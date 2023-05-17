@@ -1,0 +1,18 @@
+[
+    {
+        "files": [
+            "+../../setup/rcl_settings_ble_generic.c -> rcl_settings_ble_generic.c",
+            "+../../setup/rcl_settings_ble_generic.h -> rcl_settings_ble_generic.h",
+            "+../../setup/rcl_settings_msk_250_kbps.c -> rcl_settings_msk_250_kbps.c",
+            "+../../setup/rcl_settings_msk_250_kbps.h -> rcl_settings_msk_250_kbps.h",
+            "+../../setup/rcl_settings_msk_500_kbps.c -> rcl_settings_msk_500_kbps.c",
+            "+../../setup/rcl_settings_msk_500_kbps.h -> rcl_settings_msk_500_kbps.h",
+            "+cc23x0r5_freertos.icf -> cc23x0r5_freertos.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.md -> README.md",
+            "+../../rfCarrierWave.c -> rfCarrierWave.c",
+            "+../rfCarrierWave.syscfg -> rfCarrierWave.syscfg"
+        ]
+    }
+]

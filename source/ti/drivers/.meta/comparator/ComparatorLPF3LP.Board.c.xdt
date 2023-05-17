@@ -1,0 +1,155 @@
+%%{
+/*
+ * Copyright (c) 2022 Texas Instruments Incorporated - https://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/*
+ *  ======== ComparatorLPF3LP.c.xdt ========
+ */
+    let Common = system.getScript("/ti/drivers/Common.js");
+    let Comparator = args[0];
+    let instances = Comparator.$instances;
+    let GPIO      = system.getScript("/ti/drivers/GPIO.syscfg.js");
+
+    let countDef = Comparator.defaultInstanceName + "COUNT";
+    let driver = 'ComparatorLPF3LP';  // In case name changes
+
+    /* Hardcoded mapping between DIOs and comparator pins naming */
+    let map = {
+        "DIO21_A10" : "A1",
+        "DIO23_A8"  : "A2",
+        "DIO24_A7"  : "A3"
+    };
+%%}
+
+/*
+ *  ============= Comparator ===============
+ */
+
+#include <ti/drivers/Comparator.h>
+#include <ti/drivers/comparator/ComparatorLPF3LP.h>
+#include <ti/drivers/GPIO.h>
+
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
+#include DeviceFamily_constructPath(inc/hw_ints.h)
+
+#define `countDef` `instances.length`
+
+/*
+ *  ====== `driver`_objects =======
+ */
+`driver`_Object `driver`_objects[`countDef`];
+
+/*
+ *  ===== `driver`_hwAttrs ========
+ */
+ const `driver`_HWAttrs `driver`_hwAttrs[`countDef`] = {
+ % for (let i = 0; i < instances.length; i++) {
+    % let inst = instances[i];
+    % let hwName = inst.comparator.$solution.peripheralName;
+    % let peripheral = system.deviceData.peripherals[hwName];
+    %
+    % let intNum = inst.interruptNumber;
+    % let intMux = 'EVTSVT_' + inst.interruptNumber.substring(4) + 'SEL_PUBID_AON_LPMCMP_IRQ';
+    % let positiveInputPinName = 'GPIO_INVALID_INDEX';
+    % let positiveInputPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+    % let negativeInputPinName = 'GPIO_INVALID_INDEX';
+    % let negativeInputPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+    % let positiveChannel;
+    % let negativeChannel;
+    % let dividerPath;
+    %
+    % if ('positivePinInstance' in inst) {
+    %   positiveInputPinName = inst.positivePinInstance.$name;
+    %   let positiveInputPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins['LPC+'],
+    %                                                     inst.comparator.positivePin.$solution.devicePinName);
+    %   positiveInputPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + positiveInputPinMuxMode.toString();
+    % }
+    % if ('negativePinInstance' in inst) {
+    %   negativeInputPinName = inst.negativePinInstance.$name;
+    %   let negativeInputPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins['LPC-'],
+    %                                                     inst.comparator.negativePin.$solution.devicePinName);
+    %   negativeInputPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + negativeInputPinMuxMode.toString();
+    % }
+    % if (inst.voltageDividerPath === "Negative Input") {
+    %     dividerPath = "NEG";
+    % }
+    % else {
+    %     dividerPath = "POS";
+    % }
+    % let dividerRatio = inst.voltageDividerRatio.replace("/", "_");
+    %
+    % if ('positivePinInstance' in inst) {
+    %   positiveChannel = map[inst.comparator.positivePin.$solution.devicePinName];
+    % }
+    % else {
+    %   positiveChannel = inst.positiveInputSource.split(' ').pop();
+    % }
+    % if ('negativePinInstance' in inst) {
+    %   negativeChannel = map[inst.comparator.negativePin.$solution.devicePinName];
+    % }
+    % else {
+    %   negativeChannel = inst.negativeInputSource.split(' ').pop();
+    % }
+    {
+        .intNum = `intNum`,
+        .intPriority = `Common.intPriority2Hex(inst.interruptPriority)`,
+        .intMux = `intMux`,
+        .positiveInputPin = `positiveInputPinName`,
+        .positiveInputPinMux = `positiveInputPinMuxName`,
+        .positiveInputChannel = ComparatorLPF3LP_POS_INPUT_`positiveChannel`,
+        .negativeInputPin = `negativeInputPinName`,
+        .negativeInputPinMux = `negativeInputPinMuxName`,
+        .negativeInputChannel = ComparatorLPF3LP_NEG_INPUT_`negativeChannel`,
+        .voltageDividerPath = ComparatorLPF3LP_V_DIV_PATH_`dividerPath`,
+        .voltageDividerFactor = ComparatorLPF3LP_V_DIV_FACTOR_`dividerRatio`,
+    },
+
+% }
+};
+
+/*
+ *  ===== Comparator_config ====
+ */
+const Comparator_Config Comparator_config[`countDef`] = {
+% for (let i = 0; i < instances.length; i++) {
+    % let inst = instances[i];
+    {
+        .fxnTablePtr = &ComparatorLPF3LP_fxnTable,
+        .object = &`driver`_objects[`inst.$name`],
+        .hwAttrs = &`driver`_hwAttrs[`inst.$name`]
+    },
+% }
+};
+
+const uint_least8_t Comparator_count = `countDef`;

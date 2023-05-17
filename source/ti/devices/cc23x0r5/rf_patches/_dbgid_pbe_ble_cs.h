@@ -1,0 +1,6 @@
+DBG_DEF(DBGID_PBE_RAM_BANK0_ASM_1111, 128, DBGCH2, 0, "END: OK!", "pbe_ram_bank0.asm", 1111)
+DBG_DEF(DBGID_PBE_RAM_BANK0_ASM_1117, 129, DBGCH2, 0, "ERROR: Operation was stopped/aborted!", "pbe_ram_bank0.asm", 1117)
+DBG_DEF(DBGID_PBE_RAM_BANK0_ASM_1122, 130, DBGCH2, 0, "ERROR: TX FIFO underflow, MCU check FSTAT!", "pbe_ram_bank0.asm", 1122)
+DBG_DEF(DBGID_PBE_RAM_BANK0_ASM_1127, 131, DBGCH2, 0, "ERROR: RX FIFO overflow, MCU check FSTAT!", "pbe_ram_bank0.asm", 1127)
+DBG_DEF(DBGID_PBE_RAM_BANK0_ASM_1132, 132, DBGCH2, 0, "ERROR: Unknown operation", "pbe_ram_bank0.asm", 1132)
+DBG_DEF(DBGID_PBE_RAM_BANK0_ASM_1137, 133, DBGCH2, 0, "ERROR: Unknown internal error", "pbe_ram_bank0.asm", 1137)

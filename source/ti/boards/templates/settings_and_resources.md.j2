@@ -1,0 +1,36 @@
+{% if opts != "no_links" %}
+{# Create macro for assigning variables with variable values #}
+{% macro md_link(name,url) -%}
+[{{name}}]: {{url}}
+{%- endmacro %}
+{%  set link.refs = link.refs + [md_link("device", deviceLink)] -%}
+{%  set link.refs = link.refs + [md_link("launchpad", boardLink)] -%}
+{% endif %}
+# {{boardLongName}} Settings & Resources
+
+{% if opts == "lpstk_cc1352r" %}
+The [__{{boardLongName}}__][launchpad] contains a
+[__{{deviceName}}__][device] device and several on-board sensors:
+
+* The [__HDC2080__][hdc2080] is an integrated humidity and temperature sensor that provides
+  high accuracy measurements with very low power consumption, in a small DFN package
+* The [__DRV5055__][drv5055] is a high accuracy 3.3 V or 5 V ratio-metric bipolar hall effect
+  sensor that responds proportionally to magnetic flux density. The device can be used for
+  accurate position sensing in a  wide range of applications.
+* The [__ADXL362__][adxl362] is an ultralow power, 3-axis MEMS accelerometer that consumes
+  less than 2 μA at a 100 Hz output data rate and 270 nA when in motion triggered wake-up mode,
+* The [__OPT3001__][opt3001] is a sensor that measures the intensity of visible light.
+  The spectral response of the sensor tightly matches the photopic response of the human eye
+  and includes significant infrared rejection.
+{%  set link.refs = link.refs + ["[hdc2080]: https://www.ti.com/product/HDC2080"] -%}
+{%- set link.refs = link.refs + ["[drv5055]: https://www.ti.com/product/DRV5055"] -%}
+{%- set link.refs = link.refs + ["[adxl362]: https://www.analog.com/en/products/adxl362.html"] -%}
+{%- set link.refs = link.refs + ["[opt3001]: https://www.ti.com/product/OPT3001"] -%}
+{% elif opts == "no_links" %}
+The __{{boardLongName}}__ contains a __{{deviceName}}__ device.
+{% else %}
+The [__{{boardLongName}}__][launchpad] contains a
+[__{{deviceName}}__][device] device.
+{% endif %}
+
+{# Intentional: empty line #}

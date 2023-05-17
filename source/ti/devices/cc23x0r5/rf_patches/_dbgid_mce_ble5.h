@@ -1,0 +1,8 @@
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_413, 3, DBGCH3, 0, "Started sending sync word", "mce_ram_bank.asm", 413)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_417, 4, DBGCH3, 2, "BLE TX Access Address %2x %2x", "mce_ram_bank.asm", 417)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_476, 5, DBGCH3, 0, "Start wait for sync", "mce_ram_bank.asm", 476)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_482, 6, DBGCH3, 0, "False sync found", "mce_ram_bank.asm", 482)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_487, 7, DBGCH3, 0, "Sync Found", "mce_ram_bank.asm", 487)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_493, 8, DBGCH3, 2, "Captured %x and %x", "mce_ram_bank.asm", 493)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_819, 9, DBGCH3, 0, "Sync search enabled", "mce_ram_bank.asm", 819)
+DBG_DEF(DBGID_MCE_RAM_BANK_ASM_1420, 10, DBGCH3, 0, "SWQU Error. Restart Rx.", "mce_ram_bank.asm", 1420)

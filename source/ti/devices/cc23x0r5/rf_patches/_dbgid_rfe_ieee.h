@@ -1,0 +1,7 @@
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_96, 255, DBGCH2, 2, "API %2d CMDPAR0 %2d", "rfe_ram_bank0.asm", 96)
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_154, 254, DBGCH2, 0, "Enabling PLL", "rfe_ram_bank0.asm", 154)
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_156, 253, DBGCH2, 0, "Calibrating PLL", "rfe_ram_bank0.asm", 156)
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_164, 252, DBGCH2, 0, "PLL calibration done", "rfe_ram_bank0.asm", 164)
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_173, 251, DBGCH2, 0, "Turning off PLL", "rfe_ram_bank0.asm", 173)
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_280, 250, DBGCH2, 0, "802.15.4: Start of AGC Algorithm", "rfe_ram_bank0.asm", 280)
+DBG_DEF(DBGID_RFE_RAM_BANK0_ASM_459, 249, DBGCH2, 2, "RSSI Algorithm Done. RFGAIN: %d dB  RSSI: %d dBm", "rfe_ram_bank0.asm", 459)

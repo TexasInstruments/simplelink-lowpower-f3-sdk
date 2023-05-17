@@ -1,0 +1,9 @@
+## TI BoosterPacks&trade;
+
+The following {{ 'BoosterPacks are' if data|length > 1 else 'BoosterPack is' }} used with some driver examples.
+
+{% for bp,variant in data.items() %}
+{%   with mod=variant %}
+{%     include bp + ".md.j2" %}
+{%   endwith %}
+{% endfor %}

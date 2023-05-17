@@ -1,0 +1,11 @@
+{# Create list link.refs that sub-modules can append entries to #}
+{% set link = namespace(refs=[]) -%}
+
+{% for section,opts in sections.items() %}
+{%   with data=opts %}
+{%     include section + ".md.j2" %}
+{%   endwith %}
+{% endfor %}
+{# Print link ref. list #}
+{{ link.refs | join("\n") }}
+{# Intentional: Comment to get empty line at end of rendered markdown #}

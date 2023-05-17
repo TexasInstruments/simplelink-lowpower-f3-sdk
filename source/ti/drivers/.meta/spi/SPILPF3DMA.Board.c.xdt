@@ -1,0 +1,166 @@
+%%{
+/*
+ * Copyright (c) 2022, Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/*
+ *  ======== SPILPF3DMA.Board.c.xdt ========
+ */
+
+    /* passed by /ti/drivers/templates/Board.c.xdt */
+    let SPI = args[0];
+    let instances = SPI.$instances;
+    if (instances.length == 0) return;
+
+    /* get ti/drivers common utility functions */
+    let Common = system.getScript('/ti/drivers/Common.js');
+    let GPIO      = system.getScript("/ti/drivers/GPIO.syscfg.js");
+
+    let declarations = Common.genBoardDeclarations(instances);
+
+    /* CONFIG_XXXCOUNT string, derived from defaultInstanceName */
+    let countDef = SPI.defaultInstanceName + 'COUNT';
+%%}
+/*
+ *  =============================== SPI DMA ===============================
+ */
+#include <ti/drivers/SPI.h>
+#include <ti/drivers/spi/SPILPF3DMA.h>
+#include <ti/drivers/dma/UDMALPF3.h>
+
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
+
+#define `countDef` `instances.length`
+
+/*
+ *  ======== SPILPF3DMA_objects ========
+ */
+SPILPF3DMA_Object SPILPF3DMA_objects[`countDef`];
+
+/*
+ * ======== SPILPF3DMA uDMA Table Entries  ========
+ */
+% for (let i = 0; i < instances.length; i++) {
+    % let inst = instances[i];
+    % let dmaRXDevicePinName = inst.spi.dmaRxChannel.$solution.devicePinName;
+    % let dmaTXDevicePinName = inst.spi.dmaTxChannel.$solution.devicePinName;
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry, (`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)` | UDMA_PRI_SELECT));
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry, (`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)` | UDMA_PRI_SELECT));
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`AltControlTableEntry, (`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)` | UDMA_ALT_SELECT));
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`AltControlTableEntry, (`dmaRXDevicePinName.slice(6, dmaTXDevicePinName.length)` | UDMA_ALT_SELECT));
+%}
+
+/*
+ *  ======== SPILPF3DMA_hwAttrs ========
+ */
+const SPILPF3DMA_HWAttrs SPILPF3DMA_hwAttrs[`countDef`] = {
+% for (let i = 0; i < instances.length; i++) {
+    % let inst = instances[i];
+    % let spi = inst.spi;
+    % let name = spi.$solution.peripheralName;
+    % let dmaRXDevicePinName = inst.spi.dmaRxChannel.$solution.devicePinName;
+    % let dmaTXDevicePinName = inst.spi.dmaTxChannel.$solution.devicePinName;
+    % let peripheral  = system.deviceData.peripherals[name];
+    % /* Get the index of the SPI instance by extracting the last character */
+
+    % let pociPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'MISO'],
+    %                                         inst.spi.pociPin.$solution.devicePinName);
+    % let pociPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + pociPinMuxMode.toString();
+    %
+    % let picoPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'MOSI'],
+    %                                         inst.spi.picoPin.$solution.devicePinName);
+    % let picoPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + picoPinMuxMode.toString();
+    %
+    % let sclkPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'SCLK'],
+    %                                         inst.spi.sclkPin.$solution.devicePinName);
+    % let sclkPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + sclkPinMuxMode.toString();
+    %
+    % if (inst.mode != 'Three Pin') {
+    %   var csnPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'CSN'],
+    %                                         inst.spi.csnPin.$solution.devicePinName);
+    %   var csnPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + csnPinMuxMode.toString();
+    % }
+    {
+        .baseAddr = `name`_BASE,
+        .intNum = INT_`name`_COMB,
+        .intPriority = `Common.intPriority2Hex(inst.dmaInterruptPriority)`,
+        .swiPriority = `Common.swiPriority2Int(inst.softwareInterruptPriority)`,
+        .defaultTxBufValue = `inst.defaultTxBufferValue`,
+        .rxChannelBitMask = UDMA_CHANNEL_`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`_M,
+        .txChannelBitMask = UDMA_CHANNEL_`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`_M,
+        .rxChannelEvtMux = EVTSVT_DMACH`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`SEL_IPID_`name`RXTRG,
+        .txChannelEvtMux = EVTSVT_DMACH`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`SEL_IPID_`name`TXTRG,
+        .dmaTxTableEntryPri = &dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry,
+        .dmaRxTableEntryPri = &dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry,
+        .dmaTxTableEntryAlt = &dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`AltControlTableEntry,
+        .dmaRxTableEntryAlt = &dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`AltControlTableEntry,
+        .minDmaTransferSize = `inst.minDmaTransferSize`,
+        .picoPinMux   = `picoPinMuxName`,
+        .pociPinMux   = `pociPinMuxName`,
+        .sclkPinMux  = `sclkPinMuxName`,
+        .picoPin = `inst.picoPinInstance.$name`,
+        .pociPin = `inst.pociPinInstance.$name`,
+        .sclkPin  = `inst.sclkPinInstance.$name`,
+    % if (inst.mode != 'Three Pin') {
+        .csnPin  = `inst.csnPinInstance.$name`,
+        .csnPinMux  = `csnPinMuxName`,
+    % } else {
+        .csnPin  = GPIO_INVALID_INDEX,
+    % }
+        .powerID = PowerLPF3_PERIPH_`name`,
+    },
+% }
+};
+
+/*
+ *  ======== SPI_config ========
+ */
+const SPI_Config SPI_config[`countDef`] = {
+% for (let i = 0; i < instances.length; i++) {
+    % let inst = instances[i];
+    /* `inst.$name` */
+    % if (inst.$hardware) {
+    %    if (inst.$hardware.displayName) {
+    /* `inst.$hardware.displayName` */
+    %    }
+    % }
+    {
+        .fxnTablePtr = &SPILPF3DMA_fxnTable,
+        .object = &SPILPF3DMA_objects[`inst.$name`],
+        .hwAttrs = &SPILPF3DMA_hwAttrs[`inst.$name`]
+    },
+% }
+};
+
+`declarations`
+const uint_least8_t SPI_count = `countDef`;

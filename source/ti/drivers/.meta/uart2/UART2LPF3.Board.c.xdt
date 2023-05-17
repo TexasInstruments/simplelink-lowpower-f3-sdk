@@ -1,0 +1,216 @@
+%%{
+/*
+ * Copyright (c) 2019-2022, Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/*
+ *  ======== UART2LPF3.Board.c.xdt ========
+ */
+
+    let Common    = system.getScript("/ti/drivers/Common.js");
+    let GPIO      = system.getScript("/ti/drivers/GPIO.syscfg.js");
+    let UART2     = args[0];
+    let instances = UART2.$instances;
+
+    if (instances.length == 0) return;
+
+    let declarations = Common.genBoardDeclarations(instances);
+
+    /* CONFIG_XXXCOUNT string, derived from defaultInstanceName */
+    let countDef = UART2.defaultInstanceName + "COUNT";
+
+    /* localize the object names with this device ID */
+    let devId = system.deviceData.deviceId;
+
+    /* Get name of device specific include directory */
+    let devicesDir = Common.device2DevicesDir(devId);
+
+    /* For mapping coding schemes into the enum names */
+    let codingMap = {
+        "UART" : "UART2LPF3_CODING_UART",
+        "Serial Infrared" : "UART2LPF3_CODING_SIR",
+        "Low-Power Serial Infrared" : "UART2LPF3_CODING_SIR_LP"
+    };
+
+    let driver = 'UART2LPF3';  // In case name changes
+
+    /* Determine if non-blocking functions and datastructures should be used */
+    let useNonBlocking = false;
+    for (let i = 0; i < instances.length; i++) {
+        let inst = instances[i];
+        if (inst.enableNonblocking == true) {
+            useNonBlocking = true;
+        }
+    }
+%%}
+/*
+ *  =============================== UART2 ===============================
+ */
+
+#include <ti/drivers/UART2.h>
+#include <ti/drivers/uart2/`driver`.h>
+#include <ti/drivers/GPIO.h>
+#include <ti/drivers/Power.h>
+#include <ti/drivers/dma/UDMALPF3.h>
+#include <ti/drivers/Power.h>
+#include <ti/devices/`devicesDir`/inc/hw_memmap.h>
+#include <ti/devices/`devicesDir`/inc/hw_ints.h>
+#include <ti/devices/`devicesDir`/inc/hw_evtsvt.h>
+
+#define `countDef` `instances.length`
+
+`driver`_Object `driver`_objects[`countDef`];
+
+% for (let i = 0; i < instances.length; i++) {
+%     let inst = instances[i];
+static unsigned char uart2RxRingBuffer`i`[`inst.rxRingBufferSize`];
+%   if (inst.enableNonblocking == true) {
+/* TX ring buffer allocated to be used for nonblocking mode */
+static unsigned char uart2TxRingBuffer`i`[`inst.txRingBufferSize`];
+%   }
+% }
+
+% for (let i = 0; i < instances.length; i++) {
+%     let inst        = instances[i];
+
+%     let dmaRXDevicePinName = inst.uart.dmaRxChannel.$solution.devicePinName;
+%     let dmaTXDevicePinName = inst.uart.dmaTxChannel.$solution.devicePinName;
+
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry, `dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`);
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry, `dmaTXDevicePinName.slice(6, dmaRXDevicePinName.length)`);
+% }
+
+static const `driver`_HWAttrs `driver`_hwAttrs[`countDef`] = {
+% for (let i = 0; i < instances.length; i++) {
+%     let inst        = instances[i];
+%     let uart        = inst.uart;
+%     let solution    = uart.$solution;
+%     let peripheral  = system.deviceData.peripherals[solution.peripheralName];
+%     let dmaRXDevicePinName = inst.uart.dmaRxChannel.$solution.devicePinName;
+%     let dmaTXDevicePinName = inst.uart.dmaTxChannel.$solution.devicePinName;
+%
+%     let rxPinName = 'GPIO_INVALID_INDEX';
+%     let txPinName = 'GPIO_INVALID_INDEX';
+%     let rxPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%     let txPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%     let flowName = 'UART2_FLOWCTRL_NONE';
+%     let ctsPinName = 'GPIO_INVALID_INDEX';
+%     let rtsPinName = 'GPIO_INVALID_INDEX';
+%     let ctsPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%     let rtsPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%
+%     if ('rxPinInstance' in inst) {
+%         rxPinName = inst.rxPinInstance.$name;
+%         let rxPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'RXD'],
+%                                                   inst.uart.rxPin.$solution.devicePinName);
+%         rxPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + rxPinMuxMode.toString();
+%     }
+%
+%     if ('txPinInstance' in inst) {
+%         txPinName = inst.txPinInstance.$name;
+%         let txPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'TXD'],
+%                                                   inst.uart.txPin.$solution.devicePinName);
+%         txPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + txPinMuxMode.toString();
+%     }
+%
+%     if (inst.flowControl) {
+%         ctsPinName = inst.ctsPinInstance.$name;
+%         rtsPinName = inst.rtsPinInstance.$name;
+%         let ctsPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'CTS'],
+%                                                 inst.uart.ctsPin.$solution.devicePinName);
+%         let rtsPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'RTS'],
+%                                                 inst.uart.rtsPin.$solution.devicePinName);
+%         ctsPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ctsPinMuxMode.toString();
+%         rtsPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + rtsPinMuxMode.toString();
+%         flowName = 'UART2_FLOWCTRL_HARDWARE';
+%     }
+%
+%     let concatFIFOs = inst.concatenateFIFOs ? 'true' : 'false';
+  {
+    .baseAddr           = `peripheral.name`_BASE,
+    .intNum             = INT_`peripheral.name`_COMB,
+    .intPriority        = `Common.intPriority2Hex(inst.interruptPriority)`,
+    .rxPin              = `rxPinName`,
+    .txPin              = `txPinName`,
+    .ctsPin             = `ctsPinName`,
+    .rtsPin             = `rtsPinName`,
+    .flowControl        = `flowName`,
+    .rxBufPtr           = uart2RxRingBuffer`i`,
+    .rxBufSize          = sizeof(uart2RxRingBuffer`i`),
+% if (inst.enableNonblocking == true) {
+    .txBufPtr           = uart2TxRingBuffer`i`,
+    .txBufSize          = sizeof(uart2TxRingBuffer`i`),
+% } else {
+    .txBufPtr           = NULL,
+    .txBufSize          = 0,
+% }
+    .txPinMux           = `txPinMuxName`,
+    .rxPinMux           = `rxPinMuxName`,
+    .ctsPinMux          = `ctsPinMuxName`,
+    .rtsPinMux          = `rtsPinMuxName`,
+    .dmaRxTableEntryPri = &dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry,
+    .dmaTxTableEntryPri = &dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry,
+    .rxChannelMask      = UDMA_CHANNEL_`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`_M,
+    .txChannelMask      = UDMA_CHANNEL_`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`_M,
+    .rxChannelEvtMux    = EVTSVT_DMACH`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`SEL_IPID_`solution.peripheralName`RXTRG,
+    .txChannelEvtMux    = EVTSVT_DMACH`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`SEL_IPID_`solution.peripheralName`TXTRG,
+    .codingScheme       = `codingMap[inst.codingScheme]`,
+    .concatenateFIFO    = `concatFIFOs`,
+    .irLPClkDivider     = `inst.SIRLPclockDivider`,
+    .powerID            = PowerLPF3_PERIPH_`solution.peripheralName`
+  },
+% }
+};
+
+const UART2_Config UART2_config[`countDef`] = {
+% for (let i = 0; i < instances.length; i++) {
+%     let inst    = instances[i];
+    {   /* `inst.$name` */
+        .object      = &`driver`_objects[`inst.$name`],
+        .hwAttrs     = &`driver`_hwAttrs[`inst.$name`]
+    },
+% }
+};
+
+`declarations`
+const uint_least8_t UART2_count = `countDef`;
+
+% if (useNonBlocking == false) {
+/* Forward-declare write function used for blocking and callback mode */
+extern int_fast16_t UART2_writeTimeoutBlocking(UART2_Handle handle, const void *buffer, size_t size, size_t *bytesWritten, uint32_t timeout);
+
+/* Override weak writeTimeout function in UART2 library to only use blocking/callback mode */
+int_fast16_t UART2_writeTimeout(UART2_Handle handle, const void *buffer, size_t size, size_t *bytesWritten, uint32_t timeout)
+{
+    return UART2_writeTimeoutBlocking(handle, buffer, size, bytesWritten, timeout);
+}
+% }

@@ -1,0 +1,24 @@
+[
+    {
+        "files": [
+            "+../../setup/rcl_settings_ble_generic.c -> rcl_settings_ble_generic.c",
+            "+../../setup/rcl_settings_ble_generic.h -> rcl_settings_ble_generic.h",
+            "+../../setup/rcl_settings_msk_250_kbps.c -> rcl_settings_msk_250_kbps.c",
+            "+../../setup/rcl_settings_msk_250_kbps.h -> rcl_settings_msk_250_kbps.h",
+            "+../../setup/rcl_settings_msk_500_kbps.c -> rcl_settings_msk_500_kbps.c",
+            "+../../setup/rcl_settings_msk_500_kbps.h -> rcl_settings_msk_500_kbps.h",
+            "+cc23x0r5_freertos.icf -> cc23x0r5_freertos.icf",
+            "+../../config.c -> config.c",
+            "+../../config.h -> config.h",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../menu.c -> menu.c",
+            "+../../menu.h -> menu.h",
+            "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.md -> README.md",
+            "+../../rfPacketErrorRate.c -> rfPacketErrorRate.c",
+            "+../rfPacketErrorRate.syscfg -> rfPacketErrorRate.syscfg",
+            "+../../rx.c -> rx.c",
+            "+../../tx.c -> tx.c"
+        ]
+    }
+]

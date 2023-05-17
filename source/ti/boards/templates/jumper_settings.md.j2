@@ -1,0 +1,29 @@
+## Jumper Settings
+
+{% if opts|length %}
+{%   for mod in opts %}
+{%     if mod == "leds" %}
+* Close the __`LEDs`__ jumper to enable the on-board LEDs.
+{%     elif mod == "uart_txd_rxd" %}
+* Close the __`RXD<<`__ and __`TXD>>`__ jumpers to enable UART via the XDS110 on-board USB debugger.
+{%     elif mod == "cc32_uart_txd_rxd" %}
+* Close the __`RX`__ and __`TX`__ jumpers to enable UART via the XDS110 on-board USB debugger.
+{%     elif mod == "cc32_opamp_gnd_brd"%}
+* Close the __`OPAMP EN`__, __`GND`__, and __`BRD`__ jumpers to enable the
+  operation amplifier circuit on analog pins __`P57`__, __`P58`__, __`P59`__,
+  and __`P60`__. The operation amplifier circuit, even when disabled, prevents
+  any output on the respective pins. Additionally, the input voltage is clipped
+  to 1.4 V.
+{%     elif mod == "cc2340q1_scl_or_btn1"%}
+* Close the __`SCL`__ jumper to enable I2C SCL or the __`BTN1`__ jumper to enable Button 1.
+  These two jumper settings are mutually exclusive.
+{%     elif mod == "cc2340q1_sda_or_btn2"%}
+* Close the __`SDA`__ jumper to enable I2C SDA or the __`BTN2`__ jumper to enable Button 2.
+  These two jumper settings are mutually exclusive.
+{%     endif %}
+{%   endfor %}
+{% else %}
+* No modifications are needed.
+{% endif %}
+
+{# Intentional: empty line #}

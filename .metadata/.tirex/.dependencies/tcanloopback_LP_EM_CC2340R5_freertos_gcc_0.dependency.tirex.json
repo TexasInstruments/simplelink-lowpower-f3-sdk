@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../../tcanloopback.c -> tcanloopback.c",
+            "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../tcan455x.syscfg -> tcan455x.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
+            "+cc23x0r5_freertos.lds -> cc23x0r5_freertos.lds"
+        ]
+    }
+]

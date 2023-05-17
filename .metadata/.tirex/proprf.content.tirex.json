@@ -1,0 +1,997 @@
+[
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfCarrierWave",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/ticlang/rfCarrierWave_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "rfCarrierWave",
+        "description": "rfCarrierWave",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfCarrierWave",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfCarrierWave",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/ticlang/rfCarrierWave_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "rfCarrierWave",
+        "description": "rfCarrierWave",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfCarrierWave",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/iar/rfCarrierWave_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "rfCarrierWave",
+        "description": "rfCarrierWave",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfCarrierWave",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfCarrierWave",
+        "description": "rfCarrierWave",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfCarrierWave",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/rfCarrierWave_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "rfCarrierWave",
+        "description": "rfCarrierWave",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfCarrierWave",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfCarrierWave",
+        "description": "rfCarrierWave",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfCarrierWave",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfPacketErrorRate",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/ticlang/rfPacketErrorRate_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "rfPacketErrorRate",
+        "description": "rfPacketErrorRate",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketErrorRate",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/rfPacketErrorRate_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "rfPacketErrorRate",
+        "description": "rfPacketErrorRate",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketErrorRate",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfPacketErrorRate",
+        "description": "rfPacketErrorRate",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketErrorRate",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfPacketRx",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/ticlang/rfPacketRx_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "rfPacketRx",
+        "description": "rfPacketRx",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketRx",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfPacketRx",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/ticlang/rfPacketRx_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "rfPacketRx",
+        "description": "rfPacketRx",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketRx",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfPacketRx",
+        "description": "rfPacketRx",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketRx",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/iar/rfPacketRx_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "rfPacketRx",
+        "description": "rfPacketRx",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketRx",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/iar/rfPacketRx_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "rfPacketRx",
+        "description": "rfPacketRx",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketRx",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfPacketRx",
+        "description": "rfPacketRx",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketRx",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfPacketTx",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/ticlang/rfPacketTx_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "rfPacketTx",
+        "description": "rfPacketTx",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketTx",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/README.html",
+        "resourceType": "categoryInfo",
+        "name": "rfPacketTx",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/ticlang/rfPacketTx_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "rfPacketTx",
+        "description": "rfPacketTx",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketTx",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfPacketTx",
+        "description": "rfPacketTx",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketTx",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/iar/rfPacketTx_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "rfPacketTx",
+        "description": "rfPacketTx",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketTx",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "name": "rfPacketTx",
+        "description": "rfPacketTx",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketTx",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/iar/rfPacketTx_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "rfPacketTx",
+        "description": "rfPacketTx",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "prop_rf",
+            "rfPacketTx",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    }
+]

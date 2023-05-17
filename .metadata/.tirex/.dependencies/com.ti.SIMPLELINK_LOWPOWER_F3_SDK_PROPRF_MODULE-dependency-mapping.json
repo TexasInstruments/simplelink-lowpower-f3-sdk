@@ -1,0 +1,16 @@
+{
+    "../../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/iar/rfCarrierWave_LP_EM_CC2340R5_nortos_iar.ipcf": "rfCarrierWave_LP_EM_CC2340R5_nortos_iar_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/ticlang/rfCarrierWave_LP_EM_CC2340R5_nortos_ticlang.projectspec": "rfCarrierWave_LP_EM_CC2340R5_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/iar/rfPacketRx_LP_EM_CC2340R5_nortos_iar.ipcf": "rfPacketRx_LP_EM_CC2340R5_nortos_iar_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/ticlang/rfPacketRx_LP_EM_CC2340R5_nortos_ticlang.projectspec": "rfPacketRx_LP_EM_CC2340R5_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/iar/rfPacketTx_LP_EM_CC2340R5_nortos_iar.ipcf": "rfPacketTx_LP_EM_CC2340R5_nortos_iar_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/ticlang/rfPacketTx_LP_EM_CC2340R5_nortos_ticlang.projectspec": "rfPacketTx_LP_EM_CC2340R5_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/rfCarrierWave_LP_EM_CC2340R5_freertos_iar.ipcf": "rfCarrierWave_LP_EM_CC2340R5_freertos_iar_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/ticlang/rfCarrierWave_LP_EM_CC2340R5_freertos_ticlang.projectspec": "rfCarrierWave_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/rfPacketErrorRate_LP_EM_CC2340R5_freertos_iar.ipcf": "rfPacketErrorRate_LP_EM_CC2340R5_freertos_iar_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/ticlang/rfPacketErrorRate_LP_EM_CC2340R5_freertos_ticlang.projectspec": "rfPacketErrorRate_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/iar/rfPacketRx_LP_EM_CC2340R5_freertos_iar.ipcf": "rfPacketRx_LP_EM_CC2340R5_freertos_iar_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/ticlang/rfPacketRx_LP_EM_CC2340R5_freertos_ticlang.projectspec": "rfPacketRx_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/iar/rfPacketTx_LP_EM_CC2340R5_freertos_iar.ipcf": "rfPacketTx_LP_EM_CC2340R5_freertos_iar_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/ticlang/rfPacketTx_LP_EM_CC2340R5_freertos_ticlang.projectspec": "rfPacketTx_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json"
+}

@@ -1,0 +1,357 @@
+[
+    {
+        "name": "Release Notes",
+        "resourceType": "file",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_7_10_00_35.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ]
+    },
+    {
+        "name": "Documentation Overview",
+        "resourceType": "file",
+        "location": "../../docs/Documentation_Overview.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ]
+    },
+    {
+        "name": "Quick Start Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_mcu_sdk/Quick_Start_Guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ]
+    },
+    {
+        "name": "SimpleLink MCU SDK User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_mcu_sdk/Users_Guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ]
+    },
+    {
+        "name": "SimpleLink MCU SDK Migration Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_mcu_sdk/Migration_Guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ]
+    },
+    {
+        "name": "BLE5-Stack User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/ble_user_guide/ble5stack-users-guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ]
+    },
+    {
+        "name": "BLE5-Stack Quick Start Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_mcu_sdk/html/quickstart-guide/ble5-quick-start-cc23xx.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ]
+    },
+    {
+        "name": "BLE5-Stack Migration Guide",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/ble_user_guide/migration-guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ]
+    },
+    {
+        "name": "BLE5-Stack Debugging Guide",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/ble_user_guide/ble5stack-debugging.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ]
+    },
+    {
+        "name": "Proprietary RF Quick Start Guide",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_mcu_sdk/html/quickstart-guide/proprietary-rf-quick-start.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Proprietary RF"
+        ]
+    },
+    {
+        "name": "Proprietary RF Migration Guide",
+        "resourceType": "file",
+        "location": "../../docs/proprietary-rf/proprietary-rf-migration-guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Proprietary RF"
+        ]
+    },
+    {
+        "name": "Proprietary RF User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/proprietary-rf/proprietary-rf-users-guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Proprietary RF"
+        ]
+    },
+    {
+        "name": "Proprietary RF Examples User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/proprietary-rf/proprietary-rf-examples-users-guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Proprietary RF"
+        ]
+    },
+    {
+        "name": "TI-POSIX User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/tiposix/Users_Guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "categories": [
+            "Documents",
+            "TI-RTOS Kernel (SYS/BIOS)"
+        ]
+    },
+    {
+        "name": "CoreSDK Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_7_11_01_00.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ]
+    },
+    {
+        "name": "TI Proprietary RF Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_7_10_00.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Proprietary RF"
+        ]
+    },
+    {
+        "name": "RCL Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/rcl/rcl_release_notes.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "RCL"
+        ]
+    },
+    {
+        "name": "TI BLE5-Stack Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/release_notes_ble5stack_3_02_01_00.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ]
+    },
+    {
+        "name": "SimpleLink Graphics Library Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/grlib/release_notes_grlib_5_00_00_05.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Graphics Library"
+        ]
+    }
+]

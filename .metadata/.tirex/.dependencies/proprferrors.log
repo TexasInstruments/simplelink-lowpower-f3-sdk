@@ -1,0 +1,42 @@
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/nortos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketRx/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/nortos/LP_EM_CC2340R5/prop_rf/rfPacketTx/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketRx/freertos/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketTx/freertos/iar/SysConfig_Generated_Files.ipcf
+

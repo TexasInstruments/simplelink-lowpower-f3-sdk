@@ -1,0 +1,17 @@
+[
+    {
+        "files": [
+            "+../rfCarrierWave.c -> rfCarrierWave.c",
+            "+../README.md -> README.md",
+            "+../setup/rcl_settings_ble_generic.c -> setup/rcl_settings_ble_generic.c",
+            "+../setup/rcl_settings_ble_generic.h -> setup/rcl_settings_ble_generic.h",
+            "+../setup/rcl_settings_msk_250_kbps.c -> setup/rcl_settings_msk_250_kbps.c",
+            "+../setup/rcl_settings_msk_250_kbps.h -> setup/rcl_settings_msk_250_kbps.h",
+            "+../setup/rcl_settings_msk_500_kbps.c -> setup/rcl_settings_msk_500_kbps.c",
+            "+../setup/rcl_settings_msk_500_kbps.h -> setup/rcl_settings_msk_500_kbps.h",
+            "+../rfCarrierWave.syscfg -> rfCarrierWave.syscfg",
+            "+../main_nortos.c -> main_nortos.c",
+            "+cc23x0r5_nortos.cmd -> cc23x0r5_nortos.cmd"
+        ]
+    }
+]

@@ -1,0 +1,17 @@
+[{
+    "rootMacroName": "COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR",
+    "compilerIncludePath": [],
+    "compilerSymbols": [],
+    "linkerSearchPath": [],
+    "properties": {
+        "rtsc.repoMacroName": "COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR_REPOS",
+        "rtsc.repositories": [
+            "source",
+            "kernel/tirtos/packages",
+            "kernel/tirtos7/packages",
+            "."
+        ],
+        "rtsc.platformMappingsFile": "./kernel/tirtos/etc/platforms.json",
+        "rtsc.targetMappingsFile": "./kernel/tirtos/etc/targets.json"
+    }
+}]

@@ -1,0 +1,17 @@
+[
+    {
+        "files": [
+            "+../setup/rcl_settings_ble_generic.c -> rcl_settings_ble_generic.c",
+            "+../setup/rcl_settings_ble_generic.h -> rcl_settings_ble_generic.h",
+            "+../setup/rcl_settings_msk_250_kbps.c -> rcl_settings_msk_250_kbps.c",
+            "+../setup/rcl_settings_msk_250_kbps.h -> rcl_settings_msk_250_kbps.h",
+            "+../setup/rcl_settings_msk_500_kbps.c -> rcl_settings_msk_500_kbps.c",
+            "+../setup/rcl_settings_msk_500_kbps.h -> rcl_settings_msk_500_kbps.h",
+            "+cc23x0r5_nortos.icf -> cc23x0r5_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../README.md -> README.md",
+            "+../rfPacketTx.c -> rfPacketTx.c",
+            "+../rfPacketTx.syscfg -> rfPacketTx.syscfg"
+        ]
+    }
+]

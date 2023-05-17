@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../README.html -> README.html",
+            "+../../app/app_main.c -> app/app_main.c",
+            "+../../app/app_ptm.c -> app/app_ptm.c",
+            "+../../Startup/osal_icall_ble.c -> Startup/osal_icall_ble.c",
+            "+../../common/DPL/Queue_freertos.c -> common/DPL/Queue_freertos.c",
+            "+../../common/DPL/Queue_freertos.h -> common/DPL/Queue_freertos.h",
+            "+../../common/Startup/main_freertos.c -> main_freertos.c",
+            "+../basic_ble_ptm.syscfg -> basic_ble_ptm.syscfg",
+            "+cc23x0_app_freertos.cmd -> cc23x0_app_freertos.cmd"
+        ]
+    }
+]
