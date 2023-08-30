@@ -3,13 +3,32 @@ include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_common.cmake)
 
 set(SOURCES_CC27XX
     ${SOURCES_COMMON}
+    AESCBC.c
+    # AESCCM.c
+    # AESCMAC.c
+    AESCTR.c
+    AESCTRDRBG.c
+    AESECB.c
     # AESGCM.c
+    cryptoutils/cryptokey/CryptoKeyPlaintext.c
+    cryptoutils/sharedresources/CryptoResourceLPF3.c
+    cryptoutils/utils/CryptoUtils.c
     GPIO.c
     gpio/GPIOLPF3.c
-    # cryptoutils/sharedresources/PKAResourceCC26XX.c
     # ECJPAKE.c
     # EDDSA.c
-    # spi/SPICC26X4DMA.c
+    pwm/PWMTimerLPF3.c
+    NVS.c
+    nvs/NVSLPF3.c
+    nvs/NVSRAM.c
+    nvs/NVSSPI25X.c
+    timer/LGPTimerLPF3.c
+    SPI.c
+    spi/SPILPF3DMA.c
+    UART2.c
+    uart2/UART2LPF3.c
+    power/PowerCC27XX.c
+    dma/UDMALPF3.c
     # watchdog/WatchdogCC26X4.c
 )
 
@@ -20,13 +39,14 @@ set(SOURCES_TFM_NS_API ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/src/t
 set(SOURCES_SEC_ONLY_CC27XX
     ${SOURCES_CC27XX}
     power/PowerCC27XX.c
-    # aescbc/AESCBCCC26XX.c
-    # aesccm/AESCCMCC26X4.c
-    # aescmac/AESCMACCC26XX.c
-    # aesctr/AESCTRCC26XX.c
-    # aesctrdrbg/AESCTRDRBGXX.c
-    # aesecb/AESECBCC26XX.c
-    # aesgcm/AESGCMCC26X4.c
+    aescbc/AESCBCLPF3.c
+    # aesccm/AESCCMLPF3.c
+    # aescmac/AESCMACLPF3.c
+    aesctr/AESCTRLPF3.c
+    aesctrdrbg/AESCTRDRBGXX.c
+    aesecb/AESECBLPF3.c
+    # aesgcm/AESGCMLPF3.c
+    cryptoutils/aes/AESCommonLPF3.c
     # cryptoutils/ecc/ECCParamsCC26X2.c
     # ecdh/ECDHCC26X2.c
     # ecdsa/ECDSACC26X2.c

@@ -39,68 +39,55 @@
 // BPU component
 //
 //*****************************************************************************
-// Use the Breakpoint Control Register to enable the Breakpoint block
+// Breakpoint Control Register
 #define BPU_O_BP_CTRL                                               0x00000000U
 
-// Use the Breakpoint Comparator Registers to store the values to compare with
-// the instruction address.
+// Breakpoint Comparator Register 0
 #define BPU_O_BP_COMP0                                              0x00000008U
 
-// Use the Breakpoint Comparator Registers to store the values to compare with
-// the instruction address.
+// Breakpoint Comparator Register 1
 #define BPU_O_BP_COMP1                                              0x0000000CU
 
-// Use the Breakpoint Comparator Registers to store the values to compare with
-// the PC address.
+// Breakpoint Comparator Register 2
 #define BPU_O_BP_COMP2                                              0x00000010U
 
-// Use the Breakpoint Comparator Registers to store the values to compare with
-// the instruction address.
+// Breakpoint Comparator Register 3
 #define BPU_O_BP_COMP3                                              0x00000014U
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer identity and the memory footprint indicator.
+// Peripheral ID Register 4
 #define BPU_O_PIDR4                                                 0x00000FD0U
 
-// Reserved
+// Peripheral ID Register 5
 #define BPU_O_PIDR5                                                 0x00000FD4U
 
-// Reserved
+// Peripheral ID Register 6
 #define BPU_O_PIDR6                                                 0x00000FD8U
 
-// Reserved
+// Peripheral ID Register 7
 #define BPU_O_PIDR7                                                 0x00000FDCU
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer specific part number.
+// Peripheral ID Register 0
 #define BPU_O_PIDR0                                                 0x00000FE0U
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer specific part number and part of the designer identity.
+// Peripheral ID Register 1
 #define BPU_O_PIDR1                                                 0x00000FE4U
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer identity and the product revision.
+// Peripheral ID Register 2
 #define BPU_O_PIDR2                                                 0x00000FE8U
 
-// Part of the set of Peripheral Identification registers. Contains the RevAnd
-// and Customer Modified fields.
+// Peripheral ID Register 3
 #define BPU_O_PIDR3                                                 0x00000FECU
 
-// A component identification register, that indicates that the identification
-// registers are present.
+// Component ID Register 0
 #define BPU_O_CIDR0                                                 0x00000FF0U
 
-// A component identification register, that indicates that the identification
-// registers are present. This register also indicates the component class.
+// Component ID Register 1
 #define BPU_O_CIDR1                                                 0x00000FF4U
 
-// A component identification register, that indicates that the identification
-// registers are present.
+// Component ID Register 2
 #define BPU_O_CIDR2                                                 0x00000FF8U
 
-// A component identification register, that indicates that the identification
-// registers are present.
+// Component ID Register 3
 #define BPU_O_CIDR3                                                 0x00000FFCU
 
 //*****************************************************************************

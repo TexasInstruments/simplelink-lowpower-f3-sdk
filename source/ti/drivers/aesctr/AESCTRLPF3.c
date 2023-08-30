@@ -73,9 +73,17 @@
  *    ADRCHB = TXT0
  *    TRGCHB = WRTXT3
  */
-#define AESCTRLPF3_DMA_CONFIG                                                                            \
-    ((uint32_t)AES_DMA_ADRCHA_TXTX0 | (uint32_t)AES_DMA_TRGCHA_ECBDONE | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
-     (uint32_t)AES_DMA_TRGCHB_WRTXT3)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCTRLPF3_DMA_CONFIG                                                                            \
+        ((uint32_t)AES_DMA_ADRCHA_TXTX0 | (uint32_t)AES_DMA_TRGCHA_AESDONE | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
+         (uint32_t)AES_DMA_TRGCHB_WRTXT3)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCTRLPF3_DMA_CONFIG                                                                            \
+        ((uint32_t)AES_DMA_ADRCHA_TXTX0 | (uint32_t)AES_DMA_TRGCHA_ECBDONE | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
+         (uint32_t)AES_DMA_TRGCHB_WRTXT3)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
+#endif
 
 /*
  * AES DMA configuration to use when data length is exactly a block multiple.
@@ -91,7 +99,13 @@
  *    ADRCHB = TXT0
  *    TRGCHB = WRTXT3
  */
-#define AESCTRLPF3_GATE_CHA_DMA_CONFIG (AESCTRLPF3_DMA_CONFIG | (uint32_t)AES_DMA_DONEACT_GATE_TRGECB_ON_CHA)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCTRLPF3_GATE_CHA_DMA_CONFIG (AESCTRLPF3_DMA_CONFIG | (uint32_t)AES_DMA_DONEACT_GATE_TRGAES_ON_CHA)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCTRLPF3_GATE_CHA_DMA_CONFIG (AESCTRLPF3_DMA_CONFIG | (uint32_t)AES_DMA_DONEACT_GATE_TRGECB_ON_CHA)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
+#endif
 
 /* Forward declarations */
 static void AESCTRLPF3_initCounter(AESCTRLPF3_Object *object, const uint8_t initialCounter[AES_BLOCK_SIZE]);

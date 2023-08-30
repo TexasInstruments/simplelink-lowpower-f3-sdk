@@ -150,6 +150,50 @@ function getAttrs(deviceId, part)
     return (result);
 }
 
+function getLibs()
+{
+    /* Get toolchain specific information from GenLibs */
+    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
+    let getToolchainDir = GenLibs.getToolchainDir;
+
+    /* get device ID to select appropriate libs */
+    let deviceId = system.deviceData.deviceId;
+
+    let libs = [];
+
+    if (deviceId.match(/CC13|CC26/)) {
+        libs.push(
+            "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/bin/" + getToolchainDir() + "/driverlib.lib"
+        );
+    } else if (deviceId.match(/CC32/)) {
+        libs.push(
+            "ti/devices/cc32xx/driverlib/" + getToolchainDir() + "/Release/driverlib.a"
+        );
+    } else {
+        libs.push(
+            "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/lib/" + getToolchainDir() + "/driverlib.a"
+        );
+    }
+
+    /* create a GenLibs input argument */
+    var linkOpts = {
+        name: "/ti/devices",
+        vers: "1.0.0.0",
+        deps: [],
+        libs: libs
+    };
+
+    return linkOpts;
+}
+
+function getOpts()
+{
+    /* get device ID to select appropriate defines */
+    let deviceId = system.deviceData.deviceId;
+
+    return ["-D" + getAttrs(deviceId).deviceDefine];
+}
+
 /*
  *  ======== exports ========
  */
@@ -162,6 +206,14 @@ exports = {
         config: config
     },
 
+    templates: {
+        /* contribute TI-DRIVERS libraries to linker command file */
+        "/ti/utils/build/GenLibs.cmd.xdt": { modName: "/ti/devices/DriverLib", getLibs: getLibs },
+        "/ti/utils/build/GenOpts.opt.xdt": { modName: "/ti/devices/DriverLib", getOpts: getOpts }
+    },
+
     /* DriverLib-specific exports */
-    getAttrs: getAttrs
+    getAttrs: getAttrs,
+    getOpts: getOpts,
+    getLibs: getLibs
 };

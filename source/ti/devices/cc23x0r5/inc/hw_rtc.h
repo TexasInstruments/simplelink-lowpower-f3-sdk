@@ -45,10 +45,10 @@
 // RTC control Register
 #define RTC_O_CTL                                                   0x00000004U
 
-// Interrupt mask
+// Channel Arming Set
 #define RTC_O_ARMSET                                                0x00000008U
 
-// Interrupt mask
+// Channel Arming Clear
 #define RTC_O_ARMCLR                                                0x0000000CU
 
 // RTC Lower Time Slice
@@ -60,7 +60,7 @@
 // Channel0 compare value
 #define RTC_O_CH0CC8U                                               0x00000028U
 
-// channel1 capture Value
+// Channel1 capture Value
 #define RTC_O_CH1CC8U                                               0x00000038U
 
 // channel1 Input Configuration
@@ -89,9 +89,6 @@
 
 // Emulation
 #define RTC_O_EMU                                                   0x00000060U
-
-// Digital Test Bus
-#define RTC_O_DTB                                                   0x00000064U
 
 //*****************************************************************************
 //
@@ -518,23 +515,6 @@
 #define RTC_EMU_HALT_S                                                       0U
 #define RTC_EMU_HALT_STOP                                           0x00000001U
 #define RTC_EMU_HALT_RUN                                            0x00000000U
-
-//*****************************************************************************
-//
-// Register: RTC_O_DTB
-//
-//*****************************************************************************
-// Field:   [3:0] SEL
-//
-// Digital test bus selection mux control.
-//
-// Non-zero select values output a 16 bit selected group of signals per value.
-// ENUMs:
-// DIS                      All 16 observation signals are set to zero.
-#define RTC_DTB_SEL_W                                                        4U
-#define RTC_DTB_SEL_M                                               0x0000000FU
-#define RTC_DTB_SEL_S                                                        0U
-#define RTC_DTB_SEL_DIS                                             0x00000000U
 
 
 #endif // __RTC__

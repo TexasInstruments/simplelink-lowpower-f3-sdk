@@ -46,195 +46,249 @@ let logInfo = Common.logInfo;
 /* compute /ti/drivers family name from device object */
 let family = Common.device2Family(system.deviceData, "GPIO");
 
-/* CC32XX devices do not have hysteresis or inversion controls */
-const inversionHidden = (family === "CC32XX");
-/* LPF3 devices have hysteresis forcibly enabled to lower glitch sensitivity */
-const hysteresisHidden = (family === "CC32XX" || family === "LPF3");
-
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
 intPriority.displayName = "Interrupt Priority";
 
-/* generic configuration parameters for GPIO instances */
-let config = [
-    {
-        name: "$hardware",
-        getDisabledOptions: getDisabledHWOptions,
-        filterHardware: filterHardware,
-        onChange: onHardwareChanged
-    },
-    {
-        name: "mode",
-        displayName: "Mode",
-        description: "Select the GPIO mode",
-        longDescription: "The mode configuration parameter is used to"
-            + " determine the initial state of GPIO, eliminating the need to"
-            + " configure the GPIO pin at runtime prior to using it."
-            + "\n[More ...](/drivers/syscfg/html/ConfigDoc.html"
-            + "#ti_drivers_GPIO_mode \"Full descriptions of all GPIO modes\""
-            + ")",
-
-        default: "Input",
-        options: [
-            {
-                name: "Input",
-                description: "This GPIO is initially configured for input"
-            },
-            {
-                name: "Output" ,
-                description: "This GPIO is initially configured for output"
-            }
-        ],
-        onChange: updateConfigs
-    },
-    {
-        name: "outputType",
-        displayName: "Output Type",
-        description: "Specifies the output type",
-        hidden: true,
-        default: "Standard",
-        options: [
-            { name: "Standard" },
-            { name: "Open Drain" }
-        ],
-        onChange: updateConfigs
-    },
-    {
-        name: "outputStrength",
-        displayName: "Output Strength",
-        description: "Specifies the output strength",
-        hidden: true,
-        default: "Medium",
-        options: [
-            { name: "High" },
-            { name: "Medium" },
-            { name: "Low" }
-        ]
-    },
-    {
-        name: "initialOutputState",
-        displayName: "Initial Output State",
-        description: "Specifies the initial output state",
-        longDescription: "This specifies if an output will be driven high or"
-            + " low after __GPIO_init()__.",
-        hidden: true,
-        default: "Low",
-        options: [
-            { name: "High" },
-            { name: "Low" }
-        ]
-    },
-    {
-        name: "pull",
-        displayName: "Pull",
-        description: "Specifies the internal pull-up or pull-down resistor"
-            + " configuration of this GPIO pin.",
-        hidden: false,
-        default: "None",
-        options: [
-            { name: "None" },
-            { name: "Pull Up" },
-            { name: "Pull Down" }
-        ]
-    },
-    {
-        name: "invert",
-        displayName: "Value Inversion",
-        description: "Invert input/output value in hardware",
-        hidden: inversionHidden,
-        default: false
-    },
-    {
-        name: "outputSlew",
-        displayName: "Reduce Slew Rate",
-        description: "Reduce pin slew rate",
-        hidden: true,
-        default: false
-    },
-    {
-        name: "hysteresis",
-        displayName: "Enable Hysteresis",
-        description: "Enable input hysteresis",
-        hidden: hysteresisHidden,
-        default: false
-    },
-    {
-        name: "interruptTrigger",
-        displayName: "Interrupt Trigger",
-        description: "Specifies when or if interrupts are triggered",
-        longDescription: `
+/*
+ *  ======== generateConfig ========
+ *  Generate config array based on the current family.
+ *  It can be assumed that the function will always generate at least the following options:
+ *  - $hardware
+ *  - mode
+ *  - interruptTrigger
+ *  - callbackFunction
+ *  - initialOutputState
+ *  - outputState (deprecated, but kept for compatibility)
+ *  - irq (deprecated, but kept for compatibility)
+ */
+function generateConfig()
+{
+    /* Superset of possible options. Options will be removed based on family below */ 
+    let config = [
+        {
+            name: "$hardware",
+            getDisabledOptions: getDisabledHWOptions,
+            filterHardware: filterHardware,
+            onChange: onHardwareChanged
+        },
+        {
+            name: "mode",
+            displayName: "Mode",
+            description: "Select the GPIO mode",
+            longDescription: `The mode configuration parameter is used to determine the initial state of GPIO, 
+eliminating the need to configure the GPIO pin at runtime prior to using it.
+[More ...](/drivers/syscfg/html/ConfigDoc.html#ti_drivers_GPIO_mode "Full descriptions of all GPIO modes")`,
+            default: "Input",
+            options: [
+                {
+                    name: "Input",
+                    description: "This GPIO is initially configured for input"
+                },
+                {
+                    name: "Output" ,
+                    description: "This GPIO is initially configured for output"
+                }
+            ],
+            onChange: updateConfigs
+        },
+        {
+            name: "outputType",
+            displayName: "Output Type",
+            description: "Specifies the output type",
+            hidden: true,
+            default: "Standard",
+            options: [
+                { name: "Standard" },
+                { name: "Open Drain" }
+            ],
+            onChange: updateConfigs
+        },
+        {
+            name: "outputStrength",
+            displayName: "Output Strength",
+            description: "Specifies the output strength",
+            longDescription: `This specifies the output strength for the GPIO.
+Not all GPIOs necessarily support controlling the drive strength.
+Please consult the technical reference manual and the device-specific datasheet for individual I/O output strength capability.`,
+            hidden: true,
+            default: "Medium",
+            options: [
+                { name: "High" },
+                { name: "Medium" },
+                { name: "Low" }
+            ]
+        },
+        {
+            name: "initialOutputState",
+            displayName: "Initial Output State",
+            description: "Specifies the initial output state",
+            longDescription: "This specifies if an output will be driven high or low after __GPIO_init()__.",
+            hidden: true,
+            default: "Low",
+            options: [
+                { name: "High" },
+                { name: "Low" }
+            ]
+        },
+        {
+            name: "pull",
+            displayName: "Pull",
+            description: "Specifies the internal pull-up or pull-down resistor configuration of this GPIO pin.",
+            hidden: false,
+            default: "None",
+            options: [
+                { name: "None" },
+                { name: "Pull Up" },
+                { name: "Pull Down" }
+            ]
+        },
+        {
+            name: "invert",
+            displayName: "Value Inversion",
+            description: "Invert input/output value in hardware",
+            hidden: false,
+            default: false
+        },
+        {
+            name: "outputSlew",
+            displayName: "Reduce Slew Rate",
+            description: "Reduce pin slew rate",
+            hidden: true,
+            default: false
+        },
+        {
+            name: "hysteresis",
+            displayName: "Enable Hysteresis",
+            description: "Enable input hysteresis",
+            hidden: false,
+            default: false
+        },
+        {
+            name: "interruptTrigger",
+            displayName: "Interrupt Trigger",
+            description: "Specifies when or if interrupts are triggered",
+            longDescription: `
 This parameter configures when the GPIO pin interrupt will trigger. Even when this config is set, interrupts are not enabled until
 [\`GPIO_enableInt()\`](/drivers/doxygen/html/_g_p_i_o_8h.html#a31c4e65b3855424418262e35521c7051) is called at runtime.`,
-        hidden: false,
-        default: "None",
-        options: [
-            { name: "None" },
-            { name: "High" },
-            { name: "Low" },
-            { name: "Falling Edge" },
-            { name: "Rising Edge" },
-            { name: "Both Edges" }
-        ]
-    },
-    {
-        name: "callbackFunction",
-        hidden: false,
-        displayName: "Callback Function",
-        description: "The name of the callback function called when this GPIO pin triggers an interrupt, or 'NULL' if it's specified at runtime",
-        longDescription: `
+            hidden: false,
+            default: "None",
+            options: [
+                { name: "None" },
+                { name: "High" },
+                { name: "Low" },
+                { name: "Falling Edge" },
+                { name: "Rising Edge" },
+                { name: "Both Edges" }
+            ]
+        },
+        {
+            name: "callbackFunction",
+            hidden: false,
+            displayName: "Callback Function",
+            description: "The name of the callback function called when this GPIO pin triggers an interrupt, or 'NULL' if it's specified at runtime",
+            longDescription: `
 If you need to set the callback at runtime, set this configuration parameter
 to 'NULL' and call [\`GPIO_setCallback()\`](/drivers/doxygen/html/_g_p_i_o_8h.html#a24c401f32e65f60f11a1594fdafb9d2a) with the name of the function you
 want to be triggered.
 
 [More ...](/drivers/syscfg/html/ConfigDoc.html#ti_drivers_GPIO_callbackFunction "Function's type signature and an example")
 `,
-        documentation: `
+            documentation: `
 This function is of type [\`GPIO_CallbackFxn\`](/drivers/doxygen/html/_g_p_i_o_8h.html#a46b0c9afbe998c88539abc92082a1173),
 it's called in the context of a hardware ISR, and it's passed
 a single parameter: the index of the GPIO that triggered the interrupt.
 
 Example: [Creating an input callback](/drivers/doxygen/html/_g_p_i_o_8h.html#ti_drivers_GPIO_Example_callback "C/C++ source").
 `,
+    
+            placeholder: "<a callback is never needed>",
+            default: "NULL" /* a callback may be set at runtime */
+        },
+        /* Compatibility - these deprecated options mirror PIN configurables */
+        {
+            name: "outputState",
+            description: "GPIO uses initialOutputState instead of outputState.",
+            deprecated: true,
+            default: "",
+            onChange: updateDeprecatedConfigs
+        },
+        {
+            name: "irq",
+            displayName: "GPIO uses interruptTrigger instead of irq",
+            deprecated: true,
+            default: "",
+            onChange: updateDeprecatedConfigs
+        },
+        /* Internal only - used by modules that instantiate GPIO objects to convey ownership information */
+        {
+            name: "parentSignalName",
+            displayName: "Parent Signal Name",
+            hidden: true,
+            default: ""
+        },
+        {
+            name: "parentInterfaceName",
+            displayName: "Parent Interface Name",
+            hidden: true,
+            default: ""
+        },
+        {
+            name: "parentSignalDisplayName",
+            displayName: "Parent Signal Display Name",
+            description: "Used in comments to indicate what this pin is for. Examples would be SCLK, TX, AOUT.",
+            hidden: true,
+            default: ""
+        }
+    ];
 
-        placeholder: "<a callback is never needed>",
-        default: "NULL" /* a callback may be set at runtime */
-    },
-    /* Compatibility - these deprecated options mirror PIN configurables */
+    /* Helper function to get the config element from list based on name */
+    let getConfigElement = (name) => {
+        return config.find(element => element.name === name);
+    };
+
+    /* Helper function to remove element from config array based on name */
+    let removeConfigElement = (name) => {
+        /* Delete element from config array */
+        config.splice(config.findIndex(element => element.name === name), 1);
+    };
+
+    /* Modification for specific families */
+
+    if (family == "LPF3")
     {
-        name: "outputState",
-        description: "GPIO uses initialOutputState instead of outputState.",
-        deprecated: true,
-        default: "",
-        onChange: updateDeprecatedConfigs
-    },
-    {
-        name: "irq",
-        displayName: "GPIO uses interruptTrigger instead of irq",
-        deprecated: true,
-        default: "",
-        onChange: updateDeprecatedConfigs
-    },
-    /* Internal only - used by modules that instantiate GPIO objects to convey ownership information */
-    {
-        name: "parentSignalName",
-        displayName: "Parent Signal Name",
-        hidden: true,
-        default: ""
-    },
-    {
-        name: "parentInterfaceName",
-        displayName: "Parent Interface Name",
-        hidden: true,
-        default: ""
-    },
-    {
-        name: "parentSignalDisplayName",
-        displayName: "Parent Signal Display Name",
-        description: "Used in comments to indicate what this pin is for. Examples would be SCLK, TX, AOUT.",
-        hidden: true,
-        default: ""
+        /* CC23XX devices have hysteresis forcibly enabled to lower glitch sensitivity */
+        removeConfigElement("hysteresis");
     }
-];
+    else if (family == "CC32XX")
+    {
+        removeConfigElement("invert");
+        removeConfigElement("outputSlew");
+        removeConfigElement("hysteresis");
+    }
+    else if (family == "WFF3")
+    {
+        removeConfigElement("invert");
+        removeConfigElement("outputSlew");
+        removeConfigElement("hysteresis");
+        removeConfigElement("outputType");
+        getConfigElement("interruptTrigger")["options"] = [
+            { name: "None" },
+            { name: "High" },
+            { name: "Low" },
+            { name: "Falling Edge" },
+            { name: "Rising Edge" }
+        ];
+        getConfigElement("outputStrength")["default"] = "Low";
+        getConfigElement("outputStrength")["options"] = [
+            { name: "High" },
+            { name: "Low" }
+        ];
+    }
+
+    return config;
+}
+
 
 /*
  *  ======== getDisabledHWOptions ========
@@ -336,44 +390,61 @@ function filterHardware(component)
  */
 function updateConfigs(inst, ui)
 {
+
+    /* Helper function to hide option, if it exists */
+    let hideOption = (name) => {
+        if(name in ui)
+        {
+            ui[name].hidden = true;
+        }
+    };
+
+    /* Helper function to show option, if it exists */
+    let showOption = (name) => {
+        if(name in ui)
+        {
+            ui[name].hidden = false;
+        }
+    };
+
     if (inst.mode == "Output") {
         /* Show output-specific options */
-        ui.outputType.hidden = false;
-        ui.outputSlew.hidden = inversionHidden;
-        ui.outputStrength.hidden = false;
-        ui.initialOutputState.hidden = false;
+        showOption("outputType");
+        showOption("outputSlew");
+        showOption("outputStrength");
+        showOption("initialOutputState");
 
         /* Hide input-specific options */
-        ui.pull.hidden = true;
-        ui.hysteresis.hidden = true;
-        ui.interruptTrigger.hidden = true;
-        ui.callbackFunction.hidden = true;
+        hideOption("pull");
+        hideOption("hysteresis");
+        hideOption("interruptTrigger");
+        hideOption("callbackFunction");
 
         /* Clear input-specific text configurables */
         inst.callbackFunction = "";
 
         /* Special case: Open Drain can have a pull but not a drive strength */
         if (inst.outputType == "Open Drain") {
-            ui.pull.hidden = false;
-            ui.outputStrength.hidden = true;
+            showOption("pull");
+            hideOption("outputStrength");
         }
     }
     else if (inst.mode == "Input") {
         /* Show input-specific options */
-        ui.pull.hidden = false;
-        ui.hysteresis.hidden = hysteresisHidden;
-        ui.interruptTrigger.hidden = false;
-        ui.callbackFunction.hidden = false;
+        showOption("pull");
+        showOption("hysteresis");
+        showOption("interruptTrigger");
+        showOption("callbackFunction");
 
         /* Reset input-specific text configurables */
         inst.interruptTrigger = "None";
         inst.callbackFunction = "NULL";
 
         /* Hide output-specific options */
-        ui.outputType.hidden = true;
-        ui.outputSlew.hidden = true;
-        ui.outputStrength.hidden = true;
-        ui.initialOutputState.hidden = true;
+        hideOption("outputType");
+        hideOption("outputSlew");
+        hideOption("outputStrength");
+        hideOption("initialOutputState");
     }
 }
 
@@ -487,7 +558,11 @@ function onHardwareChanged(inst, ui)
             inst.mode = "Input";
         }
 
-        inst.pull = "None";
+        /* Disable pull, if pull option exists */
+        if ("pull" in inst)
+        {
+            inst.pull = "None";
+        }
 
         if (!inst.$uiState.interruptTrigger.readOnly) {
             inst.interruptTrigger = "None";
@@ -496,6 +571,18 @@ function onHardwareChanged(inst, ui)
         inst.callbackFunction = "NULL";
         updateConfigs(inst, ui);
     }
+}
+
+/*
+ *  ======== _isDioAccessible ========
+ * For some devices not all DIOs withing the bounds returned by getPinBounds are
+ * actually accessible. This function is meant to be overridden for such devices.
+ */
+function _isDioAccessible(module, dioNumber)
+{
+    let pinBounds = getPinBounds(module);
+
+    return (pinBounds.lowest <= dioNumber) && (dioNumber <= pinBounds.highest);
 }
 
 /*
@@ -520,10 +607,13 @@ function getPinBounds(module)
     {
         let pin = system.deviceData.devicePins[x];
 
-        /* CC26XX devices have DIO_0, DIO_16 while CC32XX devices have GP03, GP30 */
+        /* CC26XX devices have DIO_0, DIO_16 while CC32XX devices have GP03, GP30 
+         * All device pins with type "Default" are valid pins for WFF3 */
+
         if ((pin.description.startsWith("DIO")) ||
             (pin.description.startsWith("RGCDIO")) ||
-            (pin.description.startsWith("GP") && pin.devicePinType === "Default"))
+            (pin.description.startsWith("GP") && pin.devicePinType === "Default") || 
+            ((family == "WFF3") && pin.devicePinType === "Default"))
         {
             let dioNum = module._pinToDio(null, pin);
             if (dioNum < pins.lowest)
@@ -552,24 +642,29 @@ function getPinData(module)
     let localPinData = [];
     let pinBounds = getPinBounds(module);
 
-    /* Start with any dummy pins, if we have a lower bound */
-    for (let i = 0; i < pinBounds.lowest; i++)
+    /* Start with dummy pin data for all pins. Accessible pins will be
+     * overwritten later.
+     */
+    for (let i = 0; i < pinBounds.highest; i++)
     {
         localPinData.push({
             "name": "Pin is not available on this device",
-            "config": "0",
+            "config": module._getInaccessiblePinAttrs(),
             "callback": "NULL"
         });
     }
 
-    /* Then all the valid pins */
+    /* Then all the accessible pins */
     for (let i = pinBounds.lowest; i <= pinBounds.highest; i++)
     {
-        localPinData.push({
-            "name": "DIO_" + i,
-            "config": module._getDefaultAttrs(),
-            "callback": "NULL"
-        });
+        if(module._isDioAccessible(module, i))
+        {
+            localPinData[i] = {
+                "name": module._getDefaultName(i),
+                "config": module._getDefaultAttrs(),
+                "callback": "NULL"
+            };
+        }
     }
 
     /* Go through all the configured pins and overwrite as appropriate */
@@ -654,9 +749,17 @@ function getAttrs(inst)
 
     if (inst.mode == "Output") {
         listOfDefines.push("GPIO_CFG_OUTPUT_INTERNAL");
-        listOfDefines.push(strengthMapping[inst.outputStrength]);
 
-        if (inst.outputType != "Standard") {
+        /* If the outputStrength option exists, add the define for the selected option to list of defines */
+        if ("outputStrength" in inst)
+        {
+            listOfDefines.push(strengthMapping[inst.outputStrength]);
+        }
+
+        /* If the outputType option exists and is not "Standard", 
+         * add the define for the selected option to list of defines 
+         */
+        if ("outputType" in inst && inst.outputType != "Standard") {
             listOfDefines.push(outputMapping[inst.outputType]);
         }
 
@@ -670,16 +773,22 @@ function getAttrs(inst)
     else {
         listOfDefines.push("GPIO_CFG_INPUT_INTERNAL");
         listOfDefines.push(intMapping[inst.interruptTrigger]);
-        listOfDefines.push(pullMapping[inst.pull]);
+
+        /* If the pull option exists, add the define for the selected option to list of defines */
+        if ("pull" in inst)
+        {
+            listOfDefines.push(pullMapping[inst.pull]);
+        }
     }
 
-    if (inst.invert) {
+    /* Add defines for the invert, hysteresis and outputSlew options, if they exists and are enabled */
+    if ("invert" in inst && inst.invert == true) {
         listOfDefines.push("GPIO_CFG_INVERT_ON");
     }
-    if (inst.hysteresis) {
+    if ("hysteresis" in inst && inst.hysteresis == true) {
         listOfDefines.push("GPIO_CFG_HYSTERESIS_ON");
     }
-    if (inst.outputSlew) {
+    if ("outputSlew" in inst && inst.outputSlew == true) {
         listOfDefines.push("GPIO_CFG_SLEW_REDUCED");
     }
 
@@ -742,12 +851,30 @@ function _pinToDio(pinSolution, devicePin)
 }
 
 /*
+ *  ======== _getDefaultName ========
+ */
+/* istanbul ignore next */
+function _getDefaultName(dioNumber)
+{
+    return "DIO_" + dioNumber;
+}
+
+/*
  *  ======== _getDefaultAttrs ========
  */
 /* istanbul ignore next */
 function _getDefaultAttrs()
 {
     return "GPIO_CFG_NO_DIR";
+}
+
+/*
+ *  ======== _getInaccessiblePinAttrs ========
+ */
+/* istanbul ignore next */
+function _getInaccessiblePinAttrs()
+{
+    return "0";
 }
 
 /*
@@ -794,7 +921,7 @@ dependency issue.
     validate: validate,
 
     defaultInstanceName: "CONFIG_GPIO_",
-    config: Common.addNameConfig(config, "/ti/drivers/GPIO", "CONFIG_GPIO_"),
+    config: Common.addNameConfig(generateConfig(), "/ti/drivers/GPIO", "CONFIG_GPIO_"),
 
     moduleStatic: {
         name: "gpioGlobal",
@@ -806,9 +933,12 @@ dependency issue.
     },
 
     _getPinResources: _getPinResources,
+    _getDefaultName: _getDefaultName,
     _getDefaultAttrs: _getDefaultAttrs,
+    _getInaccessiblePinAttrs: _getInaccessiblePinAttrs,
     _getHwSpecificAttrs: _getHwSpecificAttrs,
     _pinToDio: _pinToDio,
+    _isDioAccessible: _isDioAccessible,
 
     getPinData: getPinData,
     getPinBounds: getPinBounds,

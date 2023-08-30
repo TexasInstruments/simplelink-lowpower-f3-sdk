@@ -43,7 +43,10 @@
 #define I2C_O_TOAR                                                  0x00000000U
 
 // Target Control and Status
-#define I2C_O_TSTAT_CTL                                             0x00000004U
+#define I2C_O_TSTA                                                  0x00000004U
+
+// Target control
+#define I2C_O_TCTL                                                  0x00000004U
 
 // Target Data
 #define I2C_O_TDR                                                   0x00000008U
@@ -61,10 +64,13 @@
 #define I2C_O_TICR                                                  0x00000018U
 
 // Controller Target Address
-#define I2C_O_CSA                                                   0x00000800U
+#define I2C_O_CTA                                                   0x00000800U
 
 // Controller Control and Status
-#define I2C_O_CSTAT_CTL                                             0x00000804U
+#define I2C_O_CSTA                                                  0x00000804U
+
+// Controller control
+#define I2C_O_CCTL                                                  0x00000804U
 
 // Controller Data
 #define I2C_O_CDR                                                   0x00000808U
@@ -94,65 +100,80 @@
 //*****************************************************************************
 // Field:   [6:0] OAR
 //
-// I2C target own address. This field specifies bits a6 through a0 of the
-// target address.
+// Target own address. This field specifies bits a6 through a0 of the target
+// address.
 #define I2C_TOAR_OAR_W                                                       7U
 #define I2C_TOAR_OAR_M                                              0x0000007FU
 #define I2C_TOAR_OAR_S                                                       0U
 
 //*****************************************************************************
 //
-// Register: I2C_O_TSTAT_CTL
+// Register: I2C_O_TSTA
 //
 //*****************************************************************************
 // Field:     [2] FBR
 //
 // First byte received.
-// This bit is only applicable when the RREQ bit is set and is automatically
-// cleared when data has been read from the SDR register.
+// This bit is only applicable when the TSTA.RREQ bit is set and is
+// automatically cleared when data has been read from the TDR register.
 // Note: This bit is not used for target transmit operations.
 // ENUMs:
 // SET                      The first byte following the target's own address
 //                          has been received.
-// CLEAR                    The first byte following the target's own address
-//                          has not been received.
-#define I2C_TSTAT_CTL_FBR                                           0x00000004U
-#define I2C_TSTAT_CTL_FBR_M                                         0x00000004U
-#define I2C_TSTAT_CTL_FBR_S                                                  2U
-#define I2C_TSTAT_CTL_FBR_SET                                       0x00000004U
-#define I2C_TSTAT_CTL_FBR_CLEAR                                     0x00000000U
+// CLR                      The first byte following the target's own address
+//                          has not been received
+#define I2C_TSTA_FBR                                                0x00000004U
+#define I2C_TSTA_FBR_M                                              0x00000004U
+#define I2C_TSTA_FBR_S                                                       2U
+#define I2C_TSTA_FBR_SET                                            0x00000004U
+#define I2C_TSTA_FBR_CLR                                            0x00000000U
 
 // Field:     [1] TREQ
 //
-// Transmit request
+// This field reflects the transmit request status
 // ENUMs:
-// SET                      The I2C controller has been addressed as a target
-//                          transmitter and is using clock stretching to
-//                          delay the controller until data has been
-//                          written to the SDR register
-// CLEAR                    No outstanding transmit request
-#define I2C_TSTAT_CTL_TREQ                                          0x00000002U
-#define I2C_TSTAT_CTL_TREQ_M                                        0x00000002U
-#define I2C_TSTAT_CTL_TREQ_S                                                 1U
-#define I2C_TSTAT_CTL_TREQ_SET                                      0x00000002U
-#define I2C_TSTAT_CTL_TREQ_CLEAR                                    0x00000000U
+// SET                      The I2C has been addressed as a target transmitter
+//                          and is using clock stretching to delay the
+//                          controller until data has been written to the
+//                          TDR register
+// CLR                      No outstanding transmit request
+#define I2C_TSTA_TREQ                                               0x00000002U
+#define I2C_TSTA_TREQ_M                                             0x00000002U
+#define I2C_TSTA_TREQ_S                                                      1U
+#define I2C_TSTA_TREQ_SET                                           0x00000002U
+#define I2C_TSTA_TREQ_CLR                                           0x00000000U
 
-// Field:     [0] RREQ_DA
+// Field:     [0] RREQ
 //
-// This field reflects the Receive Request status when read and sets the Device
-// Active control when written.
-// When read:
-// 0 - No outstanding receive data
-// 1 - The I2C controller has outstanding receive data from the I2C controller
-// and is using clock stretching to delay the controller until data has been
-// read from the SDR register
+// This field reflects the receive request status.
+// ENUMs:
+// SET                      The target has outstanding receive data from the
+//                          external controller and is using clock
+//                          stretching to delay the controller until data
+//                          has been read from the TDR register
+// CLR                      No outstanding receive data
+#define I2C_TSTA_RREQ                                               0x00000001U
+#define I2C_TSTA_RREQ_M                                             0x00000001U
+#define I2C_TSTA_RREQ_S                                                      0U
+#define I2C_TSTA_RREQ_SET                                           0x00000001U
+#define I2C_TSTA_RREQ_CLR                                           0x00000000U
+
+//*****************************************************************************
 //
-// When written:
-// 0 - Disables the I2C target operation
-// 1 - Enables the I2C target operation
-#define I2C_TSTAT_CTL_RREQ_DA                                       0x00000001U
-#define I2C_TSTAT_CTL_RREQ_DA_M                                     0x00000001U
-#define I2C_TSTAT_CTL_RREQ_DA_S                                              0U
+// Register: I2C_O_TCTL
+//
+//*****************************************************************************
+// Field:     [0] DA
+//
+// This field sets the device active control
+// ENUMs:
+// EN                       Enable the target operation
+// DIS                      Disable the target operation
+#define I2C_TCTL_DA                                                 0x00000001U
+#define I2C_TCTL_DA_M                                               0x00000001U
+#define I2C_TCTL_DA_S                                                        0U
+#define I2C_TCTL_DA_EN                                              0x00000001U
+#define I2C_TCTL_DA_DIS                                             0x00000000U
 
 //*****************************************************************************
 //
@@ -191,8 +212,8 @@
 //
 // Start condition interrupt mask
 // ENUMs:
-// EN                       Enable Interrupt Mask
-// DIS                      Disable Interrupt Mask
+// EN                       Enable interrupt mask
+// DIS                      Disable interrupt mask
 #define I2C_TIMR_STARTIM                                            0x00000002U
 #define I2C_TIMR_STARTIM_M                                          0x00000002U
 #define I2C_TIMR_STARTIM_S                                                   1U
@@ -204,7 +225,7 @@
 // Data interrupt mask
 // ENUMs:
 // EN                       Enable interrupt mask
-// DIS                      Disbale interrupt mask
+// DIS                      Disable interrupt mask
 #define I2C_TIMR_DATAIM                                             0x00000001U
 #define I2C_TIMR_DATAIM_M                                           0x00000001U
 #define I2C_TIMR_DATAIM_S                                                    0U
@@ -219,41 +240,41 @@
 // Field:     [2] STOPRIS
 //
 // Stop condition raw interrupt status
-// This bit is cleared by writing a 1 to SICR.STOPIC.
+// This bit is cleared by writing a 1 to TICR.STOPIC.
 // ENUMs:
 // SET                      Interrupt occured
-// CLEAR                    Interrupt did not occur
+// CLR                      Interrupt did not occur
 #define I2C_TRIS_STOPRIS                                            0x00000004U
 #define I2C_TRIS_STOPRIS_M                                          0x00000004U
 #define I2C_TRIS_STOPRIS_S                                                   2U
 #define I2C_TRIS_STOPRIS_SET                                        0x00000004U
-#define I2C_TRIS_STOPRIS_CLEAR                                      0x00000000U
+#define I2C_TRIS_STOPRIS_CLR                                        0x00000000U
 
 // Field:     [1] STARTRIS
 //
 // Start condition raw interrupt status
-// This bit is cleared by writing a 1 to SICR.STARTIC.
+// This bit is cleared by writing a 1 to TICR.STARTIC.
 // ENUMs:
 // SET                      Interrupt occured
-// CLEAR                    Interrupt did not occur
+// CLR                      Interrupt did not occur
 #define I2C_TRIS_STARTRIS                                           0x00000002U
 #define I2C_TRIS_STARTRIS_M                                         0x00000002U
 #define I2C_TRIS_STARTRIS_S                                                  1U
 #define I2C_TRIS_STARTRIS_SET                                       0x00000002U
-#define I2C_TRIS_STARTRIS_CLEAR                                     0x00000000U
+#define I2C_TRIS_STARTRIS_CLR                                       0x00000000U
 
 // Field:     [0] DATARIS
 //
 // Data raw interrupt status
-// This bit is cleared by writing a 1 to SICR.DATAIC.
+// This bit is cleared by writing a 1 to TICR.DATAIC.
 // ENUMs:
 // SET                      Interrupt occured
-// CLEAR                    Interrupt did not occur
+// CLR                      Interrupt did not occur
 #define I2C_TRIS_DATARIS                                            0x00000001U
 #define I2C_TRIS_DATARIS_M                                          0x00000001U
 #define I2C_TRIS_DATARIS_S                                                   0U
 #define I2C_TRIS_DATARIS_SET                                        0x00000001U
-#define I2C_TRIS_DATARIS_CLEAR                                      0x00000000U
+#define I2C_TRIS_DATARIS_CLR                                        0x00000000U
 
 //*****************************************************************************
 //
@@ -263,41 +284,41 @@
 // Field:     [2] STOPMIS
 //
 // Stop condition masked interrupt status
-// This bit is cleared by writing a 1 to SICR.STOPIC.
+// This bit is cleared by writing a 1 to TICR.STOPIC.
 // ENUMs:
 // SET                      Masked interrupt occured
-// CLEAR                    Masked interrupt did not occur
+// CLR                      Masked interrupt did not occur
 #define I2C_TMIS_STOPMIS                                            0x00000004U
 #define I2C_TMIS_STOPMIS_M                                          0x00000004U
 #define I2C_TMIS_STOPMIS_S                                                   2U
 #define I2C_TMIS_STOPMIS_SET                                        0x00000004U
-#define I2C_TMIS_STOPMIS_CLEAR                                      0x00000000U
+#define I2C_TMIS_STOPMIS_CLR                                        0x00000000U
 
 // Field:     [1] STARTMIS
 //
 // Start condition masked interrupt status
-// This bit is cleared by writing a 1 to SICR.STARTIC.
+// This bit is cleared by writing a 1 to TICR.STARTIC.
 // ENUMs:
 // SET                      Masked interrput occured
-// CLEAR                    Masked interrupt did not occur
+// CLR                      Masked interrupt did not occur
 #define I2C_TMIS_STARTMIS                                           0x00000002U
 #define I2C_TMIS_STARTMIS_M                                         0x00000002U
 #define I2C_TMIS_STARTMIS_S                                                  1U
 #define I2C_TMIS_STARTMIS_SET                                       0x00000002U
-#define I2C_TMIS_STARTMIS_CLEAR                                     0x00000000U
+#define I2C_TMIS_STARTMIS_CLR                                       0x00000000U
 
 // Field:     [0] DATAMIS
 //
 // Start condition masked interrupt status
-// This bit is cleared by writing a 1 to SICR.DATAIC.
+// This bit is cleared by writing a 1 to TICR.DATAIC.
 // ENUMs:
 // SET                      Masked interrupt occured
-// CLEAR                    Masked interrupt did not occur
+// CLR                      Masked interrupt did not occur
 #define I2C_TMIS_DATAMIS                                            0x00000001U
 #define I2C_TMIS_DATAMIS_M                                          0x00000001U
 #define I2C_TMIS_DATAMIS_S                                                   0U
 #define I2C_TMIS_DATAMIS_SET                                        0x00000001U
-#define I2C_TMIS_DATAMIS_CLEAR                                      0x00000000U
+#define I2C_TMIS_DATAMIS_CLR                                        0x00000000U
 
 //*****************************************************************************
 //
@@ -310,7 +331,7 @@
 // ENUMs:
 // EN                       Clear interrupt
 //                          Writing 1 to this bit
-//                          clears SRIS.STOPRIS and SMIS.STOPMIS.
+//                          clears TRIS.STOPRIS and TMIS.STOPMIS
 // DIS                      No effect
 #define I2C_TICR_STOPIC                                             0x00000004U
 #define I2C_TICR_STOPIC_M                                           0x00000004U
@@ -324,7 +345,7 @@
 // ENUMs:
 // EN                       Clear interrupt
 //                          Writing 1 to this bit
-//                          clears SRIS.STARTRIS and SMIS.STARTMIS.
+//                          clears TRIS.STARTRIS and TMIS.STARTMIS
 // DIS                      No effect
 #define I2C_TICR_STARTIC                                            0x00000002U
 #define I2C_TICR_STARTIC_M                                          0x00000002U
@@ -338,7 +359,7 @@
 // ENUMs:
 // EN                       Clear interrupt
 //                          Writing 1 to this bit
-//                          clears SRIS.DATARIS and SMIS.DATAMIS.
+//                          clears TRIS.DATARIS and TMIS.DATAMIS
 // DIS                      No effect
 #define I2C_TICR_DATAIC                                             0x00000001U
 #define I2C_TICR_DATAIC_M                                           0x00000001U
@@ -348,145 +369,188 @@
 
 //*****************************************************************************
 //
-// Register: I2C_O_CSA
+// Register: I2C_O_CTA
 //
 //*****************************************************************************
 // Field:   [7:1] SA
 //
-// I2C controller target address
+// Controller target address
 // Defines which target is addressed for the transaction in controller mode
-#define I2C_CSA_SA_W                                                         7U
-#define I2C_CSA_SA_M                                                0x000000FEU
-#define I2C_CSA_SA_S                                                         1U
+#define I2C_CTA_SA_W                                                         7U
+#define I2C_CTA_SA_M                                                0x000000FEU
+#define I2C_CTA_SA_S                                                         1U
 
 // Field:     [0] RS
 //
 // Receive or Send
-// This bit-field specifies the next operation with addressed target SA.
+// This bit-field specifies the next operation with addressed target CTA.SA.
 // ENUMs:
 // EN                       Receive data from target
 // DIS                      Transmit/send data to target
-#define I2C_CSA_RS                                                  0x00000001U
-#define I2C_CSA_RS_M                                                0x00000001U
-#define I2C_CSA_RS_S                                                         0U
-#define I2C_CSA_RS_EN                                               0x00000001U
-#define I2C_CSA_RS_DIS                                              0x00000000U
+#define I2C_CTA_RS                                                  0x00000001U
+#define I2C_CTA_RS_M                                                0x00000001U
+#define I2C_CTA_RS_S                                                         0U
+#define I2C_CTA_RS_EN                                               0x00000001U
+#define I2C_CTA_RS_DIS                                              0x00000000U
 
 //*****************************************************************************
 //
-// Register: I2C_O_CSTAT_CTL
+// Register: I2C_O_CSTA
 //
 //*****************************************************************************
 // Field:     [6] BUSBSY
 //
 // Bus busy
-// Note:The bit changes based on the MCTRL.START and MCTRL.STOP conditions.
+// Note:The bit changes based on the CCTRL.START and CCTRL.STOP conditions.
 // ENUMs:
-// SET                      The I2C bus is busy.
-// CLEAR                    The I2C bus is idle.
-#define I2C_CSTAT_CTL_BUSBSY                                        0x00000040U
-#define I2C_CSTAT_CTL_BUSBSY_M                                      0x00000040U
-#define I2C_CSTAT_CTL_BUSBSY_S                                               6U
-#define I2C_CSTAT_CTL_BUSBSY_SET                                    0x00000040U
-#define I2C_CSTAT_CTL_BUSBSY_CLEAR                                  0x00000000U
+// SET                      The bus is busy.
+// CLR                      The bus is idle.
+#define I2C_CSTA_BUSBSY                                             0x00000040U
+#define I2C_CSTA_BUSBSY_M                                           0x00000040U
+#define I2C_CSTA_BUSBSY_S                                                    6U
+#define I2C_CSTA_BUSBSY_SET                                         0x00000040U
+#define I2C_CSTA_BUSBSY_CLR                                         0x00000000U
 
 // Field:     [5] IDLE
 //
 // This field specifies whether I2C is idle or not
 // ENUMs:
-// SET                      The I2C controller is not idle.
-// CLEAR                    The I2C controller is not idle.
-#define I2C_CSTAT_CTL_IDLE                                          0x00000020U
-#define I2C_CSTAT_CTL_IDLE_M                                        0x00000020U
-#define I2C_CSTAT_CTL_IDLE_S                                                 5U
-#define I2C_CSTAT_CTL_IDLE_SET                                      0x00000020U
-#define I2C_CSTAT_CTL_IDLE_CLEAR                                    0x00000000U
+// SET                      The controller is idle.
+// CLR                      The controller is not idle.
+#define I2C_CSTA_IDLE                                               0x00000020U
+#define I2C_CSTA_IDLE_M                                             0x00000020U
+#define I2C_CSTA_IDLE_S                                                      5U
+#define I2C_CSTA_IDLE_SET                                           0x00000020U
+#define I2C_CSTA_IDLE_CLR                                           0x00000000U
 
 // Field:     [4] ARBLST
 //
 // The filed specifies the arbitration status
 // ENUMs:
-// SET                      The I2C controller lost arbitration.
-// CLEAR                    The I2C controller won arbitration.
-#define I2C_CSTAT_CTL_ARBLST                                        0x00000010U
-#define I2C_CSTAT_CTL_ARBLST_M                                      0x00000010U
-#define I2C_CSTAT_CTL_ARBLST_S                                               4U
-#define I2C_CSTAT_CTL_ARBLST_SET                                    0x00000010U
-#define I2C_CSTAT_CTL_ARBLST_CLEAR                                  0x00000000U
+// SET                      The controller lost arbitration.
+// CLR                      The controller won arbitration.
+#define I2C_CSTA_ARBLST                                             0x00000010U
+#define I2C_CSTA_ARBLST_M                                           0x00000010U
+#define I2C_CSTA_ARBLST_S                                                    4U
+#define I2C_CSTA_ARBLST_SET                                         0x00000010U
+#define I2C_CSTA_ARBLST_CLR                                         0x00000000U
 
-// Field:     [3] DATACKN_ACK
+// Field:     [3] DATACKN
 //
-// This field contains Data acknowledge in status read and Data acknowledge
-// enable in control write.
-// Status Read: Data Acknowledge
-// 0 - The transmitted data was acknowledged.
-// 1 - The transmitted data was not acknowledged.
+// This field contains Data acknowledge status
+// ENUMs:
+// SET                      The transmitted data was not acknowledged
+// CLR                      The transmitted data was acknowledged
+#define I2C_CSTA_DATACKN                                            0x00000008U
+#define I2C_CSTA_DATACKN_M                                          0x00000008U
+#define I2C_CSTA_DATACKN_S                                                   3U
+#define I2C_CSTA_DATACKN_SET                                        0x00000008U
+#define I2C_CSTA_DATACKN_CLR                                        0x00000000U
+
+// Field:     [2] ADRACKN
 //
-// Control write: Data acknowledge enable
-// 0 - The received data byte is not acknowledged automatically by the
-// controller.
-// 1 - The received data byte is acknowledged automatically by the controller.
+// This field reflects the address acknowledge status
+// ENUMs:
+// SET                      The transmitted address was not acknowledged
+// CLR                      The transmitted address was acknowledged
+#define I2C_CSTA_ADRACKN                                            0x00000004U
+#define I2C_CSTA_ADRACKN_M                                          0x00000004U
+#define I2C_CSTA_ADRACKN_S                                                   2U
+#define I2C_CSTA_ADRACKN_SET                                        0x00000004U
+#define I2C_CSTA_ADRACKN_CLR                                        0x00000000U
+
+// Field:     [1] ERR
+//
+// This field reflects the error status
+// ENUMs:
+// SET                      An error occurred with the last operation
+// CLR                      No error was detected on the last operation
+#define I2C_CSTA_ERR                                                0x00000002U
+#define I2C_CSTA_ERR_M                                              0x00000002U
+#define I2C_CSTA_ERR_S                                                       1U
+#define I2C_CSTA_ERR_SET                                            0x00000002U
+#define I2C_CSTA_ERR_CLR                                            0x00000000U
+
+// Field:     [0] BUSY
+//
+// This field reflects the I2C busy status
+// Note: The I2C controller requires four CLKSVT clock cycles to assert the
+// BUSY status after I2C controller operation has been initiated through a
+// write into CCTL register.
+// Hence after programming CCTL register, application is requested to wait for
+// four CLKSVT clock cycles before issuing a controller status inquiry through
+// a read from CSTA register. Any prior inquiry would result in wrong status
+// being reported.
+// ENUMs:
+// SET                      The controller is busy
+// CLR                      The controller is idle
+#define I2C_CSTA_BUSY                                               0x00000001U
+#define I2C_CSTA_BUSY_M                                             0x00000001U
+#define I2C_CSTA_BUSY_S                                                      0U
+#define I2C_CSTA_BUSY_SET                                           0x00000001U
+#define I2C_CSTA_BUSY_CLR                                           0x00000000U
+
+//*****************************************************************************
+//
+// Register: I2C_O_CCTL
+//
+//*****************************************************************************
+// Field:     [3] ACK
+//
+// This field is to enable the data acknowledge.
 // Note:This bit-field must be cleared when the I2C bus controller requires no
 // further data to be transmitted from the target transmitter.
-#define I2C_CSTAT_CTL_DATACKN_ACK                                   0x00000008U
-#define I2C_CSTAT_CTL_DATACKN_ACK_M                                 0x00000008U
-#define I2C_CSTAT_CTL_DATACKN_ACK_S                                          3U
+// ENUMs:
+// EN                       The received data byte is acknowledged
+//                          automatically by the controller
+// DIS                      The received data byte is not acknowledged
+//                          automatically by the controller
+#define I2C_CCTL_ACK                                                0x00000008U
+#define I2C_CCTL_ACK_M                                              0x00000008U
+#define I2C_CCTL_ACK_S                                                       3U
+#define I2C_CCTL_ACK_EN                                             0x00000008U
+#define I2C_CCTL_ACK_DIS                                            0x00000000U
 
-// Field:     [2] ADRACKN_STOP
+// Field:     [2] STOP
 //
-// This field reflects the address acknowledge status when read and sets stop
-// condition when written.
-// When read:
-// 0 - The transmitted address was acknowledged.
-// 1 - The transmitted address was not acknowledged.
-//
-// When written
-// Note:This bit-field determines if the cycle stops at the end of the data
-// cycle or continues on to a repeated START condition.
-// 0 - The controller does not generate the Stop condition.
-// 1 - The controller generates the Stop condition.
-#define I2C_CSTAT_CTL_ADRACKN_STOP                                  0x00000004U
-#define I2C_CSTAT_CTL_ADRACKN_STOP_M                                0x00000004U
-#define I2C_CSTAT_CTL_ADRACKN_STOP_S                                         2U
+// This field is to set stop condition .
+// Note: This bit-field determines if the cycle stops at the end of the data
+// cycle or continues on to a repeated start condition.
+// ENUMs:
+// EN                       The controller generates the stop condition
+// DIS                      The controller does not generate the stop
+//                          condition
+#define I2C_CCTL_STOP                                               0x00000004U
+#define I2C_CCTL_STOP_M                                             0x00000004U
+#define I2C_CCTL_STOP_S                                                      2U
+#define I2C_CCTL_STOP_EN                                            0x00000004U
+#define I2C_CCTL_STOP_DIS                                           0x00000000U
 
-// Field:     [1] ERR_START
+// Field:     [1] START
 //
-// This field reflect the error status when read and sets start or repeated
-// start condition when written.
-// When read:
-// 0 - No error was detected on the last operation.
-// 1 - An error occurred on the last operation.
-//
-// When written:
-// 0 - The controller does not generate the Start condition.
-// 1 - The controller generates the Start condition.
-#define I2C_CSTAT_CTL_ERR_START                                     0x00000002U
-#define I2C_CSTAT_CTL_ERR_START_M                                   0x00000002U
-#define I2C_CSTAT_CTL_ERR_START_S                                            1U
+// This field is to set start or repeated start condition.
+// ENUMs:
+// EN                       The controller generates the start condition.
+// DIS                      The controller does not generate the start
+//                          condition
+#define I2C_CCTL_START                                              0x00000002U
+#define I2C_CCTL_START_M                                            0x00000002U
+#define I2C_CCTL_START_S                                                     1U
+#define I2C_CCTL_START_EN                                           0x00000002U
+#define I2C_CCTL_START_DIS                                          0x00000000U
 
-// Field:     [0] BUSY_RUN
+// Field:     [0] RUN
 //
-// This field reflects the I2C busy status when read and sets I2C controller
-// enable when written.
-// When Read
-// 0 - The controller is idle.
-// 1 - The controller is busy.
-//
-// When this bit-field is set, the other status bits are not applicable.
-// Note: The I2C controller requires four SYSBUS clock cycles to assert the
-// BUSY status after I2C controller operation has been initiated through a
-// write into MSTAT_MCTL register.
-// Hence after programming MCTRL register, application is requested to wait for
-// four SYSBUS clock cycles before issuing a controller status inquiry through
-// a read from MSTAT_MCTL register. Any prior inquiry would result in wrong
-// status being reported.
-//
-// When written:
-// 0 - The controller is disabled.
-// 1 - The controller is enabled to transmit or receive data.
-#define I2C_CSTAT_CTL_BUSY_RUN                                      0x00000001U
-#define I2C_CSTAT_CTL_BUSY_RUN_M                                    0x00000001U
-#define I2C_CSTAT_CTL_BUSY_RUN_S                                             0U
+// This field is to set the controller enable.
+// ENUMs:
+// EN                       The controller is enabled to transmit or receive
+//                          data
+// DIS                      The controller is disabled.
+#define I2C_CCTL_RUN                                                0x00000001U
+#define I2C_CCTL_RUN_M                                              0x00000001U
+#define I2C_CCTL_RUN_S                                                       0U
+#define I2C_CCTL_RUN_EN                                             0x00000001U
+#define I2C_CCTL_RUN_DIS                                            0x00000000U
 
 //*****************************************************************************
 //
@@ -508,7 +572,8 @@
 //*****************************************************************************
 // Field:     [7] TPR_7
 //
-// Must be set to 0 to set TPR. If set to 1, a write to TPR will be ignored.
+// Must be set to 0 to set CTPR.TPR. If set to 1, a write to CTPR.TPR will be
+// ignored.
 #define I2C_CTPR_TPR_7                                              0x00000080U
 #define I2C_CTPR_TPR_7_M                                            0x00000080U
 #define I2C_CTPR_TPR_7_S                                                     7U
@@ -522,7 +587,7 @@
 // TPR is the timer period register value (range of 1 to 127)
 // SCL_LP is the SCL low period (fixed at 6).
 // SCL_HP is the SCL high period (fixed at 4).
-// CLK_PRD is the system clock period in ns.
+// CLK_PRD is the CLKSVT period in ns.
 #define I2C_CTPR_TPR_W                                                       7U
 #define I2C_CTPR_TPR_M                                              0x0000007FU
 #define I2C_CTPR_TPR_S                                                       0U
@@ -536,8 +601,8 @@
 //
 // Interrupt mask
 // ENUMs:
-// EN                       Enable Interrupt mask
-// DIS                      Disable Interrupt mask
+// EN                       Enable interrupt mask
+// DIS                      Disable interrupt mask
 #define I2C_CIMR_IM                                                 0x00000001U
 #define I2C_CIMR_IM_M                                               0x00000001U
 #define I2C_CIMR_IM_S                                                        0U
@@ -552,15 +617,15 @@
 // Field:     [0] RIS
 //
 // Raw interrupt status
-// This bit is cleared by writing 1 to MICR.IC bit.
+// This bit is cleared by writing 1 to CICR.IC bit.
 // ENUMs:
 // SET                      Interrupt occured
-// CLEAR                    Interrupt did not occur
+// CLR                      Interrupt did not occur
 #define I2C_CRIS_RIS                                                0x00000001U
 #define I2C_CRIS_RIS_M                                              0x00000001U
 #define I2C_CRIS_RIS_S                                                       0U
 #define I2C_CRIS_RIS_SET                                            0x00000001U
-#define I2C_CRIS_RIS_CLEAR                                          0x00000000U
+#define I2C_CRIS_RIS_CLR                                            0x00000000U
 
 //*****************************************************************************
 //
@@ -570,15 +635,15 @@
 // Field:     [0] MIS
 //
 // Masked interrupt status
-// This bit is cleared by writing 1 to MICR.IC bit.
+// This bit is cleared by writing 1 to CICR.IC bit.
 // ENUMs:
 // SET                      Masked interrupt occured
-// CLEAR                    Masked interrupt did not occur
+// CLR                      Masked interrupt did not occur
 #define I2C_CMIS_MIS                                                0x00000001U
 #define I2C_CMIS_MIS_M                                              0x00000001U
 #define I2C_CMIS_MIS_S                                                       0U
 #define I2C_CMIS_MIS_SET                                            0x00000001U
-#define I2C_CMIS_MIS_CLEAR                                          0x00000000U
+#define I2C_CMIS_MIS_CLR                                            0x00000000U
 
 //*****************************************************************************
 //
@@ -591,7 +656,7 @@
 // ENUMs:
 // EN                       Clear Interrupt
 //                          Writing 1 to this bit
-//                          clears MRIS.RIS and MMIS.MIS.
+//                          clears CRIS.RIS and CMIS.MIS.
 // DIS                      No effect
 #define I2C_CICR_IC                                                 0x00000001U
 #define I2C_CICR_IC_M                                               0x00000001U
@@ -604,36 +669,34 @@
 // Register: I2C_O_CCR
 //
 //*****************************************************************************
-// Field:     [5] SFE
+// Field:     [5] TFE
 //
 // I2C target function enable
 //
 // ENUMs:
 // EN                       Target mode enabled
 // DIS                      Target mode disabled
-#define I2C_CCR_SFE                                                 0x00000020U
-#define I2C_CCR_SFE_M                                               0x00000020U
-#define I2C_CCR_SFE_S                                                        5U
-#define I2C_CCR_SFE_EN                                              0x00000020U
-#define I2C_CCR_SFE_DIS                                             0x00000000U
+#define I2C_CCR_TFE                                                 0x00000020U
+#define I2C_CCR_TFE_M                                               0x00000020U
+#define I2C_CCR_TFE_S                                                        5U
+#define I2C_CCR_TFE_EN                                              0x00000020U
+#define I2C_CCR_TFE_DIS                                             0x00000000U
 
-// Field:     [4] MFE
+// Field:     [4] CFE
 //
 // I2C controller function enable
-//
 // ENUMs:
 // EN                       Controller mode enabled
 // DIS                      Controller mode disabled
-#define I2C_CCR_MFE                                                 0x00000010U
-#define I2C_CCR_MFE_M                                               0x00000010U
-#define I2C_CCR_MFE_S                                                        4U
-#define I2C_CCR_MFE_EN                                              0x00000010U
-#define I2C_CCR_MFE_DIS                                             0x00000000U
+#define I2C_CCR_CFE                                                 0x00000010U
+#define I2C_CCR_CFE_M                                               0x00000010U
+#define I2C_CCR_CFE_S                                                        4U
+#define I2C_CCR_CFE_EN                                              0x00000010U
+#define I2C_CCR_CFE_DIS                                             0x00000000U
 
 // Field:     [0] LPBK
 //
 // I2C loopback
-//
 // ENUMs:
 // EN                       Test mode (Loopback operation) enabled
 // DIS                      Test mode (Loopback operation) disabled

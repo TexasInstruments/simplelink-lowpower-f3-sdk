@@ -66,9 +66,6 @@
 // Interrupt mask clear
 #define GPIO_O_IMCLR                                                0x00000074U
 
-// Digital Test Bus
-#define GPIO_O_DTB                                                  0x0000007CU
-
 // Alias for Data out 3 to 0
 #define GPIO_O_DOUT3_0                                              0x00000100U
 
@@ -2461,23 +2458,6 @@
 #define GPIO_IMCLR_DIO0_S                                                    0U
 #define GPIO_IMCLR_DIO0_CLR                                         0x00000001U
 #define GPIO_IMCLR_DIO0_NOEFF                                       0x00000000U
-
-//*****************************************************************************
-//
-// Register: GPIO_O_DTB
-//
-//*****************************************************************************
-// Field:   [2:0] SEL
-//
-// Digital test bus selection mux control.
-//
-// Non-zero select values output a 16 bit selected group of signals per value.
-// ENUMs:
-// DIS                      All 16 observation signals are set to zero.
-#define GPIO_DTB_SEL_W                                                       3U
-#define GPIO_DTB_SEL_M                                              0x00000007U
-#define GPIO_DTB_SEL_S                                                       0U
-#define GPIO_DTB_SEL_DIS                                            0x00000000U
 
 //*****************************************************************************
 //

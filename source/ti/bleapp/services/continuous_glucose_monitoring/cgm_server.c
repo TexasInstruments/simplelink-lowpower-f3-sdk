@@ -26,10 +26,6 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#ifdef SYSCFG
-#include "ti_ble_config.h"
-#endif
-
 #include <ti/bleapp/services/continuous_glucose_monitoring/cgm_server.h>
 #include "ble_stack_api.h"
 
@@ -632,7 +628,11 @@ static bStatus_t CGMS_writeAttrCB( uint16 connHandle,
         memset( racpReq, 0, sizeof( CGMS_racpReq_t ));
         // Copy the data and send it to the profile
         VOID memcpy( racpReq, pValue, len );
-
+        // if there is RACP in progress and the peer ask to abort, flag the App to stop sending notifications.
+        if((racpReq->opCode == RACP_OPCODE_ABORT_OPERATION) && (cgmp_racpProc & RACP_PROC_INPROGRESS))
+        {
+          cgmp_racpProc |= RACP_PROC_ABORT;
+        }
         // Callback function to notify profile of change on RACP characteristic
         BLEAppUtil_invokeFunction( cgms_profileCBs->pfnRACPReqCB, (char *)racpReq );
       }

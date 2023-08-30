@@ -39,32 +39,45 @@
 // SYS0 component
 //
 //*****************************************************************************
-// Description Register. This register provides IP module ID, revision
-// information, instance index and standard MMR registers offset.
+// Description Register
 #define SYS0_O_DESC                                                 0x00000000U
 
-// Unlocks registers in mutable section
+// Mutable section Unlock
 #define SYS0_O_MUNLOCK                                              0x0000000CU
 
-// This register is used to configure analog switches in ATEST module
+// ATEST Configuration
 #define SYS0_O_ATESTCFG                                             0x00000100U
 
-// This register is used to configure temperature sensor module.
+// TSENSE Configuration
 #define SYS0_O_TSENSCFG                                             0x00000108U
 
-// This register is used to configure and check the status of low-power
-// comparator (LPCOMP) module.
+// LPCMP configuration
 #define SYS0_O_LPCMPCFG                                             0x0000010CU
 
-// This register provides Device ID information.
+// Device ID
 #define SYS0_O_DEVICEID                                             0x000003FCU
 
-// This register is programmed by boot code with Part ID information.Note: This
-// 32-bit register value is provided as output to DEBUGSS
+// Part ID
 #define SYS0_O_PARTID                                               0x000007F8U
+
+// Internal. Only to be used through TI provided API.
+#define SYS0_O_TMUTE0                                               0x00000800U
+
+// Internal. Only to be used through TI provided API.
+#define SYS0_O_TMUTE1                                               0x00000804U
 
 // TMUTE2 trim Register
 #define SYS0_O_TMUTE2                                               0x00000808U
+
+// Internal. Only to be used through TI provided API.
+#define SYS0_O_TMUTE3                                               0x0000080CU
+
+// TMUTE4 trim Register
+#define SYS0_O_TMUTE4                                               0x00000810U
+
+// Internal. Only to be used through TI provided API.
+#define SYS0_O_TMUTE5                                               0x00000814U
+
 //*****************************************************************************
 //
 // Register: SYS0_O_DESC
@@ -72,15 +85,15 @@
 //*****************************************************************************
 // Field: [31:16] MODID
 //
-// Module identifier used to uniquely identify this IP.
+// Module Identifier is used to uniquely identify this IP
 #define SYS0_DESC_MODID_W                                                   16U
 #define SYS0_DESC_MODID_M                                           0xFFFF0000U
 #define SYS0_DESC_MODID_S                                                   16U
 
 // Field: [15:12] STDIPOFF
 //
-// Standard IP MMR block offset. Standard IP MMRs are the set of from
-// aggregated IRQ registers till DTB.
+// Standard IP MMR block offset. Standard IP MMRs are the set from aggregated
+// IRQ registers till DTB.
 //
 // 0: Standard IP MMRs do not exist
 //
@@ -124,9 +137,14 @@
 // section, are detected for consecutive 32 CLKULL (24MHz) clock cycles.
 // Writing any value other that the unlock key will immediately lock the
 // mutable register space for write access.
+// ENUMs:
+// UNLOCK                   Unlock registers in the mutable section
+// LOCK                     Lock registers in the mutable section
 #define SYS0_MUNLOCK_KEY_W                                                  32U
 #define SYS0_MUNLOCK_KEY_M                                          0xFFFFFFFFU
 #define SYS0_MUNLOCK_KEY_S                                                   0U
+#define SYS0_MUNLOCK_KEY_UNLOCK                                     0xC5AF6927U
+#define SYS0_MUNLOCK_KEY_LOCK                                       0x00000000U
 
 //*****************************************************************************
 //
@@ -316,8 +334,10 @@
 
 // Field:    [24] EVTIFG
 //
-// Event flag. The event flag is set when the comparator output transition is
-// qualified based on the edge polarity configuration in EDGCFG.
+// Event flag
+//
+// The event flag is set when the comparator output transition is qualified
+// based on the edge polarity configuration in EDGCFG.
 // ENUMs:
 // SET
 // CLR                      Clear
@@ -435,7 +455,11 @@
 
 // Field:   [7:5] HYSSEL
 //
-// Used to enable and select hysteresis level.
+// Used to enable and select hysteresis level
+//
+// Hysteresis is disabled when HYSSEL = 0 and enabled for other values of
+// HYSSEL from 1 to 7. Refer to device specific datasheet for individual
+// hysteresis values.
 // ENUMs:
 // VAL7                     Hysteresis value: TBD
 // VAL6                     Hysteresis value: TBD
@@ -557,7 +581,7 @@
 // Field: [30:28] MAJORREV
 //
 // Monotonic increasing value indicating a new revision of the SKU significant
-// enough that users of the device may have to revise PCB or or software design
+// enough that users of the device may have to revise PCB or software design
 #define SYS0_PARTID_MAJORREV_W                                               3U
 #define SYS0_PARTID_MAJORREV_M                                      0x70000000U
 #define SYS0_PARTID_MAJORREV_S                                              28U
@@ -572,7 +596,7 @@
 
 // Field: [23:16] VARIANT
 //
-// Bit pattern uniquely identifying a part
+// Bit pattern uniquely identifying a variant of a part
 #define SYS0_PARTID_VARIANT_W                                                8U
 #define SYS0_PARTID_VARIANT_M                                       0x00FF0000U
 #define SYS0_PARTID_VARIANT_S                                               16U
@@ -583,6 +607,30 @@
 #define SYS0_PARTID_PART_W                                                  16U
 #define SYS0_PARTID_PART_M                                          0x0000FFFFU
 #define SYS0_PARTID_PART_S                                                   0U
+
+//*****************************************************************************
+//
+// Register: SYS0_O_TMUTE0
+//
+//*****************************************************************************
+// Field:  [31:0] CDACL
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE0_CDACL_W                                                 32U
+#define SYS0_TMUTE0_CDACL_M                                         0xFFFFFFFFU
+#define SYS0_TMUTE0_CDACL_S                                                  0U
+
+//*****************************************************************************
+//
+// Register: SYS0_O_TMUTE1
+//
+//*****************************************************************************
+// Field:  [31:0] CDACM
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE1_CDACM_W                                                 32U
+#define SYS0_TMUTE1_CDACM_M                                         0xFFFFFFFFU
+#define SYS0_TMUTE1_CDACM_S                                                  0U
 
 //*****************************************************************************
 //
@@ -631,5 +679,154 @@
 #define SYS0_TMUTE2_CDACU_W                                                  2U
 #define SYS0_TMUTE2_CDACU_M                                         0x00000003U
 #define SYS0_TMUTE2_CDACU_S                                                  0U
+
+//*****************************************************************************
+//
+// Register: SYS0_O_TMUTE3
+//
+//*****************************************************************************
+// Field: [31:26] BATC1
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE3_BATC1_W                                                  6U
+#define SYS0_TMUTE3_BATC1_M                                         0xFC000000U
+#define SYS0_TMUTE3_BATC1_S                                                 26U
+
+// Field: [25:19] BATC0
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE3_BATC0_W                                                  7U
+#define SYS0_TMUTE3_BATC0_M                                         0x03F80000U
+#define SYS0_TMUTE3_BATC0_S                                                 19U
+
+// Field: [18:14] TEMPC2
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE3_TEMPC2_W                                                 5U
+#define SYS0_TMUTE3_TEMPC2_M                                        0x0007C000U
+#define SYS0_TMUTE3_TEMPC2_S                                                14U
+
+// Field:  [13:8] TEMPC1
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE3_TEMPC1_W                                                 6U
+#define SYS0_TMUTE3_TEMPC1_M                                        0x00003F00U
+#define SYS0_TMUTE3_TEMPC1_S                                                 8U
+
+// Field:   [7:0] TEMPC0
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE3_TEMPC0_W                                                 8U
+#define SYS0_TMUTE3_TEMPC0_M                                        0x000000FFU
+#define SYS0_TMUTE3_TEMPC0_S                                                 0U
+
+//*****************************************************************************
+//
+// Register: SYS0_O_TMUTE4
+//
+//*****************************************************************************
+// Field: [31:28] RECHCOMPREFLVL
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_RECHCOMPREFLVL_W                                         4U
+#define SYS0_TMUTE4_RECHCOMPREFLVL_M                                0xF0000000U
+#define SYS0_TMUTE4_RECHCOMPREFLVL_S                                        28U
+
+// Field: [27:26] IOSTRCFG2
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_IOSTRCFG2_W                                              2U
+#define SYS0_TMUTE4_IOSTRCFG2_M                                     0x0C000000U
+#define SYS0_TMUTE4_IOSTRCFG2_S                                             26U
+
+// Field: [25:22] IOSTRCFG1
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_IOSTRCFG1_W                                              4U
+#define SYS0_TMUTE4_IOSTRCFG1_M                                     0x03C00000U
+#define SYS0_TMUTE4_IOSTRCFG1_S                                             22U
+
+// Field: [21:19] MAX
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_MAX_W                                                    3U
+#define SYS0_TMUTE4_MAX_M                                           0x00380000U
+#define SYS0_TMUTE4_MAX_S                                                   19U
+
+// Field: [18:16] MED
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_MED_W                                                    3U
+#define SYS0_TMUTE4_MED_M                                           0x00070000U
+#define SYS0_TMUTE4_MED_S                                                   16U
+
+// Field: [15:13] MIN
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_MIN_W                                                    3U
+#define SYS0_TMUTE4_MIN_M                                           0x0000E000U
+#define SYS0_TMUTE4_MIN_S                                                   13U
+
+// Field: [12:11] DCDCLOAD
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_DCDCLOAD_W                                               2U
+#define SYS0_TMUTE4_DCDCLOAD_M                                      0x00001800U
+#define SYS0_TMUTE4_DCDCLOAD_S                                              11U
+
+// Field:  [10:8] IPEAK
+//
+// DCDC: Set inductor peak current
+#define SYS0_TMUTE4_IPEAK_W                                                  3U
+#define SYS0_TMUTE4_IPEAK_M                                         0x00000700U
+#define SYS0_TMUTE4_IPEAK_S                                                  8U
+
+// Field:   [7:6] DTIME
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_DTIME_W                                                  2U
+#define SYS0_TMUTE4_DTIME_M                                         0x000000C0U
+#define SYS0_TMUTE4_DTIME_S                                                  6U
+
+// Field:   [5:3] LENSEL
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_LENSEL_W                                                 3U
+#define SYS0_TMUTE4_LENSEL_M                                        0x00000038U
+#define SYS0_TMUTE4_LENSEL_S                                                 3U
+
+// Field:   [2:0] HENSEL
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE4_HENSEL_W                                                 3U
+#define SYS0_TMUTE4_HENSEL_M                                        0x00000007U
+#define SYS0_TMUTE4_HENSEL_S                                                 0U
+
+//*****************************************************************************
+//
+// Register: SYS0_O_TMUTE5
+//
+//*****************************************************************************
+// Field: [12:10] DCDCDRVDS
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE5_DCDCDRVDS_W                                              3U
+#define SYS0_TMUTE5_DCDCDRVDS_M                                     0x00001C00U
+#define SYS0_TMUTE5_DCDCDRVDS_S                                             10U
+
+// Field:   [9:5] GLDOISCLR
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE5_GLDOISCLR_W                                              5U
+#define SYS0_TMUTE5_GLDOISCLR_M                                     0x000003E0U
+#define SYS0_TMUTE5_GLDOISCLR_S                                              5U
+
+// Field:   [4:0] GLDOISSET
+//
+// Internal. Only to be used through TI provided API.
+#define SYS0_TMUTE5_GLDOISSET_W                                              5U
+#define SYS0_TMUTE5_GLDOISSET_M                                     0x0000001FU
+#define SYS0_TMUTE5_GLDOISSET_S                                              0U
+
 
 #endif // __SYS0__

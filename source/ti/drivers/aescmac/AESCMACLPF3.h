@@ -75,15 +75,28 @@ extern "C" {
  *  ECB SRC as TXTXBUF
  *  Trigger point for auto ECB as WRBUF3 (encryption starts by writing BUF3)
  */
-#define AESCMACLPF3_DEFAULT_AUTOCFG \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCMACLPF3_DEFAULT_AUTOCFG \
+        ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCMACLPF3_DEFAULT_AUTOCFG \
+        ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
+#endif
 
 /*
  * AES CMAC DMA config:
  *  - ADRCHA = BUF0
  *  - TRGCHA = ECBSTART
  */
-#define AESCMACLPF3_DMA_CONFIG ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_ECBSTART)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCMACLPF3_DMA_CONFIG ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_AESSTART)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCMACLPF3_DMA_CONFIG ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_ECBSTART)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
+#endif
 
 #define AESCBCMACLPF3_DMA_CONFIG AESCMACLPF3_DMA_CONFIG
 

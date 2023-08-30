@@ -57,8 +57,6 @@
 #include "simple_gatt_profile.h"
 
 #ifdef SYSCFG
-#include "ti_ble_config.h"
-
 #ifdef USE_GATT_BUILDER
 #include "ti_ble_gatt_service.h"
 #endif

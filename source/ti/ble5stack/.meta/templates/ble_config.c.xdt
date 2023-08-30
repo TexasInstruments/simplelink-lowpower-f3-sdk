@@ -20,11 +20,14 @@ ble.deviceRole.includes("OBSERVER") ? profileRole.push("GAP_PROFILE_OBSERVER"): 
 #include <bcomdef.h>
 #include <gapgattserver.h>
 #include <gap_advertiser.h>
+% if(ble.basicBLE){
+#include <app_main.h>
+%}
 % if(ble.bondManager == true) {
 #include <gapbondmgr.h>
 %}
 #include "ti_ble_config.h"
-
+#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 % if (ble){
 
 // The GAP profile role
@@ -41,6 +44,26 @@ uint8_t pRandomAddress[6] = `common.addPeerAddress(common.reverseBytes(ble.rando
 uint8_t * pRandomAddress = NULL;
 % }
 
+% if(ble.basicBLE){
+// Initiate selected profiles
+void init_profiles(){
+ % if(ble.DeviceInfo)
+ % {
+    DevInfo_start();
+ % }
+ % if(ble.profiles.includes("6175")){
+    CGM_start();
+ % }
+ % if(ble.profiles.includes("6152"))
+ % {
+    GL_start();
+ % }
+  % if(ble.profiles.includes("65520"))
+ % {
+    SimpleGatt_start();
+ % }
+ }
+ %}
 % if (ble.deviceRole != "BROADCASTER_CFG" && ble.deviceRole != "OBSERVER_CFG" && ble.deviceRole != "BROADCASTER_CFG+OBSERVER_CFG" && ble.bondManager == true){
 /*********************************************************************
  * Bond Manager Configuration

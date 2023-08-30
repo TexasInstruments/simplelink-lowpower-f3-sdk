@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
+
 /*
  *  ======== ble.syscfg.js ========
  */
@@ -82,13 +82,16 @@ const meshProvDataScript = system.getScript("/ti/ble5stack/mesh/"
 // Get common Script
 const Common = system.getScript("/ti/ble5stack/ble_common.js");
 
+// Get common Script
+const profilesScript = system.getScript("/ti/ble5stack/profiles/ble_profiles_config");
+
 // Ext Adv default values
 const defaultExtAdvVal = Common.defaultValue();
 const readOnlyExtAdvVal = Common.readOnlyValue();
 
 //static implementation of the BLE module
 const moduleStatic = {
-    
+
     //configurables for the static BLE module
     config: [
         {
@@ -109,6 +112,12 @@ const moduleStatic = {
             name: "calledFromDeviceRole",
             default: false,
             hidden: true
+        },
+        {
+            name: "basicBLE",
+            default: false,
+            hidden: true,
+            onChange: basicbleconfig
         },
         {
             name: "hidePtm",
@@ -324,6 +333,7 @@ const moduleStatic = {
             default: false,
             hidden: true
         },
+        profilesScript.config,
         radioScript.config,
         generalScript.config,
         bondMgrScript.config,
@@ -332,13 +342,14 @@ const moduleStatic = {
         observerScript.config,
         peripheralScript.config,
         broadcasterScript.config,
-        bleMeshScript.config
+        bleMeshScript.config,
     ],
 
     validate: validate,
     moduleInstances: moduleInstances,
     modules: modules
 }
+
 
 /*
  * ======== validate ========
@@ -361,6 +372,7 @@ function validate(inst, validation)
     peripheralScript.validate(inst, validation);
     broadcasterScript.validate(inst, validation);
     bleMeshScript.validate(inst, validation);
+    profilesScript.validate(inst, validation);
     // When using CC2652RB (BAW) device and the BLE role is central/observer/multi_role
     // the LF src clock (srcClkLF) should be different from "LF RCOSC".
     // Therefore, throwing a warning on the CCFG srcClkLF configurable.
@@ -457,6 +469,30 @@ function ondeviceRoleChange(inst,ui)
 
     // Change the Periodic configurable state
     onExtAdvChange(inst,ui);
+}
+
+function basicbleconfig(inst,ui)
+{
+    if(inst.basicBLE)
+    {
+        ui.DeviceInfo.hidden = false;
+        inst.DeviceInfo = true;
+        ui.profiles.hidden = false;
+        inst.profiles = [];
+        inst.hidebasicbleGroup = false;
+    }
+    else
+    {
+        ui.DeviceInfo.hidden = true;
+        inst.DeviceInfo = false;
+        ui.profiles.hidden = true;
+        inst.profiles = [];
+        inst.hidebasicbleGroup = true;
+    }
+
+    Common.hideGroup(Common.getGroupByName(inst.$module.config, "profiles_module"), inst.hidebasicbleGroup, ui);
+
+
 }
 
 /*

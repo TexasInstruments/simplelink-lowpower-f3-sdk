@@ -4,8 +4,8 @@
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name                   SmartRF Studio
-// Tool version                0.6.0.193 INTERNAL
+// Tool name                   SmartRF Studio 8
+// Tool version                0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +14,7 @@
 // Device                      CC2340R5
 //     Package                 QFN40 5x5 RKP
 //     Revision(s)             B (2.0)
-// SDK                         SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                         SimpleLink CC23x0 SDK 7.20.00.00
 // Board                       LP-EM-CC2340R5
 // PHY                         2.4 GHz - Proprietary - 1 Mbps, 160 kHz dev, GFSK
 // PHY abbreviation            gfsk_1_mbps
@@ -47,12 +47,11 @@ extern const LRF_TxPowerTable LRF_txPowerTableGfsk1Mbps;
 extern const LRF_Config       LRF_configGfsk1Mbps;
 
 
-// LRF register configuration summary
+// COMMON register field values
 
 // Address    Module             Register             Bit(s)     Field              Value
 // ---------------------------------------------------------------------------------------
-// 0x1090     LRFDPBE            MDMCMDPAR0           [15:0]     VAL                0x0037
-// 0x1094     LRFDPBE            MDMCMDPAR1           [15:0]     VAL                0x0000
+// 0x1090     LRFDPBE            MDMCMDPAR0           [15:0]     VAL                0x8007
 // 0x1098     LRFDPBE            MDMCMDPAR2           [15:0]     VAL                0xAAAA
 // 0x10A0     LRFDPBE            POLY0L               [15:0]     VALLSB             0x0000
 // 0x10A4     LRFDPBE            POLY0H               [15:0]     VALMSB             0x0000
@@ -71,7 +70,7 @@ extern const LRF_Config       LRF_configGfsk1Mbps;
 // 0x10D0     LRFDPBE            RXFRBTHRS            [9:0]      BYTES              0x004
 // 0x10D4     LRFDPBE            TXFWBTHRS            [9:0]      BYTES              0x002
 // 0x10DC     LRFDPBE            TIMCTL               [1]        SRC0               0x1
-// 0x10E0     LRFDPBE            TIMPRE               [5:0]      PRE0               0x0C
+// 0x10E0     LRFDPBE            TIMPRE               [5:0]      PRE0               0x0B
 // 0x20B8     LRFDMDM            SYSTIMEVTMUX0        [11:6]     SEL1               0x00
 // 0x20B8     LRFDMDM            SYSTIMEVTMUX0        [5:0]      SEL0               0x15
 // 0x20C0     LRFDMDM            ADCDIGCONF           [1]        QBRANCHEN          0x1
@@ -125,9 +124,9 @@ extern const LRF_Config       LRF_configGfsk1Mbps;
 // 0x2108     LRFDMDM            DEMFIFE0             [0]        IIREN              0x1
 // 0x210C     LRFDMDM            DEMMAFI0             [15:8]     C1C7               0x03
 // 0x210C     LRFDMDM            DEMMAFI0             [7:0]      C0C8               0x00
-// 0x2110     LRFDMDM            DEMMAFI1             [15:8]     C3C5               0x4F
-// 0x2110     LRFDMDM            DEMMAFI1             [7:0]      C2C6               0x15
-// 0x2114     LRFDMDM            DEMMAFI2             [8:0]      C4                 0x07C
+// 0x2110     LRFDMDM            DEMMAFI1             [15:8]     C3C5               0x60
+// 0x2110     LRFDMDM            DEMMAFI1             [7:0]      C2C6               0x19
+// 0x2114     LRFDMDM            DEMMAFI2             [8:0]      C4                 0x097
 // 0x2118     LRFDMDM            DEMC1BE0             [15:11]    MASKB              0x00
 // 0x2118     LRFDMDM            DEMC1BE0             [10:6]     MASKA              0x00
 // 0x2118     LRFDMDM            DEMC1BE0             [5:4]      CASCCONF           0x2
@@ -253,7 +252,7 @@ extern const LRF_Config       LRF_configGfsk1Mbps;
 // 0x6818     RFE_COMMON_RAM     K3AL                 [15:0]     VAL                0x07AB
 // 0x681A     RFE_COMMON_RAM     K5                   [15:0]     VAL                0x916F
 // 0x6820     RFE_COMMON_RAM     RTRIMOFF             [3:0]      VAL                0x0
-// 0x6822     RFE_COMMON_RAM     RTRIMMIN             [3:0]      VAL                0x8
+// 0x6822     RFE_COMMON_RAM     RTRIMMIN             [3:0]      VAL                0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [14:12]    NMIREFTRIM         0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [11:9]     PMIREFTRIM         0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [3]        OUT                0x1

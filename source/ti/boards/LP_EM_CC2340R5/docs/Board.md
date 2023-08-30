@@ -26,16 +26,19 @@ The following BoosterPacks are used with some driver examples.
 
 ### [__BOOSTXL-CANFD-LIN SPI to CAN FD + LIN BoosterPack__][boostxl-canfd-lin]
 
-The BoosterPack requires an external voltage supply connected to the barrel jack __`J2`__ in the range of 6-V to 24-V.
+The BoosterPack requires an external voltage supply connected to the barrel jack __`J2`__ in the range of 6 V to 24 V.
 
 The following modifications are required:
-* On the LaunchPad, use a jumper wire to connect header pin BP.31 (unlabeled) to pin BP.36 (DIO8).
-* On the BoosterPack, bend down the __`nWKRQ`__ header pin to prevent the signal from interfering with the LaunchPad __`SWDCK`__.
-* Remove jumpers __`J11`__ and __`J12`__ to disconnect BoosterPack's 3.3-V and 5-V rails if the LaunchPad is powered from the debugger.
+
+* On the LaunchPad, use a jumper wire to connect header pin BP.31 (unlabeled) to pin BP.36 (__`DIO8`__).
+* On the BoosterPack, bend down header pin BP.33 (__`nWKRQ`__) to prevent the signal from interfering with the LaunchPad
+  __`SWDCK`__ signal.
+* Remove jumpers __`J11`__ and __`J12`__ to disconnect BoosterPack's 3.3 V and 5 V rails if the LaunchPad is powered from
+  the debugger.
 
 ### [__BOOSTXL-SHARP128 LCD & SD Card BoosterPack__][boostxl-sharp128]
 
-* The SD_CS pin must be jumpered from BP.8 to BP.28 (DIO7) when using the SD card.
+* BoosterPack pin header BP.8 (__`SD_CS`__) must be jumpered to BP.28 when using the SD card.
 
 ### [__BP-BASSENSORSMKII BoosterPack__][bp-bassensorsmkii]
 

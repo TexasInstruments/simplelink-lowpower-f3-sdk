@@ -293,8 +293,9 @@ void halAssertHazardLights(void)
   uint8 debugData[DEBUG_DATA_SIZE];
 
   /* disable all interrupts before anything else */
+#ifndef USE_RCL
   HAL_DISABLE_INTERRUPTS();
-
+#endif
   /*----------------------------------------------------------------------------
    *  Initialize LEDs and turn them off.
    */

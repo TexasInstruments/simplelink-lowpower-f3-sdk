@@ -78,10 +78,23 @@ extern "C" {
  *  Counter endianness as Big Endian
  *  BUSHALT enabled
  */
-#define AESCTRLPF3_DEFAULT_AUTOCFG                                                                                   \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | \
-     (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN |                                \
-     (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #define AES_AUTOCFG_CTRENDN_BIGENDIAN AES_AUTOCFG_CTRENDIAN_BIGENDIAN
+#endif
+
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCTRLPF3_DEFAULT_AUTOCFG                                                \
+        ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S |    \
+         (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | \
+         (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCTRLPF3_DEFAULT_AUTOCFG                                                \
+        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S |    \
+         (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | \
+         (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
+#endif
 
 /*
  * AES CTR auto config for handling processing of the last
@@ -94,9 +107,19 @@ extern "C" {
  *  Counter size as 128-bits
  *  Counter endianness as Big Endian
  */
-#define AESCTRLPF3_LAST_BLOCK_AUTOCFG                                                                                 \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | \
-     (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCTRLPF3_LAST_BLOCK_AUTOCFG                                                 \
+        ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S |        \
+         (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | \
+         (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCTRLPF3_LAST_BLOCK_AUTOCFG                                                 \
+        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S |        \
+         (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | \
+         (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
+#endif
 
 /*!
  *  @brief      AESCTRLPF3 Hardware Attributes

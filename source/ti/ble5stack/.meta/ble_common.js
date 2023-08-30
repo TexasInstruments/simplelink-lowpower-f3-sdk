@@ -403,6 +403,8 @@ const connParamsRanges = {
   scanWinMaxValue:              "40959.375",          // Max value of Scan Window (ms)
   scanDurationMinValue:         "10",                 // Min value of Scan Duration (ms)
   scanDurationMaxValue:         "655350",             // Max value of Scan Duration (ms)
+  scanPeriodMinValue:           "0",                  // Min value of Scan Period (sec)
+  scanPeriodMaxValue:           "83884.8",            // Max value of Scan Period (sec)
   connLatencyMinValue:          "0",                  // Min value of Connection Latency
   connLatencyMaxValue:          "499",                // Max value of Connection Latency
   connTimeoutMinValue:          "100",                // Min value of Connection Timeout (ms)
@@ -477,6 +479,12 @@ const bleCentralCCFGSettings = {
   LP_EM_CC1354P10_6_CCFG_SETTINGS: {}
 };
 
+const profiles_list = [
+    { displayName: "Simple Gatt",    name: "65520"  },
+    { displayName: "CGM",    name: "6175" },
+    { displayName: "Glucose",    name: "6152" }
+]
+
 const supportedMigrations = {
   // Boards
   CC1352R1_LAUNCHXL:  [
@@ -503,6 +511,8 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   LP_CC2652RB: [
     {target: "CC26X2R1_LAUNCHXL"},
@@ -512,6 +522,8 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   LP_CC2652PSIP: [
     {target: "LP_CC2652PSIP"},
@@ -525,6 +537,8 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   LP_EM_CC1354P10_1: [
     {target: "LP_EM_CC1354P10_1"},
@@ -557,6 +571,30 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
+  ],
+  CC2642R1FRGZQ1: [
+    {target: "CC26X2R1_LAUNCHXL"},
+    {target: "LP_CC2652RSIP"},
+    {target: "LP_CC2652RB"},
+    {target: "CC2652RB1FRGZ"},
+    {target: "CC2652R1FRGZ"},
+    {target: "CC2642R1FRGZ"},
+    {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
+  ],
+  CC2642R1FRTCQ1: [
+    {target: "CC26X2R1_LAUNCHXL"},
+    {target: "LP_CC2652RSIP"},
+    {target: "LP_CC2652RB"},
+    {target: "CC2652RB1FRGZ"},
+    {target: "CC2652R1FRGZ"},
+    {target: "CC2642R1FRGZ"},
+    {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   CC2652R1FRGZ: [
     {target: "CC26X2R1_LAUNCHXL"},
@@ -566,6 +604,8 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   CC2652RB1FRGZ: [
     {target: "CC26X2R1_LAUNCHXL"},
@@ -575,6 +615,8 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   CC2652R1FSIP: [
     {target: "CC26X2R1_LAUNCHXL"},
@@ -584,6 +626,8 @@ const supportedMigrations = {
     {target: "CC2652R1FRGZ"},
     {target: "CC2642R1FRGZ"},
     {target: "CC2652R1FSIP"},
+    {target: "CC2642R1FRTCQ1"},
+    {target: "CC2642R1FRGZQ1"},
   ],
   CC2652P1FSIP: [
     {target: "CC2652P1FSIP"},
@@ -1237,6 +1281,16 @@ function getRadioScript(rfDesign, deviceId)
         radioSettings = system.getScript("/ti/ble5stack/rf_config/"
             + "CC26X2R1_LAUNCHXL_rf_defaults.js");
     }
+    else if(deviceId === "CC2642R1FRGZQ1")
+    {
+        radioSettings = system.getScript("/ti/ble5stack/rf_config/"
+            + "CC26X2R1_LAUNCHXL_rf_defaults.js");
+    }
+    else if(deviceId === "CC2642R1FRTCQ1")
+    {
+        radioSettings = system.getScript("/ti/ble5stack/rf_config/"
+            + "CC26X2R1_LAUNCHXL_rf_defaults.js");
+    }
     else if(deviceId === "CC2652R1FRGZ")
     {
         radioSettings = system.getScript("/ti/ble5stack/rf_config/"
@@ -1445,7 +1499,7 @@ function readOnlyValue()
 */
 function defaultBondValue()
 {
-    if(device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0")
+    if(device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")
     {
         return 5;
     }
@@ -1751,5 +1805,6 @@ exports = {
     getExtendedStackSettingsGuardTimeName: getExtendedStackSettingsGuardTimeName,
     getFilterPolicyName: getFilterPolicyName,
     getOptionsOfFilterPolicy: getOptionsOfFilterPolicy,
-    getAutoSyncName: getAutoSyncName
+    getAutoSyncName: getAutoSyncName,
+    profiles_list: profiles_list
 };

@@ -1,11 +1,13 @@
 // SETTINGS FOR PHY BASED ON RADIO CONTROL LAYER (SOURCE FILE)
 //
+// Usage                       Protocol stack / Application
+//
 //
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name                   SmartRF Studio
-// Tool version                0.6.0.193 INTERNAL
+// Tool name                   SmartRF Studio 8
+// Tool version                0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +16,7 @@
 // Device                      CC2340R5
 //     Package                 QFN40 5x5 RKP
 //     Revision(s)             B (2.0)
-// SDK                         SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                         SimpleLink CC23x0 SDK 7.20.00.00
 // Board                       LP-EM-CC2340R5
 // PHY                         2.4 GHz - NESB - 1 Mbps / 2 Mbps
 // PHY abbreviation            nesb
@@ -24,7 +26,7 @@
 //
 // Run-time properties:
 //     Sub-PHY                 1 Mbps 
-//     Frequency               2420.00000 MHz
+//     Frequency               2440.00000 MHz
 //     TX output power         5.0 dBm 
 // Start of packet:
 //     Synchronization word    0x930B51DE 
@@ -35,8 +37,8 @@
 #include DeviceFamily_constructPath(rf_patches/lrf_rfe_binary_ble5.h)
 
 
-// Configuration for SUB-PHY = 1 Mbps, 2 Mbps
-static const uint32_t LRF_subPhy1Mbps2MbpsRegConfig[] =
+// Configuration: Common
+static const uint32_t LRF_commonRegConfig[] =
 {
     0x0000004E,                           // Segment length = 78
     0x0004A001,                           //     Data structure 32-bit region (start byte position = 4, count = 2)
@@ -93,8 +95,8 @@ static const uint32_t LRF_subPhy1Mbps2MbpsRegConfig[] =
     0x00001804,                           //         -                                   LRFDRFE.MOD0
     0x2022500A,                           //     RAM 16-bit region (start address = 0x2022, count = 11)
     0x03CB00B4,                           //         PBE_GENERIC_RAM.PKTCFG              PBE_GENERIC_RAM.SYNTHCALTIMEOUT
-    0x4BB00008,                           //         PBE_GENERIC_RAM.FIFOCFG             PBE_GENERIC_RAM.NUMCRCBITS
-    0x00000002,                           //         PBE_GENERIC_RAM.WHITEINIT           PBE_GENERIC_RAM.EXTRABYTES
+    0x03B00008,                           //         PBE_GENERIC_RAM.FIFOCFG             PBE_GENERIC_RAM.NUMCRCBITS
+    0x00000000,                           //         PBE_GENERIC_RAM.WHITEINIT           PBE_GENERIC_RAM.EXTRABYTES
     0x00000000,                           //         PBE_GENERIC_RAM.CRCINITL            < GAP >
     0x0103FF00,                           //         PBE_GENERIC_RAM.LENCFG              PBE_GENERIC_RAM.CRCINITH
     0x00000000,                           //         -                                   PBE_GENERIC_RAM.LENOFFSET
@@ -109,7 +111,7 @@ static const uint32_t LRF_subPhy1Mbps2MbpsRegConfig[] =
     0x132C0074,                           //         RFE_COMMON_RAM.K3BL                 RFE_COMMON_RAM.K2AL
     0x916F07AB,                           //         RFE_COMMON_RAM.K5                   RFE_COMMON_RAM.K3AL
     0x68206005,                           //     RAM 32-bit region (start address = 0x6820, count = 6)
-    0x00080000,                           //         RFE_COMMON_RAM.RTRIMMIN             RFE_COMMON_RAM.RTRIMOFF
+    0x00000000,                           //         RFE_COMMON_RAM.RTRIMMIN             RFE_COMMON_RAM.RTRIMOFF
     0x48080008,                           //         RFE_COMMON_RAM.DIVF                 RFE_COMMON_RAM.DIVI
     0x00000000,                           //         RFE_COMMON_RAM.DIVLDOF              RFE_COMMON_RAM.DIVLDOI
     0x00470014,                           //         RFE_COMMON_RAM.LDOSETTLE            RFE_COMMON_RAM.DIVLDOIOFF
@@ -119,7 +121,7 @@ static const uint32_t LRF_subPhy1Mbps2MbpsRegConfig[] =
     0x00000045                            //         RFE_COMMON_RAM.AGCINFO              RFE_COMMON_RAM.SPARE1SHADOW
 };
 
-// Configuration for SUB-PHY = 1 Mbps
+// Configuration: Sub-PHY = 1 Mbps
 static const uint32_t LRF_subPhy1MbpsRegConfig[] =
 {
     0x00014011,                           // Segment length = 17
@@ -142,7 +144,7 @@ static const uint32_t LRF_subPhy1MbpsRegConfig[] =
     0x75F80050                            //         RFE_COMMON_RAM.SPARE0SHADOW         RFE_COMMON_RAM.PHYRSSIOFFSET
 };
 
-// Configuration for SUB-PHY = 2 Mbps
+// Configuration: Sub-PHY = 2 Mbps
 static const uint32_t LRF_subPhy2MbpsRegConfig[] =
 {
     0x00010011,                           // Segment length = 17
@@ -156,8 +158,8 @@ static const uint32_t LRF_subPhy2MbpsRegConfig[] =
     0x24742000,                           //     HW 32-bit region (start address = 0x2474, count = 1)
     0x108110F9,                           //         LRFDMDM.DEMMISC3                    LRFDMDM.DEMMISC2
     0x210C1002,                           //     HW 16-bit region (start address = 0x210C, count = 3)
-    0x4F150300,                           //         LRFDMDM.DEMMAFI1                    LRFDMDM.DEMMAFI0
-    0x0000007C,                           //         -                                   LRFDMDM.DEMMAFI2
+    0x60190300,                           //         LRFDMDM.DEMMAFI1                    LRFDMDM.DEMMAFI0
+    0x00000097,                           //         -                                   LRFDMDM.DEMMAFI2
     0x00007001,                           //     RAM sparse region (address/value pairs, count = 2)
     0x20200009,                           //         PBE_GENERIC_RAM.PHY
     0x203E0146,                           //         PBE_GENERIC_RAM.PRETXIFS
@@ -170,7 +172,7 @@ static const uint32_t LRF_subPhy2MbpsRegConfig[] =
 static const LRF_RegConfigList LRF_regConfigList = {
     .numEntries = 3,
     .entries = {
-        (LRF_ConfigWord*) LRF_subPhy1Mbps2MbpsRegConfig,
+        (LRF_ConfigWord*) LRF_commonRegConfig,
         (LRF_ConfigWord*) LRF_subPhy1MbpsRegConfig,
         (LRF_ConfigWord*) LRF_subPhy2MbpsRegConfig 
     }

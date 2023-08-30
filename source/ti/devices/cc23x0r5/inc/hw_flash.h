@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_flash_h
 ******************************************************************************
-*  Copyright (c) 2021-2023 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2021 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -710,7 +710,7 @@
 //*****************************************************************************
 // Field:   [3:0] WAITSTATE
 //
-// Wait State setting for program verify and erase verify
+// Wait State setting for verify reads
 // ENUMs:
 // MAXIMUM                  Maximum value
 // MINIMUM                  Minimum value

@@ -64,6 +64,7 @@ const config = [
         name: "legacyEvnPropOptions",
         displayName: "Legacy Event Properties Options",
         default: "CONN_SCAN",
+        getDisabledOptions: generateDisabledOptions("legacyEvnPropOptions"),
         longDescription: Docs.legacyEvnPropOptionsLongDescription,
         onChange: onLegacyEvnPropOptionsChange,
         hidden: false,
@@ -229,6 +230,12 @@ const config = [
         longDescription: Docs.sidLongDescription,
         displayFormat: "dec",
         default: 0
+    },
+    {
+        name: "deviceRole",
+        default: "",
+        onChange: onDeviceRoleChange,
+        hidden: true
     }
 ];
 
@@ -369,10 +376,11 @@ function generateDisabledOptions(name)
 
         if(name == "eventProps")
         {
+            let disabledOptions = configurable.options;
             if (inst.advType == "extended")
             {
                 // List of invalid options
-                let disabledOptions = configurable.options.filter(function(index){ return index.name.includes("HDC") == true || index.name.includes("LEGACY") == true});
+                disabledOptions = disabledOptions.filter(function(index){ return index.name.includes("HDC") == true || index.name.includes("LEGACY") == true});
 
                 // Add the "reason" why it's disabled, and return that information
                 disabledOptions = disabledOptions.map((option) => ({ name: option.name, reason: "This is not a valid option for Extended Advertisement Type" }));
@@ -393,16 +401,34 @@ function generateDisabledOptions(name)
                     disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable advertising is not supported when Anonymous advertising is selected"});
                     disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_SCANNABLE", reason: "Scannable advertising is not supported when Anonymous advertising is selected"});
                 }
+            }
+            else
+            {
+                // Add the "reason" why it's disabled, and return that information
+                disabledOptions = disabledOptions.map((option) => ({ name: option.name,
+                    reason: "The Event Properties selection for Legacy advertisement is done by choosing an option from Legacy Event Properties Options" }));
+            }
+
+            if( inst.$ownedBy.$ownedBy.deviceRole.includes("BROADCASTER_CFG"))
+            {
+               disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable can not be used in the Broadcaster role"});
+            }
+            return disabledOptions;
+        }
+        if(name == "legacyEvnPropOptions")
+        {
+            if( inst.$ownedBy.$ownedBy.deviceRole.includes("BROADCASTER_CFG"))
+            {
+                let disabledOptions = configurable.options;
+                disabledOptions = disabledOptions.filter(function(index){ return index.name.includes("CONN") == true});
+                // Add the "reason" why it's disabled, and return that information
+                disabledOptions = disabledOptions.map((option) => ({ name: option.name,
+                    reason: "Connectable can not be used in the Broadcaster role" }));
                 return disabledOptions;
             }
             else
             {
-                // List of invalid options
-                let disabledOptions = configurable.options;
-                // Add the "reason" why it's disabled, and return that information
-                disabledOptions = disabledOptions.map((option) => ({ name: option.name,
-                    reason: "The Event Properties selection for Legacy advertisement is done by choosing an option from Legacy Event Properties Options" }));
-                return disabledOptions;
+                return [];
             }
         }
 	}
@@ -463,6 +489,22 @@ function onLegacyEvnPropOptionsChange(inst,ui)
       }
 }
 
+
+function onDeviceRoleChange(inst,ui)
+{
+    if(inst.deviceRole.includes("BROADCASTER_CFG"))
+    {
+        if(inst.advType == "legacy")
+        {
+            inst.legacyEvnPropOptions = "SCAN";
+            inst.eventProps = legacyEventPropValidOpt.SCAN_LEG;
+        }
+        else if(inst.advType == "extended")
+        {
+            inst.eventProps.remove("GAP_ADV_PROP_CONNECTABLE");
+        }
+    }
+}
  /*
  *  ======== onTxPowerChange ========
  * Change the tx power input option

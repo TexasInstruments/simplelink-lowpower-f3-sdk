@@ -66,7 +66,7 @@ and portable APIs.
 
 [1]: /drivers/doxygen/html/_l_g_p_timer_l_p_f3_8h.html#details "C API reference"
 [2]: /drivers/doxygen/html/_l_g_p_timer_l_p_f3_8h.html#ti_drivers_LGPTimer_PeripheralProperties "Peripheral properties"
-[3]: /drivers/doxygen/html/_l_g_p_timer_l_p_f3_8h.html#ti_drivers_LGPTimer_Example "C usage examples"
+[3]: /drivers/doxygen/html/_l_g_p_timer_l_p_f3_8h.html#ti_drivers_LGPTimer_Examples "C usage examples"
 `,
     defaultInstanceName : "CONFIG_LGPTIMER_",
     config              : Common.addNameConfig(timerConfig, "/ti/drivers/lgptimer", "CONFIG_LGPTIMER_"),

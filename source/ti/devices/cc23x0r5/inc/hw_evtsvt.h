@@ -39,17 +39,13 @@
 // EVTSVT component
 //
 //*****************************************************************************
-// Description Register. This register provides IP module ID, revision
-// information, instance index and standard MMR registers offset.
+// Description
 #define EVTSVT_O_DESC                                               0x00000000U
 
-// Extended Description Register. This register provides configuration details
-// of the IP to software drivers and end users.
+// Extended Description
 #define EVTSVT_O_DESCEX                                             0x00000004U
 
-// Digital test bus control register. This register can be used to bring out IP
-// internal signals to the pads for observation. 16 signals can be observed per
-// select value.
+// Digital test bus control
 #define EVTSVT_O_DTB                                                0x00000064U
 
 // Output Selection for CPU NMI Exception

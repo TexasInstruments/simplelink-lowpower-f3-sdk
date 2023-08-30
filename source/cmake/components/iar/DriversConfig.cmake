@@ -33,7 +33,6 @@ endmacro()
 find_package("DriversUtils" REQUIRED)
 find_package("TrustZone" REQUIRED)
 find_package("ThirdPartyEccLib" REQUIRED)
-find_package("Tirtos7Generic" REQUIRED)
 find_package("DriverlibCC23X0R5" REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/DriversM0PTargets.cmake")

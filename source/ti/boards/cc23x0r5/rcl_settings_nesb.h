@@ -1,11 +1,13 @@
 // SETTINGS FOR PHY BASED ON RADIO CONTROL LAYER (HEADER FILE)
 //
+// Usage                       Protocol stack / Application
+//
 //
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name                   SmartRF Studio
-// Tool version                0.6.0.193 INTERNAL
+// Tool name                   SmartRF Studio 8
+// Tool version                0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +16,7 @@
 // Device                      CC2340R5
 //     Package                 QFN40 5x5 RKP
 //     Revision(s)             B (2.0)
-// SDK                         SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                         SimpleLink CC23x0 SDK 7.20.00.00
 // Board                       LP-EM-CC2340R5
 // PHY                         2.4 GHz - NESB - 1 Mbps / 2 Mbps
 // PHY abbreviation            nesb
@@ -24,7 +26,7 @@
 //
 // Run-time properties:
 //     Sub-PHY                 1 Mbps 
-//     Frequency               2420.00000 MHz
+//     Frequency               2440.00000 MHz
 //     TX output power         5.0 dBm 
 // Start of packet:
 //     Synchronization word    0x930B51DE 
@@ -51,7 +53,7 @@ extern const LRF_TxPowerTable LRF_txPowerTableNesb;
 extern const LRF_Config       LRF_configNesb;
 
 
-// LRF register configuration summary
+// SUB-PHY register field values
 
 // Address    Module             Register             Bit(s)     Field              Value (1_MBPS)    Value (2_MBPS)
 // -----------------------------------------------------------------------------------------------------------------
@@ -126,9 +128,9 @@ extern const LRF_Config       LRF_configNesb;
 // 0x2108     LRFDMDM            DEMFIFE0             [0]        IIREN              0x1               0x1
 // 0x210C     LRFDMDM            DEMMAFI0             [15:8]     C1C7               0x04              0x03
 // 0x210C     LRFDMDM            DEMMAFI0             [7:0]      C0C8               0x00              0x00
-// 0x2110     LRFDMDM            DEMMAFI1             [15:8]     C3C5               0x7B              0x4F
-// 0x2110     LRFDMDM            DEMMAFI1             [7:0]      C2C6               0x20              0x15
-// 0x2114     LRFDMDM            DEMMAFI2             [8:0]      C4                 0x0C1             0x07C
+// 0x2110     LRFDMDM            DEMMAFI1             [15:8]     C3C5               0x7B              0x60
+// 0x2110     LRFDMDM            DEMMAFI1             [7:0]      C2C6               0x20              0x19
+// 0x2114     LRFDMDM            DEMMAFI2             [8:0]      C4                 0x0C1             0x097
 // 0x2118     LRFDMDM            DEMC1BE0             [15:11]    MASKB              0x00              0x00
 // 0x2118     LRFDMDM            DEMC1BE0             [10:6]     MASKA              0x00              0x00
 // 0x2118     LRFDMDM            DEMC1BE0             [5:4]      CASCCONF           0x2               0x2
@@ -216,16 +218,16 @@ extern const LRF_Config       LRF_configNesb;
 // 0x2024     PBE_GENERIC_RAM    PKTCFG               [5:0]      NUMHDRBITS         0x0B              0x0B
 // 0x2026     PBE_GENERIC_RAM    NUMCRCBITS           [5:0]      VAL                0x08              0x08
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [15]       APPENDTIMESTAMP    0x0               0x0
-// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [14]       APPENDRSSI         0x1               0x1
+// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [14]       APPENDRSSI         0x0               0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [13]       APPENDFREQEST      0x0               0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [12]       APPENDLQI          0x0               0x0
-// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [11]       APPENDSTATUS       0x1               0x1
+// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [11]       APPENDSTATUS       0x0               0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [10]       APPENDCRC          0x0               0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [9]        AUTOFLUSHEMPTY     0x1               0x1
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [8]        AUTOFLUSHIGN       0x1               0x1
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [7]        AUTOFLUSHCRC       0x1               0x1
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [6:4]      LENOPTPAD          0x3               0x3
-// 0x202A     PBE_GENERIC_RAM    EXTRABYTES           [15:0]     VAL                0x0002            0x0002
+// 0x202A     PBE_GENERIC_RAM    EXTRABYTES           [15:0]     VAL                0x0000            0x0000
 // 0x202C     PBE_GENERIC_RAM    WHITEINIT            [15:0]     VAL                0x0000            0x0000
 // 0x2030     PBE_GENERIC_RAM    CRCINITL             [15:0]     VALLSB             0x0000            0x0000
 // 0x2032     PBE_GENERIC_RAM    CRCINITH             [15:0]     VALMSB             0xFF00            0xFF00
@@ -258,7 +260,7 @@ extern const LRF_Config       LRF_configNesb;
 // 0x6818     RFE_COMMON_RAM     K3AL                 [15:0]     VAL                0x07AB            0x07AB
 // 0x681A     RFE_COMMON_RAM     K5                   [15:0]     VAL                0x916F            0x916F
 // 0x6820     RFE_COMMON_RAM     RTRIMOFF             [3:0]      VAL                0x0               0x0
-// 0x6822     RFE_COMMON_RAM     RTRIMMIN             [3:0]      VAL                0x8               0x8
+// 0x6822     RFE_COMMON_RAM     RTRIMMIN             [3:0]      VAL                0x0               0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [14:12]    NMIREFTRIM         0x0               0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [11:9]     PMIREFTRIM         0x0               0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [3]        OUT                0x1               0x1

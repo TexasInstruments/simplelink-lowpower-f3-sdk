@@ -58,19 +58,35 @@
  *  CBC SRC as TXTXBUF
  *  Trigger points for auto CBC as RDTXT3 and WRBUF3S
  *   (the first encryption starts by writing BUF3, the successive ones by reading TXT3)
- *  DONEACT as GATE_TRGECB_ON_CHA_DEL (to avoid spurious last ECB using DMA)
+ *  DONEACT as GATE_TRGAES_ON_CHA_DEL (to avoid spurious last ECB using DMA)
  *  BUSHALT enabled
  */
-#define AESCBCLPF3_DEFAULT_AUTOCFG                                                 \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | \
-     (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCBCLPF3_DEFAULT_AUTOCFG                                                 \
+        ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | \
+         (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCBCLPF3_DEFAULT_AUTOCFG                                                 \
+        ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | \
+         (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCBCLPF3!"
+#endif
 
 /*
  * AES CBC auto config for a single block encryption:
  *  CBC SRC as TXTXBUF
  *  Trigger points for auto CBC as WRBUF3S (encryption starts by writing BUF3)
  */
-#define AESCBCLPF3_SINGLE_BLOCK_AUTOCFG ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESCBCLPF3_SINGLE_BLOCK_AUTOCFG \
+        ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESCBCLPF3_SINGLE_BLOCK_AUTOCFG \
+        ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCBCLPF3!"
+#endif
 
 /* Forward declarations */
 static int_fast16_t AESCBCLPF3_checkOperation(AESCBCLPF3_Object *object,

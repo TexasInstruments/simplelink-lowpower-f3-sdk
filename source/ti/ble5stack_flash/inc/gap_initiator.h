@@ -113,7 +113,7 @@ enum GapInit_InitPhy_t
  * @{
  */
 #define INIT_PHYPARAM_DFLT_SCAN_INTERVAL   16     //!< Default scan interval (in 625us)
-#define INIT_PHYPARAM_DFLT_SCAN_WINDOW     16     //!< Default scan interval (in 625us)
+#define INIT_PHYPARAM_DFLT_SCAN_WINDOW     16     //!< Default scan window (in 625us)
 #define INIT_PHYPARAM_DFLT_CONN_INT_MIN    80     //!< Default minimum connection interval (in 1.25ms)
 #define INIT_PHYPARAM_DFLT_CONN_INT_MAX    80     //!< Default maximum connection interval (in 1.25ms)
 #define INIT_PHYPARAM_DFLT_CONN_LATENCY    0      //!< Default connection latency
@@ -153,7 +153,7 @@ typedef enum
   /**
    * Scan Window
    *
-   * default: @ref INIT_PHYPARAM_DFLT_SCAN_INTERVAL
+   * default: @ref INIT_PHYPARAM_DFLT_SCAN_WINDOW
    *
    * range: 4 - 16384
    */

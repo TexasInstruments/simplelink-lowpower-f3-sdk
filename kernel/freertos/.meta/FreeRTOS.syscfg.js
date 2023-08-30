@@ -90,6 +90,10 @@ function validate(mod, validation)
     if (mod.rovQueueEnabled && mod.queueRegistrySize == 0) {
         validation.logError("The Queue registry size may not be zero if extended kernel object decoding is enabled", mod, "queueRegistrySize");
     }
+
+    if (mod.useEventGroups && !(mod.useTimers) ) {
+        validation.logError("Enabling Event Groups requires enabling Software Timers", mod, "useEventGroups");
+    }
 }
 
 function getCFiles(kernel)
@@ -154,8 +158,18 @@ on Stack Overflow Protection for more information.`,
                 displayName: "Enable Software Timers",
                 description: `Enable or disable FreeRTOS Software Timers`,
                 longDescription: `
-When set to false, software timers are disabled and not available. See the FreeRTOS documentation on Software Timers
-for more information.`,
+When set to false, Software Timers are disabled and not available. Disabling Software Timers also precludes using Event
+Groups, as that FreeRTOS module depends on software timers.
+See the FreeRTOS documentation on Software Timers for more information.`,
+                default: true
+            },
+            {
+                name: "useEventGroups",
+                displayName: "Enable Event Groups",
+                description: `Enable or disable FreeRTOS Event Groups`,
+                longDescription: `
+When set to false, Event Groups are disabled and not available.
+See the FreeRTOS documentation on Event Groups for more information.`,
                 default: true
             },
             {

@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_7_10_00_35.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_7_20_00_29.html",
         "devices": [
             "CC2340R5"
         ],
@@ -87,7 +87,7 @@
     {
         "name": "BLE5-Stack User's Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble_user_guide/ble5stack-users-guide.html",
+        "location": "../../docs/ble5stack/ble5stack-users-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -107,7 +107,7 @@
     {
         "name": "BLE5-Stack Quick Start Guide",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/html/quickstart-guide/ble5-quick-start-cc23xx.html",
+        "location": "../../docs/ble5stack/ble5stack-quickstart-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -127,7 +127,7 @@
     {
         "name": "BLE5-Stack Migration Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble_user_guide/migration-guide.html",
+        "location": "../../docs/ble5stack/ble5stack-migration-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -147,7 +147,7 @@
     {
         "name": "BLE5-Stack Debugging Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble_user_guide/ble5stack-debugging.html",
+        "location": "../../docs/ble5stack/ble5stack-debugging-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -167,7 +167,7 @@
     {
         "name": "Proprietary RF Quick Start Guide",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/html/quickstart-guide/proprietary-rf-quick-start.html",
+        "location": "../../docs/proprietary-rf/proprietary-rf-quick-start-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -260,9 +260,47 @@
         ]
     },
     {
+        "name": "SimpleLink Graphics Library Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/grlib/release_notes_grlib_5_00_00_05.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "Graphics Library"
+        ]
+    },
+    {
+        "name": "TI BLE5-Stack Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/release_notes_ble5stack_3_02_02_00.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ]
+    },
+    {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_7_11_01_00.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_7_20_00_04.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -276,25 +314,6 @@
         ],
         "subCategories": [
             "TI Drivers"
-        ]
-    },
-    {
-        "name": "TI Proprietary RF Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_7_10_00.html",
-        "devices": [
-            "CC1352R1F3",
-            "CC2642R1F"
-        ],
-        "devtools": [
-            "LAUNCHXL-CC13X2R1",
-            "LAUNCHXL-CC26X2R1"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "Proprietary RF"
         ]
     },
     {
@@ -317,9 +336,9 @@
         ]
     },
     {
-        "name": "TI BLE5-Stack Release Notes",
+        "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble5stack_3_02_01_00.html",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_7_20_00.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -332,26 +351,7 @@
             "Documents"
         ],
         "subCategories": [
-            "BLE5-Stack"
-        ]
-    },
-    {
-        "name": "SimpleLink Graphics Library Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/grlib/release_notes_grlib_5_00_00_05.html",
-        "devices": [
-            "CC1352R1F3",
-            "CC2642R1F"
-        ],
-        "devtools": [
-            "LAUNCHXL-CC13X2R1",
-            "LAUNCHXL-CC26X2R1"
-        ],
-        "mainCategories": [
-            "Documents"
-        ],
-        "subCategories": [
-            "Graphics Library"
+            "Proprietary RF"
         ]
     }
 ]

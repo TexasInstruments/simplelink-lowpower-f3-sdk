@@ -4782,7 +4782,7 @@ extern void LL_EXT_ExtendRfRangeCback( void );
  * @param       status - error code:
  *                       HW_FAIL_PDU_SIZE_EXCEEDS_MTU or
  *                       HW_FAIL_PKT_LEN_EXCEEDS_PDU_SIZE
- * @param       handle - Connection handle.
+ * @param       connHandle - Connection handle.
  * @param       cid - L2CAP Channel ID.
  *
  * output parameters
@@ -4791,7 +4791,7 @@ extern void LL_EXT_ExtendRfRangeCback( void );
  *
  * @return      None.
  */
-extern void LL_DataLenExceedEventCback( uint8 status, uint16 handle, uint16 cid );
+extern void LL_DataLenExceedEventCback( uint8 status, uint16 connHandle, uint16 cid );
 
 /*******************************************************************************
  * @fn          LL_AuthPayloadTimeoutExpiredCback Callback

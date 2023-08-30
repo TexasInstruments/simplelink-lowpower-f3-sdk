@@ -69,19 +69,19 @@
 // Interrupt clear
 #define ADC_O_ICLR1                                                 0x00000078U
 
-// Interrupt mask extension
+// Interrupt mask
 #define ADC_O_IMASK2                                                0x00000088U
 
-// Raw interrupt status extension
+// Raw interrupt status
 #define ADC_O_RIS2                                                  0x00000090U
 
-// Masked interrupt status extension
+// Masked interrupt status
 #define ADC_O_MIS2                                                  0x00000098U
 
-// Interrupt set extension
+// Interrupt set
 #define ADC_O_ISET2                                                 0x000000A0U
 
-// Interrupt clear extension
+// Interrupt clear
 #define ADC_O_ICLR2                                                 0x000000A8U
 
 // Control Register 0
@@ -117,16 +117,16 @@
 // ASC Result Register
 #define ADC_O_ASCRES                                                0x00000170U
 
-// Conversion Memory Control Register
+// Conversion Memory Control Register 0
 #define ADC_O_MEMCTL0                                               0x00000180U
 
-// Conversion Memory Control Register
+// Conversion Memory Control Register 1
 #define ADC_O_MEMCTL1                                               0x00000184U
 
-// Conversion Memory Control Register
+// Conversion Memory Control Register 2
 #define ADC_O_MEMCTL2                                               0x00000188U
 
-// Conversion Memory Control Register
+// Conversion Memory Control Register 3
 #define ADC_O_MEMCTL3                                               0x0000018CU
 
 // Memory Result Register 0
@@ -146,9 +146,6 @@
 
 // Internal. Only to be used through TI provided API.
 #define ADC_O_TEST0                                                 0x00000E00U
-
-// Test 1
-#define ADC_O_TEST1                                                 0x00000E04U
 
 // Internal. Only to be used through TI provided API.
 #define ADC_O_TEST2                                                 0x00000E08U
@@ -232,7 +229,7 @@
 
 // Field:     [7] ASCDONE
 //
-// Mask for ASC done raw interrupt flag
+// Mask for ASC done raw interrupt flag.
 // ENUMs:
 // EN                       Enable interrupt mask
 // DIS                      Disable interrupt mask
@@ -244,7 +241,7 @@
 
 // Field:     [6] UVIFG
 //
-// Conversion underflow interrupt mask
+// Conversion underflow interrupt mask.
 // ENUMs:
 // EN                       Enable interrupt mask
 // DIS                      Disable interrupt mask
@@ -253,6 +250,18 @@
 #define ADC_IMASK0_UVIFG_S                                                   6U
 #define ADC_IMASK0_UVIFG_EN                                         0x00000040U
 #define ADC_IMASK0_UVIFG_DIS                                        0x00000000U
+
+// Field:     [5] DMADONE
+//
+// DMA done interrupt mask.
+// ENUMs:
+// EN                       Enable interrupt mask
+// DIS                      Disable interrupt mask
+#define ADC_IMASK0_DMADONE                                          0x00000020U
+#define ADC_IMASK0_DMADONE_M                                        0x00000020U
+#define ADC_IMASK0_DMADONE_S                                                 5U
+#define ADC_IMASK0_DMADONE_EN                                       0x00000020U
+#define ADC_IMASK0_DMADONE_DIS                                      0x00000000U
 
 // Field:     [4] INIFG
 //
@@ -268,7 +277,7 @@
 
 // Field:     [3] LOWIFG
 //
-// Low threshold compare interrupt mask
+// Low threshold compare interrupt mask.
 // ENUMs:
 // EN                       Enable interrupt mask
 // DIS                      Disable interrupt mask
@@ -280,7 +289,7 @@
 
 // Field:     [2] HIGHIFG
 //
-// High threshold compare interrupt mask
+// High threshold compare interrupt mask.
 // ENUMs:
 // EN                       Enable interrupt mask
 // DIS                      Disable interrupt mask
@@ -292,7 +301,7 @@
 
 // Field:     [1] TOVIFG
 //
-// Sequence conversion time overflow interrupt mask
+// Sequence conversion time overflow interrupt mask.
 // ENUMs:
 // EN                       Enable interrupt mask
 // DIS                      Disable interrupt mask
@@ -304,7 +313,7 @@
 
 // Field:     [0] OVIFG
 //
-// Conversion overflow interrupt mask
+// Conversion overflow interrupt mask.
 // ENUMs:
 // EN                       Enable interrupt mask
 // DIS                      Disable interrupt mask
@@ -325,7 +334,7 @@
 // This bit is set to 1 when MEMRES3 is loaded with a new
 // conversion result.
 // Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR0 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -341,7 +350,7 @@
 // This bit is set to 1 when MEMRES2 is loaded with a new
 // conversion result.
 // Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR0 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -357,7 +366,7 @@
 // This bit is set to 1 when MEMRES1 is loaded with a new
 // conversion result.
 // Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR0 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -373,7 +382,7 @@
 // This bit is set to 1 when MEMRES0 is loaded with a new
 // conversion result.
 // Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR0 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -385,7 +394,7 @@
 
 // Field:     [7] ASCDONE
 //
-// Raw interrupt flag for ASC done
+// Raw interrupt flag for ASC done.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -398,8 +407,6 @@
 // Field:     [6] UVIFG
 //
 // Raw interrupt flag for MEMRESx underflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR is set to 1.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -412,8 +419,6 @@
 // Field:     [5] DMADONE
 //
 // Raw interrupt flag for DMADONE.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -425,7 +430,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Raw interrupt status for In-range comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -437,10 +442,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Raw interrupt flag for the MEMRESx result register being below than the
+// WCLOWx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -452,10 +455,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Raw interrupt flag for the MEMRESx result register being higher than the
+// WCHIGHx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -468,8 +469,6 @@
 // Field:     [1] TOVIFG
 //
 // Raw interrupt flag for sequence conversion trigger overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -482,8 +481,6 @@
 // Field:     [0] OVIFG
 //
 // Raw interrupt flag for MEMRESx overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -500,11 +497,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES3.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -516,11 +509,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES2.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -532,11 +521,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES1.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -548,11 +533,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES0.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -564,7 +545,7 @@
 
 // Field:     [7] ASCDONE
 //
-// Masked interrupt status for ASC done
+// Masked interrupt status for ASC done.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -576,9 +557,7 @@
 
 // Field:     [6] UVIFG
 //
-// Raw interrupt flag for MEMRESx underflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR is set to 1.
+// Masked interrupt flag for MEMRESx underflow.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -590,9 +569,7 @@
 
 // Field:     [5] DMADONE
 //
-// Raw interrupt flag for DMADONE.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for DMADONE.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -604,7 +581,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Mask INIFG in MIS0 register.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -616,10 +593,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for the MEMRESx result register being below than the
+// WCLOWx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -631,10 +606,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for the MEMRESx result register being higher than the
+// WCHIGHx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -646,9 +619,7 @@
 
 // Field:     [1] TOVIFG
 //
-// Raw interrupt flag for sequence conversion timeout overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for sequence conversion timeout overflow.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -660,9 +631,7 @@
 
 // Field:     [0] OVIFG
 //
-// Raw interrupt flag for MEMRESx overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for MEMRESx overflow.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -679,11 +648,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set interrupt status for MEMRES3.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -695,11 +660,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set interrupt status for MEMRES2.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -711,11 +672,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set interrupt status for MEMRES1.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -727,11 +684,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set Interrupt status for MEMRES0.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -743,7 +696,7 @@
 
 // Field:     [7] ASCDONE
 //
-// Set ASC done flag in RIS
+// Set interrupt for ASC done.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -755,9 +708,7 @@
 
 // Field:     [6] UVIFG
 //
-// Raw interrupt flag for MEMRESx underflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set interrupt for MEMRESx underflow.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -769,9 +720,7 @@
 
 // Field:     [5] DMADONE
 //
-// Raw interrupt flag for DMADONE.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set interrupt for DMADONE.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -783,7 +732,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Set INIFG interrupt register.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -795,10 +744,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set interrupt for MEMRESx result register being below than the WCLOWx
+// threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -810,10 +757,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set Interrupt for the MEMRESx result register being higher than the WCHIGHx
+// threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -825,9 +770,7 @@
 
 // Field:     [1] TOVIFG
 //
-// Raw interrupt flag for sequence conversion timeout overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set interrupt for sequence conversion timeout overflow.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -839,9 +782,7 @@
 
 // Field:     [0] OVIFG
 //
-// Raw interrupt flag for MEMRESx overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set Interrupt for MEMRESx overflow.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -858,11 +799,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES3.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -874,11 +811,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES2.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -890,11 +823,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES1.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -906,11 +835,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES0.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -922,7 +847,7 @@
 
 // Field:     [7] ASCDONE
 //
-// Clear ASC done flag in RIS
+// Clear ASC done flag in RIS.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -934,9 +859,7 @@
 
 // Field:     [6] UVIFG
 //
-// Raw interrupt flag for MEMRESx underflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for MEMRESx underflow.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -948,9 +871,7 @@
 
 // Field:     [5] DMADONE
 //
-// Raw interrupt flag for DMADONE.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for DMADONE.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -962,7 +883,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Clear INIFG in MIS0 register.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -974,10 +895,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for the MEMRESx result register being below than the
+// WCLOWx threshold of the window comparator.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -989,10 +908,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for the MEMRESx result register being higher than the
+// WCHIGHx threshold of the window comparator.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1004,9 +921,7 @@
 
 // Field:     [1] TOVIFG
 //
-// Raw interrupt flag for sequence conversion timeout overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for sequence conversion timeout overflow.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1018,9 +933,7 @@
 
 // Field:     [0] OVIFG
 //
-// Raw interrupt flag for MEMRESx overflow.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for MEMRESx overflow.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1037,11 +950,7 @@
 //*****************************************************************************
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// MEMRES0 conversion result interrupt mask.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1053,7 +962,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// In-range comparator interrupt mask.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1065,10 +974,7 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Low threshold compare interrupt mask.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1080,10 +986,7 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// High threshold compare interrupt mask.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1104,7 +1007,7 @@
 // This bit is set to 1 when MEMRES0 is loaded with a new
 // conversion result.
 // Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR1 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1116,7 +1019,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Raw interrupt status for In-range comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1128,10 +1031,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Raw interrupt flag for the MEMRESx result register being below than the
+// WCLOWx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1143,10 +1044,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Raw interrupt flag for the MEMRESx result register being higher than the
+// WCHIGHx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1163,11 +1062,7 @@
 //*****************************************************************************
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES0.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1179,7 +1074,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Mask INIFG in MIS1 register.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1191,10 +1086,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for the MEMRESx result register being below than the
+// WCLOWx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1206,10 +1099,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Masked interrupt flag for the MEMRESx result register being higher than the
+// WCHIGHx threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // CLR                      Interrupt is not pending.
@@ -1226,11 +1117,7 @@
 //*****************************************************************************
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set Interrupt status for MEMRES0.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1242,7 +1129,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Set INIFG interrupt register.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1254,10 +1141,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set interrupt for MEMRESx result register being below than the WCLOWx
+// threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1269,10 +1154,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Set Interrupt for the MEMRESx result register being higher than the WCHIGHx
+// threshold of the window comparator.
 // ENUMs:
 // SET                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1289,11 +1172,7 @@
 //*****************************************************************************
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES0.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1305,7 +1184,7 @@
 
 // Field:     [4] INIFG
 //
-// Mask INIFG in MIS_EX register.
+// Clear INIFG in MIS1 register.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1317,10 +1196,8 @@
 
 // Field:     [3] LOWIFG
 //
-// Raw interrupt flag for the MEMRESx result register being below
-// than the WCLOWx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for the MEMRESx result register being below than the
+// WCLOWx threshold of the window comparator.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1332,10 +1209,8 @@
 
 // Field:     [2] HIGHIFG
 //
-// Raw interrupt flag for the MEMRESx result register being higher
-// than the WCHIGHx threshold of the window comparator.
-// This bit is reset to 0 by IIDX read or when corresponding bit in
-// ICLR_EX is set to 1.
+// Clear interrupt flag for the MEMRESx result register being higher than the
+// WCHIGHx threshold of the window comparator.
 // ENUMs:
 // CLR                      Interrupt is pending.
 // NO_EFFECT                Interrupt is not pending.
@@ -1352,11 +1227,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// MEMRES3 conversion result interrupt mask.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1368,11 +1239,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// MEMRES2 conversion result interrupt mask.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1384,11 +1251,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// MEMRES1 conversion result interrupt mask.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1400,11 +1263,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// MEMRES0 conversion result interrupt mask.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1425,7 +1284,7 @@
 // This bit is set to 1 when MEMRES3 is loaded with a new
 // conversion result.
 // Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR2 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1441,7 +1300,7 @@
 // This bit is set to 1 when MEMRES2 is loaded with a new
 // conversion result.
 // Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR2 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1457,7 +1316,7 @@
 // This bit is set to 1 when MEMRES1 is loaded with a new
 // conversion result.
 // Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR2 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1473,7 +1332,7 @@
 // This bit is set to 1 when MEMRES0 is loaded with a new
 // conversion result.
 // Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// corresponding bit in ICLR2 is set to 1
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1490,11 +1349,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES3.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1506,11 +1361,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES2.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1522,11 +1373,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES1.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1538,11 +1385,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Masked interrupt status for MEMRES0.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // CLR                      No new data ready.
@@ -1559,11 +1402,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set interrupt status for MEMRES3.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1575,11 +1414,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set interrupt status for MEMRES2.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1591,11 +1426,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set interrupt status for MEMRES1.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1607,11 +1438,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Set Interrupt status for MEMRES0.
 // ENUMs:
 // SET                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1628,11 +1455,7 @@
 //*****************************************************************************
 // Field:    [11] MEMRESIFG3
 //
-// Raw interrupt status for MEMRES3.
-// This bit is set to 1 when MEMRES3 is loaded with a new
-// conversion result.
-// Reading MEMRES3 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES3.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1644,11 +1467,7 @@
 
 // Field:    [10] MEMRESIFG2
 //
-// Raw interrupt status for MEMRES2.
-// This bit is set to 1 when MEMRES2 is loaded with a new
-// conversion result.
-// Reading MEMRES2 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES2.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1660,11 +1479,7 @@
 
 // Field:     [9] MEMRESIFG1
 //
-// Raw interrupt status for MEMRES1.
-// This bit is set to 1 when MEMRES1 is loaded with a new
-// conversion result.
-// Reading MEMRES1 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES1.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1676,11 +1491,7 @@
 
 // Field:     [8] MEMRESIFG0
 //
-// Raw interrupt status for MEMRES0.
-// This bit is set to 1 when MEMRES0 is loaded with a new
-// conversion result.
-// Reading MEMRES0 register will clear this bit, or when the
-// corresponding bit in ICLR is set to 1
+// Clear interrupt status for MEMRES0.
 // ENUMs:
 // CLR                      A new data is ready to be read.
 // NO_EFFECT                No new data ready.
@@ -1831,28 +1642,8 @@
 //
 // Sequence end address. These bits select which MEMCTLx is the last one for
 // the sequence mode.
-// The value of ENDADD is 0x00 to 0x17, corresponding to MEMRES0 to MEMRES23.
+// The value of ENDADD is 0x00 to 0x03 corresponding to MEMRES0 to MEMRES3.
 // ENUMs:
-// ADDR_23                  MEMCTL23 is selected as end address of sequence.
-// ADDR_22                  MEMCTL22 is selected as end address of sequence.
-// ADDR_21                  MEMCTL21 is selected as end address of sequence.
-// ADDR_20                  MEMCTL20 is selected as end address of sequence.
-// ADDR_19                  MEMCTL19 is selected as end address of sequence.
-// ADDR_18                  MEMCTL18 is selected as end address of sequence.
-// ADDR_17                  MEMCTL17 is selected as end address of sequence.
-// ADDR_16                  MEMCTL16 is selected as end address of sequence.
-// ADDR_15                  MEMCTL15 is selected as end address of sequence.
-// ADDR_14                  MEMCTL14 is selected as end address of sequence.
-// ADDR_13                  MEMCTL13 is selected as end address of sequence.
-// ADDR_12                  MEMCTL12 is selected as end address of sequence.
-// ADDR_11                  MEMCTL11 is selected as end address of sequence.
-// ADDR_10                  MEMCTL10 is selected as end address of sequence.
-// ADDR_09                  MEMCTL9 is selected as end address of sequence.
-// ADDR_08                  MEMCTL8 is selected as end address of sequence.
-// ADDR_07                  MEMCTL7 is selected as end address of sequence.
-// ADDR_06                  MEMCTL6 is selected as end address of sequence.
-// ADDR_05                  MEMCTL5 is selected as end address of sequence.
-// ADDR_04                  MEMCTL4 is selected as end address of sequence.
 // ADDR_03                  MEMCTL3 is selected as end address of sequence.
 // ADDR_02                  MEMCTL2 is selected as end address of sequence.
 // ADDR_01                  MEMCTL1 is selected as end address of sequence.
@@ -1860,26 +1651,6 @@
 #define ADC_CTL2_ENDADD_W                                                    5U
 #define ADC_CTL2_ENDADD_M                                           0x1F000000U
 #define ADC_CTL2_ENDADD_S                                                   24U
-#define ADC_CTL2_ENDADD_ADDR_23                                     0x17000000U
-#define ADC_CTL2_ENDADD_ADDR_22                                     0x16000000U
-#define ADC_CTL2_ENDADD_ADDR_21                                     0x15000000U
-#define ADC_CTL2_ENDADD_ADDR_20                                     0x14000000U
-#define ADC_CTL2_ENDADD_ADDR_19                                     0x13000000U
-#define ADC_CTL2_ENDADD_ADDR_18                                     0x12000000U
-#define ADC_CTL2_ENDADD_ADDR_17                                     0x11000000U
-#define ADC_CTL2_ENDADD_ADDR_16                                     0x10000000U
-#define ADC_CTL2_ENDADD_ADDR_15                                     0x0F000000U
-#define ADC_CTL2_ENDADD_ADDR_14                                     0x0E000000U
-#define ADC_CTL2_ENDADD_ADDR_13                                     0x0D000000U
-#define ADC_CTL2_ENDADD_ADDR_12                                     0x0C000000U
-#define ADC_CTL2_ENDADD_ADDR_11                                     0x0B000000U
-#define ADC_CTL2_ENDADD_ADDR_10                                     0x0A000000U
-#define ADC_CTL2_ENDADD_ADDR_09                                     0x09000000U
-#define ADC_CTL2_ENDADD_ADDR_08                                     0x08000000U
-#define ADC_CTL2_ENDADD_ADDR_07                                     0x07000000U
-#define ADC_CTL2_ENDADD_ADDR_06                                     0x06000000U
-#define ADC_CTL2_ENDADD_ADDR_05                                     0x05000000U
-#define ADC_CTL2_ENDADD_ADDR_04                                     0x04000000U
 #define ADC_CTL2_ENDADD_ADDR_03                                     0x03000000U
 #define ADC_CTL2_ENDADD_ADDR_02                                     0x02000000U
 #define ADC_CTL2_ENDADD_ADDR_01                                     0x01000000U
@@ -1891,46 +1662,6 @@
 // conversion or as first MEMCTL for sequence mode.
 // The value of STARTADD is 0x00 to 0x17, corresponding to MEMRES0 to MEMRES23.
 // ENUMs:
-// ADDR_23                  MEMCTL23 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_22                  MEMCTL22 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_21                  MEMCTL21 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_20                  MEMCTL20 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_19                  MEMCTL19 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_18                  MEMCTL18 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_17                  MEMCTL17 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_16                  MEMCTL16 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_15                  MEMCTL15 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_14                  MEMCTL14 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_13                  MEMCTL13 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_12                  MEMCTL12 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_11                  MEMCTL11 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_10                  MEMCTL10 is selected as start address of a
-//                          sequence or for a single conversion.
-// ADDR_09                  MEMCTL9 is selected as start address of a sequence
-//                          or for a single conversion.
-// ADDR_08                  MEMCTL8 is selected as start address of a sequence
-//                          or for a single conversion.
-// ADDR_07                  MEMCTL7 is selected as start address of a sequence
-//                          or for a single conversion.
-// ADDR_06                  MEMCTL6 is selected as start address of a sequence
-//                          or for a single conversion.
-// ADDR_05                  MEMCTL5 is selected as start address of a sequence
-//                          or for a single conversion.
-// ADDR_04                  MEMCTL4 is selected as start address of a sequence
-//                          or for a single conversion.
 // ADDR_03                  MEMCTL3 is selected as start address of a sequence
 //                          or for a single conversion.
 // ADDR_02                  MEMCTL2 is selected as start address of a sequence
@@ -1942,26 +1673,6 @@
 #define ADC_CTL2_STARTADD_W                                                  5U
 #define ADC_CTL2_STARTADD_M                                         0x001F0000U
 #define ADC_CTL2_STARTADD_S                                                 16U
-#define ADC_CTL2_STARTADD_ADDR_23                                   0x00170000U
-#define ADC_CTL2_STARTADD_ADDR_22                                   0x00160000U
-#define ADC_CTL2_STARTADD_ADDR_21                                   0x00150000U
-#define ADC_CTL2_STARTADD_ADDR_20                                   0x00140000U
-#define ADC_CTL2_STARTADD_ADDR_19                                   0x00130000U
-#define ADC_CTL2_STARTADD_ADDR_18                                   0x00120000U
-#define ADC_CTL2_STARTADD_ADDR_17                                   0x00110000U
-#define ADC_CTL2_STARTADD_ADDR_16                                   0x00100000U
-#define ADC_CTL2_STARTADD_ADDR_15                                   0x000F0000U
-#define ADC_CTL2_STARTADD_ADDR_14                                   0x000E0000U
-#define ADC_CTL2_STARTADD_ADDR_13                                   0x000D0000U
-#define ADC_CTL2_STARTADD_ADDR_12                                   0x000C0000U
-#define ADC_CTL2_STARTADD_ADDR_11                                   0x000B0000U
-#define ADC_CTL2_STARTADD_ADDR_10                                   0x000A0000U
-#define ADC_CTL2_STARTADD_ADDR_09                                   0x00090000U
-#define ADC_CTL2_STARTADD_ADDR_08                                   0x00080000U
-#define ADC_CTL2_STARTADD_ADDR_07                                   0x00070000U
-#define ADC_CTL2_STARTADD_ADDR_06                                   0x00060000U
-#define ADC_CTL2_STARTADD_ADDR_05                                   0x00050000U
-#define ADC_CTL2_STARTADD_ADDR_04                                   0x00040000U
 #define ADC_CTL2_STARTADD_ADDR_03                                   0x00030000U
 #define ADC_CTL2_STARTADD_ADDR_02                                   0x00020000U
 #define ADC_CTL2_STARTADD_ADDR_01                                   0x00010000U
@@ -1971,13 +1682,13 @@
 //
 // Enable FIFO based operation
 // ENUMs:
-// ENABLE                   Enable
-// DISABLE                  Disable
+// EN                       Enable
+// DIS                      Disable
 #define ADC_CTL2_FIFOEN                                             0x00000400U
 #define ADC_CTL2_FIFOEN_M                                           0x00000400U
 #define ADC_CTL2_FIFOEN_S                                                   10U
-#define ADC_CTL2_FIFOEN_ENABLE                                      0x00000400U
-#define ADC_CTL2_FIFOEN_DISABLE                                     0x00000000U
+#define ADC_CTL2_FIFOEN_EN                                          0x00000400U
+#define ADC_CTL2_FIFOEN_DIS                                         0x00000000U
 
 // Field:     [8] DMAEN
 //
@@ -1986,13 +1697,13 @@
 // of data transfer. Software has to re-enable DMAEN bit for ADC to generate
 // DMA triggers.
 // ENUMs:
-// ENABLE                   DMA trigger enabled
-// DISABLE                  DMA trigger not enabled
+// EN                       DMA trigger enabled
+// DIS                      DMA trigger not enabled
 #define ADC_CTL2_DMAEN                                              0x00000100U
 #define ADC_CTL2_DMAEN_M                                            0x00000100U
 #define ADC_CTL2_DMAEN_S                                                     8U
-#define ADC_CTL2_DMAEN_ENABLE                                       0x00000100U
-#define ADC_CTL2_DMAEN_DISABLE                                      0x00000000U
+#define ADC_CTL2_DMAEN_EN                                           0x00000100U
+#define ADC_CTL2_DMAEN_DIS                                          0x00000000U
 
 // Field:   [2:1] RES
 //
@@ -2060,22 +1771,6 @@
 //
 // ASC channel select
 // ENUMs:
-// CHAN_31                  Selects channel 31
-// CHAN_30                  Selects channel 30
-// CHAN_29                  Selects channel 29
-// CHAN_28                  Selects channel 28
-// CHAN_27                  Selects channel 27
-// CHAN_26                  Selects channel 26
-// CHAN_25                  Selects channel 25
-// CHAN_24                  Selects channel 24
-// CHAN_23                  Selects channel 23
-// CHAN_22                  Selects channel 22
-// CHAN_21                  Selects channel 21
-// CHAN_20                  Selects channel 20
-// CHAN_19                  Selects channel 19
-// CHAN_18                  Selects channel 18
-// CHAN_17                  Selects channel 17
-// CHAN_16                  Selects channel 16
 // CHAN_15                  Selects channel 15
 // CHAN_14                  Selects channel 14
 // CHAN_13                  Selects channel 13
@@ -2095,22 +1790,6 @@
 #define ADC_CTL3_ASCCHSEL_W                                                  5U
 #define ADC_CTL3_ASCCHSEL_M                                         0x0000001FU
 #define ADC_CTL3_ASCCHSEL_S                                                  0U
-#define ADC_CTL3_ASCCHSEL_CHAN_31                                   0x0000001FU
-#define ADC_CTL3_ASCCHSEL_CHAN_30                                   0x0000001EU
-#define ADC_CTL3_ASCCHSEL_CHAN_29                                   0x0000001DU
-#define ADC_CTL3_ASCCHSEL_CHAN_28                                   0x0000001CU
-#define ADC_CTL3_ASCCHSEL_CHAN_27                                   0x0000001BU
-#define ADC_CTL3_ASCCHSEL_CHAN_26                                   0x0000001AU
-#define ADC_CTL3_ASCCHSEL_CHAN_25                                   0x00000019U
-#define ADC_CTL3_ASCCHSEL_CHAN_24                                   0x00000018U
-#define ADC_CTL3_ASCCHSEL_CHAN_23                                   0x00000017U
-#define ADC_CTL3_ASCCHSEL_CHAN_22                                   0x00000016U
-#define ADC_CTL3_ASCCHSEL_CHAN_21                                   0x00000015U
-#define ADC_CTL3_ASCCHSEL_CHAN_20                                   0x00000014U
-#define ADC_CTL3_ASCCHSEL_CHAN_19                                   0x00000013U
-#define ADC_CTL3_ASCCHSEL_CHAN_18                                   0x00000012U
-#define ADC_CTL3_ASCCHSEL_CHAN_17                                   0x00000011U
-#define ADC_CTL3_ASCCHSEL_CHAN_16                                   0x00000010U
 #define ADC_CTL3_ASCCHSEL_CHAN_15                                   0x0000000FU
 #define ADC_CTL3_ASCCHSEL_CHAN_14                                   0x0000000EU
 #define ADC_CTL3_ASCCHSEL_CHAN_13                                   0x0000000DU
@@ -2206,13 +1885,13 @@
 //
 // Reference buffer enable
 // ENUMs:
-// ENABLE                   Enable
-// DISABLE                  Disable
+// EN                       Enable
+// DIS                      Disable
 #define ADC_REFCFG_REFEN                                            0x00000001U
 #define ADC_REFCFG_REFEN_M                                          0x00000001U
 #define ADC_REFCFG_REFEN_S                                                   0U
-#define ADC_REFCFG_REFEN_ENABLE                                     0x00000001U
-#define ADC_REFCFG_REFEN_DISABLE                                    0x00000000U
+#define ADC_REFCFG_REFEN_EN                                         0x00000001U
+#define ADC_REFCFG_REFEN_DIS                                        0x00000000U
 
 //*****************************************************************************
 //
@@ -2294,13 +1973,13 @@
 //
 // Enable window comparator.
 // ENUMs:
-// ENABLE                   Enable
-// DISABLE                  Disable
+// EN                       Enable
+// DIS                      Disable
 #define ADC_MEMCTL0_WINCOMP                                         0x10000000U
 #define ADC_MEMCTL0_WINCOMP_M                                       0x10000000U
 #define ADC_MEMCTL0_WINCOMP_S                                               28U
-#define ADC_MEMCTL0_WINCOMP_ENABLE                                  0x10000000U
-#define ADC_MEMCTL0_WINCOMP_DISABLE                                 0x00000000U
+#define ADC_MEMCTL0_WINCOMP_EN                                      0x10000000U
+#define ADC_MEMCTL0_WINCOMP_DIS                                     0x00000000U
 
 // Field:    [24] TRG
 //
@@ -2348,22 +2027,6 @@
 //
 // Input channel select.
 // ENUMs:
-// CHAN_31                  Selects channel 31
-// CHAN_30                  Selects channel 30
-// CHAN_29                  Selects channel 29
-// CHAN_28                  Selects channel 28
-// CHAN_27                  Selects channel 27
-// CHAN_26                  Selects channel 26
-// CHAN_25                  Selects channel 25
-// CHAN_24                  Selects channel 24
-// CHAN_23                  Selects channel 23
-// CHAN_22                  Selects channel 22
-// CHAN_21                  Selects channel 21
-// CHAN_20                  Selects channel 20
-// CHAN_19                  Selects channel 19
-// CHAN_18                  Selects channel 18
-// CHAN_17                  Selects channel 17
-// CHAN_16                  Selects channel 16
 // CHAN_15                  Selects channel 15
 // CHAN_14                  Selects channel 14
 // CHAN_13                  Selects channel 13
@@ -2383,22 +2046,6 @@
 #define ADC_MEMCTL0_CHANSEL_W                                                5U
 #define ADC_MEMCTL0_CHANSEL_M                                       0x0000001FU
 #define ADC_MEMCTL0_CHANSEL_S                                                0U
-#define ADC_MEMCTL0_CHANSEL_CHAN_31                                 0x0000001FU
-#define ADC_MEMCTL0_CHANSEL_CHAN_30                                 0x0000001EU
-#define ADC_MEMCTL0_CHANSEL_CHAN_29                                 0x0000001DU
-#define ADC_MEMCTL0_CHANSEL_CHAN_28                                 0x0000001CU
-#define ADC_MEMCTL0_CHANSEL_CHAN_27                                 0x0000001BU
-#define ADC_MEMCTL0_CHANSEL_CHAN_26                                 0x0000001AU
-#define ADC_MEMCTL0_CHANSEL_CHAN_25                                 0x00000019U
-#define ADC_MEMCTL0_CHANSEL_CHAN_24                                 0x00000018U
-#define ADC_MEMCTL0_CHANSEL_CHAN_23                                 0x00000017U
-#define ADC_MEMCTL0_CHANSEL_CHAN_22                                 0x00000016U
-#define ADC_MEMCTL0_CHANSEL_CHAN_21                                 0x00000015U
-#define ADC_MEMCTL0_CHANSEL_CHAN_20                                 0x00000014U
-#define ADC_MEMCTL0_CHANSEL_CHAN_19                                 0x00000013U
-#define ADC_MEMCTL0_CHANSEL_CHAN_18                                 0x00000012U
-#define ADC_MEMCTL0_CHANSEL_CHAN_17                                 0x00000011U
-#define ADC_MEMCTL0_CHANSEL_CHAN_16                                 0x00000010U
 #define ADC_MEMCTL0_CHANSEL_CHAN_15                                 0x0000000FU
 #define ADC_MEMCTL0_CHANSEL_CHAN_14                                 0x0000000EU
 #define ADC_MEMCTL0_CHANSEL_CHAN_13                                 0x0000000DU
@@ -2425,13 +2072,13 @@
 //
 // Enable window comparator.
 // ENUMs:
-// ENABLE                   Enable
-// DISABLE                  Disable
+// EN                       Enable
+// DIS                      Disable
 #define ADC_MEMCTL1_WINCOMP                                         0x10000000U
 #define ADC_MEMCTL1_WINCOMP_M                                       0x10000000U
 #define ADC_MEMCTL1_WINCOMP_S                                               28U
-#define ADC_MEMCTL1_WINCOMP_ENABLE                                  0x10000000U
-#define ADC_MEMCTL1_WINCOMP_DISABLE                                 0x00000000U
+#define ADC_MEMCTL1_WINCOMP_EN                                      0x10000000U
+#define ADC_MEMCTL1_WINCOMP_DIS                                     0x00000000U
 
 // Field:    [24] TRG
 //
@@ -2479,22 +2126,6 @@
 //
 // Input channel select.
 // ENUMs:
-// CHAN_31                  Selects channel 31
-// CHAN_30                  Selects channel 30
-// CHAN_29                  Selects channel 29
-// CHAN_28                  Selects channel 28
-// CHAN_27                  Selects channel 27
-// CHAN_26                  Selects channel 26
-// CHAN_25                  Selects channel 25
-// CHAN_24                  Selects channel 24
-// CHAN_23                  Selects channel 23
-// CHAN_22                  Selects channel 22
-// CHAN_21                  Selects channel 21
-// CHAN_20                  Selects channel 20
-// CHAN_19                  Selects channel 19
-// CHAN_18                  Selects channel 18
-// CHAN_17                  Selects channel 17
-// CHAN_16                  Selects channel 16
 // CHAN_15                  Selects channel 15
 // CHAN_14                  Selects channel 14
 // CHAN_13                  Selects channel 13
@@ -2514,22 +2145,6 @@
 #define ADC_MEMCTL1_CHANSEL_W                                                5U
 #define ADC_MEMCTL1_CHANSEL_M                                       0x0000001FU
 #define ADC_MEMCTL1_CHANSEL_S                                                0U
-#define ADC_MEMCTL1_CHANSEL_CHAN_31                                 0x0000001FU
-#define ADC_MEMCTL1_CHANSEL_CHAN_30                                 0x0000001EU
-#define ADC_MEMCTL1_CHANSEL_CHAN_29                                 0x0000001DU
-#define ADC_MEMCTL1_CHANSEL_CHAN_28                                 0x0000001CU
-#define ADC_MEMCTL1_CHANSEL_CHAN_27                                 0x0000001BU
-#define ADC_MEMCTL1_CHANSEL_CHAN_26                                 0x0000001AU
-#define ADC_MEMCTL1_CHANSEL_CHAN_25                                 0x00000019U
-#define ADC_MEMCTL1_CHANSEL_CHAN_24                                 0x00000018U
-#define ADC_MEMCTL1_CHANSEL_CHAN_23                                 0x00000017U
-#define ADC_MEMCTL1_CHANSEL_CHAN_22                                 0x00000016U
-#define ADC_MEMCTL1_CHANSEL_CHAN_21                                 0x00000015U
-#define ADC_MEMCTL1_CHANSEL_CHAN_20                                 0x00000014U
-#define ADC_MEMCTL1_CHANSEL_CHAN_19                                 0x00000013U
-#define ADC_MEMCTL1_CHANSEL_CHAN_18                                 0x00000012U
-#define ADC_MEMCTL1_CHANSEL_CHAN_17                                 0x00000011U
-#define ADC_MEMCTL1_CHANSEL_CHAN_16                                 0x00000010U
 #define ADC_MEMCTL1_CHANSEL_CHAN_15                                 0x0000000FU
 #define ADC_MEMCTL1_CHANSEL_CHAN_14                                 0x0000000EU
 #define ADC_MEMCTL1_CHANSEL_CHAN_13                                 0x0000000DU
@@ -2556,13 +2171,13 @@
 //
 // Enable window comparator.
 // ENUMs:
-// ENABLE                   Enable
-// DISABLE                  Disable
+// EN                       Enable
+// DIS                      Disable
 #define ADC_MEMCTL2_WINCOMP                                         0x10000000U
 #define ADC_MEMCTL2_WINCOMP_M                                       0x10000000U
 #define ADC_MEMCTL2_WINCOMP_S                                               28U
-#define ADC_MEMCTL2_WINCOMP_ENABLE                                  0x10000000U
-#define ADC_MEMCTL2_WINCOMP_DISABLE                                 0x00000000U
+#define ADC_MEMCTL2_WINCOMP_EN                                      0x10000000U
+#define ADC_MEMCTL2_WINCOMP_DIS                                     0x00000000U
 
 // Field:    [24] TRG
 //
@@ -2610,22 +2225,6 @@
 //
 // Input channel select.
 // ENUMs:
-// CHAN_31                  Selects channel 31
-// CHAN_30                  Selects channel 30
-// CHAN_29                  Selects channel 29
-// CHAN_28                  Selects channel 28
-// CHAN_27                  Selects channel 27
-// CHAN_26                  Selects channel 26
-// CHAN_25                  Selects channel 25
-// CHAN_24                  Selects channel 24
-// CHAN_23                  Selects channel 23
-// CHAN_22                  Selects channel 22
-// CHAN_21                  Selects channel 21
-// CHAN_20                  Selects channel 20
-// CHAN_19                  Selects channel 19
-// CHAN_18                  Selects channel 18
-// CHAN_17                  Selects channel 17
-// CHAN_16                  Selects channel 16
 // CHAN_15                  Selects channel 15
 // CHAN_14                  Selects channel 14
 // CHAN_13                  Selects channel 13
@@ -2645,22 +2244,6 @@
 #define ADC_MEMCTL2_CHANSEL_W                                                5U
 #define ADC_MEMCTL2_CHANSEL_M                                       0x0000001FU
 #define ADC_MEMCTL2_CHANSEL_S                                                0U
-#define ADC_MEMCTL2_CHANSEL_CHAN_31                                 0x0000001FU
-#define ADC_MEMCTL2_CHANSEL_CHAN_30                                 0x0000001EU
-#define ADC_MEMCTL2_CHANSEL_CHAN_29                                 0x0000001DU
-#define ADC_MEMCTL2_CHANSEL_CHAN_28                                 0x0000001CU
-#define ADC_MEMCTL2_CHANSEL_CHAN_27                                 0x0000001BU
-#define ADC_MEMCTL2_CHANSEL_CHAN_26                                 0x0000001AU
-#define ADC_MEMCTL2_CHANSEL_CHAN_25                                 0x00000019U
-#define ADC_MEMCTL2_CHANSEL_CHAN_24                                 0x00000018U
-#define ADC_MEMCTL2_CHANSEL_CHAN_23                                 0x00000017U
-#define ADC_MEMCTL2_CHANSEL_CHAN_22                                 0x00000016U
-#define ADC_MEMCTL2_CHANSEL_CHAN_21                                 0x00000015U
-#define ADC_MEMCTL2_CHANSEL_CHAN_20                                 0x00000014U
-#define ADC_MEMCTL2_CHANSEL_CHAN_19                                 0x00000013U
-#define ADC_MEMCTL2_CHANSEL_CHAN_18                                 0x00000012U
-#define ADC_MEMCTL2_CHANSEL_CHAN_17                                 0x00000011U
-#define ADC_MEMCTL2_CHANSEL_CHAN_16                                 0x00000010U
 #define ADC_MEMCTL2_CHANSEL_CHAN_15                                 0x0000000FU
 #define ADC_MEMCTL2_CHANSEL_CHAN_14                                 0x0000000EU
 #define ADC_MEMCTL2_CHANSEL_CHAN_13                                 0x0000000DU
@@ -2687,13 +2270,13 @@
 //
 // Enable window comparator.
 // ENUMs:
-// ENABLE                   Enable
-// DISABLE                  Disable
+// EN                       Enable
+// DIS                      Disable
 #define ADC_MEMCTL3_WINCOMP                                         0x10000000U
 #define ADC_MEMCTL3_WINCOMP_M                                       0x10000000U
 #define ADC_MEMCTL3_WINCOMP_S                                               28U
-#define ADC_MEMCTL3_WINCOMP_ENABLE                                  0x10000000U
-#define ADC_MEMCTL3_WINCOMP_DISABLE                                 0x00000000U
+#define ADC_MEMCTL3_WINCOMP_EN                                      0x10000000U
+#define ADC_MEMCTL3_WINCOMP_DIS                                     0x00000000U
 
 // Field:    [24] TRG
 //
@@ -2741,22 +2324,6 @@
 //
 // Input channel select.
 // ENUMs:
-// CHAN_31                  Selects channel 31
-// CHAN_30                  Selects channel 30
-// CHAN_29                  Selects channel 29
-// CHAN_28                  Selects channel 28
-// CHAN_27                  Selects channel 27
-// CHAN_26                  Selects channel 26
-// CHAN_25                  Selects channel 25
-// CHAN_24                  Selects channel 24
-// CHAN_23                  Selects channel 23
-// CHAN_22                  Selects channel 22
-// CHAN_21                  Selects channel 21
-// CHAN_20                  Selects channel 20
-// CHAN_19                  Selects channel 19
-// CHAN_18                  Selects channel 18
-// CHAN_17                  Selects channel 17
-// CHAN_16                  Selects channel 16
 // CHAN_15                  Selects channel 15
 // CHAN_14                  Selects channel 14
 // CHAN_13                  Selects channel 13
@@ -2776,22 +2343,6 @@
 #define ADC_MEMCTL3_CHANSEL_W                                                5U
 #define ADC_MEMCTL3_CHANSEL_M                                       0x0000001FU
 #define ADC_MEMCTL3_CHANSEL_S                                                0U
-#define ADC_MEMCTL3_CHANSEL_CHAN_31                                 0x0000001FU
-#define ADC_MEMCTL3_CHANSEL_CHAN_30                                 0x0000001EU
-#define ADC_MEMCTL3_CHANSEL_CHAN_29                                 0x0000001DU
-#define ADC_MEMCTL3_CHANSEL_CHAN_28                                 0x0000001CU
-#define ADC_MEMCTL3_CHANSEL_CHAN_27                                 0x0000001BU
-#define ADC_MEMCTL3_CHANSEL_CHAN_26                                 0x0000001AU
-#define ADC_MEMCTL3_CHANSEL_CHAN_25                                 0x00000019U
-#define ADC_MEMCTL3_CHANSEL_CHAN_24                                 0x00000018U
-#define ADC_MEMCTL3_CHANSEL_CHAN_23                                 0x00000017U
-#define ADC_MEMCTL3_CHANSEL_CHAN_22                                 0x00000016U
-#define ADC_MEMCTL3_CHANSEL_CHAN_21                                 0x00000015U
-#define ADC_MEMCTL3_CHANSEL_CHAN_20                                 0x00000014U
-#define ADC_MEMCTL3_CHANSEL_CHAN_19                                 0x00000013U
-#define ADC_MEMCTL3_CHANSEL_CHAN_18                                 0x00000012U
-#define ADC_MEMCTL3_CHANSEL_CHAN_17                                 0x00000011U
-#define ADC_MEMCTL3_CHANSEL_CHAN_16                                 0x00000010U
 #define ADC_MEMCTL3_CHANSEL_CHAN_15                                 0x0000000FU
 #define ADC_MEMCTL3_CHANSEL_CHAN_14                                 0x0000000EU
 #define ADC_MEMCTL3_CHANSEL_CHAN_13                                 0x0000000DU
@@ -2928,25 +2479,25 @@
 //
 // Internal. Only to be used through TI provided API.
 // ENUMs:
-// ENABLE                   Internal. Only to be used through TI provided API.
-// DISABLE                  Internal. Only to be used through TI provided API.
+// EN                       Internal. Only to be used through TI provided API.
+// DIS                      Internal. Only to be used through TI provided API.
 #define ADC_TEST0_ATEST0_EN                                         0x40000000U
 #define ADC_TEST0_ATEST0_EN_M                                       0x40000000U
 #define ADC_TEST0_ATEST0_EN_S                                               30U
-#define ADC_TEST0_ATEST0_EN_ENABLE                                  0x40000000U
-#define ADC_TEST0_ATEST0_EN_DISABLE                                 0x00000000U
+#define ADC_TEST0_ATEST0_EN_EN                                      0x40000000U
+#define ADC_TEST0_ATEST0_EN_DIS                                     0x00000000U
 
 // Field:    [29] ATEST1_EN
 //
 // Internal. Only to be used through TI provided API.
 // ENUMs:
-// ENABLE                   Internal. Only to be used through TI provided API.
-// DISABLE                  Internal. Only to be used through TI provided API.
+// EN                       Internal. Only to be used through TI provided API.
+// DIS                      Internal. Only to be used through TI provided API.
 #define ADC_TEST0_ATEST1_EN                                         0x20000000U
 #define ADC_TEST0_ATEST1_EN_M                                       0x20000000U
 #define ADC_TEST0_ATEST1_EN_S                                               29U
-#define ADC_TEST0_ATEST1_EN_ENABLE                                  0x20000000U
-#define ADC_TEST0_ATEST1_EN_DISABLE                                 0x00000000U
+#define ADC_TEST0_ATEST1_EN_EN                                      0x20000000U
+#define ADC_TEST0_ATEST1_EN_DIS                                     0x00000000U
 
 // Field:  [12:8] ATEST1_MUXSEL
 //
@@ -2983,18 +2534,6 @@
 #define ADC_TEST0_ATEST0_MUXSEL_VAL4                                0x00000004U
 #define ADC_TEST0_ATEST0_MUXSEL_VAL2                                0x00000002U
 #define ADC_TEST0_ATEST0_MUXSEL_VAL1                                0x00000001U
-
-//*****************************************************************************
-//
-// Register: ADC_O_TEST1
-//
-//*****************************************************************************
-// Field:   [4:0] DTB_MUXSEL
-//
-// DTB mux select.
-#define ADC_TEST1_DTB_MUXSEL_W                                               5U
-#define ADC_TEST1_DTB_MUXSEL_M                                      0x0000001FU
-#define ADC_TEST1_DTB_MUXSEL_S                                               0U
 
 //*****************************************************************************
 //

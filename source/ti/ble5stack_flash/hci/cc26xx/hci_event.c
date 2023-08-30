@@ -279,6 +279,8 @@ void HCI_NumOfCompletedPacketsEvent( uint8   numHandles,
                                      uint16 *handles,
                                      uint16 *numCompletedPkts )
 {
+  uint16 connHandle;
+
   // check if this is for the Host
   if ( hciL2capTaskID != 0 )
   {
@@ -297,7 +299,8 @@ void HCI_NumOfCompletedPacketsEvent( uint8   numHandles,
       // completed packets for that handle
       for ( uint8 i = 0; i < numHandles; i++ )
       {
-        pkt->pConnectionHandle[i] = handles[i];
+        connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(handles[i]);
+        pkt->pConnectionHandle[i] = connHandle;
         pkt->pNumCompletedPackets[i] = numCompletedPkts[i];
       }
 
@@ -340,8 +343,9 @@ void HCI_NumOfCompletedPacketsEvent( uint8   numHandles,
       // completed packets for that handle
       for (i=0; i<numHandles; i++)
       {
-        msg->pData[4+(4*i)] = LO_UINT16(handles[i]);
-        msg->pData[5+(4*i)] = HI_UINT16(handles[i]);
+        connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(handles[i]);
+        msg->pData[4+(4*i)] = LO_UINT16(connHandle);
+        msg->pData[5+(4*i)] = HI_UINT16(connHandle);
         msg->pData[6+(4*i)] = LO_UINT16(numCompletedPkts[i]);
         msg->pData[7+(4*i)] = HI_UINT16(numCompletedPkts[i]);
       }
@@ -510,6 +514,9 @@ void LL_EXT_ScanReqReportCback( uint8  peerAddrType,
  */
 void LL_EXT_ChanMapUpdateCback(uint16 connHandle, uint8 *newChanMap, uint8 nextDataChan)
 {
+
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if (hciGapTaskID != 0)
   {
@@ -872,8 +879,10 @@ void HCI_SendControllerToHostEvent( uint8 eventCode,
  *
  * @return      None.
  */
-void LL_DataLenExceedEventCback( uint8 status, uint16 handle, uint16 cid )
+void LL_DataLenExceedEventCback( uint8 status, uint16 connHandle, uint16 cid )
 {
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciL2capTaskID != 0 )
   {
@@ -883,7 +892,7 @@ void LL_DataLenExceedEventCback( uint8 status, uint16 handle, uint16 cid )
     {
       pkt->hdr.event  = HCI_DATA_EVENT;              // packet type
       pkt->hdr.status = status;                      // event code
-      pkt->connHandle = handle;
+      pkt->connHandle = connHandle;
       pkt->cid = cid;
 
       (void)MAP_osal_msg_send( hciL2capTaskID, (uint8 *)pkt );
@@ -914,6 +923,8 @@ void LL_DataLenExceedEventCback( uint8 status, uint16 handle, uint16 cid )
  */
 void LL_AuthPayloadTimeoutExpiredCback( uint16 connHandle )
 {
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if LE Meta-Events are enabled and this event is enabled
   if ( ((pHciEvtMask[BT_EVT_INDEX_LE_META_EVENT] & BT_EVT_MASK_LE_META_EVENT) == 0) ||
        ((pHciEvtMask2[BT_EVT_INDEX2_APTO_EXPIRED] & BT_EVT_MASK2_AUTHENTICATED_PAYLOAD_TIMEOUT_EXPIRED) == 0) )
@@ -1015,6 +1026,8 @@ void LL_RemoteConnParamReqCback( uint16 connHandle,
 
     return;
   }
+
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
 
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
@@ -1136,6 +1149,8 @@ void LL_PhyUpdateCompleteEventCback( llStatus_t status,
     rxPhy = LL_PHY_1_MBPS;
   }
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
@@ -1242,6 +1257,8 @@ void LL_DataLengthChangeEventCback( uint16 connHandle,
     // the event mask is not enabled for this event
     return;
   }
+
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
 
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
@@ -1596,6 +1613,8 @@ void LL_EnhancedConnectionCompleteCback( uint8   reasonCode,
     return;
   }
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
@@ -1773,7 +1792,9 @@ void LL_ChannelSelectionAlgorithmCback( uint16 connHandle,
     return;
   }
 
-    // check if this is for the Host
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
+  // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
     hciEvt_BLEChanSelAlgo_t *msg =
@@ -1988,6 +2009,8 @@ void LL_ConnectionCompleteCback( uint8  reasonCode,
                                  uint16 connTimeout,
                                  uint8  clockAccuracy )
 {
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
@@ -2102,6 +2125,8 @@ void LL_ConnectionCompleteCback( uint8  reasonCode,
 void LL_DisconnectCback( uint16 connHandle,
                          uint8  reasonCode )
 {
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
@@ -2200,6 +2225,8 @@ void LL_ConnParamUpdateCback( llStatus_t status,
     // the event mask is not enabled for this event
     return;
   }
+
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
 
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
@@ -2314,6 +2341,8 @@ void LL_ConnParamUpdateRejectCback( llStatus_t   status,
     return;
   }
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
@@ -2425,6 +2454,8 @@ void LL_ReadRemoteUsedFeaturesCompleteCback( hciStatus_t  status,
     return;
   }
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // data length
   dataLength = HCI_READ_REMOTE_FEATURE_COMPLETE_EVENT_LEN;
 
@@ -2501,6 +2532,8 @@ void LL_ReadRemoteVersionInfoCback( hciStatus_t status,
     return;
   }
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // data length
   dataLength = HCI_REMOTE_VERSION_INFO_EVENT_LEN;
 
@@ -2564,6 +2597,8 @@ void LL_EncLtkReqCback( uint16  connHandle,
   {
     hciEvt_BLELTKReq_t *pkt;
 
+    connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
     pkt = (hciEvt_BLELTKReq_t *)MAP_osal_msg_allocate( sizeof( hciEvt_BLELTKReq_t ) );
     if ( pkt )
     {
@@ -2595,6 +2630,8 @@ void LL_EncLtkReqCback( uint16  connHandle,
 
       return;
     }
+
+    connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
 
     // data length
     dataLength = HCI_LTK_REQUESTED_EVENT_LEN;
@@ -2662,6 +2699,8 @@ void LL_EncChangeCback( uint16 connHandle,
                         uint8  reason,
                         uint8  encEnab )
 {
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciSmpTaskID != 0 )
   {
@@ -2754,6 +2793,8 @@ void LL_EncChangeCback( uint16 connHandle,
 void LL_EncKeyRefreshCback( uint16 connHandle,
                             uint8  reason )
 {
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciSmpTaskID != 0 )
   {
@@ -3131,6 +3172,9 @@ void HCI_ConnectionIqReportEvent(uint16 connHandle,
     // the event mask is not enabled for this event
     return;
   }
+
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // case the source buffers are NULLs - set the samples count to proper value
   if (cteData == NULL)
   {
@@ -3266,6 +3310,8 @@ void HCI_CteRequestFailedEvent( uint8  status,
     return;
   }
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if this is for the Host
   if ( hciGapTaskID != 0 )
   {
@@ -3392,6 +3438,9 @@ void HCI_ExtConnectionIqReportEvent(uint16 connHandle,
     // the event mask is not enabled for this event
     return;
   }
+
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // case the source buffers are NULLs - set the samples count to proper value
   if (cteData == NULL)
   {

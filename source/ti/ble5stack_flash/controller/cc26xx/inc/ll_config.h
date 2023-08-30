@@ -111,7 +111,7 @@ extern "C"
 // Receive Suffix Data Sizes
 #ifdef USE_RCL
 #define SUFFIX_SIZE_NONE                0
-#define SUFFIX_CRC_SIZE                 0 // RCL does not append CRC
+#define SUFFIX_CRC_SIZE                 3
 #define SUFFIX_RSSI_SIZE                1
 #define SUFFIX_STATUS_SIZE              1 // RCL status byte is 1
 #define SUFFIX_TIMESTAMP_SIZE           4

@@ -60,7 +60,10 @@ extern "C"
 // ****************************************************************************
 // defines
 // ****************************************************************************
-
+#define NPI_TX_QUEUE_SIZE                             16
+#define NPI_RX_QUEUE_SIZE                             16
+#define NPI_SYNC_TX_QUEUE_SIZE                        16
+#define NPI_SYNC_RX_QUEUE_SIZE                        16
 // ****************************************************************************
 // typedefs
 // ****************************************************************************
@@ -166,13 +169,13 @@ extern uint8_t NPITask_regSSFromICallCB(uint8_t icallID, npiFromICallCBack_t pCB
 extern _npiFrame_t * NPITask_mallocFrame(uint16_t len);
 
 // -----------------------------------------------------------------------------
-//! \brief      API to de-allocate an NPI frame
+//! \brief      API to de-allocate an NPI frame Data
 //!
-//! \param[in]  frame   Pointer to NPI frame to be de-allocated
+//! \param[in]  frame   Pointer to NPI frame Data to be de-allocated
 //!
 //! \return     void
 // -----------------------------------------------------------------------------
-extern void NPITask_freeFrame(_npiFrame_t *frame);
+extern void NPITask_freeFrameData(_npiFrame_t *npiFrameData);
 
 // -----------------------------------------------------------------------------
 //! \brief   change the NPI header of the pre-defined Assert NPI message

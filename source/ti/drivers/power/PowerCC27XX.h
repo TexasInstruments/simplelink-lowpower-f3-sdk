@@ -85,8 +85,8 @@ extern "C" {
 /* \cond */
 /* The control of the peripherals are split between multiple groups.
  * These defines are used to differentiate between the groups.
- * The bits in the PowerLPF3_PERIPH_GROUP_M mask is used to store the group id,
- * and the bits in the PowerLPF3_PERIPH_BIT_INDEX_M mask is used to store the
+ * The bits in the PowerCC27XX_PERIPH_GROUP_M mask is used to store the group id,
+ * and the bits in the PowerCC27XX_PERIPH_BIT_INDEX_M mask is used to store the
  * bit index shift value in the register for the given group.
  */
 #define PowerCC27XX_PERIPH_GROUP_M       0xFF00
@@ -159,10 +159,10 @@ extern "C" {
 #define PowerLPF3_PERIPH_MCAN (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_MCAN_S)
 
 /*!< Resource ID: LRFD Tracer */
-#define PowerLPF3_PERIPH_LFRD_TRC (PowerLPF3_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
+#define PowerLPF3_PERIPH_LFRD_TRC (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
 
 /*!< Resource ID: LRFD S2R RAM */
-#define PowerLPF3_PERIPH_LFRD_S2RRAM (PowerLPF3_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
+#define PowerLPF3_PERIPH_LFRD_S2RRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
 
 /* \cond */
 /* Number of resources in the different resource groups. This is possibly larger

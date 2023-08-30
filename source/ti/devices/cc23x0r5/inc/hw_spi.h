@@ -66,9 +66,6 @@
 // Emulation
 #define SPI_O_EMU                                                   0x00000060U
 
-// Digital Test Bus
-#define SPI_O_DTB                                                   0x00000064U
-
 // Control 0
 #define SPI_O_CTL0                                                  0x00000100U
 
@@ -93,19 +90,19 @@
 // Transmit CRC
 #define SPI_O_TXCRC                                                 0x0000011CU
 
-// 32hdr
+// Header write for 32bits
 #define SPI_O_TXFHDR32                                              0x00000120U
 
-// 24hdr
+// Header write for 24bits
 #define SPI_O_TXFHDR24                                              0x00000124U
 
-// 16hdr
+// Header write for 16bits
 #define SPI_O_TXFHDR16                                              0x00000128U
 
-// 8hdr
+// Header write for 8bits
 #define SPI_O_TXFHDR8                                               0x0000012CU
 
-// hdr_ctrl
+// Atomic header control
 #define SPI_O_TXFHDRC                                               0x00000130U
 
 // Receive data
@@ -990,28 +987,12 @@
 
 //*****************************************************************************
 //
-// Register: SPI_O_DTB
-//
-//*****************************************************************************
-// Field:   [2:0] SEL
-//
-// Digital test bus selection mux control.
-// Non-zero select values output a 16 bit selected group of signals per value.
-// ENUMs:
-// DIS                      All 16 observation signal outputs are set to zero.
-#define SPI_DTB_SEL_W                                                        3U
-#define SPI_DTB_SEL_M                                               0x00000007U
-#define SPI_DTB_SEL_S                                                        0U
-#define SPI_DTB_SEL_DIS                                             0x00000000U
-
-//*****************************************************************************
-//
 // Register: SPI_O_CTL0
 //
 //*****************************************************************************
 // Field:    [17] IDLEPOCI
 //
-// The Idle value of POCI - when TXFIFO is empty and before data is writtern
+// The Idle value of POCI - when TXFIFO is empty and before data is written
 // into TXFIFO - can be controlled by this field.
 // ENUMs:
 // IDLE_ONE                 POCI outputs idle value of '1'
@@ -1042,13 +1023,13 @@
 //
 // CRC polynomial selection.
 // ENUMs:
-// _16BIT                   Selects 16-bit CCITT CRC polynomial
-// _8BIT                    Selects 8-bit CCITT CRC polynomial
+// SIZE16BIT                Selects 16-bit CCITT CRC polynomial
+// SIZE8BIT                 Selects 8-bit CCITT CRC polynomial
 #define SPI_CTL0_CRCPOLY                                            0x00008000U
 #define SPI_CTL0_CRCPOLY_M                                          0x00008000U
 #define SPI_CTL0_CRCPOLY_S                                                  15U
-#define SPI_CTL0_CRCPOLY__16BIT                                     0x00008000U
-#define SPI_CTL0_CRCPOLY__8BIT                                      0x00000000U
+#define SPI_CTL0_CRCPOLY_SIZE16BIT                                  0x00008000U
+#define SPI_CTL0_CRCPOLY_SIZE8BIT                                   0x00000000U
 
 // Field:    [14] AUTOCRC
 //
@@ -1113,8 +1094,8 @@
 // b.	All data bytes are transmitted
 // c.	CS is asserted
 // ENUMs:
-// EN                       HWCS Enable
-// DIS                      HWCS Disable
+// EN                       HWCSN Enable
+// DIS                      HWCSN Disable
 #define SPI_CTL0_HWCSN                                              0x00000400U
 #define SPI_CTL0_HWCSN_M                                            0x00000400U
 #define SPI_CTL0_HWCSN_S                                                    10U
@@ -1123,7 +1104,7 @@
 
 // Field:     [9] SPH
 //
-// CLKOUT phase (Motorola SPI frame format only).
+// SCLK phase (Motorola SPI frame format only).
 // This bit selects the clock edge that captures data and enables it to change
 // state.
 // It has the most impact on the first bit transmitted by either permitting or
@@ -1141,10 +1122,10 @@
 
 // Field:     [8] SPO
 //
-// CLKOUT polarity (Motorola SPI frame format only).
+// SCLK polarity (Motorola SPI frame format only).
 // ENUMs:
-// HI                       SPI produces a steady state HI value on the CLKOUT
-// LO                       SPI produces a steady state LO value on the CLKOUT
+// HI                       SPI produces a steady state HI value on the SCLK
+// LO                       SPI produces a steady state LO value on the SCLK
 #define SPI_CTL0_SPO                                                0x00000100U
 #define SPI_CTL0_SPO_M                                              0x00000100U
 #define SPI_CTL0_SPO_S                                                       8U
@@ -1155,14 +1136,14 @@
 //
 // Frame format select
 // ENUMs:
-// MIRCOWIRE                National Microwire frame format
+// MICROWIRE                MICROWIRE frame format
 // TI_SYNC                  TI synchronous serial frame format
-// MOTOROLA_4WIRE           Motorola SPI frame format (4 wire mode)
-// MOTOROLA_3WIRE           Motorola SPI frame format (3 wire mode)
+// MOTOROLA_4WIRE           Motorola SPI frame format (4-wire mode)
+// MOTOROLA_3WIRE           Motorola SPI frame format (3-wire mode)
 #define SPI_CTL0_FRF_W                                                       2U
 #define SPI_CTL0_FRF_M                                              0x00000060U
 #define SPI_CTL0_FRF_S                                                       5U
-#define SPI_CTL0_FRF_MIRCOWIRE                                      0x00000060U
+#define SPI_CTL0_FRF_MICROWIRE                                      0x00000060U
 #define SPI_CTL0_FRF_TI_SYNC                                        0x00000040U
 #define SPI_CTL0_FRF_MOTOROLA_4WIRE                                 0x00000020U
 #define SPI_CTL0_FRF_MOTOROLA_3WIRE                                 0x00000000U
@@ -1211,10 +1192,8 @@
 // Field: [29:24] RTOUT
 //
 // Receive Timeout (only for Peripheral mode)
-// Defines the number of Clock Cycles before after which the Receive Timeout
+// Defines the number of  CLKSVT clock cycles after which the Receive Timeout
 // flag RIS.RTOUT is set.
-// The time is calculated using the control register for the clock selection
-// and divider in the Controller mode configuration.
 // A value of 0 disables this function.
 #define SPI_CTL1_RTOUT_W                                                     6U
 #define SPI_CTL1_RTOUT_M                                            0x3F000000U
@@ -1222,14 +1201,12 @@
 
 // Field: [23:16] REPTX
 //
-// Counter to repeat last transfer
+// Counter to repeat last transfer (only in controller mode)
 // 0: repeat last transfer is disabled.
 // x: repeat the last transfer with the provided value.
 // The transfer will be started with writing a data into the TX FIFO. Sending
-// the data will be repeated provided value number of times, so the data will
-// be transferred x+1 times in total.
-// The behavior would be as if the data were be written into the TX FIFO as
-// many times as defined by the value here additionally.
+// the data will be repeated REPTX number of times, so the data will be
+// transferred x+1 times in total.
 // It can be used to clean a transfer or to pull a certain amount of data by a
 // peripheral.
 // ENUMs:
@@ -1380,6 +1357,8 @@
 // Field:     [0] EN
 //
 // SPI enable.
+// NOTE: This bit field must be set to 1 using a separate write access, after
+// the other bit fields have been configured.
 // ENUMs:
 // EN                       SPI Enabled and released for operation.
 // DIS                      SPI is disabled
@@ -1425,9 +1404,9 @@
 //*****************************************************************************
 // Field: [19:16] DSAMPLE
 //
-// Delayed sampling. In controller mode the data on the input pin will be
-// delayed sampled by the defined clock cycles. DSAMPLE values can range from 0
-// to SCR+1. Typically, values of 1 or 2 would suffice.
+// Delayed sampling. In controller mode the data on the POCI pin will be
+// delayed sampled by the defined CLKSVT clock cycles. DSAMPLE values can range
+// from 0 to SCR+1. Typically, values of 1 or 2 would suffice.
 #define SPI_CLKCFG1_DSAMPLE_W                                                4U
 #define SPI_CLKCFG1_DSAMPLE_M                                       0x000F0000U
 #define SPI_CLKCFG1_DSAMPLE_S                                               16U
@@ -1550,8 +1529,8 @@
 // Field:    [31] AUTOCRCINS
 //
 // Status to indicate if Auto CRC has been inserted into TXFIFO.
-// This is applicable only if CTL0.AUTOCRC enable bit is set
-// SW should read TXCRC register to clear auto inserted crc at the end of the
+// This is applicable only if CTL0.AUTOCRC enable bit is set.
+// SW should read TXCRC register to clear auto inserted CRC at the end of the
 // transfer.
 // ENUMs:
 // INS                      Auto CRC inserted
@@ -1576,7 +1555,7 @@
 //*****************************************************************************
 // Field:  [31:0] DATA
 //
-// This field can be used to write four bytes of header data
+// This field can be used to write four bytes of header data into the TXFIFO
 #define SPI_TXFHDR32_DATA_W                                                 32U
 #define SPI_TXFHDR32_DATA_M                                         0xFFFFFFFFU
 #define SPI_TXFHDR32_DATA_S                                                  0U
@@ -1588,7 +1567,7 @@
 //*****************************************************************************
 // Field:  [31:0] DATA
 //
-// This field can be used to write three bytes of header data
+// This field can be used to write three bytes of header data into the TXFIFO.
 #define SPI_TXFHDR24_DATA_W                                                 32U
 #define SPI_TXFHDR24_DATA_M                                         0xFFFFFFFFU
 #define SPI_TXFHDR24_DATA_S                                                  0U
@@ -1600,7 +1579,7 @@
 //*****************************************************************************
 // Field:  [31:0] DATA
 //
-// This field can be used to write two bytes of header data
+// This field can be used to write two bytes of header data into the TXFIFO.
 #define SPI_TXFHDR16_DATA_W                                                 32U
 #define SPI_TXFHDR16_DATA_M                                         0xFFFFFFFFU
 #define SPI_TXFHDR16_DATA_S                                                  0U
@@ -1612,7 +1591,7 @@
 //*****************************************************************************
 // Field:  [31:0] DATA
 //
-// This field can be used to write one byte of header data
+// This field can be used to write one byte of header data into the TXFIFO.
 #define SPI_TXFHDR8_DATA_W                                                  32U
 #define SPI_TXFHDR8_DATA_M                                          0xFFFFFFFFU
 #define SPI_TXFHDR8_DATA_S                                                   0U
@@ -1624,7 +1603,7 @@
 //*****************************************************************************
 // Field:     [3] CSGATE
 //
-// Chip Select Gating control register. If this bit is set header update
+// Chip Select Gating control register. If this bit is set, header update
 // register writes are blocked when chip select (CS) is active low, and HDRIGN
 // bit is set.
 // This bit resets to 0.
@@ -1674,17 +1653,20 @@
 // remains 0 otherwise. When set, this bit can be written to a value of 0 to
 // clear.
 // ENUMs:
+// SET                      Header update is ignored
 // CLR                      Header update is not ignored
 #define SPI_TXFHDRC_HDRIGN                                          0x00000002U
 #define SPI_TXFHDRC_HDRIGN_M                                        0x00000002U
 #define SPI_TXFHDRC_HDRIGN_S                                                 1U
-#define SPI_TXFHDRC_HDRIGN_CLR                                      0x00000002U
+#define SPI_TXFHDRC_HDRIGN_SET                                      0x00000002U
+#define SPI_TXFHDRC_HDRIGN_CLR                                      0x00000000U
 
 // Field:     [0] HDREN
 //
 // Header enable field. When CSGATE is set to BLK, this bit has to be set by
-// software to enable this feature. When CSGATE is set to UNBLK, this field is
-// set automatically whenever a write to header update registers occurs TXFHDRn
+// software to enable atomic header feature. When CSGATE is set to UNBLK, this
+// field is set automatically whenever a write to header update registers
+// TXFHDRn occurs.
 // ENUMs:
 // EN                       Atomic header update feature enable
 // DIS                      Atomic header update feature disable
@@ -1745,8 +1727,8 @@
 
 // Field:     [6] TXDONE
 //
-// Transmit done. Indicates whether the last bit left the Shift register after
-// a transmission
+// Transmit done. Indicates whether the last bit has left the Shift register
+// after a transmission
 // ENUMs:
 // TX_DONE                  Last bit has been shifted out, and the
 //                          transmission is done
@@ -1760,14 +1742,15 @@
 
 // Field:     [5] CSD
 //
-// Detection of CS deassertion in the middle of a word transmission results in
-// this error being set. This feature is only available in the peripheral mode.
+// Detection of CS deassertion in the middle of a data frame transmission
+// results in this error being set. This feature is only available in the
+// peripheral mode.
 // ENUMs:
 // ERR                      An error is generated when CS posedge
 //                          (deassertion) is detected before the entire
-//                          word is transmitted.
-// NOERR                    No CS posedge is detected before the entire word
-//                          has been transmitted.
+//                          data frame is transmitted.
+// NOERR                    No CS posedge is detected before the entire data
+//                          frame has been transmitted.
 #define SPI_STA_CSD                                                 0x00000020U
 #define SPI_STA_CSD_M                                               0x00000020U
 #define SPI_STA_CSD_S                                                        5U

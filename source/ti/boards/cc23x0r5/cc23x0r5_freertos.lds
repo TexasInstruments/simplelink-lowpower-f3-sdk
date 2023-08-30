@@ -81,7 +81,7 @@ SECTIONS {
      * UDMALPF3_CONFIG_BASE below must match UDMALPF3_CONFIG_BASE defined
      * by ti/drivers/dma/UDMALPF3.h
      * The user is allowed to change UDMALPF3_CONFIG_BASE to move it away from
-     * the default address 0x2000_400, but remember it must be 1024 bytes aligned.
+     * the default address 0x2000_0400, but remember it must be 1024 bytes aligned.
      */
     UDMALPF3_CONFIG_BASE = 0x20000400;
 

@@ -37,6 +37,7 @@
  */
 
     let Common    = system.getScript("/ti/drivers/Common.js");
+    let GPIO      = system.getScript("/ti/drivers/GPIO.syscfg.js");
     let LGPTimer  = args[0];
     let instances = LGPTimer.$instances;
 
@@ -60,6 +61,7 @@
 
 #include <ti/drivers/timer/LGPTimerLPF3.h>
 #include <ti/drivers/Power.h>
+#include <ti/drivers/GPIO.h>
 #include <ti/devices/`devicesDir`/inc/hw_memmap.h>
 #include <ti/devices/`devicesDir`/inc/hw_ints.h>
 
@@ -80,11 +82,86 @@ static const LGPTimerLPF3_HWAttrs LGPTimerLPF3_hwAttrs[`countDef`] = {
 %     let solution    = timer.$solution;
 %     let peripheral  = system.deviceData.peripherals[solution.peripheralName];
 %
+%     let ch0PinName     = 'GPIO_INVALID_INDEX';
+%     let ch0PinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let ch0NPinName    = 'GPIO_INVALID_INDEX';
+%     let ch0NPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%
+%     let ch1PinName     = 'GPIO_INVALID_INDEX';
+%     let ch1PinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let ch1NPinName    = 'GPIO_INVALID_INDEX';
+%     let ch1NPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%
+%     let ch2PinName     = 'GPIO_INVALID_INDEX';
+%     let ch2PinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let ch2NPinName    = 'GPIO_INVALID_INDEX';
+%     let ch2NPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%
+%     if ('ch0PinInstance' in inst) {
+%         ch0PinName = inst.ch0PinInstance.$name;
+%         let ch0PinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'C0'],
+%                                                 inst.timer.ch0Pin.$solution.devicePinName);
+%         ch0PinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ch0PinMuxMode.toString();
+%     }
+%
+%     if ('ch1PinInstance' in inst) {
+%        ch1PinName = inst.ch1PinInstance.$name;
+%        let ch1PinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'C1'],
+%                                                inst.timer.ch1Pin.$solution.devicePinName);
+%        ch1PinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ch1PinMuxMode.toString();
+%     }
+%
+%     if ('ch2PinInstance' in inst) {
+%         ch2PinName = inst.ch2PinInstance.$name;
+%         let ch2PinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'C2'],
+%                                                 inst.timer.ch2Pin.$solution.devicePinName);
+%         ch2PinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ch2PinMuxMode.toString();
+%     }
+%
+%     if ('ch0NPinInstance' in inst) {
+%         ch0NPinName = inst.ch0NPinInstance.$name;
+%         let ch0NPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'C0N'],
+%                                                 inst.timer.ch0NPin.$solution.devicePinName);
+%         ch0NPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ch0NPinMuxMode.toString();
+%     }
+%
+%     if ('ch1NPinInstance' in inst) {
+%        ch1NPinName = inst.ch1NPinInstance.$name;
+%        let ch1NPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'C1N'],
+%                                                inst.timer.ch1NPin.$solution.devicePinName);
+%        ch1NPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ch1NPinMuxMode.toString();
+%     }
+%
+%     if ('ch2NPinInstance' in inst) {
+%         ch2NPinName = inst.ch2NPinInstance.$name;
+%         let ch2NPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'C2N'],
+%                                                 inst.timer.ch2NPin.$solution.devicePinName);
+%         ch2NPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ch2NPinMuxMode.toString();
+%     }
+%
   {
     .baseAddr           = `peripheral.name`_BASE,
     .intNum             = INT_`peripheral.name`_COMB,
     .intPriority        = `Common.intPriority2Hex(inst.interruptPriority)`,
-    .powerID            = PowerLPF3_PERIPH_`solution.peripheralName`
+    .powerID            = PowerLPF3_PERIPH_`solution.peripheralName`,
+    .channelConfig[0]   = {
+        .pin     = `ch0PinName`,
+        .pinMux  = `ch0PinMuxName`,
+        .nPin    = `ch0NPinName`,
+        .nPinMux = `ch0NPinMuxName`,
+    },
+    .channelConfig[1]   = {
+        .pin     = `ch1PinName`,
+        .pinMux  = `ch1PinMuxName`,
+        .nPin    = `ch1NPinName`,
+        .nPinMux = `ch1NPinMuxName`,
+    },
+    .channelConfig[2]   = {
+        .pin     = `ch2PinName`,
+        .pinMux  = `ch2PinMuxName`,
+        .nPin    = `ch2NPinName`,
+        .nPinMux = `ch2NPinMuxName`,
+    },
   },
 % }
 };

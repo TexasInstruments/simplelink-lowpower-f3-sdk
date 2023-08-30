@@ -59,6 +59,14 @@ static uint32_t TempDiodeRamHWREG(uint32_t address, uint32_t data) __attribute__
 static void enableADC(void);
 static int32_t voltageToTemp(uint32_t microVolts);
 
+/* Temporary PMUD PREFSYS register definition. */
+#ifdef PMUD_O_PREFSYS
+    #error "PMUD_O_PREFSYS defined in DOC release! Remove definitition below."
+#endif
+
+#define PMUD_O_PREFSYS     0x00000080U
+#define PMUD_PREFSYS_TEST2 0x00000004U
+
 //*****************************************************************************
 //
 // Writes data to register while executing from RAM
@@ -120,8 +128,10 @@ static void enableADC(void)
 //*****************************************************************************
 static int32_t voltageToTemp(uint32_t microVolts)
 {
-    /* Convert to millivolts with 4 fractional bits, which is the same format as stored in fcfg */
-    int32_t milliVolts = (microVolts / 1000) << 4;
+    /* Convert to millivolts with 4 fractional bits,
+     * which is the same format as stored in fcfg
+     */
+    int32_t milliVolts = ((microVolts << 4) + 500) / 1000;
 
     /* Get diode voltage drop at 30 degC from fcfg */
     int32_t voltageAt30Deg = fcfg->appTrims.cc23x0r5.auxDiodeCal30C.auxDiodeVoltage -
@@ -132,7 +142,9 @@ static int32_t voltageToTemp(uint32_t microVolts)
                               fcfg->appTrims.cc23x0r5.auxDiodeCal125C.auxDiodeGnd;
 
     /* Fit measured voltage onto the line defined by the two points in fcfg */
-    int32_t temperature = 30 + (milliVolts - voltageAt30Deg) * (125 - 30) / (voltageAt125Deg - voltageAt30Deg);
+    int32_t divisor = voltageAt125Deg - voltageAt30Deg;
+
+    int32_t temperature = 30 + ((milliVolts - voltageAt30Deg) * (125 - 30) + (divisor / 2)) / divisor;
 
     return temperature;
 }
@@ -145,18 +157,26 @@ static int32_t voltageToTemp(uint32_t microVolts)
 int32_t TempDiodeGetTemp(void)
 {
     uint32_t diodeVoltage = 0;
-    bool intEnabled;
+    bool intAlreadyDisabled;
 
     /* Unlock ATESTCFG register and connect VR_ATEST to VA_ATEST */
     HWREG(SYS0_BASE + SYS0_O_ATESTCFG) = 0x5A000000 | SYS0_ATESTCFG_VR2VA1 | SYS0_ATESTCFG_VR2VA0;
 
-    /* Connects 1uA IREF to test bus. This is done via a function executing from RAM,
-     * while interrupts are disabled, to ensure that no flash-operations are active
-     * when the reference current is enabled.
+    /* Disable interrupts and keep track of whether interrupts were already
+     * disabled or not
      */
-    intEnabled = IntDisableMaster();
+    intAlreadyDisabled = IntDisableMaster();
+
+    /* Connect 1uA IREF to test bus. This is done via a function executing from
+     * RAM, while interrupts are disabled, to ensure that no flash-operations
+     * are active when the reference current is enabled.
+     */
     TempDiodeRamHWREG(PMUD_BASE + PMUD_O_PREFSYS, PMUD_PREFSYS_TEST2);
-    if (intEnabled)
+
+    /* If interrupts were already disabled, then they should be left disabled.
+     * If interrupts were already enabled, then they should be re-enabled here.
+     */
+    if (intAlreadyDisabled == false)
     {
         IntEnableMaster();
     }
@@ -201,9 +221,9 @@ int32_t TempDiodeGetTemp(void)
     HWREG(SYS0_BASE + SYS0_O_TSENSCFG) &= ~SYS0_TSENSCFG_SEL_M;
 
     /* Disconnect all test reference signals */
-    intEnabled = IntDisableMaster();
+    intAlreadyDisabled = IntDisableMaster();
     TempDiodeRamHWREG(PMUD_BASE + PMUD_O_PREFSYS, 0);
-    if (intEnabled)
+    if (intAlreadyDisabled == false)
     {
         IntEnableMaster();
     }

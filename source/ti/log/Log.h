@@ -60,7 +60,7 @@
  *  | `LogLevel`                      | The severity or importance of a given log statement.                                                                                                                                                                                                    |
  *  | `Sink`                          | Also simply called a logger. This is a transport specific logger implementation. <br> The Logging framework is flexible such that multiple sinks may exist in a single firmware image.                                                                                                                                         |
  *  | `CallSite`                      | A specific invocation of a Log API in a given file or program.                                                                                                                                                                                                                                                                 |
- *  | `Record`                        | The binary representation of a log when it is stored or transported by a given sink. The log record format varys slightly with each sink depending on their implementation and needs. However, they all convey the same information.                                                                                           |
+ *  | `Record`                        | The binary representation of a log when it is stored or transported by a given sink. The log record format varies slightly with each sink depending on their implementation and needs. However, they all convey the same information.                                                                                           |
  *  | Link Time Optimization (LTO)    | A feature of some toolchains that can significantly reduce the code overhead of the log statements through a process called dead code elimination. In order to maximize the benefits of this, all static libraries and application files should have LTO enabled.                                                              |
  *
  *  ## Summary ##
@@ -70,13 +70,13 @@
  *  on the embedded device. For associated PC tooling, please see the
  *  [README](../../../tools/log/tiutils/Readme.html) in the tools/log/tiutils/ folder.
  *
- *  Desgin Philiosophy:
+ *  Design Philosophy:
  *
  *  * Logs target code should be as efficient as possible.
  *    * This means that Log APIs should minimize FLASH, RAM, and execution overhead.
  *  * Complexity should be pushed to host side tooling where possible.
  *    *  Even if this means that PC setup/tooling requirements are more complex.
- *  * Multiple log sink implemenetations shall be able to exist in a system.
+ *  * Multiple log sink implementations shall be able to exist in a system.
  *    *  Where applicable, multiple instances should be supported (e.g. multiple circular buffers to collect logs)
  *  * It shall be possible to remove logging entirely using the preprocessor
  *  * Configuration of logging should be deferred to application compile and
@@ -115,7 +115,7 @@
  *
  *  2. (String declaration): Automate placement of constant strings, format
  *     strings, and pointers to these strings in the the nonloadable metadata
- *     section of the out file. This saves FLASH on the target. Each sring
+ *     section of the out file. This saves FLASH on the target. Each string
  *     contains a large amount of data, including the following:
  *
  *     * File and line number of the log statement
@@ -158,7 +158,7 @@
  *  @endcode
  *
  *  From here, the logger has transferred control over to the sink
- *  implementation, which varys based on the tansport
+ *  implementation, which varies based on the transport
  *  (e.g. circular buffer in memory or UART).
  *
  *  ## Modules ##
@@ -179,7 +179,7 @@
  *  macro. An example for the LogBuf sink is below, it will do the following
  *
  *  1. Create a module called `LogModule_App1`.
- *  1. Initialze the module for use with the buffer based LogSink.
+ *  1. Initialize the module for use with the buffer based LogSink.
  *     Use buffer instance called `CONFIG_ti_log_LogSinkBuf_0`.
  *  1. Enable only the `Log_ERROR` level. Other logs will not be stored.
  *
@@ -317,7 +317,7 @@
  *  // Use helper macro from <ti/log/LogSinkBuf.h> to make a sink instance (buffer + config) with 100 entries.
  *  Log_SINK_BUF_DEFINE(MyBufferSink, LogSinkBuf_Type_CIRCULAR, 100);
  *
- *  // Use helper macro from <ti/log/Log.h> to make a module pointing at the new sink instace.
+ *  // Use helper macro from <ti/log/Log.h> to make a module pointing at the new sink instance.
  *  // This example will enable all log levels
  *  Log_MODULE_DEFINE(MyModule, Log_MODULE_INIT_SINK_BUF(MyBufferSink, Log_ALL))
  *
@@ -325,7 +325,7 @@
  *  // the sink you wish to use. For example, LogSinkITM must be initialised like this before it can be used:
  *  // LogSinkITM_init();
  *
- *  // Invoke one of the log APIs you want to use for either premade events or formatted strings
+ *  // Invoke one of the log APIs you want to use for either pre-defined events or formatted strings
  *  Log_printf(MyModule, Log_DEBUG, "The answer is %d", 42);
  *  uint8_t buffer[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
  *  Log_buf(MyModule, Log_VERBOSE, buffer, sizeof(buffer));
@@ -394,7 +394,7 @@
  *  @anchor ti_utils_LOG_Example_guide **Log API usage**:
  *
  *  For a uniform experience with the logging tool, users are recommended to follow certain guidelines regarding
- *  the Log API. Typical use-cases for each API call is desribed below
+ *  the Log API. Typical use-cases for each API call is described below
  *
  *  #### Log_printf ####
  *
@@ -410,7 +410,7 @@
  *  #### Log_event ####
  *
  *  Log_event is meant to represent more generic debug-information, and typically something that can occur from
- *  anywhere in the application, as opposed to being localised in a single library. Events can also be defined once
+ *  anywhere in the application, as opposed to being localized in a single library. Events can also be defined once
  *  and referenced from anywhere in the application, so the same event can be used by multiple libraries.
  *  A generic example would be an event such as "Entering critical section"
  *
@@ -510,7 +510,7 @@ extern "C" {
 
 /** @cond NODOC */
 
-/* This macro protects against sideffects of the C preprocessor expansion
+/* This macro protects against side effects of the C preprocessor expansion
  * of log statements. Each log API should be guarded by it.
  * An article explaining this behavior can be found here:
  * https://gcc.gnu.org/onlinedocs/cpp/Swallowing-the-Semicolon.html
@@ -865,7 +865,7 @@ typedef enum Log_Level {
     Log_DEBUG = 1,                          /*! This should be the default level, reserved to be used by users to insert into applications for debugging. Exported libraries should avoid using this level. */
     Log_VERBOSE = 4,                        /*! This level is recommended to be used in libraries to emit verbose information */
     Log_INFO = 16,                          /*! This level is recommended to be used in libraries to emit simple information */
-    Log_WARNING = 64,                       /*! This level is recommended to be used in libraries to emit warnings. It is up to the library developer to decide what constitutes a warning, but it should typially indicate something unexpected, but not something that leads to system failure */
+    Log_WARNING = 64,                       /*! This level is recommended to be used in libraries to emit warnings. It is up to the library developer to decide what constitutes a warning, but it should typically indicate something unexpected, but not something that leads to system failure */
     Log_ERROR = 256,                        /*! This level is recommended to be used in libraries to emit errors. Typically, this should be used when something has failed and the system is unable to continue correct operation */
     Log_ALL   = 1 + 4 + 16 + 64 + 256,      /*! This enables all levels */
     Log_ENABLED = 512                       /*! This is used to enable or disable the log module, independently of the log levels */

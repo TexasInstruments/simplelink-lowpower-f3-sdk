@@ -138,6 +138,10 @@ static bool isSPIbusy(uint32_t baseAddr);
 /* Maximum serial clock divider value */
 #define SERIAL_CLK_DIVIDER_MAX 0x3FFU
 
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define SPI_CTL0_FRF_MICROWIRE SPI_CTL0_FRF_MIRCOWIRE
+#endif
+
 /* SPI function table for SPILPF3DMA implementation */
 const SPI_FxnTable SPILPF3DMA_fxnTable = {SPILPF3DMA_close,
                                           SPILPF3DMA_control,
@@ -166,7 +170,7 @@ static const uint32_t frameFormat[] = {
     /* SPI_TI */
     (SPI_CTL0_FRF_TI_SYNC),
     /* SPI_MW */
-    (SPI_CTL0_FRF_MIRCOWIRE),
+    (SPI_CTL0_FRF_MICROWIRE),
 };
 
 /*

@@ -1041,6 +1041,7 @@ PACKED_TYPEDEF_STRUCT
   uint8 secPhy;
   uint8 sid;
   uint8 notifyEnableFlags;                  // scan request notification
+  uint8 zeroDelay;
 } aeSetParamCmd_t;
 
 //

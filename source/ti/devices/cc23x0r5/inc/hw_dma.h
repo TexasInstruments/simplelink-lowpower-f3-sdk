@@ -280,7 +280,7 @@
 // Read as:
 //
 // Bit [Ch] = 0: uDMA channel Ch responds to both burst and single requests on
-// channel C. The controller performs 2^R, or single, bus transfers.
+// channel Ch. The controller performs 2^R, or single, bus transfers.
 //
 // Bit [Ch] = 1: uDMA channel Ch does not respond to single transfer requests.
 // The controller only responds to burst transfer requests and performs 2^R
@@ -333,8 +333,8 @@
 //
 // Write as:
 // Bit [Ch] = 0: No effect. Use the CLEARREQMASK.CHNLS to enable uDMA requests.
-// Bit [Ch] = 1: Disables uDMA burst request channel [C] and uDMA single
-// request channel [C] input from generating uDMA requests.
+// Bit [Ch] = 1: Disables uDMA burst request channel [Ch] and uDMA single
+// request channel [Ch] input from generating uDMA requests.
 //
 // Writing to a bit where a uDMA channel is not implemented has no effect
 #define DMA_SETREQMASK_CHNLS_W                                               8U
@@ -351,9 +351,9 @@
 // Set the appropriate bit to enable uDMA request for the channel.
 //
 // Write as:
-// Bit [Ch] = 0: No effect. Use the SETREQMASK.CHNLS to disable channel C from
+// Bit [Ch] = 0: No effect. Use the SETREQMASK.CHNLS to disable channel Ch from
 // generating requests.
-// Bit [Ch] = 1: Enables channel [C] to generate uDMA requests.
+// Bit [Ch] = 1: Enables channel [Ch] to generate uDMA requests.
 //
 // Writing to a bit where a uDMA channel is not implemented has no effect.
 #define DMA_CLEARREQMASK_CHNLS_W                                             8U
@@ -367,7 +367,7 @@
 //*****************************************************************************
 // Field:   [7:0] CHNLS
 //
-// Returns the enable status of the channels, or enables the corresponding
+// Returns the enable status of the channels, or enable the corresponding
 // channels.
 //
 // Read as:
@@ -555,7 +555,7 @@
 // contributing to generation of combined uDMA done signal
 //
 // Write as:
-// Bit [Ch] = 0: Allows uDMA done and active stat to propagate to the
+// Bit [Ch] = 0: Allows uDMA done and active state to propagate to the
 // peripherals.
 // Note that this disables uDMA done state for channel [Ch] from contributing
 // to generation of combined uDMA done signal

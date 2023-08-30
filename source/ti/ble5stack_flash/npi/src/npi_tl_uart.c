@@ -125,6 +125,9 @@ static Char* TransportTxBuf;
 //! \brief Length of bytes to send from NPI TL Tx Buffer
 static uint16 TransportTxLen = 0;
 
+//! \brief This flag indicates that all the data has been fully transmitted from the UART
+static uint8 UartTxFinishedFlag = FALSE;
+
 //! \brief UART Object. Initialized in board specific files
 #ifdef CC23X0
 extern UART2LPF3_Object uart2LPF3Objects[];
@@ -140,6 +143,9 @@ static uint16 NPITLUART_readIsrBuf(size_t size);
 
 //! \brief UART Callback invoked after UART write completion
 static void NPITLUART_writeCallBack(UART2_Handle handle, void *ptr, size_t size, void *userArg, int_fast16_t status);
+
+//! \brief UART Callback invoked after event has occurred.
+static void NPITLUART_eventCallBack(UART2_Handle handle, uint32_t event, uint32_t data, void *userArg);
 
 //! \brief UART Callback invoked after readsize has been read or timeout
 static void NPITLUART_readCallBack(UART2_Handle handle, void *ptr, size_t size, void *userArg, int_fast16_t status);
@@ -170,6 +176,11 @@ void NPITLUART_initializeTransport(Char *tRxBuf, Char *tTxBuf, npiCB_t npiCBack)
     params.writeMode = UART2_Mode_CALLBACK;
     params.readCallback = NPITLUART_readCallBack;
     params.writeCallback = NPITLUART_writeCallBack;
+    params.eventCallback = NPITLUART_eventCallBack;
+    // subscribe to the UART2_EVENT_TX_FINISHED event.
+    // The UART2_EVENT_TX_FINISHED event triggered after all of the
+    // TX data was transferred from the UART, even when using the DMA.
+    params.eventMask |= UART2_EVENT_TX_FINISHED;
     params.baudRate = NPI_UART_BR;
     params.dataLength = UART2_DataLen_8;
     params.stopBits = UART2_StopBits_1;
@@ -268,7 +279,43 @@ void NPITLUART_handleMrdyEvent(void)
 #endif // NPI_FLOW_CTRL = 1
 
 // -----------------------------------------------------------------------------
-//! \brief      This callback is invoked on Write completion
+//! \brief      This callback is invoked after Event has occurred.
+//!
+//! \param[in]  handle - handle to the UART port
+//! \param[in]  event  - UART2_EVENT that has occurred
+//!                    - UART2_EVENT_BREAK
+//!                    - UART2_EVENT_PARITY
+//!                    - UART2_EVENT_FRAMING
+//!                    - UART2_EVENT_TX_BEGIN
+//!                    - UART2_EVENT_TX_FINISHED
+//! \param[in]  data   - accumulated count used for the event UART2_EVENT_OVERRUN
+//!
+//! \return     void
+// -----------------------------------------------------------------------------
+static void NPITLUART_eventCallBack(UART2_Handle handle, uint32_t event, uint32_t data, void *userArg)
+{
+  // Check if the UART finished transmitting all the data
+  if (event & UART2_EVENT_TX_FINISHED)
+  {
+      ICall_CSState key = ICall_enterCriticalSection();
+
+      // Update UartTxFinishedFlag to TRUE to inform the NPITLUART_writeCallBack function
+      // that all the data has been fully transmitted
+      UartTxFinishedFlag = TRUE;
+      // Call the NPITLUART_writeCallBackto allow backwards compatibility.
+      // Unused input params were reset to NULL/0.
+      // This function performs the action needed for UART Write
+      NPITLUART_writeCallBack(handle, NULL, 0, userArg, 0);
+
+      // initialize the UartTxFinishedFlag to FALSE for the next write callBack
+      UartTxFinishedFlag = FALSE;
+
+      ICall_leaveCriticalSection(key);
+  }
+}
+
+// -----------------------------------------------------------------------------
+//! \brief      This callback is invoked on Write completion.
 //!
 //! \param[in]  handle - handle to the UART port
 //! \param[in]  ptr    - pointer to data to be transmitted
@@ -278,29 +325,37 @@ void NPITLUART_handleMrdyEvent(void)
 // -----------------------------------------------------------------------------
 static void NPITLUART_writeCallBack(UART2_Handle handle, void *ptr, size_t size, void *userArg, int_fast16_t status)
 {
-    ICall_CSState key;
-    key = ICall_enterCriticalSection();
+    // Perform the UART write actions only in case all the data has fully
+    // transmitted from the UART, and the event UART2_EVENT_TX_FINISHED
+    // has received.
+    if (UartTxFinishedFlag)
+    {
+        ICall_CSState key;
+        key = ICall_enterCriticalSection();
 
 #if (NPI_FLOW_CTRL == 1)
-    if ( !RxActive )
-    {
-        UART2_readCancel(uartHandle);
+        if ( !RxActive )
+        {
+            UART2_readCancel(uartHandle);
+            if ( npiTransmitCB )
+            {
+                npiTransmitCB(TransportRxLen,TransportTxLen);
+            }
+        }
+
+        TxActive = FALSE;
+#else
         if ( npiTransmitCB )
         {
-            npiTransmitCB(TransportRxLen,TransportTxLen);
+            npiTransmitCB(0,TransportTxLen);
         }
-    }
+        #endif // NPI_FLOW_CTRL = 1
 
-    TxActive = FALSE;
-#else
-    if ( npiTransmitCB )
-    {
-        npiTransmitCB(0,TransportTxLen);
+        ICall_leaveCriticalSection(key);
     }
-#endif // NPI_FLOW_CTRL = 1
-
-    ICall_leaveCriticalSection(key);
 }
+
+
 
 // -----------------------------------------------------------------------------
 //! \brief      This callback is invoked on Read completion of readSize/receive

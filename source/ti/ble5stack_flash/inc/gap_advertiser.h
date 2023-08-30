@@ -119,6 +119,7 @@ extern "C"
   .primPhy = GAP_ADV_PRIM_PHY_1_MBPS,                                      \
   .secPhy = GAP_ADV_SEC_PHY_1_MBPS,                                        \
   .sid = 0                                                                 \
+  .zeroDelay = 0                                                           \
 }
 
 #ifdef USE_AE
@@ -135,6 +136,7 @@ extern "C"
   .primPhy = GAP_ADV_PRIM_PHY_CODED_S2,                                    \
   .secPhy = GAP_ADV_SEC_PHY_CODED_S2,                                      \
   .sid = 0                                                                 \
+  .zeroDelay = 0                                                           \
 }
 
 /// Non-Connectable & Non-Scannable advertising set
@@ -150,6 +152,7 @@ extern "C"
   .primPhy = GAP_ADV_PRIM_PHY_1_MBPS,                                      \
   .secPhy = GAP_ADV_SEC_PHY_1_MBPS,                                        \
   .sid = 1                                                                 \
+  .zeroDelay = 0                                                           \
 }
 #endif
 /** @} End GapAdv_Constants */
@@ -345,6 +348,23 @@ typedef enum
    * range: 0-15
    */
   GAP_ADV_PARAM_SID,
+
+  /**
+   * Advertising start time delay
+   *
+   * This parameter determines whether to disable random delay of advertising start time or not.
+   * If 1, Random delay will be disabled (zero delay).
+   * If 0, Random delay will be enabled  (default).
+   * Default value - 0;
+   *
+   * NOTE: This parameter enables zero delay for the advertisements, which is not compliant with the
+   * BLE SPEC.
+   *
+   * size: uint8_t
+   *
+   * range: 0-1
+   */
+  GAP_ADV_PARAM_ZERODELAY,
 
 /// @cond NODOC
   GAP_ADV_PARAM_COUNT
@@ -574,6 +594,7 @@ typedef struct
   GapAdv_primaryPHY_t primPhy;           //!< @ref GAP_ADV_PARAM_PRIMARY_PHY
   GapAdv_secondaryPHY_t secPhy;          //!< @ref GAP_ADV_PARAM_SECONDARY_PHY
   uint8_t sid;                           //!< @ref GAP_ADV_PARAM_SID
+  uint8_t zeroDelay;                     //!< @ref GAP_ADV_PARAM_ZERODELAY
 } GapAdv_params_t;
 
 

@@ -4,8 +4,8 @@
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name                   SmartRF Studio
-// Tool version                0.6.0.193 INTERNAL
+// Tool name                   SmartRF Studio 8
+// Tool version                0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +14,7 @@
 // Device                      CC2340R5
 //     Package                 QFN40 5x5 RKP
 //     Revision(s)             B (2.0)
-// SDK                         SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                         SimpleLink CC23x0 SDK 7.20.00.00
 // Board                       LP-EM-CC2340R5
 // PHY                         2.4 GHz - Proprietary - 1 Mbps, 160 kHz dev, GFSK
 // PHY abbreviation            gfsk_1_mbps
@@ -37,17 +37,25 @@
 #include DeviceFamily_constructPath(rf_patches/lrf_rfe_binary_ble5.h)
 
 
-// Configuration for COMBINED
-static const uint32_t LRF_combinedRegConfig[] =
+// Configuration: Common
+static const uint32_t LRF_commonRegConfig[] =
 {
-    0x00000050,                               // Segment length = 80
+    0x0000004F,                               // Segment length = 79
     0x0000A002,                               //     Data structure 32-bit region (start byte position = 0, count = 3)
     (uint32_t) &LRF_swConfigGfsk1Mbps,        //         LRF_swParam : swConfig
     (uint32_t) &LRF_txPowerTableGfsk1Mbps,    //         LRF_swParam : txPowerTable
     (uint32_t) &(fcfg->appTrims),             //         LRF_swParam : trimDef
-    0x14482001,                               //     HW 32-bit region (start address = 0x1448, count = 2)
-    0x00000037,                               //         LRFDPBE.MDMCMDPAR1                  LRFDPBE.MDMCMDPAR0
-    0x0000AAAA,                               //         < GAP >                             LRFDPBE.MDMCMDPAR2
+    0x00003009,                               //     HW sparse region (address/value pairs, count = 10)
+    0x10908007,                               //         LRFDPBE.MDMCMDPAR0
+    0x1098AAAA,                               //         LRFDPBE.MDMCMDPAR2
+    0x20B80015,                               //         LRFDMDM.SYSTIMEVTMUX0
+    0x20C00003,                               //         LRFDMDM.ADCDIGCONF
+    0x20C8001F,                               //         LRFDMDM.MODSYMMAP0
+    0x2134005F,                               //         LRFDMDM.DEMSWQU0
+    0x30800000,                               //         LRFDRFE.MAGNTHRCFG
+    0x30880000,                               //         LRFDRFE.RSSIOFFSET
+    0x31201820,                               //         LRFDRFE.MISC0
+    0x31300C07,                               //         LRFDRFE.PHEDISC
     0x10A00002,                               //     HW zero region (start address = 0x10A0, count = 3)
     0x10AC1006,                               //     HW 16-bit region (start address = 0x10AC, count = 7)
     0x00001021,                               //         LRFDPBE.PHACFG                      LRFDPBE.POLY1H
@@ -57,16 +65,7 @@ static const uint32_t LRF_combinedRegConfig[] =
     0x14682000,                               //     HW 32-bit region (start address = 0x1468, count = 1)
     0x00020004,                               //         LRFDPBE.TXFWBTHRS                   LRFDPBE.RXFRBTHRS
     0x10DC1001,                               //     HW 16-bit region (start address = 0x10DC, count = 2)
-    0x000C0002,                               //         LRFDPBE.TIMPRE                      LRFDPBE.TIMCTL
-    0x00003007,                               //     HW sparse region (address/value pairs, count = 8)
-    0x20B80015,                               //         LRFDMDM.SYSTIMEVTMUX0
-    0x20C00003,                               //         LRFDMDM.ADCDIGCONF
-    0x20C8001F,                               //         LRFDMDM.MODSYMMAP0
-    0x2134005F,                               //         LRFDMDM.DEMSWQU0
-    0x30800000,                               //         LRFDRFE.MAGNTHRCFG
-    0x30880000,                               //         LRFDRFE.RSSIOFFSET
-    0x31201820,                               //         LRFDRFE.MISC0
-    0x31300C07,                               //         LRFDRFE.PHEDISC
+    0x000B0002,                               //         LRFDPBE.TIMPRE                      LRFDPBE.TIMCTL
     0x20D41002,                               //     HW 16-bit region (start address = 0x20D4, count = 3)
     0x000C4000,                               //         LRFDMDM.BAUDPRE                     LRFDMDM.BAUD
     0x00000000,                               //         -                                   LRFDMDM.MODMAIN
@@ -76,8 +75,8 @@ static const uint32_t LRF_combinedRegConfig[] =
     0x0F708087,                               //         LRFDMDM.DEMCODC0                    LRFDMDM.DEMDSBU
     0x02240000,                               //         LRFDMDM.DEMFEXB0                    LRFDMDM.DEMFIDC0
     0x00050004,                               //         LRFDMDM.DEMFIFE0                    LRFDMDM.DEMDSXB0
-    0x4F150300,                               //         LRFDMDM.DEMMAFI1                    LRFDMDM.DEMMAFI0
-    0x002F007C,                               //         LRFDMDM.DEMC1BE0                    LRFDMDM.DEMMAFI2
+    0x60190300,                               //         LRFDMDM.DEMMAFI1                    LRFDMDM.DEMMAFI0
+    0x002F0097,                               //         LRFDMDM.DEMC1BE0                    LRFDMDM.DEMMAFI2
     0x027F2727,                               //         LRFDMDM.DEMC1BE2                    LRFDMDM.DEMC1BE1
     0x00000A18,                               //         -                                   LRFDMDM.SPARE0
     0x30A01006,                               //     HW 16-bit region (start address = 0x30A0, count = 7)
@@ -112,7 +111,7 @@ static const uint32_t LRF_combinedRegConfig[] =
     0x132C0074,                               //         RFE_COMMON_RAM.K3BL                 RFE_COMMON_RAM.K2AL
     0x916F07AB,                               //         RFE_COMMON_RAM.K5                   RFE_COMMON_RAM.K3AL
     0x68206005,                               //     RAM 32-bit region (start address = 0x6820, count = 6)
-    0x00080000,                               //         RFE_COMMON_RAM.RTRIMMIN             RFE_COMMON_RAM.RTRIMOFF
+    0x00000000,                               //         RFE_COMMON_RAM.RTRIMMIN             RFE_COMMON_RAM.RTRIMOFF
     0x48080008,                               //         RFE_COMMON_RAM.DIVF                 RFE_COMMON_RAM.DIVI
     0x00000000,                               //         RFE_COMMON_RAM.DIVLDOF              RFE_COMMON_RAM.DIVLDOI
     0x00470014,                               //         RFE_COMMON_RAM.LDOSETTLE            RFE_COMMON_RAM.DIVLDOIOFF
@@ -128,7 +127,7 @@ static const uint32_t LRF_combinedRegConfig[] =
 static const LRF_RegConfigList LRF_regConfigList = {
     .numEntries = 1,
     .entries = {
-        (LRF_ConfigWord*) LRF_combinedRegConfig 
+        (LRF_ConfigWord*) LRF_commonRegConfig 
     }
 };
 

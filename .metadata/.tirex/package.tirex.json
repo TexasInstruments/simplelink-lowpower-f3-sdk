@@ -3,7 +3,7 @@
         "metadataVersion": "3.0.0",
         "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
         "name": "SimpleLink Low Power F3 SDK",
-        "version": "7.10.00.35",
+        "version": "7.20.00.29",
         "type": "software",
         "devices": [
             "CC23x0"
@@ -19,12 +19,12 @@
             },
             {
                 "packageId": "sysconfig",
-                "version": "1.16.1",
+                "version": "1.17.0",
                 "require": "optional"
             },
             {
                 "packageId": "ti_cgt_tiarmclang",
-                "version": "2.1.2",
+                "version": "2.1.3",
                 "require": "optional"
             },
             {

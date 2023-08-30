@@ -4121,7 +4121,7 @@ static void gapBondMgr_SyncAcceptList(void)
     // Make sure empty addresses are not added to the Accept List
     if(osal_isbufset(bonds[i].addr, 0xFF, B_ADDR_LEN) == FALSE)
     {
-      VOID MAP_HCI_LE_AddAcceptListCmd(HCI_PUBLIC_DEVICE_ADDRESS, bonds[i].addr);
+      VOID MAP_HCI_LE_AddAcceptListCmd( bonds[i].addrType, bonds[i].addr );
     }
   }
 }

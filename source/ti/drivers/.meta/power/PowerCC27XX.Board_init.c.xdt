@@ -66,7 +66,7 @@
 %   else if (CCFG.$static.srcClkLF === "LF RCOSC") {
     PowerLPF3_selectLFOSC();
 %   }
-%   if (CCFG.$static.voltageRegulator == 'DCDC') {
+%   if (!isFPGA && CCFG.$static.voltageRegulator == 'DCDC') {
     PMCTLSetVoltageRegulator(PMCTL_VOLTAGE_REGULATOR_DCDC);
 %   }
 

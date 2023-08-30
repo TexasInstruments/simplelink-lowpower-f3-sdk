@@ -205,6 +205,7 @@ typedef bool halIntState_t;
   IntEnable(INT_RFCOREERR);             \
 }
 
+#ifndef USE_RCL
 /* Enable interrupts */
 #define HAL_ENABLE_INTERRUPTS()     IntMasterEnable()
 
@@ -222,6 +223,7 @@ static bool halIntsAreEnabled(void)
 }
 
 #define HAL_INTERRUPTS_ARE_ENABLED() halIntsAreEnabled()
+#endif
 
 #define HAL_ENTER_CRITICAL_SECTION(x)  \
   do { (x) = !IntMasterDisable(); } while (0)

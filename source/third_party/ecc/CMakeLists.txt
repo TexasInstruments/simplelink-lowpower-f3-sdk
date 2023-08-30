@@ -35,13 +35,13 @@ ti_init_package(NAMESPACE ThirdPartyEccLib)
 
 if (TI_INTERNAL_BUILD)
     # Not using get_install_dir for INVIA_LIB_INSTALL_DIR as it does not ship
-    list(TRANSFORM SOURCES_CC13X1_CC26X1 PREPEND ${INVIA_LIB_INSTALL_DIR}/ecc/src/)
-    list(TRANSFORM SOURCES_CC23X0 PREPEND ${INVIA_LIB_INSTALL_DIR}/ecc/src/)
+    list(TRANSFORM SOURCES_CC13X1_CC26X1 PREPEND ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/)
+    list(TRANSFORM SOURCES_CC23X0 PREPEND ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/)
 
     if ("m4" IN_LIST SUPPORTED_ARCHITECTURES)
         ti_add_library(
             ecc_cc13x1_cc26x1
-            SOURCES ${SOURCES_CC13X1_CC26X1}
+            SOURCES ${SOURCES_CC13X1_CC26X1} ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include/ECCSW.h
             ARCH m4
             LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m4
         )
@@ -51,38 +51,40 @@ if (TI_INTERNAL_BUILD)
         ti_add_library(
             ecc_cc23x0
             OUTPUT_NAME ecc
-            SOURCES ${SOURCES_CC23X0}
+            SOURCES ${SOURCES_CC23X0} ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include/ECCSW.h
             ARCH m0p
             LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m0p
         )
-        target_include_directories(ecc_cc23x0 INTERFACE "$<INSTALL_INTERFACE:${INVIA_LIB_INSTALL_DIR}>")
+        target_include_directories(ecc_cc23x0 INTERFACE "${CMAKE_SOURCE_DIR}/source")
 
         if (${TI_TOOLCHAIN_NAME} STREQUAL "ticlang" OR ${TI_TOOLCHAIN_NAME} STREQUAL "gcc")
-            target_sources(ecc_cc23x0 PUBLIC ${INVIA_LIB_INSTALL_DIR}/ecc/src/lowlevelapi_m0_gnu.s)
+            target_sources(ecc_cc23x0 PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_gnu.s)
         elseif (${TI_TOOLCHAIN_NAME} STREQUAL "iar")
-            target_sources(ecc_cc23x0 PUBLIC ${INVIA_LIB_INSTALL_DIR}/ecc/src/lowlevelapi_m0_iar.s)
+            target_sources(ecc_cc23x0 PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_iar.s)
         endif ()
     endif ()
 
     get_property(libraries DIRECTORY PROPERTY TI_PACKAGE_LIBRARIES)
     foreach (library_name ${libraries})
-        target_include_directories(${library_name} PRIVATE "$<BUILD_INTERFACE:${INVIA_LIB_INSTALL_DIR}/ecc/include>")
+        target_include_directories(${library_name} PRIVATE "${CMAKE_SOURCE_DIR}/source")
     endforeach ()
 
     # Manually run commands for ECC header deployment
     add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/source/third_party/ecc/include
-    DEPENDS ${INVIA_LIB_INSTALL_DIR}/ecc/include/ECCSW.h
-    COMMENT Copying ECC header files
-    COMMAND bash -c "mkdir -p ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include"
-    COMMAND bash -c "cp ${INVIA_LIB_INSTALL_DIR}/ecc/include/*.h ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include"
+        OUTPUT
+            ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include
+            ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include/ECCSW.h
+        DEPENDS ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/include/ECCSW.h
+        COMMENT Copying ECC header files
+        COMMAND bash -c "mkdir -p ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include"
+        COMMAND bash -c "cp ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/include/*.h ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include"
     )
 
-    add_library(ecc_deploy INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source/third_party/ecc/include)
+    add_library(ecc_deploy INTERFACE ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include)
 
     set_target_properties(
         ecc_deploy PROPERTIES
-        ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/source/third_party/ecc/include"
+        ADDITIONAL_CLEAN_FILES "${CMAKE_SOURCE_DIR}/source/third_party/ecc/include"
     )
 else()
     ti_add_library(ecc_cc13x1_cc26x1 INTERFACE ARCH m4)

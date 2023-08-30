@@ -176,7 +176,7 @@ const ccfg_t ccfg __attribute__((section(".ccfg"))) __attribute__((used)) =
     .userRecord = {`inst.userRecordMacro`},
 % }
 % if(inst.debugAuthorization == "Require debug authentication"){
-    .debugCfg.authorization = CCFG_DBGAUTH_REQPASSWD,
+    .debugCfg.authorization = CCFG_DBGAUTH_REQPWD,
 % }
 % else if(inst.debugAuthorization == "Debug not allowed"){
     .debugCfg.authorization = CCFG_DBGAUTH_DBGFORBID,

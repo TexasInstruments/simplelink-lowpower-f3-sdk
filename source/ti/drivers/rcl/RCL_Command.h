@@ -114,6 +114,14 @@ typedef enum RCL_CommandStatus_e {
 } RCL_CommandStatus;
 
 /**
+ * Helper macros to compare command status - ensures compatibility with more detailed status codes in future versions
+ */
+#define RCL_CommandStatus_isAnyStop(x)           (((x) == RCL_CommandStatus_Descheduled) || ((x) == RCL_CommandStatus_GracefulStop) || ((x) == RCL_CommandStatus_HardStop))
+#define RCL_CommandStatus_isAnyDescheduled(x)    ((x) == RCL_CommandStatus_Descheduled)
+#define RCL_CommandStatus_isAnyGracefulStop(x)   ((x) == RCL_CommandStatus_GracefulStop)
+#define RCL_CommandStatus_isAnyHardStop(x)       ((x) == RCL_CommandStatus_HardStop)
+
+/**
  *  @brief Stop types
  *
  *  Type of stop to perform

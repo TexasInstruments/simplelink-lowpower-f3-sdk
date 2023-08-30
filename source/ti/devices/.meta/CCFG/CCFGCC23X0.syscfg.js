@@ -42,6 +42,17 @@ const MAX_SERIALIOCFGINDEX = 0x07;
 const MAX_SACITIMEOUTEXP = 0x07;
 const MAX_PIN_TRIGGER_DIO = 0x3F;
 const MAX_CAP_ARRAY = 0x3F;
+const MAX_TEMP_THRESHOLD = 125;
+const MIN_TEMP_THRESHOLD = -41;
+
+/* Default HFXT parameters for LP_EM_CC2340R5 launchpad */
+const hfxtDefaultParams = {
+    "P0" : 14.56160,
+    "P1" : -0.43677,
+    "P2" : -0.00853,
+    "P3" : 0.00010,
+    "shift":  22
+};
 
 const moduleDesc = `
 The CCFG area is a dedicated flash memory sector and must contain a
@@ -51,8 +62,10 @@ bytes This configuration is done by simply letting SysConfig generate the file
 ti_devices_config.c and including it in the project.`;
 
 let devSpecific = {
+    hfxtDefaultParams: hfxtDefaultParams,
     longDescription: moduleDesc,
     moduleStatic: {
+        modules: modules,
         validate: validate,
         config : [
             {
@@ -130,6 +143,86 @@ automatically turn on and take over if the voltage drops too low.
                         name: "GLDO",
                         description: "The internal GLDO regulator will be enabled for use."+
                               "This will disable the DCDC regulator."
+                    }
+                ]
+            },
+            {
+                displayName: "RF Temperature Compensation",
+                longDescription: `Settings for temperature compensation of HFXT. This will enable temperature
+compensation of the system clock (CLKSVT) and the RF reference clock (CLKREF) to improve the frequency
+stability over temperature.`,
+                config: [
+                    {
+                        name: "enableHFXTComp",
+                        displayName: "RF Temperature Compensation",
+                        description: "Compensate HFXT frequency for temperature during radio transmissions.",
+                        longDescription: `Compensate HFXT frequency for temperature during radio transmissions.
+This improves the accuracy of the CLKSVT and CLKREF over temperature. This should only be enabled if the selected HFXT
+source is not accurate enough for the selected RF protocol.`,
+                        default: false,
+                        onChange: onChangeHFXT
+                    },
+                    {
+                        name        : "HFXTCompTempThreshold",
+                        displayName : "HFXT Compensation Threshold",
+                        description : `Perform compensation only above this temperature`,
+                        longDescription : `HFXT will only be automatically compensated when the measured device
+temperature exceeds this threshold (in degrees Celsius). This can help to reduce power consumption if temperature
+compensation is not required below a certain temperature. If set to -41, then compensation will be enabled across the
+entire operating temperature range of [-40, +125].`,
+                        default     : -41,
+                        hidden      : true
+                    },
+                    {
+                        name        : "HFXTCompTempDelta",
+                        displayName : "HFXT Compensation Delta",
+                        description : `How much the temperature must change before compensation is performed`,
+                        longDescription : `HFXT will be automatically compensated if the temperature drifts more than
+this delta-value in either direction (in degrees Celsius). For example, if the temperature is measured to 30 degrees
+when the device boots, but later drifts to 30 + delta or 30 - delta, then HFXT temperature compensation will be
+performed, and the temperature setpoint updated accordingly.`,
+                        default     : 2,
+                        hidden      : true
+                    },
+                    {
+                        name        : "customHFXTCoeff",
+                        displayName : "Custom HFXT Coefficients",
+                        description : "Use Custome HFXT Temperature Coefficients",
+                        longDescription:`If the ppm offset of the HFXT can be approximated by a third order polynomial
+function of temperature (degrees Celsius), ppm(T) = P3*T^3 + P2*T^2 + P1*T + P0, where the coefficients
+P3, P2, P1, and P0 are known, they can be supplied below. The default coefficients represent the characteristics of the
+48 MHz crystal (part number TZ3908AAAO43) mounted on the LP_EM_CC2340R5 LaunchPad.`,
+                        default     : false,
+                        hidden      : true,
+                        onChange    : onChangeHFXT
+                    },
+                    {
+                        name        : "HFXTCoefficientP0",
+                        displayName : "HFXT Coefficient P0",
+                        description : "HFXT Coefficient P0",
+                        default     : hfxtDefaultParams["P0"],
+                        hidden      : true
+                    },
+                    {
+                        name        : "HFXTCoefficientP1",
+                        displayName : "HFXT Coefficient P1",
+                        description : "HFXT Coefficient P1",
+                        default     : hfxtDefaultParams["P1"],
+                        hidden      : true
+                    },
+                    {
+                        name        : "HFXTCoefficientP2",
+                        displayName : "HFXT Coefficient P2",
+                        description : "HFXT Coefficient P2",
+                        default     : hfxtDefaultParams["P2"],
+                        hidden      : true
+                    },
+                    {
+                        name        : "HFXTCoefficientP3",
+                        displayName : "HFXT Coefficient P3",
+                        description : "HFXT Coefficient P3",
+                        default     : hfxtDefaultParams["P3"],
+                        hidden      : true
                     }
                 ]
             },
@@ -537,6 +630,24 @@ function updateBldrVisibility(inst, ui){
     ui["pinTriggerLevel"].hidden = setHidden;
 }
 
+/*
+ *  ======== onChangeEnableHFXTComp ========
+ *  onChange callback function for the enableHFXTComp config
+ */
+function onChangeHFXT(inst, ui)
+{
+    let subState = (inst.enableHFXTComp == false);
+    ui.customHFXTCoeff.hidden = subState;
+    ui.HFXTCompTempThreshold.hidden = subState;
+    ui.HFXTCompTempDelta.hidden = subState;
+    subState = subState || (inst.customHFXTCoeff == false);
+    ui.HFXTCoefficientP0.hidden = subState;
+    ui.HFXTCoefficientP1.hidden = subState;
+    ui.HFXTCoefficientP2.hidden = subState;
+    ui.HFXTCoefficientP3.hidden = subState;
+
+}
+
 /*!
  *  ======== validate ========
  *  Validate this module's configuration
@@ -627,8 +738,34 @@ function validate(inst, validation) {
         Common.logError(validation, inst, "chipEraseRetain_mainSectors32_255",
             "Must be 32-bit value");
     }
+
+    if (inst.HFXTCompTempThreshold < MIN_TEMP_THRESHOLD || inst.HFXTCompTempThreshold > MAX_TEMP_THRESHOLD) {
+        Common.logError(validation, inst, "HFXTCompTempThreshold",
+            "Must be an integer in the range [" + MIN_TEMP_THRESHOLD.toString(10) + ", " +
+            MAX_TEMP_THRESHOLD.toString(10) + "]");
+    }
+
+    if (inst.HFXTCompTempDelta < 1) {
+        Common.logError(validation, inst, "HFXTCompTempDelta",
+            "Must be an integer greater than 0");
+    }
 }
 
+/*
+ *  ======== modules ========
+ */
+function modules(inst) {
+    let tmpModules = [];
+
+    /* If HFXT compensation is enabled, include the temperature driver. */
+    if (inst.enableHFXTComp) {
+        tmpModules.push({
+            name: "Temperature",
+            moduleName: "/ti/drivers/Temperature"
+        });
+    }
+    return tmpModules;
+}
 
 /*
  *  ======== extend ========

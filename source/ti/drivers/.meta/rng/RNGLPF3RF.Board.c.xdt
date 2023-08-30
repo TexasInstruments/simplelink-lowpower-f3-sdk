@@ -57,36 +57,38 @@
 
 const size_t RNG_poolByteSize = RNG_POOL_BYTE_SIZE;
 #if defined(__IAR_SYSTEMS_ICC__)
-#pragma data_alignment=32
+#pragma data_alignment=4
 #else
-__attribute__ ((aligned (32)))
+__attribute__((aligned(4)))
 #endif
 uint8_t  RNG_instancePool[RNG_POOL_BYTE_SIZE];
 
 const RNG_ReturnBehavior RNGLPF3RF_returnBehavior = `RNG.$static.rngReturnBehavior`;
 
-RNGLPF3RF_Object RNGLPF3RF_objects[`countDef`];
-
 const RNGLPF3RF_HWAttrs RNGLPF3RF_hwAttrs = {
     .intPriority = `Common.intPriority2Hex(RNG.$static.interruptPriority)`
 };
+
+% if (instances.length > 0) {
+RNGLPF3RF_Object RNGLPF3RF_objects[`countDef`];
 
 const RNG_Config RNG_config[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
 %     let inst    = instances[i];
     {   /* `inst.$name` */
         .object         = &RNGLPF3RF_objects[`inst.$name`],
-        .hwAttrs        = NULL
+        .hwAttrs        = &RNGLPF3RF_hwAttrs
     },
 % }
 };
 
+% }
 `declarations`
 const uint_least8_t RNG_count = `countDef`;
 
 const uint32_t RNGLPF3RF_noiseInputWordLen = `RNG.$static.rawNoiseLenWords`;
 
-uint32_t RNGLPF3RF_noiseConditioningKeyWord0 = `RNG.$static.noiseConditioningKeyW0`;
-uint32_t RNGLPF3RF_noiseConditioningKeyWord1 = `RNG.$static.noiseConditioningKeyW1`;
-uint32_t RNGLPF3RF_noiseConditioningKeyWord2 = `RNG.$static.noiseConditioningKeyW2`;
-uint32_t RNGLPF3RF_noiseConditioningKeyWord3 = `RNG.$static.noiseConditioningKeyW3`;
+uint32_t RNGLPF3RF_noiseConditioningKeyWord0 = `"0x" + RNG.$static.noiseConditioningKeyW0.toString(16)`;
+uint32_t RNGLPF3RF_noiseConditioningKeyWord1 = `"0x" + RNG.$static.noiseConditioningKeyW1.toString(16)`;
+uint32_t RNGLPF3RF_noiseConditioningKeyWord2 = `"0x" + RNG.$static.noiseConditioningKeyW2.toString(16)`;
+uint32_t RNGLPF3RF_noiseConditioningKeyWord3 = `"0x" + RNG.$static.noiseConditioningKeyW3.toString(16)`;

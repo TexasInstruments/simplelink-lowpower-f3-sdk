@@ -66,18 +66,6 @@
 // Internal. Only to be used through TI provided API.
 #define VIMS_O_CFG                                                  0x000003FCU
 
-// Flash main region read protection configuration
-#define VIMS_O_RDPRMN                                               0x00000400U
-
-// Flash non main region read protection configuration
-#define VIMS_O_RDPRNMN                                              0x00000404U
-
-// Flash trim region read protection configuration
-#define VIMS_O_RDPRTRM                                              0x00000408U
-
-// Flash engr region read protection configuration
-#define VIMS_O_RDPREGR                                              0x0000040CU
-
 // Flash main region write/erase protection configuration 1
 #define VIMS_O_WEPRA                                                0x00000410U
 
@@ -92,9 +80,6 @@
 
 // Cache control
 #define VIMS_O_CCHCTRL                                              0x00000424U
-
-// Digital Test Bus
-#define VIMS_O_DTB                                                  0x00000800U
 
 //*****************************************************************************
 //
@@ -307,54 +292,6 @@
 
 //*****************************************************************************
 //
-// Register: VIMS_O_RDPRMN
-//
-//*****************************************************************************
-// Field:   [2:0] VAL
-//
-// Flash read protection configuration value.
-#define VIMS_RDPRMN_VAL_W                                                    3U
-#define VIMS_RDPRMN_VAL_M                                           0x00000007U
-#define VIMS_RDPRMN_VAL_S                                                    0U
-
-//*****************************************************************************
-//
-// Register: VIMS_O_RDPRNMN
-//
-//*****************************************************************************
-// Field:   [5:0] VAL
-//
-// Flash read protection configuration value.
-#define VIMS_RDPRNMN_VAL_W                                                   6U
-#define VIMS_RDPRNMN_VAL_M                                          0x0000003FU
-#define VIMS_RDPRNMN_VAL_S                                                   0U
-
-//*****************************************************************************
-//
-// Register: VIMS_O_RDPRTRM
-//
-//*****************************************************************************
-// Field:   [5:0] VAL
-//
-// Flash read protection configuration value.
-#define VIMS_RDPRTRM_VAL_W                                                   6U
-#define VIMS_RDPRTRM_VAL_M                                          0x0000003FU
-#define VIMS_RDPRTRM_VAL_S                                                   0U
-
-//*****************************************************************************
-//
-// Register: VIMS_O_RDPREGR
-//
-//*****************************************************************************
-// Field:     [0] VAL
-//
-// Flash read protection configuration value.
-#define VIMS_RDPREGR_VAL                                            0x00000001U
-#define VIMS_RDPREGR_VAL_M                                          0x00000001U
-#define VIMS_RDPREGR_VAL_S                                                   0U
-
-//*****************************************************************************
-//
 // Register: VIMS_O_WEPRA
 //
 //*****************************************************************************
@@ -497,21 +434,6 @@
 #define VIMS_CCHCTRL_CCHEN_S                                                 0U
 #define VIMS_CCHCTRL_CCHEN_EN                                       0x00000001U
 #define VIMS_CCHCTRL_CCHEN_DIS                                      0x00000000U
-
-//*****************************************************************************
-//
-// Register: VIMS_O_DTB
-//
-//*****************************************************************************
-// Field:   [3:0] SEL
-//
-// DTB MUX select pin value
-// ENUMs:
-// DIS                      DTB output from peripheral is 0x0.
-#define VIMS_DTB_SEL_W                                                       4U
-#define VIMS_DTB_SEL_M                                              0x0000000FU
-#define VIMS_DTB_SEL_S                                                       0U
-#define VIMS_DTB_SEL_DIS                                            0x00000000U
 
 
 #endif // __VIMS__

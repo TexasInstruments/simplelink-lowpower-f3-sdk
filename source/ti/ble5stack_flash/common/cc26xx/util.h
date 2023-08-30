@@ -100,8 +100,8 @@ extern "C" {
 #define UTIL_EVENT_ID_04         (0x10)// Event_Id_04
 #define UTIL_EVENT_ID_05         (0x20)// Event_Id_05
 #define UTIL_EVENT_ID_06         (0x40)// Event_Id_06
-#define UTIL_QUEUE_EVENT_ID (0x40000000)//Event_Id_30
-#define UTIL_TL_CB_EVENT    UTIL_EVENT_ID_00 // Event_Id_00
+#define UTIL_QUEUE_EVENT_ID      (0x00100000)//Event_Id_30
+#define UTIL_TL_CB_EVENT         UTIL_EVENT_ID_00 // Event_Id_00
 #else
 #define UTIL_QUEUE_EVENT_ID Event_Id_30
 #endif

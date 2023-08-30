@@ -1226,7 +1226,14 @@ ICall_Errno
 ICall_fetchServiceMsg(ICall_ServiceEnum *src,
                       ICall_EntityID *dest,
                       void **msg);
-
+/**
+ * Check if Task Queue is empty.
+ *
+ * @return @ref ICALL_ERRNO_SUCCESS when a message was successfully
+ *         retrieved.<br>
+ *         @ref ICALL_ERRNO_NOMSG when no message was queued to
+ */
+uint8 ICall_IsQueueEmpty();
 /**
  * @brief Waits for a signal to the semaphore associated with the calling thread.
  *

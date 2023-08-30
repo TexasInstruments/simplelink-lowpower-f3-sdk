@@ -79,7 +79,6 @@ extern "C"
 /* For POSIX only:
  * The message size is tailored to ubleEvtMsg_t plus length in uble.h
  */
-#define MQ_DEF_MSGSIZE    16  //!< Maximum POSIX message size
 #define MQ_DEF_MAXMSG     12  //!< Maximum number of messages in POSIX
 
 /** @} End PORT_Constants */
@@ -111,27 +110,6 @@ struct port_timerObject_s;
 /** @defgroup Port_Queues RTOS Queue Interfaces
  * @{
  */
-
-/// @brief Port RTOS queue element for TIRTOS
-typedef struct port_queueElem_tirtos_s
-{
-  void *next;  //!< next pointer
-  void *prev;  //!< previous pointer
-} port_queueElem_tirtos_t;
-
-/// @brief Port RTOS queue element for POSIX
-typedef struct port_queueElem_posix_s
-{
-  void *pElem;  //!< pointer to the queue element
-  uint16_t size;  //!< size of the queue element
-} port_queueElem_posix_t;
-
-/// @brief Union of port RTOS queue element for TIRTOS/POSIX
-typedef union port_queueElem_s
-{
-  port_queueElem_tirtos_t tirtos_queueElem;  //!< TIRTOS queue element
-  port_queueElem_posix_t posix_queueElem; //!< POISX queue element
-} port_queueElem_t;
 
 /// @brief Opaque strut for queue object
 struct port_queueObject_s;
@@ -196,7 +174,7 @@ extern void port_timerStop( struct port_timerObject_s *handle );
  *
  * @return pointer to port_queueObject_s.
  */
-extern struct port_queueObject_s *port_queueCreate( const char *portQueueName );
+extern struct port_queueObject_s *port_queueCreate( const char *portQueueName, long size );
 
 /**
  * @brief This function removes the element from the front of queue.
@@ -207,7 +185,7 @@ extern struct port_queueObject_s *port_queueCreate( const char *portQueueName );
  * @return - none.
  */
 extern void port_queueGet( struct port_queueObject_s *handle,
-                           port_queueElem_t **port_ppQueueElement );
+                           char *port_ppQueueElement );
 
 /**
  * @brief This function puts the queue element at the front of queue.
@@ -219,7 +197,7 @@ extern void port_queueGet( struct port_queueObject_s *handle,
  * @return none
  */
 extern void port_queuePut( struct port_queueObject_s *handle,
-                           port_queueElem_t *port_queueElement,
+                           char *port_queueElement,
                            uint16_t size );
 
 /**

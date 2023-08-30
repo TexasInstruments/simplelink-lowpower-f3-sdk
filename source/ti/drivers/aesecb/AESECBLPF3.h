@@ -82,8 +82,15 @@ extern "C" {
  *  ECB SRC as BUF
  *  Trigger points for auto ECB as WRBUF3S (encryption starts by writing BUF3)
  */
-#define AESEBCLPF3_SINGLE_BLOCK_AUTOCFG \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESEBCLPF3_SINGLE_BLOCK_AUTOCFG \
+        ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESEBCLPF3_SINGLE_BLOCK_AUTOCFG \
+        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
+#endif
 
 /*!
  *  @brief      AESECBLPF3 Hardware Attributes

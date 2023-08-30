@@ -76,6 +76,12 @@ typedef struct
     char                            *data;
 }BLEAppUtil_CallbackToInvoke_t;
 
+typedef struct
+{
+    uint8_t event;                // event type
+    void    *pData;               // pointer to message
+} BLEAppUtil_appEvt_t;
+
 /*********************************************************************
  * GLOBAL VARIABLES
  */

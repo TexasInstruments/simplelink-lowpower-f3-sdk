@@ -84,12 +84,7 @@ static int I2CLPF3_postNotify(unsigned int eventType, uintptr_t eventArg, uintpt
 static void I2CLPF3_swiFxn(uintptr_t arg0, uintptr_t arg1);
 
 /* Default I2C parameters structure */
-static const I2C_Params I2C_defaultParams = {
-    I2C_MODE_BLOCKING, /* transferMode */
-    NULL,              /* transferCallbackFxn */
-    I2C_100kHz,        /* bitRate */
-    NULL               /* custom */
-};
+extern const I2C_Params I2C_defaultParams;
 
 /*!
  *  ======== I2C_close ========
@@ -321,7 +316,7 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
     I2C_Handle handle              = (I2C_Handle)arg;
     I2CLPF3_Object *object         = handle->object;
     I2CLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
-    uint32_t command               = I2C_CSTAT_CTL_BUSY_RUN;
+    uint32_t command               = I2C_CCTL_RUN_EN;
 
     /* Clear the interrupt */
     I2CControllerClearInt(hwAttrs->baseAddr);
@@ -336,12 +331,12 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
         return;
     }
 
-    uint32_t status = HWREG(I2C0_BASE + I2C_O_CSTAT_CTL);
+    uint32_t status = HWREG(I2C0_BASE + I2C_O_CSTA);
 
     /* Current transaction is cancelled */
     if (object->currentTransaction->status == I2C_STATUS_CANCEL)
     {
-        I2CControllerCommand(hwAttrs->baseAddr, I2C_CSTAT_CTL_ADRACKN_STOP);
+        I2CControllerCommand(hwAttrs->baseAddr, I2C_CCTL_STOP_EN);
         I2CLPF3_completeTransfer(handle);
         return;
     }
@@ -354,11 +349,11 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
      * the status register. If the condition is true, don't enter
      * the error-handling block, but carry on reading instead.
      */
-    if ((status & (I2C_CSTAT_CTL_ERR_START | I2C_CSTAT_CTL_ARBLST)) &&
-        !(object->writeCount == 0 && ((status & 0x1F) == (I2C_CSTAT_CTL_ERR_START | I2C_CSTAT_CTL_DATACKN_ACK))))
+    if ((status & (I2C_CSTA_ERR_M | I2C_CSTA_ARBLST_M)) &&
+        !(object->writeCount == 0 && ((status & 0x1F) == (I2C_CSTA_ERR_M | I2C_CSTA_DATACKN_M))))
     {
         /* Decode interrupt status */
-        if (status & I2C_CSTAT_CTL_ARBLST)
+        if (status & I2C_CSTA_ARBLST_M)
         {
             object->currentTransaction->status = I2C_STATUS_ARB_LOST;
         }
@@ -367,7 +362,7 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
          * is always transmitted, regardless of the ADDR NACK. Therefore,
          * we should check this error condition first.
          */
-        else if (status & I2C_CSTAT_CTL_ADRACKN_STOP)
+        else if (status & I2C_CSTA_ADRACKN_M)
         {
             object->currentTransaction->status = I2C_STATUS_ADDR_NACK;
         }
@@ -382,7 +377,7 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
          * interrupt bit. Therefore, if an error occurred, we send the STOP
          * bit and complete the transfer immediately.
          */
-        I2CControllerCommand(hwAttrs->baseAddr, I2C_CSTAT_CTL_ADRACKN_STOP);
+        I2CControllerCommand(hwAttrs->baseAddr, I2C_CCTL_STOP_EN);
         I2CLPF3_completeTransfer(handle);
     }
     else if (object->writeCount)
@@ -403,16 +398,16 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
             if (object->readCount > 1)
             {
                 /* RUN and generate ACK to target */
-                command |= I2C_CSTAT_CTL_DATACKN_ACK;
+                command |= I2C_CCTL_ACK_M;
             }
 
             /* RUN and generate a repeated START */
-            command |= I2C_CSTAT_CTL_ERR_START;
+            command |= I2C_CCTL_START_M;
         }
         else
         {
             /* Send STOP */
-            command = I2C_CSTAT_CTL_ADRACKN_STOP;
+            command = I2C_CCTL_STOP_EN;
         }
 
         I2CControllerCommand(hwAttrs->baseAddr, command);
@@ -427,12 +422,12 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
         if (object->readCount > 1)
         {
             /* Send ACK and RUN */
-            command |= I2C_CSTAT_CTL_DATACKN_ACK;
+            command |= I2C_CCTL_ACK_EN;
         }
         else if (object->readCount < 1)
         {
             /* Send STOP */
-            command = I2C_CSTAT_CTL_ADRACKN_STOP;
+            command = I2C_CCTL_STOP_EN;
         }
         else
         {
@@ -443,7 +438,7 @@ static void I2CLPF3_hwiFxn(uintptr_t arg)
     }
     else
     {
-        I2CControllerCommand(hwAttrs->baseAddr, I2C_CSTAT_CTL_ADRACKN_STOP);
+        I2CControllerCommand(hwAttrs->baseAddr, I2C_CCTL_STOP_EN);
         object->currentTransaction->status = I2C_STATUS_SUCCESS;
         I2CLPF3_completeTransfer(handle);
     }
@@ -565,7 +560,7 @@ static void I2CLPF3_swiFxn(uintptr_t arg0, uintptr_t arg1)
 void I2CSupport_controllerFinish(I2C_HWAttrs const *hwAttrs)
 {
     /* Asynchronously generate a STOP condition. */
-    I2CControllerCommand(hwAttrs->baseAddr, I2C_CSTAT_CTL_ADRACKN_STOP);
+    I2CControllerCommand(hwAttrs->baseAddr, I2C_CCTL_STOP_EN);
 }
 
 /*
@@ -686,14 +681,12 @@ static void I2CLPF3_initHw(I2C_Handle handle)
 {
     I2CLPF3_Object *object         = handle->object;
     I2CLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
-    ClockP_FreqHz freq;
 
     /* Disable and clear interrupts */
     I2CControllerDisableInt(hwAttrs->baseAddr);
     I2CControllerClearInt(hwAttrs->baseAddr);
 
     /* Set the I2C configuration */
-    ClockP_getCpuFreq(&freq);
     I2CControllerInitExpClk(hwAttrs->baseAddr, object->bitRate > I2C_100kHz);
 
     /* Enable the I2C Controller for operation */

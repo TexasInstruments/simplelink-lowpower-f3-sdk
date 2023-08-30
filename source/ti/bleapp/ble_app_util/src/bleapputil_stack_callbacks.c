@@ -125,9 +125,8 @@ void BLEAppUtil_pairStateCB(uint16_t connHandle, uint8_t state, uint8_t status)
  * @param   uiOutputs     - TRUE if the local device should display
  *                          the passcode
  * @param   numComparison - Is zero until the passcode pairing is
- *                          complete. After that, the it is the code that
- *                          should be displayed for numeric comparison for
- *                          numeric comparison pairing
+ *                          complete. After that, it is the code that
+ *                          should be displayed for numeric comparison pairing
  *
  * @return  None
  */

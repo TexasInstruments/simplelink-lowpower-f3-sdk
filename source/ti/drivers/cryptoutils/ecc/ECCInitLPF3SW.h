@@ -51,6 +51,15 @@ extern "C" {
 void ECCInitLPF3SW_NISTP256(ECC_State *state, uint8_t windowSize, uint32_t *workZone);
 
 /*!
+ *  @brief Initializes the ECC state with NIST P224 curve params.
+ *
+ *  @param  state       Points to ECC state.
+ *  @param  windowSize  ECC SW window size used for computations.
+ *  @param  workZone    Points to ECC workzone buffer.
+ */
+void ECCInitLPF3SW_NISTP224(ECC_State *state, uint8_t windowSize, uint32_t *workZone);
+
+/*!
  *  @brief Initializes the ECC state with Curve25519 curve params.
  *
  *  @param  state       Points to ECC state.

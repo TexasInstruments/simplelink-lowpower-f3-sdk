@@ -434,7 +434,7 @@ static void AESCCMLPF3_processCBCMACFinalBlock(const uint8_t *input, size_t byte
      */
     (void)memcpy((void *)(AES_BASE + AES_O_BUF0), input, bytesRemaining);
 
-    AESSetTrigger((uint32_t)AES_TRG_ECBOP_TXTXBUF);
+    AESSetTrigger((uint32_t)AES_TRG_AESOP_TXTXBUF);
 }
 
 #define M_PRIME_OFFSET 3
@@ -1361,7 +1361,7 @@ static void AESCCMLPF3_processCTRCounterBlock(const uint8_t *nonce, uint8_t nonc
 static void AESCCMLPF3_processTagCTR(AESCCMLPF3_Object *object)
 {
     /*
-     * Use default CTR config without AES_AUTOCFG_TRGECB_RDTXT3
+     * Use default CTR config without AES_AUTOCFG_TRGAES_RDTXT3
      * to avoid triggering an encryption of the next counter value
      * when reading out the encrypted tag.
      */

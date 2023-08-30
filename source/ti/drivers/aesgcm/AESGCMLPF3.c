@@ -31,12 +31,13 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+#include <ti/drivers/aesgcm/AESGCMLPF3.h>
 #include <ti/drivers/aesecb/AESECBLPF3.h>
 #include <ti/drivers/aesctr/AESCTRLPF3.h>
-#include <ti/drivers/aesgcm/AESGCMLPF3.h>
 #include <ti/drivers/AESCommon.h>
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
@@ -44,16 +45,23 @@
 #include <ti/drivers/cryptoutils/utils/CryptoUtils.h>
 
 #include <ti/drivers/dpl/DebugP.h>
-#include <ti/drivers/dpl/HwiP.h>
-#include <ti/drivers/dpl/SemaphoreP.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
 #include DeviceFamily_constructPath(inc/hw_aes.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 
-/*
- * Default AES CTR auto config used by GCM:
+/* Macro to byte swap a word */
+#if (defined(__IAR_SYSTEMS_ICC__) || defined(__TI_COMPILER_VERSION__))
+    #include <arm_acle.h>
+    #define BSWAP32 __rev
+#elif defined(__GNUC__)
+    #define BSWAP32 __builtin_bswap32
+#else
+    #error Unsupported compiler
+#endif
+
+/* Default AES CTR auto config used by GCM:
  *  ECB SRC as BUF
  *  Trigger points for auto ECB as RDTX3 and WRBUF3S
  *   (the first encryption starts by writing BUF3, the successive ones by reading TXT3)
@@ -62,7 +70,7 @@
  *  BUSHALT enabled
  */
 #define AESGCMLPF3_DEFAULT_AUTOCFG                                                                                   \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | \
+    ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | \
      (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN |                                \
      (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 
@@ -70,13 +78,15 @@
 #define GALOIS_FIELD_MULT_R 0xe1000000U
 
 /* Mask used to extract the upper or lower 4-bits of a byte */
-#define BYTE_MASK 0xf
+#define BYTE_MASK 0xFU
 
 /* Mask used to extract the upper or lower byte of a word */
-#define WORD_MASK 0xff
+#define WORD_MASK 0xFFU
 
-/*
- * Shoup's method for multiplication uses precomputed table with
+/* Number of 16-byte entries in the pre-computed table for each key in GHASH operation */
+#define AESGCMLPF3_HASH_PRECOMPUTE_TABLE_SIZE 16U
+
+/* Shoup's method for multiplication uses precomputed table with
  *      last4[x] = x * P^128
  * where x and last4[x] are seen as elements of GF(2^128)
  */
@@ -91,22 +101,21 @@ uint64_t hashTableLow[AESGCMLPF3_HASH_PRECOMPUTE_TABLE_SIZE];
 uint64_t hashTableHigh[AESGCMLPF3_HASH_PRECOMPUTE_TABLE_SIZE];
 
 /* Forward declarations */
-static void AESGCMLPF3_initCounter(AESGCMLPF3_Object *object, const uint8_t initialCounter[AES_BLOCK_SIZE]);
 static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
                                                 AESGCM_OneStepOperation *operation,
                                                 AESGCM_OperationType operationType);
 static int_fast16_t AESGCMLPF3_startOperation(AESGCM_Handle handle, bool isOneStepOrFinalOperation);
 static int_fast16_t AESGCMLPF3_waitForResult(AESGCM_Handle handle);
-static int_fast16_t AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object,
-                                                            const uint32_t *input,
-                                                            uint32_t *output);
-static void AESGCMLPF3_ghash(uint8_t *y, uint8_t *x, int32_t len);
-static void AESGCMLPF3_xorByte(uint8_t *vector1, const uint8_t *vector2, size_t len);
-static void AESGCMLPF3_xorWord(uint32_t *vector1, const uint32_t *vector2);
-static void AESGCMLPF3_computeTag(AESGCM_Handle handle, bool isEncrypt);
-static void AESGCMLPF3_lenToBits(uint32_t byteLen, uint8_t *bitLen);
-static void AESGCMLPF3_precomputeGhashTable(AESGCM_Handle handle);
+static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object,
+                                                    const uint32_t *input,
+                                                    uint32_t *output);
+static void AESGCMLPF3_computeGHASH(void *outputBlock, const void *input, int32_t len);
+static void AESGCMLPF3_xorBytes(uint8_t *vector1, const uint8_t *vector2, size_t len);
+static void AESGCMLPF3_xorBlock(uint32_t *vector1, const uint32_t *vector2);
+static void AESGCMLPF3_computeTag(AESGCM_Handle handle, size_t aadLength, size_t inputLength, bool isEncrypt);
+static void AESGCMLPF3_precomputeGHASHTable(uint32_t hashKey[AES_BLOCK_SIZE_WORDS]);
 static void AESGCMLPF3_galoisMult(uint8_t x[16]);
+static inline void AESGCMLPF3_incrementBEWord(uint32_t *word);
 
 /*
  *  ======== AESGCMLPF3_getObject ========
@@ -144,9 +153,11 @@ AESGCM_Handle AESGCM_construct(AESGCM_Config *config, const AESGCM_Params *param
         params = &AESGCM_defaultParams;
     }
 
-    DebugP_assert((params->returnBehavior != AESGCM_RETURN_BEHAVIOR_CALLBACK) || (params->callbackFxn != NULL));
-
-    object->threadSafe = true;
+    /* Callback return behavior is not supported */
+    if (params->returnBehavior == AESGCM_RETURN_BEHAVIOR_CALLBACK)
+    {
+        return NULL;
+    }
 
     status = AESCommonLPF3_construct(&object->common, (AES_ReturnBehavior)params->returnBehavior, params->timeout);
 
@@ -199,14 +210,9 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
     /* No need to assert operationType since we control it within the driver */
 
     AESGCMLPF3_Object *object = AESGCMLPF3_getObject(handle);
-    int_fast16_t status;
     bool tagValid;
-
-    /* Only polling mode supported for GCM on LPF3 devices */
-    if (object->common.returnBehavior != AES_RETURN_BEHAVIOR_POLLING)
-    {
-        return AESGCM_STATUS_FEATURE_NOT_SUPPORTED;
-    }
+    int_fast16_t status;
+    uint32_t ivBits;
 
 #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input & output pointers */
@@ -222,14 +228,7 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
         return AESGCM_STATUS_ERROR;
     }
 
-    /* The only currently supported IV length is 12 bytes */
-    if (operation->ivLength != AESGCMLPF3_IV_LENGTH)
-    {
-        return AESGCM_STATUS_ERROR;
-    }
-
-    /*
-     * Check if there is no operation already in progress for this driver
+    /* Check if there is no operation already in progress for this driver
      * instance, and then mark the current operation to be in progress.
      */
     status = AESCommonLPF3_setOperationInProgress(&object->common);
@@ -239,16 +238,13 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
         return status;
     }
 
-    if (object->threadSafe)
+    if (!CryptoResourceLPF3_acquireLock(object->common.semaphoreTimeout))
     {
-        if (!CryptoResourceLPF3_acquireLock(object->common.semaphoreTimeout))
-        {
-            AESCommonLPF3_clearOperationInProgress(&object->common);
-            return AESGCM_STATUS_RESOURCE_UNAVAILABLE;
-        }
-
-        object->common.cryptoResourceLocked = true;
+        AESCommonLPF3_clearOperationInProgress(&object->common);
+        return AESGCM_STATUS_RESOURCE_UNAVAILABLE;
     }
+
+    object->common.cryptoResourceLocked = true;
 
     object->operation           = (AESGCM_OperationUnion *)operation;
     object->operationType       = operationType;
@@ -256,46 +252,64 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
     object->common.returnStatus = AESGCM_STATUS_SUCCESS;
 
     /* Make internal copy of operational params */
-    object->common.key           = *(operation->key);
-    object->input                = operation->input;
-    object->inputLength          = operation->inputLength;
-    object->inputLengthRemaining = operation->inputLength;
-    object->output               = operation->output;
-    object->mac                  = operation->mac;
-    object->aad                  = operation->aad;
+    object->common.key  = *(operation->key);
+    object->input       = operation->input;
+    object->inputLength = operation->inputLength;
+    object->output      = operation->output;
+    object->mac         = operation->mac;
+    object->aad         = operation->aad;
 
-    /* Compute Hash Key H by initializing counter to zeros */
-    AESGCMLPF3_initCounter(object, NULL);
-    status = AESGCMLPF3_encryptOneAlignedAESBlockECB(&object->common,
-                                                     (const uint32_t *)&object->counter,
-                                                     (uint32_t *)&object->hashKey);
+    /* Clear the counter value */
+    (void)memset(object->counter, 0, sizeof(object->counter));
 
-    AESGCMLPF3_precomputeGhashTable(handle);
+    /* Compute Hash Key H by encrypting a block of zeros */
+    AESGCMLPF3_encryptOneAlignedAESBlockECB(&object->common, object->counter, object->hashKey);
 
-    if (status != AESGCM_STATUS_SUCCESS)
+    AESGCMLPF3_precomputeGHASHTable(object->hashKey);
+
+    /* Compute the initial counter value */
+    if (operation->ivLength == 12U)
     {
-        return status;
+        /* Construct the initial counter block Y0: IV || 1 */
+        (void)memcpy(object->counter, operation->iv, operation->ivLength);
+        object->counter[AES_BLOCK_SIZE_WORDS - 1U] = ((uint32_t)1U << 24U);
     }
+    else
+    {
+        /* Construct the initial counter block Y0: GHASH(IV || 0s+64 || [len(IV)]64)
+         * where the IV is padded with the minimum number of '0' bits, possibly
+         * none, so that the length of the resulting string is a multiple of 128
+         * bits (the block size). This string in turn is appended with 64
+         * additional '0' bits, followed by the 64-bit representation of the
+         * length of the IV in bits. Finally, the GHASH function is applied to
+         * the resulting string to form the initial counter block.
+         */
 
-    /* Construct the word aligned counter block Y0: IV || 1 */
-    AESGCMLPF3_initCounter(object, operation->iv);
-    object->counter[3] |= 1 << 24;
+        /* Compute GHASH(IV) */
+        AESGCMLPF3_computeGHASH(object->counter, operation->iv, operation->ivLength);
+
+        /* Temporarily use intermediate tag block to store (0s+64 || [len(IV)]64)
+         * where [len(IV)]64 is the 64-bit length of IV in bits formatted in
+         * big-endian.
+         */
+        (void)memset(object->intermediateTag, 0, sizeof(object->intermediateTag));
+        ivBits                                             = operation->ivLength * 8U;
+        object->intermediateTag[AES_BLOCK_SIZE_WORDS - 1U] = BSWAP32(ivBits);
+
+        /* Compute GHASH(0s+64 || [len(IV)]64) with the previously computed
+         * GHASH(IV) which yields Y0: GHASH(IV || 0s+64 || [len(IV)]64)
+         */
+        AESGCMLPF3_computeGHASH(object->counter, object->intermediateTag, sizeof(object->intermediateTag));
+    }
 
     /* Compute tag OPT: ENC(key, Y0) */
-    status = AESGCMLPF3_encryptOneAlignedAESBlockECB(&object->common,
-                                                     (const uint32_t *)&object->counter,
-                                                     (uint32_t *)&object->tagOTP);
-
-    if (status != AESGCM_STATUS_SUCCESS)
-    {
-        return status;
-    }
+    AESGCMLPF3_encryptOneAlignedAESBlockECB(&object->common, object->counter, object->tagOTP);
 
     /* Compute Y1: Y0 + 1 used for GCTR operation*/
-    object->counter[3] = object->counter[3] << 1;
+    AESGCMLPF3_incrementBEWord(&object->counter[AES_BLOCK_SIZE_WORDS - 1U]);
 
     /* Clear intermediate tag */
-    memset(object->intermediateTag, 0, sizeof(object->intermediateTag));
+    (void)memset(object->intermediateTag, 0, sizeof(object->intermediateTag));
 
     if (operationType == AESGCM_OPERATION_TYPE_ENCRYPT)
     {
@@ -303,140 +317,105 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
         status = AESGCMLPF3_startOperation(handle, true);
 
         /* Compute Authentication tag T */
-        AESGCMLPF3_computeTag(handle, true);
+        AESGCMLPF3_computeTag(handle, operation->aadLength, operation->inputLength, true);
 
         /* Copy computed tag to operations struct */
-        memcpy(operation->mac, object->intermediateTag, object->operation->oneStepOperation.macLength);
+        (void)memcpy(operation->mac, object->intermediateTag, object->operation->oneStepOperation.macLength);
     }
     else
     {
         /* Compute Authentication tag T' */
-        AESGCMLPF3_computeTag(handle, false);
+        AESGCMLPF3_computeTag(handle, operation->aadLength, operation->inputLength, false);
 
         /* Verify if computed T' matches T in operations struct */
         tagValid = CryptoUtils_buffersMatch(object->intermediateTag,
                                             object->mac,
                                             (size_t)object->operation->oneStepOperation.macLength);
 
-        if (!tagValid)
+        if (tagValid)
         {
-            return AESGCM_STATUS_MAC_INVALID;
+            /* Compute Plaintext if tags match */
+            status = AESGCMLPF3_startOperation(handle, true);
         }
-        /* Compute Plaintext if tags match*/
-        status = AESGCMLPF3_startOperation(handle, true);
+        else
+        {
+            CryptoResourceLPF3_releaseLock();
+            AESCommonLPF3_clearOperationInProgress(&object->common);
+            status = AESGCM_STATUS_MAC_INVALID;
+        }
     }
 
     return status;
+}
+
+/*
+ *  ======== AESGCMLPF3_incrementBEWord ========
+ *  Increments a big-endian word and discards the carry bit if any.
+ */
+static inline void AESGCMLPF3_incrementBEWord(uint32_t *word)
+{
+    uint32_t tempWord = *word;
+
+    tempWord = BSWAP32(tempWord);
+    tempWord++;
+    *word = BSWAP32(tempWord);
 }
 
 /*
  *  ======== AESGCMLPF3_computeTag ========
  */
-static void AESGCMLPF3_computeTag(AESGCM_Handle handle, bool isEncrypt)
+static void AESGCMLPF3_computeTag(AESGCM_Handle handle, size_t aadLength, size_t inputLength, bool isEncrypt)
 {
     AESGCMLPF3_Object *object = AESGCMLPF3_getObject(handle);
+    uint32_t concatBitLengths[AES_BLOCK_SIZE_WORDS];
 
     /* Compute GF128-multiplication over AAD */
-    if (object->operation->oneStepOperation.aadLength)
+    if (aadLength > 0U)
     {
-        AESGCMLPF3_ghash(object->intermediateTag, object->aad, object->operation->oneStepOperation.aadLength);
+        AESGCMLPF3_computeGHASH(object->intermediateTag, object->aad, aadLength);
     }
 
     /* Compute GF128-multiplication over ciphertext: input for dec and output for enc */
-    if (object->operation->oneStepOperation.inputLength)
+    if (inputLength > 0U)
     {
         if (isEncrypt)
         {
-            AESGCMLPF3_ghash(object->intermediateTag, object->output, object->operation->oneStepOperation.inputLength);
+            AESGCMLPF3_computeGHASH(object->intermediateTag, object->output, inputLength);
         }
         else
         {
-            AESGCMLPF3_ghash(object->intermediateTag,
-                             (uint8_t *)object->input,
-                             object->operation->oneStepOperation.inputLength);
+            AESGCMLPF3_computeGHASH(object->intermediateTag, object->input, inputLength);
         }
     }
 
-    /* Compute GF128-multiplication over concatenated bit length of input and AAD */
-    uint8_t concatMessageLen[AES_BLOCK_SIZE];
+    /* Compute GF128-multiplication over concatenated bit lengths of ADD and
+     * input. This code is optimized based on the fact that the AAD and input
+     * lengths will never be greater than (2^32 / 8) bytes.
+     */
+    concatBitLengths[0] = 0U;
+    concatBitLengths[1] = BSWAP32(aadLength * 8U);
+    concatBitLengths[2] = 0U;
+    concatBitLengths[3] = BSWAP32(inputLength * 8U);
 
-    AESGCMLPF3_lenToBits(object->operation->oneStepOperation.aadLength, concatMessageLen);
-    AESGCMLPF3_lenToBits(object->operation->oneStepOperation.inputLength, concatMessageLen + (AES_BLOCK_SIZE / 2));
-
-    AESGCMLPF3_ghash(object->intermediateTag, concatMessageLen, AES_BLOCK_SIZE);
+    AESGCMLPF3_computeGHASH(object->intermediateTag, concatBitLengths, sizeof(concatBitLengths));
 
     /* Post processing: XOR above GF128-mult output with Tag OTP: E(K, Y0) */
-    /* Check word-alignment of XOR input pointers */
-    if (!IS_WORD_ALIGNED(object->intermediateTag) || !IS_WORD_ALIGNED(object->tagOTP))
-    {
-        AESGCMLPF3_xorByte((uint8_t *)&object->intermediateTag, (uint8_t *)&object->tagOTP, AES_BLOCK_SIZE);
-    }
-    else
-    {
-        AESGCMLPF3_xorWord((uint32_t *)&object->intermediateTag, (uint32_t *)&object->tagOTP);
-    }
-}
-
-/*
- *  ======== AESGCMLPF3_lenToBits ========
- */
-static void AESGCMLPF3_lenToBits(uint32_t byteLen, uint8_t *bitLen)
-{
-    int8_t i;
-
-    /* Length is converted from bytes to bits */
-    byteLen *= 8;
-    for (i = 3; i >= 0; i--)
-    {
-        bitLen[i]     = 0;
-        bitLen[i + 4] = byteLen & 0xFF;
-        byteLen >>= 8;
-    }
+    AESGCMLPF3_xorBlock(object->intermediateTag, object->tagOTP);
 }
 
 /*
  *  ======== AESGCMLPF3_encryptOneAlignedAESBlockECB ========
+ *  Encrypts a single word-aligned block in polling mode.
  */
-static int_fast16_t AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object,
-                                                            const uint32_t *input,
-                                                            uint32_t *output)
+static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object,
+                                                    const uint32_t *input,
+                                                    uint32_t *output)
 {
-    int_fast16_t status;
-
     /* Set up the key and AES engine to begin an operation */
     AESCommonLPF3_setupOperation(&object->key, AESEBCLPF3_SINGLE_BLOCK_AUTOCFG);
 
     /* Process the single block with CPU R/W */
     AESProcessAlignedBlocksECB(input, output, (uint32_t)AES_GET_NUM_BLOCKS(AES_BLOCK_SIZE));
-
-    /*
-     * Save the returnStatus prior clearing operationInProgress or
-     * releasing the access semaphore in case it's overwritten.
-     */
-    status = object->returnStatus;
-    AESCommonLPF3_clearOperationInProgress(object);
-    AESCommonLPF3_cleanup(object);
-
-    return status;
-}
-
-/*
- *  ======== AESGCMLPF3_initCounter ========
- */
-static void AESGCMLPF3_initCounter(AESGCMLPF3_Object *object, const uint8_t initialCounter[AES_BLOCK_SIZE])
-{
-    if (initialCounter != NULL)
-    {
-        /* Reset object's counter to zero */
-        memset(object->counter, 0, sizeof(object->counter));
-
-        /* Intiialize with the provided IV */
-        memcpy(object->counter, initialCounter, object->operation->oneStepOperation.ivLength);
-    }
-    else
-    {
-        memset(object->counter, 0, sizeof(object->counter));
-    }
 }
 
 /*
@@ -452,12 +431,10 @@ static int_fast16_t AESGCMLPF3_startOperation(AESGCM_Handle handle, bool isOneSt
 
     /* Process all data as a polling mode operation */
     /* Write the counter value to the AES engine to trigger first encryption */
-    AESCTRLPF3_writeCounter((uint32_t *)&object->counter[0]);
+    AESCTRLPF3_writeCounter(object->counter);
 
     /* Process all blocks with CPU R/W */
     AESCTRLPF3_processData(object->input, object->output, object->inputLength, isOneStepOrFinalOperation);
-
-    object->inputLengthRemaining = 0U;
 
     status = AESGCMLPF3_waitForResult(handle);
 
@@ -473,10 +450,9 @@ static int_fast16_t AESGCMLPF3_waitForResult(AESGCM_Handle handle)
     int_fast16_t status       = AESGCM_STATUS_ERROR;
 
     /* Save the last counter value from the AES engine */
-    AESCTRLPF3_readCounter((uint32_t *)&object->counter[0]);
+    AESCTRLPF3_readCounter(object->counter);
 
-    /*
-     * Save the object's returnStatus before clearing operationInProgress or
+    /* Save the object's returnStatus before clearing operationInProgress or
      * posting the access semaphore in case it is overwritten.
      */
     status = object->common.returnStatus;
@@ -494,161 +470,118 @@ static int_fast16_t AESGCMLPF3_waitForResult(AESGCM_Handle handle)
  */
 int_fast16_t AESGCM_cancelOperation(AESGCM_Handle handle)
 {
-    DebugP_assert(handle);
-
-    AESGCMLPF3_Object *object = AESGCMLPF3_getObject(handle);
-
-    uintptr_t interruptKey = HwiP_disable();
-
-    /*
-     * Return success if there is no active operation to cancel.
-     * Do not execute the callback as it would have been executed already
-     * when the operation completed.
+    /* Cancellation returns an error because this driver does not support
+     * callback return behavior.
      */
-    if (!object->common.operationInProgress)
-    {
-        HwiP_restore(interruptKey);
-        return AESGCM_STATUS_SUCCESS;
-    }
-
-    HwiP_restore(interruptKey);
-
-    /*
-     * Cancel DMA for input and output channels, clear operation in-progress,
-     * and releases crypto resource if necessary.
-     */
-    AESCommonLPF3_cancelOperation(&object->common, true);
-
-    return AESGCM_STATUS_SUCCESS;
+    return AESGCM_STATUS_ERROR;
 }
 
-/* XOR a vector into another vector. */
 /*
- *  ======== AESGCMLPF3_xorByte ========
+ *  ======== AESGCMLPF3_xorBytes ========
+ *  XOR a vector into another vector
  */
-static void AESGCMLPF3_xorByte(uint8_t *vector1, const uint8_t *vector2, size_t len)
+static void AESGCMLPF3_xorBytes(uint8_t *vector1, const uint8_t *vector2, size_t len)
+{
+    size_t i;
+
+    for (i = 0U; i < len; i++)
+    {
+        vector1[i] ^= vector2[i];
+    }
+}
+
+/*
+ *  ======== AESGCMLPF3_xorBlock ========
+ *  XOR a word-aligned block into another word-aligned block
+ */
+static void AESGCMLPF3_xorBlock(uint32_t *vector1, const uint32_t *vector2)
 {
     uint_fast8_t i;
 
-    for (i = 0; i < len; i++)
+    for (i = 0U; i < AES_BLOCK_SIZE_WORDS; i++)
     {
         vector1[i] ^= vector2[i];
     }
 }
 
-/* XOR a word aligned vector into another word aligned vector. */
 /*
- *  ======== AESGCMLPF3_xorWord ========
+ *  ======== AESGCMLPF3_computeGHASH ========
+ *  GHASH Function
+ *  @pre AESGCMLPF3_precomputeGHASHTable
  */
-static void AESGCMLPF3_xorWord(uint32_t *vector1, const uint32_t *vector2)
-{
-    uint32_t i;
-
-    size_t lenWords = AES_BLOCK_SIZE / 4;
-
-    for (i = 0; i < lenWords; i++)
-    {
-        vector1[i] ^= vector2[i];
-    }
-}
-
-/* GHASH Function */
-/*
- *  ======== AESGCMLPF3_ghash ========
- */
-static void AESGCMLPF3_ghash(uint8_t *y, uint8_t *x, int32_t len)
+static void AESGCMLPF3_computeGHASH(void *outputBlock, const void *input, int32_t len)
 {
     for (; len > 0; len -= AES_BLOCK_SIZE)
     {
         if (len >= AES_BLOCK_SIZE)
         {
             /* Check word-alignment of XOR input pointers */
-            if (!IS_WORD_ALIGNED(y) || !IS_WORD_ALIGNED(x))
+            if (!IS_WORD_ALIGNED(outputBlock) || !IS_WORD_ALIGNED(input))
             {
-                AESGCMLPF3_xorByte(y, x, len);
+                AESGCMLPF3_xorBytes(outputBlock, input, AES_BLOCK_SIZE);
             }
             else
             {
-                AESGCMLPF3_xorWord((uint32_t *)y, (uint32_t *)x);
+                AESGCMLPF3_xorBlock((uint32_t *)outputBlock, (uint32_t *)input);
             }
         }
         else
         {
-            AESGCMLPF3_xorByte(y, x, len);
+            AESGCMLPF3_xorBytes(outputBlock, input, len);
         }
 
-        AESGCMLPF3_galoisMult(y);
+        AESGCMLPF3_galoisMult(outputBlock);
 
-        x += AES_BLOCK_SIZE;
+        input = (const uint8_t *)input + AES_BLOCK_SIZE;
     }
 }
 
 /*
- * Return the unsigned 32 bits integer corresponding to four bytes in
- * big-endian order (MSB first).
- */
-/*
- *  ======== AESGCMLPF3_getUint32BE ========
- */
-static uint32_t AESGCMLPF3_getUint32BE(uint8_t *src)
-{
-    uint8_t *buf;
-    uint32_t result;
-
-    buf    = src;
-    result = ((uint32_t)buf[0] << 24) | ((uint32_t)buf[1] << 16) | ((uint32_t)buf[2] << 8) | (uint32_t)buf[3];
-
-    return result;
-}
-
-/* Store a 32 bits unsigned integer in big-endian order in memory. */
-/*
  *  ======== AESGCMLPF3_storeUint32InArray ========
+ *  Store a 32 bits unsigned integer in big-endian order in memory
  */
 static void AESGCMLPF3_storeUint32InArray(uint8_t *dst, uint32_t x)
 {
     uint8_t *buf;
 
     buf    = dst;
-    buf[0] = (uint8_t)(x >> 24) & WORD_MASK;
-    buf[1] = (uint8_t)(x >> 16) & WORD_MASK;
-    buf[2] = (uint8_t)(x >> 8) & WORD_MASK;
+    buf[0] = (uint8_t)((x >> 24) & WORD_MASK);
+    buf[1] = (uint8_t)((x >> 16) & WORD_MASK);
+    buf[2] = (uint8_t)((x >> 8) & WORD_MASK);
     buf[3] = (uint8_t)x;
 }
 
-/* Pre-compute Shoup's 4-bit tables */
 /*
- *  ======== AESGCMLPF3_precomputeGhashTable ========
+ *  ======== AESGCMLPF3_precomputeGHASHTable ========
+ *  Pre-compute Shoup's 4-bit tables
  */
-static void AESGCMLPF3_precomputeGhashTable(AESGCM_Handle handle)
+static void AESGCMLPF3_precomputeGHASHTable(uint32_t hashKey[AES_BLOCK_SIZE_WORDS])
 {
-    AESGCMLPF3_Object *object = AESGCMLPF3_getObject(handle);
-
-    int8_t i;
+    uint_fast8_t i;
     uint_fast8_t j;
     uint64_t upperWord, lowerWord;
     uint64_t vLow, vHigh;
     uint32_t tmp;
 
     /* Pack hashKey as two 64-bit big-endian variables in vHigh and vLow */
-    upperWord = AESGCMLPF3_getUint32BE((uint8_t *)object->hashKey);
-    lowerWord = AESGCMLPF3_getUint32BE((uint8_t *)object->hashKey + 4);
-    vHigh     = (uint64_t)upperWord << 32 | lowerWord;
+    upperWord = BSWAP32(hashKey[0]);
+    lowerWord = BSWAP32(hashKey[1]);
+    vHigh     = ((uint64_t)upperWord << 32) | lowerWord;
 
-    upperWord = AESGCMLPF3_getUint32BE((uint8_t *)object->hashKey + 8);
-    lowerWord = AESGCMLPF3_getUint32BE((uint8_t *)object->hashKey + 12);
-    vLow      = (uint64_t)upperWord << 32 | lowerWord;
+    upperWord = BSWAP32(hashKey[2]);
+    lowerWord = BSWAP32(hashKey[3]);
+    vLow      = ((uint64_t)upperWord << 32) | lowerWord;
 
     /* 8th table entry is the hash key */
     hashTableLow[8]  = vLow;
     hashTableHigh[8] = vHigh;
 
     /* 1st table entry is all zeros */
-    hashTableLow[0]  = 0;
-    hashTableHigh[0] = 0;
+    hashTableLow[0]  = 0U;
+    hashTableHigh[0] = 0U;
 
     /* Compute table indices that are powers of two as product of H * special element */
-    for (i = 4U; i > 0; i >>= 1U)
+    for (i = 4U; i > 0U; i >>= 1U)
     {
         tmp   = (vLow & 1) * GALOIS_FIELD_MULT_R;
         vLow  = (vHigh << 63) | (vLow >> 1);
@@ -669,13 +602,14 @@ static void AESGCMLPF3_precomputeGhashTable(AESGCM_Handle handle)
     }
 }
 
-/* x = x.H, computed using the precomputed tables in object */
 /*
  *  ======== AESGCMLPF3_galoisMult ========
+ *  x = x.H, computed using the precomputed tables in object
+ *  @pre AESGCMLPF3_precomputeGHASHTable
  */
 static void AESGCMLPF3_galoisMult(uint8_t *x)
 {
-    int8_t i;
+    int_fast8_t i;
     uint_fast8_t lower4Bits, upper4Bits, rem;
     uint64_t zHigh, zLow;
 
@@ -684,7 +618,7 @@ static void AESGCMLPF3_galoisMult(uint8_t *x)
     zHigh = hashTableHigh[lower4Bits];
     zLow  = hashTableLow[lower4Bits];
 
-    for (i = 15U; i >= 0; i--)
+    for (i = 15; i >= 0; i--)
     {
         lower4Bits = x[i] & BYTE_MASK;
         upper4Bits = (x[i] >> 4) & BYTE_MASK;

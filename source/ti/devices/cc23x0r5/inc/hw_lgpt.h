@@ -39,8 +39,7 @@
 // LGPT component
 //
 //*****************************************************************************
-// Description Register. This register provides IP module ID, revision
-// information, instance index and standard MMR registers offset.
+// Description Register.
 #define LGPT_O_DESC                                                0x00000000U
 
 // Description Extended
@@ -85,39 +84,25 @@
 // IO Controller
 #define LGPT_O_IOCTL                                               0x00000048U
 
-// Interrupt mask. This register selects interrupt sources which are allowed to
-// pass from RIS to MIS when the corresponding bit-fields are set to 1.
+// Interrupt mask.
 #define LGPT_O_IMASK                                               0x00000068U
 
-// Raw interrupt status. This register reflects the state of all pending
-// interrupts, regardless of masking. This register allows the user to
-// implement a poll scheme. A flag set in this register can be cleared by
-// writing 1 to the corresponding ICLR register bit.
+// Raw interrupt status.
 #define LGPT_O_RIS                                                 0x0000006CU
 
-// Masked interrupt status. This register is simply a bitwise AND of the
-// contents of IMASK and RIS.*] registers. A flag set in this register can be
-// cleared by writing 1 to the corresponding ICLR register bit.
+// Masked interrupt status.
 #define LGPT_O_MIS                                                 0x00000070U
 
-// Interrupt set register. This register can used by software for diagnostics
-// and safety checking purposes. Writing a 1 to a bit in this register will set
-// the event and the corresponding RIS bit also gets set. If the corresponding
-// IMASK bit is set, then the corresponding MIS register bit also gets set.
+// Interrupt set register.
 #define LGPT_O_ISET                                                0x00000074U
 
-// Interrupt clear register. This register allows software to clear interrupts.
-// Writing a 1 to a bit in this register will clear the event and the
-// corresponding RIS bit also gets cleared. If the corresponding IMASK bit is
-// set, then the corresponding MIS register bit also gets cleared.
+// Interrupt clear register.
 #define LGPT_O_ICLR                                                0x00000078U
 
-// Interrupt mask set register. Writing a 1 to a bit in this register will set
-// the corresponding IMASK bit.
+// Interrupt mask set register.
 #define LGPT_O_IMSET                                               0x0000007CU
 
-// Interrupt mask clear register. Writing a 1 to a bit in this register will
-// clear the corresponding IMASK bit.
+// Interrupt mask clear register.
 #define LGPT_O_IMCLR                                               0x00000080U
 
 // Debug control
@@ -552,7 +537,8 @@
 //
 // Current counter value.
 // If CTL.MODE = QDEC this can be used to set the initial counter value during
-// QDEC.
+// QDEC.  Writing to CNTR in other modes than QDEC is possible, but may result
+// in unpredictable behavior.
 #define LGPT_CNTR_VAL_W                                                    16U
 #define LGPT_CNTR_VAL_M                                            0x0000FFFFU
 #define LGPT_CNTR_VAL_S                                                     0U

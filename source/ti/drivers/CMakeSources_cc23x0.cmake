@@ -19,6 +19,8 @@ set(SOURCES_CC23X0_COMMON
     aesecb/AESECBLPF3.c
     AESGCM.c
     aesgcm/AESGCMLPF3.c
+    ANSIX936KDF.c
+    ansix936kdf/ANSIX936KDFXX.c
     batterymonitor/BatteryMonitorLPF3.c
     batterymonitor/BatMonSupportLPF3.c
     CAN.c
@@ -47,6 +49,7 @@ set(SOURCES_CC23X0_COMMON
     nvs/NVSRAM.c
     nvs/NVSSPI25X.c
     power/PowerCC23X0.c
+    pwm/PWMTimerLPF3.c
     RNG.c
     rng/RNGLPF3RF.c
     SD.c

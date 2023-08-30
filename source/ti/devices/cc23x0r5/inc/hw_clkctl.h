@@ -69,7 +69,7 @@
 // Internal. Only to be used through TI provided API.
 #define CLKCTL_O_STBYPTR                                            0x0000003CU
 
-// Internal. Only to be used through TI provided API.
+// IDLE Configuration Register.
 #define CLKCTL_O_IDLECFG                                            0x00000048U
 
 //*****************************************************************************
@@ -798,10 +798,21 @@
 //*****************************************************************************
 // Field:     [0] MODE
 //
-// Internal. Only to be used through TI provided API.
+// Flash LDO configuration in SLEEP/IDLE mode.
 // ENUMs:
-// LDO_OFF                  Internal. Only to be used through TI provided API.
-// LDO_ON                   Internal. Only to be used through TI provided API.
+// LDO_OFF                  Flash LDO is off in SLEEP/IDLE mode.
+//                          Decreases power
+//                          consumption in SLEEP/IDLE mode, but gives
+//                          longer wake up time.
+//
+//                          Note: NVM clock is turned
+//                          off independent of DMA status. Therefore SW
+//                          must ensure that DMA never access NVM in this
+//                          mode.
+// LDO_ON                   Flash LDO is on in SLEEP/IDLE mode.
+//                          Gives fast wake up time
+//                          from SLEEP/IDLE mode, but increased power
+//                          consumption.
 #define CLKCTL_IDLECFG_MODE                                         0x00000001U
 #define CLKCTL_IDLECFG_MODE_M                                       0x00000001U
 #define CLKCTL_IDLECFG_MODE_S                                                0U

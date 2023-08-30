@@ -4,7 +4,7 @@
  *
  *  Description:    Defines and prototypes for the UART peripheral.
  *
- *  Copyright (c) 2022 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2023 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -71,17 +71,17 @@ extern "C" {
 // as the intFlags parameter, and returned from UARTIntStatus.
 //
 //*****************************************************************************
-#define UART_INT_EOT       (UART_IMSC_EOTIM)       //!< End Of Transmission Interrupt Mask
-#define UART_INT_OE        (UART_IMSC_OEIM)        //!< Overrun Error Interrupt Mask
-#define UART_INT_BE        (UART_IMSC_BEIM)        //!< Break Error Interrupt Mask
-#define UART_INT_PE        (UART_IMSC_PEIM)        //!< Parity Error Interrupt Mask
-#define UART_INT_FE        (UART_IMSC_FEIM)        //!< Framing Error Interrupt Mask
-#define UART_INT_RT        (UART_IMSC_RTIM)        //!< Receive Timeout Interrupt Mask
-#define UART_INT_RX        (UART_IMSC_RXIM)        //!< Receive Interrupt Mask
-#define UART_INT_TX        (UART_IMSC_TXIM)        //!< Transmit Interrupt Mask
-#define UART_INT_CTS       (UART_IMSC_CTSMIM)      //!< CTS Modem Interrupt Mask
-#define UART_INT_TXDMADONE (UART_IMSC_TXDMADONEIM) //!< Tx DMA done interrupt mask
-#define UART_INT_RXDMADONE (UART_IMSC_RXDMADONEIM) //!< Rx DMA done interrupt mask
+#define UART_INT_EOT       (UART_IMSC_EOT)       //!< End Of Transmission Interrupt Mask
+#define UART_INT_OE        (UART_IMSC_OE)        //!< Overrun Error Interrupt Mask
+#define UART_INT_BE        (UART_IMSC_BE)        //!< Break Error Interrupt Mask
+#define UART_INT_PE        (UART_IMSC_PE)        //!< Parity Error Interrupt Mask
+#define UART_INT_FE        (UART_IMSC_FE)        //!< Framing Error Interrupt Mask
+#define UART_INT_RT        (UART_IMSC_RT)        //!< Receive Timeout Interrupt Mask
+#define UART_INT_RX        (UART_IMSC_TX)        //!< Receive Interrupt Mask
+#define UART_INT_TX        (UART_IMSC_RX)        //!< Transmit Interrupt Mask
+#define UART_INT_CTS       (UART_IMSC_CTSM)      //!< CTS Modem Interrupt Mask
+#define UART_INT_TXDMADONE (UART_IMSC_TXDMADONE) //!< Tx DMA done interrupt mask
+#define UART_INT_RXDMADONE (UART_IMSC_RXDMADONE) //!< Rx DMA done interrupt mask
 
 //*****************************************************************************
 //

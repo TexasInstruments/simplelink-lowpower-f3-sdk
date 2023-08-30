@@ -43,21 +43,7 @@ let logError = Common.logError;
 let logWarning = Common.logWarning;
 
 /* Define Flash sector size based on device type */
-let SECTORSIZE;
-
-let NVS_SECTORSIZE_MAP = [
-    {prefix: "CC23",     sector_size: 0x800}
-];
-
-for (let i = 0; i < NVS_SECTORSIZE_MAP.length; i++) {
-    let nsm = NVS_SECTORSIZE_MAP[i];
-
-    if (system.deviceData.deviceId.match(nsm.prefix)) {
-        SECTORSIZE = nsm.sector_size;
-        break;
-    }
-}
-
+let SECTORSIZE = 0x800;
 
 let config = [
     {

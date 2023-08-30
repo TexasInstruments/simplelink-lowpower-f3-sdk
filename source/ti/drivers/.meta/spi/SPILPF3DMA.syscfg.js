@@ -144,20 +144,7 @@ function pinmuxRequirements(inst)
             break;
     }
 
-    let SPI_DEVICE_INTERFACE_MAP = [
-        {prefix: "CC23..",   interfaceName: "SPI"}
-    ];
-
-    let interfaceName;
-
-    for (let i = 0; i < SPI_DEVICE_INTERFACE_MAP.length; i++) {
-        let sdim = SPI_DEVICE_INTERFACE_MAP[i];
-
-        if (system.deviceData.deviceId.match(sdim.prefix)) {
-            interfaceName = sdim.interfaceName;
-            break;
-        }
-    }
+    let interfaceName = "SPI";
 
     let spi = {
         name: "spi",

@@ -37,9 +37,12 @@
 
 "use strict";
 
+// Get common utility functions
+const Common = system.getScript("/ti/ble5stack/ble_common.js");
+
 // Long description for the maxBonds configuration parameter
 const maxBondsLongDescription = `Maximum number of bonds that can be saved in NV.\n
-__Default__: 10\n`
+__Default__: ${Common.defaultBondValue()}\n`
 
 // Long description for the maxCharCfg configuration parameter
 const maxCharCfgLongDescription = `Maximum number of characteristic configurations \

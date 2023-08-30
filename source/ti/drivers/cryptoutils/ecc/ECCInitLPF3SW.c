@@ -57,6 +57,25 @@ void ECCInitLPF3SW_NISTP256(ECC_State *state, uint8_t windowSize, uint32_t *work
 }
 
 /*
+ *  ======== ECCInitLPF3SW_NISTP224 ========
+ */
+void ECCInitLPF3SW_NISTP224(ECC_State *state, uint8_t windowSize, uint32_t *workZone)
+{
+    state->data_Gx     = ECC_NISTP224_generatorX.word;
+    state->data_Gy     = ECC_NISTP224_generatorY.word;
+    state->data_p      = ECC_NISTP224_prime.word;
+    state->data_r      = ECC_NISTP224_order.word;
+    state->data_a      = ECC_NISTP224_a.word;
+    state->data_b      = ECC_NISTP224_b.word;
+    state->data_a_mont = ECC_NISTP224_a_mont.word;
+    state->data_b_mont = ECC_NISTP224_b_mont.word;
+    state->data_k_mont = ECC_NISTP224_k_mont.word;
+    state->win         = windowSize;
+
+    state->workzone = workZone;
+}
+
+/*
  *  ======== ECCInitLPF3SW_Curve25519 ========
  */
 void ECCInitLPF3SW_Curve25519(ECC_State *state, uint8_t windowSize, uint32_t *workZone)

@@ -37,15 +37,15 @@ set(TI_TOOLCHAIN_NAME gcc)
 set(TI_TOOLCHAIN_LINKER_FILE_EXTENSION lds)
 
 #Set compilers and archiver
-if (WIN32)
+if(WIN32)
     set(CMAKE_C_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc.exe")
     set(CMAKE_ASM_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc.exe")
     set(CMAKE_AR "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc-ar.exe")
-else ()
+else()
     set(CMAKE_C_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc")
     set(CMAKE_ASM_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc")
     set(CMAKE_AR "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc-ar")
-endif ()
+endif()
 
 #Specify how the compilers should be invoked
 set(CMAKE_C_COMPILE_OBJECT
@@ -61,7 +61,7 @@ set(CMAKE_C_COMPILER_ID_RUN TRUE)
 set(CMAKE_C_COMPILER_FORCED TRUE)
 set(CMAKE_C_COMPILER_WORKS TRUE)
 
-if (NOT TARGET TOOLCHAIN_gcc)
+if(NOT TARGET TOOLCHAIN_gcc)
     add_library(TOOLCHAIN_gcc INTERFACE IMPORTED)
     target_compile_options(
         TOOLCHAIN_gcc
@@ -76,6 +76,8 @@ if (NOT TARGET TOOLCHAIN_gcc)
                   -fdata-sections>
                   $<$<AND:$<COMPILE_LANGUAGE:C>,$<CONFIG:Release>>:-O3>
                   $<$<AND:$<COMPILE_LANGUAGE:C>,$<CONFIG:Debug>>:-O0>
+                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:${TI_CMAKE_COMMON_ENABLE_ALL_WARNINGS}>>:-Wall>
+                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>>:-Werror>
                   >
                   # If TI_CFLAGS_OVERRIDE, use it exclusively
                   $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>>
@@ -93,7 +95,10 @@ if (NOT TARGET TOOLCHAIN_gcc)
         -specs=nosys.specs
         # Disables 0x10000 sector allocation boundaries, which interfere
         # with the SPE layouts and prevent proper secure operation
-        --nmagic
+        -Wl,--nmagic
+        $<$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>:-Wl,--fatal-warnings>
+        # End of section for TI_LFLAGS_OVERRIDE not defined
+        >
         # If TI_CFLAGS_OVERRIDE, use it exclusively
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_LFLAGS_OVERRIDE>>
     )
@@ -117,4 +122,4 @@ if (NOT TARGET TOOLCHAIN_gcc)
     target_link_libraries(TOOLCHAIN_gcc_m33f INTERFACE TOOLCHAIN_gcc)
     target_compile_options(TOOLCHAIN_gcc_m33f INTERFACE -mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv5-sp-d16)
     add_library(CMakeCommon::gcc_m33f ALIAS TOOLCHAIN_gcc_m33f)
-endif ()
+endif()

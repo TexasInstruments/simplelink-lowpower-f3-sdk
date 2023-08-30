@@ -72,7 +72,7 @@ extern "C" {
 #define IS_WORD_ALIGNED(ptr) (((uintptr_t)(ptr) << 30) == 0U)
 
 #define AES_ICLR_ALL \
-    ((uint32_t)AES_ICLR_ECBDONE | (uint32_t)AES_ICLR_ECBSTART | (uint32_t)AES_ICLR_CHADONE | (uint32_t)AES_ICLR_CHBDONE)
+    ((uint32_t)AES_ICLR_AESDONE | (uint32_t)AES_ICLR_AESSTART | (uint32_t)AES_ICLR_CHADONE | (uint32_t)AES_ICLR_CHBDONE)
 
 typedef union
 {
@@ -381,8 +381,8 @@ __STATIC_INLINE void AESReadTag32(uint32_t tag[4])
  *      - @ref AES_AUTOCFG_CTRALIGN_M
  *      - @ref AES_AUTOCFG_CTRENDIAN_M
  *      - @ref AES_AUTOCFG_TRGTXT_M
- *      - @ref AES_AUTOCFG_ECBSRC_M
- *      - @ref AES_AUTOCFG_TRGECB_M
+ *      - @ref AES_AUTOCFG_AESSRC_M
+ *      - @ref AES_AUTOCFG_TRGAES_M
  *
  */
 __STATIC_INLINE void AESSetAUTOCFG(uint32_t autoCfg)
@@ -402,7 +402,7 @@ __STATIC_INLINE void AESClearAUTOCFGTrigger(void)
     uint32_t autoCfg = HWREG(AES_BASE + AES_O_AUTOCFG);
 
     /* Clear the TRGECB bits */
-    autoCfg &= (uint32_t)~AES_AUTOCFG_TRGECB_M;
+    autoCfg &= (uint32_t)~AES_AUTOCFG_TRGAES_M;
 
     HWREG(AES_BASE + AES_O_AUTOCFG) = autoCfg;
 }
@@ -446,9 +446,9 @@ __STATIC_INLINE uint32_t AESGetStatus(void)
  *  @param [in] triggerMask Specifies which operations to be triggered.
  *      - @ref AES_TRG_DMACHA
  *      - @ref AES_TRG_DMACHB
- *      - @ref AES_TRG_ECBOP_TXTXBUF
- *      - @ref AES_TRG_ECBOP_BUF
- *      - @ref AES_TRG_ECBOP_TXT
+ *      - @ref AES_TRG_AESOP_TXTXBUF
+ *      - @ref AES_TRG_AESOP_BUF
+ *      - @ref AES_TRG_AESOP_TXT
  *
  */
 __STATIC_INLINE void AESSetTrigger(uint32_t triggerMask)
@@ -466,7 +466,7 @@ __STATIC_INLINE void AESSetTrigger(uint32_t triggerMask)
  */
 __STATIC_INLINE void AESAbort(void)
 {
-    HWREG(AES_BASE + AES_O_ABORT) = AES_ABORT_ECB_M;
+    HWREG(AES_BASE + AES_O_ABORT) = AES_ABORT_ABORTAES_SET;
 }
 
 /*!
@@ -611,8 +611,8 @@ __STATIC_INLINE void AESSetInterrupt(uint32_t intFlags)
  *  @param [in] intFlags    Specifies which interrupt(s) to be cleared.
  *      - @ref AES_ICLR_CHBDONE_M
  *      - @ref AES_ICLR_CHADONE_M
- *      - @ref AES_ICLR_ECBSTART_M
- *      - @ref AES_ICLR_ECBDONE_M
+ *      - @ref AES_ICLR_AESSTART_M
+ *      - @ref AES_ICLR_AESDONE_M
  *
  */
 __STATIC_INLINE void AESClearInterrupt(uint32_t intFlags)

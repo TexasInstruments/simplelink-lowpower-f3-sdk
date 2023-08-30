@@ -100,6 +100,7 @@ extern "C"
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>
 #include <ti/drivers/RNG.h>
+#include "ti/drivers/utils/List.h"
 #else
 #include <ti/drivers/rf/RF.h>
 #include <ti/drivers/TRNG.h>
@@ -158,8 +159,6 @@ extern "C"
 #define LL_ADV_HDR_SET_CHSEL( hdr, v )   (((hdr) & ~0x20) | ((v) << 5))
 
 #ifdef USE_RCL
-#define LL_CHECK_STATUS_BYTE( data, len ) ( data[len - RCL_STATUS_BYTE] & RCL_IGNORE_BIT_MASK )
-#define LL_GET_RSSI( data, len )          ( data[len - RCL_RSSI_BYTE] )
 #define LL_GET_PDU_HEADER(data, pad)      ( data + (pad - RCL_HEADER_BYTE) )
 #endif
 
@@ -200,11 +199,14 @@ extern "C"
 
 // corrects RSSI if valid, otherwise returns not available
 // Note: Input is uint8, output int8.
+#ifdef USE_RCL
+#define LL_CHECK_LAST_RSSI( rssi ) (rssi)
+#else
 #define LL_CHECK_LAST_RSSI( rssi )                                             \
           ((rssi) == LL_RF_RSSI_UNDEFINED || (rssi) == LL_RF_RSSI_INVALID)  ?  \
           (int8)LL_RSSI_NOT_AVAILABLE                                       :  \
           ((int8)(rssi) - rssiCorrection)
-
+#endif
 #define CHECK_CRITICAL_SECTION() (__get_BASEPRI() & 0x20 )
 
 #define LL_CMP_BDADDR( dstPtr, srcPtr )                                        \
@@ -594,8 +596,6 @@ extern char *llCtrl_BleLogStrings[];
 
 // Direct Test Mode Related
 #define LL_DIRECT_TEST_SYNCH_WORD                      0x71764129
-#define LL_DIRECT_TEST_CRC_INIT_VALUE                  0x55555500
-#define LL_DIRECT_TEST_CRC_LEN                         3
 #define LL_DTM_MAX_PAYLOAD_LEN                         37
 
 // Post-Radio Operations
@@ -2018,7 +2018,9 @@ extern void                 llCombinePDU( uint16, uint8 *, uint16, uint8 );
 extern uint8                llFragmentPDU( llConnState_t *, uint8 *, uint16 );
 extern uint8                *llMemCopySrc( uint8 *, uint8 *, uint8 );
 extern uint8                *llMemCopyDst( uint8 *, uint8 *, uint8 );
-#ifndef USE_RCL
+#ifdef USE_RCL
+extern void                 llUpdateRxBuffersForActiveConnections(List_List *rxBuffers);
+#else
 extern void                 llCreateRxBuffer( llConnState_t *, dataEntry_t *);
 #endif
 extern void                 llCheckRxBuffers( llConnState_t *connPtr );

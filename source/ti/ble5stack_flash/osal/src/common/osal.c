@@ -52,7 +52,6 @@
  */
 
 #include <string.h>
-
 #include "comdef.h"
 #include "hal_board.h"
 #include "osal.h"
@@ -1923,6 +1922,7 @@ void osal_run_system( void )
         if (tasksEvents[i] != 0)
         {
           ICall_signal(osal_syncHandle);
+          break;
         }
       }
     }

@@ -39,10 +39,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc32xx.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc35xx.cmake OPTIONAL)
 
 project(drivers LANGUAGES C ASM)
-ti_init_package(NAMESPACE Drivers DEPENDS_ON DriversUtils TrustZone ThirdPartyEccLib Tirtos7Generic)
+ti_init_package(NAMESPACE Drivers DEPENDS_ON DriversUtils TrustZone ThirdPartyEccLib)
 foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
     if(${TI_PLATFORM} MATCHES "cc(13|26).1")
         ti_add_package_dependency(DriverlibCC13X1CC26X1)
+        ti_add_package_dependency(Tirtos7Generic)
         ti_add_library(
             drivers_${TI_PLATFORM}
             SOURCES ${SOURCES_CC13X1_CC26X1}
@@ -54,6 +55,7 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
 
     elseif(${TI_PLATFORM} MATCHES "cc(13|26).2.7")
         ti_add_package_dependency(DriverlibCC13X2X7CC26X2X7)
+        ti_add_package_dependency(Tirtos7Generic)
         ti_add_library(
             drivers_${TI_PLATFORM}
             SOURCES ${SOURCES_CC13X2_CC26X2}
@@ -65,6 +67,7 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
 
     elseif(${TI_PLATFORM} MATCHES "cc(13|26).2")
         ti_add_package_dependency(DriverlibCC13X2CC26X2)
+        ti_add_package_dependency(Tirtos7Generic)
         ti_add_library(
             drivers_${TI_PLATFORM}
             SOURCES ${SOURCES_CC13X2_CC26X2}
@@ -77,6 +80,7 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
         # C26X3 is deliberately excluded from this regex, as the 26x4 libraries are good enough
     elseif(${TI_PLATFORM} MATCHES "cc(13|26).4")
         ti_add_package_dependency(DriverlibCC13X4CC26X3CC26X4)
+        ti_add_package_dependency(Tirtos7Generic)
         ti_add_library(
             drivers_${TI_PLATFORM}
             SOURCES ${SOURCES_SEC_ONLY_CC13X4_CC26X3_CC26X4}

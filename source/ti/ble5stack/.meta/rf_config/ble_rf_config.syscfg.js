@@ -214,6 +214,32 @@ function getPaTableValues(rfDesign, tableOptions)
     if(txPowerTableType != "combined")
     {
         currentOptions = tableOptions.filter(config => config.displayName.valueOf() <= 5);
+
+        // The power table of the CC2642R1FRTCQ1 device doesn't contain
+        // all the negative values exist in the defaultTxPower list.
+        // Filter out the un-needed values from the list
+        if(system.deviceData.deviceId === "CC2642R1FRTCQ1")
+        {
+            currentOptions = currentOptions.filter(function(item) {
+                if ((item.displayName.includes('-')
+                     && item.displayName.replace('-','')%5 === 0)
+                     || !item.displayName.includes('-'))
+                    return item;
+              });
+        }
+
+        // The power table of the CC2642R1FRGZQ1 device doesn't contain
+        // all the negative values exist in the defaultTxPower list.
+        // Filter out the un-needed values from the list
+        if(system.deviceData.deviceId === "CC2642R1FRGZQ1")
+        {
+            currentOptions = currentOptions.filter(function(item) {
+                if ((item.displayName.includes('-')
+                     && item.displayName.replace('-','')%5 === 0)
+                     || !item.displayName.includes('-'))
+                    return item;
+              });
+        }
     }
     // If using CC1352P-2 device
     else if(rfDesign == "LAUNCHXL-CC1352P-2")
@@ -262,6 +288,14 @@ function getRfDesignOptions(deviceId)
         newRfDesignOptions = [{name: "LAUNCHXL-CC1352R1"}];
     }
     else if(deviceId === "CC2642R1FRGZ")
+    {
+        newRfDesignOptions = [{name: "LAUNCHXL-CC26X2R1"}];
+    }
+    else if(deviceId === "CC2642R1FRGZQ1")
+    {
+        newRfDesignOptions = [{name: "LAUNCHXL-CC26X2R1"}];
+    }
+    else if(deviceId === "CC2642R1FRTCQ1")
     {
         newRfDesignOptions = [{name: "LAUNCHXL-CC26X2R1"}];
     }

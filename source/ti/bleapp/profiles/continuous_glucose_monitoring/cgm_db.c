@@ -23,10 +23,6 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#ifdef SYSCFG
-#include "ti_ble_config.h"
-#endif
-
 #include <ti/bleapp/profiles/continuous_glucose_monitoring/cgm_db.h>
 
 /*********************************************************************
@@ -200,6 +196,7 @@ static bStatus_t CGM_DB_advanceIndexes(void)
     {
         // Wraparound.
         cgm_db_recordsInfo.measDBTail = 0;
+        cgm_db_recordsInfo.measDBHead = 1;
     }
 
     // Increment the head only in case we are full.
@@ -275,11 +272,25 @@ bStatus_t CGM_DB_getMeasRecord(uint16 timeOffset, CGMS_measRecord_t **pMeasRecor
     bStatus_t status = SUCCESS;
     // The index of the input timeOffset.
     uint16 timeOffsetRecArrayIndex = ((timeOffset / cgm_samplingInterval) % CGM_DB_MAX_NUM_OF_RECORDS);
+    uint16 HeadOffsetNum;
+    uint16 TailOffsetNum;
+    // if database is in cyclic event
+    if(CGM_DB_isFull())
+    {
+      HeadOffsetNum = cgm_db_measRecordsArray[(cgm_db_recordsInfo.measDBHead-1) % CGM_DB_MAX_NUM_OF_RECORDS].timeOffset;
+      TailOffsetNum = cgm_db_measRecordsArray[(cgm_db_recordsInfo.measDBTail-1) % CGM_DB_MAX_NUM_OF_RECORDS].timeOffset;
+    }
+    else
+    {
+      HeadOffsetNum = cgm_db_measRecordsArray[cgm_db_recordsInfo.measDBHead].timeOffset;
+      TailOffsetNum = cgm_db_measRecordsArray[(cgm_db_recordsInfo.measDBTail-1) % CGM_DB_MAX_NUM_OF_RECORDS].timeOffset;
+    }
 
     // Check valid input.
     // In case the measRecordNum is NOT in between the head index and tail index record number or the array is empty,
     // return ERROR
-    if ((timeOffsetRecArrayIndex > cgm_db_recordsInfo.measDBTail) || (timeOffsetRecArrayIndex < cgm_db_recordsInfo.measDBHead) ||
+
+    if ((timeOffset > TailOffsetNum) || (timeOffset < HeadOffsetNum) ||
         (CGM_DB_getCurrentNumOfRecords() == 0) ||
         (cgm_db_measRecordsArray[timeOffsetRecArrayIndex].timeOffset != timeOffset))
     {

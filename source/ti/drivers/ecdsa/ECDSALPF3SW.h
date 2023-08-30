@@ -48,6 +48,7 @@
  *  | Curves Supported |
  *  |------------------|
  *  | NISTP256         |
+ *  | NISTP224         |
  */
 
 #ifndef ti_drivers_ecdsa_ECDSALPF3SW__include

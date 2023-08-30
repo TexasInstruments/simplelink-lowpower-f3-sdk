@@ -57,9 +57,17 @@
  *   (the first encryption starts by writing BUF3, the successive ones by reading TXT3)
  *  BUSHALT enabled
  */
-#define AESECBLPF3_DEFAULT_AUTOCFG                                                                                   \
-    ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | \
-     (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESECBLPF3_DEFAULT_AUTOCFG                                             \
+        ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | \
+         (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESECBLPF3_DEFAULT_AUTOCFG                                             \
+        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | \
+         (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
+#endif
 
 /*
  * AES ECB DMA config:
@@ -70,10 +78,19 @@
  *  - DONEACT = GATE_TRGECB_ON_CHA_DEL (to avoid spurious last ECB using DMA
  *                                      if data length > 1 block)
  */
-#define AESECBLPF3_DMA_CONFIG                                                           \
-    ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_ECBSTART |                \
-     (uint32_t)AES_DMA_DONEACT_GATE_TRGECB_ON_CHA_DEL | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
-     (uint32_t)AES_DMA_TRGCHB_ECBDONE)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define AESECBLPF3_DMA_CONFIG                                                           \
+        ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_AESSTART |                \
+         (uint32_t)AES_DMA_DONEACT_GATE_TRGAES_ON_CHA_DEL | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
+         (uint32_t)AES_DMA_TRGCHB_AESDONE)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define AESECBLPF3_DMA_CONFIG                                                           \
+        ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_ECBSTART |                \
+         (uint32_t)AES_DMA_DONEACT_GATE_TRGECB_ON_CHA_DEL | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
+         (uint32_t)AES_DMA_TRGCHB_ECBDONE)
+#else
+    #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
+#endif
 
 /* Forward declarations */
 static int_fast16_t AESECBLPF3_checkOperation(const AESECBLPF3_Object *object, const AESECB_Operation *operation);

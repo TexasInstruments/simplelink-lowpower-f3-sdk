@@ -42,7 +42,8 @@
 //
 // Current counter value.
 // If CTL.MODE = QDEC this can be used to set the initial counter value during
-// QDEC.
+// QDEC.  Writing to CNTR in other modes than QDEC is possible, but may result
+// in unpredictable behavior.
 #define LGPT3_CNTR_VAL_W                                                    24U
 #define LGPT3_CNTR_VAL_M                                            0x00FFFFFFU
 

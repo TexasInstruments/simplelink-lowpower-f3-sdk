@@ -1669,10 +1669,7 @@
 
 // Field:     [2] AUTOEN
 //
-// Automatic HFXT enable.
-//
-// If this bit is set, EN will automatically be set at wakeup or before (using
-// pre-wake mechanism in PMCTL).
+// Internal. Only to be used through TI provided API.
 #define CKMD_HFXTCTL_AUTOEN                                         0x00000004U
 #define CKMD_HFXTCTL_AUTOEN_M                                       0x00000004U
 #define CKMD_HFXTCTL_AUTOEN_S                                                2U
@@ -1689,12 +1686,7 @@
 
 // Field:     [0] EN
 //
-// HFXT enable.
-//
-// Setting this bit will enable HFXT. It will automatically be cleared upon
-// STANDBY entry.
-// If AUTOEN is set, this bit will be set automatically on wakeup or before
-// (pre-wake mechanism in PMCTL).
+// Internal. Only to be used through TI provided API.
 #define CKMD_HFXTCTL_EN                                             0x00000001U
 #define CKMD_HFXTCTL_EN_M                                           0x00000001U
 #define CKMD_HFXTCTL_EN_S                                                    0U
@@ -2599,21 +2591,21 @@
 //*****************************************************************************
 // Field: [22:18] DSEL2
 //
-// Select data to output on DTB[15:11]
+// Internal. Only to be used through TI provided API.
 #define CKMD_DTBCTL_DSEL2_W                                                  5U
 #define CKMD_DTBCTL_DSEL2_M                                         0x007C0000U
 #define CKMD_DTBCTL_DSEL2_S                                                 18U
 
 // Field: [17:13] DSEL1
 //
-// Select data to output on DTB[10:6]
+// Internal. Only to be used through TI provided API.
 #define CKMD_DTBCTL_DSEL1_W                                                  5U
 #define CKMD_DTBCTL_DSEL1_M                                         0x0003E000U
 #define CKMD_DTBCTL_DSEL1_S                                                 13U
 
 // Field:  [12:8] DSEL0
 //
-// Select data to output on DTB[5:1]
+// Internal. Only to be used through TI provided API.
 #define CKMD_DTBCTL_DSEL0_W                                                  5U
 #define CKMD_DTBCTL_DSEL0_M                                         0x00001F00U
 #define CKMD_DTBCTL_DSEL0_S                                                  8U
@@ -2621,9 +2613,31 @@
 // Field:   [7:4] CLKSEL
 //
 // Select clock to output on DTB[0]
+// ENUMs:
+// LFXT                     Select LFXT
+// LFOSC                    Select LFOSC
+// HFXT                     Select HFXT
+// HFXTBY8                  Select HFXT divided by 8
+// HFOSC                    Select HFOSC after qualification
+// LFCLK                    Select LFCLK (selected by LFCLKSEL.MAIN)
+// TRACKREF                 Select tracking loop reference clock
+// CLKADC                   Select CLKADC (48 MHz)
+// CLKSVT                   Select CLKSVT (48 MHz)
+// CLKULL                   Select CLKULL (24 MHz during ACTIVE, 32kHz during
+//                          STANDBY)
 #define CKMD_DTBCTL_CLKSEL_W                                                 4U
 #define CKMD_DTBCTL_CLKSEL_M                                        0x000000F0U
 #define CKMD_DTBCTL_CLKSEL_S                                                 4U
+#define CKMD_DTBCTL_CLKSEL_LFXT                                     0x000000F0U
+#define CKMD_DTBCTL_CLKSEL_LFOSC                                    0x000000E0U
+#define CKMD_DTBCTL_CLKSEL_HFXT                                     0x000000D0U
+#define CKMD_DTBCTL_CLKSEL_HFXTBY8                                  0x000000C0U
+#define CKMD_DTBCTL_CLKSEL_HFOSC                                    0x000000A0U
+#define CKMD_DTBCTL_CLKSEL_LFCLK                                    0x00000070U
+#define CKMD_DTBCTL_CLKSEL_TRACKREF                                 0x00000040U
+#define CKMD_DTBCTL_CLKSEL_CLKADC                                   0x00000020U
+#define CKMD_DTBCTL_CLKSEL_CLKSVT                                   0x00000010U
+#define CKMD_DTBCTL_CLKSEL_CLKULL                                   0x00000000U
 
 // Field:     [0] EN
 //

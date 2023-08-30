@@ -39,60 +39,40 @@
 // NVIC component
 //
 //*****************************************************************************
-// Use the Interrupt Set-Enable Register to enable interrupts and determine
-// which interrupts are currently enabled.
+// Interrupt Set-Enable Register
 #define NVIC_O_ISER                                                 0x00000100U
 
-// Use the Interrupt Clear-Enable Registers to disable interrupts and determine
-// which interrupts are currently enabled.
+// Interrupt Clear-Enable Register
 #define NVIC_O_ICER                                                 0x00000180U
 
-// Use the Interrupt Set-Pending Register to force interrupts into the pending
-// state and determine which interrupts are currently pending
+// Interrupt Set-Pending Register
 #define NVIC_O_ISPR                                                 0x00000200U
 
-// Use the Interrupt Clear-Pending Register to clear pending interrupts and
-// determine which interrupts are currently pending.
+// Interrupt Clear-Pending Register
 #define NVIC_O_ICPR                                                 0x00000280U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 0
 #define NVIC_O_IPR0                                                 0x00000400U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 1
 #define NVIC_O_IPR1                                                 0x00000404U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 2
 #define NVIC_O_IPR2                                                 0x00000408U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 3
 #define NVIC_O_IPR3                                                 0x0000040CU
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 4
 #define NVIC_O_IPR4                                                 0x00000410U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 5
 #define NVIC_O_IPR5                                                 0x00000414U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 6
 #define NVIC_O_IPR6                                                 0x00000418U
 
-// Use the Interrupt Priority Registers to assign a priority from 0 to 3 to
-// each of the available interrupts. 0 is the highest priority, and 3 is the
-// lowest.
+// Interrupt Priority Register 7
 #define NVIC_O_IPR7                                                 0x0000041CU
 
 //*****************************************************************************

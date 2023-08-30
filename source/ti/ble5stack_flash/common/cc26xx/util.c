@@ -54,7 +54,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
-#include <mqueue.h>
+#include <icall.h>
 #else
 #include <ti/sysbios/knl/Event.h>
 #include <ti/sysbios/knl/Clock.h>
@@ -441,7 +441,7 @@ void Util_constructQueue(mqd_t *pQueue)
 {
     struct mq_attr MRattr;
 
-    MRattr.mq_flags = O_NONBLOCK; //Blocking
+    MRattr.mq_flags = O_NONBLOCK;  //NON-Blocking
     MRattr.mq_curmsgs = 0;
     MRattr.mq_maxmsg = 32;
     MRattr.mq_msgsize = sizeof(uint8_t*);

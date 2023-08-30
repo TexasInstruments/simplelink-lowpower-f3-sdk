@@ -2667,6 +2667,10 @@ void hci_tl_aeAdvCbackProcess(hci_tl_AdvEvtCallback_t* evtCallback)
           if(msg)
           {
             //Complete the packet and send it
+            // Convert the connection handle in case mask was set
+            // This is used to support power management in cc33xx, otherwise no change to the connection handle value
+            pEvtData->connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(pEvtData->connHandle);
+
             // Icall message event, status, and pointer to packet
             msg->hdr.event  = HCI_EVENT_PACKET;
             msg->hdr.status = 0xFF;
@@ -5499,22 +5503,27 @@ static uint8_t processExtMsgATT(uint8_t cmdID, hciExtCmd_t *pCmd)
                                       pCmd->len-3, &msg) == SUCCESS)
         {
           pNoti = &msg.handleValueNoti;
-          cccHandle = GATT_INVALID_HANDLE;
-          pAttrNoti =(gattAttribute_t *)GATT_FindHandle(pNoti->handle+1, &cccHandle); //get Handle from table
-          notCharCfg = (gattCharCfg_t *)*(uint32_t*)(pAttrNoti->pValue); //get value from Table
-          if (notCharCfg == NULL)
+          // only if handle is bigger than zero, look at the ATT table for permission
+          if(pNoti->handle > 0)
           {
-              stat = INVALIDPARAMETER;
-              break;
+              cccHandle = GATT_INVALID_HANDLE;
+              pAttrNoti =(gattAttribute_t *)GATT_FindHandle(pNoti->handle+1, &cccHandle); //get Handle from table
+              notCharCfg = (gattCharCfg_t *)*(uint32_t*)(pAttrNoti->pValue); //get value from Table
+              if (notCharCfg == NULL)
+              {
+                stat = INVALIDPARAMETER;
+                break;
+              }
+              value = GATTServApp_ReadCharCfg(connHandle, notCharCfg);
           }
-          value = GATTServApp_ReadCharCfg(connHandle, notCharCfg);
-          if (value & GATT_CLIENT_CFG_NOTIFY)
+          // if ATT table value enable notifications or the handle is 0 send Notification
+          if ((value & GATT_CLIENT_CFG_NOTIFY) || (pNoti->handle == 0))
           {
-             stat = GATT_Notification(connHandle, pNoti, pBuf[2]);
-             if ((stat == SUCCESS) && (pNoti->pValue != NULL))
-             {
-               safeToDealloc = FALSE; // payload passed to GATT
-             }
+           stat = GATT_Notification(connHandle, pNoti, pBuf[2]);
+           if ((stat == SUCCESS) && (pNoti->pValue != NULL))
+           {
+             safeToDealloc = FALSE; // payload passed to GATT
+           }
           }
           else
           {
@@ -5535,18 +5544,22 @@ static uint8_t processExtMsgATT(uint8_t cmdID, hciExtCmd_t *pCmd)
         {
           attHandleValueInd_t *pInd = &msg.handleValueInd;
 #ifndef BLE3_CMD
-          uint16 cccHandle;
-          uint16 value;
-          cccHandle = GATT_INVALID_HANDLE;
-          pAttrInd = (gattAttribute_t *)GATT_FindHandle(pInd->handle+1, &cccHandle);
-          indCharCfg = (gattCharCfg_t *)*(uint32_t*)(pAttrInd->pValue);
-          if(indCharCfg == NULL)
+          uint16 value = 0;
+          if(pInd->handle > 0)
           {
-            stat = INVALIDPARAMETER;
-            break;
+            uint16 cccHandle;
+            cccHandle = GATT_INVALID_HANDLE;
+            pAttrInd = (gattAttribute_t *)GATT_FindHandle(pInd->handle+1, &cccHandle);
+            indCharCfg = (gattCharCfg_t *)*(uint32_t*)(pAttrInd->pValue);
+            if(indCharCfg == NULL)
+            {
+              stat = INVALIDPARAMETER;
+             break;
+            }
+            value = GATTServApp_ReadCharCfg(connHandle, indCharCfg);
           }
-          value = GATTServApp_ReadCharCfg(connHandle, indCharCfg);
-          if(value & GATT_CLIENT_CFG_INDICATE)
+          // if ATT table value enable notifications or the handle is 0 send Indication
+          if((value & GATT_CLIENT_CFG_INDICATE) || (pInd->handle == 0))
           {
 #endif
             stat = GATT_Indication(connHandle, pInd, pBuf[2], appTaskID);

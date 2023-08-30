@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2023, Texas Instruments Incorporated
+ * Copyright (c) 2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,29 +38,34 @@
  *  struct.
  *
  *  # Hardware Accelerator #
- *  The Low Power F3 family of devices has a dedicated AES hardware that can perform
- *  AES encryption operations with 128-bit keys. Only one operation
- *  can be carried out on the accelerator at a time. Mutual exclusion is
- *  implemented at the driver level and coordinated between all drivers
- *  relying on the accelerator. It is transparent to the application and only
- *  noted to ensure sensible access timeouts are set.
- *  The GHASH computation for GCM is optimizations using Shoup's 4-bit tables
- *  that are precomputed for each hash key H. The table contains 16 entires of each
- *  16B.
+ *  The Low Power F3 family of devices has a dedicated AES hardware that can
+ *  perform AES encryption operations with 128-bit keys. Only one operation can
+ *  be carried out on the accelerator at a time. Mutual exclusion is implemented
+ *  at the driver level and coordinated between all drivers relying on the
+ *  accelerator. It is transparent to the application and only noted to ensure
+ *  sensible access timeouts are set. The GHASH computation for GCM has
+ *  optimizations using Shoup's 4-bit tables that are precomputed for each hash
+ *  key H.
  *
  *  # Implementation Limitations
  *  - Only plaintext CryptoKeys are supported by this implementation.
- *  - Only 12 Byte IVs are supported by this implementation.
- *  - Only Polling mode is supported
+ *  - Callback return behavior is not supported by this implementation.
+ *  - Blocking return behavior operates the same as polling return behavior and
+ *    does not block the calling thread.
  *
  *  # Runtime Parameter Validation #
- *  The driver implementation does not perform runtime checks for most input parameters.
- *  Only values that are likely to have a stochastic element to them are checked (such
- *  as whether a driver is already open). Higher input parameter validation coverage is
- *  achieved by turning on assertions when compiling the driver.
+ *  The driver implementation does not perform runtime checks for most input
+ *  parameters. Only values that are likely to have a stochastic element to them
+ *  are checked (such as whether a driver is already open). Higher input
+ *  parameter validation coverage is achieved by turning on assertions when
+ *  compiling the driver.
  */
 
+#ifndef ti_drivers_aesgcm_AESGCMLPF3__include
+#define ti_drivers_aesgcm_AESGCMLPF3__include
+
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <ti/drivers/AESGCM.h>
@@ -69,11 +74,9 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
 
-/* This implementation only supports 12 Byte IVs */
-#define AESGCMLPF3_IV_LENGTH 12U
-
-/* Number of 16B entries in the pre-computed table for each key in GHASH operation */
-#define AESGCMLPF3_HASH_PRECOMPUTE_TABLE_SIZE 16U
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*!
  *  @brief      AESCCMLPF3 Hardware Attributes
@@ -93,10 +96,9 @@ typedef struct
     /* Common member first to allow struct to be cast to the common type */
     AESCommonLPF3_Object common;
     uint32_t hashKey[AES_BLOCK_SIZE_WORDS];
-    uint8_t tagOTP[AES_BLOCK_SIZE];
-    uint8_t intermediateTag[AES_BLOCK_SIZE];
+    uint32_t tagOTP[AES_BLOCK_SIZE_WORDS];
+    uint32_t intermediateTag[AES_BLOCK_SIZE_WORDS];
     size_t inputLength;
-    size_t inputLengthRemaining;
     uint32_t counter[AES_BLOCK_SIZE_WORDS];
     const uint8_t *input;
     uint8_t *output;
@@ -105,5 +107,10 @@ typedef struct
 
     AESGCM_OperationUnion *operation;
     AESGCM_OperationType operationType;
-    bool threadSafe;
 } AESGCMLPF3_Object;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ti_drivers_aesgcm_AESGCMLPF3__include */

@@ -30,7 +30,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-/*!
+/** ============================================================================
+ *  @file       EventP.h
+ *
+ *  @brief      Event Group support
+ *
  * Events are a collection of bits with an application-defined meaning,
  * typically used for messaging or synchronisation. A task may check the state
  * of a set of bits or pend on an EventP object to react to changes when they
@@ -53,6 +57,8 @@
  * task was unblocked. Event bits that caused a return (either the whole
  * eventMask or any individual bit, depending on waitForAll) will be cleared
  * when EventP_pend returns.
+ *
+ *  ============================================================================
  */
 
 #ifndef ti_dpl_EventP__include

@@ -59,7 +59,7 @@
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_s.h>
 #endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include <ti/drivers/aesctr/AESCTRLPF3.h>
 #else
     #include <ti/drivers/aesctr/AESCTRCC26XX.h>

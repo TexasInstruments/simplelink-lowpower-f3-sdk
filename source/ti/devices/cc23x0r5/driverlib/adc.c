@@ -91,7 +91,7 @@ void ADCSetInput(uint32_t reference, uint8_t channel, uint32_t index)
 {
     uint32_t tempCtl;
     /* Set internal reference to disabled by default */
-    uint32_t refCfg = ADC_REFCFG_REFEN_DISABLE;
+    uint32_t refCfg = ADC_REFCFG_REFEN_DIS;
 
     /* Read current control register */
     tempCtl = HWREG(ADC_BASE + ADC_O_MEMCTL0 + (4 * index));
@@ -106,7 +106,7 @@ void ADCSetInput(uint32_t reference, uint8_t channel, uint32_t index)
     if ((reference == ADC_FIXED_REFERENCE_1V4) || (reference == ADC_FIXED_REFERENCE_2V5))
     {
         /* Enable internal reference, set bias current */
-        refCfg = ADC_REFCFG_IBPROG_VAL0 | ADC_REFCFG_REFEN_ENABLE;
+        refCfg = ADC_REFCFG_IBPROG_VAL0 | ADC_REFCFG_REFEN_EN;
 
         /* Set mem-ctrl register to use internal reference */
         tempCtl |= ADC_MEMCTL0_VRSEL_INTREF;

@@ -50,7 +50,13 @@
 #include DeviceFamily_constructPath(inc/hw_lgpt.h)
 
 /* Define for interrupt mask */
-#define INT_MASK (LGPTimerLPF3_INT_TGT | LGPTimerLPF3_INT_ZERO)
+#define INT_MASK                                                                                                    \
+    (LGPTimerLPF3_INT_TGT | LGPTimerLPF3_INT_ZERO | LGPTimerLPF3_INT_COUNTER_CHANGE | LGPTimerLPF3_INT_DIR_CHANGE | \
+     LGPTimerLPF3_INT_CH0_CC | LGPTimerLPF3_INT_CH1_CC | LGPTimerLPF3_INT_CH2_CC)
+
+/* Field mask defines */
+#define COUNTER_MASK_16_BIT 0x00FFFF
+#define COUNTER_MASK_24_BIT 0xFFFFFF
 
 /* LGPTimer configuration */
 extern const LGPTimerLPF3_Config LGPTimerLPF3_config[];
@@ -59,17 +65,37 @@ extern const uint_least8_t LGPTimerLPF3_count;
 /* Static functions */
 static void LGPTimerLPF3_initHw(LGPTimerLPF3_Handle handle);
 static void LGPTimerLPF3_resetHw(LGPTimerLPF3_Handle handle);
+static void LGPTimerLPF3_initIO(LGPTimerLPF3_Handle handle);
+static bool LGPTimerLPF3_isChannelActionCaptureType(LGPTimerLPF3_ChannelAction channelAction);
+static void LGPTimerLPF3_resetIO(LGPTimerLPF3_Handle handle);
 static void LGPTimerLPF3_configureDebugStall(LGPTimerLPF3_Handle handle, LGPTimerLPF3_DebugMode mode);
 static void LGPTimerLPF3_configurePrescaler(LGPTimerLPF3_Handle handle, uint8_t prescalerDiv);
+static void LGPTimerLPF3_configureChannels(LGPTimerLPF3_Handle handle);
 static void LGPTimerLPF3HwiFxn(uintptr_t a0);
 static int LGPTimerLPF3_postNotifyFxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg);
 
 /* Default LGPTimer parameters */
 static const LGPTimerLPF3_Params LGPTimerLPF3_defaultParams = {
-    .hwiCallbackFxn = NULL,
-    .intPhaseLate   = false,
-    .prescalerDiv   = 0,
-    .debugStallMode = LGPTimerLPF3_DEBUG_STALL_OFF,
+    .hwiCallbackFxn      = NULL,
+    .intPhaseLate        = true,
+    .prescalerDiv        = 0,
+    .debugStallMode      = LGPTimerLPF3_DEBUG_STALL_OFF,
+    .counterDirChCompare = LGPTimerLPF3_CH_COMPARE_COUNTER_DIR_BOTH,
+    .channelProperty[0] =
+        {
+            .action    = LGPTimerLPF3_CH_DISABLE,
+            .inputEdge = LGPTimerLPF3_CH_EDGE_NONE,
+        },
+    .channelProperty[1] =
+        {
+            .action    = LGPTimerLPF3_CH_DISABLE,
+            .inputEdge = LGPTimerLPF3_CH_EDGE_NONE,
+        },
+    .channelProperty[2] =
+        {
+            .action    = LGPTimerLPF3_CH_DISABLE,
+            .inputEdge = LGPTimerLPF3_CH_EDGE_NONE,
+        },
 };
 
 /*
@@ -83,6 +109,9 @@ void LGPTimerLPF3_close(LGPTimerLPF3_Handle handle)
 
     /* Stop and reset timer */
     LGPTimerLPF3_resetHw(handle);
+
+    /* Reset any configured GPIO pins */
+    LGPTimerLPF3_resetIO(handle);
 
     HwiP_destruct(&(object->hwi));
 
@@ -134,15 +163,22 @@ LGPTimerLPF3_Handle LGPTimerLPF3_open(uint_least8_t index, const LGPTimerLPF3_Pa
     HwiP_restore(key);
 
     /* Save param values used by LGPTimerLPF3_initHw() */
-    object->intPhaseLate   = params->intPhaseLate;
-    object->prescalerDiv   = params->prescalerDiv;
-    object->debugStallMode = params->debugStallMode;
+    object->intPhaseLate        = params->intPhaseLate;
+    object->prescalerDiv        = params->prescalerDiv;
+    object->debugStallMode      = params->debugStallMode;
+    object->counterDirChCompare = params->counterDirChCompare;
+    object->channelProperty[0]  = params->channelProperty[0];
+    object->channelProperty[1]  = params->channelProperty[1];
+    object->channelProperty[2]  = params->channelProperty[2];
 
     /* Store callback function */
     object->hwiCallbackFxn = params->hwiCallbackFxn;
 
     /* Register power dependency */
     Power_setDependency(hwAttrs->powerID);
+
+    /* Configure selected GPIO pins */
+    LGPTimerLPF3_initIO(handle);
 
     /* Initialize the LGPT hardware module */
     LGPTimerLPF3_initHw(handle);
@@ -223,10 +259,10 @@ void LGPTimerLPF3_setInitialCounterTarget(LGPTimerLPF3_Handle handle, uint32_t v
      * the selected peripheral instance.
      */
     uint32_t targetReg = LGPT_O_TGT;
-    uint32_t fieldMask = 0x00FFFF;
-    if ((HWREG(hwAttrs->baseAddr + LGPT_O_DESCEX) & LGPT_DESCEX_CNTRW_M) == LGPT_DESCEX_CNTRW_CNTR24)
+    uint32_t fieldMask = COUNTER_MASK_16_BIT;
+    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
     {
-        fieldMask = 0xFFFFFF;
+        fieldMask = COUNTER_MASK_24_BIT;
     }
     if (!intFlagClr)
     {
@@ -247,16 +283,149 @@ void LGPTimerLPF3_setNextCounterTarget(LGPTimerLPF3_Handle handle, uint32_t valu
      * depends on the selected peripheral instance.
      */
     uint32_t targetReg = LGPT_O_PTGT;
-    uint32_t fieldMask = 0x00FFFF;
-    if ((HWREG(hwAttrs->baseAddr + LGPT_O_DESCEX) & LGPT_DESCEX_CNTRW_M) > LGPT_DESCEX_CNTRW_CNTR16)
+    uint32_t fieldMask = COUNTER_MASK_16_BIT;
+    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
     {
-        fieldMask = 0xFFFFFF;
+        fieldMask = COUNTER_MASK_24_BIT;
     }
     if (!intFlagClr)
     {
         targetReg = LGPT_O_PTGTNC;
     }
     HWREG(hwAttrs->baseAddr + targetReg) = value & fieldMask;
+}
+
+/*
+ *  ======== LGPTimerLPF3_setInitialChannelCompVal ========
+ */
+void LGPTimerLPF3_setInitialChannelCompVal(LGPTimerLPF3_Handle handle,
+                                           LGPTimerLPF3_ChannelNo chNo,
+                                           uint32_t value,
+                                           bool intFlagClr)
+{
+    /* Set channel number dependent register offset */
+    uint32_t regOffset = sizeof(uint32_t) * chNo;
+
+    /* Get the pointer to the hwAttrs */
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Set channel compare value. Compare value width (16 or 24 bits) depends on
+     * the selected peripheral instance.
+     */
+    uint32_t regAddr   = LGPT_O_C0CC + regOffset;
+    uint32_t fieldMask = COUNTER_MASK_16_BIT;
+    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
+    {
+        fieldMask = COUNTER_MASK_24_BIT;
+    }
+    if (!intFlagClr)
+    {
+        /* Use No clear variant of the C0CC register */
+        regAddr = LGPT_O_C0CCNC + regOffset;
+    }
+    HWREG(hwAttrs->baseAddr + regAddr) = value & fieldMask;
+}
+
+/*
+ *  ======== LGPTimerLPF3_setNextChannelCompVal ========
+ */
+void LGPTimerLPF3_setNextChannelCompVal(LGPTimerLPF3_Handle handle,
+                                        LGPTimerLPF3_ChannelNo chNo,
+                                        uint32_t value,
+                                        bool intFlagClr)
+{
+    /* Set channel number dependent register offset */
+    uint32_t regOffset = sizeof(uint32_t) * chNo;
+
+    /* Get the pointer to the hwAttrs */
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Set channel compare value for next period. Compare value width (16 or 24 bits)
+     * depends on the selected peripheral instance.
+     */
+    uint32_t regAddr   = LGPT_O_PC0CC + regOffset;
+    uint32_t fieldMask = COUNTER_MASK_16_BIT;
+    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
+    {
+        fieldMask = COUNTER_MASK_24_BIT;
+    }
+    if (!intFlagClr)
+    {
+        /* Use No clear variant of the PC0CC register */
+        regAddr = LGPT_O_PC0CCNC + regOffset;
+    }
+    HWREG(hwAttrs->baseAddr + regAddr) = value & fieldMask;
+}
+
+/*
+ *  ======== LGPTimerLPF3_setChannelOutputLevel ========
+ */
+void LGPTimerLPF3_setChannelOutputLevel(LGPTimerLPF3_Handle handle,
+                                        LGPTimerLPF3_ChannelNo chNo,
+                                        LGPTimerLPF3_ChannelLevel level)
+{
+    /* Get the pointer to the hwAttrs */
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Manually override the current channel output level on the selected peripheral instance */
+    uint32_t regVal                          = level << (chNo * 2);
+    HWREG(hwAttrs->baseAddr + LGPT_O_OUTCTL) = regVal;
+}
+
+/*
+ *  ======== LGPTimerLPF3_getChCompareVal ========
+ */
+uint32_t LGPTimerLPF3_getChCompareVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo)
+{
+    /* Get the pointer to the hwAttrs */
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Get channel compare value. Timer width (16 or 24 bits) depends on
+     * the selected peripheral instance.
+     */
+    uint32_t targetReg = LGPT_O_C0CCNC + (sizeof(uint32_t) * chNo);
+
+    return (HWREG(hwAttrs->baseAddr + targetReg));
+}
+
+/*
+ *  ======== LGPTimerLPF3_getChCaptureVal ========
+ */
+uint32_t LGPTimerLPF3_getChCaptureVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo)
+{
+    uint32_t captureVal;
+
+    captureVal = LGPTimerLPF3_getChCompareVal(handle, chNo);
+
+    return captureVal;
+}
+
+/*
+ *  ======== LGPTimerLPF3_getNextChCompareVal ========
+ */
+uint32_t LGPTimerLPF3_getNextChCompareVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo)
+{
+    /* Get the pointer to the hwAttrs */
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Get channel compare value. Timer width (16 or 24 bits) depends on
+     * the selected peripheral instance.
+     */
+    uint32_t targetReg = LGPT_O_PC0CCNC + (sizeof(uint32_t) * chNo);
+
+    return (HWREG(hwAttrs->baseAddr + targetReg));
+}
+
+/*
+ *  ======== LGPTimerLPF3_getNextChCaptureVal ========
+ */
+uint32_t LGPTimerLPF3_getNextChCaptureVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo)
+{
+    uint32_t captureVal;
+
+    captureVal = LGPTimerLPF3_getNextChCompareVal(handle, chNo);
+
+    return captureVal;
 }
 
 /*
@@ -297,6 +466,23 @@ void LGPTimerLPF3_setArg(LGPTimerLPF3_Handle handle, void *arg)
 {
     LGPTimerLPF3_Object *object = handle->object;
     object->arg                 = (uint32_t)arg;
+}
+
+/*
+ *  ======== LGPTimerLPF3_getCounterWidth ========
+ */
+uint32_t LGPTimerLPF3_getCounterWidth(LGPTimerLPF3_Handle handle)
+{
+    /* Get the pointer to the hwAttrs */
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    uint32_t counterWidth = 16;
+    if ((HWREG(hwAttrs->baseAddr + LGPT_O_DESCEX) & LGPT_DESCEX_CNTRW_M) == LGPT_DESCEX_CNTRW_CNTR24)
+    {
+        counterWidth = 24;
+    }
+
+    return counterWidth;
 }
 
 /*
@@ -351,11 +537,13 @@ static void LGPTimerLPF3_configurePrescaler(LGPTimerLPF3_Handle handle, uint8_t 
 /*!
  *  @brief  Function that initializes the HW when LGPTimerLPF3_open() is called.
  *          Timer counter is disabled and channels are reset.
- *          The following is configured as specified by params that are stored in
+ *          Then the following is configured as specified by params that are stored in
  *          object:
  *          - Interrupt phase
  *          - Prescaler
  *          - Debug stall mode
+ *          - Counter compare direction
+ *          - Capture/compare channels
  *
  *  @param[in]  handle   A LGPTimerLPF3 handle returned from LGPTimerLPF3_open()
  *
@@ -365,8 +553,11 @@ static void LGPTimerLPF3_initHw(LGPTimerLPF3_Handle handle)
     LGPTimerLPF3_Object *object         = handle->object;
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Disable timer counter, reset channels and configure interrupt phase */
-    uint32_t regVal = LGPT_CTL_C2RST | LGPT_CTL_C1RST | LGPT_CTL_C0RST | LGPT_CTL_MODE_DIS;
+    /* Disable timer counter, reset channels and configure both interrupt phase and
+     * counter compare direction.
+     */
+    uint32_t regVal = LGPT_CTL_C2RST | LGPT_CTL_C1RST | LGPT_CTL_C0RST | LGPT_CTL_MODE_DIS |
+                      object->counterDirChCompare;
     if (object->intPhaseLate)
     {
         regVal |= LGPT_CTL_INTP_LATE;
@@ -378,6 +569,9 @@ static void LGPTimerLPF3_initHw(LGPTimerLPF3_Handle handle)
 
     /* Configure debug stall mode */
     LGPTimerLPF3_configureDebugStall(handle, object->debugStallMode);
+
+    /* Configure capture/compare channels */
+    LGPTimerLPF3_configureChannels(handle);
 }
 
 /*!
@@ -409,10 +603,10 @@ static void LGPTimerLPF3_resetHw(LGPTimerLPF3_Handle handle)
     /* Reset timer counter target registers.
      * Supported counter widths are 16 bits and 24 bits.
      */
-    uint32_t resetVal = 0xFFFF;
-    if ((HWREG(base + LGPT_O_DESCEX) & LGPT_DESCEX_CNTRW_M) > LGPT_DESCEX_CNTRW_CNTR16)
+    uint32_t resetVal = COUNTER_MASK_16_BIT;
+    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
     {
-        resetVal = 0xFFFFFF;
+        resetVal = COUNTER_MASK_24_BIT;
     }
     HWREG(base + LGPT_O_TGT)    = resetVal;
     HWREG(base + LGPT_O_TGTNC)  = resetVal;
@@ -425,6 +619,136 @@ static void LGPTimerLPF3_resetHw(LGPTimerLPF3_Handle handle)
 
     /* Reset debug configuration */
     HWREG(base + LGPT_O_EMU) = 0;
+}
+
+/*!
+ *  @brief  Configures the three capture/compare channels of the LGPTimer.
+ *
+ */
+static void LGPTimerLPF3_configureChannels(LGPTimerLPF3_Handle handle)
+{
+    uint32_t regAddr;
+    uint32_t regVal;
+
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+    LGPTimerLPF3_Object *object         = handle->object;
+
+    /* Configure channel 0 if selected to be used */
+    if (object->channelProperty[0].action != LGPTimerLPF3_CH_DISABLE)
+    {
+        regAddr = LGPT_O_C0CFG;
+        regVal  = object->channelProperty[0].inputEdge;
+        regVal |= object->channelProperty[0].action;
+        regVal |= (LGPT_C0CFG_OUT0_EN);
+        if (LGPTimerLPF3_isChannelActionCaptureType(object->channelProperty[0].action))
+        {
+            regVal |= LGPT_C0CFG_INPUT_IO;
+        }
+        HWREG(hwAttrs->baseAddr + regAddr) = regVal;
+    }
+
+    /* Configure channel 1 if selected to be used */
+    if (object->channelProperty[1].action != LGPTimerLPF3_CH_DISABLE)
+    {
+        regAddr = LGPT_O_C1CFG;
+        regVal  = object->channelProperty[1].inputEdge;
+        regVal |= object->channelProperty[1].action;
+        regVal |= (LGPT_C1CFG_OUT1_EN);
+        if (LGPTimerLPF3_isChannelActionCaptureType(object->channelProperty[1].action))
+        {
+            regVal |= LGPT_C1CFG_INPUT_IO;
+        }
+        HWREG(hwAttrs->baseAddr + regAddr) = regVal;
+    }
+
+    /* Configure channel 2 if selected to be used */
+    if (object->channelProperty[2].action != LGPTimerLPF3_CH_DISABLE)
+    {
+        regAddr = LGPT_O_C2CFG;
+        regVal  = object->channelProperty[2].inputEdge;
+        regVal |= object->channelProperty[2].action;
+        regVal |= (LGPT_C2CFG_OUT2_EN);
+        if (LGPTimerLPF3_isChannelActionCaptureType(object->channelProperty[2].action))
+        {
+            regVal |= LGPT_C2CFG_INPUT_IO;
+        }
+        HWREG(hwAttrs->baseAddr + regAddr) = regVal;
+    }
+}
+
+/*!
+ *  @brief  Initializes selected GPIO pins for the three capture/compare
+ *          channels of the LGPTimer including their complementary channels.
+ *          The complementary channels are outputs only.
+ *
+ */
+static void LGPTimerLPF3_initIO(LGPTimerLPF3_Handle handle)
+{
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+    LGPTimerLPF3_Object *object         = handle->object;
+
+    /* Loop over all available channels on the LGPT peripheral */
+    for (uint32_t i = 0; i < NO_OF_LGPT_CHANNELS; i++)
+    {
+        /* Check if channel is selected for GPIO usage */
+        if (hwAttrs->channelConfig[i].pin != GPIO_INVALID_INDEX)
+        {
+            /* Channel selected for GPIO pin usage. Configure dependent on channel action */
+            if (LGPTimerLPF3_isChannelActionCaptureType(object->channelProperty[i].action))
+            {
+                /* Configure as input */
+                GPIO_setConfigAndMux(hwAttrs->channelConfig[i].pin, GPIO_CFG_INPUT, hwAttrs->channelConfig[i].pinMux);
+            }
+            else
+            {
+                /* Configure as output */
+                GPIO_setConfigAndMux(hwAttrs->channelConfig[i].pin, GPIO_CFG_NO_DIR, hwAttrs->channelConfig[i].pinMux);
+            }
+        }
+
+        /* Check if complementary channel is selected for GPIO usage */
+        if (hwAttrs->channelConfig[i].nPin != GPIO_INVALID_INDEX)
+        {
+            /* Complementary channel output selected for GPIO pin usage. Configure as output */
+            GPIO_setConfigAndMux(hwAttrs->channelConfig[i].nPin, GPIO_CFG_NO_DIR, hwAttrs->channelConfig[i].nPinMux);
+        }
+    }
+}
+
+/*!
+ *  @brief  Checks if specified channel action is a capture type action.
+ *          Capture type channel action requires the channel to be configured
+ *          as input.
+ *
+ */
+static bool LGPTimerLPF3_isChannelActionCaptureType(LGPTimerLPF3_ChannelAction channelAction)
+{
+    bool captureType = false;
+
+    if ((channelAction == LGPTimerLPF3_CH_SET_ON_CAPTURE_PERIODIC) ||
+        (channelAction == LGPTimerLPF3_CH_SET_ON_CAPTURE_ONCE) ||
+        (channelAction == LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE))
+    {
+        captureType = true;
+    }
+
+    return captureType;
+}
+
+/*!
+ *  @brief  Resets configured GPIO pins of the LGPTimer.
+ *
+ */
+static void LGPTimerLPF3_resetIO(LGPTimerLPF3_Handle handle)
+{
+    LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+
+    /* Loop over all available channels on the LGPT peripheral */
+    for (uint32_t i = 0; i < NO_OF_LGPT_CHANNELS; i++)
+    {
+        GPIO_resetConfig(hwAttrs->channelConfig[i].pin);
+        GPIO_resetConfig(hwAttrs->channelConfig[i].nPin);
+    }
 }
 
 /*!

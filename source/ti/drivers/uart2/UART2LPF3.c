@@ -1002,10 +1002,15 @@ static void UART2LPF3_initHw(UART2_Handle handle)
     UART2LPF3_Object *object         = handle->object;
     UART2LPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
+    ClockP_getCpuFreq(&freq);
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    /* On CC27XX, the UART reference clock is half of SVTCLK */
+    freq.lo /= 2;
+#endif
+
     /* Configure frame format and baudrate. UARTConfigSetExpClk() disables
      * the UART and does not re-enable it, so call this function first.
      */
-    ClockP_getCpuFreq(&freq);
     UARTConfigSetExpClk(hwAttrs->baseAddr,
                         freq.lo,
                         object->baudRate,

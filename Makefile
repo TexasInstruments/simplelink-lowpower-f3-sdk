@@ -9,11 +9,13 @@ export TICLANG_ARMCOMPILER
 export GCC_ARMCOMPILER
 export IAR_ARMCOMPILER
 
+GENERATOR="Unix Makefiles"
+
 build: build-ticlang build-gcc build-iar build-sdk-specific
 
 build-ticlang:
 ifdef TICLANG_ARMCOMPILER
-	@ $(CMAKE) . -B build/ticlang --log-level=VERBOSE
+	@ $(CMAKE) -G$(GENERATOR) . -B build/ticlang --log-level=VERBOSE
 	@ $(CMAKE) --build build/ticlang
 	@ $(CMAKE) --install build/ticlang
 else
@@ -22,7 +24,7 @@ endif
 
 build-gcc:
 ifdef GCC_ARMCOMPILER
-	@ $(CMAKE) . -B build/gcc --log-level=VERBOSE
+	@ $(CMAKE) -G$(GENERATOR) . -B build/gcc --log-level=VERBOSE
 	@ $(CMAKE) --build build/gcc
 	@ $(CMAKE) --install build/gcc
 else
@@ -31,7 +33,7 @@ endif
 
 build-iar:
 ifdef IAR_ARMCOMPILER
-	@ $(CMAKE) . -B build/iar --log-level=VERBOSE
+	@ $(CMAKE) -G$(GENERATOR) . -B build/iar --log-level=VERBOSE
 	@ $(CMAKE) --build build/iar
 	@ $(CMAKE) --install build/iar
 else

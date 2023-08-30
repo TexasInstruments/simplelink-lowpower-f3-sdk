@@ -82,19 +82,19 @@ uint32_t I2CControllerError(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Get the raw error state.
-    err = HWREG(base + I2C_O_CSTAT_CTL);
+    err = HWREG(base + I2C_O_CSTA);
 
     // If the I2C controller is busy, then all the other status bits are invalid,
     // and there is no error to report.
-    if (err & I2C_CSTAT_CTL_BUSY_RUN)
+    if (err & I2C_CSTA_BUSY_M)
     {
         return (I2C_CONTROLLER_ERR_NONE);
     }
 
     // Check for errors.
-    if (err & (I2C_CSTAT_CTL_ERR_START | I2C_CSTAT_CTL_ARBLST))
+    if (err & (I2C_CSTA_ERR_M | I2C_CSTA_ARBLST_M))
     {
-        return (err & (I2C_CSTAT_CTL_ARBLST | I2C_CSTAT_CTL_DATACKN_ACK | I2C_CSTAT_CTL_ADRACKN_STOP));
+        return (err & (I2C_CSTA_ARBLST_M | I2C_CSTA_DATACKN_M | I2C_CSTA_ADRACKN_M));
     }
     else
     {

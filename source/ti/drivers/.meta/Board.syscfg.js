@@ -103,7 +103,7 @@ function getLibs(mod)
     var linkOpts = {
         name: "/ti/drivers",
         vers: "1.0.0.0",
-        deps: [],
+        deps: ["/ti/devices"],
         libs: libs
     };
 

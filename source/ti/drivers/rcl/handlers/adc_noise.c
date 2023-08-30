@@ -55,7 +55,7 @@
 
 /* Storage location of S2R samples */
 #define ADC_NOISE_SAMPLE_MEM (PBE_RAM_BASE_ADDR)
-#define ADC_NOISE_SAMPLE_PTR (uint32_t *)ADC_NOISE_SAMPLE_MEM
+#define ADC_NOISE_SAMPLE_PTR ((uint32_t *)ADC_NOISE_SAMPLE_MEM)
 /* Start-address of PBE RAM in S2R address-space */
 #define ADC_NOISE_SAMPLE_MEM_S2R_START 2048
 
@@ -178,6 +178,10 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
                 S_PBE_RFEAPI = 3;
                 /* Wait until RX is up and running */
                 while ((S_MDM_RFECMDIN & 0x08) == 0);
+
+                /* Disable LNA and mixer clocks to reduce impact of any signal received on the antenna */
+                S_RFE_LNA &= ~RFE_LNA_EN_BM;
+                S_RFE_DIVCTL &= ~(RFE_DIVCTL_RXPH90DIV_BM | RFE_DIVCTL_RXPH0DIV_BM);
 
                 /* Initialize and enable ADC digital interface */
                 S_MDM_INIT = (MDM_INIT_ADCDIG_RESET << MDM_INIT_ADCDIG);

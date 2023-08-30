@@ -6,8 +6,8 @@
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name              SmartRF Studio
-// Tool version           0.6.0.193 INTERNAL
+// Tool name              SmartRF Studio 8
+// Tool version           0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -16,7 +16,7 @@
 // Device                 CC2340R5
 //     Package            QFN40 5x5 RKP
 //     Revision(s)        B (2.0)
-// SDK                    SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                    SimpleLink CC23x0 SDK 7.20.00.00
 // Board                  LP-EM-CC2340R5
 // PHY                    2.4 GHz - Bluetooth 5, LE - 1 Mbps / 2 Mbps / Coded
 // PHY abbreviation       ble
@@ -54,7 +54,7 @@ extern const LRF_TxPowerTable LRF_txPowerTableBle;
 extern const LRF_Config       LRF_configBle;
 
 
-// LRF register configuration summary
+// SUB-PHY register field values
 
 // Address    Module            Register             Bit(s)     Field              Value (1_MBPS)    Value (2_MBPS)    Value (CODED)
 // ---------------------------------------------------------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ extern const LRF_Config       LRF_configBle;
 // 0x6818     RFE_COMMON_RAM    K3AL                 [15:0]     VAL                0x07AB            0x07AB            0x07AB
 // 0x681A     RFE_COMMON_RAM    K5                   [15:0]     VAL                0x916F            0x916F            0x916F
 // 0x6820     RFE_COMMON_RAM    RTRIMOFF             [3:0]      VAL                0x0               0x0               0x0
-// 0x6822     RFE_COMMON_RAM    RTRIMMIN             [3:0]      VAL                0x8               0x8               0x8
+// 0x6822     RFE_COMMON_RAM    RTRIMMIN             [3:0]      VAL                0x0               0x0               0x0
 // 0x6824     RFE_COMMON_RAM    DIVI                 [14:12]    NMIREFTRIM         0x0               0x0               0x0
 // 0x6824     RFE_COMMON_RAM    DIVI                 [11:9]     PMIREFTRIM         0x0               0x0               0x0
 // 0x6824     RFE_COMMON_RAM    DIVI                 [3]        OUT                0x1               0x1               0x1
@@ -283,9 +283,12 @@ extern const LRF_Config       LRF_configBle;
 // 0x6842     RFE_COMMON_RAM    SPARE1SHADOW         [15:0]     VAL                0x0045            0x0045            0x001C
 // 0x6844     RFE_COMMON_RAM    AGCINFO              [0]        MODE               0x0               0x0               0x1
 
-// Address    Module     Register    Bit(s)    Field    Value (S8)    Value (S2)
-// -----------------------------------------------------------------------------
-// 0x2128     LRFDMDM    SPARE1      [15:0]    VAL      0x0000        0x0001
+
+// CODED TX RATE register field values
+
+// Address    Module            Register             Bit(s)     Field              Value (S8)        Value (S2)
+// ---------------------------------------------------------------------------------------------------------------------------------
+// 0x2128     LRFDMDM           SPARE1               [15:0]     VAL                0x0000            0x0001
 
 
 #endif

@@ -108,11 +108,6 @@
 #define RCL_BUFFER_MAX_HEADER_PAD_BYTES 2                                     // padding of 2 bytes will be located before the packet header
 #define RCL_BUFFER_MAX_PAD_BYTES        (RCL_BUFFER_MAX_HEADER_PAD_BYTES + 1) // 1 is already part of the RCL buffer struct
 #define RCL_BUFFER_RX_HEADER_ENTRY_SIZE 6                                     // length + pad num + 3 pad bytes
-#define RCL_IGNORE_BIT_MASK             0x10                                  // Privacy Ignore bit mask in the status byte
-// Appended data location
-#define RCL_RSSI_BYTE                   3                                     // RSSI byte location in the RCL packet
-#define RCL_STATUS_BYTE                 3                                     // Status byte location in the RCL packet, NOTE: this should be changed
-                                                                              // to 4 once RCL will support appending the RSSI/Channel
 #define RCL_HEADER_BYTE                 1                                     // Header byte location in the RCL packet
 #ifdef RCL_329
 #define RCL_PEER_ADDR_INDEX             0                                     // This is used when initiator uses filter policy is LL_INIT_AL_POLICY_USE_PEER_ADDR
@@ -1213,10 +1208,11 @@ extern RCL_StatsConnection   connOutput;
 extern connReqData_t    connReqData[];
 
 // DTM Command, Parameters and Output
-extern RCL_CmdBle5DtmTx      txTestCmd;
+extern RCL_CmdBle5DtmTx      txDtmTestCmd;
 extern RCL_CmdBle5GenericRx  rxTestCmd;
 extern RCL_CtxGenericRx      rxTestParam;
 extern RCL_StatsGenericRx    rxTestOut;
+extern RCL_CmdBle5TxTest     txTestCmd;
 
 #else //!USE_RCL
 // Receive Queue

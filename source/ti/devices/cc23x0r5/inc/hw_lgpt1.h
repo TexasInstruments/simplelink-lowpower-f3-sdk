@@ -39,8 +39,7 @@
 // LGPT1 component
 //
 //*****************************************************************************
-// Description Register. This register provides IP module ID, revision
-// information, instance index and standard MMR registers offset.
+// Description Register.
 // Description Extended
 // Start Configuration
 // Timer Control
@@ -57,27 +56,13 @@
 // Direct Memory Access
 // ADC Trigger
 // IO Controller
-// Interrupt mask. This register selects interrupt sources which are allowed to
-// pass from RIS to MIS when the corresponding bit-fields are set to 1.
-// Raw interrupt status. This register reflects the state of all pending
-// interrupts, regardless of masking. This register allows the user to
-// implement a poll scheme. A flag set in this register can be cleared by
-// writing 1 to the corresponding ICLR register bit.
-// Masked interrupt status. This register is simply a bitwise AND of the
-// contents of IMASK and RIS.*] registers. A flag set in this register can be
-// cleared by writing 1 to the corresponding ICLR register bit.
-// Interrupt set register. This register can used by software for diagnostics
-// and safety checking purposes. Writing a 1 to a bit in this register will set
-// the event and the corresponding RIS bit also gets set. If the corresponding
-// IMASK bit is set, then the corresponding MIS register bit also gets set.
-// Interrupt clear register. This register allows software to clear interrupts.
-// Writing a 1 to a bit in this register will clear the event and the
-// corresponding RIS bit also gets cleared. If the corresponding IMASK bit is
-// set, then the corresponding MIS register bit also gets cleared.
-// Interrupt mask set register. Writing a 1 to a bit in this register will set
-// the corresponding IMASK bit.
-// Interrupt mask clear register. Writing a 1 to a bit in this register will
-// clear the corresponding IMASK bit.
+// Interrupt mask.
+// Raw interrupt status.
+// Masked interrupt status.
+// Interrupt set register.
+// Interrupt clear register.
+// Interrupt mask set register.
+// Interrupt mask clear register.
 // Debug control
 // Channel 0 Configuration
 // Channel 1 Configuration

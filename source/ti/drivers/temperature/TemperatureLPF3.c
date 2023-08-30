@@ -361,7 +361,7 @@ void Temperature_init(void)
         /* Wait first measurement is ready to prevent Temperature_getTemperature
          * returning an invalid value
          */
-        while ((HWREG(PMUD_BASE + PMUD_O_TEMPUPD) & PMUD_TEMPUPD_STAT_M) != PMUD_TEMPUPD_STAT_M) {}
+        while ((HWREG(PMUD_BASE + PMUD_O_TEMPUPD) & PMUD_TEMPUPD_STA_M) != PMUD_TEMPUPD_STA_M) {}
 
         isInitialized = true;
     }

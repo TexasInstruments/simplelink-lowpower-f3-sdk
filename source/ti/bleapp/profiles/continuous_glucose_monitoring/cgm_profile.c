@@ -23,10 +23,6 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#ifdef SYSCFG
-#include "ti_ble_config.h"
-#endif
-
 #include "util.h"
 
 #include <ti/bleapp/profiles/continuous_glucose_monitoring/cgm_profile.h>
@@ -307,15 +303,7 @@ static void CGMP_measOnCccUpdateCB( char *pValue )
   // If the callback function is not NULL, notify the application
   if ( cgmp_appCB && cgmp_appCB->pfnMeasOnCccUpdateCB )
   {
-    // Verify input parameters
-    if ( pValue == NULL )
-    {
-      cgmp_appCB->pfnMeasOnCccUpdateCB( LINKDB_CONNHANDLE_INVALID, 0 );
-    }
-    else
-    {
       cgmp_appCB->pfnMeasOnCccUpdateCB( cccUpdate->connHandle, cccUpdate->value );
-    }
   }
 }
 
@@ -439,13 +427,7 @@ static void CGMP_racpReqCB( char *pValue)
           CGMP_sendRecords( CGM_DB_getMinTimeOffset(), cgm_curTimeOffset );
 
           // Check if the RACP process was aborted
-          if ( cgmp_racpProc & RACP_PROC_ABORT )
-          {
-            // The RACP procedure was not complete
-            CGMP_sendRacpRsp( RACP_OPCODE_RSP_CODE, RACP_OPERATOR_NULL, racpReq->opCode,
-                              RACP_RSP_PROCEDURE_NOT_COMPLETED, 0 );
-          }
-          else
+          if ( !(cgmp_racpProc & RACP_PROC_ABORT) )
           {
             // The RACP procedure complete successfully
             CGMP_sendRacpRsp( RACP_OPCODE_RSP_CODE, RACP_OPERATOR_NULL, racpReq->opCode,
@@ -477,6 +459,8 @@ static void CGMP_racpReqCB( char *pValue)
               // There are stored records for that given request, send response over BLE indication
               CGMP_sendRacpRsp( RACP_OPCODE_RSP_CODE, RACP_OPERATOR_NULL, racpReq->opCode,
                                 RACP_RSP_SUCCESS, 0 );
+
+              cgmp_racpProc = RACP_PROC_NON;
 
             }
             else
@@ -524,14 +508,12 @@ static void CGMP_racpReqCB( char *pValue)
       }
 
       // If RACP procedure is in progress
-      else if ( cgmp_racpProc & RACP_PROC_INPROGRESS )
+      else
       {
-        cgmp_racpProc |= RACP_PROC_ABORT;
+        // Send response over BLE indication
+        CGMP_sendRacpRsp( RACP_OPCODE_RSP_CODE, RACP_OPERATOR_NULL, racpReq->opCode,
+                            RACP_RSP_SUCCESS, 0 );
       }
-
-      // Send response over BLE indication
-      CGMP_sendRacpRsp( RACP_OPCODE_RSP_CODE, RACP_OPERATOR_NULL, racpReq->opCode,
-                        RACP_RSP_SUCCESS, 0 );
     }
     break;
 

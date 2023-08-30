@@ -50,9 +50,6 @@
 
 /* Defines */
 
-/* Octet string format requires an extra byte at the start of the public key */
-#define OCTET_STRING_OFFSET 1
-
 /*
  *  ======== ECDSA_init ========
  */
@@ -109,9 +106,6 @@ ECDSA_Handle ECDSA_construct(ECDSA_Config *config, const ECDSA_Params *params)
 
             HwiP_restore(key);
 
-            /* Initialize object with NIST-P256 curve */
-            ECCInitLPF3SW_NISTP256(&object->eccState, ECDSALPF3SW_ECC_WINDOW_SIZE, object->eccWorkZone);
-
             object->returnBehavior = params->returnBehavior;
 
             handle = (ECDSA_Handle)config;
@@ -138,27 +132,22 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
     RNG_Params rngParams;
     RNGLPF3RF_Object rngObject = {0};
     uint8_t eccStatus;
+    size_t curveLength     = operation->curve->length;
+    size_t curveWordLength = curveLength / sizeof(uint32_t);
 
     /*
      * Allocate local copies of the private and public keys because the ECC
      * library implementation requires the word length to be prepended to every
      * array input.
      */
-    ECC_NISTP256_Param privateKeyUnion;
-    ECC_NISTP256_Param pmsnUnion;
-    ECC_NISTP256_Param hashUnion;
-    ECC_NISTP256_Param rUnion;
-    ECC_NISTP256_Param sUnion;
-
-    /* Prepend the word length - always 8 words for NIST-P256 */
-    privateKeyUnion.word[0] = 0x08;
-    pmsnUnion.word[0]       = 0x08;
-    hashUnion.word[0]       = 0x08;
-    rUnion.word[0]          = 0x08;
-    sUnion.word[0]          = 0x08;
+    ECC_Param privateKeyUnion;
+    ECC_Param pmsnUnion;
+    ECC_Param hashUnion;
+    ECC_Param rUnion;
+    ECC_Param sUnion;
 
     /* Create a blank CryptoKey to store the per-message secret number (PMSN) */
-    CryptoKeyPlaintext_initBlankKey(&pmsnKey, &pmsnUnion.byte[ECC_LENGTH_PREFIX_BYTES], ECCParams_NISTP256_LENGTH);
+    CryptoKeyPlaintext_initBlankKey(&pmsnKey, &pmsnUnion.byte[ECC_LENGTH_PREFIX_BYTES], curveLength);
 
     /*
      * Note: For CC23X0, RNG must be initialized by application in a task context with interrupts enabled
@@ -181,6 +170,28 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
      */
     RNG_Params_init(&rngParams);
 
+    if (curveLength == ECCParams_NISTP256_LENGTH)
+    {
+        /* Initialize object with NIST-P256 curve */
+        ECCInitLPF3SW_NISTP256(&object->eccState, ECDSALPF3SW_ECC_WINDOW_SIZE, object->eccWorkZone);
+    }
+    else if (curveLength == ECCParams_NISTP224_LENGTH)
+    {
+        /* Initialize object with NIST-P224 curve */
+        ECCInitLPF3SW_NISTP224(&object->eccState, ECDSALPF3SW_ECC_WINDOW_SIZE, object->eccWorkZone);
+    }
+    else
+    {
+        return ECDSA_STATUS_ERROR;
+    }
+
+    /* Prepend the word length for ECC Library */
+    privateKeyUnion.word[0] = curveWordLength;
+    pmsnUnion.word[0]       = curveWordLength;
+    hashUnion.word[0]       = curveWordLength;
+    rUnion.word[0]          = curveWordLength;
+    sUnion.word[0]          = curveWordLength;
+
     rngHandle = RNG_construct(&rngConfig, &rngParams);
 
     if (rngHandle != NULL)
@@ -189,10 +200,10 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
         do
         {
             /*
-             * Get a random PMSN. ECCParams_NISTP256_LENGTH is in bytes
+             * Get a random PMSN. curveLength is in bytes
              * so multiply by 8 for the number of random bits.
              */
-            rngStatus = RNG_getRandomBits(rngHandle, pmsnKey.u.plaintext.keyMaterial, ECCParams_NISTP256_LENGTH * 8);
+            rngStatus = RNG_getRandomBits(rngHandle, pmsnKey.u.plaintext.keyMaterial, curveLength * 8);
 
             if (rngStatus != RNG_STATUS_SUCCESS)
             {
@@ -211,11 +222,11 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
          * format, we need to convert them to little-endian for use with the
          * ECC library functions.
          */
-        CryptoUtils_reverseCopyPad(operation->hash, &hashUnion.word[1], ECCParams_NISTP256_LENGTH);
+        CryptoUtils_reverseCopyPad(operation->hash, &hashUnion.word[1], curveLength);
 
         CryptoUtils_reverseCopyPad(operation->myPrivateKey->u.plaintext.keyMaterial,
                                    &privateKeyUnion.word[1],
-                                   ECCParams_NISTP256_LENGTH);
+                                   curveLength);
 
         eccStatus = ECCSW_ECDSASign(&object->eccState,
                                     privateKeyUnion.word,
@@ -237,9 +248,9 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
              * reverse byte order since the ECC library implementation generates
              * little-endian values.
              */
-            CryptoUtils_reverseCopy(&rUnion.word[1], operation->r, ECCParams_NISTP256_LENGTH);
+            CryptoUtils_reverseCopy(&rUnion.word[1], operation->r, curveLength);
 
-            CryptoUtils_reverseCopy(&sUnion.word[1], operation->s, ECCParams_NISTP256_LENGTH);
+            CryptoUtils_reverseCopy(&sUnion.word[1], operation->s, curveLength);
 
             returnStatus = ECDSA_STATUS_SUCCESS;
         }
@@ -259,6 +270,8 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
     ECDSALPF3SW_Object *object = handle->object;
     int_fast16_t returnStatus  = ECDSA_STATUS_ERROR;
     uint8_t eccStatus;
+    size_t curveLength     = operation->curve->length;
+    size_t curveWordLength = curveLength / sizeof(uint32_t);
 
     /* Validate key sizes to make sure octet string format is used */
     if ((operation->theirPublicKey->u.plaintext.keyLength != (2 * operation->curve->length + OCTET_STRING_OFFSET)) ||
@@ -272,40 +285,75 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
      * library implementation requires the word length to be prepended to every
      * array input.
      */
-    ECC_NISTP256_Param publicKeyUnionX;
-    ECC_NISTP256_Param publicKeyUnionY;
-    ECC_NISTP256_Param hashUnion;
-    ECC_NISTP256_Param rUnion;
-    ECC_NISTP256_Param sUnion;
+    ECC_Param publicKeyUnionX;
+    ECC_Param publicKeyUnionY;
+    ECC_Param hashUnion;
+    ECC_Param rUnion;
+    ECC_Param sUnion;
 
-    /* Prepend the word length - always 8 words for P256 */
-    publicKeyUnionX.word[0] = 0x08;
-    publicKeyUnionY.word[0] = 0x08;
-    hashUnion.word[0]       = 0x08;
-    rUnion.word[0]          = 0x08;
-    sUnion.word[0]          = 0x08;
+    if (curveLength == ECCParams_NISTP256_LENGTH)
+    {
+        /* Initialize object with NIST-P256 curve */
+        ECCInitLPF3SW_NISTP256(&object->eccState, ECDSALPF3SW_ECC_WINDOW_SIZE, object->eccWorkZone);
+    }
+    else if (curveLength == ECCParams_NISTP224_LENGTH)
+    {
+        /* Initialize object with NIST-P224 curve */
+        ECCInitLPF3SW_NISTP224(&object->eccState, ECDSALPF3SW_ECC_WINDOW_SIZE, object->eccWorkZone);
+    }
+    else
+    {
+        return ECDSA_STATUS_ERROR;
+    }
+
+    /* Prepend the word length for ECC Library */
+    publicKeyUnionX.word[0] = curveWordLength;
+    publicKeyUnionY.word[0] = curveWordLength;
+    hashUnion.word[0]       = curveWordLength;
+    rUnion.word[0]          = curveWordLength;
+    sUnion.word[0]          = curveWordLength;
 
     /*
      * Since we are receiving the private and public keys in octet string
      * format, we need to convert them to little-endian for use with the
      * ECC library functions.
      */
-    CryptoUtils_reverseCopyPad(operation->hash, &hashUnion.word[1], ECCParams_NISTP256_LENGTH);
+    CryptoUtils_reverseCopyPad(operation->hash, &hashUnion.word[1], curveLength);
 
-    CryptoUtils_reverseCopyPad(operation->r, &rUnion.word[1], ECCParams_NISTP256_LENGTH);
+    CryptoUtils_reverseCopyPad(operation->r, &rUnion.word[1], curveLength);
 
-    CryptoUtils_reverseCopyPad(operation->s, &sUnion.word[1], ECCParams_NISTP256_LENGTH);
+    CryptoUtils_reverseCopyPad(operation->s, &sUnion.word[1], curveLength);
 
     CryptoUtils_reverseCopyPad(operation->theirPublicKey->u.plaintext.keyMaterial + OCTET_STRING_OFFSET,
                                &publicKeyUnionX.word[1],
-                               ECCParams_NISTP256_LENGTH);
+                               curveLength);
 
-    CryptoUtils_reverseCopyPad(operation->theirPublicKey->u.plaintext.keyMaterial + ECCParams_NISTP256_LENGTH +
-                                   OCTET_STRING_OFFSET,
+    CryptoUtils_reverseCopyPad(operation->theirPublicKey->u.plaintext.keyMaterial + curveLength + OCTET_STRING_OFFSET,
                                &publicKeyUnionY.word[1],
-                               ECCParams_NISTP256_LENGTH);
+                               curveLength);
 
-    eccStatus = ECCSW_validatePublicKeyWeierstrass(&object->eccState, publicKeyUnionX.word, publicKeyUnionY.word);
+    /* Verify r in range [1, n-1] where n is the order of the curve */
+    eccStatus = ECCSW_validatePrivateKeyWeierstrass(&object->eccState, rUnion.word);
+
+    if (eccStatus == STATUS_PRIVATE_VALID)
+    {
+        /* Verify s in range [1, n-1] where n is the order of the curve */
+        eccStatus = ECCSW_validatePrivateKeyWeierstrass(&object->eccState, sUnion.word);
+
+        if (eccStatus != STATUS_PRIVATE_VALID)
+        {
+            returnStatus = ECDSA_STATUS_S_LARGER_THAN_ORDER;
+        }
+    }
+    else
+    {
+        returnStatus = ECDSA_STATUS_R_LARGER_THAN_ORDER;
+    }
+
+    if (eccStatus == STATUS_PRIVATE_VALID)
+    {
+        eccStatus = ECCSW_validatePublicKeyWeierstrass(&object->eccState, publicKeyUnionX.word, publicKeyUnionY.word);
+    }
 
     if (eccStatus == STATUS_ECC_POINT_ON_CURVE)
     {

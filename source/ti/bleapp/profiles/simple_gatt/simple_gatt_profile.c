@@ -23,10 +23,6 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#ifdef SYSCFG
-#include "ti_ble_config.h"
-#endif
-
 #include <ti/bleapp/profiles/simple_gatt/simple_gatt_profile.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 

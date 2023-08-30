@@ -44,12 +44,15 @@ const MAX_READPROT_MAINSECTORS = 0x0F;
 const MAX_READPROT_CCFGSECTOR = 0x3F;
 const MAX_PIN_TRIGGER_DIO = 0x3F; // TODO: Find correct value for CC27XX
 const MAX_CAP_ARRAY = 0x3F;
+const MAX_HSM_SIZE = 0x07;
 
 const moduleDesc = `
 The CCFG area is a dedicated flash memory sector and must contain a
 Customer Configuration section (CCFG) that is used by boot ROM and TI provided
 drivers to configure the device. It starts at 0x4E020000 and has a size of 0x800
-bytes This configuration is done by simply letting SysConfig generate the file
+bytes. In addition, there is an SCFG area that must contain a valid Security
+Configuration. It starts at 0x4E040000 and has a size of 0x400 bytes. Both of
+these configurations are done by simply letting SysConfig generate the file
 ti_devices_config.c and including it in the project.`;
 
 let devSpecific = {
@@ -536,6 +539,33 @@ The User Record Macro must be defined in the User Record File to be a list of va
                 ]
             },
             {
+                displayName: "Security Configuration",
+                config: [
+                    {
+                        name: "hsmPublicKeyHash",
+                        displayName: "HSM Public Key Hash",
+                        longDescription: `Optional customer public key hash for authenticating HSM updates.`,
+                        default: "c665564a4785eaf7e2c41e4508dd95517a3e7d849fe0c133a76455284a6c9d42"
+                    },
+                    {
+                        name: "hsmSize",
+                        displayName: "HSM Size",
+                        longDescription: `This value is copied to VIMS.CFG.HSM_SIZE to during bootup sequence.`,
+                        default: 0x03
+                    },
+                    {
+                        name: "flashBanksMode",
+                        displayName: "Flash Banks Mode",
+                        longDescription: `This value is copied to VIMS.CFG.SPLMODE`,
+                        default: "Monolithic (0x00)",
+                        options: [
+                            {name: "Monolithic (0x00)"},
+                            {name: "Split (0x01)"}
+                        ]
+                    }
+                ]
+            },
+            {
                 name        : "voltageRegulator",
                 displayName : "Voltage Regulator",
                 description : "Choose between using the internal DCDC or GLDO voltage regulator",
@@ -696,6 +726,16 @@ function validate(inst, validation) {
     if (inst.chipEraseRetain_mainSectors256_511 > 0xFFFFFFFF) {
         Common.logError(validation, inst, "chipEraseRetain_mainSectors256_511",
             "Must be 32-bit value");
+    }
+
+    if (!(inst.hsmPublicKeyHash.match(/^[a-fA-F0-9]{0,64}$/))) {
+        Common.logError(validation, inst, "hsmPublicKeyHash",
+            "Must be valid hex-formatted SHA256 hash");
+    }
+
+    if (inst.hsmSize > MAX_HSM_SIZE) {
+        Common.logError(validation, inst, "hsmSize",
+        "Must be less than 0x" + (MAX_HSM_SIZE + 1).toString(16));
     }
 }
 

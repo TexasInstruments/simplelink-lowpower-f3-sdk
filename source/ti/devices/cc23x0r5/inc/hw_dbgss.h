@@ -722,18 +722,6 @@
 #define DBGSS_SPECIAL_AUTH_DFTAPEN_EN                               0x00000004U
 #define DBGSS_SPECIAL_AUTH_DFTAPEN_DIS                              0x00000000U
 
-// Field:     [1] FAKESTBYEN
-//
-// Indicates status of FAKESTBYEN
-// ENUMs:
-// EN                        FAKESTBYEN is Enabled
-// DIS                       FAKESTBYEN is Disabled
-#define DBGSS_SPECIAL_AUTH_FAKESTBYEN                               0x00000002U
-#define DBGSS_SPECIAL_AUTH_FAKESTBYEN_M                             0x00000002U
-#define DBGSS_SPECIAL_AUTH_FAKESTBYEN_S                                      1U
-#define DBGSS_SPECIAL_AUTH_FAKESTBYEN_EN                            0x00000002U
-#define DBGSS_SPECIAL_AUTH_FAKESTBYEN_DIS                           0x00000000U
-
 // Field:     [0] SECAPEN
 //
 // Indicates status of SECAP
@@ -802,25 +790,13 @@
 //
 // This bit sets DFTAPEN in SPECIAL_AUTH register.
 // ENUMs:
-// SET                      Set DFTTAPEN
+// SET                      Set DFTAPEN
 // NOEFF                    Writing 0 has no effect
 #define DBGSS_SPECIAL_AUTH_SET_DFTAPEN                              0x00000004U
 #define DBGSS_SPECIAL_AUTH_SET_DFTAPEN_M                            0x00000004U
 #define DBGSS_SPECIAL_AUTH_SET_DFTAPEN_S                                     2U
 #define DBGSS_SPECIAL_AUTH_SET_DFTAPEN_SET                          0x00000004U
 #define DBGSS_SPECIAL_AUTH_SET_DFTAPEN_NOEFF                        0x00000000U
-
-// Field:     [1] FAKESTBYEN
-//
-// This bit sets FAKESTBYEN in SPECIAL_AUTH register.
-// ENUMs:
-// SET                      Set FAKESTBYEN
-// NOEFF                    Writing 0 has no effect
-#define DBGSS_SPECIAL_AUTH_SET_FAKESTBYEN                           0x00000002U
-#define DBGSS_SPECIAL_AUTH_SET_FAKESTBYEN_M                         0x00000002U
-#define DBGSS_SPECIAL_AUTH_SET_FAKESTBYEN_S                                  1U
-#define DBGSS_SPECIAL_AUTH_SET_FAKESTBYEN_SET                       0x00000002U
-#define DBGSS_SPECIAL_AUTH_SET_FAKESTBYEN_NOEFF                     0x00000000U
 
 // Field:     [0] SECAPEN
 //
@@ -888,27 +864,15 @@
 
 // Field:     [2] DFTAPEN
 //
-// This bit clears DFTTAPEN in SPECIAL_AUTH register.
+// This bit clears DFTAPEN in SPECIAL_AUTH register.
 // ENUMs:
-// CLR                      Clear DFTTAPEN
+// CLR                      Clear DFTAPEN
 // NOEFF                    Writing 0 has no effect
 #define DBGSS_SPECIAL_AUTH_CLR_DFTAPEN                              0x00000004U
 #define DBGSS_SPECIAL_AUTH_CLR_DFTAPEN_M                            0x00000004U
 #define DBGSS_SPECIAL_AUTH_CLR_DFTAPEN_S                                     2U
 #define DBGSS_SPECIAL_AUTH_CLR_DFTAPEN_CLR                          0x00000004U
 #define DBGSS_SPECIAL_AUTH_CLR_DFTAPEN_NOEFF                        0x00000000U
-
-// Field:     [1] FAKESTBYEN
-//
-// This bit clears FAKESTBYEN in SPECIAL_AUTH register.
-// ENUMs:
-// CLR                      Clears FAKESTBYEN
-// NOEFF                    Writing 0 has no effect
-#define DBGSS_SPECIAL_AUTH_CLR_FAKESTBYEN                           0x00000002U
-#define DBGSS_SPECIAL_AUTH_CLR_FAKESTBYEN_M                         0x00000002U
-#define DBGSS_SPECIAL_AUTH_CLR_FAKESTBYEN_S                                  1U
-#define DBGSS_SPECIAL_AUTH_CLR_FAKESTBYEN_CLR                       0x00000002U
-#define DBGSS_SPECIAL_AUTH_CLR_FAKESTBYEN_NOEFF                     0x00000000U
 
 // Field:     [0] SECAPEN
 //

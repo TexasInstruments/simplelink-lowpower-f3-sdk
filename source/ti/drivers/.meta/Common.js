@@ -367,6 +367,7 @@ function device2Family(device, mod)
 
     /* CC26X1 specific module delegates */
     let cc26x1Mods = {
+        "ANSIX936KDF" : "CC26X1",
         "ECDH" :        "CC26X1",
         "ECDSA" :       "CC26X1",
         "SHA2" :        "CC26X1",
@@ -378,6 +379,7 @@ function device2Family(device, mod)
      * contain all CC23X0 specific modules
      */
     let cc23x0Mods = {
+        "ANSIX936KDF" :  "CC23X0",
         "Board" :        "CC23X0",
         "Power" :        "CC23X0",
         "CAN" :          "CC23X0",

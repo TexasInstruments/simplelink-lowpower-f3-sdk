@@ -569,7 +569,7 @@
             "driver_examples_resources": "",
             "booster_packs": {
                 "boostxl_canfdlin": "mod_cc23",
-                "boostxl_sharp128": "mod_sd_cs_cc23",
+                "boostxl_sharp128": "mod_sd_cs",
                 "bp_bassensorsmkii": "",
                 "cc3200audboost": ""
             }

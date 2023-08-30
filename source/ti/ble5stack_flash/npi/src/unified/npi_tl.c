@@ -48,13 +48,6 @@
 // includes
 // ****************************************************************************
 #include <string.h>
-#include <xdc/std.h>
-#include <ti/drivers/Power.h>
-#include <ti/drivers/power/PowerCC26XX.h>
-#include <ti/sysbios/family/arm/m3/Hwi.h>
-#include <ti/sysbios/knl/Task.h>
-#include <ti/sysbios/knl/Swi.h>
-
 #include <ti/drivers/GPIO.h>
 #include "inc/hw_memmap.h"
 #include "inc/hw_ints.h"
@@ -183,6 +176,7 @@ uint8_t NPITL_openTL(NPITL_Params *params)
     }
     else
     {
+        NPIUtil_ExitCS(key);
         return NPI_TASK_FAILURE;
     }
     if ((npiTxBuf = NPIUtil_malloc(params->npiTLBufSize)) != NULL )
@@ -191,6 +185,7 @@ uint8_t NPITL_openTL(NPITL_Params *params)
     }
     else
     {
+        NPIUtil_ExitCS(key);
         return NPI_TASK_FAILURE;
     }
     // This will be updated to be able to select SPI/UART TL at runtime

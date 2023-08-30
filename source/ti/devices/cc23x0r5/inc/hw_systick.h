@@ -39,22 +39,16 @@
 // SYSTICK component
 //
 //*****************************************************************************
-// Use the SysTick Control and Status Register to enable the SysTick features.
+// SysTick Control and Status Register
 #define SYSTICK_O_CSR                                               0x00000000U
 
-// Use the SysTick Reload Value Register to specify the start value to load
-// into the current value register when the counter reaches 0. It can be any
-// value between 0 and 0x00FFFFFF. A start value of 0 is possible, but has no
-// effect because the SysTick interrupt and COUNTFLAG are activated when
-// counting from 1 to 0. The reset value of this register is UNKNOWN.
+// SysTick Reload Value Register
 #define SYSTICK_O_RVR                                               0x00000004U
 
-// Use the SysTick Current Value Register to find the current value in the
-// register. The reset value of this register is UNKNOWN.
+// SysTick Current Value Register
 #define SYSTICK_O_CVR                                               0x00000008U
 
-// Use the SysTick Calibration Value Register to enable software to scale to
-// any required speed using divide and multiply.
+// SysTick Calibration Value Register
 #define SYSTICK_O_CALIB                                             0x0000000CU
 
 //*****************************************************************************
@@ -74,7 +68,7 @@
 //
 // SysTick clock source. Always reads as one if STCALIB reports NOREF.
 // 0x0:Systick driven by external reference clock.
-// 0x1:Systick driven by processor clock, hclk.
+// 0x1:Systick driven by processor clock
 #define SYSTICK_CSR_CLKSOURCE                                       0x00000004U
 #define SYSTICK_CSR_CLKSOURCE_M                                     0x00000004U
 #define SYSTICK_CSR_CLKSOURCE_S                                              2U

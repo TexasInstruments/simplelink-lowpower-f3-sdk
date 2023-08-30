@@ -428,6 +428,16 @@ static void rclSchedulerHwi(void)
         return;
     }
 
+    int32_t deltaTime = (nextCmd->scheduling == RCL_Schedule_Now)
+                            ? (int32_t)RCL_SCHEDULER_TRIG_NOW_DELAY
+                            : RCL_Scheduler_delta(RCL_Scheduler_getCurrentTime(), nextCmd->timing.absStartTime);
+    /* Event must be in future */
+    if (false == nextCmd->allowDelay && deltaTime < (int32_t)RCL_SCHEDULER_TRIG_NOW_DELAY)
+    {
+        nextCmd->status = RCL_CommandStatus_Error_StartTooLate;
+        return;
+    }
+
     /* ScheduleHook might immediately terminate running command and cmdHwi might update currCmd to NULL */
     scheduleHook(&rclSchedulerState, nextCmd->runtime.client, nextCmd);
 
@@ -453,12 +463,7 @@ static void rclSchedulerHwi(void)
     /* Next command may need different PHY applied; prepare this */
     phyHook(&rclState, nextCmd->runtime.client, rclSchedulerState.currCmd);
 
-    int32_t deltaTime = (rclSchedulerState.currCmd->scheduling == RCL_Schedule_Now)
-                            ? 0
-                            : RCL_Scheduler_delta(RCL_Scheduler_getCurrentTime(), rclSchedulerState.currCmd->timing.absStartTime);
-    /* Event must be in future */
-    RCL_Debug_assert(deltaTime >= 0);
-    if ((uint32_t) deltaTime <= RCL_SCHEDULER_SLEEP_CUTOFF)
+    if (deltaTime <= (int32_t)RCL_SCHEDULER_SLEEP_CUTOFF)
     {
         Log_printf(RclCore, Log_INFO2, "Calling setup immediately, %d µs until event", deltaTime >> 2);
 

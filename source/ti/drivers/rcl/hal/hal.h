@@ -55,6 +55,8 @@ void hal_cancel_hard_stop_time(void);
 void hal_cancel_graceful_stop_time(void);
 void hal_disable_radio_interrupts(void);
 int16_t hal_get_temperature(void);
+uint32_t hal_get_hfxt_ratio(void);
+uint32_t hal_get_hfxt_ratio_default(void);
 
 typedef enum {
     HAL_TIMER_EVT_NONE = 0,
@@ -70,9 +72,15 @@ typedef enum {
 } RCL_PowerEvent;
 
 HalTimerEvent hal_check_clear_timer_compare(void);
+void hal_setup_cmd_start_cap(void);
+void hal_arm_cmd_start_cap(void);
+uint32_t hal_get_cmd_start_cap(void);
 void hal_setup_sync_found_cap(void);
 void hal_arm_sync_found_cap(void);
 uint32_t hal_get_sync_found_cap(void);
+void hal_setup_cmd_done_cap(void);
+void hal_arm_cmd_done_cap(void);
+uint32_t hal_get_cmd_done_cap(void);
 void hal_set_clkctl(uint32_t clkctl);
 void hal_enable_clk_buffer(void);
 void hal_power_set_constraint(void);

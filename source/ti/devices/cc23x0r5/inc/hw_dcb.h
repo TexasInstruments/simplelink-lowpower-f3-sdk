@@ -39,30 +39,19 @@
 // DCB component
 //
 //*****************************************************************************
-// Use the Debug Fault Status Register to monitor external debug requests,
-// vector catches, data watchpoint match, BKPT instruction execution and BPU
-// comparator matches, halt requests. Write one to clear. C_DEBUGEN must be set
-// before any bits in DFSR are updated.
+// Debug Fault Status Register
 #define DCB_O_DFSR                                                  0x00000000U
 
-// The purpose of the Debug Halting Control and Status Register (DHCSR) is to
-// provide status information about the state of the processor, enable core
-// debug, halt and step the processor. For writes, 0xA05F must be written to
-// bits [31:16], otherwise the write operation is ignored and no bits are
-// written into the register.
+// Debug Halting Control and Status Register
 #define DCB_O_DHCSR                                                 0x000000C0U
 
-// The purpose of the Debug Core Register Selector Register (DCRSR) is to
-// select the processor register to transfer data to or from.
+// Debug Core Register Selector Register
 #define DCB_O_DCRSR                                                 0x000000C4U
 
-// The purpose of the Debug Core Register Data Register (DCRDR) is to hold data
-// read from or written to core registers.
+// Debug Core Register Data Register
 #define DCB_O_DCRDR                                                 0x000000C8U
 
-// The purpose of the Debug Exception and Monitor Control Register (DEMCR) is:
-// Global enable for the DW unit, Vector catching (that is, causes debug entry
-// on execution of a specified vector.)
+// Debug Exception and Monitor Control Register
 #define DCB_O_DEMCR                                                 0x000000CCU
 
 //*****************************************************************************
@@ -229,7 +218,7 @@
 // 0x0c:R12
 // 0x0d:Current sp
 // 0x0e:Lr
-// 0x0f:Debugreturnaddress
+// 0x0f:Debug Return Address
 // 0x10:Xpsr flags, execution number, and state information
 // 0x11:Msp (main sp)
 // 0x12:Psp (process sp)

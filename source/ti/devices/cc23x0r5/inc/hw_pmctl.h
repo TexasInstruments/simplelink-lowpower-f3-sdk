@@ -58,12 +58,6 @@
 #define PMCTL_O_VDDRCTL                                             0x00000014U
 
 // Internal. Only to be used through TI provided API.
-#define PMCTL_O_IOSEGSET                                            0x00000018U
-
-// Internal. Only to be used through TI provided API.
-#define PMCTL_O_IOSEGCLR                                            0x0000001CU
-
-// Internal. Only to be used through TI provided API.
 #define PMCTL_O_SYSFSET                                             0x00000020U
 
 // Internal. Only to be used through TI provided API.
@@ -89,18 +83,6 @@
 
 // AON Register Clear 1.
 #define PMCTL_O_AONRCLR1                                            0x00000044U
-
-// Delta Time Register.
-#define PMCTL_O_DELTA                                               0x0000004CU
-
-// WakeUp Time Register
-#define PMCTL_O_WUTIME                                              0x00000050U
-
-// Pre Power-Up Control Register.
-#define PMCTL_O_PREPUCTL                                            0x00000054U
-
-// SW Time Stamp Register.
-#define PMCTL_O_SWSTMP                                              0x00000058U
 
 // Internal. Only to be used through TI provided API.
 #define PMCTL_O_ETPP                                                0x00000064U
@@ -300,10 +282,10 @@
 //*****************************************************************************
 // Field:     [1] STBY
 //
-// Internal. Only to be used through TI provided API.
+// Select between continuous or duty-cycled VDDR regulation in STANDBY mode.
 // ENUMs:
-// PSUEDO                   Internal. Only to be used through TI provided API.
-// NORMAL                   Internal. Only to be used through TI provided API.
+// PSUEDO                   Continuous VDDR regulation in STANDBY mode.
+// NORMAL                   Duty-cycled VDDR regulation in STANDBY mode.
 #define PMCTL_VDDRCTL_STBY                                          0x00000002U
 #define PMCTL_VDDRCTL_STBY_M                                        0x00000002U
 #define PMCTL_VDDRCTL_STBY_S                                                 1U
@@ -322,64 +304,6 @@
 #define PMCTL_VDDRCTL_SELECT_S                                               0U
 #define PMCTL_VDDRCTL_SELECT_DCDC                                   0x00000001U
 #define PMCTL_VDDRCTL_SELECT_GLDO                                   0x00000000U
-
-//*****************************************************************************
-//
-// Register: PMCTL_O_IOSEGSET
-//
-//*****************************************************************************
-// Field:     [1] VDDS3
-//
-// Internal. Only to be used through TI provided API.
-// ENUMs:
-// EN                       Internal. Only to be used through TI provided API.
-// NOEFF                    Internal. Only to be used through TI provided API.
-#define PMCTL_IOSEGSET_VDDS3                                        0x00000002U
-#define PMCTL_IOSEGSET_VDDS3_M                                      0x00000002U
-#define PMCTL_IOSEGSET_VDDS3_S                                               1U
-#define PMCTL_IOSEGSET_VDDS3_EN                                     0x00000002U
-#define PMCTL_IOSEGSET_VDDS3_NOEFF                                  0x00000000U
-
-// Field:     [0] VDDS2
-//
-// Internal. Only to be used through TI provided API.
-// ENUMs:
-// EN                       Internal. Only to be used through TI provided API.
-// NOEFF                    Internal. Only to be used through TI provided API.
-#define PMCTL_IOSEGSET_VDDS2                                        0x00000001U
-#define PMCTL_IOSEGSET_VDDS2_M                                      0x00000001U
-#define PMCTL_IOSEGSET_VDDS2_S                                               0U
-#define PMCTL_IOSEGSET_VDDS2_EN                                     0x00000001U
-#define PMCTL_IOSEGSET_VDDS2_NOEFF                                  0x00000000U
-
-//*****************************************************************************
-//
-// Register: PMCTL_O_IOSEGCLR
-//
-//*****************************************************************************
-// Field:     [1] VDDS3
-//
-// Internal. Only to be used through TI provided API.
-// ENUMs:
-// DIS                      Internal. Only to be used through TI provided API.
-// NOEFF                    Internal. Only to be used through TI provided API.
-#define PMCTL_IOSEGCLR_VDDS3                                        0x00000002U
-#define PMCTL_IOSEGCLR_VDDS3_M                                      0x00000002U
-#define PMCTL_IOSEGCLR_VDDS3_S                                               1U
-#define PMCTL_IOSEGCLR_VDDS3_DIS                                    0x00000002U
-#define PMCTL_IOSEGCLR_VDDS3_NOEFF                                  0x00000000U
-
-// Field:     [0] VDDS2
-//
-// Internal. Only to be used through TI provided API.
-// ENUMs:
-// DIS                      Internal. Only to be used through TI provided API.
-// NOEFF                    Internal. Only to be used through TI provided API.
-#define PMCTL_IOSEGCLR_VDDS2                                        0x00000001U
-#define PMCTL_IOSEGCLR_VDDS2_M                                      0x00000001U
-#define PMCTL_IOSEGCLR_VDDS2_S                                               0U
-#define PMCTL_IOSEGCLR_VDDS2_DIS                                    0x00000001U
-#define PMCTL_IOSEGCLR_VDDS2_NOEFF                                  0x00000000U
 
 //*****************************************************************************
 //
@@ -759,155 +683,6 @@
 #define PMCTL_AONRCLR1_FLAG_S                                                0U
 #define PMCTL_AONRCLR1_FLAG_ALL_CLR                                 0x0003FFFFU
 #define PMCTL_AONRCLR1_FLAG_NOEFF                                   0x00000000U
-
-//*****************************************************************************
-//
-// Register: PMCTL_O_DELTA
-//
-//*****************************************************************************
-// Field: [31:30] SLWP
-//
-// Slow part.
-// States which of HFXT ready or SW ready that completed first during wakeup
-// from STANDBY mode.
-// ENUMs:
-// INVALID3                 No valid measurement available
-// HFXT                     HFXT ready set after SW ready (SWSTMP.SWRDY)
-// SVT                       HFXT ready set before SW ready (SWSTMP.SWRDY)
-// INVALID0                 No valid measurement available
-#define PMCTL_DELTA_SLWP_W                                                   2U
-#define PMCTL_DELTA_SLWP_M                                          0xC0000000U
-#define PMCTL_DELTA_SLWP_S                                                  30U
-#define PMCTL_DELTA_SLWP_INVALID3                                   0xC0000000U
-#define PMCTL_DELTA_SLWP_HFXT                                       0x80000000U
-#define PMCTL_DELTA_SLWP_SVT                                        0x40000000U
-#define PMCTL_DELTA_SLWP_INVALID0                                   0x00000000U
-
-// Field:  [11:0] TIME
-//
-// Delta time.
-// Measured time in us between SWSTMP.SWRDY and HFXT ready.
-// This is a always a positive number, and SLWP is used to determine which
-// event occurred first.
-// Measurement is enabled when PREPUCTL.WUTIMEN is set.
-#define PMCTL_DELTA_TIME_W                                                  12U
-#define PMCTL_DELTA_TIME_M                                          0x00000FFFU
-#define PMCTL_DELTA_TIME_S                                                   0U
-
-//*****************************************************************************
-//
-// Register: PMCTL_O_WUTIME
-//
-//*****************************************************************************
-// Field: [23:16] DIGWU
-//
-// Digital wakeup time.
-// Gives the time (in us) from HFSOC is running until CPU execution starts.
-// Measurement is enabled when PREPUCTL.WUTIMEN is set.
-#define PMCTL_WUTIME_DIGWU_W                                                 8U
-#define PMCTL_WUTIME_DIGWU_M                                        0x00FF0000U
-#define PMCTL_WUTIME_DIGWU_S                                                16U
-
-// Field:   [7:0] HFXTWU
-//
-// HFXT wakeup time
-// Gives the time (in us) from HFSOC is running until HFXT auto enable is
-// triggered.
-// Measurement is enabled when PREPUCTL.WUTIMEN is set.
-#define PMCTL_WUTIME_HFXTWU_W                                                8U
-#define PMCTL_WUTIME_HFXTWU_M                                       0x000000FFU
-#define PMCTL_WUTIME_HFXTWU_S                                                0U
-
-//*****************************************************************************
-//
-// Register: PMCTL_O_PREPUCTL
-//
-//*****************************************************************************
-// Field:    [31] PREPUEN
-//
-// Pre PowerUp Enable.
-// When PREPUEN is set the device will start the wakeup process in advance of
-// the RTC wakeup event.
-// This to start HFXT settling earlier, so that HFXT can be ready when SW is
-// ready.
-// ENUMs:
-// EN                       Enable pre-powerup
-// DIS                      Disable pre-powerup
-#define PMCTL_PREPUCTL_PREPUEN                                      0x80000000U
-#define PMCTL_PREPUCTL_PREPUEN_M                                    0x80000000U
-#define PMCTL_PREPUCTL_PREPUEN_S                                            31U
-#define PMCTL_PREPUCTL_PREPUEN_EN                                   0x80000000U
-#define PMCTL_PREPUCTL_PREPUEN_DIS                                  0x00000000U
-
-// Field:    [30] WUTIMEN
-//
-// Wakeup time measurement enable.
-// When set will enable WUTIME.DIGWU,  WUTIME.HFXTWU and DELTA.TIME time
-// measurements.
-// ENUMs:
-// EN                       Enable wakeup time measurement
-// DIS                      Disable wakeup time measurement
-#define PMCTL_PREPUCTL_WUTIMEN                                      0x40000000U
-#define PMCTL_PREPUCTL_WUTIMEN_M                                    0x40000000U
-#define PMCTL_PREPUCTL_WUTIMEN_S                                            30U
-#define PMCTL_PREPUCTL_WUTIMEN_EN                                   0x40000000U
-#define PMCTL_PREPUCTL_WUTIMEN_DIS                                  0x00000000U
-
-// Field:  [15:8] CONS
-//
-// Conservative pre-wakeup time.
-// When PREPUEN is set the device will start the wakeup process in advance of
-// the RTC wakeup event.
-// This field will give the conservative time in advance of a RTC event.
-// Conservative value is used if a temperature change has been detected since
-// STANDBY mode was entered.
-// The time unit for the value is 8us.
-// ENUMs:
-// MAX                      Highest possible value
-// MIN                      Smallest value
-#define PMCTL_PREPUCTL_CONS_W                                                8U
-#define PMCTL_PREPUCTL_CONS_M                                       0x0000FF00U
-#define PMCTL_PREPUCTL_CONS_S                                                8U
-#define PMCTL_PREPUCTL_CONS_MAX                                     0x0000FE00U
-#define PMCTL_PREPUCTL_CONS_MIN                                     0x00000000U
-
-// Field:   [7:0] NOM
-//
-// Nominal pre-wakeup time.
-// When PREPUEN is set the device will start the wakeup process in advance of
-// the RTC wakeup event.
-// This field will give the nominal time in advance of a RTC event. Nominal
-// value is used if no temperature change has been detected since STANDBY mode
-// was entered.
-// The time unit for the value is 8us.
-// ENUMs:
-// MAX                      Highest possible value
-// MIN                      Smallest value
-#define PMCTL_PREPUCTL_NOM_W                                                 8U
-#define PMCTL_PREPUCTL_NOM_M                                        0x000000FFU
-#define PMCTL_PREPUCTL_NOM_S                                                 0U
-#define PMCTL_PREPUCTL_NOM_MAX                                      0x000000FEU
-#define PMCTL_PREPUCTL_NOM_MIN                                      0x00000000U
-
-//*****************************************************************************
-//
-// Register: PMCTL_O_SWSTMP
-//
-//*****************************************************************************
-// Field:     [0] SWRDY
-//
-// SW ready
-// Set by SW to indicate when SW is ready. Used to measure DELTA.TIME and
-// DELTA.SLWP.
-// This bit is auto-cleared by HW.
-// ENUMs:
-// SET                      Set SW ready time stamp
-// NOEFF                    No effect
-#define PMCTL_SWSTMP_SWRDY                                          0x00000001U
-#define PMCTL_SWSTMP_SWRDY_M                                        0x00000001U
-#define PMCTL_SWSTMP_SWRDY_S                                                 0U
-#define PMCTL_SWSTMP_SWRDY_SET                                      0x00000001U
-#define PMCTL_SWSTMP_SWRDY_NOEFF                                    0x00000000U
 
 //*****************************************************************************
 //

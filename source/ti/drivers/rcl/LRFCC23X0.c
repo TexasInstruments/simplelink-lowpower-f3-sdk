@@ -65,8 +65,9 @@ static void LRF_updateTrim(const LRF_TrimDef *trimDef, const LRF_SwConfig *swCon
 static void LRF_setTrimCommon(const LRF_TrimDef *trimDef, const LRF_SwConfig *swConfig);
 static void LRF_setTemperatureTrim(const LRF_TrimDef *trimDef);
 static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef);
-static uint32_t LRF_findExtTrim1TrimAdjustment(uint32_t temperatureDiff, uint32_t tempThreshIndex, uint32_t maxAdjustment);
+static uint32_t LRF_findExtTrim1TrimAdjustment(uint32_t temperatureDiff, uint32_t tempThreshFactor, uint32_t maxAdjustment);
 static int32_t LRF_findExtTrim0TrimAdjustment(int32_t temperature, int32_t tempCompFactor, int32_t offset);
+static uint32_t LRF_scaleFreqWithHFXTOffset(uint32_t frequency);
 
 uint32_t swParamList[sizeof(LRF_SwParam)/sizeof(uint32_t)];
 const size_t swParamListSz = sizeof(LRF_SwParam);
@@ -520,29 +521,39 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
 #define LRF_ONE_THIRD_NEG_EXP  16
 /* Calculate temperature compensation for the fields in lrfdrfeExtTrim1 */
 /* temperatureDiff: absolute difference from calculated temperature threshold */
-/* tempThreshIndex: Temperature Threshold field as defined in https://jira.itg.ti.com/browse/LOKI_DFWT-47 */
+/* tempThreshFactor: Temperature Threshold field as defined in the trim spec:
+   The temperature threshold is given by (125 - tempThreshFactor * 2^k) for high temperatures and
+   (-40C + tempThreshFactor * 2^k) for low temperatures, where k = LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP. */
 /* maxAdjustment: The adjustment to apply at the extreme temperature */
 /* Return: Adjustment to add to value */
-static uint32_t LRF_findExtTrim1TrimAdjustment(uint32_t temperatureDiff, uint32_t tempThreshIndex, uint32_t maxAdjustment)
+static uint32_t LRF_findExtTrim1TrimAdjustment(uint32_t temperatureDiff, uint32_t tempThreshFactor, uint32_t maxAdjustment)
 {
     uint32_t adjustment;
-    switch (tempThreshIndex)
+    /* Calculate adjustment = round((temperatureDiff * maxAdjustment) / (tempThreshFactor * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP)) */
+    switch (tempThreshFactor)
     {
         case 0:
         default:
+            /* tempThreshFactor = 0:
+               No temperatures will be in the range for adjustment */
             adjustment = 0;
             break;
         case 1:
-            /* (temperatureDiff * maxAdjustment) / (1 * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP) */
-            adjustment = (temperatureDiff * maxAdjustment) >> LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP;
+            /* tempThreshFactor = 1:
+               adjustment = round((temperatureDiff * maxAdjustment) / (1 * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP)) */
+            adjustment = ((temperatureDiff * maxAdjustment) + (1 << (LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP - 1))) >> LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP;
             break;
         case 2:
-            /* (temperatureDiff * maxAdjustment) / (2 * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP) */
-            adjustment = (temperatureDiff * maxAdjustment) >> (LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP + 1);
+            /* tempThreshFactor = 2:
+               adjustment = round((temperatureDiff * maxAdjustment) / (2 * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP)) */
+            adjustment = ((temperatureDiff * maxAdjustment) + (1 << LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP)) >> (LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP + 1);
             break;
         case 3:
-            /* (temperatureDiff * maxAdjustment) / (3 * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP) */
-            adjustment = (temperatureDiff * maxAdjustment * LRF_ONE_THIRD_MANTISSA) >> (LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP + LRF_ONE_THIRD_NEG_EXP);
+            /* tempThreshFactor = 3:
+               adjustment = round((temperatureDiff * maxAdjustment) / (3 * 2^LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP))
+               Use approximation with multiplication to avoid performing division */
+            adjustment = ((temperatureDiff * maxAdjustment * LRF_ONE_THIRD_MANTISSA) + (1 << (LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP + LRF_ONE_THIRD_NEG_EXP - 1)))
+                >> (LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP + LRF_ONE_THIRD_NEG_EXP);
             break;
     }
     return adjustment;
@@ -550,7 +561,7 @@ static uint32_t LRF_findExtTrim1TrimAdjustment(uint32_t temperatureDiff, uint32_
 
 /* Calculate temperature compensation for the fields in lrfdrfeExtTrim0 */
 /* temperature: temperature (degrees C) */
-/* tempCompFactor: Temperature compensation coefficient as defined in https://jira.itg.ti.com/browse/LOKI_DFWT-45 */
+/* tempCompFactor: Temperature compensation coefficient used to find offset from the formula ((temperature - 25) * tempCompFactor) / 128 */
 /* offset: Absolute offset to apply independent of temperature  */
 /* Return: Adjustment to add to value */
 static int32_t LRF_findExtTrim0TrimAdjustment(int32_t temperature, int32_t tempCompFactor, int32_t offset)
@@ -1088,6 +1099,9 @@ void LRF_programFrequency(uint32_t frequency, bool tx)
             - swConfig->rxIntFrequency;
     }
 
+    /* Compensate desired frequency for temperature-dependent offset in HFXT, if any */
+    synthFrequency = LRF_scaleFreqWithHFXTOffset(synthFrequency);
+
     /* Frequency divided by 2^16, rounded */
     uint32_t frequencyDiv2_16 = (synthFrequency + (1 << 15)) >> 16;
 
@@ -1317,4 +1331,48 @@ LRF_TxPowerResult LRF_programTxPower(LRF_TxPowerTable_Index powerLevel)
         }
     }
     return TxPowerResult_Ok;
+}
+
+static uint32_t LRF_scaleFreqWithHFXTOffset(uint32_t frequency)
+{
+    /* Get HFXT ratio from HFTRACKCTL register. This will have been
+     * updated by the power driver if compensation is enabled and the temperature has drifted beyond the threshold.
+     */
+    uint32_t ratio = hal_get_hfxt_ratio();
+
+    /* If temperature compensation is disabled, or temperature has not drifted,
+     * the ratio will have its reset-value of 0x400000. In this case, do not perform scaling of input frequency
+     * to save computational cost.
+     * Rationale:
+     * ratio = 24 MHz / (2 * HFXT_freq) * 2^24 ==> HFXT_freq = 24 MHz / ratio * 2^23
+     * (ref: CKMD.HFTRACKCTL.RATIO register description)
+     * Nominal HFXT frequency is 48 MHz
+     *
+     * frequency_out = frequency_in * HFXT_nominal_freq / HFXT_freq
+     *               = frequency_in * 48 MHz / (24 MHz / ratio * 2^23)
+     * frequency_out = frequency_in * ratio * 2^-22
+     *
+     * The method below is a computationally cost-effective way to calculate the scaled result.
+     * Instead of performing 64-bit multiplication and shifting, the multiplier and multiplicand are divided into
+     * half-words which are multiplied, added, and shifted appropriately.
+     */
+    if (ratio != hal_get_hfxt_ratio_default())
+    {
+        uint32_t ah = frequency >> 16;      /* Multiplier high half-word */
+        uint32_t al = frequency & 0xFFFF;   /* Multiplier low half-word */
+
+        uint32_t bh = ratio >> 16;          /* Multiplicand high half-word */
+        uint32_t bl = ratio & 0xFFFF;       /* Multiplicand low half-word */
+
+        /* Perform standard long multiplication where each "digit" is a half-word
+         * https://en.wikipedia.org/wiki/Multiplication_algorithm
+         * The rounding error will be maximum 1 Hz in this calculation.
+         * frequency * ratio >> 22 = [ah al] * [bh bl] >> 22
+         * [ah al] * [bh bl] >> 22 = ([bl * al] + (([bl * ah] + [bh * al]) << 16) + ([bh * ah]) << 32) >> 22
+         *                         = (([bl * ah] + [bh * al]) >> 6) + ([bh * ah]) << 10)
+         */
+        frequency = ((bl*ah + bh*al + ((bl*al) >> 16)) >> 6) + ((bh*ah) << 10);
+    }
+
+    return frequency;
 }

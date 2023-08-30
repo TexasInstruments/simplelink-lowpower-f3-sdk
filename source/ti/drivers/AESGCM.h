@@ -752,7 +752,7 @@ typedef struct
                                  *   block-aligned.
                                  */
     uint8_t ivLength;           /*!< Length of \c IV in bytes.
-                                 *   The only currently supported IV length is 12 bytes.
+                                 *   See implementation-specific header for IV length support.
                                  */
     uint8_t macLength;          /*!< Length of \c mac in bytes.
                                  *   Valid MAC lengths are [4, 8, 12, 13, 14, 15, 16].
@@ -1310,7 +1310,7 @@ void AESGCM_SegmentedFinalizeOperation_init(AESGCM_SegmentedFinalizeOperation *o
  * operation.
  *
  *  @retval #AESGCM_STATUS_SUCCESS                    The operation succeeded.
- *  @retval #AESGCM_STATUS_ERROR                      The operation failed.
+ *  @retval #AESGCM_STATUS_ERROR                      The operation failed or the IV length is not supported.
  *  @retval #AESGCM_STATUS_RESOURCE_UNAVAILABLE       The required hardware resource was not available. Try again later.
  *  @retval #AESGCM_STATUS_UNALIGNED_IO_NOT_SUPPORTED The input and/or output buffer were not word-aligned.
  *
@@ -1332,7 +1332,7 @@ int_fast16_t AESGCM_oneStepEncrypt(AESGCM_Handle handle, AESGCM_OneStepOperation
  * operation.
  *
  *  @retval #AESGCM_STATUS_SUCCESS                    The operation succeeded.
- *  @retval #AESGCM_STATUS_ERROR                      The operation failed.
+ *  @retval #AESGCM_STATUS_ERROR                      The operation failed or the IV length is not supported.
  *  @retval #AESGCM_STATUS_RESOURCE_UNAVAILABLE       The required hardware resource was not available. Try again later.
  *  @retval #AESGCM_STATUS_MAC_INVALID                The provided MAC did no match the recomputed one.
  *  @retval #AESGCM_STATUS_UNALIGNED_IO_NOT_SUPPORTED The input and/or output buffer were not word-aligned.

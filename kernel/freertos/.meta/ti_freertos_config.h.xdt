@@ -233,7 +233,9 @@
 #define INCLUDE_xTaskGetCurrentTaskHandle 1
 #define INCLUDE_xTaskGetSchedulerState 1
 #define INCLUDE_xSemaphoreGetMutexHolder 0
+% if (kernel.useEventGroups) {
 #define INCLUDE_xTimerPendFunctionCall 1
+% }
 
 /* Cortex-M3/4 interrupt priority configuration follows...................... */
 

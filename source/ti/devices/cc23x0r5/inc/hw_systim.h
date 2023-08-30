@@ -60,15 +60,11 @@
 // Interrupt mask set
 #define SYSTIM_O_IMSET                                              0x00000058U
 
-// Interrupt mask clear register. Writing a 1 to a bit in this register will
-// clear the corresponding IMASK bit.
+// Interrupt mask clear
 #define SYSTIM_O_IMCLR                                              0x0000005CU
 
 // Emulation
 #define SYSTIM_O_EMU                                                0x00000060U
-
-// Digital Test Bus
-#define SYSTIM_O_DTB                                                0x00000064U
 
 // Systime Count Value [31:0]
 #define SYSTIM_O_TIME250N                                           0x00000100U
@@ -94,52 +90,46 @@
 // channel4 Configuration.
 #define SYSTIM_O_CH4CFG                                             0x0000011CU
 
-// channel0 reg Value
+// Channel 0 Capture/Compare Value
 #define SYSTIM_O_CH0CC                                              0x00000120U
 
-// channel1 reg Value
+// Channel 1 Capture/Compare Value
 #define SYSTIM_O_CH1CC                                              0x00000124U
 
-// channel2 reg Value
+// Channel 2 Capture/Compare Value
 #define SYSTIM_O_CH2CC                                              0x00000128U
 
-// channel3 reg Value
+// Channel 3 Capture/Compare Value
 #define SYSTIM_O_CH3CC                                              0x0000012CU
 
-// channel4 reg Value
+// Channel 4 Capture/Compare Value
 #define SYSTIM_O_CH4CC                                              0x00000130U
 
-// Systimer's bit
+// Systimer's Time bit
 #define SYSTIM_O_TIMEBIT                                            0x00000134U
-
-// Proportional Gain
-#define SYSTIM_O_KP                                                 0x00000138U
-
-// Accumulator's Gain
-#define SYSTIM_O_KI                                                 0x0000013CU
 
 // Timer Status
 #define SYSTIM_O_STATUS                                             0x00000140U
 
-// Interrupt mask
+// Channel arming set
 #define SYSTIM_O_ARMSET                                             0x00000144U
 
-// Interrupt mask
+// Channel Arming clear
 #define SYSTIM_O_ARMCLR                                             0x00000148U
 
-// channel0 reg Value
+// Channel 0 Save/Restore Value
 #define SYSTIM_O_CH0CCSR                                            0x0000014CU
 
-// channel0 reg Value
+// Channel 1 Save/Restore Value
 #define SYSTIM_O_CH1CCSR                                            0x00000150U
 
-// channel0 reg Value
+// Channel 2 Save/Restore Value
 #define SYSTIM_O_CH2CCSR                                            0x00000154U
 
-// channel0 reg Value
+// Channel 3 Save/Restore Value
 #define SYSTIM_O_CH3CCSR                                            0x00000158U
 
-// channel0 reg Value
+// Channel 4 Save/Restore Value
 #define SYSTIM_O_CH4CCSR                                            0x0000015CU
 
 //*****************************************************************************
@@ -764,23 +754,6 @@
 
 //*****************************************************************************
 //
-// Register: SYSTIM_O_DTB
-//
-//*****************************************************************************
-// Field:   [3:0] SEL
-//
-// Digital test bus selection mux control.
-//
-// Non-zero select values output a 16 bit selected group of signals per value.
-// ENUMs:
-// DIS                      All 16 observation signals are set to zero.
-#define SYSTIM_DTB_SEL_W                                                     4U
-#define SYSTIM_DTB_SEL_M                                            0x0000000FU
-#define SYSTIM_DTB_SEL_S                                                     0U
-#define SYSTIM_DTB_SEL_DIS                                          0x00000000U
-
-//*****************************************************************************
-//
 // Register: SYSTIM_O_TIME250N
 //
 //*****************************************************************************
@@ -890,7 +863,7 @@
 // Field:     [3] REARM
 //
 // When Rearm is enabled the channel remains in continous capture mode.
-// Otherwise it'll be in One shot capture mode. Rearm is only valid for capture
+// Otherwise it'll be in one shot capture mode. Rearm is only valid for capture
 // mode.
 // ENUMs:
 // EN                       Re arm is enabled
@@ -936,7 +909,7 @@
 // Field:     [3] REARM
 //
 // When Rearm is enabled the channel remains in continous capture mode.
-// Otherwise it'll be in One shot capture mode. Rearm is only valid for capture
+// Otherwise it'll be in one shot capture mode. Rearm is only valid for capture
 // mode.
 // ENUMs:
 // EN                       Re arm is enabled
@@ -982,7 +955,7 @@
 // Field:     [3] REARM
 //
 // When Rearm is enabled the channel remains in continous capture mode.
-// Otherwise it'll be in One shot capture mode. Rearm is only valid for capture
+// Otherwise it'll be in one shot capture mode. Rearm is only valid for capture
 // mode.
 // ENUMs:
 // EN                       Re arm is enabled
@@ -1028,7 +1001,7 @@
 // Field:     [3] REARM
 //
 // When Rearm is enabled the channel remains in continous capture mode.
-// Otherwise it'll be in One shot capture mode. Rearm is only valid for capture
+// Otherwise it'll be in one shot capture mode. Rearm is only valid for capture
 // mode.
 // ENUMs:
 // EN                       Re arm is enabled
@@ -1074,7 +1047,7 @@
 // Field:     [3] REARM
 //
 // When Rearm is enabled the channel remains in continous capture mode.
-// Otherwise it'll be in One shot capture mode. Rearm is only valid for capture
+// Otherwise it'll be in one shot capture mode. Rearm is only valid for capture
 // mode.
 // ENUMs:
 // EN                       Re arm is enabled
@@ -1222,37 +1195,13 @@
 
 //*****************************************************************************
 //
-// Register: SYSTIM_O_KP
-//
-//*****************************************************************************
-// Field:   [3:0] VAL
-//
-// Proportional Error is left shifted by this value.
-#define SYSTIM_KP_VAL_W                                                      4U
-#define SYSTIM_KP_VAL_M                                             0x0000000FU
-#define SYSTIM_KP_VAL_S                                                      0U
-
-//*****************************************************************************
-//
-// Register: SYSTIM_O_KI
-//
-//*****************************************************************************
-// Field:   [3:0] VAL
-//
-// Accumulated Error is left shifted by this value.
-#define SYSTIM_KI_VAL_W                                                      4U
-#define SYSTIM_KI_VAL_M                                             0x0000000FU
-#define SYSTIM_KI_VAL_S                                                      0U
-
-//*****************************************************************************
-//
 // Register: SYSTIM_O_STATUS
 //
 //*****************************************************************************
 // Field:     [4] SYNCUP
 //
 // This bit indicates sync status of Systimer with RTC. The bitfield has a
-// reset value of '1' , which gets cleared to '0' after  the systimer
+// reset value of '1', which gets cleared to '0' after the Systimer
 // synchronizes with RTC on the first LFTICK edge. A write to this bit
 // resynchronizes the Systimer with RTC on the next LFTICK edge. A read value
 // of '1'  indicates the synchronization is ongoing and a read of '0' indicates
@@ -1282,10 +1231,9 @@
 //
 // Arming channel 4 for either compare or capture operation.
 // ENUMs:
-// SET                      if channel 3 is in CAPTURE state then no effect on
-//                          the channel Else  Set channel in COMPARE mode
-//                          using existing CH3
-//                          VAL value
+// SET                      if channel 4 is in CAPTURE state then no effect on
+//                          the channel else it can set channel in COMPARE
+//                          mode using existing CH4CC.VAL value.
 // NOEFF                    No effect on the channel
 #define SYSTIM_ARMSET_CH4                                           0x00000010U
 #define SYSTIM_ARMSET_CH4_M                                         0x00000010U
@@ -1298,9 +1246,8 @@
 // Arming channel 3 for either compare or capture operation.
 // ENUMs:
 // SET                      if channel 3 is in CAPTURE state then no effect on
-//                          the channel Else  Set channel in COMPARE mode
-//                          using existing CH3
-//                          VAL value
+//                          the channel else it can set channel in COMPARE
+//                          mode using existing CH3CC.VAL value
 // NOEFF                    No effect on the channel
 #define SYSTIM_ARMSET_CH3                                           0x00000008U
 #define SYSTIM_ARMSET_CH3_M                                         0x00000008U
@@ -1313,8 +1260,8 @@
 // Arming channel 2 for either compare or capture operation.
 // ENUMs:
 // SET                      if channel 2 is in CAPTURE state then no effect on
-//                          the channel Else  Set channel in COMPARE mode
-//                          using existing CH2VAL value
+//                          the channel else it can set channel in COMPARE
+//                          mode using existing CH2CC.VAL value
 // NOEFF                    No effect on the channel
 #define SYSTIM_ARMSET_CH2                                           0x00000004U
 #define SYSTIM_ARMSET_CH2_M                                         0x00000004U
@@ -1327,8 +1274,8 @@
 // Arming channel 1 for either compare or capture operation.
 // ENUMs:
 // SET                      if channel 1 is in CAPTURE state then no effect on
-//                          the channel Else  Set channel in COMPARE mode
-//                          using existing CH1VAL value
+//                          the channel else it can Set channel in COMPARE
+//                          mode using existing CH1CC.VAL value
 // NOEFF                    No effect on the channel
 #define SYSTIM_ARMSET_CH1                                           0x00000002U
 #define SYSTIM_ARMSET_CH1_M                                         0x00000002U
@@ -1341,9 +1288,8 @@
 // Arming channel 0 for either compare or capture operation.
 // ENUMs:
 // SET                      if channel 0 is in CAPTURE state then no effect on
-//                          the channel
-//                          3.	Else  Set channel in
-//                          COMPARE mode using existing CH0VAL value
+//                          the channel else it can set channel in COMPARE
+//                          mode using existing CH0CC.VAL value
 // NOEFF                    No effect on the channel
 #define SYSTIM_ARMSET_CH0                                           0x00000001U
 #define SYSTIM_ARMSET_CH0_M                                         0x00000001U

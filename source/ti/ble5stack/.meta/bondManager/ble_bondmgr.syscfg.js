@@ -241,7 +241,7 @@ const config = {
  */
 function validate(inst, validation)
 {
-    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0" )
+    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5" )
     {
        //check what is the max value
        if(inst.maxBonds < 0 || inst.maxBonds > 32)
@@ -261,11 +261,13 @@ function validate(inst, validation)
         // Check what is the max value
         if ( inst.maxBonds > 5 )
         {
-            validation.logWarning("When using privacy the maxBonds should not be greater than 5");
+            validation.logWarning("When using privacy the maxBonds should not be greater than 5",
+                                   inst, "maxBonds");
         }
         if ( (inst.maxBonds < 0) || (inst.maxBonds > 15) )
         {
-            validation.logError("Maximum number of bonds allowed is 15");
+            validation.logError("Maximum number of bonds allowed is 15",
+                                 inst, "maxBonds");
         }
     }
 

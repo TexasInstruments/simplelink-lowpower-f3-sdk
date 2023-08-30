@@ -96,8 +96,6 @@ Status_t SwUpdate_Open(swUpdateSource_e source)
     pSwUpdateModuleGlobalData->pageSize = hasExternalFlash()?EFL_PAGE_SIZE:INTFLASH_PAGE_SIZE;
     pSwUpdateModuleGlobalData->pageMask = hasExternalFlash()?(~EXTFLASH_PAGE_MASK):(~INTFLASH_PAGE_MASK);
 
-    // Initialize the flash interface
-    flash_init();
     status = flash_open();
     if(status != FLASH_OPEN)
     {
@@ -118,12 +116,6 @@ Status_t SwUpdate_Open(swUpdateSource_e source)
 void SwUpdate_Close(void)
 {
     flash_close();
-
-    // Free pointer for global data.
-    if(NULL != pSwUpdateModuleGlobalData)
-    {
-        ICall_free(pSwUpdateModuleGlobalData);
-    }
 }
 
 /*********************************************************************
@@ -175,7 +167,6 @@ Status_t SwUpdate_RevokeImage(uint8 imageSlot)
     Status_t status = FLASH_SUCCESS;
     struct image_header emptyHeader = {0};
 
-    flash_init();
     status = flash_open();
 
     if(INT_PRIMARY_SLOT == imageSlot)
@@ -200,11 +191,9 @@ Status_t SwUpdate_RevokeImage(uint8 imageSlot)
  */
 uint32* SwUpdate_GetSWVersion(uint32 hdrAdrr)
 {
-
     struct image_header * img_hdr = (struct image_header*)hdrAdrr;
 
     return ((uint32 *)&(img_hdr->ih_ver));
-
 }
 /*********************************************************************
  * @fn      SwUpdate_EraseImageSlot

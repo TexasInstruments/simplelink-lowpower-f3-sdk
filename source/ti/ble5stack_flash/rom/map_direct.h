@@ -1175,6 +1175,7 @@
 #define MAP_smFinishPublicKeyExchange                                smFinishPublicKeyExchange
 #define MAP_smResponderAuthStageTwo                                  smResponderAuthStageTwo
 #define MAP_smResponderProcessLTKReq                                 smResponderProcessLTKReq
+#define MAP_smTriggerProcessLTKReq                                   smTriggerProcessLTKReq
 #define MAP_smResponderSendNextKeyInfo                               smResponderSendNextKeyInfo
 #define MAP_smpResponderProcessEncryptionInformation                 smpResponderProcessEncryptionInformation
 #define MAP_smpResponderProcessIdentityAddrInfo                      smpResponderProcessIdentityAddrInfo
@@ -1188,6 +1189,7 @@
 #define MAP_smpResponderProcessPairingReq                            smpResponderProcessPairingReq
 #define MAP_smpResponderProcessSigningInfo                           smpResponderProcessSigningInfo
 #define MAP_smpResponderSendPairRspEvent                             smpResponderSendPairRspEvent
+#define MAP_smGetLtkReqDetails                                       smGetLtkReqDetails
 
 // SM Protocol
 #define MAP_smpBuildEncInfo                                          smpBuildEncInfo

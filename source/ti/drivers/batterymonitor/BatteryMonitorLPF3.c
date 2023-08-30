@@ -322,7 +322,7 @@ void BatteryMonitor_init(void)
         /* Wait until first measurement is ready to prevent BatteryMonitor_getVoltage
          * returning an invalid value.
          */
-        while ((HWREG(PMUD_BASE + PMUD_O_BATUPD) & PMUD_BATUPD_STAT_M) != PMUD_BATUPD_STAT_M) {}
+        while ((HWREG(PMUD_BASE + PMUD_O_BATUPD) & PMUD_BATUPD_STA_M) != PMUD_BATUPD_STA_M) {}
 
         isInitialized = true;
     }

@@ -1,7 +1,7 @@
 {
     "name": "simplelink_lowpower_f3_sdk",
     "displayName": "simplelink_lowpower_f3_sdk",
-    "version": "7.10.00.35",
+    "version": "7.20.00.29",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",
@@ -13,6 +13,7 @@
         "/ti/common/migration.component.js",
         "/ti/devices/devices.component.js",
         "/ti/drivers/drivers.component.js",
+        "/ti/drivers/rcl.component.js",
         "/ti/log/drivers.component.js",
         "/ti/log/utils.component.js",
         "/ti/posix/tiposix.component.js",
@@ -29,5 +30,5 @@
         "none",
         "nortos"
     ],
-    "minToolVersion": "1.16.1"
+    "minToolVersion": "1.17.0"
 }

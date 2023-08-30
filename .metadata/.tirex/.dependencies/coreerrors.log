@@ -8,6 +8,15 @@ Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/comparatorinterrupt/iar/comparatorinterrupt_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/empty_LP_EM_CC2340R5_nortos_iar.ipcf
+
+Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/fatsdraw/iar/SysConfig_Generated_Files.ipcf
 
 TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
@@ -24,15 +33,6 @@ In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/iar/SysConfig_G
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/iar/gpiointerrupt_LP_EM_CC2340R5_nortos_iar.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiostandby/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiostandby/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiostandby/iar/gpiostandby_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/iar/SysConfig_Generated_Files.ipcf
@@ -177,15 +177,6 @@ In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/SysC
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiostandby/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiostandby/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiostandby/freertos/iar/gpiostandby_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/i2ctmp/freertos/iar/SysConfig_Generated_Files.ipcf

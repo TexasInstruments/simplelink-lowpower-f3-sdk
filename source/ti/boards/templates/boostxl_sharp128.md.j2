@@ -2,16 +2,14 @@
 ### [__BOOSTXL-SHARP128 LCD & SD Card BoosterPack__][boostxl-sharp128]
 
 {% if mod == "mod_sd_cs" %}
-* The SD_CS pin must be jumpered from BP.8 to BP.28 (DIO30) when using the SD card.
-{% elif mod == "mod_sd_cs_cc23" %}
-* The SD_CS pin must be jumpered from BP.8 to BP.28 (DIO7) when using the SD card.
+* BoosterPack pin header BP.8 (__`SD_CS`__) must be jumpered to BP.28 when using the SD card.
 {% elif mod == "mod_sd_cs_and_resolder" %}
-The SD card's default SPI peripheral select pin is not compatible with this
+The SD card's default SPI Chip Select pin is not compatible with this
 LaunchPad's header pin layout. Use one of the following modification(s)
 to the BOOSTXL-SHARP128 to enable SD card usage with the __sdraw__,
   __fatsd__, and __fatsdraw__ examples.
 
-* Use a jumper wire to connect __`SD_CS`__ and __`SD_CS*`__.
+* Use a jumper wire to connect BP.8 (__`SD_CS`__) and BP.12 (__`SD_CS*`__).
 * Unsolder resistor __`R16`__ and re-solder it on __`R17`__.
   __`SD_CS*`__ uses the same LaunchPad header pin as __`BTN-2`__.
 {% elif mod == "mod_cc32" %}

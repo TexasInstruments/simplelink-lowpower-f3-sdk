@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Texas Instruments Incorporated
+# Copyright (c) 2022-2023, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,15 +37,15 @@ set(TI_TOOLCHAIN_NAME ticlang)
 set(TI_TOOLCHAIN_LINKER_FILE_EXTENSION cmd)
 
 # Set compilers and archiver
-if (WIN32)
+if(WIN32)
     cmake_path(SET CMAKE_C_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang.exe")
     cmake_path(SET CMAKE_ASM_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang.exe")
     cmake_path(SET CMAKE_AR "${TICLANG_ARMCOMPILER}/bin/tiarmar.exe")
-else ()
+else()
     cmake_path(SET CMAKE_C_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang")
     cmake_path(SET CMAKE_ASM_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang")
     cmake_path(SET CMAKE_AR "${TICLANG_ARMCOMPILER}/bin/tiarmar")
-endif ()
+endif()
 
 # Specify how the compilers should be invoked
 set(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> -c <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -MD -MF <OBJECT>.d <SOURCE>")
@@ -61,7 +61,7 @@ set(CMAKE_C_COMPILER_ID_RUN TRUE CACHE PATH "" FORCE)
 set(CMAKE_C_COMPILER_FORCED TRUE CACHE PATH "" FORCE)
 set(CMAKE_C_COMPILER_WORKS TRUE CACHE PATH "" FORCE)
 
-if (NOT TARGET TOOLCHAIN_ticlang)
+if(NOT TARGET TOOLCHAIN_ticlang)
     add_library(TOOLCHAIN_ticlang INTERFACE IMPORTED)
     target_compile_options(
         TOOLCHAIN_ticlang
@@ -72,6 +72,8 @@ if (NOT TARGET TOOLCHAIN_ticlang)
                   -flto>
                   $<$<AND:$<COMPILE_LANGUAGE:C>,$<CONFIG:Debug>>:-Og>
                   -g
+                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:${TI_CMAKE_COMMON_ENABLE_ALL_WARNINGS}>>:-Wall>
+                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>>:-Werror>
                   >
                   # If TI_CFLAGS_OVERRIDE, use it exclusively
                   $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>>
@@ -87,6 +89,7 @@ if (NOT TARGET TOOLCHAIN_ticlang)
         # If map-file property exists, set map file
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_LINKER_MAP_FILE>,>>:-Wl,-m,$<TARGET_PROPERTY:TI_LINKER_MAP_FILE>>
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_LINKER_REFERENCE_FILE>,>>:-Wl,--emit_references:file=$<TARGET_PROPERTY:TI_LINKER_REFERENCE_FILE>>
+        $<$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>:-Wl,--emit_warnings_as_errors>
         >
         # If TI_CFLAGS_OVERRIDE, use it exclusively
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_LFLAGS_OVERRIDE>>
@@ -111,4 +114,4 @@ if (NOT TARGET TOOLCHAIN_ticlang)
     target_link_libraries(TOOLCHAIN_ticlang_m33f INTERFACE TOOLCHAIN_ticlang)
     target_compile_options(TOOLCHAIN_ticlang_m33f INTERFACE -mcpu=cortex-m33 -mfloat-abi=hard -mfpu=fpv5-sp-d16)
     add_library(CMakeCommon::ticlang_m33f ALIAS TOOLCHAIN_ticlang_m33f)
-endif ()
+endif()

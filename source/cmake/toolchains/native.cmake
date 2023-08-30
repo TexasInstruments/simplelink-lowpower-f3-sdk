@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Texas Instruments Incorporated
+# Copyright (c) 2022-2023, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,13 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
 
 # This is a top-level toolchain file for the ticlang compiler, defining the most general options and variables as well
 # as any special commands or invocations needed by the compiler.
 set(TI_TOOLCHAIN_NAME native)
 set(TI_TOOLCHAIN_LINKER_FILE_EXTENSION cmd)
 
-if (NOT TARGET TOOLCHAIN_native)
+if(NOT TARGET TOOLCHAIN_native)
     add_library(TOOLCHAIN_native INTERFACE IMPORTED)
     target_compile_options(TOOLCHAIN_native INTERFACE -std=c11)
     target_link_options(TOOLCHAIN_native INTERFACE)
@@ -42,4 +41,4 @@ if (NOT TARGET TOOLCHAIN_native)
     add_library(TOOLCHAIN_native_x86-32 INTERFACE IMPORTED)
     target_link_libraries(TOOLCHAIN_native_x86-32 INTERFACE TOOLCHAIN_native)
     add_library(CMakeCommon::native_x86-32 ALIAS TOOLCHAIN_native_x86-32)
-endif ()
+endif()

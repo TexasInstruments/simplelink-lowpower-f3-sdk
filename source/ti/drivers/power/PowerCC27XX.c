@@ -668,10 +668,16 @@ void PowerCC27XX_doWFI(void)
  */
 void PowerCC27XX_enterStandby(void)
 {
+    /* Declare static volatile variable to ensure the toolchain does not use
+     * stack for the variable and does not optimize this memory allocation
+     * away.
+     */
+    static volatile uint32_t controlPreStandby;
+
     /* Stash current CONTROL configuration to re-apply after wakeup.
      * Depending on the kernel used, we could be on PSP or MSP
      */
-    uint32_t controlPreStandby = __get_CONTROL();
+    controlPreStandby = __get_CONTROL();
 
     /* Switch to MSP. HapiEnterStandby() must execute from MSP since the
      * device reboots into privileged mode on MSP and HapiEnterStandby()

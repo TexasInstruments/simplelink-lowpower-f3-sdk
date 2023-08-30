@@ -249,3 +249,5 @@ else
 % {
 -DADV_RPT_INC_CHANNEL=1
 % }
+-DMAX_NUM_BLE_CONNS=`ble.maxConnNum`
+-DGATT_MAX_PREPARE_WRITES=`ble.maxNumPrepareWrites`

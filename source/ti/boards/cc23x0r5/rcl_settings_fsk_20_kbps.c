@@ -4,8 +4,8 @@
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name                   SmartRF Studio
-// Tool version                0.6.0.193 INTERNAL
+// Tool name                   SmartRF Studio 8
+// Tool version                0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +14,7 @@
 // Device                      CC2340R5
 //     Package                 QFN40 5x5 RKP
 //     Revision(s)             B (2.0)
-// SDK                         SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                         SimpleLink CC23x0 SDK 7.20.00.00
 // Board                       LP-EM-CC2340R5
 // PHY                         2.4 GHz - Proprietary - 20 kbps, 19 kHz dev, FSK, TX
 // PHY abbreviation            fsk_20_kbps
@@ -37,8 +37,8 @@
 #include DeviceFamily_constructPath(rf_patches/lrf_rfe_binary_genfsk.h)
 
 
-// Configuration for COMBINED
-static const uint32_t LRF_combinedRegConfig[] =
+// Configuration: Common
+static const uint32_t LRF_commonRegConfig[] =
 {
     0x00000054,                               // Segment length = 84
     0x0000A002,                               //     Data structure 32-bit region (start byte position = 0, count = 3)
@@ -57,7 +57,7 @@ static const uint32_t LRF_combinedRegConfig[] =
     0x14682000,                               //     HW 32-bit region (start address = 0x1468, count = 1)
     0x00020004,                               //         LRFDPBE.TXFWBTHRS                   LRFDPBE.RXFRBTHRS
     0x10DC1001,                               //     HW 16-bit region (start address = 0x10DC, count = 2)
-    0x000C0002,                               //         LRFDPBE.TIMPRE                      LRFDPBE.TIMCTL
+    0x000B0002,                               //         LRFDPBE.TIMPRE                      LRFDPBE.TIMCTL
     0x00003006,                               //     HW sparse region (address/value pairs, count = 7)
     0x20C00003,                               //         LRFDMDM.ADCDIGCONF
     0x20C8001F,                               //         LRFDMDM.MODSYMMAP0
@@ -105,7 +105,7 @@ static const uint32_t LRF_combinedRegConfig[] =
     0x42413D2D,                               //         LRFDRFE.DTX9                        LRFDRFE.DTX8
     0x42424242,                               //         LRFDRFE.DTX11                       LRFDRFE.DTX10
     0x20206005,                               //     RAM 32-bit region (start address = 0x2020, count = 6)
-    0x00A00000,                               //         PBE_GENERIC_RAM.SYNTHCALTIMEOUT     PBE_GENERIC_RAM.PHY
+    0x00B40000,                               //         PBE_GENERIC_RAM.SYNTHCALTIMEOUT     PBE_GENERIC_RAM.PHY
     0x00100088,                               //         PBE_GENERIC_RAM.NUMCRCBITS          PBE_GENERIC_RAM.PKTCFG
     0x00024BB0,                               //         PBE_GENERIC_RAM.EXTRABYTES          PBE_GENERIC_RAM.FIFOCFG
     0x00000000,                               //         < GAP >                             PBE_GENERIC_RAM.WHITEINIT
@@ -119,7 +119,7 @@ static const uint32_t LRF_combinedRegConfig[] =
     0x132C0074,                               //         RFE_COMMON_RAM.K3BL                 RFE_COMMON_RAM.K2AL
     0x916F07AB,                               //         RFE_COMMON_RAM.K5                   RFE_COMMON_RAM.K3AL
     0x68206005,                               //     RAM 32-bit region (start address = 0x6820, count = 6)
-    0x00080000,                               //         RFE_COMMON_RAM.RTRIMMIN             RFE_COMMON_RAM.RTRIMOFF
+    0x00000000,                               //         RFE_COMMON_RAM.RTRIMMIN             RFE_COMMON_RAM.RTRIMOFF
     0x48080008,                               //         RFE_COMMON_RAM.DIVF                 RFE_COMMON_RAM.DIVI
     0x00000000,                               //         RFE_COMMON_RAM.DIVLDOF              RFE_COMMON_RAM.DIVLDOI
     0x00470014,                               //         RFE_COMMON_RAM.LDOSETTLE            RFE_COMMON_RAM.DIVLDOIOFF
@@ -132,7 +132,7 @@ static const uint32_t LRF_combinedRegConfig[] =
 static const LRF_RegConfigList LRF_regConfigList = {
     .numEntries = 1,
     .entries = {
-        (LRF_ConfigWord*) LRF_combinedRegConfig 
+        (LRF_ConfigWord*) LRF_commonRegConfig 
     }
 };
 

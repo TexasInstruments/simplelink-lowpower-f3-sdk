@@ -413,7 +413,13 @@ struct RCL_CMD_NESB_PRX_t {
                                                     mismatch */
         uint8_t     reserved: 2;            /*!< Reserved, set to 0 */
     } config;
-    RCL_ConfigAddress syncWord[2];
+    union {
+        RCL_ConfigAddress syncWord[2];
+        struct {
+            RCL_ConfigAddress syncWordACfg;
+            RCL_ConfigAddress syncWordBCfg;
+        };
+    };
 };
 #define RCL_CmdNesbPrx_Default()                                   \
 {                                                                  \

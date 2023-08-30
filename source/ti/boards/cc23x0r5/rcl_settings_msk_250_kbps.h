@@ -1,11 +1,13 @@
 // SETTINGS FOR PHY BASED ON RADIO CONTROL LAYER (HEADER FILE)
 //
+// Usage                       Protocol stack / Application
+//
 //
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name                   SmartRF Studio
-// Tool version                0.6.0.193 INTERNAL
+// Tool name                   SmartRF Studio 8
+// Tool version                0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +16,7 @@
 // Device                      CC2340R5
 //     Package                 QFN40 5x5 RKP
 //     Revision(s)             B (2.0)
-// SDK                         SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                         SimpleLink CC23x0 SDK 7.20.00.00
 // Board                       LP-EM-CC2340R5
 // PHY                         2.4 GHz - Proprietary - 250 kbps, MSK
 // PHY abbreviation            msk_250_kbps
@@ -46,7 +48,7 @@ extern const LRF_TxPowerTable LRF_txPowerTableMsk250Kbps;
 extern const LRF_Config       LRF_configMsk250Kbps;
 
 
-// LRF register configuration summary
+// COMMON register field values
 
 // Address    Module             Register             Bit(s)     Field              Value
 // ---------------------------------------------------------------------------------------
@@ -70,7 +72,7 @@ extern const LRF_Config       LRF_configMsk250Kbps;
 // 0x10D0     LRFDPBE            RXFRBTHRS            [9:0]      BYTES              0x004
 // 0x10D4     LRFDPBE            TXFWBTHRS            [9:0]      BYTES              0x002
 // 0x10DC     LRFDPBE            TIMCTL               [1]        SRC0               0x1
-// 0x10E0     LRFDPBE            TIMPRE               [5:0]      PRE0               0x0C
+// 0x10E0     LRFDPBE            TIMPRE               [5:0]      PRE0               0x0B
 // 0x20C0     LRFDMDM            ADCDIGCONF           [1]        QBRANCHEN          0x1
 // 0x20C0     LRFDMDM            ADCDIGCONF           [0]        IBRANCHEN          0x1
 // 0x20C8     LRFDMDM            MODSYMMAP0           [7:4]      SYM1               0xF
@@ -259,16 +261,16 @@ extern const LRF_Config       LRF_configMsk250Kbps;
 // 0x2024     PBE_GENERIC_RAM    PKTCFG               [5:0]      NUMHDRBITS         0x08
 // 0x2026     PBE_GENERIC_RAM    NUMCRCBITS           [5:0]      VAL                0x10
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [15]       APPENDTIMESTAMP    0x0
-// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [14]       APPENDRSSI         0x1
+// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [14]       APPENDRSSI         0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [13]       APPENDFREQEST      0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [12]       APPENDLQI          0x0
-// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [11]       APPENDSTATUS       0x1
+// 0x2028     PBE_GENERIC_RAM    FIFOCFG              [11]       APPENDSTATUS       0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [10]       APPENDCRC          0x0
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [9]        AUTOFLUSHEMPTY     0x1
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [8]        AUTOFLUSHIGN       0x1
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [7]        AUTOFLUSHCRC       0x1
 // 0x2028     PBE_GENERIC_RAM    FIFOCFG              [6:4]      LENOPTPAD          0x3
-// 0x202A     PBE_GENERIC_RAM    EXTRABYTES           [15:0]     VAL                0x0002
+// 0x202A     PBE_GENERIC_RAM    EXTRABYTES           [15:0]     VAL                0x0000
 // 0x202C     PBE_GENERIC_RAM    WHITEINIT            [15:0]     VAL                0x0000
 // 0x2030     PBE_GENERIC_RAM    CRCINITL             [15:0]     VALLSB             0x0000
 // 0x2032     PBE_GENERIC_RAM    CRCINITH             [15:0]     VALMSB             0xFFFF
@@ -297,7 +299,7 @@ extern const LRF_Config       LRF_configMsk250Kbps;
 // 0x6818     RFE_COMMON_RAM     K3AL                 [15:0]     VAL                0x07AB
 // 0x681A     RFE_COMMON_RAM     K5                   [15:0]     VAL                0x916F
 // 0x6820     RFE_COMMON_RAM     RTRIMOFF             [3:0]      VAL                0x0
-// 0x6822     RFE_COMMON_RAM     RTRIMMIN             [3:0]      VAL                0x8
+// 0x6822     RFE_COMMON_RAM     RTRIMMIN             [3:0]      VAL                0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [14:12]    NMIREFTRIM         0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [11:9]     PMIREFTRIM         0x0
 // 0x6824     RFE_COMMON_RAM     DIVI                 [3]        OUT                0x1

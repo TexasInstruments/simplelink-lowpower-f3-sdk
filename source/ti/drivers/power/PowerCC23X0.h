@@ -77,6 +77,9 @@ extern "C" {
 /*! The initial delay when waking from STANDBY (usec). */
 #define PowerCC23X0_WAKEDELAYSTANDBY 185
 
+/* Default lower threshold for when HFXT compensation is enabled */
+#define PowerCC23X0_HFXT_THRESHOLD_TEMP_DEFAULT (-40)
+
 /* \cond */
 /* The control of the peripherals are split between multiple groups.
  * These defines are used to differentiate between the groups.
@@ -382,6 +385,61 @@ void PowerLPF3_selectLFOSC(void);
  * @sa PowerLPF3_selectLFOSC()
  */
 void PowerLPF3_selectLFXT(void);
+
+/*!
+ * @brief Initialise HFXT temperature compensation coefficients
+ *
+ * Initialise the parameters used for HFXT temperature coefficients. They approximate
+ * the ppm offset of the HFXT frequency with the following polynomial as a function of
+ * temperature (degC), where P_3 = P3 / 2^shift, P_2 = P2 / 2^shift, etc..
+ * ppm(T) = P_3*T^3 + P_2*T^2 + P_1*T + P_0
+ *
+ * @param[in] P0    0th-order coefficient, multiplied by 2^shift
+ * @param[in] P1    1st-order coefficient, multiplied by 2^shift
+ * @param[in] P2    2nd-order coefficient, multiplied by 2^shift
+ * @param[in] P3    3rd-order coefficient, multiplied by 2^shift
+ * @param[in] shift Shift-value for scaling fixed-point coefficients
+ * @param[in] fcfgInsertion Boolean used to indicate presence of HFXT FCFG data.
+ *
+ * @pre Power_init()
+ */
+void PowerLPF3_initHFXTCompensation(int32_t P0, int32_t P1, int32_t P2, int32_t P3, uint8_t shift, bool fcfgInsertion);
+
+/*!
+ * @brief Enable HFXT temperature compensation
+ *
+ * Enable automatic compensation for temperature-based frequency-drift of HFXT
+ *
+ * This function should only be called once, but can be invoked again if
+ * PowerLPF3_enableHFXTCompensation has been called
+ *
+ * @param[in] tempThreshold Threshold above which temperature compensation will
+ * be performed. This can be useful to save power consumption if HFXT
+ * performance is acceptable at low temperatures, and only required at
+ * high temperatures. If the threshold is set to for example 80 degrees, then
+ * the first compensation will occur once the temperature reaches 81 degrees.
+ * Units in degrees Celsius.
+ * @param[in] tempDelta Delta describing how much the temperature can drift
+ * before compensation is applied. If compensation is performed at 81 degrees,
+ * and the delta is set to 5, then a re-compensation is performed at either
+ * 76 degrees or 86 degrees, depending on which temperature state occurs first.
+ * Units in degrees Celsius.
+ *
+ * @pre PowerLPF3_initHFXTCompensation()
+ */
+void PowerLPF3_enableHFXTCompensation(int16_t tempThreshold, int16_t tempDelta);
+
+/*!
+ * @brief Disable HFXT temperature compensation
+ *
+ * Disable automatic compensation for temperature-based frequency-drift of HFXT
+ *
+ * @note Calling this function will also undo any previous temperature compensation that has been
+ * performed in the past, and HFXT will become uncompensated
+ *
+ * @pre PowerLPF3_enableHFXTCompensation()
+ */
+void PowerLPF3_disableHFXTCompensation(void);
 
 void PowerCC23X0_schedulerDisable(void);
 void PowerCC23X0_schedulerRestore(void);

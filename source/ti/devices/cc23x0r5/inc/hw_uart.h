@@ -48,7 +48,7 @@
 // Flag
 #define UART_O_FR                                                   0x00000018U
 
-// IrDA <Low-Power Counter Register
+// IrDA Low-Power Counter Register
 #define UART_O_UARTILPR                                             0x00000020U
 
 // Integer Baud-Rate Divisor
@@ -91,7 +91,7 @@
 // UART Overrun Error:
 // This bit is set to 1 if data is received and the receive FIFO is already
 // full. The FIFO contents remain valid because no more data is written when
-// the FIFO is full, , only the contents of the shift register are overwritten.
+// the FIFO is full, only the contents of the shift register are overwritten.
 // This is cleared to 0 once there is an empty space in the FIFO and a new
 // character can be written to it.
 #define UART_DR_OE                                                  0x00000800U
@@ -155,7 +155,7 @@
 // UART Overrun Error:
 // This bit is set to 1 if data is received and the receive FIFO is already
 // full. The FIFO contents remain valid because no more data is written when
-// the FIFO is full, , only the contents of the shift register are overwritten.
+// the FIFO is full, only the contents of the shift register are overwritten.
 // This is cleared to 0 once there is an empty space in the FIFO and a new
 // character can be written to it.
 // ENUMs:
@@ -297,7 +297,9 @@
 //*****************************************************************************
 // Field:   [7:0] ILPDVSR
 //
-// 8 bit low-power divisor value
+// 8 bit low-power divisor value. In low-power IrDA mode the UART rejects
+// random noise on the received serial data
+// input by ignoring SIRIN pulses that are less than 3 periods of IrLPBaud16.
 #define UART_UARTILPR_ILPDVSR_W                                              8U
 #define UART_UARTILPR_ILPDVSR_M                                     0x000000FFU
 #define UART_UARTILPR_ILPDVSR_S                                              0U
@@ -316,6 +318,7 @@
 // That is, DIVINT=0 does not give a valid baud rate.
 // Similarly, if DIVINT=0xFFFF, any non-zero values in FBRD.DIVFRAC will be
 // illegal.
+// Refer to Section 19.1.5 for an example calculation.
 // A valid value must be written to this field before the UART can be used for
 // RX or TX operations.
 #define UART_IBRD_DIVINT_W                                                  16U
@@ -336,6 +339,7 @@
 // That is, IBRD.DIVINT=0 does not give a valid baud rate.
 // Similarly, if IBRD.DIVINT=0xFFFF, any non-zero values in DIVFRAC will be
 // illegal.
+// Refer to Section 19.1.5 for an example calculation.
 // A valid value must be written to this field before the UART can be used for
 // RX or TX operations.
 #define UART_FBRD_DIVFRAC_W                                                  6U
@@ -524,7 +528,7 @@
 // Field:     [6] FCEN
 //
 // UART FIFO Concatenation Enable
-// Enabling the lFIFO concatenetion in TX moderesulting in 16 TX buffers.
+// Enabling the FIFO concatenation in TX mode resulting in 16 TX buffers.
 // ENUMs:
 // EN                       UART FIFO Concatenation  enabled
 // DIS                      UART FIFO Concatenation  disabled
@@ -540,8 +544,16 @@
 // This bit selects the IrDA encoding mode
 // ENUMs:
 // EN                       Low-level bits are transmitted with a pulse width
-//                          of 3 times the period of IrLPBaud16, regardless
-//                          of the selected bit rate.
+//                          of 3 times the period of IrLPBaud16(which has a
+//                          frequency of (UARTCLK
+//                          frequency)/UARTILP.ILPDVSR), regardless of the
+//                          selected bit rate.
+//                          In low-power IrDA mode
+//                          the UART rejects random noise on the received
+//                          serial data
+//                          input by ignoring SIRIN
+//                          pulses that are less than 3 periods of
+//                          IrLPBaud16.
 // DIS                      Low-level bits are transmitted as active high with
 //                          a 3/16th period width,
 #define UART_CTL_SIRLP                                              0x00000004U
@@ -618,216 +630,216 @@
 // Register: UART_O_IMSC
 //
 //*****************************************************************************
-// Field:    [13] RXDMADONEIM
+// Field:    [13] RXDMADONE
 //
-// Rx DMA done interrupt mask. A read returns the current mask for UART's
+// RX DMA done interrupt mask. A read returns the current mask for UART's
 // RXDMADONE interrupt. On a write of 1, the mask of the RXDMADONE interrupt is
-// set which means the interrupt state will be reflected in MIS.RXDMADONEMIS. A
-// write of 0 clears the mask which means MIS.RXDMADONEMIS will not reflect the
+// set which means the interrupt state will be reflected in MIS.RXDMADONE. A
+// write of 0 clears the mask which means MIS.RXDMADONE will not reflect the
 // interrupt.
-#define UART_IMSC_RXDMADONEIM                                       0x00002000U
-#define UART_IMSC_RXDMADONEIM_M                                     0x00002000U
-#define UART_IMSC_RXDMADONEIM_S                                             13U
+#define UART_IMSC_RXDMADONE                                         0x00002000U
+#define UART_IMSC_RXDMADONE_M                                       0x00002000U
+#define UART_IMSC_RXDMADONE_S                                               13U
 
-// Field:    [12] TXDMADONEIM
+// Field:    [12] TXDMADONE
 //
-// Tx DMA done interrupt mask. A read returns the current mask for UART's
+// TX DMA done interrupt mask. A read returns the current mask for UART's
 // TXDMADONE interrupt. On a write of 1, the mask of the TXDMADONE interrupt is
-// set which means the interrupt state will be reflected in MIS.TXDMADONEMIS. A
-// write of 0 clears the mask which means MIS.TXDMADONEMIS will not reflect the
+// set which means the interrupt state will be reflected in MIS.TXDMADONE. A
+// write of 0 clears the mask which means MIS.TXDMADONE will not reflect the
 // interrupt.
-#define UART_IMSC_TXDMADONEIM                                       0x00001000U
-#define UART_IMSC_TXDMADONEIM_M                                     0x00001000U
-#define UART_IMSC_TXDMADONEIM_S                                             12U
+#define UART_IMSC_TXDMADONE                                         0x00001000U
+#define UART_IMSC_TXDMADONE_M                                       0x00001000U
+#define UART_IMSC_TXDMADONE_S                                               12U
 
-// Field:    [11] EOTIM
+// Field:    [11] EOT
 //
 // End of Transmission interrupt mask. A read returns the current mask for
 // UART's EoT interrupt. On a write of 1, the mask of the EoT interrupt is set
-// which means the interrupt state will be reflected in MIS.EOTMIS. A write of
-// 0 clears the mask which means MIS.EOTMIS will not reflect the interrupt.
-#define UART_IMSC_EOTIM                                             0x00000800U
-#define UART_IMSC_EOTIM_M                                           0x00000800U
-#define UART_IMSC_EOTIM_S                                                   11U
+// which means the interrupt state will be reflected in MIS.EOT. A write of 0
+// clears the mask which means MIS.EOT will not reflect the interrupt.
+#define UART_IMSC_EOT                                               0x00000800U
+#define UART_IMSC_EOT_M                                             0x00000800U
+#define UART_IMSC_EOT_S                                                     11U
 
-// Field:    [10] OEIM
+// Field:    [10] OE
 //
 // Overrun error interrupt mask. A read returns the current mask for UART's
 // overrun error interrupt. On a write of 1, the mask of the overrun error
 // interrupt is set which means the interrupt state will be reflected in
-// MIS.OEMIS. A write of 0 clears the mask which means MIS.OEMIS will not
-// reflect the interrupt.
-#define UART_IMSC_OEIM                                              0x00000400U
-#define UART_IMSC_OEIM_M                                            0x00000400U
-#define UART_IMSC_OEIM_S                                                    10U
+// MIS.OE. A write of 0 clears the mask which means MIS.OE will not reflect the
+// interrupt.
+#define UART_IMSC_OE                                                0x00000400U
+#define UART_IMSC_OE_M                                              0x00000400U
+#define UART_IMSC_OE_S                                                      10U
 
-// Field:     [9] BEIM
+// Field:     [9] BE
 //
 // Break error interrupt mask. A read returns the current mask for UART's break
 // error interrupt. On a write of 1, the mask of the overrun error interrupt is
-// set which means the interrupt state will be reflected in MIS.BEMIS. A write
-// of 0 clears the mask which means MIS.BEMIS will not reflect the interrupt.
-#define UART_IMSC_BEIM                                              0x00000200U
-#define UART_IMSC_BEIM_M                                            0x00000200U
-#define UART_IMSC_BEIM_S                                                     9U
+// set which means the interrupt state will be reflected in MIS.BE. A write of
+// 0 clears the mask which means MIS.BE will not reflect the interrupt.
+#define UART_IMSC_BE                                                0x00000200U
+#define UART_IMSC_BE_M                                              0x00000200U
+#define UART_IMSC_BE_S                                                       9U
 
-// Field:     [8] PEIM
+// Field:     [8] PE
 //
 // Parity error interrupt mask. A read returns the current mask for UART's
 // parity error interrupt. On a write of 1, the mask of the overrun error
 // interrupt is set which means the interrupt state will be reflected in
-// MIS.PEMIS. A write of 0 clears the mask which means MIS.PEMIS will not
-// reflect the interrupt.
-#define UART_IMSC_PEIM                                              0x00000100U
-#define UART_IMSC_PEIM_M                                            0x00000100U
-#define UART_IMSC_PEIM_S                                                     8U
+// MIS.PE. A write of 0 clears the mask which means MIS.PE will not reflect the
+// interrupt.
+#define UART_IMSC_PE                                                0x00000100U
+#define UART_IMSC_PE_M                                              0x00000100U
+#define UART_IMSC_PE_S                                                       8U
 
-// Field:     [7] FEIM
+// Field:     [7] FE
 //
 // Framing error interrupt mask. A read returns the current mask for UART's
 // framing error interrupt. On a write of 1, the mask of the overrun error
 // interrupt is set which means the interrupt state will be reflected in
-// MIS.FEMIS. A write of 0 clears the mask which means MIS.FEMIS will not
-// reflect the interrupt.
-#define UART_IMSC_FEIM                                              0x00000080U
-#define UART_IMSC_FEIM_M                                            0x00000080U
-#define UART_IMSC_FEIM_S                                                     7U
+// MIS.FE. A write of 0 clears the mask which means MIS.FE will not reflect the
+// interrupt.
+#define UART_IMSC_FE                                                0x00000080U
+#define UART_IMSC_FE_M                                              0x00000080U
+#define UART_IMSC_FE_S                                                       7U
 
-// Field:     [6] RTIM
+// Field:     [6] RT
 //
 // Receive timeout interrupt mask. A read returns the current mask for UART's
 // receive timeout interrupt. On a write of 1, the mask of the overrun error
 // interrupt is set which means the interrupt state will be reflected in
-// MIS.RTMIS. A write of 0 clears the mask which means this bitfield will not
+// MIS.RT. A write of 0 clears the mask which means this bitfield will not
 // reflect the interrupt.
-// The raw interrupt for receive timeout RIS.RTRIS cannot be set unless the
-// mask is set (RTIM = 1). This is because the mask acts as an enable for power
-// saving. That is, the same status can be read from MIS.RTMIS and RIS.RTRIS.
-#define UART_IMSC_RTIM                                              0x00000040U
-#define UART_IMSC_RTIM_M                                            0x00000040U
-#define UART_IMSC_RTIM_S                                                     6U
+// The raw interrupt for receive timeout RIS.RT cannot be set unless the mask
+// is set (RT = 1). This is because the mask acts as an enable for power
+// saving. That is, the same status can be read from MIS.RT and RIS.RT.
+#define UART_IMSC_RT                                                0x00000040U
+#define UART_IMSC_RT_M                                              0x00000040U
+#define UART_IMSC_RT_S                                                       6U
 
-// Field:     [5] TXIM
+// Field:     [5] TX
 //
 // Transmit interrupt mask. A read returns the current mask for UART's transmit
 // interrupt. On a write of 1, the mask of the overrun error interrupt is set
-// which means the interrupt state will be reflected in MIS.TXMIS. A write of 0
-// clears the mask which means MIS.TXMIS will not reflect the interrupt.
-#define UART_IMSC_TXIM                                              0x00000020U
-#define UART_IMSC_TXIM_M                                            0x00000020U
-#define UART_IMSC_TXIM_S                                                     5U
+// which means the interrupt state will be reflected in MIS.TX. A write of 0
+// clears the mask which means MIS.TX will not reflect the interrupt.
+#define UART_IMSC_TX                                                0x00000020U
+#define UART_IMSC_TX_M                                              0x00000020U
+#define UART_IMSC_TX_S                                                       5U
 
-// Field:     [4] RXIM
+// Field:     [4] RX
 //
 // Receive interrupt mask. A read returns the current mask for UART's receive
 // interrupt. On a write of 1, the mask of the overrun error interrupt is set
-// which means the interrupt state will be reflected in MIS.RXMIS. A write of 0
-// clears the mask which means MIS.RXMIS will not reflect the interrupt.
-#define UART_IMSC_RXIM                                              0x00000010U
-#define UART_IMSC_RXIM_M                                            0x00000010U
-#define UART_IMSC_RXIM_S                                                     4U
+// which means the interrupt state will be reflected in MIS.RX. A write of 0
+// clears the mask which means MIS.RX will not reflect the interrupt.
+#define UART_IMSC_RX                                                0x00000010U
+#define UART_IMSC_RX_M                                              0x00000010U
+#define UART_IMSC_RX_S                                                       4U
 
-// Field:     [1] CTSMIM
+// Field:     [1] CTSM
 //
 // Clear to Send (CTS) modem interrupt mask. A read returns the current mask
 // for UART's clear to send interrupt. On a write of 1, the mask of the overrun
 // error interrupt is set which means the interrupt state will be reflected in
-// MIS.CTSMMIS. A write of 0 clears the mask which means MIS.CTSMMIS will not
-// reflect the interrupt.
-#define UART_IMSC_CTSMIM                                            0x00000002U
-#define UART_IMSC_CTSMIM_M                                          0x00000002U
-#define UART_IMSC_CTSMIM_S                                                   1U
+// MIS.CTSM. A write of 0 clears the mask which means MIS.CTSM will not reflect
+// the interrupt.
+#define UART_IMSC_CTSM                                              0x00000002U
+#define UART_IMSC_CTSM_M                                            0x00000002U
+#define UART_IMSC_CTSM_S                                                     1U
 
 //*****************************************************************************
 //
 // Register: UART_O_RIS
 //
 //*****************************************************************************
-// Field:    [13] RXDMADONERIS
+// Field:    [13] RXDMADONE
 //
-// Rx DMA done interrupt status:
-// This field returns the raw interrupt state of UART's rx dma done interrupt.
-// RX DMA done flag is set when you recieve rx dma done status from dma module.
-#define UART_RIS_RXDMADONERIS                                       0x00002000U
-#define UART_RIS_RXDMADONERIS_M                                     0x00002000U
-#define UART_RIS_RXDMADONERIS_S                                             13U
+// RX DMA done interrupt status:
+// This field returns the raw interrupt state of UART's RX DMA done interrupt.
+// RX DMA done flag is set when you recieve RX DMA done status from dma module.
+#define UART_RIS_RXDMADONE                                          0x00002000U
+#define UART_RIS_RXDMADONE_M                                        0x00002000U
+#define UART_RIS_RXDMADONE_S                                                13U
 
-// Field:    [12] TXDMADONERIS
+// Field:    [12] TXDMADONE
 //
-// Tx DMA done interrupt status:
-// This field returns the raw interrupt state of UART's tx dma done interrupt.
-// TX DMA done flag is set when you recieve tx dma done status from dma module.
-#define UART_RIS_TXDMADONERIS                                       0x00001000U
-#define UART_RIS_TXDMADONERIS_M                                     0x00001000U
-#define UART_RIS_TXDMADONERIS_S                                             12U
+// TX DMA done interrupt status:
+// This field returns the raw interrupt state of UART's TX DMA done interrupt.
+// TX DMA done flag is set when you recieve TX DMA done status from dma module.
+#define UART_RIS_TXDMADONE                                          0x00001000U
+#define UART_RIS_TXDMADONE_M                                        0x00001000U
+#define UART_RIS_TXDMADONE_S                                                12U
 
-// Field:    [11] EOTRIS
+// Field:    [11] EOT
 //
 // End of Transmission interrupt status:
 // This field returns the raw interrupt state of UART's end of transmission
 // interrupt. End of transmission flag is set when all the Transmit data in the
 // FIFO and on the TX Line is tranmitted.
-#define UART_RIS_EOTRIS                                             0x00000800U
-#define UART_RIS_EOTRIS_M                                           0x00000800U
-#define UART_RIS_EOTRIS_S                                                   11U
+#define UART_RIS_EOT                                                0x00000800U
+#define UART_RIS_EOT_M                                              0x00000800U
+#define UART_RIS_EOT_S                                                      11U
 
-// Field:    [10] OERIS
+// Field:    [10] OE
 //
 // Overrun error interrupt status:
 // This field returns the raw interrupt state of UART's overrun error
 // interrupt. Overrun error occurs if data is received and the receive FIFO is
 // full.
-#define UART_RIS_OERIS                                              0x00000400U
-#define UART_RIS_OERIS_M                                            0x00000400U
-#define UART_RIS_OERIS_S                                                    10U
+#define UART_RIS_OE                                                 0x00000400U
+#define UART_RIS_OE_M                                               0x00000400U
+#define UART_RIS_OE_S                                                       10U
 
-// Field:     [9] BERIS
+// Field:     [9] BE
 //
 // Break error interrupt status:
 // This field returns the raw interrupt state of UART's break error interrupt.
 // Break error is set when a break condition is detected, indicating that the
 // received data input (UARTRXD input pin) was held LOW for longer than a
 // full-word transmission time (defined as start, data, parity and stop bits).
-#define UART_RIS_BERIS                                              0x00000200U
-#define UART_RIS_BERIS_M                                            0x00000200U
-#define UART_RIS_BERIS_S                                                     9U
+#define UART_RIS_BE                                                 0x00000200U
+#define UART_RIS_BE_M                                               0x00000200U
+#define UART_RIS_BE_S                                                        9U
 
-// Field:     [8] PERIS
+// Field:     [8] PE
 //
 // Parity error interrupt status:
 // This field returns the raw interrupt state of UART's parity error interrupt.
 // Parity error is set if the parity of the received data character does not
 // match the parity that the LCRH.EPS and LCRH.SPS select.
-#define UART_RIS_PERIS                                              0x00000100U
-#define UART_RIS_PERIS_M                                            0x00000100U
-#define UART_RIS_PERIS_S                                                     8U
+#define UART_RIS_PE                                                 0x00000100U
+#define UART_RIS_PE_M                                               0x00000100U
+#define UART_RIS_PE_S                                                        8U
 
-// Field:     [7] FERIS
+// Field:     [7] FE
 //
 // Framing error interrupt status:
 // This field returns the raw interrupt state of UART's framing error
 // interrupt. Framing error is set if the received character does not have a
 // valid stop bit (a valid stop bit is 1).
-#define UART_RIS_FERIS                                              0x00000080U
-#define UART_RIS_FERIS_M                                            0x00000080U
-#define UART_RIS_FERIS_S                                                     7U
+#define UART_RIS_FE                                                 0x00000080U
+#define UART_RIS_FE_M                                               0x00000080U
+#define UART_RIS_FE_S                                                        7U
 
-// Field:     [6] RTRIS
+// Field:     [6] RT
 //
 // Receive timeout interrupt status:
 // This field returns the raw interrupt state of UART's receive timeout
 // interrupt. The receive timeout interrupt is asserted when the receive FIFO
 // is not empty, and no more data is received during a 32-bit period. The
 // receive timeout interrupt is cleared either when the FIFO becomes empty
-// through reading all the data, or when a 1 is written to ICR.RTIC.
+// through reading all the data, or when a 1 is written to ICR.RT.
 // The raw interrupt for receive timeout cannot be set unless the mask is set
-// (IMSC.RTIM = 1). This is because the mask acts as an enable for power
-// saving. That is, the same status can be read from MIS.RTMIS and RTRIS.
-#define UART_RIS_RTRIS                                              0x00000040U
-#define UART_RIS_RTRIS_M                                            0x00000040U
-#define UART_RIS_RTRIS_S                                                     6U
+// (IMSC.RT = 1). This is because the mask acts as an enable for power saving.
+// That is, the same status can be read from MIS.RT and RT.
+#define UART_RIS_RT                                                 0x00000040U
+#define UART_RIS_RT_M                                               0x00000040U
+#define UART_RIS_RT_S                                                        6U
 
-// Field:     [5] TXRIS
+// Field:     [5] TX
 //
 // Transmit interrupt status:
 // This field returns the raw interrupt state of UART's transmit interrupt.
@@ -835,16 +847,16 @@
 // the number of bytes in transmit FIFO is equal to or lower than the
 // programmed trigger level (IFLS.TXSEL). The transmit interrupt is cleared by
 // writing data to the transmit FIFO until it becomes greater than the trigger
-// level, or by clearing the interrupt through ICR.TXIC.
+// level, or by clearing the interrupt through ICR.TX.
 // When FIFOs are disabled (LCRH.FEN = 0), that is they have a depth of one
 // location, the transmit interrupt is asserted if there is no data present in
 // the transmitters single location. It is cleared by performing a single write
-// to the transmit FIFO, or by clearing the interrupt through ICR.TXIC.
-#define UART_RIS_TXRIS                                              0x00000020U
-#define UART_RIS_TXRIS_M                                            0x00000020U
-#define UART_RIS_TXRIS_S                                                     5U
+// to the transmit FIFO, or by clearing the interrupt through ICR.TX.
+#define UART_RIS_TX                                                 0x00000020U
+#define UART_RIS_TX_M                                               0x00000020U
+#define UART_RIS_TX_S                                                        5U
 
-// Field:     [4] RXRIS
+// Field:     [4] RX
 //
 // Receive interrupt status:
 // This field returns the raw interrupt state of UART's receive interrupt.
@@ -852,24 +864,24 @@
 // the receive FIFO reaches the programmed trigger
 // level (IFLS.RXSEL). The receive interrupt is cleared by reading data from
 // the receive FIFO until it becomes less than the trigger level, or by
-// clearing the interrupt through ICR.RXIC.
+// clearing the interrupt through ICR.RX.
 // When FIFOs are disabled (LCRH.FEN = 0), that is they have a depth of one
 // location, the receive interrupt is asserted if data is received
 // thereby filling the location. The receive interrupt is cleared by performing
 // a single read of the receive FIFO, or by clearing the interrupt through
-// ICR.RXIC.
-#define UART_RIS_RXRIS                                              0x00000010U
-#define UART_RIS_RXRIS_M                                            0x00000010U
-#define UART_RIS_RXRIS_S                                                     4U
+// ICR.RX.
+#define UART_RIS_RX                                                 0x00000010U
+#define UART_RIS_RX_M                                               0x00000010U
+#define UART_RIS_RX_S                                                        4U
 
-// Field:     [1] CTSRMIS
+// Field:     [1] CTSM
 //
 // Clear to Send (CTS) modem interrupt status:
 // This field returns the raw interrupt state of UART's clear to send
 // interrupt.
-#define UART_RIS_CTSRMIS                                            0x00000002U
-#define UART_RIS_CTSRMIS_M                                          0x00000002U
-#define UART_RIS_CTSRMIS_S                                                   1U
+#define UART_RIS_CTSM                                               0x00000002U
+#define UART_RIS_CTSM_M                                             0x00000002U
+#define UART_RIS_CTSM_S                                                      1U
 
 //*****************************************************************************
 //
@@ -878,217 +890,217 @@
 //*****************************************************************************
 // Field:    [13] RXDMADONE
 //
-// Rx DMA done interrupt status:
-// This field returns the masked interrupt state of the rx dma done interrupt
-// which is the AND product of raw interrupt state RIS.RXDMADONERIS and the
-// mask setting IMSC.RXDMADONEIM.
+// RX DMA done interrupt status:
+// This field returns the masked interrupt state of the RX DMA done interrupt
+// which is the bitiwse AND product of raw interrupt state RIS.RXDMADONE and
+// the mask setting IMSC.RXDMADONE.
 #define UART_MIS_RXDMADONE                                          0x00002000U
 #define UART_MIS_RXDMADONE_M                                        0x00002000U
 #define UART_MIS_RXDMADONE_S                                                13U
 
-// Field:    [12] TXDMADONEMIS
+// Field:    [12] TXDMADONE
 //
-// Tx DMA done interrupt status:
-// This field returns the masked interrupt state of the tx dma done interrupt
-// which is the AND product of raw interrupt state RIS.TXDMADONERIS and the
-// mask setting IMSC.TXDMADONEIM.
-#define UART_MIS_TXDMADONEMIS                                       0x00001000U
-#define UART_MIS_TXDMADONEMIS_M                                     0x00001000U
-#define UART_MIS_TXDMADONEMIS_S                                             12U
+// TX DMA done interrupt status:
+// This field returns the masked interrupt state of the TX DMA done interrupt
+// which is the bitwise AND product of raw interrupt state RIS.TXDMADONE and
+// the mask setting IMSC.TXDMADONE.
+#define UART_MIS_TXDMADONE                                          0x00001000U
+#define UART_MIS_TXDMADONE_M                                        0x00001000U
+#define UART_MIS_TXDMADONE_S                                                12U
 
-// Field:    [11] EOTMIS
+// Field:    [11] EOT
 //
 // End of Transmission interrupt status:
 // This field returns the masked interrupt state of the End of transmission
-// interrupt which is the AND product of raw interrupt state RIS.EOTRIS and the
-// mask setting IMSC.EOTIM.
-#define UART_MIS_EOTMIS                                             0x00000800U
-#define UART_MIS_EOTMIS_M                                           0x00000800U
-#define UART_MIS_EOTMIS_S                                                   11U
+// interrupt which is the bitwise AND product of raw interrupt state RIS.EOT
+// and the mask setting IMSC.EOT.
+#define UART_MIS_EOT                                                0x00000800U
+#define UART_MIS_EOT_M                                              0x00000800U
+#define UART_MIS_EOT_S                                                      11U
 
-// Field:    [10] OEMIS
+// Field:    [10] OE
 //
 // Overrun error masked interrupt status:
 // This field returns the masked interrupt state of the overrun interrupt which
-// is the AND product of raw interrupt state RIS.OERIS and the mask setting
-// IMSC.OEIM.
-#define UART_MIS_OEMIS                                              0x00000400U
-#define UART_MIS_OEMIS_M                                            0x00000400U
-#define UART_MIS_OEMIS_S                                                    10U
+// is the bitwise AND product of raw interrupt state RIS.OE and the mask
+// setting IMSC.OE.
+#define UART_MIS_OE                                                 0x00000400U
+#define UART_MIS_OE_M                                               0x00000400U
+#define UART_MIS_OE_S                                                       10U
 
-// Field:     [9] BEMIS
+// Field:     [9] BE
 //
 // Break error masked interrupt status:
 // This field returns the masked interrupt state of the break error interrupt
-// which is the AND product of raw interrupt state RIS.BERIS and the mask
-// setting IMSC.BEIM.
-#define UART_MIS_BEMIS                                              0x00000200U
-#define UART_MIS_BEMIS_M                                            0x00000200U
-#define UART_MIS_BEMIS_S                                                     9U
+// which is the bitiwse AND product of raw interrupt state RIS.BE and the mask
+// setting IMSC.BE.
+#define UART_MIS_BE                                                 0x00000200U
+#define UART_MIS_BE_M                                               0x00000200U
+#define UART_MIS_BE_S                                                        9U
 
-// Field:     [8] PEMIS
+// Field:     [8] PE
 //
 // Parity error masked interrupt status:
 // This field returns the masked interrupt state of the parity error interrupt
-// which is the AND product of raw interrupt state RIS.PERIS and the mask
-// setting IMSC.PEIM.
-#define UART_MIS_PEMIS                                              0x00000100U
-#define UART_MIS_PEMIS_M                                            0x00000100U
-#define UART_MIS_PEMIS_S                                                     8U
+// which is the bitiwise AND product of raw interrupt state RIS.PE and the mask
+// setting IMSC.PE.
+#define UART_MIS_PE                                                 0x00000100U
+#define UART_MIS_PE_M                                               0x00000100U
+#define UART_MIS_PE_S                                                        8U
 
-// Field:     [7] FEMIS
+// Field:     [7] FE
 //
 // Framing error masked interrupt status: Returns the masked interrupt state of
-// the framing error interrupt which is the AND product of raw interrupt state
-// RIS.FERIS and the mask setting IMSC.FEIM.
-#define UART_MIS_FEMIS                                              0x00000080U
-#define UART_MIS_FEMIS_M                                            0x00000080U
-#define UART_MIS_FEMIS_S                                                     7U
+// the framing error interrupt which is the bitiwse AND product of raw
+// interrupt state RIS.FE and the mask setting IMSC.FE.
+#define UART_MIS_FE                                                 0x00000080U
+#define UART_MIS_FE_M                                               0x00000080U
+#define UART_MIS_FE_S                                                        7U
 
-// Field:     [6] RTMIS
+// Field:     [6] RT
 //
 // Receive timeout masked interrupt status:
 // Returns the masked interrupt state of the receive timeout interrupt.
 // The raw interrupt for receive timeout cannot be set unless the mask is set
-// (IMSC.RTIM = 1). This is because the mask acts as an enable for power
-// saving. That is, the same status can be read from RTMIS and RIS.RTRIS.
-#define UART_MIS_RTMIS                                              0x00000040U
-#define UART_MIS_RTMIS_M                                            0x00000040U
-#define UART_MIS_RTMIS_S                                                     6U
+// (IMSC.RT = 1). This is because the mask acts as an enable for power saving.
+// That is, the same status can be read from MIS.RT and RIS.RT.
+#define UART_MIS_RT                                                 0x00000040U
+#define UART_MIS_RT_M                                               0x00000040U
+#define UART_MIS_RT_S                                                        6U
 
-// Field:     [5] TXMIS
+// Field:     [5] TX
 //
 // Transmit masked interrupt status:
 // This field returns the masked interrupt state of the transmit interrupt
-// which is the AND product of raw interrupt state RIS.TXRIS and the mask
-// setting IMSC.TXIM.
-#define UART_MIS_TXMIS                                              0x00000020U
-#define UART_MIS_TXMIS_M                                            0x00000020U
-#define UART_MIS_TXMIS_S                                                     5U
+// which is the bitiwse AND product of raw interrupt state RIS.TX and the mask
+// setting IMSC.TX.
+#define UART_MIS_TX                                                 0x00000020U
+#define UART_MIS_TX_M                                               0x00000020U
+#define UART_MIS_TX_S                                                        5U
 
-// Field:     [4] RXMIS
+// Field:     [4] RX
 //
 // Receive masked interrupt status:
 // This field returns the masked interrupt state of the receive interrupt
-// which is the AND product of raw interrupt state RIS.RXRIS and the mask
-// setting IMSC.RXIM.
-#define UART_MIS_RXMIS                                              0x00000010U
-#define UART_MIS_RXMIS_M                                            0x00000010U
-#define UART_MIS_RXMIS_S                                                     4U
+// which is the bitwise AND product of raw interrupt state RIS.RX and the mask
+// setting IMSC.RX.
+#define UART_MIS_RX                                                 0x00000010U
+#define UART_MIS_RX_M                                               0x00000010U
+#define UART_MIS_RX_S                                                        4U
 
-// Field:     [1] CTSMMIS
+// Field:     [1] CTSM
 //
 // Clear to Send (CTS) modem masked interrupt status:
 // This field returns the masked interrupt state of the clear to send interrupt
-// which is the AND product of raw interrupt state RIS.CTSRMIS and the mask
-// setting IMSC.CTSMIM.
-#define UART_MIS_CTSMMIS                                            0x00000002U
-#define UART_MIS_CTSMMIS_M                                          0x00000002U
-#define UART_MIS_CTSMMIS_S                                                   1U
+// which is the bitwise AND product of raw interrupt state RIS.CTS and the mask
+// setting IMSC.CTS.
+#define UART_MIS_CTSM                                               0x00000002U
+#define UART_MIS_CTSM_M                                             0x00000002U
+#define UART_MIS_CTSM_S                                                      1U
 
 //*****************************************************************************
 //
 // Register: UART_O_ICR
 //
 //*****************************************************************************
-// Field:    [13] RXDMADONEIC
+// Field:    [13] RXDMADONE
 //
-// Rx DMA Done interrupt clear:
-// Writing 1 to this field clears the rxdma done interrupt (RIS.RXDMADONERIS).
+// RX DMA Done interrupt clear:
+// Writing 1 to this field clears the RX DMA done interrupt (RIS.RXDMADONE).
 // Writing 0 has no effect.
-#define UART_ICR_RXDMADONEIC                                        0x00002000U
-#define UART_ICR_RXDMADONEIC_M                                      0x00002000U
-#define UART_ICR_RXDMADONEIC_S                                              13U
+#define UART_ICR_RXDMADONE                                          0x00002000U
+#define UART_ICR_RXDMADONE_M                                        0x00002000U
+#define UART_ICR_RXDMADONE_S                                                13U
 
-// Field:    [12] TXDMADONEIC
+// Field:    [12] TXDMADONE
 //
-// Tx DMA Done interrupt clear:
-// Writing 1 to this field clears the txdma done interrupt (RIS.TXDMADONERIS).
+// TX DMA Done interrupt clear:
+// Writing 1 to this field clears the TX DMA done interrupt (RIS.TXDMADONE).
 // Writing 0 has no effect.
-#define UART_ICR_TXDMADONEIC                                        0x00001000U
-#define UART_ICR_TXDMADONEIC_M                                      0x00001000U
-#define UART_ICR_TXDMADONEIC_S                                              12U
+#define UART_ICR_TXDMADONE                                          0x00001000U
+#define UART_ICR_TXDMADONE_M                                        0x00001000U
+#define UART_ICR_TXDMADONE_S                                                12U
 
-// Field:    [11] EOTIC
+// Field:    [11] EOT
 //
 // End of Transmission interrupt clear:
-// Writing 1 to this field clears the End of Transmission interrupt
-// (RIS.EOTRIS). Writing 0 has no effect.
-#define UART_ICR_EOTIC                                              0x00000800U
-#define UART_ICR_EOTIC_M                                            0x00000800U
-#define UART_ICR_EOTIC_S                                                    11U
+// Writing 1 to this field clears the End of Transmission interrupt (RIS.EOT).
+// Writing 0 has no effect.
+#define UART_ICR_EOT                                                0x00000800U
+#define UART_ICR_EOT_M                                              0x00000800U
+#define UART_ICR_EOT_S                                                      11U
 
-// Field:    [10] OEIC
+// Field:    [10] OE
 //
 // Overrun error interrupt clear:
-// Writing 1 to this field clears the overrun error interrupt (RIS.OERIS).
-// Writing 0 has no effect.
-#define UART_ICR_OEIC                                               0x00000400U
-#define UART_ICR_OEIC_M                                             0x00000400U
-#define UART_ICR_OEIC_S                                                     10U
+// Writing 1 to this field clears the overrun error interrupt (RIS.OE). Writing
+// 0 has no effect.
+#define UART_ICR_OE                                                 0x00000400U
+#define UART_ICR_OE_M                                               0x00000400U
+#define UART_ICR_OE_S                                                       10U
 
-// Field:     [9] BEIC
+// Field:     [9] BE
 //
 // Break error interrupt clear:
-// Writing 1 to this field clears the break error interrupt (RIS.BERIS).
-// Writing 0 has no effect.
-#define UART_ICR_BEIC                                               0x00000200U
-#define UART_ICR_BEIC_M                                             0x00000200U
-#define UART_ICR_BEIC_S                                                      9U
+// Writing 1 to this field clears the break error interrupt (RIS.BE). Writing 0
+// has no effect.
+#define UART_ICR_BE                                                 0x00000200U
+#define UART_ICR_BE_M                                               0x00000200U
+#define UART_ICR_BE_S                                                        9U
 
-// Field:     [8] PEIC
+// Field:     [8] PE
 //
 // Parity error interrupt clear:
-// Writing 1 to this field clears the parity error interrupt (RIS.PERIS).
-// Writing 0 has no effect.
-#define UART_ICR_PEIC                                               0x00000100U
-#define UART_ICR_PEIC_M                                             0x00000100U
-#define UART_ICR_PEIC_S                                                      8U
+// Writing 1 to this field clears the parity error interrupt (RIS.PE). Writing
+// 0 has no effect.
+#define UART_ICR_PE                                                 0x00000100U
+#define UART_ICR_PE_M                                               0x00000100U
+#define UART_ICR_PE_S                                                        8U
 
-// Field:     [7] FEIC
+// Field:     [7] FE
 //
 // Framing error interrupt clear:
-// Writing 1 to this field clears the framing error interrupt (RIS.FERIS).
-// Writing 0 has no effect.
-#define UART_ICR_FEIC                                               0x00000080U
-#define UART_ICR_FEIC_M                                             0x00000080U
-#define UART_ICR_FEIC_S                                                      7U
+// Writing 1 to this field clears the framing error interrupt (RIS.FE). Writing
+// 0 has no effect.
+#define UART_ICR_FE                                                 0x00000080U
+#define UART_ICR_FE_M                                               0x00000080U
+#define UART_ICR_FE_S                                                        7U
 
-// Field:     [6] RTIC
+// Field:     [6] RT
 //
 // Receive timeout interrupt clear:
-// Writing 1 to this field clears the receive timeout interrupt (RIS.RTRIS).
+// Writing 1 to this field clears the receive timeout interrupt (RIS.RT).
 // Writing 0 has no effect.
-#define UART_ICR_RTIC                                               0x00000040U
-#define UART_ICR_RTIC_M                                             0x00000040U
-#define UART_ICR_RTIC_S                                                      6U
+#define UART_ICR_RT                                                 0x00000040U
+#define UART_ICR_RT_M                                               0x00000040U
+#define UART_ICR_RT_S                                                        6U
 
-// Field:     [5] TXIC
+// Field:     [5] TX
 //
 // Transmit interrupt clear:
-// Writing 1 to this field clears the transmit interrupt (RIS.TXRIS). Writing 0
+// Writing 1 to this field clears the transmit interrupt (RIS.TX). Writing 0
 // has no effect.
-#define UART_ICR_TXIC                                               0x00000020U
-#define UART_ICR_TXIC_M                                             0x00000020U
-#define UART_ICR_TXIC_S                                                      5U
+#define UART_ICR_TX                                                 0x00000020U
+#define UART_ICR_TX_M                                               0x00000020U
+#define UART_ICR_TX_S                                                        5U
 
-// Field:     [4] RXIC
+// Field:     [4] RX
 //
 // Receive interrupt clear:
-// Writing 1 to this field clears the receive interrupt (RIS.RXRIS). Writing 0
-// has no effect.
-#define UART_ICR_RXIC                                               0x00000010U
-#define UART_ICR_RXIC_M                                             0x00000010U
-#define UART_ICR_RXIC_S                                                      4U
+// Writing 1 to this field clears the receive interrupt (RIS.RX). Writing 0 has
+// no effect.
+#define UART_ICR_RX                                                 0x00000010U
+#define UART_ICR_RX_M                                               0x00000010U
+#define UART_ICR_RX_S                                                        4U
 
-// Field:     [1] CTSMIC
+// Field:     [1] CTSM
 //
 // Clear to Send (CTS) modem interrupt clear:
-// Writing 1 to this field clears the clear to send interrupt (RIS.CTSRMIS).
+// Writing 1 to this field clears the clear to send interrupt (RIS.CTS).
 // Writing 0 has no effect.
-#define UART_ICR_CTSMIC                                             0x00000002U
-#define UART_ICR_CTSMIC_M                                           0x00000002U
-#define UART_ICR_CTSMIC_S                                                    1U
+#define UART_ICR_CTSM                                               0x00000002U
+#define UART_ICR_CTSM_M                                             0x00000002U
+#define UART_ICR_CTSM_S                                                      1U
 
 //*****************************************************************************
 //

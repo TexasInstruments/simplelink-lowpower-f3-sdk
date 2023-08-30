@@ -39,7 +39,7 @@
 // LRFDDBELL component
 //
 //*****************************************************************************
-// This register identifies the peripheral and its exact version.
+// Description
 #define LRFDDBELL_O_DESC                                            0x00000000U
 
 // Clock control
@@ -48,10 +48,10 @@
 // DMA Configuration
 #define LRFDDBELL_O_DMACFG                                          0x00000008U
 
-// Controls routing of internal events to the three systimer output events
+// Systimer Output Event Control Register
 #define LRFDDBELL_O_SYSTIMOEV                                       0x0000000CU
 
-// Manual trigging of systimer capture event
+// System DMA Trigger
 #define LRFDDBELL_O_SYSTDMATRIG                                     0x00000010U
 
 // GPO control

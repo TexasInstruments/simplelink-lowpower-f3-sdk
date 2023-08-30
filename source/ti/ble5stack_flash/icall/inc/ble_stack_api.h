@@ -150,8 +150,8 @@ extern bStatus_t bleStack_initGatt(uint8_t role, ICall_EntityID appSelfEntity, u
 extern bStatus_t bleStk_initAdvSet(pfnBleStkAdvCB_t advCallback, uint8_t *advHandle,
                                           GapAdv_eventMaskFlags_t eventMask,
                                           GapAdv_params_t *advParams,
-                                          uint16_t advDataLen ,uint8_t advData[],
-                                          uint16_t scanRespDataLen, uint8_t scanRespData[]);
+                                          uint16_t advDataLen ,uint8_t *advData,
+                                          uint16_t scanRespDataLen, uint8_t *scanRespData);
 extern void bleStk_getDevAddr(uint8_t wantIA, uint8_t *pAddr);
 
 // Scan

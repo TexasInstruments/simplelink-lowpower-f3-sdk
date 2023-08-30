@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,11 +50,9 @@
  *
  */
 
-#ifndef __CCFC_C__
-#define __CCFC_C__
-
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_ccfg.h)
+#include DeviceFamily_constructPath(inc/hw_scfg.h)
 % if(inst.useHwInitCopyList){
 #include "`inst.hwInitCopyListFile`"    //hardware initialisation copy list
 % }
@@ -71,7 +69,7 @@ const ccfg_t ccfg =
 #elif defined(__llvm__)
 const ccfg_t ccfg __attribute__((section(".ccfg"), retain)) =
 #else
-const ccfg_t ccfg __attribute__((section(".ccfg"))) __attribute__((used)) =
+const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 #endif
 {
 
@@ -226,4 +224,49 @@ for(i=0; i<tempArray.length; i++){
 
 };
 
-#endif // __CCFC_C__
+#if defined(__IAR_SYSTEMS_ICC__)
+__root const scfg_t scfg @ ".scfg" =
+#elif defined(__TI_COMPILER_VERSION__)
+#pragma DATA_SECTION(scfg, ".scfg")
+#pragma RETAIN(scfg)
+const scfg_t scfg =
+#elif defined(__llvm__)
+/* Push current set of diagnostics */
+#pragma clang diagnostic push
+/* Ignore warnings about overriding struct members in the initialiser below.
+ * This is required only for ticlang.
+ */
+#pragma clang diagnostic ignored "-Winitializer-overrides"
+const scfg_t scfg __attribute__((section(".scfg"), retain)) =
+#else
+const scfg_t scfg __attribute__((section(".scfg"), used)) =
+#endif
+{
+    SCFG_DEFAULT_VALUES,
+%%{
+tempArray = Common.hexToBytes(inst.hsmPublicKeyHash, 32);
+arrStr = "";
+for(i=0; i<tempArray.length; i++){
+    byteStr = "0x" + tempArray[i].toString(16).padStart(2,'0');
+    if((i+1)%8 || i==0){
+        arrStr += byteStr + ", ";
+    } else if(i!=tempArray.length-1){
+        /* Pad the beginning of each line so the initialiser array looks aligned */
+        arrStr += byteStr + ",\n                             ";
+    } else {
+        arrStr += byteStr;
+    }
+}
+%%}
+
+    /* Overwrite default SCFG values */
+    .hsmCfg.publicKeyHash = {`arrStr`},
+    .hsmCfg.hsmSize = `inst.hsmSize`,
+
+    .flashCfg.flashBanks.mode = `inst.flashBanksMode.match(/\(([^)]+)\)/)[1]`,
+};
+
+#ifdef __llvm__
+/* Restore the original set of diagnostics */
+#pragma clang diagnostic pop
+#endif

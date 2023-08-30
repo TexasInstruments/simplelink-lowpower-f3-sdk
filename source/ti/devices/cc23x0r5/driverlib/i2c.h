@@ -200,9 +200,9 @@ __STATIC_INLINE void I2CControllerCommand(uint32_t base, uint32_t cmd)
            (cmd == I2C_CONTROLLER_CMD_BURST_RECEIVE_FINISH) || (cmd == I2C_CONTROLLER_CMD_BURST_RECEIVE_ERROR_STOP));
 
     // Send the command.
-    HWREG(base + I2C_O_CSTAT_CTL) = cmd;
+    HWREG(base + I2C_O_CCTL) = cmd;
 
-    // Delay minimum four cycles in order to ensure that the I2C_O_CSTAT_CTL
+    // Delay minimum four cycles in order to ensure that the I2C_O_CCTL
     // register has been correctly updated before function exit
     CPUDelay(2);
 }
@@ -233,7 +233,7 @@ __STATIC_INLINE void I2CControllerSetTargetAddr(uint32_t base, uint8_t targetAdd
     ASSERT(!(targetAddr & 0x80));
 
     // Set the address of the target with which the controller will communicate.
-    HWREG(base + I2C_O_CSA) = (targetAddr << 1) | receive;
+    HWREG(base + I2C_O_CTA) = (targetAddr << 1) | receive;
 }
 
 //*****************************************************************************
@@ -253,10 +253,10 @@ __STATIC_INLINE void I2CControllerEnable(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Enable the clock for the controller.
-    HWREG(base + I2C_O_CCR) |= I2C_CCR_MFE_M;
+    HWREG(base + I2C_O_CCR) |= I2C_CCR_CFE_M;
 
     // Enable the controller module.
-    HWREG(base + I2C_O_CSTAT_CTL) = I2C_CSTAT_CTL_BUSY_RUN;
+    HWREG(base + I2C_O_CCTL) = I2C_CCTL_RUN_EN;
 }
 
 //*****************************************************************************
@@ -276,10 +276,10 @@ __STATIC_INLINE void I2CControllerDisable(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Disable the controller module.
-    HWREG(base + I2C_O_CSTAT_CTL) = 0;
+    HWREG(base + I2C_O_CCTL) = 0;
 
     // Disable the clock for the controller.
-    HWREG(base + I2C_O_CCR) &= ~I2C_CCR_MFE_M;
+    HWREG(base + I2C_O_CCR) &= ~I2C_CCR_CFE_M;
 }
 
 //*****************************************************************************
@@ -302,7 +302,7 @@ __STATIC_INLINE bool I2CControllerBusy(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Return the busy status.
-    if (HWREG(base + I2C_O_CSTAT_CTL) & I2C_CSTAT_CTL_BUSY_RUN)
+    if (HWREG(base + I2C_O_CSTA) & I2C_CSTA_BUSY_M)
     {
         return (true);
     }
@@ -333,7 +333,7 @@ __STATIC_INLINE bool I2CControllerBusBusy(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Return the bus busy status.
-    if (HWREG(base + I2C_O_CSTAT_CTL) & I2C_CSTAT_CTL_BUSBSY)
+    if (HWREG(base + I2C_O_CSTA) & I2C_CSTA_BUSBSY_M)
     {
         return (true);
     }
@@ -533,10 +533,10 @@ __STATIC_INLINE void I2CTargetEnable(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Enable the clock to the target module.
-    HWREG(base + I2C_O_CCR) |= I2C_CCR_SFE_M;
+    HWREG(base + I2C_O_CCR) |= I2C_CCR_TFE_M;
 
     // Enable the target.
-    HWREG(base + I2C_O_TSTAT_CTL) = I2C_TSTAT_CTL_RREQ_DA;
+    HWREG(base + I2C_O_TCTL) = I2C_TCTL_DA_EN;
 }
 
 //*****************************************************************************
@@ -608,10 +608,10 @@ __STATIC_INLINE void I2CTargetDisable(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Disable the target.
-    HWREG(base + I2C_O_TSTAT_CTL) = 0x0;
+    HWREG(base + I2C_O_TCTL) = 0x0;
 
     // Disable the clock to the target module.
-    HWREG(base + I2C_O_CCR) &= ~I2C_CCR_SFE_M;
+    HWREG(base + I2C_O_CCR) &= ~I2C_CCR_TFE_M;
 }
 
 //*****************************************************************************
@@ -636,7 +636,7 @@ __STATIC_INLINE uint32_t I2CTargetStatus(uint32_t base)
     ASSERT(I2CBaseValid(base));
 
     // Return the target status.
-    return (HWREG(base + I2C_O_TSTAT_CTL));
+    return (HWREG(base + I2C_O_TSTA));
 }
 
 //*****************************************************************************

@@ -171,6 +171,8 @@ void LL_RxDataCompleteCback( uint16 connHandle,
   // unused input parameter; PC-Lint error 715.
   (void)rssi;
 
+  connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(connHandle);
+
   // check if Controller to Host flow control is enabled
   if ( ctrlToHostEnable == TRUE )
   {

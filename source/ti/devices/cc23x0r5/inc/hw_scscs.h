@@ -39,49 +39,40 @@
 // SCSCS component
 //
 //*****************************************************************************
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer identity and the memory footprint indicator.
+// Peripheral ID Register 4
 #define SCSCS_O_PIDR4                                               0x00000010U
 
-// Reserved
+// Peripheral ID Register 5
 #define SCSCS_O_PIDR5                                               0x00000014U
 
-// Reserved
+// Peripheral ID Register 6
 #define SCSCS_O_PIDR6                                               0x00000018U
 
-// Reserved
+// Peripheral ID Register 7
 #define SCSCS_O_PIDR7                                               0x0000001CU
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer specific part number.
+// Peripheral ID Register 0
 #define SCSCS_O_PIDR0                                               0x00000020U
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer specific part number and part of the designer identity.
+// Peripheral ID Register 1
 #define SCSCS_O_PIDR1                                               0x00000024U
 
-// Part of the set of Peripheral Identification registers. Contains part of the
-// designer identity and the product revision.
+// Peripheral ID Register 2
 #define SCSCS_O_PIDR2                                               0x00000028U
 
-// Part of the set of Peripheral Identification registers. Contains the RevAnd
-// and Customer Modified fields.
+// Peripheral ID Register 3
 #define SCSCS_O_PIDR3                                               0x0000002CU
 
-// A component identification register, that indicates that the identification
-// registers are present.
+// Component ID Register 0
 #define SCSCS_O_CIDR0                                               0x00000030U
 
-// A component identification register, that indicates that the identification
-// registers are present. This register also indicates the component class.
+// Component ID Register 1
 #define SCSCS_O_CIDR1                                               0x00000034U
 
-// A component identification register, that indicates that the identification
-// registers are present.
+// Component ID Register 2
 #define SCSCS_O_CIDR2                                               0x00000038U
 
-// A component identification register, that indicates that the identification
-// registers are present.
+// Component ID Register 3
 #define SCSCS_O_CIDR3                                               0x0000003CU
 
 //*****************************************************************************

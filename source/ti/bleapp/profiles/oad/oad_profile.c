@@ -220,7 +220,7 @@ typedef struct
  * OAD Block size can range from [OAD_DEFAULT_BLOCK_SIZE,OAD_MAX_BLOCK_SIZE]
  * \note OAD block size must be 4 Octet aligned
  */
-#define OAD_MAX_BLOCK_SIZE              244
+#define OAD_MAX_BLOCK_SIZE              240
 
 /*!
  * Size of the payload in an image identify response.
@@ -242,14 +242,14 @@ typedef struct
  * OAD Block size can range from [OAD_DEFAULT_BLOCK_SIZE,OAD_MAX_BLOCK_SIZE]
  * \note OAD block size must be 4 Octet aligned
  */
-#define OAD_DEFAULT_BLOCK_SIZE          244
+#define OAD_DEFAULT_BLOCK_SIZE          240
 
 /*!
  * The following 2 definitions are for this function: HCI_LE_WriteSuggestedDefaultDataLenCmd
  * the explanation of them is indicated near the use of the function
  */
 
-#define APP_SUGGESTED_PDU_SIZE 251 //default is 27 octets(TX)
+#define APP_SUGGESTED_PDU_SIZE 247 //default is 27 octets(TX)
 #define APP_SUGGESTED_TX_TIME 2120 //default is 328us(TX)
 
 #endif //OAD_APP_ONCHIP

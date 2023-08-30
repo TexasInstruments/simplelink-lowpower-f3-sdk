@@ -39,48 +39,31 @@
 // SCB component
 //
 //*****************************************************************************
-// Read the CPU ID Base Register to determine: the ID number of the processor
-// core, the version number of the processor core, the implementation details
-// of the processor core.
+// CPUID Base Register
 #define SCB_O_CPUID                                                 0x00000000U
 
-// Use the Interrupt Control State Register to set a pending Non-Maskable
-// Interrupt (NMI), set or clear a pending PendSV, set or clear a pending
-// SysTick, check for pending exceptions, check the vector number of the
-// highest priority pended exception, check the vector number of the active
-// exception.
+// Interrupt Control State Register
 #define SCB_O_ICSR                                                  0x00000004U
 
-// The VTOR holds the vector table offset address.
+// Vector Table Offset Register
 #define SCB_O_VTOR                                                  0x00000008U
 
-// Use the Application Interrupt and Reset Control Register to: determine data
-// endianness, clear all active state information from debug halt mode, request
-// a system reset.
+// Application Interrupt and Reset Control Register
 #define SCB_O_AIRCR                                                 0x0000000CU
 
-// System Control Register. Use the System Control Register for
-// power-management functions: signal to the system when the processor can
-// enter a low power state, control how the processor enters and exits low
-// power states.
+// System Control Register
 #define SCB_O_SCR                                                   0x00000010U
 
-// The Configuration and Control Register permanently enables stack alignment
-// and causes unaligned accesses to result in a Hard Fault.
+// Configuration and Control Register
 #define SCB_O_CCR                                                   0x00000014U
 
-// System handlers are a special class of exception handler that can have their
-// priority set to any of the priority levels. Use the System Handler Priority
-// Register 2 to set the priority of SVCall.
+// System Handler Priority Register 2
 #define SCB_O_SHPR2                                                 0x0000001CU
 
-// System handlers are a special class of exception handler that can have their
-// priority set to any of the priority levels. Use the System Handler Priority
-// Register 3 to set the priority of PendSV and SysTick.
+// System Handler Priority Register 3
 #define SCB_O_SHPR3                                                 0x00000020U
 
-// Use the System Handler Control and State Register to determine or clear the
-// pending status of SVCall.
+// System Handler Control and State Register
 #define SCB_O_SHCSR                                                 0x00000024U
 
 //*****************************************************************************

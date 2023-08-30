@@ -62,6 +62,8 @@ Power_NotifyObj powerXtalAvailableObj;
 static void (*rclPowerNotify)(RCL_PowerEvent) = NULL;
 #endif
 
+#define RCL_DEFAULT_HFTRACKCTL_RATIO    CKMD_HFTRACKCTL_RATIO_REF48M
+
 static HwiP_Struct schedHwi;
 void (*halSchedFsmCb)(void) = NULL;
 
@@ -170,6 +172,7 @@ void hal_enable_setup_time_irq(void)
 void hal_setup_setup_time(uint32_t time)
 {
     channel2usage = SYSTIM_CH2_SETUP;
+    S_DBELL_ICLR0 = DBELL_ICLR0_SYSTIM0_BM;
     HWREG(SYSTIM_BASE + SYSTIM_O_CH2CC) = time;
     S_DBELL_IMASK0 |= DBELL_IMASK0_SYSTIM0_BM;
 }
@@ -177,6 +180,7 @@ void hal_setup_setup_time(uint32_t time)
 void hal_setup_start_time(uint32_t time)
 {
     channel2usage = SYSTIM_CH2_START;
+    S_DBELL_ICLR0 = DBELL_ICLR0_SYSTIM0_BM;
     HWREG(SYSTIM_BASE + SYSTIM_O_CH2CC) = time;
     S_DBELL_IMASK0 |= DBELL_IMASK0_SYSTIM0_BM;
 }
@@ -184,6 +188,7 @@ void hal_setup_start_time(uint32_t time)
 void hal_setup_hard_stop_time(uint32_t time)
 {
     channel2usage = SYSTIM_CH2_STOP;
+    S_DBELL_ICLR0 = DBELL_ICLR0_SYSTIM0_BM;
     HWREG(SYSTIM_BASE + SYSTIM_O_CH2CC) = time;
     /* Interrupt is not always needed, as event will be handled by PBE */
 }
@@ -195,6 +200,7 @@ void hal_enable_hard_stop_time_irq(void)
 
 void hal_setup_graceful_stop_time(uint32_t time)
 {
+    S_DBELL_ICLR0 = DBELL_ICLR0_SYSTIM1_BM;
     HWREG(SYSTIM_BASE + SYSTIM_O_CH3CC) = time;
     /* Interrupt is not always needed, as event will be handled by PBE */
 }
@@ -401,4 +407,14 @@ void hal_set_systim_imask(void)
 __attribute__((weak)) int16_t hal_get_temperature(void)
 {
     return Temperature_getTemperature();
+}
+
+uint32_t hal_get_hfxt_ratio(void)
+{
+    return (HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) & CKMD_HFTRACKCTL_RATIO_M) >> CKMD_HFTRACKCTL_RATIO_S;
+}
+
+uint32_t hal_get_hfxt_ratio_default(void)
+{
+    return RCL_DEFAULT_HFTRACKCTL_RATIO;
 }

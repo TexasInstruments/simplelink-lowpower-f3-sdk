@@ -4,8 +4,8 @@
 // CODE EXPORT INFORMATION
 // This file is generated
 //
-// Tool name           SmartRF Studio
-// Tool version        0.6.0.193 INTERNAL
+// Tool name           SmartRF Studio 8
+// Tool version        0.6.0.263 INTERNAL
 //
 //
 // WORKSPACE INFORMATION
@@ -14,7 +14,7 @@
 // Device              CC2340R5
 //     Package         QFN40 5x5 RKP
 //     Revision(s)     B (2.0)
-// SDK                 SimpleLink CC23x0 SDK 7.11.00.36
+// SDK                 SimpleLink CC23x0 SDK 7.20.00.00
 // Board               LP-EM-CC2340R5
 // PHY                 ADC Noise
 // PHY abbreviation    adc_noise
@@ -32,10 +32,16 @@ extern const LRF_SwConfig LRF_swConfigAdcNoise;
 extern const LRF_Config   LRF_configAdcNoise;
 
 
-// LRF register configuration summary
+// COMMON register field values
 
 // Address    Module            Register             Bit(s)     Field           Value
 // -----------------------------------------------------------------------------------
+// 0x3080     LRFDRFE           MAGNTHRCFG           [1]        SEL             0x0
+// 0x3088     LRFDRFE           RSSIOFFSET           [7:0]      VAL             <TRIM>
+// 0x30A0     LRFDRFE           SPARE2               [15:0]     VAL             0xA246
+// 0x30A4     LRFDRFE           SPARE3               [15:0]     VAL             0x1F40
+// 0x30A8     LRFDRFE           SPARE4               [15:0]     VAL             0x0000
+// 0x30AC     LRFDRFE           SPARE5               [15:0]     VAL             0x7C00
 // 0x30B0     LRFDRFE           LNA                  [7:4]      TRIM            <TRIM>
 // 0x30B0     LRFDRFE           LNA                  [3]        BIAS            0x1
 // 0x30B0     LRFDRFE           LNA                  [2:1]      IB              0x1
@@ -93,6 +99,9 @@ extern const LRF_Config   LRF_configAdcNoise;
 // 0x3138     LRFDRFE           PLLMON0              [6:0]      FCTHR           0x7F
 // 0x313C     LRFDRFE           PLLMON1              [12:8]     PHELOCKCNT      0x04
 // 0x313C     LRFDRFE           PLLMON1              [7:0]      PHELOCKTHR      0x7F
+// 0x3140     LRFDRFE           MOD0                 [12:11]    SCHEME          0x3
+// 0x3140     LRFDRFE           MOD0                 [10:8]     SYMSHP          0x0
+// 0x3140     LRFDRFE           MOD0                 [3:2]      INTPFACT        0x1
 // 0x6804     RFE_COMMON_RAM    SYNTHCTL             [7]        CHRGFILT        0x0
 // 0x6804     RFE_COMMON_RAM    SYNTHCTL             [6]        VREFBP          0x0
 // 0x6804     RFE_COMMON_RAM    SYNTHCTL             [5]        TXWAITMOD       0x0
@@ -115,7 +124,7 @@ extern const LRF_Config   LRF_configAdcNoise;
 // 0x6818     RFE_COMMON_RAM    K3AL                 [15:0]     VAL             0x07AB
 // 0x681A     RFE_COMMON_RAM    K5                   [15:0]     VAL             0x916F
 // 0x6820     RFE_COMMON_RAM    RTRIMOFF             [3:0]      VAL             0x0
-// 0x6822     RFE_COMMON_RAM    RTRIMMIN             [3:0]      VAL             0x8
+// 0x6822     RFE_COMMON_RAM    RTRIMMIN             [3:0]      VAL             0x0
 // 0x6824     RFE_COMMON_RAM    DIVI                 [14:12]    NMIREFTRIM      0x0
 // 0x6824     RFE_COMMON_RAM    DIVI                 [11:9]     PMIREFTRIM      0x0
 // 0x6824     RFE_COMMON_RAM    DIVI                 [3]        OUT             0x1
@@ -134,6 +143,10 @@ extern const LRF_Config   LRF_configAdcNoise;
 // 0x6832     RFE_COMMON_RAM    DCOSETTLE            [9:0]      VAL             0x005
 // 0x6834     RFE_COMMON_RAM    IFAMPRFLDOTX         [15:9]     TRIM            0x7F
 // 0x6836     RFE_COMMON_RAM    IFAMPRFLDODEFAULT    [15:9]     TRIM            0x00
+// 0x683E     RFE_COMMON_RAM    PHYRSSIOFFSET        [7:0]      VAL             0x50
+// 0x6840     RFE_COMMON_RAM    SPARE0SHADOW         [15:0]     VAL             0x0022
+// 0x6842     RFE_COMMON_RAM    SPARE1SHADOW         [15:0]     VAL             0x0045
+// 0x6844     RFE_COMMON_RAM    AGCINFO              [0]        MODE            0x0
 
 
 #endif

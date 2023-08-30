@@ -3,7 +3,7 @@
         "metadataVersion": "3.0.0",
         "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK_PROPRF_MODULE",
         "name": "TI Proprietary RF Stack Core",
-        "version": "7.10.00.35",
+        "version": "7.20.00.29",
         "type": "software",
         "devices": [
             "CC23x0"
@@ -13,7 +13,7 @@
         "allowPartialDownload": "false",
         "moduleOf": {
             "packageId": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
-            "semver": "7.10.0"
+            "semver": "7.20.0"
         }
     }
 ]

@@ -53,6 +53,7 @@
 #ifdef FREERTOS
 #include <FreeRTOS.h>
 #include <task.h>
+#include <portable.h>
 #endif
 
 /*POSIX*/
@@ -80,7 +81,7 @@
 #include "icall_platform.h"
 #include <stdarg.h>
 #include <string.h>
-
+#include <ti/drivers/dpl/EventP.h>
 
 #ifndef ICALL_FEATURE_SEPARATE_IMGINFO
 #include <icall_addrs.h>
@@ -88,7 +89,6 @@
 
 
 typedef uint32_t * Task_Handle;
-
 
 #ifndef Task_self
 #define Task_self ICall_taskSelf
@@ -159,7 +159,11 @@ typedef uint32_t * Task_Handle;
  * Creation of the synchronous object between application and service
  */
 
+
+
 #ifdef ICALL_EVENTS
+#define ICALL_POSIX_WAITMATCH_EVENT_ID                          0x00001000
+#define ICALL_POSIX_MSG_EVENT_ID                                0x00010000
 #define ICALL_SYNC_HANDLE_CREATE() (Event_create(NULL, NULL))
 #else /* ICALL_EVENTS */
 #define ICALL_SYNC_HANDLE_CREATE() (Semaphore_create(0, NULL, NULL))
@@ -171,8 +175,8 @@ typedef uint32_t * Task_Handle;
    * post the synchronous object between application and service
  */
 #ifdef ICALL_EVENTS
-#define ICALL_SYNC_HANDLE_POST(x)     (Event_post(x, ICALL_MSG_EVENT_ID))
-#define ICALL_SYNC_HANDLE_POST_WM(x)  (Event_post(x, ICALL_WAITMATCH_EVENT_ID))
+#define ICALL_SYNC_HANDLE_POST(x)     (Event_post(x, ICALL_POSIX_MSG_EVENT_ID))
+#define ICALL_SYNC_HANDLE_POST_WM(x)  (Event_post(x, ICALL_POSIX_WAITMATCH_EVENT_ID))
 #else /* ICALL_EVENTS */
 #define ICALL_SYNC_HANDLE_POST(x)     (Semaphore_post(x))
 #define ICALL_SYNC_HANDLE_POST_WM(x)  (Semaphore_post(x))  /* Semaphore does not have event ID */
@@ -184,8 +188,8 @@ typedef uint32_t * Task_Handle;
    * pend for the synchronous object between application and service
  */
 #ifdef ICALL_EVENTS
-#define ICALL_SYNC_HANDLE_PEND(x, t)    (Event_pend(x, 0, ICALL_MSG_EVENT_ID ,t))
-#define ICALL_SYNC_HANDLE_PEND_WM(x, t) (Event_pend(x, 0, ICALL_WAITMATCH_EVENT_ID, t))
+#define ICALL_SYNC_HANDLE_PEND(x, t)    (Event_pend(x, 0, ICALL_POSIX_MSG_EVENT_ID ,t))
+#define ICALL_SYNC_HANDLE_PEND_WM(x, t) (Event_pend(x, 0, ICALL_POSIX_WAITMATCH_EVENT_ID, t))
 #else /* ICALL_EVENTS */
 #define ICALL_SYNC_HANDLE_PEND(x, t)    (Semaphore_pend(x, t))
 #define ICALL_SYNC_HANDLE_PEND_WM(x, t) (Semaphore_pend(x, t))  /* Semaphore does not have event ID */
@@ -500,8 +504,6 @@ static ICall_TaskEntry *ICall_newTask(Task_Handle taskhandle)
   size_t i;
   ICall_CSState key;
 
-  char name[7];
-
   key = ICall_enterCSImpl();
   for (i = 0; i < ICALL_MAX_NUM_TASKS; i++)
   {
@@ -511,25 +513,8 @@ static ICall_TaskEntry *ICall_newTask(Task_Handle taskhandle)
       ICall_TaskEntry *taskentry = &ICall_tasks[i];
       taskentry->task = taskhandle;
       taskentry->queue = NULL;
-
-
-      struct mq_attr MRattr;
-
-      MRattr.mq_flags = 0; //Blocking
-      MRattr.mq_curmsgs = 0;
-      MRattr.mq_maxmsg = 32;
-      MRattr.mq_msgsize = sizeof(uint32_t);
-
-      /* Open the reply message queue */
-      snprintf(name,6,"mq_%d",i);
-      taskentry->syncHandle  = mq_open(name, O_CREAT , 0, &MRattr);
-
-      if (taskentry->syncHandle == (mqd_t) -1)
-      {
-          //handle_error("mq_open");
-          while(1);
-      }
-
+      // Create event handle to the osal events
+      taskentry->syncHandle = EventP_create();
       if (taskentry->syncHandle == NULL)
       {
         /* abort */
@@ -714,7 +699,6 @@ void *ICall_workerThreadEntry(void *arg)
 
   if (workerThreadEntity.queueHandle == (mqd_t)-1)
   {
-    pthread_detach(pthread_self());
     return NULL;
   }
 
@@ -737,8 +721,7 @@ void *ICall_workerThreadEntry(void *arg)
       }
     }
   }
-  //mq_unlink ("workerThreadQueue");
-  //pthread_detach(pthread_self());
+
   return NULL;
 }
 
@@ -760,6 +743,7 @@ int ICall_createWorkerThread(void)
 
   retVal |= pthread_attr_setschedparam(&param_attribute, &param);
   retVal |= pthread_attr_setstacksize(&param_attribute, ICALL_WORKER_THREAD_STACKSIZE);
+  retVal |= pthread_attr_setdetachstate(&param_attribute, PTHREAD_CREATE_DETACHED);
 
   retVal |= pthread_create(&workerThreadEntity.threadId,
                            &param_attribute,
@@ -2131,7 +2115,7 @@ static ICall_Errno ICall_primWaitEvent(ICall_WaitEventArgs *args)
     }
   }
 
-  if (Event_pend(args->event, 0, ICALL_MSG_EVENT_ID, timeout))
+  if (Event_pend(args->event, 0, ICALL_POSIX_MSG_EVENT_ID, timeout))
   {
     return ICALL_ERRNO_SUCCESS;
   }
@@ -2856,7 +2840,6 @@ ICall_Errno ICall_wait(uint_fast32_t milliseconds)
     Task_Handle taskhandle = Task_self();
     ICall_TaskEntry *taskentry = ICall_searchTask(taskhandle);
     uint32_t timeout;
-    uint32_t event;
 
     int16_t retVal = 0;
 
@@ -2882,7 +2865,7 @@ ICall_Errno ICall_wait(uint_fast32_t milliseconds)
             return (errno);
         }
     }
-    mq_receive(taskentry->syncHandle, (char*)&event, sizeof(uint32_t), NULL);
+    EventP_pend(taskentry->syncHandle, ICALL_POSIX_MSG_EVENT_ID, 0, milliseconds);
     if(retVal != (-1))
     {
         return (ICALL_ERRNO_SUCCESS);
@@ -2898,10 +2881,7 @@ ICall_Errno ICall_wait(uint_fast32_t milliseconds)
  */
 ICall_Errno ICall_signal(ICall_SyncHandle msgSyncHdl)
 {
-    /* 0x80000000 is an internal Event_ID */
-    uint32_t msg_ptr = 0x80000000;
-    mq_send(msgSyncHdl,(char*)&msg_ptr,sizeof(msg_ptr),1);
-
+    EventP_post((EventP_Handle)msgSyncHdl, ICALL_POSIX_MSG_EVENT_ID);
     return (ICALL_ERRNO_SUCCESS);
 }
 
@@ -3006,16 +2986,18 @@ void ICall_heapFree(void *msg)
   ICall_leaveCSImpl(key);
 }
 
-
 /**
  * Get Statistic on Heap.
  * @param stats  pointer to a heapStats_t structure.
  */
-
-/* Statistics currently are not supported via ICall apis.
- *  Please consider to use bget statistics (or any of your internal heap statistics)  */
 void ICall_heapGetStats(ICall_heapStats_t *pStats)
 {
+  struct xHeapStats pHeapStats;
+
+  vPortGetHeapStats(&pHeapStats);
+
+  pStats->totalFreeSize = pHeapStats.xAvailableHeapSpaceInBytes;
+  pStats->totalSize = configTOTAL_HEAP_SIZE;
 }
 
 #endif // FREERTOS
@@ -3146,10 +3128,7 @@ ICall_Errno ICall_send(ICall_EntityID src,
   }
 #endif // ICALL_NO_APP_EVENTS
   ICall_msgEnqueue(&ICall_entities[dest].task->queue, msg);
-/* 0x80000000 is an internal event number */
-  uint32_t msg_ptr = 0x80000000;
-  mq_send(ICall_entities[dest].task->syncHandle,(char*)&msg_ptr,sizeof(msg_ptr),1);
-
+  EventP_post((EventP_Handle)ICall_entities[dest].task->syncHandle, ICALL_POSIX_MSG_EVENT_ID);
   return (ICALL_ERRNO_SUCCESS);
 }
 
@@ -3198,6 +3177,23 @@ ICall_Errno ICall_fetchMsg(ICall_EntityID *src,
   *msg = msgTemp;
   return (ICALL_ERRNO_SUCCESS);
 
+}
+
+/**
+ * Check if Task Queue is empty.
+ *
+ * @return @ref true when queue is empty
+ *
+ *         @ref false when queue is not empty
+ */
+uint8 ICall_IsQueueEmpty()
+{
+  Task_Handle taskhandle = Task_self();
+  ICall_TaskEntry *taskentry = ICall_searchTask(taskhandle);
+  if(taskentry->queue == NULL)
+      return true;
+  else
+      return false;
 }
 
 /**
@@ -3818,7 +3814,7 @@ ICall_waitEvent(ICall_Event event, uint_fast32_t milliseconds)
     }
   }
 
-  if (Event_pend(event, 0, ICALL_MSG_EVENT_ID, timeout))
+  if (Event_pend(event, 0, ICALL_POSIX_MSG_EVENT_ID, timeout))
   {
     return (ICALL_ERRNO_SUCCESS);
   }
@@ -3870,17 +3866,18 @@ ICall_waitSemaphore(ICall_Semaphore sem, uint_fast32_t milliseconds)
 #endif /* ICALL_RTOS_SEMAPHORE_API */
 
 
-
 /* Util function that take time in ticks and convert it into ms - relate to system clock (returns system clock + converted ms) */
-static void AbsoluteTimeInMilliPlusTimer(uint_least32_t timeout,struct timespec *tsTimer)
-{
+// this function is unused and and can be used in the future. To avoid warnings it was commented.
+/*
+  static void AbsoluteTimeInMilliPlusTimer(uint_least32_t timeout,struct timespec *tsTimer)
+  {
 
     clock_gettime(CLOCK_REALTIME, tsTimer);
 
     tsTimer->tv_sec += (timeout / 1000);
     tsTimer->tv_nsec += (timeout % 1000) * 1000000;
-}
-
+  }
+*/
 
 /**
  * Waits for and retrieves a message received at the message queue
@@ -3954,11 +3951,7 @@ ICall_waitMatch(uint_least32_t milliseconds,
 
 #ifdef ICALL_LITE
 
-  uint32_t events;
-  struct timespec tsTimer = {0};
-  AbsoluteTimeInMilliPlusTimer(milliseconds, &tsTimer);
-
-  while(mq_timedreceive(taskentry->syncHandle,(char*)&events, sizeof(uint32_t), NULL, &tsTimer) != (-1))
+  while(EventP_pend(taskentry->syncHandle, ICALL_POSIX_WAITMATCH_EVENT_ID, 0, timeout))
 #else /* !ICALL_LITE */
   while (ICALL_SYNC_HANDLE_PEND(taskentry->syncHandle, timeout))
 #endif /* ICALL_LITE */
@@ -3999,9 +3992,7 @@ ICall_waitMatch(uint_least32_t milliseconds,
      * all the messages in the queue are processed.
      */
 #ifdef ICALL_LITE
-      /* 0x20000000 is an internal Event_ID */
-      uint32_t msg_ptr = (0x20000000); //Event_Id_29;
-      mq_send(taskentry->syncHandle,(char*)&msg_ptr,sizeof(msg_ptr),1);
+      EventP_post((EventP_Handle)taskentry->syncHandle, ICALL_POSIX_WAITMATCH_EVENT_ID);
 
 #else /* !ICALL_LITE */
      ICALL_SYNC_HANDLE_POST(taskentry->syncHandle);
@@ -4268,9 +4259,7 @@ ICall_Errno ICall_sendServiceComplete(ICall_EntityID src,
   hdr->format = format;
   ICall_msgEnqueue(&ICall_entities[dest].task->queue, msg);
 
-  /* 0x20000000 is an internal Event_ID */
-  uint32_t msg_ptr = (0x20000000); //Event_Id_29;
-  mq_send(ICall_entities[dest].task->syncHandle,(char*)&msg_ptr,sizeof(msg_ptr),1);
+  EventP_post((EventP_Handle)ICall_entities[dest].task->syncHandle, ICALL_POSIX_WAITMATCH_EVENT_ID);
 
   return (ICALL_ERRNO_SUCCESS);
 }

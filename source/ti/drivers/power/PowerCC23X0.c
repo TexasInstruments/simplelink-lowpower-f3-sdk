@@ -40,6 +40,9 @@
 #include <ti/drivers/dpl/DebugP.h>
 
 #include <ti/drivers/Power.h>
+#include <ti/drivers/Temperature.h>
+
+#include <ti/drivers/utils/Math.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -70,6 +73,12 @@ static void PowerCC23X0_enterStandby(void);
 static void PowerCC23X0_setDependencyCount(uint_fast16_t resourceId, uint8_t count);
 bool PowerCC23X0_isValidResourceId(uint_fast16_t resourceId);
 static void PowerCC23X0_startHFXT(void);
+static void PowerCC23X0_hfxtCompensateFxn(int16_t currentTemperature,
+                                          int16_t thresholdTemperature,
+                                          uintptr_t clientArg,
+                                          Temperature_NotifyObj *notifyObject);
+static uint32_t PowerCC23X0_temperatureToRatio(int16_t temperature);
+static void PowerCC23X0_updateHFXTRatio(uint32_t ratio);
 
 /* Externs */
 extern const PowerCC23X0_Config PowerCC23X0_config;
@@ -90,7 +99,47 @@ extern const uint_least8_t GPIO_pinUpperBound;
 /* Macro used to extract the bit index shift encoded from a resource ID */
 #define RESOURCE_BIT_INDEX(resourceId) ((resourceId)&PowerCC23X0_PERIPH_BIT_INDEX_M)
 
+#define HFXT_COMP_MAX_TEMP (125)
+#define HFXT_COMP_MIN_TEMP (-40)
+
+/* SYS0 UNLOCK register key needed to write to SYS0_TMUTEn */
+#define SYS0_UNLOCK_KEY 0xC5AF6927
+
+/* Type definitions */
+
+/*! Type used for passing configuration information to HFXT temperature
+ * notification callback
+ */
+typedef union
+{
+    struct
+    {
+        int16_t delta;
+        int16_t threshold;
+    } temperature;
+    uint32_t value;
+} PowerCC23X0_hfxtConfig;
+
 /* Static Globals */
+
+/*! Temperature notification to compensate the HFXT */
+static Temperature_NotifyObj PowerCC23X0_hfxtCompNotifyObj = {0};
+
+/*! Temperature compensation coefficients for HFXT */
+static struct
+{
+    int32_t P0;
+    int32_t P1;
+    int32_t P2;
+    int32_t P3;
+    uint8_t shift;
+} PowerCC23X0_hfxtCompCoefficients;
+
+/* Global state variable to track if HFXT compensation is enabled or not.
+ * It is used to check whether temperature notifications should be re-enabled
+ * after an update or not, in case compensation has been asynchronously disabled
+ */
+static bool PowerCC23X0_hfxtCompEnabled = false;
 
 /* Array to maintain constraint reference counts */
 uint8_t constraintCounts[PowerCC23X0_NUMCONSTRAINTS];
@@ -564,6 +613,7 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
 int_fast16_t Power_sleep(uint_fast16_t sleepState)
 {
     int_fast16_t status = Power_SOK;
+    uint32_t tmuteRestoreVal;
 
     /* Signal all clients registered for pre standby wakeup notification */
     status = PowerCC23X0_notify(PowerLPF3_ENTERING_STANDBY);
@@ -575,6 +625,13 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
         return status;
     }
 
+    /* Stash TMUTE4 value to restore later */
+    tmuteRestoreVal                   = HWREG(SYS0_BASE + SYS0_O_TMUTE4);
+    /* Unlock TMUTEn registers to make them writable */
+    HWREG(SYS0_BASE + SYS0_O_MUNLOCK) = SYS0_UNLOCK_KEY;
+    /* Set IPEAK to 0 for lower standby power consumption */
+    HWREG(SYS0_BASE + SYS0_O_TMUTE4) &= ~SYS0_TMUTE4_IPEAK_M;
+
     /* Call wrapper function to ensure that R0-R3 are saved and restored before
      * and after this function call. Otherwise, compilers will attempt to stash
      * values on the stack while on the PSP and then restore them just after
@@ -582,6 +639,14 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      * behaviour.
      */
     PowerCC23X0_enterStandby();
+
+    /* Unlock TMUTEn registers to make them writable */
+    HWREG(SYS0_BASE + SYS0_O_MUNLOCK) = SYS0_UNLOCK_KEY;
+    /* Set IPEAK back to previous value for improved RF performance. We can just OR it in
+     * because we set it to 0 before entering standby and no one else could have
+     * changed it since then.
+     */
+    HWREG(SYS0_BASE + SYS0_O_TMUTE4)  = tmuteRestoreVal;
 
     /* Now that we have returned and are executing code from flash again, start
      * up the HFXT using the workaround for the HFXT amplitude control ADC bias
@@ -620,6 +685,12 @@ void PowerCC23X0_doWFI(void)
  */
 void PowerCC23X0_enterStandby(void)
 {
+    /* Declare static volatile variable to ensure the toolchain does not use
+     * stack for the variable and does not optimize this memory allocation
+     * away.
+     */
+    static volatile uint32_t controlPreStandby;
+
     /* Clear all CKM LDO SW control bits. If we do not do this before entering
      * standby, the LDO will remain on in standby and consume power. We do not
      * disable it earlier after turning on HFXT to avoid waiting 20us to safely
@@ -630,7 +701,7 @@ void PowerCC23X0_enterStandby(void)
     /* Stash current CONTROL configuration to re-apply after wakeup.
      * Depending on the kernel used, we could be on PSP or MSP
      */
-    uint32_t controlPreStandby = __get_CONTROL();
+    controlPreStandby = __get_CONTROL();
 
     /* Switch to MSP. HapiEnterStandby() must execute from MSP since the
      * device reboots into privileged mode on MSP and HapiEnterStandby()
@@ -667,8 +738,10 @@ void PowerLPF3_selectLFOSC(void)
     /* Disable LFINC filter settling preventing standby */
     HWREG(CKMD_BASE + CKMD_O_LFINCCTL) &= ~CKMD_LFINCCTL_PREVENTSTBY_M;
 
-    /* Enable LFCLKGOOD */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD;
+    /* Enable LFCLKGOOD and TRACKREFLOSS. TRACKREFLOSS may occur when entering
+     * and exiting fake standby with the debugger attached.
+     */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD | CKMD_MIS_TRACKREFLOSS_M;
 
     /* Disallow standby until LF clock is running. Otherwise, we will only
      * vector to the ISR after we wake up from standby the next time since the
@@ -712,7 +785,7 @@ static void PowerCC23X0_oscillatorISR(uintptr_t arg)
     uint32_t maskedStatus = HWREG(CKMD_BASE + CKMD_O_MIS);
 
     /* Manipulating ICLR alone does not actually do anything. The CKM_COMB
-     * signals are all level values that reset one cycle after writing to
+     * signals are almost all level values that reset one cycle after writing to
      * ICLR. We need to update the mask instead to avoid looping in the ISR
      */
     HWREG(CKMD_BASE + CKMD_O_ICLR)  = maskedStatus;
@@ -750,6 +823,25 @@ static void PowerCC23X0_oscillatorISR(uintptr_t arg)
 
         /* Allow standby again now that we have sent out the notification */
         Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+    }
+
+    if (maskedStatus & CKMD_MIS_TRACKREFLOSS_M)
+    {
+        /* Disable interrupts as HFXT SWTCXO may interrupt and modify HFTRACKCTL
+         * with a higher priority depending on user interrupt priorities.
+         */
+        uintptr_t key = HwiP_disable();
+
+        /* Disable tracking */
+        HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) &= ~CKMD_HFTRACKCTL_EN_M;
+
+        /* Re-enable tracking */
+        HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) |= CKMD_HFTRACKCTL_EN_M;
+
+        HwiP_restore(key);
+
+        /* Re-enable TRACKREFLOSS */
+        HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_MIS_TRACKREFLOSS_M;
     }
 }
 
@@ -915,4 +1007,219 @@ bool PowerCC23X0_isValidResourceId(uint_fast16_t resourceId)
     {
         return false;
     }
+}
+
+/*
+ *  ======== PowerCC23X0_temperatureToRatio ========
+ */
+static uint32_t PowerCC23X0_temperatureToRatio(int16_t temperature)
+{
+    /* Calculate unshifted ppm offset. Fixed-point coefficients are assumed to
+     * be set so that this computation does not overflow 32 bits in the -40, 125
+     * degC range.
+     */
+    int32_t hfxtPpmOffset = PowerCC23X0_hfxtCompCoefficients.P3 * temperature * temperature * temperature +
+                            PowerCC23X0_hfxtCompCoefficients.P2 * temperature * temperature +
+                            PowerCC23X0_hfxtCompCoefficients.P1 * temperature + PowerCC23X0_hfxtCompCoefficients.P0;
+
+    /* Calculate correct frequency offset, using shifted hfxtPpmOffset.
+     * Frequency offset = 48000000 Hz * (hfxtPpmOffset >> shift) / 1000000
+     *                  = 48 Hz * hfxtPpmOffset >> shift
+     * Do 64-bit multiplication, since this will most likely overflow 32 bits.
+     * Signed right-shift will result in an arithmetic shift operation.
+     */
+#if !(defined(__IAR_SYSTEMS_ICC__) || (defined(__clang__) && defined(__ti_version__)) || defined(__GNUC__))
+    #warning The following signed right-shift operation is implementation-defined
+#endif
+    int32_t hfxtFreqOffset = (int32_t)((48LL * (int64_t)hfxtPpmOffset) >> PowerCC23X0_hfxtCompCoefficients.shift);
+
+    /* Calculate temperature dependent ppm offset of the capacitor array on the
+     * crystal input pins, modelled as ppm(T) = (T-25) * 0.2
+     * Input frequency is assumed 48 MHz, and any potential crystal offset is
+     * neglected and not factored into the cap array offset calculation.
+     * frequency_offset(T) = 48000000 * (T-25) * 0.2 / 1000000 = 9.6 * (T-25)
+     * To avoid floating-point multiplication and integer division, 9.6 is
+     * approximated as 10066330 / 2^20 ~ 9.600000381. The error introduced by
+     * this approximation is negligable.
+     */
+#if !(defined(__IAR_SYSTEMS_ICC__) || (defined(__clang__) && defined(__ti_version__)) || defined(__GNUC__))
+    #warning The following signed right-shift operation is implementation-defined
+#endif
+    int32_t capArrayOffset = (10066330 * (temperature - 25)) >> 20;
+
+    /* Calculate the actual reference input frequency to the tracking loop,
+     * accounting for the HFXT offset and cap array offset
+     */
+    int32_t refFreq = 48000000 + hfxtFreqOffset + capArrayOffset;
+
+    /* Calculate word to write to HFTRACKCTL.RATIO. Expression taken from
+     * register description: ratio = 24MHz / (2 * reference_frequency) * 2^24
+     * 64-bit division is required, which is truncated to 32 bit
+     */
+    uint32_t ratio = (uint32_t)(0xB71B00000000LL / (int64_t)refFreq);
+
+    return ratio;
+}
+
+/*
+ *  ======== PowerCC23X0_updateHFXTRatio ========
+ */
+static void PowerCC23X0_updateHFXTRatio(uint32_t ratio)
+{
+    /* Update HFTRACKCTL atomically */
+    uintptr_t key = HwiP_disable();
+    uint32_t temp = HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) & ~CKMD_HFTRACKCTL_RATIO_M;
+    temp |= ratio & CKMD_HFTRACKCTL_RATIO_M;
+    HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) = temp;
+    HwiP_restore(key);
+}
+
+/*
+ *  ======== PowerCC23X0_hfxtCompensateFxn ========
+ */
+static void PowerCC23X0_hfxtCompensateFxn(int16_t currentTemperature,
+                                          int16_t thresholdTemperature,
+                                          uintptr_t clientArg,
+                                          Temperature_NotifyObj *notifyObject)
+{
+    uintptr_t key;
+    uint32_t ratio;
+    PowerCC23X0_hfxtConfig hfxtConfig;
+    hfxtConfig.value = (uint32_t)clientArg;
+
+    /* Sanitize current temperature to fall within valid range. This ensures
+     * that 32-bit overflow does not occur in the ppm calculation below.
+     */
+    if (currentTemperature > HFXT_COMP_MAX_TEMP)
+    {
+        currentTemperature = HFXT_COMP_MAX_TEMP;
+    }
+
+    if (currentTemperature < HFXT_COMP_MIN_TEMP)
+    {
+        currentTemperature = HFXT_COMP_MIN_TEMP;
+    }
+
+    key = HwiP_disable();
+
+    /* If HFXT compensation has been disabled asynchronously during execution of
+     * this callback then do not re-register the notification object
+     */
+    if (PowerCC23X0_hfxtCompEnabled)
+    {
+        if (currentTemperature > hfxtConfig.temperature.threshold)
+        {
+            /* If temperature is above compensation threshold then compute a
+             * compensated ratio-value and update the ratio register in the
+             * tracking loop
+             */
+            ratio = PowerCC23X0_temperatureToRatio(currentTemperature);
+            PowerCC23X0_updateHFXTRatio(ratio);
+
+            /* Register the notification again with updated thresholds. Notification thresholds must be crossed to
+             * trigger, so the upper and lower limits are decreased by 1 to maintain a range of +/- delta.
+             */
+            Temperature_registerNotifyRange(notifyObject,
+                                            currentTemperature + hfxtConfig.temperature.delta - 1,
+                                            currentTemperature - hfxtConfig.temperature.delta + 1,
+                                            PowerCC23X0_hfxtCompensateFxn,
+                                            clientArg);
+        }
+        else
+        {
+            /* If temperature is at or below compensation threshold then reset
+             * the tracking loop ratio to remove any compensation, and register
+             * a new high notification. The new limit should not be lower than
+             * the compensation threshold.
+             */
+            PowerCC23X0_updateHFXTRatio(CKMD_HFTRACKCTL_RATIO_REF48M);
+
+            Temperature_registerNotifyHigh(notifyObject,
+                                           Math_MAX(hfxtConfig.temperature.threshold,
+                                                    currentTemperature + hfxtConfig.temperature.delta - 1),
+                                           PowerCC23X0_hfxtCompensateFxn,
+                                           clientArg);
+        }
+    }
+
+    HwiP_restore(key);
+}
+
+/*
+ *  ======== PowerLPF3_initHFXTCompensation ========
+ */
+void PowerLPF3_initHFXTCompensation(int32_t P0,
+                                    int32_t P1,
+                                    int32_t P2,
+                                    int32_t P3,
+                                    uint8_t shift,
+                                    __attribute__((unused)) bool fcfgInsertion)
+{
+    PowerCC23X0_hfxtCompCoefficients.P0    = P0;
+    PowerCC23X0_hfxtCompCoefficients.P1    = P1;
+    PowerCC23X0_hfxtCompCoefficients.P2    = P2;
+    PowerCC23X0_hfxtCompCoefficients.P3    = P3;
+    PowerCC23X0_hfxtCompCoefficients.shift = shift;
+
+    /* If device offers FCFG insertion data it will be factored in here.
+     * Currently no device supports this.
+     */
+}
+
+/*
+ *  ======== PowerLPF3_enableHFXTCompensation ========
+ */
+void PowerLPF3_enableHFXTCompensation(int16_t tempThreshold, int16_t tempDelta)
+{
+
+    if (PowerCC23X0_hfxtCompEnabled == false)
+    {
+        PowerCC23X0_hfxtCompEnabled = true;
+
+        Temperature_init();
+
+        int16_t currentTemperature = Temperature_getTemperature();
+
+        PowerCC23X0_hfxtConfig config;
+        config.temperature.threshold = tempThreshold;
+        config.temperature.delta     = tempDelta;
+
+        /* Only perform temperature compensation if the temperature is above the
+         * set threshold. If it is not, then register a high notification on the
+         * threshold
+         */
+        if (currentTemperature > tempThreshold)
+        {
+            PowerCC23X0_hfxtCompensateFxn(currentTemperature,
+                                          0,
+                                          (uintptr_t)config.value,
+                                          &PowerCC23X0_hfxtCompNotifyObj);
+        }
+        else
+        {
+            Temperature_registerNotifyHigh(&PowerCC23X0_hfxtCompNotifyObj,
+                                           tempThreshold,
+                                           PowerCC23X0_hfxtCompensateFxn,
+                                           (uintptr_t)config.value);
+        }
+    }
+}
+
+/*
+ *  ======== PowerLPF3_disableHFXTCompensation ========
+ */
+void PowerLPF3_disableHFXTCompensation(void)
+{
+
+    uintptr_t key = HwiP_disable();
+    if (PowerCC23X0_hfxtCompEnabled == true)
+    {
+        PowerCC23X0_hfxtCompEnabled = false;
+
+        Temperature_unregisterNotify(&PowerCC23X0_hfxtCompNotifyObj);
+
+        /* Update HFTRACKCTL.RATIO to reset-value */
+        PowerCC23X0_updateHFXTRatio(CKMD_HFTRACKCTL_RATIO_REF48M);
+    }
+    HwiP_restore(key);
 }

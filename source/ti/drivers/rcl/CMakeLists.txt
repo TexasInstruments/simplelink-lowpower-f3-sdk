@@ -1,100 +1,77 @@
-cmake_minimum_required(VERSION 3.21.3)
+# Copyright (c) 2022-2023, Texas Instruments Incorporated
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# *  Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# *  Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# *  Neither the name of Texas Instruments Incorporated nor the names of
+#    its contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
+include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources.cmake)
 
-find_program(SRF_CLI_EXE cli_hw_mock PATHS $ENV{SRFSTUDIO_INSTALL_DIR}/bin REQUIRED)
 
-set(DEVICE_LIST "cc23x0r5;cc23x0r2")
+project(rcl LANGUAGES C ASM)
+ti_init_package(NAMESPACE Rcl PACKAGE_TYPE COMPONENT)
 
-foreach (DEVICE ${DEVICE_LIST})
-    if (${DEVICE} STREQUAL "cc23x0r5")
-        set(DEVICE_FAMILY_DEFINE "DeviceFamily_CC23X0R5=1")
-    elseif (${DEVICE} STREQUAL "cc23x0r2")
-        set(DEVICE_FAMILY_DEFINE "DeviceFamily_CC23X0R2=1")
+
+foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
+
+    if(${TI_PLATFORM} STREQUAL "cc23x0r2")
+        ti_add_package_dependency(DriverlibCC23X0R2)
+        set(SOURCES ${SOURCES_CC23X0R2})
+
+    elseif(${TI_PLATFORM} STREQUAL "cc23x0r5")
+        ti_add_package_dependency(DriverlibCC23X0R5)
+        set(SOURCES ${SOURCES_CC23X0R5})
+
+    # Ignore platform CC27XX (for now)
+    elseif(${TI_PLATFORM} STREQUAL "cc27xx")
+        continue()
+
+    else()
+        continue()
     endif()
 
-    file(GLOB sources
-        *.c
-        handlers/ble5.c
-        handlers/generic.c
-        handlers/adc_noise.c
-        hal/cc23x0rx/hal_cc23x0rx.c
-        wrappers/RCL_AdcNoise.c
+    # Include boards/cc23x0rx to get the necessary rcl settings
+    include_directories(${CMAKE_SOURCE_DIR}/source/ti/boards/cc23x0rx/)
+
+    # Only rcl_settings_adc_noise.c is needed at this time. Other rcl settings are used on a per need basis.
+    list(APPEND SOURCES
+        ${CMAKE_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_adc_noise.c
     )
 
-    list(
-        APPEND
-        RFCONFIG_PHYS
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_adc_noise.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_adc_noise.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_ble_cs_hp.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_ble_cs_hp.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_ble_generic.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_ble_generic.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_ble.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_ble.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_fsk_20_kbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_fsk_20_kbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_1_mbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_1_mbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_2_mbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_2_mbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_100_kbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_100_kbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_250_kbps_hidev.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_250_kbps_hidev.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_250_kbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_250_kbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_500_kbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_gfsk_500_kbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_msk_250_kbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_msk_250_kbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_msk_500_kbps.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_msk_500_kbps.h
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_nesb.c
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_nesb.h
+    ti_add_library(rcl_${TI_PLATFORM}
+        # Contents of the library. Include LRF binaries in library
+        SOURCES ${SOURCES}
+        $<TARGET_OBJECTS:lrf_${TI_PLATFORM}>
+        # This library has public link dependencies on Driverlib, and the CC23X0RX device
+        LINK_PUBLIC Driverlib::${TI_PLATFORM}
+                    CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+        # Adds source directory to install target, helps with SDK building
+        ADD_SDK_INCLUDE_PATH "source"
     )
-
-    file(GLOB existing_settings
-        ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings*
-    )
-    if(existing_settings)
-        file(REMOVE ${existing_settings})
-    endif()
-
-    # TODO: Currently RFCONFIG only supports CC2340R5. So we are currently using that for CC2340R2 too. This is fine for now,
-    # but this needs to be handled on a per device basis.
-    add_custom_command(
-        OUTPUT ${RFCONFIG_PHYS}
-        COMMAND
-        ${CMAKE_COMMAND} -E env
-        "LD_LIBRARY_PATH=$ENV{SRFSTUDIO_INSTALL_DIR}/lib"
-        # Smart rf studio CLI
-        ${SRF_CLI_EXE}
-          --set-defs-dir "type=sdk_support_defs,dir=$ENV{RFCONFIG_DB_DIR}"
-          # If $ENV{RFCONFIG_VERSION} == EDITABLE - then we are using a local package of rfconfig
-          # This means we have no version number, and use EDITABLE instead
-          # If not, then we can use the version number from our rfconfig version
-          --create-workspace "device=CC2340R5,sdk=SimpleLink CC23x0 SDK:$ENV{RFCONFIG_VERSION},board=LP-EM-CC2340R5"
-          ${CMAKE_CURRENT_SOURCE_DIR}/config_generation.srfcli
-          # The file below selects phys, naming policy and whether to export all code or just registers
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-          DEPENDS config_generation.srfcli
-        VERBATIM
-      )
-
-    # Include LRF binaries and local sources in library
-    add_library(rcl_${DEVICE}
-    ${sources}
-    ${PROJECT_SOURCE_DIR}/source/ti/boards/cc23x0rx/rcl_settings_adc_noise.c
-    $<TARGET_OBJECTS:lrf_${DEVICE}>
-    )
-
-    # No librcl, just rclXX
-    set_target_properties(rcl_${DEVICE} PROPERTIES PREFIX "")
-
-    # Get board definitions (mostly (only)) device family define
-    target_link_libraries(rcl_${DEVICE} boards_${DEVICE})
-
-    # In-source library delivery
-    install(TARGETS rcl_${DEVICE} ARCHIVE DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/${TC_NAME}/m0p)
 
 endforeach()
+
+ti_export_package()

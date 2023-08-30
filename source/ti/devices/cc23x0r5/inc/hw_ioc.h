@@ -45,9 +45,6 @@
 // Extended Module Description
 #define IOC_O_DESCEX                                                0x00000004U
 
-// Digital Test Bus
-#define IOC_O_DTB                                                   0x00000064U
-
 // Configuration
 #define IOC_O_IOC0                                                  0x00000100U
 
@@ -207,7 +204,8 @@
 
 // Field:  [11:7] NUMHDIO
 //
-// Number of HD IOs supported. Total HD IOs supported is NUMHDIO value +1.
+// Number of high drive IOs supported. Total high drive IOs supported is
+// NUMHDIO value +1.
 // ENUMs:
 // MAXIMUM                  Highest possible value
 // MINIMUM                  Smallest value
@@ -240,23 +238,6 @@
 #define IOC_DESCEX_NUMDIO_S                                                  0U
 #define IOC_DESCEX_NUMDIO_MAXIMUM                                   0x0000003FU
 #define IOC_DESCEX_NUMDIO_MINIMUM                                   0x00000000U
-
-//*****************************************************************************
-//
-// Register: IOC_O_DTB
-//
-//*****************************************************************************
-// Field:   [2:0] SEL
-//
-// Digital test bus selection mux control.
-//
-// Non-zero select values output a 16 bit selected group of signals per value.
-// ENUMs:
-// DIS                      DTB output from peripheral is 0x0
-#define IOC_DTB_SEL_W                                                        3U
-#define IOC_DTB_SEL_M                                               0x00000007U
-#define IOC_DTB_SEL_S                                                        0U
-#define IOC_DTB_SEL_DIS                                             0x00000000U
 
 //*****************************************************************************
 //
@@ -328,7 +309,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC0_WUENSB                                             0x00040000U
@@ -461,7 +442,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC1_WUENSB                                             0x00040000U
@@ -594,7 +575,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC2_WUENSB                                             0x00040000U
@@ -727,7 +708,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC3_WUENSB                                             0x00040000U
@@ -860,7 +841,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC4_WUENSB                                             0x00040000U
@@ -993,7 +974,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC5_WUENSB                                             0x00040000U
@@ -1126,7 +1107,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC6_WUENSB                                             0x00040000U
@@ -1259,7 +1240,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC7_WUENSB                                             0x00040000U
@@ -1392,7 +1373,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC8_WUENSB                                             0x00040000U
@@ -1525,7 +1506,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC9_WUENSB                                             0x00040000U
@@ -1658,7 +1639,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC10_WUENSB                                            0x00040000U
@@ -1791,7 +1772,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC11_WUENSB                                            0x00040000U
@@ -1924,7 +1905,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC12_WUENSB                                            0x00040000U
@@ -2100,7 +2081,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC13_WUENSB                                            0x00040000U
@@ -2233,7 +2214,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC14_WUENSB                                            0x00040000U
@@ -2366,7 +2347,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC15_WUENSB                                            0x00040000U
@@ -2499,7 +2480,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC16_WUENSB                                            0x00040000U
@@ -2675,7 +2656,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC17_WUENSB                                            0x00040000U
@@ -2851,7 +2832,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC18_WUENSB                                            0x00040000U
@@ -3027,7 +3008,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC19_WUENSB                                            0x00040000U
@@ -3203,7 +3184,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC20_WUENSB                                            0x00040000U
@@ -3336,7 +3317,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC21_WUENSB                                            0x00040000U
@@ -3469,7 +3450,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC22_WUENSB                                            0x00040000U
@@ -3602,7 +3583,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC23_WUENSB                                            0x00040000U
@@ -3735,7 +3716,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC24_WUENSB                                            0x00040000U
@@ -3911,7 +3892,7 @@
 //
 // Wakeup enable from standby
 // ENUMs:
-// EN                       wakeup enabled (effective only if EDGEDET is
+// EN                       Wakeup enabled (effective only if EDGEDET is
 //                          enabled)
 // DIS                      Wakeup disabled
 #define IOC_IOC25_WUENSB                                            0x00040000U

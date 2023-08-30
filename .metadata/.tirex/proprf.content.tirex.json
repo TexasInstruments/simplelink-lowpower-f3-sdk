@@ -221,7 +221,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/rfCarrierWave_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "rfCarrierWave",
         "description": "rfCarrierWave",
         "kernel": [
@@ -260,7 +260,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfCarrierWave/freertos/iar/rfCarrierWave_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "rfCarrierWave",
         "description": "rfCarrierWave",
         "kernel": [
@@ -367,7 +367,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/rfPacketErrorRate_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "rfPacketErrorRate",
         "description": "rfPacketErrorRate",
         "kernel": [
@@ -406,7 +406,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/prop_rf/rfPacketErrorRate/freertos/iar/rfPacketErrorRate_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "rfPacketErrorRate",
         "description": "rfPacketErrorRate",
         "kernel": [

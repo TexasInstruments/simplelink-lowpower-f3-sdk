@@ -292,6 +292,13 @@ typedef struct
   uint8 result[KEYLEN];           // Result of encrypt (key + Plain Text data)
 } sm_Encrypt_t;
 
+// hciEvt_BLELTKReq_t wrapper to save pkt details
+typedef struct
+{
+  uint8 bHandled;
+  hciEvt_BLELTKReq_t ltkReqPkt;
+} sm_hciEvtBLELTKReqWrapper_t;
+
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -426,6 +433,11 @@ extern uint8 smContPublicKeyExchange( void );
 extern void smResponderAuthStageTwo( void );
 extern uint8 smResponderProcessLTKReq( uint16 connectionHandle, uint8 *pRandom, uint16 encDiv );
 extern void smResponderSendNextKeyInfo( void );
+
+#ifndef GAP_BOND_MGR
+extern void smGetLtkReqDetails( sm_hciEvtBLELTKReqWrapper_t** pLtkReqDetails );
+extern void smTriggerProcessLTKReq( uint16 connHandle);
+#endif //GAP_BOND_MGR
 
 extern uint8 smpResponderProcessEncryptionInformation( smpEncInfo_t *pParsedMsg );
 extern uint8 smpResponderProcessIdentityAddrInfo( smpIdentityAddrInfo_t *pParsedMsg );

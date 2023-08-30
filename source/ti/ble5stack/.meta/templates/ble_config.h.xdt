@@ -59,7 +59,9 @@ if(devFamily != "DeviceFamily_CC23X0R5")
 extern uint8_t profileRole;
 // GAP GATT Service (GGS) parameters
 extern uint8_t attDeviceName[GAP_DEVICE_NAME_LEN];
-
+% if(ble.basicBLE){
+extern void init_profiles(void);
+%}
 %if(devFamily != "DeviceFamily_CC23X0R5")
 %{
 % if(rfdesign){
@@ -88,16 +90,6 @@ extern uint8_t * pRandomAddress;
 
 // How often to read current RPA (in ms)
 #define READ_RPA_PERIOD                       `ble.rpaRead`
-
-// Maximum number of BLE connections. It should be set based on the
-// device GAP role. Here're some recommended values:
-//      * Central:     32
-//      * Peripheral:  16
-//      * Observer:    0
-//      * Broadcaster: 0
-// Note: When the GAP role includes Peripheral and no v4.1 Controller features
-//       are configured, MAX_NUM_BLE_CONNS must not be greater than 1
-#define MAX_NUM_BLE_CONNS                      `ble.maxConnNum`
 
 // Maximum number of BLE HCI PDUs. If the maximum number connections (above)
 // is set to 0 then this number should also be set to 0.
@@ -146,16 +138,28 @@ extern void setBondManagerParameters();
 % if (ble.hideCentralGroup == false){
 
 
-//Init PHY Parameters
+// Initiator PHY Parameters
 
 // Default PHY for initiating
 #define DEFAULT_INIT_PHY                      `ble.initiatingPHY`
+
+// Default scan interval (in 0.625ms)
+#define INIT_PHYPARAM_SCAN_INT    		      `(ble.centralScanInt)/0.625`
+
+// Default scan window (in 0.625ms)
+#define INIT_PHYPARAM_SCAN_WIN    		      `(ble.centralScanWin)/0.625`
 
 // Default minimum connection interval (in 1.25ms)
 #define INIT_PHYPARAM_MIN_CONN_INT    		  `(ble.connIntMin)/1.25`
 
 // Default maximum connection interval (in 1.25ms)
 #define INIT_PHYPARAM_MAX_CONN_INT    		  `ble.connIntMax/1.25`
+
+// Default connection latency
+#define INIT_PHYPARAM_CONN_LAT    		      `ble.centraConnLatency`
+
+// Default Supervision Timeout (in 10ms)
+#define INIT_PHYPARAM_SUP_TO   		          `ble.centraSupTimeout/10`
 
 // Default RSSI polling period in ms
 #define DEFAULT_RSSI_PERIOD                   `ble.rssiPollingPeriod`
@@ -188,6 +192,9 @@ extern void setBondManagerParameters();
 //Default Scan type (Active/Passive)
 #define DEFAULT_SCAN_TYPE                       `ble.scanType`
 
+// Scan period
+#define DEFAULT_SCAN_PERIOD                     `ble.scanPeriod/1.28`
+
 // Default scan interval (in 625 us ticks)
 #define DEFAULT_SCAN_INTERVAL                   `(ble.scanInt)/0.625`
 
@@ -200,11 +207,26 @@ extern void setBondManagerParameters();
 // Advertising report fields to keep in the list
 #define ADV_RPT_FIELDS                          (`ble.advRptFields.join(" | ")`)
 
+// Scanner Filter Policy
+#define SCANNER_FILTER_POLICY                   `ble.fltPolicy`
+
+// Scanner Filter PDU Type
+#define SCANNER_FILTER_PDU_TYPE                  (`ble.fltPduType.join(" | ")`)
+
+// Scanner Filter Minimum RSSI
+#define SCANNER_FILTER_MIN_RSSI                  `ble.fltMinRssi`
+
+// Scanner Discoverable Mode Filter
+#define SCANNER_FILTER_DISC_MODE                 `ble.fltDiscMode`
+
 // Scanner Duplicate Filter
 #define SCANNER_DUPLICATE_FILTER                 `ble.dupFilter`
 
 // TRUE to filter discovery results on desired service UUID
 #define DEFAULT_DEV_DISC_BY_SVC_UUID            `ble.disDevBySerUuid`
+
+// Maximum number of advertising reports
+#define APP_MAX_NUM_OF_ADV_REPORTS              `ble.maxNumAdvReport`
 
 %}
 %

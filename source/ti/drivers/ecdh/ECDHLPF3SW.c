@@ -44,18 +44,6 @@
 #include <third_party/ecc/include/ECCSW.h>
 #include <third_party/ecc/include/ECCSW25519.h>
 
-/* Octet string format requires an extra byte at the start of the public key */
-#define OCTET_STRING_OFFSET 1
-
-/* Param length needs to be equal to the length of the largest curve supported plus length offset bytes */
-#define ECC_PARAM_LENGTH_WITH_OFFSET_BYTES (ECCParams_NISTP256_LENGTH + ECC_LENGTH_PREFIX_BYTES)
-
-typedef union
-{
-    uint32_t word[ECC_PARAM_LENGTH_WITH_OFFSET_BYTES / sizeof(uint32_t)];
-    uint8_t byte[ECC_PARAM_LENGTH_WITH_OFFSET_BYTES];
-} ECC_Param;
-
 /*
  *  ======== ECDHLPF3SW_getKeyResult ========
  */

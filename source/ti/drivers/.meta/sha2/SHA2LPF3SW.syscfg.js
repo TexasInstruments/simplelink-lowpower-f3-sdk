@@ -40,19 +40,12 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-let intPriority = Common.newIntPri()[0];
-intPriority.name = "interruptPriority";
-intPriority.displayName = "Interrupt Priority";
-intPriority.description = "Crypto peripheral interrupt priority";
-
 /*
  *  ======== devSpecific ========
  *  Device-specific extensions to be added to base SHA2 configuration
  */
 let devSpecific = {
-    config: [
-        intPriority
-    ],
+    config: [],
 
     templates : {
         boardc: "/ti/drivers/sha2/SHA2LPF3SW.Board.c.xdt",

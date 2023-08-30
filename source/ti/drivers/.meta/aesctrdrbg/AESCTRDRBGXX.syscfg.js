@@ -67,7 +67,7 @@ let devSpecific = {
     },
 
     modules: (inst) => {
-        if (family.match(/CC23/))
+        if (family.match(/CC23|CC27/))
         {
             return Common.autoForceModules(["Board", "Power", "DMA"])();
         }
