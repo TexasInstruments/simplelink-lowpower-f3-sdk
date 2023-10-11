@@ -18,7 +18,7 @@
 # will build using each non-empty *_ARMCOMPILER cgtool.
 #
 
-SYSCONFIG_TOOL         ?= /home/username/ti/ccs1230/ccs/utils/sysconfig_1.16.1/sysconfig_cli.sh
+SYSCONFIG_TOOL         ?= /home/username/ti/ccs1230/ccs/utils/sysconfig_1.17.0/sysconfig_cli.sh
 
 FREERTOS_INSTALL_DIR   ?= /home/username/FreeRTOSv202104.00
 CMAKE                  ?= /home/username/cmake-3.21.3/bin/cmake

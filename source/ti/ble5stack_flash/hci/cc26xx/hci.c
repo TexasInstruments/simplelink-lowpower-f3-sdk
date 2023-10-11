@@ -4902,6 +4902,49 @@ hciStatus_t HCI_EXT_SetBDADDRCmd( uint8 *bdAddr )
   return( HCI_SUCCESS );
 }
 
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
+/*******************************************************************************
+ * This API is used to set the random device address
+ * for the advertiser's address contained in the advertising
+ * PDUs for the advertising set specified by the advertising handle.
+ *
+ * Note: In case of connectable advertise set,
+ *       this command is only allowed when the advertise set is not active.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_EXT_SetAdvSetRandAddrCmd( uint8 advHandle, uint8 *randAddr)
+{
+  // 0: Event Opcode (LSB)
+  // 1: Event Opcode (MSB)
+  // 2: Status
+  uint8 rtnParam[3];
+  aeRandAddrCmd_t pCmdParams;
+
+  rtnParam[0] = LO_UINT16( HCI_EXT_SET_ADV_SET_RAND_ADDR_EVENT );
+  rtnParam[1] = HI_UINT16( HCI_EXT_SET_ADV_SET_RAND_ADDR_EVENT );
+
+  // check parameters
+  if ( randAddr != NULL )
+  {
+      pCmdParams.handle = advHandle;
+      (void)MAP_osal_memcpy( pCmdParams.randAddr, randAddr, B_ADDR_LEN );
+
+      rtnParam[2] = MAP_LE_SetAdvSetRandAddr( &pCmdParams );
+  }
+  else
+  {
+      rtnParam[2] = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
+  }
+
+  MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_ADV_SET_RAND_ADDR,
+                                             sizeof(rtnParam),
+                                             rtnParam );
+  return( HCI_SUCCESS );
+}
+#endif // ADV_NCONN_CFG | ADV_CONN_CFG
+
+
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_NCONN_CFG)
 /*******************************************************************************
  * This API is used to set the advertiser's virtual public address.

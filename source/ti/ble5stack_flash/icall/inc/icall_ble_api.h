@@ -290,6 +290,7 @@ extern void *GATT_bm_alloc(uint16 connHandle, uint8 opcode, uint16 size,
 #define HCI_EXT_SetDtmTxPktCntCmd(...)                             (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetDtmTxPktCntCmd , ##__VA_ARGS__))
 #define HCI_EXT_SetPinOutputCmd(...)                               (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetPinOutputCmd , ##__VA_ARGS__))
 #define HCI_EXT_SetLocationingAccuracyCmd(...)                     (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetLocationingAccuracyCmd , ##__VA_ARGS__))
+#define HCI_EXT_SetAdvSetRandAddrCmd(...)                          (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetAdvSetRandAddrCmd , ##__VA_ARGS__))
 #define HCI_EXT_SetVirtualAdvAddrCmd(...)                          (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetVirtualAdvAddrCmd , ##__VA_ARGS__))
 #define HCI_EXT_CoexEnableCmd(...)                                 (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_CoexEnableCmd , ##__VA_ARGS__))
 #define HCI_EXT_SetExtScanChannels(...)                            (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetExtScanChannels , ##__VA_ARGS__))

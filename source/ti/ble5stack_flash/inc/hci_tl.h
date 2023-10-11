@@ -448,6 +448,7 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_END_DISCOVERABLE_DONE                        0xFC78    //!< opcode of @ref HCI_LE_SetAdvStatus
 #define HCI_EXT_SET_HOST_DEFAULT_CHANNEL_CLASSIFICATION     0xFC79    //!< opcode of @ref HCI_EXT_SetHostDefChanClassificationCmd
 #define HCI_EXT_SET_HOST_CONNECTION_CHANNEL_CLASSIFICATION  0xFC7A    //!< opcode of @ref HCI_EXT_SetHostConnChanClassificationCmd
+#define HCI_EXT_SET_ADV_SET_RAND_ADDR                       0xFC7B    //!< opcode of @ref HCI_EXT_SetAdvSetRandAddrCmd
 
 // @endcond //NODOC
 
@@ -581,6 +582,7 @@ extern char *BLEEventCode_BleLogStrings[];
 #define HCI_EXT_COEX_ENABLE_EVENT                          0x042E    //!< event from @ref HCI_EXT_CoexEnableCmd
 #define HCI_EXT_SET_HOST_DEF_CHANNEL_CLASSIFICATION_EVENT  0x042F    //!< event from @ref HCI_EXT_CoexEnableCmd
 #define HCI_EXT_SET_HOST_CONN_CHANNEL_CLASSIFICATION_EVENT 0x0430    //!< event from @ref HCI_EXT_CoexEnableCmd
+#define HCI_EXT_SET_ADV_SET_RAND_ADDR_EVENT                0x0431    //!< event from @ref HCI_EXT_SetAdvSetRandAddrCmd
 
 #define HCI_EXT_LL_TEST_MODE_EVENT                        0x0470    //!< LL Test Mode
 // @endcond // NODOC

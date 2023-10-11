@@ -62,6 +62,15 @@ Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsinternal/iar/nvsinternal_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/pwmled1_LP_EM_CC2340R5_nortos_iar.ipcf
+
+Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/s2rram/iar/SysConfig_Generated_Files.ipcf
 
 TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
@@ -213,6 +222,15 @@ In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/SysCon
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/nvsinternal_LP_EM_CC2340R5_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/SysConfig_Generated_Files.ipcf
+
+TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
+In project: examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/SysConfig_Generated_Files.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/pwmled1_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/s2rram/freertos/iar/SysConfig_Generated_Files.ipcf

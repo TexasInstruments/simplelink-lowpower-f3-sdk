@@ -283,6 +283,10 @@ bStatus_t BLEAppUtil_invokeFunction(InvokeFromBLEAppUtilContext_t callback, char
     // If the allocation failed, return an error
     if(pDataMsg == NULL)
     {
+        if(pData != NULL)
+        {
+            BLEAppUtil_free(pData);
+        }
         return FAILURE;
     }
 
@@ -292,10 +296,11 @@ bStatus_t BLEAppUtil_invokeFunction(InvokeFromBLEAppUtilContext_t callback, char
     // Queue the event and data to switch context
     if (BLEAppUtil_enqueueMsg(BLEAPPUTIL_EVT_CALL_IN_BLEAPPUTIL_CONTEXT, pDataMsg) != SUCCESS)
     {
-        if(pDataMsg != NULL)
+        if(pData != NULL)
         {
-            BLEAppUtil_free(pDataMsg);
+            BLEAppUtil_free(pData);
         }
+        BLEAppUtil_free(pDataMsg);
         return FAILURE;
     }
     return SUCCESS;

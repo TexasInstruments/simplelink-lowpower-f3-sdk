@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <iarUserArgVars>
-  <group active="true" name="SIMPLELINK_LOWPOWER_F3_SDK">
-    <variable>
-      <name>XDCPATH</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_00_29/kernel/tirtos/packages;c:/ti/simplelink_lowpower_f3_sdk_7_20_00_29/source</value>
-    </variable>
-    <variable>
-      <name>XDCROOT</name>
-      <value>c:/ti/xdctools_3_62_01_15_core</value>
-    </variable>
+  <group active="true" name="SIMPLELINK_LOWPOWER_F3_SDK_7_20_01_10">
     <variable>
       <name>SYSCONFIG_ROOT</name>
       <value>c:/ti/sysconfig_1.17.0</value>
@@ -20,15 +12,15 @@
     </variable>
     <variable>
       <name>SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_00_29</value>
+      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_01_10</value>
     </variable>
     <variable>
       <name>COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_00_29</value>
+      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_01_10</value>
     </variable>
     <variable>
       <name>EXAMPLE_ROOT</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_00_29/tools/iar</value>
+      <value>c:/ti/simplelink_lowpower_f3_sdk_7_20_01_10/tools/iar</value>
     </variable>
   </group>
 </iarUserArgVars>

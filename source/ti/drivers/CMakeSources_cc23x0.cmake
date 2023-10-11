@@ -32,6 +32,12 @@ set(SOURCES_CC23X0_COMMON
     cryptoutils/aes/AESCommonLPF3.c
     cryptoutils/cryptokey/CryptoKeyPlaintext.c
     cryptoutils/ecc/ECCInitLPF3SW.c
+    utils/BigNum.c
+    ../../third_party/bearssl/src/i32_muladd.c
+    ../../third_party/bearssl/src/i32_reduce.c
+    ../../third_party/bearssl/src/i32_sub.c
+    ../../third_party/bearssl/src/i32_add.c
+    ../../third_party/bearssl/src/i32_div32.c
     cryptoutils/ecc/ECCParamsLPF3SW.c
     cryptoutils/sharedresources/CryptoResourceLPF3.c
     cryptoutils/utils/CryptoUtils.c
@@ -40,6 +46,8 @@ set(SOURCES_CC23X0_COMMON
     ecdh/ECDHLPF3SW.c
     ECDSA.c
     ecdsa/ECDSALPF3SW.c
+    ECIES.c
+    ecies/ECIESXX.c
     GPIO.c
     gpio/GPIOLPF3.c
     I2C.c
@@ -49,6 +57,7 @@ set(SOURCES_CC23X0_COMMON
     nvs/NVSRAM.c
     nvs/NVSSPI25X.c
     power/PowerCC23X0.c
+    PWM.c
     pwm/PWMTimerLPF3.c
     RNG.c
     rng/RNGLPF3RF.c

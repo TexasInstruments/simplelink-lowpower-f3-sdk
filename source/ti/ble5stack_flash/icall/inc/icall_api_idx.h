@@ -320,6 +320,7 @@
 #define IDX_LE_ExtCreateConn                             LE_ExtCreateConn
 #define IDX_HCI_EXT_SetPinOutputCmd                      HCI_EXT_SetPinOutputCmd
 #define IDX_HCI_EXT_SetLocationingAccuracyCmd            HCI_EXT_SetLocationingAccuracyCmd
+#define IDX_HCI_EXT_SetAdvSetRandAddrCmd                 HCI_EXT_SetAdvSetRandAddrCmd
 #define IDX_HCI_EXT_SetVirtualAdvAddrCmd                 HCI_EXT_SetVirtualAdvAddrCmd
 #define IDX_HCI_EXT_CoexEnableCmd                        HCI_EXT_CoexEnableCmd
 #define IDX_HCI_EXT_SetExtScanChannels                   HCI_EXT_SetExtScanChannels

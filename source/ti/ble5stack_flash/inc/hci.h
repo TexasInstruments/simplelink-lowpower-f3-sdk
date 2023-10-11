@@ -4266,6 +4266,29 @@ extern hciStatus_t HCI_EXT_SetLocationingAccuracyCmd( uint16 handle,
  */
 extern hciStatus_t HCI_EXT_GetActiveConnInfoCmd( uint8 connId, hciActiveConnInfo_t *activeConnInfo );
 
+/**
+ *
+ * @brief       This API is used to set the random device address
+ *              for the advertiser's address contained in the advertising
+ *              PDUs for the advertising set specified by the advertising handle.
+ *
+ *              Note: In case of connectable advertise set,
+ *                    this command is only allowed when the advertise set is not active.
+ *
+ *
+ * input parameters
+ *
+ * @param       advHandle - advertising handle
+ * @param       randAddr - random address
+ *
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      HCI_SUCCESS
+ */
+extern hciStatus_t HCI_EXT_SetAdvSetRandAddrCmd( uint8 advHandle, uint8 *randAddr);
 
 /**
  *

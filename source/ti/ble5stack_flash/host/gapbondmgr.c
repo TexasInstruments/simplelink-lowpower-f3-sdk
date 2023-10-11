@@ -2575,13 +2575,13 @@ static uint8_t gapBondMgrAddBond(gapBondRec_t *pBondRec,
  * @return SUCCESS if bond was imported
  * @return bleNoResources if there are no empty slots
  */
-uint8_t gapBondMgrImportBond(gapBondRec_t* pBondRec,
-                             gapBondLTK_t* pLocalLtk,
-                             gapBondLTK_t* pDevLtk,
-                             uint8_t* pIRK,
-                             uint8_t* pSRK,
+uint8_t gapBondMgrImportBond(gapBondRec_t *pBondRec,
+                             gapBondLTK_t *pLocalLtk,
+                             gapBondLTK_t *pDevLtk,
+                             uint8_t *pIRK,
+                             uint8_t *pSRK,
                              uint32_t signCount,
-                             gapBondCharCfg_t* charCfg)
+                             gapBondCharCfg_t *charCfg)
 {
   uint8_t bondIdx;
   uint8_t snvErrorCode = SUCCESS;
@@ -2645,6 +2645,8 @@ uint8_t gapBondMgrImportBond(gapBondRec_t* pBondRec,
  *
  * @brief   Read bond record from NV
  *
+ * @param   addrType - peer's address type
+ * @param   pDevAddr - peer's address
  * @param   pBondRec - basic bond record
  * @param   pLocalLTK - LTK used by this device during pairing
  * @param   pDevLTK - LTK used by the peer device during pairing
@@ -2658,49 +2660,65 @@ uint8_t gapBondMgrImportBond(gapBondRec_t* pBondRec,
  */
 uint8_t gapBondMgrReadBondRec(GAP_Peer_Addr_Types_t addrType,
                               uint8_t *pDevAddr,
-                              gapBondRec_t* pBondRec,
-                              gapBondLTK_t* pLocalLtk,
-                              gapBondLTK_t* pDevLtk,
-                              uint8_t* pIRK,
-                              uint8_t* pSRK,
-                              uint32_t signCount,
-                              gapBondCharCfg_t* charCfg)
+                              gapBondRec_t *pBondRec,
+                              gapBondLTK_t *pLocalLtk,
+                              gapBondLTK_t *pDevLtk,
+                              uint8_t *pIRK,
+                              uint8_t *pSRK,
+                              uint32_t *signCount,
+                              gapBondCharCfg_t *charCfg)
 {
   // NV Index
   uint8_t idx;
 
   // If a pre-existing bond was found
-  if(GAPBondMgr_FindAddr(pDevAddr, addrType, &idx, NULL, NULL) == SUCCESS)
+  if (GAPBondMgr_FindAddr(pDevAddr, addrType, &idx, NULL, NULL) == SUCCESS)
   {
     // See if the entry exists in NV
-    if(osal_snv_read(MAIN_RECORD_NV_ID(idx), sizeof(gapBondRec_t), pBondRec) != SUCCESS)
+    if (osal_snv_read(MAIN_RECORD_NV_ID(idx), sizeof(gapBondRec_t), pBondRec) != SUCCESS)
     {
       // Can't read the entry, assume that it doesn't exist
       return (bleGAPNotFound);
     }
 
-    // Load the local LTK information
-    VOID osal_snv_read(LOCAL_LTK_NV_ID(idx), sizeof(gapBondLTK_t), pLocalLtk);
-
-    // Load the connected device's LTK information
-    VOID osal_snv_read(DEV_LTK_NV_ID(idx), sizeof(gapBondLTK_t), pDevLtk);
-
-    // Load in NV IRK Record
-    VOID osal_snv_read(DEV_IRK_NV_ID(idx), KEYLEN, pIRK);
-
-    // Load the Signing Key
-    if(osal_snv_read(DEV_CSRK_NV_ID(idx), KEYLEN, pSRK) == SUCCESS)
+    if (pLocalLtk != NULL)
     {
-      if(osal_isbufset(pSRK, 0xFF, KEYLEN) == FALSE)
+      // Load the local LTK information
+      VOID osal_snv_read(LOCAL_LTK_NV_ID(idx), sizeof(gapBondLTK_t), pLocalLtk);
+    }
+
+
+    if (pDevLtk != NULL)
+    {
+      // Load the connected device's LTK information
+      VOID osal_snv_read(DEV_LTK_NV_ID(idx), sizeof(gapBondLTK_t), pDevLtk);
+    }
+
+
+    if (pIRK != NULL)
+    {
+      // Load in NV IRK Record
+      VOID osal_snv_read(DEV_IRK_NV_ID(idx), KEYLEN, pIRK);
+    }
+
+    if (pSRK != NULL)
+    {
+      // Load the Signing Key
+      if(osal_snv_read(DEV_CSRK_NV_ID(idx), KEYLEN, pSRK) == SUCCESS)
       {
-        // Load the signing information for this connection
-        VOID osal_snv_read(DEV_SIGN_COUNTER_NV_ID(idx), sizeof(uint32_t),
-	                           &(signCount));
+        if(signCount != NULL && osal_isbufset(pSRK, 0xFF, KEYLEN) == FALSE)
+        {
+          // Load the signing information for this connection
+          VOID osal_snv_read(DEV_SIGN_COUNTER_NV_ID(idx), sizeof(uint32_t), signCount);
+        }
       }
     }
 
-    // Load the characteristic configuration
-    VOID osal_snv_read(GATT_CFG_NV_ID(idx), sizeof(gapBondCharCfg_t) * gapBond_maxCharCfg, charCfg);
+    if (charCfg != NULL)
+    {
+      // Load the characteristic configuration
+      VOID osal_snv_read(GATT_CFG_NV_ID(idx), sizeof(gapBondCharCfg_t) * gapBond_maxCharCfg, charCfg);
+    }
   }
   else
   {

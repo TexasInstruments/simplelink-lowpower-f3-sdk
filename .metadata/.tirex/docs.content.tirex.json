@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_7_20_00_29.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_7_20_01_10.html",
         "devices": [
             "CC2340R5"
         ],
@@ -300,7 +300,7 @@
     {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_7_20_00_04.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_7_20_01_02.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -338,7 +338,7 @@
     {
         "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_7_20_00.html",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_7_20_01.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"

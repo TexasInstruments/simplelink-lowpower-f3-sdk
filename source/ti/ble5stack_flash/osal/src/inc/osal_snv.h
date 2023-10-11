@@ -77,7 +77,7 @@ extern "C"
  */
 
   typedef uint16 osalSnvId_t;
-  typedef uint8  osalSnvLen_t;
+  typedef uint16 osalSnvLen_t;
 
 /*********************************************************************
  * GLOBAL VARIABLES

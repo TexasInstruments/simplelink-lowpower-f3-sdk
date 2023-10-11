@@ -189,7 +189,7 @@ void BLEAppUtil_scanCB(uint32_t event, GapScan_data_t *pBuf, uint32_t *arg)
 {
     BLEAppUtil_ScanEventData_t *pData = BLEAppUtil_malloc(sizeof(BLEAppUtil_ScanEventData_t));
 
-    if (pData)
+    if (pData != NULL)
     {
         pData->event = event;
         pData->pBuf = pBuf;
@@ -198,7 +198,18 @@ void BLEAppUtil_scanCB(uint32_t event, GapScan_data_t *pBuf, uint32_t *arg)
         // Enqueue the event
         if (BLEAppUtil_enqueueMsg(BLEAPPUTIL_EVT_SCAN_CB_EVENT, pData) != SUCCESS)
         {
+            if (pBuf != NULL)
+            {
+                BLEAppUtil_free(pBuf);
+            }
             BLEAppUtil_free(pData);
+        }
+    }
+    else
+    {
+        if (pBuf != NULL)
+        {
+            BLEAppUtil_free(pBuf);
         }
     }
 }
@@ -219,7 +230,7 @@ void BLEAppUtil_advCB(uint32_t event, GapAdv_data_t *pBuf, uint32_t *arg)
 {
     BLEAppUtil_AdvEventData_t *pData = BLEAppUtil_malloc(sizeof(BLEAppUtil_AdvEventData_t));
 
-    if (pData)
+    if (pData != NULL)
     {
         pData->event = event;
         pData->pBuf = pBuf;
@@ -228,7 +239,18 @@ void BLEAppUtil_advCB(uint32_t event, GapAdv_data_t *pBuf, uint32_t *arg)
         // Enqueue the event
         if (BLEAppUtil_enqueueMsg(BLEAPPUTIL_EVT_ADV_CB_EVENT, pData) != SUCCESS)
         {
+            if (pBuf != NULL)
+            {
+                BLEAppUtil_free(pBuf);
+            }
             BLEAppUtil_free(pData);
+        }
+    }
+    else
+    {
+        if (pBuf != NULL)
+        {
+            BLEAppUtil_free(pBuf);
         }
     }
 }
