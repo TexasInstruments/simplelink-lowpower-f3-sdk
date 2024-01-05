@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,19 +47,19 @@ const MAX_CAP_ARRAY = 0x3F;
 const MAX_HSM_SIZE = 0x07;
 
 const moduleDesc = `
-The CCFG area is a dedicated flash memory sector and must contain a
-Customer Configuration section (CCFG) that is used by boot ROM and TI provided
-drivers to configure the device. It starts at 0x4E020000 and has a size of 0x800
-bytes. In addition, there is an SCFG area that must contain a valid Security
-Configuration. It starts at 0x4E040000 and has a size of 0x400 bytes. Both of
-these configurations are done by simply letting SysConfig generate the file
-ti_devices_config.c and including it in the project.`;
+The device has 3 dedicated configuration areas in flash that must contain a valid configuration
+
+* The Customer Configuration Area (CCFG) is used by boot ROM and TI provided drivers to configure the device. It starts at 0x4E020000 and has a size of 0x800 bytes.
+* The Security Configuration Area (SCFG) must contain a valid Security Configuration. It starts at 0x4E040000 and has a size of 0x400 bytes.
+* The HSM OTP area (HSMOTP) must contain a valid configuration for the HSM. It starts at 0x4E020800 and has a size of 0x800 bytes.
+
+All of these configurations are done by simply letting SysConfig generate file ti_devices_config.c and including it in the project.`;
 
 let devSpecific = {
     longDescription: moduleDesc,
     moduleStatic: {
         validate: validate,
-        config : [
+        config: [
             {
                 name: "srcClkLF",
                 displayName: "Low Frequency Clock Source",
@@ -67,8 +67,8 @@ let devSpecific = {
                 readOnly: false,
                 hidden: false,
                 options: [
-                    {name: "LF XOSC"},
-                    {name: "LF RCOSC"}
+                    { name: "LF XOSC" },
+                    { name: "LF RCOSC" }
                 ],
                 default: "LF XOSC"
             },
@@ -97,7 +97,7 @@ let devSpecific = {
                 longDescription: `The cap-array Q1 value is used when turning on HFXT.
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
-                displayFormat: {radix: "hex", bitSize: 2},
+                displayFormat: { radix: "hex", bitSize: 2 },
                 default: 0x00,
                 readOnly: false,
                 hidden: true
@@ -109,7 +109,7 @@ Q1 and Q2 should not differ by more than one step.`,
                 longDescription: `The cap-array Q2 value is used when turning on HFXT.
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
-                displayFormat: {radix: "hex", bitSize: 2},
+                displayFormat: { radix: "hex", bitSize: 2 },
                 default: 0x00,
                 readOnly: false,
                 hidden: true
@@ -122,12 +122,12 @@ Q1 and Q2 should not differ by more than one step.`,
                         displayName: "Bootloader Configration",
                         longDescription: `This configurable chooses whether to use default bootloader,
 default bootloader with customer settings, or user-specific bootloader`,
-                        default: "Default FCFG bootloader",
+                        default: "Default FCFG bootloader, with CCFG settings",
                         options: [
-                            {name: "Default FCFG bootloader"},
-                            {name: "Default FCFG bootloader, with CCFG settings"},
-                            {name: "User-specific bootloader"},
-                            {name: "Any bootloader forbidden"}
+                            { name: "Default FCFG bootloader" },
+                            { name: "Default FCFG bootloader, with CCFG settings" },
+                            { name: "User-specific bootloader" },
+                            { name: "Any bootloader forbidden" }
                         ],
                         onChange: function (inst, ui) {
                             updateBldrVisibility(inst, ui);
@@ -138,8 +138,8 @@ default bootloader with customer settings, or user-specific bootloader`,
                         displayName: "Bootloader Vector Table",
                         description: "Bootloader vector table address",
                         longDescription: `This configurable sets the address of the user-specific bootloader`,
-                        hidden: true,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        hidden: false,
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00000000
                     },
                     {
@@ -149,8 +149,8 @@ default bootloader with customer settings, or user-specific bootloader`,
                         longDescription: `Pointer to application vector table. Used by bootloader upon exit
 or invoked directly by boot sequence if neither user bootloader nor default bootloader is allowed.
 0xFFFFFFFF: No user application vector table`,
-                        hidden: true,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        hidden: false,
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00000000
                     },
                     {
@@ -158,7 +158,7 @@ or invoked directly by boot sequence if neither user bootloader nor default boot
                         displayName: "Enable Serial Bootloader",
                         longDescription: `true: All serial bootloader commands are accepted.
 false: All serial bootloader commands except BLDR_CMD_GET_STATUS are rejected.`,
-                        hidden: true,
+                        hidden: false,
                         default: false,
                         onChange: (inst, ui) => {
                             updateBldrVisibility(inst, ui);
@@ -196,9 +196,9 @@ false: All serial bootloader commands except BLDR_CMD_GET_STATUS are rejected.`,
 to be triggered during boot. Only valid if pin triggering is enabled.`,
                         hidden: true,
                         default: "LOW",
-                        options :[
-                            {name: "HIGH"},
-                            {name: "LOW"}
+                        options: [
+                            { name: "HIGH" },
+                            { name: "LOW" }
                         ]
                     }
                 ]
@@ -212,7 +212,7 @@ to be triggered during boot. Only valid if pin triggering is enabled.`,
                         description: "Hardware Options 1",
                         longDescription: `Value written to both the PMCTL:HWOPT0 and CLKCTL:HWOPT0 registers by ROM code
 on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -221,7 +221,7 @@ on PRODDEV at execution transfer from boot code/bootloader to application image`
                         description: "Hardware Options 2",
                         longDescription: `Value written to both the PMCTL:HWOPT1 and CLKCTL:HWOPT1 registers by ROM code
 on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     }
                 ]
@@ -317,7 +317,7 @@ Any other: (2^saciTimeout)*64 ms`,
                         description: "Sets write/erase protection for main sectors 0-31 (1 sector/bit)",
                         longDescription: `Value is written to VIMS:WEPRA register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. Each bit corresponds to 1 sector. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -326,7 +326,7 @@ from boot code/bootloader to application image. Each bit corresponds to 1 sector
                         description: "Sets write/erase protection for main sectors 32-255 (8 sectors/bit)",
                         longDescription: `Value is written to VIMS:WEPRB0 register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. Each bit corresponds to 8 sectors. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -335,7 +335,7 @@ from boot code/bootloader to application image. Each bit corresponds to 8 sector
                         description: "Sets write/erase protection for main sectors 256-511 (8 sectors/bit)",
                         longDescription: `Value is written to VIMS:WEPRB1 register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. Each bit corresponds to 8 sectors. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -375,7 +375,7 @@ from boot code/bootloader to application image. Each bit corresponds to 8 sector
                         longDescription: `Read protection for CCFG (16B granular watermark).
 Value is written to the VIMS:RDPRNMN register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 8},
+                        displayFormat: { radix: "hex", bitSize: 8 },
                         default: 0x3F
                     },
                     {
@@ -384,7 +384,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         description: "Sets read protection for main sector",
                         longDescription: `Value is written to the VIMS:RDPRMN register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 4},
+                        displayFormat: { radix: "hex", bitSize: 4 },
                         default: 0x0F
                     },
                     {
@@ -392,7 +392,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         displayName: "Erase/Retain, Main Sectors 0-31",
                         description: "Sets chip write/erase protection for main sectors 0-31",
                         longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00
                     },
                     {
@@ -400,7 +400,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         displayName: "Erase/Retain, Main Sectors 32-255",
                         description: "Sets chip write/erase protection for main sectors 32-255",
                         longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00
                     },
                     {
@@ -408,8 +408,8 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         displayName: "Erase/Retain, Main Sectors 256-511",
                         description: "Sets chip write/erase protection for main sectors 256-511",
                         longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
-                        default: 0x00
+                        displayFormat: { radix: "hex", bitSize: 32 },
+                        default: 0xFC000000
                     }
                 ]
             },
@@ -506,9 +506,9 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         displayName: "Debug Authorization Configuration",
                         default: "Debug always allowed",
                         options: [
-                            {name: "Debug always allowed"},
-                            {name: "Require debug authentication"},
-                            {name: "Debug not allowed"}
+                            { name: "Debug always allowed" },
+                            { name: "Require debug authentication" },
+                            { name: "Debug not allowed" }
                         ],
                         onChange: (inst, ui) => {
                             ui["debugAllowBldr"].hidden = (inst.debugAuthorization == "Debug not allowed");
@@ -559,35 +559,35 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         longDescription: `This value is copied to VIMS.CFG.SPLMODE`,
                         default: "Monolithic (0x00)",
                         options: [
-                            {name: "Monolithic (0x00)"},
-                            {name: "Split (0x01)"}
+                            { name: "Monolithic (0x00)" },
+                            { name: "Split (0x01)" }
                         ]
                     }
                 ]
             },
             {
-                name        : "voltageRegulator",
-                displayName : "Voltage Regulator",
-                description : "Choose between using the internal DCDC or GLDO voltage regulator",
-                default     : "DCDC",
+                name: "voltageRegulator",
+                displayName: "Voltage Regulator",
+                description: "Choose between using the internal DCDC or GLDO voltage regulator",
+                default: "DCDC",
                 longDescription: `On the CC27XX devices, the DCDC regulator is
 disabled by default in hardware. This setting enables the DCDC regulator upon
 device startup. It is possible to choose between using the internal DCDC or GLDO
 regulator. Enabling the DCDC regulator means that it is predominantly used, but the GLDO will still
 automatically turn on and take over if the voltage drops too low.
 `,
-                options     :
-                [
-                    {
-                        name: "DCDC",
-                        description: "The internal DCDC regulator will be enabled for use."
-                    },
-                    {
-                        name: "GLDO",
-                        description: "The internal GLDO regulator will be enabled for use."+
-                              "This will disable the DCDC regulator."
-                    }
-                ]
+                options:
+                    [
+                        {
+                            name: "DCDC",
+                            description: "The internal DCDC regulator will be enabled for use."
+                        },
+                        {
+                            name: "GLDO",
+                            description: "The internal GLDO regulator will be enabled for use." +
+                                "This will disable the DCDC regulator."
+                        }
+                    ]
             }
         ]
     }
@@ -602,7 +602,7 @@ automatically turn on and take over if the voltage drops too low.
  *  @param inst - CCFG instance to be validated
  *  @param ui   -   GUI state
  */
-function updateBldrVisibility(inst, ui){
+function updateBldrVisibility(inst, ui) {
     let setHidden = inst.bldrSetting == "Any bootloader forbidden" || inst.bldrSetting == "Default FCFG bootloader";
     ui["pBldrVtor"].hidden = setHidden;
     ui["pAppVtor"].hidden = setHidden;
@@ -628,24 +628,24 @@ function validate(inst, validation) {
 
     if (inst.hfxtCapArrayQ1 > MAX_CAP_ARRAY) {
         Common.logError(validation, inst, "hfxtCapArrayQ1",
-        "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
+            "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
     }
 
     if (inst.hfxtCapArrayQ2 > MAX_CAP_ARRAY) {
         Common.logError(validation, inst, "hfxtCapArrayQ2",
-        "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
+            "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
     }
 
-    if (Math.abs(inst.hfxtCapArrayQ1 - inst.hfxtCapArrayQ2 ) > 1) {
+    if (Math.abs(inst.hfxtCapArrayQ1 - inst.hfxtCapArrayQ2) > 1) {
         Common.logError(validation, inst, "hfxtCapArrayQ1",
-        "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
+            "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
         Common.logError(validation, inst, "hfxtCapArrayQ2",
-        "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
+            "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
     }
 
     if (inst.pBldrVtor > MAX_PBLDRVTOR) {
         Common.logError(validation, inst, "pBldrVtor",
-        "Must be less than 0x" + (MAX_PBLDRVTOR + 1).toString(16));
+            "Must be less than 0x" + (MAX_PBLDRVTOR + 1).toString(16));
     }
 
     if (inst.serialIoCfgIndex > MAX_SERIALIOCFGINDEX) {
@@ -705,12 +705,12 @@ function validate(inst, validation) {
 
     if (inst.ccfgSector > MAX_READPROT_CCFGSECTOR) {
         Common.logError(validation, inst, "ccfgSector",
-        "Must be less than 0x" + (MAX_READPROT_CCFGSECTOR + 1).toString(16));
+            "Must be less than 0x" + (MAX_READPROT_CCFGSECTOR + 1).toString(16));
     }
 
     if (inst.mainSectors > MAX_READPROT_MAINSECTORS) {
         Common.logError(validation, inst, "mainSectors",
-        "Must be less than 0x" + (MAX_READPROT_MAINSECTORS + 1).toString(16));
+            "Must be less than 0x" + (MAX_READPROT_MAINSECTORS + 1).toString(16));
     }
 
     if (inst.chipEraseRetain_mainSectors0_31 > 0xFFFFFFFF) {
@@ -735,7 +735,7 @@ function validate(inst, validation) {
 
     if (inst.hsmSize > MAX_HSM_SIZE) {
         Common.logError(validation, inst, "hsmSize",
-        "Must be less than 0x" + (MAX_HSM_SIZE + 1).toString(16));
+            "Must be less than 0x" + (MAX_HSM_SIZE + 1).toString(16));
     }
 }
 
@@ -743,8 +743,7 @@ function validate(inst, validation) {
 /*
  *  ======== extend ========
  */
-function extend(base)
-{
+function extend(base) {
     /* merge and overwrite base module attributes */
     let result = Object.assign({}, base, devSpecific);
 

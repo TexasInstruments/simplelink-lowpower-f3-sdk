@@ -69,6 +69,10 @@ extern "C" {
 //! \brief Reads temperature from high accuracy temperature diode
 //!
 //! This function reads the temperature from the high-accuracy temperature diode
+//! The returned result contains 4 fractional bits. For example:
+//! 0x00000200 = +32.0000 degC
+//! 0x0000020C = +32.7500 degC
+//! 0xFFFFFEC3 = -19.8125 degC
 //!
 //! \warning This function uses the SoC ADC to measure the temperature. This
 //! function must not be called while the ADC driver is active, or the SoC ADC
@@ -77,7 +81,10 @@ extern "C" {
 //! \warning This function uses the internal test-bus (ATEST) to measure the
 //! temperature. The test-bus must not be used when calling this function.
 //!
-//! \return Ambient temperature in degrees Celcius
+//! \note Due to long and repeated ADC sampling, this function takes
+//! roughly 8 milliseconds to execute.
+//!
+//! \return Ambient temperature in degrees Celcius, with 4 fractional bits
 //
 //*****************************************************************************
 extern int32_t TempDiodeGetTemp(void);

@@ -30,11 +30,13 @@ The BoosterPack requires an external voltage supply connected to the barrel jack
 
 The following modifications are required:
 
-* On the LaunchPad, use a jumper wire to connect header pin BP.31 (unlabeled) to pin BP.36 (__`DIO8`__).
-* On the BoosterPack, bend down header pin BP.33 (__`nWKRQ`__) to prevent the signal from interfering with the LaunchPad
-  __`SWDCK`__ signal.
-* Remove jumpers __`J11`__ and __`J12`__ to disconnect BoosterPack's 3.3 V and 5 V rails if the LaunchPad is powered from
-  the debugger.
+* On the BoosterPack, remove jumpers __`J11`__ and __`J12`__ to disconnect the BoosterPack's 3.3 V and 5 V rails if the
+  LaunchPad is powered from the debugger.
+* On the LaunchPad, bend down header pin BP.33 (__`SWDCK`__) to prevent the signal from interfering with the
+  BoosterPack __`nWKRQ`__ signal.
+* On the BoosterPack, use a jumper wire to connect header pin BP.31 (__`nINT`__) to pin BP.36 (__`unlabeled`__).
+
+Place the BoosterPack directly atop the LaunchPad.
 
 ### [__BOOSTXL-SHARP128 LCD & SD Card BoosterPack__][boostxl-sharp128]
 

@@ -42,6 +42,7 @@ var dplFiles = [
     "dpl/AppHooks_freertos.c",
     "dpl/DebugP_freertos.c",
     "dpl/EventP_freertos.c",
+    "dpl/MessageQueueP_freertos.c",
     "dpl/MutexP_freertos.c",
     "dpl/QueueP_freertos.c",
     "dpl/SemaphoreP_freertos.c",
@@ -88,7 +89,7 @@ var cc27xxDeviceFiles = [
 ];
 
 var cc35xxDeviceFiles = [
-    "dpl/ClockP_freertos.c",
+    "dpl/ClockPWFF3_freertos.c",
     "dpl/HwiPWFF3_freertos.c",
     "dpl/PowerWFF3_freertos.c"
 ];
@@ -98,14 +99,14 @@ function getStartupFiles(family)
     var startupFile;
     if (system.modules["/ti/utils/TrustZone"]) {
         // TFM-enabled startup files have the suffix "_ns"
-        startupFile = `startup/startup_${family}_${system.compiler}_ns.c`
+        startupFile = `startup/startup_${family}_${system.compiler}_ns.c`;
     }
     else {
-        startupFile = `startup/startup_${family}_${system.compiler}.c`
+        startupFile = `startup/startup_${family}_${system.compiler}.c`;
     }
     return [
         startupFile
-    ]
+    ];
 }
 
 function getCFiles(kernel)

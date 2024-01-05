@@ -73,7 +73,7 @@ MEMORY
     /* Application uses internal RAM for data */
     SRAM (RWX) : origin = RAM_BASE, length = RAM_SIZE
     /* Customer configuration region */
-    CCFG (RW): origin = CCFG_BASE, length = CCFG_SIZE
+    CCFG (R): origin = CCFG_BASE, length = CCFG_SIZE
 }
 
 /* Section allocation in memory */

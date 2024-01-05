@@ -571,6 +571,9 @@ extern "C"
 #define LL_EXT_DISABLE_SCAN_REQUEST_REPORT             0
 #define LL_EXT_ENABLE_SCAN_REQUEST_REPORT              1
 
+#define LL_EXT_STATS_RESET                             0
+#define LL_EXT_STATS_READ                              1
+
 // Enhanced Modem Test
 
 // BLE5 PHYs
@@ -594,7 +597,7 @@ extern "C"
 #define LL_MAX_LINK_DATA_LEN                           251   // in bytes
 #define LL_MAX_LINK_DATA_TIME_UNCODED                  2120  // in us
 
-#define LL_MAX_LINK_DATA_TIME_CODED                  17040 // in us
+#define LL_MAX_LINK_DATA_TIME_CODED                    17040 // in us
 
 #define LL_MAX_LINK_DATA_TIME                          MAX( LL_MAX_LINK_DATA_TIME_CODED, LL_MAX_LINK_DATA_TIME_UNCODED )
 
@@ -778,6 +781,44 @@ extern uint16 LL_ProcessEvent( uint8  task_id,
 
 
 /*******************************************************************************
+ * @fn          LL_IsRLActiveTasksRunning
+ *
+ * @brief       This function checks if Adv/Scan/Init/periodec_sync is/are active
+ *
+ * input parameters
+ *
+ * @param       None.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      True if Adv/Scan/Init/periodec_sync is/are active
+ *              O.W return False.
+ */
+extern uint8 LL_IsRLActiveTasksRunning( void );
+
+
+/*******************************************************************************
+ * @fn          LL_IsResolvingListInUsed
+ *
+ * @brief       This function checks if resolving list is in use
+ *
+ * input parameters
+ *
+ * @param       None.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      True if Resolving List is in used
+ *              O.W return False.
+ */
+extern uint8 LL_IsResolvingListInUsed( void );
+
+
+/*******************************************************************************
  * LL API for HCI
  */
 
@@ -800,6 +841,25 @@ extern uint16 LL_ProcessEvent( uint8  task_id,
  * @return      Pointer to buffer, or NULL.
  */
 extern void *LL_TX_bm_alloc( uint16 size );
+
+
+/*******************************************************************************
+ * @fn          LL_TX_bm_free API
+ *
+ * @brief       This API is used to free memory using buffer management.
+ *
+ *              Note: This function should never be called by the application.
+ *                    It is only used by HCI and L2CAP_bm_alloc.
+ *
+ * input parameters
+ *
+ * @param       pBuf - Pointer to buffer.
+ *
+ * output parameters
+ *
+ * @return      None.
+ */
+extern void LL_TX_bm_free( uint8* pBuf );
 
 
 /*******************************************************************************
@@ -903,6 +963,18 @@ extern llStatus_t LL_ReadBDADDR( uint8 *bdAddr );
  */
 extern llStatus_t LL_SetRandomAddress( uint8 *devAddr );
 
+/*******************************************************************************
+ * @fn          LL_IsRandomAddressConfigured
+ *
+ * @brief       Getter for randomAddressFlag value.
+ *
+ * input parameters
+ *
+ * @param       None.
+ *
+ * @return      TRUE/FALSE.
+ */
+extern llStatus_t LL_IsRandomAddressConfigured ( void );
 
 /*******************************************************************************
  * @fn          LL_ClearAcceptList API
@@ -4260,6 +4332,45 @@ extern llStatus_t LL_EXT_SetLocationingAccuracy( uint16 handle,
  */
 extern llStatus_t LL_EXT_CoexEnable( uint8 enable );
 
+/*******************************************************************************
+ * @fn          LL_EXT_GetRxStats API
+ *
+ * @brief       This API is called by the HCI to Reset or Read the RX
+ *              Statistics counters for a connection.
+ *
+ * @param       connId - connection handle.
+ *              command - Reset/Read
+ *
+ * @return      LL_STATUS_SUCCESS
+ */
+extern llStatus_t LL_EXT_GetRxStats( uint16 connId, uint8 command );
+
+/*******************************************************************************
+ * @fn          LL_EXT_GetTxStats API
+ *
+ * @brief       This API is called by the HCI to Reset or Read the TX
+ *              Statistics counters for a connection.
+ *
+ * @param       connId - connection handle.
+ *              command - Reset/Read
+ *
+ * @return      LL_STATUS_SUCCESS
+ */
+extern llStatus_t LL_EXT_GetTxStats( uint16 connId, uint8 command );
+
+/*******************************************************************************
+ * @fn          LL_EXT_GetCoexStats API
+ *
+ * @brief       This API is called by the HCI to Reset or Read the COEX
+ *              Statistics counters
+ *
+ * @param       command - Reset/Read
+ *
+ * @return      LL_STATUS_SUCCESS
+ */
+extern llStatus_t LL_EXT_GetCoexStats( uint8 command );
+
+
 /*
 **  LL Callbacks to HCI
 */
@@ -4985,6 +5096,90 @@ extern void LL_EXT_ScanReqReportCback( uint8  peerAddrType,
                                        uint8 *peerAddr,
                                        uint8  chan,
                                        int8   rssi );
+
+/*******************************************************************************
+ * @fn          LL_EXT_GetRxStatsCback Callback
+ *
+ * @brief       This LL callback is used to generate a vendor specific channel map
+ *              update event
+ *
+ * input parameters
+ *
+ * @param       numRxOk      - Number of RX pakets
+ * @param       numRxCtrl    - Number of RX control packets
+ * @param       numRxCtrlAck - Number of RX control packets acked
+ * @param       numRxCrcErr  - Number of RX CRC error packets
+ * @param       numRxIgnored - Number of RX ignored packets
+ * @param       numRxEmpty   - Number of RX empty packets
+ * @param       numRxBufFull - Number of RX discarded packets
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None.
+ */
+extern void LL_EXT_GetRxStatsCback( uint16 numRxOk,
+                                    uint16 numRxCtrl,
+                                    uint16 numRxCtrlAck,
+                                    uint16 numRxCrcErr,
+                                    uint16 numRxIgnored,
+                                    uint16 numRxEmpty,
+                                    uint16 numRxBufFull );
+
+/*******************************************************************************
+ * @fn          LL_EXT_GetTxStatsCback Callback
+ *
+ * @brief       This LL callback is used to generate a vendor specific channel map
+ *              update event
+ *
+ * input parameters
+ *
+ * @param       numTx           - Number of TX pakets
+ * @param       numTxAck        - Number of TX packets Acked
+ * @param       numTxCtrl       - Number of TX control packets
+ * @param       numTxCtrlAck    - Number of TX control packets acked
+ * @param       numTxCtrlAckAck - Number of TX control packets acked that were acked
+ * @param       numTxRetrans    - Number of retransmissions
+ * @param       numTxEntryDone  - Number of packets on Tx queue that are finished
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None.
+ */
+extern void LL_EXT_GetTxStatsCback( uint16 numTx,
+                                    uint16 numTxAck,
+                                    uint16 numTxCtrl,
+                                    uint16 numTxCtrlAck,
+                                    uint16 numTxCtrlAckAck,
+                                    uint16 numTxRetrans,
+                                    uint16 numTxEntryDone );
+
+/*******************************************************************************
+ * @fn          LL_EXT_ChanMapUpdateCback Callback
+ *
+ * @brief       This LL callback is used to generate a vendor specific channel map
+ *              update event
+ *
+ * input parameters
+ *
+ * @param       grants         - Number of grants
+ * @param       rejects        - Number of rejects (no grant)
+ * @param       contRejects    - Number of continuously rejected requests
+ * @param       maxContRejects - Max continuously rejected requests
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None.
+ */
+extern void LL_EXT_GetCoexStatsCback( uint32 grants,
+                                      uint32 rejects,
+                                      uint16 contRejects,
+                                      uint16 maxContRejects );
 
 /*******************************************************************************
  * @fn          LL_SetDefChanMap API

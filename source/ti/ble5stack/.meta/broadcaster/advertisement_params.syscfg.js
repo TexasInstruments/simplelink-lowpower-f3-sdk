@@ -342,7 +342,7 @@ function generateDisabledOptions(name)
         {
             const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
 
-            if(devFamily == "DeviceFamily_CC23X0R5")
+            if(devFamily == "DeviceFamily_CC23X0R5" || devFamily == "DeviceFamily_CC23X0R2")
             {
                 // Find the configurable we're going to generate a disabled list from
                 const configurable = _.find(inst.$module.config,(conf) => conf.name == name);
@@ -351,7 +351,7 @@ function generateDisabledOptions(name)
                 const disabledOptions = configurable.options.slice(configurable.options.includes("legacy") == false);
 
                 // Add the "reason" why it's disabled, and return that information
-                return disabledOptions.map((option) => ({ name: option.name, reason: "Currently not supported for CC23X0R5" }));
+                return disabledOptions.map((option) => ({ name: option.name, reason: "Currently not supported for CC23X0R5 or CC23X0R2" }));
             }
             else
             {

@@ -41,16 +41,17 @@
 const Common = system.getScript("/ti/ble5stack/ble_common.js");
 
 // Long description for the maxBonds configuration parameter
-const ProfileSelection = `Select the profiles you wish to include.\n
+const profileSelectionLongDescription = `Select profiles to include\n
 __Warning__: Adding more than 2 profiles may result in memory error.\n
 __Default__: None\n
-Pairing Mode | Description
+Profile | Description
 --- | ---
-Simple Gatt |  * Need to add *
+Simple Gatt | This profile is an example of a non BT SIG profile. It demonstrates various types of characteristics, permissions, and properties.
 CGM: Continuous Glucose Monitoring | This profile enables a device to connect and interact with a CGM Sensor for use in consumer healthcare applications.
-Glucose | This profile enables a device to connect and interact with a glucose sensor for use in consumer healthcare applications. \n`
+Glucose | This profile enables a device to connect and interact with a glucose sensor for use in consumer healthcare applications.
+HT: Health Thermometer | This profile enables a device to connect and interact with a HT Sensor for use in consumer healthcare applications.\n`
 
-const DeviceInfo = ` *Need to Add*.\n
+const deviceInfoLongDescription = ` *Need to Add*.\n
 __Default__: True\n`
 
 const maxNumPrepareWritesLongDescription =
@@ -60,7 +61,7 @@ __Range__: 0 to 255\n`
 
  // Exports the long descriptions for each configurable
  exports = {
-    ProfileSelection: ProfileSelection,
-    DeviceInfo: DeviceInfo,
+    profileSelectionLongDescription: profileSelectionLongDescription,
+    deviceInfoLongDescription: deviceInfoLongDescription,
     maxNumPrepareWritesLongDescription: maxNumPrepareWritesLongDescription
 };

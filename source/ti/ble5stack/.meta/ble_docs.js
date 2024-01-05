@@ -114,9 +114,8 @@ __Default__: False (unchecked)\n`
 // Long description for the L2CAPCOC configuration parameter
 const L2CAPCOCLongDescription = `Enable/Disable the use of L2CAP Connection Oriented Channels. \
 The BLE5-Stack provides APIs to create L2CAP CoC channels to transfer bidirectional data between \
-two Bluetooth Low Energy devices supporting this feature. For more information, refer to the \
-[BLE Stack User's Guide](/ble5stack/ble_user_guide/html/ble-stack-common/l2cap.html#connection\
--oriented-channels-example).\n
+two Bluetooth Low Energy devices supporting this feature. \
+For more information, refer to the User Guide \n
 __Default__: False (unchecked)\n`
 
 // Long description for the delayingAttReadReq configuration parameter

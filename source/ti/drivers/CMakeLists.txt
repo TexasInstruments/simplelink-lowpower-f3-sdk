@@ -28,7 +28,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
-get_install_dir(MBEDCRYPTO_INSTALL_DIR)
+get_install_dir(MBEDTLS_INSTALL_DIR)
 get_install_dir(TFM_INSTALL_DIR)
 
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_common.cmake)
@@ -118,8 +118,19 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
         ti_add_package_dependency(DriverlibCC27XX)
         ti_add_library(
             drivers_${TI_PLATFORM} SOURCES ${SOURCES_SEC_ONLY_CC27XX} ADD_SDK_INCLUDE_PATH source
-            LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            LINK_PUBLIC ThirdPartyEccLib::ecc_cc27xx Driverlib::${TI_PLATFORM}
+                        CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
         )
+        add_dependencies(drivers_${TI_PLATFORM} ecc_deploy)
+
+        # Add library with workarounds for Rev A devices
+        ti_add_library(
+            drivers_${TI_PLATFORM}_reva SOURCES ${SOURCES_SEC_ONLY_CC27XX} ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC ThirdPartyEccLib::ecc_cc27xx Driverlib::${TI_PLATFORM}
+                        CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+        )
+        target_compile_definitions(drivers_${TI_PLATFORM}_reva PRIVATE CC27XX_REVA_WORKAROUNDS)
+        add_dependencies(drivers_${TI_PLATFORM}_reva ecc_deploy)
 
         # ti_add_library(
         #     drivers_${TI_PLATFORM}_ns SOURCES ${SOURCES_NONSEC_CC27XX} ADD_SDK_INCLUDE_PATH source
@@ -173,16 +184,25 @@ target_include_directories(tfm_dependencies_cc26x4 BEFORE INTERFACE ${CMAKE_SOUR
 if(TI_INTERNAL_BUILD)
     target_include_directories(
         tfm_dependencies_cc26x4
-        INTERFACE ${TFM_INSTALL_DIR}/source/ ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
-                  ${MBEDCRYPTO_INSTALL_DIR}/source ${MBEDCRYPTO_INSTALL_DIR}/source/third_party/mbedcrypto/include
-                  ${MBEDCRYPTO_INSTALL_DIR}/source/third_party/mbedcrypto/ti
+        INTERFACE ${TFM_INSTALL_DIR}/source/
+                  ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
+                  ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
+                  ${TFM_INSTALL_DIR}/source/third_party/tfm/config
+                  ${TFM_INSTALL_DIR}/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc
+                  ${MBEDTLS_INSTALL_DIR}/source
+                  ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
+                  ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti
     )
 else()
     target_include_directories(
         tfm_dependencies_cc26x4
-        INTERFACE ${CMAKE_SOURCE_DIR}/source/ ${CMAKE_SOURCE_DIR}/source/third_party/tfm/interface/include
-                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedcrypto/include
-                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedcrypto/ti
+        INTERFACE ${CMAKE_SOURCE_DIR}/source/
+                  ${CMAKE_SOURCE_DIR}/source/third_party/tfm/interface/include
+                  ${CMAKE_SOURCE_DIR}/source/third_party/tfm/secure_fw/include
+                  ${CMAKE_SOURCE_DIR}/source/third_party/tfm/config
+                  ${CMAKE_SOURCE_DIR}/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc
+                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedtls/include
+                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedtls/ti
     )
 endif()
 
@@ -195,15 +215,15 @@ if(TI_INTERNAL_BUILD)
     target_include_directories(
         tfm_dependencies_cc27xx
         INTERFACE ${TFM_INSTALL_DIR}/source/ ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
-                  ${MBEDCRYPTO_INSTALL_DIR}/source ${MBEDCRYPTO_INSTALL_DIR}/source/third_party/mbedcrypto/include
-                  ${MBEDCRYPTO_INSTALL_DIR}/source/third_party/mbedcrypto/ti
+                  ${MBEDTLS_INSTALL_DIR}/source ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
+                  ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti
     )
 else()
     target_include_directories(
         tfm_dependencies_cc27xx
         INTERFACE ${CMAKE_SOURCE_DIR}/source/ ${CMAKE_SOURCE_DIR}/source/third_party/tfm/interface/include
-                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedcrypto/include
-                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedcrypto/ti
+                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedtls/include
+                  ${CMAKE_SOURCE_DIR}/source/third_party/mbedtls/ti
     )
 endif()
 

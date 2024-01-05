@@ -31,7 +31,7 @@
  */
 /*!****************************************************************************
  *  @file       I2C.h
- *  @brief      Inter-Integrated Circuit (I2C) Driver
+ *  @brief      Inter-Integrated Circuit (I2C) Controller Driver
  *
  *  @anchor ti_drivers_I2C_Overview
  *  # Overview

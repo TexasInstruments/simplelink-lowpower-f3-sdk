@@ -30,6 +30,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
+ * SHA-2 driver is non-functional on CC27CC devices, as it returns incorrect digest.
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -155,12 +159,22 @@ int_fast16_t SHA2_addData(SHA2_Handle handle, const void *data, size_t length)
 
     if (object->sha256swObject.bitsProcessed == 0)
     {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libStatus = SHA2SW_STATUS_SUCCESS;
+#else
         libStatus = HapiSha256SwStart(&object->sha256swObject);
+#endif
     }
 
     if (libStatus == SHA2SW_STATUS_SUCCESS)
     {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libStatus = SHA2SW_STATUS_SUCCESS;
+#else
         libStatus = HapiSha256SwAddData(&object->sha256swObject, data, length);
+#endif
     }
 
     return (libStatus == SHA2SW_STATUS_SUCCESS) ? SHA2_STATUS_SUCCESS : SHA2_STATUS_ERROR;
@@ -178,11 +192,21 @@ int_fast16_t SHA2_finalize(SHA2_Handle handle, void *digest)
     /* SHA256SW library's digest output must be word aligned */
     if ((digestPtrValue & 0x03u) == 0u)
     {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libStatus = SHA2SW_STATUS_SUCCESS;
+#else
         libStatus = HapiSha256SwFinalize(&object->sha256swObject, digest);
+#endif
     }
     else
     {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libStatus = SHA2SW_STATUS_SUCCESS;
+#else
         libStatus = HapiSha256SwFinalize(&object->sha256swObject, object->digestBuffer);
+#endif
         (void)memcpy(digest, object->digestBuffer, (size_t)SHA2_DIGEST_LENGTH_BYTES_256);
     }
 
@@ -263,7 +287,12 @@ int_fast16_t SHA2_setupHmac(SHA2_Handle handle, CryptoKey *key)
 
     if (returnStatus == SHA2_STATUS_SUCCESS)
     {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libResult = SHA2SW_STATUS_SUCCESS;
+#else
         libResult = HapiSha256SwStart(&object->sha256swObject);
+#endif
 
         if (libResult != SHA2SW_STATUS_SUCCESS)
         {
@@ -293,8 +322,13 @@ int_fast16_t SHA2_setupHmac(SHA2_Handle handle, CryptoKey *key)
          */
         SHA2LPF3SW_xorBufferWithWord(xorBuffer, sizeof(xorBuffer) / sizeof(uint32_t), HMAC_OPAD_WORD ^ HMAC_IPAD_WORD);
 
-        /* Reset object state to prepare to start a new hash */
+/* Reset object state to prepare to start a new hash */
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libResult = SHA2SW_STATUS_SUCCESS;
+#else
         libResult = HapiSha256SwStart(&object->sha256swObject);
+#endif
 
         if (libResult != SHA2SW_STATUS_SUCCESS)
         {
@@ -336,7 +370,12 @@ int_fast16_t SHA2_finalizeHmac(SHA2_Handle handle, void *hmac)
 
     if (returnStatus == SHA2_STATUS_SUCCESS)
     {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        /* On CC27XX, always return success as HAPI functions are read protected */
+        libResult = SHA2SW_STATUS_SUCCESS;
+#else
         libResult = HapiSha256SwStart(&object->sha256swObject);
+#endif
 
         if (libResult != SHA2SW_STATUS_SUCCESS)
         {

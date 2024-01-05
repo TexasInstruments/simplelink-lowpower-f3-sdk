@@ -104,6 +104,9 @@ extern "C" {
  *  number sequence will restart after each call to Random_seedAutomatic().
  *  This will usually occur after rebooting the device.
  *
+ *  For CC23X0, RNG will be used to generate the seed, where the application needs to
+ *  perform additional steps for initializing the RNG driver.
+ *
  *  If neither a TRNG nor a unique device identifier is available,
  *  a constant will be used.
  *

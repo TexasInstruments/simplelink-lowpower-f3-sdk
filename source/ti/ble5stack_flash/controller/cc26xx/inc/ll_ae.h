@@ -461,7 +461,7 @@
 // adv sorted list node start time error code
 #define AE_INVALID_START_TIME                                 0
 
-#if defined(CC26X2) || defined(CC13X2) || defined(CC13X2P) || defined(CC13X4) || defined(CC23X0)
+#if defined(CC26X2) || defined(CC13X2) || defined(CC13X2P) || defined(CC13X4) || defined(CC23X0) || defined(CC26X4)
   // TEMP: Define substitute for StartSynthToRatOffset, a radio parameter(?).
   #define START_SYNTH_TO_RAT_OFFSET                         166
   #define PRIMARY_CMD_START_SYNTH_TO_RAT_OFFSET             180
@@ -474,7 +474,7 @@
   //
   #define AE_MIN_CMD_TIME_IN_US                             500
   #define AE_MIN_T_MAFS_IN_US                               500
-#endif // CC26X2 || CC13X2 || CC13X2P || CC13X4
+#endif // CC26X2 || CC13X2 || CC13X2P || CC13X4 || CC26X4
 
 #define AE_MIN_CMD_TIME_IN_RAT_TICKS                        (4*AE_MIN_CMD_TIME_IN_US)
 #define AE_MIN_T_MAFS_IN_RAT_TICKS                          (4*AE_MIN_T_MAFS_IN_US)
@@ -1041,7 +1041,9 @@ PACKED_TYPEDEF_STRUCT
   uint8 secPhy;
   uint8 sid;
   uint8 notifyEnableFlags;                  // scan request notification
-  uint8 zeroDelay;
+#ifndef CONTROLLER_ONLY
+  uint8 zeroDelay;                          // not part of BLE SIG HCI command
+#endif
 } aeSetParamCmd_t;
 
 //
@@ -1461,6 +1463,8 @@ struct advSet_t
   aeSetDataCmd_t  *pAdvData;                      // ptr to Host provided adv data params
   aeSetDataCmd_t  *pScanRspData;                  // ptr to Host provided scan response data params
   aeEnableCmd_t   *pEnable;                       // ptr to Host provided enable params
+
+  uint8           actualOwnAddrType;              // The original address type
 };
 
 typedef struct sortedAdv_t sortedAdv_t;
@@ -1866,7 +1870,7 @@ extern sortedAdv_t  *llDetachNode( sortedAdv_t *aeNode );
 extern uint32        llAddAdvSortedEntry( advSet_t *pAdvSet, sortedAdv_t** newNode );
 extern void          llAllocRfMem( advSet_t * );
 extern llStatus_t    llSetupExtAdv( advSet_t * );
-#if !defined(DeviceFamily_CC13X4)
+#if !defined(DeviceFamily_CC13X4) && !defined(DeviceFamily_CC26X4)
 extern llStatus_t    llSetupPeriodicAdv( advSet_t * );
 #endif
 extern llStatus_t    llSetupExtAdvLegacy( advSet_t * );
@@ -1911,6 +1915,9 @@ extern uint32        llGetSecondaryTaskEndTime( taskInfo_t *, uint32 , llConnSta
 extern uint8         llCheckRfCmdPreemption( uint32, uint8 );
 extern void          llSetRestPrimaryChannels( advSet_t * );
 extern void          llTermExtAdv( advSet_t *, uint8  );
+#ifdef USE_RCL
+extern void          llRclPrepareAndUpdateAlEntry(RCL_FilterList *filterList, uint16 flags, uint8 *pAddr, uint8 alIndex);
+#endif
 // RF Post Processing
 extern void          llExtAdv_PostProcess( void );
 extern void          llPeriodicAdv_PostProcess( void );

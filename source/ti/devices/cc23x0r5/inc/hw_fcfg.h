@@ -42,7 +42,7 @@
 
 // \note Struct written to avoid automatic padding. Packing directives not needed
 // \note Bitfields: lsb->msb, packing of similar base types, no word boundary crossing
-typedef const struct {
+typedef struct {
     // Critical Trim (done early in boot sequence or requires special handling)
     struct {    // [0]: length 64 B
         // SRAM repair information (* hardcoded into ASM to be at offset 0, do not move! *)
@@ -215,12 +215,8 @@ typedef const struct {
         struct {
             // Sticky-0 bits written to VIMS.WEPRA (sectors 0-31, 1/bit)
             uint32_t mainSectors0_31;
-            union {
-                // Sticky-0 bits written to VIMS.WEPRB(0) (sectors 32-255, 8/bit)
-                uint32_t mainSectors32_255;
-                // Dummy symbol to allow code to remain the same across devices
-                uint32_t mainSectors256_511;
-            };
+            // Sticky-0 bits written to VIMS.WEPRB(0) (sectors 32-255, 8/bit)
+            uint32_t mainSectors32_255;
             // Sticky-0 bit written to VIMS.WEPRAUX
             union {
                 uint32_t auxSectors;
@@ -256,7 +252,7 @@ typedef const struct {
     // *******************************************************
     // ***        Extended Application Trims               ***
     // *******************************************************
-    // Extended application trims. (not referenced in any way by ROM)
+    // Extended application trims.
     // [End-272]: length 64B
     struct appTrimsExt_struct {
         struct appTrimsExtCc23x0r5_s {     // length: 64B
@@ -325,9 +321,7 @@ typedef const struct {
         uint8_t res[2];
 
         // Different device-specific application trim records
-        // TODO: Finalize appTrim for BLE High (LPRFROM-743)
-        // TODO: Finalize appTrim for BLE Low (LPRFROM-846)
-        struct appTrimsCc23x0_s {     // length: 124B
+        struct appTrimsCc23x0r5_s {     // length: 124B
             // Trim value for LRFDRFE:PA0.TRIM
             struct {    // length: 2B
                 uint16_t trim           : 5;
@@ -406,7 +400,7 @@ typedef const struct {
             struct {    // length: 2B
                 uint16_t zero0          : 9;
                 uint16_t trim           : 6;
-                uint16_t zero1          : 1;
+                uint16_t nrz            : 1;
             } ifadc1;
             // Trim values for LRFDRFE:IFADCLF
             struct {    // length: 2B
@@ -434,7 +428,7 @@ typedef const struct {
             struct {    // length: 2B
                 uint16_t zero0          : 9;
                 uint16_t trim           : 6;
-                uint16_t zero1          : 1;
+                uint16_t nrz            : 1;
             } ifadc1Wbw;
             // Trim values for LRFDRFE:IFADCLF high-bandwidth
             struct {    // length: 2B
@@ -565,8 +559,15 @@ typedef const struct {
                 uint16_t auxDiodeGnd;
                 uint16_t auxDiodeVoltage;
             } auxDiodeCal125C;
+            // Values for LFOSC performance
+            struct {    // length: 4B
+                uint32_t ppmRtn         : 8;
+                uint32_t ppmTempMid     : 8;
+                uint32_t ppmTempExt     : 8;
+                uint32_t res            : 8;
+            } lfOscParams;
             // Unused space
-            uint8_t res2[20];
+            uint8_t res2[16];
             // ADC offset for four modes
             struct {    // length: 4B
                 uint32_t adcOffsetVdds       : 8;
@@ -584,8 +585,18 @@ typedef const struct {
                 uint32_t adcGainIntref2P5V   : 16;
                 uint32_t adcGainIntref1P4V   : 16;
             } adcGainWord1;
+            // Coefficients for AUX Diode temperature to voltage
+            struct {    // length: 8B
+                int16_t coeffP2;
+                int16_t coeffP1;
+                int16_t coeffP0;
+                uint16_t coeffP2Shift   :5;
+                uint16_t coeffP1Shift   :5;
+                uint16_t coeffP0Shift   :5;
+                uint16_t res0           :1;
+            } auxDiodeCoeff;
             // Unused space
-            uint8_t res3[28];
+            uint8_t res3[20];
             // Measured I2V resistor error values
             struct {    // length: 4B
                 uint32_t i2v20k   : 8;
@@ -643,6 +654,9 @@ typedef const struct {
  * This definition can be used to access member elements with the `->`
  * operator.
  */
-#define fcfg ((fcfg_t *)FCFG_BASE)
+#define fcfg ((const fcfg_t *)FCFG_BASE)
+
+/* Define type used by hw_device.h */
+typedef struct appTrims_struct fcfg_appTrims_t;
 
 #endif // __HW_FCFG_H__

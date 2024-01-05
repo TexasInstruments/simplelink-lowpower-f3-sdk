@@ -65,6 +65,9 @@ const peripheralScript = system.getScript("/ti/ble5stack/peripheral/"
 //Get broadcaster Script
 const broadcasterScript = system.getScript("/ti/ble5stack/broadcaster/"
                             + "ble_broadcaster");
+//Get l2capScript Script
+const l2capScript = system.getScript("/ti/ble5stack/l2cap_coc/"
+                            + "ble_l2cap_coc");
 
 //Get Adv Settings Script
 const advSetScript = system.getScript("/ti/ble5stack/adv_config/"
@@ -82,7 +85,7 @@ const meshProvDataScript = system.getScript("/ti/ble5stack/mesh/"
 // Get common Script
 const Common = system.getScript("/ti/ble5stack/ble_common.js");
 
-// Get common Script
+// Get profiles Script
 const profilesScript = system.getScript("/ti/ble5stack/profiles/ble_profiles_config");
 
 // Ext Adv default values
@@ -117,7 +120,13 @@ const moduleStatic = {
             name: "basicBLE",
             default: false,
             hidden: true,
-            onChange: basicbleconfig
+            onChange: onBasicBLEChange
+        },
+        {
+            name: "basicBLEProfiles",
+            default: false,
+            hidden: true,
+            onChange: onBasicBLEChange
         },
         {
             name: "hidePtm",
@@ -252,7 +261,9 @@ const moduleStatic = {
                     name: "L2CAPCOC",
                     displayName: "L2CAP Connection Oriented Channels",
                     default: false,
-                    longDescription: Docs.L2CAPCOCLongDescription
+                    longDescription: Docs.L2CAPCOCLongDescription,
+                    onChange: onL2CAPCOCChange,
+                    hidden: false
                 },
                 {
                     name: "delayingAttReadReq",
@@ -343,9 +354,11 @@ const moduleStatic = {
         peripheralScript.config,
         broadcasterScript.config,
         bleMeshScript.config,
+        l2capScript.config,
     ],
 
     validate: validate,
+    migrateLegacyConfiguration: migrateLegacyConfiguration,
     moduleInstances: moduleInstances,
     modules: modules
 }
@@ -360,10 +373,7 @@ const moduleStatic = {
  */
 function validate(inst, validation)
 {
-    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5" )
-    {
-        radioScript.validate(inst, validation);
-    }
+    radioScript.validate(inst, validation);
     generalScript.validate(inst, validation);
     bondMgrScript.validate(inst, validation);
     advSetScript.validate(inst, validation);
@@ -373,6 +383,7 @@ function validate(inst, validation)
     broadcasterScript.validate(inst, validation);
     bleMeshScript.validate(inst, validation);
     profilesScript.validate(inst, validation);
+    l2capScript.validate(inst, validation);
     // When using CC2652RB (BAW) device and the BLE role is central/observer/multi_role
     // the LF src clock (srcClkLF) should be different from "LF RCOSC".
     // Therefore, throwing a warning on the CCFG srcClkLF configurable.
@@ -404,7 +415,9 @@ function isFlashOnlyDevice() {
         // Return true if the device is from CC26X1 family
         Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC26X1" ||
         Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC13X4" ||
-        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5"
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC26X4"
     );
 }
 
@@ -471,28 +484,36 @@ function ondeviceRoleChange(inst,ui)
     onExtAdvChange(inst,ui);
 }
 
-function basicbleconfig(inst,ui)
+/*
+ *  ======== onBasicBLEChange ========
+ * Show/hide the Profiles group and parameters depanding on the
+ * values of basicBLE and basicBLEProfiles configurables.
+ * @param inst  - Module instance containing the config that changed
+ * @param ui    - The User Interface object
+ */
+function onBasicBLEChange(inst,ui)
 {
     if(inst.basicBLE)
     {
-        ui.DeviceInfo.hidden = false;
-        inst.DeviceInfo = true;
-        ui.profiles.hidden = false;
+        inst.deviceInfo = true;
         inst.profiles = [];
-        inst.hidebasicbleGroup = false;
+        inst.hideBasicBLEGroup = false;
+        Common.hideGroup(Common.getGroupByName(inst.$module.config, "profiles_module"), inst.hideBasicBLEGroup, ui);
+        // Display the profiles selection only when basicBLEProfiles is set
+        if(!inst.basicBLEProfiles)
+        {
+            inst.deviceInfo = false;
+            ui.deviceInfo.hidden = true;
+            ui.profiles.hidden = true;
+        }
     }
     else
     {
-        ui.DeviceInfo.hidden = true;
-        inst.DeviceInfo = false;
-        ui.profiles.hidden = true;
+        inst.deviceInfo = false;
         inst.profiles = [];
-        inst.hidebasicbleGroup = true;
+        inst.hideBasicBLEGroup = true;
+        Common.hideGroup(Common.getGroupByName(inst.$module.config, "profiles_module"), inst.hideBasicBLEGroup, ui);
     }
-
-    Common.hideGroup(Common.getGroupByName(inst.$module.config, "profiles_module"), inst.hidebasicbleGroup, ui);
-
-
 }
 
 /*
@@ -600,6 +621,22 @@ function onEnableGattBuildeChange(inst,ui)
 }
 
 /*
+ *  ======== onL2CAPCOCChange ========
+ * Add/remove the L2CAP module
+ *
+ * @param inst  - Module instance containing the config that changed
+ * @param ui    - The User Interface object
+ */
+function onL2CAPCOCChange(inst,ui)
+{
+    if(Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX")
+    {
+        inst.hideL2CAPGroup = inst.L2CAPCOC ? false : true;
+        Common.hideGroup(Common.getGroupByName(inst.$module.config, "l2capConfig"), inst.hideL2CAPGroup, ui);
+    }
+}
+
+/*
  *  ======== onMeshChange ========
  * Add/remove the Mesh module
  *
@@ -671,7 +708,6 @@ function changeProxyState(inst,ui)
         inst.deviceRole = "BROADCASTER_CFG+OBSERVER_CFG";
     }
 }
-
 
 /*
  * ======== changeGroupsState ========
@@ -745,6 +781,17 @@ function changeGroupsState(inst,ui)
 
         system.utils.hideGroupConfig("bleMeshConfig", inst, ui);
     }
+
+    if(inst.deviceRole.includes("PERIPHERAL_CFG") || inst.deviceRole.includes("CENTRAL_CFG"))
+    {
+        ui.L2CAPCOC.hidden = false;
+        Common.hideGroup(Common.getGroupByName(inst.$module.config, "l2capConfig"), inst.hideL2CAPGroup, ui);
+    }
+    else
+    {
+        ui.L2CAPCOC.hidden = true;
+        Common.hideGroup(Common.getGroupByName(inst.$module.config, "l2capConfig"), true, ui);
+    }
 }
 
 /*
@@ -770,14 +817,14 @@ function getLibs(inst)
         const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
 
         let basePath = "ti/ble5stack/libraries/";
-        let rfDesign;
         let LPName;
 
-        if(devFamily != "DeviceFamily_CC23X0R5")
+        if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
         {
-            rfDesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
+            let rfDesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
             LPName = rfDesign.rfDesign;
         }
+
         let devLibsFolder = "cc26x2r1";
 
         // DeviceFamily_CC26X2 and DeviceFamily_CC26X2X7 devices are using the libs from the
@@ -836,29 +883,28 @@ function getLibs(inst)
         }
         else if(devFamily == "DeviceFamily_CC26X4" || devFamily == "DeviceFamily_CC13X4" )
         {
-            if(LPName == "LP_EM_CC1354P10_1")
+            if(LPName == "LP_EM_CC1354P10_1" || LPName == "LP_CC2674R10_RGZ" )
             {
                 devLibsFolder = "cc1354p10_1";
             }
-            else if(LPName == "LP_EM_CC1354P10_6")
+            else if(LPName == "LP_EM_CC1354P10_6" || LPName == "LP_CC2674P10_RGZ" )
             {
                 devLibsFolder = "cc1354p10_6";
             }
             basePath = "ti/ble5stack_flash/libraries/";
         }
-        else if(devFamily == "DeviceFamily_CC23X0R5")
+        else if(devFamily == "DeviceFamily_CC23X0R5" || devFamily == "DeviceFamily_CC23X0R2")
         {
             // Add OneLib library
-            basePath = "ti/ble5stack_flash/lib_projects/CC2340R5/OneLib/lib/ticlang/m0p"
+            basePath = `ti/ble5stack_flash/lib_projects/CC2340R5/OneLib/lib/${toolchain}/m0p`
             devLibsFolder = ""
             libs.push(basePath + devLibsFolder + "/OneLib.a");
             // Add StackWrapper library
-            basePath = "ti/ble5stack_flash/lib_projects/CC2340R5/StackWrapper/lib/ticlang/m0p"
+            basePath = `ti/ble5stack_flash/lib_projects/CC2340R5/StackWrapper/lib/${toolchain}/m0p`
             devLibsFolder = ""
             libs.push(basePath + devLibsFolder + "/StackWrapper.a");
         }
-
-        if(devFamily != "DeviceFamily_CC23X0R5")
+        if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
         {
             libs.push(basePath + devLibsFolder + "/OneLib.a");
             libs.push(basePath + devLibsFolder + "/StackWrapper.a");
@@ -868,7 +914,8 @@ function getLibs(inst)
         if(devFamily != "DeviceFamily_CC26X1" &&
            devFamily != "DeviceFamily_CC26X4" &&
            devFamily != "DeviceFamily_CC13X4" &&
-           devFamily != "DeviceFamily_CC23X0R5")
+           devFamily != "DeviceFamily_CC23X0R5" &&
+           devFamily != "DeviceFamily_CC23X0R2")
         {
             libs.push(basePath + devLibsFolder + "/ble_r2.symbols");
         }
@@ -911,6 +958,172 @@ function getLibs(inst)
 }
 
 /*
+ *  ======== migrateLegacyConfiguration ========
+ * Migration of deprecated configurables
+ * @param inst  - Module instance containing the config that changed
+ */
+function migrateLegacyConfiguration(inst)
+{
+    // defaultTxPower was deprecated, if it used in users scripts
+    // assign it's value to the new parameter defaultTxPowerValue
+    inst.defaultTxPowerValue = Common.convertTxPowerIndexToValue(inst.defaultTxPower);
+}
+
+/*
+ *  ======== getOpts ========
+ */
+function getOpts(mod)
+{
+    let result = [];
+
+    let buildConfigDefines = getBuildConfigOpts();
+    let appConfigDefines = getAppConfigOpts();
+
+    result.push(buildConfigDefines);
+    result.push(appConfigDefines);
+
+    return result.flat(Infinity);
+}
+
+/*
+ *  ======== getBuildConfigOpts ========
+ */
+function getBuildConfigOpts()
+{
+    const bleMod = system.modules["/ti/ble5stack/ble"].$static;
+    const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
+    let result = [];
+
+    result.push("-DHOST_CONFIG="+bleMod.deviceRole);
+    result.push("-D"+bleMod.trensLayer);
+
+    if(bleMod.extAdv &&
+       (devFamily == "DeviceFamily_CC26X1" ||
+        devFamily == "DeviceFamily_CC13X4" ||
+        devFamily == "DeviceFamily_CC26X4"))
+    {
+        result.push("-DUSE_AE");
+    }
+    else if(!bleMod.extAdv &&
+            devFamily != "DeviceFamily_CC26X1" &&
+            devFamily != "DeviceFamily_CC23X0R5" &&
+            devFamily != "DeviceFamily_CC23X0R2")
+    {
+        result.push("-DEXCLUDE_AE");
+    }
+
+    if(bleMod.extAdv)
+    {
+        bleMod.periodicAdv && result.push("-DUSE_PERIODIC_ADV");
+        bleMod.periodicAdvSync && result.push("-DUSE_PERIODIC_SCAN");
+    }
+
+    if(bleMod.disablePairing && devFamily != "DeviceFamily_CC26X1" &&
+       (bleMod.deviceRole.includes("PERIPHERAL_CFG") || bleMod.deviceRole.includes("CENTRAL_CFG")))
+    {
+        result.push("-DEXCLUDE_SM");
+    }
+
+    bleMod.disableConfig && result.push("-DNO_QOS");
+    bleMod.gattDB && result.push("-DGATT_DB_OFF_CHIP");
+    bleMod.gattNoClient && result.push("-DGATT_NO_CLIENT");
+    bleMod.bondManager && result.push("-DGAP_BOND_MGR");
+    bleMod.L2CAPCOC && result.push("-DV41_FEATURES=L2CAP_COC_CFG", "-DBLE_V41_FEATURES=V41_FEATURES");
+    bleMod.delayingAttReadReq && result.push("-DATT_DELAYED_REQ");
+    bleMod.gattBuilder && result.push("-DUSE_GATT_BUILDER");
+
+    return result;
+}
+
+/*
+ *  ======== getAppConfigOpts ========
+ */
+function getAppConfigOpts()
+{
+    const bleMod = system.modules["/ti/ble5stack/ble"].$static;
+    const ccfg = system.modules["/ti/devices/CCFG"];
+    const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
+    let result = [];
+
+    result.push("-DSYSCFG");
+    result.push("-DMAX_NUM_BLE_CONNS="+bleMod.maxConnNum,
+                "-DGATT_MAX_PREPARE_WRITES="+bleMod.maxNumPrepareWrites,
+                "-DEXTENDED_STACK_SETTINGS="+bleMod.extendedStackSettings);
+
+    if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+    {
+        let rfDesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
+
+        // Get the device defines from the list
+        result.push(Common.deviceToDefines[rfDesign.rfDesign]);
+    }
+
+    bleMod.disableDisplayModule && result.push("-DDisplay_DISABLE_ALL");
+    bleMod.powerMamagement && result.push("-DPOWER_SAVING");
+    bleMod.halAssert && result.push("-DEXT_HAL_ASSERT");
+    bleMod.tbmActiveItemsOnly && result.push("-DTBM_ACTIVE_ITEMS_ONLY");
+    bleMod.stackLibrary && result.push("-DSTACK_LIBRARY");
+    bleMod.dontTransmitNewRpa && result.push("-DDONT_TRANSMIT_NEW_RPA");
+    bleMod.peerConnParamUpdateRejectInd && result.push("-DNOTIFY_PARAM_UPDATE_RJCT");
+    bleMod.noOsalSnv && result.push("-DNO_OSAL_SNV");
+    bleMod.oneLibSizeOpt && result.push("-DONE_BLE_LIB_SIZE_OPTIMIZATION");
+    bleMod.icallEvents && result.push("-DICALL_EVENTS");
+    bleMod.icallJT && result.push("-DICALL_JT");
+    bleMod.icallLite && result.push("-DICALL_LITE");
+    bleMod.icallStackAddress && result.push("-DICALL_STACK0_ADDR");
+    bleMod.useIcall && result.push("-DUSE_ICALL");
+
+    result.push("-DICALL_MAX_NUM_ENTITIES="+bleMod.maxNumEntIcall,
+                "-DICALL_MAX_NUM_TASKS="+bleMod.maxNumIcallEnabledTasks,
+                "-DOSAL_CBTIMER_NUM_TASKS=1");
+
+    bleMod.uartLog && result.push("-DUARTLOG_ENABLE");
+    bleMod.ledDebug && result.push("-DLED_DEBUG");
+    bleMod.oadDebug && result.push("-DOAD_DEBUG");
+    bleMod.oadFeature && result.push("-DFEATURE_OAD");
+    bleMod.oadBleSecurity && result.push("-DOAD_BLE_SECURITY");
+
+    if(!(ccfg===undefined))
+    {
+        (ccfg.srcClkLF == "LF RCOSC" || bleMod.useRcosc) && result.push("-DUSE_RCOSC");
+        ccfg.disableCache && result.push("-DCACHE_AS_RAM");
+    }
+
+    if ((_.isEqual(bleMod.deviceRole, "PERIPHERAL_CFG")) || (bleMod.ptm))
+    {
+        result.push("-DNPI_USE_UART");
+    }
+    if(bleMod.ptm)
+    {
+        let flowCtrlValue = bleMod.flowControl == "0" ? 0 : 1;
+        result.push("-DPTM_MODE", "-DNPI_FLOW_CTRL="+flowCtrlValue);
+    }
+
+    if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+    {
+        let rf = system.modules["/ti/drivers/RF"].$static;
+        if(!(rf===undefined) && rf.coexEnable == true)
+        {
+            result.push("-DUSE_COEX");
+        }
+    }
+
+    if(bleMod.mesh)
+    {
+        bleMod.meshApp == "meshAndPeri" && result.push("-DADD_SIMPLE_PERIPHERAL");
+        bleMod.meshApp == "meshAndPeriOadOffchip" && result.push("-DADD_SIMPLE_PERIPHERAL", "-DOAD_SUPPORT", "-DOAD_SUPPORT_OFFCHIP");
+        bleMod.meshApp == "meshAndPeriOadOnchip" && result.push("-DADD_SIMPLE_PERIPHERAL", "-DOAD_SUPPORT", "-DOAD_SUPPORT_ONCHIP");
+    }
+
+    if( (bleMod.deviceRole.includes("OBSERVER_CFG") || bleMod.deviceRole.includes("CENTRAL_CFG")) && bleMod.advReportChanNum )
+    {
+        result.push("-DADV_RPT_INC_CHANNEL=1");
+    }
+
+    return result;
+}
+
+/*
  *  ======== moduleInstances ========
  *  Determines what modules are added as non-static submodules
  *
@@ -921,10 +1134,7 @@ function moduleInstances(inst)
 {
     let dependencyModule = [];
 
-    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5" )
-    {
-        dependencyModule = radioScript.moduleInstances(inst);
-    }
+    dependencyModule = radioScript.moduleInstances(inst);
     dependencyModule = dependencyModule.concat(centralScript.moduleInstances(inst));
     dependencyModule = dependencyModule.concat(peripheralScript.moduleInstances(inst));
     dependencyModule = dependencyModule.concat(broadcasterScript.moduleInstances(inst));
@@ -997,16 +1207,14 @@ const bleModule = {
         "/ti/ble5stack/templates/ble_config.c.xdt":
         "/ti/ble5stack/templates/ble_config.c.xdt",
 
-        "/ti/ble5stack/templates/build_config.opt.xdt":
-        "/ti/ble5stack/templates/build_config.opt.xdt",
-
-        "/ti/ble5stack/templates/ble_app_config.opt.xdt":
-        "/ti/ble5stack/templates/ble_app_config.opt.xdt",
-
         "/ti/utils/build/GenLibs.cmd.xdt":
         {
             modName: "/ti/ble5stack/ble",
             getLibs: getLibs
+        },
+        "/ti/utils/build/GenOpts.opt.xdt": {
+            modName: "/ti/ble5stack/ble",
+            getOpts: getOpts
         }
     }
 };

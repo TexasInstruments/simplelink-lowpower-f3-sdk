@@ -39,16 +39,21 @@ set(TI_TOOLCHAIN_LINKER_FILE_EXTENSION cmd)
 # Set compilers and archiver
 if(WIN32)
     cmake_path(SET CMAKE_C_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang.exe")
+    cmake_path(SET CMAKE_CXX_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang.exe")
     cmake_path(SET CMAKE_ASM_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang.exe")
     cmake_path(SET CMAKE_AR "${TICLANG_ARMCOMPILER}/bin/tiarmar.exe")
 else()
     cmake_path(SET CMAKE_C_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang")
+    cmake_path(SET CMAKE_CXX_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang")
     cmake_path(SET CMAKE_ASM_COMPILER "${TICLANG_ARMCOMPILER}/bin/tiarmclang")
     cmake_path(SET CMAKE_AR "${TICLANG_ARMCOMPILER}/bin/tiarmar")
 endif()
 
 # Specify how the compilers should be invoked
 set(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> -c <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -MD -MF <OBJECT>.d <SOURCE>")
+set(CMAKE_CXX_COMPILE_OBJECT
+    "<CMAKE_CXX_COMPILER> -c <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -MD -MF <OBJECT>.d <SOURCE>"
+)
 set(CMAKE_ASM_COMPILE_OBJECT
     "<CMAKE_ASM_COMPILER> <DEFINES> <INCLUDES> -c -x assembler-with-cpp <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
@@ -61,22 +66,28 @@ set(CMAKE_C_COMPILER_ID_RUN TRUE CACHE PATH "" FORCE)
 set(CMAKE_C_COMPILER_FORCED TRUE CACHE PATH "" FORCE)
 set(CMAKE_C_COMPILER_WORKS TRUE CACHE PATH "" FORCE)
 
+set(CMAKE_CXX_COMPILER_ID_RUN TRUE CACHE PATH "" FORCE)
+set(CMAKE_CXX_COMPILER_FORCED TRUE CACHE PATH "" FORCE)
+set(CMAKE_CXX_COMPILER_WORKS TRUE CACHE PATH "" FORCE)
+
 if(NOT TARGET TOOLCHAIN_ticlang)
     add_library(TOOLCHAIN_ticlang INTERFACE IMPORTED)
     target_compile_options(
         TOOLCHAIN_ticlang
-        INTERFACE $<$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>:
-                  # This part included if TI_CFLAGS_OVERRIDE not defined
-                  -std=c11
-                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<CONFIG:Release>>:-Oz
-                  -flto>
-                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<CONFIG:Debug>>:-Og>
-                  -g
-                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:${TI_CMAKE_COMMON_ENABLE_ALL_WARNINGS}>>:-Wall>
-                  $<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>>:-Werror>
-                  >
-                  # If TI_CFLAGS_OVERRIDE, use it exclusively
-                  $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>>
+        INTERFACE
+            $<$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>:
+            # This part included if TI_CFLAGS_OVERRIDE not defined
+            $<$<COMPILE_LANGUAGE:C>:-std=c11>
+            $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>
+            $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<CONFIG:Release>>:-Oz
+            -flto>
+            $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<CONFIG:Debug>>:-Og>
+            -g
+            $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<BOOL:${TI_CMAKE_COMMON_ENABLE_ALL_WARNINGS}>>:-Wall>
+            $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>>:-Werror>
+            >
+            # If TI_CFLAGS_OVERRIDE, use it exclusively
+            $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>>
     )
     target_link_options(
         TOOLCHAIN_ticlang
@@ -97,12 +108,17 @@ if(NOT TARGET TOOLCHAIN_ticlang)
 
     add_library(TOOLCHAIN_ticlang_m0p INTERFACE IMPORTED)
     target_link_libraries(TOOLCHAIN_ticlang_m0p INTERFACE TOOLCHAIN_ticlang)
-    target_compile_options(TOOLCHAIN_ticlang_m0p INTERFACE -mcpu=cortex-m0plus -mfloat-abi=soft -mfpu=none)
+    target_compile_options(TOOLCHAIN_ticlang_m0p INTERFACE -mcpu=cortex-m0plus -mfloat-abi=soft)
     add_library(CMakeCommon::ticlang_m0p ALIAS TOOLCHAIN_ticlang_m0p)
+
+    add_library(TOOLCHAIN_ticlang_m3 INTERFACE IMPORTED)
+    target_link_libraries(TOOLCHAIN_ticlang_m3 INTERFACE TOOLCHAIN_ticlang)
+    target_compile_options(TOOLCHAIN_ticlang_m3 INTERFACE -mcpu=cortex-m3 -mfloat-abi=soft)
+    add_library(CMakeCommon::ticlang_m3 ALIAS TOOLCHAIN_ticlang_m3)
 
     add_library(TOOLCHAIN_ticlang_m4 INTERFACE IMPORTED)
     target_link_libraries(TOOLCHAIN_ticlang_m4 INTERFACE TOOLCHAIN_ticlang)
-    target_compile_options(TOOLCHAIN_ticlang_m4 INTERFACE -mcpu=cortex-m4 -mfloat-abi=soft -mfpu=none)
+    target_compile_options(TOOLCHAIN_ticlang_m4 INTERFACE -mcpu=cortex-m4 -mfloat-abi=soft)
     add_library(CMakeCommon::ticlang_m4 ALIAS TOOLCHAIN_ticlang_m4)
 
     add_library(TOOLCHAIN_ticlang_m4f INTERFACE IMPORTED)

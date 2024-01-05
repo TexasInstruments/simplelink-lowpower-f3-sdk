@@ -37,10 +37,11 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC27XX)
 #  include <ti/devices/DeviceFamily.h>
-#  include DeviceFamily_constructPath(driverlib/pbe_regs.h)
-#  include "LRFCC23X0.h"
+#  include DeviceFamily_constructPath(inc/hw_types.h)
+#  include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
+#  include <ti/drivers/rcl/LRFCC23X0.h>
 #endif
 
 #ifdef DeviceFamily_CC1308

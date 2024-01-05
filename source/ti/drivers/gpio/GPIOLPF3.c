@@ -162,15 +162,15 @@ void GPIO_init()
 
     /* Setup HWI handler */
     HwiP_Params_init(&hwiParams);
-    hwiParams.priority = ~0;
+    hwiParams.priority = GPIO_config.intPriority;
     HwiP_construct(&gpioHwi, INT_GPIO_COMB, GPIO_hwiIntFxn, &hwiParams);
 
     for (i = GPIO_pinLowerBound; i <= GPIO_pinUpperBound; i++)
     {
         uint32_t pinConfig = GPIO_config.configs[i];
 
-        /* Mask off the three mux bits, since they contain special configs */
-        tempPinConfigs[i] = pinConfig & 0xFFFFFFF8;
+        /* Mask off the bits containing non-IOC configuration values */
+        tempPinConfigs[i] = pinConfig & GPIOLPF3_CFG_IOC_M;
 
         if (pinConfig & GPIOLPF3_CFG_PIN_IS_INPUT_INTERNAL)
         {
@@ -252,7 +252,11 @@ void GPIO_getConfig(uint_least8_t index, GPIO_PinConfig *pinConfig)
 {
     uint32_t iocfgRegAddr = IOC_ADDR(index);
     uint32_t mask         = GPIO_PIN_TO_MASK(index);
-    uint32_t configValue  = HWREG(iocfgRegAddr);
+
+    /* Mask off the bits reserved for non-IOC configuration values.
+     * The non-IOC configuration values will be written further below.
+     */
+    uint32_t configValue = HWREG(iocfgRegAddr) & GPIOLPF3_CFG_IOC_M;
 
     if (HWREGB(GPIO_BASE + GPIO_O_IMASK) & mask)
     {
@@ -348,8 +352,8 @@ int_fast16_t GPIO_setConfigAndMux(uint_least8_t index, GPIO_PinConfig pinConfig,
         GPIO_disableInt(index);
     }
 
-    /* Mask off the mux bits containing non-IOC configuration values and apply */
-    GPIO_PinConfig tmpConfig = pinConfig & 0xFFFFFFF8;
+    /* Mask off the bits containing non-IOC configuration values and apply */
+    GPIO_PinConfig tmpConfig = pinConfig & GPIOLPF3_CFG_IOC_M;
     HWREG(iocfgRegAddr)      = tmpConfig | mux;
 
     if (!setPinToOutput)

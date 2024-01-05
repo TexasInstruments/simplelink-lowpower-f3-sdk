@@ -37,8 +37,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/pbe_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_generic_regdef_regs.h)
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
+#include DeviceFamily_constructPath(inc/pbe_generic_regdef_regs.h)
 
 #include <ti/drivers/rcl/RCL_Types.h>
 
@@ -46,6 +47,24 @@
  *
  * Register value to be written to registers, prior to temperature compensation
  */
+#ifdef DeviceFamily_CC27XX
+/* TODO: See RCL-556 */
+#define LRFDPBE32_BASE          0x40081400 // LRFDPBE32
+#define LRFDMDM32_BASE          0x40082400 // LRFDMDM32
+#define LRFDRFE32_BASE          0x40083400 // LRFDRFE32
+typedef union
+{
+    struct {
+        uint16_t ibBoost: 2;
+        uint16_t ib: 6;
+        uint16_t gain: 3;
+        uint16_t mode: 2;
+        uint16_t reserved: 2;
+        uint16_t noIfampRfLdoBypass: 1;
+    };
+    uint16_t rawValue;
+} LRF_TxPowerTable_Value;
+#else
 typedef union
 {
     struct {
@@ -57,6 +76,7 @@ typedef union
     };
     uint16_t rawValue;
 } LRF_TxPowerTable_Value;
+#endif
 #define LRF_TxPowerTable_INVALID_VALUE ((LRF_TxPowerTable_Value){.rawValue = 0xFFFF})              /*!< Value indicating that no valid tx power could be found in the table. */
 
 typedef uint8_t LRF_TxPowerTable_TempCoeff;
@@ -460,14 +480,16 @@ typedef struct LRF_Config_s {
     const LRF_RegConfigList *regConfigList;  /*!< List of pointers to register definitions */
 } LRF_Config;
 
-#define LRF_BASE_ADDR      0x40080000U
-#define PBE_RAM_BASE_ADDR  0x40090000U
-#define BUF_RAM_BASE_ADDR  0x40092000U
-#define MCE_RAM_BASE_ADDR  0x40094000U
-#define RFE_RAM_BASE_ADDR  0x40096000U
-#define S2R_RAM_BASE_ADDR  0x40098000U
-#define TOPSM_RAM_SZ       0x00001000U /* 4 KB */
-#define MAX_REG_CONFIG_LEN 1024U        /* 1024 entries, using 4 KB */
+#define LRF_BASE_ADDR           0x40080000U
+#define PBE_RAM_BASE_ADDR       0x40090000U
+#define BUF_RAM_BASE_ADDR       0x40092000U
+#define RXF_UNWRAPPED_BASE_ADDR 0x40093000U
+#define TXF_UNWRAPPED_BASE_ADDR 0x40093800U
+#define MCE_RAM_BASE_ADDR       0x40094000U
+#define RFE_RAM_BASE_ADDR       0x40096000U
+#define S2R_RAM_BASE_ADDR       0x40098000U
+#define TOPSM_RAM_SZ            0x00001000U /* 4 KB */
+#define MAX_REG_CONFIG_LEN      1024U        /* 1024 entries, using 4 KB */
 
 #define LRF_TXPOWER_REFERENCE_TEMPERATURE 25    /*!< Reference temperature for TX power, degrees C */
 #define LRF_TXPOWER_TEMPERATURE_SCALING  0x100 /*!< Scaling factor for TX power temperature coefficients */
@@ -480,14 +502,14 @@ static inline void LRF_sendHardStop(void)
 {
     /* Send stop to PBE */
     /* This API is the same across PBE banks */
-    S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOP;
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
 }
 
 static inline void LRF_sendGracefulStop(void)
 {
     /* Send stop to PBE */
     /* This API is the same across PBE banks */
-    S_PBE_API = PBE_GENERIC_REGDEF_API_OP_EOPSTOP;
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_EOPSTOP;
 }
 
 static inline void LRF_hardStop(void)
@@ -497,7 +519,7 @@ static inline void LRF_hardStop(void)
 
 static inline uint32_t LRF_getTxFifoWritable(void)
 {
-    return S_PBE_TXFWRITABLE;
+    return HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE);
 }
 
 /**

@@ -55,14 +55,14 @@ endif()
 add_library(TrustZone::tfm_dependencies_cc26x4 INTERFACE IMPORTED)
 
 set_target_properties(TrustZone::tfm_dependencies_cc26x4 PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "/project/lowpower_f3_sdk/tfm_s/cc26x4/build_dependencies;/project/lowpower_f3_sdk/source/;/project/lowpower_f3_sdk/source/third_party/tfm/interface/include;/project/lowpower_f3_sdk/source/third_party/mbedcrypto/include;/project/lowpower_f3_sdk/source/third_party/mbedcrypto/ti"
+  INTERFACE_INCLUDE_DIRECTORIES "/project/lowpower_f3_sdk/tfm_s/cc26x4/build_dependencies;/project/lowpower_f3_sdk/source/;/project/lowpower_f3_sdk/source/third_party/tfm/interface/include;/project/lowpower_f3_sdk/source/third_party/tfm/secure_fw/include;/project/lowpower_f3_sdk/source/third_party/tfm/config;/project/lowpower_f3_sdk/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc;/project/lowpower_f3_sdk/source/third_party/mbedtls/include;/project/lowpower_f3_sdk/source/third_party/mbedtls/ti"
 )
 
 # Create imported target TrustZone::tfm_dependencies_cc27xx
 add_library(TrustZone::tfm_dependencies_cc27xx INTERFACE IMPORTED)
 
 set_target_properties(TrustZone::tfm_dependencies_cc27xx PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "/project/lowpower_f3_sdk/tfm_s/cc27xx/build_dependencies;/project/lowpower_f3_sdk/source/;/project/lowpower_f3_sdk/source/third_party/tfm/interface/include;/project/lowpower_f3_sdk/source/third_party/mbedcrypto/include;/project/lowpower_f3_sdk/source/third_party/mbedcrypto/ti"
+  INTERFACE_INCLUDE_DIRECTORIES "/project/lowpower_f3_sdk/tfm_s/cc27xx/build_dependencies;/project/lowpower_f3_sdk/source/;/project/lowpower_f3_sdk/source/third_party/tfm/interface/include;/project/lowpower_f3_sdk/source/third_party/mbedtls/include;/project/lowpower_f3_sdk/source/third_party/mbedtls/ti"
 )
 
 if(CMAKE_VERSION VERSION_LESS 3.0.0)

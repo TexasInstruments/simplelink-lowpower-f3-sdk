@@ -74,7 +74,7 @@ extern "C" {
 /*!
  *  @brief Perform modular reduction on large integer array
  *
- *  This function supports inputs up to #BigNum_MOD_REDUCTION_MAX_INPUT_LEN_IN_WORD in word length.
+ *  This function supports inputs up to #BigNum_MOD_REDUCTION_MAX_INPUT_LEN_IN_WORDS in word length.
  *
  *  @param  result          Pointer to a word-aligned buffer to store result in little-endian,
  *                          where result[0] contains the least significant 32-bits of result.

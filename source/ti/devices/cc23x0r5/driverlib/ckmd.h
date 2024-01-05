@@ -61,6 +61,30 @@ extern "C" {
 #include "../inc/hw_types.h"
 #include "../inc/hw_memmap.h"
 #include "../inc/hw_ckmd.h"
+#include "../inc/hw_fcfg.h"
+
+//*****************************************************************************
+//
+//! \name LFOSC Temperature Coefficient Temperature Limits
+//!
+//! If the temperature in Celsius is within the range [
+//! \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MIN,
+//! \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MAX ], inclusive, then the
+//! temperature coefficient \ref CKMDGetLfoscMidTempCoefficientPpmPerC() shall
+//! be used, otherwise \ref CKMDGetLfoscExtTempCoefficientPpmPerC().
+//!
+//! If \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MIN is INT16_MIN, then there is no
+//! lower limit for the above mentioned temperature range.
+//!
+//! If \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MAX is INT16_MAX, then there is no
+//! upper limit for the above mentioned temperature range.
+//!
+//! \{
+//
+//*****************************************************************************
+#define CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MIN (INT16_MIN)
+#define CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MAX (70)
+//! \}
 
 //*****************************************************************************
 //
@@ -333,6 +357,7 @@ __STATIC_INLINE void CKMDSetTargetCapTrim(uint32_t q1CapTrim, uint32_t q2CapTrim
     tmp |= (q2CapTrim << CKMD_HFXTTARG_Q2CAP_S) & CKMD_HFXTTARG_Q2CAP_M;
     HWREG(CKMD_BASE + CKMD_O_HFXTTARG) = tmp;
 }
+
 //*****************************************************************************
 //
 //! \brief Sets target HFXT Q1 capacitor ramp trim
@@ -531,6 +556,70 @@ __STATIC_INLINE uint32_t CKMDGetTargetIdacTrim(void)
 __STATIC_INLINE uint32_t CKMDGetTargetAmplitudeThresholdTrim(void)
 {
     return (HWREG(CKMD_BASE + CKMD_O_HFXTTARG) & CKMD_HFXTTARG_AMPTHR_M) >> CKMD_HFXTTARG_AMPTHR_S;
+}
+
+//*****************************************************************************
+//
+//! \brief Gets the worst case LFOSC frequency jump due to RTN.
+//!
+//! \return The absolute value of the worst case jump due to RTN in ppm.
+//
+//*****************************************************************************
+__STATIC_INLINE uint_least16_t CKMDGetLfoscRtnPpm(void)
+{
+    uint8_t ppmRtn = 0x14;
+    if (fcfg->appTrims.revision >= 0x5)
+    {
+        ppmRtn = fcfg->appTrims.cc23x0r5.lfOscParams.ppmRtn;
+    }
+    return ppmRtn * 30;
+}
+
+//*****************************************************************************
+//
+//! \brief Gets the the worst case LFOSC temperature coefficient in the "middle"
+//! temperature range.
+//!
+//! This function can be used to determine the the worst case LFOSC temperature
+//! coefficient in units of ppm/C in the temperature range [
+//! \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MIN,
+//! \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MAX ].
+//!
+//! \return The absolute value of worst case temperature coefficient in ppm/C.
+//
+//*****************************************************************************
+__STATIC_INLINE uint_least16_t CKMDGetLfoscMidTempCoefficientPpmPerC(void)
+{
+    uint8_t ppmTempMid = 0x14;
+    if (fcfg->appTrims.revision >= 0x5)
+    {
+        ppmTempMid = fcfg->appTrims.cc23x0r5.lfOscParams.ppmTempMid;
+    }
+    return ppmTempMid * 13;
+}
+
+//*****************************************************************************
+//
+//! \brief Gets the the worst case LFOSC temperature coefficient in the
+//! "extended" temperature range.
+//!
+//! This function can be used to determine the the worst case LFOSC temperature
+//! coefficient in units of ppm/C when the temperature is outside of the
+//! temperature range [
+//! \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MIN,
+//! \ref CKMD_LFOSC_MID_TEMP_COEFFICIENT_RANGE_MAX ].
+//!
+//! \return The absolute value of worst case temperature coefficient in ppm/C.
+//
+//*****************************************************************************
+__STATIC_INLINE uint_least16_t CKMDGetLfoscExtTempCoefficientPpmPerC(void)
+{
+    uint8_t ppmTempExt = 0x14;
+    if (fcfg->appTrims.revision >= 0x5)
+    {
+        ppmTempExt = fcfg->appTrims.cc23x0r5.lfOscParams.ppmTempExt;
+    }
+    return ppmTempExt * 35;
 }
 
 //*****************************************************************************

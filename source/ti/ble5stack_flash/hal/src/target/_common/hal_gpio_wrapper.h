@@ -57,7 +57,8 @@ extern "C"
  */
 
 #ifndef CC33xx
-#include <driverlib/gpio.h>
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/gpio.h)
 #ifndef CC23X0
 #include <driverlib/ioc.h>
 #endif // !CC23X0

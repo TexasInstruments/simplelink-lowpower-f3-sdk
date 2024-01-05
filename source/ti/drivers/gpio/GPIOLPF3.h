@@ -80,6 +80,13 @@ extern "C" {
  */
 #undef GPIOLPF3_CFG_OPTION_NOT_SUPPORTED
 
+/* Most configuration values are directly mapped to fields in the IOCn
+ * registers, but the mux bits are reserved for configuration options that
+ * cannot be directly mapped to the IOCn registers. The define below is the
+ * mask used by the GPIO driver to mask off the non-IOC configuration values.
+ */
+#define GPIOLPF3_CFG_IOC_M 0xFFFFFFF8
+
 /* Low and high value interrupts are not available on Low Power F3 devices */
 #define GPIO_CFG_INT_LOW_INTERNAL  GPIOLPF3_CFG_OPTION_NOT_SUPPORTED
 #define GPIO_CFG_INT_HIGH_INTERNAL GPIOLPF3_CFG_OPTION_NOT_SUPPORTED
@@ -127,7 +134,9 @@ extern "C" {
 
 /* Configuration values stored in mux bits Any configuration options not
  * directly handled by IOC need to be stored inside the mux bits (lowest 3 bits
- * on Low Power F3 devices). These are masked out by init() and setConfig()
+ * on Low Power F3 devices). These are masked out by GPIO_init(),
+ * GPIO_setConfig(), GPIO_setConfigAndMux() and GPIO_getConfig() using
+ * GPIOLPF3_CFG_IOC_M.
  */
 
 /* Default output value */

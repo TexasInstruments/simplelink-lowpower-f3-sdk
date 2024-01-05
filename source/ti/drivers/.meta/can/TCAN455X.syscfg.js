@@ -41,6 +41,24 @@
 let Common = system.getScript("/ti/drivers/Common.js");
 let logError = Common.logError;
 
+/* The default task priority is the highest task priority common to both
+ * FreeRTOS and TIRTOS7 default configurations.
+ */
+const defaultTaskPriority = 5;
+
+/* get device ID */
+const deviceId = system.deviceData.deviceId;
+
+let maxSPIBitRate;
+if (deviceId.match(/CC(13|26).[12]/))
+{
+    maxSPIBitRate = 8000000;
+}
+else
+{
+    maxSPIBitRate = 12000000;
+}
+
 let config = [
     {
         name: "clkFreqMHz",
@@ -57,9 +75,9 @@ let config = [
         displayName: "SPI Bit Rate",
         description: "Specifies the SPI controller bit rate in bits per second.",
         longDescription: "The TCAN455X SPI peripheral can support bit rates up " +
-            "to 18 MHz; however, the max bit rate is limited to 12 MHz by the SPI " +
-            "controller. Select the highest bit rate for maximum performance.",
-        default: 12000000
+            "to 18 MHz; however, the max bit rate is limited to by the SPI " +
+            "controller. Select the highest supported bit rate for maximum performance.",
+        default: maxSPIBitRate
     },
     {
         name: "taskPri",
@@ -67,9 +85,8 @@ let config = [
         description: "Specifies the priority for the interrupt handler task.",
         longDescription: "Higher numbers denote higher priority. The max value " +
             "depends on the RTOS configuration. It is recommended to set this " +
-            "to the highest priority.",
-        /* The max value corresponding to the TI FreeRTOS config is 9 */
-        default: 9
+            "to the highest priority to minimize interrupt processing latency.",
+        default: defaultTaskPriority
     },
     {
         name: "taskStackSize",
@@ -201,6 +218,20 @@ function sharedModuleInstances(inst) {
 function validate(inst, validation)
 {
     let message;
+    let maxPriority;
+    const taskModule = system.modules["/ti/sysbios/knl/Task"];
+
+    if (taskModule)
+    {
+        const Task = taskModule.$static;
+        maxPriority = Task.numPriorities - 1;
+
+        if (inst.taskPri > maxPriority)
+        {
+            message = 'Task priority cannot be greater than ' + maxPriority;
+            logError(validation, inst, "taskPri", message);
+        }
+    }
 
     if ((inst.taskStackSize & 0x3) != 0)
     {
@@ -208,10 +239,16 @@ function validate(inst, validation)
         logError(validation, inst, "taskStackSize", message);
     }
 
-    if (inst.spiBitRate > 12000000)
+    if (inst.spiBitRate > maxSPIBitRate)
     {
-        message = 'SPI Bit Rate cannot be greater than 12 MHz';
+        message = 'SPI Bit Rate cannot be greater than ' + (maxSPIBitRate / 1000000) + ' MHz';
         logError(validation, inst, "spiBitRate", message);
+    }
+
+    if (inst.taskPri < 0)
+    {
+        message = 'Task priority cannot be negative';
+        logError(validation, inst, "taskPri", message);
     }
 }
 

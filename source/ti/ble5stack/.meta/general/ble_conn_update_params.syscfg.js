@@ -72,6 +72,7 @@ const config = [
     },
     {
         name: "reqPeripheralLat",
+        legacyNames: ["reqSlaveLat"],
         displayName: "Requested Peripheral Latency",
         default: 0,
         longDescription: Docs.reqPeripheralLatLongDescription

@@ -48,8 +48,9 @@
 // includes
 // ****************************************************************************
 #include <string.h>
-#include "inc/hw_memmap.h"
-#include "inc/hw_ints.h"
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_ints.h)
 #include "hal_types.h"
 
 #include "inc/npi_data.h"

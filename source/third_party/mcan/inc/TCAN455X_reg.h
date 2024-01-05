@@ -35,8 +35,8 @@
  *******************************************************************************
  */
 
-#ifndef third_party_mcan_tcan455x_reg__include
-#define third_party_mcan_tcan455x_reg__include
+#ifndef __TCAN455X_REG_H__
+#define __TCAN455X_REG_H__
 
 /******************************************************************************/
 /* Device ID and Interrupt/Diagnostic Flag Register Addresses */
@@ -208,4 +208,4 @@
 #define TCAN455X_IE_CANDOM    0x00000100
 #define TCAN455X_IE_MASK      0xFF69D700
 
-#endif /* third_party_mcan_tcan455x_reg__include */
+#endif /* __TCAN455X_REG_H__ */

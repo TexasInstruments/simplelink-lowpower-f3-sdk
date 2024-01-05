@@ -117,8 +117,10 @@ void BatMonSupportLPF3_init(void)
         /* Disable all events */
         HWREG(PMUD_BASE + PMUD_O_EVENTMASK) = 0;
 
-        /* Enable BATMON */
-        HWREG(PMUD_BASE + PMUD_O_CTL) |= (PMUD_CTL_CALC_EN | PMUD_CTL_MEAS_EN);
+        /* Enable BATMON. Explicitly disable HW hysteresis to avoid HW bug
+         * causing poor temperature measurement accuracy.
+         */
+        HWREG(PMUD_BASE + PMUD_O_CTL) = PMUD_CTL_CALC_EN | PMUD_CTL_MEAS_EN | PMUD_CTL_HYST_EN_DIS;
 
         /* Set the combined BATMON interrupt as a wakeup source. This means the
          * BATMON can bring the device out of standby when an event is

@@ -77,11 +77,6 @@ extern "C" {
 /*! The initial delay when waking from STANDBY (usec). */
 #define PowerCC27XX_WAKEDELAYSTANDBY 100
 
-// TODO: Remove these once they have been defined in driverlib (LPRF_DOC-118)
-#define CLKCTL_DESCEX0_HSCMP_S 26
-#define CLKCTL_DESCEX1_LGPT4_S 0
-#define CLKCTL_DESCEX1_LGPT5_S 1
-
 /* \cond */
 /* The control of the peripherals are split between multiple groups.
  * These defines are used to differentiate between the groups.
@@ -96,72 +91,68 @@ extern "C" {
 #define PowerCC27XX_PERIPH_BIT_INDEX_M   0x00FF
 
 /* \endcond */
+
+/* \cond */
+typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
+/* \endcond */
+
 /* Resource IDs */
 
-/*!< Resource ID: General Purpose I/O */
+/*! Resource ID: General Purpose I/O */
 #define PowerLPF3_PERIPH_GPIO (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_GPIO_S)
 
-/*!< Resource ID: UART 0 */
+/*! Resource ID: UART 0 */
 #define PowerLPF3_PERIPH_UART0 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_UART0_S)
 
-/*!< Resource ID: UART 1 */
-#define PowerLPF3_PERIPH_UART1 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_UART0_S)
+/*! Resource ID: UART 1 */
+#define PowerLPF3_PERIPH_UART1 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_UART1_S)
 
-/*!< Resource ID: I2C 0 */
+/*! Resource ID: I2C 0 */
 #define PowerLPF3_PERIPH_I2C0 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_I2C0_S)
 
-/*!< Resource ID: SPI 0 */
+/*! Resource ID: SPI 0 */
 #define PowerLPF3_PERIPH_SPI0 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_SPI0_S)
 
-/*!< Resource ID: SPI 1 */
+/*! Resource ID: SPI 1 */
 #define PowerLPF3_PERIPH_SPI1 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_SPI1_S)
 
-/*!< Resource ID: ADC */
+/*! Resource ID: ADC */
 #define PowerLPF3_PERIPH_ADC0 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_ADC0_S)
 
-/*!< Resource ID: AES Security Module */
+/*! Resource ID: AES Security Module */
 #define PowerLPF3_PERIPH_AES (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LAES_S)
 
-/*!< Resource ID: uDMA Controller */
+/*! Resource ID: uDMA Controller */
 #define PowerLPF3_PERIPH_DMA (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_DMA_S)
 
-/*!< Resource ID: I2S */
+/*! Resource ID: I2S */
 #define PowerLPF3_PERIPH_I2S (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_I2S_S)
 
-/*!< Resource ID: High-Speed Comparator */
-#define PowerLPF3_PERIPH_HSCMP (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_HSCMP_S)
-
-/*!< Resource ID: General Purpose Timer 0 */
+/*! Resource ID: General Purpose Timer 0 */
 #define PowerLPF3_PERIPH_LGPT0 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT0_S)
 
-/*!< Resource ID: General Purpose Timer 1 */
+/*! Resource ID: General Purpose Timer 1 */
 #define PowerLPF3_PERIPH_LGPT1 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT1_S)
 
-/*!< Resource ID: General Purpose Timer 2 */
+/*! Resource ID: General Purpose Timer 2 */
 #define PowerLPF3_PERIPH_LGPT2 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT2_S)
 
-/*!< Resource ID: General Purpose Timer 3 */
+/*! Resource ID: General Purpose Timer 3 */
 #define PowerLPF3_PERIPH_LGPT3 (PowerCC27XX_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT3_S)
 
-/*!< Resource ID: General Purpose Timer 4 */
-#define PowerLPF3_PERIPH_LGPT4 (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_LGPT4_S)
-
-/*!< Resource ID: General Purpose Timer 5 */
-#define PowerLPF3_PERIPH_LGPT5 (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_LGPT5_S)
-
-/*!< Resource ID: Hardware Security Module */
+/*! Resource ID: Hardware Security Module */
 #define PowerLPF3_PERIPH_HSM (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_HSM_S)
 
-/*!< Resource ID: Vector Computational Engine */
+/*! Resource ID: Vector Computational Engine */
 #define PowerLPF3_PERIPH_VCE (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_VCE_S)
 
-/*!< Resource ID: MCAN */
+/*! Resource ID: MCAN */
 #define PowerLPF3_PERIPH_MCAN (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_MCAN_S)
 
-/*!< Resource ID: LRFD Tracer */
+/*! Resource ID: LRFD Tracer */
 #define PowerLPF3_PERIPH_LFRD_TRC (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
 
-/*!< Resource ID: LRFD S2R RAM */
+/*! Resource ID: LRFD S2R RAM */
 #define PowerLPF3_PERIPH_LFRD_S2RRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
 
 /* \cond */
@@ -189,16 +180,16 @@ extern "C" {
  * a specified effect until released.
  */
 
-/*!< Constraint: Disallow a transition to the SHUTDOWN state */
+/*! Constraint: Disallow a transition to the SHUTDOWN state */
 #define PowerLPF3_DISALLOW_SHUTDOWN 0
 
-/*!< Constraint: Disallow a transition to the STANDBY sleep state */
+/*! Constraint: Disallow a transition to the STANDBY sleep state */
 #define PowerLPF3_DISALLOW_STANDBY 1
 
-/*!< Constraint: Disallow a transition to the IDLE sleep state */
+/*! Constraint: Disallow a transition to the IDLE sleep state */
 #define PowerLPF3_DISALLOW_IDLE 2
 
-/*!< Constraint: Flash memory needs to enabled during IDLE */
+/*! Constraint: Flash memory needs to enabled during IDLE */
 #define PowerLPF3_NEED_FLASH_IN_IDLE 3
 
 /* \cond */
@@ -212,21 +203,21 @@ extern "C" {
  *  without any gaps.
  */
 
-/*!< Power event: The device is entering the STANDBY sleep state */
+/*! Power event: The device is entering the STANDBY sleep state */
 #define PowerLPF3_ENTERING_STANDBY (1 << 0)
 
-/*!< Power event: The device is entering the SHUTDOWN state */
+/*! Power event: The device is entering the SHUTDOWN state */
 #define PowerLPF3_ENTERING_SHUTDOWN (1 << 1)
 
-/*!< Power event: The device is waking up from the STANDBY sleep state */
+/*! Power event: The device is waking up from the STANDBY sleep state */
 #define PowerLPF3_AWAKE_STANDBY (1 << 2)
 
-/*!< Power event: The high frequency (HF) crystal oscillator is now available
+/*! Power event: The high frequency (HF) crystal oscillator is now available
  *   for use (HFXT) by the digital domain
  */
 #define PowerLPF3_HFXT_AVAILABLE (1 << 3)
 
-/*!< Power event: The system has switched to the low frequency clock source
+/*! Power event: The system has switched to the low frequency clock source
  *   configured in CCFG
  */
 #define PowerLPF3_LFCLK_SWITCHED (1 << 4)
@@ -308,6 +299,18 @@ typedef enum
     /*! Device booted due to power on reset */
     PowerLPF3_RESET_POR          = PMCTL_RESET_POR,
 } PowerLPF3_ResetReason;
+
+/*!
+ * @brief The possible frequencies to configure the AFOSC to.
+ *
+ * The value of each enumeration represents the frequency in Hz.
+ */
+typedef enum
+{
+    PowerLPF3_AFOSC_FREQ_80MHZ      = 80000000, /*!< 80 MHz */
+    PowerLPF3_AFOSC_FREQ_90P3168MHZ = 90316800, /*!< 90.3168 MHz */
+    PowerLPF3_AFOSC_FREQ_98P304MHZ  = 98304000, /*!< 98.304 MHz */
+} PowerLPF3_AfoscFreq;
 
 /*!
  *  @brief  The wait for interrupt (WFI) policy
@@ -401,11 +404,39 @@ void PowerLPF3_selectLFOSC(void);
  */
 void PowerLPF3_selectLFXT(void);
 
+/*!
+ *  @brief  Start the AFOSC
+ *
+ *  This function will start the AFOSC if it is not already running. The AFOSC
+ *  will be configured to the specified frequency and it will be configured to
+ *  automatically be disabled when entering STANDBY, meaning this function will
+ *  need to be called again after waking up from STANDBY.
+ *
+ *  If the AFOSC is already running, no change will be done, and an error code
+ *  will be returned. This indicates that another SW component is "owning" the
+ *  AFOSC.
+ *
+ *  @param[in]  frequency      The desired frequency of the AFOSC.
+ *
+ *  @return #Power_SOK on success,
+ *          #Power_EFAIL if AFOSC is already running,
+ *          #Power_EINVALIDINPUT if an invalid frequency is specified.
+ *
+ *  @sa  #PowerLPF3_stopAFOSC()
+ */
+int_fast16_t PowerLPF3_startAFOSC(PowerLPF3_AfoscFreq frequency);
+
+/*!
+ *  @brief  Stop the AFOSC
+ *
+ *  This function will stop the AFOSC.
+ *
+ *  @sa  #PowerLPF3_startAFOSC()
+ */
+void PowerLPF3_stopAFOSC(void);
+
 void PowerCC27XX_schedulerDisable(void);
 void PowerCC27XX_schedulerRestore(void);
-
-#define Power_getPerformanceLevel(void)  0
-#define Power_setPerformanceLevel(level) Power_EFAIL
 
 #ifdef __cplusplus
 }

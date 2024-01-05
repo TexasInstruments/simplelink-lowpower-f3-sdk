@@ -1,0 +1,14 @@
+[
+    {
+        "files": [
+            "+../../rfEchoRx.c -> rfEchoRx.c",
+            "+../../README.md -> README.md",
+            "+../../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
+            "+../../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
+            "+../rfEchoRx.syscfg -> rfEchoRx.syscfg",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../overview.rov.json -> overview.rov.json",
+            "+cc23x0r5_freertos.cmd -> cc23x0r5_freertos.cmd"
+        ]
+    }
+]

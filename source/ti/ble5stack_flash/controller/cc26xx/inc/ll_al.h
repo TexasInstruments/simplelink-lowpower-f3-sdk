@@ -168,6 +168,13 @@
 #define BLE_MAX_NUM_AL_ENTRIES         (alSize)  // at 8 bytes per AL entry
 #define BLE_NO_AL_MATCH_FOUND          0xFF
 
+#ifdef CC23X0
+#define BLE_MAX_NUM_AL_SCAN_ENTRIES    15
+#else
+#define BLE_MAX_NUM_AL_SCAN_ENTRIES    BLE_MAX_NUM_AL_ENTRIES
+#endif // USE_RCL
+
+#define BLE_NUM_AL_ENTRIES_ZERO        0   // Error return value for number of accept list entries
 #define BLE_NUM_AL_ENTRIES             ((BLE_MAX_NUM_AL_ENTRIES) + (2 * (BLE_RESOLVING_LIST_SIZE)) + 1)
 
 /*******************************************************************************
@@ -246,6 +253,8 @@ extern alTable_t *alTableScan;
  */
 
 extern void       AL_Init( alTable_t * );
+
+extern void       AL_Scan_Init( alTable_t * );
 
 extern llStatus_t AL_Clear( alTable_t * );
 

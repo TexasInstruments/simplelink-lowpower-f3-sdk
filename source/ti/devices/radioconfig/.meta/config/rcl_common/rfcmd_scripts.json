@@ -1,0 +1,1091 @@
+{
+  "adc_noise": {},
+  "ble": {
+    "CMD_GENERIC_TX_TEST": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "ble_prod_test": {
+    "CMD_GENERIC_TX_TEST": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js",
+        "role": "update",
+        "call": "updCfRfFrequency()"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "ble_cs": {},
+  "ble_cs_hp": {},
+  "fsk_20_kbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "gfsk_100_kbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "gfsk_1_mbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "gfsk_250_kbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "gfsk_250_kbps_hidev": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "gfsk_2_mbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "gfsk_500_kbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "ieee_diff": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "msk_250_kbps": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "msk_250_kbps_fec": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
+  "nesb": {
+    "CMD_GENERIC_TX_TEST": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      }
+    },
+    "CMD_NESB_PTX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_NESB_PRX": {
+      "common.phyFeatures": {
+        "#text": "getFeatureSelector(\"subPhy\")",
+        "role": "update"
+      },
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "syncWordB": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      }
+    }
+  },
+  "custom2400": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"syncWord\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  }
+}

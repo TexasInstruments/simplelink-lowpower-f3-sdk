@@ -46,22 +46,22 @@
 #include <ti/drivers/rcl/commands/ble_cs.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/txf_regs.h)
-#include DeviceFamily_constructPath(driverlib/rxf_regs.h)
-#include DeviceFamily_constructPath(driverlib/dbell_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe32_regs.h)
-#include DeviceFamily_constructPath(driverlib/mdm_regs.h)
-#include DeviceFamily_constructPath(driverlib/mdm32_regs.h)
-#include DeviceFamily_constructPath(driverlib/rfe_regs.h)
-#include DeviceFamily_constructPath(driverlib/rfe32_regs.h)
-#include DeviceFamily_constructPath(driverlib/s2r_regs.h)
-#include DeviceFamily_constructPath(driverlib/rfe_common_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_generic_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_common_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_ble5_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_ble_cs_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_ble_cs_regdef_regs.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdtxf.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrxf.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdpbe32.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdmdm.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdmdm32.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrfe.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrfe32.h)
+#include DeviceFamily_constructPath(inc/hw_lrfds2r.h)
+#include DeviceFamily_constructPath(inc/rfe_common_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_generic_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_ble5_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_ble_cs_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_ble_cs_regdef_regs.h)
 
 #ifndef OCTOPUS
 #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -249,9 +249,9 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
       .tTxModDelay       = RCL_BLE_CS_US_TO_MCE_TIMER(4),
 
       .pctConfig = {
-        /*TPM = 10US*/ {.period = MDM_DEMFIDC0_ACCPERIOD_SMPL32,  .numIteration = 1, .fracWait = 32,  .fracWaitAdj = 0},
-        /*TPM = 20US*/ {.period = MDM_DEMFIDC0_ACCPERIOD_SMPL32,  .numIteration = 2, .fracWait = 32,  .fracWaitAdj = 0},
-        /*TPM = 40US*/ {.period = MDM_DEMFIDC0_ACCPERIOD_SMPL128, .numIteration = 1, .fracWait = 128, .fracWaitAdj = 0}
+        /*TPM = 10US*/ {.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL32 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S),  .numIteration = 1, .fracWait = 32,  .fracWaitAdj = 0},
+        /*TPM = 20US*/ {.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL32 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S),  .numIteration = 2, .fracWait = 32,  .fracWaitAdj = 0},
+        /*TPM = 40US*/ {.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL128 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S), .numIteration = 1, .fracWait = 128, .fracWaitAdj = 0}
       },
 
       .magnConfig = {
@@ -301,9 +301,9 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
       .tTxModDelay       = 124, //2.6us
 
       .pctConfig = {
-        /*TPM = 10US*/{.period = MDM_DEMFIDC0_ACCPERIOD_SMPL32,  .numIteration = 2, .fracWait = 32,  .fracWaitAdj = 9},
-        /*TPM = 20US*/{.period = MDM_DEMFIDC0_ACCPERIOD_SMPL128, .numIteration = 1, .fracWait = 128, .fracWaitAdj = 0},
-        /*TPM = 40US*/{.period = MDM_DEMFIDC0_ACCPERIOD_SMPL128, .numIteration = 2, .fracWait = 128, .fracWaitAdj = 0}
+        /*TPM = 10US*/{.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL32 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S),  .numIteration = 2, .fracWait = 32,  .fracWaitAdj = 9},
+        /*TPM = 20US*/{.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL128 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S), .numIteration = 1, .fracWait = 128, .fracWaitAdj = 0},
+        /*TPM = 40US*/{.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL128 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S), .numIteration = 2, .fracWait = 128, .fracWaitAdj = 0}
       },
 
       .magnConfig = {
@@ -380,33 +380,34 @@ static RCL_CommandStatus RCL_Handler_BLE_CS_findPbeErrorEndStatus(uint16_t pbeEn
 static void RCL_Handler_BLE_CS_configureTxRxFIFO(RCL_CmdBleCs* pCmd)
 {
     /* Override the FIFO location and size */
-    S_PBE_FCFG1    = 128;   // TXFIFO base address
-    S_PBE_FCFG2    = 128;   // 128 x 32bit word
-    S_PBE_FCFG3    = 256;   // RXFIFO base address
-    S_PBE_FCFG4    = 128;   // 128 x 32bit word
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG1)    = 128;   // TXFIFO base address
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG2)    = 128;   // 128 x 32bit word
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG3)    = 256;   // RXFIFO base address
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG4)    = 128;   // 128 x 32bit word
 
-    /* Deallocate FIFOs to have a clean start */
-    S_PBE_FCMD = PBE_FCMD_DATA_FIFO_RESET;
+    /* Reset FIFOs to have a clean start */
+    /* Writing to FCMD is safe since the PBE is not running, ref. RCL-367 */
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_FIFO_RESET;
 
     /* Calculate how many entries can be stored simultaneous in given size of tx/rx fifos */
-    uint16_t nStepsFit = S_PBE_TXFWRITABLE / sizeof(RCL_CmdBleCs_Step);
-    S_PBE_TXFWBTHRS = (nStepsFit - 1) * sizeof(RCL_CmdBleCs_Step);
+    uint16_t nStepsFit = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE) / sizeof(RCL_CmdBleCs_Step);
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_TXFWBTHRS) = (nStepsFit - 1) * sizeof(RCL_CmdBleCs_Step);
 
-    uint16_t nResultsFit = S_PBE_RXFWRITABLE / sizeof(RCL_CmdBleCs_StepResult);
-    S_PBE_RXFRBTHRS = (nResultsFit - 1) * sizeof(RCL_CmdBleCs_StepResult);
+    uint16_t nResultsFit = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFWRITABLE) / sizeof(RCL_CmdBleCs_StepResult);
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = (nResultsFit - 1) * sizeof(RCL_CmdBleCs_StepResult);
 
     #ifndef PG2
     /* CDDS BUG00003 - Temporarily workaround */
-    S_PBE_RXFRBTHRS = sizeof(RCL_CmdBleCs_StepResult);
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = sizeof(RCL_CmdBleCs_StepResult);
     #endif
 
     /* FIFO pointers should auto-commit/auto-dealloc, enable threshold events */
-    S_PBE_FCFG0   |= (PBE_FCFG0_TXACOM_BM | PBE_FCFG0_TXADEAL_BM | PBE_FCFG0_RXACOM_BM | PBE_FCFG0_RXADEAL_BM);
-    S_PBE_FCFG0   &= ~(PBE_FCFG0_RXIRQMET_BM | PBE_FCFG0_TXIRQMET_BM);
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG0)   = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) | (LRFDPBE_FCFG0_TXACOM_M | LRFDPBE_FCFG0_TXADEAL_M | LRFDPBE_FCFG0_RXACOM_M | LRFDPBE_FCFG0_RXADEAL_M);
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG0)   = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) & (~(LRFDPBE_FCFG0_RXIRQMET_M | LRFDPBE_FCFG0_TXIRQMET_M));
 
     /* Clear any interrupts left from uninitialized fifos */
-    S_PBE_EVTCLR1  =  (PBE_EVTCLR1_RXRDBTHR_BM |  PBE_EVTCLR1_RXWRBTHR_BM | PBE_EVTCLR1_TXRDBTHR_BM | PBE_EVTCLR1_TXWRBTHR_BM);
-    S_DBELL_ICLR0 |=  (DBELL_ICLR0_RXFIFO_BM | DBELL_ICLR0_TXFIFO_BM);
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_EVTCLR1)  =  (LRFDPBE_EVTCLR1_RXRDBTHR_M |  LRFDPBE_EVTCLR1_RXWRBTHR_M | LRFDPBE_EVTCLR1_TXRDBTHR_M | LRFDPBE_EVTCLR1_TXWRBTHR_M);
+    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_ICLR0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_ICLR0) | (LRFDDBELL_ICLR0_RXFIFO_M | LRFDDBELL_ICLR0_TXFIFO_M);
 }
 
 /*
@@ -417,7 +418,7 @@ static void RCL_Handler_BLE_CS_fillTxBuffer(RCL_CmdBleCs* pCmd)
     if (pCmd->output->nStepsWritten < pCmd->mode.nSteps)
     {
         /* Calculate how many additional step will fit (which might be all) */
-        uint16_t nWritable  = S_PBE_TXFWRITABLE / sizeof(RCL_CmdBleCs_Step);
+        uint16_t nWritable  = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE) / sizeof(RCL_CmdBleCs_Step);
         uint16_t nRemaining = pCmd->mode.nSteps - pCmd->output->nStepsWritten;
         uint16_t nBatch     = (nWritable < nRemaining) ? nWritable : nRemaining;
 
@@ -440,10 +441,13 @@ static void RCL_Handler_BLE_CS_fillTxBuffer(RCL_CmdBleCs* pCmd)
             RCL_CmdBleCs_Step *pStep = RCL_Handler_BLE_CS_fetchNextStep(pCmd);
 
             /* Send it to PBE */
+            /* Using push operations is safe because the FIFO is used in
+               streaming mode, ref. RCL-367. This means that the BLE CS PBE
+               does not write to FCMD. */
             uint32_t *ptr = (uint32_t *) RCL_Handler_BLE_CS_preprocessStep(pCmd, pStep);
             for(uint8_t j=0; j<sizeof(RCL_CmdBleCs_Step)/sizeof(uint32_t); j++)
             {
-                S_TXF_TXD = *(ptr+j);
+                HWREG(LRFDTXF_BASE + LRFDTXF_O_TXD) = *(ptr+j);
             }
 
         }
@@ -458,7 +462,7 @@ static void RCL_Handler_BLE_CS_fillTxBuffer(RCL_CmdBleCs* pCmd)
             else
             {
                 /* No more steps left, no more interrupts needed, boost threshold to max value */
-                S_PBE_TXFWBTHRS = 0x3FF;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_TXFWBTHRS) = 0x3FF;
             }
         }
     }
@@ -472,7 +476,7 @@ static void RCL_Handler_BLE_CS_readRxBuffer(RCL_CmdBleCs* pCmd)
     if (pCmd->output->nResultsRead < pCmd->mode.nSteps)
     {
         /* Calculate how many result entries are available in rx fifo (might be all that has left) */
-        uint16_t nReadable  = S_PBE_RXFREADABLE / sizeof(RCL_CmdBleCs_StepResult);
+        uint16_t nReadable  = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) / sizeof(RCL_CmdBleCs_StepResult);
         uint16_t nRemaining = pCmd->mode.nSteps - pCmd->output->nResultsRead;
         uint16_t nBatch     = (nReadable < nRemaining) ? nReadable : nRemaining;
 
@@ -481,10 +485,13 @@ static void RCL_Handler_BLE_CS_readRxBuffer(RCL_CmdBleCs* pCmd)
         {
             RCL_CmdBleCs_StepResult *pResult = RCL_Handler_BLE_CS_fetchNextStepResult(pCmd);
 
+            /* Using pop operations is safe because the FIFO is used in
+               streaming mode, ref. RCL-367. This means that the BLE CS PBE
+               does not write to FCMD. */
             uint32_t *ptr = (uint32_t *) pResult;
             for(uint8_t j=0; j<sizeof(RCL_CmdBleCs_StepResult)/sizeof(uint32_t); j++)
             {
-                *(ptr+j) = S_RXF_RXD;
+                *(ptr+j) = HWREG_READ_LRF(LRFDRXF_BASE + LRFDRXF_O_RXD);
             }
 
             if (pResult->pktResult == RCL_CmdBleCs_PacketResult_Ok)
@@ -503,7 +510,7 @@ static void RCL_Handler_BLE_CS_readRxBuffer(RCL_CmdBleCs* pCmd)
         {
             if (nRemaining)
             {
-                S_PBE_RXFRBTHRS = (nRemaining * sizeof(RCL_CmdBleCs_StepResult));
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = (nRemaining * sizeof(RCL_CmdBleCs_StepResult));
             }
             else if (pCmd->mode.repeatSteps)
             {
@@ -511,7 +518,7 @@ static void RCL_Handler_BLE_CS_readRxBuffer(RCL_CmdBleCs* pCmd)
             }
             else
             {
-                S_PBE_RXFRBTHRS = 0x3FF;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = 0x3FF;
             }
         }
     }
@@ -523,19 +530,19 @@ static void RCL_Handler_BLE_CS_readRxBuffer(RCL_CmdBleCs* pCmd)
  */
 static void RCL_Handler_BLE_CS_configureS2R(RCL_CmdBleCs *pCmd)
 {
-    LRF_setClockEnable(DBELL_CLKCTL_S2RRAM_BM | DBELL_CLKCTL_S2R_BM, LRF_CLK_ENA_RCL);
+    LRF_setClockEnable(LRFDDBELL_CLKCTL_S2RRAM_M | LRFDDBELL_CLKCTL_S2R_M, LRF_CLK_ENA_RCL);
 
     /* Decode length */
     uint16_t len = (uint16_t)(sizeof(RCL_CmdBleCs_S2r)/sizeof(uint32_t) - 1); // -1 = container header
 
     /* Store 32bit words in S2R (offset 3072) memory; don't arm yet */
-    S_S2R_START = 0x0C00;
-    S_S2R_STOP  = S_S2R_START + len;
-    S_S2R_CFG   = ((S2R_CFG_CTL_EN << S2R_CFG_CTL) & S2R_CFG_CTL_BM) |
-                  //((S2R_CFG_SEL_DECSTAGE << S2R_CFG_SEL) & S2R_CFG_SEL_BM) |
-                  ((S2R_CFG_SEL_FRONTEND << S2R_CFG_SEL) & S2R_CFG_SEL_BM) |
-                  ((S2R_CFG_TRIGMODE_ONESHOT << S2R_CFG_TRIGMODE) & S2R_CFG_TRIGMODE_BM) |
-                  ((S2R_CFG_LAST0_DIS << S2R_CFG_LAST0) & S2R_CFG_LAST0_BM);
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_START) = 0x0C00;
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_STOP)  = HWREG_READ_LRF(LRFDS2R_BASE + LRFDS2R_O_START) + len;
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_CFG)   = ((LRFDS2R_CFG_CTL_EN) & LRFDS2R_CFG_CTL_M) |
+                  //((LRFDS2R_CFG_SEL_DECSTAGE) & LRFDS2R_CFG_SEL_M) |
+                  ((LRFDS2R_CFG_SEL_FRONTEND) & LRFDS2R_CFG_SEL_M) |
+                  ((LRFDS2R_CFG_TRIGMODE_ONESHOT) & LRFDS2R_CFG_TRIGMODE_M) |
+                  ((LRFDS2R_CFG_LAST0_DIS) & LRFDS2R_CFG_LAST0_M);
 }
 
 /*
@@ -562,7 +569,7 @@ void RCL_Handler_BLE_CS_readS2RSamples(RCL_CmdBleCs *pCmd)
             container = &container[pCmd->output->nS2RDone++];
 
             /* Store the step index */
-            container->idx = S_PBE_BLE_CS_RAM_S2ROUTIDX;
+            container->idx = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTIDX);
 
             /* Number of valid samples to be copied out */
             container->length = pCmd->steps[container->idx].payloadLen
@@ -588,9 +595,9 @@ void RCL_Handler_BLE_CS_readS2RSamples(RCL_CmdBleCs *pCmd)
 static void RCL_Handler_BLE_CS_readStatistics(RCL_CmdBleCs *pCmd)
 {
     if (pCmd->output) {
-        pCmd->output->nStepsDone = S_PBE_BLE_CS_RAM_NSTEPSDONE;
-        pCmd->output->lastRssi   = S_PBE_BLE_CS_RAM_RSSILAST;
-        pCmd->output->lastFoff   = S_PBE_BLE_CS_RAM_FOFFLAST;
+        pCmd->output->nStepsDone = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_NSTEPSDONE);
+        pCmd->output->lastRssi   = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_RSSILAST);
+        pCmd->output->lastFoff   = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFLAST);
     }
 }
 
@@ -616,59 +623,59 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     }
 
     /* Mode */
-    S_PBE_BLE_CS_RAM_MODE = ((pCmd->mode.role        << PBE_BLE_CS_RAM_MODE_ROLE)      & PBE_BLE_CS_RAM_MODE_ROLE_BM) |
-                            ((pCmd->mode.phy         << PBE_BLE_CS_RAM_MODE_PHY)       & PBE_BLE_CS_RAM_MODE_PHY_BM) |
-                            ((pCmd->mode.repeatSteps << PBE_BLE_CS_RAM_MODE_INFINIT)   & PBE_BLE_CS_RAM_MODE_INFINIT_BM) |
-                            ((pCmd->mode.nSteps      << PBE_BLE_CS_RAM_MODE_NUM_STEPS) & PBE_BLE_CS_RAM_MODE_NUM_STEPS_BM);
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_MODE) = ((pCmd->mode.role        << PBE_BLE_CS_RAM_MODE_ROLE_S)      & PBE_BLE_CS_RAM_MODE_ROLE_M) |
+                            ((pCmd->mode.phy         << PBE_BLE_CS_RAM_MODE_PHY_S)       & PBE_BLE_CS_RAM_MODE_PHY_M) |
+                            ((pCmd->mode.repeatSteps << PBE_BLE_CS_RAM_MODE_INFINIT_S)   & PBE_BLE_CS_RAM_MODE_INFINIT_M) |
+                            ((pCmd->mode.nSteps      << PBE_BLE_CS_RAM_MODE_NUM_STEPS_S) & PBE_BLE_CS_RAM_MODE_NUM_STEPS_M);
 
     /* Antenna */
-    S_PBE_BLE_CS_RAM_ANTN   = antennaEntry->numPath;
-    S_PBE_BLE_CS_RAM_ANTMSK = pCmd->antennaConfig.gpoMask;
-    S_PBE_BLE_CS_RAM_ANT0   = pCmd->antennaConfig.gpoVal[0];
-    S_PBE_BLE_CS_RAM_ANT1   = pCmd->antennaConfig.gpoVal[1];
-    S_PBE_BLE_CS_RAM_ANT2   = pCmd->antennaConfig.gpoVal[2];
-    S_PBE_BLE_CS_RAM_ANT3   = pCmd->antennaConfig.gpoVal[3];
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANTN)   = antennaEntry->numPath;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANTMSK) = pCmd->antennaConfig.gpoMask;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANT0)   = pCmd->antennaConfig.gpoVal[0];
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANT1)   = pCmd->antennaConfig.gpoVal[1];
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANT2)   = pCmd->antennaConfig.gpoVal[2];
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANT3)   = pCmd->antennaConfig.gpoVal[3];
 
     /* Timing */
-    S_PBE_BLE_CS_RAM_TFCS        = pCmd->timing.tFcs - (TPLT + config->tStartup); // Pilot tone + startup time is included into the TFCS budget
-    S_PBE_BLE_CS_RAM_TFM         = pCmd->timing.tFm;
-    S_PBE_BLE_CS_RAM_TPM         = pCmd->timing.tPm;
-    S_PBE_BLE_CS_RAM_TIP1        = pCmd->timing.tIp1;
-    S_PBE_BLE_CS_RAM_TIP2        = pCmd->timing.tIp2;
-    S_PBE_BLE_CS_RAM_TSW         = pCmd->timing.tSw;
-    S_PBE_BLE_CS_RAM_TSWADJA     = pCmd->timing.tSwAdjustA;
-    S_PBE_BLE_CS_RAM_TSWADJB     = pCmd->timing.tSwAdjustB;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TFCS)        = pCmd->timing.tFcs - (TPLT + config->tStartup); // Pilot tone + startup time is included into the TFCS budget
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TFM)         = pCmd->timing.tFm;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TPM)         = pCmd->timing.tPm;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TIP1)        = pCmd->timing.tIp1;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TIP2)        = pCmd->timing.tIp2;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSW)         = pCmd->timing.tSw;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSWADJA)     = pCmd->timing.tSwAdjustA;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSWADJB)     = pCmd->timing.tSwAdjustB;
 
     /* Timegrid adjustment shall be initialized with maximum unsigned value (ca. 536s @ 4MHz) */
-    S_PBE_BLE_CS_RAM_TSTEPACCTHRH= 0x7FFF;
-    S_PBE_BLE_CS_RAM_TSTEPACCTHRL= 0xFFFF;
-    S_PBE_BLE_CS_RAM_TSTEPACCH   = 0;
-    S_PBE_BLE_CS_RAM_TSTEPACCL   = 0;
-    S_PBE_BLE_CS_RAM_TSTEPCOMP   = 0;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSTEPACCTHRH)= 0x7FFF;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSTEPACCTHRL)= 0xFFFF;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSTEPACCH)   = 0;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSTEPACCL)   = 0;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSTEPCOMP)   = 0;
 
     /* Initialize MOD.FOFF values. Usueful for sub-events without mode 0 steps */
-    S_PBE_BLE_CS_RAM_FOFFSUM     = pCmd->frontend.foffOverride;
-    S_PBE_BLE_CS_RAM_FOFFNUM     = pCmd->frontend.foffOverrideEnable;
-    S_PBE_BLE_CS_RAM_NSTEPSDONE  = 0;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFSUM)     = pCmd->frontend.foffOverride;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFNUM)     = pCmd->frontend.foffOverrideEnable;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_NSTEPSDONE)  = 0;
 
     /* Program frequency dependent config: hardcode on 2440MHz, to be updated on the fly */
-    S_MDM32_DEMFRAC1_DEMFRAC0 = 0x0D800000;     // P: Constant
-    S_MDM32_DEMFRAC3_DEMFRAC2 = 0x0E4C0000;     // Q: Being dynammically scaled by RFE per channel
+    HWREG(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC1_DEMFRAC0) = 0x0D800000;     // P: Constant
+    HWREG(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC3_DEMFRAC2) = 0x0E4C0000;     // Q: Being dynammically scaled by RFE per channel
 
     /* Shaper gain */
-    S_RFE_MOD0 = 0x1824;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_MOD0) = 0x1824;
 
     /* Configure RX gain */
-    S_RFE_SPARE0 = (S_RFE_SPARE0 & 0x0F) | (pCmd->frontend.rxGain << 4);
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_SPARE0) = (HWREG(LRFDRFE_BASE + LRFDRFE_O_SPARE0) & 0x0F) | (pCmd->frontend.rxGain << 4);
 
     if (pCmd->mode.role == RCL_CmdBleCs_Role_Initiator) {
         /* Initiator: timeout is hardcoded in the MCE in order to comply with the static timegrid.
            This parameter is therefor ignored.  */
-        S_PBE_BLE_CS_RAM_TRXTIMEOUT = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TRXTIMEOUT) = 0;
 
     } else {
         /* The miminum value is defined by the static timegrid. Different for each datarate. */
-        S_PBE_BLE_CS_RAM_TRXTIMEOUT = config->tRxTimeoutRn;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TRXTIMEOUT) = config->tRxTimeoutRn;
     }
 
     uint8_t lutIdx = RCL_CmdBleCs_Tpm_40us;
@@ -680,16 +687,16 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     }
 
     /* Baudrate specific settings */
-    S_MDM_SPARE0                       = config->pctConfig[lutIdx].val;
-    S_MDM_BAUD                         = config->baud;
-    S_MDM_MODSYMMAP0                   = config->symmap;
-    S_RFE_SPARE3                       = config->magnConfig[lutIdx].val;
-    S_PBE_BLE_CS_RAM_DEMMISC3          = config->demmisc3;
-    S_PBE_BLE_CS_RAM_TPOSTPROCESSDIV1  = config->tPostProcessDiv1;
-    S_PBE_BLE_CS_RAM_TPOSTPROCESSDIV12 = config->tPostProcessDiv12;
-    S_PBE_BLE_CS_RAM_TRXTIMEOUTI0      = config->tRxTimeoutI0;
-    S_PBE_BLE_CS_RAM_TRXTIMEOUTI3      = config->tRxTimeoutI3;
-    S_PBE_BLE_CS_RAM_TPILOTADJ         = config->tPilotAdjust;
+    HWREG(LRFDMDM_BASE + LRFDMDM_O_SPARE0)                       = config->pctConfig[lutIdx].val;
+    HWREG(LRFDMDM_BASE + LRFDMDM_O_BAUD)                         = config->baud;
+    HWREG(LRFDMDM_BASE + LRFDMDM_O_MODSYMMAP0)                   = config->symmap;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_SPARE3)                       = config->magnConfig[lutIdx].val;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_DEMMISC3)          = config->demmisc3;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TPOSTPROCESSDIV1)  = config->tPostProcessDiv1;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TPOSTPROCESSDIV12) = config->tPostProcessDiv12;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TRXTIMEOUTI0)      = config->tRxTimeoutI0;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TRXTIMEOUTI3)      = config->tRxTimeoutI3;
+    HWREGH(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TPILOTADJ)         = config->tPilotAdjust;
 
     /* Alias for dynamic parameters for calculations */
     uint16_t tIp1  = pCmd->timing.tIp1;
@@ -761,7 +768,7 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     tAntennaAdjLut[RCL_CmdBleCs_StepMode_3] = tAntennaAdj + TPLT + tPkt + TGD;
 
     /* Enforce modulator and demodulator clock. RTL bug with automatic control. */
-    LRF_setClockEnable(DBELL_CLKCTL_DEM_BM | DBELL_CLKCTL_MOD_BM, LRF_CLK_ENA_RCL);
+    LRF_setClockEnable(LRFDDBELL_CLKCTL_DEM_M | LRFDDBELL_CLKCTL_MOD_M, LRF_CLK_ENA_RCL);
 }
 
 /*
@@ -927,7 +934,7 @@ static RCL_CommandStatus RCL_Handler_BLE_CS_findPbeErrorEndStatus(uint16_t pbeEn
         status = RCL_CommandStatus_Error_Synth;
         break;
     case PBE_COMMON_RAM_ENDCAUSE_STAT_ERR_STOP:
-        status = RCL_CommandStatus_HardStop;
+        status = RCL_Scheduler_findStopStatus(RCL_StopType_Hard);
         break;
      case PBE_COMMON_RAM_ENDCAUSE_STAT_ERR_PAR:
         status = RCL_CommandStatus_Error_Param;
@@ -936,7 +943,7 @@ static RCL_CommandStatus RCL_Handler_BLE_CS_findPbeErrorEndStatus(uint16_t pbeEn
         status = RCL_CommandStatus_Error_UnknownOp;
         break;
     default:
-        Log(RclCore, Log_ERROR, "Unexpected error 0x%04X from PBE", pbeEndStatus);
+        Log_printf(RclCore, Log_ERROR, "Unexpected error 0x%04X from PBE", pbeEndStatus);
         status = RCL_CommandStatus_Error;
         break;
     }
@@ -960,13 +967,13 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
 
         /* Check if valid PLLDIV0 synth setting is used. */
         /* BLE CS currently supports only either 3 => FREF0=16MHz or 12 => FREF0=4MHz */
-        uint32_t plldiv0 = (S_RFE_PRE0 & RFE_PRE0_PLLDIV0_BM) >> RFE_PRE0_PLLDIV0;
+        uint32_t plldiv0 = (HWREG(LRFDRFE_BASE + LRFDRFE_O_PRE0) & LRFDRFE_PRE0_PLLDIV0_M) >> LRFDRFE_PRE0_PLLDIV0_S;
         if ((plldiv0 != 3U) && (plldiv0 != 12U))
         {
             /* Override to use PLLDIV0=12, gives FREF0=4MHz */
-            Log(RclCore, Log_WARN, "Unsupported RFE_PRE0_PLLDIV0 synth setting detected. Will override to use 12 (FREF=4MHz)");
-            S_RFE_PRE0 = ((12U << RFE_PRE0_PLLDIV0) & RFE_PRE0_PLLDIV0_BM) |
-                        ((12U << RFE_PRE0_PLLDIV1) & RFE_PRE0_PLLDIV1_BM);
+            Log_printf(RclCore, Log_WARNING, "Unsupported RFE_PRE0_PLLDIV0 synth setting detected. Will override to use 12 (FREF=4MHz)");
+            HWREG(LRFDRFE_BASE + LRFDRFE_O_PRE0) = ((12U << LRFDRFE_PRE0_PLLDIV0_S) & LRFDRFE_PRE0_PLLDIV0_M) |
+                                                   ((12U << LRFDRFE_PRE0_PLLDIV1_S) & LRFDRFE_PRE0_PLLDIV1_M);
         }
 
         /* Mark as active */
@@ -987,12 +994,12 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
         else
         {
              /* Enable interrupts (TxCtrlAck => "S2R samples available") */
-             S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value | LRF_EventTxCtrlAck.value |
-                               LRF_EventRxfifo.value;
+             HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value | LRF_EventTxCtrlAck.value |
+                              LRF_EventRxfifo.value);
 
              #ifdef PG2
              /* CDDS BUG00003 - Temporarily workaround */
-             S_DBELL_IMASK0 |= LRF_EventTxfifo.value;
+             HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | LRF_EventTxfifo.value;
              #endif
 
              /* Initialize BLE CS specific registers and FIFO */
@@ -1012,13 +1019,11 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
 
              /* Post command */
              LRF_waitForTopsmReady();
-             S_PBE_COMMON_RAM_MSGBOX = 0;
-             S_PBE_API = PBE_BLE_CS_REGDEF_API_OP_BLE_CS;
+             HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_MSGBOX) = 0;
+             HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE_CS_REGDEF_API_OP_BLE_CS;
 
              /* Forward fill more steps */
              RCL_Handler_BLE_CS_fillTxBuffer(pCmd);
-
-             //Log(RclCore, Log_INFO5, "Starting BLE CS");
          }
      }
 
@@ -1065,7 +1070,7 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
              RCL_CommandStatus endStatus = bleCsHandlerState.common.endStatus;
              if (endStatus == RCL_CommandStatus_Finished)
              {
-                 cmd->status = RCL_Handler_BLE_CS_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                 cmd->status = RCL_Handler_BLE_CS_findPbeErrorEndStatus(HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
              }
              else
              {

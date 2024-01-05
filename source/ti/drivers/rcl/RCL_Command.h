@@ -81,45 +81,54 @@ struct RCL_CommandTiming_s {
  *  Gives information on the command, and if finished, how it finished.
  */
 typedef enum RCL_CommandStatus_e {
-    RCL_CommandStatus_Idle = 0,                 /*!< Command is not yet run. This state is mandatory when submitting. */
-    RCL_CommandStatus_Queued,                   /*!< Command is queued, but pending end of previous command */
-    RCL_CommandStatus_Scheduled,                /*!< Command is scheduled, pending start time. */
-    RCL_CommandStatus_Active,                   /*!< Command is currently running. */
-    RCL_CommandStatus_Suspended,                /*!< Command is suspended and will resume once the othe running commands have finished */
-    RCL_CommandStatus_Deferred,                 /*!< Command is deferred. */
-    RCL_CommandStatus_Finished = 0x10,          /*!< Command has finished normally */
-    RCL_CommandStatus_ChannelIdle,              /*!< Channel assessment has finished with channel idle */
-    RCL_CommandStatus_ChannelBusy,              /*!< Channel assessment has finished with channel busy */
-    RCL_CommandStatus_RxTimeout,                /*!< Command timed out waiting for sync */
-    RCL_CommandStatus_NoSync,                   /*!< Command timed out waiting for a returned packet from peer device */
-    RCL_CommandStatus_RxErr,                    /*!< Command ended due to errors with the received packet (e.g, CRC errors) */
-    RCL_CommandStatus_GracefulStop,             /*!< Command ended because graceful stop time was reached or stop command was sent */
-    RCL_CommandStatus_HardStop,                 /*!< Command ended because hard stop time was reached or stop command was sent */
-    RCL_CommandStatus_Descheduled,              /*!< Command was descheduled before starting running in the radio */
-    RCL_CommandStatus_RejectedStart,            /*!< Command was rejected start due to scheduling parameters */
-    RCL_CommandStatus_Connect = 0x40,           /*!< Command has finished and a connection may be established (BLE5 advertiser and initiator) */
-    RCL_CommandStatus_MaxNak,                   /*!< Command ended because more subsequent NAKs than supported were received (BLE5) */
-    RCL_CommandStatus_Error  = 0x80,            /*!< Command ended with unknown error */
-    RCL_CommandStatus_Error_Setup,              /*!< Command ended because of an error in the setup */
-    RCL_CommandStatus_Error_Param,              /*!< Command ended because of an error with a parameter */
-    RCL_CommandStatus_Error_MissingTxBuffer,    /*!< Command ended because no TX buffer was available when required */
-    RCL_CommandStatus_Error_TxBufferCorruption, /*!< Command ended because of errors in TX buffer structure */
-    RCL_CommandStatus_Error_RxBufferCorruption, /*!< Command ended because of errors in RX buffer structure */
-    RCL_CommandStatus_Error_StartTooLate,       /*!< Command ended because start time was in the past */
-    RCL_CommandStatus_Error_TxFifo,             /*!< Command ended because of underflow of TX FIFO */
-    RCL_CommandStatus_Error_RxFifo,             /*!< Command ended because of unsupported overflow of RX FIFO (no buffer to store packets) */
-    RCL_CommandStatus_Error_Synth,              /*!< Command ended because of synth programming error */
-    RCL_CommandStatus_Error_UnknownOp,          /*!< Command ended because radio did not recognize command; probably wrong image for given command */
-    RCL_CommandStatus_Error_AlreadySubmitted,   /*!< Command is already submitted and planned or running and can't be submitted again without calling stop first */
+    RCL_CommandStatus_Idle = 0,                     /*!< Command is not yet run. This state is mandatory when submitting. */
+    RCL_CommandStatus_Queued,                       /*!< Command is queued, but pending end of previous command */
+    RCL_CommandStatus_Scheduled,                    /*!< Command is scheduled, pending start time. */
+    RCL_CommandStatus_Active,                       /*!< Command is currently running. */
+    RCL_CommandStatus_Suspended,                    /*!< Command is suspended and will resume once the othe running commands have finished */
+    RCL_CommandStatus_Deferred,                     /*!< Command is deferred. */
+    RCL_CommandStatus_Finished = 0x10,              /*!< Command has finished normally */
+    RCL_CommandStatus_ChannelIdle,                  /*!< Channel assessment has finished with channel idle */
+    RCL_CommandStatus_ChannelBusy,                  /*!< Channel assessment has finished with channel busy */
+    RCL_CommandStatus_RxTimeout,                    /*!< Command timed out waiting for sync */
+    RCL_CommandStatus_NoSync,                       /*!< Command timed out waiting for a returned packet from peer device */
+    RCL_CommandStatus_RxErr,                        /*!< Command ended due to errors with the received packet (e.g, CRC errors) */
+    RCL_CommandStatus_RejectedStart,                /*!< Command was rejected start due to scheduling parameters */
+    RCL_CommandStatus_UnexpectedMdrRx,              /*!< Command ended because an MDR packet was received when we have MDR disabled */
+    RCL_CommandStatus_DescheduledApi = 0x31,        /*!< Command was descheduled before starting running in the radio because stop API was called */
+    RCL_CommandStatus_DescheduledScheduling,        /*!< Command was descheduled before starting running in the radio due to scheduling of another command */
+    RCL_CommandStatus_GracefulStopTimeout = 0x34,   /*!< Command ended because graceful stop time was reached */
+    RCL_CommandStatus_GracefulStopApi,              /*!< Command ended because stop API was called with RCL_StopType_Graceful argument */
+    RCL_CommandStatus_GracefulStopScheduling,       /*!< Command ended due to scheduling where interrupting command had RCL_ConflictPolicy_Polite */
+    RCL_CommandStatus_HardStopTimeout = 0x38,       /*!< Command ended because hard stop time was reached */
+    RCL_CommandStatus_HardStopApi,                  /*!< Command ended because stop API was called with RCL_StopType_Hard argument */
+    RCL_CommandStatus_HardStopScheduling,           /*!< Command ended due to scheduling where interrupting command had RCL_ConflictPolicy_AlwaysInterrupt */
+    RCL_CommandStatus_Connect = 0x40,               /*!< Command has finished and a connection may be established (BLE5 advertiser and initiator) */
+    RCL_CommandStatus_MaxNak,                       /*!< Command ended because more subsequent NAKs than supported were received (BLE5) */
+    RCL_CommandStatus_Error  = 0x80,                /*!< Command ended with unknown error */
+    RCL_CommandStatus_Error_Setup,                  /*!< Command ended because of an error in the setup */
+    RCL_CommandStatus_Error_Param,                  /*!< Command ended because of an error with a parameter */
+    RCL_CommandStatus_Error_MissingTxBuffer,        /*!< Command ended because no TX buffer was available when required */
+    RCL_CommandStatus_Error_TxBufferCorruption,     /*!< Command ended because of errors in TX buffer structure */
+    RCL_CommandStatus_Error_RxBufferCorruption,     /*!< Command ended because of errors in RX buffer structure */
+    RCL_CommandStatus_Error_StartTooLate,           /*!< Command ended because start time was in the past */
+    RCL_CommandStatus_Error_TxFifo,                 /*!< Command ended because of underflow of TX FIFO */
+    RCL_CommandStatus_Error_RxFifo,                 /*!< Command ended because of unsupported overflow of RX FIFO (no buffer to store packets) */
+    RCL_CommandStatus_Error_Synth,                  /*!< Command ended because of synth programming error */
+    RCL_CommandStatus_Error_UnknownOp,              /*!< Command ended because radio did not recognize command; probably wrong image for given command */
+    RCL_CommandStatus_Error_AlreadySubmitted,       /*!< Command is already submitted and planned or running and can't be submitted again without calling stop first */
 } RCL_CommandStatus;
 
 /**
- * Helper macros to compare command status - ensures compatibility with more detailed status codes in future versions
+ * Helper macros to compare command status
  */
-#define RCL_CommandStatus_isAnyStop(x)           (((x) == RCL_CommandStatus_Descheduled) || ((x) == RCL_CommandStatus_GracefulStop) || ((x) == RCL_CommandStatus_HardStop))
-#define RCL_CommandStatus_isAnyDescheduled(x)    ((x) == RCL_CommandStatus_Descheduled)
-#define RCL_CommandStatus_isAnyGracefulStop(x)   ((x) == RCL_CommandStatus_GracefulStop)
-#define RCL_CommandStatus_isAnyHardStop(x)       ((x) == RCL_CommandStatus_HardStop)
+#define RCL_CommandStatus_isAnyStop(x)           (((x) >= RCL_CommandStatus_DescheduledApi) && ((x) <= RCL_CommandStatus_HardStopScheduling))
+#define RCL_CommandStatus_isAnyDescheduled(x)    (((x) >= RCL_CommandStatus_DescheduledApi) && ((x) <= RCL_CommandStatus_DescheduledScheduling))
+#define RCL_CommandStatus_isAnyGracefulStop(x)   (((x) >= RCL_CommandStatus_GracefulStopTimeout) && ((x) <= RCL_CommandStatus_GracefulStopScheduling))
+#define RCL_CommandStatus_isAnyHardStop(x)       (((x) >= RCL_CommandStatus_HardStopTimeout) && ((x) <= RCL_CommandStatus_HardStopScheduling))
+#define RCL_CommandStatus_isAnyTimeoutStop(x)    (((x) == RCL_CommandStatus_GracefulStopTimeout) || ((x) == RCL_CommandStatus_HardStopTimeout))
+#define RCL_CommandStatus_isAnyApiStop(x)        (((x) == RCL_CommandStatus_DescheduledApi) || ((x) == RCL_CommandStatus_GracefulStopApi) || ((x) == RCL_CommandStatus_HardStopApi))
+#define RCL_CommandStatus_isAnySchedulingStop(x) (((x) == RCL_CommandStatus_DescheduledScheduling) || ((x) == RCL_CommandStatus_GracefulStopScheduling) || ((x) == RCL_CommandStatus_HardStopScheduling))
 
 /**
  *  @brief Stop types
@@ -128,11 +137,10 @@ typedef enum RCL_CommandStatus_e {
  */
 typedef enum {
     RCL_StopType_None = 0,        /*!< No stop requested */
-    RCL_StopType_DescheduleOnly,  /*!< Stop a command theat is queued or pending start, but do not stop it from running */
+    RCL_StopType_DescheduleOnly,  /*!< Stop a command that is queued or pending start, but do not stop it from running */
     RCL_StopType_Graceful,        /*!< Stop the command gracefully, that is finish a packet or transaction in progress before ending */
     RCL_StopType_Hard,            /*!< Stop the command as soon as possible */
 } RCL_StopType;
-
 
 /**
  *  @brief Schedule type

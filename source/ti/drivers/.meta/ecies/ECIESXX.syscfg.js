@@ -69,7 +69,7 @@ ecdhIntPriority.description = "ECDH interrupt priority used for public key gener
 
 let cfg = [aesIntPriority, rngIntPriority];
 
-if (!(deviceId.match(/CC23/) || deviceId.match(/CC26.1/)))
+if (!deviceId.match(/CC23|CC13.1|CC26.1/))
 {
     /* Add interrupt priority for KDF and ECDH */
     cfg.push(kdfIntPriority);

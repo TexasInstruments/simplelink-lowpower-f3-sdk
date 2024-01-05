@@ -350,6 +350,23 @@ typedef enum
   GAP_ADV_PARAM_SID,
 
   /**
+     * Own address type of the advSet
+     *
+     * This is the value of the address type that can determine of which address the device
+     * will advertise with.
+     * The value can be set only if the gapDeviceAddrMode is set to RPA.
+     * 0x00 - Public address (IDA).
+     * 0x01 - Random address (Static Random).
+     * 0x02 - RPA with public.
+     * 0x03 - RPA with random.
+     *
+     * size: uint8_t
+     *
+     * range: 0x00-0x03
+     */
+  GAP_ADV_PARAM_OWN_ADDRESS_TYPE,
+
+  /**
    * Advertising start time delay
    *
    * This parameter determines whether to disable random delay of advertising start time or not.

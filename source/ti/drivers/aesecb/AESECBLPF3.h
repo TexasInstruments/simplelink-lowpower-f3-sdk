@@ -81,6 +81,7 @@ extern "C" {
  * AES ECB auto config for a single block encryption:
  *  ECB SRC as BUF
  *  Trigger points for auto ECB as WRBUF3S (encryption starts by writing BUF3)
+ *  BUSHALT enabled
  */
 #if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
     #define AESEBCLPF3_SINGLE_BLOCK_AUTOCFG \

@@ -45,7 +45,6 @@
             "+../../../../../../../source/ti/ble5stack_flash/icall/stack/ble_user_config_stack.c -> ble_user_config_stack.c",
             "+../../common/Startup/osal_icall_ble.c -> osal_icall_ble.c",
             "+../../../../../../../source/ti/ble5stack_flash/rom/agama_r1/rom_init.c -> rom_init.c",
-            "+../../../../../../../source/ti/boards/cc23x0r5/rcl_settings_ble.c -> rcl_settings_ble.c",
             "+../basic_ble.syscfg -> basic_ble.syscfg",
             "+cc23x0_app_and_stack_freertos.icf -> cc23x0_app_and_stack_freertos.icf",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",

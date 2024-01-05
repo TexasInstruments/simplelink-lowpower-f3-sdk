@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2019-2023, Texas Instruments Incorporated
+ Copyright (c) 2023, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -194,10 +194,11 @@ Requires API's in a crc.h to implement CRC functionality.
 #include "crc.h"
 #ifndef NV_LINUX
 
+#include <ti/devices/DeviceFamily.h>
 /* CC23X0 and CC27XX does not support GPRAM,
  * so VIMS access is not needed */
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC27XX)
-#include <driverlib/vims.h>
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC27XX)
+#include DeviceFamily_constructPath(driverlib/vims.h)
 #endif
 
 #ifdef NVOCMP_MIN_VDD_FLASH_MV
@@ -364,8 +365,10 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
 //*****************************************************************************
 // Page and Header Definitions
 //*****************************************************************************
-#if defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || defined(DeviceFamily_CC26X3) || defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC27XX)
-// CC26x4/CC13x4/CC23x0//cc27xx devices flash page size is (1 << 11) or 0x800
+#if defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || \
+    defined(DeviceFamily_CC26X3) || defined(DeviceFamily_CC23X0R5) || \
+    defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC27XX)
+// CC26x4/CC13x4/CC23x0/cc27xx devices flash page size is (1 << 11) or 0x800
 #define PAGE_SIZE_LSHIFT 11
 #else
 // CC26x2/CC13x2 devices flash page size is (1 << 13) or 0x2000
@@ -386,7 +389,7 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
 #endif // NVOCMP_SIGNATURE
 
 #ifndef NVOCMP_NO_RAM_OPTIMIZATION
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC27XX)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC27XX)
     #define NVOCMP_RAM_OPTIMIZATION
 #endif
 #endif
@@ -398,6 +401,7 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
         !defined (DeviceFamily_CC26X4) && \
         !defined (DeviceFamily_CC26X3) && \
         !defined (DeviceFamily_CC23X0R5) && \
+        !defined (DeviceFamily_CC23X0R2) && \
         !defined (DeviceFamily_CC27XX)
         #define NVOCMP_GPRAM
     #endif
@@ -730,7 +734,7 @@ static uint8_t    NVOCMP_eraseNvApi(void);
 static uint32_t   NVOCMP_getFreeNvApi(void);
 
 #ifdef ENABLE_SANITY_CHECK
-static uint32_t   NVOCMP_sanityCheckApi (void);
+static uint32_t   NVOCMP_sanityCheckApi(void);
 #endif
 
 //*****************************************************************************
@@ -3364,7 +3368,7 @@ static uint8_t NVOCMP_readItem(NVOCMP_itemHdr_t *iHdr, uint16_t ofs, uint16_t le
     iOfs = (iHdr->hofs - iHdr->len);
 
     // Optional CRC integrity check
-#if NVOCMP_CRCONREAD    
+#if NVOCMP_CRCONREAD
     err = NVOCMP_verifyCRC(iOfs, iHdr->len, iHdr->crc8, iHdr->hpage, flag);
 #endif
 

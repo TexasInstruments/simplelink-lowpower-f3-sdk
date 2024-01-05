@@ -211,9 +211,6 @@ static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object)
         /* If One-step or Finalize operation, process the final input block */
         if (opcode != AESCMAC_OP_CODE_SEGMENTED)
         {
-            /* Wait until the operation is done */
-            while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-
             AESWriteBUF32(&object->finalInputBlock[0]);
         }
 
@@ -366,22 +363,17 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
  */
 void AESCMACLPF3_processBlocks(const uint8_t *input, size_t transactionLength)
 {
+#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    AESProcessAlignedBlocksCMAC((const uint32_t *)input, (uint32_t)AES_GET_NUM_BLOCKS(transactionLength));
+#else
     size_t bytesProcessed                = 0;
     size_t transactionLengthDoubleBlocks = transactionLength & AES_DOUBLE_BLOCK_SIZE_MULTIPLE_MASK;
     size_t transactionLengthSingleBlocks = transactionLength & (size_t)~AES_DOUBLE_BLOCK_SIZE_MULTIPLE_MASK;
 
     /*
-     * For efficiency, the next block of data can be written to AES BUF regs
-     * while the AES engine is encrypting the previous block. The AES engine
-     * takes 23-cycles to encrypt a block. If the SW can load blocks faster
-     * than that, SW must wait until the AES HW is idle after writing two
-     * blocks consecutively to avoid overwriting data before the AES engine
-     * can consume it.
-     *
      * The code below has additional optimizations for word-aligned input data
      * to support lower latency AES-CCM operations for BLE stack.
      */
-
     if (IS_WORD_ALIGNED(input))
     {
         AESProcessAlignedBlocksCMAC((const uint32_t *)input, (uint32_t)AES_GET_NUM_BLOCKS(transactionLength));
@@ -390,9 +382,6 @@ void AESCMACLPF3_processBlocks(const uint8_t *input, size_t transactionLength)
     {
         while (bytesProcessed < transactionLengthDoubleBlocks)
         {
-            /* Wait for encryption to complete */
-            while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-
             AESWriteBUF(&input[bytesProcessed]);
             bytesProcessed += AES_BLOCK_SIZE;
 
@@ -403,12 +392,10 @@ void AESCMACLPF3_processBlocks(const uint8_t *input, size_t transactionLength)
         /* Process any remaining single block */
         if (transactionLengthSingleBlocks != 0U)
         {
-            /* Wait for encryption to complete */
-            while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-
             AESWriteBUF(&input[bytesProcessed]);
         }
     }
+#endif
 }
 
 /*
@@ -769,10 +756,8 @@ static inline void AESCMACLPF3_encryptZeroBlockECB(uint32_t output[AES_BLOCK_SIZ
     /* Write block of zeros to input */
     AESWriteBUF32(&zeroBlock[0]);
 
-#ifdef AES_BUSHALT_DISABLED
-    /* Wait for encryption of final input block */
+    /* Wait until the operation is done */
     while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-#endif
 
     /* Read output */
     AESReadTXT32(&output[0]);

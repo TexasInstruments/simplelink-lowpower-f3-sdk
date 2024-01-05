@@ -54,24 +54,20 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11395">BLE_LOKI-794</a></td>
-<td align="left"><span>Introduced No Delay Advertising Feature</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11604">BLE_LOKI-994</a></td>
+<td align="left"><span>CC2340R2 Device Support</span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11394">BLE_LOKI-709</a></td>
-<td align="left"><span>[BASIC BLE] [Profiles] Glucose Profile added to ble_basic profiles</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11605">BLE_LOKI-991</a></td>
+<td align="left"><span>CC2340R5-Q1 Device Support</span></td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11393">BLE_LOKI-674</a></td>
-<td align="left"><span>Connection Monitor example introduced</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11606">BLE_LOKI-812</a></td>
+<td align="left"><span>[SYSCONFIG] Migrate the BLE SysConfig module to use the ti_utils_build_compiler.opt file</span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11392">BLE_LOKI-473</a></td>
-<td align="left"><span>[OAD] OAD Dual Image Support</span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11391">BLE_LOKI-224</a></td>
-<td align="left"><span>Use RSSI/Channel/Timestamp reported by the RCL</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11603">BLE_LOKI-302</a></td>
+<td align="left"><span>Health Thermometer profile included in Basic BLE Profiles example</span></td>
 </tr>
 </tbody>
 </table>
@@ -85,8 +81,43 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">PROPRF-1226</td>
-<td align="left"><span>[F3] Update 500kbps MSK PHY to 250kbps MSK FEC</span></td>
+<td align="center">PROPRF-1234</td>
+<td align="left"><span>Support CC23450R5 migration path to CC2340R2</span></td>
+</tr>
+<tr class="even">
+<td align="center">PROPRF-1230</td>
+<td align="left"><span>Integrate radioconfig8 and generate RCL settings via SysConfig</span></td>
+</tr>
+<tr class="odd">
+<td align="center">PROPRF-1222</td>
+<td align="left"><span>Create rfEchoTx/Rx examples for F3 device family</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="simplelink-common-commponents-module-sccm">SimpleLink Common Commponents Module (SCCM)</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">SCCM-365</td>
+<td align="left"><span>Remove MCUBoot folder creation for LP_EM_CC2340R2</span></td>
+</tr>
+<tr class="even">
+<td align="center">SCCM-357</td>
+<td align="left"><span>SCCM Remove ticlang tautological warning from MCUBoot</span></td>
+</tr>
+<tr class="odd">
+<td align="center">SCCM-354</td>
+<td align="left"><span>Add support of MCUboot for CC2340R2 device </span></td>
+</tr>
+<tr class="even">
+<td align="center">SCCM-348</td>
+<td align="left"><span>Add Loki Low support for SCCM LPF3 package</span></td>
 </tr>
 </tbody>
 </table>
@@ -100,12 +131,92 @@
 </thead>
 <tbody>
 <tr class="odd">
+<td align="center">TIDRIVERS-6270</td>
+<td align="left"><span>CCFG SysConfig module should explicitly set the CRC32 checksums to 0</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11504">TIDRIVERS-6134</a></td>
+<td align="left"><span>Include FreeRTOS kernel source files in Core SDK</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6112</td>
+<td align="left"><span>Enable gpioshutdown example</span></td>
+</tr>
+<tr class="even">
 <td align="center">TIDRIVERS-6110</td>
 <td align="left"><span>Add API for modular reduction for non-curve length input length </span></td>
 </tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6103</td>
+<td align="left"><span>Do not dynamically set IPEAK in active vs standby</span></td>
+</tr>
 <tr class="even">
-<td align="center">TIDRIVERS-6025</td>
-<td align="left"><span>Add Elliptic Curve Integrated Encryption Scheme (ECIES) driver for CC23x0</span></td>
+<td align="center">TIDRIVERS-6099</td>
+<td align="left"><span>Add MessageQueueP DPL module</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6086</td>
+<td align="left"><span>Add support for FreeRTOS tick rates != 1ms</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6075</td>
+<td align="left"><span>Remove unused Power function prototypes</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6072</td>
+<td align="left"><span>Improve temperature measurement accuracy of Temperature driver</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6070</td>
+<td align="left"><span>Improve RF temperature compensation capacitor array model</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6029</td>
+<td align="left"><span>Add UART -&gt; SysTimer timestamp example</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6017</td>
+<td align="left"><span>Remove SHA2 driver interrupt priority in SysConfig </span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-5998</td>
+<td align="left"><span>Update Power driver APIs to use uint32_t for resource IDs instead of uint_fast16_t</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-5919</td>
+<td align="left"><span>RNG instance pool alignment should be 4-bytes instead of 32-bytes</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-5913</td>
+<td align="left"><span>Add Power_getConstraintCount</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-5889</td>
+<td align="left"><span>Update Random_seedAutomatic() to use a seed from RNG.</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-5495</td>
+<td align="left"><span>Add LogSinkUART</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-126</td>
+<td align="left"><span>Add I2CTarget driver</span></td>
+</tr>
+<tr class="odd">
+<td align="center">LPRFXXWARE-861</td>
+<td align="left"><span>Update tempsense diode voltage-to-temp function</span></td>
+</tr>
+<tr class="even">
+<td align="center">FREERTOS-12</td>
+<td align="left"><span>Allow configuration of FreeRTOS source location</span></td>
+</tr>
+<tr class="odd">
+<td align="center">FREERTOS-10</td>
+<td align="left"><span>Add support for custom tickrate in FreeRTOS Sysconfig Module</span></td>
+</tr>
+<tr class="even">
+<td align="center">FREERTOS-6</td>
+<td align="left"><span>FreeRTOS GCC standard library re-entrancy support causes task control block size of 340 bytes</span></td>
 </tr>
 </tbody>
 </table>
@@ -119,12 +230,12 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">RCL-409</td>
-<td align="left"><span>Improve robustness of radio entropy generation in the presence of a strong RF signal</span></td>
+<td align="center">RCL-469</td>
+<td align="left"><span>IEEE 802.15.4: Create link example and test for IEEE 802.15.4 (Zigbee) PHY using generic commands</span></td>
 </tr>
 <tr class="even">
-<td align="center">RCL-238</td>
-<td align="left"><span>Added support for HFXT SW TCXO by compensating RF PLL</span></td>
+<td align="center">RCL-397</td>
+<td align="left"><span>Update to more detailed command status codes for stopped commands</span></td>
 </tr>
 </tbody>
 </table>
@@ -140,12 +251,43 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11435">BLE_LOKI-768</a></td>
-<td align="left"><span>Device stops responding after multiple connections</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11611">BLE_LOKI-1033</a></td>
+<td align="left"><span>Inaccurate payload time calculation on test packet interval</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11465">BLE_LOKI-1016</a></td>
+<td align="left"><span>CC2340 unintended wakeup from standby, interval gets shorter and shorter</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11436">BLE_LOKI-939</a></td>
+<td align="left"><span>Fails to Change Connection PHY to Coded in multi-role with multiple connections</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11397">BLE_LOKI-872</a></td>
+<td align="left"><span>[Application] basic_ble_Central - Missing Addresses In Scan Results When Duplicate Filters Is Enable</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11398">BLE_LOKI-694</a></td>
+<td align="left"><span>[GATT_WriteLongCharValue] Large data size (300 bytes) results in incomplete writes</span></td>
 </tr>
 </tbody>
 </table>
 <h3 id="ti-proprietary-rf-1">TI Proprietary RF</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">PROPRF-1243</td>
+<td align="left"><span>Lowpower F3 SDK File linker path error</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="simplelink-common-commponents-module-sccm-1">SimpleLink Common Commponents Module (SCCM)</h3>
 <table>
 <thead>
 <tr class="header">
@@ -170,8 +312,48 @@
 </thead>
 <tbody>
 <tr class="odd">
+<td align="center">TIDRIVERS-6336</td>
+<td align="left"><span>Increase RNG's minimum entropy raw noise words from 80 to 152 to add margin for CC23x0</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6267</td>
+<td align="left"><span>LP_EM_CC2340R5 spicontroller and spiperipheral examples halt in boot / enter bootloader</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6209</td>
+<td align="left"><span>FreeRTOS uses 3 priority bits instead of the supported 2 on CC23X0 devices</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6080</td>
+<td align="left"><span>systimtimestamp example uses undefined macro</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6067</td>
+<td align="left"><span>SysTimer (ClockP) reading after async wakeup from standby may incorrectly be 0</span></td>
+</tr>
+<tr class="even">
 <td align="center">TIDRIVERS-6065</td>
 <td align="left"><span>Some PWM files not exported into SDK</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6054</td>
+<td align="left"><span>Stopping a ClockP clock does not result in recomputation of the next timeout</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6046</td>
+<td align="left"><span>Starting HFXT when it is already running causes TRACKREFLOSS</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6041</td>
+<td align="left"><span>Unaligned input to AESGCM GHASH function causes memory corruption</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-5969</td>
+<td align="left"><span>GPIO_resetConfig permanently clears IO callbacks set through SysConfig</span></td>
+</tr>
+<tr class="odd">
+<td align="center">LPRFXXWARE-864</td>
+<td align="left"><span>IntSetPriority does not re-enable interrupt if it was previously enabled</span></td>
 </tr>
 </tbody>
 </table>
@@ -185,12 +367,32 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">RCL-384</td>
-<td align="left"><span>RSSI read back-to-back reading sometimes returns unexpected value</span></td>
+<td align="center">RCL-588</td>
+<td align="left"><span>The Loki RCL does not ensure Temperature driver is initialized before use causing inaccurate TX power temperature compensation and trim compensation</span></td>
 </tr>
 <tr class="even">
-<td align="center">RCL-392</td>
-<td align="left"><span>PBE fails to respond if a timer interrupt flag is unexpectedly set at first execution</span></td>
+<td align="center">RCL-567</td>
+<td align="left"><span>RCL doesn't clear SYSTIM interrupt mask when no further events are planned upon entering standby</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-505</td>
+<td align="left"><span>CC27xx: BLE packet may be unexpectedly re-transmitted due to PBE TX FIFO and RCL TX buffer being out of sync</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-367</td>
+<td align="left"><span>Update packet FIFO handling to avoid losing operations</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-438</td>
+<td align="left"><span>Issue in “genfsk” PHY firmware with incorrect demodulator termination at end-of-packet (used by MSK and GFSK PHYs)</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-437</td>
+<td align="left"><span>Issue with incorrect frequency offset compensation for MSK (250kbps) and GFSK (250kbps, 500kbps) PHYs</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-209</td>
+<td align="left"><span>RCL_init should return void</span></td>
 </tr>
 </tbody>
 </table>
@@ -206,24 +408,39 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11465">BLE_LOKI-1016</a></td>
-<td align="left"><span>CC2340 unintended wakeup from standby, interval gets shorter and shorter</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11615">BLE_LOKI-1247</a></td>
+<td align="left"><span>[SWAT][Data Stream] Gatt_WriteLongCharValue() calls with size 512 bytes fails when using TI Clang Compiler</span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11436">BLE_LOKI-939</a></td>
-<td align="left"><span>Fails to Change Connection PHY to Coded in multi-role with multiple connections</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11607">BLE_LOKI-1245</a></td>
+<td align="left"><span>[Build][MAC OS] BLE5-Stack Projects using SysConfig 1.18.1 fail to build on MacOS Intel i5 models</span></td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11397">BLE_LOKI-872</a></td>
-<td align="left"><span>[Application] basic_ble_Central - Missing Addresses In Scan Results When Duplicate Filters Is Enable</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11610">BLE_LOKI-1199</a></td>
+<td align="left"><span>[SWAT] GATT_ReadLongCharValue fails after 307 iterations during stress test</span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11398">BLE_LOKI-694</a></td>
-<td align="left"><span>[GATT_WriteLongCharValue] Large data size (300 bytes) results in incomplete writes</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11609">BLE_LOKI-1034</a></td>
+<td align="left"><span>Critical Section order not optimal in ICall_leaveCSImpl &amp; ICall_enterCSImpl functions</span></td>
 </tr>
 </tbody>
 </table>
 <h3 id="ti-proprietary-rf-2">TI Proprietary RF</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">None</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="simplelink-common-commponents-module-sccm-2">SimpleLink Common Commponents Module (SCCM)</h3>
 <table>
 <thead>
 <tr class="header">
@@ -252,18 +469,6 @@
 <td align="left"><span>clock_nanosleep() with CLOCK_REALTIME broken on msp432</span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-9044">SYSBIOS-642</a></td>
-<td align="left"><span>Seconds_getTime() for MSP432P always returns ‘0’ in nanoseconds field</span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-9045">SYSBIOS-446</a></td>
-<td align="left"><span>Reported CPU load is not 100% when a task is in “while 1 {}” loop</span></td>
-</tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-9046">SYSBIOS-98</a></td>
-<td align="left"><span>Load module won't work correctly if the TI-RTOS Power module is enabled for CC3200 or MSP432</span></td>
-</tr>
-<tr class="odd">
 <td align="center">FREERTOS-8</td>
 <td align="left"><span>Tasks view in ROV for FreeRTOS does not show if a task is blocked on a semaphore or mutex</span></td>
 </tr>
@@ -279,6 +484,10 @@
 </thead>
 <tbody>
 <tr class="odd">
+<td align="center">RCL-590</td>
+<td align="left"><span>RCL for CC27XX assumes a current temperature of 25 degrees C</span></td>
+</tr>
+<tr class="even">
 <td align="center">RCL-343</td>
 <td align="left"><span>PBE NESB - Address mismatch counter not implemented</span></td>
 </tr>

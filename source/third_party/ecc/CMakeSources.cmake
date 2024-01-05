@@ -43,3 +43,10 @@ set(SOURCES_CC23X0
     lowlevelapi.c
     scalarMul.c
 )
+
+set(SOURCES_CC27XX
+    ${SOURCES_COMMON}
+    ECCSW.c
+    lowlevelapi.c
+    scalarMul.c
+)

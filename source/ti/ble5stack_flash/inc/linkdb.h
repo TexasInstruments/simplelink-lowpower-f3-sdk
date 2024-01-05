@@ -87,6 +87,7 @@ extern "C"
  */
 
 #include "ll_common.h"
+#include "hci.h"
 
 /*********************************************************************
  * MACROS
@@ -250,6 +251,16 @@ extern uint8 linkDB_NumConns( void );
  * @return FALSE otherwise.
  */
   extern uint8 linkDB_State( uint16 connectionHandle, uint8 state );
+
+/**
+ * Get the activeConnInfo from LL using connectionHandle.
+ *
+ * @param connectionHandle - controller link connection handle.
+ * @param activeConnInfo   - pointer to the activeConnInfo
+ *
+ * @return Status - SUCCESS/FAILED
+ */
+  extern uint8 linkDB_GetActiveConnInfo( uint8 connectionHandle, hciActiveConnInfo_t *activeConnInfo );
 
 /*********************************************************************
 *********************************************************************/

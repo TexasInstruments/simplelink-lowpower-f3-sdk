@@ -89,7 +89,7 @@ HwiP_Handle HwiP_construct(HwiP_Struct *handle, int interruptNum, HwiP_Fxn hwiFx
 
         if ((params->priority & 0xFF) == 0xFF)
         {
-            /* SwiP_freertos.c uses INT_PRI_LEVEL3 as its scheduler. No one else
+            /* SwiP_nortos.c uses INT_PRI_LEVEL3 as its scheduler. No one else
              * may use that priority level. CC23X0 only has two priority bits.
              * So level 3 is the lowest.
              */
@@ -224,7 +224,6 @@ bool HwiP_interruptsEnabled(void)
 }
 
 /*
-
  *  ======== HwiP_inISR ========
  */
 bool HwiP_inISR(void)

@@ -51,9 +51,9 @@
 #define RCL_EventStartDelayed          ((RCL_Events){ .value = (1 << 12)})  /*!< Command start is delayed, may still happen within allowDelay */
 #define RCL_EventStartRejected         ((RCL_Events){ .value = (1 << 13)})  /*!< Command start is not possible within scheduling parameters */
 #define RCL_EventSetup                 ((RCL_Events){ .value = (1 << 14)})  /*!< Setup has been performed */
-#define RCL_EventPartialSetup          ((RCL_Events){ .value = (1 << 15)})  /*!< Partial setup has been performed */
-#define RCL_EventRxBufferUpdate        ((RCL_Events){ .value = (1 << 16)})  /*!< Partial setup has been performed */
-#define RCL_EventTxBufferUpdate        ((RCL_Events){ .value = (1 << 17)})  /*!< Setup has been performed */
+#define RCL_EventPartialSetup          ((RCL_Events){ .value = (1 << 15)})  /*!< Partial setup has been performed or is required by the running command */
+#define RCL_EventRxBufferUpdate        ((RCL_Events){ .value = (1 << 16)})  /*!< RX buffer has been updated */
+#define RCL_EventTxBufferUpdate        ((RCL_Events){ .value = (1 << 17)})  /*!< TX buffer has been updated */
 #define RCL_EventHandlerCmdUpdate      ((RCL_Events){ .value = (1 << 18)})  /*!< A property of a running command has been updated, to be detailed by handler */
 
 
@@ -74,7 +74,7 @@ union RCL_Events_u {
         uint32_t startDelayed        : 1; /*!< Command start is delayed, may still happen within allowDelay */
         uint32_t startRejected       : 1; /*!< Command start is not possible within scheduling parameters */
         uint32_t setup               : 1; /*!< Setup has been performed */
-        uint32_t partialSetup        : 1; /*!< Partial setup has been performed */
+        uint32_t partialSetup        : 1; /*!< Partial setup has been performed or is required by the running command */
         uint32_t rxBufferUpdate      : 1; /*!< RX buffer has been updated */
         uint32_t txBufferUpdate      : 1; /*!< TX buffer has been updated */
         uint32_t handlerCmdUpdate    : 1; /*!< A property of a running command has been updated, to be detailed by handler */

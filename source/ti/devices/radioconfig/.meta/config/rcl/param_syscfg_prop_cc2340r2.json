@@ -1,0 +1,700 @@
+{
+  "configs": [
+    {
+      "name": "freqBand",
+      "displayName": "Frequency Band",
+      "description": "Select the frequency band",
+      "options": [
+        {
+          "name": "2400",
+          "displayName": "2400 - 2480 MHz"
+        }
+      ],
+      "default": "2400"
+    },
+    {
+      "name": "phyType2400",
+      "displayName": "PHY Type",
+      "description": "Selects the PHY setting",
+      "options": [],
+      "default": ""
+    },
+    {
+      "name": "parent",
+      "displayName": "Parent",
+      "default": "Stack",
+      "hidden": true
+    },
+    {
+      "name": "permission",
+      "displayName": "Permission",
+      "default": "None",
+      "hidden": true,
+      "options": [
+        {
+          "name": "None"
+        },
+        {
+          "name": "ReadWrite"
+        },
+        {
+          "name": "ReadOnly"
+        }
+      ]
+    },
+    {
+      "name": "subPhy",
+      "displayName": "Default sub-PHY",
+      "description": "Select the sub-PHY",
+      "hidden": true,
+      "options": [
+        {
+          "name": "1_mbps",
+          "displayName": "1 Mbps"
+        },
+        {
+          "name": "2_mbps",
+          "displayName": "2 Mbps"
+        }
+      ],
+      "default": "1_mbps"
+    },
+    {
+      "name": "frequency",
+      "displayName": "Frequency (MHz)",
+      "description": "Frequency.",
+      "default": 2440,
+      "displayFormat": {
+        "radix": "dec",
+        "fixedPoint": 4
+      }
+    },
+    {
+      "name": "txPower",
+      "displayName": "TX Power (dBm)",
+      "description": "TX Power",
+      "default": "5"
+    },
+    {
+      "name": "syncWord",
+      "displayName": "Sync Word",
+      "description": "Complete Sync Word. Number of bits that is checked is determined by the Sync word length field.\\n The bit order is determined by formatConf.bMsbFirst.",
+      "default": 0,
+      "displayFormat": {
+        "radix": "hex",
+        "bitSize": 32
+      }
+    },
+    {
+      "name": "whitening",
+      "displayName": "Whitening",
+      "description": "Whitening",
+      "default": "Disabled",
+      "options": [
+        {
+          "name": "Disabled",
+          "key": 0
+        },
+        {
+          "name": "PN9",
+          "key": 2
+        }
+      ]
+    },
+    {
+      "name": "packetLengthSize",
+      "displayName": "Packet Length Config",
+      "description": "Packet Length Configuration",
+      "default": "Variable, 8-bit length field",
+      "options": [
+        {
+          "name": "Fixed",
+          "key": 0
+        },
+        {
+          "name": "Variable, 8-bit length field",
+          "key": 1
+        }
+      ]
+    },
+    {
+      "name": "rxFixedPayloadLength",
+      "displayName": "RX fixed payload length",
+      "description": "Maximum payload length in RX if packet length configuration is fixed",
+      "default": 5,
+      "hidden": true
+    }
+  ],
+  "phys": {
+    "prop2400": []
+  },
+  "rcl_structs": {
+    "RCL_CommandRuntime": {
+      "desc": "Command timing structure",
+      "field": [
+        {
+          "desc": "Command handler to use for this command",
+          "name": "handler",
+          "type": "RCL_CommandHandler"
+        },
+        {
+          "desc": "Client",
+          "name": "client",
+          "type": "RCL_Client*"
+        },
+        {
+          "desc": "Callbacks enabled for events directly from LRF",
+          "name": "lrfCallbackMask",
+          "type": "LRF_Events"
+        },
+        {
+          "desc": "Callbacks enabled for events generated in RCL",
+          "name": "rclCallbackMask",
+          "type": "RCL_Events"
+        },
+        {
+          "desc": "Callback function",
+          "name": "callback",
+          "type": "RCL_Callback"
+        }
+      ]
+    },
+    "RCL_CommandTiming": {
+      "desc": "Command timing structure",
+      "field": [
+        {
+          "desc": "Unless timing is Schedule_Now: Start time of the command on SYSTIM (0.25 us steps)",
+          "name": "absStartTime",
+          "type": "uint32_t",
+          "size": "32",
+          "default": "0"
+        },
+        {
+          "desc": "For scheduler: Minimum time command must be allowed to run (0.25 us steps). Not supported in this version.",
+          "name": "relMinTime",
+          "type": "uint32_t",
+          "size": "32",
+          "default": "0"
+        },
+        {
+          "desc": "Time to initiate graceful stop of command. If negative: Relative to hardStopTime, otherwise relative to startTime (0.25 us steps)",
+          "enum": {
+            "value": "0",
+            "label": "Not used"
+          },
+          "name": "relGracefulStopTime",
+          "type": "int32_t",
+          "size": "32",
+          "default": "0"
+        },
+        {
+          "desc": "Time to stop the command as soon as possible; relative to start time (0.25 us steps)",
+          "enum": {
+            "value": "0",
+            "label": "Not used"
+          },
+          "name": "relHardStopTime",
+          "type": "uint32_t",
+          "size": "32",
+          "default": "0"
+        }
+      ]
+    },
+    "RCL_Command": {
+      "desc": "Command common fields",
+      "field": [
+        {
+          "desc": "Command ID",
+          "enum": [
+            {
+              "symbol": "RCL_CMDID_GENERIC_FS",
+              "value": "0x0001",
+              "label": "Frequency programming command"
+            },
+            {
+              "symbol": "RCL_CMDID_GENERIC_FS_OFF",
+              "value": "0x0002",
+              "label": "Stop frequency synthesizer command"
+            },
+            {
+              "symbol": "RCL_CMDID_GENERIC_TX",
+              "value": "0x0003",
+              "label": "Generic transmit command"
+            },
+            {
+              "symbol": "RCL_CMDID_GENERIC_TX_REPEAT",
+              "value": "0x0004",
+              "label": "Generic repeated packet transmit command"
+            },
+            {
+              "symbol": "RCL_CMDID_GENERIC_TX_TEST",
+              "value": "0x0005",
+              "label": "Generic transmitter test command"
+            },
+            {
+              "symbol": "RCL_CMDID_GENERIC_RX",
+              "value": "0x0006",
+              "label": "Generic receive command"
+            }
+          ],
+          "name": "cmdId",
+          "type": "uint16_t",
+          "size": "16"
+        },
+        {
+          "desc": "PHY feature selector",
+          "enum": {
+            "value": "0",
+            "label": "Use default PHY features, if any"
+          },
+          "name": "phyFeatures",
+          "type": "uint16_t",
+          "size": "16",
+          "default": "0"
+        },
+        {
+          "desc": "Scheduling type",
+          "enum": [
+            {
+              "symbol": "RCL_Schedule_Now",
+              "value": "0",
+              "label": "Schedule the command to start as soon as possible"
+            },
+            {
+              "symbol": "RCL_Schedule_AbsTime",
+              "value": "1",
+              "label": "Schedule command to start at a given time; give error if delays occur"
+            }
+          ],
+          "name": "scheduling",
+          "type": "uint8_t",
+          "size": "8",
+          "default": "0"
+        },
+        {
+          "desc": "Status of command",
+          "enum": [
+            {
+              "symbol": "RCL_CommandStatus_Idle",
+              "value": "0x00",
+              "label": "Command is not yet run. This state is mandatory when submitting"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Queued",
+              "value": "0x01",
+              "label": "Command is queued, but pending end of previous command"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Scheduled",
+              "value": "0x02",
+              "label": "Command is scheduled, pending start time"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Active",
+              "value": "0x03",
+              "label": "Command is currently running"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Suspended",
+              "value": "0x04",
+              "label": "Command is suspended and will resume once the othe running commands have finished"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Deferred",
+              "value": "0x05",
+              "label": "Command is deferred"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Finished",
+              "value": "0x10",
+              "label": "Command has finished normally"
+            },
+            {
+              "symbol": "RCL_CommandStatus_ChannelIdle",
+              "value": "0x11",
+              "label": "Channel assessment has finished with channel idle"
+            },
+            {
+              "symbol": "RCL_CommandStatus_ChannelBusy",
+              "value": "0x12",
+              "label": "Channel assessment has finished with channel busy"
+            },
+            {
+              "symbol": "RCL_CommandStatus_RxTimeout",
+              "value": "0x13",
+              "label": "Command timed out waiting for sync"
+            },
+            {
+              "symbol": "RCL_CommandStatus_NoSync",
+              "value": "0x14",
+              "label": "Command timed out waiting for a returned packet from peer device"
+            },
+            {
+              "symbol": "RCL_CommandStatus_RxErr",
+              "value": "0x15",
+              "label": "Command ended due to errors with the received packet (e.g, CRC errors)"
+            },
+            {
+              "symbol": "RCL_CommandStatus_RejectedStart",
+              "value": "0x16",
+              "label": "Command was rejected start due to scheduling parameters"
+            },
+            {
+              "symbol": "RCL_CommandStatus_DescheduledApi",
+              "value": "0x31",
+              "label": "Command was descheduled before starting running in the radio because stop API was called"
+            },
+            {
+              "symbol": "RCL_CommandStatus_DescheduledScheduling",
+              "value": "0x32",
+              "label": "Command was descheduled before starting running in the radio due to scheduling of another command"
+            },
+            {
+              "symbol": "RCL_CommandStatus_GracefulStopTimeout",
+              "value": "0x34",
+              "label": "Command ended because graceful stop time was reached"
+            },
+            {
+              "symbol": "RCL_CommandStatus_GracefulStopApi",
+              "value": "0x35",
+              "label": "Command ended because stop API was called with RCL_StopType_Graceful argument"
+            },
+            {
+              "symbol": "RCL_CommandStatus_GracefulStopScheduling",
+              "value": "0x36",
+              "label": "Command ended due to scheduling where interrupting command had RCL_ConflictPolicy_Polite"
+            },
+            {
+              "symbol": "RCL_CommandStatus_HardStopTimeout",
+              "value": "0x38",
+              "label": "Command ended because hard stop time was reached"
+            },
+            {
+              "symbol": "RCL_CommandStatus_HardStopApi",
+              "value": "0x39",
+              "label": "Command ended because stop API was called with RCL_StopType_Hard argument"
+            },
+            {
+              "symbol": "RCL_CommandStatus_HardStopScheduling",
+              "value": "0x3A",
+              "label": "Command ended due to scheduling where interrupting command had RCL_ConflictPolicy_AlwaysInterrupt"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Connect",
+              "value": "0x40",
+              "label": "Command has finished and a connection may be established (BLE5 advertiser and initiator)"
+            },
+            {
+              "symbol": "RCL_CommandStatus_MaxNak",
+              "value": "0x41",
+              "label": "Command ended because more subsequent NAKs than supported were received (BLE5)"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error",
+              "value": "0x80",
+              "label": "Command ended with unknown error"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_Setup",
+              "value": "0x81",
+              "label": "Command ended because of an error in the setup"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_Param",
+              "value": "0x82",
+              "label": "Command ended because of an error with a parameter"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_MissingTxBuffer",
+              "value": "0x83",
+              "label": "Command ended because no TX buffer was available when required"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_TxBufferCorruption",
+              "value": "0x84",
+              "label": "Command ended because of errors in TX buffer structure"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_RxBufferCorruption",
+              "value": "0x85",
+              "label": "Command ended because of errors in RX buffer structure"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_StartTooLate",
+              "value": "0x86",
+              "label": "Command ended because start time was in the past"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_TxFifo",
+              "value": "0x87",
+              "label": "Command ended because of underflow of TX FIFO"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_RxFifo",
+              "value": "0x88",
+              "label": "Command ended because of unsupported overflow of RX FIFO (no buffer to store packets)"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_Synth",
+              "value": "0x89",
+              "label": "Command ended because of synth programming error"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_UnknownOp",
+              "value": "0x8A",
+              "label": "Command ended because radio did not recognize command; probably wrong image for given command"
+            },
+            {
+              "symbol": "RCL_CommandStatus_Error_AlreadySubmitted",
+              "value": "0x8B",
+              "label": "Command is already submitted and planned or running and can't be submitted again without calling stop first"
+            }
+          ],
+          "name": "status",
+          "type": "uint8_t",
+          "size": "8",
+          "default": "0x00"
+        },
+        {
+          "desc": "Conflict resolution policy",
+          "enum": [
+            {
+              "symbol": "RCL_ConflictPolicy_AlwaysInterrupt",
+              "value": "0",
+              "label": "Always stop a running command if necessary to run this command"
+            },
+            {
+              "symbol": "RCL_ConflictPolicy_Polite",
+              "value": "1",
+              "label": "Stop a running command unless it is communicating, i.e. transmitting or is actively receiving"
+            },
+            {
+              "symbol": "RCL_ConflictPolicy_NeverInterrupt",
+              "value": "2",
+              "label": "Never stop an ongoing command"
+            }
+          ],
+          "name": "conflictPolicy",
+          "type": "uint8_t",
+          "size": "8",
+          "default": "0"
+        },
+        {
+          "desc": "Start may be delayed",
+          "name": "allowDelay",
+          "type": "uint8_t",
+          "size": "8",
+          "default": "0"
+        },
+        {
+          "desc": "Runtime information",
+          "name": "runtime",
+          "type": "RCL_CommandRuntime"
+        },
+        {
+          "desc": "Timing information",
+          "name": "timing",
+          "type": "RCL_CommandTiming"
+        }
+      ]
+    },
+    "LRF_TOPsmImage": {
+      "desc": "TOPsm image",
+      "field": [
+        {
+          "desc": "Number of image words",
+          "name": "imageLen",
+          "type": "uint32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Image words",
+          "name": "image[]",
+          "type": "uint32_t",
+          "size": "32"
+        }
+      ]
+    },
+    "LRF_RegConfig": {
+      "desc": "Register configuration",
+      "field": [
+        {
+          "desc": "Number of register configuration words",
+          "name": "configLen",
+          "type": "uint32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Register configuration words",
+          "name": "regConfig[]",
+          "type": "uint32_t",
+          "size": "32"
+        }
+      ]
+    },
+    "LRF_RegConfigList": {
+      "desc": "Register configuration",
+      "field": [
+        {
+          "desc": "Number of register configuration entries",
+          "name": "numEntries",
+          "type": "uint32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Register configuration entries",
+          "name": "entries[]",
+          "type": "const LRF_RegConfig*"
+        }
+      ]
+    },
+    "LRF_TxPowerTable": {
+      "desc": "Register configuration",
+      "field": [
+        {
+          "desc": "Number of power table entries",
+          "name": "numEntries",
+          "type": "uint32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Power table entries",
+          "name": "powerTable[]",
+          "type": "const LRF_TxPowerTable_Entry"
+        }
+      ]
+    },
+    "LRF_TxShape": {
+      "desc": "Transmitter shape definition",
+      "field": [
+        {
+          "desc": "Scale",
+          "name": "scale",
+          "type": "uint32_t",
+          "size": "17"
+        },
+        {
+          "desc": "Number of coefficients",
+          "name": "numCoeff",
+          "type": "uint32_t",
+          "size": "15"
+        },
+        {
+          "desc": "Coefficients",
+          "name": "coeff[]",
+          "type": "uint8_t",
+          "size": "8"
+        }
+      ]
+    },
+    "LRF_SwConfig": {
+      "desc": "Software defined PHY parameters",
+      "field": [
+        {
+          "desc": "Receiver intermediate frequency [Hz]",
+          "name": "rxIntFrequency",
+          "type": "int32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Receiver frequency offset [Hz]",
+          "name": "rxFrequencyOffset",
+          "type": "int32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Transmitter frequency offset [Hz]",
+          "name": "txFrequencyOffset",
+          "type": "int32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Transmitter frequency deviation [Hz]",
+          "name": "modFrequencyDeviation",
+          "type": "uint32_t",
+          "size": "32"
+        },
+        {
+          "desc": "Transmitter shape definition",
+          "name": "txShape",
+          "type": "LRF_TxShape*"
+        },
+        {
+          "desc": "Index to use for bandwitdh dependent settings",
+          "enum": [
+            {
+              "value": "0",
+              "label": "Normal or low bandwidth"
+            },
+            {
+              "value": "1",
+              "label": "High bandwidth"
+            }
+          ],
+          "name": "bwIndex",
+          "type": "uint8_t",
+          "size": "8"
+        },
+        {
+          "desc": "Index to use for bandwitdh dependent ADC dithering settings",
+          "enum": [
+            {
+              "value": "0",
+              "label": "Low bandwidth"
+            },
+            {
+              "value": "1",
+              "label": "Normal or high bandwidth"
+            }
+          ],
+          "name": "bwIndexDither",
+          "type": "uint8_t",
+          "size": "8"
+        }
+      ]
+    },
+    "LRF_Config": {
+      "desc": "LRF configuration structure",
+      "field": [
+        {
+          "desc": "Pointer to PBE image",
+          "enum": {
+            "value": "0",
+            "label": "Image must be copied to PBE RAM manually"
+          },
+          "name": "pbeImage",
+          "type": "LRF_TOPsmImage*"
+        },
+        {
+          "desc": "Pointer to MCE image",
+          "enum": {
+            "value": "0",
+            "label": "Image must be copied to MCE RAM manually"
+          },
+          "name": "mceImage",
+          "type": "LRF_TOPsmImage*"
+        },
+        {
+          "desc": "Pointer to RFE image",
+          "enum": {
+            "value": "0",
+            "label": "Image must be copied to RFE RAM manually"
+          },
+          "name": "rfeImage",
+          "type": "LRF_TOPsmImage*"
+        },
+        {
+          "desc": "Register configuration list",
+          "name": "regConfigList",
+          "type": "LRF_RegConfigList*"
+        }
+      ]
+    }
+  },
+  "frontends": [
+    {
+      "name": "IS",
+      "displayName": "Internal bias, internal balun RF"
+    }
+  ]
+}

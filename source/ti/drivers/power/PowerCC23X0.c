@@ -70,8 +70,8 @@ int_fast16_t PowerCC23X0_notify(uint_fast16_t eventType);
 static void PowerCC23X0_oscillatorISR(uintptr_t arg);
 static void PowerCC23X0_rtcISR(uintptr_t arg);
 static void PowerCC23X0_enterStandby(void);
-static void PowerCC23X0_setDependencyCount(uint_fast16_t resourceId, uint8_t count);
-bool PowerCC23X0_isValidResourceId(uint_fast16_t resourceId);
+static void PowerCC23X0_setDependencyCount(Power_Resource resourceId, uint8_t count);
+bool PowerCC23X0_isValidResourceId(Power_Resource resourceId);
 static void PowerCC23X0_startHFXT(void);
 static void PowerCC23X0_hfxtCompensateFxn(int16_t currentTemperature,
                                           int16_t thresholdTemperature,
@@ -101,9 +101,6 @@ extern const uint_least8_t GPIO_pinUpperBound;
 
 #define HFXT_COMP_MAX_TEMP (125)
 #define HFXT_COMP_MIN_TEMP (-40)
-
-/* SYS0 UNLOCK register key needed to write to SYS0_TMUTEn */
-#define SYS0_UNLOCK_KEY 0xC5AF6927
 
 /* Type definitions */
 
@@ -142,37 +139,39 @@ static struct
 static bool PowerCC23X0_hfxtCompEnabled = false;
 
 /* Array to maintain constraint reference counts */
-uint8_t constraintCounts[PowerCC23X0_NUMCONSTRAINTS];
+static uint8_t constraintCounts[PowerCC23X0_NUMCONSTRAINTS];
 
 /* Mask of Power constraints for quick access */
-uint32_t constraintMask = 0;
+static uint32_t constraintMask = 0;
 
 /* Arrays to maintain resource dependency reference counts.
  * Each resource group will have an array associated with it, and the arrays can
  * be indexed using the bit index shift value encoded in the resource ID.
  */
-uint8_t resourceCountsClkctl0[PowerCC23X0_NUMRESOURCES_CLKCTL0];
-uint8_t resourceCountsLrfd[PowerCC23X0_NUMRESOURCES_LRFD];
+static uint8_t resourceCountsClkctl0[PowerCC23X0_NUMRESOURCES_CLKCTL0];
+static uint8_t resourceCountsLrfd[PowerCC23X0_NUMRESOURCES_LRFD];
 
 /* Keeps track of the configured Power policy. Power_idleFunc() will not run
  * the policy if this is set to NULL
  */
-Power_PolicyFxn policyFxn = NULL;
+static Power_PolicyFxn policyFxn = NULL;
 
 /* Is the Power policy enabled? */
-bool isPolicyEnabled = false;
+static bool isPolicyEnabled = false;
 
 /* Has the Power driver been initialized */
-bool isInitialized = false;
+static bool isInitialized = false;
 
 /* Power state of the system. Idle, active, standby, etc */
-uint8_t powerState = Power_ACTIVE;
+static uint8_t powerState = Power_ACTIVE;
 
 /* Event notification list */
-List_List notifyList;
+static List_List notifyList;
 
 /* Interrupt for handling clock switching */
-HwiP_Struct ckmHwi;
+static HwiP_Struct ckmHwi;
+
+/* Non-static Globals */
 
 /* Interrupt for ClockP and Power policy */
 HwiP_Struct clockHwi;
@@ -297,7 +296,7 @@ uint_fast32_t Power_getConstraintMask(void)
  *  ======== Power_getDependencyCount ========
  *  Get the count of dependencies that are currently declared upon a resource.
  */
-int_fast16_t Power_getDependencyCount(uint_fast16_t resourceId)
+int_fast16_t Power_getDependencyCount(Power_Resource resourceId)
 {
     DebugP_assert(PowerCC23X0_isValidResourceId(resourceId));
 
@@ -313,6 +312,25 @@ int_fast16_t Power_getDependencyCount(uint_fast16_t resourceId)
     }
 
     return (int_fast16_t)Power_EINVALIDINPUT;
+}
+
+/*
+ *  ======== Power_getConstraintCount ========
+ *  Get the count of constraints that are currently set on a certain
+ *  operational transition
+ */
+int_fast16_t Power_getConstraintCount(uint_fast16_t constraintId)
+{
+    DebugP_assert(constraintId < PowerCC23X0_NUMCONSTRAINTS);
+
+    if (constraintId < PowerCC23X0_NUMCONSTRAINTS)
+    {
+        return (int_fast16_t)constraintCounts[constraintId];
+    }
+    else
+    {
+        return (int_fast16_t)Power_EINVALIDINPUT;
+    }
 }
 
 /*
@@ -461,7 +479,7 @@ int_fast16_t Power_releaseConstraint(uint_fast16_t constraintId)
  *  ======== Power_setDependency ========
  *  Declare a dependency upon a resource.
  */
-int_fast16_t Power_setDependency(uint_fast16_t resourceId)
+int_fast16_t Power_setDependency(Power_Resource resourceId)
 {
     uint8_t previousCount;
     uintptr_t key;
@@ -504,7 +522,7 @@ int_fast16_t Power_setDependency(uint_fast16_t resourceId)
  *  ======== Power_releaseDependency ========
  *  Release a previously declared dependency.
  */
-int_fast16_t Power_releaseDependency(uint_fast16_t resourceId)
+int_fast16_t Power_releaseDependency(Power_Resource resourceId)
 {
     uint8_t resourceCount;
     uintptr_t key;
@@ -613,7 +631,6 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
 int_fast16_t Power_sleep(uint_fast16_t sleepState)
 {
     int_fast16_t status = Power_SOK;
-    uint32_t tmuteRestoreVal;
 
     /* Signal all clients registered for pre standby wakeup notification */
     status = PowerCC23X0_notify(PowerLPF3_ENTERING_STANDBY);
@@ -625,13 +642,6 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
         return status;
     }
 
-    /* Stash TMUTE4 value to restore later */
-    tmuteRestoreVal                   = HWREG(SYS0_BASE + SYS0_O_TMUTE4);
-    /* Unlock TMUTEn registers to make them writable */
-    HWREG(SYS0_BASE + SYS0_O_MUNLOCK) = SYS0_UNLOCK_KEY;
-    /* Set IPEAK to 0 for lower standby power consumption */
-    HWREG(SYS0_BASE + SYS0_O_TMUTE4) &= ~SYS0_TMUTE4_IPEAK_M;
-
     /* Call wrapper function to ensure that R0-R3 are saved and restored before
      * and after this function call. Otherwise, compilers will attempt to stash
      * values on the stack while on the PSP and then restore them just after
@@ -639,14 +649,6 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      * behaviour.
      */
     PowerCC23X0_enterStandby();
-
-    /* Unlock TMUTEn registers to make them writable */
-    HWREG(SYS0_BASE + SYS0_O_MUNLOCK) = SYS0_UNLOCK_KEY;
-    /* Set IPEAK back to previous value for improved RF performance. We can just OR it in
-     * because we set it to 0 before entering standby and no one else could have
-     * changed it since then.
-     */
-    HWREG(SYS0_BASE + SYS0_O_TMUTE4)  = tmuteRestoreVal;
 
     /* Now that we have returned and are executing code from flash again, start
      * up the HFXT using the workaround for the HFXT amplitude control ADC bias
@@ -794,6 +796,9 @@ static void PowerCC23X0_oscillatorISR(uintptr_t arg)
     if (maskedStatus & CKMD_MIS_AMPSETTLED_M)
     {
         PowerCC23X0_notify(PowerLPF3_HFXT_AVAILABLE);
+
+        /* Allow standby again now that HFXT has finished starting */
+        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
     else if (maskedStatus & CKMD_MIS_HFXTFAULT_M)
     {
@@ -868,6 +873,20 @@ static void PowerCC23X0_rtcISR(uintptr_t arg)
  */
 static void PowerCC23X0_startHFXT(void)
 {
+    /* Return immediately if HFXT is already enabled. Not doing so will cause
+     * TRACKREFLOSS when starting the LDO. This situation can arise when:
+     * - Waking up from fake standby. Fake standby does not shut down the HFXT,
+     *   unlike real standby.
+     * - Waking up without actually entering real standby. If a wakeup source is
+     *   pending when we reach WFI in the ROM function, the hardware will just
+     *   turn that into a NOP instead and not run through the regular state
+     *   machine.
+     */
+    if ((HWREG(CKMD_BASE + CKMD_O_HFXTCTL) & CKMD_HFXTCTL_EN_M) == CKMD_HFXTCTL_EN)
+    {
+        return;
+    }
+
     /* Start LDO */
     HWREG(CKMD_BASE + CKMD_O_LDOCTL) = (CKMD_LDOCTL_SWOVR | CKMD_LDOCTL_STARTCTL | CKMD_LDOCTL_START | CKMD_LDOCTL_EN);
 
@@ -910,6 +929,9 @@ static void PowerCC23X0_startHFXT(void)
 
     /* Start HFXT */
     HWREG(CKMD_BASE + CKMD_O_HFXTCTL) |= CKMD_HFXTCTL_EN;
+
+    /* Disallow standby until AMPSETTLED is true */
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
     /* Enable the AMPSETTLED interrupt.
      * Since it is a level status signal, it remains asserted when we are
@@ -970,7 +992,7 @@ int_fast16_t PowerCC23X0_notify(uint_fast16_t eventType)
 /*
  *  ======== PowerCC23X0_setDependencyCount ========
  */
-void PowerCC23X0_setDependencyCount(uint_fast16_t resourceId, uint8_t count)
+void PowerCC23X0_setDependencyCount(Power_Resource resourceId, uint8_t count)
 {
     uint8_t bitIndex    = RESOURCE_BIT_INDEX(resourceId);
     uint_fast16_t group = RESOURCE_GROUP(resourceId);
@@ -990,7 +1012,7 @@ void PowerCC23X0_setDependencyCount(uint_fast16_t resourceId, uint8_t count)
 /*
  *  ======== PowerCC23X0_isValidResourceId ========
  */
-bool PowerCC23X0_isValidResourceId(uint_fast16_t resourceId)
+bool PowerCC23X0_isValidResourceId(Power_Resource resourceId)
 {
     uint8_t bitIndex    = RESOURCE_BIT_INDEX(resourceId);
     uint_fast16_t group = RESOURCE_GROUP(resourceId);
@@ -1034,18 +1056,19 @@ static uint32_t PowerCC23X0_temperatureToRatio(int16_t temperature)
     int32_t hfxtFreqOffset = (int32_t)((48LL * (int64_t)hfxtPpmOffset) >> PowerCC23X0_hfxtCompCoefficients.shift);
 
     /* Calculate temperature dependent ppm offset of the capacitor array on the
-     * crystal input pins, modelled as ppm(T) = (T-25) * 0.2
+     * crystal input pins, modelled as ppm(T) = 0.07 * (T - 25) + 10
      * Input frequency is assumed 48 MHz, and any potential crystal offset is
      * neglected and not factored into the cap array offset calculation.
-     * frequency_offset(T) = 48000000 * (T-25) * 0.2 / 1000000 = 9.6 * (T-25)
-     * To avoid floating-point multiplication and integer division, 9.6 is
-     * approximated as 10066330 / 2^20 ~ 9.600000381. The error introduced by
+     * frequency_offset(T) = 48000000 * (0.07 * (T - 25) + 10) / 1000000
+     *                     = 3.36 * (T - 25) + 480
+     * To avoid floating-point multiplication and integer division, 3.36 is
+     * approximated as 3523215 / 2^20 ~ 3.35999966. The error introduced by
      * this approximation is negligable.
      */
 #if !(defined(__IAR_SYSTEMS_ICC__) || (defined(__clang__) && defined(__ti_version__)) || defined(__GNUC__))
     #warning The following signed right-shift operation is implementation-defined
 #endif
-    int32_t capArrayOffset = (10066330 * (temperature - 25)) >> 20;
+    int32_t capArrayOffset = ((3523215 * (temperature - 25)) >> 20) + 480;
 
     /* Calculate the actual reference input frequency to the tracking loop,
      * accounting for the HFXT offset and cap array offset

@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 Texas Instruments Incorporated - http://www.ti.com
+/* Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,22 +98,27 @@ function validate(mod, validation)
 
 function getCFiles(kernel)
 {
+    /*
+     * Relative path to FreeRTOS source files. Note that (typically) only the
+     * FreeRTOS include/ directory is explicitly added to the user's include
+     * path, so these source files paths are found relative to that.  In the
+     * rare case that the user experiences an issue (e.g. a "list.c" is present
+     * in a directory one level above a non-FreeRTOS directory on the include
+     * path), users can configure we _not_ add a prefix, and instead they can
+     * explicitly add the FreeRTOS source directory to their include path.
+     */
+    let prefix = kernel.addRelativeSourcePath ? "../" : "";
     let baseFiles = [
-        /* FreeRTOS source files. Note that typically only an include path to
-         * FreeRTOS/Source/include is provided. To try and minimise naming
-         * conflicts, we go up to FreeRTOS, so we at least know these files are
-         * in a 'Source' folder.
-         */
-        "../../Source/list.c",
-        "../../Source/queue.c",
-        "../../Source/tasks.c",
-        "../../Source/timers.c",
-        "../../Source/croutine.c",
-        "../../Source/event_groups.c",
-        "../../Source/stream_buffer.c"
+        prefix + "list.c",
+        prefix + "queue.c",
+        prefix + "tasks.c",
+        prefix + "timers.c",
+        prefix + "croutine.c",
+        prefix + "event_groups.c",
+        prefix + "stream_buffer.c"
     ];
     if (!kernel.useCustomHeap) {
-        baseFiles.push("../../Source/portable/MemMang/heap_4.c");
+        baseFiles.push(prefix + "portable/MemMang/heap_4.c");
     }
 
     return baseFiles;
@@ -139,6 +144,27 @@ let base = {
         name: "moduleGlobal",
         validate: validate,
         config: [
+            {
+                name: "addRelativeSourcePath",
+                displayName: "Add FreeRTOS Source Path Prefix",
+                description: `Find the FreeRTOS sources relative to compiler include path`,
+                longDescription: `
+Find the FreeRTOS source files relative to the FreeRTOS **include/** directory.
+
+The FreeRTOS sources are compiled as part of the generated **ti_freertos_config.c** file.  Since the FreeRTOS sources
+are located in the parent directory of the FreeRTOS **include/** directory, and this **include/** directory is
+necessarily on the include search path (\`-I\` option), the compiler can find the FreeRTOS sources by searching
+parent directories ("\`..\`") along the include search path (e.g. \`#include <../list.c>\`).
+
+However, because the FreeRTOS source file names are very common (e.g. "list.c"), there is a small chance the
+wrong source file may be found (e.g. a "list.c" present in the parent of a directory on the include search path
+_earlier_ than FreeRTOS's **include/** directory).
+
+This config parameter can be used to avoid that file name collision, by removing any relative directory prefix
+on the FreeRTOS sources being built (e.g. \`include <list.c>\`), and instead requiring users explicitly add the
+directory containing FreeRTOS sources to the compiler include path.`,
+                default: true
+            },
             {
                 name: "stackOverflowMode",
                 displayName: "Stack Overflow Checking",
@@ -270,6 +296,12 @@ responsible for defining vPortFree and pvPortMalloc with their custom heap confi
             /* Hidden settings - internal use only, for specifying differences between device implementations
              * If you modify these settings in your application, the behaviour is undefined.
              */
+            {
+                name: "tickRate",
+                displayName: "Kernel Clock tick rate (Hz)",
+                default: 1000,
+                hidden: true
+            },
             {
                 name: "cpuFrequency",
                 displayName: "CPU Frequency (Hz)",

@@ -1,9 +1,9 @@
-// This code snippet was auto-generated on Tue Apr 18 13:24:34 2023 using command: 
-// perl /home/developer/.conan/data/loki-lrf/7.11.00.18/library-lprf/eng/build/7c92806c54e4cfdd9df8e8c53e37468130adda90/tools/topsm/bin2csource_v2.pl --cpu rfe --fwname ble_cs --fwdesc LRF firmware for RF Engine (RFE). Implements: ble_cs /home/developer/.conan/data/loki-lrf/7.11.00.18/library-lprf/eng/build/7c92806c54e4cfdd9df8e8c53e37468130adda90/rfe/ble_cs/bin_nopll/rfe_ram.bin /home/developer/.conan/data/loki-lrf/7.11.00.18/library-lprf/eng/build/7c92806c54e4cfdd9df8e8c53e37468130adda90/rfe/ble_cs/bin_nopll/lrf_rfe_binary_ble_cs_nopll.c
+// This code snippet was auto-generated on Tue Dec  5 12:16:26 2023 using command: 
+// perl /home/developer/.conan/data/loki-lrf/7.40.01.13/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/lrfbledig/../tools/topsm/bin2csource_v2.pl --cpu rfe --fwname ble_cs_nopll --fwdesc CC2340R5 LRF firmware for rfe, mode ble_cs, NOPLL=1 /home/developer/.conan/data/loki-lrf/7.40.01.13/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledig/iar/rfe/ble_cs_nopll/rfe_ble_cs_nopll_ram.bin /home/developer/.conan/data/loki-lrf/7.40.01.13/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledig/iar/rfe/ble_cs_nopll/lrf_rfe_binary_ble_cs_nopll.c
 
 
-// Binary source file: /home/developer/.conan/data/loki-lrf/7.11.00.18/library-lprf/eng/build/7c92806c54e4cfdd9df8e8c53e37468130adda90/rfe/ble_cs/bin_nopll/rfe_ram.bin
-// Binary source last modified: 18-Apr-2023 13:24
+// Binary source file: /home/developer/.conan/data/loki-lrf/7.40.01.13/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledig/iar/rfe/ble_cs_nopll/rfe_ble_cs_nopll_ram.bin
+// Binary source last modified: 05-Dec-2023 12:16
 
 
 #ifndef _LRF_RFE_BINARY_BLE_CS_NOPLL_C

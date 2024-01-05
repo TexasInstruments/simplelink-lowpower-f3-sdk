@@ -44,6 +44,7 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/SPI.h>
 #include <ti/drivers/utils/StructRingBuf.h>
+#include <ti/drivers/utils/Math.h>
 
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/HwiP.h>
@@ -56,12 +57,10 @@
 #if (defined(__IAR_SYSTEMS_ICC__) || defined(__TI_COMPILER_VERSION__))
     #include <arm_acle.h>
     #define BSWAP32 __rev
-#else
+#elif defined(__GNUC__)
     #define BSWAP32 __builtin_bswap32
-#endif
-
-#ifndef MIN
-    #define MIN(n, m) (((n) > (m)) ? (m) : (n))
+#else
+    #error Unsupported compiler
 #endif
 
 #define TCAN455X_RESET_DELAY_US 800U /* Must be at least 700us */
@@ -77,7 +76,8 @@
  */
 static uint32_t rxRingBufFullCnt = 0U;
 
-static SemaphoreP_Struct tcanSemaphore;
+static SemaphoreP_Struct tcanIRQSemaphore;
+static SemaphoreP_Struct spiAccessSemaphore;
 static TaskP_Params taskParams;
 static TaskP_Struct tcanTask;
 
@@ -86,7 +86,12 @@ static MCAN_RxBufElement rxElem;
 
 extern const TCAN455X_Config TCAN455X_config;
 
-/* Default device-specific message RAM configuration */
+/* Default device-specific message RAM configuration:
+ *  - Each standard filter element occupies 4-bytes.
+ *  - Each extended filter element occupies 8-bytes.
+ *  - Each Rx/Tx buffer occupies 72-bytes when CAN FD is enabled or 16-bytes
+ *    for classic CAN.
+ */
 const CAN_MsgRAMConfig TCAN455X_defaultMsgRAMConfig = {
     .stdFilterNum       = 0U,
     .extFilterNum       = 0U,
@@ -103,6 +108,7 @@ const CAN_MsgRAMConfig TCAN455X_defaultMsgRAMConfig = {
 
 static SPI_Handle TCAN455X_spiHandle;
 
+/* Forward declarations */
 static inline void TCAN455X_assertSPICSN(void);
 static inline void TCAN455X_deassertSPICSN(void);
 static void TCAN455X_startSPITransfer(uint8_t opcode, uint16_t addr, uint8_t numWords);
@@ -114,6 +120,9 @@ static void TCAN455X_writeReg(uint16_t offset, uint32_t value);
 static uint32_t TCAN455X_readReg(uint16_t offset);
 static inline void TCAN455X_disableInterrupt(void);
 static inline void TCAN455X_enableInterrupt(void);
+static bool TCAN455X_isRxStructRingBufFull(CAN_Handle handle);
+static void TCAN455X_handleRxFIFO(CAN_Handle handle, uint32_t fifoNum);
+static void TCAN455X_handleRxBuf(CAN_Handle handle);
 static void TCAN455X_irqHandler(uint_least8_t index);
 static inline int_fast16_t TCAN455X_initSPI(void);
 static void TCAN455X_clearMsgRAM(void);
@@ -125,7 +134,7 @@ static void TCAN455X_reset(void);
 static int_fast16_t TCAN455X_init(const CAN_Config *config,
                                   const CAN_MsgRAMConfig *msgRAMConfig,
                                   const CAN_BitRateTimingRaw *bitTiming);
-static void TCAN455X_enableLoopback(uint32_t externalModeEnable);
+static void TCAN455X_enableLoopback(bool externalModeEnable);
 static void TCAN455X_taskFxn(void *arg);
 
 /* Definitions for extern functions defined in MCAN.h */
@@ -307,6 +316,9 @@ static void TCAN455X_startSPITransfer(uint8_t opcode, uint16_t addr, uint8_t num
     SPI_Transaction xfer;
     uint8_t hdr[4];
 
+    /* No need to check return value when waiting forever */
+    (void)SemaphoreP_pend(&spiAccessSemaphore, SemaphoreP_WAIT_FOREVER);
+
     TCAN455X_assertSPICSN();
 
     hdr[0] = opcode;
@@ -331,6 +343,8 @@ static void TCAN455X_startSPITransfer(uint8_t opcode, uint16_t addr, uint8_t num
 static inline void TCAN455X_endSPITransfer(void)
 {
     TCAN455X_deassertSPICSN();
+
+    SemaphoreP_post(&spiAccessSemaphore);
 }
 
 /*
@@ -414,12 +428,12 @@ static inline void TCAN455X_enableInterrupt(void)
 /*
  *  ======== TCAN455X_isRxStructRingBufFull ========
  */
-static uint32_t TCAN455X_isRxStructRingBufFull(CAN_Handle handle)
+static bool TCAN455X_isRxStructRingBufFull(CAN_Handle handle)
 {
     CAN_Object *object = (CAN_Object *)handle->object;
-    uint32_t isFull    = FALSE;
+    bool isFull        = StructRingBuf_isFull(&object->rxStructRingBuf);
 
-    if (StructRingBuf_isFull(&object->rxStructRingBuf))
+    if (isFull)
     {
         rxRingBufFullCnt++;
 
@@ -438,12 +452,12 @@ static uint32_t TCAN455X_isRxStructRingBufFull(CAN_Handle handle)
  */
 static void TCAN455X_handleRxFIFO(CAN_Handle handle, uint32_t fifoNum)
 {
-    CAN_Object *object = (CAN_Object *)handle->object;
-    MCAN_RxFIFOStatus fifoStatus;
+    CAN_Object *object           = (CAN_Object *)handle->object;
+    MCAN_RxFIFOStatus fifoStatus = {0};
 
     MCAN_getRxFIFOStatus(fifoNum, &fifoStatus);
 
-    if ((fifoStatus.fillLvl > 0U) && (TCAN455X_isRxStructRingBufFull(handle) == FALSE))
+    if ((fifoStatus.fillLvl > 0U) && !TCAN455X_isRxStructRingBufFull(handle))
     {
         MCAN_readRxMsg(MCAN_MEM_TYPE_FIFO, fifoNum, &rxElem);
         /* Return value can be ignored since ring buffer is not full */
@@ -451,7 +465,7 @@ static void TCAN455X_handleRxFIFO(CAN_Handle handle, uint32_t fifoNum)
 
         fifoStatus.fillLvl--;
 
-        while ((fifoStatus.fillLvl > 0U) && (TCAN455X_isRxStructRingBufFull(handle) == FALSE))
+        while ((fifoStatus.fillLvl > 0U) && !TCAN455X_isRxStructRingBufFull(handle))
         {
             MCAN_readRxMsg(MCAN_MEM_TYPE_FIFO, fifoNum, &rxElem);
             /* Return value can be ignored since ring buffer is not full */
@@ -487,11 +501,11 @@ static void TCAN455X_handleRxBuf(CAN_Handle handle)
     /* Check for Rx messages in buffers 0-31 */
     if (newDataStatus.statusLow != 0U)
     {
-        for (bufNum = 0U; bufNum < MIN(object->rxBufNum, 32U); bufNum++)
+        for (bufNum = 0U; bufNum < Math_MIN(object->rxBufNum, 32U); bufNum++)
         {
             if ((newDataStatus.statusLow & ((uint32_t)1U << bufNum)) != 0U)
             {
-                if (TCAN455X_isRxStructRingBufFull(handle) == FALSE)
+                if (!TCAN455X_isRxStructRingBufFull(handle))
                 {
                     MCAN_readRxMsg(MCAN_MEM_TYPE_BUF, bufNum, &rxElem);
 
@@ -508,11 +522,11 @@ static void TCAN455X_handleRxBuf(CAN_Handle handle)
         /* Check for Rx messages in buffers 32-63 */
         if (newDataStatus.statusHigh != 0U)
         {
-            for (bufNum = 0U; bufNum < MIN((object->rxBufNum - 32U), 32U); bufNum++)
+            for (bufNum = 0U; bufNum < Math_MIN((object->rxBufNum - 32U), 32U); bufNum++)
             {
                 if ((newDataStatus.statusHigh & ((uint32_t)1U << bufNum)) != 0U)
                 {
-                    if (TCAN455X_isRxStructRingBufFull(handle) == FALSE)
+                    if (!TCAN455X_isRxStructRingBufFull(handle))
                     {
                         MCAN_readRxMsg(MCAN_MEM_TYPE_BUF, (bufNum + 32U), &rxElem);
 
@@ -541,7 +555,7 @@ static void TCAN455X_irqHandler(uint_least8_t index)
      */
 
     /* Unblock task to handle the interrupt */
-    SemaphoreP_post(&tcanSemaphore);
+    SemaphoreP_post(&tcanIRQSemaphore);
 }
 
 /*
@@ -564,15 +578,23 @@ static inline int_fast16_t TCAN455X_initSPI(void)
         spiParams.transferMode = SPI_MODE_BLOCKING;
 
         TCAN455X_spiHandle = SPI_open(TCAN455X_config.spiIndex, &spiParams);
+    }
 
-        if (TCAN455X_spiHandle == NULL)
+    if (TCAN455X_spiHandle == NULL)
+    {
+        status = CAN_STATUS_ERROR;
+    }
+    else
+    {
+        /* Config GPIO for SW-controlled SPI CS */
+        GPIO_setConfig(TCAN455X_config.spiCSPin, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_HIGH);
+
+        /* Create binary semaphore for SPI resource access */
+        if (SemaphoreP_constructBinary(&spiAccessSemaphore, 1) == NULL)
         {
             status = CAN_STATUS_ERROR;
         }
     }
-
-    /* Config GPIO for SW-controlled SPI CS */
-    GPIO_setConfig(TCAN455X_config.spiCSPin, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_HIGH);
 
     return status;
 }
@@ -877,10 +899,10 @@ static int_fast16_t TCAN455X_init(const CAN_Config *config,
     TCAN455X_setMode(TCAN455X_MODE_OPMODE_STANDBY);
 
     /* Set FD mode and bit rate switching */
-    initParams.fdMode    = hwAttrs->enableCANFD;
-    initParams.brsEnable = hwAttrs->enableBRS;
+    initParams.fdMode    = hwAttrs->enableCANFD ? 1U : 0U;
+    initParams.brsEnable = hwAttrs->enableBRS ? 1U : 0U;
 
-    if ((1U == hwAttrs->enableBRS) && (bitTiming != NULL))
+    if ((hwAttrs->enableBRS) && (bitTiming != NULL))
     {
         /* Check for Transmitter Delay Compensation settings */
         if ((bitTiming->dataTiming->tdcOffset != 0U) || (bitTiming->dataTiming->tdcFilterWinLen != 0U))
@@ -912,7 +934,7 @@ static int_fast16_t TCAN455X_init(const CAN_Config *config,
         configParams.filterConfig.rrfs = 1U;
         configParams.filterConfig.rrfe = 1U;
 
-        if (hwAttrs->rejectNonMatchingMsgs == 1U)
+        if (hwAttrs->rejectNonMatchingMsgs)
         {
             /* Reject incoming messages that do not match a filter, the default
              * is to accept them into Rx FIFO0.
@@ -929,24 +951,24 @@ static int_fast16_t TCAN455X_init(const CAN_Config *config,
 
     if (status == CAN_STATUS_SUCCESS)
     {
-        object->irqMask = CANMCAN_getInterruptMask(object->eventMask);
+        object->intMask = CANMCAN_getInterruptMask(object->eventMask);
 
         /* Always enable transmit complete IRQ if there is a Tx FIFO/Queue
          * and the Tx ring buffer size is non-zero.
          */
         if ((object->txFIFOQNum != 0U) && (hwAttrs->txRingBufSize != 0U))
         {
-            object->irqMask |= (uint32_t)MCAN_INTR_SRC_TRANS_COMPLETE;
+            object->intMask |= (uint32_t)MCAN_INT_SRC_TRANS_COMPLETE;
         }
 
-        MCAN_setIntrLineSel(object->irqMask, MCAN_INTR_LINE_NUM_0);
-        MCAN_setIntrEnable(object->irqMask, TRUE);
-        MCAN_setIntrLineEnable(MCAN_INTR_LINE_NUM_0, TRUE);
+        MCAN_setIntLineSel(object->intMask, MCAN_INT_LINE_NUM_0);
+        MCAN_enableInt(object->intMask);
+        MCAN_enableIntLine(MCAN_INT_LINE_NUM_0);
 
-        if ((object->irqMask & MCAN_INTR_SRC_TRANS_COMPLETE) != 0U)
+        if ((object->intMask & MCAN_INT_SRC_TRANS_COMPLETE) != 0U)
         {
             /* Enable transmission interrupt for all buffers */
-            MCAN_setTxBufTransIntrEnable(0xFFFFFFFFU, TRUE);
+            MCAN_enableTxBufTransInt(0xFFFFFFFFU);
         }
 
         if (bitTiming != NULL)
@@ -987,7 +1009,7 @@ static int_fast16_t TCAN455X_init(const CAN_Config *config,
 
     if (status == CAN_STATUS_SUCCESS)
     {
-        MCAN_clearIntrStatus(object->irqMask);
+        MCAN_clearIntStatus(object->intMask);
         newDataStatus.statusLow  = 0xFFFFFFFFU;
         newDataStatus.statusHigh = 0xFFFFFFFFU;
         MCAN_clearNewDataStatus(&newDataStatus);
@@ -1007,21 +1029,21 @@ static void TCAN455X_taskFxn(void *arg)
     MCAN_ProtocolStatus protStatus;
     MCAN_TxFIFOQStatus fifoQStatus;
     uint32_t event;
-    uint32_t irqStatus;
+    uint32_t intStatus;
     uint32_t txOccurred = 0U;
 
     while (1)
     {
-        /* Wait for TCAN455X_irqHandler to post semaphore */
-        SemaphoreP_pend(&tcanSemaphore, SemaphoreP_WAIT_FOREVER);
+        /* Wait for TCAN455X_irqHandler to post semaphore. No need to check return value when waiting forever. */
+        (void)SemaphoreP_pend(&tcanIRQSemaphore, SemaphoreP_WAIT_FOREVER);
 
-        irqStatus = MCAN_getIntrStatus() & object->irqMask;
+        intStatus = MCAN_getIntStatus() & object->intMask;
 
-        while (irqStatus != 0U)
+        while (intStatus != 0U)
         {
-            MCAN_clearIntrStatus(irqStatus);
+            MCAN_clearIntStatus(intStatus);
 
-            if ((irqStatus & MCAN_INTR_SRC_BUS_OFF_STATUS) != 0U)
+            if ((intStatus & MCAN_INT_SRC_BUS_OFF_STATUS) != 0U)
             {
                 MCAN_getProtocolStatus(&protStatus);
 
@@ -1047,7 +1069,7 @@ static void TCAN455X_taskFxn(void *arg)
                 }
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_ERR_PASSIVE) != 0U)
+            if ((intStatus & MCAN_INT_SRC_ERR_PASSIVE) != 0U)
             {
                 MCAN_getProtocolStatus(&protStatus);
 
@@ -1066,23 +1088,26 @@ static void TCAN455X_taskFxn(void *arg)
                 object->eventCbk(handle, event, 0U, object->userArg);
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_RX_FIFO0_NEW_MSG) != 0U)
+            if ((intStatus & MCAN_INT_SRC_RX_FIFO0_NEW_MSG) != 0U)
             {
                 TCAN455X_handleRxFIFO(handle, MCAN_RX_FIFO_NUM_0);
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_RX_FIFO1_NEW_MSG) != 0U)
+            if ((intStatus & MCAN_INT_SRC_RX_FIFO1_NEW_MSG) != 0U)
             {
                 TCAN455X_handleRxFIFO(handle, MCAN_RX_FIFO_NUM_1);
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_DEDICATED_RX_BUFF_MSG) != 0U)
+            if ((intStatus & MCAN_INT_SRC_DEDICATED_RX_BUFF_MSG) != 0U)
             {
                 TCAN455X_handleRxBuf(handle);
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_TRANS_COMPLETE) != 0U)
+            if ((intStatus & MCAN_INT_SRC_TRANS_COMPLETE) != 0U)
             {
+                /* Read TX buffer transmission status if the Tx finished event mask
+                 * is set so it can be provided to the event callback.
+                 */
                 if ((object->eventMask & CAN_EVENT_TX_FINISHED) != 0U)
                 {
                     txOccurred = MCAN_getTxBufTransmissionStatus();
@@ -1102,6 +1127,10 @@ static void TCAN455X_taskFxn(void *arg)
                     }
                 }
 
+                /* Source Tx complete interrupt is always enabled if the Tx ring
+                 * buffer size is non-zero so we must check the event mask before
+                 * executing the callback.
+                 */
                 if ((object->eventMask & CAN_EVENT_TX_FINISHED) != 0U)
                 {
                     /* Call the event callback function provided by the application */
@@ -1109,7 +1138,7 @@ static void TCAN455X_taskFxn(void *arg)
                 }
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_RX_MASK) != 0U)
+            if ((intStatus & MCAN_INT_SRC_RX_MASK) != 0U)
             {
                 event = CAN_EVENT_RX_DATA_AVAIL;
 
@@ -1122,20 +1151,20 @@ static void TCAN455X_taskFxn(void *arg)
                 }
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_RX_FIFO0_MSG_LOST) != 0U)
+            if ((intStatus & MCAN_INT_SRC_RX_FIFO0_MSG_LOST) != 0U)
             {
                 /* Call the event callback function provided by the application */
                 object->eventCbk(handle, CAN_EVENT_RX_FIFO_MSG_LOST, 0U, object->userArg);
             }
 
-            if ((irqStatus & MCAN_INTR_SRC_RX_FIFO1_MSG_LOST) != 0U)
+            if ((intStatus & MCAN_INT_SRC_RX_FIFO1_MSG_LOST) != 0U)
             {
                 /* Call the event callback function provided by the application */
                 object->eventCbk(handle, CAN_EVENT_RX_FIFO_MSG_LOST, 1U, object->userArg);
             }
 
             /* Since we are using edge-triggered IRQ, re-check the status to ensure interrupts are not missed */
-            irqStatus = MCAN_getIntrStatus() & object->irqMask;
+            intStatus = MCAN_getIntStatus() & object->intMask;
         }
     }
 }
@@ -1171,7 +1200,7 @@ int_fast16_t CAN_initDevice(uint_least8_t index, CAN_Params *params)
     if (status == CAN_STATUS_SUCCESS)
     {
         /* Create binary semaphore for IRQ handling */
-        if (SemaphoreP_constructBinary(&tcanSemaphore, 0) == NULL)
+        if (SemaphoreP_constructBinary(&tcanIRQSemaphore, 0) == NULL)
         {
             status = CAN_STATUS_ERROR;
         }
@@ -1220,7 +1249,8 @@ void CAN_close(CAN_Handle handle)
 
     TaskP_destruct(&tcanTask);
 
-    SemaphoreP_destruct(&tcanSemaphore);
+    SemaphoreP_destruct(&tcanIRQSemaphore);
+    SemaphoreP_destruct(&spiAccessSemaphore);
 
     object->isOpen = false;
 }
@@ -1228,14 +1258,14 @@ void CAN_close(CAN_Handle handle)
 /*
  *  ======== TCAN455X_enableLoopback ========
  */
-static void TCAN455X_enableLoopback(uint32_t externalModeEnable)
+static void TCAN455X_enableLoopback(bool externalModeEnable)
 {
-    /* Set mode of operation to Normal - this also sets MCAN.CCCR.INIT
+    /* Set mode of operation to Standby - this also sets MCAN.CCCR.INIT
      * so no need to call MCAN_setOpMode(MCAN_OPERATION_MODE_SW_INIT)
      */
     TCAN455X_setMode(TCAN455X_MODE_OPMODE_STANDBY);
 
-    if (externalModeEnable == TRUE)
+    if (externalModeEnable)
     {
         MCAN_enableLoopbackMode(MCAN_LPBK_MODE_EXTERNAL);
     }
@@ -1257,7 +1287,7 @@ int_fast16_t CAN_enableLoopbackExt(CAN_Handle handle)
 {
     (void)handle; /* unused arg */
 
-    TCAN455X_enableLoopback(TRUE);
+    TCAN455X_enableLoopback(true);
 
     return CAN_STATUS_SUCCESS;
 }
@@ -1269,7 +1299,7 @@ int_fast16_t CAN_enableLoopbackInt(CAN_Handle handle)
 {
     (void)handle; /* unused arg */
 
-    TCAN455X_enableLoopback(FALSE);
+    TCAN455X_enableLoopback(false);
 
     return CAN_STATUS_SUCCESS;
 }

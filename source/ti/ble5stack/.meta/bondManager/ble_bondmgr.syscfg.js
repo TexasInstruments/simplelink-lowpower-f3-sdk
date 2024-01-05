@@ -128,6 +128,7 @@ const config = {
         },
         {
             name: "syncALWithBondDev",
+            legacyNames: ["syncWLWithBondDev"],
             displayName: "Sync Acceptlist With Bonded Devices",
             longDescription: Docs.syncALWithBondDevLongDescription,
             default: false
@@ -241,7 +242,8 @@ const config = {
  */
 function validate(inst, validation)
 {
-    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5" )
+    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5" &&
+        Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R2")
     {
        //check what is the max value
        if(inst.maxBonds < 0 || inst.maxBonds > 32)

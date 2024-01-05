@@ -6,13 +6,43 @@
          Profiles sample application.
 
  Group: WCS, BTS
- $Target Device: DEVICES $
+ Target Device: cc23xx
 
  ******************************************************************************
- $License: BSD3 2010 $
+ 
+ Copyright (c) 2010-2023, Texas Instruments Incorporated
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+
+ *  Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+ *  Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+ *  Neither the name of Texas Instruments Incorporated nor the names of
+    its contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
  ******************************************************************************
- $Release Name: PACKAGE NAME $
- $Release Date: PACKAGE RELEASE DATE $
+ 
+ 
  *****************************************************************************/
 
 /*********************************************************************
@@ -27,6 +57,8 @@
 #include "icall_ble_api.h"
 
 #include <ti/bleapp/services/continuous_glucose_monitoring/cgm_server.h>
+#include <ti/bleapp/menu_module/menu_module.h>
+#include <app_main.h>
 #include "ble_stack_api.h"
 
 /*********************************************************************
@@ -724,7 +756,7 @@ static bStatus_t CGMS_sendNotiInd(uint8 *pValue, uint16 len, gattCharCfg_t *char
         status = linkDB_GetInfo(pItem->connHandle, &connInfo);
         offset = 0;
 
-        while ( status == SUCCESS &&  len != offset )
+        while ( status != bleTimeout && status != bleNotConnected &&  len > offset )
         {
           // Determine allocation size
           uint16_t allocLen = (len - offset);
@@ -762,11 +794,20 @@ static bStatus_t CGMS_sendNotiInd(uint8 *pValue, uint16 len, gattCharCfg_t *char
             if ( status != SUCCESS )
             {
               GATT_bm_free( (gattMsg_t *)&noti, ATT_HANDLE_VALUE_NOTI );
+
+              // Failed to send notification/indication, print error message
+              MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE4, 0,
+                                "Failed to send notification/indication - Error: " MENU_MODULE_COLOR_RED "%d " MENU_MODULE_COLOR_RESET,
+                                 status);
             }
             else
             {
               // Increment data offset
               offset += allocLen;
+
+              // Notification/indication sent
+              MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE4, 0,
+                                "Notification/indication sent");
             }
           }
           else

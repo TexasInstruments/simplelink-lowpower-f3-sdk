@@ -327,7 +327,17 @@ void PowerCC23X0_standbyPolicy(void)
             HwiP_clearInterrupt(INT_CPUIRQ16);
 
             /* Switch EVTSVT_O_CPUIRQ16SEL in eventfabric back to SysTimer */
-            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM1;
+            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
+
+            /* If waking up from an async event (not RTC), the SysTimer may not
+             * have synchronised with the RTC by now and will read out 0. If we
+             * wait for the register to take on a non-zero value, we know the
+             * SysTimer time and any generated events from code below are valid.
+             *
+             * 0 is a legal value so we will need to wait 1us for that 1 in 2^32
+             * -1 case that we woke up just after rollover.
+             */
+            while (HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U) == 0) {}
 
             /* Restore SysTimer timeouts since standby wiped them */
             for (sysTimerIndex = 0; sysTimerIndex < SYSTIMER_CHANNEL_COUNT; sysTimerIndex++)
@@ -358,10 +368,17 @@ void PowerCC23X0_standbyPolicy(void)
             /* Calculate elapsed FreeRTOS tick periods in STANDBY */
             sleptTicks = (ticksAfter - ticksBefore) * CLOCK_FREQUENCY_DIVIDER * RTC_TO_SYSTIMER_TICKS;
 
+    #if (FREERTOS_TICKPERIOD_US == 1000)
             /* Use a dedicated divide by 1000 function to run in 16 cycles
              * instead of 95. This shaves about 1.6us off in real-time.
              */
             sleptTicks = Math_divideBy1000(sleptTicks);
+    #else
+            /* If we are not using the default tick rate, do a slow
+             * divide
+             */
+            sleptTicks = sleptTicks / FREERTOS_TICKPERIOD_US;
+    #endif
 
             /* Update FreeRTOS tick count for time spent in STANDBY */
             vTaskStepTick(sleptTicks);

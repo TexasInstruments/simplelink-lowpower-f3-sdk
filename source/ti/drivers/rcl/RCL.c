@@ -57,6 +57,7 @@ static void rclCommandHwi(void);
 static void rclDispatchHwi(void);
 static void rclSchedulerHwi(void);
 static void rclPowerNotify(RCL_PowerEvent eventType);
+static RCL_CommandStatus rclStop(RCL_Command_Handle c, RCL_StopType stopType, RCL_SchedulerStopReason stopReason);
 
 /* Hooks */
 
@@ -134,7 +135,7 @@ static void rclCommandHwi(void)
             break;
     }
 
-    Log_printf(RclCore, Log_INFO2, "Command input events RCL: %08X; LRF: %08X", rclEventsIn.value, lrfEvents.value);
+    Log_printf(RclCore, Log_DEBUG, "Command input events RCL: 0x%08X; LRF: 0x%08X", rclEventsIn.value, lrfEvents.value);
 
     /*** 2. Handle stop or setup event (either from timer or posted SW event) */
     /* Hardstop immediately, graceful is up to the handler */
@@ -145,7 +146,19 @@ static void rclCommandHwi(void)
         if (cmd->status == RCL_CommandStatus_Scheduled)
         {
             hal_cancel_start_time();
-            cmd->status = RCL_CommandStatus_Descheduled;
+            if (rclEventsIn.hardStop)
+            {
+                rclSchedulerState.descheduleReason = rclSchedulerState.hardStopInfo.stopReason;
+            }
+            else if (rclEventsIn.gracefulStop)
+            {
+                rclSchedulerState.descheduleReason = rclSchedulerState.gracefulStopInfo.stopReason;
+            }
+            else
+            {
+                /* The event is descheduleStop - source already set */
+            }
+            cmd->status = RCL_Scheduler_findStopStatus(RCL_StopType_DescheduleOnly);
         }
         else /* Command started, handle hardStop here */
         {
@@ -194,7 +207,7 @@ static void rclCommandHwi(void)
     {
         rclEventsOut = cmd->runtime.handler(cmd, lrfEvents, rclEventsIn);
     }
-    Log_printf(RclCore, Log_INFO2, "RCL out: %08X", rclEventsOut.value);
+    Log_printf(RclCore, Log_DEBUG, "RCL out: 0x%08X", rclEventsOut.value);
 
     /*** 4. If the command was caused to start now, configure end timeouts */
     if (rclEventsOut.cmdStarted)
@@ -202,11 +215,33 @@ static void rclCommandHwi(void)
         RCL_StopType immediateStop = RCL_Scheduler_setStopTimes();
         if (immediateStop != RCL_StopType_None)
         {
-            RCL_Command_stop(rclSchedulerState.currCmd, immediateStop);
+            rclStop(rclSchedulerState.currCmd, immediateStop, RCL_SchedulerStopReason_Timeout);
         }
     }
+    /*** 5. If the command raises an event indicating the need for partial radio setup, do it */
+    if (rclEventsOut.partialSetup)
+    {
+        /* Rerun the radio setup */
+        LRF_RadioState lrfState = rclState.lrfState;
 
-    /*** 5. If stop did not happen, queued event might be delayed */
+        LRF_SetupResult result = LRF_setupRadio(rclState.lrfConfig, rclSchedulerState.requestedPhyFeatures, lrfState);
+        if (result != SetupResult_Ok)
+        {
+            Log_printf(RclCoreShort, Log_ERROR, "Setup failed with code %1d", result);
+            cmd->status = RCL_CommandStatus_Error_Setup;
+            rclEventsOut.lastCmdDone = 1;
+            rclState.lrfState = RadioState_Down;
+        }
+        else
+        {
+            rclState.lrfState = RadioState_Configured;
+        }
+        /* Invoke command handler again to resume the ongoing operation */
+        rclEventsIn.handlerCmdUpdate = 1;
+        rclEventsOut = cmd->runtime.handler(cmd, lrfEvents, rclEventsIn);
+    }
+
+    /*** 6. If stop did not happen, queued event might be delayed */
     if (rclEventsIn.gracefulStop && cmd->status < RCL_CommandStatus_Finished)
     {
         rclEventsOut.stopDelayed = 1;
@@ -223,11 +258,11 @@ static void rclCommandHwi(void)
     rclEventMask.stopDelayed = 1;
     rclEventMask.stopRejected = 1;
 
-    /*** 6. Filter events, pass stop-rejected to setup, to alert nextCmd */
+    /*** 7. Filter events, pass stop-rejected to setup, to alert nextCmd */
     client->deferredLrfEvents.value |= cmd->runtime.lrfCallbackMask.value & lrfEvents.value;
     client->deferredRclEvents.value |= rclEventMask.value & rclEventsOut.value;
 
-    /*** 7. If finished or have events, invoke setup */
+    /*** 8. If finished or have events, invoke setup */
     if (cmd->status >= RCL_CommandStatus_Finished || client->deferredLrfEvents.value || client->deferredRclEvents.value)
     {
         if (cmd->status >= RCL_CommandStatus_Finished)
@@ -266,13 +301,13 @@ static void rclDispatchHwi(void)
     if (currCmd->status >= RCL_CommandStatus_Finished)
     {
         /* It's done or failed */
-        Log_printf(RclCore, Log_INFO2, "Finished; Clearing currCmd, calling scheduleHwi");
+        Log_printf(RclCore, Log_DEBUG, "Finished; Clearing currCmd, calling scheduleHwi");
         RCL_Command *doneCmd = rclSchedulerState.currCmd;
         rclSchedulerState.currCmd = NULL;
 
         if (doneCmd->runtime.client->pendCmd == doneCmd)
         {
-            Log_printf(RclCore, Log_INFO4, "Unpending client: %08X", doneCmd->runtime.client);
+            Log_printf(RclCore, Log_INFO, "Unpending client: 0x%08X", doneCmd->runtime.client);
             doneCmd->runtime.client->pendCmd = NULL;
             SemaphoreP_post(&doneCmd->runtime.client->pendSem);
         }
@@ -300,7 +335,7 @@ static void rclDispatchHwi(void)
         RCL_Command *nextCmd = rclState.nextCmd;
         if (nextCmd && !nextCmd->allowDelay && rclSchedulerState.nextWantsStop)
         {
-            Log_printf(RclCore, Log_INFO2, "Command deplanned due to rejected start: %08X", nextCmd);
+            Log_printf(RclCore, Log_DEBUG, "Command deplanned due to rejected start: 0x%08X", nextCmd);
 
             /* Next command does not allow delay, and stop did not take immediate effect */
             rclState.nextCmd = NULL;
@@ -324,7 +359,7 @@ static void rclDispatchHwi(void)
     }
 
     /* Notify owner about events */
-    Log_printf(RclCore, Log_INFO4, "Client callback: LRF: %08X, RCL: %08X", lrfEvents.value, rclEvents.value);
+    Log_printf(RclCore, Log_INFO, "Client callback: LRF: 0x%08X, RCL: 0x%08X", lrfEvents.value, rclEvents.value);
     if ((lrfEvents.value || rclEvents.value) && callback)
     {
         callback(currCmd, lrfEvents, rclEvents);
@@ -379,12 +414,12 @@ __attribute__((weak)) void scheduleHook(RCL_SchedulerState *rclSchedulerState, R
         rclSchedulerState->nextWantsStop = true;
         if (cmd->scheduling == RCL_Schedule_Now || urgent)
         {
-            Log_printf(RclCore, Log_INFO3, "Stopping old command immediately, urgent=%d", urgent);
-            RCL_Command_stop(rclSchedulerState->currCmd, stopType);
+            Log_printf(RclCore, Log_VERBOSE, "Stopping old command immediately, urgent=%d", urgent);
+            rclStop(rclSchedulerState->currCmd, stopType, RCL_SchedulerStopReason_Scheduling);
         }
         else
         {
-            Log_printf(RclCore, Log_INFO3, "Setting running command stop-time to %08X", then);
+            Log_printf(RclCore, Log_VERBOSE, "Setting running command stop-time to 0x%08X", then);
             RCL_SchedulerStopInfo *stopInfo;
             switch (stopType)
             {
@@ -406,7 +441,7 @@ __attribute__((weak)) void scheduleHook(RCL_SchedulerState *rclSchedulerState, R
                 /* Stop now if new stop time is in the past */
                 if (immediateStop != RCL_StopType_None)
                 {
-                    RCL_Command_stop(rclSchedulerState->currCmd, immediateStop);
+                    rclStop(rclSchedulerState->currCmd, immediateStop, RCL_SchedulerStopReason_Scheduling);
                 }
             }
         }
@@ -419,7 +454,7 @@ static void rclSchedulerHwi(void)
     /* Find next command */
     /* TODO: See RCL-344 */
     RCL_Command *nextCmd = rclState.nextCmd;
-    Log_printf(RclCore, Log_INFO3, "SchedulerHwi nextCmd: %08X", nextCmd);
+    Log_printf(RclCore, Log_VERBOSE, "SchedulerHwi nextCmd: 0x%08X", nextCmd);
 
     /* If nothing is pending, pack up */
     if (NULL == nextCmd)
@@ -447,7 +482,7 @@ static void rclSchedulerHwi(void)
         /* If there is a current command, we will be triggered again after it is
          * finished.
          */
-        Log_printf(RclCore, Log_INFO3, "Could not promote; command %08X running, status %02X",
+        Log_printf(RclCore, Log_VERBOSE, "Could not promote; command 0x%08X running, status 0x%02X",
                                 rclSchedulerState.currCmd,
                                 rclSchedulerState.currCmd->status);
         /* A finished command should not be the current command */
@@ -465,7 +500,7 @@ static void rclSchedulerHwi(void)
 
     if (deltaTime <= (int32_t)RCL_SCHEDULER_SLEEP_CUTOFF)
     {
-        Log_printf(RclCore, Log_INFO2, "Calling setup immediately, %d µs until event", deltaTime >> 2);
+        Log_printf(RclCore, Log_DEBUG, "Calling setup immediately, %d µs until event", deltaTime >> 2);
 
         /* Command handler does last mile config and trigger */
         RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventSetup);
@@ -488,11 +523,8 @@ static void rclSchedulerHwi(void)
         /* Use LRF:systim0 (SYSTIM:CH2) as wakeup source */
         hal_setup_setup_time(rclSchedulerState.currCmd->timing.absStartTime - margin);
 
-        /* Set LRF:systim0 IMASK so that the power driver can keep track of the wakeup source */
-        hal_set_systim_imask();
-
         /* SetupFSM triggers command handler due to timer */
-        Log_printf(RclCore, Log_INFO2, "Wakeup scheduled at %08X (.25µs) with margin subtracted from deltaTime: %d µs", rclSchedulerState.currCmd->timing.absStartTime, deltaTime >> 2);
+        Log_printf(RclCore, Log_DEBUG, "Wakeup scheduled at 0x%08X (.25µs) with margin subtracted from deltaTime: %d µs", rclSchedulerState.currCmd->timing.absStartTime, deltaTime >> 2);
     }
 }
 
@@ -513,14 +545,7 @@ static void rclPowerNotify(RCL_PowerEvent eventType)
             rclState.lrfState = RadioState_ImagesLoaded;
         }
         RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStart);
-    }
-    else if (eventType == RCL_POWER_XTAL_AVAILABLE)
-    {
-        /*
-        * Executed everytime the high frequency (HF) crystal oscillator is available
-        * for use by the digital domain.
-        */
-        /* Temporary solution: Enable all needed clocks here */
+        /* TODO: RCL-287. Enable all clocks here. */
         LRF_rclEnableRadioClocks();
         /* Check if there is an active command at the time of wakeup */
         /* If so, enable start timer interrupt */
@@ -539,7 +564,7 @@ static void rclPowerNotify(RCL_PowerEvent eventType)
 /*
  *  ======== RCL_init ========
  */
-int RCL_init(void)
+void RCL_init(void)
 {
     /* Initialize state  */
     rclState = (RCL){
@@ -550,7 +575,8 @@ int RCL_init(void)
 
     hal_init_fsm(rclDispatchHwi, rclSchedulerHwi, rclCommandHwi);
 
-    return 0;
+    /* Ensure temperature compensation of TX output power and RF Trims */
+    hal_temperature_init();
 }
 
 /*
@@ -698,6 +724,14 @@ RCL_CommandStatus RCL_Command_pend(RCL_Command_Handle c)
  */
 RCL_CommandStatus RCL_Command_stop(RCL_Command_Handle c, RCL_StopType stopType)
 {
+    return rclStop(c, stopType, RCL_SchedulerStopReason_Api);
+}
+
+/*
+ *  ======== rclStop ========
+ */
+static RCL_CommandStatus rclStop(RCL_Command_Handle c, RCL_StopType stopType, RCL_SchedulerStopReason stopReason)
+{
     RCL_Command *cmd = (RCL_Command *)c;
 
     /* Check if command is already finished or no stop is done*/
@@ -705,14 +739,14 @@ RCL_CommandStatus RCL_Command_stop(RCL_Command_Handle c, RCL_StopType stopType)
     if (cmd->status < RCL_CommandStatus_Queued || cmd->status >= RCL_CommandStatus_Finished || stopType == RCL_StopType_None)
     {
         HwiP_restore(key);
-        Log_printf(RclCoreShort, Log_INFO2, "Stop called with type: %d, resulting status: %02X", stopType, cmd->status);
+        Log_printf(RclCoreShort, Log_DEBUG, "Stop called with type: %d, resulting status: 0x%02X", stopType, cmd->status);
         return cmd->status;
     }
 
     if (cmd->status == RCL_CommandStatus_Queued)
     {
         rclState.nextCmd = NULL;
-        cmd->status = RCL_CommandStatus_Descheduled;
+        cmd->status = RCL_Scheduler_findStopStatus(RCL_StopType_DescheduleOnly);;
     }
     else
     {
@@ -720,10 +754,12 @@ RCL_CommandStatus RCL_Command_stop(RCL_Command_Handle c, RCL_StopType stopType)
         switch (stopType)
         {
             case RCL_StopType_DescheduleOnly:
+                rclSchedulerState.descheduleReason = stopReason;
                 rclEvent.descheduleStop = 1;
                 break;
             case RCL_StopType_Graceful:
                 rclEvent.gracefulStop = 1;
+                rclSchedulerState.gracefulStopInfo.stopReason = stopReason;
                 /* Do not send graceful stop if any stop is already sent */
                 if (rclSchedulerState.gracefulStopInfo.apiStopEnabled == 0 &&
                     rclSchedulerState.hardStopInfo.apiStopEnabled == 0)
@@ -735,6 +771,7 @@ RCL_CommandStatus RCL_Command_stop(RCL_Command_Handle c, RCL_StopType stopType)
             case RCL_StopType_Hard:
                 /* Do not send hard stop if already sent (but send if graceful stop is sent) */
                 rclEvent.hardStop = 1;
+                rclSchedulerState.hardStopInfo.stopReason = stopReason;
                 if (rclSchedulerState.hardStopInfo.apiStopEnabled == 0)
                 {
                     LRF_sendHardStop();
@@ -750,7 +787,7 @@ RCL_CommandStatus RCL_Command_stop(RCL_Command_Handle c, RCL_StopType stopType)
     }
     HwiP_restore(key);
 
-    Log_printf(RclCoreShort, Log_INFO2, "Stop called with type: %d, resulting status: %02X", stopType, cmd->status);
+    Log_printf(RclCoreShort, Log_DEBUG, "Stop called with type: %d, resulting status: 0x%02X", stopType, cmd->status);
     return cmd->status;
 }
 

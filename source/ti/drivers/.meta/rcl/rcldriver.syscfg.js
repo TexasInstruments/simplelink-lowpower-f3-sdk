@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -155,7 +155,7 @@ function sharedModuleInstances(inst){
  */
 function modules(inst) {
 
-    const dependencies = ["Board", "Power"];
+    const dependencies = ["Board", "Power", "Temperature"];
 
     return Common.autoForceModules(dependencies)();
 }
@@ -175,25 +175,42 @@ function modules(inst) {
 function getLibs(mod) {
     const GenLibs = system.getScript("/ti/utils/build/GenLibs.syscfg.js");
     const DriverLib = system.getScript("/ti/devices/DriverLib");
-    var toolchain = GenLibs.getToolchainDir();
-    var isa = GenLibs.getDeviceIsa();
-
 
     /* get device information from DriverLib */
     const deviceId = system.deviceData.deviceId;
     var libName = DriverLib.getAttrs(deviceId).libName;
 
     var link_info = {
-        name: "drivers/rcl",
+        name: "/ti/drivers/rcl",
         deps: [
             "/ti/drivers"
         ],
         libs: [
-            `ti/drivers/rcl/lib/${toolchain}/${isa}/rcl_${libName}.a`
+            GenLibs.libPath('ti/drivers/rcl', `rcl_${libName}.a`),
+            GenLibs.libPath(`ti/devices/${libName}/rf_patches`, `lrf_${libName}.a`)
         ]
     };
 
     return link_info;
+}
+
+function getOpts()
+{
+
+    let board = system.deviceData.board;
+    let isFPGA = false;
+
+    /* Users may be using SysConfig with no provided board */
+    if (board) {
+        isFPGA = board.name.match(/FPGA/);
+    }
+
+    if (isFPGA) {
+        return ["-DSOCFPGA"];
+    }
+    else {
+        return [];
+    }
 }
 
 /*
@@ -239,6 +256,8 @@ let rcldriverModule = {
     templates: {
         "/ti/utils/build/GenLibs.cmd.xdt":
             { modName: "/ti/drivers/RCL", getLibs },
+        "/ti/utils/build/GenOpts.opt.xdt":
+            { modName: "/ti/drivers/RCL", getOpts : getOpts },
         boardc: "/ti/drivers/rcl/templates/RCL.Board.c.xdt",
         board_initc: "/ti/drivers/rcl/templates/RCL.Board_init.c.xdt",
         boardh: "/ti/drivers/rcl/templates/RCL.Board.h.xdt"

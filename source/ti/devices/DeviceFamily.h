@@ -79,6 +79,7 @@ extern "C" {
 #define DeviceFamily_ID_CC23X0R2          20
 #define DeviceFamily_ID_CC27XX            21
 #define DeviceFamily_ID_CC35XX            22
+#define DeviceFamily_ID_CC33XX            23
 
 /*
  * DeviceFamily_PARENT_XYZ values.
@@ -215,6 +216,11 @@ extern "C" {
     #define DeviceFamily_DIRECTORY cc35xx
     #define DeviceFamily_PARENT    DeviceFamily_PARENT_CC35XX
 
+#elif defined(DeviceFamily_CC33XX)
+    #define DeviceFamily_ID        DeviceFamily_ID_CC33XX
+    #define DeviceFamily_DIRECTORY cc33xx
+    #define DeviceFamily_PARENT    DeviceFamily_PARENT_CC35XX
+
 #else
     #error "DeviceFamily_XYZ undefined. You must define a DeviceFamily_XYZ!"
 #endif
@@ -225,7 +231,8 @@ extern "C" {
      defined(DeviceFamily_CC26X1) + defined(DeviceFamily_CC26X2) + defined(DeviceFamily_CC26X2X7) +   \
      defined(DeviceFamily_CC26X3) + defined(DeviceFamily_CC26X4) + defined(DeviceFamily_CC13X4) +     \
      defined(DeviceFamily_CC23X0R5) + defined(DeviceFamily_CC23X0R2) + defined(DeviceFamily_CC27XX) + \
-     defined(DeviceFamily_CC3200) + defined(DeviceFamily_CC3220) + defined(DeviceFamily_CC35XX)) > 1
+     defined(DeviceFamily_CC3200) + defined(DeviceFamily_CC3220) + defined(DeviceFamily_CC35XX) +     \
+     defined(DeviceFamily_CC33XX)) > 1
     #error More then one DeviceFamily has been defined!
 #endif
 

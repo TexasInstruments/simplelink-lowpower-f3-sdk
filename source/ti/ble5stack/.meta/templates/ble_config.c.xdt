@@ -37,17 +37,17 @@ uint8_t attDeviceName[GAP_DEVICE_NAME_LEN]= "`ble.deviceName`";
 
 % if(ble.addressMode == "ADDRMODE_RANDOM" || ble.addressMode == "ADDRMODE_RP_WITH_RANDOM_ID")
 % {
-uint8_t pRandomAddress[6] = `common.addPeerAddress(common.reverseBytes(ble.randomAddress.toString(16).replace(/:/g,'')))`;
+uint8_t pRandomAddress[B_ADDR_LEN] = `common.addPeerAddress(common.reverseBytes(ble.randomAddress.toString(16).replace(/:/g,'')))`;
 % }
 % else
 % {
-uint8_t * pRandomAddress = NULL;
+uint8_t pRandomAddress[B_ADDR_LEN] = {0};
 % }
 
 % if(ble.basicBLE){
 // Initiate selected profiles
 void init_profiles(){
- % if(ble.DeviceInfo)
+ % if(ble.deviceInfo)
  % {
     DevInfo_start();
  % }
@@ -57,6 +57,10 @@ void init_profiles(){
  % if(ble.profiles.includes("6152"))
  % {
     GL_start();
+ % }
+  % if(ble.profiles.includes("6153"))
+ % {
+    HT_start();
  % }
   % if(ble.profiles.includes("65520"))
  % {

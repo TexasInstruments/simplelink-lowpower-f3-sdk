@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2021-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,8 @@
  *
  */
 
-#ifndef __CCFC_C__
-#define __CCFC_C__
+#ifndef __TI_DEVICES_CC23X0_CONFIG_C__
+#define __TI_DEVICES_CC23X0_CONFIG_C__
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_ccfg.h)
@@ -71,10 +71,9 @@ const ccfg_t ccfg =
 #elif defined(__llvm__)
 const ccfg_t ccfg __attribute__((section(".ccfg"), retain)) =
 #else
-const ccfg_t ccfg __attribute__((section(".ccfg"))) __attribute__((used)) =
+const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 #endif
 {
-
 % if(inst.bldrSetting == "Default FCFG bootloader, with CCFG settings"){
     .bootCfg.pBldrVtor = CCFG_BC_PBLDR_USE_FCFG,
 % }
@@ -106,6 +105,12 @@ const ccfg_t ccfg __attribute__((section(".ccfg"))) __attribute__((used)) =
     .bootCfg.bldrParam.serialRomBldrParamStruct.pinTriggerLevel = XCFG_BC_PINTRIG_LEVEL_LO,
 % }
     .bootCfg.pAppVtor = (void*)0x`inst.pAppVtor.toString(16)`,
+
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .bootCfg.crc32 = 0x00000000,
 
     .hwOpts = {0x`inst.hwOpts0.toString(16)`, 0x`inst.hwOpts1.toString(16)`},
 
@@ -171,10 +176,24 @@ const ccfg_t ccfg __attribute__((section(".ccfg"))) __attribute__((used)) =
 
 % if(inst.useHwInitCopyList){
     .hwInitCopyList = {`inst.hwInitCopyListMacro`},
+
 % }
+    /* Set to 0. This checksum (across hwOpts through hwInitCopyList) must be
+     * calculated and updated prior to programming the application to the device
+     * (this is normally handled as a post-build step, or by the flashloader).
+     */
+    .crc32 = 0x00000000,
+
 % if(inst.enableUserRecord){
     .userRecord = {`inst.userRecordMacro`},
+
 % }
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .userRecord.crc32 = 0x00000000,
+
 % if(inst.debugAuthorization == "Require debug authentication"){
     .debugCfg.authorization = CCFG_DBGAUTH_REQPWD,
 % }
@@ -218,6 +237,12 @@ for(i=0; i<tempArray.length; i++){
 }
 %%}
     .debugCfg.pwdHash = {`arrStr`},
+
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .debugCfg.crc32 = 0x00000000,
 };
 
-#endif // __CCFC_C__
+#endif // __TI_DEVICES_CC23X0_CONFIG_C__

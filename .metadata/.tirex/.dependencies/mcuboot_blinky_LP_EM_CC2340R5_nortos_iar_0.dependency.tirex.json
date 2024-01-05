@@ -5,7 +5,7 @@
             "+../../../../../../source/third_party/mcuboot/boot/ti/source/blinky_app/blinky.c -> blinky.c",
             "+../../../../../../source/third_party/mcuboot/boot/ti/source/blinky_app/main_nortos.c -> main_nortos.c",
             "+../mcuboot_blinky.syscfg -> mcuboot_blinky.syscfg",
-            "+../mcuboot_blinky_lpf3.icf -> mcuboot_blinky_lpf3.icf",
+            "+../mcuboot_blinky_cc2340r5.icf -> mcuboot_blinky_cc2340r5.icf",
             "+../../../../../../source/third_party/mcuboot/boot/ti/source/blinky_app/README.md -> README.md"
         ]
     }

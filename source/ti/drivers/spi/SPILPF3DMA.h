@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Texas Instruments Incorporated
+ * Copyright (c) 2022-2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -859,20 +859,6 @@ typedef struct
 {
     /*! @brief SPI Peripheral's base address */
     uint32_t baseAddr;
-    /*! SPILPF3DMA Peripheral's interrupt vector */
-    uint8_t intNum;
-    /*! @brief SPILPF3DMA Peripheral's interrupt priority.
-
-        The Low Power F3 devices use either three or two priority bits,
-        depending on the device. That means ~0 has the same effect as (7 << 5)
-        or (3 << 6), respectively.
-
-        Setting the priority to 0 is not supported by this driver.
-
-        HWI's with priority 0 ignore the HWI dispatcher to support zero-latency
-        interrupts, thus invalidating the critical sections in this driver.
-    */
-    uint8_t intPriority;
     /*! @brief SPI SWI priority.
         The higher the number, the higher the priority.
         The minimum is 0 and the maximum is 15 by default.
@@ -880,18 +866,10 @@ typedef struct
         Swi.numPriorities in the kernel configuration file.
     */
     uint32_t swiPriority;
-    /*! Power driver ID for this SPI instance */
-    uint8_t powerID;
-    /*! Default TX value if txBuf == NULL */
-    uint16_t defaultTxBufValue;
     /*! uDMA controlTable channel index */
     uint32_t rxChannelBitMask;
     /*! uDMA controlTable channel index */
     uint32_t txChannelBitMask;
-    /*! Mux ID for this SPI instance TX pin */
-    uint8_t txChannelEvtMux;
-    /*! Mux ID for this SPI instance RX pin */
-    uint8_t rxChannelEvtMux;
     /*! uDMA controlTable primary tx entry */
     volatile uDMAControlTableEntry *dmaTxTableEntryPri;
     /*! uDMA controlTable primary tx entry */
@@ -908,17 +886,38 @@ typedef struct
     int32_t sclkPinMux;
     /*! CSN PIN mux value for flow control */
     int32_t csnPinMux;
+    /*! Minimum transfer size for DMA based transfer */
+    uint32_t minDmaTransferSize;
+    /*! Power driver ID for this SPI instance */
+    PowerLPF3_Resource powerID;
+    /*! Default TX value if txBuf == NULL */
+    uint16_t defaultTxBufValue;
+    /*! DMA Mux ID for this SPI TX channel */
+    uint8_t txChannelEvtMux;
+    /*! DMA Mux ID for this SPI RX channel */
+    uint8_t rxChannelEvtMux;
+    /*! SPILPF3DMA Peripheral's interrupt vector */
+    uint8_t intNum;
+    /*! @brief SPILPF3DMA Peripheral's interrupt priority.
+
+        The Low Power F3 devices use either three or two priority bits,
+        depending on the device. That means ~0 has the same effect as (7 << 5)
+        or (3 << 6), respectively.
+
+        Setting the priority to 0 is not supported by this driver.
+
+        HWI's with priority 0 ignore the HWI dispatcher to support zero-latency
+        interrupts, thus invalidating the critical sections in this driver.
+    */
+    uint8_t intPriority;
     /*! SPI PICO pin */
     uint_least8_t picoPin;
     /*! SPI POCI pin */
     uint_least8_t pociPin;
     /*! SPI SCLK pin */
     uint_least8_t sclkPin;
-    /*! CSN CSN pin */
+    /*! SPI CSN pin */
     uint_least8_t csnPin;
-
-    /*! Minimum transfer size for DMA based transfer */
-    uint32_t minDmaTransferSize;
 } SPILPF3DMA_HWAttrs;
 
 /*!

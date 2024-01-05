@@ -47,17 +47,13 @@
 
     /* CONFIG_XXXCOUNT string, derived from defaultInstanceName */
     let countDef = CAN.defaultInstanceName + "COUNT";
-
-    let map = {
-        "true"   : "1U",
-        "false"  : "0U"
-    };
 %%}
 /*
  *  =============================== CAN ===============================
  */
 
 #include <ti/drivers/CAN.h>
+#include <ti/drivers/GPIO.h>
 #include <ti/drivers/utils/StructRingBuf.h>
 
 #include <third_party/mcan/MCAN.h>
@@ -86,11 +82,11 @@ static const CAN_HWAttrs CAN_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
 %     let inst        = instances[i];
     {
-        .enableCANFD           = `map[inst.canFDEnable]`,
-        .enableBRS             = `map[inst.brsEnable]`,
+        .enableCANFD           = `inst.canFDEnable`,
+        .enableBRS             = `inst.brsEnable`,
+        .rejectNonMatchingMsgs = `inst.rejectNonMatching`,
         .nominalBitRate        = `inst.nomBitRate`U,
         .dataBitRate           = `inst.dataBitRate`U,
-        .rejectNonMatchingMsgs = `map[inst.rejectNonMatching]`,
         .rxRingBufPtr          = CAN_rxStructRingBuffer`i`,
 %     if (inst.txRingBufferSize > 0) {
         .txRingBufPtr          = CAN_txStructRingBuffer`i`,
@@ -102,6 +98,24 @@ static const CAN_HWAttrs CAN_hwAttrs[`countDef`] = {
         .txRingBufSize         = CAN_TX_STRUCT_RING_BUF`i`_NUM,
 %     } else {
         .txRingBufSize         = 0U,
+%     }
+%     if (typeof inst.interruptPriority !== 'undefined') {
+        .intPriority           = `Common.intPriority2Hex(inst.interruptPriority)`,
+%     }
+%     if ('rxPinInstance' in inst) {
+%         let rxPinName = inst.rxPinInstance.$name;
+%         let rxPinMuxMode = inst.can.rxPin.$solution.muxMode;
+%         let rxPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + rxPinMuxMode.toString();
+        .rxPin                 = `rxPinName`,
+        .rxPinMux              = `rxPinMuxName`,
+%     }
+%
+%     if ('txPinInstance' in inst) {
+%         let txPinName = inst.txPinInstance.$name;
+%         let txPinMuxMode = inst.can.txPin.$solution.muxMode;
+%         let txPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + txPinMuxMode.toString();
+        .txPin                 = `txPinName`,
+        .txPinMux              = `txPinMuxName`,
 %     }
     },
 % }

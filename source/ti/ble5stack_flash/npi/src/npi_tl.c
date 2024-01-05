@@ -67,8 +67,9 @@
 #endif
 
 #include <ti/drivers/GPIO.h>
-#include "inc/hw_memmap.h"
-#include "inc/hw_ints.h"
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_ints.h)
 #include <ti_drivers_config.h>
 #include "icall.h"
 #include "hal_types.h"

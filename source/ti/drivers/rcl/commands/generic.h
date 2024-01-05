@@ -40,8 +40,8 @@
 #include <ti/drivers/utils/List.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/pbe_generic_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_generic_regdef_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_generic_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_generic_regdef_regs.h)
 
 typedef struct RCL_CMD_GENERIC_FS_t            RCL_CmdGenericFs;
 typedef struct RCL_CMD_GENERIC_FS_OFF_t        RCL_CmdGenericFsOff;
@@ -402,7 +402,7 @@ struct RCL_CMD_NESB_PRX_t {
     uint8_t         addrLen;                /*!< Length of address after header (0-4 bytes) */
     struct {
         uint8_t     disableSyncA: 1;        /*!< 0: Listen for syncWordA. 1: Do not listen for syncWordA */
-        uint8_t     disableSyncB: 1;        /*!< 0: Listen for syncWordB. 1: Do not listen for syncWordB - not supported in this release */
+        uint8_t     disableSyncB: 1;        /*!< 0: Listen for syncWordB. 1: Do not listen for syncWordB */
         uint8_t     discardRxPackets: 1;    /*!< 0: Store received packets in rxBuffers.
                                                  1: Do not store packets, useful for link tests where checksum result is enough */
         uint8_t     fsOff: 1;               /*!< 0: Keep PLL enabled after command. 1: Turn off FS after command. */

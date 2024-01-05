@@ -435,7 +435,7 @@ __STATIC_INLINE void AESClearAUTOCFGBusHalt(void)
  */
 __STATIC_INLINE uint32_t AESGetStatus(void)
 {
-    return HWREG(AES_BASE + AES_O_STA);
+    return (HWREG(AES_BASE + AES_O_STA) & AES_STA_STATE_M);
 }
 
 /*!

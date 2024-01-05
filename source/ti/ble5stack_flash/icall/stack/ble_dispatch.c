@@ -812,6 +812,20 @@ static uint8 processICallLL(uint16 opCode, ICall_CmdMsg *msg_ptr,
       break;
 #endif // ADV_CONN_CFG | INIT_CFG
 
+    case HCI_EXT_GET_RX_STATS:
+      stat = HCI_EXT_GetRxStatisticsCmd(msg_ptr->hciParams.param1,
+                                        msg_ptr->hciParams.param2);
+      break;
+
+    case HCI_EXT_GET_TX_STATS:
+      stat = HCI_EXT_GetTxStatisticsCmd(msg_ptr->hciParams.param1,
+                                        msg_ptr->hciParams.param2);
+      break;
+
+    case HCI_EXT_GET_COEX_STATS:
+      stat = HCI_EXT_GetCoexStatisticsCmd(msg_ptr->hciParams.param1);
+      break;
+
     default:
       stat = FAILURE;
       break;
@@ -2383,6 +2397,7 @@ static uint8 processExtMsgL2CAP( uint8 cmdID, hciExtCmd_t *pCmd, uint8 *pRspData
 
         psm.psm = connHandle; // connHandle is PSM here
         psm.mtu = BUILD_UINT16( pBuf[2], pBuf[3] );
+        psm.mps = psm.mtu;
         psm.initPeerCredits = BUILD_UINT16( pBuf[4], pBuf[5] );
         psm.peerCreditThreshold = BUILD_UINT16( pBuf[6], pBuf[7] );
         psm.maxNumChannels = pBuf[8];

@@ -93,48 +93,53 @@ extern "C" {
 #define PowerCC23X0_PERIPH_BIT_INDEX_M   0x00FF
 
 /* \endcond */
+
+/* \cond */
+typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
+/* \endcond */
+
 /* Resource IDs */
 
-/*!< Resource ID: General Purpose I/O */
+/*! Resource ID: General Purpose I/O */
 #define PowerLPF3_PERIPH_GPIO (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_GPIO_S)
 
-/*!< Resource ID: UART 0 */
+/*! Resource ID: UART 0 */
 #define PowerLPF3_PERIPH_UART0 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_UART0_S)
 
-/*!< Resource ID: I2C 0 */
+/*! Resource ID: I2C 0 */
 #define PowerLPF3_PERIPH_I2C0 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_I2C0_S)
 
-/*!< Resource ID: SPI 0 */
+/*! Resource ID: SPI 0 */
 #define PowerLPF3_PERIPH_SPI0 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_SPI0_S)
 
-/*!< Resource ID: ADC */
+/*! Resource ID: ADC */
 #define PowerLPF3_PERIPH_ADC0 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_ADC0_S)
 
-/*!< Resource ID: AES Security Module */
+/*! Resource ID: AES Security Module */
 #define PowerLPF3_PERIPH_AES (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LAES_S)
 
-/*!< Resource ID: uDMA Controller */
+/*! Resource ID: uDMA Controller */
 #define PowerLPF3_PERIPH_DMA (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_DMA_S)
 
-/*!< Resource ID: General Purpose Timer 0 */
+/*! Resource ID: General Purpose Timer 0 */
 #define PowerLPF3_PERIPH_LGPT0 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT0_S)
 
-/*!< Resource ID: General Purpose Timer 1 */
+/*! Resource ID: General Purpose Timer 1 */
 #define PowerLPF3_PERIPH_LGPT1 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT1_S)
 
 /* The peripherals below are not available on CC23X0R2 devices */
 #if !defined(DeviceFamily_CC23X0R2)
-    /*!< Resource ID: General Purpose Timer 2 */
+    /*! Resource ID: General Purpose Timer 2 */
     #define PowerLPF3_PERIPH_LGPT2 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT2_S)
 
-    /*!< Resource ID: General Purpose Timer 3 */
+    /*! Resource ID: General Purpose Timer 3 */
     #define PowerLPF3_PERIPH_LGPT3 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT3_S)
 #endif
 
-/*!< Resource ID: LRFD Tracer */
+/*! Resource ID: LRFD Tracer */
 #define PowerLPF3_PERIPH_LFRD_TRC (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
 
-/*!< Resource ID: LRFD S2R RAM */
+/*! Resource ID: LRFD S2R RAM */
 #define PowerLPF3_PERIPH_LFRD_S2RRAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
 
 /* \cond */
@@ -166,16 +171,16 @@ extern "C" {
  * a specified effect until released.
  */
 
-/*!< Constraint: Disallow a transition to the SHUTDOWN state */
+/*! Constraint: Disallow a transition to the SHUTDOWN state */
 #define PowerLPF3_DISALLOW_SHUTDOWN 0
 
-/*!< Constraint: Disallow a transition to the STANDBY sleep state */
+/*! Constraint: Disallow a transition to the STANDBY sleep state */
 #define PowerLPF3_DISALLOW_STANDBY 1
 
-/*!< Constraint: Disallow a transition to the IDLE sleep state */
+/*! Constraint: Disallow a transition to the IDLE sleep state */
 #define PowerLPF3_DISALLOW_IDLE 2
 
-/*!< Constraint: Flash memory needs to enabled during IDLE */
+/*! Constraint: Flash memory needs to enabled during IDLE */
 #define PowerLPF3_NEED_FLASH_IN_IDLE 3
 
 /* \cond */
@@ -189,21 +194,21 @@ extern "C" {
  *  without any gaps.
  */
 
-/*!< Power event: The device is entering the STANDBY sleep state */
+/*! Power event: The device is entering the STANDBY sleep state */
 #define PowerLPF3_ENTERING_STANDBY (1 << 0)
 
-/*!< Power event: The device is entering the SHUTDOWN state */
+/*! Power event: The device is entering the SHUTDOWN state */
 #define PowerLPF3_ENTERING_SHUTDOWN (1 << 1)
 
-/*!< Power event: The device is waking up from the STANDBY sleep state */
+/*! Power event: The device is waking up from the STANDBY sleep state */
 #define PowerLPF3_AWAKE_STANDBY (1 << 2)
 
-/*!< Power event: The high frequency (HF) crystal oscillator is now available
+/*! Power event: The high frequency (HF) crystal oscillator is now available
  *   for use (HFXT) by the digital domain
  */
 #define PowerLPF3_HFXT_AVAILABLE (1 << 3)
 
-/*!< Power event: The system has switched to the low frequency clock source
+/*! Power event: The system has switched to the low frequency clock source
  *   configured in CCFG
  */
 #define PowerLPF3_LFCLK_SWITCHED (1 << 4)
@@ -371,7 +376,7 @@ void PowerCC23X0_standbyPolicy(void);
 void PowerLPF3_selectLFOSC(void);
 
 /*!
- * @brief Select LFOSC as LFCLK source
+ * @brief Select LFXT as LFCLK source
  *
  * Turn on the LFXT and choose it as LFCLK source. Once LFCLK has switched,
  * the #PowerLPF3_LFCLK_SWITCHED notification will be issued and all
@@ -443,9 +448,6 @@ void PowerLPF3_disableHFXTCompensation(void);
 
 void PowerCC23X0_schedulerDisable(void);
 void PowerCC23X0_schedulerRestore(void);
-
-#define Power_getPerformanceLevel(void)  0
-#define Power_setPerformanceLevel(level) Power_EFAIL
 
 #ifdef __cplusplus
 }

@@ -128,7 +128,7 @@ typedef enum
  * ECCParams_CurveParams have different struct members depending on the context
  * of the build (Secure-only, Non-secure, or Secure)
  */
-#if (TFM_ENABLED == 0) || defined(TFM_PSA_API) /* TFM_PSA_API indicates this is a TF-M build */
+#if (TFM_ENABLED == 0) || defined(TFM_BUILD) /* TFM_BUILD indicates this is a TF-M build */
 
 /*!
  *  @brief A structure containing the parameters of an elliptic curve.
@@ -160,9 +160,9 @@ typedef struct ECCParams_CurveParams
     ECCParams_SecureCurve secureCurve;
 } ECCParams_CurveParams;
 
-#endif /* (TFM_ENABLED == 0) || defined(TFM_PSA_API) */
+#endif /* (TFM_ENABLED == 0) || defined(TFM_BUILD) */
 
-#if defined(TFM_PSA_API) /* TFM_PSA_API indicates this is a TF-M build */
+#if defined(TFM_BUILD) /* TFM_BUILD indicates this is a TF-M build */
 
 /*!
  *  @brief A structure containing the curve name to reference elliptic curve
@@ -174,7 +174,7 @@ typedef struct ECCParams_ns_CurveParams
     ECCParams_SecureCurve secureCurve;
 } ECCParams_ns_CurveParams;
 
-#endif /* defined(TFM_PSA_API) */
+#endif /* defined(TFM_BUILD) */
 
 /* Short Weierstrass curves */
 
@@ -252,7 +252,7 @@ extern const ECCParams_CurveParams ECCParams_Ed25519;
  */
 #define ECC_LENGTH_PREFIX_BYTES 4
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 
     /*!
      *  @defgroup nistp256_params NIST P256 curve params to be used with ECC SW library

@@ -32,7 +32,15 @@
 /*
  *  ======== ClockPLPF3.h ========
  */
+/* Driverlib includes*/
+#include <ti/devices/DeviceFamily.h>
 
 /* ClockP tick period, in microseconds */
 #define ClockP_TICK_PERIOD 1U
-#define ClockP_CPU_FREQ    48000000U
+
+/* CPU frequency, in Hertz */
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    #define ClockP_CPU_FREQ 48000000U
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    #define ClockP_CPU_FREQ 96000000U
+#endif

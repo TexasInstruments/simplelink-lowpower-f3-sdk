@@ -34,17 +34,17 @@ STACKSIZE = 0x800;
 
 MEMORY
 {
-    FLASH (RX)      : ORIGIN = 0x00000000, LENGTH = 0x00080000
+    FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 0x00080000
     /*
      * Customer Configuration Area and Bootloader Backdoor configuration in
      * flash, 512 bytes
      */
-    FLASH_CCFG (RX) : ORIGIN = 0x4E020000, LENGTH = 0x00000800
-    SRAM (RWX)      : ORIGIN = 0x20000000, LENGTH = 0x00009000
+    CCFG (R)   : ORIGIN = 0x4E020000, LENGTH = 0x00000800
+    SRAM (RWX) : ORIGIN = 0x20000000, LENGTH = 0x00009000
     /* S2RRAM is intended for the S2R radio module, but it can also be used by
      * the application with some limitations. Please refer to the s2rram example.
      */
-    S2RRAM (RW)    : ORIGIN = 0x40098000, LENGTH = 0x00001000
+    S2RRAM (RW) : ORIGIN = 0x40098000, LENGTH = 0x00001000
     /* Explicitly placed off target for the storage of logging data.
      * The data placed here is NOT loaded onto the target device.
      * This is part of 1 GB of external memory from 0x60000000 - 0x9FFFFFFF.
@@ -99,6 +99,7 @@ SECTIONS {
     DMA_CHANNEL6_CONTROL_TABLE_ENTRY_ADDRESS = (UDMALPF3_CONFIG_BASE + 0x60);
     DMA_CHANNEL7_CONTROL_TABLE_ENTRY_ADDRESS = (UDMALPF3_CONFIG_BASE + 0x70);
 
+    /* Device has 8 DMA channels => the alt. control table is at offset 0x80 */
     DMA_CHANNEL0_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMALPF3_CONFIG_BASE + 0x80);
     DMA_CHANNEL1_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMALPF3_CONFIG_BASE + 0x90);
     DMA_CHANNEL2_ALT_CONTROL_TABLE_ENTRY_ADDRESS = (UDMALPF3_CONFIG_BASE + 0xA0);
@@ -212,7 +213,7 @@ SECTIONS {
 
     .ccfg : {
         KEEP (*(.ccfg))
-    } > FLASH_CCFG AT> FLASH_CCFG
+    } > CCFG AT> CCFG
 
     .bss : {
         __bss_start__ = .;

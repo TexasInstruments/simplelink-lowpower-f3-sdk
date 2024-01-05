@@ -918,6 +918,15 @@ extern "C"
 #define HCI_EXT_RF_SETUP_CODED_S2_PHY                 LL_EXT_RF_SETUP_CODED_S2_PHY  //!< Coded-S2
 /** @} End RF_Setup_Phy_Params */
 
+ /**
+  * @defgroup STATS_Cmd Get statistics Command
+  * @{
+  */
+ #define HCI_EXT_STATS_RESET                          LL_EXT_STATS_RESET     //!< Reset
+ #define HCI_EXT_STATS_READ                           LL_EXT_STATS_READ      //!< Read
+ /** @} End STATS_Cmd */
+
+
 /** @} End HCI_Constants */
 
 /*
@@ -1389,6 +1398,7 @@ typedef struct
   uint8_t   nextChan;                            //! next data channel
   uint8_t   chanMap[LL_NUM_BYTES_FOR_CHAN_MAP];  //! bitmap of used BLE channels
   uint8_t   crcInit[LL_PKT_CRC_LEN];             //! connection CRC initialization value (24 bits)
+  uint8_t   ownAddrType;                         //! the own address type when the connection established
 }hciActiveConnInfo_t;
 
 #if defined( CC26XX ) || defined( CC13XX ) || defined( CC23X0 )
@@ -1426,6 +1436,18 @@ typedef struct
  * @return Pointer to buffer, or NULL.
  */
 extern void *HCI_bm_alloc( uint16 size );
+
+/**
+ * Free memory using buffer management.
+ *
+ * @note This function should never be called by the application. It is only
+ * used by HCI and L2CAP_bm_alloc.
+ *
+ * @param pBuf Number of bytes to free from the heap.
+ *
+ * @return None.
+ */
+extern void HCI_bm_free( uint8* pBuf );
 
 /**
  * Checks that the connection time parameter ranges are valid
@@ -2620,6 +2642,27 @@ extern hciStatus_t HCI_LE_ReadLocalP256PublicKeyCmd( void );
  * @return @ref HCI_SUCCESS
  */
 extern hciStatus_t HCI_LE_GenerateDHKeyCmd( uint8 *publicKey );
+
+
+/**
+ * Generate Diffie-Hellman Key with debug keys or regular
+ * as HCI_LE_GenerateDHKeyCmd function.
+ * case keytpe = 0: Use the generated private key
+ * case keytype = 1: Use the debug private key
+ * O.W : error, invalid parameters
+ *
+ * * @par Corresponding Events
+ * @ref hciEvt_CommandStatus_t with cmdOpcode @ref HCI_LE_GENERATE_DHKEY <br>
+ * @ref hciEvt_BLEGenDHKeyComplete_t
+ *
+ * @param publicKey: The remote P-256 public key (X-Y format), keyType: 0/1.
+ *
+* @return @ref HCI_SUCCESS,
+*              HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS,
+*              HCI_ERROR_CODE_MEM_CAP_EXCEEDED,
+*              HCI_ERROR_CODE_CONTROLLER_BUSY
+ */
+extern hciStatus_t HCI_LE_GenerateDHKeyV2Cmd( uint8 *publicKey, uint8 keyType );
 
 // V5.0 2M and Coded PHY
 
@@ -4440,6 +4483,35 @@ extern hciStatus_t HCI_EXT_SetQOSDefaultParameters(uint32 paramDefaultVal,
  * @return @ref HCI_SUCCESS
  */
 extern hciStatus_t HCI_EXT_CoexEnableCmd( uint8 enable );
+
+/**
+ * @brief       This API is used to get RX statistics.
+ *
+ * @par connHandle
+ * @par command
+ *
+ * @return @ref HCI_SUCCESS
+ */
+extern hciStatus_t HCI_EXT_GetRxStatisticsCmd( uint16 connHandle, uint8 command );
+
+/**
+ * @brief       This API is used to get TX statistics.
+ *
+ * @par connHandle
+ * @par command
+ *
+ * @return @ref HCI_SUCCESS
+ */
+extern hciStatus_t HCI_EXT_GetTxStatisticsCmd( uint16 connHandle, uint8 command );
+
+/**
+ * @brief       This API is used to get COEX statistics.
+ *
+ * @par command
+ *
+ * @return @ref HCI_SUCCESS
+ */
+extern hciStatus_t HCI_EXT_GetCoexStatisticsCmd( uint8 command );
 
 #ifdef __cplusplus
 }

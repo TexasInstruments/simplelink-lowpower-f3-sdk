@@ -29,7 +29,6 @@
             "+../../RTLSCtrl/rtls_ctrl_api.h -> rtls_ctrl_api.h",
             "+../../RTLSCtrl/rtls_host.h -> rtls_host.h",
             "+../../RTLSCtrl/rtls_host_npi.c -> rtls_host_npi.c",
-            "+../../../../../../../source/ti/boards/cc23x0r5/rcl_settings_ble.c -> rcl_settings_ble.c",
             "+../../Tools/Defines/build_config.opt -> build_config.opt",
             "+../../Tools/Defines/connection_monitor_app.opt -> connection_monitor_app.opt",
             "+../../../../../../../source/ti/ble5stack_flash/microstack/port.c -> port.c",

@@ -82,6 +82,7 @@
 #include <port.h>
 #include <uble.h>
 #include <ull.h>
+#include "ti_radio_config.h"
 
 /*********************************************************************
  * CONSTANTS
@@ -169,7 +170,7 @@ bStatus_t urcli_init(void)
   RCL_init();
 
   /* Open client and provide settings */
-  urcliHandle = RCL_open(&rfClient, &LRF_configBle);
+  urcliHandle = RCL_open(&rfClient, &LRF_config);
 
 #if defined(FEATURE_MONITOR)
   urcli_initGenericRxCmd();

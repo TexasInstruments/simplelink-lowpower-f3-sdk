@@ -106,7 +106,8 @@ const config = {
                 },
                 {
                     displayName: "Guard Time",
-                    name: Common.getExtendedStackSettingsGuardTimeName()
+                    name: Common.getExtendedStackSettingsGuardTimeName(),
+                    legacyNames: Common.isFlashOnlyDevice() ? ["MASTER_GUARD_TIME_ENABLE"]: [""]
                 }
             ]
         },

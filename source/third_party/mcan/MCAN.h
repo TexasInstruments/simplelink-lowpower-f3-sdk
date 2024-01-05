@@ -40,8 +40,8 @@
 /* Structs were designed to avoid bitfields, unions, and casting
  * for portability and to avoid static analysis violations.
  */
-#ifndef ti_drivers_can_common_mcan__include
-#define ti_drivers_can_common_mcan__include
+#ifndef __MCAN_H__
+#define __MCAN_H__
 
 #include <stdint.h>
 #include <stddef.h>
@@ -61,15 +61,6 @@ extern void MCAN_writeMsgRAM(uint32_t offset, const uint8_t *src, size_t numByte
 extern uint32_t MCAN_readReg(uint32_t offset);
 extern void MCAN_readMsgRAM(uint8_t *dst, uint32_t offset, size_t numBytes);
 extern uint32_t MCAN_getMRAMOffset(void);
-
-/* Unsigned constants for boolean values to avoid MISRA violations */
-#ifndef TRUE
-    #define TRUE (1U)
-#endif
-
-#ifndef FALSE
-    #define FALSE (0U)
-#endif
 
 /*!
  * @brief   Successful status code.
@@ -103,35 +94,19 @@ extern uint32_t MCAN_getMRAMOffset(void);
 #define MCAN_TX_RX_ELEMENT_HEADER_SIZE (8U)
 
 /*!
- *  @anchor MCAN_IntrLineNum
+ *  @anchor MCAN_IntLineNum
  *  @name MCAN Interrupt Line Number
  *  @{
  */
 /*!
  *  @brief    Enum to select the MCAN interrupt lines
  */
-typedef uint32_t MCAN_IntrLineNum;
+typedef uint32_t MCAN_IntLineNum;
 
-#define MCAN_INTR_LINE_NUM_0 (0U)
+#define MCAN_INT_LINE_NUM_0 (0U)
 /*!< MCAN interrupt line 0 */
-#define MCAN_INTR_LINE_NUM_1 (1U)
+#define MCAN_INT_LINE_NUM_1 (1U)
 /*!< MCAN interrupt line 1 */
-/* @} */
-
-/*!
- *  @anchor MCAN_IdType
- *  @name MCAN Id Type
- *  @{
- */
-/*!
- *  @brief    Enum to represent the MCAN Identifier Type
- */
-typedef uint32_t MCAN_IdType;
-
-#define MCAN_ID_TYPE_11_BIT (0U)
-/*!< 11bit MCAN Identifier */
-#define MCAN_ID_TYPE_29_BIT (1U)
-/*!< 29bit MCAN Identifier */
 /* @} */
 
 /*!
@@ -183,22 +158,6 @@ typedef uint32_t MCAN_RxFIFONum;
 /* @} */
 
 /*!
- *  @anchor MCAN_PinType
- *  @name MCAN Pin Type
- *  @{
- */
-/*!
- *  @brief    Enum to represent the MCAN pin type
- */
-typedef uint32_t MCAN_PinType;
-
-#define MCAN_PIN_TYPE_RX (0U)
-/*!< MCAN Rx Pin */
-#define MCAN_PIN_TYPE_TX (1U)
-/*!< MCAN Tx Pin */
-/* @} */
-
-/*!
  *  @anchor MCAN_ElemSize
  *  @name MCAN Element Size
  *  @{
@@ -247,91 +206,75 @@ typedef uint32_t MCAN_TimeOutSelect;
 /* @} */
 
 /*!
- *  @anchor MCAN_IntrSrc
+ *  @anchor MCAN_IntSrc
  *  @name MCAN Interrupt Source
  *  @{
  */
 /*!
  * @brief  Enum for MCAN interrupts.
  */
-typedef uint32_t MCAN_IntrSrc;
+typedef uint32_t MCAN_IntSrc;
 
-#define MCAN_INTR_SRC_RX_FIFO0_NEW_MSG       (MCAN_IR_RF0N_MASK)
+#define MCAN_INT_SRC_RX_FIFO0_NEW_MSG       (MCAN_IR_RF0N_MASK)
 /*!< Rx FIFO 0 New Message interrupt */
-#define MCAN_INTR_SRC_RX_FIFO0_WATERMARK     (MCAN_IR_RF0W_MASK)
+#define MCAN_INT_SRC_RX_FIFO0_WATERMARK     (MCAN_IR_RF0W_MASK)
 /*!< Rx FIFO 0 Watermark Reached interrupt */
-#define MCAN_INTR_SRC_RX_FIFO0_FULL          (MCAN_IR_RF0F_MASK)
+#define MCAN_INT_SRC_RX_FIFO0_FULL          (MCAN_IR_RF0F_MASK)
 /*!< Rx FIFO 0 Full interrupt */
-#define MCAN_INTR_SRC_RX_FIFO0_MSG_LOST      (MCAN_IR_RF0L_MASK)
+#define MCAN_INT_SRC_RX_FIFO0_MSG_LOST      (MCAN_IR_RF0L_MASK)
 /*!< Rx FIFO 0 Message Lost interrupt */
-#define MCAN_INTR_SRC_RX_FIFO1_NEW_MSG       (MCAN_IR_RF1N_MASK)
+#define MCAN_INT_SRC_RX_FIFO1_NEW_MSG       (MCAN_IR_RF1N_MASK)
 /*!< Rx FIFO 1 New Message interrupt */
-#define MCAN_INTR_SRC_RX_FIFO1_WATERMARK     (MCAN_IR_RF1W_MASK)
+#define MCAN_INT_SRC_RX_FIFO1_WATERMARK     (MCAN_IR_RF1W_MASK)
 /*!< Rx FIFO 1 Watermark Reached interrupt */
-#define MCAN_INTR_SRC_RX_FIFO1_FULL          (MCAN_IR_RF1F_MASK)
+#define MCAN_INT_SRC_RX_FIFO1_FULL          (MCAN_IR_RF1F_MASK)
 /*!< Rx FIFO 1 Full interrupt */
-#define MCAN_INTR_SRC_RX_FIFO1_MSG_LOST      (MCAN_IR_RF1L_MASK)
+#define MCAN_INT_SRC_RX_FIFO1_MSG_LOST      (MCAN_IR_RF1L_MASK)
 /*!< Rx FIFO 1 Message Lost interrupt */
-#define MCAN_INTR_SRC_HIGH_PRIO_MSG          (MCAN_IR_HPM_MASK)
+#define MCAN_INT_SRC_HIGH_PRIO_MSG          (MCAN_IR_HPM_MASK)
 /*!< High Priority Message interrupt */
-#define MCAN_INTR_SRC_TRANS_COMPLETE         (MCAN_IR_TC_MASK)
+#define MCAN_INT_SRC_TRANS_COMPLETE         (MCAN_IR_TC_MASK)
 /*!< Transmission Completed interrupt */
-#define MCAN_INTR_SRC_TRANS_CANCEL_FINISH    (MCAN_IR_TCF_MASK)
+#define MCAN_INT_SRC_TRANS_CANCEL_FINISH    (MCAN_IR_TCF_MASK)
 /*!< Transmission Cancellation Finished interrupt */
-#define MCAN_INTR_SRC_TX_FIFO_EMPTY          (MCAN_IR_TFE_MASK)
+#define MCAN_INT_SRC_TX_FIFO_EMPTY          (MCAN_IR_TFE_MASK)
 /*!< Tx FIFO Empty interrupt */
-#define MCAN_INTR_SRC_TX_EVT_FIFO_NEW_ENTRY  (MCAN_IR_TEFN_MASK)
+#define MCAN_INT_SRC_TX_EVT_FIFO_NEW_ENTRY  (MCAN_IR_TEFN_MASK)
 /*!< Tx Event FIFO New Entry interrupt */
-#define MCAN_INTR_SRC_TX_EVT_FIFO_WATERMARK  (MCAN_IR_TEFW_MASK)
+#define MCAN_INT_SRC_TX_EVT_FIFO_WATERMARK  (MCAN_IR_TEFW_MASK)
 /*!< Tx Event FIFO Watermark Reached interrupt */
-#define MCAN_INTR_SRC_TX_EVT_FIFO_FULL       (MCAN_IR_TEFF_MASK)
+#define MCAN_INT_SRC_TX_EVT_FIFO_FULL       (MCAN_IR_TEFF_MASK)
 /*!< Tx Event FIFO Full interrupt */
-#define MCAN_INTR_SRC_TX_EVT_FIFO_ELEM_LOST  (MCAN_IR_TEFL_MASK)
+#define MCAN_INT_SRC_TX_EVT_FIFO_ELEM_LOST  (MCAN_IR_TEFL_MASK)
 /*!< Tx Event FIFO Element Lost interrupt */
-#define MCAN_INTR_SRC_TIMESTAMP_WRAPAROUND   (MCAN_IR_TSW_MASK)
+#define MCAN_INT_SRC_TIMESTAMP_WRAPAROUND   (MCAN_IR_TSW_MASK)
 /*!< Timestamp Wraparound interrupt */
-#define MCAN_INTR_SRC_MSG_RAM_ACCESS_FAILURE (MCAN_IR_MRAF_MASK)
+#define MCAN_INT_SRC_MSG_RAM_ACCESS_FAILURE (MCAN_IR_MRAF_MASK)
 /*!< Message RAM Access Failure interrupt */
-#define MCAN_INTR_SRC_TIMEOUT                (MCAN_IR_TOO_MASK)
+#define MCAN_INT_SRC_TIMEOUT                (MCAN_IR_TOO_MASK)
 /*!< Timeout Occurred interrupt */
-#define MCAN_INTR_SRC_DEDICATED_RX_BUFF_MSG  (MCAN_IR_DRX_MASK)
+#define MCAN_INT_SRC_DEDICATED_RX_BUFF_MSG  (MCAN_IR_DRX_MASK)
 /*!< Message stored to Dedicated Rx Buffer interrupt */
-#define MCAN_INTR_SRC_BIT_ERR_CORRECTED      (MCAN_IR_BEC_MASK)
+#define MCAN_INT_SRC_BIT_ERR_CORRECTED      (MCAN_IR_BEC_MASK)
 /*!< Bit Error Corrected interrupt */
-#define MCAN_INTR_SRC_BIT_ERR_UNCORRECTED    (MCAN_IR_BEU_MASK)
+#define MCAN_INT_SRC_BIT_ERR_UNCORRECTED    (MCAN_IR_BEU_MASK)
 /*!< Bit Error Uncorrected interrupt */
-#define MCAN_INTR_SRC_ERR_LOG_OVRFLW         (MCAN_IR_ELO_MASK)
+#define MCAN_INT_SRC_ERR_LOG_OVERFLOW       (MCAN_IR_ELO_MASK)
 /*!< Error Logging Overflow interrupt */
-#define MCAN_INTR_SRC_ERR_PASSIVE            (MCAN_IR_EP_MASK)
+#define MCAN_INT_SRC_ERR_PASSIVE            (MCAN_IR_EP_MASK)
 /*!< Error Passive interrupt */
-#define MCAN_INTR_SRC_WARNING_STATUS         (MCAN_IR_EW_MASK)
+#define MCAN_INT_SRC_WARNING_STATUS         (MCAN_IR_EW_MASK)
 /*!< Warning Status interrupt */
-#define MCAN_INTR_SRC_BUS_OFF_STATUS         (MCAN_IR_BO_MASK)
+#define MCAN_INT_SRC_BUS_OFF_STATUS         (MCAN_IR_BO_MASK)
 /*!< Bus_Off Status interrupt */
-#define MCAN_INTR_SRC_WATCHDOG               (MCAN_IR_WDI_MASK)
+#define MCAN_INT_SRC_WATCHDOG               (MCAN_IR_WDI_MASK)
 /*!< Watchdog Interrupt interrupt */
-#define MCAN_INTR_SRC_PROTOCOL_ERR_ARB       (MCAN_IR_PEA_MASK)
+#define MCAN_INT_SRC_PROTOCOL_ERR_ARB       (MCAN_IR_PEA_MASK)
 /*!< Protocol Error in Arbitration Phase interrupt */
-#define MCAN_INTR_SRC_PROTOCOL_ERR_DATA      (MCAN_IR_PED_MASK)
+#define MCAN_INT_SRC_PROTOCOL_ERR_DATA      (MCAN_IR_PED_MASK)
 /*!< Protocol Error in Data Phase interrupt */
-#define MCAN_INTR_SRC_RES_ADDR_ACCESS        (MCAN_IR_ARA_MASK)
+#define MCAN_INT_SRC_RES_ADDR_ACCESS        (MCAN_IR_ARA_MASK)
 /*!< Access to Reserved Address interrupt */
-/* @} */
-
-/*!
- *  @anchor MCAN_ECCErrType
- *  @name MCAN Ecc Error Type
- *  @{
- */
-/*!
- *  @brief    Enum to represent the ECC Error Types
- */
-typedef uint32_t MCAN_ECCErrType;
-
-#define MCAN_ECC_ERR_TYPE_SEC (0U)
-/*!< ECC Single Error Correction */
-#define MCAN_ECC_ERR_TYPE_DED (1U)
-/*!< ECC Single Error Detection */
 /* @} */
 
 /*!
@@ -544,11 +487,11 @@ typedef struct
      *   0 = Filter remote frames with 11-bit standard IDs
      *   1 = Reject all remote frames with 11-bit standard IDs
      */
-    uint32_t anfe;
+    MCAN_GFCNonMatching anfe;
     /*!< Accept Non-matching Frames Extended
      *   Refer enum MCAN_GFCNonMatching.
      */
-    uint32_t anfs;
+    MCAN_GFCNonMatching anfs;
     /*!< Accept Non-matching Frames Standard
      *   Refer enum MCAN_GFCNonMatching.
      */
@@ -628,11 +571,11 @@ typedef struct
      *   Interpreted by MCAN as the value in this field + 1.
      *   Range:[0x0-0xF]
      */
-    uint32_t tsSelect;
+    MCAN_TSCCTimestampSel tsSelect;
     /*!< Timestamp source selection.
      *   Refer enum MCAN_TSCCTimestampSel
      */
-    uint32_t timeoutSelect;
+    MCAN_TimeOutSelect timeoutSelect;
     /*!< Time-out counter source select.
      *   Refer enum MCAN_TimeOutSelect.
      */
@@ -676,11 +619,11 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t lastErrCode;
+    MCAN_ErrCode lastErrCode;
     /*!< Last Error Code
      *   Refer enum MCAN_ErrCode
      */
-    uint32_t act;
+    MCAN_ComState act;
     /*!< Activity - Monitors the module's CAN communication state.
      *   Refer enum MCAN_ComState
      */
@@ -700,7 +643,7 @@ typedef struct
      *   0 = The M_CAN is not Bus_Off
      *   1 = The M_CAN is in Bus_Off state
      */
-    uint32_t dlec;
+    MCAN_ErrCode dlec;
     /*!< Data Phase Last Error Code
      *   Refer enum MCAN_ErrCode
      */
@@ -1298,7 +1241,7 @@ int_fast16_t MCAN_config(const MCAN_ConfigParams *config);
  *
  * @return  None.
  */
-void MCAN_setOpMode(uint32_t mode);
+void MCAN_setOpMode(MCAN_OperationMode mode);
 
 /*!
  * @brief   Returns MCAN module mode of operation.
@@ -1307,7 +1250,7 @@ void MCAN_setOpMode(uint32_t mode);
  * @return  mode            Mode of operation.
  *                          Refer enum MCAN_OperationMode.
  */
-uint32_t MCAN_getOpMode(void);
+MCAN_OperationMode MCAN_getOpMode(void);
 
 /*!
  * @brief   Configures bit timings for MCAN module.
@@ -1400,7 +1343,7 @@ void MCAN_clearNewDataStatus(const MCAN_RxNewDataStatus *newDataStatus);
  *
  * @return  None.
  */
-void MCAN_readRxMsgNoCpy(uint32_t memType, uint32_t num, MCAN_RxBufElementNoCpy *elem);
+void MCAN_readRxMsgNoCpy(MCAN_MemType memType, uint32_t num, MCAN_RxBufElementNoCpy *elem);
 
 /*!
  * @brief   Reads received message from message RAM.
@@ -1416,7 +1359,7 @@ void MCAN_readRxMsgNoCpy(uint32_t memType, uint32_t num, MCAN_RxBufElementNoCpy 
  *
  * @return  None.
  */
-void MCAN_readRxMsg(uint32_t memType, uint32_t num, MCAN_RxBufElement *elem);
+void MCAN_readRxMsg(MCAN_MemType memType, uint32_t num, MCAN_RxBufElement *elem);
 
 /*!
  * @brief   Adds Standard Message ID Filter Element.
@@ -1451,7 +1394,7 @@ void MCAN_addExtMsgIDFilter(uint32_t filtNum, const MCAN_ExtMsgIDFilterElement *
  * @note    This API can be called only when MCAN is in Software
  *          Initialization mode of operation.
  */
-void MCAN_enableLoopbackMode(uint32_t lpbkMode);
+void MCAN_enableLoopbackMode(MCAN_LpbkMode lpbkMode);
 
 /*!
  * @brief   Disables Loopback Test Mode for MCAN module.
@@ -1474,56 +1417,72 @@ void MCAN_disableLoopbackMode(void);
 void MCAN_getProtocolStatus(MCAN_ProtocolStatus *protStatus);
 
 /*!
- * @brief   Enables/disables interrupts.
+ * @brief   Enables interrupts.
  *
- * @param   intrMask        Interrupts to enable.
- *                          Refer enum MCAN_IntrSrc.
- * @param   enable          Interrupt is enabled if TRUE.
- *                          Interrupt is disabled if FALSE.
+ * @param   intMask         Bit mask of interrupts to enable.
+ *                          Refer enum MCAN_IntSrc.
  *
  * @return  None.
  */
-void MCAN_setIntrEnable(uint32_t intrMask, uint32_t enable);
+void MCAN_enableInt(uint32_t intMask);
+
+/*!
+ * @brief   Disables interrupts.
+ *
+ * @param   intMask         Bit mask of interrupts to disable.
+ *                          Refer enum MCAN_IntSrc.
+ *
+ * @return  None.
+ */
+void MCAN_disableInt(uint32_t intMask);
 
 /*!
  * @brief   Sets interrupt line select.
  *
- * @param   intrMask        Interrupt Number for which interrupt
- *                          line is to be selected. Refer enum MCAN_IntrSrc.
+ * @param   intMask         Interrupt Number for which interrupt
+ *                          line is to be selected. Refer enum MCAN_IntSrc.
  * @param   lineNum         Interrupt Line to select.
- *                          Refer enum MCAN_IntrLineNum,
+ *                          Refer enum MCAN_IntLineNum,
  *
  * @return  None.
  */
-void MCAN_setIntrLineSel(uint32_t intrMask, uint32_t lineNum);
+void MCAN_setIntLineSel(uint32_t intMask, MCAN_IntLineNum lineNum);
 
 /*!
- * @brief   Enables/disables selected interrupt line.
+ * @brief   Enables selected interrupt line.
  *
- * @param   lineNum         Interrupt Line to select.
- *                          Refer enum MCAN_IntrLineNum,
- * @param   enable          Interrupt Line is enabled if TRUE.
- *                          Interrupt Line is disabled if FALSE.
+ * @param   lineNum         Interrupt Line to enable.
+ *                          Refer enum MCAN_IntLineNum,
  *
  * @return  None.
  */
-void MCAN_setIntrLineEnable(uint32_t lineNum, uint32_t enable);
+void MCAN_enableIntLine(MCAN_IntLineNum lineNum);
+
+/*!
+ * @brief   Disables selected interrupt line.
+ *
+ * @param   lineNum         Interrupt Line to disable.
+ *                          Refer enum MCAN_IntLineNum,
+ *
+ * @return  None.
+ */
+void MCAN_disableIntLine(MCAN_IntLineNum lineNum);
 
 /*!
  * @brief   Returns interrupt status.
  *
  * @return  Interrupt Status.
  */
-uint32_t MCAN_getIntrStatus(void);
+uint32_t MCAN_getIntStatus(void);
 
 /*!
  * @brief   Clears the interrupt status.
  *
- * @param   intrMask        Interrupts to clear status.
+ * @param   intMask         Interrupts to clear status.
  *
  * @return  None.
  */
-void MCAN_clearIntrStatus(uint32_t intrMask);
+void MCAN_clearIntStatus(uint32_t intMask);
 
 /*!
  * @brief   Reads Rx FIFO status.
@@ -1535,7 +1494,7 @@ void MCAN_clearIntrStatus(uint32_t intrMask);
  *
  * @return  None.
  */
-void MCAN_getRxFIFOStatus(uint32_t fifoNum, MCAN_RxFIFOStatus *fifoStatus);
+void MCAN_getRxFIFOStatus(MCAN_RxFIFONum fifoNum, MCAN_RxFIFOStatus *fifoStatus);
 
 /*!
  * @brief   Reads Tx FIFO/Queue status.
@@ -1557,7 +1516,7 @@ void MCAN_getTxFIFOQStatus(MCAN_TxFIFOQStatus *fifoQStatus);
  * @retval  MCAN_STATUS_SUCCESS if successful.
  * @retval  MCAN_STATUS_ERROR if \c fifoNum or \c idx is invalid.
  */
-int_fast16_t MCAN_setRxFIFOAck(uint32_t fifoNum, uint32_t idx);
+int_fast16_t MCAN_setRxFIFOAck(MCAN_RxFIFONum fifoNum, uint32_t idx);
 
 /*!
  * @brief   Returns Tx Buffer Request Pending status.
@@ -1588,13 +1547,18 @@ uint32_t MCAN_getTxBufTransmissionStatus(void);
 uint32_t MCAN_getTxBufCancellationStatus(void);
 
 /*!
- * @brief   Enables/disables Tx Buffer Transmission Interrupt.
+ * @brief   Enables Tx Buffer Transmission Interrupt.
  *
- * @param   bufMask         Tx Buffer mask for which interrupt(s) to enable/disable.
- * @param   enable          Interrupts are enabled if TRUE.
- *                          Interrupts are disabled if FALSE.
+ * @param   bufMask         Tx Buffer mask for which interrupt(s) to enable.
  */
-void MCAN_setTxBufTransIntrEnable(uint32_t bufMask, uint32_t enable);
+void MCAN_enableTxBufTransInt(uint32_t bufMask);
+
+/*!
+ * @brief   Disables Tx Buffer Transmission Interrupt.
+ *
+ * @param   bufMask         Tx Buffer mask for which interrupt(s) to disable.
+ */
+void MCAN_disableTxBufTransInt(uint32_t bufMask);
 
 /*!
  * @brief   Reads message from Tx Event FIFO.
@@ -1619,4 +1583,4 @@ uint32_t MCAN_getClkStopAck(void);
 }
 #endif
 
-#endif /* ti_drivers_can_common_mcan__include */
+#endif /* __MCAN_H__ */

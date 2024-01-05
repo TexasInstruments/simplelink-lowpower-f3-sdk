@@ -99,7 +99,6 @@
             "+../../../../../../../source/ti/ble5stack_flash/common/cc26xx/onboard.c -> onboard.c",
             "+../../../../../../../source/ti/ble5stack_flash/common/cc26xx/onboard.h -> onboard.h",
             "+../../Startup/osal_icall_ble.c -> osal_icall_ble.c",
-            "+../../../../../../../source/ti/boards/cc23x0r5/rcl_settings_ble.c -> rcl_settings_ble.c",
             "+../../../../../../../source/ti/ble5stack_flash/rom/agama_r1/rom_init.c -> rom_init.c",
             "+../../Tools/build_config.opt -> build_config.opt",
             "+../../Tools/Defines/host_test.opt -> host_test.opt",

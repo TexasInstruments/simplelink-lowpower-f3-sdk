@@ -29,10 +29,8 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
 
-if(NOT DEFINED FREERTOS_INSTALL_DIR)
-    message(STATUS "FREERTOS_INSTALL_DIR is not defined, skipping FreeRTOS build")
-    return()
-endif()
+# Set FREERTOS_INSTALL_DIR to SDK root if it is not explicitly defined
+get_install_dir(FREERTOS_INSTALL_DIR)
 
 include(CMakeSources.cmake)
 ti_init_package(NAMESPACE FreeRTOS)
@@ -41,7 +39,7 @@ ti_init_package(NAMESPACE FreeRTOS)
 ti_add_library(freertos INTERFACE ARCH all)
 target_include_directories(
     freertos
-    INTERFACE "$<BUILD_INTERFACE:${FREERTOS_INSTALL_DIR}/FreeRTOS/Source/include>"
+    INTERFACE "$<BUILD_INTERFACE:${FREERTOS_INSTALL_DIR}/source/third_party/freertos/include>"
               # Note: we cannot set the INSTALL_INTERFACE include here, because it depends on
               # FREERTOS_INSTALL_DIR It is configured in ConfigFreeRTOS.cmake.in, after the CMake
               # package magic

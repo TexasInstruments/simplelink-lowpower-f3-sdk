@@ -55,6 +55,7 @@
 #include DeviceFamily_constructPath(inc/hw_pmud.h)
 #include DeviceFamily_constructPath(inc/hw_sys0.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
+#include DeviceFamily_constructPath(inc/hw_fcfg.h)
 #include DeviceFamily_constructPath(driverlib/cpu.h)
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 #include DeviceFamily_constructPath(driverlib/gpio.h)
@@ -66,8 +67,9 @@ int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
 static void PowerCC27XX_oscillatorISR(uintptr_t arg);
 static void PowerCC27XX_rtcISR(uintptr_t arg);
 static void PowerCC27XX_enterStandby(void);
-static void PowerCC27XX_setDependencyCount(uint_fast16_t resourceId, uint8_t count);
-bool PowerCC27XX_isValidResourceId(uint_fast16_t resourceId);
+static void PowerCC27XX_setDependencyCount(Power_Resource resourceId, uint8_t count);
+static void PowerCC27XX_startHFXT(void);
+bool PowerCC27XX_isValidResourceId(Power_Resource resourceId);
 
 /* Externs */
 extern const PowerCC27XX_Config PowerCC27XX_config;
@@ -83,41 +85,47 @@ extern const uint_least8_t GPIO_pinUpperBound;
 /* Macro used to extract the bit index shift encoded from a resource ID */
 #define RESOURCE_BIT_INDEX(resourceId) ((resourceId)&PowerCC27XX_PERIPH_BIT_INDEX_M)
 
+/* Workaround for missing enums for CKMD_AFTRACKCTL_RATIO */
+#define CKMD_AFTRACKCTL_RATIO__90P3168MHZ 0x0880DEE9U
+#define CKMD_AFTRACKCTL_RATIO__98P304MHZ  0x07D00000U
+
 /* Static Globals */
 
 /* Array to maintain constraint reference counts */
-uint8_t constraintCounts[PowerCC27XX_NUMCONSTRAINTS];
+static uint8_t constraintCounts[PowerCC27XX_NUMCONSTRAINTS];
 
 /* Mask of Power constraints for quick access */
-uint32_t constraintMask = 0;
+static uint32_t constraintMask = 0;
 
 /* Arrays to maintain resource dependency reference counts.
  * Each resource group will have an array associated with it, and the arrays can
  * be indexed using the bit index shift value encoded in the resource ID.
  */
-uint8_t resourceCountsClkctl0[PowerCC27XX_NUMRESOURCES_CLKCTL0];
-uint8_t resourceCountsClkctl1[PowerCC27XX_NUMRESOURCES_CLKCTL1];
-uint8_t resourceCountsLrfd[PowerCC27XX_NUMRESOURCES_LRFD];
+static uint8_t resourceCountsClkctl0[PowerCC27XX_NUMRESOURCES_CLKCTL0];
+static uint8_t resourceCountsClkctl1[PowerCC27XX_NUMRESOURCES_CLKCTL1];
+static uint8_t resourceCountsLrfd[PowerCC27XX_NUMRESOURCES_LRFD];
 
 /* Keeps track of the configured Power policy. Power_idleFunc() will not run
  * the policy if this is set to NULL
  */
-Power_PolicyFxn policyFxn = NULL;
+static Power_PolicyFxn policyFxn = NULL;
 
 /* Is the Power policy enabled? */
-bool isPolicyEnabled = false;
+static bool isPolicyEnabled = false;
 
 /* Has the Power driver been initialized */
-bool isInitialized = false;
+static bool isInitialized = false;
 
 /* Power state of the system. Idle, active, standby, etc */
-uint8_t powerState = Power_ACTIVE;
+static uint8_t powerState = Power_ACTIVE;
 
 /* Event notification list */
-List_List notifyList;
+static List_List notifyList;
 
 /* Interrupt for handling clock switching */
-HwiP_Struct ckmHwi;
+static HwiP_Struct ckmHwi;
+
+/* Non-static Globals */
 
 /* Interrupt for ClockP and Power policy */
 HwiP_Struct clockHwi;
@@ -150,11 +158,11 @@ int_fast16_t Power_init()
 
     HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ3SEL) = EVTSVT_CPUIRQ3SEL_PUBID_AON_CKM_COMB;
 
-    /* Enable a selection of CKM signals as interrupt sources. For now,
-     * we will stick to LKCLKGOOD and AMPSETTLED since those are related to existing
-     * notifications.
+    /* Enable a selection of CKM signals as interrupt sources. LKCLKGOOD and
+     * AMPSETTLED are related to existing notifications. HFXTFAULT requires a
+     * restart of the HFXT.
      */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD | CKMD_IMASK_AMPSETTLED | CKMD_IMASK_HFXTFAULT;
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_AMPSETTLED | CKMD_IMASK_HFXTFAULT;
 
     HwiP_enableInterrupt(INT_CPUIRQ3);
 
@@ -175,54 +183,24 @@ int_fast16_t Power_init()
     /* Configure RTC to halt when CPU stopped during debug */
     HWREG(RTC_BASE + RTC_O_EMU) = RTC_EMU_HALT_STOP;
 
-    /* Configure SysTimer to halt when CPU stopped during debug.
-     * This setting needs to be re-applied in the Power policy after waking up
-     * from standby.
+    /* Configure SysTimer to halt when CPU stopped during debug. The setting
+     * is sync'd from RTC_EMU on each wakeup from standby.
      */
     HWREG(SYSTIM_BASE + SYSTIM_O_EMU) = SYSTIM_EMU_HALT_STOP;
 
-    /* Enable HFXT and configure it to automatically start up when the device
-     * wakes up from standby.
-     * OR-in to avoid overwriting other fields with non-zero reset values.
+    /* Start HFXT */
+    PowerCC27XX_startHFXT();
+
+    /* Enable tracking loop with HFXT as reference. This will automatically
+     * calibrate LFOSC against HFXT whenever HFXT is enabled; usually after
+     * waking up from standby.
+     * This is needed to ensure fast HFXT startup and a reasonably accurate
+     * LFOSC frequency.
      */
-    /* TODO: move to CCFG copyList? */
-    HWREG(CKMD_BASE + CKMD_O_HFXTCTL) |= CKMD_HFXTCTL_EN_M | CKMD_HFXTCTL_AUTOEN_M;
-
-    // /* Enable tracking loop with HFXT as reference. This will automatically
-    //  * calibrate LFOSC against HFXT whenever HFXT is enabled; usually after
-    //  * waking up from standby.
-    //  * This is needed to ensure fast HFXT startup and a reasonably accurate
-    //  * LFOSC frequency.
-    //  */
-    // HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) |= CKMD_HFTRACKCTL_EN_M | CKMD_HFTRACKCTL_REFCLK_HFXT;
-    // /* TODO: Register removed on CC27xx?
-    //  * OR in value to ensure trims are not overwritten */
-    // HWREG(CKMD_BASE + CKMD_O_LOOPCFG) |= CKMD_LOOPCFG_BOOT_DONE;
-
-    // /* TODO: Bitfield missing for CC27xx. Find out if not applicable for CC27xx?
-    // Enable LFINC updates when the HFOSC tracking loop is running */
-    // HWREG(CKMD_BASE + CKMD_O_LFINCCTL) |= CKMD_LFINCCTL_EN_ONTRACK;
+    HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) |= CKMD_HFTRACKCTL_EN_M | CKMD_HFTRACKCTL_REFCLK_HFXT;
 
     /* Enable GPIO and RTC standby wakeup sources */
-    /* TODO: move to CCFG copyList? */
     HWREG(EVTULL_BASE + EVTULL_O_WKUPMASK) = EVTULL_WKUPMASK_AON_IOC_COMB_M | EVTULL_WKUPMASK_AON_RTC_COMB_M;
-
-    /* Enable ULDO */
-    // HWREG(PMUD_BASE + PMUD_O_PREG0) |= PMUD_PREG0_UDIGLDO_EN_EN;
-
-    // /* Enable DCDC */
-    // HWREG(PMCTL_BASE + PMCTL_O_VDDRCTL) |= PMCTL_VDDRCTL_SELECT_DCDC;
-
-    // /* TODO: Hack for untrimmed devices: Reduce recharge comp level to minimum */
-    // HWREG(SYS0_BASE + SYS0_O_TMUTE4) &= ~SYS0_TMUTE4_RECHCOMPREFLVL_M;
-
-    // // Set IDAC change delay. CKMD.AMPCFG1.IDACDLY=0xF
-    // HWREG(CKMD_BASE + CKMD_O_AMPCFG1) &= ~CKMD_AMPCFG1_IDACDLY_M;
-    // HWREG(CKMD_BASE + CKMD_O_AMPCFG1) |= 0xFU << CKMD_AMPCFG1_IDACDLY_S;
-
-    // // Set Update rate for the AMPCOMP update rate. CKMD.AMPCFG0.FSMRATE=0x17 (250K)
-    // HWREG(CKMD_BASE + CKMD_O_AMPCFG0) &= ~CKMD_AMPCFG0_FSMRATE_M;
-    // HWREG(CKMD_BASE + CKMD_O_AMPCFG0) |= CKMD_AMPCFG0_FSMRATE__250K << CKMD_AMPCFG0_FSMRATE_S;
 
     return Power_SOK;
 }
@@ -272,7 +250,7 @@ uint_fast32_t Power_getConstraintMask(void)
  *  ======== Power_getDependencyCount ========
  *  Get the count of dependencies that are currently declared upon a resource.
  */
-int_fast16_t Power_getDependencyCount(uint_fast16_t resourceId)
+int_fast16_t Power_getDependencyCount(Power_Resource resourceId)
 {
     DebugP_assert(PowerCC27XX_isValidResourceId(resourceId));
 
@@ -292,6 +270,25 @@ int_fast16_t Power_getDependencyCount(uint_fast16_t resourceId)
     }
 
     return (int_fast16_t)Power_EINVALIDINPUT;
+}
+
+/*
+ *  ======== Power_getConstraintCount ========
+ *  Get the count of constraints that are currently set on a certain
+ *  operational transition
+ */
+int_fast16_t Power_getConstraintCount(uint_fast16_t constraintId)
+{
+    DebugP_assert(constraintId < PowerCC27XX_NUMCONSTRAINTS);
+
+    if (constraintId < PowerCC27XX_NUMCONSTRAINTS)
+    {
+        return (int_fast16_t)constraintCounts[constraintId];
+    }
+    else
+    {
+        return (int_fast16_t)Power_EINVALIDINPUT;
+    }
 }
 
 /*
@@ -444,7 +441,7 @@ int_fast16_t Power_releaseConstraint(uint_fast16_t constraintId)
  *  ======== Power_setDependency ========
  *  Declare a dependency upon a resource.
  */
-int_fast16_t Power_setDependency(uint_fast16_t resourceId)
+int_fast16_t Power_setDependency(Power_Resource resourceId)
 {
     uint8_t previousCount;
     uintptr_t key;
@@ -490,7 +487,7 @@ int_fast16_t Power_setDependency(uint_fast16_t resourceId)
  *  ======== Power_releaseDependency ========
  *  Release a previously declared dependency.
  */
-int_fast16_t Power_releaseDependency(uint_fast16_t resourceId)
+int_fast16_t Power_releaseDependency(Power_Resource resourceId)
 {
     uint8_t resourceCount;
     uintptr_t key;
@@ -619,22 +616,11 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      */
     PowerCC27XX_enterStandby();
 
-    /* Restore SYSTIMER halt during debug break.
-     * This bit is cleared when waking up from standby since the SYSTIMER is in
-     * the SVT domain.
-     * Any breakpoints set before this write will cause the SYSTIMER to desync
-     * and likely break program execution.
+    /* Enable the AMPSETTLED interrupt. After waking up from standby, the HFXT
+     * is re-enabled by the hardware automatically. We still need to generate a
+     * notification once it is ready though.
      */
-    HWREG(SYSTIM_BASE + SYSTIM_O_EMU) = SYSTIM_EMU_HALT_STOP;
-
-    /* Re-enable the AMPSETTLED interrupt.
-     * Since it is a level status signal, it remains asserted when we are
-     * running on HFXT and cannot be cleared.
-     * The oscillator interrupt removes it from the interrupt mask to prevent
-     * repeated vectoring.
-     * Now that we are exiting standby, we need to enable it again to vector to
-     * the interrupt once more.
-     */
+    HWREG(CKMD_BASE + CKMD_O_ICLR)  = CKMD_ICLR_AMPSETTLED;
     HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_AMPSETTLED;
 
     /* Now clear the transition state before re-enabling the scheduler */
@@ -685,8 +671,6 @@ void PowerCC27XX_enterStandby(void)
      */
     __set_CONTROL(0 << 1);
 
-    /* TODO: add copyList support to Power driver */
-
     /* - Save CPU state on MSP and MSP in CLKCTL_STBYPTR
      * - Enter standby
      * - Exit standby
@@ -694,11 +678,6 @@ void PowerCC27XX_enterStandby(void)
      * - Apply copyList
      */
     HapiEnterStandby(NULL);
-
-    /* Just go into WFI while we work on FPGA
-     * TODO: reenable standby fxn when silicon arrives
-     */
-    //__WFI();
 
     /* Switch back to previous stack pointer. */
     __set_CONTROL(controlPreStandby);
@@ -709,20 +688,22 @@ void PowerCC27XX_enterStandby(void)
  */
 void PowerLPF3_selectLFOSC(void)
 {
-    /* Set LFOSC to PRECLK and LFXT to LFCLK */
+    /* Select LFOSC */
     HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_MAIN_LFOSC;
-
-    /* Clear any existing interrupt flags */
-    HWREG(CKMD_BASE + CKMD_O_IMCLR) = CKMD_IMCLR_LFCLKGOOD;
 
     /* Start LFOSC */
     HWREG(CKMD_BASE + CKMD_O_LFOSCCTL) = CKMD_LFOSCCTL_EN;
 
-    /* Enable nanoamp bias */
-    HWREG(CKMD_BASE + CKMD_O_NABIASCTL) = CKMD_NABIASCTL_EN;
+    /* Enable LFCLKGOOD, TRACKREFLOSS, and TRACKREFOOR. TRACKREFLOSS may occur
+     * when entering and exiting fake standby with the debugger attached.
+     */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFCLKGOOD | CKMD_IMSET_TRACKREFLOSS | CKMD_IMSET_TRACKREFOOR;
 
-    /* Enable LF clock monitoring */
-    HWREG(CKMD_BASE + CKMD_O_LFMONCTL) = CKMD_LFMONCTL_EN;
+    /* Disallow standby until LF clock is running. Otherwise, we will only
+     * vector to the ISR after we wake up from standby the next time since the
+     * CKM interrupt is purposefully not configured as a wakeup source.
+     */
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
 
 /*
@@ -730,31 +711,41 @@ void PowerLPF3_selectLFOSC(void)
  */
 void PowerLPF3_selectLFXT(void)
 {
-    /* Set LFINC override to 32.768 kHz */
-    HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x001E8480 | CKMD_LFINCOVR_OVERRIDE_M;
+    /* Set LFINC override to 32.768 kHz. Will not impact RTC since the fake LF
+     * ticks will have a higher priority than LFINCOVR.
+     *
+     * The value is calculated as period in microsections with 16 fractional
+     * bits.
+     * The LFXT runs at 32.768 kHz -> 1 / 32768 Hz = 30.5176 us.
+     * 30.5176 * 2^16 = 2000000 = 0x001E8480
+     */
+    HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x001E8480 | CKMD_LFINCOVR_OVERRIDE;
 
     /* Set LFCLK  */
     HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_MAIN_LFXT;
 
-    /* Clear any existing interrupt flags */
-    HWREG(CKMD_BASE + CKMD_O_IMCLR) = CKMD_IMCLR_LFCLKGOOD;
-
     /* Start LFXT */
     HWREG(CKMD_BASE + CKMD_O_LFXTCTL) = CKMD_LFXTCTL_EN;
 
-    /* Enable LF clock monitoring */
-    HWREG(CKMD_BASE + CKMD_O_LFMONCTL) = CKMD_LFMONCTL_EN;
+    /* Enable LFCLKGOOD */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD;
+
+    /* Disallow standby until LF clock is running. Otherwise, we will only
+     * vector to the ISR after we wake up from standby the next time since the
+     * CKM interrupt is purposefully not configured as a wakeup source.
+     */
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
 
 /*
- *  ======== PowerCC23X0_oscillatorISR ========
+ *  ======== PowerCC27XX_oscillatorISR ========
  */
 static void PowerCC27XX_oscillatorISR(uintptr_t arg)
 {
     uint32_t maskedStatus = HWREG(CKMD_BASE + CKMD_O_MIS);
 
     /* Manipulating ICLR alone does not actually do anything. The CKM_COMB
-     * signals are all level values that reset one cycle after writing to
+     * signals are almost all level values that reset one cycle after writing to
      * ICLR. We need to update the mask instead to avoid looping in the ISR
      */
     HWREG(CKMD_BASE + CKMD_O_ICLR)  = maskedStatus;
@@ -763,6 +754,9 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
     if (maskedStatus & CKMD_MIS_AMPSETTLED_M)
     {
         PowerCC27XX_notify(PowerLPF3_HFXT_AVAILABLE);
+
+        /* Allow standby again now that HFXT has finished starting */
+        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
     else if (maskedStatus & CKMD_MIS_HFXTFAULT_M)
     {
@@ -772,12 +766,36 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
          * like there is a great way to recover from that.
          */
         HWREG(CKMD_BASE + CKMD_O_HFXTCTL) &= ~CKMD_HFXTCTL_EN_M;
-        HWREG(CKMD_BASE + CKMD_O_HFXTCTL) |= CKMD_HFXTCTL_EN_M;
+
+        /* Start up the HFXT again */
+        PowerCC27XX_startHFXT();
     }
 
     if (maskedStatus & CKMD_MIS_LFCLKGOOD_M)
     {
+        /* Enable LF clock monitoring */
+        HWREG(CKMD_BASE + CKMD_O_LFMONCTL) = CKMD_LFMONCTL_EN;
+
+        /* Enable LF clock loss reset while in standby */
+        HWREG(PMCTL_BASE + PMCTL_O_RSTCTL) |= PMCTL_RSTCTL_LFLOSS_ARMED;
+
+        /* Send out notification for LF clock switch */
         PowerCC27XX_notify(PowerLPF3_LFCLK_SWITCHED);
+
+        /* Allow standby again now that we have sent out the notification */
+        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+    }
+
+    if (maskedStatus & CKMD_MIS_TRACKREFLOSS_M || maskedStatus & CKMD_MIS_TRACKREFOOR_M)
+    {
+        /* No device currently achieves tracking loop lock, so instead of having
+         * an endless while(1) loop a NOP instruciton is used, such that the FW
+         * will actually execute. A NOP instruction is used such that a
+         * breakpoint can be put here for debugging purposes.
+         * TODO: Reintroduce while(1) loop when the tracking loop issue is
+         * fixed.
+         */
+        __asm(" NOP");
     }
 }
 
@@ -791,6 +809,132 @@ static void PowerCC27XX_rtcISR(uintptr_t arg)
      * interrupts are disabled.
      */
     HWREG(RTC_BASE + RTC_O_ICLR) = HWREG(RTC_BASE + RTC_O_MIS);
+}
+
+/*
+ *  ======== PowerCC27XX_startHFXT ========
+ */
+static void PowerCC27XX_startHFXT(void)
+{
+    /* Return immediately if HFXT is already enabled. Not doing so will cause
+     * TRACKREFLOSS when starting the LDO. This situation can arise when:
+     * - Waking up from fake standby. Fake standby does not shut down the HFXT,
+     *   unlike real standby.
+     * - Waking up without actually entering real standby. If a wakeup source is
+     *   pending when we reach WFI in the ROM function, the hardware will just
+     *   turn that into a NOP instead and not run through the regular state
+     *   machine.
+     */
+    if ((HWREG(CKMD_BASE + CKMD_O_HFXTCTL) & CKMD_HFXTCTL_EN_M) == CKMD_HFXTCTL_EN)
+    {
+        return;
+    }
+
+    /* Start HFXT and enable automatic enabling after waking up from standby */
+    HWREG(CKMD_BASE + CKMD_O_HFXTCTL) |= CKMD_HFXTCTL_EN | CKMD_HFXTCTL_AUTOEN;
+
+    /* Disallow standby until AMPSETTLED is true */
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+
+    /* Enable the AMPSETTLED interrupt.
+     * Since it is a level status signal, it remains asserted when we are
+     * running on HFXT and cannot be cleared.
+     * The oscillator interrupt removes it from the interrupt mask to prevent
+     * repeated vectoring.
+     */
+    HWREG(CKMD_BASE + CKMD_O_ICLR)  = CKMD_ICLR_AMPSETTLED;
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_AMPSETTLED;
+}
+
+/*
+ *  ======== PowerLPF3_startAFOSC ========
+ */
+int_fast16_t PowerLPF3_startAFOSC(PowerLPF3_AfoscFreq frequency)
+{
+    /* Return failed if AFOSC is already enabled */
+    if ((HWREG(CKMD_BASE + CKMD_O_AFOSCCTL) & CKMD_AFOSCCTL_EN_M) == CKMD_AFOSCCTL_EN)
+    {
+        return Power_EFAIL;
+    }
+
+    uint8_t mode;
+    uint8_t mid;
+    uint8_t coarse;
+    uint32_t trackingRatio;
+
+    /* Read AFOSC trims and select tracking loop ratio */
+    switch (frequency)
+    {
+        case PowerLPF3_AFOSC_FREQ_80MHZ:
+            mode          = fcfg->appTrims.cc27xx.afosc80MHZ.mode;
+            mid           = fcfg->appTrims.cc27xx.afosc80MHZ.mid;
+            coarse        = fcfg->appTrims.cc27xx.afosc80MHZ.coarse;
+            trackingRatio = CKMD_AFTRACKCTL_RATIO__80MHZ;
+            break;
+        case PowerLPF3_AFOSC_FREQ_90P3168MHZ:
+            mode          = fcfg->appTrims.cc27xx.afosc90MHZ.mode;
+            mid           = fcfg->appTrims.cc27xx.afosc90MHZ.mid;
+            coarse        = fcfg->appTrims.cc27xx.afosc90MHZ.coarse;
+            trackingRatio = CKMD_AFTRACKCTL_RATIO__90P3168MHZ;
+            break;
+        case PowerLPF3_AFOSC_FREQ_98P304MHZ:
+            mode          = fcfg->appTrims.cc27xx.afosc98MHZ.mode;
+            mid           = fcfg->appTrims.cc27xx.afosc98MHZ.mid;
+            coarse        = fcfg->appTrims.cc27xx.afosc98MHZ.coarse;
+            trackingRatio = CKMD_AFTRACKCTL_RATIO__98P304MHZ;
+            break;
+        default:
+            /* Return error */
+            return Power_EINVALIDINPUT;
+            break;
+    }
+
+    /* Write AFOSC to temporary variable representing the upper half word
+     * (16bits) of CKMD.TRIM0. The CKMD_TRIM0_*_S defines define the bit shift
+     * values for fields in the full word (32 bits) CKMD.TRIM0 register. 16 is
+     * subtracted from the full word bit shift values to convert them to bit
+     * shift values for the upper half word.
+     */
+    uint16_t upperHalfwordTrim0Tmp = 0;
+    upperHalfwordTrim0Tmp |= mode << (CKMD_TRIM0_AFOSC_MODE_S - 16);
+    upperHalfwordTrim0Tmp |= mid << (CKMD_TRIM0_AFOSC_MID_S - 16);
+    upperHalfwordTrim0Tmp |= coarse << (CKMD_TRIM0_AFOSC_COARSE_S - 16);
+
+    /* Write the AFOSC trims to CKMD with half word access, to prevent writing
+     * to the HFOSC trims.
+     */
+    HWREGH(CKMD_BASE + CKMD_O_TRIM0 + 2) = upperHalfwordTrim0Tmp;
+
+    /* Set tracking ratio.
+     * Note, trackingRatio is already bit aligned with the RATIO field.
+     */
+    uint32_t afTrackCtl = HWREG(CKMD_BASE + CKMD_O_AFTRACKCTL);
+    afTrackCtl &= ~CKMD_AFTRACKCTL_RATIO_M;
+    afTrackCtl |= trackingRatio;
+    HWREG(CKMD_BASE + CKMD_O_AFTRACKCTL) = afTrackCtl;
+
+    /* Enable AFOSC and enable auto-disable on standby entry */
+    HWREG(CKMD_BASE + CKMD_O_AFOSCCTL) |= CKMD_AFOSCCTL_EN | CKMD_AFOSCCTL_AUTODIS;
+
+    /* Wait until AFOSC good indication */
+    while ((HWREG(CKMD_BASE + CKMD_O_RIS) & CKMD_RIS_AFOSCGOOD_M) != CKMD_RIS_AFOSCGOOD) {}
+
+    /* Enable the AFOSC tracking loop */
+    HWREG(CKMD_BASE + CKMD_O_AFTRACKCTL) |= CKMD_AFTRACKCTL_EN;
+
+    return Power_SOK;
+}
+
+/*
+ *  ======== PowerLPF3_stopAFOSC ========
+ */
+void PowerLPF3_stopAFOSC(void)
+{
+    /* Disable AFOSC tracking loop */
+    HWREG(CKMD_BASE + CKMD_O_AFTRACKCTL) &= ~CKMD_AFTRACKCTL_EN_M;
+
+    /* Disable AFOSC */
+    HWREG(CKMD_BASE + CKMD_O_AFOSCCTL) &= ~CKMD_AFOSCCTL_EN_M;
 }
 
 /*
@@ -849,7 +993,7 @@ int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType)
 /*
  *  ======== PowerCC27XX_setDependencyCount ========
  */
-void PowerCC27XX_setDependencyCount(uint_fast16_t resourceId, uint8_t count)
+void PowerCC27XX_setDependencyCount(Power_Resource resourceId, uint8_t count)
 {
     uint8_t bitIndex    = RESOURCE_BIT_INDEX(resourceId);
     uint_fast16_t group = RESOURCE_GROUP(resourceId);
@@ -873,7 +1017,7 @@ void PowerCC27XX_setDependencyCount(uint_fast16_t resourceId, uint8_t count)
 /*
  *  ======== PowerCC27XX_isValidResourceId ========
  */
-bool PowerCC27XX_isValidResourceId(uint_fast16_t resourceId)
+bool PowerCC27XX_isValidResourceId(Power_Resource resourceId)
 {
     uint8_t bitIndex    = RESOURCE_BIT_INDEX(resourceId);
     uint_fast16_t group = RESOURCE_GROUP(resourceId);

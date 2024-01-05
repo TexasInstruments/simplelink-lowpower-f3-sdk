@@ -369,6 +369,8 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_READ_ANTENNA_INFORMATION                   0x2058    //!< opcode of @ref HCI_LE_ReadAntennaInformation
 #define HCI_LE_SET_PERIODIC_ADV_RECEIVE_ENABLE            0x2059    //!< opcode of @ref HCI_LE_SetPeriodicAdvReceiveEnableCmd
 // @endcond // NODOC
+// V5.2
+#define HCI_LE_GENERATE_DHKEY_V2                          0x205E    //!< opcode of @ref HCI_LE_GenerateDHKeyCmd_V2
 
 /// @endcond //NODOC
 // LE Vendor Specific LL Extension Commands
@@ -435,6 +437,9 @@ extern uint8 hciSmpTaskID;
 #define HCI_EXT_COEX_ENABLE                                 0xFC2E    //!< opcode of @ref HCI_EXT_CoexEnableCmd
 #define HCI_EXT_SET_TX_POWER_DBM                            0xFC2F    //!< opcode of @ref HCI_EXT_SetTxPowerDbmCmd
 #define HCI_EXT_SET_MAX_DTM_TX_POWER_DBM                    0xFC30    //!< opcode of @ref HCI_EXT_SetMaxDtmTxPowerDbmCmd
+#define HCI_EXT_GET_RX_STATS                                0xFC31    //!< opcode of @ref HCI_EXT_GetRxStatisticsCmd
+#define HCI_EXT_GET_TX_STATS                                0xFC32    //!< opcode of @ref HCI_EXT_GetTxStatisticsCmd
+#define HCI_EXT_GET_COEX_STATS                              0xFC33    //!< opcode of @ref HCI_EXT_GetCoexStatisticsCmd
 
 #define HCI_EXT_LL_TEST_MODE                                0xFC70    //!< opcode of @ref HCI_EXT_LLTestModeCmd
 
@@ -582,7 +587,10 @@ extern char *BLEEventCode_BleLogStrings[];
 #define HCI_EXT_COEX_ENABLE_EVENT                          0x042E    //!< event from @ref HCI_EXT_CoexEnableCmd
 #define HCI_EXT_SET_HOST_DEF_CHANNEL_CLASSIFICATION_EVENT  0x042F    //!< event from @ref HCI_EXT_CoexEnableCmd
 #define HCI_EXT_SET_HOST_CONN_CHANNEL_CLASSIFICATION_EVENT 0x0430    //!< event from @ref HCI_EXT_CoexEnableCmd
-#define HCI_EXT_SET_ADV_SET_RAND_ADDR_EVENT                0x0431    //!< event from @ref HCI_EXT_SetAdvSetRandAddrCmd
+#define HCI_EXT_GET_RX_STATS_EVENT                         0x0431    //!< opcode of @ref HCI_EXT_GetRxStatisticsCmd
+#define HCI_EXT_GET_TX_STATS_EVENT                         0x0432    //!< opcode of @ref HCI_EXT_GetTxStatisticsCmd
+#define HCI_EXT_GET_COEX_STATS_EVENT                       0x0433    //!< opcode of @ref HCI_EXT_GetCoexStatisticsCmd
+#define HCI_EXT_SET_ADV_SET_RAND_ADDR_EVENT                0x0434    //!< event from @ref HCI_EXT_SetAdvSetRandAddrCmd
 
 #define HCI_EXT_LL_TEST_MODE_EVENT                        0x0470    //!< LL Test Mode
 // @endcond // NODOC

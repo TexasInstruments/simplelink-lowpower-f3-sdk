@@ -248,6 +248,9 @@
 #define IDX_HCI_EXT_SetDtmTxPktCntCmd                    HCI_EXT_SetDtmTxPktCntCmd
 #define IDX_HCI_EXT_SetHostDefChanClassificationCmd      HCI_EXT_SetHostDefChanClassificationCmd
 #define IDX_HCI_EXT_SetHostConnChanClassificationCmd     HCI_EXT_SetHostConnChanClassificationCmd
+#define IDX_HCI_EXT_GetRxStatisticsCmd                   HCI_EXT_GetRxStatisticsCmd
+#define IDX_HCI_EXT_GetTxStatisticsCmd                   HCI_EXT_GetTxStatisticsCmd
+#define IDX_HCI_EXT_GetCoexStatisticsCmd                 HCI_EXT_GetCoexStatisticsCmd
 #define IDX_HCI_TL_getCmdResponderID                     HCI_TL_getCmdResponderID
 #define IDX_HCI_LE_RandCmd                               HCI_LE_RandCmd
 #define IDX_HCI_LE_ReadBufSizeCmd                        HCI_LE_ReadBufSizeCmd
@@ -271,6 +274,7 @@
 #define IDX_HCI_LE_SetPrivacyModeCmd                     HCI_LE_SetPrivacyModeCmd
 #define IDX_HCI_LE_ReadLocalP256PublicKeyCmd             HCI_LE_ReadLocalP256PublicKeyCmd
 #define IDX_HCI_LE_GenerateDHKeyCmd                      HCI_LE_GenerateDHKeyCmd
+#define IDX_HCI_LE_GenerateDHKeyV2Cmd                    HCI_LE_GenerateDHKeyV2Cmd
 #define IDX_HCI_LE_SetAdvParamCmd                        HCI_LE_SetAdvParamCmd
 #define IDX_HCI_LE_SetAdvDataCmd                         HCI_LE_SetAdvDataCmd
 #define IDX_HCI_LE_SetScanRspDataCmd                     HCI_LE_SetScanRspDataCmd
@@ -298,6 +302,7 @@
 #define IDX_HCI_CommandStatusEvent                       HCI_CommandStatusEvent
 #define IDX_HCI_CommandCompleteEvent                     HCI_CommandCompleteEvent
 #define IDX_HCI_bm_alloc                                 HCI_bm_alloc
+#define IDX_HCI_bm_free                                  HCI_bm_free
 #define IDX_HCI_LE_ReadPhyCmd                            HCI_LE_ReadPhyCmd
 #define IDX_HCI_LE_SetDefaultPhyCmd                      HCI_LE_SetDefaultPhyCmd
 #define IDX_HCI_LE_SetPhyCmd                             HCI_LE_SetPhyCmd

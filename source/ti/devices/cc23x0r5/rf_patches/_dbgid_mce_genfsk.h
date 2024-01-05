@@ -1,6 +1,0 @@
-DBG_DEF(DBGID_MCE_RAM_BANK_ASM_436, 3, DBGCH3, 0, "Ieee 802.15.4g, K=4 FEC and Interleaver, TX Started", "mce_ram_bank.asm", 436)
-DBG_DEF(DBGID_MCE_RAM_BANK_ASM_627, 4, DBGCH3, 0, "GenericFSK, NoFEC, TX Started", "mce_ram_bank.asm", 627)
-DBG_DEF(DBGID_MCE_RAM_BANK_ASM_1109, 5, DBGCH3, 0, "SWQU failed", "mce_ram_bank.asm", 1109)
-DBG_DEF(DBGID_MCE_RAM_BANK_ASM_1226, 6, DBGCH3, 0, "All bits received, MCE Ending", "mce_ram_bank.asm", 1226)
-DBG_DEF(DBGID_MCE_RAM_BANK_ASM_1249, 7, DBGCH3, 0, "GenericFSK FEC RX Started", "mce_ram_bank.asm", 1249)
-DBG_DEF(DBGID_MCE_RAM_BANK_ASM_1463, 8, DBGCH3, 0, "GenericFSK,  (G)FSK 2/4-ary, RX Started", "mce_ram_bank.asm", 1463)

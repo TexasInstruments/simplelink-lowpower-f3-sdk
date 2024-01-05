@@ -35,28 +35,28 @@
 
 #include <ti/devices/DeviceFamily.h>
 
-#include <ti/drivers/rcl/hal/hal.h>
 #include <ti/drivers/rcl/RCL.h>
-#include <ti/drivers/rcl/RCL_Scheduler.h>
 #include <ti/drivers/rcl/commands/adc_noise.h>
-#include <ti/drivers/rcl/LRFCC23X0.h>
 
-#include DeviceFamily_constructPath(driverlib/dbell_regs.h)
-#include DeviceFamily_constructPath(rf_patches/lrf_rfe_binary_ble5.h)
-#include DeviceFamily_constructPath(rf_patches/lrf_rfe_binary_ble5_nopll.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
+#include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
 
-#include DeviceFamily_constructPath(settings/lrf_rfe_cfg_fe_common.h)
-#include DeviceFamily_constructPath(settings/lrf_rfe_cfg_synth_common.h)
-#include DeviceFamily_constructPath(settings/lrf_rfe_cfg_synth_common_ram.h)
-
-#include DeviceFamily_constructPath(driverlib/mdm_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_ble5_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_common_ram_regs.h)
-
-#include <rcl_settings_adc_noise.h>
+#ifdef DeviceFamily_CC27XX
+#include <ti/boards/cc27xx/rcl_settings_adc_noise.h>
+#else
+#include <ti/boards/cc23x0/rcl_settings_adc_noise.h>
+#endif
 
 /* Place necessary RCL structs in BUFRAM to avoid using static SYSRAM. This saves 148 B */
-#define RCL_CLIENT_ADDR     (BUF_RAM_BASE_ADDR)
+/* Note that we need to skip the part of the BUFRAM used by common RAM variables, as they
+  may be written by the RCL */
+#define PBE_COMMON_RAM_REGISTER_END_OFFSET     32UL
+/* We know that the PBE_COMMON_RAM_FIFOCMDADD register is used by the LRF setup, so at least make sure that this is covered */
+#if (PBE_COMMON_RAM_FIFOCMDADD_ADR >= (BUF_RAM_BASE_ADDR + PBE_COMMON_RAM_REGISTER_END_OFFSET))
+#error "BUFRAM memory used by ADC noise wrapper overlaps initialized RAM variable"
+#endif
+
+#define RCL_CLIENT_ADDR     (BUF_RAM_BASE_ADDR + PBE_COMMON_RAM_REGISTER_END_OFFSET)
 #define RCL_ADC_NOISE_CMD_ADDR   (RCL_CLIENT_ADDR + sizeof(RCL_Client))
 #define CALLBACK_ADDR       (RCL_ADC_NOISE_CMD_ADDR + sizeof(RCL_CmdAdcNoiseGet))
 
@@ -86,7 +86,7 @@ static void adcNoiseCallback(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events 
     RCL_close(cmd->runtime.client);
 
     /* This must come after closing because command and client structs are in BUFRAM */
-    LRF_clearAppClockEnable(DBELL_CLKCTL_BUFRAM_BM);
+    LRF_clearAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
 
     /* Release power constraint to allow standby */
     hal_power_release_constraint();
@@ -106,7 +106,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
     RCL_CmdAdcNoiseGet *adcNoiseCmd = RCL_ADC_NOISE_CMD_PTR;
 
     /* Turn on BUFRAM before calling RCL_open, since the RCL_client resides in BUFRAM */
-    LRF_setAppClockEnable(DBELL_CLKCTL_BUFRAM_BM);
+    LRF_setAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
 
     /* Prevent the system from going to standby because BUFRAM doesn't have retention */
     hal_power_set_constraint();
@@ -135,7 +135,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
     RCL_close(h);
 
     /* This must come after closing because command and client structs are in BUFRAM */
-    LRF_clearAppClockEnable(DBELL_CLKCTL_BUFRAM_BM);
+    LRF_clearAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
 
     /* Release power constraint to allow standby */
     hal_power_release_constraint();
@@ -154,7 +154,7 @@ int_fast16_t RCL_AdcNoise_get_samples_callback(uint32_t* buffer, uint32_t numWor
     RCL_CmdAdcNoiseGet *adcNoiseCmd = RCL_ADC_NOISE_CMD_PTR;
 
     /* Turn on BUFRAM before calling RCL_open, since the RCL_client resides in BUFRAM */
-    LRF_setAppClockEnable(DBELL_CLKCTL_BUFRAM_BM);
+    LRF_setAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
 
     /* Prevent the system from going to standby because BUFRAM doesn't have retention */
     hal_power_set_constraint();

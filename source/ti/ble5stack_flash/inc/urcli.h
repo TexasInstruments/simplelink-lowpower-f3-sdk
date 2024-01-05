@@ -80,7 +80,6 @@ extern "C"
 {
 #endif
 
-#include <rcl_settings_ble.h>
 #include <ll_common.h>
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>

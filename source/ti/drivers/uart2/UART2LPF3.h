@@ -155,11 +155,11 @@ typedef struct
     int32_t rxPinMux;                                   /*!< RX PIN mux value */
     int32_t ctsPinMux;                                  /*!< CTS PIN mux value for flow control */
     int32_t rtsPinMux;                                  /*!< RTS PIN mux value for flow control */
+    PowerLPF3_Resource powerID;                         /*!< Power driver ID for this UART instance */
     UART2LPF3_CodingScheme codingScheme;                /*!< UART TXD/RXD encoding/decoding scheme */
     uint8_t irLPClkDivider;                             /*!< Clock divider for IR Low-Power mode */
-    uint8_t powerID;                                    /*!< Power driver ID for this UART instance */
-    uint8_t txChannelEvtMux;                            /*!< Mux ID for this UART instance TX pin */
-    uint8_t rxChannelEvtMux;                            /*!< Mux ID for this UART instance RX pin */
+    uint8_t txChannelEvtMux;                            /*!< DMA Mux ID for this UART TX channel */
+    uint8_t rxChannelEvtMux;                            /*!< DMA Mux ID for this UART RX channel */
     bool concatenateFIFO;                               /*!< Concatenate RX and TX FIFO if write-only */
 } UART2LPF3_HWAttrs;
 

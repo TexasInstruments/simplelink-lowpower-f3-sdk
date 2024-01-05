@@ -84,7 +84,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble/freertos/iar/basic_ble_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "basic_ble",
         "description": "basic_ble",
         "kernel": [
@@ -107,6 +107,74 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_oad_dual_image/README.html",
+        "resourceType": "categoryInfo",
+        "name": "basic_ble_oad_dual_image",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_oad_dual_image/freertos/ticlang/basic_ble_oad_dual_image_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "basic_ble_oad_dual_image",
+        "description": "basic_ble_oad_dual_image",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "basic_ble_oad_dual_image",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -123,9 +191,9 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble/freertos/iar/basic_ble_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "basic_ble",
-        "description": "basic_ble",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_oad_dual_image/freertos/iar/basic_ble_oad_dual_image_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "basic_ble_oad_dual_image",
+        "description": "basic_ble_oad_dual_image",
         "kernel": [
             "freertos"
         ],
@@ -140,7 +208,7 @@
         ],
         "subCategories": [
             "BLE5-Stack",
-            "basic_ble",
+            "basic_ble_oad_dual_image",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -211,45 +279,6 @@
             "basic_ble_oad_offchip",
             "FreeRTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_oad_offchip/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "basic_ble_oad_offchip",
-        "description": "basic_ble_oad_offchip",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_ble_oad_offchip",
-            "FreeRTOS",
-            "IAR Compiler"
         ]
     },
     {
@@ -376,45 +405,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_oad_onchip/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "basic_ble_oad_onchip",
-        "description": "basic_ble_oad_onchip",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_ble_oad_onchip",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_oad_onchip/freertos/iar/basic_ble_oad_onchip_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "basic_ble_oad_onchip",
         "description": "basic_ble_oad_onchip",
@@ -503,45 +493,6 @@
             "basic_ble_profiles",
             "FreeRTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_profiles/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "basic_ble_profiles",
-        "description": "basic_ble_profiles",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_ble_profiles",
-            "FreeRTOS",
-            "IAR Compiler"
         ]
     },
     {
@@ -668,45 +619,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_ptm/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "basic_ble_ptm",
-        "description": "basic_ble_ptm",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_ble_ptm",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble_ptm/freertos/iar/basic_ble_ptm_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "basic_ble_ptm",
         "description": "basic_ble_ptm",
@@ -725,152 +637,6 @@
         "subCategories": [
             "BLE5-Stack",
             "basic_ble_ptm",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_dual_image/README.html",
-        "resourceType": "categoryInfo",
-        "name": "basic_dual_image",
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack"
-        ],
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ]
-    },
-    {
-        "resourceType": "project.ccs",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_dual_image/freertos/ticlang/basic_dual_image_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-        "name": "basic_dual_image",
-        "description": "basic_dual_image",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "ticlang"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_dual_image",
-            "FreeRTOS",
-            "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_dual_image/freertos/iar/basic_dual_image_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "basic_dual_image",
-        "description": "basic_dual_image",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_dual_image",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_dual_image/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "basic_dual_image",
-        "description": "basic_dual_image",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_dual_image",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -960,45 +726,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_persistent/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "basic_persistent",
-        "description": "basic_persistent",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "basic_persistent",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_persistent/freertos/iar/basic_persistent_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "basic_persistent",
         "description": "basic_persistent",
@@ -1061,45 +788,6 @@
             "connection_monitor",
             "FreeRTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/connection_monitor/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "connection_monitor",
-        "description": "connection_monitor",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "connection_monitor",
-            "FreeRTOS",
-            "IAR Compiler"
         ]
     },
     {
@@ -1249,45 +937,6 @@
         ]
     },
     {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/data_stream/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "data_stream",
-        "description": "data_stream",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "data_stream",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/host_test/README.html",
         "resourceType": "categoryInfo",
         "name": "host_test",
@@ -1353,45 +1002,6 @@
             "host_test",
             "FreeRTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/host_test/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "host_test",
-        "description": "host_test",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack",
-            "host_test",
-            "FreeRTOS",
-            "IAR Compiler"
         ]
     },
     {

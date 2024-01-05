@@ -58,7 +58,7 @@
 #include <port.h>
 #ifdef USE_RCL
 #include <urcli.h>
-#include "rcl_settings_ble.h"
+#include DeviceFamily_constructPath(inc/hw_fcfg.h)
 #else
 #include <urfi.h>
 #endif
@@ -916,7 +916,7 @@ void uble_getPublicAddr(uint8 *pPublicAddr)
  * @return  SUCCESS or bleMemAllocError
  */
 bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
-                               char *pMsg, uint16 len)
+                               uint8 *pMsg, uint16 len)
 {
   port_key_t key;
   ubleEvtMsg_t evtMsg;

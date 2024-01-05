@@ -3,14 +3,13 @@
         "metadataVersion": "3.0.0",
         "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
         "name": "SimpleLink Low Power F3 SDK",
-        "version": "7.20.01.10",
+        "version": "7.40.00.64",
         "type": "software",
         "devices": [
             "CC23x0"
         ],
         "image": "None",
         "description": "Welcome to the Low Power F3 SDK",
-        "allowPartialDownload": "false",
         "dependencies": [
             {
                 "packageId": "xdctools",
@@ -19,7 +18,7 @@
             },
             {
                 "packageId": "sysconfig",
-                "version": "1.17.0",
+                "version": "1.18.1",
                 "require": "optional"
             },
             {

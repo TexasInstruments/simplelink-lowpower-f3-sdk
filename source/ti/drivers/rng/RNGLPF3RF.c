@@ -300,6 +300,10 @@ static int_fast16_t RNGLPF3RF_getValidatedNumber(RNG_Handle handle,
 
     if (returnValue == RNG_STATUS_SUCCESS)
     {
+        /*
+         * Convert bit length to byte size by rounding up the number of bytes.
+         * Mask the extra bits from rounding up written in the destination buffer.
+         */
         byteSize        = (randomNumberBitLength + 7u) >> 3u;
         byteDestination = (uint8_t *)randomNumber;
         bitMask         = (2u << (((randomNumberBitLength + 7u) % 8u))) - 1u;

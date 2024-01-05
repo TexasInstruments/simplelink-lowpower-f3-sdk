@@ -117,7 +117,7 @@ extern ubleAntSwitchCB_t ubleAntSwitchSel;
  * EXTERNAL FUNCTIONS
  */
 extern bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
-                                      ubleMsg_t *pMsg, uint16 len);
+                                      uint8 *pMsg, uint16 len);
 extern dataEntryQ_t *ull_setupScanDataEntryQueue( void );
 extern dataEntryQ_t *ull_setupMonitorDataEntryQueue( void );
 

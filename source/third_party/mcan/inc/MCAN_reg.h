@@ -35,8 +35,8 @@
  *******************************************************************************
  */
 
-#ifndef third_party_mcan_mcan_reg__include
-#define third_party_mcan_mcan_reg__include
+#ifndef __MCAN_REG_H__
+#define __MCAN_REG_H__
 
 //*****************************************************************************
 //
@@ -2641,8 +2641,6 @@
 //
 // Rx Buffer Start Address. Configures the start address of the Rx Buffers
 // section in the Message RAM (32-bit word address).
-//
-// +I466
 #define MCAN_RXBC_RBSA_WIDTH 14U
 #define MCAN_RXBC_RBSA_MASK  0x0000FFFCU
 #define MCAN_RXBC_RBSA_SHIFT 2U
@@ -4947,4 +4945,4 @@
 #define MCAN_TXEFA_EFAI_MASK  0x0000001FU
 #define MCAN_TXEFA_EFAI_SHIFT 0U
 
-#endif /* third_party_mcan_mcan_reg__include */
+#endif /* __MCAN_REG_H__ */

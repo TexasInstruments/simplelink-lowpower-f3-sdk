@@ -153,8 +153,8 @@ int_fast16_t ANSIX936KDF_deriveKey(ANSIX936KDF_Handle handle,
     size_t outputBytesRemaining = outputLen;
     uint32_t bigEndianCounter;
     uint32_t counter;
-    uint32_t digest[SHA2_DIGEST_LENGTH_BYTES_256];
-    uint8_t *dest = (uint8_t *)output;
+    uint32_t digest[SHA2_DIGEST_LENGTH_BYTES_256] = {0};
+    uint8_t *dest                                 = (uint8_t *)output;
 
     if ((sharedInfo == NULL) && (sharedInfoLen != 0))
     {

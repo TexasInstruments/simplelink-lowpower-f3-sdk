@@ -326,6 +326,7 @@
 #include <stddef.h>
 
 #include <ti/drivers/utils/StructRingBuf.h>
+#include <ti/devices/DeviceFamily.h>
 
 #include <third_party/mcan/MCAN.h>
 
@@ -615,7 +616,7 @@ typedef struct
     CAN_EventCbk eventCbk; /*!< User supplied event callback */
     uint32_t eventMask;    /*!< User supplied event mask */
     void *userArg;         /*!< User supplied arg for callback */
-    uint32_t irqMask;      /*!< IRQ mask */
+    uint32_t intMask;      /*!< MCAN interrupt mask */
 
     uint32_t txBufNum;     /*!< Copy of the number of dedicated Tx Buffer elements */
     uint32_t txFIFOQNum;   /*!< Copy of the number of Tx buffer elements to use for Tx FIFO or Queue */
@@ -637,16 +638,23 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t enableCANFD;           /*!< Set to 1 to enable CAN FD */
-    uint32_t enableBRS;             /*!< Set to 1 to enable CAN FD bit rate switching */
-    uint32_t nominalBitRate;        /*!< Bit rate for arbitration */
-    uint32_t dataBitRate;           /*!< Bit rate for CAN-FD data phase */
-    uint32_t rejectNonMatchingMsgs; /*!< Set to 1 to reject incoming messages that do not match a filter */
+    bool enableCANFD;           /*!< Set to true to enable CAN FD */
+    bool enableBRS;             /*!< Set to true to enable CAN FD bit rate switching */
+    bool rejectNonMatchingMsgs; /*!< Set to true to reject incoming messages that do not match a filter */
+    uint32_t nominalBitRate;    /*!< Bit rate for arbitration */
+    uint32_t dataBitRate;       /*!< Bit rate for CAN-FD data phase */
 
     void *rxRingBufPtr;   /*!< Pointer to Rx ring buffer */
     void *txRingBufPtr;   /*!< Pointer to Tx ring buffer */
     size_t rxRingBufSize; /*!< Number of Rx ring buffer elements */
     size_t txRingBufSize; /*!< Number of Tx ring buffer elements */
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    uint32_t intPriority; /*!< Interrupt priority */
+    uint32_t rxPinMux;    /*!< Receive pin mux */
+    uint32_t txPinMux;    /*!< Transmit pin mux */
+    uint_least8_t rxPin;  /*!< Receive pin */
+    uint_least8_t txPin;  /*!< Transmit pin */
+#endif
 } CAN_HWAttrs;
 
 /*!

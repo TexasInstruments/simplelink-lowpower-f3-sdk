@@ -47,16 +47,16 @@
 #include <ti/drivers/rcl/commands/generic.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/txf_regs.h)
-#include DeviceFamily_constructPath(driverlib/rxf_regs.h)
-#include DeviceFamily_constructPath(driverlib/dbell_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe32_regs.h)
-#include DeviceFamily_constructPath(driverlib/mdm_regs.h)
-#include DeviceFamily_constructPath(driverlib/rfe_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_generic_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_common_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/pbe_generic_regdef_regs.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdtxf.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrxf.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdpbe32.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdmdm.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrfe.h)
+#include DeviceFamily_constructPath(inc/pbe_generic_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_generic_regdef_regs.h)
 
 /** Polynomial to use for PRBS15 data */
 #define RCL_HANDLER_GENERIC_PRBS15_POLY            0x80020000
@@ -155,7 +155,7 @@ RCL_Events RCL_Handler_Generic_Fs(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         cmd->status = RCL_CommandStatus_Active;
         /* Default end status */
         genericHandlerState.common.endStatus = RCL_CommandStatus_Finished;
-        S_PBE_GENERIC_RAM_OPCFG = 0 << PBE_GENERIC_RAM_OPCFG_START;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = 0 << PBE_GENERIC_RAM_OPCFG_START_S;
 
         RCL_CommandStatus startTimeStatus = RCL_Scheduler_setStartStopTimeEarliestStart(cmd, earliestStartTime);
         if (startTimeStatus >= RCL_CommandStatus_Finished)
@@ -166,12 +166,12 @@ RCL_Events RCL_Handler_Generic_Fs(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         else
         {
             /* Enable interrupts */
-            S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
-            Log(RclCore, Log_INFO5, "Starting FS");
+            Log_printf(RclCore, Log_VERBOSE, "Starting FS");
             LRF_waitForTopsmReady();
-            S_PBE_API = PBE_GENERIC_REGDEF_API_OP_FS;
+            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_FS;
         }
     }
 
@@ -200,7 +200,7 @@ RCL_Events RCL_Handler_Generic_Fs(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
             RCL_CommandStatus endStatus = genericHandlerState.common.endStatus;
             if (endStatus == RCL_CommandStatus_Finished)
             {
-                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
             else
             {
@@ -244,15 +244,15 @@ RCL_Events RCL_Handler_Generic_FsOff(RCL_Command *cmd, LRF_Events lrfEvents, RCL
         }
         else
         {
-            S_PBE_GENERIC_RAM_OPCFG = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = 0;
 
             /* Enable interrupts */
-            S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
-            Log(RclCore, Log_INFO5, "Turning off FS");
+            Log_printf(RclCore, Log_VERBOSE, "Turning off FS");
             LRF_waitForTopsmReady();
-            S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOPFS;
+            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
         }
     }
 
@@ -266,7 +266,7 @@ RCL_Events RCL_Handler_Generic_FsOff(RCL_Command *cmd, LRF_Events lrfEvents, RCL
         }
         else if (lrfEvents.opError != 0)
         {
-            cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+            cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             rclEvents.lastCmdDone = 1;
         }
         else
@@ -296,7 +296,7 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
 
-        if ((txCmd->rfFrequency == 0) && ((S_RFE_SPARE4 & 0x0001) == 0))
+        if ((txCmd->rfFrequency == 0) && ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x0001) == 0))
         {
             /* Synth not to be programmed, but not already locked */
             cmd->status = RCL_CommandStatus_Error_Synth;
@@ -304,32 +304,32 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         }
         else
         {
-            S_PBE32_MDMSYNCA = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
             uint32_t opCfgVal =
-                (0 << PBE_GENERIC_RAM_OPCFG_TXINFINITE) |
-                (0 << PBE_GENERIC_RAM_OPCFG_TXPATTERN) |
-                (2 << PBE_GENERIC_RAM_OPCFG_TXFCMD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_START) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATNOK) |
-                (0 << PBE_GENERIC_RAM_OPCFG_NEXTOP) |
-                (1 << PBE_GENERIC_RAM_OPCFG_SINGLE) |
-                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL);
+                (0 << PBE_GENERIC_RAM_OPCFG_TXINFINITE_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_TXPATTERN_S) |
+                (2 << PBE_GENERIC_RAM_OPCFG_TXFCMD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_START_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_NEXTOP_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_SINGLE_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL_S);
 
             if (txCmd->config.fsOff != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
             if (txCmd->rfFrequency != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
 
-            S_PBE_GENERIC_RAM_OPCFG = opCfgVal;
-            S_PBE_GENERIC_RAM_NESB = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF << PBE_GENERIC_RAM_NESB_NESBMODE);
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -371,13 +371,13 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                 else
                 {
                     /* Enable interrupts */
-                    S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+                    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
 
                     /* Post cmd */
-                    Log(RclCore, Log_INFO5, "Starting TX");
+                    Log_printf(RclCore, Log_VERBOSE, "Starting TX");
                     LRF_waitForTopsmReady();
                     RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-                    S_PBE_API = PBE_GENERIC_REGDEF_API_OP_TX;
+                    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
                 }
             }
         }
@@ -407,7 +407,7 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
             RCL_CommandStatus endStatus = genericHandlerState.common.endStatus;
             if (endStatus == RCL_CommandStatus_Finished)
             {
-                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
             else
             {
@@ -442,7 +442,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
 
-        if ((txCmd->rfFrequency == 0) && ((S_RFE_SPARE4 & 0x0001) == 0))
+        if ((txCmd->rfFrequency == 0) && ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x0001) == 0))
         {
             /* Synth not to be programmed, but not already locked */
             cmd->status = RCL_CommandStatus_Error_Synth;
@@ -456,31 +456,31 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
         }
         else
         {
-            S_PBE32_MDMSYNCA = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
             /* Handle FS off in the end, so disable it in PBE */
             uint32_t opCfgVal =
-                (0 << PBE_GENERIC_RAM_OPCFG_TXINFINITE) |
-                (0 << PBE_GENERIC_RAM_OPCFG_TXPATTERN) |
-                (1 << PBE_GENERIC_RAM_OPCFG_TXFCMD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_START) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON) |
-                (0 << PBE_GENERIC_RAM_OPCFG_NEXTOP) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK) |
-                (1 << PBE_GENERIC_RAM_OPCFG_SINGLE) |
-                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL);
+                (0 << PBE_GENERIC_RAM_OPCFG_TXINFINITE_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_TXPATTERN_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_TXFCMD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_START_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_NEXTOP_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_SINGLE_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL_S);
 
             if (txCmd->rfFrequency != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
             if (txCmd->config.fsRecal != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
-            S_PBE_GENERIC_RAM_OPCFG = opCfgVal;
-            S_PBE_GENERIC_RAM_NESB = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF << PBE_GENERIC_RAM_NESB_NESBMODE);
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -567,25 +567,25 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
                 runTx = false;
             }
             else {
-                /* Retry TX FIFO */
-                S_PBE_FCMD = PBE_FCMD_DATA_TXFIFO_RETRY;
+                /* Retry TX FIFO. Writing to FCMD is safe because PBE is finished, ref. RCL-367 */
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_TXFIFO_RETRY;
 
                 if (txCmd->numPackets == 0 || genericHandlerState.tx.txCount < txCmd->numPackets)
                 {
                     /* Reset PBE */
-                    S_PBE_INIT = 1 << PBE_INIT_TOPSM;
+                    HWREG(LRFDPBE_BASE + LRFDPBE_O_INIT) = 1 << LRFDPBE_INIT_TOPSM_S;
 
                     runTx = true;
                     if (rclEventsIn.hardStop != 0)
                     {
-                        genericHandlerState.common.endStatus = RCL_CommandStatus_HardStop;
+                        genericHandlerState.common.endStatus = RCL_Scheduler_findStopStatus(RCL_StopType_Hard);
                         runTx = false;
                     }
-                    else if (S_PBE_COMMON_RAM_ENDCAUSE == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP ||
+                    else if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE) == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP ||
                              genericHandlerState.tx.gracefulStopObserved ||
                              rclEventsIn.gracefulStop != 0)
                     {
-                        genericHandlerState.common.endStatus = RCL_CommandStatus_GracefulStop;
+                        genericHandlerState.common.endStatus = RCL_Scheduler_findStopStatus(RCL_StopType_Graceful);
                         runTx = false;
                     }
                     else {
@@ -607,9 +607,9 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
                 }
                 else
                 {
-                    if (S_PBE_COMMON_RAM_ENDCAUSE == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP)
+                    if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE) == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP)
                     {
-                        genericHandlerState.common.endStatus = RCL_CommandStatus_GracefulStop;
+                        genericHandlerState.common.endStatus = RCL_Scheduler_findStopStatus(RCL_StopType_Graceful);
                     }
                     runTx = false;
                 }
@@ -620,7 +620,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
                 {
                     /* Send stop FS */
                     LRF_waitForTopsmReady();
-                    S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOPFS;
+                    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
                     genericHandlerState.tx.stopFs = true;
                 }
                 else {
@@ -633,15 +633,15 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
         {
             if (genericHandlerState.common.endStatus == RCL_CommandStatus_Finished)
             {
-                genericHandlerState.common.endStatus = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                genericHandlerState.common.endStatus = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
 
             if (!genericHandlerState.tx.stopFs && txCmd->config.fsRecal == 0 && txCmd->config.fsOff != 0 &&
-                (S_RFE_SPARE4 & 0x01) != 0)
+                (HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x01) != 0)
             {
                 /* Synth was turned on, but should be off. Send stop FS */
                 LRF_waitForTopsmReady();
-                S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOPFS;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
                 genericHandlerState.tx.stopFs = true;
             }
             else
@@ -661,7 +661,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
             if (txCount != 0 && txCmd->config.fsRecal == 0)
             {
                 /* Frequency programming only for the first packet */
-                S_PBE_GENERIC_RAM_OPCFG |= PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM;
+                HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) | PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M;
             }
             txCount++;
             if (txCount != 0)
@@ -670,13 +670,13 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
                 genericHandlerState.tx.txCount = txCount;
             }
             /* Enable interrupts */
-            S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
-            Log(RclCore, Log_INFO5, "Starting TX");
+            Log_printf(RclCore, Log_VERBOSE, "Starting TX");
 
             LRF_waitForTopsmReady();
-            S_PBE_API = PBE_GENERIC_REGDEF_API_OP_TX;
+            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
         }
     }
     if (rclEvents.lastCmdDone != 0)
@@ -703,7 +703,7 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
         genericHandlerState.txTest.restoreOpt = RCL_HANDLER_GENERIC_RESTORE_NONE;
-        if ((txCmd->rfFrequency == 0) && ((S_RFE_SPARE4 & 0x0001) == 0))
+        if ((txCmd->rfFrequency == 0) && ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x0001) == 0))
         {
             /* Synth not to be programmed, but not already locked */
             cmd->status = RCL_CommandStatus_Error_Synth;
@@ -712,29 +712,29 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
         else
         {
             uint32_t opCfgVal =
-                (1 << PBE_GENERIC_RAM_OPCFG_TXINFINITE) |
-                (1 << PBE_GENERIC_RAM_OPCFG_TXPATTERN) |
-                (0 << PBE_GENERIC_RAM_OPCFG_TXFCMD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_START) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK) |
-                (0 << PBE_GENERIC_RAM_OPCFG_NEXTOP) |
-                (1 << PBE_GENERIC_RAM_OPCFG_SINGLE) |
-                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL);
+                (1 << PBE_GENERIC_RAM_OPCFG_TXINFINITE_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_TXPATTERN_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_TXFCMD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_START_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_NEXTOP_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_SINGLE_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL_S);
 
             if (txCmd->config.fsOff != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
             if (txCmd->rfFrequency != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
 
-            S_PBE_GENERIC_RAM_OPCFG = opCfgVal;
-            S_PBE_GENERIC_RAM_NESB = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF << PBE_GENERIC_RAM_NESB_NESBMODE);
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -748,10 +748,10 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
             }
 
             /* Enter configuration */
-            S_PBE_GENERIC_RAM_PATTERN = txCmd->config.txWord;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PATTERN) = txCmd->config.txWord;
             if (txCmd->config.sendCw != 0)
             {
-                S_MDM_MODCTRL |= MDM_MODCTRL_TONEINSERT_BM;
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) | LRFDMDM_MODCTRL_TONEINSERT_M;
                 genericHandlerState.txTest.restoreOpt = RCL_HANDLER_GENERIC_RESTORE_MODCTRL;
             }
             else
@@ -761,30 +761,30 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 if (whitenMode == RCL_CMD_GENERIC_WH_MODE_NONE)
                 {
                     genericHandlerState.txTest.restoreOpt = RCL_HANDLER_GENERIC_RESTORE_WHITEN_INIT;
-                    genericHandlerState.txTest.storedWhitenInit = S_PBE_GENERIC_RAM_WHITEINIT;
-                    S_PBE_GENERIC_RAM_WHITEINIT = 0;
+                    genericHandlerState.txTest.storedWhitenInit = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT);
+                    HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = 0;
                     /* Use pattern as sync word */
-                    S_PBE32_MDMSYNCA = RCL_Handler_Generic_updateSyncWord(txCmd->config.txWord | (txCmd->config.txWord << 16));
+                    HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->config.txWord | (txCmd->config.txWord << 16));
                 }
                 else
                 {
                     if (whitenMode >= RCL_CMD_GENERIC_WH_MODE_PRBS15)
                     {
                         genericHandlerState.txTest.restoreOpt = RCL_HANDLER_GENERIC_RESTORE_WHITEN_POLY | RCL_HANDLER_GENERIC_RESTORE_WHITEN_INIT;
-                        genericHandlerState.txTest.storedWhitenPoly = S_PBE32_POLY0;
-                        genericHandlerState.txTest.storedWhitenInit = S_PBE_GENERIC_RAM_WHITEINIT;
+                        genericHandlerState.txTest.storedWhitenPoly = HWREG_READ_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0);
+                        genericHandlerState.txTest.storedWhitenInit = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT);
                         if (whitenMode > RCL_CMD_GENERIC_WH_MODE_PRBS15)
                         {
-                            S_PBE32_POLY0 = RCL_HANDLER_GENERIC_PRBS15_POLY;
+                            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = RCL_HANDLER_GENERIC_PRBS15_POLY;
                         }
                         else
                         {
-                            S_PBE32_POLY0 = RCL_HANDLER_GENERIC_PRBS32_POLY;
+                            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = RCL_HANDLER_GENERIC_PRBS32_POLY;
                         }
-                        S_PBE_GENERIC_RAM_WHITEINIT = RCL_HANDLER_GENERIC_PRBS_INIT;
+                        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = RCL_HANDLER_GENERIC_PRBS_INIT;
                     }
                     /* Use pseudo-random sync word (not necessarily matching selected PRBS) */
-                    S_PBE32_MDMSYNCA = RCL_HANDLER_GENERIC_PRBS_SYNC;
+                    HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_HANDLER_GENERIC_PRBS_SYNC;
                 }
             }
             /* Enable radio */
@@ -805,13 +805,13 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 }
 
                 /* Enable interrupts */
-                S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
 
                 /* Post cmd */
-                Log(RclCore, Log_INFO5, "Starting infinite TX");
+                Log_printf(RclCore, Log_VERBOSE, "Starting infinite TX");
 
                 LRF_waitForTopsmReady();
-                S_PBE_API = PBE_GENERIC_REGDEF_API_OP_TX;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
             }
         }
     }
@@ -832,7 +832,7 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
             RCL_CommandStatus endStatus = genericHandlerState.common.endStatus;
             if (endStatus == RCL_CommandStatus_Finished)
             {
-                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
             else
             {
@@ -851,15 +851,15 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
         LRF_disable();
         RCL_Handler_Generic_setSynthPowerState(txCmd->config.fsOff);
         if ((genericHandlerState.txTest.restoreOpt & RCL_HANDLER_GENERIC_RESTORE_MODCTRL) != 0)        {
-            S_MDM_MODCTRL &= ~MDM_MODCTRL_TONEINSERT_BM;
+            HWREG(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) & (~LRFDMDM_MODCTRL_TONEINSERT_M);
         }
         if ((genericHandlerState.txTest.restoreOpt & RCL_HANDLER_GENERIC_RESTORE_WHITEN_INIT) != 0)
         {
-            S_PBE_GENERIC_RAM_WHITEINIT = genericHandlerState.txTest.storedWhitenInit;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = genericHandlerState.txTest.storedWhitenInit;
         }
         if ((genericHandlerState.txTest.restoreOpt & RCL_HANDLER_GENERIC_RESTORE_WHITEN_POLY) != 0)
         {
-            S_PBE32_POLY0 = genericHandlerState.txTest.storedWhitenPoly;
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = genericHandlerState.txTest.storedWhitenPoly;
         }
     }
 
@@ -881,7 +881,7 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
 
-        if ((rxCmd->rfFrequency == 0) && ((S_RFE_SPARE4 & 0x0001) == 0))
+        if ((rxCmd->rfFrequency == 0) && ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x0001) == 0))
         {
             /* Synth not to be programmed, but not already locked */
             cmd->status = RCL_CommandStatus_Error_Synth;
@@ -889,63 +889,63 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         }
         else
         {
-            S_PBE32_MDMSYNCA = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
-            S_PBE32_MDMSYNCB = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
             uint32_t opCfgVal =
-                (0 << PBE_GENERIC_RAM_OPCFG_RXFILTEROP) |
-                (1 << PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR) |
-                (1 << PBE_GENERIC_RAM_OPCFG_RXREPEATNOK) |
-                (0 << PBE_GENERIC_RAM_OPCFG_START) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL) |
-                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON) |
-                (1 << PBE_GENERIC_RAM_OPCFG_NEXTOP) |
-                (0 << PBE_GENERIC_RAM_OPCFG_SINGLE) |
-                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK) |
-                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL);
+                (0 << PBE_GENERIC_RAM_OPCFG_RXFILTEROP_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_START_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_NOCAL_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_FS_KEEPON_S) |
+                (1 << PBE_GENERIC_RAM_OPCFG_NEXTOP_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_SINGLE_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_IFSPERIOD_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RXREPEATOK_S) |
+                (0 << PBE_GENERIC_RAM_OPCFG_RFINTERVAL_S);
 
             if (rxCmd->config.fsOff != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
             if (rxCmd->rfFrequency != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
             if (rxCmd->config.repeated)
             {
-                opCfgVal |= PBE_GENERIC_RAM_OPCFG_RFINTERVAL_BM;
+                opCfgVal |= PBE_GENERIC_RAM_OPCFG_RFINTERVAL_M;
             }
             else
             {
-                opCfgVal |= PBE_GENERIC_RAM_OPCFG_SINGLE_BM;
+                opCfgVal |= PBE_GENERIC_RAM_OPCFG_SINGLE_M;
             }
 
-            S_PBE_GENERIC_RAM_OPCFG = opCfgVal;
-            S_PBE_GENERIC_RAM_NESB = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF << PBE_GENERIC_RAM_NESB_NESBMODE);
-            S_PBE_GENERIC_RAM_MAXLEN = rxCmd->maxPktLen;
-            S_PBE_GENERIC_RAM_RXTIMEOUT = 0; /* No timeout except from SYSTIM */
-            S_PBE_GENERIC_RAM_FIRSTRXTIMEOUT = 0; /* No timeout except from SYSTIM */
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = rxCmd->maxPktLen;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 0; /* No timeout except from SYSTIM */
 
             /* If needed, configure demodulator correlator engine for syncwordA and syncwordB */
             if (rxCmd->config.disableSyncA != 0 || rxCmd->config.disableSyncB != 0)
             {
-                uint16_t demc1be1 = S_MDM_DEMC1BE1;
-                uint16_t demc1be2 = S_MDM_DEMC1BE2;
+                uint16_t demc1be1 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1);
+                uint16_t demc1be2 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2);
                 genericHandlerState.rx.restoreThresh = true;
                 genericHandlerState.rx.demc1be1 = demc1be1;
                 genericHandlerState.rx.demc1be2 = demc1be2;
                 if (rxCmd->config.disableSyncA != 0)
                 {
-                    demc1be1 = (demc1be1 & ~MDM_DEMC1BE1_THRESHOLDA_BM) | (0x7F << MDM_DEMC1BE1_THRESHOLDA);
-                    demc1be2 = (demc1be2 & ~MDM_DEMC1BE2_THRESHOLDC_BM) | (0x7F << MDM_DEMC1BE2_THRESHOLDC);
+                    demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDA_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDA_S);
+                    demc1be2 = (demc1be2 & ~LRFDMDM_DEMC1BE2_THRESHOLDC_M) | (0x7F << LRFDMDM_DEMC1BE2_THRESHOLDC_S);
                 }
                 if (rxCmd->config.disableSyncB != 0)
                 {
-                    demc1be1 = (demc1be1 & ~MDM_DEMC1BE1_THRESHOLDB_BM) | (0x7F << MDM_DEMC1BE1_THRESHOLDB);
+                    demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDB_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDB_S);
                 }
-                S_MDM_DEMC1BE1 = demc1be1;
-                S_MDM_DEMC1BE2 = demc1be2;
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
             }
             else
             {
@@ -991,16 +991,16 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                 }
 
                 /* Enable interrupts */
-                uint16_t fifoCfg = S_PBE_GENERIC_RAM_FIFOCFG;
-                S_DBELL_IMASK0 |= RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
-                                                                           LRF_EventRxOk.value | LRF_EventRxNok.value,
-                                                                           fifoCfg);
+                uint16_t fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIFOCFG);
+                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |
+                                                                            RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
+                                                                                                                     LRF_EventRxOk.value | LRF_EventRxNok.value, fifoCfg);
 
                 /* Post cmd */
-                Log(RclCore, Log_INFO5, "Starting Rx");
+                Log_printf(RclCore, Log_VERBOSE, "Starting Rx");
                 LRF_waitForTopsmReady();
                 RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-                S_PBE_API = PBE_GENERIC_REGDEF_API_OP_RX;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_RX;
             }
         }
     }
@@ -1010,7 +1010,7 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         {
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
-            while (S_PBE_RXFREADABLE >= 4)
+            while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) >= 4)
             {
                 /* Check length of received buffer by peeking */
                 uint32_t fifoWord = LRF_peekRxFifo(0);
@@ -1030,7 +1030,7 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                             /* Error */
                             genericHandlerState.common.endStatus = RCL_CommandStatus_Error_RxBufferCorruption;
                             /* Send abort */
-                            S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOP;
+                            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
                             /* Do not check for more packets from the RX FIFO */
                             break;
                         }
@@ -1070,11 +1070,11 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
             rclEvents.lastCmdDone = 1;
             if (lrfEvents.opError != 0 && endStatus == RCL_CommandStatus_Finished)
             {
-                endStatus = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                endStatus = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
-            else if (S_PBE_COMMON_RAM_ENDCAUSE == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP)
+            else if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE) == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP)
             {
-                endStatus = RCL_CommandStatus_GracefulStop;
+                endStatus = RCL_Scheduler_findStopStatus(RCL_StopType_Graceful);
             }
             cmd->status = endStatus;
             RCL_Profiling_eventHook(RCL_ProfilingEvent_PostprocStart);
@@ -1101,8 +1101,8 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         /* Restore changed thresholds */
         if (genericHandlerState.rx.restoreThresh)
         {
-            S_MDM_DEMC1BE1 = genericHandlerState.rx.demc1be1;
-            S_MDM_DEMC1BE2 = genericHandlerState.rx.demc1be2;
+            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
+            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
 
         }
     }
@@ -1135,11 +1135,11 @@ RCL_Events RCL_Handler_Generic_PbeOperation(RCL_Command *cmd, LRF_Events lrfEven
         else
         {
             /* Enable interrupts */
-            S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
             LRF_waitForTopsmReady();
-            S_PBE_API = pbeCmd->pbeOperation;
+            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = pbeCmd->pbeOperation;
         }
     }
 
@@ -1152,7 +1152,7 @@ RCL_Events RCL_Handler_Generic_PbeOperation(RCL_Command *cmd, LRF_Events lrfEven
         }
         else if (lrfEvents.opError != 0)
         {
-            cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+            cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             rclEvents.lastCmdDone = 1;
         }
         else
@@ -1184,7 +1184,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
 
-        if ((txCmd->rfFrequency == 0) && ((S_RFE_SPARE4 & 0x0001) == 0))
+        if ((txCmd->rfFrequency == 0) && ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x0001) == 0))
         {
             /* Synth not to be programmed, but not already locked */
             cmd->status = RCL_CommandStatus_Error_Synth;
@@ -1192,49 +1192,49 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
         }
         else
         {
-            S_PBE32_MDMSYNCA = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
-            S_PBE32_MDMSYNCB = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
 
-            uint32_t opCfgVal = (PBE_GENERIC_RAM_OPCFG_NEXTOP_SWITCH << PBE_GENERIC_RAM_OPCFG_NEXTOP) |
-                                (PBE_GENERIC_RAM_OPCFG_TXFCMD_NONE << PBE_GENERIC_RAM_OPCFG_TXFCMD) |
-                                (PBE_GENERIC_RAM_OPCFG_FS_NOCAL_NOCAL << PBE_GENERIC_RAM_OPCFG_FS_NOCAL) |
-                                (PBE_GENERIC_RAM_OPCFG_FS_KEEPON_YES << PBE_GENERIC_RAM_OPCFG_FS_KEEPON) |
-                                (PBE_GENERIC_RAM_OPCFG_IFSPERIOD_EN << PBE_GENERIC_RAM_OPCFG_IFSPERIOD) |
-                                (PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_YES << PBE_GENERIC_RAM_OPCFG_RXREPEATNOK) |
-                                (PBE_GENERIC_RAM_OPCFG_RXREPEATOK_YES << PBE_GENERIC_RAM_OPCFG_RXREPEATOK) |
-                                (PBE_GENERIC_RAM_OPCFG_RFINTERVAL_DIS << PBE_GENERIC_RAM_OPCFG_RFINTERVAL) |
-                                (PBE_GENERIC_RAM_OPCFG_SINGLE_DIS << PBE_GENERIC_RAM_OPCFG_SINGLE) |
-                                (PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR_YES << PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR);
+            uint32_t opCfgVal = (PBE_GENERIC_RAM_OPCFG_NEXTOP_SWITCH) |
+                                (PBE_GENERIC_RAM_OPCFG_TXFCMD_NONE) |
+                                (PBE_GENERIC_RAM_OPCFG_FS_NOCAL_NOCAL) |
+                                (PBE_GENERIC_RAM_OPCFG_FS_KEEPON_YES) |
+                                (PBE_GENERIC_RAM_OPCFG_IFSPERIOD_EN) |
+                                (PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_YES) |
+                                (PBE_GENERIC_RAM_OPCFG_RXREPEATOK_YES) |
+                                (PBE_GENERIC_RAM_OPCFG_RFINTERVAL_DIS) |
+                                (PBE_GENERIC_RAM_OPCFG_SINGLE_DIS) |
+                                (PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR_YES);
 
             if (txCmd->config.fsOff != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
             if (txCmd->rfFrequency != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
             if (txCmd->config.autoRetransmitMode != 0)
             {
-                opCfgVal |= (PBE_GENERIC_RAM_OPCFG_TXFCMD_RETRY << PBE_GENERIC_RAM_OPCFG_TXFCMD);
+                opCfgVal |= (PBE_GENERIC_RAM_OPCFG_TXFCMD_RETRY);
             }
             else
             {
-                opCfgVal |= (PBE_GENERIC_RAM_OPCFG_TXFCMD_DEALLOC << PBE_GENERIC_RAM_OPCFG_TXFCMD);
+                opCfgVal |= (PBE_GENERIC_RAM_OPCFG_TXFCMD_DEALLOC);
             }
 
             /* Enable NESB mode */
-            uint32_t nesbVal = (PBE_GENERIC_RAM_NESB_NESBMODE_ON << PBE_GENERIC_RAM_NESB_NESBMODE);
+            uint32_t nesbVal = (PBE_GENERIC_RAM_NESB_NESBMODE_ON);
 
-            uint32_t seqStat0Val = (txCmd->config.autoRetransmitMode << PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO)
-                                    & PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_BM;
+            uint32_t seqStat0Val = (txCmd->config.autoRetransmitMode << PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_S)
+                                    & PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_M;
 
-            S_PBE_GENERIC_RAM_FIRSTRXTIMEOUT = 2500;
-            S_PBE_GENERIC_RAM_RXTIMEOUT = 800;
-            S_PBE_GENERIC_RAM_MAXLEN = 255;
-            S_PBE_GENERIC_RAM_OPCFG = opCfgVal;
-            S_PBE_GENERIC_RAM_NESB = nesbVal;
-            S_PBE_GENERIC_RAM_SEQSTAT0 = seqStat0Val;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 2500;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 800;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = 255;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = nesbVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) = seqStat0Val;
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -1310,7 +1310,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
         {
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
-            while (S_PBE_RXFREADABLE >= 4)
+            while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) >= 4)
             {
                 /* Check length of received buffer by peeking */
                 uint32_t fifoWord = LRF_peekRxFifo(0);
@@ -1332,7 +1332,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
                         /* Error */
                         genericHandlerState.common.endStatus = RCL_CommandStatus_Error_RxBufferCorruption;
                         /* Send abort */
-                        S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOP;
+                        HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
                         /* Do not check for more packets from the RX FIFO */
                         break;
                     }
@@ -1361,12 +1361,12 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
         {
             rclEvents.cmdStarted = 1;
         }
-        if (lrfEvents.opDone != 0 || lrfEvents.rxIgnored != 0)
+        if (lrfEvents.opDone != 0)
         {
-            /* Retry TX FIFO in case a retransmission is necessary */
-            S_PBE_FCMD = PBE_FCMD_DATA_TXFIFO_RETRY;
+            /* Retry TX FIFO. Writing to FCMD is safe because PBE is finished, ref. RCL-367 */
+            HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_TXFIFO_RETRY;
 
-            uint16_t endCause = S_PBE_COMMON_RAM_ENDCAUSE;
+            uint16_t endCause = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE);
 
             if (endCause == PBE_COMMON_RAM_ENDCAUSE_STAT_ENDOK)
             {
@@ -1390,18 +1390,18 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
             else if (endCause == PBE_COMMON_RAM_ENDCAUSE_STAT_NOSYNC || lrfEvents.rxIgnored != 0)
             {
                 /* Reset PBE */
-                S_PBE_INIT = 1 << PBE_INIT_TOPSM;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_INIT) = 1 << LRFDPBE_INIT_TOPSM_S;
 
                 /* Attempt to retransmit the packet */
                 if (genericHandlerState.tx.txCount <= txCmd->maxRetrans)
                 {
-                    Log(RclCore, Log_INFO5, "PTX needs to retransmit");
+                    Log_printf(RclCore, Log_VERBOSE, "PTX needs to retransmit");
 
                     /* Set a new transmit time according to retransDelay. If unattainable, retransmit as soon as possible */
                     RCL_CommandStatus startTimeStatus = RCL_Scheduler_setNewStartRelTime(txCmd->retransDelay);
                     if (startTimeStatus >= RCL_CommandStatus_Finished)
                     {
-                        Log(RclCore, Log_INFO5, "Unattainable retranmission delay. Retransmitting as soon as possible");
+                        Log_printf(RclCore, Log_VERBOSE, "Unattainable retranmission delay. Retransmitting as soon as possible");
                         RCL_Scheduler_setNewStartNow();
                     }
                     runTx = true;
@@ -1421,7 +1421,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
 
             if (endStatus == RCL_CommandStatus_Finished)
             {
-                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                cmd->status = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
             else
             {
@@ -1448,22 +1448,20 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
             /* Enable interrupts */
             if (listenAck)
             {
-                uint16_t fifoCfg = S_PBE_GENERIC_RAM_FIFOCFG;
-                S_DBELL_IMASK0 |= RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value |
-                                                                            LRF_EventOpError.value |
-                                                                            LRF_EventRxOk.value |
-                                                                            LRF_EventRxNok.value,
-                                                                            fifoCfg);
+                uint16_t fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIFOCFG);
+                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |
+                                                             RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
+                                                                                                      LRF_EventRxOk.value | LRF_EventRxNok.value, fifoCfg);
             }
             else
             {
-                S_DBELL_IMASK0 |= LRF_EventOpDone.value | LRF_EventOpError.value;
+                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
             }
             /* Post cmd */
-            Log(RclCore, Log_INFO5, "Start of PTX operation");
+            Log_printf(RclCore, Log_VERBOSE, "Start of PTX operation");
             LRF_waitForTopsmReady();
             RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-            S_PBE_API = PBE_GENERIC_REGDEF_API_OP_TX;
+            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
         }
     }
     if (rclEvents.lastCmdDone != 0)
@@ -1491,7 +1489,7 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
 
-        if ((rxCmd->rfFrequency == 0) && ((S_RFE_SPARE4 & 0x0001) == 0))
+        if ((rxCmd->rfFrequency == 0) && ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE4) & 0x0001) == 0))
         {
             /* Synth not to be programmed, but not already locked */
             cmd->status = RCL_CommandStatus_Error_Synth;
@@ -1499,91 +1497,91 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
         }
         else
         {
-            S_PBE32_MDMSYNCA = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
-            S_PBE32_MDMSYNCB = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
+            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
 
-            uint32_t opCfgVal = (PBE_GENERIC_RAM_OPCFG_NEXTOP_SWITCH << PBE_GENERIC_RAM_OPCFG_NEXTOP) |
-                                (PBE_GENERIC_RAM_OPCFG_TXFCMD_RETRY << PBE_GENERIC_RAM_OPCFG_TXFCMD) |
-                                (PBE_GENERIC_RAM_OPCFG_FS_NOCAL_NOCAL << PBE_GENERIC_RAM_OPCFG_FS_NOCAL) |
-                                (PBE_GENERIC_RAM_OPCFG_FS_KEEPON_YES << PBE_GENERIC_RAM_OPCFG_FS_KEEPON) |
-                                (PBE_GENERIC_RAM_OPCFG_IFSPERIOD_EN << PBE_GENERIC_RAM_OPCFG_IFSPERIOD) |
-                                (PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_NO << PBE_GENERIC_RAM_OPCFG_RXREPEATNOK) |
-                                (PBE_GENERIC_RAM_OPCFG_RXREPEATOK_NO << PBE_GENERIC_RAM_OPCFG_RXREPEATOK) |
-                                (PBE_GENERIC_RAM_OPCFG_RFINTERVAL_DIS << PBE_GENERIC_RAM_OPCFG_RFINTERVAL) |
-                                (PBE_GENERIC_RAM_OPCFG_SINGLE_DIS << PBE_GENERIC_RAM_OPCFG_SINGLE) |
-                                (PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR_YES << PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR);
+            uint32_t opCfgVal = (PBE_GENERIC_RAM_OPCFG_NEXTOP_SWITCH) |
+                                (PBE_GENERIC_RAM_OPCFG_TXFCMD_RETRY) |
+                                (PBE_GENERIC_RAM_OPCFG_FS_NOCAL_NOCAL) |
+                                (PBE_GENERIC_RAM_OPCFG_FS_KEEPON_YES) |
+                                (PBE_GENERIC_RAM_OPCFG_IFSPERIOD_EN) |
+                                (PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_NO) |
+                                (PBE_GENERIC_RAM_OPCFG_RXREPEATOK_NO) |
+                                (PBE_GENERIC_RAM_OPCFG_RFINTERVAL_DIS) |
+                                (PBE_GENERIC_RAM_OPCFG_SINGLE_DIS) |
+                                (PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR_YES);
 
             if (rxCmd->config.fsOff != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
             if (rxCmd->rfFrequency != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
             if (rxCmd->config.repeatNok != 0)
             {
-                opCfgVal |= PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_BM;
+                opCfgVal |= PBE_GENERIC_RAM_OPCFG_RXREPEATNOK_M;
             }
             if (rxCmd->config.repeatOk != 0)
             {
-                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_RXREPEATOK_BM);
+                opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_RXREPEATOK_M);
             }
 
             /* Enable NESB mode */
-            uint32_t nesbVal = (PBE_GENERIC_RAM_NESB_NESBMODE_ON << PBE_GENERIC_RAM_NESB_NESBMODE);
-            nesbVal |= (rxCmd->addrLen << PBE_GENERIC_RAM_NESB_PEERADRLEN) & PBE_GENERIC_RAM_NESB_PEERADRLEN_BM;
+            uint32_t nesbVal = (PBE_GENERIC_RAM_NESB_NESBMODE_ON);
+            nesbVal |= (rxCmd->addrLen << PBE_GENERIC_RAM_NESB_PEERADRLEN_S) & PBE_GENERIC_RAM_NESB_PEERADRLEN_M;
 
             /* Configure AutoACK and Seq Status for syncword 0 */
-            uint32_t seqStat0Val = (rxCmd->syncWord[0].seqValid << PBE_GENERIC_RAM_SEQSTAT0_VALID)
-                                    & PBE_GENERIC_RAM_SEQSTAT0_VALID_BM;
+            uint32_t seqStat0Val = (rxCmd->syncWord[0].seqValid << PBE_GENERIC_RAM_SEQSTAT0_VALID_S)
+                                    & PBE_GENERIC_RAM_SEQSTAT0_VALID_M;
 
-            seqStat0Val |= (rxCmd->syncWord[0].autoAckMode << PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO)
-                           & PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_BM;
+            seqStat0Val |= (rxCmd->syncWord[0].autoAckMode << PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_S)
+                           & PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_M;
 
             /* Configure AutoACK and Seq Status for syncword 1 */
-            uint32_t seqStat1Val = (rxCmd->syncWord[1].seqValid << PBE_GENERIC_RAM_SEQSTAT1_VALID)
-                                    & PBE_GENERIC_RAM_SEQSTAT1_VALID_BM;
+            uint32_t seqStat1Val = (rxCmd->syncWord[1].seqValid << PBE_GENERIC_RAM_SEQSTAT1_VALID_S)
+                                    & PBE_GENERIC_RAM_SEQSTAT1_VALID_M;
 
-            seqStat1Val |= (rxCmd->syncWord[1].autoAckMode << PBE_GENERIC_RAM_SEQSTAT1_STOPAUTO)
-                           & PBE_GENERIC_RAM_SEQSTAT1_STOPAUTO_BM;
+            seqStat1Val |= (rxCmd->syncWord[1].autoAckMode << PBE_GENERIC_RAM_SEQSTAT1_STOPAUTO_S)
+                           & PBE_GENERIC_RAM_SEQSTAT1_STOPAUTO_M;
 
             /* Set the addresses that will be used for address filtering */
-            S_PBE_GENERIC_RAM_PEERADR0AL = (rxCmd->syncWord[0].address & PBE_GENERIC_RAM_PEERADR0AL_VAL_BM);
-            S_PBE_GENERIC_RAM_PEERADR0AH = (rxCmd->syncWord[0].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0AH_VAL_BM;
-            S_PBE_GENERIC_RAM_PEERADR0BL = (rxCmd->syncWord[1].address & PBE_GENERIC_RAM_PEERADR0BL_VAL_BM);
-            S_PBE_GENERIC_RAM_PEERADR0BH = (rxCmd->syncWord[1].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0BH_VAL_BM;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0AL) = (rxCmd->syncWord[0].address & PBE_GENERIC_RAM_PEERADR0AL_VAL_M);
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0AH) = (rxCmd->syncWord[0].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0AH_VAL_M;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0BL) = (rxCmd->syncWord[1].address & PBE_GENERIC_RAM_PEERADR0BL_VAL_M);
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0BH) = (rxCmd->syncWord[1].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0BH_VAL_M;
 
             /* Set timeouts for the Rx operation */
-            S_PBE_GENERIC_RAM_FIRSTRXTIMEOUT = 0; /* No timeout except from SYSTIM */
-            S_PBE_GENERIC_RAM_RXTIMEOUT = 0; /* No timeout except from SYSTIM */
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
 
             /* Set remaining configuration registers */
-            S_PBE_GENERIC_RAM_OPCFG = opCfgVal;
-            S_PBE_GENERIC_RAM_NESB = nesbVal;
-            S_PBE_GENERIC_RAM_SEQSTAT0 = seqStat0Val;
-            S_PBE_GENERIC_RAM_SEQSTAT1 = seqStat1Val;
-            S_PBE_GENERIC_RAM_MAXLEN = 255;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = nesbVal;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) = seqStat0Val;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT1) = seqStat1Val;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = 255;
 
             /* If needed, configure demodulator correlator engine for syncwordA and syncwordB */
             if (rxCmd->config.disableSyncA != 0 || rxCmd->config.disableSyncB != 0)
             {
-                uint16_t demc1be1 = S_MDM_DEMC1BE1;
-                uint16_t demc1be2 = S_MDM_DEMC1BE2;
+                uint16_t demc1be1 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1);
+                uint16_t demc1be2 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2);
                 genericHandlerState.rx.restoreThresh = true;
                 genericHandlerState.rx.demc1be1 = demc1be1;
                 genericHandlerState.rx.demc1be2 = demc1be2;
                 if (rxCmd->config.disableSyncA != 0)
                 {
-                    demc1be1 = (demc1be1 & ~MDM_DEMC1BE1_THRESHOLDA_BM) | (0x7F << MDM_DEMC1BE1_THRESHOLDA);
-                    demc1be2 = (demc1be2 & ~MDM_DEMC1BE2_THRESHOLDC_BM) | (0x7F << MDM_DEMC1BE2_THRESHOLDC);
+                    demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDA_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDA_S);
+                    demc1be2 = (demc1be2 & ~LRFDMDM_DEMC1BE2_THRESHOLDC_M) | (0x7F << LRFDMDM_DEMC1BE2_THRESHOLDC_S);
                 }
                 if (rxCmd->config.disableSyncB != 0)
                 {
-                    demc1be1 = (demc1be1 & ~MDM_DEMC1BE1_THRESHOLDB_BM) | (0x7F << MDM_DEMC1BE1_THRESHOLDB);
+                    demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDB_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDB_S);
                 }
-                S_MDM_DEMC1BE1 = demc1be1;
-                S_MDM_DEMC1BE2 = demc1be2;
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
             }
             else
             {
@@ -1643,16 +1641,16 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
                 }
 
                 /* Enable interrupts */
-                uint16_t fifoCfg = S_PBE_GENERIC_RAM_FIFOCFG;
-                S_DBELL_IMASK0 |= RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
-                                                                           LRF_EventRxOk.value | LRF_EventRxNok.value |
-                                                                           LRF_EventRxIgnored.value,
-                                                                           fifoCfg);
+                uint16_t fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIFOCFG);
+                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |
+                                                             RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
+                                                                                                      LRF_EventRxOk.value | LRF_EventRxNok.value |
+                                                                                                      LRF_EventRxIgnored.value, fifoCfg);
                 /* Post cmd */
-                Log(RclCore, Log_INFO5, "Starting of PRX operation");
+                Log_printf(RclCore, Log_VERBOSE, "Starting of PRX operation");
                 LRF_waitForTopsmReady();
                 RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-                S_PBE_API = PBE_GENERIC_REGDEF_API_OP_RX;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_RX;
             }
         }
     }
@@ -1662,7 +1660,7 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
         {
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
-            while (S_PBE_RXFREADABLE >= 4)
+            while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) >= 4)
             {
                 /* Check length of received buffer by peeking */
                 uint32_t fifoWord = LRF_peekRxFifo(0);
@@ -1684,7 +1682,7 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
                             /* Error */
                             genericHandlerState.common.endStatus = RCL_CommandStatus_Error_RxBufferCorruption;
                             /* Send abort */
-                            S_PBE_API = PBE_GENERIC_REGDEF_API_OP_STOP;
+                            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
                             /* Do not check for more packets from the RX FIFO */
                             break;
                         }
@@ -1699,12 +1697,12 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
                             RCL_Handler_Generic_updateRxCurBufferAndFifo(&rxCmd->rxBuffers);
 
                             /* Update the sequence number to the one from to the last successfully received packet */
-                            rxCmd->syncWord[0].seq = (S_PBE_GENERIC_RAM_SEQSTAT0 & PBE_GENERIC_RAM_SEQSTAT0_PID_BM) >> PBE_GENERIC_RAM_SEQSTAT0_PID;
-                            rxCmd->syncWord[1].seq = (S_PBE_GENERIC_RAM_SEQSTAT1 & PBE_GENERIC_RAM_SEQSTAT1_PID_BM) >> PBE_GENERIC_RAM_SEQSTAT1_PID;
+                            rxCmd->syncWord[0].seq = (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) & PBE_GENERIC_RAM_SEQSTAT0_PID_M) >> PBE_GENERIC_RAM_SEQSTAT0_PID_S;
+                            rxCmd->syncWord[1].seq = (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT1) & PBE_GENERIC_RAM_SEQSTAT1_PID_M) >> PBE_GENERIC_RAM_SEQSTAT1_PID_S;
 
                             /* Update the CRC value to the one from the last successfully received packet */
-                            rxCmd->syncWord[0].crcVal = S_PBE_GENERIC_RAM_CRCVAL0;
-                            rxCmd->syncWord[1].crcVal = S_PBE_GENERIC_RAM_CRCVAL1;
+                            rxCmd->syncWord[0].crcVal = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_CRCVAL0);
+                            rxCmd->syncWord[1].crcVal = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_CRCVAL1);
                         }
                     }
                     else
@@ -1733,11 +1731,11 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
             rclEvents.lastCmdDone = 1;
             if (lrfEvents.opError != 0 && endStatus == RCL_CommandStatus_Finished)
             {
-                endStatus = RCL_Handler_Generic_findPbeErrorEndStatus(S_PBE_COMMON_RAM_ENDCAUSE);
+                endStatus = RCL_Handler_Generic_findPbeErrorEndStatus(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE));
             }
-            else if (S_PBE_COMMON_RAM_ENDCAUSE == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP)
+            else if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE) == PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP)
             {
-                endStatus = RCL_CommandStatus_GracefulStop;
+                endStatus = RCL_Scheduler_findStopStatus(RCL_StopType_Graceful);
             }
             cmd->status = endStatus;
             RCL_Profiling_eventHook(RCL_ProfilingEvent_PostprocStart);
@@ -1762,8 +1760,8 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
         /* Restore changed thresholds */
         if (genericHandlerState.rx.restoreThresh)
         {
-            S_MDM_DEMC1BE1 = genericHandlerState.rx.demc1be1;
-            S_MDM_DEMC1BE2 = genericHandlerState.rx.demc1be2;
+            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
+            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
         }
     }
 
@@ -1838,16 +1836,16 @@ static RCL_CommandStatus RCL_Handler_Generic_findPbeErrorEndStatus(uint16_t pbeE
         status = RCL_CommandStatus_RxTimeout;
         break;
     case PBE_COMMON_RAM_ENDCAUSE_STAT_EOPSTOP:
-        status = RCL_CommandStatus_GracefulStop;
+        status = RCL_Scheduler_findStopStatus(RCL_StopType_Graceful);
         break;
     case PBE_COMMON_RAM_ENDCAUSE_STAT_ERR_STOP:
-        status = RCL_CommandStatus_HardStop;
+        status = RCL_Scheduler_findStopStatus(RCL_StopType_Hard);
         break;
     case PBE_COMMON_RAM_ENDCAUSE_STAT_ERR_BADOP:
         status = RCL_CommandStatus_Error_UnknownOp;
         break;
     default:
-        Log(RclCore, Log_ERROR, "Unexpected error 0x%04X from PBE", pbeEndStatus);
+        Log_printf(RclCore, Log_ERROR, "Unexpected error 0x%04X from PBE", pbeEndStatus);
         status = RCL_CommandStatus_Error;
         break;
     }
@@ -1896,8 +1894,8 @@ static uint32_t RCL_Handler_Generic_updateTxBuffers(List_List *txBuffers,
 static uint32_t RCL_Handler_Generic_maskEventsByFifoConf(uint32_t mask, uint16_t fifoConfVal)
 {
     /* Remove events that will not give an entry in the RX FIFO, based on FIFOCFG. */
-    mask &= ~(((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHIGN_BM) ? 0 : LRF_EventRxIgnored.value) |
-              ((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHEMPTY_BM) ? 0 : LRF_EventRxEmpty.value));
+    mask &= ~(((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHIGN_M) ? 0 : LRF_EventRxIgnored.value) |
+              ((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHEMPTY_M) ? 0 : LRF_EventRxEmpty.value));
 
     return mask;
 }
@@ -1909,7 +1907,7 @@ static void RCL_Handler_Generic_updateRxStats(RCL_StatsGeneric *stats, uint32_t 
 {
     if (stats != NULL)
     {
-        uint32_t lastTimestamp = RAMREG32(SP_PBE_GENERIC_RAM_LASTTIMESTAMPL);
+        uint32_t lastTimestamp = RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL));
         /* Check if a new value is found in the first timestamp */
         if (lastTimestamp == startTime)
         {
@@ -1919,7 +1917,7 @@ static void RCL_Handler_Generic_updateRxStats(RCL_StatsGeneric *stats, uint32_t 
             stats->timestampValid = true;
             stats->lastTimestamp = lastTimestamp;
         }
-        stats->lastRssi = S_PBE_GENERIC_RAM_LASTRSSI;
+        stats->lastRssi = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTRSSI);
         RCL_Handler_Generic_updateLongStats();
         stats->nRxNok = genericHandlerState.rx.longNokCount;
         stats->nRxOk = genericHandlerState.rx.longOkCount;
@@ -1933,8 +1931,8 @@ static void RCL_Handler_Generic_updateLongStats(void)
 {
     uint32_t oldRxOk = genericHandlerState.rx.longOkCount;
     uint32_t oldRxNok = genericHandlerState.rx.longNokCount;
-    uint32_t newRxOk = (oldRxOk & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXOK;
-    uint32_t newRxNok = (oldRxNok & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXNOK;
+    uint32_t newRxOk = (oldRxOk & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK);
+    uint32_t newRxNok = (oldRxNok & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK);
 
     if (newRxOk < oldRxOk)
     {
@@ -1956,24 +1954,24 @@ static bool RCL_Handler_Generic_initRxStats(RCL_StatsGeneric *stats, uint32_t st
     if (stats != NULL)
     {
         /* Set timestamp to start time of command (will not occur again) to know if a valid value has been found */
-        RAMREG32(SP_PBE_GENERIC_RAM_LASTTIMESTAMPL) = startTime;
+        RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL)) = startTime;
         stats->timestampValid = false;
         stats->lastRssi = LRF_RSSI_INVALID;
         if (stats->config.accumulate != 0)
         {
             /* Copy existing values into PBE */
             genericHandlerState.rx.longNokCount = stats->nRxNok;
-            S_PBE_GENERIC_RAM_NRXNOK = stats->nRxNok & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = stats->nRxNok & 0xFFFF;
             genericHandlerState.rx.longOkCount = stats->nRxOk;
-            S_PBE_GENERIC_RAM_NRXOK = stats->nRxOk & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = stats->nRxOk & 0xFFFF;
         }
         else
         {
             /* Reset existing values in PBE */
             genericHandlerState.rx.longNokCount = 0;
-            S_PBE_GENERIC_RAM_NRXNOK = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
             genericHandlerState.rx.longOkCount = 0;
-            S_PBE_GENERIC_RAM_NRXOK = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
 
             stats->nRxNok = 0;
             stats->nRxOk = 0;
@@ -1984,9 +1982,9 @@ static bool RCL_Handler_Generic_initRxStats(RCL_StatsGeneric *stats, uint32_t st
     {
         /* Reset existing values in PBE */
         genericHandlerState.rx.longNokCount = 0;
-        S_PBE_GENERIC_RAM_NRXNOK = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
         genericHandlerState.rx.longOkCount = 0;
-        S_PBE_GENERIC_RAM_NRXOK = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
 
         return false;
     }
@@ -1999,15 +1997,15 @@ static uint32_t RCL_Handler_Generic_updateSyncWord(uint32_t syncWord)
 {
     uint32_t syncWordOut;
     /* Check bit ordering of header and follow that */
-    if ((S_PBE_GENERIC_RAM_PKTCFG & PBE_GENERIC_RAM_PKTCFG_HDRORDER_BM) != 0)
+    if ((HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PKTCFG) & PBE_GENERIC_RAM_PKTCFG_HDRORDER_M) != 0)
     {
         /* MSb first configured - bit reverse sync word */
-        S_PBE_PHAOUT0 = syncWord & 0x0000FFFF;
-        syncWordOut = S_PBE_PHAOUT0BR << 16;
-        S_PBE_PHAOUT0 = syncWord >> 16;
-        syncWordOut |= S_PBE_PHAOUT0BR;
+        HWREG(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0) = syncWord & 0x0000FFFF;
+        syncWordOut = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0BR) << 16;
+        HWREG(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0) = syncWord >> 16;
+        syncWordOut |= HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0BR);
         /* Check sync word length to see ensure that sync word ends up in least significant bits */
-        uint32_t syncWordLen = (S_MDM_DEMSWQU0 & MDM_DEMSWQU0_REFLEN_BM) + 1;
+        uint32_t syncWordLen = (HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMSWQU0) & LRFDMDM_DEMSWQU0_REFLEN_M) + 1;
         syncWordOut >>= (32 - syncWordLen);
     }
     else
@@ -2055,7 +2053,7 @@ static void RCL_Handler_Nesb_updateStats(RCL_StatsNesb *stats, uint32_t startTim
 {
     if (stats != NULL)
     {
-        uint32_t lastTimestamp = RAMREG32(SP_PBE_GENERIC_RAM_LASTTIMESTAMPL);
+        uint32_t lastTimestamp = RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL));
         /* Check if a new value is found in the first timestamp */
         if (lastTimestamp == startTime)
         {
@@ -2065,7 +2063,7 @@ static void RCL_Handler_Nesb_updateStats(RCL_StatsNesb *stats, uint32_t startTim
             stats->timestampValid = true;
             stats->lastTimestamp = lastTimestamp;
         }
-        stats->lastRssi = S_PBE_GENERIC_RAM_LASTRSSI;
+        stats->lastRssi = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTRSSI);
         RCL_Handler_Nesb_updateLongStats();
         stats->nTx = genericHandlerState.nesb.longTxCount;
         stats->nRxOk = genericHandlerState.nesb.longOkCount;
@@ -2088,13 +2086,13 @@ static void RCL_Handler_Nesb_updateLongStats(void)
     uint32_t oldRxAddrMismatch = genericHandlerState.nesb.longRxAddrMismatchCount;
     uint32_t oldRxBufFull = genericHandlerState.nesb.longRxBufFullCount;
 
-    uint32_t newTx = (oldTx & ~0xFFFF) | S_PBE_GENERIC_RAM_NTX;
-    uint32_t newRxOk = (oldRxOk & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXOK;
-    uint32_t newRxNok = (oldRxNok & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXNOK;
-    uint32_t newRxIgnored = (oldRxIgnored & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXIGNORED;
+    uint32_t newTx = (oldTx & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX);
+    uint32_t newRxOk = (oldRxOk & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK);
+    uint32_t newRxNok = (oldRxNok & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK);
+    uint32_t newRxIgnored = (oldRxIgnored & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED);
     /* TODO: See RCL-343 */
-    uint32_t newRxAddrMismatch = (oldRxAddrMismatch & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXIGNORED;
-    uint32_t newRxBufFull = (oldRxBufFull & ~0xFFFF) | S_PBE_GENERIC_RAM_NRXFIFOFULL;
+    uint32_t newRxAddrMismatch = (oldRxAddrMismatch & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED);
+    uint32_t newRxBufFull = (oldRxBufFull & ~0xFFFF) | HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL);
 
     if (newTx < oldTx)
     {
@@ -2136,40 +2134,40 @@ static bool RCL_Handler_Nesb_initStats(RCL_StatsNesb *stats, uint32_t startTime)
     if (stats != NULL)
     {
         /* Set timestamp to start time of command (will not occur again) to know if a valid value has been found */
-        RAMREG32(SP_PBE_GENERIC_RAM_LASTTIMESTAMPL) = startTime;
+        RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL)) = startTime;
         stats->timestampValid = false;
         stats->lastRssi = LRF_RSSI_INVALID;
         if (stats->config.accumulate != 0)
         {
             /* Copy existing values into PBE */
             genericHandlerState.nesb.longTxCount = stats->nTx;
-            S_PBE_GENERIC_RAM_NTX = stats->nRxOk & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = stats->nRxOk & 0xFFFF;
             genericHandlerState.nesb.longOkCount = stats->nRxOk;
-            S_PBE_GENERIC_RAM_NRXOK = stats->nRxOk & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = stats->nRxOk & 0xFFFF;
             genericHandlerState.nesb.longNokCount = stats->nRxNok;
-            S_PBE_GENERIC_RAM_NRXNOK = stats->nRxNok & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = stats->nRxNok & 0xFFFF;
             genericHandlerState.nesb.longRxIgnoredCount = stats->nRxIgnored;
-            S_PBE_GENERIC_RAM_NRXIGNORED = stats->nRxIgnored & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = stats->nRxIgnored & 0xFFFF;
             genericHandlerState.nesb.longRxAddrMismatchCount = stats->nRxAddrMismatch;
-            S_PBE_GENERIC_RAM_NRXIGNORED = stats->nRxAddrMismatch & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = stats->nRxAddrMismatch & 0xFFFF;
             genericHandlerState.nesb.longRxBufFullCount = stats->nRxBufFull;
-            S_PBE_GENERIC_RAM_NRXFIFOFULL = stats->nRxBufFull & 0xFFFF;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = stats->nRxBufFull & 0xFFFF;
         }
         else
         {
             /* Reset existing values in PBE */
             genericHandlerState.nesb.longTxCount = 0;
-            S_PBE_GENERIC_RAM_NTX = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = 0;
             genericHandlerState.nesb.longOkCount = 0;
-            S_PBE_GENERIC_RAM_NRXOK = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
             genericHandlerState.nesb.longNokCount = 0;
-            S_PBE_GENERIC_RAM_NRXNOK = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
             genericHandlerState.nesb.longRxIgnoredCount = 0;
-            S_PBE_GENERIC_RAM_NRXIGNORED = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
             genericHandlerState.nesb.longRxAddrMismatchCount = 0;
-            S_PBE_GENERIC_RAM_NRXIGNORED = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
             genericHandlerState.nesb.longRxBufFullCount = 0;
-            S_PBE_GENERIC_RAM_NRXFIFOFULL = 0;
+            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = 0;
 
             stats->nTx = 0;
             stats->nRxOk = 0;
@@ -2184,17 +2182,17 @@ static bool RCL_Handler_Nesb_initStats(RCL_StatsNesb *stats, uint32_t startTime)
     {
         /* Reset existing values in PBE */
         genericHandlerState.nesb.longTxCount = 0;
-        S_PBE_GENERIC_RAM_NTX = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = 0;
         genericHandlerState.nesb.longOkCount = 0;
-        S_PBE_GENERIC_RAM_NRXOK = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
         genericHandlerState.nesb.longNokCount = 0;
-        S_PBE_GENERIC_RAM_NRXNOK = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
         genericHandlerState.nesb.longRxIgnoredCount = 0;
-        S_PBE_GENERIC_RAM_NRXIGNORED = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
         genericHandlerState.nesb.longRxAddrMismatchCount = 0;
-        S_PBE_GENERIC_RAM_NRXIGNORED = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
         genericHandlerState.nesb.longRxBufFullCount = 0;
-        S_PBE_GENERIC_RAM_NRXFIFOFULL = 0;
+        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = 0;
 
         return false;
     }

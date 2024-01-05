@@ -454,9 +454,10 @@ const config = [
     },
     {
         name: connIntervalRange,
+        legacyNames: Common.isFlashOnlyDevice() ? ["GAP_ADTYPE_SLAVE_CONN_INTERVAL_RANGE"]: [""],
         displayName: "Peripheral Connection Interval Range",
         description: "2 octets Min, 2 octets Max (0xFFFF indicates no conn interval min or max)",
-        longDescription: Docs.GAP_ADTYPE_PERIPHERAL_CONN_INTERVAL_RANGELongDescription,
+        longDescription: Docs.connIntervalRangeLongDescription,
         default: false,
         onChange: onPeripheralConnIntRangeChange
     },

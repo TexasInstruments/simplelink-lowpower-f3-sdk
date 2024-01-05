@@ -1,0 +1,1283 @@
+{
+  "rcl_commands_def": {
+    "command": [
+      {
+        "name": "CMD_GENERIC_FS",
+        "desc": "Frequency programming command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0001"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_Fs"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program"
+          },
+          {
+            "name": "fsType",
+            "type": "uint32_t",
+            "size": "32",
+            "desc": "Rules for synth setup",
+            "enum": [
+              {
+                "symbol": "RCL_FsType_Rx",
+                "value": "0",
+                "label": "Program synth as for RX operation"
+              },
+              {
+                "symbol": "RCL_FsType_Tx",
+                "value": "1",
+                "label": "Program synth as for TX operation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "CMD_GENERIC_FS_OFF",
+        "desc": "Stop frequency synthesizer command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0002"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_FsOff"
+          }
+        ],
+        "field": {
+          "name": "common",
+          "type": "RCL_Command"
+        }
+      },
+      {
+        "name": "CMD_GENERIC_TX",
+        "desc": "Generic transmit command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0003"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_Tx"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program",
+            "enum": {
+              "value": "0",
+              "label": "Do not program frequency"
+            }
+          },
+          {
+            "name": "txBuffers",
+            "type": "List_List",
+            "desc": "Linked list of packets to transmit. RCL will pop the first packet when transmitted."
+          },
+          {
+            "name": "syncWord",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x930B51DE",
+            "desc": "Sync word to transmit"
+          },
+          {
+            "name": "txPower.fraction",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "desc": "Transmit power, fractional part"
+          },
+          {
+            "name": "txPower.dBm",
+            "type": "int8_t",
+            "size": "7",
+            "default": "0",
+            "desc": "Transmit power, integer part"
+          },
+          {
+            "name": "config.fsOff",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep PLL enabled after command"
+              },
+              {
+                "value": "1",
+                "label": "Turn off FS after command"
+              }
+            ]
+          },
+          {
+            "gap": "23"
+          }
+        ]
+      },
+      {
+        "name": "CMD_GENERIC_TX_REPEAT",
+        "desc": "Generic repeated packet transmit command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0004"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_TxRepeat"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program",
+            "enum": {
+              "value": "0",
+              "label": "Do not program frequency"
+            }
+          },
+          {
+            "name": "txEntry",
+            "type": "RCL_Buffer_DataEntry*",
+            "default": "0",
+            "desc": "Packet to transmit"
+          },
+          {
+            "name": "syncWord",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x930B51DE",
+            "desc": "Sync word to transmit"
+          },
+          {
+            "name": "timePeriod",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0",
+            "desc": "Time period (0.25 us units) of repeated transmissions",
+            "enum": {
+              "value": "0",
+              "label": "Back-to-back"
+            }
+          },
+          {
+            "name": "numPackets",
+            "type": "uint16_t",
+            "size": "16",
+            "default": "0",
+            "desc": "Number of times to send the packet",
+            "enum": {
+              "value": "0",
+              "label": "Unlimited"
+            }
+          },
+          {
+            "name": "txPower.fraction",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "desc": "Transmit power, fractional part"
+          },
+          {
+            "name": "txPower.dBm",
+            "type": "int8_t",
+            "size": "7",
+            "default": "0",
+            "desc": "Transmit power, integer part"
+          },
+          {
+            "name": "config.fsOff",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep PLL enabled after command"
+              },
+              {
+                "value": "1",
+                "label": "Turn off FS after command"
+              }
+            ]
+          },
+          {
+            "name": "config.fsRecal",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep synth running between each packet"
+              },
+              {
+                "value": "1",
+                "label": "Turn off synth after each packet and recalibrate for the next"
+              }
+            ]
+          },
+          {
+            "gap": "6"
+          }
+        ]
+      },
+      {
+        "name": "CMD_GENERIC_TX_TEST",
+        "desc": "Generic transmitter test command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0005"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_TxTest"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program",
+            "enum": {
+              "value": "0",
+              "label": "Do not program frequency"
+            }
+          },
+          {
+            "name": "txPower.fraction",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "desc": "Transmit power, fractional part"
+          },
+          {
+            "name": "txPower.dBm",
+            "type": "int8_t",
+            "size": "7",
+            "default": "0",
+            "desc": "Transmit power, integer part"
+          },
+          {
+            "gap": "24"
+          },
+          {
+            "name": "config.txWord",
+            "type": "uint32_t",
+            "size": "16",
+            "default": "0",
+            "desc": "Word to transmit repeatedly for modulated signal"
+          },
+          {
+            "name": "config.whitenMode",
+            "type": "uint32_t",
+            "size": "2",
+            "default": "2",
+            "enum": [
+              {
+                "value": "0",
+                "label": "No whitening"
+              },
+              {
+                "value": "1",
+                "label": "Default whitening"
+              },
+              {
+                "value": "2",
+                "label": "PRBS-15"
+              },
+              {
+                "value": "3",
+                "label": "PRBS-32"
+              }
+            ]
+          },
+          {
+            "name": "config.sendCw",
+            "type": "uint32_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Send modulated signal"
+              },
+              {
+                "value": "1",
+                "label": "Send continuous wave (unmodulated signal)"
+              }
+            ]
+          },
+          {
+            "name": "config.fsOff",
+            "type": "uint32_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep PLL enabled after command"
+              },
+              {
+                "value": "1",
+                "label": "Turn off FS after command"
+              }
+            ]
+          },
+          {
+            "gap": "12"
+          }
+        ]
+      },
+      {
+        "name": "CMD_GENERIC_RX",
+        "desc": "Generic receive command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0006"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_Rx"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program",
+            "enum": {
+              "value": "0",
+              "label": "Do not program frequency"
+            }
+          },
+          {
+            "name": "rxBuffers",
+            "type": "List_List",
+            "desc": "Linked list of buffers where packets are stored"
+          },
+          {
+            "name": "stats",
+            "type": "RCL_StatsGeneric*",
+            "default": "0",
+            "desc": "Pointer to statistics structure",
+            "enum": {
+              "value": "0",
+              "label": "Do not store statistics"
+            }
+          },
+          {
+            "name": "syncWordA",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x930B51DE",
+            "desc": "Sync word to listen for"
+          },
+          {
+            "name": "syncWordB",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x12345678",
+            "desc": "Alternate Sync word to listen for"
+          },
+          {
+            "name": "maxPktLen",
+            "type": "uint16_t",
+            "size": "16",
+            "default": "255",
+            "desc": "Maximum packet length, or packet length for fixed length"
+          },
+          {
+            "name": "config.repeated",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "End after receiving one packet"
+              },
+              {
+                "value": "1",
+                "label": "Go back to sync search after receiving"
+              }
+            ]
+          },
+          {
+            "name": "config.disableSyncA",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Listen for syncWordA"
+              },
+              {
+                "value": "1",
+                "label": "Do not listen for syncWordA"
+              }
+            ]
+          },
+          {
+            "name": "config.disableSyncB",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Listen for syncWordB"
+              },
+              {
+                "value": "1",
+                "label": "Do not listen for syncWordB"
+              }
+            ]
+          },
+          {
+            "name": "config.discardRxPackets",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Store received packets in rxBuffers."
+              },
+              {
+                "value": "1",
+                "label": "Do not store packets, useful for link tests where checksum result is enough"
+              }
+            ]
+          },
+          {
+            "name": "config.fsOff",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep PLL enabled after command"
+              },
+              {
+                "value": "1",
+                "label": "Turn off FS after command"
+              }
+            ]
+          },
+          {
+            "gap": "11"
+          }
+        ]
+      },
+      {
+        "name": "CMD_GENERIC_PBE_OPERATION",
+        "desc": "Generic PBE operation",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0007"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Generic_PbeOperation"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "pbeOperation",
+            "type": "uint16_t",
+            "size": "16",
+            "default": "0",
+            "desc": "Operation code to send to the PBE"
+          }
+        ]
+      },
+      {
+        "name": "CMD_NESB_PTX",
+        "desc": "NESB transmit command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0008"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Nesb_Ptx"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program",
+            "enum": {
+              "value": "0",
+              "label": "Do not program frequency"
+            }
+          },
+          {
+            "name": "txBuffers",
+            "type": "List_List",
+            "desc": "Linked list of packets to transmit. RCL will pop the first packet when transmitted."
+          },
+          {
+            "name": "rxBuffers",
+            "type": "List_List",
+            "desc": "Linked list of buffers for storing received packets. In this case, the ACK."
+          },
+          {
+            "name": "stats",
+            "type": "RCL_StatsNesb*",
+            "default": "0",
+            "desc": "Pointer to statistics structure",
+            "enum": {
+              "value": "0",
+              "label": "Do not store statistics"
+            }
+          },
+          {
+            "name": "syncWord",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x930B51DE",
+            "desc": "Sync word to transmit"
+          },
+          {
+            "name": "txPower.fraction",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "desc": "Transmit power, fractional part"
+          },
+          {
+            "name": "txPower.dBm",
+            "type": "int8_t",
+            "size": "7",
+            "default": "0",
+            "desc": "Transmit power, integer part"
+          },
+          {
+            "name": "seqNo",
+            "type": "uint8_t",
+            "size": "8",
+            "default": "0",
+            "desc": "Sequence number to use for next packet"
+          },
+          {
+            "name": "maxRetrans",
+            "type": "uint8_t",
+            "size": "8",
+            "default": "5",
+            "desc": "Maximum number of retransmissions"
+          },
+          {
+            "gap": "8"
+          },
+          {
+            "name": "retransDelay",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "100000",
+            "desc": "Number of Systim ticks (250 [ns] resolution) from start of transmission of a packet to retransmission. If an unattainable retransmission delay is set, the retransmission will start as soon as possible."
+          },
+          {
+            "name": "config.fsOff",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep PLL enabled after command"
+              },
+              {
+                "value": "1",
+                "label": "Turn off FS after command"
+              }
+            ]
+          },
+          {
+            "name": "config.autoRetransmitMode",
+            "type": "uint8_t",
+            "size": "2",
+            "default": "3",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Do not listen for ACK"
+              },
+              {
+                "value": "1",
+                "label": "Listen for ACK if transmitted NO_ACK = 0 and retransmit if missing"
+              },
+              {
+                "value": "2",
+                "label": "Listen for ACK if transmitted NO_ACK = 1 and retransmit if missing"
+              },
+              {
+                "value": "3",
+                "label": "Always listen for ACK and retransmit if missing"
+              }
+            ]
+          },
+          {
+            "name": "config.hdrConf",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Insert NO_ACK field from TX buffer"
+              },
+              {
+                "value": "1",
+                "label": "Insert SEQ and NO_ACK field from TX buffer"
+              }
+            ]
+          },
+          {
+            "gap": "28"
+          }
+        ]
+      },
+      {
+        "name": "CMD_NESB_PRX",
+        "desc": "NESB receive command",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x0009"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_Nesb_Prx"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "rfFrequency",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "2440000000",
+            "desc": "RF frequency in Hz to program",
+            "enum": {
+              "value": "0",
+              "label": "Do not program frequency"
+            }
+          },
+          {
+            "name": "rxBuffers",
+            "type": "List_List",
+            "desc": "Linked list of buffers where packets are stored"
+          },
+          {
+            "name": "stats",
+            "type": "RCL_StatsNesb*",
+            "default": "0",
+            "desc": "Pointer to statistics structure",
+            "enum": {
+              "value": "0",
+              "label": "Do not store statistics"
+            }
+          },
+          {
+            "name": "syncWordA",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x930B51DE",
+            "desc": "Sync word to listen for"
+          },
+          {
+            "name": "syncWordB",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0x570451AE",
+            "desc": "Alternate Sync word to listen for"
+          },
+          {
+            "name": "txPower.fraction",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "desc": "Transmit power for ACKs, fractional part"
+          },
+          {
+            "name": "txPower.dBm",
+            "type": "int8_t",
+            "size": "7",
+            "default": "0",
+            "desc": "Transmit power for ACKs, integer part"
+          },
+          {
+            "name": "addrLen",
+            "type": "uint8_t",
+            "size": "8",
+            "default": "4",
+            "desc": "Maximum packet length, or packet length for fixed length"
+          },
+          {
+            "name": "config.disableSyncA",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Listen for syncWordA"
+              },
+              {
+                "value": "1",
+                "label": "Do not listen for syncWordA"
+              }
+            ]
+          },
+          {
+            "name": "config.disableSyncB",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Listen for syncWordB"
+              },
+              {
+                "value": "1",
+                "label": "Do not listen for syncWordB"
+              }
+            ]
+          },
+          {
+            "name": "config.discardRxPackets",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Store received packets in rxBuffers."
+              },
+              {
+                "value": "1",
+                "label": "Do not store packets, useful for link tests where checksum result is enough"
+              }
+            ]
+          },
+          {
+            "name": "config.fsOff",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Keep PLL enabled after command"
+              },
+              {
+                "value": "1",
+                "label": "Turn off FS after command"
+              }
+            ]
+          },
+          {
+            "name": "config.repeatOk",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "End operation after receiving a packet correctly"
+              },
+              {
+                "value": "1",
+                "label": "Go back to sync search after receiving a packet correctly"
+              }
+            ]
+          },
+          {
+            "name": "config.repeatNok",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "End operation after receiving a packet with CRC error or address mismatch"
+              },
+              {
+                "value": "1",
+                "label": "Go back to sync search after receiving a packet with CRC error or address mismatch"
+              }
+            ]
+          },
+          {
+            "gap": "10"
+          },
+          {
+            "name": "syncWordACfg.address",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0",
+            "desc": "Address after header"
+          },
+          {
+            "name": "syncWordACfg.crcVal",
+            "type": "uint16_t",
+            "size": "16",
+            "default": "0",
+            "desc": "CRC value (last two bytes if more than 2 CRC bytes) of last successfully received packet"
+          },
+          {
+            "name": "syncWordACfg.maxPktLen",
+            "type": "uint8_t",
+            "size": "8",
+            "default": "255",
+            "desc": "Packet length for fixed length, maximum packet length for variable length"
+          },
+          {
+            "name": "syncWordACfg.autoAckMode",
+            "type": "uint8_t",
+            "size": "2",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Disable auto-acknowledgement"
+              },
+              {
+                "value": "1",
+                "label": "Enable auto-acknowledgement if received NO_ACK = 0"
+              },
+              {
+                "value": "2",
+                "label": "Enable auto-acknowledgement if received NO_ACK = 1"
+              },
+              {
+                "value": "3",
+                "label": "Enable auto-acknowledgement regardless of received NO_ACK"
+              }
+            ]
+          },
+          {
+            "name": "syncWordACfg.varLen",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Use fixed length given by maxPktLenA in receiver when receiving packets"
+              },
+              {
+                "value": "1",
+                "label": "Use variable length in receiver when receiving packets"
+              }
+            ]
+          },
+          {
+            "name": "syncWordACfg.seqValid",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "The status is not valid. Any packet is viewed as new."
+              },
+              {
+                "value": "1",
+                "label": "The status is valid. Only packets with sequence number and CRC different from the previous one are accepted."
+              }
+            ]
+          },
+          {
+            "name": "syncWordACfg.seq",
+            "type": "uint8_t",
+            "size": "2",
+            "default": "0",
+            "desc": "Sequence number of last successfully received packet"
+          },
+          {
+            "gap": "2"
+          },
+          {
+            "name": "syncWordBCfg.address",
+            "type": "uint32_t",
+            "size": "32",
+            "default": "0",
+            "desc": "Address after header"
+          },
+          {
+            "name": "syncWordBCfg.crcVal",
+            "type": "uint16_t",
+            "size": "16",
+            "default": "0",
+            "desc": "CRC value (last two bytes if more than 2 CRC bytes) of last successfully received packet"
+          },
+          {
+            "name": "syncWordBCfg.maxPktLen",
+            "type": "uint8_t",
+            "size": "8",
+            "default": "255",
+            "desc": "Packet length for fixed length, maximum packet length for variable length"
+          },
+          {
+            "name": "syncWordBCfg.autoAckMode",
+            "type": "uint8_t",
+            "size": "2",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Disable auto-acknowledgement"
+              },
+              {
+                "value": "1",
+                "label": "Enable auto-acknowledgement if received NO_ACK = 0"
+              },
+              {
+                "value": "2",
+                "label": "Enable auto-acknowledgement if received NO_ACK = 1"
+              },
+              {
+                "value": "3",
+                "label": "Enable auto-acknowledgement regardless of received NO_ACK"
+              }
+            ]
+          },
+          {
+            "name": "syncWordBCfg.varLen",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "1",
+            "enum": [
+              {
+                "value": "0",
+                "label": "Use fixed length given by maxPktLenA in receiver when receiving packets"
+              },
+              {
+                "value": "1",
+                "label": "Use variable length in receiver when receiving packets"
+              }
+            ]
+          },
+          {
+            "name": "syncWordBCfg.seqValid",
+            "type": "uint8_t",
+            "size": "1",
+            "default": "0",
+            "enum": [
+              {
+                "value": "0",
+                "label": "The status is not valid. Any packet is viewed as new."
+              },
+              {
+                "value": "1",
+                "label": "The status is valid. Only packets with sequence number and CRC different from the previous one are accepted."
+              }
+            ]
+          },
+          {
+            "name": "syncWordBCfg.seq",
+            "type": "uint8_t",
+            "size": "2",
+            "default": "0",
+            "desc": "Sequence number of last successfully received packet"
+          },
+          {
+            "gap": "2"
+          }
+        ]
+      },
+      {
+        "name": "CMD_BLE_CS",
+        "desc": "BLE channel sounding",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x1001"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_BLE_CS"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "mode.role",
+            "type": "uint16_t",
+            "size": "1",
+            "desc": "Role of the device",
+            "enum": [
+              {
+                "symbol": "RCL_CmdBleCs_Role_Initiator",
+                "value": "0",
+                "label": "Initiator"
+              },
+              {
+                "symbol": "RCL_CmdBleCs_Role_Reflector",
+                "value": "1",
+                "label": "Reflector"
+              }
+            ]
+          },
+          {
+            "name": "mode.phy",
+            "type": "uint16_t",
+            "size": "1",
+            "desc": "PHY used for packet exchange",
+            "enum": [
+              {
+                "symbol": "RCL_CmdBleCs_Phy_1M",
+                "value": "0",
+                "label": "1 Mbit"
+              },
+              {
+                "symbol": "RCL_CmdBleCs_Phy_2M",
+                "value": "1",
+                "label": "2 Mbit"
+              }
+            ]
+          },
+          {
+            "name": "mode.repeatSteps",
+            "type": "uint16_t",
+            "size": "1",
+            "desc": "Enable continuous repetition of step list"
+          },
+          {
+            "name": "mode.chFilterEnable",
+            "type": "uint16_t",
+            "size": "1",
+            "desc": "Enable filtering restricted channels (2402, 2403, 2425, 2426, 2527, 2479, 2480 MHz)"
+          },
+          {
+            "name": "mode.nS2R",
+            "type": "uint16_t",
+            "size": "4",
+            "desc": "Total number of Samples-To-Ram containers in the list"
+          },
+          {
+            "name": "mode.nSteps",
+            "type": "uint16_t",
+            "size": "8",
+            "desc": "Total number of steps within the BLE CS Event"
+          },
+          {
+            "name": "antennaConfig.select",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "Antenna pattern selection by index ref RCL_CmdBleCs_AntennaConfig"
+          },
+          {
+            "name": "antennaConfig.gpoMask",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "Mask of GPOs on the LRF controlling the antennas"
+          },
+          {
+            "name": "antennaConfig.gpoCtrl0",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "GPOCTRL word for antenna path 0"
+          },
+          {
+            "name": "antennaConfig.gpoCtrl1",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "GPOCTRL word for antenna path 1"
+          },
+          {
+            "name": "antennaConfig.gpoCtrl2",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "GPOCTRL word for antenna path 2"
+          },
+          {
+            "name": "antennaConfig.gpoCtrl3",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "GPOCTRL word for antenna path 3"
+          },
+          {
+            "name": "timing.tFcs",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Config of time of Frequency Change period ref RCL_CmdBleCs_Tfcs"
+          },
+          {
+            "name": "timing.tFm",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Config of time of Frequency Measurement period"
+          },
+          {
+            "name": "timing.tPm",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Config of time of Phase Measurement Duration ref RCL_CmdBleCs_Tpm"
+          },
+          {
+            "name": "timing.tIp1",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Config of time of Interlude Period 1 ref RCL_CmdBleCs_Tip"
+          },
+          {
+            "name": "timing.tIp2",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Config of time of Interlude Period 2 ref RCL_CmdBleCs_Tip"
+          },
+          {
+            "name": "timing.reserved",
+            "type": "uint16_t",
+            "size": "16"
+          },
+          {
+            "name": "timing.tSw",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Config of time of Antenna Switching duration ref RCL_CmdBleCs_Tsw"
+          },
+          {
+            "name": "timing.tSwAdjustA",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Time adjustment of first set of antenna switching within a step"
+          },
+          {
+            "name": "timing.tSwAdjustB",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "Time adjustment of second set of antenna switching within a step"
+          },
+          {
+            "name": "frontend.txPower",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "Index value of TX power"
+          },
+          {
+            "name": "frontend.rxGain",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "Index value of RX gain"
+          },
+          {
+            "name": "frontend.foffOverride",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "Frequency offset compensation override value in [4x FOFF] units."
+          },
+          {
+            "name": "frontend.foffOverrideEnable",
+            "type": "uint8_t",
+            "size": "1",
+            "desc": "Disables automatic estimate foff estimation and enforces the use of the provided override"
+          },
+          {
+            "name": "frontend.reserved",
+            "type": "uint8_t",
+            "size": "7"
+          },
+          {
+            "name": "reserved1",
+            "type": "uint8_t",
+            "size": "8"
+          },
+          {
+            "name": "steps",
+            "type": "RCL_CmdBleCs_Step*",
+            "desc": "Pointer to step list"
+          },
+          {
+            "name": "results",
+            "type": "RCL_CmdBleCs_StepResult*",
+            "desc": "Pointer to result list"
+          },
+          {
+            "name": "s2rResults",
+            "type": "RCL_CmdBleCs_S2r*",
+            "desc": "Pointer to container list"
+          },
+          {
+            "name": "output",
+            "type": "RCL_CmdBleCs_Output*",
+            "desc": "Pointer to statistics"
+          }
+        ]
+      }
+    ]
+  }
+}

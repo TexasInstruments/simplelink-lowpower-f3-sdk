@@ -157,6 +157,12 @@
 #define MAP_LL_EXT_SetTxPower                                        LL_EXT_SetTxPower
 #define MAP_LL_EXT_SetTxPowerDbm                                     LL_EXT_SetTxPowerDbm
 #define MAP_LL_EXT_SetTxPowerCback                                   LL_EXT_SetTxPowerCback
+#define MAP_LL_EXT_GetRxStats                                        LL_EXT_GetRxStats
+#define MAP_LL_EXT_GetRxStatsCback                                   LL_EXT_GetRxStatsCback
+#define MAP_LL_EXT_GetTxStats                                        LL_EXT_GetTxStats
+#define MAP_LL_EXT_GetTxStatsCback                                   LL_EXT_GetTxStatsCback
+#define MAP_LL_EXT_GetCoexStats                                      LL_EXT_GetCoexStats
+#define MAP_LL_EXT_GetCoexStatsCback                                 LL_EXT_GetCoexStatsCback
 #define MAP_LL_ChannelSelectionAlgorithmCback                        LL_ChannelSelectionAlgorithmCback
 #define MAP_LL_EncChangeCback                                        LL_EncChangeCback
 #define MAP_LL_EncKeyRefreshCback                                    LL_EncKeyRefreshCback
@@ -247,6 +253,7 @@
 #define MAP_LL_SetScanRspData                                        LL_SetScanRspData
 #define MAP_LL_StartEncrypt                                          LL_StartEncrypt
 #define MAP_LL_TX_bm_alloc                                           LL_TX_bm_alloc
+#define MAP_LL_TX_bm_free                                            LL_TX_bm_free
 #define MAP_LL_TxData                                                LL_TxData
 #define MAP_LL_WriteAuthPayloadTimeout                               LL_WriteAuthPayloadTimeout
 #define MAP_LL_WriteDefaultDataLen                                   LL_WriteDefaultDataLen
@@ -258,6 +265,7 @@
 #define MAP_AL_GetNumFreeEntries                                     AL_GetNumFreeEntries
 #define MAP_AL_GetSize                                               AL_GetSize
 #define MAP_AL_Init                                                  AL_Init
+#define MAP_AL_Scan_Init                                             AL_Scan_Init
 #define MAP_AL_RemoveEntry                                           AL_RemoveEntry
 #define MAP_AL_SetAlIgnore                                           AL_SetAlIgnore
 #define MAP_hciInitEventMasks                                        hciInitEventMasks
@@ -636,6 +644,7 @@
 #define MAP_llEndExtAdvTask                                          llEndExtAdvTask
 #define MAP_llEndExtScanTask                                         llEndExtScanTask
 #define MAP_llEndExtInitTask                                         llEndExtInitTask
+#define MAP_llRclPrepareAndUpdateAlEntry                             llRclPrepareAndUpdateAlEntry
 // RF Post Processing
 #define MAP_llExtAdv_PostProcess                                     llExtAdv_PostProcess
 #define MAP_llExtScan_PostProcess                                    llExtScan_PostProcess
@@ -665,6 +674,7 @@
 #define MAP_linkDB_State                                             linkDB_State
 #define MAP_linkDB_Update                                            linkDB_Update
 #define MAP_linkDB_UpdateMTU                                         linkDB_UpdateMTU
+#define MAP_linkDB_UpdateOwnAddrType                                 linkDB_UpdateOwnAddrType
 #define MAP_linkDB_reportStatusChange                                linkDB_reportStatusChange
 #define MAP_linkDB_SecurityModeSCOnly                                linkDB_SecurityModeSCOnly
 #define MAP_linkDB_updateConnParam                                   linkDB_updateConnParam
@@ -952,6 +962,7 @@
 #endif
 #define MAP_GapConfig_SetParameter                                   GapConfig_SetParameter
 #define MAP_GAP_GetDevAddress                                        GAP_GetDevAddress
+#define MAP_GAP_GetDevAddressByType                                  GAP_GetDevAddressByType
 
 // GAP Task
 #define MAP_gapProcessBLEEvents                                      gapProcessBLEEvents
@@ -1096,6 +1107,7 @@
 #define MAP_leftshift_onebit                                         leftshift_onebit
 #define MAP_padding                                                  padding
 #define MAP_smAuthReqToUint8                                         smAuthReqToUint8
+#define MAP_smResetAuthReqReservedBits                               smResetAuthReqReservedBits
 #define MAP_smEncrypt                                                smEncrypt
 #define MAP_smEncryptLocal                                           smEncryptLocal
 #define MAP_smGenerateRandBuf                                        smGenerateRandBuf
@@ -1319,6 +1331,7 @@ extern uint8 MAP_llRxEntryDoneEventHandleStateAdv( void );
 extern uint8 MAP_llAbortEventHandleStateScan( uint8 );
 extern uint8 MAP_llLastCmdDoneEventHandleStateScan( void );
 extern uint8 MAP_llRxIgnoreEventHandleStateScan( void );
+extern uint8 MAP_llRxIgnoreEventHandleConnectResponse( uint8 *, uint8, uint8 *, uint8 );
 extern uint8 MAP_llAbortEventHandleStateInit( uint8 );
 extern uint8 MAP_llLastCmdDoneEventHandleStateInit( void );
 extern uint8 MAP_llRxIgnoreEventHandleStateInit( void );

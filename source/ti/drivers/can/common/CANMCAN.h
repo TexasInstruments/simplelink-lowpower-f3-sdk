@@ -50,9 +50,9 @@ extern "C" {
 /*! Interrupt mask for all Rx sources (Rx FIFO 0, Rx FIFO 1, and dedicated Rx
  *  buffers).
  */
-#define MCAN_INTR_SRC_RX_MASK                                                              \
-    ((uint32_t)MCAN_INTR_SRC_RX_FIFO0_NEW_MSG | (uint32_t)MCAN_INTR_SRC_RX_FIFO1_NEW_MSG | \
-     (uint32_t)MCAN_INTR_SRC_DEDICATED_RX_BUFF_MSG)
+#define MCAN_INT_SRC_RX_MASK                                                             \
+    ((uint32_t)MCAN_INT_SRC_RX_FIFO0_NEW_MSG | (uint32_t)MCAN_INT_SRC_RX_FIFO1_NEW_MSG | \
+     (uint32_t)MCAN_INT_SRC_DEDICATED_RX_BUFF_MSG)
 
 /*!
  *  @brief  Sets the MCAN raw bit timing.
@@ -67,21 +67,25 @@ int_fast16_t CANMCAN_setBitTimingRaw(const CAN_BitRateTimingRaw *rawTiming);
 /*!
  *  @brief  Configures the MCAN message RAM
  *
+ *  Configures the MCAN message RAM. If CAN FD is enabled, buffers are configured
+ *  to support a max payload size of 64-bytes. Otherwise, the buffers are
+ *  configured to support a max payload size of 8-bytes for classic CAN.
+ *
  *  @param  config       A pointer to CAN_MsgRAMConfig.
  *  @param  msgRAMSize   Size of the message RAM in bytes.
- *  @param  enableCANFD  Set to 1U if CAN FD is enabled, 0U otherwise.
+ *  @param  enableCANFD  Set to true if CAN FD is enabled, false otherwise.
  *
  *  @retval CAN_STATUS_SUCCESS if successful.
  *  @retval CAN_STATUS_ERROR if the message RAM config is invalid.
  */
-int_fast16_t CANMCAN_configMsgRAM(const CAN_MsgRAMConfig *config, uint32_t msgRAMSize, uint32_t enableCANFD);
+int_fast16_t CANMCAN_configMsgRAM(const CAN_MsgRAMConfig *config, uint32_t msgRAMSize, bool enableCANFD);
 
 /*!
- *  @brief  Returns the MCAN IRQ mask based on the CAN event mask.
+ *  @brief  Returns the MCAN interrupt mask based on the CAN event mask.
  *
  *  @param  eventMask    CAN event mask.
  *
- *  @return MCAN IRQ mask
+ *  @return MCAN interrupt mask
  */
 uint32_t CANMCAN_getInterruptMask(uint32_t eventMask);
 

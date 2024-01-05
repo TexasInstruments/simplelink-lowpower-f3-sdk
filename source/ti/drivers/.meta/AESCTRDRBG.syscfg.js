@@ -78,6 +78,7 @@ related purposes.
 [1]: /drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#details "C API reference"
 [2]: /drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#ti_drivers_AESCTRDRBG_Synopsis "Basic C usage summary"
 [3]: /drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#ti_drivers_AESCTRDRBG_Examples "C usage examples"
+[4]: /drivers/syscfg/html/ConfigDoc.html#AESCTRDRBG_Configuration_Options "Configuration options reference"
 `,
     config              : Common.addNameConfig(config, "/ti/drivers/aesctrdrbg", "CONFIG_AESCTRDRBG_"),
     defaultInstanceName : "CONFIG_AESCTRDRBG_",

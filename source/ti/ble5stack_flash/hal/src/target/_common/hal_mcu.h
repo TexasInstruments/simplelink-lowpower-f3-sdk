@@ -64,13 +64,13 @@
 #ifndef CC33xx
 #include DeviceFamily_constructPath(inc/hw_nvic.h)
 #include DeviceFamily_constructPath(inc/hw_gpio.h)
-#include <driverlib/interrupt.h>
-#include <driverlib/gpio.h>
-#include <driverlib/systick.h>
-#include <driverlib/uart.h>
+#include DeviceFamily_constructPath(driverlib/interrupt.h)
+#include DeviceFamily_constructPath(driverlib/gpio.h)
+#include DeviceFamily_constructPath(driverlib/systick.h)
+#include DeviceFamily_constructPath(driverlib/uart.h)
 #ifndef CC23X0
-#include <driverlib/flash.h>
-#include <driverlib/ioc.h>
+#include DeviceFamily_constructPath(driverlib/flash.h)
+#include DeviceFamily_constructPath(driverlib/ioc.h)
 #endif //CC23X0
 #else
 #include "osi.h"
@@ -225,11 +225,19 @@ static bool halIntsAreEnabled(void)
 #define HAL_INTERRUPTS_ARE_ENABLED() halIntsAreEnabled()
 #endif
 
+#ifdef CC23X0
 #define HAL_ENTER_CRITICAL_SECTION(x)  \
-  do { (x) = !IntMasterDisable(); } while (0)
+  do { (x) = !IntDisableMaster(); } while (0)
+
+#define HAL_EXIT_CRITICAL_SECTION(x) \
+  do { if (x) { (void) IntEnableMaster(); } } while (0)
+#else
+#define HAL_ENTER_CRITICAL_SECTION(x)  \
+  do { (x) = !IntMasterEnable(); } while (0)
 
 #define HAL_EXIT_CRITICAL_SECTION(x) \
   do { if (x) { (void) IntMasterEnable(); } } while (0)
+#endif
 
 #endif /* USE_ICALL */
 

@@ -99,10 +99,11 @@
 #include "osal_list.h"
 #include "hal_trng_wrapper.h"
 #include "ecc_rom.h"
-#include <driverlib/vims.h>
-#include <driverlib/interrupt.h>
-#include <inc/hw_sysctl.h>
-#include <inc/hw_ioc.h>
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/vims.h)
+#include DeviceFamily_constructPath(driverlib/interrupt.h)
+#include DeviceFamily_constructPath(inc/hw_sysctl.h)
+#include DeviceFamily_constructPath(inc/hw_ioc.h)
 #endif // !CC33xx
 #ifndef CONTROLLER_ONLY
 #include "linkdb.h"
@@ -563,6 +564,7 @@ extern uint8 llRxEntryDoneEventHandleStateAdv( void );
 extern uint8 llAbortEventHandleStateScan( uint8 preempted );
 extern uint8 llLastCmdDoneEventHandleStateScan( void );
 extern uint8 llRxIgnoreEventHandleStateScan( void );
+extern uint8 llRxIgnoreEventHandleConnectResponse( uint8 *OwnA, uint8 OwnAdd, uint8 *PeerA, uint8 PeerAdd );
 extern uint8 llAbortEventHandleStateInit( uint8 preempted );
 extern uint8 llLastCmdDoneEventHandleStateInit( void );
 extern uint8 llRxIgnoreEventHandleStateInit( void );
@@ -707,6 +709,15 @@ uint8 MAP_llRxIgnoreEventHandleStateScan( void )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & SCAN_CFG)
   return llRxIgnoreEventHandleStateScan();
+#else
+  return 0;
+#endif
+}
+
+uint8 MAP_llRxIgnoreEventHandleConnectResponse( uint8 *OwnA, uint8 OwnAdd, uint8 *PeerA, uint8 PeerAdd )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
+  return llRxIgnoreEventHandleConnectResponse(OwnA,OwnAdd,PeerA,PeerAdd);
 #else
   return 0;
 #endif
@@ -1553,7 +1564,7 @@ uint8 MAP_llTrigPeriodicAdv( void *pAdvSet, void *pPeriodicAdv )
 
 uint8 MAP_llSetupPeriodicAdv( void *pAdvSet )
 {
-#if defined ( USE_PERIODIC_ADV ) && !defined( DeviceFamily_CC13X4 )
+#if defined ( USE_PERIODIC_ADV ) && (!defined( DeviceFamily_CC13X4 ) || !defined( DeviceFamily_CC26X4 ))
   return llSetupPeriodicAdv( pAdvSet );
 #else
   return 0;

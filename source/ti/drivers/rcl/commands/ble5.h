@@ -37,7 +37,8 @@ typedef struct RCL_FL_ENTRY_t     RCL_FL_Entry;
 typedef struct RCL_FILTER_LIST_t  RCL_FilterList;
 typedef struct RCL_ADDR_TYPE_t    RCL_AddrType;
 
-typedef struct RCL_CMD_BLE5_ADV          RCL_CmdBle5Advertiser;
+typedef struct RCL_CMD_BLE5_ADV_t          RCL_CmdBle5Advertiser;
+typedef struct RCL_CMD_BLE5_AUX_ADV_t    RCL_CmdBle5AuxAdvertiser;
 typedef struct RCL_CMD_BLE5_INITIATOR_t  RCL_CmdBle5Initiator;
 typedef struct RCL_CMD_BLE5_SCANNER_t    RCL_CmdBle5Scanner;
 typedef struct RCL_CMD_BLE5_CONNECTION_t RCL_CmdBle5Connection;
@@ -67,7 +68,7 @@ typedef struct RCL_STATS_GENERIC_RX_t    RCL_StatsGenericRx;
 typedef uint8_t RCL_Ble5Channel;
 
 /**
- *  @brief PHY returned in status of recieved packets
+ *  @brief PHY returned in status of received packets
  *
  */
 typedef enum {
@@ -95,23 +96,24 @@ typedef union {
 /* Invalid packet status */
 #define RCL_BLE5_RX_PKT_STATUS_INVALID 0xFF
 
-/* Do inlcudes after typedefs, as the types are needed in ti/drivers/rcl/handlers/ble5.h */
+/* Do includes after typedefs, as the types are needed in ti/drivers/rcl/handlers/ble5.h */
 #include <ti/drivers/rcl/RCL_Command.h>
 #include <ti/drivers/rcl/handlers/ble5.h>
 #include <ti/drivers/utils/List.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/pbe_ble5_ram_regs.h)
+#include DeviceFamily_constructPath(inc/pbe_ble5_ram_regs.h)
 
 /* Command IDs for BLE commands */
-#define RCL_CMDID_BLE5_ADVERTISER 0x1001U
-#define RCL_CMDID_BLE5_INITIATOR  0x1002U
-#define RCL_CMDID_BLE5_SCANNER    0x1003U
-#define RCL_CMDID_BLE5_CONNECTION 0x1004U
-#define RCL_CMDID_BLE5_DTM_TX     0x1005U
-#define RCL_CMDID_BLE5_GENERIC_RX 0x1006U
-#define RCL_CMDID_BLE5_GENERIC_TX 0x1007U
-#define RCL_CMDID_BLE5_TX_TEST    0x1008U
+#define RCL_CMDID_BLE5_ADVERTISER        0x1001U
+#define RCL_CMDID_BLE5_INITIATOR         0x1002U
+#define RCL_CMDID_BLE5_SCANNER           0x1003U
+#define RCL_CMDID_BLE5_CONNECTION        0x1004U
+#define RCL_CMDID_BLE5_DTM_TX            0x1005U
+#define RCL_CMDID_BLE5_GENERIC_RX        0x1006U
+#define RCL_CMDID_BLE5_GENERIC_TX        0x1007U
+#define RCL_CMDID_BLE5_TX_TEST           0x1008U
+#define RCL_CMDID_BLE5_AUX_ADV           0x1009U
 
 /**
  * @brief Bit mask indicating the use of a custom frequency
@@ -169,7 +171,7 @@ struct RCL_ADDR_TYPE_t {
  *
  *  Command to run BLE advertiser. The advertisement type is found from the packet type transmitted.
  */
-struct RCL_CMD_BLE5_ADV {
+struct RCL_CMD_BLE5_ADV_t {
     RCL_Command  common;
     uint8_t chanMap;              /*!< Channel map. Bit positions 0-2 correspond to channels 37-39; a 1 means channel enabled */
     uint8_t order;                /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
@@ -192,6 +194,32 @@ struct RCL_CMD_BLE5_ADV {
     .stats = NULL,                                              \
 }
 #define RCL_CmdBle5Advertiser_DefaultRuntime() (RCL_CmdBle5Advertiser) RCL_CmdBle5Advertiser_Default()
+
+/**
+ *  @brief Secondary Channel Advertiser command
+ *
+ *  Command to run BLE advertiser on a secondary channel. The advertisement type is found from the packet type transmitted.
+ */
+struct RCL_CMD_BLE5_AUX_ADV_t {
+    RCL_Command  common;
+    RCL_Ble5Channel channel;      /*!< Channel index */
+    RCL_Command_TxPower txPower;  /*!< Transmit power */
+    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND packet is returned if connection is formed - Not supported in this release. */
+    RCL_CtxAdvertiser *ctx;       /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+};
+
+#define RCL_CmdBle5AuxAdvertiser_Default()                      \
+{                                                               \
+    .common = RCL_Command_Default(RCL_CMDID_BLE5_AUX_ADV,       \
+                                  RCL_Handler_BLE5_aux_adv),    \
+    .channel = 0,                                               \
+    .txPower = {.dBm = 0, .fraction = 0},                       \
+    .ctx = NULL,                                                \
+    .stats = NULL,                                              \
+}
+#define RCL_CmdBle5AuxAdvertiser_DefaultRuntime() (RCL_CmdBle5AuxAdvertiser) RCL_CmdBle5AuxAdvertiser_Default()
+
 
 /**
  *  @brief Advertiser context
@@ -394,9 +422,9 @@ struct RCL_CTX_CONNECTION_t {
     uint32_t  crcInit;         /*!< CRC initialization value (24 bits) */
 };
 
-#define _INIT_SEQSTAT (PBE_BLE5_RAM_SEQSTAT_LASTRXSN_BM | \
-                       PBE_BLE5_RAM_SEQSTAT_LASTTXSN_BM | \
-                       PBE_BLE5_RAM_SEQSTAT_FIRSTPKT_BM )
+#define _INIT_SEQSTAT (PBE_BLE5_RAM_SEQSTAT_LASTRXSN_M | \
+                       PBE_BLE5_RAM_SEQSTAT_LASTTXSN_M | \
+                       PBE_BLE5_RAM_SEQSTAT_FIRSTPKT_M )
 
 #define RCL_CtxConnection_Default() \
 {                                   \
@@ -632,7 +660,7 @@ struct RCL_CMD_BLE5_TX_TEST_t {
 }
 #define RCL_CmdBle5TxTest_DefaultRuntime() (RCL_CmdBle5TxTest) RCL_CmdBle5TxTest_Default()
 
-#define RCL_CMD_BLE5_WH_MODE_DEFAULT  0 /*!< config.whitenMode: Deafult (or no) whitening */
+#define RCL_CMD_BLE5_WH_MODE_DEFAULT  0 /*!< config.whitenMode: Default (or no) whitening */
 #define RCL_CMD_BLE5_WH_MODE_PRBS9    1 /*!< config.whitenMode: PRBS-9  */
 #define RCL_CMD_BLE5_WH_MODE_PRBS15   2 /*!< config.whitenMode: PRBS-15 */
 #define RCL_CMD_BLE5_WH_MODE_PRBS32   3 /*!< config.whitenMode: PRBS-32 */

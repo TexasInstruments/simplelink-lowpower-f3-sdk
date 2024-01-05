@@ -122,25 +122,25 @@ extern const ADC_FxnTable ADCLPF3_fxnTable;
  */
 typedef struct
 {
-    /*!< DIO that the ADC input is routed to */
+    /*! DIO that the ADC input is routed to */
     uint8_t adcInputDIO;
-    /*!< DIO that the ADC positive reference is routed to */
+    /*! DIO that the ADC positive reference is routed to */
     uint8_t adcRefPosDIO;
-    /*!< DIO that the ADC negative reference is routed to */
+    /*! DIO that the ADC negative reference is routed to */
     uint8_t adcRefNegDIO;
-    /*!< Internal signal routed to ADC */
+    /*! Internal signal routed to ADC */
     uint8_t internalChannel;
-    /*!< Should the raw output be trimmed before returning it */
+    /*! Should the raw output be trimmed before returning it */
     bool returnAdjustedVal;
-    /*!< Reference voltage in microvolts*/
+    /*! Reference voltage in microvolts*/
     uint_fast32_t refVoltage;
-    /*!< Reference source for the ADC to use */
+    /*! Reference source for the ADC to use */
     ADCLPF3_Reference_Source refSource;
-    /*!< Time the ADC spends sampling, in CLK-cycles.*/
+    /*! Time the ADC spends sampling, in CLK-cycles.*/
     uint16_t samplingDuration;
-    /*!< Resolution of ADC-conversion. */
+    /*! Resolution of ADC-conversion. */
     ADCLPF3_Resolution_Bits resolutionBits;
-    /*!< ADC clock divider value */
+    /*! ADC clock divider value */
     ADCLPF3_Clock_Divider adcClkkDivider;
 
 } ADCLPF3_HWAttrs;
@@ -152,9 +152,9 @@ typedef struct
  */
 typedef struct
 {
-    /*!< Flag if the instance is in use */
+    /*! Flag if the instance is in use */
     bool isOpen;
-    /*!< Flag to indicate if thread safety is ensured by the driver */
+    /*! Flag to indicate if thread safety is ensured by the driver */
     bool isProtected;
 } ADCLPF3_Object;
 

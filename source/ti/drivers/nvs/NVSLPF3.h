@@ -266,9 +266,9 @@ extern const NVS_FxnTable NVSLPF3_fxnTable;
  *  @code
  *  MEMORY
  *  {
- *      FLASH (RX)      : ORIGIN = 0x00000000, LENGTH = 0x0001ffa8
- *      FLASH_CCFG (RX) : ORIGIN = 0x0001ffa8, LENGTH = 0x00000058
- *      SRAM (RWX)      : ORIGIN = 0x20000000, LENGTH = 0x00005000
+ *      FLASH (RX) : ORIGIN = 0x00000000, LENGTH = 0x0001ffa8
+ *      CCFG (R)   : ORIGIN = 0x0001ffa8, LENGTH = 0x00000058
+ *      SRAM (RWX) : ORIGIN = 0x20000000, LENGTH = 0x00005000
  *  }
  *
  *  .nvs (0x1b000) (NOLOAD) : AT (0x1b000) {

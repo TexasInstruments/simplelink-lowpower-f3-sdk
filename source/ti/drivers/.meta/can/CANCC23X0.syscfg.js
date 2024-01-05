@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== CANCC23XX.syscfg.js ========
+ *  ======== CANCC23X0.syscfg.js ========
  */
 
 "use strict";

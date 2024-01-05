@@ -68,12 +68,12 @@
  * (4.194sec at 1us resolution). Therefore, the max number of SysTimer ticks you
  * can schedule into the future is 2^32 - 2^22 - 1 ticks (~= 4290 sec at 1us
  * resolution). */
-#define CLOCKP_PERIOD_MAX     (0xFFBFFFFFU / ClockP_tickPeriod)
+#define ClockP_PERIOD_MAX     (0xFFBFFFFFU / ClockP_TICK_PERIOD)
 /** Max number of seconds into the future supported by this ClockP
  * implementation.
  *
  * This limit affects ClockP_sleep() */
-#define CLOCKP_PERIOD_MAX_SEC 4290U
+#define ClockP_PERIOD_MAX_SEC 4290U
 
 /* Processing overhead.
  *
@@ -81,10 +81,10 @@
  * ClockP_usleep() to be more accurate.
  * TODO: Revise for CC27XX devices (TIDRIVERS-5793)
  */
-#define CLOCKP_PROC_OVERHEAD_US (99U * CLOCK_FREQUENCY_DIVIDER)
+#define ClockP_PROC_OVERHEAD_US (99U * CLOCK_FREQUENCY_DIVIDER)
 
 /* Get the current ClockP tick value */
-#define getClockPTick() (HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U) / ClockP_tickPeriod)
+#define getClockPTick() (HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U) / ClockP_TICK_PERIOD)
 
 /* The name of this struct and the names of its members are used by ROV */
 typedef struct ClockP_Obj
@@ -106,8 +106,9 @@ extern HwiP_Struct clockHwi;
 /* The names of these variables are used by ROV */
 static bool ClockP_initialized = false;
 
-/* The existance of a variable with this name is the signal to ROV
- * that it is used on a CC23XX/CC27XX device */
+/* The existence of a variable with this name is the signal to ROV
+ * that it is used on a CC23XX/CC27XX device
+ */
 static List_List ClockP_list;
 static volatile uint32_t ClockP_ticks;
 static uint32_t ClockP_nextScheduledTick;
@@ -148,11 +149,13 @@ void ClockP_startup(void)
         /* Get current value as early as possible */
         nowTick = getClockPTick();
 
-        /* Clear any pending interrupts on SysTimer channel 1 */
-        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_EV1_CLR;
+        /* Clear any pending interrupts on SysTimer channel 0 */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_EV0_CLR;
 
-        /* Configure SysTimer channel 1 to compare mode */
-        HWREG(SYSTIM_BASE + SYSTIM_O_CH1CFG) = 0;
+        /* Configure SysTimer channel 0 to compare mode with timer
+         *  resolution of 1 us.
+         */
+        HWREG(SYSTIM_BASE + SYSTIM_O_CH0CFG) = 0;
 
         /* Make SysTimer halt on CPU debug halt */
         HWREG(SYSTIM_BASE + SYSTIM_O_EMU) = SYSTIM_EMU_HALT_STOP;
@@ -160,20 +163,20 @@ void ClockP_startup(void)
         /* HWI clockHwi is owned by the Power driver, but multiplexed between
          * ClockP and the Power policy (this is handled by the Power driver).
          * All ClockP must do is to set the callback function and mux the
-         * SysTimer channel 1 signal to CPUIRQ16.
+         * SysTimer channel 0 signal to CPUIRQ16.
          */
         HwiP_setFunc(&clockHwi, ClockP_hwiCallback, (uintptr_t)NULL);
-        HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM1;
+        HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
 
-        /* Set IMASK for channel 1. IMASK is used by the power driver to know
+        /* Set IMASK for channel 0. IMASK is used by the power driver to know
          * which systimer channels are active.
          */
-        HWREG(SYSTIM_BASE + SYSTIM_O_IMSET) = SYSTIM_IMSET_EV1_SET;
+        HWREG(SYSTIM_BASE + SYSTIM_O_IMSET) = SYSTIM_IMSET_EV0_SET;
 
         /* Initialize ClockP variables */
         List_clearList(&ClockP_list);
         ClockP_ticks               = nowTick;
-        ClockP_nextScheduledTick   = (uint32_t)(nowTick + CLOCKP_PERIOD_MAX);
+        ClockP_nextScheduledTick   = (uint32_t)(nowTick + ClockP_PERIOD_MAX);
         ClockP_inWorkFunc          = false;
         ClockP_startDuringWorkFunc = false;
 
@@ -196,7 +199,7 @@ uint32_t ClockP_getTicksUntilInterrupt(void)
     ticks = ClockP_nextScheduledTick - getClockPTick();
 
     /* Clamp value to zero if nextScheduledTick is less than current */
-    if (ticks > CLOCKP_PERIOD_MAX)
+    if (ticks > ClockP_PERIOD_MAX)
     {
         ticks = 0;
     }
@@ -211,11 +214,12 @@ uint32_t ClockP_getTicksUntilInterrupt(void)
 void ClockP_scheduleNextTick(uint32_t absTick)
 {
     /* Reprogram the timer for the new period and next interrupt */
-    uint32_t newSystim = (uint32_t)(absTick * ClockP_tickPeriod);
+    uint32_t newSystim = (uint32_t)(absTick * ClockP_TICK_PERIOD);
 
     /* Note: Channel interrupt flag is automatically cleared when writing a
-     * compare value */
-    HWREG(SYSTIM_BASE + SYSTIM_O_CH1CC) = newSystim;
+     * compare value
+     */
+    HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = newSystim;
 
     /* Remember this */
     ClockP_nextScheduledTick = absTick;
@@ -225,6 +229,9 @@ void ClockP_scheduleNextTick(uint32_t absTick)
  *  ======== ClockP_walkQueueDynamic ========
  *  Walk the Clock Queue for TickMode_DYNAMIC, optionally servicing a
  *  specific tick
+ *
+ *  Returns the number of ticks from thisTick to the next timeout.
+ *  If no future timeouts exists, ~0 is returned.
  */
 uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
 {
@@ -240,7 +247,7 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
 
         obj = (ClockP_Obj *)elem;
 
-        /* If  the object is active ... */
+        /* If the object is active ... */
         if (obj->active == true)
         {
 
@@ -268,13 +275,13 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
                 }
             }
 
-            /* If object still active update distance to soonest tick */
+            /* If object is still active, update distance to soonest timeout */
             if (obj->active == true)
             {
 
                 delta = obj->currTimeout - thisTick;
 
-                /* If this is the soonest tick update distance to soonest */
+                /* If this is the soonest timeout, update distance to soonest */
                 if (delta < distance)
                 {
                     distance = delta;
@@ -292,13 +299,28 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
  */
 void ClockP_workFuncDynamic(uintptr_t arg)
 {
-    uint32_t distance;
-    uint32_t serviceTickAbs;
-    uint32_t nowToNextService;
-    uint32_t skippable;
-    uint32_t nowTick;
-    uint32_t nextTick;
     uintptr_t hwiKey;
+
+    /* The tick count at the entry of this function. This is our definition of
+     * "now".
+     */
+    uint32_t nowTick;
+
+    /* The tick count for the current timeout to service */
+    uint32_t timeoutTick;
+
+    /* The number of ticks between the current timeout to service and the next
+     * timeout.
+     */
+    uint32_t distance;
+
+    /* The number of ticks since the current timeout to service relative to now.
+     * (nowTick)
+     */
+    uint32_t ticksSinceTimeout;
+
+    /* The next tick to schedule at the end of this function */
+    uint32_t nextTick;
 
     hwiKey = HwiP_disable();
 
@@ -309,53 +331,65 @@ void ClockP_workFuncDynamic(uintptr_t arg)
     ClockP_inWorkFunc          = true;
     ClockP_startDuringWorkFunc = false;
 
-    /* Determine first tick expiration to service (the anticipated next tick) */
-    serviceTickAbs   = ClockP_nextScheduledTick;
-    /* Number of ticks from now until next scheduled tick */
-    nowToNextService = nowTick - serviceTickAbs;
+    /* Determine the first expired timeout to service.
+     * This function will be called by ClockP_hwiCallback after the "next
+     * scheduled tick" has expired. The "next scheduled tick" will therefore be
+     * now or in the past (until it is updated at the end of this function).
+     * The "next scheduled tick" will either be the value of a timeout or it
+     * will be a dummy tick that was scheduled ClockP_PERIOD_MAX ticks into the
+     * future. In both scenarios the "next scheduled tick" will be treated as a
+     * timeout. If it was a dummy tick, it will just result in no timeouts being
+     * serviced for that specific tick.
+     */
+    timeoutTick       = ClockP_nextScheduledTick;
+    /* Number of ticks since the timeout to service */
+    ticksSinceTimeout = nowTick - timeoutTick;
 
     HwiP_restore(hwiKey);
 
+    /* In the first iteration of below loop, the distance is set to 0, to ensure
+     * that the the first expired timeout will be serviced.
+     */
     distance = 0;
 
-    /* Walk queue until we catch up to current tick count */
-    while (nowToNextService >= distance)
+    /* Walk queue until the next timeout is in the future. */
+    while (ticksSinceTimeout >= distance)
     {
-        serviceTickAbs += distance;
-        nowToNextService -= distance;
-        distance = ClockP_walkQueueDynamic(true, serviceTickAbs);
+        /* Determine the next timeout to service */
+        timeoutTick += distance;
+        /* Number of ticks since the timeout */
+        ticksSinceTimeout -= distance;
+        /* Walk queue and service timeout(s) and return the distance to the next
+         * timeout.
+         */
+        distance = ClockP_walkQueueDynamic(true, timeoutTick);
     }
 
     hwiKey = HwiP_disable();
 
-    /* If ClockP_start() was called during processing of Q, re-walk to
+    /* If ClockP_start() was called during processing of queue, re-walk to
      * update distance */
     if (ClockP_startDuringWorkFunc == true)
     {
-        distance = ClockP_walkQueueDynamic(false, serviceTickAbs);
+        distance = ClockP_walkQueueDynamic(false, timeoutTick);
     }
 
-    /* If no active timeouts then skip the maximum supported by the timer */
-    if (distance == ~0)
+    /* Cap the distance to the maximum distance supported by the timer */
+    if (distance > ClockP_PERIOD_MAX)
     {
-        skippable = CLOCKP_PERIOD_MAX;
+        distance = ClockP_PERIOD_MAX;
     }
-    /* Else, finalize how many ticks can skip */
-    else
-    {
-        skippable = distance - nowToNextService;
-        if (skippable > CLOCKP_PERIOD_MAX)
-        {
-            skippable = CLOCKP_PERIOD_MAX;
-        }
-    }
-    nextTick = serviceTickAbs + skippable;
+
+    /* Next tick is the latest timeout that was serviced plus the distance to
+     * the next timeout.
+     */
+    nextTick = timeoutTick + distance;
 
     /* Reprogram for next expected tick */
     ClockP_scheduleNextTick(nextTick);
 
     ClockP_inWorkFunc = false;
-    ClockP_ticks      = serviceTickAbs;
+    ClockP_ticks      = timeoutTick;
 
     HwiP_restore(hwiKey);
 }
@@ -365,11 +399,11 @@ void ClockP_workFuncDynamic(uintptr_t arg)
  */
 void ClockP_hwiCallback(uintptr_t arg)
 {
-    /* ClockP is using raw SysTimer channel 1 interrupt. Clearing the channel 1
+    /* ClockP is using raw SysTimer channel 0 interrupt. Clearing the channel 0
      * flag is strictly not necessary, but doing it here to avoid confusion for
      * anyone using the SysTimer combined event.
      */
-    HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_EV1_CLR;
+    HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_EV0_CLR;
 
     /* Run worker function */
     ClockP_workFuncDynamic(arg);
@@ -534,9 +568,42 @@ void ClockP_start(ClockP_Handle handle)
  */
 void ClockP_stop(ClockP_Handle handle)
 {
+    uintptr_t hwiKey;
+    uint32_t now;
+    uint32_t distanceToNextTick;
+
     ClockP_Obj *obj = (ClockP_Obj *)handle;
 
     obj->active = false;
+
+    /* Re-compute next scheduled tick, if the current one is the timeout of the
+     * stopped clock.
+     */
+    if (obj->currTimeout == ClockP_nextScheduledTick)
+    {
+
+        now = getClockPTick();
+
+        /* Disable interrupts to ensure no new clocks are started while
+         * determining and scheduling the next tick.
+         */
+        hwiKey = HwiP_disable();
+
+        /* Determine distance to next tick */
+        distanceToNextTick = ClockP_walkQueueDynamic(false, now);
+
+        /* Cap the distance to the maximum distance supported by the timer */
+        if (distanceToNextTick > ClockP_PERIOD_MAX)
+        {
+            distanceToNextTick = ClockP_PERIOD_MAX;
+        }
+
+        ClockP_scheduleNextTick(now + distanceToNextTick);
+
+        ClockP_ticks = now;
+
+        HwiP_restore(hwiKey);
+    }
 }
 
 /*
@@ -600,7 +667,7 @@ void ClockP_getCpuFreq(ClockP_FreqHz *freq)
  */
 uint32_t ClockP_getSystemTickPeriod(void)
 {
-    return (ClockP_tickPeriod);
+    return (ClockP_TICK_PERIOD);
 }
 
 /*
@@ -619,12 +686,12 @@ void ClockP_sleep(uint32_t sec)
 {
     uint32_t ticksToSleep;
 
-    if (sec > CLOCKP_PERIOD_MAX_SEC)
+    if (sec > ClockP_PERIOD_MAX_SEC)
     {
-        sec = CLOCKP_PERIOD_MAX_SEC;
+        sec = ClockP_PERIOD_MAX_SEC;
     }
     /* Convert from seconds to number of ticks */
-    ticksToSleep = (sec * 1000000U) / ClockP_tickPeriod;
+    ticksToSleep = (sec * 1000000U) / ClockP_TICK_PERIOD;
     sleepTicks(ticksToSleep);
 }
 
@@ -641,13 +708,13 @@ void ClockP_usleep(uint32_t usec)
     currTick = getClockPTick();
 
     /* Make sure we sleep at least one tick if usec > 0 */
-    endTick = currTick + ((usec + ClockP_tickPeriod - 1) / (ClockP_tickPeriod * CLOCK_FREQUENCY_DIVIDER));
+    endTick = currTick + ((usec + ClockP_TICK_PERIOD - 1) / (ClockP_TICK_PERIOD * CLOCK_FREQUENCY_DIVIDER));
 
     /* If usec large enough, sleep for the appropriate number of clock ticks. */
-    if (usec > CLOCKP_PROC_OVERHEAD_US)
+    if (usec > ClockP_PROC_OVERHEAD_US)
     {
         ClockP_startup();
-        ticksToSleep = (usec - CLOCKP_PROC_OVERHEAD_US) / ClockP_tickPeriod;
+        ticksToSleep = (usec - ClockP_PROC_OVERHEAD_US) / ClockP_TICK_PERIOD;
         sleepTicks(ticksToSleep);
     }
 
@@ -675,9 +742,9 @@ size_t ClockP_staticObjectSize(void)
 static void sleepTicks(uint32_t ticks)
 {
     /* Cap to max number of ticks supported */
-    if (ticks > CLOCKP_PERIOD_MAX)
+    if (ticks > ClockP_PERIOD_MAX)
     {
-        ticks = CLOCKP_PERIOD_MAX;
+        ticks = ClockP_PERIOD_MAX;
     }
 
     SemaphoreP_Struct semStruct;

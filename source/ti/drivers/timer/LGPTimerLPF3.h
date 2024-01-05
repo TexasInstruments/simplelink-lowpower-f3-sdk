@@ -711,14 +711,14 @@ typedef struct LGPTimerLPF3_HWAttrs
 {
     /*! LGPTimer peripheral base address */
     uint32_t baseAddr;
+    /*! LGPTimer peripheral's power resource ID */
+    PowerLPF3_Resource powerID;
+    /*! LGPTimer peripheral channel selection for for pin and pin mux */
+    LGPTimerLPF3_ChannelConf channelConfig[NO_OF_LGPT_CHANNELS];
     /*! LGPTimer peripheral interrupt vector */
     uint8_t intNum;
     /*! LGPTimer peripheral's interrupt priority */
     uint8_t intPriority;
-    /*! LGPTimer peripheral's power resource ID */
-    uint8_t powerID;
-    /*! LGPTimer peripheral channel selection for for pin and pin mux */
-    LGPTimerLPF3_ChannelConf channelConfig[NO_OF_LGPT_CHANNELS];
 } LGPTimerLPF3_HWAttrs;
 
 /*!

@@ -227,9 +227,6 @@ typedef struct
 {
     I2C_BASE_HWATTRS
 
-    /* I2C peripheral's Power driver ID */
-    unsigned long powerMngrId;
-
     /*
      *  I2C Swi priority.
      *  The higher the number, the higher the priority.
@@ -238,6 +235,10 @@ typedef struct
      *  Swi.numPriorities in the kernel configuration file.
      */
     uint32_t swiPriority;
+
+    /* I2C peripheral's Power driver ID */
+    PowerLPF3_Resource powerMngrId;
+
     /* SDA pin index and mux */
     uint8_t sdaPin;
     uint8_t sdaPinMux;

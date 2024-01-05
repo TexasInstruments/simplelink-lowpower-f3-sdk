@@ -287,6 +287,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <ti/drivers/Power.h>
+
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
@@ -657,7 +659,7 @@ typedef struct
     UART2_Callback writeCallback;  /*!< Pointer to write callback */                      \
                                                                                           \
     /* For Power management */                                                            \
-    unsigned int powerMgrId; /*!< Determined from base address */                         \
+    Power_Resource powerMgrId; /*!< Determined from base address */                       \
 /*! @endcond */
 
 /*!

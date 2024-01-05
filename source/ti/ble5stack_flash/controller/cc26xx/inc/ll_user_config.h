@@ -118,6 +118,10 @@ extern "C"
  */
 #include "ble_user_config.h"
 
+#ifdef USE_RCL
+#include <ti/drivers/rcl/LRF.h>
+#endif
+
 /*******************************************************************************
  * MACROS
  */
@@ -170,6 +174,7 @@ typedef struct
   regOverride_t         *rfRegOverrideTxStdPtr; // Default PA overrides
 #endif //CC13X2P
 #ifndef CC23X0
+  RF_Mode               *rfMode;                // Specify PRCM Mode and pointers to CPE/MCE/RFE patches
   regOverride_t         *rfRegOverrideCtePtr;   // CTE overrides
   cteAntProp_t          *cteAntProp;            // CTE antenna properties
   uint8                 privOverrideOffset;    // Privacy Override Offset
@@ -177,6 +182,19 @@ typedef struct
   uint8                 maxNumCteBufs;         // num of CTE samples buffers (each ~2.5KB) used for RF auto copy
 #endif
   uint8                 advReportIncChannel;   // include channel index in advertising report
+#ifdef USE_RCL
+  const LRF_TxPowerTable  *lrfTxPowerTablePtr;
+  const LRF_Config        *lrfConfigPtr;
+  int8                    defaultTxPowerDbm;      // The default Tx Power value in dBm
+  uint8                   defaultTxPowerFraction; // The fraction field allows 0.5 dB steps in the power table
+                                                  // 0 - use the integer Tx power dBm value
+                                                  // 1 - raise the Tx power value by 0.5 dBm
+  uint16                  rclPhyFeature1MBPS;     // RCL_PHY_FEATURE_SUB_PHY_1_MBPS
+  uint16                  rclPhyFeature2MBPS;     // RCL_PHY_FEATURE_SUB_PHY_2_MBPS
+  uint16                  rclPhyFeatureCoded;     // RCL_PHY_FEATURE_SUB_PHY_CODED
+  uint16                  rclPhyFeatureCodedS8;   // RCL_PHY_FEATURE_CODED_TX_RATE_S8
+  uint16                  rclPhyFeatureCodedS2;   //RCL_PHY_FEATURE_CODED_TX_RATE_S2
+#endif
 } llUserCfg_t;
 
 /*******************************************************************************

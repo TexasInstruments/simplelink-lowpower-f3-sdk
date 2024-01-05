@@ -40,7 +40,6 @@
 /* get Common /ti/drivers utility functions */
 let Common     = system.getScript("/ti/drivers/Common.js");
 let logError   = Common.logError;
-let logWarning = Common.logWarning;
 let logInfo = Common.logInfo;
 
 /* compute /ti/drivers family name from device object */
@@ -57,14 +56,13 @@ intPriority.displayName = "Interrupt Priority";
  *  - $hardware
  *  - mode
  *  - interruptTrigger
- *  - callbackFunction
  *  - initialOutputState
  *  - outputState (deprecated, but kept for compatibility)
  *  - irq (deprecated, but kept for compatibility)
  */
 function generateConfig()
 {
-    /* Superset of possible options. Options will be removed based on family below */ 
+    /* Superset of possible options. Options will be removed based on family below */
     let config = [
         {
             name: "$hardware",
@@ -76,7 +74,7 @@ function generateConfig()
             name: "mode",
             displayName: "Mode",
             description: "Select the GPIO mode",
-            longDescription: `The mode configuration parameter is used to determine the initial state of GPIO, 
+            longDescription: `The mode configuration parameter is used to determine the initial state of GPIO,
 eliminating the need to configure the GPIO pin at runtime prior to using it.
 [More ...](/drivers/syscfg/html/ConfigDoc.html#ti_drivers_GPIO_mode "Full descriptions of all GPIO modes")`,
             default: "Input",
@@ -175,35 +173,10 @@ This parameter configures when the GPIO pin interrupt will trigger. Even when th
             default: "None",
             options: [
                 { name: "None" },
-                { name: "High" },
-                { name: "Low" },
                 { name: "Falling Edge" },
                 { name: "Rising Edge" },
                 { name: "Both Edges" }
             ]
-        },
-        {
-            name: "callbackFunction",
-            hidden: false,
-            displayName: "Callback Function",
-            description: "The name of the callback function called when this GPIO pin triggers an interrupt, or 'NULL' if it's specified at runtime",
-            longDescription: `
-If you need to set the callback at runtime, set this configuration parameter
-to 'NULL' and call [\`GPIO_setCallback()\`](/drivers/doxygen/html/_g_p_i_o_8h.html#a24c401f32e65f60f11a1594fdafb9d2a) with the name of the function you
-want to be triggered.
-
-[More ...](/drivers/syscfg/html/ConfigDoc.html#ti_drivers_GPIO_callbackFunction "Function's type signature and an example")
-`,
-            documentation: `
-This function is of type [\`GPIO_CallbackFxn\`](/drivers/doxygen/html/_g_p_i_o_8h.html#a46b0c9afbe998c88539abc92082a1173),
-it's called in the context of a hardware ISR, and it's passed
-a single parameter: the index of the GPIO that triggered the interrupt.
-
-Example: [Creating an input callback](/drivers/doxygen/html/_g_p_i_o_8h.html#ti_drivers_GPIO_Example_callback "C/C++ source").
-`,
-    
-            placeholder: "<a callback is never needed>",
-            default: "NULL" /* a callback may be set at runtime */
         },
         /* Compatibility - these deprecated options mirror PIN configurables */
         {
@@ -418,10 +391,6 @@ function updateConfigs(inst, ui)
         hideOption("pull");
         hideOption("hysteresis");
         hideOption("interruptTrigger");
-        hideOption("callbackFunction");
-
-        /* Clear input-specific text configurables */
-        inst.callbackFunction = "";
 
         /* Special case: Open Drain can have a pull but not a drive strength */
         if (inst.outputType == "Open Drain") {
@@ -434,11 +403,9 @@ function updateConfigs(inst, ui)
         showOption("pull");
         showOption("hysteresis");
         showOption("interruptTrigger");
-        showOption("callbackFunction");
 
         /* Reset input-specific text configurables */
         inst.interruptTrigger = "None";
-        inst.callbackFunction = "NULL";
 
         /* Hide output-specific options */
         hideOption("outputType");
@@ -477,27 +444,6 @@ function validate(inst, validation)
             logError(validation, inst, "interruptTrigger",
                 "Output mode GPIO resources can't trigger interrupts");
         }
-
-        /* specified callbackFunction is never called for output only GPIOs */
-        if (inst.callbackFunction.length > 0) {
-            let message = "callback '" + inst.callbackFunction
-                + "' set, but won't be triggered by this output-only GPIO";
-
-            logError(validation, inst, "callbackFunction", message);
-        }
-    }
-
-    /* callbackFunction must be valid C identifier */
-    if (!Common.isCName(inst.callbackFunction)) {
-        let message = "'" + inst.callbackFunction
-            + "' is not a valid a C identifier";
-        logError(validation, inst, "callbackFunction", message);
-    }
-
-    if (inst.callbackFunction !== "NULL"
-        && (inst.callbackFunction.toLowerCase() === "null")) {
-        logWarning(validation, inst, "callbackFunction",
-            "Did you mean \"NULL\"?");
     }
 
     if (inst.$hardware) {
@@ -568,7 +514,6 @@ function onHardwareChanged(inst, ui)
             inst.interruptTrigger = "None";
         }
 
-        inst.callbackFunction = "NULL";
         updateConfigs(inst, ui);
     }
 }
@@ -607,12 +552,11 @@ function getPinBounds(module)
     {
         let pin = system.deviceData.devicePins[x];
 
-        /* CC26XX devices have DIO_0, DIO_16 while CC32XX devices have GP03, GP30 
+        /* CC26XX devices have DIO_0, DIO_16 while CC32XX devices have GP03, GP30
          * All device pins with type "Default" are valid pins for WFF3 */
 
         if ((pin.description.startsWith("DIO")) ||
-            (pin.description.startsWith("RGCDIO")) ||
-            (pin.description.startsWith("GP") && pin.devicePinType === "Default") || 
+            (pin.description.startsWith("GP") && pin.devicePinType === "Default") ||
             ((family == "WFF3") && pin.devicePinType === "Default"))
         {
             let dioNum = module._pinToDio(null, pin);
@@ -680,44 +624,6 @@ function getPinData(module)
 }
 
 /*
- * ======== getConfiguredCallbacks ========
- * Generates two pieces of data: a list of unique names and an indented string
- * containing calls to GPIO_setCallback. This is needed because if a callback
- * is reused, we don't want to generate two extern definitions for it because
- * that would look ugly.
- *
- * Note that this callback configuration is slightly heavier on runtime cost
- * than having the array contain initialised values, but it saves flash since
- * the table is likely to be quite sparse.
- */
-function getConfiguredCallbacks(instances)
-{
-    let callbackInfo = {
-        /* A set of unique callback function names */
-        names: [],
-        /* String containing calls to GPIO_setCallback */
-        calls: ""
-    };
-
-    for (let inst of instances)
-    {
-        if (inst.callbackFunction !== "" && inst.callbackFunction !== "NULL")
-        {
-            if (!callbackInfo.names.includes(inst.callbackFunction))
-            {
-                callbackInfo.names.push(inst.callbackFunction);
-            }
-            callbackInfo.calls += "    GPIO_setCallback(" + inst.$name + ", " + inst.callbackFunction + ");\n";
-        }
-    }
-
-    /* Snip the trailing linebreak */
-    callbackInfo.calls = callbackInfo.calls.trim();
-
-    return callbackInfo;
-}
-
-/*
  *  ======== getAttrs ========
  *  Return a symbolic GPIO bit mask corresponding to inst's configs
  */
@@ -756,8 +662,8 @@ function getAttrs(inst)
             listOfDefines.push(strengthMapping[inst.outputStrength]);
         }
 
-        /* If the outputType option exists and is not "Standard", 
-         * add the define for the selected option to list of defines 
+        /* If the outputType option exists and is not "Standard",
+         * add the define for the selected option to list of defines
          */
         if ("outputType" in inst && inst.outputType != "Standard") {
             listOfDefines.push(outputMapping[inst.outputType]);
@@ -932,6 +838,9 @@ dependency issue.
         getAttrs: getAttrs
     },
 
+    /* Board_init() priority to guarantee that GPIO is initialized before the LogSink */
+    initPriority        : 1,
+
     _getPinResources: _getPinResources,
     _getDefaultName: _getDefaultName,
     _getDefaultAttrs: _getDefaultAttrs,
@@ -942,8 +851,7 @@ dependency issue.
 
     getPinData: getPinData,
     getPinBounds: getPinBounds,
-    getDioForInst: getDioForInst,
-    getConfiguredCallbacks: getConfiguredCallbacks
+    getDioForInst: getDioForInst
 };
 
 /* extend our common exports to include the family-specific content */

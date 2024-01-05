@@ -30,6 +30,7 @@ set(SOURCES_CC23X0_COMMON
     Comparator.c
     comparator/ComparatorLPF3LP.c
     cryptoutils/aes/AESCommonLPF3.c
+    cryptoutils/cryptokey/CryptoKey.c
     cryptoutils/cryptokey/CryptoKeyPlaintext.c
     cryptoutils/ecc/ECCInitLPF3SW.c
     utils/BigNum.c
@@ -52,6 +53,8 @@ set(SOURCES_CC23X0_COMMON
     gpio/GPIOLPF3.c
     I2C.c
     i2c/I2CLPF3.c
+    I2CTarget.c
+    i2ctarget/I2CTargetLPF3.c
     NVS.c
     nvs/NVSLPF3.c
     nvs/NVSRAM.c

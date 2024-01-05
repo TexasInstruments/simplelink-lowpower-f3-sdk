@@ -2,7 +2,7 @@
 
  @file  led_debug.h
 
- @brief This module contains the definitions for the  functionality of a
+ @brief This module contains the definitions for the functionality of a
         bim debug utility.
 
  Group: WCS, BTS
@@ -61,7 +61,10 @@ extern "C"
  * MACROS
  */
 
-#ifdef DeviceFamily_CC23X0R5
+#if defined(DeviceFamily_CC23X0R2)
+#define RED_LED    21
+#define GREEN_LED  8
+#elif defined(DeviceFamily_CC23X0R5)
 #define RED_LED    14
 #define GREEN_LED  15
 #else
@@ -76,7 +79,7 @@ extern "C"
 /**
  * @fn      delay
  *
- * @brief   Causes Proecessor to execute NOP's for the specified time delayMs
+ * @brief   Causes processor to execute NOP's for the specified time delayMs
  *
  * @param   delayMs - desired delay in milliseconds
  *

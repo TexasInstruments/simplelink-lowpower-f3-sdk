@@ -155,21 +155,28 @@ int_fast16_t CAN_read(CAN_Handle handle, MCAN_RxBufElement *buf)
  */
 int_fast16_t CAN_write(CAN_Handle handle, const MCAN_TxBufElement *elem)
 {
-    CAN_Object *object  = handle->object;
-    int_fast16_t status = CAN_STATUS_ERROR;
-    MCAN_TxFIFOQStatus fifoQStatus;
-    uintptr_t interruptKey;
-
-    /* Disable interrupts to prevent CAN IRQ handler from corrupting SPI */
-    interruptKey = HwiP_disable();
+    CAN_Object *object             = handle->object;
+    int_fast16_t status            = CAN_STATUS_ERROR;
+    MCAN_TxFIFOQStatus fifoQStatus = {0};
+    uintptr_t hwiKey;
 
     if (object->txFIFOQNum != 0U)
     {
+        /* Disable interrupts as the ISR may call CAN_write */
+        hwiKey = HwiP_disable();
+
         MCAN_getTxFIFOQStatus(&fifoQStatus);
 
-        if (fifoQStatus.fifoFull == 1U)
+        if (fifoQStatus.fifoFull == 0U)
         {
-            if (StructRingBuf_put(&object->txStructRingBuf, elem) == -1)
+            MCAN_writeTxMsg(fifoQStatus.putIdx, elem);
+
+            MCAN_setTxBufAddReq(fifoQStatus.putIdx);
+            status = CAN_STATUS_SUCCESS;
+        }
+        else
+        {
+            if (StructRingBuf_put(&object->txStructRingBuf, elem) < 0)
             {
                 status = CAN_STATUS_TX_BUF_FULL;
             }
@@ -178,16 +185,9 @@ int_fast16_t CAN_write(CAN_Handle handle, const MCAN_TxBufElement *elem)
                 status = CAN_STATUS_SUCCESS;
             }
         }
-        else
-        {
-            MCAN_writeTxMsg(fifoQStatus.putIdx, elem);
 
-            MCAN_setTxBufAddReq(fifoQStatus.putIdx);
-            status = CAN_STATUS_SUCCESS;
-        }
+        HwiP_restore(hwiKey);
     }
-
-    HwiP_restore(interruptKey);
 
     return status;
 }
@@ -200,10 +200,6 @@ int_fast16_t CAN_writeBuffer(CAN_Handle handle, uint32_t bufIdx, const MCAN_TxBu
     CAN_Object *object  = handle->object;
     int_fast16_t status = CAN_STATUS_ERROR;
     uint32_t pendingTx;
-    uintptr_t interruptKey;
-
-    /* Disable interrupts to prevent CAN IRQ handler from corrupting SPI */
-    interruptKey = HwiP_disable();
 
     if (bufIdx < object->txBufNum)
     {
@@ -218,8 +214,6 @@ int_fast16_t CAN_writeBuffer(CAN_Handle handle, uint32_t bufIdx, const MCAN_TxBu
             status = CAN_STATUS_SUCCESS;
         }
     }
-
-    HwiP_restore(interruptKey);
 
     return status;
 }

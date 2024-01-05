@@ -53,7 +53,7 @@ __root const TimestampP_Format
 #elif (defined(__clang__) && defined(__ti_version__))
 const TimestampP_Format __attribute__((used))
 #elif defined(__GNUC__)
-const static TimestampP_Format __attribute__((section(".timestampPFormat"), used))
+const TimestampP_Format __attribute__((section(".timestampPFormat"), used))
 #endif
     TimestampP_nativeFormat32 = {
         .format = {.exponent = TimestampP_Exponent_Microseconds, .fracBytes = 0, .intBytes = 4, .multiplier = 8}};

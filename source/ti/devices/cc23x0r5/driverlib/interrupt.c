@@ -169,7 +169,7 @@ void IntSetPriority(uint32_t intNum, uint8_t priority)
     shift  = (priorityRegIndex & 0x3) * 8;
     mask   = 0xff << shift;
 
-    intNumWasEnabled = ((NVIC->ISER[0]) & (1 << intNum));
+    intNumWasEnabled = IntIsEnabled(intNum);
 
     // Disable the interrupt before changing it's priority
     IntDisable(intNum);
@@ -212,6 +212,33 @@ int32_t IntGetPriority(uint32_t intNum)
          */
         return ((NVIC->IP[index - 4] >> (8 * (intNum & 3))) & INT_PRIORITY_MASK);
     }
+}
+
+//*****************************************************************************
+//
+// Checks whether an interrupt is enabled
+//
+//*****************************************************************************
+bool IntIsEnabled(uint32_t intNum)
+{
+    // Check the arguments.
+    ASSERT(intNum < NUM_INTERRUPTS);
+
+    bool isEnabled = false;
+
+    // Determine the interrupt to check.
+    if (intNum == INT_SYSTICK)
+    {
+        // Check the System Tick interrupt.
+        isEnabled = SysTick->CTRL & SysTick_CTRL_TICKINT_Msk ? true : false;
+    }
+    else if ((intNum >= 16) && (intNum <= 47))
+    {
+        // Check the general interrupt.
+        isEnabled = (NVIC->ISER[0] & (1 << (intNum - 16))) ? true : false;
+    }
+
+    return isEnabled;
 }
 
 //*****************************************************************************

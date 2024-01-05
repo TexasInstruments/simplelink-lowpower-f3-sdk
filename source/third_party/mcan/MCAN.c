@@ -162,6 +162,11 @@
 #define MCAN_TX_EVENT_FIFO_ELEM_MM_SHIFT   (24U)
 #define MCAN_TX_EVENT_FIFO_ELEM_MM_MASK    (0xFF000000U)
 
+/* Start Address bit shift for any MCAN registers containing a word-aligned
+ * start address field.
+ */
+#define MCAN_START_ADDR_SHIFT  (2U)
+
 /*!
  *  @brief Macro to extract a field value. This macro extracts the field value
  *         from a 32-bit variable (which contains the register value).
@@ -246,7 +251,7 @@ static const uint32_t MCAN_elementSizeWords[8] = {4, 5, 6, 7, 8, 10, 14, 18};
 static inline void MCAN_modify_field_raw(uint32_t offset, uint32_t mask, uint32_t shift, uint32_t value)
 {
     uint32_t regVal = MCAN_readReg(offset);
-    regVal &= (~mask);
+    regVal &= (uint32_t)~mask;
     regVal |= (value << shift) & mask;
     MCAN_writeReg(offset, regVal);
 }
@@ -464,7 +469,7 @@ static void MCAN_writeMsg(uint32_t elemAddr, const MCAN_TxBufElement *elem)
 /*
  *  ======== MCAN_setOpMode ========
  */
-void MCAN_setOpMode(uint32_t mode)
+void MCAN_setOpMode(MCAN_OperationMode mode)
 {
     MCAN_MODIFY_FIELD(MCAN_CCCR, MCAN_CCCR_INIT, mode);
 }
@@ -472,7 +477,7 @@ void MCAN_setOpMode(uint32_t mode)
 /*
  *  ======== MCAN_getOpMode ========
  */
-uint32_t MCAN_getOpMode(void)
+MCAN_OperationMode MCAN_getOpMode(void)
 {
     return (MCAN_READ_FIELD(MCAN_CCCR, MCAN_CCCR_INIT));
 }
@@ -633,7 +638,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     if (0U != msgRAMConfig->sidFilterListSize)
     {
         regVal = 0U;
-        MCAN_SET_FIELD(regVal, MCAN_SIDFC_FLSSA, (msgRAMConfig->sidFilterStartAddr >> 2U));
+        MCAN_SET_FIELD(regVal, MCAN_SIDFC_FLSSA, (msgRAMConfig->sidFilterStartAddr >> MCAN_START_ADDR_SHIFT));
         MCAN_SET_FIELD(regVal, MCAN_SIDFC_LSS, msgRAMConfig->sidFilterListSize);
         MCAN_writeReg(MCAN_SIDFC, regVal);
     }
@@ -642,7 +647,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     if (0U != msgRAMConfig->xidFilterListSize)
     {
         regVal = 0U;
-        MCAN_SET_FIELD(regVal, MCAN_XIDFC_FLESA, (msgRAMConfig->xidFilterStartAddr >> 2U));
+        MCAN_SET_FIELD(regVal, MCAN_XIDFC_FLESA, (msgRAMConfig->xidFilterStartAddr >> MCAN_START_ADDR_SHIFT));
         MCAN_SET_FIELD(regVal, MCAN_XIDFC_LSE, msgRAMConfig->xidFilterListSize);
         MCAN_writeReg(MCAN_XIDFC, regVal);
     }
@@ -651,7 +656,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     if (0U != msgRAMConfig->rxFIFO0Size)
     {
         regVal = 0U;
-        MCAN_SET_FIELD(regVal, MCAN_RXF0C_F0SA, (msgRAMConfig->rxFIFO0StartAddr >> 2U));
+        MCAN_SET_FIELD(regVal, MCAN_RXF0C_F0SA, (msgRAMConfig->rxFIFO0StartAddr >> MCAN_START_ADDR_SHIFT));
         MCAN_SET_FIELD(regVal, MCAN_RXF0C_F0S, msgRAMConfig->rxFIFO0Size);
         MCAN_SET_FIELD(regVal, MCAN_RXF0C_F0WM, msgRAMConfig->rxFIFO0Watermark);
         MCAN_SET_FIELD(regVal, MCAN_RXF0C_F0OM, msgRAMConfig->rxFIFO0OpMode);
@@ -665,7 +670,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     if (0U != msgRAMConfig->rxFIFO1Size)
     {
         regVal = 0U;
-        MCAN_SET_FIELD(regVal, MCAN_RXF1C_F1SA, (msgRAMConfig->rxFIFO1StartAddr >> 2U));
+        MCAN_SET_FIELD(regVal, MCAN_RXF1C_F1SA, (msgRAMConfig->rxFIFO1StartAddr >> MCAN_START_ADDR_SHIFT));
         MCAN_SET_FIELD(regVal, MCAN_RXF1C_F1S, msgRAMConfig->rxFIFO1Size);
         MCAN_SET_FIELD(regVal, MCAN_RXF1C_F1WM, msgRAMConfig->rxFIFO1Watermark);
         MCAN_SET_FIELD(regVal, MCAN_RXF1C_F1OM, msgRAMConfig->rxFIFO1OpMode);
@@ -676,7 +681,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     }
 
     /* Configure Rx Buffer Start Address */
-    MCAN_MODIFY_FIELD(MCAN_RXBC, MCAN_RXBC_RBSA, (msgRAMConfig->rxBufStartAddr >> 2U));
+    MCAN_MODIFY_FIELD(MCAN_RXBC, MCAN_RXBC_RBSA, (msgRAMConfig->rxBufStartAddr >> MCAN_START_ADDR_SHIFT));
     /* Configure Rx Buffer elements size */
     MCAN_SET_FIELD(regValRXESC, MCAN_RXESC_RBDS, msgRAMConfig->rxBufElemSize);
     MCAN_writeReg(MCAN_RXESC, regValRXESC);
@@ -685,7 +690,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     if (0U != msgRAMConfig->txEventFIFOSize)
     {
         regVal = 0U;
-        MCAN_SET_FIELD(regVal, MCAN_TXEFC_EFSA, (msgRAMConfig->txEventFIFOStartAddr >> 2U));
+        MCAN_SET_FIELD(regVal, MCAN_TXEFC_EFSA, (msgRAMConfig->txEventFIFOStartAddr >> MCAN_START_ADDR_SHIFT));
         MCAN_SET_FIELD(regVal, MCAN_TXEFC_EFS, msgRAMConfig->txEventFIFOSize);
         MCAN_SET_FIELD(regVal, MCAN_TXEFC_EFWM, msgRAMConfig->txEventFIFOWatermark);
         MCAN_writeReg(MCAN_TXEFC, regVal);
@@ -695,7 +700,7 @@ void MCAN_configMsgRAM(const MCAN_MsgRAMConfig *msgRAMConfig)
     if ((0U != msgRAMConfig->txFIFOQSize) || (0U != msgRAMConfig->txBufNum))
     {
         regVal = 0U;
-        MCAN_SET_FIELD(regVal, MCAN_TXBC_TBSA, (msgRAMConfig->txBufStartAddr >> 2U));
+        MCAN_SET_FIELD(regVal, MCAN_TXBC_TBSA, (msgRAMConfig->txBufStartAddr >> MCAN_START_ADDR_SHIFT));
         MCAN_SET_FIELD(regVal, MCAN_TXBC_NDTB, msgRAMConfig->txBufNum);
         MCAN_SET_FIELD(regVal, MCAN_TXBC_TFQS, msgRAMConfig->txFIFOQSize);
         MCAN_SET_FIELD(regVal, MCAN_TXBC_TFQM, msgRAMConfig->txFIFOQMode);
@@ -720,7 +725,7 @@ static uint32_t MCAN_getTxBufAddr(uint32_t bufIdx)
 
     startAddr = MCAN_READ_FIELD(MCAN_TXBC, MCAN_TXBC_TBSA);
     /* Shift address field to correct position */
-    startAddr = (startAddr << 2U);
+    startAddr = (startAddr << MCAN_START_ADDR_SHIFT);
 
     elemSizeIdx = MCAN_READ_FIELD(MCAN_TXESC, MCAN_TXESC_TBDS);
     /* Get element size words and convert to bytes */
@@ -793,62 +798,7 @@ void MCAN_clearNewDataStatus(const MCAN_RxNewDataStatus *newDataStatus)
 /*
  *  ======== MCAN_readRxMsgNoCpy ========
  */
-void MCAN_readRxMsgNoCpy(uint32_t memType, uint32_t num, MCAN_RxBufElementNoCpy *elem)
-{
-    uint32_t elemAddr;
-    uint32_t elemSize;
-    uint32_t elemSizeIdx;
-    uint32_t enableRead = 0U;
-    uint32_t idx;
-    uint32_t startAddr;
-
-    if (MCAN_MEM_TYPE_BUF == memType)
-    {
-        startAddr   = MCAN_READ_FIELD(MCAN_RXBC, MCAN_RXBC_RBSA);
-        elemSizeIdx = MCAN_READ_FIELD(MCAN_RXESC, MCAN_RXESC_RBDS);
-        idx         = num;
-        enableRead  = 1U;
-    }
-
-    if (MCAN_MEM_TYPE_FIFO == memType)
-    {
-        switch (num)
-        {
-            case MCAN_RX_FIFO_NUM_0:
-                startAddr   = MCAN_READ_FIELD(MCAN_RXF0C, MCAN_RXF0C_F0SA);
-                elemSizeIdx = MCAN_READ_FIELD(MCAN_RXESC, MCAN_RXESC_F0DS);
-                idx         = MCAN_READ_FIELD(MCAN_RXF0S, MCAN_RXF0S_F0GI);
-                enableRead  = 1U;
-                break;
-
-            case MCAN_RX_FIFO_NUM_1:
-                startAddr   = MCAN_READ_FIELD(MCAN_RXF1C, MCAN_RXF1C_F1SA);
-                elemSizeIdx = MCAN_READ_FIELD(MCAN_RXESC, MCAN_RXESC_F1DS);
-                idx         = MCAN_READ_FIELD(MCAN_RXF1S, MCAN_RXF1S_F1GI);
-                enableRead  = 1U;
-                break;
-
-            default:
-                /* Invalid option */
-                break;
-        }
-    }
-
-    if (1U == enableRead)
-    {
-        /* Shift address field to correct position */
-        startAddr = (startAddr << 2U);
-        elemSize  = MCAN_elementSizeWords[elemSizeIdx] << 2U; /* convert to bytes */
-        elemAddr  = startAddr + (elemSize * idx);
-        elemAddr += MCAN_getMRAMOffset();
-        MCAN_readMsgNoCpy(elemAddr, elem);
-    }
-}
-
-/*
- *  ======== MCAN_readRxMsg ========
- */
-void MCAN_readRxMsg(uint32_t memType, uint32_t num, MCAN_RxBufElement *elem)
+void MCAN_readRxMsgNoCpy(MCAN_MemType memType, uint32_t num, MCAN_RxBufElementNoCpy *elem)
 {
     uint32_t elemAddr;
     uint32_t elemSize;
@@ -888,10 +838,64 @@ void MCAN_readRxMsg(uint32_t memType, uint32_t num, MCAN_RxBufElement *elem)
         }
     }
 
-    if (1U == enableRead)
+    if (0U != enableRead)
     {
         /* Shift address field to correct position */
-        startAddr = (uint32_t)(startAddr << 2U);
+        startAddr = (startAddr << MCAN_START_ADDR_SHIFT);
+        elemSize  = MCAN_elementSizeWords[elemSizeIdx] << 2U; /* convert to bytes */
+        elemAddr  = startAddr + (elemSize * idx);
+        elemAddr += MCAN_getMRAMOffset();
+        MCAN_readMsgNoCpy(elemAddr, elem);
+    }
+}
+
+/*
+ *  ======== MCAN_readRxMsg ========
+ */
+void MCAN_readRxMsg(MCAN_MemType memType, uint32_t num, MCAN_RxBufElement *elem)
+{
+    uint32_t elemAddr;
+    uint32_t elemSize;
+    uint32_t elemSizeIdx;
+    uint32_t enableRead = 0U;
+    uint32_t idx;
+    uint32_t startAddr;
+
+    if (MCAN_MEM_TYPE_BUF == memType)
+    {
+        startAddr   = MCAN_READ_FIELD(MCAN_RXBC, MCAN_RXBC_RBSA);
+        elemSizeIdx = MCAN_READ_FIELD(MCAN_RXESC, MCAN_RXESC_RBDS);
+        idx         = num;
+        enableRead  = 1U;
+    }
+    else /* (MCAN_MEM_TYPE_FIFO == memType) */
+    {
+        switch (num)
+        {
+            case MCAN_RX_FIFO_NUM_0:
+                startAddr   = MCAN_READ_FIELD(MCAN_RXF0C, MCAN_RXF0C_F0SA);
+                elemSizeIdx = MCAN_READ_FIELD(MCAN_RXESC, MCAN_RXESC_F0DS);
+                idx         = MCAN_READ_FIELD(MCAN_RXF0S, MCAN_RXF0S_F0GI);
+                enableRead  = 1U;
+                break;
+
+            case MCAN_RX_FIFO_NUM_1:
+                startAddr   = MCAN_READ_FIELD(MCAN_RXF1C, MCAN_RXF1C_F1SA);
+                elemSizeIdx = MCAN_READ_FIELD(MCAN_RXESC, MCAN_RXESC_F1DS);
+                idx         = MCAN_READ_FIELD(MCAN_RXF1S, MCAN_RXF1S_F1GI);
+                enableRead  = 1U;
+                break;
+
+            default:
+                /* Invalid option */
+                break;
+        }
+    }
+
+    if (0U != enableRead)
+    {
+        /* Shift address field to correct position */
+        startAddr = (uint32_t)(startAddr << MCAN_START_ADDR_SHIFT);
         elemSize  = MCAN_elementSizeWords[elemSizeIdx] << 2U; /* convert to bytes */
         elemAddr  = startAddr + (elemSize * idx);
         elemAddr += MCAN_getMRAMOffset();
@@ -915,7 +919,7 @@ void MCAN_readTxEventFIFO(MCAN_TxEventFIFOElement *txEventElem)
     idx       = MCAN_READ_FIELD(MCAN_TXEFS, MCAN_TXEFS_EFGI);
 
     /* Shift address field to correct position */
-    startAddr = (startAddr << 2U);
+    startAddr = (startAddr << MCAN_START_ADDR_SHIFT);
     elemSize *= 4U;
     elemAddr = startAddr + (elemSize * idx);
     elemAddr += MCAN_getMRAMOffset();
@@ -947,7 +951,7 @@ void MCAN_addStdMsgIDFilter(uint32_t filtNum, const MCAN_StdMsgIDFilterElement *
 
     startAddr = MCAN_READ_FIELD(MCAN_SIDFC, MCAN_SIDFC_FLSSA);
     /* Shift address field to correct position */
-    startAddr = (startAddr << 2U);
+    startAddr = (startAddr << MCAN_START_ADDR_SHIFT);
     elemAddr  = startAddr + (filtNum * MCAN_STD_ID_FILTER_ELEM_SIZE);
     elemAddr += MCAN_getMRAMOffset();
 
@@ -970,7 +974,7 @@ void MCAN_addExtMsgIDFilter(uint32_t filtNum, const MCAN_ExtMsgIDFilterElement *
 
     startAddr = MCAN_READ_FIELD(MCAN_XIDFC, MCAN_XIDFC_FLESA);
     /* Shift address field to correct position */
-    startAddr = (startAddr << 2U);
+    startAddr = (startAddr << MCAN_START_ADDR_SHIFT);
     elemAddr  = startAddr + (filtNum * MCAN_EXT_ID_FILTER_ELEM_SIZE);
     elemAddr += MCAN_getMRAMOffset();
 
@@ -989,7 +993,7 @@ void MCAN_addExtMsgIDFilter(uint32_t filtNum, const MCAN_ExtMsgIDFilterElement *
 /*
  *  ======== MCAN_enableLoopbackMode ========
  */
-void MCAN_enableLoopbackMode(uint32_t lpbkMode)
+void MCAN_enableLoopbackMode(MCAN_LpbkMode lpbkMode)
 {
     uint32_t regVal;
 
@@ -1066,91 +1070,102 @@ void MCAN_getProtocolStatus(MCAN_ProtocolStatus *protStatus)
 }
 
 /*
- *  ======== MCAN_setIntrEnable ========
+ *  ======== MCAN_enableInt ========
  */
-void MCAN_setIntrEnable(uint32_t intrMask, uint32_t enable)
+void MCAN_enableInt(uint32_t intMask)
 {
     uint32_t regVal = MCAN_readReg(MCAN_IE);
 
-    if (TRUE == enable)
-    {
-        regVal |= intrMask;
-    }
-    else
-    {
-        regVal &= ~intrMask;
-    }
+    regVal |= intMask;
 
     MCAN_writeReg(MCAN_IE, regVal);
 }
 
 /*
- *  ======== MCAN_setIntrLineSel ========
+ *  ======== MCAN_disableInt ========
  */
-void MCAN_setIntrLineSel(uint32_t intrMask, uint32_t lineNum)
+void MCAN_disableInt(uint32_t intMask)
+{
+    uint32_t regVal = MCAN_readReg(MCAN_IE);
+
+    regVal &= (uint32_t)~intMask;
+
+    MCAN_writeReg(MCAN_IE, regVal);
+}
+
+/*
+ *  ======== MCAN_setIntLineSel ========
+ */
+void MCAN_setIntLineSel(uint32_t intMask, MCAN_IntLineNum lineNum)
 {
     uint32_t regVal;
 
     regVal = MCAN_readReg(MCAN_ILS);
 
-    if (MCAN_INTR_LINE_NUM_0 == lineNum)
+    if (MCAN_INT_LINE_NUM_0 == lineNum)
     {
         /* 0 = Interrupt assigned to interrupt line 0 */
-        regVal &= ~intrMask;
+        regVal &= (uint32_t)~intMask;
     }
     else
     {
         /* 1 = Interrupt assigned to interrupt line 0 */
-        regVal |= intrMask;
+        regVal |= intMask;
     }
 
     MCAN_writeReg(MCAN_ILS, regVal);
 }
 
 /*
- *  ======== MCAN_setIntrLineEnable ========
+ *  ======== MCAN_enableIntLine ========
  */
-void MCAN_setIntrLineEnable(uint32_t lineNum, uint32_t enable)
+void MCAN_enableIntLine(MCAN_IntLineNum lineNum)
 {
     uint32_t mask   = ((uint32_t)1U << lineNum);
     uint32_t regVal = MCAN_readReg(MCAN_ILE);
 
-    if (TRUE == enable)
-    {
-        regVal |= mask;
-    }
-    else
-    {
-        regVal &= ~mask;
-    }
+    regVal |= mask;
 
     MCAN_writeReg(MCAN_ILE, regVal);
 }
 
 /*
- *  ======== MCAN_getIntrStatus ========
+ *  ======== MCAN_disableIntLine ========
  */
-uint32_t MCAN_getIntrStatus(void)
+void MCAN_disableIntLine(MCAN_IntLineNum lineNum)
+{
+    uint32_t mask   = ((uint32_t)1U << lineNum);
+    uint32_t regVal = MCAN_readReg(MCAN_ILE);
+
+    regVal &= (uint32_t)~mask;
+
+    MCAN_writeReg(MCAN_ILE, regVal);
+}
+
+/*
+ *  ======== MCAN_getIntStatus ========
+ */
+uint32_t MCAN_getIntStatus(void)
 {
     return (MCAN_readReg(MCAN_IR));
 }
 
 /*
- *  ======== MCAN_clearIntrStatus ========
+ *  ======== MCAN_clearIntStatus ========
  */
-void MCAN_clearIntrStatus(uint32_t intrMask)
+void MCAN_clearIntStatus(uint32_t intMask)
 {
-    MCAN_writeReg(MCAN_IR, intrMask);
+    MCAN_writeReg(MCAN_IR, intMask);
 }
 
 /*
  *  ======== MCAN_getRxFIFOStatus ========
  */
-void MCAN_getRxFIFOStatus(uint32_t fifoNum, MCAN_RxFIFOStatus *fifoStatus)
+void MCAN_getRxFIFOStatus(MCAN_RxFIFONum fifoNum, MCAN_RxFIFOStatus *fifoStatus)
 {
     uint32_t regVal;
 
-    if (fifoNum == MCAN_RX_FIFO_NUM_0)
+    if (MCAN_RX_FIFO_NUM_0 == fifoNum)
     {
         regVal = MCAN_readReg(MCAN_RXF0S);
     }
@@ -1172,7 +1187,7 @@ void MCAN_getRxFIFOStatus(uint32_t fifoNum, MCAN_RxFIFOStatus *fifoStatus)
 /*
  *  ======== MCAN_setRxFIFOAck ========
  */
-int_fast16_t MCAN_setRxFIFOAck(uint32_t fifoNum, uint32_t idx)
+int_fast16_t MCAN_setRxFIFOAck(MCAN_RxFIFONum fifoNum, uint32_t idx)
 {
     int_fast16_t status = MCAN_STATUS_ERROR;
     uint32_t numElements;
@@ -1238,22 +1253,25 @@ uint32_t MCAN_getTxBufCancellationStatus(void)
 }
 
 /*
- *  ======== MCAN_setTxBufTransIntrEnable ========
+ *  ======== MCAN_enableTxBufTransInt ========
  */
-void MCAN_setTxBufTransIntrEnable(uint32_t bufMask, uint32_t enable)
+void MCAN_enableTxBufTransInt(uint32_t bufMask)
 {
-    uint32_t regVal;
+    uint32_t regVal = MCAN_readReg(MCAN_TXBTIE);
 
-    regVal = MCAN_readReg(MCAN_TXBTIE);
+    regVal |= bufMask;
 
-    if (TRUE == enable)
-    {
-        regVal |= bufMask;
-    }
-    else
-    {
-        regVal &= ~bufMask;
-    }
+    MCAN_writeReg(MCAN_TXBTIE, regVal);
+}
+
+/*
+ *  ======== MCAN_disableTxBufTransInt ========
+ */
+void MCAN_disableTxBufTransInt(uint32_t bufMask)
+{
+    uint32_t regVal = MCAN_readReg(MCAN_TXBTIE);
+
+    regVal &= (uint32_t)~bufMask;
 
     MCAN_writeReg(MCAN_TXBTIE, regVal);
 }

@@ -79,11 +79,12 @@
 #endif // CC33xx
 
 #include "bcomdef.h"
+#include "icall.h"
 #include "hci_tl.h"
 #include "hci_data.h"
 #include "hci_event.h"
 #include "hci.h"
-
+#include "ll_ecc.h"
 #include "ll_ae.h"
 
 #if defined( CC26XX ) || defined( CC13XX ) || defined( CC23X0 )
@@ -95,7 +96,7 @@
 #include "ecc_rom.h"
 #include <ti/drivers/rf/RF.h>
 #include "rf_api.h"
-//
+
 extern RF_Handle rfHandle;
 #endif
 
@@ -532,6 +533,16 @@ extern RF_Handle rfHandle;
 #define SUPPORTED_CMD_LE_SET_PERIODIC_ADV_RECEIVE_ENABLE                            0x20
 #define SUPPORTED_CMD_RESERVED_BYTE40_BIT07                                         0x40
 #define SUPPORTED_CMD_RESERVED_BYTE40_BIT08                                         0x80
+// Byte 41
+#define SUPPORTED_CMD_LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS          0x01
+#define SUPPORTED_CMD_LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS  0x02
+#define SUPPORTED_CMD_LE_SET_GENERATE_DHKEY_V2                                      0x04
+#define SUPPORTED_CMD_RESERVED_BYTE41_BIT04                                         0x08
+#define SUPPORTED_CMD_RESERVED_BYTE41_BIT05                                         0x10
+#define SUPPORTED_CMD_RESERVED_BYTE41_BIT06                                         0x20
+#define SUPPORTED_CMD_RESERVED_BYTE41_BIT07                                         0x40
+#define SUPPORTED_CMD_RESERVED_BYTE41_BIT08                                         0x80
+
 // Byte 41-63 will define if we support commands in these bytes.
 
 ///////////////////////////////
@@ -989,7 +1000,7 @@ extern RF_Handle rfHandle;
 // SUPPORTED_COMMAND_BYTE_41 //
 ///////////////////////////////
 
-#define SUPPORTED_COMMAND_BYTE_41                    (SUPPORTED_CMD_NONE)
+#define SUPPORTED_COMMAND_BYTE_41                    (SUPPORTED_CMD_LE_SET_GENERATE_DHKEY_V2)
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_42 //
@@ -1210,7 +1221,6 @@ supportedCmdsTable_t supportedCmdsTable[SUPPORTED_COMMAND_LEN+1] =
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-
 uint8  hciPTMenabled;
 uint8  ctrlToHostEnable;
 uint16 numHostBufs;
@@ -1221,7 +1231,6 @@ uint16 numHostBufs;
 
 extern uint8  ctrlToHostEnable;
 extern uint16 numHostBufs;
-
 /*
 ** Buffer Management
 */
@@ -1237,6 +1246,15 @@ void *HCI_bm_alloc( uint16 size )
   return( MAP_LL_TX_bm_alloc( size ) );
 }
 
+/*******************************************************************************
+ * This API is used to free memory using buffer management.
+ *
+ * Public function defined in hci.h.
+ */
+void HCI_bm_free( uint8* pBuf )
+{
+  MAP_LL_TX_bm_free( pBuf ) ;
+}
 
 /*******************************************************************************
  * This API is used to check that the connection time parameters are valid.
@@ -3249,6 +3267,83 @@ hciStatus_t HCI_LE_GenerateDHKeyCmd( uint8 *publicKey )
 #endif
 }
 
+/*********************************************************************************************
+ * Generate Diffie-Hellman Key with debug keys or regular
+ * as HCI_LE_GenerateDHKeyCmd function.
+ * case keytype = 0: Use the generated private key
+ * case keytype = 1: Use the debug private key
+ * O.W : error, invalid parameters
+ *
+ *Public function defined in hci.h.
+ *
+ * @par Corresponding Events
+ * @ref hciEvt_CommandStatus_t with cmdOpcode @ref HCI_LE_GENERATE_DHKEY
+ * @ref hciEvt_BLEGenDHKeyComplete_t
+ *
+ * @param publicKey: The remote P-256 public key (X-Y format), keyType: 0/1.
+ *
+ * @return @ref HCI_SUCCESS,
+ *              HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS,
+ *              HCI_ERROR_CODE_MEM_CAP_EXCEEDED,
+ *              HCI_ERROR_CODE_CONTROLLER_BUSY
+ */
+hciStatus_t HCI_LE_GenerateDHKeyV2Cmd( uint8 *publicKey, uint8 keyType )
+{
+    // Note:
+    // In case of using SW ECC, the following operation will take ~600 msec.
+    // We will process it in a dedicated task (worker thread)
+    // send Command Status first
+    // Note: Just indicate success here, and if there's an ECC error, it will be
+    //       reflected in the Complete event status.
+
+    // hciTranslationTable cant parse pointer of 64 bytes array so it parse all the input to 65 bytes array
+    // we need to copy publicKey[LL_SC_P256_KEY_LEN] to keyType
+    keyType = publicKey[LL_SC_P256_KEY_LEN];
+
+    if (( keyType != 1 ) && ( keyType != 0 ) )
+    {
+        MAP_HCI_CommandStatusEvent( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS, HCI_LE_GENERATE_DHKEY_V2 );
+        return (HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS);
+    }
+    else if ( keyType == 1 )
+    {
+        // Use the debug private key
+        MAP_osal_memcpy((uint8_t *)localPrivKeyMaterial, (uint8_t *)localDebugPrivateKeyMaterial, LL_SC_RAND_NUM_LEN);
+    }
+
+    // else (keyType == 0):Use the generated private key
+
+    MAP_HCI_CommandStatusEvent( HCI_SUCCESS,
+                                HCI_LE_GENERATE_DHKEY_V2 );
+
+#ifdef CC33xx
+  // create the worker thread
+  if (ICall_createWorkerThread() == -1)
+  {
+      // fail to create the worker thread
+      return (HCI_ERROR_CODE_MEM_CAP_EXCEEDED);
+  }
+#endif
+
+  // generate the Public P256 key
+#if defined(CC23X0) || defined (CC33xx)
+  if (ICall_workerThreadSendMsg((void *)MAP_LL_GenerateDHKeyCmd, publicKey, LL_SC_P256_KEY_LEN) != -1)
+  {
+    // message sent successfully - indicate controller is busy executing the command
+    return (HCI_ERROR_CODE_CONTROLLER_BUSY);
+  }
+  else
+  {
+    // message failed to be sent
+    return (HCI_ERROR_CODE_MEM_CAP_EXCEEDED);
+  }
+#else
+  MAP_LL_GenerateDHKeyCmd( publicKey );
+
+  return( HCI_SUCCESS );
+#endif
+}
+
 
 // V5.0 - 2M and Coded PHY
 
@@ -3590,7 +3685,7 @@ hciStatus_t HCI_LE_ReadRfPathCompCmd( void )
   int16 temp_rtnParam3;
 
   // Use tempValue to make sure the passed pointer is aligned
-  rtnParam[0] = MAP_LE_ReadRfPathCompCmd( &temp_rtnParam1,
+  rtnParam[0] = MAP_LE_ReadRfPathCompCmd(  &temp_rtnParam1,
                                            &temp_rtnParam3 );
 
   // Save the value
@@ -4902,6 +4997,7 @@ hciStatus_t HCI_EXT_SetBDADDRCmd( uint8 *bdAddr )
   return( HCI_SUCCESS );
 }
 
+
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
 /*******************************************************************************
  * This API is used to set the random device address
@@ -4943,7 +5039,6 @@ hciStatus_t HCI_EXT_SetAdvSetRandAddrCmd( uint8 advHandle, uint8 *randAddr)
   return( HCI_SUCCESS );
 }
 #endif // ADV_NCONN_CFG | ADV_CONN_CFG
-
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_NCONN_CFG)
 /*******************************************************************************
@@ -5894,6 +5989,100 @@ hciStatus_t HCI_EXT_CoexEnableCmd( uint8 enable )
   return( HCI_SUCCESS );
 }
 
+/*******************************************************************************
+ * This HCI Extension API is used to Reset or Read the Rx statistics data
+ * for a connection.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_EXT_GetRxStatisticsCmd( uint16 connHandle, uint8 command )
+{
+  // 0: Event Opcode (LSB)
+  // 1: Event Opcode (MSB)
+  // 2: Status
+  // 3: Command
+  uint8 rtnParam[4];
+
+  connHandle = CONN_HANDLE_HOST_TO_CTRL_CONVERT(connHandle);
+
+  rtnParam[0] = LO_UINT16( HCI_EXT_GET_RX_STATS_EVENT );
+  rtnParam[1] = HI_UINT16( HCI_EXT_GET_RX_STATS_EVENT );
+  rtnParam[2] = MAP_LL_EXT_GetRxStats( connHandle, command );
+  rtnParam[3] = command;
+
+  // check if it is okay to complete this event now or later
+  if ( (command == HCI_EXT_STATS_RESET) || (rtnParam[2] != LL_STATUS_SUCCESS) )
+  {
+    MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_RX_STATS,
+                                               sizeof(rtnParam),
+                                               rtnParam );
+  }
+
+  return( HCI_SUCCESS );
+}
+
+/*******************************************************************************
+ * This HCI Extension API is used to Reset or Read the Tx statistics data
+ * for a connection.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_EXT_GetTxStatisticsCmd( uint16 connHandle, uint8 command )
+{
+  // 0: Event Opcode (LSB)
+  // 1: Event Opcode (MSB)
+  // 2: Status
+  // 3: Command
+  uint8 rtnParam[4];
+
+  connHandle = CONN_HANDLE_HOST_TO_CTRL_CONVERT(connHandle);
+
+  rtnParam[0] = LO_UINT16( HCI_EXT_GET_TX_STATS_EVENT );
+  rtnParam[1] = HI_UINT16( HCI_EXT_GET_TX_STATS_EVENT );
+  rtnParam[2] = MAP_LL_EXT_GetTxStats( connHandle, command );
+  rtnParam[3] = command;
+
+  // check if it is okay to complete this event now or later
+  if ( (command == HCI_EXT_STATS_RESET) || (rtnParam[2] != LL_STATUS_SUCCESS) )
+  {
+    MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_TX_STATS,
+                                               sizeof(rtnParam),
+                                               rtnParam );
+  }
+
+  return( HCI_SUCCESS );
+}
+
+/*******************************************************************************
+ * This HCI Extension API is used to Reset or Read the Coex statistics data
+ * for a connection.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_EXT_GetCoexStatisticsCmd( uint8 command )
+{
+  // 0: Event Opcode (LSB)
+  // 1: Event Opcode (MSB)
+  // 2: Status
+  // 3: Command
+  uint8 rtnParam[4];
+
+  rtnParam[0] = LO_UINT16( HCI_EXT_GET_COEX_STATS_EVENT );
+  rtnParam[1] = HI_UINT16( HCI_EXT_GET_COEX_STATS_EVENT );
+  rtnParam[2] = MAP_LL_EXT_GetCoexStats( command );
+  rtnParam[3] = command;
+
+  // check if it is okay to complete this event now or later
+  if ( (command == HCI_EXT_STATS_RESET) || (rtnParam[2] != LL_STATUS_SUCCESS) )
+  {
+    MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_COEX_STATS,
+                                               sizeof(rtnParam),
+                                               rtnParam );
+  }
+
+  return( HCI_SUCCESS );
+}
+
 #ifdef LL_TEST_MODE
 /*******************************************************************************
  * This HCI Extension API is used send a LL Test Mode test case.
@@ -6073,5 +6262,186 @@ void LL_EXT_ExtendRfRangeCback( void )
   return;
 }
 
+/*******************************************************************************
+ * This LL Extension command Callback is used by the LL to notify the HCI that
+ * the RX statistics Read has been completed.
+ *
+ * Note: The counters are only 16 bits. At the shortest connection
+ *       interval, this provides a bit over 8 minutes of data.
+ *
+ * Public function defined in hci.h.
+ */
+void LL_EXT_GetRxStatsCback( uint16 numRxOk,
+                             uint16 numRxCtrl,
+                             uint16 numRxCtrlAck,
+                             uint16 numRxCrcErr,
+                             uint16 numRxIgnored,
+                             uint16 numRxEmpty,
+                             uint16 numRxBufFull )
+{
+  // 0:  Event Opcode (LSB)
+  // 1:  Event Opcode (MSB)
+  // 2:  Status
+  // 3:  Command
+  // 4:  Number of okay Rx pkts (LSB)
+  // 5:  Number of okay Rx pkts (MSB)
+  // 6:  Number of okay Rx ctrl pkts (LSB)
+  // 7:  Number of okay Rx ctrl pkts (MSB)
+  // 8:  Number of okay Rx ctrl pkts Acked (LSB)
+  // 9:  Number of okay Rx ctrl pkts Acked (MSB)
+  // 10: Number of CRC error Rx pkts(LSB)
+  // 11: Number of CRC error Rx pkts (MSB)
+  // 12: Number of okay Rx pkts ignored (LSB)
+  // 13: Number of okay Rx pkts ignored (MSB)
+  // 14: Number of empty Rx pkts (LSB)
+  // 15: Number of empty Rx pkts (MSB)
+  // 16: Number of pkts discarded (LSB)
+  // 17: Number of pkts discarded (MSB)
+  uint8 rtnParam[18];
+
+  rtnParam[0]  = LO_UINT16( HCI_EXT_GET_RX_STATS_EVENT );
+  rtnParam[1]  = HI_UINT16( HCI_EXT_GET_RX_STATS_EVENT );
+  rtnParam[2]  = HCI_SUCCESS;
+  rtnParam[3]  = HCI_EXT_STATS_READ;
+  rtnParam[4]  = LO_UINT16( numRxOk );
+  rtnParam[5]  = HI_UINT16( numRxOk );
+  rtnParam[6]  = LO_UINT16( numRxCtrl );
+  rtnParam[7]  = HI_UINT16( numRxCtrl );
+  rtnParam[8]  = LO_UINT16( numRxCtrlAck );
+  rtnParam[9]  = HI_UINT16( numRxCtrlAck );
+  rtnParam[10] = LO_UINT16( numRxCrcErr );
+  rtnParam[11] = HI_UINT16( numRxCrcErr );
+  rtnParam[12] = LO_UINT16( numRxIgnored );
+  rtnParam[13] = HI_UINT16( numRxIgnored );
+  rtnParam[14] = LO_UINT16( numRxEmpty );
+  rtnParam[15] = HI_UINT16( numRxEmpty );
+  rtnParam[16] = LO_UINT16( numRxBufFull );
+  rtnParam[17] = HI_UINT16( numRxBufFull );
+
+  MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_RX_STATS,
+                                             sizeof(rtnParam),
+                                             rtnParam );
+
+  return;
+}
+
+
+/*******************************************************************************
+ * This LL Extension command Callback is used by the LL to notify the HCI that
+ * the TX statistics Read has been completed.
+ *
+ * Note: The counters are only 16 bits. At the shortest connection
+ *       interval, this provides a bit over 8 minutes of data.
+ *
+ * Public function defined in hci.h.
+ */
+void LL_EXT_GetTxStatsCback( uint16 numTx,
+                             uint16 numTxAck,
+                             uint16 numTxCtrl,
+                             uint16 numTxCtrlAck,
+                             uint16 numTxCtrlAckAck,
+                             uint16 numTxRetrans,
+                             uint16 numTxEntryDone )
+{
+  // 0:  Event Opcode (LSB)
+  // 1:  Event Opcode (MSB)
+  // 2:  Status
+  // 3:  Command
+  // 4:  Number of Tx pkts (LSB)
+  // 5:  Number of Tx pkts (MSB)
+  // 6:  Number of Tx pkts Acked (LSB)
+  // 7:  Number of Tx pkts Acked (MSB)
+  // 8:  Number of Tx ctrl pkts (LSB)
+  // 9:  Number of Tx ctrl pkts (MSB)
+  // 10: Number of Tx ctrl pkts Acked (LSB)
+  // 11: Number of Tx ctrl pkts Acked (MSB)
+  // 12: Number of Tx ctrl pkts Acked that were Acked (LSB)
+  // 13: Number of Tx ctrl pkts Acked that were Acked (MSB)
+  // 14: Number of retransmissions (LSB)
+  // 15: Number of retransmissions (MSB)
+  // 16: Number of pkts on Tx queue that are finished (LSB)
+  // 17: Number of pkts on Tx queue that are finished (MSB)
+  uint8 rtnParam[18];
+
+  rtnParam[0]  = LO_UINT16( HCI_EXT_GET_TX_STATS_EVENT );
+  rtnParam[1]  = HI_UINT16( HCI_EXT_GET_TX_STATS_EVENT );
+  rtnParam[2]  = HCI_SUCCESS;
+  rtnParam[3]  = HCI_EXT_STATS_READ;
+  rtnParam[4]  = LO_UINT16( numTx );
+  rtnParam[5]  = HI_UINT16( numTx );
+  rtnParam[6]  = LO_UINT16( numTxAck );
+  rtnParam[7]  = HI_UINT16( numTxAck );
+  rtnParam[8]  = LO_UINT16( numTxCtrl );
+  rtnParam[9]  = HI_UINT16( numTxCtrl );
+  rtnParam[10] = LO_UINT16( numTxCtrlAck );
+  rtnParam[11] = HI_UINT16( numTxCtrlAck );
+  rtnParam[12] = LO_UINT16( numTxCtrlAckAck );
+  rtnParam[13] = HI_UINT16( numTxCtrlAckAck );
+  rtnParam[14] = LO_UINT16( numTxEntryDone );
+  rtnParam[15] = HI_UINT16( numTxEntryDone );
+  rtnParam[16] = LO_UINT16( numTxRetrans );
+  rtnParam[17] = HI_UINT16( numTxRetrans );
+
+  MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_TX_STATS,
+                                             sizeof(rtnParam),
+                                             rtnParam );
+
+  return;
+}
+
+/*******************************************************************************
+ * This LL Extension command Callback is used by the LL to notify the HCI that
+ * the Coex statistics Read has been completed.
+ *
+ * Note: The counters are 32 or 16 bits.
+ *
+ * Public function defined in hci.h.
+ */
+void LL_EXT_GetCoexStatsCback( uint32 grants,
+                               uint32 rejects,
+                               uint16 contRejects,
+                               uint16 maxContRejects )
+{
+  // 0:  Event Opcode (LSB)
+  // 1:  Event Opcode (MSB)
+  // 2:  Status
+  // 3:  Command
+  // 4:  Number of grants (BYTE0)
+  // 5:  Number of grants (BYTE1)
+  // 6:  Number of grants (BYTE2)
+  // 7:  Number of grants (BYTE3)
+  // 8:  Number of rejects (BYTE0)
+  // 9:  Number of rejects (BYTE1)
+  // 10: Number of rejects (BYTE2)
+  // 11: Number of rejects (BYTE3)
+  // 12: Number of continuously Rejects (LSB)
+  // 13: Number of continuously Rejects (MSB)
+  // 14: Number of max ontinuously Rejects (LSB)
+  // 15: Number of max ontinuously Rejects (MSB)
+  uint8 rtnParam[16];
+
+  rtnParam[0]  = LO_UINT16( HCI_EXT_GET_COEX_STATS_EVENT );
+  rtnParam[1]  = HI_UINT16( HCI_EXT_GET_COEX_STATS_EVENT );
+  rtnParam[2]  = HCI_SUCCESS;
+  rtnParam[3]  = HCI_EXT_STATS_READ;
+  rtnParam[4]  = BREAK_UINT32( grants, 0 );
+  rtnParam[5]  = BREAK_UINT32( grants, 1 );
+  rtnParam[6]  = BREAK_UINT32( grants, 2 );
+  rtnParam[7]  = BREAK_UINT32( grants, 3 );
+  rtnParam[8]  = BREAK_UINT32( rejects, 0 );
+  rtnParam[9]  = BREAK_UINT32( rejects, 1 );
+  rtnParam[10] = BREAK_UINT32( rejects, 2 );
+  rtnParam[11] = BREAK_UINT32( rejects, 3 );
+  rtnParam[12] = LO_UINT16( contRejects );
+  rtnParam[13] = HI_UINT16( contRejects );
+  rtnParam[14] = LO_UINT16( maxContRejects );
+  rtnParam[15] = HI_UINT16( maxContRejects );
+
+  MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_COEX_STATS,
+                                             sizeof(rtnParam),
+                                             rtnParam );
+
+  return;
+}
 /***************************************************************************************************
  */

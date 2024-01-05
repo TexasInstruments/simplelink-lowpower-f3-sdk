@@ -237,6 +237,22 @@ extern int32_t IntGetPriority(uint32_t intNum);
 
 //*****************************************************************************
 //
+//! \brief Check whether an interrupt is enabled.
+//!
+//! This function checks whether an interrupt is enabled in the NVIC.
+//!
+//! \param intNum specifies the index in the vector table to check.
+//!
+//! \return Whether the interrupt is enabled or not
+//!
+//! \sa \ref IntDisable()
+//! \sa \ref IntEnable()
+//
+//*****************************************************************************
+extern bool IntIsEnabled(uint32_t intNum);
+
+//*****************************************************************************
+//
 //! \brief Enables an interrupt or system exception.
 //!
 //! This function enables the specified interrupt in the interrupt controller.

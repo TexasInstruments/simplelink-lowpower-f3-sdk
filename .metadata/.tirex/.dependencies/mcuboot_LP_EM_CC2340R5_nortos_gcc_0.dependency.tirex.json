@@ -67,7 +67,7 @@
             "+../../../../../../source/ti/common/ecdsa_lpf3/ecdsa_lpf3.c -> ecdsa_lpf3.c",
             "+../../../../../../source/ti/common/ecdsa_lpf3/ecdsa_lpf3.h -> ti-crypto/ecdsa_lpf3.h",
             "+../../../../../../source/ti/common/flash/no_rtos/extFlash/bsp_spi_lpf3.c -> flash_map_backend/bsp_spi_lpf3.c",
-            "+../mcuboot_lpf3.lds -> mcuboot_lpf3.lds"
+            "+../mcuboot_cc2340r5.lds -> mcuboot_cc2340r5.lds"
         ]
     }
 ]

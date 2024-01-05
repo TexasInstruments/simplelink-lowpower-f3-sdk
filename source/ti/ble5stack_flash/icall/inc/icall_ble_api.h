@@ -201,8 +201,9 @@ extern void *GATT_bm_alloc(uint16 connHandle, uint8 opcode, uint16 size,
 #define LE_ReadNumSupportedAdvSets(...)                   (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_LE_ReadNumSupportedAdvSets, ##__VA_ARGS__))
 #define LL_AE_RegCBack(...)                               (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_LL_AE_RegCBack, ##__VA_ARGS__))
 #define LE_ExtCreateConn(...)                             (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_LE_ExtCreateConn, ##__VA_ARGS__))
-
-
+/* HCI V5.2 SC API */
+/********************/
+#define HCI_LE_GenerateDHKeyV2Cmd(...)                    (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_LE_GenerateDHKeyV2Cmd , ##__VA_ARGS__))
 //ROLES
 #define HCI_LE_SetAdvParamCmd(...)                        (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_LE_SetAdvParamCmd , ##__VA_ARGS__))
 #define HCI_LE_SetAdvDataCmd(...)                         (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_LE_SetAdvDataCmd , ##__VA_ARGS__))
@@ -298,6 +299,9 @@ extern void *GATT_bm_alloc(uint16 connHandle, uint8 opcode, uint16 size,
 #define HCI_EXT_SetQOSDefaultParameters(...)                       (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetQOSDefaultParameters , ##__VA_ARGS__))
 #define HCI_EXT_SetHostDefChanClassificationCmd(...)               (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetHostDefChanClassificationCmd , ##__VA_ARGS__))
 #define HCI_EXT_SetHostConnChanClassificationCmd(...)              (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_SetHostConnChanClassificationCmd , ##__VA_ARGS__))
+#define HCI_EXT_GetRxStatisticsCmd(...)                            (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_GetRxStatisticsCmd , ##__VA_ARGS__))
+#define HCI_EXT_GetTxStatisticsCmd(...)                            (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_GetTxStatisticsCmd , ##__VA_ARGS__))
+#define HCI_EXT_GetCoexStatisticsCmd(...)                          (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_EXT_GetCoexStatisticsCmd , ##__VA_ARGS__))
 
 /* HCI API Cont'd */
 /******************/
@@ -310,6 +314,7 @@ extern void *GATT_bm_alloc(uint16 connHandle, uint8 opcode, uint16 size,
 #define HCI_CommandStatusEvent(...)                                (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_CommandStatusEvent, ##__VA_ARGS__))
 #define HCI_CommandCompleteEvent(...)                              (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_CommandCompleteEvent, ##__VA_ARGS__))
 #define HCI_bm_alloc(...)                                          (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_bm_alloc , ##__VA_ARGS__))
+#define HCI_bm_free(...)                                           (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_bm_free , ##__VA_ARGS__))
 /* the following API are not available for now */
 
 #define HCI_TestAppTaskRegister(...)                               (AssertHandler(0,0)) // icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_HCI_TestAppTaskRegister , ##__VA_ARGS__) // =>need taskId

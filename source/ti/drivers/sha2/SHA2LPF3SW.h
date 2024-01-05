@@ -67,6 +67,10 @@
  *
  */
 
+/* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
+ * SHA-2 driver is non-functional on CC27CC devices, as it returns incorrect digest.
+ */
+
 #ifndef ti_drivers_sha2_SHA2LPF3SW__include
 #define ti_drivers_sha2_SHA2LPF3SW__include
 

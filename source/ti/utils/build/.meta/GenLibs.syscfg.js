@@ -37,7 +37,7 @@
  *  toolchain, generates a linker command file containing the appropriate
  *  library linker options in the order dictated by the specified
  *  dependencies.  For example, the TI-DRIVERS libraries must precede the
- *  DriverLib library and the NDK libraries must preceed the TI-DRIVERS
+ *  DriverLib library and the NDK libraries must precede the TI-DRIVERS
  *  libraries.
  *
  *  The GenLibs.cmd.xdt template is ONLY expanded when both

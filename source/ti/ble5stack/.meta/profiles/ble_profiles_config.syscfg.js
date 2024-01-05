@@ -52,21 +52,22 @@ const config =
     description: "Configure Profile Settings",
     config:[
         {
-            name: "hidebasicbleGroup",
+            name: "hideBasicBLEGroup",
             default: true,
             hidden: true
         },
         {
-            name: "DeviceInfo",
+            name: "deviceInfo",
             displayName: "Device Info",
-            longDescription: Docs.DeviceInfo,
+            legacyNames: ["DeviceInfo"],
+            longDescription: Docs.deviceInfoLongDescription,
             default: true,
             hidden: true
         },
         {
             name: "profiles",
             displayName: "Profile Selection",
-            longDescription: Docs.ProfileSelection,
+            longDescription: Docs.profileSelectionLongDescription,
             default: [],
             minSelections: 0,
             options: Common.profiles_list,
@@ -91,9 +92,9 @@ const config =
  */
 function onChangeProfile(inst,ui)
 {
- // UUID: 6152 - Glucose, UUID: 6175 - CGM
+ // UUID: 6152 - Glucose, UUID: 6175 - CGM, UUID: 6153 - HT
  // if one of this profiles was added, change PDU values to those number
- if(inst.profiles.includes("6152") || inst.profiles.includes("6175"))
+ if(inst.profiles.includes("6152") || inst.profiles.includes("6175") || inst.profiles.includes("6153"))
  {
     inst.maxPDUNum = 100;
     inst.deviceName = "Profiles";

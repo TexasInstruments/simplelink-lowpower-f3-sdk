@@ -41,7 +41,7 @@ MEMORY
     /* Application is stored in and executes from internal flash */
     FLASH (RX) : ORIGIN = 0x0, LENGTH = 0x80000
     /* Customer Configuration Area (CCFG) */
-    FLASH_CCFG (RX) : ORIGIN = 0x4E020000, LENGTH = 0x800
+    CCFG (R) : ORIGIN = 0x4E020000, LENGTH = 0x800
     /* Application uses internal RAM for data */
     SRAM (RWX) : ORIGIN = 0x20000000, LENGTH = 0x9000
 }
@@ -118,7 +118,7 @@ SECTIONS
     .ccfg :
     {
         KEEP(*(.ccfg));
-    } > FLASH_CCFG
+    } > CCFG
 
     /* User_heap_stack section, used to check that there is enough SRAM left */
     ._user_heap_stack :

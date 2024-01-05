@@ -18,7 +18,7 @@ let rfdesign;
 let frontEnd;
 let bias;
 
-if(devFamily != "DeviceFamily_CC23X0R5")
+if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
 {
     rfdesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
 
@@ -49,7 +49,7 @@ if(devFamily != "DeviceFamily_CC23X0R5")
 % if(ble.bondManager == true) {
 #include <gapbondmgr.h>
 %}
-% if(devFamily != "DeviceFamily_CC23X0R5")
+% if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
 % {
 #include <ti_radio_config.h>
 %}
@@ -62,25 +62,26 @@ extern uint8_t attDeviceName[GAP_DEVICE_NAME_LEN];
 % if(ble.basicBLE){
 extern void init_profiles(void);
 %}
-%if(devFamily != "DeviceFamily_CC23X0R5")
+%if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
 %{
 % if(rfdesign){
 #define RF_FE_MODE_AND_BIAS            `frontEnd` | `bias`
 %}
 %}
 
-// Default Tx Power Index
-#define DEFAULT_TX_POWER               `ble.defaultTxPower`
-
-//Random Address
-% if(ble.addressMode == "ADDRMODE_RANDOM" || ble.addressMode == "ADDRMODE_RP_WITH_RANDOM_ID")
+% if(devFamily == "DeviceFamily_CC23X0R5" || devFamily == "DeviceFamily_CC23X0R2")
 % {
-extern uint8_t pRandomAddress[6];
+// Default Tx Power value in dBm
+#define DEFAULT_TX_POWER               `ble.defaultTxPowerValue`
 % }
 % else
 % {
-extern uint8_t * pRandomAddress;
+// Default Tx Power Index
+#define DEFAULT_TX_POWER               `common.convertTxPowerValueToIndex(ble.defaultTxPowerValue)`
 % }
+
+//Random Address
+extern uint8_t pRandomAddress[B_ADDR_LEN];
 
 // Address mode of the local device
 // Note: When using the DEFAULT_ADDRESS_MODE as ADDRMODE_RANDOM or 
@@ -287,6 +288,16 @@ extern uint8_t `ble["advSet"+i]["scanRes"+i].name`[`common.advDataTotalLength(sc
 % }
 % }
 %}
+%}
+
+% if (ble.hideL2CAPGroup == false){
+#define L2CAP_PSM_ID                      `ble.L2CAPCOCpsmId`
+#define L2CAP_PEER_PSM_ID                 `ble.L2CAPCOPeerPsmId`
+#define L2CAP_MAX_MTU                     `ble.L2CAPCOCmaxMTU`
+#define L2CAP_MAX_MPS                     `ble.L2CAPCOCmaxMPS`
+#define L2CAP_NOF_CREDITS                 `ble.L2CAPCOCnofCredits`
+#define L2CAP_CREDITS_THRESHOLD           `ble.L2CAPCOCcreditsThreshold`
+#define L2CAP_CONN_ESTABLISH_ROLE         `ble.L2CAPCOCInitiator`
 %}
 
 #endif /* TI_BLE_CONFIG_H */

@@ -1034,15 +1034,15 @@ extern bStatus_t GAPBondMgr_GenerateEccKeys( void );
  * @return  SUCCESS if bond was extracted
  *          bleGAPNotFound if there is no bond record
  */
-uint8_t gapBondMgrReadBondRec(GAP_Peer_Addr_Types_t addrType,
-                              uint8_t *pDevAddr,
-                              gapBondRec_t *pBondRec,
-                              gapBondLTK_t *pLocalLtk,
-                              gapBondLTK_t *pDevLtk,
-                              uint8_t *pIRK,
-                              uint8_t *pSRK,
-                              uint32_t *signCount,
-                              gapBondCharCfg_t *charCfg);
+extern uint8_t gapBondMgrReadBondRec(GAP_Peer_Addr_Types_t addrType,
+                                     uint8_t *pDevAddr,
+                                     gapBondRec_t *pBondRec,
+                                     gapBondLTK_t *pLocalLtk,
+                                     gapBondLTK_t *pDevLtk,
+                                     uint8_t *pIRK,
+                                     uint8_t *pSRK,
+                                     uint32_t *signCount,
+                                     gapBondCharCfg_t *charCfg);
 
 /**
  * @brief   Import bond record to NV

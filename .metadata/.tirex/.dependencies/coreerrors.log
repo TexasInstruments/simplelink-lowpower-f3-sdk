@@ -1,314 +1,131 @@
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/comparatorinterrupt/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/comparatorinterrupt/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/comparatorinterrupt/iar/comparatorinterrupt_LP_EM_CC2340R5_nortos_iar.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/empty_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/fatsdraw/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/fatsdraw/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/fatsdraw/iar/fatsdraw_LP_EM_CC2340R5_nortos_iar.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/iar/gpiointerrupt_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/iar/SysConfig_Generated_Files.ipcf
+In project: examples/nortos/LP_EM_CC2340R5/drivers/gpioshutdown/iar/gpioshutdown_LP_EM_CC2340R5_nortos_iar.ipcf
 
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/iar/SysConfig_Generated_Files.ipcf
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/drivers/i2ccontroller/iar/i2ccontroller_LP_EM_CC2340R5_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/iar/i2ctarget_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/iar/i2ctmp_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsexternal/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsexternal/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsexternal/iar/nvsexternal_LP_EM_CC2340R5_nortos_iar.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsinternal/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsinternal/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/nvsinternal/iar/nvsinternal_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/pwmled1_LP_EM_CC2340R5_nortos_iar.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/s2rram/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/s2rram/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/s2rram/iar/s2rram_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/sha2hash/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/sha2hash/iar/SysConfig_Generated_Files.ipcf
+In project: examples/nortos/LP_EM_CC2340R5/drivers/sdraw/iar/sdraw_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/sha2hash/iar/sha2hash_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/temperatureNotify/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/temperatureNotify/iar/SysConfig_Generated_Files.ipcf
+In project: examples/nortos/LP_EM_CC2340R5/drivers/systimtimestamp/iar/systimtimestamp_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/temperatureNotify/iar/temperatureNotify_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/iar/uart2echo_LP_EM_CC2340R5_nortos_iar.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/drivers/watchdog/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/drivers/watchdog/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/watchdog/iar/watchdog_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/mcuboot/mcuboot/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/mcuboot/mcuboot/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
-In project: examples/nortos/LP_EM_CC2340R5/mcuboot/mcuboot_blinky/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/nortos/LP_EM_CC2340R5/mcuboot/mcuboot_blinky/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/demos/portable/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/demos/portable/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/demos/portable/freertos/iar/portable_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/demos/portableNative/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/demos/portableNative/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/adcsinglechannel/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/adcsinglechannel/freertos/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/adcsinglechannel/freertos/iar/adcsinglechannel_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/comparatorinterrupt/freertos/iar/SysConfig_Generated_Files.ipcf
+In project: examples/rtos/LP_EM_CC2340R5/drivers/buttonled/freertos/iar/buttonled_LP_EM_CC2340R5_freertos_iar.ipcf
 
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/comparatorinterrupt/freertos/iar/SysConfig_Generated_Files.ipcf
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/drivers/canloopback/freertos/iar/canloopback_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/comparatorinterrupt/freertos/iar/comparatorinterrupt_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/empty/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/empty/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/empty/freertos/iar/empty_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/fatsdraw/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/fatsdraw/freertos/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/fatsdraw/freertos/iar/fatsdraw_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/i2ctmp/freertos/iar/SysConfig_Generated_Files.ipcf
+In project: examples/rtos/LP_EM_CC2340R5/drivers/gpioshutdown/freertos/iar/gpioshutdown_LP_EM_CC2340R5_freertos_iar.ipcf
 
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/i2ctmp/freertos/iar/SysConfig_Generated_Files.ipcf
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/drivers/i2ccontroller/freertos/iar/i2ccontroller_LP_EM_CC2340R5_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R5/drivers/i2ctarget/freertos/iar/i2ctarget_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/i2ctmp/freertos/iar/i2ctmp_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/log/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/log/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/log/freertos/iar/log_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsexternal/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsexternal/freertos/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsexternal/freertos/iar/nvsexternal_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/nvsinternal_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/pwmled1_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/s2rram/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/s2rram/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/s2rram/freertos/iar/s2rram_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/sha2hash/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/sha2hash/freertos/iar/SysConfig_Generated_Files.ipcf
+In project: examples/rtos/LP_EM_CC2340R5/drivers/sdraw/freertos/iar/sdraw_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/sha2hash/freertos/iar/sha2hash_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/spicontroller/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/spicontroller/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/spicontroller/freertos/iar/spicontroller_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/spiperipheral/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/spiperipheral/freertos/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/spiperipheral/freertos/iar/spiperipheral_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/iar/tcanloopback_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/temperatureNotify/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/temperatureNotify/freertos/iar/SysConfig_Generated_Files.ipcf
+In project: examples/rtos/LP_EM_CC2340R5/drivers/systimtimestamp/freertos/iar/systimtimestamp_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/temperatureNotify/freertos/iar/temperatureNotify_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2callback/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2callback/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2callback/freertos/iar/uart2callback_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2echo/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2echo/freertos/iar/SysConfig_Generated_Files.ipcf
-
-Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2echo/freertos/iar/uart2echo_LP_EM_CC2340R5_freertos_iar.ipcf
-
-Unable to parse files
-In project: examples/rtos/LP_EM_CC2340R5/drivers/watchdog/freertos/iar/SysConfig_Generated_Files.ipcf
-
-TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received type undefined
-In project: examples/rtos/LP_EM_CC2340R5/drivers/watchdog/freertos/iar/SysConfig_Generated_Files.ipcf
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/watchdog/freertos/iar/watchdog_LP_EM_CC2340R5_freertos_iar.ipcf

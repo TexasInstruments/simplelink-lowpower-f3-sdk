@@ -87,7 +87,7 @@ int_fast16_t CANMCAN_setBitTimingRaw(const CAN_BitRateTimingRaw *rawTiming)
  *     - TX Buffers
  *     - TX FIFO (or TX Queue)
  */
-int_fast16_t CANMCAN_configMsgRAM(const CAN_MsgRAMConfig *config, uint32_t msgRAMSize, uint32_t enableCANFD)
+int_fast16_t CANMCAN_configMsgRAM(const CAN_MsgRAMConfig *config, uint32_t msgRAMSize, bool enableCANFD)
 {
     int_fast16_t status = CAN_STATUS_SUCCESS;
     MCAN_MsgRAMConfig msgRAMConfig;
@@ -108,7 +108,7 @@ int_fast16_t CANMCAN_configMsgRAM(const CAN_MsgRAMConfig *config, uint32_t msgRA
     }
 
     /* Set common element size for all sections */
-    if (enableCANFD == 1U)
+    if (enableCANFD)
     {
         msgRAMConfig.rxBufElemSize   = MCAN_ELEM_SIZE_64BYTES;
         msgRAMConfig.rxFIFO0ElemSize = MCAN_ELEM_SIZE_64BYTES;
@@ -196,33 +196,33 @@ int_fast16_t CANMCAN_configMsgRAM(const CAN_MsgRAMConfig *config, uint32_t msgRA
 uint32_t CANMCAN_getInterruptMask(uint32_t eventMask)
 {
     /* Bus Off interrupt source is always enabled to allow for recovery */
-    uint32_t irqMask = (uint32_t)MCAN_INTR_SRC_BUS_OFF_STATUS;
+    uint32_t intMask = (uint32_t)MCAN_INT_SRC_BUS_OFF_STATUS;
 
     if ((eventMask & CAN_EVENT_RX_DATA_AVAIL) != 0U)
     {
-        irqMask |= MCAN_INTR_SRC_RX_MASK;
+        intMask |= MCAN_INT_SRC_RX_MASK;
     }
 
     if ((eventMask & CAN_EVENT_TX_FINISHED) != 0U)
     {
-        irqMask |= (uint32_t)MCAN_INTR_SRC_TRANS_COMPLETE;
+        intMask |= (uint32_t)MCAN_INT_SRC_TRANS_COMPLETE;
     }
 
     if ((eventMask & (CAN_EVENT_ERR_PASSIVE | CAN_EVENT_ERR_ACTIVE)) != 0U)
     {
-        irqMask |= (uint32_t)MCAN_INTR_SRC_ERR_PASSIVE;
+        intMask |= (uint32_t)MCAN_INT_SRC_ERR_PASSIVE;
     }
 
     if ((eventMask & CAN_EVENT_RX_FIFO_MSG_LOST) != 0U)
     {
-        irqMask |= (uint32_t)MCAN_INTR_SRC_RX_FIFO0_MSG_LOST;
-        irqMask |= (uint32_t)MCAN_INTR_SRC_RX_FIFO1_MSG_LOST;
+        intMask |= (uint32_t)MCAN_INT_SRC_RX_FIFO0_MSG_LOST;
+        intMask |= (uint32_t)MCAN_INT_SRC_RX_FIFO1_MSG_LOST;
     }
 
     if ((eventMask & CAN_EVENT_BIT_ERR_UNCORRECTED) != 0U)
     {
-        irqMask |= (uint32_t)MCAN_INTR_SRC_BIT_ERR_UNCORRECTED;
+        intMask |= (uint32_t)MCAN_INT_SRC_BIT_ERR_UNCORRECTED;
     }
 
-    return irqMask;
+    return intMask;
 }

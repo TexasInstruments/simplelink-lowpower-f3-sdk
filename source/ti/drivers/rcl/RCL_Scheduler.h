@@ -64,10 +64,11 @@
 #endif
 
 typedef enum {
-    RCL_SchedulerStopTimeSelect_None = 0,      /*!< Stop type is not active */
-    RCL_SchedulerStopTimeSelect_Cmd = 1,       /*!< Command stop time is the earliest for the stop type */
-    RCL_SchedulerStopTimeSelect_Sched = 2,     /*!< Scheduler stop time is the earliest for the stop type */
-} RCL_SchedulerStopTimeSelect;
+    RCL_SchedulerStopReason_None = 0,       /*!< No stop active */
+    RCL_SchedulerStopReason_Timeout = 1,    /*!< Command stop time is active  */
+    RCL_SchedulerStopReason_Scheduling = 2, /*!< Scheduler stop is active */
+    RCL_SchedulerStopReason_Api = 3,        /*!< API stop has been sent and will take precedence */
+} RCL_SchedulerStopReason;
 
 typedef enum {
     RCL_SchedulerStopTimeState_Init = 0,       /*!< Stop times not calculated or programmed */
@@ -79,7 +80,7 @@ typedef struct RCL_SchedulerStopInfo_s {
     uint32_t cmdStopEnabled                     : 1;
     uint32_t schedStopEnabled                   : 1;
     uint32_t apiStopEnabled                     : 1;
-    RCL_SchedulerStopTimeSelect stopTimeSelect  : 2;
+    RCL_SchedulerStopReason stopReason          : 2;
     uint32_t cmdStopTime;
     uint32_t schedStopTime;
 } RCL_SchedulerStopInfo;
@@ -88,10 +89,12 @@ typedef struct RCL_SchedulerState_s {
     RCL_Command  *currCmd;
     uint32_t nextWantsStop                      : 1;
     RCL_SchedulerStopTimeState stopTimeState    : 2;
+    RCL_SchedulerStopReason descheduleReason    : 2;
     RCL_Events postedRclEvents; /* Events to be handled by the command handler */
     uint32_t actualStartTime;
     RCL_SchedulerStopInfo hardStopInfo;
     RCL_SchedulerStopInfo gracefulStopInfo;
+    uint16_t requestedPhyFeatures;
 } RCL_SchedulerState;
 
 extern RCL_SchedulerState rclSchedulerState;
@@ -100,6 +103,20 @@ extern RCL_SchedulerState rclSchedulerState;
  *  These functions are meant mostly to be used by handlers and RCL itself
  *  @{
  */
+
+/**
+ *  @brief  Get relevant status when a command was stopped
+ *
+ *  Returns the status to be set for a command that was stopped with the given stop source,
+ *  depending on what caused the stop
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ *  @param  stopType Stop type observed
+ *
+ *  @return Command status that should be produced
+ */
+RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType);
 
 /**
  *  @brief  Set start and stop time for LRF based on command

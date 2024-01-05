@@ -50,13 +50,13 @@ define region FLASH_region   = mem:[from ROM_start__ to ROM_end__];
 /* Define a region for the on-chip SRAM */
 define region RAM_region     = mem:[from RAM_start__ to RAM_end__];
 
-/* Define a region for the on-chip S2RRAM 
+/* Define a region for the on-chip S2RRAM
  * S2RRAM is intended for the S2R radio module, but it can also be used by the
  * application with some limitations. Please refer to the s2rram example.
  */
 define region S2RRAM_region  = mem:[from S2RRAM_start__ to S2RRAM_end__];
-/* Placing the section .s2rram in S2RRAM region. Only uninitialized 
- * objects may be placed in this section. 
+/* Placing the section .s2rram in S2RRAM region. Only uninitialized
+ * objects may be placed in this section.
  */
 place in S2RRAM_region { section .s2rram };
 do not initialize { section .s2rram };

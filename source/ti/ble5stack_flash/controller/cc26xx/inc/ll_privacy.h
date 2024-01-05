@@ -158,7 +158,7 @@ typedef struct
   uint8 idAddr[ B_ADDR_LEN ];        // Identity Address
   uint8 RPA[ B_ADDR_LEN ];           // Resolvable Private Address
   uint8 IRK[ KEYLEN ];               // Identity Resolving Key
-  uint8 privMode;                    // Privacy Mode
+  uint8 privMode;                    // Privacy Mode (NPM - 0 , DPM - 1)
 } rlEntry_t;
 
 PACKED_TYPEDEF_STRUCT

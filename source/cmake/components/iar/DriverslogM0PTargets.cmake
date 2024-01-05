@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget Drivers::log_cc23x0r5)
+foreach(_expectedTarget Drivers::log_cc23x0r2 Drivers::log_cc23x0r5)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -50,6 +50,14 @@ get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
+
+# Create imported target Drivers::log_cc23x0r2
+add_library(Drivers::log_cc23x0r2 STATIC IMPORTED)
+
+set_target_properties(Drivers::log_cc23x0r2 PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x0r2;TiUtils::tiutils;TOOLCHAIN_iar_m0p"
+)
 
 # Create imported target Drivers::log_cc23x0r5
 add_library(Drivers::log_cc23x0r5 STATIC IMPORTED)
@@ -95,7 +103,7 @@ unset(_IMPORT_CHECK_TARGETS)
 # Make sure the targets which have been exported in some other
 # export set exist.
 unset(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets)
-foreach(_target "Driverlib::cc23x0r5" "TiUtils::tiutils" )
+foreach(_target "Driverlib::cc23x0r2" "TiUtils::tiutils" "Driverlib::cc23x0r5" )
   if(NOT TARGET "${_target}" )
     set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets "${${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets} ${_target}")
   endif()

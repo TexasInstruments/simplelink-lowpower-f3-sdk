@@ -45,7 +45,6 @@
             "+../../../../../../../source/ti/common/cc26xx/flash_interface/internal/flash_interface_int_rtos_NVS.c -> flash_interface_int_rtos_NVS.c",
             "+../../../../../../../source/ti/bleapp/util/sw_update/sw_update.c -> sw_update.c",
             "+../../../../../../../source/ti/bleapp/util/sw_update/sw_update.h -> sw_update.h",
-            "+../../../../../../../source/ti/boards/cc23x0r5/rcl_settings_ble.c -> rcl_settings_ble.c",
             "+../basic_persistent.syscfg -> basic_persistent.syscfg",
             "+cc23x0_app_and_stack_freertos.icf -> cc23x0_app_and_stack_freertos.icf",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",

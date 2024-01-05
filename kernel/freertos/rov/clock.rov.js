@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* global xdc */
+/* global xdc, helperGetHexString, helperGetCurrentDevice */
 let Program = xdc.module('xdc.rov.Program');
 let TimerModule = xdc.loadCapsule("timer.rov.js");
 
@@ -217,9 +217,11 @@ function getClock(makeDetailed){
         let initialized = Program.fetchVariable("ClockP_initialized");
 
         /* If the variable was present and with a value of false then simply return */
-        if (!Boolean(initialized)) return view;
+        if (!initialized) return view;
     }
-    catch(e) {}
+    catch(e) {
+        /* Continue regardless of error */
+    }
 
     let device     = helperGetCurrentDevice();
     let listOfAddr = getListOfClockAddresses(device);
@@ -231,6 +233,7 @@ function getClock(makeDetailed){
 /* ======== getBasicClock ========
  * Entry point for basic clock view. Sets makeDetailed to false
  */
+/* eslint-disable-next-line no-unused-vars */
 function getBasicClock(){
     return getClock(false);
 }
@@ -238,6 +241,7 @@ function getBasicClock(){
 /* ======== getDetailedClock ========
  * Entry point for detailed clock view. Sets makeDetailed to true
  */
+/* eslint-disable-next-line no-unused-vars */
 function getDetailedClock(){
     return getClock(true);
 }

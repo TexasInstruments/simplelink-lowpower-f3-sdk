@@ -126,7 +126,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/adcsinglechannel/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/adcsinglechannel/freertos/iar/adcsinglechannel_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "adcsinglechannel",
         "description": "adcsinglechannel",
         "kernel": [
@@ -149,6 +149,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/buttonled/README.html",
+        "resourceType": "categoryInfo",
+        "name": "buttonled",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/buttonled/freertos/gcc/buttonled_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "buttonled",
+        "description": "buttonled",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "buttonled",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/buttonled/freertos/ticlang/buttonled_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "buttonled",
+        "description": "buttonled",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "buttonled",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -165,9 +275,9 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/adcsinglechannel/freertos/iar/adcsinglechannel_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "adcsinglechannel",
-        "description": "adcsinglechannel",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/buttonled/freertos/iar/buttonled_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "buttonled",
+        "description": "buttonled",
         "kernel": [
             "freertos"
         ],
@@ -182,7 +292,156 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "adcsinglechannel",
+            "buttonled",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/canloopback/README.html",
+        "resourceType": "categoryInfo",
+        "name": "canloopback",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/canloopback/freertos/gcc/canloopback_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "canloopback",
+        "description": "canloopback",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canloopback",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/canloopback/freertos/ticlang/canloopback_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "canloopback",
+        "description": "canloopback",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canloopback",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/canloopback/freertos/iar/canloopback_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "canloopback",
+        "description": "canloopback",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canloopback",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -434,81 +693,6 @@
             "TI Drivers",
             "comparatorinterrupt",
             "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/comparatorinterrupt/iar/SysConfig_Generated_Files.ipcf",
-        "name": "comparatorinterrupt",
-        "description": "comparatorinterrupt",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "comparatorinterrupt",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/comparatorinterrupt/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "comparatorinterrupt",
-        "description": "comparatorinterrupt",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "comparatorinterrupt",
-            "FreeRTOS",
             "IAR Compiler"
         ]
     },
@@ -782,42 +966,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/SysConfig_Generated_Files.ipcf",
-        "name": "empty",
-        "description": "empty",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "empty",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/empty/iar/empty_LP_EM_CC2340R5_nortos_iar.ipcf",
         "name": "empty",
         "description": "empty",
@@ -855,45 +1003,6 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/empty/freertos/iar/empty_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "empty",
-        "description": "empty",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "empty",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/empty/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "empty",
         "description": "empty",
         "kernel": [
@@ -1315,82 +1424,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/fatsdraw/iar/SysConfig_Generated_Files.ipcf",
-        "name": "fatsdraw",
-        "description": "fatsdraw",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "fatsdraw",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/fatsdraw/freertos/iar/fatsdraw_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "fatsdraw",
-        "description": "fatsdraw",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "fatsdraw",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/fatsdraw/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "fatsdraw",
         "description": "fatsdraw",
         "kernel": [
@@ -1679,43 +1713,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/iar/SysConfig_Generated_Files.ipcf",
-        "name": "gpiointerrupt",
-        "description": "gpiointerrupt",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "gpiointerrupt",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/SysConfig_Generated_Files.ipcf",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "gpiointerrupt",
         "description": "gpiointerrupt",
         "kernel": [
@@ -1738,6 +1736,220 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpioshutdown/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpioshutdown",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpioshutdown/gcc/gpioshutdown_LP_EM_CC2340R5_nortos_gcc.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpioshutdown/ticlang/gpioshutdown_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpioshutdown/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpioshutdown",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpioshutdown/freertos/gcc/gpioshutdown_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpioshutdown/freertos/ticlang/gpioshutdown_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -1754,9 +1966,45 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "gpiointerrupt",
-        "description": "gpiointerrupt",
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpioshutdown/iar/gpioshutdown_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpioshutdown/freertos/iar/gpioshutdown_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
         "kernel": [
             "freertos"
         ],
@@ -1771,7 +2019,296 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "gpiointerrupt",
+            "gpioshutdown",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ccontroller/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ccontroller",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ccontroller/gcc/i2ccontroller_LP_EM_CC2340R5_nortos_gcc.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ccontroller/ticlang/i2ccontroller_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ccontroller/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ccontroller",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ccontroller/freertos/gcc/i2ccontroller_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ccontroller/freertos/ticlang/i2ccontroller_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ccontroller/iar/i2ccontroller_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ccontroller/freertos/iar/i2ccontroller_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -1884,6 +2421,295 @@
             "i2copt3001_cpp",
             "FreeRTOS",
             "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ctarget",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/gcc/i2ctarget_LP_EM_CC2340R5_nortos_gcc.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/ticlang/i2ctarget_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctarget/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ctarget",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctarget/freertos/gcc/i2ctarget_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctarget/freertos/ticlang/i2ctarget_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/iar/i2ctarget_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctarget/freertos/iar/i2ctarget_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "FreeRTOS",
+            "IAR Compiler"
         ]
     },
     {
@@ -2153,81 +2979,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/iar/SysConfig_Generated_Files.ipcf",
-        "name": "i2ctmp",
-        "description": "i2ctmp",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "i2ctmp",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctmp/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "i2ctmp",
-        "description": "i2ctmp",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "i2ctmp",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctmp/freertos/iar/i2ctmp_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "i2ctmp",
         "description": "i2ctmp",
@@ -2400,45 +3151,6 @@
         ]
     },
     {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/log/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "log",
-        "description": "log",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "log",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
         "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
@@ -2514,42 +3226,6 @@
             "mcuboot",
             "No RTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/mcuboot/mcuboot/iar/SysConfig_Generated_Files.ipcf",
-        "name": "mcuboot",
-        "description": "mcuboot",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "mcuboot",
-            "mcuboot",
-            "No RTOS",
-            "IAR Compiler"
         ]
     },
     {
@@ -2664,42 +3340,6 @@
             "mcuboot_blinky",
             "No RTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/mcuboot/mcuboot_blinky/iar/SysConfig_Generated_Files.ipcf",
-        "name": "mcuboot_blinky",
-        "description": "mcuboot_blinky",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "mcuboot",
-            "mcuboot_blinky",
-            "No RTOS",
-            "IAR Compiler"
         ]
     },
     {
@@ -3005,82 +3645,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/nvsexternal/iar/SysConfig_Generated_Files.ipcf",
-        "name": "nvsexternal",
-        "description": "nvsexternal",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "nvsexternal",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/nvsexternal/freertos/iar/nvsexternal_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "nvsexternal",
-        "description": "nvsexternal",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "nvsexternal",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/nvsexternal/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "nvsexternal",
         "description": "nvsexternal",
         "kernel": [
@@ -3369,82 +3934,7 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/nvsinternal/iar/SysConfig_Generated_Files.ipcf",
-        "name": "nvsinternal",
-        "description": "nvsinternal",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "nvsinternal",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/nvsinternal_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "nvsinternal",
-        "description": "nvsinternal",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "nvsinternal",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "nvsinternal",
         "description": "nvsinternal",
         "kernel": [
@@ -3616,45 +4106,6 @@
         ]
     },
     {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/demos/portable/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "portable",
-        "description": "portable",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Demos",
-            "portable",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
         "location": "../../examples/rtos/LP_EM_CC2340R5/demos/portableNative/README.html",
         "resourceType": "categoryInfo",
         "name": "portableNative",
@@ -3782,45 +4233,6 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/demos/portableNative/freertos/iar/portableNative_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "portableNative",
-        "description": "portableNative",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Demos",
-            "portableNative",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/demos/portableNative/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "portableNative",
         "description": "portableNative",
         "kernel": [
@@ -4073,42 +4485,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/SysConfig_Generated_Files.ipcf",
-        "name": "pwmled1",
-        "description": "pwmled1",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "pwmled1",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/pwmled1/iar/pwmled1_LP_EM_CC2340R5_nortos_iar.ipcf",
         "name": "pwmled1",
         "description": "pwmled1",
@@ -4146,45 +4522,6 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/pwmled1_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "pwmled1",
-        "description": "pwmled1",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "pwmled1",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "pwmled1",
         "description": "pwmled1",
         "kernel": [
@@ -4437,42 +4774,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/s2rram/iar/SysConfig_Generated_Files.ipcf",
-        "name": "s2rram",
-        "description": "s2rram",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "s2rram",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/s2rram/iar/s2rram_LP_EM_CC2340R5_nortos_iar.ipcf",
         "name": "s2rram",
         "description": "s2rram",
@@ -4532,6 +4833,220 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sdraw/README.html",
+        "resourceType": "categoryInfo",
+        "name": "sdraw",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sdraw/gcc/sdraw_LP_EM_CC2340R5_nortos_gcc.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sdraw/ticlang/sdraw_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sdraw/README.html",
+        "resourceType": "categoryInfo",
+        "name": "sdraw",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sdraw/freertos/gcc/sdraw_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sdraw/freertos/ticlang/sdraw_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -4548,9 +5063,45 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/s2rram/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "s2rram",
-        "description": "s2rram",
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sdraw/iar/sdraw_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "sdraw",
+        "description": "sdraw",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sdraw/freertos/iar/sdraw_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "sdraw",
+        "description": "sdraw",
         "kernel": [
             "freertos"
         ],
@@ -4565,7 +5116,7 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "s2rram",
+            "sdraw",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -4801,42 +5352,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sha2hash/iar/SysConfig_Generated_Files.ipcf",
-        "name": "sha2hash",
-        "description": "sha2hash",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "sha2hash",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sha2hash/iar/sha2hash_LP_EM_CC2340R5_nortos_iar.ipcf",
         "name": "sha2hash",
         "description": "sha2hash",
@@ -4874,45 +5389,6 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sha2hash/freertos/iar/sha2hash_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "sha2hash",
-        "description": "sha2hash",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "sha2hash",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sha2hash/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "sha2hash",
         "description": "sha2hash",
         "kernel": [
@@ -5042,45 +5518,6 @@
             "spicontroller",
             "FreeRTOS",
             "TI Clang Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/spicontroller/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "spicontroller",
-        "description": "spicontroller",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "spicontroller",
-            "FreeRTOS",
-            "IAR Compiler"
         ]
     },
     {
@@ -5272,48 +5709,9 @@
         ]
     },
     {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/spiperipheral/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "spiperipheral",
-        "description": "spiperipheral",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "spiperipheral",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/README.html",
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/systimtimestamp/README.html",
         "resourceType": "categoryInfo",
-        "name": "tcanloopback",
+        "name": "systimtimestamp",
         "devtools": [
             "LP-EM-CC2340R5"
         ],
@@ -5356,9 +5754,113 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/gcc/tcanloopback_LP_EM_CC2340R5_freertos_gcc.projectspec",
-        "name": "tcanloopback",
-        "description": "tcanloopback",
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/systimtimestamp/gcc/systimtimestamp_LP_EM_CC2340R5_nortos_gcc.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/systimtimestamp/ticlang/systimtimestamp_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/systimtimestamp/README.html",
+        "resourceType": "categoryInfo",
+        "name": "systimtimestamp",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/systimtimestamp/freertos/gcc/systimtimestamp_LP_EM_CC2340R5_freertos_gcc.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
         "kernel": [
             "freertos"
         ],
@@ -5373,7 +5875,7 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "tcanloopback",
+            "systimtimestamp",
             "FreeRTOS",
             "GCC Compiler"
         ]
@@ -5398,9 +5900,9 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/ticlang/tcanloopback_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-        "name": "tcanloopback",
-        "description": "tcanloopback",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/systimtimestamp/freertos/ticlang/systimtimestamp_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
         "kernel": [
             "freertos"
         ],
@@ -5415,7 +5917,7 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "tcanloopback",
+            "systimtimestamp",
             "FreeRTOS",
             "TI Clang Compiler"
         ]
@@ -5437,12 +5939,9 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/iar/tcanloopback_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "tcanloopback",
-        "description": "tcanloopback",
-        "kernel": [
-            "freertos"
-        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/systimtimestamp/iar/systimtimestamp_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
         "compiler": [
             "iar"
         ],
@@ -5454,8 +5953,8 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "tcanloopback",
-            "FreeRTOS",
+            "systimtimestamp",
+            "No RTOS",
             "IAR Compiler"
         ]
     },
@@ -5476,9 +5975,9 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/tcanloopback/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "tcanloopback",
-        "description": "tcanloopback",
+        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/systimtimestamp/freertos/iar/systimtimestamp_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
         "kernel": [
             "freertos"
         ],
@@ -5493,7 +5992,7 @@
         ],
         "subCategories": [
             "TI Drivers",
-            "tcanloopback",
+            "systimtimestamp",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -5765,81 +6264,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/temperatureNotify/iar/SysConfig_Generated_Files.ipcf",
-        "name": "temperatureNotify",
-        "description": "temperatureNotify",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "temperatureNotify",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/temperatureNotify/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "temperatureNotify",
-        "description": "temperatureNotify",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "temperatureNotify",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/temperatureNotify/freertos/iar/temperatureNotify_LP_EM_CC2340R5_freertos_iar.ipcf",
         "name": "temperatureNotify",
         "description": "temperatureNotify",
@@ -5990,45 +6414,6 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/uart2callback/freertos/iar/uart2callback_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "uart2callback",
-        "description": "uart2callback",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "uart2callback",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/uart2callback/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "uart2callback",
         "description": "uart2callback",
         "kernel": [
@@ -6281,42 +6666,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/iar/SysConfig_Generated_Files.ipcf",
-        "name": "uart2echo",
-        "description": "uart2echo",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "uart2echo",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/iar/uart2echo_LP_EM_CC2340R5_nortos_iar.ipcf",
         "name": "uart2echo",
         "description": "uart2echo",
@@ -6354,45 +6703,6 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/uart2echo/freertos/iar/uart2echo_LP_EM_CC2340R5_freertos_iar.ipcf",
-        "name": "uart2echo",
-        "description": "uart2echo",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "uart2echo",
-            "FreeRTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/uart2echo/freertos/iar/SysConfig_Generated_Files.ipcf",
         "name": "uart2echo",
         "description": "uart2echo",
         "kernel": [
@@ -6645,42 +6955,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/watchdog/iar/SysConfig_Generated_Files.ipcf",
-        "name": "watchdog",
-        "description": "watchdog",
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "watchdog",
-            "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/watchdog/iar/watchdog_LP_EM_CC2340R5_nortos_iar.ipcf",
         "name": "watchdog",
         "description": "watchdog",
@@ -6697,45 +6971,6 @@
             "TI Drivers",
             "watchdog",
             "No RTOS",
-            "IAR Compiler"
-        ]
-    },
-    {
-        "resourceType": "project.iar",
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2340R5"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/watchdog/freertos/iar/SysConfig_Generated_Files.ipcf",
-        "name": "watchdog",
-        "description": "watchdog",
-        "kernel": [
-            "freertos"
-        ],
-        "compiler": [
-            "iar"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "TI Drivers",
-            "watchdog",
-            "FreeRTOS",
             "IAR Compiler"
         ]
     },

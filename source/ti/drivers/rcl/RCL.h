@@ -76,10 +76,8 @@ typedef struct RCL_s {
  * Resets global state and initialize hardware.
  *
  * @note Must be called before using any other RCL API
- *
- * @return >= 0 for success, negative for error.
  */
-int RCL_init();
+void RCL_init(void);
 
 /**
  * @brief Initializes an RCL client instance

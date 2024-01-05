@@ -15,5 +15,15 @@ set_target_properties(Drivers::drivers_cc27xx PROPERTIES
 list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xx )
 list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xx "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx.a" )
 
+# Import target "Drivers::drivers_cc27xx_reva" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xx_reva APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xx_reva PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_reva.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xx_reva )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xx_reva "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_reva.a" )
+
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

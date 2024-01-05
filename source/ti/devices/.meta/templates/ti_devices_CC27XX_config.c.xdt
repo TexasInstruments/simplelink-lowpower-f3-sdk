@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,9 +50,13 @@
  *
  */
 
+#ifndef __TI_DEVICES_CC27XX_CONFIG_C__
+#define __TI_DEVICES_CC27XX_CONFIG_C__
+
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_ccfg.h)
 #include DeviceFamily_constructPath(inc/hw_scfg.h)
+#include DeviceFamily_constructPath(inc/hw_hsmotp.h)
 % if(inst.useHwInitCopyList){
 #include "`inst.hwInitCopyListFile`"    //hardware initialisation copy list
 % }
@@ -72,7 +76,6 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), retain)) =
 const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 #endif
 {
-
 % if(inst.bldrSetting == "Default FCFG bootloader, with CCFG settings"){
     .bootCfg.pBldrVtor = CCFG_BC_PBLDR_USE_FCFG,
 % }
@@ -104,6 +107,12 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .bootCfg.bldrParam.serialRomBldrParamStruct.pinTriggerLevel = XCFG_BC_PINTRIG_LEVEL_LO,
 % }
     .bootCfg.pAppVtor = (void*)0x`inst.pAppVtor.toString(16)`,
+
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .bootCfg.crc32 = 0x00000000,
 
     .hwOpts = {0x`inst.hwOpts0.toString(16)`, 0x`inst.hwOpts1.toString(16)`},
 
@@ -155,6 +164,12 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .misc.saciTimeoutOverride = 0U,
 % }
 
+% if(inst.allowMainAppErase){
+    .misc.allowMainAppErase    = CCFG_PERMISSION_ALLOW,
+% } else {
+    .misc.allowMainAppErase    = CCFG_PERMISSION_FORBID,
+% }
+
     .flashProt.writeEraseProt.mainSectors0_31 = 0x`inst.writeEraseProt_mainSectors0_31.toString(16)`,
     .flashProt.writeEraseProt.mainSectors32_255 = 0x`inst.writeEraseProt_mainSectors32_255.toString(16)`,
     .flashProt.writeEraseProt.mainSectors256_511 = 0x`inst.writeEraseProt_mainSectors256_511.toString(16)`,
@@ -174,12 +189,26 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 
 % if(inst.useHwInitCopyList){
     .hwInitCopyList = {`inst.hwInitCopyListMacro`},
+
 % }
+    /* Set to 0. This checksum (across hwOpts through hwInitCopyList) must be
+     * calculated and updated prior to programming the application to the device
+     * (this is normally handled as a post-build step, or by the flashloader).
+     */
+    .crc32 = 0x00000000,
+
 % if(inst.enableUserRecord){
     .userRecord = {`inst.userRecordMacro`},
+
 % }
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .userRecord.crc32 = 0x00000000,
+
 % if(inst.debugAuthorization == "Require debug authentication"){
-    .debugCfg.authorization = CCFG_DBGAUTH_REQPASSWD,
+    .debugCfg.authorization = CCFG_DBGAUTH_REQAUTH,
 % }
 % else if(inst.debugAuthorization == "Debug not allowed"){
     .debugCfg.authorization = CCFG_DBGAUTH_DBGFORBID,
@@ -187,41 +216,12 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 % else {
     .debugCfg.authorization = CCFG_DBGAUTH_DBGOPEN,
 % }
-% if(inst.debugAllowBldr){
-    .debugCfg.allowBldr = CCFG_DBGBLDR_ALLOW,
-% } else {
-    .debugCfg.allowBldr = CCFG_DBGBLDR_FORBID,
-% }
-%%{
-var tempArray = Common.hexToBytes(inst.debugPwdId, 8);
-var arrStr = "";
-var byteStr;
-for(i=0; i<tempArray.length; i++){
-    byteStr = "0x" + tempArray[i].toString(16).padStart(2,'0');
-    if(i!=tempArray.length-1){
-        arrStr += byteStr + ", ";
-    } else {
-        arrStr += byteStr;
-    }
-}
-%%}
-    .debugCfg.pwdId = {`arrStr`},
-%%{
-tempArray = Common.hexToBytes(inst.debugPwdHash, 32);
-arrStr = "";
-for(i=0; i<tempArray.length; i++){
-    byteStr = "0x" + tempArray[i].toString(16).padStart(2,'0');
-    if((i+1)%8 || i==0){
-        arrStr += byteStr + ", ";
-    } else if(i!=tempArray.length-1){
-        arrStr += byteStr + ",\n                         ";
-    } else {
-        arrStr += byteStr;
-    }
-}
-%%}
-    .debugCfg.pwdHash = {`arrStr`},
 
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .debugCfg.crc32 = 0x00000000,
 };
 
 #if defined(__IAR_SYSTEMS_ICC__)
@@ -244,8 +244,9 @@ const scfg_t scfg __attribute__((section(".scfg"), used)) =
 {
     SCFG_DEFAULT_VALUES,
 %%{
-tempArray = Common.hexToBytes(inst.hsmPublicKeyHash, 32);
-arrStr = "";
+var tempArray = Common.hexToBytes(inst.hsmPublicKeyHash, 32);
+var arrStr = "";
+var byteStr;
 for(i=0; i<tempArray.length; i++){
     byteStr = "0x" + tempArray[i].toString(16).padStart(2,'0');
     if((i+1)%8 || i==0){
@@ -264,9 +265,32 @@ for(i=0; i<tempArray.length; i++){
     .hsmCfg.hsmSize = `inst.hsmSize`,
 
     .flashCfg.flashBanks.mode = `inst.flashBanksMode.match(/\(([^)]+)\)/)[1]`,
+
+    /* Set to 0. This checksum must be calculated and updated prior to
+     * programming the application to the device (this is normally handled as a
+     * post-build step, or by the flashloader).
+     */
+    .crc32 = 0x00000000,
 };
 
 #ifdef __llvm__
 /* Restore the original set of diagnostics */
 #pragma clang diagnostic pop
 #endif
+
+#if defined(__IAR_SYSTEMS_ICC__)
+__root const hsmotp_t hsmotp @ ".hsmotp" =
+#elif defined(__TI_COMPILER_VERSION__)
+#pragma DATA_SECTION(hsmotp, ".hsmotp")
+#pragma RETAIN(hsmotp)
+const hsmotp_t hsmotp =
+#elif defined(__llvm__)
+const hsmotp_t hsmotp __attribute__((section(".hsmotp"), retain)) =
+#else
+const hsmotp_t hsmotp __attribute__((section(".hsmotp"), used)) =
+#endif
+{
+    HSMOTP_DEFAULT_VALUES
+};
+
+#endif // __TI_DEVICES_CC27XX_CONFIG_C__

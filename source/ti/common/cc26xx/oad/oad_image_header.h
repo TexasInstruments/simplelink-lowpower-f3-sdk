@@ -170,7 +170,11 @@ extern "C"
     #error "Error: DUAL ON CHIP BIM needs the macro SECURITY to be enabled"
 #endif
 
-#define SIGN_FN_PTR 0x57fa0      //!< Pointer to BIM Function
+#if defined (DeviceFamily_CC23X0R2)
+    #define SIGN_FN_PTR 0x37fc       //!< Pointer to BIM Function
+#else
+    #define SIGN_FN_PTR 0x57fa0      //!< Pointer to BIM Function
+#endif
 extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 
 /**
@@ -333,6 +337,8 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
   #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '4', ' ', ' '}
 #elif defined (DeviceFamily_CC26X0R2)
   #define OAD_IMG_ID_VAL                    {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '}
+#elif defined (DeviceFamily_CC23X0R2)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '3', 'x', '0', 'R', '2'}
 #elif defined (DOXYGEN)
   /*!
    * Magic number to identify OAD image header. It is recommended that the
@@ -584,37 +590,19 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 * Flagimg verification status indicating the successful sign verification
 * and is the current image executing/to be executed
 */
-#define VERIFY_PASS_CURRENT                  0xFE
+#define VERIFY_PASS_CURRENT          0xFE
 
 /*!
 * Flagimg verification status indicating the successful sign verification
 * and is not the current image executing/to be executed
 */
-#define VERIFY_PASS_NOT_CURRENT                  0xFC
+#define VERIFY_PASS_NOT_CURRENT      0xFC
 
 /*!
 * Flagimg verification status indicating the failed sign verification or
 * security version check failed
 */
 #define VERIFY_FAIL                  0xF8
-
-/*!
-* Flagging image commit flag indicating image has not been committed yet
-* but might be running. Image is doing its own tests and verification to decide to commit or not
-*/
-#define COMMIT_PENDING            0XFF
-
-/*!
-* Flagging image commit flag indicating image has been committed
-* and image successfully passed its verification tests
-*/
-#define COMMIT_ACCEPTED           0XFE
-
-/*!
-* Flagging image commit flag indicating image has been rejected
-* and image failed ist verification tests
-*/
-#define COMMIT_REJECTED           0XEF
 
 #else
 
@@ -629,6 +617,27 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 * Flagimg verification status indicating the successful sign verification
 */
 #define VERIFY_PASS                  0xFE
+
+#ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
+/*!
+* Flagging image commit flag indicating image has not been committed yet
+* but might be running. Image is doing its own tests and verification to decide to commit or not
+*/
+#define COMMIT_PENDING               0XFF
+
+/*!
+* Flagging image commit flag indicating image has been committed
+* and image successfully passed its verification tests
+*/
+#define COMMIT_ACCEPTED              0XFE
+
+/*!
+* Flagging image commit flag indicating image has been rejected
+* and image failed ist verification tests
+*/
+#define COMMIT_REJECTED              0XEF
+
+#endif
 
 /*!
  * Length of image external flash image header
@@ -705,14 +714,14 @@ TYPEDEF_STRUCT_PACKED
   uint32_t  imgVld;         //!< Image validation bytes, used by BIM.
   uint32_t  len;            //!< Image length in bytes.
   uint32_t  prgEntry;       //!< Program entry address
-#ifdef BIM_DUAL_ONCHIP_IMAGE
+#ifdef BIM_VERIFY_VERSION_IMAGE
   uint32_t  softVer;        //!< Software version of the image
 #else
   uint8_t   softVer[4];     //!< Software version of the image
 #endif
   uint32_t  imgEndAddr;     //!< Address of the last byte of a contiguous image
   uint16_t  hdrLen;         //!< Total length of the image header
-#ifdef BIM_DUAL_ONCHIP_IMAGE
+#ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
   uint8_t   commitFlag;     //!< whether or not this image has not been committed, committed or rejected.
   uint8_t   rfu;            //!< Reserved bytes
 #else

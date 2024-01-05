@@ -40,8 +40,8 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-/* get /ti/drivers family name from device object */
-let family = Common.device2Family(system.deviceData, "ANSIX936KDF");
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
 
 /* Interrupt Priority for internal SHA2 instance */
 let intPriority = Common.newIntPri()[0];
@@ -51,7 +51,7 @@ intPriority.description = "Crypto peripheral interrupt priority";
 
 let cfg = [];
 
-if (!(family.match(/CC23/) || family.match(/CC26.1/)))
+if (!deviceId.match(/CC23|CC13.1|CC26.1/))
 {
     /* Add interrupt priority for SHA-2 HW */
     cfg.push(intPriority);
@@ -71,7 +71,7 @@ let devSpecific = {
     },
 
     modules: (inst) => {
-        if (!(family.match(/CC23/) || family.match(/CC26.1/)))
+        if (!deviceId.match(/CC23|CC13.1|CC26.1/))
         {
             /* Uses SHA-2 HW */
             return Common.autoForceModules(["Board", "Power"])();

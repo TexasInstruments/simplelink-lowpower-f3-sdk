@@ -1700,6 +1700,18 @@ extern bStatus_t GapConfig_SetParameter(Gap_configParamIds_t param,
 extern uint8_t *GAP_GetDevAddress(uint8 wantIA);
 
 /**
+ * Get the address of this device using the it's type
+ *
+ * @param wantIA TRUE for Identity Address. FALSE for Resolvable Private
+ *        Address (if the device has been initialized with the address mode
+ *        @ref ADDRMODE_RP_WITH_PUBLIC_ID or @ref ADDRMODE_RP_WITH_RANDOM_ID)
+ *
+ * @param       deviceAddrType - The own device address type
+ * @return pointer to device address.
+ */
+extern uint8 *GAP_GetDevAddressByType( uint8 wantIA, uint8 deviceAddrType);
+
+/**
  * Get the IRK
  *
  * @warning The memory indicated by the returned pointer should not be modified

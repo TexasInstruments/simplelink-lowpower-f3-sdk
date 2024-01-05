@@ -43,7 +43,6 @@
             "+../../../../../../../source/ti/ble5stack_flash/rom/agama_r1/rom_init.c -> rom_init.c",
             "+../../../../../../../source/ti/ble5stack_flash/common/cc26xx/util.c -> util.c",
             "+../../../../../../../source/ti/ble5stack_flash/common/cc26xx/util.h -> util.h",
-            "+../../../../../../../source/ti/boards/cc23x0r5/rcl_settings_ble.c -> rcl_settings_ble.c",
             "+../basic_ble_ptm.syscfg -> basic_ble_ptm.syscfg",
             "+cc23x0_app_and_stack_freertos.icf -> cc23x0_app_and_stack_freertos.icf",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",

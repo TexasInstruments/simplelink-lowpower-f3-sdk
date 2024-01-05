@@ -78,6 +78,8 @@ Dependency download locations:
 * [TI CLANG Compiler (TICLANG_ARMCOMPILER)](https://www.ti.com/tool/download/ARM-CGT-CLANG)
 * [ARM Gnu Toolchain (GCC_ARMCOMPILER)](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads/9-2019-q4-major)
 
+## Windows Build Information
+- [WSL2 Instructions](Windows_WSL2_setup.md)
 ## Supported Devices
 
 All devices supported by the SimpleLink Low Power F3 SDK.

@@ -50,13 +50,13 @@
 /*********************************************************************
  * INCLUDES
  */
-
+#include "osal_memory.h"
+#include "osal_timers.h"
 #include <string.h>
 #include "comdef.h"
 #include "hal_board.h"
 #include "osal.h"
 #include "osal_tasks.h"
-#include "osal_memory.h"
 #include "osal_pwrmgr.h"
 #include "osal_clock.h"
 
@@ -1158,7 +1158,7 @@ void osal_msg_extract( osal_msg_q_t *q_ptr, void *msg_ptr, void *prev_ptr )
     // remove from first
     *q_ptr = OSAL_MSG_NEXT( msg_ptr );
   }
-  else
+  else if (prev_ptr != NULL)
   {
     // remove from middle
     OSAL_MSG_NEXT( prev_ptr ) = OSAL_MSG_NEXT( msg_ptr );

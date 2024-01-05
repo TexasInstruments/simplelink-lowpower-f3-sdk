@@ -66,7 +66,7 @@
             "+../../../../../../source/third_party/mcuboot/boot/ti/source/mcuboot_app/keys.c -> keys.c",
             "+../mcuboot.syscfg -> mcuboot.syscfg",
             "+../../../../../../source/third_party/mcuboot/boot/ti/source/mcuboot_app/mcuboot_app.c -> mcuboot_app.c",
-            "+../mcuboot_lpf3.icf -> mcuboot_lpf3.icf",
+            "+../mcuboot_cc2340r5.icf -> mcuboot_cc2340r5.icf",
             "+../../../../../../source/third_party/mcuboot/boot/ti/source/mcuboot_app/README.md -> README.md"
         ]
     }

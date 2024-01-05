@@ -106,7 +106,7 @@ extern ubleParams_t ubleParams;
  * EXTERNAL FUNCTIONS
  */
 extern bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
-                                      char *pMsg, uint16 len);
+                                      uint8 *pMsg, uint16 len);
 
 /*********************************************************************
  * LOCAL VARIABLES
@@ -476,7 +476,7 @@ static bStatus_t ugap_monitorChangeState(ugapMonitorState_t state)
 
     msgStateChange.state = ugmState;
     status = uble_buildAndPostEvt(UBLE_EVTDST_GAP, UGAP_MONITOR_EVT_STATE_CHANGE,
-                                  (char *) &msgStateChange, sizeof(msgStateChange));
+                                  (uint8 *) &msgStateChange, sizeof(msgStateChange));
   }
 
   port_exitCS_SW(key);
@@ -699,7 +699,7 @@ static void upag_monitorIndicationCB(bStatus_t status, uint8_t sessionId, uint8_
   /* Post UGAP_MONITOR_EVT_MONITOR_INDICATION to itself so that it is processed
      in the application task's context */
   uble_buildAndPostEvt(UBLE_EVTDST_GAP, UGAP_MONITOR_EVT_MONITOR_INDICATION,
-                       (char *) &msg, sizeof(ugapMsgMonitorIndication_t));
+                       (uint8 *) &msg, sizeof(ugapMsgMonitorIndication_t));
   port_exitCS_SW(key);
 }
 
@@ -723,7 +723,7 @@ static void ugap_monitorCompleteCB(bStatus_t status, uint8_t sessionId)
   /* Post UGAP_MONITOR_EVT_MONITOR_COMPLETE to itself so that it is processed
      in the application task's context */
   uble_buildAndPostEvt(UBLE_EVTDST_GAP, UGAP_MONITOR_EVT_MONITOR_COMPLETE,
-                       (char *) &msg, sizeof(ugapMsgMonitorComplete_t));
+                       (uint8 *) &msg, sizeof(ugapMsgMonitorComplete_t));
   port_exitCS_SW(key);
 }
 #endif /* FEATURE_MONITOR */

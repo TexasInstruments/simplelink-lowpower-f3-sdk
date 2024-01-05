@@ -109,6 +109,8 @@ static void thermalShutdownCallback(int16_t currentTemperature,
                                     int16_t thresholdTemperature,
                                     uintptr_t clientArg,
                                     Temperature_NotifyObj *notifyObject);
+static int16_t TemperatureLPF3_scaleToRealTemperature(int32_t temperature);
+static int16_t TemperatureLPF3_scaleFromRealTemperature(int32_t temperature);
 
 /* Globals */
 
@@ -134,6 +136,9 @@ static Temperature_NotifyObj thermalShutdown;
  */
 static uint32_t degreesToCode(int32_t temperatureDegreesC)
 {
+    /* Adjust for BATMON temperature offset */
+    temperatureDegreesC = TemperatureLPF3_scaleFromRealTemperature(temperatureDegreesC);
+
     uint32_t temperatureCode = (temperatureDegreesC << PMUD_TEMP_INT_S) & PMUD_TEMP_INT_M;
 
     return temperatureCode;
@@ -376,16 +381,21 @@ int16_t Temperature_getTemperature(void)
 {
     /* The temperature on Low Power F3 devices is stored in a 32-bit register
      * containing a 9-bit signed integer part and a 2-bit unsigned fractional
-     * part. The fractional part is discarded.
+     * part. The fractional part is discarded from the returned result, but is
+     * used in the correction-calculation below.
      */
 
-    int32_t temperature = HWREG(PMUD_BASE + PMUD_O_TEMP) & PMUD_TEMP_INT_M;
+    int32_t temperature = HWREG(PMUD_BASE + PMUD_O_TEMP);
 
-    /* Mask and shift the integer-part of the temperature */
-    temperature = (temperature & PMUD_TEMP_INT_M) >> PMUD_TEMP_INT_S;
+    /* Mask and shift the integer and fractional parts of the temperature */
+    temperature = (temperature & (PMUD_TEMP_INT_M | PMUD_TEMP_FRAC_M)) >> PMUD_TEMP_FRAC_S;
 
     /* Perform sign extension */
-    temperature = (temperature << (32 - PMUD_TEMP_INT_W)) >> (32 - PMUD_TEMP_INT_W);
+    temperature = (temperature << (32 - (PMUD_TEMP_INT_W + PMUD_TEMP_FRAC_W))) >>
+                  (32 - (PMUD_TEMP_INT_W + PMUD_TEMP_FRAC_W));
+
+    /* Correct for temperature-dependent error in BATMON sensor */
+    temperature = TemperatureLPF3_scaleToRealTemperature(temperature);
 
     return temperature;
 }
@@ -550,4 +560,104 @@ void TemperatureLPF3_disableTSDMonitoring(void)
 void TemperatureLPF3_triggerThermalShutdown(void)
 {
     HWREG(PMCTL_BASE + PMCTL_O_RSTCTL) |= PMCTL_RSTCTL_TSDEN_EN;
+}
+
+/*
+ *  ======== TemperatureLPF3_scaleToRealTemperature ========
+ */
+static int16_t TemperatureLPF3_scaleToRealTemperature(int32_t temperature)
+{
+    /* Due to a non-linearity in the BATMON temperature sensor, the temperature
+     * returned by the hardware should be adjusted to attain a more accurate
+     * temperature. The transfer function from batmon temperature to real
+     * temperature is as follows:
+     *
+     * T_real(T) = p1*T + p0
+     *
+     * The coefficients account for the input temperature containing two
+     * fractional bits, and the adjusted temperature will also contain two
+     * fractional bits.
+     *
+     * p1 = 1.04348435
+     * p0 = -6.71741627
+     *
+     * Scaled by 2^20 to fixed-point integers:
+     *
+     * p1 = 1094173
+     * p0 = -7043721
+     */
+
+    int32_t p1 = 1094172;
+    int32_t p0 = -7043721;
+
+    temperature = (temperature * p1) + p0;
+
+    /* Round to nearest integer. Divide by 2^22 to bring scaled
+     * temperature with two fractional bits down to temperature with no
+     * fractional bits. Do division instead of right-shift, since temperature
+     * is a signed integer.
+     */
+    if (temperature > 0)
+    {
+        temperature = (temperature + (1 << 21)) / (1 << 22);
+    }
+    else
+    {
+        temperature = (temperature - (1 << 21)) / (1 << 22);
+    }
+
+    return temperature;
+}
+
+static int16_t TemperatureLPF3_scaleFromRealTemperature(int32_t temperature)
+{
+    /* Due to a non-linearity in the BATMON temperature sensor, the temperature
+     * programmed in the hardware should be adjusted to reflect a more accruate
+     * temperature. The transfer function accurate temperature to BATMON
+     * temperature is as follows:
+     *
+     * T_batmon(T) = p1*T + p0
+     *
+     * p1 = 0.95832774109
+     * p0 = 6.43748636
+     *
+     * Scaled by 2^20 to fixed-point integers:
+     *
+     * p1 = 1004879
+     * p0 = 6750194
+     */
+    int32_t p1 = 1004879;
+    int32_t p0 = 6750194;
+
+    /* Add two fractional bits */
+    temperature *= 4;
+
+    /* Bring temperature from real temperature to BATMON temperature */
+    temperature = (temperature * p1) + p0;
+
+    /* Round to nearest integer. Divide by 2^22 to bring scaled
+     * temperature with two fractional bits down to temperature with no
+     * fractional bits. Do division instead of right-shift, since temperature
+     * is a signed integer.
+     */
+    if (temperature > 0)
+    {
+        temperature = (temperature + (1 << 21)) / (1 << 22);
+    }
+    else
+    {
+        temperature = (temperature - (1 << 21)) / (1 << 22);
+    }
+
+    /* Limit the temperature to valid BATMON temperatures */
+    if (temperature > BATMON_TEMPERATURE_MAX)
+    {
+        temperature = BATMON_TEMPERATURE_MAX;
+    }
+    else if (temperature < BATMON_TEMPERATURE_MIN)
+    {
+        temperature = BATMON_TEMPERATURE_MIN;
+    }
+
+    return temperature;
 }

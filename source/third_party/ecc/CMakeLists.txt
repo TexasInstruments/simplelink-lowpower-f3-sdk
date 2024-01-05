@@ -37,6 +37,7 @@ if (TI_INTERNAL_BUILD)
     # Not using get_install_dir for INVIA_LIB_INSTALL_DIR as it does not ship
     list(TRANSFORM SOURCES_CC13X1_CC26X1 PREPEND ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/)
     list(TRANSFORM SOURCES_CC23X0 PREPEND ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/)
+    list(TRANSFORM SOURCES_CC27XX PREPEND ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/)
 
     if ("m4" IN_LIST SUPPORTED_ARCHITECTURES)
         ti_add_library(
@@ -45,6 +46,23 @@ if (TI_INTERNAL_BUILD)
             ARCH m4
             LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m4
         )
+    endif ()
+
+    if ("m33f" IN_LIST SUPPORTED_ARCHITECTURES)
+        ti_add_library(
+            ecc_cc27xx
+            OUTPUT_NAME ecc
+            SOURCES ${SOURCES_CC27XX} ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include/ECCSW.h
+            ARCH m33f
+            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m33f
+        )
+        target_include_directories(ecc_cc27xx INTERFACE "${CMAKE_SOURCE_DIR}/source")
+
+        if (${TI_TOOLCHAIN_NAME} STREQUAL "ticlang" OR ${TI_TOOLCHAIN_NAME} STREQUAL "gcc")
+            target_sources(ecc_cc27xx PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_gnu.s)
+        elseif (${TI_TOOLCHAIN_NAME} STREQUAL "iar")
+            target_sources(ecc_cc27xx PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_iar.s)
+        endif ()        
     endif ()
 
     if ("m0p" IN_LIST SUPPORTED_ARCHITECTURES)
@@ -89,6 +107,7 @@ if (TI_INTERNAL_BUILD)
 else()
     ti_add_library(ecc_cc13x1_cc26x1 INTERFACE ARCH m4)
     ti_add_library(ecc_cc23x0 INTERFACE ARCH m0p)
+    ti_add_library(ecc_cc27xx INTERFACE ARCH m33f)
     ti_add_library(ecc_deploy INTERFACE ARCH all)
 endif()
 ti_export_package()

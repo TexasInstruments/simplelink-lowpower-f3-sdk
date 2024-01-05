@@ -120,7 +120,8 @@ let config = [
             "all received messages. When messages are received into the CAN Message RAM " +
             "(MRAM), they are copied into the ring buffer and the Rx callback is " +
             "executed. When CAN_read() is called, the Rx element is freed from " +
-            "the ring buffer. The size can be changed based on the application " +
+            "the ring buffer. If the ring buffer is full when a message is received, " +
+            "it will be discarded. The size can be changed based on the application " +
             "and MRAM configuration. Each Rx element occupies 78-bytes.",
         default     : 6
     },
@@ -193,17 +194,10 @@ function onNomRateChange(inst, ui)
  *  ======== moduleInstances ========
  */
 function moduleInstances(inst) {
-    let modname = "Onboard CAN";
-    let internalModname = "onboardCAN";
-
-    if (family.match(/CC23/)) {
-        modname = "External CAN";
-        internalModname = "externalCAN";
-    }
-
+    /* Devices with onboard CAN will override this module instance */
     let moduleInstance = [{
-        name: internalModname,
-        displayName: modname,
+        name: "externalCAN",
+        displayName: "External CAN",
         moduleName: "/ti/drivers/can/CAN" + family
     }];
 

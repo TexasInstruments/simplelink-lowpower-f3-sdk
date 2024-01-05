@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,20 @@ intPriority.displayName = "Interrupt Priority";
 intPriority.description = "Crypto peripheral interrupt priority";
 
 /*
+* CBC-MAC driver is used to condition the entropy buffer provided by RCL.
+* The RCL entropy buffer has approximately 0.1 bits of entropy per bit.
+* Based on NIST 800-90B, 1280-bits of RCL TRNG entropy buffer with 128-bits
+* of entropy will be required as input by the conditioning component to
+* generate 128-bits of seed with full entropy. Since AESCTRDRBG requires a
+* 256-bit seed, RNG requires a 2560-bit buffer from RCL, which is 80 words.
+* However, 152 words is chosen as it provides a high margin (~ 75%).
+*/
+const minRawNoiseLenWords = 152;
+
+/* Maximum number of words which can be read from RCL's entropy buffer */
+const maxRawNoiseLenWords = 1024;
+
+/*
  *  ======== devSpecific ========
  *  Device-specific extensions to be added to base RNG configuration
  */
@@ -70,9 +84,9 @@ let devSpecific = {
             {
                 name        : "rawNoiseLenWords",
                 displayName : "RNG Raw Noise Input Size In Words",
-                description : 'Size of words read from the RCL\'s ADC '
+                description : 'Number of words read from the RCL\'s ADC '
                             + 'and conditioned using CBC-MAC before use as the RNG seed',
-                default     : 80
+                default     : minRawNoiseLenWords
             },
             {
                 name        : "noiseConditioningKeyW0",
@@ -155,38 +169,30 @@ function validate_rng_settings(inst, validation) {
 
     if (RNG.$static.rngPoolSize < 16) {
         logError(validation, RNG.$static, "rngPoolSize",
-                 "value must be 16 or greater");
+                 "Value must be 16 or greater");
     }
     else {
         if (RNG.$static.rngPoolSize % 16 != 0) {
             logError(validation, RNG.$static, "rngPoolSize",
-                     "value must be a multiple of 16");
+                     "Value must be a multiple of 16");
         }
 
         if (RNG.$static.rngPoolSize < 32) {
             logInfo(validation, RNG.$static, "rngPoolSize",
-                    "consider using a larger value for better performance");
+                    "Consider using a larger value for better performance");
         }
     }
 
     /* Validate entropy buffer length */
-    /*
-     * CBC-MAC driver is used to condition the entropy buffer provided by RCL TRNG.
-     * The RCL TRNG buffer approximately has 0.1 bits of entropy per bit.
-     * Based on NIST 800-90B, 1280-bits of RCL TRNG entropy buffer with 128-bits
-     * of entropy will be required as input by the conditioning component to generate
-     * 128-bits of seed with full entropy. Since AESCTRDRBG requires a 256-bit
-     * seed, RNG requires a 2560-bit buffer from RCL, which is 80 words.
-     */
-    if (RNG.$static.rawNoiseLenWords < 80) {
+    if (RNG.$static.rawNoiseLenWords < minRawNoiseLenWords) {
         logError(validation, RNG.$static, "rawNoiseLenWords",
-                 "Value must be a minimum of 80 words for full entropy of generated seed");
+            "Value must be a minimum of " + minRawNoiseLenWords +
+            " words for full entropy of generated seed");
     }
-    else if (RNG.$static.rawNoiseLenWords > 1024)
+    else if (RNG.$static.rawNoiseLenWords > maxRawNoiseLenWords)
     {
-        /* RCL can only provide a max of 1024 words of entropy buffer */
         logError(validation, RNG.$static, "rawNoiseLenWords",
-                    " Maxium allowed word length is 1024");
+                 "Maximum allowed word length is " + maxRawNoiseLenWords);
     }
 
     /* Valdiate Key with default value */

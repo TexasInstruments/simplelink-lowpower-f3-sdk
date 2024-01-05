@@ -34,4 +34,4 @@
  */
 
 /* ClockP tick period, in microseconds */
-#define ClockP_tickPeriod 1U
+#define ClockP_TICK_PERIOD 1U

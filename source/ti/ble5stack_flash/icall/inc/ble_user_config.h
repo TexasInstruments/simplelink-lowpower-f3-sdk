@@ -636,6 +636,12 @@ extern regOverride_t pOverridesTxStd[];
 #endif
 
 extern txPwrTbl_t    appTxPwrTbl;
+
+#ifdef CC23X0
+// The Tx Power value
+extern int8 defaultTxPowerDbm;
+#endif
+
 #ifndef CC23X0
 extern rfDrvTblPtr_t rfDriverTable[];
 

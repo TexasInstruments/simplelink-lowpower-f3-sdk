@@ -343,6 +343,7 @@ extern void smGenerateRandBuf( uint8 *pRandNum, uint8 len );
 extern void smStartRspTimer( uint16 connHandle );
 extern void smStopRspTimer( void );
 extern void smUint8ToAuthReq( authReq_t *pAuthReq, uint8 authReqUint8 );
+extern uint8 smResetAuthReqReservedBits( uint8 authReq );
 extern bStatus_t sm_c1new( uint8 *pK, uint8 *pR, uint8 *pRes, uint8 *pReq, uint8 iat, uint8 *pIA, uint8 rat, uint8 *pRA, uint8 *pC1 );
 extern bStatus_t sm_CMAC( uint8 *pK, uint8 *pM, uint16 mLen, uint8 *pMac, uint8 macLen );
 extern bStatus_t sm_d1( uint8 *pK, uint16 d, uint8 *pD1 );

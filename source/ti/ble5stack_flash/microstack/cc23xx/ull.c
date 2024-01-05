@@ -129,7 +129,7 @@
  * EXTERNAL FUNCTIONS
  */
 extern bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
-                                      char *pMsg, uint16 len);
+                                      uint8 *pMsg, uint16 len);
 
 /*********************************************************************
  * EXTERNAL VARIABLES
@@ -360,8 +360,12 @@ void ull_monitorDoneCb(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEve
         case RCL_CommandStatus_RxTimeout:
         case RCL_CommandStatus_NoSync:
         case RCL_CommandStatus_RxErr:
-        case RCL_CommandStatus_HardStop:
-        case RCL_CommandStatus_GracefulStop:
+        case RCL_CommandStatus_HardStopApi:
+        case RCL_CommandStatus_HardStopTimeout:
+        case RCL_CommandStatus_HardStopScheduling:
+        case RCL_CommandStatus_GracefulStopApi:
+        case RCL_CommandStatus_GracefulStopTimeout:
+        case RCL_CommandStatus_GracefulStopScheduling:
         case RCL_CommandStatus_Error_StartTooLate:
         case RCL_CommandStatus_Error_AlreadySubmitted:
           /* Operation finished normally or past start trigger.

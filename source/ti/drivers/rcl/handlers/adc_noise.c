@@ -46,18 +46,22 @@
 #include <ti/log/Log.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/rfe_regs.h)
-#include DeviceFamily_constructPath(driverlib/rfe32_regs.h)
-#include DeviceFamily_constructPath(driverlib/rfe_common_ram_regs.h)
-#include DeviceFamily_constructPath(driverlib/s2r_regs.h)
-#include DeviceFamily_constructPath(driverlib/mdm_regs.h)
-#include DeviceFamily_constructPath(driverlib/dbell_regs.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrfe.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdrfe32.h)
+#include DeviceFamily_constructPath(inc/rfe_common_ram_regs.h)
+#include DeviceFamily_constructPath(inc/hw_lrfds2r.h)
+#include DeviceFamily_constructPath(inc/hw_lrfdmdm.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 
 /* Storage location of S2R samples */
 #define ADC_NOISE_SAMPLE_MEM (PBE_RAM_BASE_ADDR)
 #define ADC_NOISE_SAMPLE_PTR ((uint32_t *)ADC_NOISE_SAMPLE_MEM)
 /* Start-address of PBE RAM in S2R address-space */
+#ifdef DeviceFamily_CC23X0R2
+#define ADC_NOISE_SAMPLE_MEM_S2R_START 1024
+#else
 #define ADC_NOISE_SAMPLE_MEM_S2R_START 2048
+#endif
 
 struct
 {
@@ -130,7 +134,7 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
                 /* Configure S2R */
                 RCL_Handler_Adc_Noise_configureS2R(adcCmd->numWords);
 
-                Log_printf(RclCore, Log_INFO5, "RFE powered up. Configured S2R for %d words, buffer: 0x%x", adcCmd->numWords, adcCmd->output);
+                Log_printf(RclCore, Log_VERBOSE, "RFE powered up. Configured S2R for %d words, buffer: 0x%x", adcCmd->numWords, adcCmd->output);
 
                 adcNoiseHandlerState.synthRefsys = 0;
                 adcNoiseHandlerState.powerUp = 1;
@@ -140,7 +144,7 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
             if (adcNoiseHandlerState.s2rConversion != 0)
             {
                 /* Make sure S2R is complete */
-                while (S_S2R_STAT & S2R_STAT_RUNNING_BM);
+                while (HWREG_READ_LRF(LRFDS2R_BASE + LRFDS2R_O_STAT) & LRFDS2R_STAT_RUNNING_M);
 
                 /* Power down hardware */
                 RCL_Handler_Adc_Noise_powerDown();
@@ -173,22 +177,22 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
                 RCL_CommandStatus startTimeStatus;
 
                 /* Clear messagebox */
-                S_RFE_MSGBOX = 0;
+                HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
                 /* Start RX */
-                S_PBE_RFEAPI = 3;
+                HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 3;
                 /* Wait until RX is up and running */
-                while ((S_MDM_RFECMDIN & 0x08) == 0);
+                while ((HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_RFECMDIN) & 0x08) == 0);
 
                 /* Disable LNA and mixer clocks to reduce impact of any signal received on the antenna */
-                S_RFE_LNA &= ~RFE_LNA_EN_BM;
-                S_RFE_DIVCTL &= ~(RFE_DIVCTL_RXPH90DIV_BM | RFE_DIVCTL_RXPH0DIV_BM);
+                HWREG(LRFDRFE_BASE + LRFDRFE_O_LNA) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA) & (~LRFDRFE_LNA_EN_M);
+                HWREG(LRFDRFE_BASE + LRFDRFE_O_DIVCTL) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DIVCTL) & (~(LRFDRFE_DIVCTL_RXPH90DIV_M | LRFDRFE_DIVCTL_RXPH0DIV_M));
 
                 /* Initialize and enable ADC digital interface */
-                S_MDM_INIT = (MDM_INIT_ADCDIG_RESET << MDM_INIT_ADCDIG);
-                S_MDM_ENABLE = (MDM_ENABLE_ADCDIG_EN << MDM_ENABLE_ADCDIG);
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_INIT) = (LRFDMDM_INIT_ADCDIG_RESET);
+                HWREG(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = (LRFDMDM_ENABLE_ADCDIG_EN);
 
                 /* Trigger one shot capture */
-                S_S2R_TRIG = S2R_TRIG_TRIG_ARM;
+                HWREG(LRFDS2R_BASE + LRFDS2R_O_TRIG) = LRFDS2R_TRIG_TRIG_ARM;
 
                 /* Wait for S2R to complete by setting new handler start time.
                  * ADC sampling frequency is ~11.5 MSamples/s, or 3 words / 260 ns.
@@ -222,20 +226,20 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
 static void RCL_Handler_Adc_Noise_configureS2R(uint32_t numWords)
 {
     /* Enable S2R module */
-    LRF_setClockEnable(DBELL_CLKCTL_S2R_BM, LRF_CLK_ENA_RCL);
+    LRF_setClockEnable(LRFDDBELL_CLKCTL_S2R_M, LRF_CLK_ENA_RCL);
 
     /* Configure S2R */
-    S_MDM_ADCDIGCONF = (1 << MDM_ADCDIGCONF_QBRANCHEN) | (1 << MDM_ADCDIGCONF_IBRANCHEN);
+    HWREG(LRFDMDM_BASE + LRFDMDM_O_ADCDIGCONF) = (1 << LRFDMDM_ADCDIGCONF_QBRANCHEN_S) | (1 << LRFDMDM_ADCDIGCONF_IBRANCHEN_S);
 
     /* Setup Sample capture, use PBE RAM for storing samples */
-    S_S2R_CFG = ((S2R_CFG_TRIGMODE_ONESHOT << S2R_CFG_TRIGMODE) |
-                 (S2R_CFG_SEL_ADCDIG << S2R_CFG_SEL) |
-                 (S2R_CFG_CTL_EN << S2R_CFG_CTL));
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_CFG) = ((LRFDS2R_CFG_TRIGMODE_ONESHOT) |
+                                          (LRFDS2R_CFG_SEL_ADCDIG) |
+                                          (LRFDS2R_CFG_CTL_EN));
 
     /* Set start-address of where to store samples */
-    S_S2R_START = ADC_NOISE_SAMPLE_MEM_S2R_START;
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_START) = ADC_NOISE_SAMPLE_MEM_S2R_START;
     /* Set stop-address */
-    S_S2R_STOP = ADC_NOISE_SAMPLE_MEM_S2R_START + numWords - 1;
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_STOP) = ADC_NOISE_SAMPLE_MEM_S2R_START + numWords - 1;
 }
 
 /*
@@ -244,26 +248,26 @@ static void RCL_Handler_Adc_Noise_configureS2R(uint32_t numWords)
 static void RCL_Handler_Adc_Noise_powerUp(void)
 {
     /* Write precomputed frequency words, based on frequency: 2440000000 */
-    S_RFE_COMMON_RAM_K5 = 0x9160;
-    S_RFE32_CALMMID_CALMCRS = 0x098604C4;
-    S_RFE32_PLLM0 = 0x2C760000;
-    S_RFE32_PLLM1 = 0x2FA30000;
-    S_RFE_COMMON_RAM_RXIF = 0;
+    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_K5) = 0x9160;
+    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_CALMMID_CALMCRS) = 0x098604C4;
+    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_PLLM0) = 0x130E0000;
+    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_PLLM1) = 0x163B0000;
+    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RXIF) = 0;
 
     /* Initialize and enable RFE TOPsm */
-    S_RFE_INIT = (1 << RFE_INIT_TOPSM);
-    S_RFE_ENABLE = (1 << RFE_ENABLE_TOPSM);
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_INIT) = (1 << LRFDRFE_INIT_TOPSM_S);
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = (1 << LRFDRFE_ENABLE_TOPSM_S);
 
     /* Wait for boot done */
-    while(S_RFE_MSGBOX != 4);
+    while(HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) != 4);
 
     /* Clear message box */
-    S_RFE_MSGBOX = 0;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
     /* Calibrate PLL */
-    S_PBE_RFEAPI = 4;
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 4;
 
     /* Enable RFEDONE interrupt */
-    S_DBELL_IMASK0 |= DBELL_IMASK0_RFEDONE_BM;
+    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |= LRFDDBELL_IMASK0_RFEDONE_M;
 }
 
 /*
@@ -272,40 +276,40 @@ static void RCL_Handler_Adc_Noise_powerUp(void)
 static void RCL_Handler_Adc_Noise_powerDown(void)
 {
     /* Disable RFEDONE interrupt */
-    S_DBELL_IMASK0 &= ~DBELL_IMASK0_RFEDONE_BM;
+    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) & (~LRFDDBELL_IMASK0_RFEDONE_M);
 
     /* Clear message box */
-    S_RFE_MSGBOX = 0;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
     /* Stop Radio */
-    S_PBE_RFEAPI = 1;
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 1;
 
     /* Wait until radio stops */
-    while (S_PBE_RFEMSGBOX == 0);
+    while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEMSGBOX) == 0);
 
     /* Clear message box */
-    S_RFE_MSGBOX = 0;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
     /* Stop PLL */
-    S_PBE_RFEAPI = 5;
+    HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 5;
 
     /* Wait until radio stops */
-    while (S_PBE_RFEMSGBOX == 0);
+    while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEMSGBOX) == 0);
 
     /* Disable S2R module */
-    S_S2R_CFG = 0;
+    HWREG(LRFDS2R_BASE + LRFDS2R_O_CFG) = 0;
     /* Initialize/Reset (needed for safe shut down of ADCDIG) */
-    S_MDM_INIT = 0xFFFF;
+    HWREG(LRFDMDM_BASE + LRFDMDM_O_INIT) = 0xFFFF;
     /* Stop modem */
-    S_MDM_ENABLE = 0;
+    HWREG(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = 0;
 
     /* Request RFE powerdown */
-    S_RFE_PDREQ = RFE_PDREQ_TOPSMPDREQ_BM;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = LRFDRFE_PDREQ_TOPSMPDREQ_M;
     /* Disable all RFE modules */
-    S_RFE_ENABLE = 0;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = 0;
     /* Stop powerdown request */
-    S_RFE_PDREQ = 0;
+    HWREG(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = 0;
 
     /* Disable S2R module */
-    LRF_clearClockEnable(DBELL_CLKCTL_S2R_BM, LRF_CLK_ENA_RCL);
+    LRF_clearClockEnable(LRFDDBELL_CLKCTL_S2R_M, LRF_CLK_ENA_RCL);
 
     /* Disable refsys */
     LRF_disableSynthRefsys();

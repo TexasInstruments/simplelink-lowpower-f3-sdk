@@ -54,6 +54,7 @@ void hal_cancel_start_time(void);
 void hal_cancel_hard_stop_time(void);
 void hal_cancel_graceful_stop_time(void);
 void hal_disable_radio_interrupts(void);
+void hal_temperature_init(void);
 int16_t hal_get_temperature(void);
 uint32_t hal_get_hfxt_ratio(void);
 uint32_t hal_get_hfxt_ratio_default(void);
@@ -87,5 +88,4 @@ void hal_power_set_constraint(void);
 void hal_power_release_constraint(void);
 void hal_power_open(void (*f)(RCL_PowerEvent));
 void hal_power_close(void);
-void hal_set_systim_imask(void);
 #endif

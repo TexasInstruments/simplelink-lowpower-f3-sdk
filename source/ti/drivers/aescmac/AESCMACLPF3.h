@@ -74,13 +74,14 @@ extern "C" {
  * Default AES CMAC & CBC-MAC auto config:
  *  ECB SRC as TXTXBUF
  *  Trigger point for auto ECB as WRBUF3 (encryption starts by writing BUF3)
+ *  BUSHALT enabled
  */
 #if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
     #define AESCMACLPF3_DEFAULT_AUTOCFG \
         ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
     #define AESCMACLPF3_DEFAULT_AUTOCFG \
-        ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+        ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #else
     #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
 #endif

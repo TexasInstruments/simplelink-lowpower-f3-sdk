@@ -313,7 +313,7 @@ void PowerCC27XX_standbyPolicy(void)
             HwiP_clearInterrupt(INT_CPUIRQ16);
 
             /* Switch EVTSVT_O_CPUIRQ16SEL in eventfabric back to SysTimer */
-            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM1;
+            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
 
             /* Restore SysTimer timeouts since standby wiped them */
             for (sysTimerIndex = 0; sysTimerIndex < SYSTIMER_CHANNEL_COUNT; sysTimerIndex++)

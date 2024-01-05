@@ -2587,8 +2587,8 @@ uint8_t gapBondMgrImportBond(gapBondRec_t *pBondRec,
   uint8_t snvErrorCode = SUCCESS;
 
   // First see if we already have an existing bond for this device
-  if(GAPBondMgr_FindAddr(pBondRec->addr, pBondRec->addrType,
-                         &bondIdx, NULL, NULL) != SUCCESS)
+  if (GAPBondMgr_FindAddr(pBondRec->addr, pBondRec->addrType,
+                          &bondIdx, NULL, NULL) != SUCCESS)
   {
     bondIdx = gapBondMgrFindEmpty();
   }
@@ -2598,8 +2598,8 @@ uint8_t gapBondMgrImportBond(gapBondRec_t *pBondRec,
 
     // Verify that that a previous bond had an IRK before attempting to
     // remove it from the Controller's resolving list.
-    if((osal_snv_read(DEV_IRK_NV_ID(bondIdx), KEYLEN, oldIrk) == SUCCESS) &&
-       (MAP_osal_isbufset(oldIrk, 0xFF, KEYLEN) == FALSE))
+    if ((osal_snv_read(DEV_IRK_NV_ID(bondIdx), KEYLEN, oldIrk) == SUCCESS) &&
+        (MAP_osal_isbufset(oldIrk, 0xFF, KEYLEN) == FALSE))
     {
       // If a current record is simply being updated then erase previous
       // entry in resolving list for this peer. Will subsequently update
@@ -2613,7 +2613,7 @@ uint8_t gapBondMgrImportBond(gapBondRec_t *pBondRec,
   }
 
   // If an empty slot was found
-  if(bondIdx < gapBond_maxBonds)
+  if (bondIdx < gapBond_maxBonds)
   {
     snvErrorCode = gapBondMgrSaveBond(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK,
                                       signCount, TRUE);
@@ -2628,7 +2628,7 @@ uint8_t gapBondMgrImportBond(gapBondRec_t *pBondRec,
   }
   else
   {
-   return(bleNoResources);
+   return (bleNoResources);
   }
 
   // Check for there was an error when writing to the NV area
@@ -2704,9 +2704,9 @@ uint8_t gapBondMgrReadBondRec(GAP_Peer_Addr_Types_t addrType,
     if (pSRK != NULL)
     {
       // Load the Signing Key
-      if(osal_snv_read(DEV_CSRK_NV_ID(idx), KEYLEN, pSRK) == SUCCESS)
+      if (osal_snv_read(DEV_CSRK_NV_ID(idx), KEYLEN, pSRK) == SUCCESS)
       {
-        if(signCount != NULL && osal_isbufset(pSRK, 0xFF, KEYLEN) == FALSE)
+        if (signCount != NULL && osal_isbufset(pSRK, 0xFF, KEYLEN) == FALSE)
         {
           // Load the signing information for this connection
           VOID osal_snv_read(DEV_SIGN_COUNTER_NV_ID(idx), sizeof(uint32_t), signCount);

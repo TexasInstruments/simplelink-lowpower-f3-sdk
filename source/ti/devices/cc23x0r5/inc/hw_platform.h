@@ -56,7 +56,6 @@
 // the defines listed in hw_pmctl.h
 //
 //*****************************************************************************
-// TODO: Move the two XX_START_INIT defines to hw_pmctl.h (LPRFROM-661).
 /// Boot sequence completed
 #define PMCTL_BOOTSTA_BOOT_COMPLETE   (PMCTL_BOOTSTA_FLAG_MODE_BLDR)
 /// Bootloader start initiated

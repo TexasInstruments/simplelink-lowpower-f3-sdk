@@ -61,8 +61,7 @@
     #define REV32 __builtin_bswap32
 #endif
 
-/*
- * Note: The AES-CCM one-step polling operations are specifically designed
+/* Note: The AES-CCM one-step polling operations are specifically designed
  * to optimize execution speed at the expense of code re-use and size.
  */
 
@@ -156,8 +155,7 @@ static void AESCCMLPF3_hwiFxn(uintptr_t arg0)
     AESCCM_Handle handle      = (AESCCM_Handle)arg0;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
-    /*
-     * For CBC-MAC, only the input channel A interrupt is enabled.
+    /* For CBC-MAC, only the input channel A interrupt is enabled.
      * For CTR, only the output channel B interrupt is enabled.
      */
     uint32_t intStatus = AESGetMaskedInterruptStatus();
@@ -184,8 +182,7 @@ static void AESCCMLPF3_hwiFxn(uintptr_t arg0)
             plainText = object->output;
         }
 
-        /*
-         * DMA is used to process full blocks of data but there if there is a
+        /* DMA is used to process full blocks of data but there if there is a
          * partial block of data remaining, handle it with CPU R/W.
          */
         if (object->inputCBCMACLengthRemaining > 0U)
@@ -227,8 +224,7 @@ static void AESCCMLPF3_hwiFxn(uintptr_t arg0)
     {
         UDMALPF3_clearInterrupt(AESCommonLPF3_DMA_CHB_BITMASK);
 
-        /*
-         * DMA is used to process all full blocks of data. If there is a
+        /* DMA is used to process all full blocks of data. If there is a
          * partial block of data remaining, process it with CPU R/W.
          */
         if (object->inputCTRLengthRemaining > 0U)
@@ -337,8 +333,7 @@ static int_fast16_t AESCCMLPF3_waitForDMA(const AESCCMLPF3_Object *object)
 
     if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_BLOCKING)
     {
-        /*
-         * This function may be called from handler or thread contexts.
+        /* This function may be called from handler or thread contexts.
          * Only block on semaphore when called from thread context
          * (i.e. Interrupt Program Status Register is zero)
          */
@@ -417,8 +412,7 @@ void AESCCM_close(AESCCM_Handle handle)
  */
 static void AESCCMLPF3_processCBCMACFinalBlock(const uint8_t *input, size_t bytesRemaining)
 {
-    /*
-     * No need to reload the last intermediate tag because it still loaded in
+    /* No need to reload the last intermediate tag because it still loaded in
      * the AES engine from the previous CBCMAC operation.
      */
 
@@ -428,13 +422,18 @@ static void AESCCMLPF3_processCBCMACFinalBlock(const uint8_t *input, size_t byte
     /* Zero out the BUF registers */
     AESClearBUF();
 
-    /*
-     * Copy directly to BUF registers. memcpy is safe to use here since the
+    /* Copy directly to BUF registers. memcpy is safe to use here since the
      * order of the writes is not important when writing a partial block.
      */
     (void)memcpy((void *)(AES_BASE + AES_O_BUF0), input, bytesRemaining);
 
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
     AESSetTrigger((uint32_t)AES_TRG_AESOP_TXTXBUF);
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    AESSetTrigger((uint32_t)AES_TRG_ECBOP_TXTXBUF);
+#else
+    #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
+#endif
 }
 
 #define M_PRIME_OFFSET 3
@@ -475,8 +474,7 @@ static void AESCCMLPF3_processB0(const uint8_t *nonce,
      * ============================================
      */
 
-    /*
-     * Set L'
+    /* Set L'
      *   nonceLength = 15 - L
      *   L' = L - 1
      *   L' = 15 - nonceLength - 1
@@ -484,8 +482,7 @@ static void AESCCMLPF3_processB0(const uint8_t *nonce,
      */
     B0.words[0] = (uint32_t)14U - (uint32_t)nonceLength;
 
-    /*
-     * Set M'
+    /* Set M'
      *   M' = (M - 2) / 2 where M = length of MAC
      */
     B0.words[0] |= (((uint32_t)macLength - (uint32_t)2U) >> 1) << M_PRIME_OFFSET;
@@ -496,8 +493,7 @@ static void AESCCMLPF3_processB0(const uint8_t *nonce,
         B0.words[0] |= (uint32_t)B0_FLAGS_CCM_HAS_ADATA;
     }
 
-    /*
-     * Set l(m), the length of the message, in most-significant-byte first order.
+    /* Set l(m), the length of the message, in most-significant-byte first order.
      *
      * Do this before copying nonce so word-based write can be utilized and then
      * nonce's byte-wise copy will overwrite parts of the word not used for l(m).
@@ -526,8 +522,7 @@ static size_t AESCCMLPF3_processB1withAAD(const uint8_t *aad, size_t aadSegmentL
     B1.words[2] = (uint32_t)0U;
     B1.words[3] = (uint32_t)0U;
 
-    /*
-     * Per RFC3610: If 0 < l(a) < (2^16 - 2^8), then the length field
+    /* Per RFC3610: If 0 < l(a) < (2^16 - 2^8), then the length field
      * is encoded as two octets which contain the value l(a) in
      * most-significant-byte first order.
      *
@@ -586,9 +581,7 @@ static void AESCCMLPF3_processOneStepCBCMACPolling(AESCCM_OneStepOperation *oper
     {
         aadBytesRemaining = operation->aadLength;
 
-        /*
-         * Process B1 with AAD
-         */
+        /* Process B1 with AAD */
         aadBytesRemaining -= AESCCMLPF3_processB1withAAD(operation->aad, operation->aadLength, operation->aadLength);
 
         /* Process any remaining AAD */
@@ -617,7 +610,8 @@ static void AESCCMLPF3_processOneStepCBCMACPolling(AESCCM_OneStepOperation *oper
     if (dataBytesRemaining > 0U)
     {
         /* Perform CBCMAC on plaintext data, that is, depending on encryption/decryption,
-         * use input/output data respectively. */
+         * use input/output data respectively.
+         */
 
         uint8_t *plainText = operation->input;
         if (direction != AESCCM_MODE_ENCRYPT)
@@ -668,10 +662,6 @@ static void AESCCMLPF3_processOneStepCTRPolling(AESCCM_OneStepOperation *operati
      * Process Tag
      * =====================
      */
-#ifdef AES_BUSHALT_DISABLED
-    /* Wait for encryption of counter block to complete */
-    while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-#endif
 
     /* XOR tag with encrypted counter block to form ciphertext */
     AESWriteTXTXOR32(tag);
@@ -717,8 +707,7 @@ static inline int_fast16_t AESCCMLPF3_processOneStepDecryptPolling(AESCCMLPF3_Ob
     int_fast16_t status = AESCCM_STATUS_MAC_INVALID;
     uint32_t *mac;
 
-    /*
-     * Use the object's intermediateCounter field which is only used for
+    /* Use the object's intermediateCounter field which is only used for
      * segmented operations to store the MAC to save stack space.
      */
     mac = (uint32_t *)&object->intermediateCounter[0];
@@ -814,8 +803,7 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
 
     AESCommonLPF3_loadKey(operation->key);
 
-    /*
-     * Process all one-step operations with data length less than the DMA size
+    /* Process all one-step operations with data length less than the DMA size
      * threshold as a polling mode operation.
      */
     if ((object->common.returnBehavior == AES_RETURN_BEHAVIOR_POLLING) ||
@@ -863,8 +851,7 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
 
         if ((operation->aadLength > 0U) && (status == AESCCM_STATUS_SUCCESS))
         {
-            /*
-             * Process the entire AAD using CPU R/W. It is expected that
+            /* Process the entire AAD using CPU R/W. It is expected that
              * the AAD length is relatively short (<= 64-bytes). Therefore,
              * using DMA is inefficient after DMA setup, task switching,
              * and interrupt overhead are accounted for.
@@ -930,8 +917,7 @@ static int_fast16_t AESCCMLPF3_setupSegmentedOperation(AESCCMLPF3_Object *object
 
     if (status == AES_STATUS_SUCCESS)
     {
-        /*
-         * If the user doesn't provide the total lengths in the setupXXXX()
+        /* If the user doesn't provide the total lengths in the setupXXXX()
          * calls, they must provide the lengths in setLengths().
          */
         object->totalAADLength  = totalAADLength;
@@ -943,14 +929,12 @@ static int_fast16_t AESCCMLPF3_setupSegmentedOperation(AESCCMLPF3_Object *object
         object->aadBytesProcessed          = 0U;
         object->bufferedAADLength          = (uint8_t)0U;
 
-        /*
-         * Initialize MAC pointer to NULL to avoid premature processing of the
+        /* Initialize MAC pointer to NULL to avoid premature processing of the
          * MAC in the ISR.
          */
         object->mac = NULL;
 
-        /*
-         * Initialize operation pointer to NULL in case AESCCM_cancelOperation
+        /* Initialize operation pointer to NULL in case AESCCM_cancelOperation
          * is called after AESCCM_setupXXXX and callback should be skipped.
          */
         object->operation = NULL;
@@ -1023,8 +1007,7 @@ int_fast16_t AESCCM_setLengths(AESCCM_Handle handle, size_t aadLength, size_t pl
     DebugP_assert(object->operationType == AESCCM_OPERATION_TYPE_DECRYPT ||
                   object->operationType == AESCCM_OPERATION_TYPE_ENCRYPT);
 
-    /*
-     * Don't continue the segmented operation if there
+    /* Don't continue the segmented operation if there
      * was an error or a cancellation
      */
     if (object->common.returnStatus != AESCCM_STATUS_SUCCESS)
@@ -1061,8 +1044,7 @@ int_fast16_t AESCCM_setNonce(AESCCM_Handle handle, const uint8_t *nonce, size_t 
     DebugP_assert((object->operationType == AESCCM_OPERATION_TYPE_DECRYPT) ||
                   (object->operationType == AESCCM_OPERATION_TYPE_ENCRYPT));
 
-    /*
-     * Don't continue the segmented operation if there
+    /* Don't continue the segmented operation if there
      * was an error during setup.
      */
     if (object->common.returnStatus != AESCCM_STATUS_SUCCESS)
@@ -1129,8 +1111,7 @@ static int_fast16_t AESCCMLPF3_processSegmentedCBCMAC(AESCCMLPF3_Object *object,
         AESWriteTag32((uint32_t *)&object->intermediateTag[0]);
     }
 
-    /*
-     * ===========
+    /* ===========
      * Process AAD
      * ===========
      */
@@ -1140,9 +1121,7 @@ static int_fast16_t AESCCMLPF3_processSegmentedCBCMAC(AESCCMLPF3_Object *object,
 
         if (object->aadBytesProcessed == 0U)
         {
-            /*
-             * Process B1 with AAD
-             */
+            /* Process B1 with AAD */
             object->aadBytesProcessed = AESCCMLPF3_processB1withAAD(object->aad,
                                                                     aadSegmentLength,
                                                                     object->totalAADLength);
@@ -1152,8 +1131,7 @@ static int_fast16_t AESCCMLPF3_processSegmentedCBCMAC(AESCCMLPF3_Object *object,
         /* Process any remaining AAD */
         if (aadBytesRemaining > 0U)
         {
-            /*
-             * Check for any buffered AAD from the previous transaction.
+            /* Check for any buffered AAD from the previous transaction.
              * Due to the AAD length parameter restrictions on AESCCM_addAAD(),
              * there always must be two bytes of buffered AAD if non-zero.
              */
@@ -1235,8 +1213,7 @@ static int_fast16_t AESCCMLPF3_processSegmentedCBCMAC(AESCCMLPF3_Object *object,
         }
     }
 
-    /*
-     * ============
+    /* ============
      * Process Data
      * ============
      */
@@ -1244,8 +1221,7 @@ static int_fast16_t AESCCMLPF3_processSegmentedCBCMAC(AESCCMLPF3_Object *object,
     {
         dataBytesRemaining = dataSegmentLength;
 
-        /*
-         * Perform CBC-MAC on plaintext data:
+        /* Perform CBC-MAC on plaintext data:
          *  - For encryption, plaintext data points to object's input.
          *  - For decryption, plaintext data points to object's output.
          */
@@ -1353,6 +1329,9 @@ static void AESCCMLPF3_processCTRCounterBlock(const uint8_t *nonce, uint8_t nonc
 
     /* Initial write to AES_O_BUF3 triggers the encryption */
     AESCTRLPF3_writeCounter(counter.words);
+
+    /* Wait for encryption of counter block to complete */
+    while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
 }
 
 /*
@@ -1360,8 +1339,7 @@ static void AESCCMLPF3_processCTRCounterBlock(const uint8_t *nonce, uint8_t nonc
  */
 static void AESCCMLPF3_processTagCTR(AESCCMLPF3_Object *object)
 {
-    /*
-     * Use default CTR config without AES_AUTOCFG_TRGAES_RDTXT3
+    /* Use default CTR config without AES_AUTOCFG_TRGAES_RDTXT3
      * to avoid triggering an encryption of the next counter value
      * when reading out the encrypted tag.
      */
@@ -1369,11 +1347,6 @@ static void AESCCMLPF3_processTagCTR(AESCCMLPF3_Object *object)
 
     /* Process counter block with counter value of 0 */
     AESCCMLPF3_processCTRCounterBlock(object->nonce, object->nonceLength, (uint8_t)0U);
-
-#ifdef AES_BUSHALT_DISABLED
-    /* Wait for encryption of counter block to complete */
-    while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-#endif
 
     /* XOR tag with encrypted counter block to form ciphertext */
     AESWriteTXTXOR32((uint32_t *)&object->intermediateTag[0]);
@@ -1470,8 +1443,7 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
 
     size_t calcAADLen = object->aadBytesProcessed + (size_t)object->bufferedAADLength + operation->aadLength;
 
-    /*
-     * The input length must be a non-zero multiple of an AES block size
+    /* The input length must be a non-zero multiple of an AES block size
      * unless you are dealing with the last chunk of AAD.
      */
     if ((operation->aadLength == 0U) ||
@@ -1480,8 +1452,7 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
         return AESCCM_STATUS_ERROR;
     }
 
-    /*
-     * The total AAD input length must not exceed the total length specified
+    /* The total AAD input length must not exceed the total length specified
      * in AESCCM_setLengths() or the setupXXXX() call.
      */
     if (calcAADLen > object->totalAADLength)
@@ -1506,8 +1477,7 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
 
     object->common.cryptoResourceLocked = true;
 
-    /*
-     * Load only the key into the AES engine now. The AUTOCFG values are loaded as needed
+    /* Load only the key into the AES engine now. The AUTOCFG values are loaded as needed
      * depending on whether it's a CTR operation or a CBC-MAC operation.
      */
     AESCommonLPF3_loadKey(&object->common.key);
@@ -1515,8 +1485,7 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
     object->operationType = operationType;
     object->aad           = operation->aad;
 
-    /*
-     * AAD is expected to be relatively short in length (< a few AES blocks)
+    /* AAD is expected to be relatively short in length (< a few AES blocks)
      * so DMA is not utilized for blocking and callback modes because the
      * interrupt and task switching overhead would outweigh any CPU cycles
      * saved using DMA. Code size and complexity is reduced by not supporting
@@ -1561,8 +1530,7 @@ static int_fast16_t AESCCMLPF3_addDataDMA(AESCCM_Handle handle, AESCCM_Mode dire
     object->inputLength             = inputLength;
     object->inputCTRLengthRemaining = inputLength;
 
-    /*
-     * We need to set the HWI function and priority since the same physical
+    /* We need to set the HWI function and priority since the same physical
      * interrupt is shared by multiple drivers and they all need to coexist.
      * Whenever a driver starts an operation, it registers its HWI callback
      * with the OS.
@@ -1602,8 +1570,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
 
     object->common.cryptoResourceLocked = true;
 
-    /*
-     * Load only the key into the AES engine now. The AUTOCFG values are loaded as needed
+    /* Load only the key into the AES engine now. The AUTOCFG values are loaded as needed
      * depending on whether it's a CTR operation or a CBC-MAC operation.
      */
     AESCommonLPF3_loadKey(&object->common.key);
@@ -1622,8 +1589,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
         direction = AESCCM_MODE_DECRYPT;
     }
 
-    /*
-     * Process all segmented operations with data length less than the DMA
+    /* Process all segmented operations with data length less than the DMA
      * size threshold as a polling mode operation.
      */
     if ((object->common.returnBehavior == AES_RETURN_BEHAVIOR_POLLING) || (inputLength < AESCCMLPF3_DMA_SIZE_THRESHOLD))
@@ -1697,8 +1663,7 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
     }
 #endif
 
-    /*
-     * The input length must be a non-zero multiple of an AES block size
+    /* The input length must be a non-zero multiple of an AES block size
      * unless you are dealing with the last chunk of payload data
      */
     if ((operation->inputLength == 0U) || ((AES_NON_BLOCK_SIZE_MULTIPLE_LENGTH(operation->inputLength) > 0U) &&
@@ -1707,8 +1672,7 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
         return AESCCM_STATUS_ERROR;
     }
 
-    /*
-     * The total input length must not exceed the lengths specified in
+    /* The total input length must not exceed the lengths specified in
      * AESCCM_setLengths() or setupXXXX().
      */
     if (operation->inputLength > object->totalCBCMACLengthRemaining)
@@ -1716,8 +1680,7 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
         return AESCCM_STATUS_ERROR;
     }
 
-    /*
-     * The AAD input length specified so far must match the total length
+    /* The AAD input length specified so far must match the total length
      * specified in the setLengths() or setupXXXX() calls.
      * All AAD input must be processed at this point.
      */
@@ -1791,8 +1754,7 @@ int_fast16_t AESCCM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
                                     operation->inputLength);
     }
 
-    /*
-     * If the return behavior is polling or the operation is finalized with
+    /* If the return behavior is polling or the operation is finalized with
      * input length less than the DMA size threshold (which includes the case
      * of finalizing without any additional data), all data processing will
      * be complete at this point.
@@ -1898,8 +1860,7 @@ static int_fast16_t AESCCMLPF3_performFinalizeChecks(const AESCCMLPF3_Object *ob
     DebugP_assert((object->operationType == AESCCM_OP_TYPE_AAD_ENCRYPT) ||
                   (object->operationType == AESCCM_OP_TYPE_DATA_ENCRYPT));
 
-    /*
-     * Don't continue the segmented operation if there
+    /* Don't continue the segmented operation if there
      * was an error or a cancellation.
      */
     if (object->common.returnStatus != AESCCM_STATUS_SUCCESS)
@@ -1954,8 +1915,7 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
 
     uintptr_t interruptKey = HwiP_disable();
 
-    /*
-     * Return success if there is no active operation to cancel.
+    /* Return success if there is no active operation to cancel.
      * Do not execute the callback as it would have been executed already
      * when the operation completed.
      */
@@ -1967,14 +1927,12 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
     {
         HwiP_restore(interruptKey);
 
-        /*
-         * Cancel DMA for input and output channels, clear operation in-progress,
+        /* Cancel DMA for input and output channels, clear operation in-progress,
          * and releases crypto resource if necessary.
          */
         AESCommonLPF3_cancelOperation(&object->common, true);
 
-        /*
-         * Operation pointer could be NULL if a segmented operation was setup
+        /* Operation pointer could be NULL if a segmented operation was setup
          * but neither AESCCM_addData or AESCCM_finalize was called.
          */
         if ((object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK) && (object->operation != NULL))

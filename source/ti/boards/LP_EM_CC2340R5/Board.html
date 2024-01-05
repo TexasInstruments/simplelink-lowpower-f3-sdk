@@ -50,10 +50,11 @@
 <p>The BoosterPack requires an external voltage supply connected to the barrel jack <strong><code>J2</code></strong> in the range of 6 V to 24 V.</p>
 <p>The following modifications are required:</p>
 <ul>
-<li>On the LaunchPad, use a jumper wire to connect header pin BP.31 (unlabeled) to pin BP.36 (<strong><code>DIO8</code></strong>).</li>
-<li>On the BoosterPack, bend down header pin BP.33 (<strong><code>nWKRQ</code></strong>) to prevent the signal from interfering with the LaunchPad <strong><code>SWDCK</code></strong> signal.</li>
-<li>Remove jumpers <strong><code>J11</code></strong> and <strong><code>J12</code></strong> to disconnect BoosterPack’s 3.3 V and 5 V rails if the LaunchPad is powered from the debugger.</li>
+<li>On the BoosterPack, remove jumpers <strong><code>J11</code></strong> and <strong><code>J12</code></strong> to disconnect the BoosterPack’s 3.3 V and 5 V rails if the LaunchPad is powered from the debugger.</li>
+<li>On the LaunchPad, bend down header pin BP.33 (<strong><code>SWDCK</code></strong>) to prevent the signal from interfering with the BoosterPack <strong><code>nWKRQ</code></strong> signal.</li>
+<li>On the BoosterPack, use a jumper wire to connect header pin BP.31 (<strong><code>nINT</code></strong>) to pin BP.36 (<strong><code>unlabeled</code></strong>).</li>
 </ul>
+<p>Place the BoosterPack directly atop the LaunchPad.</p>
 <h3 id="boostxl-sharp128-lcd-sd-card-boosterpackboostxl-sharp128"><a href="https://www.ti.com/tool/BOOSTXL-SHARP128"><strong>BOOSTXL-SHARP128 LCD &amp; SD Card BoosterPack</strong></a></h3>
 <ul>
 <li>BoosterPack pin header BP.8 (<strong><code>SD_CS</code></strong>) must be jumpered to BP.28 when using the SD card.</li>

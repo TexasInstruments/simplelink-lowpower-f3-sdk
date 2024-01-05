@@ -84,7 +84,7 @@ MEMORY
      */
     S2RRAM (RW) : origin = S2RRAM_BASE, length = S2RRAM_SIZE
     /* Configuration region */
-    CCFG (RW) : origin = CCFG_BASE, length = CCFG_SIZE
+    CCFG (R) : origin = CCFG_BASE, length = CCFG_SIZE
     /* Explicitly placed off target for the storage of logging data.
      * The ARM memory map allocates 1 GB of external memory from 0x60000000 - 0x9FFFFFFF.
      * Unlikely that all of this will be used, so we are using the upper parts of the region.
@@ -117,8 +117,8 @@ SECTIONS
     .stack          :   > SRAM (HIGH)
     .nonretenvar    :   > SRAM
 
-    /* Placing the section .s2rram in S2RRAM region. Only uninitialized 
-     * objects may be placed in this section. 
+    /* Placing the section .s2rram in S2RRAM region. Only uninitialized
+     * objects may be placed in this section.
      */
     .s2rram         :   > S2RRAM, type = NOINIT
 

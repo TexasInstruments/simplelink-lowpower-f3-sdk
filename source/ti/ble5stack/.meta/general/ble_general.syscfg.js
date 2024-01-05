@@ -179,7 +179,8 @@ function maxConnNumDefaultValue()
     {
         maxConnNum = 4;
     }
-    else if(Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")
+    else if(Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
+            Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
     {
         maxConnNum = 1;
     }
