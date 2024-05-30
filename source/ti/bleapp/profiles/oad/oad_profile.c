@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2022-2023, Texas Instruments Incorporated
+ Copyright (c) 2022-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -332,7 +332,7 @@ static void oadChangeMachineState(oadState_e next_state);
 static OADProfile_Status_e oadSetGlobalActiveConnHandle(uint16 connhandle);
 
 #ifdef FREERTOS
-static void oadInactivityTimeout(void);
+static void oadInactivityTimeout(uint32_t param);
 #else
 static void oadInactivityTimeout(UArg param);
 #endif //FREERTOS
@@ -401,11 +401,7 @@ bStatus_t OADProfile_start(OADProfile_AppCallback_t pOADAppCB)
 
     // Create OAD activity timer
     Util_constructClock(&oadActivityClk,
-#ifdef FREERTOS
-                       (void*)oadInactivityTimeout,
-#else
                         oadInactivityTimeout,
-#endif
                         pOADModuleGlobalData->stateTimeout, 0, false,0);
 
 #endif //OAD_APP_ONCHIP
@@ -1196,7 +1192,7 @@ static OADProfile_Status_e oadSetGlobalActiveConnHandle(uint16 connhandle)
  *
  */
 #ifdef FREERTOS
-static void oadInactivityTimeout(void)
+static void oadInactivityTimeout(uint32_t param)
 #else
 static void oadInactivityTimeout(UArg param)
 #endif //FREERTOS

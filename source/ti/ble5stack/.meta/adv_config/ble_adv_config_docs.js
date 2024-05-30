@@ -146,6 +146,48 @@ ble-stack-5.x/creating-a-custom-bluetooth-low-energy-application-cc13x2_26x2.htm
 #sec-using-production-test-mode).\n
 __Default__: False (unchecked)\n`
 
+const rxWindowDurationLongDescription =  `Duration of the time the RX window opens to validate the channel\
+ status (noisy or clear). this value must be minimum 16µs.\n
+__Default__: 100\n`
+
+const txUsageThreshLongDescription =  `When the consumption per channel reaches this threshold value,\
+ the requested channel must be clear in order to be able to transmit on it.\
+ The value of this parameter is in percentages.\n
+__Default__: 10\n`
+
+const fixedObservTimeLongDescription =  `When unmarked, the Observation Period is calculated by dwell time multiplied by 100,\
+ Dwell time - The time between frequency changes for FHSS equipment.\
+ EN 300 328 notes that this time may comprise transmit, receive, and idle phases of the equipment\n
+__Default__: False\n`
+
+const observationTimeLongDescription =  `Fixed observation period. This value will not change according to app behavior\n
+__Note__: in units of 100 ms\n
+__Default__: False\n`
+
+const rssiThresholdLongDescription =  `RSSI Threshold is the value at point the RSSI value is considered\
+ high enough for the channel to be labeled as noisy.\n
+__Default__: -70\n`
+
+const numberOfNoisySamplesLongDescription =  `The number of noisy samples refers to the quantity of samples the device will collect in order\
+ to assess whether the channel is noisy or not.\n
+__Default__: False\n`
+
+const blockingChannelTimeLongDescription =  `When the channel is determined to be noisy, only empty packets will sent \
+ on the channel for the selected time period.\n
+__Default__: False\n`
+
+const sdaaLongDescription =  `SDAA (Selective Detect And Avoid) module,\
+ This module is responsible for monitoring and limiting TX consumption\
+ per channel.\n
+__Default__: Disabled\n`
+
+const peripheralExtraLFOSCPPM = `Peripheral RX Window Widening is relevant when Source Clock LFOSC is selected in the CCFG module.\n
+The BLE Stack will always try to find the Central device by slowly widening the RX window in case a Connection Event was missed.\n
+Users are allowed to choose the extra PPM for RX Window Widening.\n
+Choosing greater values will cause the BLE Stack to open a big RX window in order to quickly find the Central device.\n
+Choosing smaller values will save power due to smaller RX windows but will take more time to find the Central device.\n
+__Default__: 1500PPM\n`
+
 // Long description for the peerConnParamUpdateRejectInd configuration parameter
 const peerConnParamUpdateRejectIndLongDescription = `When enabling this parameter\
  the application will be notified on any incoming connection parameter\
@@ -166,5 +208,14 @@ __Default__: False (unchecked)\n`
     maxNumIcallEnabledTasksLongDescription: maxNumIcallEnabledTasksLongDescription,
     ptmLongDescription: ptmLongDescription,
     flowControlLongDescription: flowControlLongDescription,
-    peerConnParamUpdateRejectIndLongDescription: peerConnParamUpdateRejectIndLongDescription
+    peerConnParamUpdateRejectIndLongDescription: peerConnParamUpdateRejectIndLongDescription,
+    rxWindowDurationLongDescription: rxWindowDurationLongDescription,
+    txUsageThreshLongDescription: txUsageThreshLongDescription,
+    sdaaLongDescription: sdaaLongDescription,
+    fixedObservTimeLongDescription: fixedObservTimeLongDescription,
+    observationTimeLongDescription: observationTimeLongDescription,
+    rssiThresholdLongDescription: rssiThresholdLongDescription,
+    numberOfNoisySamplesLongDescription: numberOfNoisySamplesLongDescription,
+    blockingChannelTimeLongDescription: blockingChannelTimeLongDescription,
+    peripheralExtraLFOSCPPM: peripheralExtraLFOSCPPM,
 };

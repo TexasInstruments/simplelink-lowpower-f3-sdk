@@ -11,7 +11,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -255,6 +255,7 @@ extern "C"
 #define LL_STATE_MODEM_TEST_TX                         0x0B
 #define LL_STATE_MODEM_TEST_RX                         0x0C
 #define LL_STATE_MODEM_TEST_TX_FREQ_HOPPING            0x0D
+#define LL_STATE_SDAA_RX_WINDOW                        0x0E
 // Extended Advertising
 
 // Pre release flag for the health check
@@ -302,6 +303,7 @@ extern "C"
 #define HW_FAIL_NO_TIMER_AVAILABLE                     0x8E
 #define HW_FAIL_EXTENDED_AL_FAULT                      0x8F
 #define HW_FAIL_NO_RAT_COMPARE_AVAILABLE               0x90
+#define HW_FAIL_START_EXT_ADV_ERROR                    0x91
 #define HW_FAIL_RF_DRIVER_ERROR                        0xE0
 #define HW_FAIL_UNKNOWN_ERROR                          0xFF
 
@@ -532,6 +534,9 @@ extern char *llCtrl_BleLogStrings[];
 #define ADV_SYNCH_WORD                                 0x8E89BED6  // Adv channel sync
 #define ADV_CRC_INIT_VALUE                             0x00555555  // not needed; handled by NR hardware automatically
 
+// Advertise Packets Data Index
+#define ADV_DATA_INDEX                                2
+
 // Connection Related
 #define LL_INVALID_CONNECTION_ID                       0xFF
 #define LL_RESERVED_CONNECTION_ID                      0x0F00
@@ -574,10 +579,12 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_CA_40_PPM                                   40
 #define LL_CA_50_PPM                                   50
 #define LL_CA_100_PPM                                  100
+#define LL_CA_500_PPM                                  500
 
 // Default SCA
 #define LL_SCA_CENTRAL_DEFAULT                         5 // 50ppm (ordinal)
-#define LL_SCA_PERIPHERAL_DEFAULT                           LL_CA_40_PPM
+#define LL_SCA_PERIPHERAL_DEFAULT                      LL_CA_40_PPM
+#define LL_SCA_PERIPHERAL_DEFAULT_LFOSC                LL_CA_500_PPM
 
 // TX Output Power Related
 #define LL_TX_POWER_0_DBM                              0
@@ -625,6 +632,13 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_FIRST_RF_CHAN_FREQ_OFFSET                   2300
 #define LL_FIRST_RF_CHAN_ADJ                           (LL_FIRST_RF_CHAN_FREQ - LL_FIRST_RF_CHAN_FREQ_OFFSET)
 #define LL_LAST_RF_CHAN_ADJ                            (LL_LAST_RF_CHAN_FREQ - LL_FIRST_RF_CHAN_FREQ_OFFSET)
+
+//defines for converter channel from BLE to RF channel
+#define LL_RF_FREQ_HOP                                  2        // hop between 2 consecutive channels (in MHZ)
+#define LL_BLE_CHANNEL_11                               11       // BLE channel 11.
+// number of adv channels
+#define LL_ONE_ADV_CHANNEL                              1
+#define LL_TWO_ADV_CHANNEL                              2
 
 /*
 ** FCFG and CCFG Offsets, and some Miscellaneous
@@ -789,7 +803,12 @@ extern char *llCtrl_BleLogStrings[];
 
 #ifndef CC23X0
 // CM0 FW Parameters
+#ifndef CC33xx
 #define CM0_RAM_BASE                                   0x21000028
+#else
+#define CM0_RAM_BASE                                   0x45C0f628
+#endif
+#define CM0_RAM_RPA_CFG_ADDR                           (CM0_RAM_BASE + 216) // pRpaCfg
 #define CM0_RAM_EXT_DATA_LEN_ADDR                      (CM0_RAM_BASE + 162) // dataLenMask/maxDatalen
 #define CM0_RAM_RX_IFS_TIMEOUT_ADDR                    (CM0_RAM_BASE + 166) // rxIfsTimeout
 #define CM0_RAM_START_TO_TX_RAT_OFFSET_ADDR            (CM0_RAM_BASE + 32)  // startToTxRatOffset
@@ -902,7 +921,7 @@ extern char *llCtrl_BleLogStrings[];
 // BLE5 PHYs
 #define BLE5_1M_PHY                                    0
 #define BLE5_2M_PHY                                    1
-#define BLE5_CODED_PHY                                 2
+#define BLE5_CODED_PHY                                 2U
 #define BLE5_RESERVED_PHY                              3
 // Rx Status
 #define BLE5_S8_PHY                                    2
@@ -1016,6 +1035,9 @@ extern char *llCtrl_BleLogStrings[];
 
 #define LL_MAX_SUPERVISION_TIMEOUT           0x0C80
 #define LL_MIN_SUPERVISION_TIMEOUT           0x000A
+
+#define LL_RCL_PKT_NUM_PAD_BTYES             3
+#define LL_RCL_PKT_HDR_LEN                   2
 /*******************************************************************************
  * TYPEDEFS
  */
@@ -1781,6 +1803,7 @@ typedef struct
 #define LL_TEST_MODE_JIRA_2756                       202
 #define LL_TEST_MODE_JIRA_3478                       203
 #define LL_TEST_MODE_JIRA_3646                       204
+#define LL_TEST_MODE_JIRA_4785                       205
 #define LL_TEST_MODE_INVALID                         0xFF
 
 typedef struct
@@ -1819,7 +1842,8 @@ extern dtmInfo_t     *dtmInfo;                        // direct test mode data
 extern sizeInfo_t    sizeInfo;                        // size info of various data structs
 extern buildInfo_t   buildInfo;                       // build revision data
 extern featureSet_t  deviceFeatureSet;                // device feature set
-extern RFBLEDPL_TX_POWER_TYPE   curTxPowerVal;     // current Tx Power Table Index
+extern RFBLEDPL_TX_POWER_TYPE   curTxPowerVal;        // current Tx Power Table Index
+extern RFBLEDPL_TX_POWER_TYPE   maxTxPwrForDTM;       // max power override for DTM
 extern rfPathComp_t *pRfPathComp;                     // RF Tx Path Compensation data
 extern uint16        taskEndStatus;                   // radio task end status
 extern uint16        postRfOperations;                // flags for post-RF operations
@@ -1957,7 +1981,7 @@ extern void                 llRfOverrideCteValue(uint32, uint16 , uint8 );
 #ifndef CC23X0
 extern void                 llRfOverrideCommonValue(uint32,uint8);
 #endif
-
+extern uint16               llBleToRfChannel(uint8);
 //
 #ifdef USE_RCL
 extern RCL_Handle            rfHandle;
@@ -2012,6 +2036,9 @@ extern uint8                llSetCteAntennaArray(llCteAntSwitch_t *, uint8 *, ui
 extern void                 llApplyParamUpdate( llConnState_t * );
 extern void                 llRemoveFeaturesForSendToPeer ( uint8 * );
 
+// SDAA task
+extern uint8                llSDAASetupRXWindowCmd(void);
+
 // Data Channel Management
 extern void                 llProcessChanMap( llConnState_t *, uint8 * );
 extern uint8                llGetNextDataChan( llConnState_t *, uint16 );
@@ -2037,7 +2064,7 @@ extern void                 llSortActiveConns( uint8 *, uint8 );
 extern void                 llShellSortActiveConns(uint8 *activeConns, uint8 numActiveConns);
 extern void                 llConnCleanup( llConnState_t * );
 extern void                 llConnTerminate( llConnState_t *, uint8  );
-extern uint8                llConnExists( uint8, uint8 *, uint8 );
+extern uint8                llConnExists( uint8 *, uint8 );
 extern uint32               llGenerateCRC( void );
 extern uint8                llEventInRange( uint16 , uint16 , uint16  );
 extern uint16               llEventDelta( uint16 , uint16  );
@@ -2148,13 +2175,14 @@ extern uint8                llConvertLlPhyOptToBlePhyOpt(uint8 llPhyOpt, uint8 *
 extern uint8                llSetPhy(llConnState_t *connPtr, uint8 rxPhy);
 extern void                 llSetRangeDelay(llConnState_t *connPtr);
 
-extern uint8                RfBleDpl_setPhy(uint8 connId, uint8 phy, uint8 phyOpts);
+extern uint8                RfBleDpl_setConnPhy(uint8 connId, uint8 phy, uint8 phyOpts);
+extern uint8                RfBleDpl_setAdvPhy(void *pRfCmd, uint8 phy);
 extern void                 RfBleDpl_setRangeDelay(uint8 connId, uint8 rangeDelay);
 
 /* Tx Power apis */
 extern uint8                     RfBleDpl_getNumTxPwrVals();
 extern RFBLEDPL_TX_POWER_HW_TYPE RfBleDpl_getTxPowerDefaultIdx();
-extern void                      RfBleDpl_setTxPower(uint32 *pRfCmd, RFBLEDPL_TX_POWER_TYPE txPower);
+extern void                      RfBleDpl_setTxPower(uint32 *pRfCmd, RFBLEDPL_TX_POWER_HW_TYPE txPower);
 extern RFBLEDPL_TX_POWER_HW_TYPE RfBleDpl_getTxPower(RFBLEDPL_TX_POWER_TYPE txPower);
 extern int8                      RfBleDpl_getTxPowerDbm(RFBLEDPL_TX_POWER_TYPE txPower);
 extern RFBLEDPL_TX_POWER_TYPE    RfBleDpl_getTxPowerByTxPowerDbm(int8 txPowerDbm, uint8 fraction);
@@ -2162,7 +2190,13 @@ extern RFBLEDPL_TX_POWER_TYPE    RfBleDpl_getTxPowerMin();
 extern RFBLEDPL_TX_POWER_TYPE    RfBleDpl_getTxPowerMax();
 extern bool                      RfBleDpl_txPowerIsValid(RFBLEDPL_TX_POWER_TYPE txPower);
 
-extern void                      llSetPower(uint32 *rfCmd, RFBLEDPL_TX_POWER_TYPE curTxPowerVal, RFBLEDPL_TX_POWER_TYPE txPower);
+extern void                      llSetPower(uint32 *rfCmd, RFBLEDPL_TX_POWER_TYPE curTxPowerVal, RFBLEDPL_TX_POWER_HW_TYPE txPower);
+
+#ifdef BLE_HEALTH
+// Health Toolkit api
+uint8_t llDbgInf_addSchedRec(taskInfo_t * const llTask);
+uint8_t llDbgInf_addConnTerm(uint16_t connHandle, uint8_t reasonCode);
+#endif //BLE_HEALTH
 
 // Health check api
 extern void llHealthUpdateWrapperForOsal(void);

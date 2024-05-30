@@ -13,6 +13,7 @@ set(SOURCES_COMMON
     ${RCL_INSTALL_DIR}/source/ti/drivers/rcl/RCL_Tracer.c
     ${RCL_INSTALL_DIR}/source/ti/drivers/rcl/RCL.c
     handlers/ble5.c
+    handlers/ieee.c
     handlers/generic.c
     handlers/adc_noise.c
     wrappers/RCL_AdcNoise.c

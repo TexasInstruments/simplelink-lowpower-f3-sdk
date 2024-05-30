@@ -11,7 +11,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -175,7 +175,12 @@
 #endif // USE_RCL
 
 #define BLE_NUM_AL_ENTRIES_ZERO        0   // Error return value for number of accept list entries
+
+#ifdef USE_DFL
+#define BLE_NUM_AL_ENTRIES             (BLE_MAX_NUM_AL_ENTRIES)
+#else
 #define BLE_NUM_AL_ENTRIES             ((BLE_MAX_NUM_AL_ENTRIES) + (2 * (BLE_RESOLVING_LIST_SIZE)) + 1)
+#endif
 
 /*******************************************************************************
  * TYPEDEFS
@@ -279,6 +284,8 @@ extern alEntry_t *AL_Alloc( uint8 );
 extern void       AL_Free( alEntry_t * );
 
 extern alEntry_t *AL_Copy( alEntry_t *, alEntry_t * );
+
+extern alTable_t *AL_GetALPtr( void );
 
 /*******************************************************************************
  */

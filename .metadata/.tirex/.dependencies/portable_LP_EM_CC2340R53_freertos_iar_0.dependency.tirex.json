@@ -1,0 +1,14 @@
+[
+    {
+        "files": [
+            "+../../../../../../../source/ti/boards/LP_EM_CC2340R53/Board.html -> Board.html",
+            "+../../console.c -> console.c",
+            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../portable.syscfg -> portable.syscfg",
+            "+../../README.html -> README.html",
+            "+../../README.md -> README.md",
+            "+../../temperature.c -> temperature.c"
+        ]
+    }
+]

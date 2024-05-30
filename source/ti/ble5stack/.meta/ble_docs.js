@@ -132,6 +132,11 @@ ble-stack-5.x/hci.html).\n
 __Default__: None \n
 __Note__: When using PTM configuration please choose \`None\` \n`
 
+// Long description for the bleHealth configuration parameter
+const bleHealthLongDescription = `Enable/Disable the use of Health Toolkit.\n
+For more information, refer to the User Guide \n
+__Default__: False (unchecked)\n`
+
 
  // Exports the long descriptions for each configurable
  exports = {
@@ -144,5 +149,6 @@ __Note__: When using PTM configuration please choose \`None\` \n`
     gattNoClientLongDescription: gattNoClientLongDescription,
     L2CAPCOCLongDescription: L2CAPCOCLongDescription,
     delayingAttReadReqLongDescription: delayingAttReadReqLongDescription,
-    trensLayerLongDescription: trensLayerLongDescription
+    trensLayerLongDescription: trensLayerLongDescription,
+    bleHealthLongDescription: bleHealthLongDescription
 };

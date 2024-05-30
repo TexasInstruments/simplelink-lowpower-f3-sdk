@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,6 +122,14 @@ dynamically changed at runtime, via the Power_setPolicy() API.
                       "Usage not typical.",
         default     : "customPolicyInitFxn",
         hidden      : true
+    },
+
+    {
+        name: "loggingEnabled",
+        displayName: "Enable Logging",
+        hidden : false,
+        description: `This setting will enable logging for the Power module.`,
+        default: false
     }
 ];
 
@@ -133,6 +141,7 @@ let devSpecific = {
     getClockFrequencies : getClockFrequencies,
     moduleStatic        : {
         config   : config,
+        moduleInstances: moduleInstances,
         validate : validate,
         modules: Common.autoForceModules(["Board", "ti/devices/CCFG"])
     },
@@ -169,6 +178,38 @@ function onChangePolicyFxn(inst, ui)
 function getClockFrequencies(clock)
 {
     return [ 48000000 ];
+}
+
+/*
+ *  ======== moduleInstances ========
+ *  returns Power instances
+ */
+function moduleInstances(inst)
+{
+    let powerInstances = new Array();
+
+    /* If logging is enabled, push a dependency on a log module */
+    if (inst.loggingEnabled) {
+        powerInstances.push(
+            {
+                name: "LogModule",
+                displayName: "Power Log Configuration",
+                moduleName: "/ti/log/LogModule",
+                collapsed: true,
+                args: {
+                    $name: "LogModule_Power",
+                    enable_DEBUG: false,
+                    enable_INFO: false,
+                    enable_VERBOSE: false,
+                    // Only enable WARNING and ERROR enabled by default
+                    enable_WARNING: true,
+                    enable_ERROR: true
+                }
+            }
+        );
+    }
+
+    return (powerInstances);
 }
 
 /*

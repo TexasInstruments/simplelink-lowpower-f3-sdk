@@ -1,8 +1,8 @@
 {
   "boards": {
-    "LP_EM_CC2340R2": {
+    "LP_EM_CC2340R5_RGE_4X4_IS24": {
       "description": "8 dBm output power internal balun for 2.4GHz.",
-      "rf_design": "LP-EM-CC2340R5-RGE-4x4-IS24",
+      "rf_design": "LP-EM-CC2340R5-RGE-4X4-IS24",
       "rf_port": [
         {
           "name": "tx_rx_2p4_ghz",
@@ -116,11 +116,11 @@
       "description": "Select which RF design to use as template.",
       "options": [
         {
-          "name": "LP_EM_CC2340R2",
+          "name": "LP_EM_CC2340R5_RGE_4X4_IS24",
           "description": "8 dBm output power internal balun for 2.4GHz."
         }
       ],
-      "default": "LP_EM_CC2340R2"
+      "default": "LP_EM_CC2340R5_RGE_4X4_IS24"
     },
     {
       "name": "fb24g",

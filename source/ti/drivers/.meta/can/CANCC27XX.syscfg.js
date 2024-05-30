@@ -37,7 +37,7 @@
 
 "use strict";
 
-/* get Common /ti/drivers utility functions */
+/* Get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
 let intPriority = Common.newIntPri()[0];
@@ -54,12 +54,15 @@ let devSpecific = {
         intPriority
     ],
 
-    /* override generic requirements with device-specific reqs (if any) */
+    /* Override generic requirements with device-specific reqs (if any) */
     pinmuxRequirements: pinmuxRequirements,
     _getPinResources: _getPinResources,
 
     /* PIN instances */
-    moduleInstances: moduleInstances
+    moduleInstances: moduleInstances,
+
+    /* Override generic filterHardware with ours */
+    filterHardware: filterHardware
 };
 
 /*
@@ -102,21 +105,40 @@ function pinmuxRequirements(inst)
         canShareWith: "CAN",
         resources: [
             {
-                name: "txPin",         /* config script name */
+                name: "txPin",         /* Config script name */
                 displayName: "Tx Pin", /* GUI name */
                 description: "CAN Tx", /* GUI description */
-                interfaceNames: ["TX"] /* pinmux tool name */
+                interfaceNames: ["TX"] /* Pinmux tool name */
             },
             {
-                name: "rxPin",         /* config script name */
+                name: "rxPin",         /* Config script name */
                 displayName: "Rx Pin", /* GUI name */
                 description: "CAN Rx", /* GUI description */
-                interfaceNames: ["RX"] /* pinmux tool name */
+                interfaceNames: ["RX"] /* Pinmux tool name */
             }
-        ]
+        ],
+        signalTypes: {
+            txPin: ["CAN_TX"],
+            rxPin: ["CAN_RX"]
+        }
     };
 
     return ([can]);
+}
+
+/*
+ *  ======== filterHardware ========
+ *  Check 'component' signals for compatibility with CAN
+ *
+ *  param component - hardware object describing signals and
+ *                     resources they're attached to
+ *
+ *  returns Boolean indicating whether or not to allow the component to
+ *           be assigned to an instance's $hardware config
+ */
+function filterHardware(component)
+{
+    return (Common.typeMatches(component.type, ["CAN"]));
 }
 
 /*
@@ -177,14 +199,14 @@ function moduleInstances(inst) {
  */
 function extend(base)
 {
-    /* display which driver implementation can be used */
+    /* Display which driver implementation can be used */
     base = Common.addImplementationConfig(base, "CAN", null,
         [{name: "CANCC27XX"}], null);
 
-    /* merge and overwrite base module attributes */
+    /* Merge and overwrite base module attributes */
     let result = Object.assign({}, base, devSpecific);
 
-    /* concatenate device-specific configs */
+    /* Concatenate device-specific configs */
     result.config = base.config.concat(devSpecific.config);
 
     return (result);
@@ -195,6 +217,6 @@ function extend(base)
  *  Export device-specific extensions to base exports
  */
 exports = {
-    /* required function, called by base CAN module */
+    /* Required function, called by base CAN module */
     extend
 };

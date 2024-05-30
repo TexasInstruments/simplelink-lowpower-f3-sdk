@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,9 @@
 #include <ti/drivers/dpl/DebugP.h>
 
 #include <ti/drivers/Power.h>
+#include <ti/drivers/GPIO.h>
+
+#include <ti/log/Log.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -57,9 +60,11 @@
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
 #include DeviceFamily_constructPath(inc/hw_fcfg.h)
 #include DeviceFamily_constructPath(driverlib/cpu.h)
+#include DeviceFamily_constructPath(driverlib/ckmd.h)
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 #include DeviceFamily_constructPath(driverlib/gpio.h)
 #include DeviceFamily_constructPath(driverlib/lrfd.h)
+#include DeviceFamily_constructPath(driverlib/pmctl.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 
 /* Forward declarations */
@@ -71,10 +76,22 @@ static void PowerCC27XX_setDependencyCount(Power_Resource resourceId, uint8_t co
 static void PowerCC27XX_startHFXT(void);
 bool PowerCC27XX_isValidResourceId(Power_Resource resourceId);
 
+static void PowerCC27XX_hfxtAmpsettledTimeout(uintptr_t arg);
+static void PowerCC27XX_initialHfxtAmpCompClockCb(uintptr_t searchDone);
+static void PowerCC27XX_forceHfxtFsmToRamp1(void);
+static void PowerCC27XX_startContHfxtAmpMeasurements(void);
+static void PowerCC27XX_stopContHfxtAmpMeasurements(void);
+static uint32_t PowerCC27XX_getHfxtAmpMeasurement(void);
+
 /* Externs */
 extern const PowerCC27XX_Config PowerCC27XX_config;
 extern const uint_least8_t GPIO_pinLowerBound;
 extern const uint_least8_t GPIO_pinUpperBound;
+extern const uint_least8_t PowerLPF3_extlfPin;
+extern const uint_least8_t PowerLPF3_extlfPinMux;
+
+/* Macro for weak definition of the Power Log module */
+Log_MODULE_DEFINE_WEAK(LogModule_Power, {0});
 
 /* Function Macros */
 #define IOC_ADDR(index) (IOC_BASE + IOC_O_IOC0 + (sizeof(uint32_t) * index))
@@ -88,6 +105,23 @@ extern const uint_least8_t GPIO_pinUpperBound;
 /* Workaround for missing enums for CKMD_AFTRACKCTL_RATIO */
 #define CKMD_AFTRACKCTL_RATIO__90P3168MHZ 0x0880DEE9U
 #define CKMD_AFTRACKCTL_RATIO__98P304MHZ  0x07D00000U
+
+/* Magic VGMCFG register unlock value */
+#define SYS0_VGMCFG_KEY_UNLOCK 0x5AU
+
+/* Timeout value used to detect if HFXT FSM is stuck in RAMP0 state */
+#define HFXT_AMP_COMP_START_TIMEOUT_US 500
+
+/* Time to wait after changing HFXTTARG.IREF and measuring the resulting
+ * HFXT amplitude
+ */
+#define HFXT_AMP_COMP_MEASUREMENT_US 1000
+
+/* The limits for the allowed target IREF values to be passed to
+ * CKMDSetTargetIrefTrim()
+ */
+#define HFXT_TARGET_IREF_MAX 8
+#define HFXT_TARGET_IREF_MIN 3
 
 /* Static Globals */
 
@@ -125,6 +159,42 @@ static List_List notifyList;
 /* Interrupt for handling clock switching */
 static HwiP_Struct ckmHwi;
 
+/* Function to be called to start the initial HFXT Amplitude compensation on the
+ * next AMPSETTLED interrupt.
+ * Will be NULL if initial compensation should not be
+ * be performed. I.e. if it has already been performed or if it is not enabled.
+ */
+static PowerLPF3_StartInitialHfxtAmpCompFxn startInitialHfxtAmpCompFxn = NULL;
+
+/* Clock object used by HFXT amplitude compensation. It is reused for multiple
+ * purposes. The callback function of the ClockP object will be changed
+ * dynamically, depending on the use case. The different use cases are described
+ * below:
+ * - Currently waiting for the AMPSETTLED interrupt, after starting HFXT
+ *   - Callback function: PowerCC27XX_hfxtAmpsettledTimeout
+ *   - Used for timeout to detect if HFXT FSM gets stuck in RAMP0 state
+ * - Currently performing the initial HFXT amplitude compensation, where we are
+ *   doing a full search for the optimal HFXTTARG.IREF value,
+ *   after the AMPSETTLED signal and before the PowerLPF3_HFXT_AVAILABLE
+ *   notification.
+ *   - Callback function: PowerCC27XX_initialHfxtAmpCompClockCb
+ *   - The clock is used to schedule measurements and evaluations of the HFXT
+ *     amplitude.
+ * - After PowerLPF3_HFXT_AVAILABLE notification:
+ *   - Callback function: NULL
+ *   - Currently not used. Could potentially be used to periodically check if
+ *     amplitude adjustments are needed.
+ *
+ * Dynamically changing the callback function is done instead of having a common
+ * callback function, to be able to only link the functions that are actually
+ * used. For example, if the initial HFXT amplitude compensation at boot is not
+ * enabled, then there will be no reference to
+ * PowerLPF3_startInitialHfxtAmpComp() which is the only place that references
+ * PowerCC27XX_initialHfxtAmpCompClockCb(), and therefore neither functions
+ * will be linked in the application.
+ */
+static ClockP_Struct hfxtAmpCompClock;
+
 /* Non-static Globals */
 
 /* Interrupt for ClockP and Power policy */
@@ -149,6 +219,8 @@ int_fast16_t Power_init()
 
     policyFxn = PowerCC27XX_config.policyFxn;
 
+    startInitialHfxtAmpCompFxn = PowerCC27XX_config.startInitialHfxtAmpCompFxn;
+
     /* Construct the CKM hwi responsible for oscillator related events.
      * Since there is no dedicated CKM interrupt line, we need to mux one of
      * the configurable lines to the CKM.
@@ -158,11 +230,13 @@ int_fast16_t Power_init()
 
     HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ3SEL) = EVTSVT_CPUIRQ3SEL_PUBID_AON_CKM_COMB;
 
-    /* Enable a selection of CKM signals as interrupt sources. LKCLKGOOD and
-     * AMPSETTLED are related to existing notifications. HFXTFAULT requires a
-     * restart of the HFXT.
+    /* Enable a selection of CKM signals as interrupt sources. For now,
+     * we will stick to AMPSETTLED since it is related to existing notification
+     * and HFXTFAULT and TRACKREFLOSS to be able to handle HFXT clock loss.
+     * TRACKREFLOSS may occur when entering and exiting fake standby with the
+     * debugger attached.
      */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_AMPSETTLED | CKMD_IMASK_HFXTFAULT;
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_AMPSETTLED | CKMD_IMSET_HFXTFAULT | CKMD_IMSET_TRACKREFLOSS;
 
     HwiP_enableInterrupt(INT_CPUIRQ3);
 
@@ -188,8 +262,37 @@ int_fast16_t Power_init()
      */
     HWREG(SYSTIM_BASE + SYSTIM_O_EMU) = SYSTIM_EMU_HALT_STOP;
 
+    /* Disable automatic periodic adjustments of HFXT amplitude. It will instead
+     * be done in SW.
+     * With this setting it is not necessary to restart HFXT after changing
+     * IREF.
+     */
+    HWREG(CKMD_BASE + CKMD_O_AMPCFG1) &= ~CKMD_AMPCFG1_INTERVAL_M;
+
+    /* Set target HFXT IREF to the max value, to ensure it is high enough.
+     * It will be gradually updated as needed later, as part of the HFXT
+     * amplitude compensation.
+     */
+    CKMDSetTargetIrefTrim(HFXT_TARGET_IREF_MAX);
+
+    /* Construct HFXT amplitude compensation clock.
+     * At boot, the clock is used to detect if the HFXT FSM gets stuck in the
+     * RAMP0 state.
+     */
+    ClockP_construct(&hfxtAmpCompClock,
+                     PowerCC27XX_hfxtAmpsettledTimeout,
+                     HFXT_AMP_COMP_START_TIMEOUT_US / ClockP_getSystemTickPeriod(),
+                     NULL);
+
     /* Start HFXT */
     PowerCC27XX_startHFXT();
+
+    /* Start timeout clock.
+     * Note, interrupts are guaranteed to be disabled during Power_init(), so
+     * there is no risk of the AMPSETTLED callback stopping the clock before it
+     * is started.
+     */
+    ClockP_start(&hfxtAmpCompClock);
 
     /* Enable tracking loop with HFXT as reference. This will automatically
      * calibrate LFOSC against HFXT whenever HFXT is enabled; usually after
@@ -201,6 +304,9 @@ int_fast16_t Power_init()
 
     /* Enable GPIO and RTC standby wakeup sources */
     HWREG(EVTULL_BASE + EVTULL_O_WKUPMASK) = EVTULL_WKUPMASK_AON_IOC_COMB_M | EVTULL_WKUPMASK_AON_RTC_COMB_M;
+
+    /* Disable overshoot detector in voltage glitch monitor (VGM) */
+    HWREG(SYS0_BASE + SYS0_O_VGMCFG) = (SYS0_VGMCFG_KEY_UNLOCK << SYS0_VGMCFG_KEY_S) | SYS0_VGMCFG_OSHDETDIS_DIS;
 
     return Power_SOK;
 }
@@ -358,6 +464,10 @@ int_fast16_t Power_registerNotify(Power_NotifyObj *notifyObj,
     /* Check for NULL pointers */
     if ((notifyObj == NULL) || (notifyFxn == NULL))
     {
+        Log_printf(LogModule_Power,
+                   Log_WARNING,
+                   "Power_registerNotify: Notify registration failed due to NULL pointer");
+
         status = Power_EINVALIDPOINTER;
     }
     else
@@ -365,6 +475,13 @@ int_fast16_t Power_registerNotify(Power_NotifyObj *notifyObj,
         notifyObj->eventTypes = eventTypes;
         notifyObj->notifyFxn  = notifyFxn;
         notifyObj->clientArg  = clientArg;
+
+        Log_printf(LogModule_Power,
+                   Log_INFO,
+                   "Power_registerNotify: Register fxn at address 0x%x with event types 0x%x and clientArg 0x%x",
+                   notifyFxn,
+                   eventTypes,
+                   clientArg);
 
         /* Place notify object on event notification queue. Assume that
          * List_Elem struct member is the first struct member in
@@ -383,6 +500,13 @@ int_fast16_t Power_registerNotify(Power_NotifyObj *notifyObj,
  */
 void Power_unregisterNotify(Power_NotifyObj *notifyObj)
 {
+    Log_printf(LogModule_Power,
+               Log_INFO,
+               "Power_unregisterNotify: Unregister fxn at address 0x%x with event types 0x%x and clientArg 0x%x",
+               notifyObj->notifyFxn,
+               notifyObj->eventTypes,
+               notifyObj->clientArg);
+
     /* Remove notify object from its event queue */
     List_remove(&notifyList, (List_Elem *)notifyObj);
 }
@@ -478,6 +602,11 @@ int_fast16_t Power_setDependency(Power_Resource resourceId)
         }
     }
 
+    Log_printf(LogModule_Power,
+               Log_INFO,
+               "Power_setDependency: Updated resource counter = %d for resource ID = 0x%x",
+               Power_getDependencyCount(resourceId), resourceId);
+
     HwiP_restore(key);
 
     return Power_SOK;
@@ -525,6 +654,11 @@ int_fast16_t Power_releaseDependency(Power_Resource resourceId)
                 break;
         }
     }
+
+    Log_printf(LogModule_Power,
+               Log_INFO,
+               "Power_releaseDependency: Updated resource counter = %d for resource ID = 0x%x",
+               Power_getDependencyCount(resourceId), resourceId);
 
     HwiP_restore(key);
 
@@ -604,9 +738,34 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
     /* Check for any error */
     if (status != Power_SOK)
     {
+        Log_printf(LogModule_Power,
+                   Log_WARNING,
+                   "Power_sleep: Entering standby failed with status = 0x%x",
+                   status);
+
         powerState = Power_ACTIVE;
         return status;
     }
+
+    /* Adjust HFXT amplitude if needed */
+    int_fast8_t adjustment = PowerLPF3_getHfxtAmpAdjustment();
+    if (adjustment != 0)
+    {
+        PowerLPF3_adjustHfxtAmp(adjustment);
+
+        /* Explicitly turn off HFXT before entering standby. This is to ensure
+         * that the HFXT is actually re-started with the new amplitude. In
+         * some cases the HFXT will not be turned off when entering standby. For
+         * example when entering fake standby with the debugger attached.
+         */
+        HWREG(CKMD_BASE + CKMD_O_HFXTCTL) &= ~CKMD_HFXTCTL_EN_M;
+    }
+
+    /* Stop continuous measurements of HFXT amplitude before entering standby,
+     * since the same hardware is needed to start the HFXT when waking up from
+     * standby.
+     */
+    PowerCC27XX_stopContHfxtAmpMeasurements();
 
     /* Call wrapper function to ensure that R0-R3 are saved and restored before
      * and after this function call. Otherwise, compilers will attempt to stash
@@ -616,12 +775,12 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      */
     PowerCC27XX_enterStandby();
 
-    /* Enable the AMPSETTLED interrupt. After waking up from standby, the HFXT
-     * is re-enabled by the hardware automatically. We still need to generate a
-     * notification once it is ready though.
+    /* Now that we have returned and are executing code from flash again, start
+     * up the HFXT. The HFXT might already have been enabled automatically by
+     * hardware, but calling below ensures that it has been enabled and that the
+     * necessary power constraints and interrupts are set and enabled.
      */
-    HWREG(CKMD_BASE + CKMD_O_ICLR)  = CKMD_ICLR_AMPSETTLED;
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_AMPSETTLED;
+    PowerCC27XX_startHFXT();
 
     /* Now clear the transition state before re-enabling the scheduler */
     powerState = Power_ACTIVE;
@@ -694,16 +853,21 @@ void PowerLPF3_selectLFOSC(void)
     /* Start LFOSC */
     HWREG(CKMD_BASE + CKMD_O_LFOSCCTL) = CKMD_LFOSCCTL_EN;
 
+    /* Disable LFINC filter settling preventing standby */
+    HWREG(CKMD_BASE + CKMD_O_LFINCCTL) &= ~CKMD_LFINCCTL_PREVENTSTBY_M;
+
     /* Enable LFCLKGOOD, TRACKREFLOSS, and TRACKREFOOR. TRACKREFLOSS may occur
      * when entering and exiting fake standby with the debugger attached.
      */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFCLKGOOD | CKMD_IMSET_TRACKREFLOSS | CKMD_IMSET_TRACKREFOOR;
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFCLKGOOD | CKMD_IMSET_TRACKREFOOR;
 
     /* Disallow standby until LF clock is running. Otherwise, we will only
      * vector to the ISR after we wake up from standby the next time since the
      * CKM interrupt is purposefully not configured as a wakeup source.
      */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+
+    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectLFOSC: LFOSC selected");
 }
 
 /*
@@ -714,7 +878,7 @@ void PowerLPF3_selectLFXT(void)
     /* Set LFINC override to 32.768 kHz. Will not impact RTC since the fake LF
      * ticks will have a higher priority than LFINCOVR.
      *
-     * The value is calculated as period in microsections with 16 fractional
+     * The value is calculated as period in microseconds with 16 fractional
      * bits.
      * The LFXT runs at 32.768 kHz -> 1 / 32768 Hz = 30.5176 us.
      * 30.5176 * 2^16 = 2000000 = 0x001E8480
@@ -735,6 +899,40 @@ void PowerLPF3_selectLFXT(void)
      * CKM interrupt is purposefully not configured as a wakeup source.
      */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+
+    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectLFXT: LFXT selected");
+}
+
+/*
+ *  ======== PowerLPF3_selectEXTLF ========
+ */
+void PowerLPF3_selectEXTLF(void)
+{
+    /* Set LFINC override to 31.25 kHz.
+     *
+     * The value is calculated as period in microseconds with 16 fractional
+     * bits.
+     * The EXTLF runs at 31.25 kHz -> 1 / 31250 Hz = 32 us.
+     * 32 * 2^16 = 2097152 = 0x00200000
+     */
+    HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x00200000 | CKMD_LFINCOVR_OVERRIDE;
+
+    /* Set LFCLK to EXTLF */
+    HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_MAIN_EXTLF;
+
+    /* Configure EXTLF to the right mux */
+    GPIO_setConfigAndMux(PowerLPF3_extlfPin, GPIO_CFG_INPUT, PowerLPF3_extlfPinMux);
+
+    /* Enable LFCLKGOOD */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD;
+
+    /* Disallow standby until LF clock is running. Otherwise, we will only
+     * vector to the ISR after we wake up from standby the next time since the
+     * CKM interrupt is purposefully not configured as a wakeup source.
+     */
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+
+    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectEXTLF: EXTLF selected");
 }
 
 /*
@@ -753,26 +951,91 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
 
     if (maskedStatus & CKMD_MIS_AMPSETTLED_M)
     {
-        PowerCC27XX_notify(PowerLPF3_HFXT_AVAILABLE);
+        /* Stop AMPSETTLED timeout clock and change callback function of clock
+         * object (NULL: not used)
+         */
+        ClockP_stop(&hfxtAmpCompClock);
+        ClockP_setFunc(&hfxtAmpCompClock, NULL, 0);
 
-        /* Allow standby again now that HFXT has finished starting */
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+        /* Start continuous measurements of HFXT amplitude */
+        PowerCC27XX_startContHfxtAmpMeasurements();
+
+        /* If enabled, start the initial HFXT amplitude compensation */
+        if (startInitialHfxtAmpCompFxn != NULL)
+        {
+            /* Start the asynchronous initial HFXT amplitude compensation.
+             * When the HFXT amplitude compensation is done the
+             * PowerLPF3_HFXT_AVAILABLE notification will be posted, and the
+             * PowerLPF3_DISALLOW_STANDBY constraint will be released.
+             */
+            startInitialHfxtAmpCompFxn();
+
+            /* Only do the initial HFXT amplitude compensation once */
+            startInitialHfxtAmpCompFxn = NULL;
+        }
+        else
+        {
+            Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_oscillatorISR: HFXT is available");
+
+            PowerCC27XX_notify(PowerLPF3_HFXT_AVAILABLE);
+
+            /* Allow standby again now that HFXT has finished starting */
+            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+        }
     }
-    else if (maskedStatus & CKMD_MIS_HFXTFAULT_M)
+
+    if (maskedStatus & (CKMD_MIS_HFXTFAULT_M | CKMD_MIS_TRACKREFLOSS_M))
     {
-        /* If there was a fault, restart HFXT. Consider issuing a notification
-         * to allow logging. If we keep it like this, we could get stuck in an
-         * infinite loop restarting a faulty oscillator. Then again, it is not
-         * like there is a great way to recover from that.
+        Log_printf(LogModule_Power, Log_WARNING, "PowerCC27XX_oscillatorISR: HFXT fault and/or TRACKREFLOSS, restarting HFXT");
+
+        /* If there was a HFXTFAULT or TRACKREFLOSS, restart HFXT. Consider
+         * issuing a notification to allow logging. If we keep it like this, we
+         * could get stuck in an infinite loop restarting a faulty oscillator.
+         * Then again, it is not like there is a great way to recover from that.
          */
         HWREG(CKMD_BASE + CKMD_O_HFXTCTL) &= ~CKMD_HFXTCTL_EN_M;
 
-        /* Start up the HFXT again */
+        /* Stop continuous measurements of HFXT amplitude. The hardware used is
+         * needed to start HFXT.
+         */
+        PowerCC27XX_stopContHfxtAmpMeasurements();
+
+        /* Max out IREF */
+        CKMDSetTargetIrefTrim(HFXT_TARGET_IREF_MAX);
+
+        /* Start up the HFXT using the workaround for the HFXT amplitude control ADC
+         * bias point
+         */
         PowerCC27XX_startHFXT();
+
+        /* Re-enable interrupts */
+        HWREG(CKMD_BASE + CKMD_O_IMSET) = maskedStatus & (CKMD_MIS_HFXTFAULT_M | CKMD_MIS_TRACKREFLOSS_M);
+    }
+
+    if (maskedStatus & CKMD_MIS_TRACKREFLOSS_M)
+    {
+        /* Disable interrupts as HFXT SWTCXO may interrupt and modify
+         * HFTRACKCTL with a higher priority depending on user interrupt
+         * priorities.
+         */
+        uintptr_t key = HwiP_disable();
+
+        /* Disable tracking */
+        HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) &= ~CKMD_HFTRACKCTL_EN_M;
+
+        /* Re-enable tracking */
+        HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) |= CKMD_HFTRACKCTL_EN_M;
+
+        HwiP_restore(key);
+
+        /* Re-enable TRACKREFLOSS */
+        HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_TRACKREFLOSS_M;
     }
 
     if (maskedStatus & CKMD_MIS_LFCLKGOOD_M)
     {
+        Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_oscillatorISR: LFCLK is ready");
+
         /* Enable LF clock monitoring */
         HWREG(CKMD_BASE + CKMD_O_LFMONCTL) = CKMD_LFMONCTL_EN;
 
@@ -786,16 +1049,11 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
         Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
 
-    if (maskedStatus & CKMD_MIS_TRACKREFLOSS_M || maskedStatus & CKMD_MIS_TRACKREFOOR_M)
+    if (maskedStatus & CKMD_MIS_TRACKREFOOR_M)
     {
-        /* No device currently achieves tracking loop lock, so instead of having
-         * an endless while(1) loop a NOP instruciton is used, such that the FW
-         * will actually execute. A NOP instruction is used such that a
-         * breakpoint can be put here for debugging purposes.
-         * TODO: Reintroduce while(1) loop when the tracking loop issue is
-         * fixed.
-         */
-        __asm(" NOP");
+        Log_printf(LogModule_Power, Log_ERROR, "PowerCC27XX_oscillatorISR: TRACKREFOOR, entering endless loop");
+
+        while (1) {}
     }
 }
 
@@ -813,22 +1071,15 @@ static void PowerCC27XX_rtcISR(uintptr_t arg)
 
 /*
  *  ======== PowerCC27XX_startHFXT ========
+ * It should be ensured that the system does not vector to the CKMD interrupt
+ * (PowerCC27XX_oscillatorISR) while this function is executing.
+ * Meaning any of the following must be true:
+ *  - Interrupts are disabled, or
+ *  - This function is called from PowerCC27XX_oscillatorISR(), since nested
+ *    vectoring to the same interrupt is not possible.
  */
 static void PowerCC27XX_startHFXT(void)
 {
-    /* Return immediately if HFXT is already enabled. Not doing so will cause
-     * TRACKREFLOSS when starting the LDO. This situation can arise when:
-     * - Waking up from fake standby. Fake standby does not shut down the HFXT,
-     *   unlike real standby.
-     * - Waking up without actually entering real standby. If a wakeup source is
-     *   pending when we reach WFI in the ROM function, the hardware will just
-     *   turn that into a NOP instead and not run through the regular state
-     *   machine.
-     */
-    if ((HWREG(CKMD_BASE + CKMD_O_HFXTCTL) & CKMD_HFXTCTL_EN_M) == CKMD_HFXTCTL_EN)
-    {
-        return;
-    }
 
     /* Start HFXT and enable automatic enabling after waking up from standby */
     HWREG(CKMD_BASE + CKMD_O_HFXTCTL) |= CKMD_HFXTCTL_EN | CKMD_HFXTCTL_AUTOEN;
@@ -885,6 +1136,11 @@ int_fast16_t PowerLPF3_startAFOSC(PowerLPF3_AfoscFreq frequency)
             break;
         default:
             /* Return error */
+            Log_printf(LogModule_Power,
+                       Log_WARNING,
+                       "PowerLPF3_startAFOSC: Invalid frequency input = %d",
+                       frequency);
+
             return Power_EINVALIDINPUT;
             break;
     }
@@ -922,6 +1178,11 @@ int_fast16_t PowerLPF3_startAFOSC(PowerLPF3_AfoscFreq frequency)
     /* Enable the AFOSC tracking loop */
     HWREG(CKMD_BASE + CKMD_O_AFTRACKCTL) |= CKMD_AFTRACKCTL_EN;
 
+    Log_printf(LogModule_Power,
+               Log_INFO,
+               "PowerLPF3_startAFOSC: AFOSC started at RTC count = 0x%x",
+               HWREG(RTC_BASE + RTC_O_TIME1U));
+
     return Power_SOK;
 }
 
@@ -935,6 +1196,11 @@ void PowerLPF3_stopAFOSC(void)
 
     /* Disable AFOSC */
     HWREG(CKMD_BASE + CKMD_O_AFOSCCTL) &= ~CKMD_AFOSCCTL_EN_M;
+
+    Log_printf(LogModule_Power,
+               Log_INFO,
+               "PowerLPF3_stopAFOSC: AFOSC stopped at RTC count = 0x%x",
+               HWREG(RTC_BASE + RTC_O_TIME1U));
 }
 
 /*
@@ -972,11 +1238,25 @@ int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType)
                 clientArg = ((Power_NotifyObj *)elem)->clientArg;
 
                 /* Call the client's notification function */
+                Log_printf(LogModule_Power,
+                           Log_VERBOSE,
+                           "PowerCC27XX_notify: Invoking notification fxn at address 0x%x with event type 0x%x and clientArg 0x%x",
+                           notifyFxn,
+                           eventType,
+                           clientArg);
+
                 notifyStatus = (int_fast16_t)(*(Power_NotifyFxn)notifyFxn)(eventType, 0, clientArg);
 
                 /* If client declared error stop all further notifications */
                 if (notifyStatus != Power_NOTIFYDONE)
                 {
+                    Log_printf(LogModule_Power,
+                               Log_WARNING,
+                               "PowerCC27XX_notify: Notification fxn reported error, fxn at address 0x%x with event type 0x%x and notifyStatus 0x%x",
+                               notifyFxn,
+                               eventType,
+                               notifyStatus);
+
                     return Power_EFAIL;
                 }
             }
@@ -1038,4 +1318,275 @@ bool PowerCC27XX_isValidResourceId(Power_Resource resourceId)
     {
         return false;
     }
+}
+
+/*
+ *  ======== PowerLPF3_startInitialHfxtAmpComp ========
+ * Function to start the initial HFXT amplitude compensation.
+ * If initial HFXT compensation is to be performed, this function is to be
+ * called in the interrupt handler for the AMPSETTLED interrupt instead of
+ * posting a PowerLPF3_HFXT_AVAILABLE notification and releasing the
+ * PowerLPF3_DISALLOW_STANDBY constraint.
+ *
+ * The initial HFXT amplitude compensation assumes that the HFXTTARG.IREF value
+ * is set to the max value (HFXT_TARGET_IREF_MAX) when this function is called.
+ * The IREF value will then be updated in steps until the optimal IREF
+ * value has been found. This is the steps taken:
+ * 1. Wait HFXT_AMP_COMP_MEASUREMENT_US us, to let the HFXT amplitude settle
+ *    before measuring it.
+ * 2. Measure the HFXT amplitude.
+ * 3. If amplitude is above 16, decrement IREF, but never lower than
+ *    HFXT_TARGET_IREF_MIN.
+ * 4. If an adjustment was made, go to step 1.
+ * 5. If amplitude is below 10, increment IREF back to previous value. No new
+ *    measurement is required.
+ * 6. If an adjustment was made, wait HFXT_AMP_COMP_MEASUREMENT_US us, to let
+ *    the HFXT amplitude settle.
+ * 7. Post PowerLPF3_HFXT_AVAILABLE notification and release
+ *    PowerLPF3_DISALLOW_STANDBY constraint.
+ *
+ * The waits mentioned in step 1 and 6 will be done asynchronously using
+ * hfxtAmpCompClock, and most of above logic is handled in the callback function
+ * for the clock (PowerCC27XX_initialHfxtAmpCompClockCb).
+ *
+ * This function is only responsible for starting the process by starting the
+ * clock to perform the first iteration of step 1.
+ *
+ * In the worst case (in terms of how long the process takes), the IREF value
+ * will be decremented to HFXT_TARGET_IREF_MIN and then incremented back to
+ * (HFXT_TARGET_IREF_MIN + 1). This means that the IREF will be changed
+ * ((HFXT_TARGET_IREF_MAX - HFXT_TARGET_IREF_MIN) + 1) times. After each change
+ * we need to wait for HFXT_AMP_COMP_MEASUREMENT_US, and including waiting
+ * before the first measurement it means that the initial HFXT amplitude
+ * compensation will take up to
+ * ((HFXT_TARGET_IREF_MAX - HFXT_TARGET_IREF_MIN) + 2)*HFXT_AMP_COMP_MEASUREMENT_US us
+ * plus aditional processing time.
+ */
+void PowerLPF3_startInitialHfxtAmpComp(void)
+{
+    /* Update hfxtAmpCompClock callback function */
+    ClockP_setFunc(&hfxtAmpCompClock, PowerCC27XX_initialHfxtAmpCompClockCb, 0);
+
+    /* Set timeout for the first HFXT amplitude measurement */
+    ClockP_setTimeout(&hfxtAmpCompClock, HFXT_AMP_COMP_MEASUREMENT_US / ClockP_getSystemTickPeriod());
+
+    /* Start clock */
+    ClockP_start(&hfxtAmpCompClock);
+}
+
+/*
+ *  ======== PowerLPF3_getHfxtAmpAdjustment ========
+ */
+int_fast8_t PowerLPF3_getHfxtAmpAdjustment(void)
+{
+    uint32_t hfxtAmplitude   = PowerCC27XX_getHfxtAmpMeasurement();
+    uint32_t currentIrefTrim = CKMDGetTargetIrefTrim();
+
+    if (hfxtAmplitude < 10 && currentIrefTrim < HFXT_TARGET_IREF_MAX)
+    {
+        /* Increase amplitude if the amplitude is too small */
+        return +1;
+    }
+    else if (hfxtAmplitude > 16 && currentIrefTrim > HFXT_TARGET_IREF_MIN)
+    {
+        /* Decrease the amplitude if the amplitude is too big */
+        return -1;
+    }
+    else
+    {
+        /* No adjustment is needed */
+        return 0;
+    }
+}
+
+/*
+ *  ======== PowerLPF3_adjustHfxtAmp ========
+ */
+void PowerLPF3_adjustHfxtAmp(int_fast8_t adjustment)
+{
+    uint32_t newTargetIref = CKMDGetTargetIrefTrim() + adjustment;
+    CKMDSetTargetIrefTrim(newTargetIref);
+}
+
+/*
+ *  ======== PowerCC27XX_initialHfxtAmpCompClockCb ========
+ * Callback function for the hfxtAmpCompClock object when it is used for the
+ * initial HFXT amplitude compensation.
+ *
+ * params:
+ *  - searchDone: If true (non-zero), the search for the optimal IREF value has
+ *                already been found.
+ */
+static void PowerCC27XX_initialHfxtAmpCompClockCb(uintptr_t searchDone)
+{
+
+    /* Has the optimal IREF value been found?
+     * Might be updated below.
+     */
+    bool optimalIref = (bool)searchDone;
+
+    /* Has the IREF value been changed?
+     * Will be updated below if the IREF value is changed.
+     */
+    bool irefChanged = false;
+
+    /* Continue search if the optimal IREF has not yet been found */
+    if (optimalIref == false)
+    {
+        /* Measure amplitude */
+        uint32_t hfxtAmplitude = PowerCC27XX_getHfxtAmpMeasurement();
+
+        /* Get current IREF value */
+        uint32_t currentIrefTrim = CKMDGetTargetIrefTrim();
+
+        /* Determine if IREF needs to be changed.
+         * Note, PowerLPF3_getHfxtAmpAdjustment() is not used here, because the
+         * amplitude limits used here are different.
+         */
+        if (hfxtAmplitude < 10 && currentIrefTrim < HFXT_TARGET_IREF_MAX)
+        {
+            /* Increase amplitude if the amplitude is too small */
+            CKMDSetTargetIrefTrim(currentIrefTrim + 1);
+            irefChanged = true;
+
+            /* No new measurement is required, because we know
+             * that IREF = currentIrefTrim + 1 causes an amplitude above 10,
+             * otherwise IREF would not have been decreased.
+             */
+            optimalIref = true;
+        }
+        else if (hfxtAmplitude > 16 && currentIrefTrim > HFXT_TARGET_IREF_MIN)
+        {
+            /* Decrease amplitude if the amplitude is too big */
+            CKMDSetTargetIrefTrim(currentIrefTrim - 1);
+            irefChanged = true;
+        }
+        else
+        {
+            /* IREF is optimal since since the HFXT amplitude is already in
+             * the optimal range (10-16)
+             */
+            optimalIref = true;
+        }
+    }
+
+    if (irefChanged)
+    {
+        /* If IREF has changed, start the clock again. If the optimal IREF
+         * value has been found, then the search is done, so in the next clock
+         * callback no measurements are needed (searchDone is true).
+         */
+        ClockP_setFunc(&hfxtAmpCompClock, PowerCC27XX_initialHfxtAmpCompClockCb, optimalIref);
+
+        /* Set timeout */
+        ClockP_setTimeout(&hfxtAmpCompClock, HFXT_AMP_COMP_MEASUREMENT_US / ClockP_getSystemTickPeriod());
+
+        /* Start clock */
+        ClockP_start(&hfxtAmpCompClock);
+    }
+    else
+    {
+        /* Update hfxtAmpCompClock callback function (NULL because the clock is
+         * no longer used)
+         */
+        ClockP_setFunc(&hfxtAmpCompClock, NULL, 0);
+
+        Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_initialHfxtAmpCompClockCb: HFXT is available");
+
+        /* Send HFXT available notification */
+        PowerCC27XX_notify(PowerLPF3_HFXT_AVAILABLE);
+
+        /* Allow standby again now that the optimal IREF value has been found */
+        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+    }
+}
+
+/*
+ *  ======== PowerCC27XX_hfxtAmpsettledTimeout ========
+ * Callback function for the hfxtAmpCompClock object when it is used as a
+ * timeout for the AMPSETTLED signal. If the timeout occurs (i.e. if this
+ * function is called), and if the HFXT FSM is stuck in the RAMP0 state,
+ * it will be forced to the RAMP1 state.
+ */
+static void PowerCC27XX_hfxtAmpsettledTimeout(uintptr_t arg)
+{
+    /* Disable interrupts */
+    uintptr_t key = HwiP_disable();
+
+    /* Timeout occured while waiting for AMPSETTLED */
+    if ((HWREG(CKMD_BASE + CKMD_O_AMPSTAT) & CKMD_AMPSTAT_STATE_M) == CKMD_AMPSTAT_STATE_RAMP0)
+    {
+        PowerCC27XX_forceHfxtFsmToRamp1();
+    }
+
+    HwiP_restore(key);
+}
+
+/*
+ *  ======== PowerCC27XX_forceHfxtFsmToRamp1 ========
+ * Force HFXT FSM to RAMP1 state. This function should only be called if the
+ * HFXT FSM is stuck in RAMP0 state.
+ */
+static void PowerCC27XX_forceHfxtFsmToRamp1(void)
+{
+    /* Max out IREF */
+    CKMDSetTargetIrefTrim(HFXT_TARGET_IREF_MAX);
+
+    /* Force a transition to RAMP1 state */
+    HWREG(CKMD_BASE + CKMD_O_AMPADCCTL) = (CKMD_AMPADCCTL_SWOVR | CKMD_AMPADCCTL_SRCSEL_PEAK |
+                                           CKMD_AMPADCCTL_ADCEN_ENABLE | CKMD_AMPADCCTL_COMPSTRT);
+
+    /* Wait until state changes */
+    while ((HWREG(CKMD_BASE + CKMD_O_AMPSTAT) & CKMD_AMPSTAT_STATE_M) == CKMD_AMPSTAT_STATE_RAMP0) {}
+
+    /* Disable AMPADCCTL.SWOVR and let the FSM take control again */
+    HWREG(CKMD_BASE + CKMD_O_AMPADCCTL) &= ~CKMD_AMPADCCTL_SWOVR;
+}
+
+/*
+ *  ======== PowerCC27XX_startContHfxtAmpMeasurements ========
+ * Start continuous measurements of the HFXT amplitude.
+ * This is done to quickly be able to read the amplitude using
+ * PowerCC27XX_getHfxtAmpMeasurement() when a measurement is needed.
+ */
+static void PowerCC27XX_startContHfxtAmpMeasurements(void)
+{
+    /* Force amplitude measurement - Set SRCSEL = PEAK */
+    HWREG(CKMD_BASE + CKMD_O_AMPADCCTL) = (CKMD_AMPADCCTL_SWOVR | CKMD_AMPADCCTL_PEAKDETEN_ENABLE |
+                                           CKMD_AMPADCCTL_ADCEN_ENABLE | CKMD_AMPADCCTL_SRCSEL_PEAK |
+                                           CKMD_AMPADCCTL_SARSTRT);
+}
+
+/*
+ *  ======== PowerCC27XX_stopContHfxtAmpMeasurements ========
+ * Stop the continuous HFXT amplitude measurements started by
+ * PowerCC27XX_startContHfxtAmpMeasurements().
+ */
+static void PowerCC27XX_stopContHfxtAmpMeasurements(void)
+{
+    /* Clear SW override of Amplitude ADC */
+    HWREG(CKMD_BASE + CKMD_O_AMPADCCTL) &= ~CKMD_AMPADCCTL_SWOVR;
+}
+
+/*
+ *  ======== PowerCC27XX_getHfxtAmpMeasurement ========
+ * Read the the latest HFXT amplitude measurement.
+ * Continuous measurements must have been started using
+ * PowerCC27XX_startContHfxtAmpMeasurements().
+ */
+static uint32_t PowerCC27XX_getHfxtAmpMeasurement(void)
+{
+    /* Read result in AMPADCSTAT */
+    uint32_t ampAdcStat = HWREG(CKMD_BASE + CKMD_O_AMPADCSTAT);
+    uint32_t peakRaw    = (ampAdcStat & CKMD_AMPADCSTAT_PEAKRAW_M) >> CKMD_AMPADCSTAT_PEAKRAW_S;
+    uint32_t bias       = (ampAdcStat & CKMD_AMPADCSTAT_BIAS_M) >> CKMD_AMPADCSTAT_BIAS_S;
+
+    /* Compute the PEAK value in SW to be able to handle negative values, which
+     * can occur for small amplitudes.
+     * In case of negative values, the result will be capped at 0.
+     * According to the register descriptions PEAK = 2*PEAKRAW - BIAS
+     */
+    uint32_t result = 2 * peakRaw > bias ? 2 * peakRaw - bias : 0;
+
+    return result;
 }

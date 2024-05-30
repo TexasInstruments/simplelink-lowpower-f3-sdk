@@ -42,13 +42,17 @@ const Device = system.deviceData.deviceId;
 const BasePath = "/ti/devices/radioconfig/";
 const PhyGroupPath = BasePath + "phy_groups/";
 
-const isDeviceClass10 = Device.match(/[157]4[RP]10|2653P10/) !== null;
+// Mapping SysCfg device name notation to SmartRF Studio format
+const SysconfigRfconfigBoardMap = system.getScript("/ti/devices/radioconfig/data/sysconfig_rfconfig_board_map.json");
+const DevNameMap = system.getScript("/ti/devices/radioconfig/data/sysconfig_studio_device_names.json");
+const DevFamilyMap = system.getScript("/ti/devices/radioconfig/data/device_family_map.json");
+const DevPhyProtocolMap = system.getScript("/ti/devices/radioconfig/config/rcl/device_phy_protocol_mapping.json");
 
-// Manage protocol support
-const hasProp = Device.match(/CC13|CC26[457][12][RP][137]|CC2674|CC2340/);
-const hasBle = Device.match(/CC..[457][1234]|CC2340/);
-const hasIeee = Device.match(/CC..[57][1234]/);
-const has24gProp = hasProp && !(Device.includes("CC131") || isDeviceClass10);
+// SmartRF Studio compatible device name
+const DeviceName = DevNameMap[Device] || "none";
+const isValidDevice = DeviceName !== "none";
+
+const isDeviceClass10 = Device.match(/[157]4[RP]10|2653P10/) !== null;
 
 const PHY_BLE = "ble";
 const PHY_PROP = "prop";
@@ -59,6 +63,21 @@ const isPlatformRFD = Device.match(/CC26|CC13/) !== null;
 
 // Paths for configuration data
 const ConfigPath = isPlatformRFD ? BasePath + "config/rfd/" : BasePath + "config/rcl/";
+
+const BLE_CONFIG = readConfigurationFile(PHY_BLE);
+const PROP_CONFIG = readConfigurationFile(PHY_PROP);
+const IEEE_CONFIG = readConfigurationFile(PHY_IEEE_15_4);
+
+// Check that configuration files exists to check that the device actually has supported phys
+const hasProp = isValidDevice && DevPhyProtocolMap[DeviceName.toUpperCase()].includes("Proprietary");
+
+const hasBle = isValidDevice && DevPhyProtocolMap[DeviceName.toUpperCase()].includes("BLE");
+
+const hasIeee = isValidDevice && DevPhyProtocolMap[DeviceName.toUpperCase()].includes("IEEE");
+
+// Manage protocol support
+const has24gProp = hasProp && !(Device.includes("CC131") || isDeviceClass10);
+
 const ConfigPathRclCommon = BasePath + "config/rcl_common/";
 
 // Keep track of PA table generation
@@ -81,10 +100,55 @@ const deferred = {
 };
 
 /**
+ *  ======== loadConfiguration ========
+ *  Load configuration data of a PHY group
+ *
+ * @param phyGroup - ble, prop, ieee_154
+ * @returns the cached device configuration options for a given device, null on invalid parameters
+ */
+function loadConfiguration(phyGroup) {
+    switch (phyGroup) {
+    case PHY_BLE:
+        return BLE_CONFIG;
+    case PHY_PROP:
+        return PROP_CONFIG;
+    case PHY_IEEE_15_4:
+        return IEEE_CONFIG;
+    default:
+        return null;
+    }
+}
+
+/**
+ *  ======== readConfigurationFile ========
+ *  Read configuration file belonging to a given phy group
+ *
+ * @param phyGroup - ble, prop, ieee_154
+ * @returns the device configuration options for a given device
+ */
+function readConfigurationFile(phyGroup) {
+    let internalGroup = phyGroup;
+
+    // TBD: fix naming inconsistency
+    if (phyGroup.includes("ieee")) {
+        internalGroup = "ieee";
+    }
+    const fileName = ConfigPath + `param_syscfg_${internalGroup}_${DeviceName}.json`;
+    try {
+        const devCfg = system.getScript(fileName);
+        return devCfg;
+    }
+    catch (err) {
+        return null;
+    }
+}
+
+/**
  *  ======== getScript ========
  *  Get a script relative to the application base path.
  *
  *  @param file - Script file name.
+ *  @returns The loaded script
  */
 function getScript(file) {
     return system.getScript(BasePath + file);
@@ -94,6 +158,7 @@ function getScript(file) {
  *  ======== getPhyHandler ========
  *  Return the PHY handler for RFD and RCL platforms respectively.
  *
+ * @returns rfd or rcl phy handler depending on platform
  */
 function getPhyHandler() {
     const file = isPlatformRFD ? "rfd_phy_handler.js" : "rcl_phy_handler.js";
@@ -106,6 +171,7 @@ function getPhyHandler() {
  *
  *  @param phyGroup - ble, ieee_15_4 or prop
  *  @param name - PHY id/abbreviation, e.g. "gfsk_2_mbps"
+ *  @returns boolean
  */
 function isPhyExternalRelease(phyGroup, name) {
     return getPhyHandler().get(phyGroup, name).isExternalRelease();
@@ -146,6 +212,10 @@ function getBoardName() {
             throw new Error("RadioConfig: Unknown board [" + boardName + "]");
         }
     }
+    // Some board names don't need to be translated, check if the selected one does
+    if (boardName in SysconfigRfconfigBoardMap) {
+        return SysconfigRfconfigBoardMap[boardName];
+    }
     return boardName;
 }
 
@@ -154,6 +224,7 @@ function getBoardName() {
  *  Return true if string is a hex value
  *
  *  @param str - string to test against
+ *  @returns boolean
  */
 function isHex(str) {
     const value = str.replace("0x", "");
@@ -168,7 +239,7 @@ function isHex(str) {
  *  @param num - numerical value or string
  *  @param width - required width of the resulting hexadecimal number
  *
- *  @return - string with hex prefix (0x)
+ *  @returns - string with hex prefix (0x)
  */
 function int2hex(num, width) {
     // Handle negative numbers
@@ -188,6 +259,7 @@ function int2hex(num, width) {
  *  Make the first characters of a string uppercase.
  *
  *  @param str - String to be processed
+ *  @returns String with capitalized first letter
  */
 function ucFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -198,6 +270,7 @@ function ucFirst(str) {
  *  Calculate the fraction of a floating point number
  *
  *  @param val - floating point number to calculate the fraction of
+ *  @returns Fractional part of number
  */
 function fract(val) {
     const res = parseFloat(val).toString().split(".");
@@ -209,11 +282,39 @@ function fract(val) {
  *  Replace the last occurrence of character in a string
  *
  *  @param str - String to operate on
- *  @param c1 - Sub-string to replace
- *  @param c2 - Replacement character
+ *  @param c1  - Sub-string to replace
+ *  @param c2  - Replacement character
+ *  @returns string with last occurence of c1 replaced with c2
  */
 function replaceLastChar(str, c1, c2 = "") {
     const pos = str.lastIndexOf(c1);
+    return str.slice(0, pos) + c2 + str.slice(pos + 1);
+}
+
+/**
+ *  ======== replaceLastCharBeforeLastSlash ========
+ *  Replace the last occurence of a character occuring before the last slash
+ *  If input contains no slash, last occurence is replaced
+ *
+ *  Currently used to remove trailing commas from generated code, but not in comments
+ *
+ *  @param str - String to operate on
+ *  @param c1  - Sub-string to replace
+ *  @param c2  - Replacement character
+ *  @returns string with first occurence of c1 replaced with c2
+ *  @example
+ *  // returns "let a = 5 // example comment with comma,"
+ *  replaceLastCharBeforeLastSlash("let a = 5, // example comment with comma,", ",")
+ */
+function replaceLastCharBeforeLastSlash(str, c1, c2 = "") {
+    let pos;
+    if (str.includes("/")) {
+        const lastLine = str.lastIndexOf("/");
+        pos = str.lastIndexOf(c1, lastLine);
+    }
+    else {
+        pos = str.lastIndexOf(c1);
+    }
     return str.slice(0, pos) + c2 + str.slice(pos + 1);
 }
 
@@ -225,6 +326,7 @@ function replaceLastChar(str, c1, c2 = "") {
  *  - if not array, create a single element array
  *
  *  @param arg - array or single value
+ *  @returns Array with contents
  */
 function forceArray(arg) {
     if (Array.isArray(arg)) {
@@ -233,23 +335,25 @@ function forceArray(arg) {
     return [arg];
 }
 
-/*
+/**
  *  ======== calculateWidth ========
  *  Calculate the width of a byte index
  *
  *  @param range - array of two items describing a range
+ *  @returns width of given byte index
  */
 function calculateWidth(range) {
     return (range[1] - range[0] + 1);
 }
 
-/*
+/**
  *  ======== getBitfieldValue ========
  *  Get the bit field of a word based on bit position and field width.
  *
- *  @param word - word to extract the bit field value from
+ *  @param word   - word to extract the bit field value from
  *  @param offset - position of the least significant bit of the field
- *  @param width - width of the bit field
+ *  @param width  - width of the bit field
+ *  @returns Bit field of given word
  */
 function getBitfieldValue(word, offset, width) {
     /* eslint-disable no-bitwise */
@@ -266,6 +370,7 @@ function getBitfieldValue(word, offset, width) {
  *
  *  @param phyGroup - ble, prop, ieee_154
  *  @param phyDefFile - name of the PHY definition file
+ *  @returns Frequency band of this setting
  */
 function getFrequencyBand(phyGroup, phyDefFile) {
     let freqBand = 2400; // BLE, IEEE 802.15.4
@@ -284,11 +389,12 @@ function getFrequencyBand(phyGroup, phyDefFile) {
     return freqBand;
 }
 
-/*
+/**
  *  ======== getPhyGroup ========
  *  Return the PHY group of an instance (prop, ble, ieee_15_4)
  *
  *  @param inst - module instance object
+ *  @returns phy group or null if none is found
  */
 function getPhyGroup(inst) {
     const name = inst.$module.$name;
@@ -309,11 +415,12 @@ function getPhyGroup(inst) {
     return phyGroup;
 }
 
-/*
+/**
  *  ======== getPhyType ========
  *  Return the PHY type of an instance based on the selected frequency band.
  *
  *  @param inst   - module instance object
+ *  @returns inst phy type based on frequency band
  */
 function getPhyType(inst) {
     switch (inst.freqBand) {
@@ -330,12 +437,13 @@ function getPhyType(inst) {
     return inst.phyType;
 }
 
-/*
+/**
  * ======== flattenConfigs ========
  * Make an array of depth one from a group of configurables that
  * may be a tree structure.
  *
  *  @param configList - object that contains grouped configurables
+ *  @returns flattened array
  */
 function flattenConfigs(configList) {
     const flatConfigList = [];
@@ -354,11 +462,12 @@ function flattenConfigs(configList) {
     return flatConfigList;
 }
 
-/*
+/**
  * ======== getCoexConfig ========
  * Return the Co-ex config structure if the device support BLE/Wi-Fi Coex,
  * otherwise return null;
  *
+ * @returns Co-ex config structure or null
  */
 function getCoexConfig() {
     // CoEx config applies only to RF Driver
@@ -387,7 +496,7 @@ function getCoexConfig() {
     return null;
 }
 
-/*
+/**
  * ======== initLongDescription ========
  * Searches through the docs object to find the correct longDescription
  *
@@ -395,6 +504,11 @@ function getCoexConfig() {
  *  @param docs   - documentation object
  */
 function initLongDescription(configurable, docs) {
+    /**
+     * Set longDescription for item
+     *
+     * @param item - configurable item with no sub-items
+     */
     function setDocs(item) {
         const configurableDocs = _.find(docs, ["configurable", item.name]);
         // If the configurable has a longDescription, add it to the configurable
@@ -424,7 +538,7 @@ function initLongDescription(configurable, docs) {
     });
 }
 
-/*
+/**
  *  ======== validateTxPower ========
  *  Validate TX Power options
  *
@@ -446,7 +560,7 @@ function validateTxPower(inst, validation) {
     }
 }
 
-/*
+/**
  *  ======== validateNames ========
  *  Validate that all names defined by inst are globally unique and
  *  valid C identifiers.
@@ -519,7 +633,7 @@ function validateNames(inst, validation) {
     }
 }
 
-/*
+/**
  *  ======== logError ========
  *  Log a new error
  *
@@ -527,7 +641,7 @@ function validateNames(inst, validation) {
  *  @param inst   - module instance object
  *  @param field  - instance property name, or array of property names, with
  *                  which this error is associated
- *  @msg          - message to display
+ *  @param msg    - message to display
  */
 function logError(vo, inst, field, msg) {
     let lvo = vo;
@@ -546,7 +660,7 @@ function logError(vo, inst, field, msg) {
     }
 }
 
-/*
+/**
  *  ======== logInfo ========
  *  Log a new remark
  *
@@ -554,7 +668,7 @@ function logError(vo, inst, field, msg) {
  *  @param inst   - module instance object
  *  @param field  - instance property name, or array of property names, with
  *                  which this remark is associated
- *  @msg          - message to display
+ *  @param msg    - message to display
  */
 function logInfo(vo, inst, field, msg) {
     let lvo = vo;
@@ -573,7 +687,7 @@ function logInfo(vo, inst, field, msg) {
     }
 }
 
-/*
+/**
  *  ======== logWarning ========
  *  Log a new warning
  *
@@ -581,7 +695,7 @@ function logInfo(vo, inst, field, msg) {
  *  @param inst   - module instance object
  *  @param field  - instance property name, or array of property names, with
  *                  which this warning is associated
- *  @msg          - message to display
+ *  @param msg    - message to display
  */
 function logWarning(vo, inst, field, msg) {
     let lvo = vo;
@@ -600,7 +714,7 @@ function logWarning(vo, inst, field, msg) {
     }
 }
 
-/*
+/**
  *  ======== isCName ========
  *  Determine if specified id is either empty or a valid C identifier
  *
@@ -617,17 +731,17 @@ function isCName(id) {
     return false;
 }
 
-/*
+/**
  *  ======== autoForceModules ========
  *  Returns an implementation of a module's modules method that just
  *  forces the addition of the specified modules
  *
  *  @param args An array of module name strings.
  *
- *  @return An array with module instance objects
+ *  @returns An array with module instance objects
  *
- *  Example:
- *     modules: Common.autoForceModules(["Board", "DMA"])
+ *  @example
+ *  modules: Common.autoForceModules(["Board", "DMA"])
  */
 function autoForceModules(args) {
     return (function() {
@@ -658,7 +772,8 @@ function autoForceModules(args) {
  *
  *  @param phyList  - List of available PHY
  *  @param phyGroup - Group where to search ("ble", "prop" ...)
- *  @param phyName - PHY id (abbreviation) to look for
+ *  @param phyName  - PHY id (abbreviation) to look for
+ *  @returns PHY definition file and PHY description
  */
 function getPhyInfo(phyList, phyGroup, phyName) {
     let item = null;
@@ -693,11 +808,12 @@ function getPhyInfo(phyList, phyGroup, phyName) {
 
 /**
  *  ======== getOptions ========
-*  Get the options array of a configurable.
-*
-*  @configs - Configurable array
-*  @name - Name of the configurable
-*/
+ *  Get the options array of a configurable.
+ *
+ * @param configs - Configurable array
+ * @param name - Name of the configurable
+ * @returns boolean, or null, if configs is empty
+ */
 function getOptions(configs, name) {
     let opts = null;
 
@@ -753,6 +869,7 @@ const IEEE_15_4_CHAN_INTV = 5;
  * Function to convert from frequency (MHz) to BLE channel (0-39)
  *
  * @param freq - frequency
+ * @returns channel switched to
  */
 function bleFreqToChan(freq) {
     let chan;
@@ -789,6 +906,7 @@ function bleFreqToChan(freq) {
  * Function to convert from frequency (MHz) to raw BLE channel value
  *
  * @param freq - frequency
+ * @returns raw BLE channel value
  */
 function bleFreqToChanRaw(freq) {
     return (freq - BLE_BASE_FREQ) + BLE_BASE_CHAN_RAW;
@@ -799,6 +917,7 @@ function bleFreqToChanRaw(freq) {
  * Function to convert from frequency (MHz) to IEEE 802.15.4 channel (11-16)
  *
  * @param freq - frequency
+ * @returns IEEE 802.15.4 channel
  */
 function ieee154FreqToChan(freq) {
     if (freq >= IEEE_15_4_BASE_FREQ && freq <= IEEE_15_4_MAX_FREQ) {
@@ -809,6 +928,15 @@ function ieee154FreqToChan(freq) {
     throw Error("Invalid IEEE 802.15.4 frequency: " + freq);
 }
 
+/**
+ * Get device family which is used in mapping register settings common for loki low etc
+ *
+ * @returns name of device family, currently cc23xx or cc27xx
+ */
+function getDeviceFamily() {
+    return DevFamilyMap[DeviceName];
+}
+
 // Exported from this module
 exports = {
     getScript: getScript,
@@ -817,6 +945,7 @@ exports = {
     basePath: BasePath,
     phyGroupPath: PhyGroupPath,
     Device: Device,
+    DeviceName: DeviceName,
     PHY_BLE: PHY_BLE,
     PHY_PROP: PHY_PROP,
     PHY_IEEE_15_4: PHY_IEEE_15_4,
@@ -825,7 +954,9 @@ exports = {
     HAS_24G: hasBle,
     HAS_IEEE_15_4: hasIeee,
     HAS_24G_PROP: has24gProp,
+    loadConfiguration: loadConfiguration,
     paTableDone: paTableDone,
+    getDeviceFamily: getDeviceFamily,
     isSub1gDevice: () => Device.includes("CC13") || Device.match("CC267[24]"),
     isSub1gOnlyDevice: () => Device.includes("CC131"),
     is24gOnlyDevice: () => Device.match(/CC26[457]|CC2340/) && !Device.match("CC267[24]"),
@@ -846,6 +977,7 @@ exports = {
     ucFirst: ucFirst,
     fract: fract,
     replaceLastChar: replaceLastChar,
+    replaceLastCharBeforeLastSlash: replaceLastCharBeforeLastSlash,
     forceArray: forceArray,
     calculateWidth: calculateWidth,
     getBitfieldValue: getBitfieldValue,

@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2016-2023, Texas Instruments Incorporated
+ Copyright (c) 2016-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -402,6 +402,7 @@ extern void *GATT_bm_alloc(uint16 connHandle, uint8 opcode, uint16 size,
 #define GAP_SendSlaveSecurityRequest(...)                                               (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_GAP_SendPeripheralSecurityRequest , ##__VA_ARGS__))
 #define GAP_Signable(...)                                                               (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_GAP_Signable , ##__VA_ARGS__))
 #define GAP_Bond(...)                                                                   (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_GAP_Bond , ##__VA_ARGS__))
+#define Gap_ReplyToLTKReq(...)                                                          (icall_directAPI(ICALL_SERVICE_CLASS_BLE, (uint32_t) IDX_Gap_ReplyToLTKReq , ##__VA_ARGS__))
 /* the following API are not available for now */
 #define GAP_PasscodeUpdate(...)                                                         (AssertHandler(0,0))
 

@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -3311,7 +3311,13 @@ hciStatus_t HCI_LE_GenerateDHKeyV2Cmd( uint8 *publicKey, uint8 keyType )
         MAP_osal_memcpy((uint8_t *)localPrivKeyMaterial, (uint8_t *)localDebugPrivateKeyMaterial, LL_SC_RAND_NUM_LEN);
     }
 
-    // else (keyType == 0):Use the generated private key
+    // else (keyType == 0): Use the generated private key
+    else
+    {
+        /* this else clause is required, even if the
+           programmer expects this will never be reached
+           Fix Misra-C Required: MISRA.IF.NO_ELSE */
+    }
 
     MAP_HCI_CommandStatusEvent( HCI_SUCCESS,
                                 HCI_LE_GENERATE_DHKEY_V2 );

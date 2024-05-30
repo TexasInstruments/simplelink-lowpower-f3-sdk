@@ -103,4 +103,16 @@ typedef unsigned int  __UINT32;
 // This define is present for cross-device compatibility. Do not use!
 #define HWREGB_READ_LRF(x) HWREGB(x)
 
+// Word (32 bit) write to address x in the LRF module.
+// This define is present for cross-device compatibility. Do not use!
+#define HWREG_WRITE_LRF(x) HWREG(x)
+
+// Half word (16 bit) write to address x in the LRF module.
+// This define is present for cross-device compatibility. Do not use!
+#define HWREGH_WRITE_LRF(x) HWREGH(x)
+
+// Byte (8 bit) write to address x in the LRF module.
+// This define is present for cross-device compatibility. Do not use!
+#define HWREGB_WRITE_LRF(x) HWREGB(x)
+
 #endif // __HW_TYPES_H__

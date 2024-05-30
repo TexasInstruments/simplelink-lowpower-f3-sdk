@@ -13,7 +13,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2015-2023, Texas Instruments Incorporated
+ Copyright (c) 2015-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -102,7 +102,11 @@ extern "C"
   #endif
 #elif defined ( CC23X0 )
   #ifndef NPI_TL_BUF_SIZE
-    #define NPI_TL_BUF_SIZE         660
+    #ifdef NPI_MAX_DATA
+      #define NPI_TL_BUF_SIZE         1680
+    #else
+      #define NPI_TL_BUF_SIZE         660
+    #endif
   #endif
 #else // CC26XX_R2 || CC1350LP_7XD ...
   #ifndef NPI_TL_BUF_SIZE

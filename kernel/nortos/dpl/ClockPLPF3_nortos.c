@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,7 +103,7 @@ static List_List ClockP_list;
 static volatile uint32_t ClockP_ticks;
 static uint32_t ClockP_nextScheduledTick;
 static bool ClockP_inWorkFunc;
-static bool ClockP_startDuringWorkFunc;
+static bool ClockP_startOrStopDuringWorkFunc;
 static ClockP_Params ClockP_defaultParams = {
     .startFlag = false,
     .period    = 0,
@@ -153,7 +153,7 @@ void ClockP_startup(void)
         /* HWI clockHwi is owned by the Power driver, but multiplexed between
          * ClockP and the Power policy (this is handled by the Power driver).
          * All ClockP must do is to set the callback function and mux the
-         * SysTimer channel 1 signal to CPUIRQ16.
+         * SysTimer channel 0 signal to CPUIRQ16.
          */
         HwiP_setFunc(&clockHwi, ClockP_hwiCallback, (uintptr_t)NULL);
         HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
@@ -165,10 +165,10 @@ void ClockP_startup(void)
 
         /* Initialize ClockP variables */
         List_clearList(&ClockP_list);
-        ClockP_ticks               = nowTick;
-        ClockP_nextScheduledTick   = (uint32_t)(nowTick + ClockP_PERIOD_MAX);
-        ClockP_inWorkFunc          = false;
-        ClockP_startDuringWorkFunc = false;
+        ClockP_ticks                     = nowTick;
+        ClockP_nextScheduledTick         = (uint32_t)(nowTick + ClockP_PERIOD_MAX);
+        ClockP_inWorkFunc                = false;
+        ClockP_startOrStopDuringWorkFunc = false;
 
         ClockP_initialized = true;
 
@@ -206,8 +206,26 @@ void ClockP_scheduleNextTick(uint32_t absTick)
     /* Reprogram the timer for the new period and next interrupt */
     uint32_t newSystim = (uint32_t)(absTick * ClockP_TICK_PERIOD);
 
+    /* At this point, we no longer care about the previously set compare value,
+     * but we might end up getting a pending interrupt from the old compare
+     * value because it could now be in the past. To prevent the the CPU from
+     * vectoring to the ISR for the wrong compare value, the pending interrupt
+     * needs to be cleared, but before that is done, the channel also needs to
+     * be un-armed. This is for the case where the interrupt would become
+     * pending after clearing the interrupt, but before updating the compare
+     * value.
+     */
+
+    /* Un-arm SysTimer channel 0 */
+    HWREG(SYSTIM_BASE + SYSTIM_O_ARMCLR) = SYSTIM_ARMCLR_CH0_CLR;
+
+    /* Clear pending interrupt */
+    HwiP_clearInterrupt(INT_CPUIRQ16);
+
     /* Note: Channel interrupt flag is automatically cleared when writing a
-     * compare value.
+     * compare value, but the pending status is not cleared in NVIC, which is
+     * why the above two statements are needed.
+     * Writing a new compare value will re-arm the channel.
      */
     HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = newSystim;
 
@@ -318,8 +336,8 @@ void ClockP_workFuncDynamic(uintptr_t arg)
     nowTick = getClockPTick();
 
     /* Set flags while actively servicing queue */
-    ClockP_inWorkFunc          = true;
-    ClockP_startDuringWorkFunc = false;
+    ClockP_inWorkFunc                = true;
+    ClockP_startOrStopDuringWorkFunc = false;
 
     /* Determine the first expired timeout to service.
      * This function will be called by ClockP_hwiCallback after the "next
@@ -357,9 +375,10 @@ void ClockP_workFuncDynamic(uintptr_t arg)
 
     hwiKey = HwiP_disable();
 
-    /* If ClockP_start() was called during processing of queue, re-walk to
-     * update distance */
-    if (ClockP_startDuringWorkFunc == true)
+    /* If ClockP_start() or ClockP_stop() was called during processing of queue,
+     * re-walk to update distance.
+     */
+    if (ClockP_startOrStopDuringWorkFunc == true)
     {
         distance = ClockP_walkQueueDynamic(false, timeoutTick);
     }
@@ -545,7 +564,7 @@ void ClockP_start(ClockP_Handle handle)
 
         if (ClockP_inWorkFunc == true)
         {
-            ClockP_startDuringWorkFunc = true;
+            ClockP_startOrStopDuringWorkFunc = true;
         }
     }
 
@@ -558,42 +577,77 @@ void ClockP_start(ClockP_Handle handle)
  */
 void ClockP_stop(ClockP_Handle handle)
 {
-    uintptr_t hwiKey;
-    uint32_t now;
-    uint32_t distanceToNextTick;
-
     ClockP_Obj *obj = (ClockP_Obj *)handle;
+    uintptr_t key   = HwiP_disable();
+
+    uint32_t nowTick;
+    uint32_t nowDelta;
+    uint32_t scheduledTick;
+    uint32_t scheduledDelta;
+    uint32_t newScheduledTickDelta;
 
     obj->active = false;
 
-    /* Re-compute next scheduled tick, if the current one is the timeout of the
-     * stopped clock.
-     */
-    if (obj->currTimeout == ClockP_nextScheduledTick)
+    if (ClockP_inWorkFunc)
     {
-
-        now = getClockPTick();
-
-        /* Disable interrupts to ensure no new clocks are started while
-         * determining and scheduling the next tick.
-         */
-        hwiKey = HwiP_disable();
-
-        /* Determine distance to next tick */
-        distanceToNextTick = ClockP_walkQueueDynamic(false, now);
-
-        /* Cap the distance to the maximum distance supported by the timer */
-        if (distanceToNextTick > ClockP_PERIOD_MAX)
-        {
-            distanceToNextTick = ClockP_PERIOD_MAX;
-        }
-
-        ClockP_scheduleNextTick(now + distanceToNextTick);
-
-        ClockP_ticks = now;
-
-        HwiP_restore(hwiKey);
+        /* If in the work function, let it handle scheduling the next tick */
+        ClockP_startOrStopDuringWorkFunc = true;
     }
+    else
+    {
+        /* Re-compute next scheduled tick, if the current one is the timeout of
+         * the stopped clock.
+         */
+        if (obj->currTimeout == ClockP_nextScheduledTick)
+        {
+            /* Get current tick count */
+            nowTick = getClockPTick();
+
+            nowDelta       = nowTick - ClockP_ticks;
+            scheduledTick  = ClockP_nextScheduledTick;
+            scheduledDelta = scheduledTick - ClockP_ticks;
+
+            /* Check if "now" is before the next scheduled tick.
+             * If "now" is after the next scheduled tick (i.e. the next
+             * scheduled tick is in the past), then there will be a pending
+             * interrupt, and the rescheduling will be done in
+             * ClockP_workFuncDynamic(), instead of below.
+             */
+            if (nowDelta < scheduledDelta)
+            {
+                /* Determine distance to next tick */
+                newScheduledTickDelta = ClockP_walkQueueDynamic(false, nowTick);
+
+                /* Cap the distance to the maximum distance supported by the timer */
+                if (newScheduledTickDelta > ClockP_PERIOD_MAX)
+                {
+                    newScheduledTickDelta = ClockP_PERIOD_MAX;
+                }
+
+                /* Schedule the next tick */
+                ClockP_scheduleNextTick(nowTick + newScheduledTickDelta);
+
+                ClockP_ticks = nowTick;
+            }
+        }
+    }
+
+    HwiP_restore(key);
+}
+
+/*
+ *  ======== ClockP_setFunc ========
+ */
+void ClockP_setFunc(ClockP_Handle handle, ClockP_Fxn clockFxn, uintptr_t arg)
+{
+    ClockP_Obj *obj = (ClockP_Obj *)handle;
+
+    uintptr_t key = HwiP_disable();
+
+    obj->fxn = clockFxn;
+    obj->arg = arg;
+
+    HwiP_restore(key);
 }
 
 /*

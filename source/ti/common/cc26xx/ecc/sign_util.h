@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2012-2023, Texas Instruments Incorporated
+ Copyright (c) 2012-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,8 @@ extern "C"
  *                                          Includes
  */
 
-#include "oad_image_header.h"
-#include "crc32.h"
+#include "ti/common/cc26xx/oad/oad_image_header.h"
+#include "ti/common/cc26xx/crc/crc32.h"
 
 
 /*********************************************************************

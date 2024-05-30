@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/pbe_generic_regdef_regs.h)
 
 #include <ti/drivers/rcl/RCL_Types.h>
@@ -100,7 +101,7 @@ typedef enum LRF_TxPowerResult_e {
 #define LRF_EventTxCtrl                ((LRF_Events){ .value = (1U << 9U)})   /*!< Transmitted LL control packet */
 #define LRF_EventTxCtrlAckAck          ((LRF_Events){ .value = (1U << 10U)})  /*!< Acknowledgement received on a transmitted LL control packet, and acknowledgement transmitted for that packet */
 #define LRF_EventTxRetrans             ((LRF_Events){ .value = (1U << 11U)})  /*!< Packet retransmitted with same SN */
-#define LRF_EventTxAck                 ((LRF_Events){ .value = (1U << 12U)})  /*!< Acknowledgement received on a transmitted packet. */
+#define LRF_EventTxAck                 ((LRF_Events){ .value = (1U << 12U)})  /*!< Acknowledgement transmitted, or acknowledgement received on a transmitted packet. */
 #define LRF_EventTxDone                ((LRF_Events){ .value = (1U << 13U)})  /*!< Packet transmitted */
 #define LRF_EventTxCtrlAck             ((LRF_Events){ .value = (1U << 14U)})  /*!< Acknowledgement received on a transmitted LL control packet */
 #define LRF_EventOpError               ((LRF_Events){ .value = (1U << 15U)})  /*!< Something went awfully wrong, the reason is indicated in RAM-based register BLE_ENDCAUSE. */
@@ -172,10 +173,10 @@ typedef struct LRF_RegConfig_s {
 typedef union
 {
     struct {
-        uint8_t fraction : 1;
-        int8_t dBm : 7;
+        uint8_t fraction : 1; /*!< If set to 1, raises the requested power level by 0.5 dB */
+        int8_t dBm : 7; /*!< Unit of level used to indicate that a power level is expressed in decibels (dB) with reference to one milliwatt (mW). */
     };
-    int8_t rawValue;
+    int8_t rawValue; /*!< rawValue is twice the dBm number, allowing 0.5 dB steps */
 } LRF_TxPowerTable_Index;
 
 /**
@@ -220,10 +221,22 @@ typedef struct LRF_TxShape_s {
 
 #define LRF_TRIM_MIN_VERSION_FULL_FEATURES  4    /* Only AppTrims revision 4 and above has all features */
 
-/* RCL-335: Some devices (State D) have an error in the programmed RSSI offset */
-#define LRF_TRIM_VERSION_RSSIOFFSET_ISSUE 4     /* AppTrims revision with issue in rssiOffset field */
-#define LRF_TRIM_LIMIT_RSSIOFFSET_ISSUE  (-4)   /* If rssiOffset is less or equal to this, apply correction */
-#define LRF_TRIM_CORRECTION_RSSIOFFSET_ISSUE 5  /* Correction to apply to devices with wrong RSSI offset */
+/* RCL-335: Some CC23X0R5 devices (State D) have an error in the programmed RSSI offset */
+#define LRF_TRIM_VERSION_RSSIOFFSET_ISSUE_CC23X0R5 4     /* AppTrims revision with issue in rssiOffset field */
+#define LRF_TRIM_LIMIT_RSSIOFFSET_ISSUE_CC23X0R5  (-4)   /* If rssiOffset is less or equal to this, apply correction */
+#define LRF_TRIM_CORRECTION_RSSIOFFSET_ISSUE_CC23X0R5 5  /* Correction to apply to devices with wrong RSSI offset */
+
+#define LRF_TRIM_VERSION_STATE_C_TRIM_WORKAROUND_CC27XX 7U                /* AppTrims revision of CC27XX devices in state C and beyond */
+/* RCL-591: RTRIM is hardcoded to 10 for CC27XX state B devices */
+#define LRF_TRIM_RTRIM_VALUE_STATE_B_RTRIM_WORKAROUND_CC27XX 10U          /* RTRIM value used on CC27XX state B devices */
+/* RCL-616: DCOLDO0:FIRSTTRIM is hardcoded to 8 and DCOLDO0:SECONDTRIM is increased by 10 for CC27XX state B devices */
+#define LRF_TRIM_DCOLDO0_FIRSTTRIM_VALUE_STATE_B_DCOLDO_WORKAROUND_CC27XX 8U    /* DCOLDO0:FIRSTTRIM value used on CC27XX state B devices */
+#define LRF_TRIM_DCOLDO0_SECONDTRIM_INC_STATE_B_DCOLDO_WORKAROUND_CC27XX 10U    /* DCOLDO0:SECONDTRIM needs to be increased by 10 on CC27XX state B devices */
+#define LRF_TRIM_DCOLDO0_SECONDTRIM_CODED_BITS_MASK_STATE_B_DCOLDO_WORKAROUND_CC27XX ((1U << 3U) | (1U << 5U))    /* Bits mask for bit 3 and 5 of DCOLDO0:SECONDTRIM */
+#define LRF_TRIM_DCOLDO0_SECONDTRIM_MAX_STATE_B_DCOLDO_WORKAROUND_CC27XX 63U    /* DCOLDO0:SECONDTRIM maximum value allowed within the range of 6-bit representation */
+
+/* CC27XX devices with revision numbers below 5 only have one PA trim value (instead of four) in CFG and need a workaround */
+#define LRF_TRIM_VERSION_CORRECT_AMOUNT_OF_PA_TRIMS_CC27XX 5
 
 /* Definitions for trim */
 typedef struct {
@@ -233,10 +246,21 @@ typedef struct {
 typedef union {
     struct {
         // Trim value for LRFDRFE:PA0.TRIM
-        struct {    // length: 2B
-            uint16_t trim           : 5;
-            uint16_t zero           : 11;
-        } pa0;
+        union {
+            struct {    // length: 2B
+                uint16_t trim           : 5;
+                uint16_t zero           : 11;
+            } pa0;
+#ifdef DeviceFamily_CC27XX
+            // Trim values for PA (mode0, mode1)
+            struct {    // length: 2B
+                uint16_t trim0           : 5;
+                uint16_t zero0           : 3;
+                uint16_t trim1           : 5;
+                uint16_t zero1           : 3;
+            } pa2trim01;
+#endif
+        };
         // Trim value for LRFDRFE:ATSTREFH.IREFTRIM
         struct {    // length: 2B
             uint16_t zero0          : 10;
@@ -245,7 +269,11 @@ typedef union {
         } atstRefH;
     } fields;
     struct {
+#ifdef DeviceFamily_CC27XX
+        uint16_t pa2trim01;
+#else
         uint16_t pa0;
+#endif
         uint16_t atstRefH;
     };
     uint32_t data;
@@ -418,7 +446,17 @@ typedef union {
                     // Value is read by RF Core FW during RF Core initialization
             uint16_t iqmc           : 16;
         } syntDiv0;
+#ifdef DeviceFamily_CC27XX
+        // Trim values for PA (mode2, mode3)
+        struct {    // length: 2B
+            uint16_t trim2           : 5;
+            uint16_t zero0           : 3;
+            uint16_t trim3           : 5;
+            uint16_t zero1           : 3;
+        } pa2trim23;
+#else
         uint16_t res1;
+#endif
         struct {
             uint8_t zero            : 4;
             uint8_t aafcap          : 4;
@@ -428,7 +466,11 @@ typedef union {
         int8_t   rssiOffset;
         uint8_t  trimCompleteN;
         uint16_t demIQMC0;
+#ifdef DeviceFamily_CC27XX
+        uint16_t pa2trim23;
+#else
         uint16_t res1;
+#endif
         uint8_t  ifamprfldo[LRF_TRIM_NUM_VARIANTS];
     };
     uint32_t data;
@@ -502,14 +544,14 @@ static inline void LRF_sendHardStop(void)
 {
     /* Send stop to PBE */
     /* This API is the same across PBE banks */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
 }
 
 static inline void LRF_sendGracefulStop(void)
 {
     /* Send stop to PBE */
     /* This API is the same across PBE banks */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_EOPSTOP;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_EOPSTOP;
 }
 
 static inline void LRF_hardStop(void)
@@ -538,5 +580,58 @@ void LRF_programTemperatureCompensatedTxPower(void);
  *
  */
 LRF_TxPowerResult LRF_programTxPower(LRF_TxPowerTable_Index powerLevel);
+
+/**
+ * @brief Request specific clock enable bits for use by the RCL
+ *
+ *  @param  mask Bit mask of clock enable bits to be set; bit positions as in LRFDDBELL_CLKCTL
+ *
+ */
+static inline void LRF_setRclClockEnable(uint16_t mask)
+{
+    hal_set_rcl_clock_enable(mask);
+}
+
+/**
+ * @brief Remove request of specific clock enable bits for use by the RCL
+ *
+ *  @param  mask Bit mask of clock enable bits to be cleared; bit positions as in LRFDDBELL_CLKCTL
+ *
+ */
+static inline void LRF_clearRclClockEnable(uint16_t mask)
+{
+    hal_clear_rcl_clock_enable(mask);
+}
+
+/* Temporarily added definitions until https://jira.itg.ti.com/browse/TIDRIVERS-6489 is implemented */
+#ifndef NO_DRIVERS
+#include <ti/drivers/Power.h>
+
+#ifdef DeviceFamily_CC27XX
+#define LRF_POWER_PERIPH_VALUE(x) (PowerCC27XX_PERIPH_GROUP_LRFD | (x))
+#else
+#define LRF_POWER_PERIPH_VALUE(x) (PowerCC23X0_PERIPH_GROUP_LRFD | (x))
+#endif
+
+#ifdef PowerLPF3_PERIPH_LRFD_BUFRAM
+#error "Remove local definition in LRFCC23X0.h and rely on Power driver's definition"
+#else
+#define PowerLPF3_PERIPH_LRFD_BUFRAM LRF_POWER_PERIPH_VALUE(LRFDDBELL_CLKCTL_BUFRAM_S)
+#endif
+
+#ifdef PowerLPF3_PERIPH_LRFD_MDM
+#error "Remove local definition in LRFCC23X0.h and rely on Power driver's definition"
+#else
+#define PowerLPF3_PERIPH_LRFD_MDM    LRF_POWER_PERIPH_VALUE(LRFDDBELL_CLKCTL_MDM_S)
+#endif
+
+#ifdef PowerLPF3_PERIPH_LRFD_TRC
+#error "Remove local definition in LRFCC23X0.h and rely on Power driver's definition"
+#else
+#define PowerLPF3_PERIPH_LRFD_TRC    LRF_POWER_PERIPH_VALUE(LRFDDBELL_CLKCTL_TRC_S)
+#endif
+/* End of temporarily added definitions */
+
+#endif
 
 #endif

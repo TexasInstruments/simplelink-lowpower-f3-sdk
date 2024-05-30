@@ -33,8 +33,6 @@
  *  ======== RCL_Tracer.c ========
  */
 
-#include <ti/drivers/rcl/RCL_Tracer.h>
-
 
 /*
  *  ======== RCL_Tracer_enable ========
@@ -50,4 +48,36 @@ void __attribute__((weak)) RCL_Tracer_enable(void)
 void __attribute__((weak)) RCL_Tracer_disable(void)
 {
     /* Internal TI use: Disables RF Tracer */
+}
+
+/*
+ *  ======== RCL_Tracer_wakeup ========
+ */
+void __attribute__((weak)) RCL_Tracer_wakeup(void)
+{
+    /* Internal TI use: Re-enables RF Tracer after wakeup from standby*/
+}
+
+/*
+ *  ======== RCL_Tracer_standby ========
+ */
+void __attribute__((weak)) RCL_Tracer_standby(void)
+{
+    /* Internal TI use: Prepares RF Tracer for standby */
+}
+
+/*
+ *  ======== RCL_GPIO_enable ========
+ */
+void __attribute__((weak)) RCL_GPIO_enable(void)
+{
+    /* Internal TI use: Enables RCL GPIOs */
+}
+
+/*
+ *  ======== RCL_GPIO_disable ========
+ */
+void __attribute__((weak)) RCL_GPIO_disable(void)
+{
+    /* Internal TI use: Disables RCL GPIOs */
 }

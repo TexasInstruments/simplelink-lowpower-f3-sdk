@@ -62,6 +62,9 @@
 extern "C" {
 #endif
 
+/* Do not configure this pin. */
+#define GPIO_CFG_DO_NOT_CONFIG_INTERNAL 0x80000000
+
 /* Re-map IOC PORTCFG defines from hw_ioc.h to GPIO defines*/
 #define GPIO_MUX_PORTCFG_PFUNC7 IOC_IOC3_PORTCFG_DTB
 #define GPIO_MUX_PORTCFG_PFUNC6 IOC_IOC3_PORTCFG_ANA
@@ -132,7 +135,7 @@ extern "C" {
 #define GPIO_CFG_DRVSTR_MED_INTERNAL  IOC_IOC17_IOCURR_CUR_4MA
 #define GPIO_CFG_DRVSTR_HIGH_INTERNAL IOC_IOC17_IOCURR_CUR_8MA
 
-/* Configuration values stored in mux bits Any configuration options not
+/* Configuration values stored in mux bits. Any configuration options not
  * directly handled by IOC need to be stored inside the mux bits (lowest 3 bits
  * on Low Power F3 devices). These are masked out by GPIO_init(),
  * GPIO_setConfig(), GPIO_setConfigAndMux() and GPIO_getConfig() using

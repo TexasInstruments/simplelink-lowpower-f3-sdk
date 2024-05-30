@@ -51,18 +51,17 @@ const RfDesign = Common.getScript("rfdesign");
 const CmdHandler = Common.getScript("cmd_handler.js");
 
 // Utility functions shared with SmartRF Studio 8
-const Srfs8Util = system.getScript(ConfigPathRclCommon + "srfs8_util.js");
-
-// Register definitions
-const FileData = system.getScript(ConfigPathRclCommon + "rcl_registers.json");
-const ModDef = FileData.module;
-const RclRegisters = FileData.registers;
-
-// Sort the register list by address
-const RclRegLookupAddr = Object.entries(RclRegisters).sort(fnComp);
+let Srfs8Util;
+if (Common.getDeviceFamily() === "cc27xx") {
+    Srfs8Util = system.getScript(ConfigPathRclCommon + "srfs8_util_cc27xx.js");
+}
+else {
+    Srfs8Util = system.getScript(ConfigPathRclCommon + "srfs8_util_cc23xx.js");
+}
 
 // Address map for each module
 const AddressMap = {};
+
 // Flag used to avoid creating the address map more than once
 let AddressMapCreated = false;
 
@@ -153,19 +152,6 @@ function getUpdatedRfCommands(inst, phyGroup) {
     phyClone.updateRfCommands(inst);
 
     return phyClone;
-}
-
-/**
- * ======== fnComp ========
- * @param a - first register
- * @param b - second register
- * @returns 1 if a has a larger address, else -1
- */
-function fnComp(a, b) {
-    if (Number(a[1].addr) > Number(b[1].addr)) {
-        return 1;
-    }
-    return -1;
 }
 
 /**
@@ -602,7 +588,7 @@ function create(phyGroup, phyID, first) {
                     const regPath = modName + "." + regName;
 
                     // Look up register and bit-field info
-                    const ri = RclRegisters[regPath];
+                    const ri = DeviceInfo.getRclRegisters()[regPath];
                     const fi = ri[fieldName];
                     const pos = Number(fi.pos);
                     const mask = (~(0xFFFF << fi.width) & 0xFFFF) << pos;
@@ -643,7 +629,7 @@ function create(phyGroup, phyID, first) {
      *  data contains an array of register addresses used by the module.
      */
     function createAddressMap() {
-        for (const item of RclRegLookupAddr) {
+        for (const item of DeviceInfo.getRclRegLookupAddr()) {
             const [name, reg] = item;
             // eslint-disable-next-line no-unused-vars
             const [module, regName] = name.split(".");
@@ -1075,7 +1061,7 @@ function create(phyGroup, phyID, first) {
                     if (region.type === RegisterRegion.T_HW_16BIT) {
                         // eslint-disable-next-line no-unused-vars
                         const [modName, _unsed] = region.regNames[0].split(".");
-                        const moduleDef = ModDef[modName];
+                        const moduleDef = DeviceInfo.getModuleDefinition()[modName];
                         if ("alias_region" in moduleDef) {
                             const aliasAddr = ((region.addr - Number(moduleDef.normal_region.address)) / 2)
                                 + Number(moduleDef.alias_region.address);
@@ -1381,7 +1367,7 @@ function create(phyGroup, phyID, first) {
         const regPath = modName + "." + regName;
         const registerAddr = Number(addr);
 
-        const modInfo = ModDef[modName];
+        const modInfo = DeviceInfo.getModuleDefinition()[modName];
         const modType = modInfo.type;
 
         // Determine region type for 16 bit (32-bit, zero, and sparse regions to be calculated later)
@@ -1950,8 +1936,8 @@ function create(phyGroup, phyID, first) {
                 }
                 // Wrap up the segment
                 if (segmentLen > 0) {
-                    // Remove last comma from segment code.
-                    segment.code = Common.replaceLastChar(segment.code, ",", " ");
+                    // Sometimes comment has comma, which we do not want to remove, so use special method
+                    segment.code = Common.replaceLastCharBeforeLastSlash(segment.code, ",", " ");
 
                     // Create symbol name for segment array
                     const segmentName = segment.name.replace(/,/g, "_");
@@ -2541,7 +2527,7 @@ ${symNameCode}
     function getRegisterFeatureGroupInfo(featureGroup, featureFilters, fieldInfo, registerFieldSeparator = ".") {
         const res = {};
         // Iterate registers
-        for (const item of RclRegLookupAddr) {
+        for (const item of DeviceInfo.getRclRegLookupAddr()) {
             const [name, reg] = item;
             const [module, regName] = name.split(".");
             const addr = int2hex(reg.addr & 0xffff);

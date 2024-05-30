@@ -49,13 +49,14 @@
 #include <ti/drivers/pwm/PWMTimerLPF3.h>
 #include <ti/drivers/timer/LGPTimerLPF3.h>
 
-/* Defines for maximal counter target values.
- * Max count is set to (2^16 - 2) or (2^24 - 2) dependent on the counter width for
- * the selected LGPTimer instance, to allow for a glitch free 100% duty cycle at
- * max period count.
+/* Defines for maximal counter target values. Max count is set to (2^16 - 2),
+ * (2^24 - 2), or (2^32 - 2) depending on the counter width for the selected
+ * LGPTimer instance, to allow for a glitch free 100% duty cycle at max period
+ * count.
  */
 #define PWM_COUNT_MAX_16_BITS 0xFFFE
 #define PWM_COUNT_MAX_24_BITS 0xFFFFFE
+#define PWM_COUNT_MAX_32_BITS 0xFFFFFFFE
 
 /* PWMTimerLPF3 functions */
 void PWMTimerLPF3_close(PWM_Handle handle);
@@ -69,6 +70,7 @@ void PWMTimerLPF3_start(PWM_Handle handle);
 void PWMTimerLPF3_stop(PWM_Handle handle);
 
 /* PWMTimerLPF3 internal functions */
+static uint32_t PWMTimerLPF3_getMaxCount(PWM_Handle handle);
 static uint32_t PWMTimerLPF3_getPeriodCounts(PWM_Handle handle, PWM_Period_Units periodUnit, uint32_t periodValue);
 static uint32_t PWMTimerLPF3_getDutyCounts(PWM_Handle handle,
                                            uint32_t periodCounts,
@@ -201,14 +203,10 @@ int_fast16_t PWMTimerLPF3_setPeriod(PWM_Handle handle, uint32_t periodValue)
     uint32_t newDutyCounts      = PWMTimerLPF3_getDutyCounts(handle, newPeriodCounts, object->dutyUnit, dutyValue);
 
     /* Get max PWM count */
-    uint32_t countMax = PWM_COUNT_MAX_16_BITS;
-    if (LGPTimerLPF3_getCounterWidth(object->hTimer) == 24)
-    {
-        countMax = PWM_COUNT_MAX_24_BITS;
-    }
+    uint32_t maxCount = PWMTimerLPF3_getMaxCount(handle);
 
     /* Fail if period is out of range */
-    if ((newPeriodCounts > countMax) || (newPeriodCounts == 0))
+    if ((newPeriodCounts > maxCount) || (newPeriodCounts == 0))
     {
         DebugP_log2("PWM(%x): Period (%d) is out of range", (uintptr_t)handle, periodValue);
         return PWM_STATUS_INVALID_PERIOD;
@@ -261,14 +259,10 @@ int_fast16_t PWMTimerLPF3_setDuty(PWM_Handle handle, uint32_t dutyValue)
     uint32_t newDutyCounts      = PWMTimerLPF3_getDutyCounts(handle, object->periodCounts, dutyUnit, dutyValue);
 
     /* Get max PWM count */
-    uint32_t countMax = PWM_COUNT_MAX_16_BITS;
-    if (LGPTimerLPF3_getCounterWidth(object->hTimer) == 24)
-    {
-        countMax = PWM_COUNT_MAX_24_BITS;
-    }
+    uint32_t maxCount = PWMTimerLPF3_getMaxCount(handle);
 
     /* Fail if duty cycle count is out of range. */
-    if (newDutyCounts > countMax)
+    if (newDutyCounts > maxCount)
     {
         DebugP_log2("PWM(%x): Duty (%d) is out of range", (uintptr_t)handle, dutyValue);
         return PWM_STATUS_INVALID_DUTY;
@@ -317,14 +311,10 @@ int_fast16_t PWMTimerLPF3_setDutyAndPeriod(PWM_Handle handle, uint32_t dutyValue
     uint32_t newDutyCounts   = PWMTimerLPF3_getDutyCounts(handle, newPeriodCounts, object->dutyUnit, dutyValue);
 
     /* Get max PWM count */
-    uint32_t countMax = PWM_COUNT_MAX_16_BITS;
-    if (LGPTimerLPF3_getCounterWidth(object->hTimer) == 24)
-    {
-        countMax = PWM_COUNT_MAX_24_BITS;
-    }
+    uint32_t maxCount = PWMTimerLPF3_getMaxCount(handle);
 
     /* Fail if period is out of range or incompatible with new duty */
-    if ((newPeriodCounts > countMax) || (newPeriodCounts == 0))
+    if ((newPeriodCounts > maxCount) || (newPeriodCounts == 0))
     {
         return PWM_STATUS_INVALID_PERIOD;
     }
@@ -339,7 +329,7 @@ int_fast16_t PWMTimerLPF3_setDutyAndPeriod(PWM_Handle handle, uint32_t dutyValue
     }
 
     /* Fail if duty cycle count is out of range. */
-    if (newDutyCounts > countMax)
+    if (newDutyCounts > maxCount)
     {
         return PWM_STATUS_INVALID_DUTY;
     }
@@ -433,6 +423,32 @@ int_fast16_t PWMTimerLPF3_control(PWM_Handle handle, uint_fast16_t cmd, void *ar
 {
     /* No implementation yet */
     return (PWM_STATUS_UNDEFINEDCMD);
+}
+
+/*
+ *  ======== PWMTimerLPF3_getMaxCount ========
+ *  Return max counter value.
+ */
+static uint32_t PWMTimerLPF3_getMaxCount(PWM_Handle handle)
+{
+    PWMTimerLPF3_Object *object = handle->object;
+    uint32_t timerWidth         = LGPTimerLPF3_getCounterWidth(object->hTimer);
+
+    uint32_t maxCount;
+    switch (timerWidth)
+    {
+        case 32:
+            maxCount = PWM_COUNT_MAX_32_BITS;
+            break;
+        case 24:
+            maxCount = PWM_COUNT_MAX_24_BITS;
+            break;
+        case 16:
+        default:
+            maxCount = PWM_COUNT_MAX_16_BITS;
+    }
+
+    return maxCount;
 }
 
 /*

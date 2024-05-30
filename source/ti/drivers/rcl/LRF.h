@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,8 +36,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <ti/drivers/rcl/hal/hal.h>
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC27XX)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC2340R53)
 #  include <ti/devices/DeviceFamily.h>
 #  include DeviceFamily_constructPath(inc/hw_types.h)
 #  include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
@@ -182,10 +183,6 @@ typedef struct {
 
 #define LRF_PhyFeatures_Default 0
 
-#define LRF_NUM_CLK_ENA    2           /* Number of clock enable sets */
-#define LRF_CLK_ENA_APP    0           /* Clock enable set to use for the application */
-#define LRF_CLK_ENA_RCL    1           /* Clock enable set to use by the RCL */
-
 /* The definition below ensures an invalid value runtime and a warning compiletime */
 #define __ERROR_Address_is_in_an_invalid_range_for_LRF_setup 0x00040000
 
@@ -296,14 +293,19 @@ LRF_TxPowerTable_Entry LRF_TxPowerTable_findValue(const LRF_TxPowerTable *table,
 void LRF_rclEnableRadioClocks(void);
 void LRF_rclDisableRadioClocks(void);
 
-static inline void LRF_setAppClockEnable(uint16_t mask)
+static inline void LRF_enableHwInterrupt(uint32_t mask)
 {
-    LRF_setClockEnable(mask, LRF_CLK_ENA_APP);
+    hal_enable_command_radio_interrupt(mask);
 }
 
-static inline void LRF_clearAppClockEnable(uint16_t mask)
+static inline void LRF_disableHwInterrupt(uint32_t mask)
 {
-    LRF_clearClockEnable(mask, LRF_CLK_ENA_APP);
+    hal_disable_command_radio_interrupt(mask);
+}
+
+static inline void LRF_clearHwInterrupt(uint32_t mask)
+{
+    hal_clear_command_radio_interrupt(mask);
 }
 
 extern uint32_t swParamList[];

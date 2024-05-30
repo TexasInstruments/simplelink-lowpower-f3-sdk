@@ -15,7 +15,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2012-2023, Texas Instruments Incorporated
+ Copyright (c) 2012-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "ECDSACC26X4_driverlib.h"
+#include "ti/common/cc26xx/ecc/ECDSACC26X4_driverlib.h"
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)

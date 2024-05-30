@@ -86,6 +86,25 @@ function validate(inst, validation) {
 }
 
 /*
+ *  ======== getLibs ========
+ *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
+ */
+function getLibs(mod)
+{
+    /* Get device information from GenLibs */
+    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
+
+    let libGroup = {
+        name: "/third_party/ecc",
+        deps: [],
+        libs: [GenLibs.libPath("third_party/ecc", "ecc.a")],
+        allowDuplicates: true
+    };
+
+    return (libGroup);
+}
+
+/*
  *  ======== devSpecific ========
  *  Device-specific extensions to be added to base ECIES configuration
  */
@@ -97,7 +116,11 @@ let devSpecific = {
     /* override device-specific templates */
     templates: {
         boardh: "/ti/drivers/ecies/ECIES.Board.h.xdt",
-        boardc: "/ti/drivers/ecies/ECIESXX.Board.c.xdt"
+        boardc: "/ti/drivers/ecies/ECIESXX.Board.c.xdt",
+
+        /* contribute libraries to linker command file */
+        "/ti/utils/build/GenLibs.cmd.xdt":
+                {modName: "/ti/drivers/ECIES", getLibs: getLibs}
     }
 };
 

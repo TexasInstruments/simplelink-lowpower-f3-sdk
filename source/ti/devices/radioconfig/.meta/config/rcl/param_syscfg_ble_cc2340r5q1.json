@@ -305,17 +305,17 @@
   "phys": {
     "ble": [
       {
-        "file8": "ble_bt5_1m_2m_coded_cc23x0r5.json",
+        "file8": "ble_bt5_1m_2m_coded_cc23xx.json",
         "name": "ble",
         "description": "1 Mbps / 2 Mbps / Coded",
         "phyName": "1 Mbps / 2 Mbps / Coded",
         "usage": "stack"
       },
       {
-        "file8": "ble_bt5_generic_cc23x0r5.json",
+        "file8": "ble_bt5_generic_cc23xx.json",
         "name": "ble_gen",
         "description": "Generic 1 Mbps / 2 Mbps / Coded",
-        "phyName": "1 Mbps / 2 Mbps / Coded",
+        "phyName": "Generic 1 Mbps / 2 Mbps / Coded",
         "usage": "generic"
       }
     ]

@@ -18,20 +18,25 @@
 # will build using each non-empty *_ARMCOMPILER cgtool.
 #
 
-SYSCONFIG_TOOL         ?= /home/username/ti/ccs1230/ccs/utils/sysconfig_1.17.0/sysconfig_cli.sh
+SYSCONFIG_TOOL         ?= /home/username/ti/ccs1270/ccs/utils/sysconfig_1.20.0/sysconfig_cli.sh
 
-FREERTOS_INSTALL_DIR   ?= /home/username/FreeRTOSv202104.00
 CMAKE                  ?= /home/username/cmake-3.21.3/bin/cmake
 PYTHON                 ?= python3
 
-TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs1230/ccs/tools/compiler/ti-cgt-armllvm_2.1.3.LTS-0
+TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs1270/ccs/tools/compiler/ti-cgt-armllvm_3.2.2.LTS-0
 GCC_ARMCOMPILER        ?= /home/username/arm-none-eabi-gcc/9.2019.q4.major-0
+IAR_ARMCOMPILER        ?= /home/username/iar9.50.2
 
-# The IAR compiler is not supported on Linux
-# IAR_ARMCOMPILER      ?=
-
-# For Linux
-RM      = rm -f
-RMDIR   = rm -rf
-DEVNULL = /dev/null
-ECHOBLANKLINE = echo
+ifeq ("$(SHELL)","sh.exe")
+# for Windows/DOS shell
+    RM      = del
+    RMDIR   = -rmdir /S /Q
+    DEVNULL = NUL
+    ECHOBLANKLINE = @cmd /c echo.
+else
+# for Linux-like shells
+    RM      = rm -f
+    RMDIR   = rm -rf
+    DEVNULL = /dev/null
+    ECHOBLANKLINE = echo
+endif

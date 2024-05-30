@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2011-2023, Texas Instruments Incorporated
+ Copyright (c) 2011-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -689,8 +689,8 @@ static void upag_monitorIndicationCB(bStatus_t status, uint8_t sessionId, uint8_
 {
   ugapMsgMonitorIndication_t msg;
   port_key_t key;
-
   key = port_enterCS_SW();
+
   msg.status = status;
   msg.sessionId = sessionId;
   msg.len = len;
@@ -1156,7 +1156,6 @@ bStatus_t ugap_monitorRequest(uint8_t  channel,
   {
     return INVALIDPARAMETER;
   }
-
   /* Start monitor scan */
   return ugap_monitorStart();
 }

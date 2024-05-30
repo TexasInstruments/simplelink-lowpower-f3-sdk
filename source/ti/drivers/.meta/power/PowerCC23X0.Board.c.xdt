@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,10 +36,18 @@
  *  ======== PowerCC23X0.Board.c.xdt ========
  */
 
-    let POWER                     = args[0];
-    let pow                       = POWER.$static;
-    let policyInitFxn             = pow.policyInitFunction;
-    let policyFxn                 = pow.policyFunction;
+    let POWER                      = args[0];
+    let CCFG                       = system.modules["/ti/devices/CCFG"];
+    let pow                        = POWER.$static;
+    let policyInitFxn              = pow.policyInitFunction;
+    let policyFxn                  = pow.policyFunction;
+
+    /* By default, disable initial HFXT amplitude compensation by setting
+     * the C pointer to the function to start the HFXT amplitude compensation
+     * to NULL. The pointer will be set to PowerLPF3_startInitialHfxtAmpComp
+     * below if initial HFXT amplitude compensation is enabled.
+     */
+    let startInitialHfxtAmpCompFxn = "NULL";
 
     if (policyInitFxn === 'Custom') {
         policyInitFxn = pow.policyInitCustomFunction;
@@ -51,6 +59,11 @@
 
     if (policyFxn === 'Custom') {
         policyFxn = pow.policyCustomFunction;
+    }
+
+    if (CCFG.$static.enableInitialHfxtAmpComp)
+    {
+        startInitialHfxtAmpCompFxn = "PowerLPF3_startInitialHfxtAmpComp";
     }
 %%}
 /*
@@ -68,7 +81,15 @@ extern void `policyInitFxn`(void);
 extern void `policyFxn`(void);
 % }
 
+%if (CCFG.$static.srcClkLF === "External LF clock") {
+const uint8_t PowerLPF3_extlfPin      = `CCFG.$static.extlfPinInstance.$name`;
+% let extlfPinMuxMode = CCFG.$static.extlf.extlfPin.$solution.muxMode;
+% let extlfPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + extlfPinMuxMode.toString();
+const uint8_t PowerLPF3_extlfPinMux   = `extlfPinMuxName`;
+% }
+
 const PowerCC23X0_Config PowerCC23X0_config = {
-    .policyInitFxn            = `policyInitFxn`,
-    .policyFxn                = `policyFxn`,
+    .policyInitFxn              = `policyInitFxn`,
+    .policyFxn                  = `policyFxn`,
+    .startInitialHfxtAmpCompFxn = `startInitialHfxtAmpCompFxn`,
 };

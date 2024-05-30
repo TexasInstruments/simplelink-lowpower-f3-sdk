@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -109,6 +109,7 @@
 #define RCL_BUFFER_MAX_PAD_BYTES        (RCL_BUFFER_MAX_HEADER_PAD_BYTES + 1) // 1 is already part of the RCL buffer struct
 #define RCL_BUFFER_RX_HEADER_ENTRY_SIZE 6                                     // length + pad num + 3 pad bytes
 #define RCL_HEADER_BYTE                 1                                     // Header byte location in the RCL packet
+#define RCL_NUM_ADV_RX                  3                                     // The RX size for the advertiser should be multiplied based on the maximum number of adv indications
 #ifdef RCL_329
 #define RCL_PEER_ADDR_INDEX             0                                     // This is used when initiator uses filter policy is LL_INIT_AL_POLICY_USE_PEER_ADDR
 #endif
@@ -295,6 +296,7 @@
 #define RAT_TICKS_IN_100US             400       // 1M / 2500 RAT ticks (SCA PPM)
 #define RAT_TICKS_IN_140US             560       // Rx Back-end Time
 #define RAT_TICKS_IN_150US             600       // T_IFS
+#define RAT_TICKS_IN_166US             664       // Frequency synthesizer delay for RX window
 #define RAT_TICKS_IN_180US             720       // AUX_CONNECT_REQ in 2M
 #define RAT_TICKS_IN_200US             800       // LL Topology margin
 #define RAT_TICKS_IN_700US             2800      // LL_TEST_MODE JIRA-2756
@@ -318,6 +320,8 @@
 #define RAT_TICKS_IN_12_5MS            50000     // DTM T(l) Compare
 #define RAT_TICKS_IN_16MS              64000     // Max time in Coded phy for fragments periodic adv
 #define RAT_TICKS_IN_20MS              80000
+#define RAT_TICKS_IN_100MS             400000    // Refers to the minimum observation period used by the SDAA module
+#define RAT_TICKS_IN_1S                4000000
 #define RAT_TICKS_IN_1_28S             5120000   // Directed Advertising Timeout
 #define RAT_TICKS_IN_32S               128000000 // Max LSTO
 //
@@ -338,7 +342,8 @@
 #define BLE_BDADDR_SIZE                6
 #define MAX_BLE_CONNECT_IND_SIZE       34 // init addr + own addr + payload
 #define MAX_BLE_ADV_PKT_SIZE          255 // payload
-
+#define MAX_EXT_ADV_PKT_SIZE           8  // max size of AE EXT_ADV_PKT PDU
+#define AUX_CONN_RSP_PKT_SIZE          14 // AUX_CONN_RSP PDU packet size (constant size)
 // HCI Rx Packet Header
 // | Packet Type (1) | Handler(2) | Length(2) |
 // Note: This is the same define as what's in hci_tl.h: HCI_DATA_MIN_LENGTH!
@@ -1242,6 +1247,9 @@ extern rxOut_t          rxTestOut;
 // Modem Tests (TELECO)
 extern rfOpCmd_TxTest_t txModemTestCmd;
 extern rfOpCmd_RxTest_t rxModemTestCmd;
+// RX command for sdaa module
+extern rfOpCmd_RxTest_t sdaaRxWindowCmd;
+extern rfOpCmd_freqSynthCtrl_t sdaaFsRfCmd;
 #endif
 
 /*******************************************************************************

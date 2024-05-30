@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,12 +64,11 @@ let config = [
  *          deviceDefine: ""  // DeviceFamily #define
  *      }
  */
-function getAttrs(deviceId, part)
-{
+function getAttrs(deviceId, part) {
     var result = {};
 
     if (deviceId.match(/CC13.1/)) {
-        result.deviceDir  = "cc13x1_cc26x1";
+        result.deviceDir = "cc13x1_cc26x1";
         result.deviceDefine = "DeviceFamily_CC13X1";
         result.libName = "cc13x1";
     }
@@ -79,7 +78,7 @@ function getAttrs(deviceId, part)
         result.libName = "cc26x1";
     }
     else if (deviceId.match(/CC13.2.7/)) {
-        result.deviceDir  = "cc13x2x7_cc26x2x7";
+        result.deviceDir = "cc13x2x7_cc26x2x7";
         result.deviceDefine = "DeviceFamily_CC13X2X7";
         result.libName = "cc13x2x7";
     }
@@ -89,7 +88,7 @@ function getAttrs(deviceId, part)
         result.libName = "cc26x2x7";
     }
     else if (deviceId.match(/CC13.2/)) {
-        result.deviceDir  = "cc13x2_cc26x2";
+        result.deviceDir = "cc13x2_cc26x2";
         result.deviceDefine = "DeviceFamily_CC13X2";
         result.libName = "cc13x2";
     }
@@ -116,6 +115,11 @@ function getAttrs(deviceId, part)
         result.deviceDefine = "DeviceFamily_CC13X4";
         result.libName = "cc13x4";
     }
+    else if (deviceId.match(/CC23.0R22/)) {
+        result.deviceDir = "cc23x0r5";
+        result.deviceDefine = "DeviceFamily_CC23X0R22";
+        result.libName = "cc23x0r5";
+    }
     else if (deviceId.match(/CC23.0R2/)) {
         result.deviceDir = "cc23x0r2";
         result.deviceDefine = "DeviceFamily_CC23X0R2";
@@ -131,11 +135,6 @@ function getAttrs(deviceId, part)
         result.deviceDefine = "DeviceFamily_CC27XX";
         result.libName = "cc27xx";
     }
-    else if (deviceId.match(/CC32/)) {
-        result.deviceDir = "cc32xx";
-        result.deviceDefine = "DeviceFamily_CC3220";
-        result.libName = "cc32xx";
-    }
     else if (deviceId.match(/CC35/)) {
         result.deviceDir = "cc35xx";
         result.deviceDefine = "DeviceFamily_CC35XX";
@@ -150,8 +149,7 @@ function getAttrs(deviceId, part)
     return (result);
 }
 
-function getLibs()
-{
+function getLibs() {
     /* Get toolchain specific information from GenLibs */
     let GenLibs = system.getScript("/ti/utils/build/GenLibs");
     let getToolchainDir = GenLibs.getToolchainDir;
@@ -164,10 +162,6 @@ function getLibs()
     if (deviceId.match(/CC13|CC26/)) {
         libs.push(
             "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/bin/" + getToolchainDir() + "/driverlib.lib"
-        );
-    } else if (deviceId.match(/CC32/)) {
-        libs.push(
-            "ti/devices/cc32xx/driverlib/" + getToolchainDir() + "/Release/driverlib.a"
         );
     } else {
         libs.push(
@@ -186,30 +180,98 @@ function getLibs()
     return linkOpts;
 }
 
-function getOpts()
-{
+function getOpts() {
     /* get device ID to select appropriate defines */
     let deviceId = system.deviceData.deviceId;
 
     return ["-D" + getAttrs(deviceId).deviceDefine];
 }
 
+
+function getLinkerDefs() {
+
+    let deviceId = system.deviceData.deviceId;
+
+    /* default region values, may vary per device*/
+    let ccfg = [
+        { name: "CCFG_BASE", value: 0x4e020000 },
+        { name: "CCFG_SIZE", value: 0x00000800 }
+    ];
+    let s2rram = [
+        { name: "S2RRAM_BASE", value: 0x40098000 },
+        { name: "S2RRAM_SIZE", value: 0x00001000 }
+    ];
+    let hsmtp = [
+        { name: "HSMOTP_BASE", value: 0x4e020800 },
+        { name: "HSMOTP_SIZE", value: 0x00000800 }
+    ];
+    let scfg = [
+        { name: "SCFG_BASE", value: 0x4e040000 },
+        { name: "SCFG_SIZE", value: 0x00000400 }
+    ];
+    let flashBase = [
+        { name: "FLASH0_BASE", value: 0x00000000 }
+    ];
+    let ramBase = [
+        { name: "RAM0_BASE",   value: 0x20000000 }
+    ];
+
+    let dev2mem = {
+        "CC2340R22RKP": [
+            { name: "FLASH0_SIZE", value: 0x00040000 },
+            { name: "RAM0_SIZE",   value: 0x00009000 }
+        ].concat(s2rram, ccfg, flashBase, ramBase),
+        "CC2340R2RGE": [
+            { name: "FLASH0_SIZE", value: 0x00040000 },
+            { name: "RAM0_SIZE",   value: 0x00007000 }
+        ].concat(ccfg, flashBase, ramBase),
+        "CC2340R5RKP": [
+            { name: "FLASH0_SIZE", value: 0x00080000 },
+            { name: "RAM0_SIZE",   value: 0x00009000 }
+        ].concat(s2rram, ccfg, flashBase, ramBase),
+        "CC2340R53RKP": [
+            { name: "FLASH0_SIZE", value: 0x00080000 },
+            { name: "RAM0_SIZE",   value: 0x00010000 }
+        ].concat(s2rram, ccfg, flashBase, ramBase),
+        "CC2745R7RHAQ1": [
+            { name: "FLASH0_SIZE", value: 0x000C0000 },
+            { name: "RAM0_SIZE",   value: 0x00020000 }
+        ].concat(s2rram, ccfg, hsmtp, scfg, flashBase, ramBase),
+        "CC2755R10RKP": [
+            { name: "FLASH0_SIZE", value: 0x00100000 },
+            { name: "RAM0_SIZE",   value: 0x00028800 }
+        ].concat(s2rram, ccfg, hsmtp, scfg, flashBase, ramBase)
+    };
+
+    /* these devices reuse device defs above as they have the same memory map */
+    dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHB"] = dev2mem["CC2340R5RKP"];
+    dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
+    dev2mem["CC2745P7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
+    dev2mem["CC2755P10RGZ"] = dev2mem["CC2755P10RKP"] =
+        dev2mem["CC2755R10RGZ"] =
+        dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
+        dev2mem["CC2755R10RKP"];
+
+    return (dev2mem[deviceId] == undefined ? [] : dev2mem[deviceId]);
+}
+
 /*
  *  ======== exports ========
  */
 exports = {
-    staticOnly   : true,
-    displayName  : "DriverLib",
+    staticOnly: true,
+    displayName: "DriverLib",
 
     /* enable end-user to override computed library path */
-    moduleStatic : {
+    moduleStatic: {
         config: config
     },
 
     templates: {
         /* contribute TI-DRIVERS libraries to linker command file */
         "/ti/utils/build/GenLibs.cmd.xdt": { modName: "/ti/devices/DriverLib", getLibs: getLibs },
-        "/ti/utils/build/GenOpts.opt.xdt": { modName: "/ti/devices/DriverLib", getOpts: getOpts }
+        "/ti/utils/build/GenOpts.opt.xdt": { modName: "/ti/devices/DriverLib", getOpts: getOpts },
+        "/ti/utils/build/GenMap.cmd.xdt": { modName: "/ti/devices/DriverLib", getLinkerDefs: getLinkerDefs }
     },
 
     /* DriverLib-specific exports */

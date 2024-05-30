@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_7_40_00_64.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_10_00_55.html",
         "devices": [
             "CC2340R5"
         ],
@@ -281,7 +281,7 @@
     {
         "name": "TI BLE5-Stack Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble5stack_3_02_04_00.html",
+        "location": "../../docs/ble5stack/release_notes_ble5stack_3_03_01_00.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -300,7 +300,7 @@
     {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_7_40_02_00.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_8_10_01_04.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -338,7 +338,7 @@
     {
         "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_7_40_00.html",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_8_10_00.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"

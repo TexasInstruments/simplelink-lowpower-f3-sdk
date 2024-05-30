@@ -75,6 +75,7 @@ class UARTDataFrame(UARTFrame):
         return self.string
 
 
+@dataclass
 class UARTErrorFrame(UARTFrame):
     """Log error frame"""
 
@@ -94,6 +95,7 @@ class UARTErrorFrame(UARTFrame):
         return self.string
 
 
+@dataclass
 class UARTTimestampFormatFrame(UARTFrame):
     """Log timestamp format frame"""
 

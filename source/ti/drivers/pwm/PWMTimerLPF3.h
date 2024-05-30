@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
  *
  *  Note that some LPF3 device types do not support all four LGPT peripherals.
  *
- *  The frequency of the underlaying timer counter can be divided by configuring
+ *  The frequency of the underlying timer counter can be divided by configuring
  *  the preScalerDivision element of the @ref PWMTimerLPF3_HwAttrs struct.
  *  This configuration can be used to extend the PWM signal period but will
  *  decrease the accuracy.
@@ -101,7 +101,7 @@
  *  - Attempts to change both the period and duty cycle at the same time
  *    for an active PWM signal, can cause pulses to be too long or short if
  *    the change is applied close to the end of the current counter cycle.
- *    This does not apply to changing only the periode or only the duty cycle,
+ *    This does not apply to changing only the period or only the duty cycle,
  *    as any of these separate changes will take effect on the next counter cycle.
  *  # PWM usage #
  *
@@ -182,7 +182,7 @@ typedef struct PWMTimerLPF3_HwAttrs
  * These fields are used by the driver to store and modify PWM configuration
  * during run-time.
  * The application must not edit any member variables of this structure.
- * Appplications should also not access member variables of this structure
+ * Applications should also not access member variables of this structure
  * as backwards compatibility is not guaranteed.
  */
 typedef struct PWMTimerLPF3_Object

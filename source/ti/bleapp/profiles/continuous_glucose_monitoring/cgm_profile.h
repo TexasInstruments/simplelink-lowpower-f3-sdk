@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2010-2023, Texas Instruments Incorporated
+ Copyright (c) 2010-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -152,6 +152,21 @@ bStatus_t CGMP_updateStatus( CGMS_status_t stat );
  * @return  SUCCESS or stack call status
  */
 bStatus_t CGMP_updateSessionRunTime( uint16 timeToReduce );
+
+/*
+ * @fn      CGMP_clockCB
+ *
+ * @brief   Callback function for clock module
+ *
+ * @param   arg - argument passed to callback function.
+ *
+ * @return  none
+ */
+#ifdef FREERTOS
+void CGMP_clockCB( uint32_t arg );
+#else
+void CGMP_clockCB( uintptr_t arg );
+#endif // FREERTOS
 
 /*********************************************************************
 *********************************************************************/

@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2011-2023, Texas Instruments Incorporated
+ Copyright (c) 2011-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -55,8 +55,8 @@
  * INCLUDES
  */
 #include "bcomdef.h"
-#include "osal.h"
 #include "osal_snv.h"
+#include "osal.h"
 #include "ll_enc.h"
 #include "ll_privacy.h"
 #include "l2cap.h"
@@ -73,6 +73,7 @@
 #include "gapbondmgr.h"
 #include "gapbondmgr_internal.h"
 #include "rom_jt.h"
+// #include "icall_ble_api.h"
 
 #ifdef SYSCFG
 #include "ti_ble_config.h"
@@ -4745,7 +4746,7 @@ uint8_t GapBondMgr_GetPrevAuth( uint16_t connHandle, uint8_t *pMitmReq, uint8_t 
                                 &idx, NULL, NULL);
     if ( status == SUCCESS )
     {
-      VOID osal_snv_read(DEV_LTK_NV_ID(idx), sizeof(gapBondLTK_t), &ltkInfo);
+      VOID osal_snv_read(LOCAL_LTK_NV_ID(idx), sizeof(gapBondLTK_t), &ltkInfo);
 
 	  // Check what it the authentication level saved in the bond information
       prevAuthReq = gapBondMgrGetStateFlags(idx);

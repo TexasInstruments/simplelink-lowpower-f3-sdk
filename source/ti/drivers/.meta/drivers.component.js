@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023, Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,8 +113,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/AESCMAC",
                 "/ti/drivers/AESCTR",
                 "/ti/drivers/AESCTRDRBG",
-                "/ti/drivers/AESGCM",
                 "/ti/drivers/AESECB",
+                "/ti/drivers/AESGCM",
                 "/ti/drivers/ANSIX936KDF",
                 "/ti/drivers/Board",
                 "/ti/drivers/CAN",
@@ -234,6 +234,7 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/GPIO",
                 "/ti/drivers/I2C",
                 "/ti/drivers/I2CTarget",
+                "/ti/drivers/LGPTimer",
                 "/ti/drivers/NVS",
                 "/ti/drivers/Power",
                 "/ti/drivers/PWM",
@@ -242,7 +243,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/SHA2",
                 "/ti/drivers/SPI",
                 "/ti/drivers/Temperature",
-                "/ti/drivers/LGPTimer",
                 "/ti/drivers/UART2",
                 "/ti/drivers/Watchdog"
             ],
@@ -268,23 +268,26 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/display/Display",
                 "/ti/drivers/ADC",
                 // "/ti/drivers/ADCBuf",
-                // "/ti/drivers/AESCBC",
-                // "/ti/drivers/AESCCM",
-                // "/ti/drivers/AESCMAC",
-                // "/ti/drivers/AESCTR",
+                "/ti/drivers/AESCBC",
+                "/ti/drivers/AESCCM",
+                "/ti/drivers/AESCMAC",
+                "/ti/drivers/AESCTR",
                 // "/ti/drivers/AESCTRDRBG",
-                // "/ti/drivers/AESECB",
+                "/ti/drivers/AESECB",
+                "/ti/drivers/AESGCM",
                 "/ti/drivers/BatteryMonitor",
                 "/ti/drivers/Board",
                 "/ti/drivers/CAN",
                 "/ti/drivers/Comparator",
                 "/ti/drivers/DMA",
                 "/ti/drivers/ECDH",
-                // "/ti/drivers/ECDSA",
+                "/ti/drivers/ECDSA",
                 "/ti/drivers/GPIO",
                 "/ti/drivers/I2C",
                 "/ti/drivers/I2CTarget",
                 "/ti/drivers/I2S",
+                "/ti/drivers/ITM",
+                "/ti/drivers/LGPTimer",
                 "/ti/drivers/NVS",
                 "/ti/drivers/Power",
                 "/ti/drivers/PWM",
@@ -293,9 +296,9 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/SHA2",
                 "/ti/drivers/SPI",
                 "/ti/drivers/Temperature",
-                "/ti/drivers/LGPTimer",
-                "/ti/drivers/UART2"
-                // "/ti/drivers/Watchdog"
+                "/ti/drivers/UART2",
+                "/ti/drivers/VCE",
+                "/ti/drivers/Watchdog"
             ],
             "categories": [
                 {
@@ -304,43 +307,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "modules" : [
                         "/ti/drivers/apps/Button"
                         // "/ti/drivers/apps/LED"
-                    ]
-                }
-            ]
-        }
-    ];
-} else if (deviceId.match(/CC32.*/)) {
-    /* CC32XX */
-    topModules = [
-        {
-            displayName: displayName,
-            description: description,
-            modules: [
-                "/ti/display/Display",
-                "/ti/drivers/ADC",
-                "/ti/drivers/Capture",
-                "/ti/drivers/Crypto",
-                "/ti/drivers/DMA",
-                "/ti/drivers/GPIO",
-                "/ti/drivers/I2C",
-                "/ti/drivers/I2S",
-                "/ti/drivers/ITM",
-                "/ti/drivers/NVS",
-                "/ti/drivers/Power",
-                "/ti/drivers/PWM",
-                "/ti/drivers/SD",
-                "/ti/drivers/SPI",
-                "/ti/drivers/Timer",
-                "/ti/drivers/UART2",
-                "/ti/drivers/Watchdog"
-            ],
-            "categories": [
-                {
-                    "displayName": "TI Driver Apps",
-                    "description": "TI Drivers Apps Configuration",
-                    "modules": [
-                        "/ti/drivers/apps/Button",
-                        "/ti/drivers/apps/LED"
                     ]
                 }
             ]
@@ -358,18 +324,18 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/Board",
                 // "/ti/drivers/Capture",
                 // "/ti/drivers/Crypto",
-                // "/ti/drivers/DMA",
+                "/ti/drivers/DMA",
                 "/ti/drivers/GPIO",
-                // "/ti/drivers/I2C",
+                "/ti/drivers/GPTimer",
+                "/ti/drivers/I2C",
                 // "/ti/drivers/I2S",
                 // "/ti/drivers/ITM",
                 // "/ti/drivers/NVS",
-                "/ti/drivers/Power"
-                // "/ti/drivers/PWM",
+                "/ti/drivers/Power",
+                "/ti/drivers/PWM",
                 // "/ti/drivers/SD",
                 // "/ti/drivers/SPI",
-                // "/ti/drivers/Timer",
-                // "/ti/drivers/UART2",
+                "/ti/drivers/UART2"
                 // "/ti/drivers/Watchdog"
             ],
             "categories": [

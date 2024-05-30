@@ -47,9 +47,9 @@ let Common = system.getScript("/ti/drivers/Common.js");
 let devSpecific = {
     templates:
     {
-        boardc : "/ti/drivers/gpio/GPIOLPF3.Board.c.xdt",
-        board_initc : "/ti/drivers/gpio/GPIO.Board_init.c.xdt",
-        boardh : "/ti/drivers/gpio/GPIO.Board.h.xdt"
+        boardc: "/ti/drivers/gpio/GPIOLPF3.Board.c.xdt",
+        board_initc: "/ti/drivers/gpio/GPIO.Board_init.c.xdt",
+        boardh: "/ti/drivers/gpio/GPIO.Board.h.xdt"
     },
 
     _getPinResources: _getPinResources,
@@ -61,8 +61,7 @@ let devSpecific = {
 /*
  *  ======== _getPinResources ========
  */
-function _getPinResources(inst)
-{
+function _getPinResources(inst) {
     let pin;
 
     if (inst.gpioPin) {
@@ -80,16 +79,14 @@ function _getPinResources(inst)
 /*
  *  ======== _getHwSpecificAttrs ========
  */
-function _getHwSpecificAttrs(inst)
-{
+function _getHwSpecificAttrs(inst) {
     return [];
 }
 
 /*
  *  ======== _pinToDio ========
  */
-function _pinToDio(pinSolution, devicePin)
-{
+function _pinToDio(pinSolution, devicePin) {
     /* The description passed here comes from the device metadata
      * and is of the format DIOnn[_desc]. Substring gets rid of DIO,
      * then we split on underscore and parse the first chunk as an int.
@@ -102,8 +99,7 @@ function _pinToDio(pinSolution, devicePin)
 /*
  *  ======== _getPinMuxMode ========
  */
-function _getPinMuxMode(peripheralPin, devicePin)
-{
+function _getPinMuxMode(peripheralPin, devicePin) {
     /* Helper function to resolve mux mode for a given peripheral signal
      * and DIO pin. Input is of type PeripheralPin, e.g
      * system.deviceData.peripherals['UART0'].peripheralPins['UART0RXD'] and
@@ -111,7 +107,7 @@ function _getPinMuxMode(peripheralPin, devicePin)
      * Returns -1 if signal can not be muxed to given pin.
      */
     for (let pin of peripheralPin.pinMappings) {
-        if (pin.designSignalName == devicePin){
+        if (pin.designSignalName == devicePin) {
             for (let muxSetting of system.deviceData.devicePins[pin.ball].mux.muxSetting) {
                 if (peripheralPin.name == muxSetting.peripheralPin.name) {
                     return muxSetting.mode;
@@ -129,8 +125,7 @@ function _getPinMuxMode(peripheralPin, devicePin)
  *
  *  $super is needed to call the generic module's functions
  */
-function pinmuxRequirements(inst, $super)
-{
+function pinmuxRequirements(inst, $super) {
     let result = $super.pinmuxRequirements ? $super.pinmuxRequirements(inst) : [];
     return (result);
 }
@@ -142,8 +137,7 @@ function pinmuxRequirements(inst, $super)
  *  This function is invoked by the generic module to
  *  allow us to augment and override as needed.
  */
-function extend(base)
-{
+function extend(base) {
     /* override base pinmuxRequirements */
     devSpecific.pinmuxRequirements = function (inst) {
         return pinmuxRequirements(inst, base);
@@ -154,7 +148,7 @@ function extend(base)
         base,
         "GPIO",
         null,
-        [{name: "GPIOLPF3"}],
+        [{ name: "GPIOLPF3" }],
         null
     );
 

@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2018-2023, Texas Instruments Incorporated
+ Copyright (c) 2018-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -77,9 +77,9 @@
 #endif
 
 #if defined(SECURITY)
-#include "sign_util.h"
+#include "ti/common/cc26xx/ecc/sign_util.h"
 #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
-#include "sha2_driverlib.h"
+#include "ti/common/cc26xx/sha2/sha2_driverlib.h"
 #elif defined(DeviceFamily_CC23X0R2)
 #include DeviceFamily_constructPath(driverlib/sha256sw.h)
 #else

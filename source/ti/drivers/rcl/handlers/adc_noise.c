@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -177,29 +177,29 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
                 RCL_CommandStatus startTimeStatus;
 
                 /* Clear messagebox */
-                HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
+                HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
                 /* Start RX */
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 3;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 3;
                 /* Wait until RX is up and running */
                 while ((HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_RFECMDIN) & 0x08) == 0);
 
                 /* Disable LNA and mixer clocks to reduce impact of any signal received on the antenna */
-                HWREG(LRFDRFE_BASE + LRFDRFE_O_LNA) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA) & (~LRFDRFE_LNA_EN_M);
-                HWREG(LRFDRFE_BASE + LRFDRFE_O_DIVCTL) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DIVCTL) & (~(LRFDRFE_DIVCTL_RXPH90DIV_M | LRFDRFE_DIVCTL_RXPH0DIV_M));
+                HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA) & (~LRFDRFE_LNA_EN_M);
+                HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_DIVCTL) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DIVCTL) & (~(LRFDRFE_DIVCTL_RXPH90DIV_M | LRFDRFE_DIVCTL_RXPH0DIV_M));
 
                 /* Initialize and enable ADC digital interface */
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_INIT) = (LRFDMDM_INIT_ADCDIG_RESET);
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = (LRFDMDM_ENABLE_ADCDIG_EN);
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_INIT) = (LRFDMDM_INIT_ADCDIG_RESET);
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = (LRFDMDM_ENABLE_ADCDIG_EN);
 
                 /* Trigger one shot capture */
-                HWREG(LRFDS2R_BASE + LRFDS2R_O_TRIG) = LRFDS2R_TRIG_TRIG_ARM;
+                HWREG_WRITE_LRF(LRFDS2R_BASE + LRFDS2R_O_TRIG) = LRFDS2R_TRIG_TRIG_ARM;
 
                 /* Wait for S2R to complete by setting new handler start time.
                  * ADC sampling frequency is ~11.5 MSamples/s, or 3 words / 260 ns.
                  * We wait for (words / 3) * 250 ns, as there is no need to sleep for too long.
                  * The handler will poll for the last few us before reading out the samples
                  */
-                startTimeStatus = RCL_Scheduler_setNewStartAbsTime(RCL_Scheduler_getCurrentTime() + adcCmd->numWords / 3);
+                startTimeStatus = RCL_Scheduler_setNewStartAbsTime(RCL_Scheduler_getCurrentTime() + adcCmd->numWords / 3, true);
 
                 if (startTimeStatus >= RCL_CommandStatus_Finished)
                 {
@@ -226,20 +226,20 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
 static void RCL_Handler_Adc_Noise_configureS2R(uint32_t numWords)
 {
     /* Enable S2R module */
-    LRF_setClockEnable(LRFDDBELL_CLKCTL_S2R_M, LRF_CLK_ENA_RCL);
+    LRF_setRclClockEnable(LRFDDBELL_CLKCTL_S2R_M);
 
     /* Configure S2R */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_ADCDIGCONF) = (1 << LRFDMDM_ADCDIGCONF_QBRANCHEN_S) | (1 << LRFDMDM_ADCDIGCONF_IBRANCHEN_S);
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_ADCDIGCONF) = (1 << LRFDMDM_ADCDIGCONF_QBRANCHEN_S) | (1 << LRFDMDM_ADCDIGCONF_IBRANCHEN_S);
 
     /* Setup Sample capture, use PBE RAM for storing samples */
-    HWREG(LRFDS2R_BASE + LRFDS2R_O_CFG) = ((LRFDS2R_CFG_TRIGMODE_ONESHOT) |
-                                          (LRFDS2R_CFG_SEL_ADCDIG) |
-                                          (LRFDS2R_CFG_CTL_EN));
+    HWREG_WRITE_LRF(LRFDS2R_BASE + LRFDS2R_O_CFG) = ((LRFDS2R_CFG_TRIGMODE_ONESHOT) |
+                                                    (LRFDS2R_CFG_SEL_ADCDIG) |
+                                                    (LRFDS2R_CFG_CTL_EN));
 
     /* Set start-address of where to store samples */
-    HWREG(LRFDS2R_BASE + LRFDS2R_O_START) = ADC_NOISE_SAMPLE_MEM_S2R_START;
+    HWREG_WRITE_LRF(LRFDS2R_BASE + LRFDS2R_O_START) = ADC_NOISE_SAMPLE_MEM_S2R_START;
     /* Set stop-address */
-    HWREG(LRFDS2R_BASE + LRFDS2R_O_STOP) = ADC_NOISE_SAMPLE_MEM_S2R_START + numWords - 1;
+    HWREG_WRITE_LRF(LRFDS2R_BASE + LRFDS2R_O_STOP) = ADC_NOISE_SAMPLE_MEM_S2R_START + numWords - 1;
 }
 
 /*
@@ -248,26 +248,26 @@ static void RCL_Handler_Adc_Noise_configureS2R(uint32_t numWords)
 static void RCL_Handler_Adc_Noise_powerUp(void)
 {
     /* Write precomputed frequency words, based on frequency: 2440000000 */
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_K5) = 0x9160;
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_CALMMID_CALMCRS) = 0x098604C4;
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_PLLM0) = 0x130E0000;
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_PLLM1) = 0x163B0000;
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RXIF) = 0;
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_K5) = 0x9160;
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_CALMMID_CALMCRS) = 0x098604C4;
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_PLLM0) = 0x130E0000;
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_PLLM1) = 0x163B0000;
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RXIF) = 0;
 
     /* Initialize and enable RFE TOPsm */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_INIT) = (1 << LRFDRFE_INIT_TOPSM_S);
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = (1 << LRFDRFE_ENABLE_TOPSM_S);
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_INIT) = (1 << LRFDRFE_INIT_TOPSM_S);
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = (1 << LRFDRFE_ENABLE_TOPSM_S);
 
     /* Wait for boot done */
     while(HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) != 4);
 
     /* Clear message box */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
     /* Calibrate PLL */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 4;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 4;
 
     /* Enable RFEDONE interrupt */
-    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |= LRFDDBELL_IMASK0_RFEDONE_M;
+    LRF_enableHwInterrupt(LRFDDBELL_IMASK0_RFEDONE_M);
 }
 
 /*
@@ -276,40 +276,40 @@ static void RCL_Handler_Adc_Noise_powerUp(void)
 static void RCL_Handler_Adc_Noise_powerDown(void)
 {
     /* Disable RFEDONE interrupt */
-    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) & (~LRFDDBELL_IMASK0_RFEDONE_M);
+    LRF_disableHwInterrupt(LRFDDBELL_IMASK0_RFEDONE_M);
 
     /* Clear message box */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
     /* Stop Radio */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 1;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 1;
 
     /* Wait until radio stops */
     while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEMSGBOX) == 0);
 
     /* Clear message box */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_MSGBOX) = 0;
     /* Stop PLL */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 5;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEAPI) = 5;
 
     /* Wait until radio stops */
     while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RFEMSGBOX) == 0);
 
     /* Disable S2R module */
-    HWREG(LRFDS2R_BASE + LRFDS2R_O_CFG) = 0;
+    HWREG_WRITE_LRF(LRFDS2R_BASE + LRFDS2R_O_CFG) = 0;
     /* Initialize/Reset (needed for safe shut down of ADCDIG) */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_INIT) = 0xFFFF;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_INIT) = 0xFFFF;
     /* Stop modem */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = 0;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = 0;
 
     /* Request RFE powerdown */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = LRFDRFE_PDREQ_TOPSMPDREQ_M;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = LRFDRFE_PDREQ_TOPSMPDREQ_M;
     /* Disable all RFE modules */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = 0;
     /* Stop powerdown request */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = 0;
 
     /* Disable S2R module */
-    LRF_clearClockEnable(LRFDDBELL_CLKCTL_S2R_M, LRF_CLK_ENA_RCL);
+    LRF_clearRclClockEnable(LRFDDBELL_CLKCTL_S2R_M);
 
     /* Disable refsys */
     LRF_disableSynthRefsys();

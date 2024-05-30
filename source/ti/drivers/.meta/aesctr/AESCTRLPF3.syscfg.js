@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,10 +40,31 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
+let family = Common.device2Family(system.deviceData, "Board");
+
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
 intPriority.displayName = "Interrupt Priority";
 intPriority.description = "Crypto peripheral interrupt priority";
+
+/*
+ *  ======== getLibs ========
+ *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
+ */
+function getLibs(mod)
+{
+    /* Get device information from GenLibs */
+    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
+
+    let libGroup = {
+        name: "/third_party/hsmddk",
+        deps: [],
+        libs: [GenLibs.libPath("third_party/hsmddk", "hsmddk.a")],
+        allowDuplicates: true
+    };
+
+    return (libGroup);
+}
 
 /*
  *  ======== devSpecific ========
@@ -69,6 +90,10 @@ function extend(base)
     /* display which driver implementation can be used */
     base = Common.addImplementationConfig(base, "AESCTR", null,
         [{name: "AESCTRLPF3"}], null);
+
+    if (family == "CC27XX") {
+        devSpecific["templates"]["/ti/utils/build/GenLibs.cmd.xdt"] = {modName: "/ti/drivers/AESCTR", getLibs: getLibs};
+    }
 
     /* merge and overwrite base module attributes */
     return (Object.assign({}, base, devSpecific));

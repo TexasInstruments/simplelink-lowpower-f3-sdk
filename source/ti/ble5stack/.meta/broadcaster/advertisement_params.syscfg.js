@@ -53,7 +53,6 @@ const config = [
         displayName: "Advertisement Type",
         default: "legacy",
         longDescription: Docs.advTypeLongDescription,
-        getDisabledOptions: generateDisabledOptions("advType"),
         onChange: onAdvTypeChange,
         options: [
             { displayName: "Legacy",    name: "legacy"   },
@@ -342,7 +341,10 @@ function generateDisabledOptions(name)
         {
             const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
 
-            if(devFamily == "DeviceFamily_CC23X0R5" || devFamily == "DeviceFamily_CC23X0R2")
+            if ( (devFamily == "DeviceFamily_CC23X0R5")  ||
+                 (devFamily == "DeviceFamily_CC23X0R2")  ||
+                 (devFamily == "DeviceFamily_CC23X0R22") ||
+                 (devFamily == "DeviceFamily_CC27XX") )
             {
                 // Find the configurable we're going to generate a disabled list from
                 const configurable = _.find(inst.$module.config,(conf) => conf.name == name);
@@ -351,7 +353,7 @@ function generateDisabledOptions(name)
                 const disabledOptions = configurable.options.slice(configurable.options.includes("legacy") == false);
 
                 // Add the "reason" why it's disabled, and return that information
-                return disabledOptions.map((option) => ({ name: option.name, reason: "Currently not supported for CC23X0R5 or CC23X0R2" }));
+                return disabledOptions.map((option) => ({ name: option.name, reason: "Currently not supported for CC23X0R5, CC23X0R2, or CC27XX" }));
             }
             else
             {
@@ -377,6 +379,8 @@ function generateDisabledOptions(name)
         if(name == "eventProps")
         {
             let disabledOptions = configurable.options;
+            const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
+
             if (inst.advType == "extended")
             {
                 // List of invalid options
@@ -385,33 +389,35 @@ function generateDisabledOptions(name)
                 // Add the "reason" why it's disabled, and return that information
                 disabledOptions = disabledOptions.map((option) => ({ name: option.name, reason: "This is not a valid option for Extended Advertisement Type" }));
 
-                // Disable the option to choose both CONNECTABLE and SCANNABLE advertise properties
-                if(inst.eventProps.includes("GAP_ADV_PROP_CONNECTABLE"))
+                if ( (devFamily != "DeviceFamily_CC23X0R5") && (devFamily != "DeviceFamily_CC23X0R2") )
                 {
-                    disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_SCANNABLE", reason: "Connectable and Scannable can not be used in the same time"});
-                    disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_ANONYMOUS", reason: "Anonymous advertising is not supported when Connectable advertising is selected"});
-                }
-                if(inst.eventProps.includes("GAP_ADV_PROP_SCANNABLE"))
-                {
-                    disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable and Scannable can not be used in the same time"});
-                    disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_ANONYMOUS", reason: "Anonymous advertising is not supported when Scannable advertising is selected"});
-                }
-                if(inst.eventProps.includes("GAP_ADV_PROP_ANONYMOUS"))
-                {
-                    disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable advertising is not supported when Anonymous advertising is selected"});
-                    disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_SCANNABLE", reason: "Scannable advertising is not supported when Anonymous advertising is selected"});
+                    // Disable the option to choose both CONNECTABLE and SCANNABLE advertise properties
+                    if(inst.eventProps.includes("GAP_ADV_PROP_CONNECTABLE"))
+                    {
+                        disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_SCANNABLE", reason: "Connectable and Scannable can not be used in the same time"});
+                        disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_ANONYMOUS", reason: "Anonymous advertising is not supported when Connectable advertising is selected"});
+                    }
+                    if(inst.eventProps.includes("GAP_ADV_PROP_SCANNABLE"))
+                    {
+                        disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable and Scannable can not be used in the same time"});
+                        disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_ANONYMOUS", reason: "Anonymous advertising is not supported when Scannable advertising is selected"});
+                    }
+                    if(inst.eventProps.includes("GAP_ADV_PROP_ANONYMOUS"))
+                    {
+                        disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable advertising is not supported when Anonymous advertising is selected"});
+                        disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_SCANNABLE", reason: "Scannable advertising is not supported when Anonymous advertising is selected"});
+                    }
                 }
             }
-            else
+			if( inst.$ownedBy.$ownedBy.deviceRole.includes("BROADCASTER_CFG") && inst.eventProps.includes("GAP_ADV_PROP_CONNECTABLE"))
+            {
+               disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable can not be used in the Broadcaster role"});
+            }
+            if (inst.advType == "legacy")
             {
                 // Add the "reason" why it's disabled, and return that information
                 disabledOptions = disabledOptions.map((option) => ({ name: option.name,
                     reason: "The Event Properties selection for Legacy advertisement is done by choosing an option from Legacy Event Properties Options" }));
-            }
-
-            if( inst.$ownedBy.$ownedBy.deviceRole.includes("BROADCASTER_CFG"))
-            {
-               disabledOptions = disabledOptions.concat({name: "GAP_ADV_PROP_CONNECTABLE", reason: "Connectable can not be used in the Broadcaster role"});
             }
             return disabledOptions;
         }
@@ -445,7 +451,14 @@ function generateDisabledOptions(name)
  {
     if(inst.advType == "legacy")
     {
-        inst.eventProps = ["GAP_ADV_PROP_CONNECTABLE", "GAP_ADV_PROP_SCANNABLE", "GAP_ADV_PROP_LEGACY"];
+		if(inst.deviceRole.includes("BROADCASTER_CFG"))
+		{
+			inst.eventProps = [];
+		}
+		else
+		{
+			inst.eventProps = ["GAP_ADV_PROP_CONNECTABLE", "GAP_ADV_PROP_SCANNABLE", "GAP_ADV_PROP_LEGACY"];
+		}
         inst.primPhy = "GAP_ADV_PRIM_PHY_1_MBPS";
         inst.secPhy = "GAP_ADV_SEC_PHY_1_MBPS";
         ui.legacyEvnPropOptions.hidden = false;
@@ -453,10 +466,12 @@ function generateDisabledOptions(name)
     }
     else if(inst.advType == "extended")
     {
-        inst.eventProps = ["GAP_ADV_PROP_CONNECTABLE"];
-        inst.primPhy = "GAP_ADV_PRIM_PHY_CODED_S2";
-        inst.secPhy = "GAP_ADV_SEC_PHY_CODED_S2";
-        ui.legacyEvnPropOptions.hidden = true;
+        const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
+
+            inst.eventProps = ["GAP_ADV_PROP_CONNECTABLE"];
+            inst.primPhy = "GAP_ADV_PRIM_PHY_CODED_S2";
+            inst.secPhy = "GAP_ADV_SEC_PHY_CODED_S2";
+            ui.legacyEvnPropOptions.hidden = true;
     }
  }
 

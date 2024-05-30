@@ -48,13 +48,63 @@ const PatchInfo = Common.isPlatformRFD()
 // Global path to Radio configuration root
 const ConfigPath = Common.ConfigPath;
 const ConfigPathRclCommon = Common.ConfigPathRclCommon;
-
-// Mapping SysCfg device name notation to SmartRF Studio format
-const DevNameMap = system.getScript("/ti/devices/radioconfig/data/device_name_map.json");
-
-// SmartRF Studio compatible device name
-const DeviceName = DevNameMap[Common.Device] || "none";
+const DeviceName = Common.DeviceName;
 const DeviceSupported = DeviceName !== "none";
+
+// Register definitions
+const FileData = system.getScript(ConfigPathRclCommon + "rcl_registers.json");
+let ModDef;
+let RclRegisters;
+let RclRegLookupAddr;
+
+/**
+ *  Get singleton module defintion for current device read from rcl_registers.json
+ *
+ * @returns Device module defintion
+ */
+function getModuleDefinition() {
+    if (typeof ModDef === "undefined") {
+        ModDef = FileData[Common.getDeviceFamily()].module;
+    }
+    return ModDef;
+}
+
+/**
+ * Get singleton rcl registers for current device read from rcl_registers.json
+ *
+ * @returns RCL registers
+ */
+function getRclRegisters() {
+    if (typeof RclRegisters === "undefined") {
+        RclRegisters = FileData[Common.getDeviceFamily()].registers;
+    }
+    return RclRegisters;
+}
+
+/**
+ * Get sorted RCL register list
+ *
+ * @returns RCL register list sorted by address
+ */
+function getRclRegLookupAddr() {
+    if (typeof RclRegLookupAddr === "undefined") {
+        RclRegLookupAddr = Object.entries(getRclRegisters()).sort(fnComp);
+    }
+    return RclRegLookupAddr;
+}
+
+/**
+ * ======== fnComp ========
+ * @param a - first register
+ * @param b - second register
+ * @returns 1 if a has a larger address, else -1
+ */
+function fnComp(a, b) {
+    if (Number(a[1].addr) > Number(b[1].addr)) {
+        return 1;
+    }
+    return -1;
+}
 
 // True if High PA device
 const HighPaDevice = DeviceName.includes("cc1352p")
@@ -97,25 +147,6 @@ if (DeviceSupported) {
     DevInfo.ceConfig = system.getScript(fileName);
 }
 
-/**
- *  ======== loadConfiguration ========
- *  Load configuration data of a PHY group
- *
- * @param phy - ble, prop, ieee_154
- * @returns the device configuration options for a given device
- */
-function loadConfiguration(phy) {
-    let phyGroup = phy;
-
-    // TBD: fix naming inconsistency
-    if (phyGroup.includes("ieee")) {
-        phyGroup = "ieee";
-    }
-    const fileName = ConfigPath + `param_syscfg_${phyGroup}_${DeviceName}.json`;
-    const devCfg = system.getScript(fileName);
-
-    return devCfg;
-}
 
 /**
  * ======== createSettingMap ========
@@ -183,32 +214,8 @@ function addPhyGroup(phyGroup) {
         paramPath: ConfigPath
     };
     DevInfo.phyGroup[phyGroup] = phyInfo;
-    phyInfo.config = loadConfiguration(phyGroup);
+    phyInfo.config = Common.loadConfiguration(phyGroup);
     phyInfo.settings = createSettingMap(phyGroup);
-}
-
-/**
- * ======== getDeviceFamily ========
- * Return the device family of the current device.
- *
- * @returns Device family of current device
- */
-function getDeviceFamily() {
-    let devFamily = null;
-
-    if (Common.isDeviceClass3()) {
-        devFamily = "cc13x1_cc26x1";
-    }
-    else if (Common.isDeviceClass7()) {
-        devFamily = "cc13x2x7_cc26x2x7";
-    }
-    else if (Common.isDeviceClass10()) {
-        devFamily = "cc13x4_cc26x4";
-    }
-    else if (Common.isDeviceStandard()) {
-        devFamily = "cc13x2_cc26x2";
-    }
-    return devFamily;
 }
 
 /**
@@ -236,7 +243,7 @@ function getPatchInfo() {
         return [];
     }
 
-    const devFamily = getDeviceFamily();
+    const devFamily = Common.getDeviceFamily();
 
     if (devFamily) {
         return PatchInfo[devFamily];
@@ -255,7 +262,7 @@ function setPatchInfo(patches) {
         // Not applicable for RCL
         return;
     }
-    const devFamily = getDeviceFamily();
+    const devFamily = Common.getDeviceFamily();
 
     if (devFamily) {
         PatchInfo[devFamily] = patches;
@@ -306,9 +313,11 @@ exports = {
     getDeviceName: getDeviceName,
     hasHighPaSupport: () => DevInfo.highPaSupport,
     hasWbmsSupport: () => WbmsSupport,
-    getDeviceFamily: getDeviceFamily,
     setPatchInfo: setPatchInfo,
     getPatchInfo: getPatchInfo,
     loadCommands: loadCommands,
-    getFrontendSettings: getFrontendSettings
+    getFrontendSettings: getFrontendSettings,
+    getModuleDefinition: getModuleDefinition,
+    getRclRegisters: getRclRegisters,
+    getRclRegLookupAddr: getRclRegLookupAddr
 };

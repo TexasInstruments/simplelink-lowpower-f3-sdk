@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,58 @@
  *
  *  @note Some implementations restrict when RNG_init() may be called.
  *        Check the implementation's documentation for more information.
+ *
+ *  For CC23X0, RNG must be initialized by application in a task context with interrupts enabled
+ *  using the following steps prior to the use of the Radio because CC23X0 uses the ADC samples
+ *  from radio as noise that is conditioned using CBC MAC to generate the seed for RNG driver
+ *
+ *  ### Step 1: Required header file ###
+ *
+ *  @code
+ *
+ *   #include <ti/drivers/rng/RNGLPF3RF.h> // required for external syscfg variable RNGLPF3RF_noiseInputWordLen
+ *
+ *  @endcode
+ *
+ *  ### Step 2: External APIs ###
+ *
+ *  @code
+ *
+ *  // Use the function provided by RCL to read noise input //
+ *  extern int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t *buffer, uint32_t numWords);
+ *
+ *  @endcode
+ *
+ *  ### Step 3: Read noise input from RCL using RCL_AdcNoise_get_samples_blocking() ###
+ *
+ *  @code
+ *
+ *  int_fast16_t rclStatus, result;
+
+ *  // User's global array for noise input based on size provided in syscfg //
+ *  uint32_t localNoiseInput[]; //Minimum array size 80 words
+ *
+ *   // Clear noise input //
+ *  memset(localNoiseInput, 0, sizeof(localNoiseInput));
+ *
+ *  // Fill noise input from RCL //
+ *  //RNGLPF3RF_noiseInputWordLen is external variable from RNGLPF3RF.h
+ *   rclStatus = RCL_AdcNoise_get_samples_blocking(localNoiseInput, RNGLPF3RF_noiseInputWordLen);
+ *
+ *  if (rclStatus != 0)
+ *  {
+ *      //Handle error;
+ *  }
+ *
+ *  // Initialize the RNG driver noise input pointer with global noise input array from user //
+ *  result = RNGLPF3RF_conditionNoiseToGenerateSeed(localNoiseInput);
+ *  if ( rclStatus != 0)
+ *  {
+ *      //Handle error;
+ *  }
+ *
+ *  @endcode
+ *
  *
  *  ## Before starting a RNG operation ##
  *
@@ -504,7 +556,9 @@ extern const size_t RNG_poolByteSize;
  *          any other RNG driver APIs. This function call does not modify any
  *          peripheral registers.
  *          For CC23X0, RNG must be initialized by application in a task context with interrupts enabled
- *          using the following steps prior to the use of the Radio.
+ *          using the following steps prior to the use of the Radio because CC23X0 uses the ADC samples
+ *          from radio as noise that is conditioned using CBC MAC
+ *          to generate the seed for RNG driver
  *          1. Read radio noise using RCL_AdcNoise_get_samples_blocking(). This RCL function must
  *             be called from a task context with interrupts enabled and therefore cannot be called
  *             by startup code. This must be executed prior to the use of the radio.

@@ -46,6 +46,9 @@ const Common = system.getScript("/ti/ble5stack/ble_common.js");
 // OAD hidden value
 const oadHiddenVal = Common.hiddenValue();
 
+// Loki hidden value
+const lokiHiddenVal = Common.hiddenValue();
+
 // TBM values
 const defaultTBMVal = Common.defaultValue();
 const hiddenTBMVal = Common.hiddenValue();
@@ -132,9 +135,24 @@ const config = {
             onChange: onPtmChange
         },
         {
+            name: "sdaa",
+            displayName: "Selective Detect And Avoid (SDAA)",
+            longDescription: Docs.sdaaLongDescription,
+            hidden: true,
+            default: false,
+            onChange: onSdaaChange
+        },
+        {
             name: "useRcosc",
             displayName: "Use RCOSC",
             default: false,
+            hidden: true
+        },
+        {
+            name: "peripheralExtraLFOSCPPM",
+            displayName: "Peripheral Extra LFOSC PPM",
+            longDescription: Docs.peripheralExtraLFOSCPPM,
+            default: "1500",
             hidden: true,
         },
         {
@@ -158,6 +176,62 @@ const config = {
                         { name: "1" }
                     ]
                 }
+            ]
+        },
+        {
+            displayName: "SDAA advance settings",
+            config: [
+                {
+                    name: "fixedObservTime",
+                    displayName: "Fixed Observation Time",
+                    longDescription: Docs.fixedObservTimeLongDescription,
+                    default: true,
+                    hidden: true,
+                    onChange: onDynamicObservTimeChange
+                },
+                {
+                    name: "observationTime",
+                    displayName: "Observation Time Value ( ms )",
+                    longDescription: Docs.observationTimeLongDescription,
+                    default: "1",
+                    hidden: true,
+                },
+                {
+                    name: "txUsageThresh",
+                    displayName: "Tx Usage Threshold (%)",
+                    longDescription: Docs.txUsageThreshLongDescription,
+                    default: "10",
+                    hidden: true,
+                },
+                {
+                    name: "rxWindowDuration",
+                    displayName: "Rx Window Duration",
+                    longDescription: Docs.rxWindowDurationLongDescription,
+                    default: "10",
+                    hidden: true,
+                },
+                {
+                    name: "rssiThreshold",
+                    displayName: "RSSI Threshold",
+                    longDescription: Docs.rssiThresholdLongDescription,
+                    default: "-70",
+                    hidden: true,
+                },
+                {
+                    name: "numberOfNoisySamples",
+                    displayName: "Number Of Noisy Samples",
+                    longDescription: Docs.numberOfNoisySamplesLongDescription,
+                    default: "1",
+                    hidden: true,
+                },
+                {
+                    name: "blockingChannelTime",
+                    displayName: "Blocking Channel Time (sec)",
+                    longDescription: Docs.blockingChannelTimeLongDescription,
+                    default: "1",
+                    hidden: true,
+                },
+
             ]
         },
         {
@@ -272,6 +346,45 @@ function onPtmChange(inst, ui)
     }
 }
 
+function onSdaaChange(inst, ui)
+{
+    ui.rxWindowDuration.hidden = !inst.sdaa;
+    ui.txUsageThresh.hidden = !inst.sdaa;
+    ui.rssiThreshold.hidden = !inst.sdaa;
+    ui.numberOfNoisySamples.hidden = !inst.sdaa;
+    ui.blockingChannelTime.hidden = !inst.sdaa;
+    ui.fixedObservTime.hidden = !inst.sdaa;
+}
+
+function onDynamicObservTimeChange(inst, ui)
+{
+    ui.observationTime.hidden = !inst.fixedObservTime;
+}
+
+/*
+ *  ======== modules ========
+ *  Determines what modules are added as static submodules
+ *
+ *  @param inst  - Module instance containing the config that changed
+ *  @returns     - Array containing a static dependency modules
+ */
+function modules(inst)
+{
+    let dependencyModule = [];
+
+    if(inst.ptm && system.getRTOS() === "tirtos7")
+    {
+        dependencyModule.push({
+            name: "gateMutex",
+            displayName: "GateMutex",
+            moduleName: "/ti/sysbios/gates/GateMutex",
+            hidden: true
+        });
+    }
+
+    return(dependencyModule);
+}
+
 /*
  * ======== validate ========
  * Validate this inst's configuration
@@ -295,10 +408,41 @@ function validate(inst, validation)
     {
         validation.logError("The value must be >= 4", inst, "maxNumIcallEnabledTasks");
     }
+
+    if(inst.rxWindowDuration < 10 || inst.rxWindowDuration > 100)
+    {
+        validation.logError("The value must be >=10 or <=100", inst, "rxWindowDuration");
+    }
+
+    if(inst.txUsageThresh < 0 || inst.txUsageThresh > 100)
+    {
+        validation.logError("The value must be >=0 or <=100", inst, "txUsageThresh");
+    }
+    if(inst.rssiThreshold < -90 || inst.rssiThreshold > -40)
+    {
+        validation.logError("The value must be >=-90 or <=-40", inst, "rssiThreshold");
+    }
+    if(inst.numberOfNoisySamples < 1 || inst.numberOfNoisySamples > 5)
+    {
+        validation.logError("The value must be >=1 or <=5", inst, "numberOfNoisySamples");
+    }
+    if(inst.blockingChannelTime < 0 || inst.blockingChannelTime > 255)
+    {
+        validation.logError("The value must be >=0 or <=255", inst, "blockingChannelTime");
+    }
+    if(inst.observationTime < 1 || inst.observationTime > 3000)
+    {
+        validation.logError("The value must be >=10 or <=100", inst, "observationTime");
+    }
+    if(system.modules["/ti/devices/CCFG"].$static.srcClkLF == "LF RCOSC" && Common.isLPF3Device() && ( inst.peripheralExtraLFOSCPPM < 0 || inst.peripheralExtraLFOSCPPM > 65535) )
+    {
+        validation.logError("The value must be greater than 0 or smaller than 65535 ", inst, "peripheralExtraLFOSCPPM");
+    }
 }
 
 // Exports to the top level BLE module
 exports = {
     config: config,
+    modules: modules,
     validate: validate
 };

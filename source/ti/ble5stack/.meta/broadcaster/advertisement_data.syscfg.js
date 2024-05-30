@@ -1145,6 +1145,7 @@ function validate(inst, validation)
 
     // Validate data length
     let maxLength;
+    let totalAdvLength = Common.advDataTotalLength(inst, config);
     if (inst.$ownedBy["advParam"+inst.$ownedBy.numOfAdvSet].advType == "legacy")
     {
         maxLength = Common.maxLegacyDataLen;
@@ -1154,9 +1155,8 @@ function validate(inst, validation)
         let connectable = inst.$ownedBy["advParam"+inst.$ownedBy.numOfAdvSet].eventProps.includes("GAP_ADV_PROP_CONNECTABLE");
         let scannable = inst.$ownedBy["advParam"+inst.$ownedBy.numOfAdvSet].eventProps.includes("GAP_ADV_PROP_SCANNABLE");
         // connectable & AdvData or scannable & ScanRspData
-        if ((connectable && !inst.hideAdvFlags) || (scannable  && inst.hideAdvFlags))
+        if ((connectable && !inst.hideAdvFlags))
         {
-
             maxLength = Common.maxExtConnDataLen - Common.minExtHdrLen - Common.advAHdrLen;
             // Adds Target Address Header
             if (inst.$ownedBy["advParam"+inst.$ownedBy.numOfAdvSet].eventProps.includes("GAP_ADV_PROP_DIRECTED"))
@@ -1169,17 +1169,18 @@ function validate(inst, validation)
                 maxLength -= Common.txPowerHdrLen;
             }
         }
-        // Scan Rsp Data & Connectable or Adv Data & Scannable
-        else if ((connectable && inst.hideAdvFlags) || (scannable  && !inst.hideAdvFlags))
-        {
-            maxLength = 0;
-        }
+		// not allowed to send AdvData when scannable nor to send ScnRspData when NC/NS or connectable
+		else if ((connectable && inst.hideAdvFlags) || (scannable && !inst.hideAdvFlags) || (!connectable && !scannable && inst.hideAdvFlags))
+		{
+		    maxLength = 0;
+	    }
+        // NC/NS  or Scannable
         else
         {
             maxLength = Common.maxExtDataLen;
         }
     }
-    if(Common.advDataTotalLength(inst, config) > maxLength)
+	if(totalAdvLength > maxLength)
     {
         // Adv Data or Scan RSP data is not allowed
         if (maxLength <= 0)
@@ -1190,7 +1191,14 @@ function validate(inst, validation)
         // else, data length exceeded max length
         else
         {
-            validation.logError("The current data length exceeds the allowed max length (" + maxLength + ")" ,inst);
+            let errorMsg = "";
+            inst.$ownedBy["advParam"+inst.$ownedBy.numOfAdvSet].advType == "legacy" ?
+            errorMsg = "Legacy":
+            errorMsg = "Extended";
+
+            validation.logError("The max allowed data length for " + errorMsg +
+                                " adv type is " + maxLength +
+                                " ,the current length is " + totalAdvLength ,inst);
         }
     }
     // validate additional data
@@ -1202,6 +1210,23 @@ function validate(inst, validation)
         {
             validation.logError("Complete Local Name should be equal to the Device Name "+
                                 "configured in \"General Configuration\"",inst,"completeLocalName");
+        }
+    }
+
+    // validate Advertising Flags
+    if(inst.GAP_ADTYPE_FLAGS)
+    {
+        if(inst.advertisingFlags.includes("GAP_ADTYPE_FLAGS_GENERAL") &&
+           inst.advertisingFlags.includes("GAP_ADTYPE_FLAGS_LIMITED"))
+        {
+            validation.logError("Advertising flags should not contain \"Limited\" and \"General\" Discoverable mode flags together",
+                                inst, "advertisingFlags");
+        }
+        else if(inst.advertisingFlags.includes("GAP_ADTYPE_FLAGS_LIMITED"))
+        {
+            validation.logInfo("When enabling an advertising set while using LE Limited Discoverable Mode flag, please make sure to set\
+                                enableOptions to GAP_ADV_ENABLE_OPTIONS_USE_DURATION or GAP_ADV_ENABLE_OPTIONS_USE_MAX_EVENTS.",
+                                inst, "advertisingFlags");
         }
     }
 }

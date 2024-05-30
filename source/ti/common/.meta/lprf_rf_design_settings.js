@@ -137,6 +137,9 @@ const boardSpecificRfDesignSettings = {
     LP_EM_CC2340R2_RF_DESIGN_SETTINGS: {
         rfDesign: "LP_EM_CC2340R2"
     },
+    LP_EM_CC2745R10_Q1_RF_DESIGN_SETTINGS: {
+        rfDesign: "LP_EM_CC2745R10_Q1"
+    }
 };
 
 // Get the LaunchPad specific CCFG Settings

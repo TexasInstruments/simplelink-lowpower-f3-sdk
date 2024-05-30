@@ -2,9 +2,9 @@
     {
         "files": [
             "+../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
-            "+cc23x0r5_nortos.icf -> cc23x0r5_nortos.icf",
             "+../empty.c -> empty.c",
             "+../empty.syscfg -> empty.syscfg",
+            "+lpf3_nortos.icf -> lpf3_nortos.icf",
             "+../main_nortos.c -> main_nortos.c",
             "+../README.html -> README.html",
             "+../README.md -> README.md"

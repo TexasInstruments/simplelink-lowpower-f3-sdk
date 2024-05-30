@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,9 @@
 
 #include <ti/log/Log.h>
 
+
+/* Globals */
+static bool isInitialized = 0;
 RCL rclState;
 
 static void rclCommandHwi(void);
@@ -113,7 +116,7 @@ static void rclCommandHwi(void)
     rclSchedulerState.postedRclEvents = RCL_EventNone;
 
     /* 1b. Hardware LRF events */
-    LRF_Events lrfEvents = {.value = hal_get_ifg_reg()};
+    LRF_Events lrfEvents = {.value = hal_get_command_ifg_reg()};
 
     /* 1c. Timer events mapped to RCL events */
     HalTimerEvent timerEvt = hal_check_clear_timer_compare();
@@ -237,8 +240,7 @@ static void rclCommandHwi(void)
             rclState.lrfState = RadioState_Configured;
         }
         /* Invoke command handler again to resume the ongoing operation */
-        rclEventsIn.handlerCmdUpdate = 1;
-        rclEventsOut = cmd->runtime.handler(cmd, lrfEvents, rclEventsIn);
+        RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventHandlerCmdUpdate);
     }
 
     /*** 6. If stop did not happen, queued event might be delayed */
@@ -259,17 +261,16 @@ static void rclCommandHwi(void)
     rclEventMask.stopRejected = 1;
 
     /*** 7. Filter events, pass stop-rejected to setup, to alert nextCmd */
-    client->deferredLrfEvents.value |= cmd->runtime.lrfCallbackMask.value & lrfEvents.value;
     client->deferredRclEvents.value |= rclEventMask.value & rclEventsOut.value;
 
     /*** 8. If finished or have events, invoke setup */
-    if (cmd->status >= RCL_CommandStatus_Finished || client->deferredLrfEvents.value || client->deferredRclEvents.value)
+    if (cmd->status >= RCL_CommandStatus_Finished || client->deferredRclEvents.value)
     {
         if (cmd->status >= RCL_CommandStatus_Finished)
         {
             hal_cancel_graceful_stop_time();
             hal_cancel_hard_stop_time();
-            hal_disable_radio_interrupts();
+            hal_disable_all_command_radio_interrupts();
 
             /* It's now safe to go into standby */
             if (rclState.powerState != RCL_standbyAllow)
@@ -295,6 +296,9 @@ static void rclDispatchHwi(void)
     RCL_Client *currClient = currCmd->runtime.client;
     RCL_Debug_assert(currClient != NULL);
 
+    /* Get hardware LRF events that should produce callback */
+    LRF_Events lrfEvents = { .value = hal_get_dispatch_ifg_reg() };
+
     /* If command completed, take out of circulation for possible reuse and
         * trigger scheduler in any case to tear down / start next.
         */
@@ -315,18 +319,18 @@ static void rclDispatchHwi(void)
         /* See if more waiting, schedule-fsm runs after this hwi */
         hal_trigger_scheduler_fsm();
         /* Now rclSchedulerState.currCmd is free in case client needs to queue something new before scheduler */
+        /* Disable the radio HW interrupts for dispatch */
+        hal_disable_all_dispatch_radio_interrupts();
     }
 
     /* Atomically retrieve what is supposed to get done since higher priority
      * interrupt sets these
      */
     uintptr_t key = HwiP_disable();
-    LRF_Events lrfEvents = currClient->deferredLrfEvents;
     RCL_Events rclEvents = { .value = currClient->deferredRclEvents.value & currCmd->runtime.rclCallbackMask.value };
     RCL_Events stopEvents = { .value = currClient->deferredRclEvents.value &  ((RCL_Events){.stopDelayed = 1, .stopRejected = 1}).value };
     RCL_Callback callback = currCmd->runtime.callback;
 
-    currClient->deferredLrfEvents = LRF_EventNone;
     currClient->deferredRclEvents = RCL_EventNone;
     HwiP_restore(key);
 
@@ -494,6 +498,8 @@ static void rclSchedulerHwi(void)
     rclState.nextCmd = NULL;
     memset((void *)&rclSchedulerState, 0, sizeof(rclSchedulerState));
     rclSchedulerState.currCmd = nextCmd;
+    /* Set up callback interrupts */
+    hal_init_dispatch_radio_interrupts(nextCmd->runtime.lrfCallbackMask.value);
 
     /* Next command may need different PHY applied; prepare this */
     phyHook(&rclState, nextCmd->runtime.client, rclSchedulerState.currCmd);
@@ -534,25 +540,40 @@ static void rclPowerNotify(RCL_PowerEvent eventType)
     if (eventType == RCL_POWER_STANDBY_AWAKE)
     {
         /*
-        * Executed everytime the device exits the standby sleep state.
+        * Executed every time the device exits the standby sleep state.
         */
         /* Reinitialize the tracer */
-        RCL_Tracer_enable();
+        RCL_Tracer_wakeup();
 
-        /* Mark radio as not configured */
-        if (rclState.lrfState > RadioState_ImagesLoaded)
+        /* The rest is only done if at least one client is open */
+        if (rclState.numClients > 0)
         {
-            rclState.lrfState = RadioState_ImagesLoaded;
+            RCL_GPIO_enable();
+
+            /* Mark radio as not configured */
+            if (rclState.lrfState > RadioState_ImagesLoaded)
+            {
+                rclState.lrfState = RadioState_ImagesLoaded;
+            }
+            RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStart);
+            /* Check if there is an active command at the time of wakeup */
+            /* If so, enable start timer interrupt */
+            if (rclSchedulerState.currCmd != NULL)
+            {
+                /* Restore the DBELL interrupt masks */
+                hal_enable_setup_time_irq();
+                /* Set up callback interrupts */
+                hal_init_dispatch_radio_interrupts(rclSchedulerState.currCmd->runtime.lrfCallbackMask.value);
+            }
         }
-        RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStart);
-        /* TODO: RCL-287. Enable all clocks here. */
-        LRF_rclEnableRadioClocks();
-        /* Check if there is an active command at the time of wakeup */
-        /* If so, enable start timer interrupt */
-        if (rclSchedulerState.currCmd != NULL)
+    }
+    else if (eventType == RCL_POWER_STANDBY_ENTER)
+    {
+        RCL_Tracer_standby();
+        /* The rest is only done if at least one client is open */
+        if (rclState.numClients > 0)
         {
-            /* Restore the DBELL interrupt mask */
-            hal_enable_setup_time_irq();
+            RCL_GPIO_disable();
         }
     }
     else
@@ -566,17 +587,50 @@ static void rclPowerNotify(RCL_PowerEvent eventType)
  */
 void RCL_init(void)
 {
-    /* Initialize state  */
-    rclState = (RCL){
-        .numClients = 0,
-        .lrfState = RadioState_Down,
-        .lrfConfig = NULL,
-    };
+    if (!isInitialized)
+    {
+        /* Initialize state  */
+        rclState = (RCL){
+            .numClients = 0,
+            .powerNotifyEnableCount = 0,
+            .lrfState = RadioState_Down,
+            .lrfConfig = NULL,
+        };
+        hal_init_fsm(rclDispatchHwi, rclSchedulerHwi, rclCommandHwi);
+        /* Ensure temperature compensation of TX output power and RF Trims */
+        hal_temperature_init();
+        isInitialized = true;
+        /* Initialize the RF Tracer */
+        RCL_Tracer_enable();
+    }
+}
 
-    hal_init_fsm(rclDispatchHwi, rclSchedulerHwi, rclCommandHwi);
+/*
+ *  ======== RCL_openPowerNotifications ========
+ */
+void RCL_openPowerNotifications(void)
+{
+    if (rclState.powerNotifyEnableCount == 0)
+    {
+        hal_power_open(&rclPowerNotify);
+    }
+    rclState.powerNotifyEnableCount++;
+    /* Check for overflow */
+    RCL_Debug_assert(rclState.powerNotifyEnableCount > 0);
+}
 
-    /* Ensure temperature compensation of TX output power and RF Trims */
-    hal_temperature_init();
+/*
+ *  ======== RCL_closePowerNotifications ========
+ */
+void RCL_closePowerNotifications(void)
+{
+    /* Check for underflow */
+    RCL_Debug_assert(rclState.powerNotifyEnableCount > 0);
+    rclState.powerNotifyEnableCount--;
+    if (rclState.powerNotifyEnableCount == 0)
+    {
+        hal_power_close();
+    }
 }
 
 /*
@@ -594,13 +648,13 @@ RCL_Handle RCL_open(RCL_Client *c, const LRF_Config *lrfConfig)
     if (rclState.numClients == 0)
     {
         /* Do the operations below if no client was open prior to this one */
-        hal_power_open(&rclPowerNotify);
-
-        /* Initialize the tracer */
-        RCL_Tracer_enable();
+        RCL_openPowerNotifications();
 
         /* Temporary solution: Enable all needed clocks here */
         LRF_rclEnableRadioClocks();
+
+        /* Initialize the RCL GPIOs */
+        RCL_GPIO_enable();
 
         /* Temporary solution: Enable the high performance clock buffer.
          * This could be done together with synth REFSYS at the start and end of the command */
@@ -628,11 +682,13 @@ void RCL_close(RCL_Handle h)
 
     if (rclState.numClients == 0)
     {
+        /* Disable RCL GPIO pins*/
+        RCL_GPIO_disable();
+
         /* Temporary solution: Disable clocks here */
         LRF_rclDisableRadioClocks();
-        /* Disable RF tracer */
-        RCL_Tracer_disable();
-        hal_power_close();
+
+        RCL_closePowerNotifications();
     }
 
     return;
@@ -746,7 +802,40 @@ static RCL_CommandStatus rclStop(RCL_Command_Handle c, RCL_StopType stopType, RC
     if (cmd->status == RCL_CommandStatus_Queued)
     {
         rclState.nextCmd = NULL;
-        cmd->status = RCL_Scheduler_findStopStatus(RCL_StopType_DescheduleOnly);;
+        cmd->status = RCL_Scheduler_findStopStatus(RCL_StopType_DescheduleOnly);
+        /* Cancel scheduler stop of current command */
+        RCL_StopType stopType;
+        /* In the unlikely case that the cmd stop time was very shortly after the canceled sched stop time,
+        the event could be missed and needs to be handled */
+        stopType = RCL_Scheduler_cancelSchedStopTime(&rclSchedulerState.hardStopInfo);
+        if (stopType == RCL_StopType_Hard && rclSchedulerState.currCmd != NULL)
+        {
+            /* Stop currently running command (not the one being canceled) immediately,
+             * as command stop time must have been passed */
+            if (rclSchedulerState.hardStopInfo.apiStopEnabled == 0)
+            {
+                LRF_sendHardStop();
+                rclSchedulerState.hardStopInfo.apiStopEnabled = 1;
+            }
+            RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventHardStop);
+        }
+        else
+        {
+            stopType = RCL_Scheduler_cancelSchedStopTime(&rclSchedulerState.gracefulStopInfo);
+            if (stopType == RCL_StopType_Graceful && rclSchedulerState.currCmd != NULL)
+            {
+                /* Stop currently running command (not the one being canceled) gracefully now,
+                 * as command stop time must have been passed */
+                /* Do not send graceful stop if any stop is already sent */
+                if (rclSchedulerState.gracefulStopInfo.apiStopEnabled == 0 &&
+                    rclSchedulerState.hardStopInfo.apiStopEnabled == 0)
+                {
+                    LRF_sendGracefulStop();
+                    rclSchedulerState.gracefulStopInfo.apiStopEnabled = 1;
+                }
+                RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventGracefulStop);
+            }
+        }
     }
     else
     {

@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,191 @@
 /*
  *  ======== RCL.Board.c.xdt ========
  */
+let Common = system.getScript("/ti/drivers/Common.js");
+let GPIO = system.getScript("/ti/drivers/GPIO.syscfg.js");
+let rclGpio = system.getScript("/ti/drivers/rcl/rclgpio.syscfg.js");
+let RCL = args[0];
+let instances = RCL.$instances;
+const rclStatic = RCL.$static;
+
+/* This function generates all necessary strings  */
+function getLrfdStrings(pin, pinInstance, pinFunction) {
+    let lrfMuxNumber = -1
+    let lrfdNumber = 0
+    let lrfMaxPinNumber = 7
+    let gpioSelTreshold = 3
+    const solution = rclStatic.lrfGpio.$solution;
+    let peripheral = system.deviceData.peripherals[solution.peripheralName];
+    for (; lrfdNumber <= lrfMaxPinNumber; lrfdNumber++) {
+        lrfMuxNumber = GPIO._getPinMuxMode(
+        peripheral.peripheralPins["LRFD" + lrfdNumber.toString()],
+        pin.$solution.devicePinName);
+
+        if (lrfMuxNumber != -1) {break; }
+    }
+    let dioPin = GPIO.getDioForInst(pinInstance);
+    let gpioSelNumber = 0
+    if (lrfdNumber > gpioSelTreshold){
+       gpioSelNumber = 1
+    }
+    let gpioSelStr1 = 'LRFDDBELL_O_GPOSEL' + gpioSelNumber.toString()
+    let gpioSelStr2 = 'LRFDDBELL_GPOSEL' + gpioSelNumber.toString()
+    let regWriteStr = 'HWREG_WRITE_LRF(LRFDDBELL_BASE + ' + gpioSelStr1 + ')'
+    let regReadStr = 'HWREG_READ_LRF(LRFDDBELL_BASE + ' + gpioSelStr1 + ')'
+    let portCfgStr = 'IOC_IOC' + dioPin.toString() + '_PORTCFG_PFUNC' +  lrfMuxNumber.toString()
+    let setLrfdStr = regWriteStr + ' = ' + regReadStr + '| (' + gpioSelStr2 + '_SRC' + lrfdNumber + '_' + pinFunction + ')'
+    let setGpioStr = 'GPIO_setConfigAndMux' + '(' + dioPin + ', GPIO_CFG_NO_DIR, ' + portCfgStr + ')'
+    let resetGpioStr = 'GPIO_resetConfig' + '(' + dioPin + ')'
+    return [setLrfdStr, setGpioStr, resetGpioStr]
+ }
 
 %%}
 
+% if(rclStatic.lrfGpio){
+/*
+ *  =============================== RCL GPIOS ===============================
+ */
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
+#include DeviceFamily_constructPath(inc/hw_ioc.h)
+#include <ti/drivers/rcl/LRF.h>
+%   if (rclStatic.lrfGpio.rfctrcPin){
+#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/rcl/RCL_Tracer.h>
+#include DeviceFamily_constructPath(inc/hw_lrfdtrc.h)
 
+static bool tracerEnabled = false;
 
+/*
+ *  ======== RCL_Tracer_enable ========
+ */
+void RCL_Tracer_enable(void)
+{
+    if (!tracerEnabled)
+    {
+        tracerEnabled = true;
+
+        /* Enable tracer clock */
+        Power_setDependency(PowerLPF3_PERIPH_LRFD_TRC);
+
+        /* Request power notification to keep tracer up after standby */
+        RCL_openPowerNotifications();
+
+        /* Do the same enabling as after wakeup */
+        RCL_Tracer_wakeup();
+    }
+}
+
+/*
+ *  ======== RCL_Tracer_disable ========
+ */
+ void RCL_Tracer_disable(void)
+{
+    if (tracerEnabled)
+    {
+        /* Disable tracer pins as when going to standby */
+        RCL_Tracer_standby();
+
+        /* Remove power notifications */
+        RCL_closePowerNotifications();
+
+        /* Disable the tracer */
+        HWREG_WRITE_LRF(LRFDTRC_BASE + LRFDTRC_O_CFG) = (LRFDTRC_CFG_CH1EN_OFF) |
+                                                        (LRFDTRC_CFG_CH2EN_OFF) |
+                                                        (LRFDTRC_CFG_CH3EN_OFF) |
+                                                        (LRFDTRC_CFG_TSEN_OFF);
+
+        /* Disable tracer clock */
+        Power_releaseDependency(PowerLPF3_PERIPH_LRFD_TRC);
+
+        tracerEnabled = false;
+    }
+}
+
+/*
+ *  ======== RCL_Tracer_wakeup ========
+ */
+void RCL_Tracer_wakeup(void)
+{
+    if (tracerEnabled)
+    {
+        /* Enable the Tracer */
+        % if (rclStatic.rftrcTimestamp == 1) {
+        HWREG_WRITE_LRF(LRFDTRC_BASE + LRFDTRC_O_CFG) = LRFDTRC_CFG_TSEN_ON |
+        %}
+        % else if (rclStatic.rftrcTimestamp == 2) {
+        HWREG_WRITE_LRF(LRFDTRC_BASE + LRFDTRC_O_CFG) = LRFDTRC_CFG_TSEN_OFF |
+        %}
+        % if (rclStatic.rftrcMode == 0) {
+                                                        LRFDTRC_CFG_CH1EN_NORM |
+                                                        LRFDTRC_CFG_CH2EN_OFF |
+                                                        LRFDTRC_CFG_CH3EN_OFF |
+        %}
+        % else if (rclStatic.rftrcMode == 1) {
+                                                        LRFDTRC_CFG_CH1EN_OFF |
+                                                        LRFDTRC_CFG_CH2EN_TOPSM |
+                                                        LRFDTRC_CFG_CH3EN_TOPSM |
+        %}
+        % else if (rclStatic.rftrcMode == 2) {
+                                                        LRFDTRC_CFG_CH1EN_NORM |
+                                                        LRFDTRC_CFG_CH2EN_TOPSM |
+                                                        LRFDTRC_CFG_CH3EN_TOPSM |
+        %}
+                                                        LRFDTRC_CFG_PRESCAL_DIV`rclStatic.rftrc_prescal`;
+
+%   let lrfdStringList0 = getLrfdStrings(rclStatic.lrfGpio.rfctrcPin, rclStatic.rfctrcPinInstance, "RFCTRC")
+                `lrfdStringList0[0]`;
+                `lrfdStringList0[1]`;
+    }
+}
+
+/*
+ *  ======== RCL_Tracer_standby ========
+ */
+void RCL_Tracer_standby(void)
+{
+    if (tracerEnabled)
+    {
+        /* Disable the tracer output */
+        `lrfdStringList0[2]`;
+    }
+}
+
+%}
+/*
+ *  ======== RCL_GPIO_enable ========
+ */
+void RCL_GPIO_enable (void)
+{
+%rclGpio.signalList.forEach(signal => {
+%   let pin = rclStatic.lrfGpio[`${signal.name.toLowerCase()}Pin`]
+%        if (pin && signal.name != "RFCTRC")
+%        {
+%           let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
+%           let lrfdStringList0 = getLrfdStrings(pin, pinInstance, signal.name)
+
+    /* `signal.name` */
+    `lrfdStringList0[0]`;
+    `lrfdStringList0[1]`;
+%        }
+%    });
+}
+
+/*
+ *  ======== RCL_GPIO_disable ========
+ */
+void RCL_GPIO_disable (void)
+{
+%rclGpio.signalList.forEach(signal => {
+%   let pin = rclStatic.lrfGpio[`${signal.name.toLowerCase()}Pin`]
+%        if (pin && signal.name != "RFCTRC")
+%        {
+%           let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
+%           let lrfdStringList0 = getLrfdStrings(pin, pinInstance, signal.name)
+
+    /* `signal.name` */
+    `lrfdStringList0[2]`;
+%        }
+%    });
+}
+
+%}

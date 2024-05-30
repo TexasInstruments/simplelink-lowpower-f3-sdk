@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2010-2023, Texas Instruments Incorporated
+ Copyright (c) 2010-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -85,47 +85,6 @@ static GLS_DB_recordsInfo_entry_t     gl_db_recordsInfo;
  * PUBLIC FUNCTIONS
  */
 
-/*********************************************************************
- * @fn      GL_DB_getCurrentNumOfRecords
- *
- * @brief   This function gets the current number of measurements records
- *          in the data base.
- *
- * @param   None.
- *
- * @return  GL_DB_NumOfRecords Value
- */
-uint16 GL_DB_getCurrentNumOfRecords(void)
-{
-    return gl_db_recordsInfo.measDBMaxNumRecords;
-}// End of GL_DB_getCurrentNumOfRecords().
-
-/*********************************************************************
- * @fn      GL_DB_getNumOfRecordsGreaterOrEqual
- *
- * @brief   This function gets the number of measurements records
- *          in the data base that greater or equal than the sequence number.
- *
- * @param   None.
- *
- * @return  GL_DB_NumOfRecords ValueGREATER
- */
-
-uint16 GL_DB_getNumOfRecordsGreaterOrEqual( uint16 SequenceNum)
-{
-    uint16 numOfRecords = 0;
-    uint16 HeadSequenceNum= gl_db_measRecordsArray[(gl_db_recordsInfo.measDBHead-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
-    uint16 TailSequenceNum= gl_db_measRecordsArray[(gl_db_recordsInfo.measDBTail-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
-    // Check valid input.
-    // In case the measRecordNum is NOT in between the head index and tail index record number or the array is empty,
-    // return ERROR
-    if ((SequenceNum > TailSequenceNum) || (SequenceNum < HeadSequenceNum) || (GL_DB_getCurrentNumOfRecords() == 0))
-    {
-        return numOfRecords;
-    }
-    numOfRecords = TailSequenceNum - SequenceNum + 1;
-    return numOfRecords;
-}// End of GL_DB_getCurrentNumOfRecords().
 
 /*********************************************************************
  * @fn      GL_DB_initDataBase
@@ -184,6 +143,53 @@ static bStatus_t GL_DB_isFull(void)
 }
 
 /*********************************************************************
+ * @fn      GL_DB_getCurrentNumOfRecords
+ *
+ * @brief   This function gets the current number of measurements records
+ *          in the data base.
+ *
+ * @param   None.
+ *
+ * @return  GL_DB_NumOfRecords Value
+ */
+uint16 GL_DB_getCurrentNumOfRecords(void)
+{
+    return gl_db_recordsInfo.measDBMaxNumRecords;
+}// End of GL_DB_getCurrentNumOfRecords().
+
+/*********************************************************************
+ * @fn      GL_DB_getNumOfRecordsGreaterOrEqual
+ *
+ * @brief   This function gets the number of measurements records
+ *          in the data base that greater or equal than the sequence number.
+ *
+ * @param   None.
+ *
+ * @return  GL_DB_NumOfRecords ValueGREATER
+ */
+
+uint16 GL_DB_getNumOfRecordsGreaterOrEqual( uint16 SequenceNum)
+{
+    uint16 numOfRecords = 0;
+    uint16 HeadSequenceNum = 0;
+    uint16 TailSequenceNum = 0;
+
+    HeadSequenceNum = GL_DB_getFirstSequenceNum();
+    TailSequenceNum = GL_DB_getLastSequenceNum();
+
+    // Check valid input.
+    // In case the measRecordNum is NOT in between the head index and tail index record number or the array is empty,
+    // return ERROR
+    if ((SequenceNum > TailSequenceNum) || (SequenceNum < HeadSequenceNum) || (GL_DB_getCurrentNumOfRecords() == 0))
+    {
+        return numOfRecords;
+    }
+    numOfRecords = TailSequenceNum - SequenceNum + 1;
+
+    return numOfRecords;
+}// End of GL_DB_getCurrentNumOfRecords().
+
+/*********************************************************************
  * @fn      GL_DB_advanceIndexes
  *
  * @brief   This function advances the head and tail of the DB array.
@@ -201,8 +207,6 @@ static bStatus_t GL_DB_advanceIndexes(void)
     {
         // Wraparound.
         gl_db_recordsInfo.measDBTail = 0;
-        gl_db_recordsInfo.measDBHead = 1;
-
     }
 
     // Increment the head only in case we are full.
@@ -256,7 +260,7 @@ bStatus_t GL_DB_addMeasRecord( GLS_measRecord_t *pMeasRecord )
         // number of records.
         GL_DB_advanceIndexes();
 
-       }// End of else.
+     }// End of else.
 
     return status;
 }// End of GL_DB_AddMeasRecord().
@@ -279,16 +283,10 @@ bStatus_t GL_DB_getMeasRecord(uint16 SequenceNum, GLS_measRecord_t **pMeasRecord
     uint16 SequenceIndex;
     uint16 HeadSequenceNum;
     uint16 TailSequenceNum;
-    if(GL_DB_isFull())
-    {
-      HeadSequenceNum = gl_db_measRecordsArray[(gl_db_recordsInfo.measDBHead-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
-      TailSequenceNum = gl_db_measRecordsArray[(gl_db_recordsInfo.measDBTail-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
-    }
-    else
-    {
-      HeadSequenceNum = gl_db_measRecordsArray[gl_db_recordsInfo.measDBHead].SequenceNum;
-      TailSequenceNum = gl_db_measRecordsArray[(gl_db_recordsInfo.measDBTail-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
-    }
+
+    HeadSequenceNum = GL_DB_getFirstSequenceNum();
+    TailSequenceNum = GL_DB_getLastSequenceNum();
+
     // Check valid input.
     // In case the measRecordNum is NOT in between the head index and tail index record number or the array is empty,
     // return ERROR
@@ -321,7 +319,21 @@ bStatus_t GL_DB_getMeasRecord(uint16 SequenceNum, GLS_measRecord_t **pMeasRecord
 
 uint16 GL_DB_getLastSequenceNum()
 {
-    return gl_db_measRecordsArray[(gl_db_recordsInfo.measDBTail-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
+    uint16 seqNum = 0;
+
+    if ( (GL_DB_isFull()) && (gl_db_recordsInfo.measDBTail == 0))
+    {
+        seqNum = gl_db_measRecordsArray[GL_DB_MAX_NUM_OF_RECORDS-1].SequenceNum;
+    }
+    else if (gl_db_recordsInfo.measDBTail == 0)
+    {
+        seqNum = gl_db_measRecordsArray[(gl_db_recordsInfo.measDBTail)].SequenceNum;
+    }
+    else
+    {
+        seqNum = gl_db_measRecordsArray[(gl_db_recordsInfo.measDBTail-1)].SequenceNum;
+    }
+    return seqNum;
 }// End of GL_DB_getCurrentNumOfRecords().
 
 /*********************************************************************
@@ -336,7 +348,7 @@ uint16 GL_DB_getLastSequenceNum()
 
 uint16 GL_DB_getFirstSequenceNum()
 {
-    return gl_db_measRecordsArray[(gl_db_recordsInfo.measDBHead-1) % GL_DB_MAX_NUM_OF_RECORDS].SequenceNum;
+  return gl_db_measRecordsArray[(gl_db_recordsInfo.measDBHead)].SequenceNum;
 }// End of GL_DB_getCurrentNumOfRecords().
 
 

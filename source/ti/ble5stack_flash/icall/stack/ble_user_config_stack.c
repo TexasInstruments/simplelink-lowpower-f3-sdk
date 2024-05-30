@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2014-2023, Texas Instruments Incorporated
+ Copyright (c) 2014-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -66,6 +66,7 @@
 #include "l2cap.h"
 
 #endif // ( CENTRAL_CFG | PERIPHERAL_CFG )
+
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -178,7 +179,11 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
     llUserConfig.cteAntProp          = userCfg->boardConfig->cteAntennaPropPtr;     // CTE antenna properties
     llUserConfig.rfRegOverrideCtePtr = userCfg->boardConfig->rfRegOverrideCtePtr;   // CTE overrides
     llUserConfig.coexUseCaseConfig   = userCfg->boardConfig->coexUseCaseConfigPtr;  // Coex Configuration
-
+#ifdef SDAA_ENABLE
+    llUserConfig.sdaaCfgPtr = &sdaaCfgTable; // SDAA module configuration
+#else
+    llUserConfig.sdaaCfgPtr = NULL;
+#endif
 // The BLE stack is using "RF_BLE_txPowerTable" that is generated via the SysConfig tool
 // and can be found in "ti_radio_config.c".
 // The RF_TxPowerTable_Entry struct type is incompetiable with the txPwrVal_t struct type, which is the type that the
@@ -332,6 +337,28 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
       LL_ASSERT( FALSE );
   }
 
+  llUserConfig.useSrcClkLFOSC = SRC_CLK_IS_LFOSC;
+  llUserConfig.cfgLFOSCExtraPPM = USER_CFG_LFOSC_EXTRA_PPM;
+
+#ifdef USE_AE
+  llUserConfig.useAE = TRUE;
+#else
+  llUserConfig.useAE = FALSE;
+#endif
+
+  // Set useDFL to false initially
+  llUserConfig.useDFL = FALSE;
+
+
+  // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
+  #if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
+  #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
+  #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
+  llUserConfig.useDFL = TRUE;
+  #endif // (advertiser only)
+  #endif // (number of bondings greater than 5)
+  #endif // (supported devices)
+
   return;
 }
 #else /* !(ICALL_JT) */
@@ -387,7 +414,11 @@ void setBleUserConfig( bleUserCfg_t *userCfg )
 
     llUserConfig.rfRegOverrideCtePtr = userCfg->boardConfig->rfRegOverrideCtePtr;   // CTE overrides
     llUserConfig.coexUseCaseConfig   = userCfg->boardConfig->coexUseCaseConfigPtr;  // Coex Configuration
-
+#ifdef SDAA_ENABLE
+    llUserConfig.sdaaCfgPtr = &sdaaCfgTable; // SDAA module configuration
+#else
+    llUserConfig.sdaaCfgPtr = NULL;
+#endif
 // The BLE stack is using "RF_BLE_txPowerTable" that is generated via the SysConfig tool
 // and can be found in "ti_radio_config.c".
 // The RF_TxPowerTable_Entry struct type is incompetiable with the txPwrVal_t struct type, which is the type that the
@@ -460,6 +491,27 @@ void setBleUserConfig( bleUserCfg_t *userCfg )
     halAssertInit( **userCfg->assertCback, HAL_ASSERT_LEGACY_MODE_DISABLED );
 #endif // CC33xx
   }
+
+#ifdef USE_AE
+  llUserConfig.useAE = TRUE;
+#else
+  llUserConfig.useAE = FALSE;
+#endif
+
+  llUserConfig.useSrcClkLFOSC = SRC_CLK_IS_LFOSC;
+  llUserConfig.cfgLFOSCExtraPPM = USER_CFG_LFOSC_EXTRA_PPM;
+
+  // Set useDFL to false initially
+  llUserConfig.useDFL = FALSE;
+
+  // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
+  #if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
+  #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
+  #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
+  llUserConfig.useDFL = TRUE;
+  #endif // (advertiser only)
+  #endif // (number of bondings greater than 5)
+  #endif // (supported devices)
 
   return;
 }

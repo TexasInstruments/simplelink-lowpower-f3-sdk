@@ -274,9 +274,13 @@ function getRfDesignOptions(deviceId)
     }
     else if(deviceId === "CC2340R2RGE")
     {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R2"}]
+        newRfDesignOptions = [{name: "LP_EM_CC2340R5_RGE_4X4_IS24"}]
     }
-    if(deviceId === "CC2340R5RKP")
+    else if(deviceId === "CC2340R5RKP")
+    {
+        newRfDesignOptions = [{name: "LP_EM_CC2340R5"}];
+    }
+    else if(deviceId === "CC2340R53RKP")
     {
         newRfDesignOptions = [{name: "LP_EM_CC2340R5"}];
     }
@@ -284,9 +288,17 @@ function getRfDesignOptions(deviceId)
     {
         newRfDesignOptions = [{name: "LP_EM_CC2340R5"}]
     }
+    else if(deviceId === "CC2340R22RKP")
+    {
+        newRfDesignOptions = [{name: "LP_EM_CC2340R5"}]
+    }
     else if(deviceId === "CC2340R5RHB")
     {
         newRfDesignOptions = [{name: "LP_EM_CC2340R5_Q1"}]
+    }
+    else if(deviceId === "CC2745R10RHAQ1")
+    {
+        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
     }
     return(newRfDesignOptions);
 }
@@ -408,8 +420,10 @@ function moduleInstances(inst)
  */
 function hideRadioConfig()
 {
-    if( Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
+    if( (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+        (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+        (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
     {
        return true;
     }

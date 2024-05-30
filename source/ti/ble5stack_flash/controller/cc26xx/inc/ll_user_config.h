@@ -33,7 +33,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2014-2023, Texas Instruments Incorporated
+ Copyright (c) 2014-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -193,8 +193,13 @@ typedef struct
   uint16                  rclPhyFeature2MBPS;     // RCL_PHY_FEATURE_SUB_PHY_2_MBPS
   uint16                  rclPhyFeatureCoded;     // RCL_PHY_FEATURE_SUB_PHY_CODED
   uint16                  rclPhyFeatureCodedS8;   // RCL_PHY_FEATURE_CODED_TX_RATE_S8
-  uint16                  rclPhyFeatureCodedS2;   //RCL_PHY_FEATURE_CODED_TX_RATE_S2
+  uint16                  rclPhyFeatureCodedS2;   // RCL_PHY_FEATURE_CODED_TX_RATE_S2
 #endif
+  sdaaUsrCfg_t            *sdaaCfgPtr;            // sdaa module user's parameters
+  uint8                   useSrcClkLFOSC;         // Specifies whether Source Clock is LFOSC (RCOSC)
+  uint16                  cfgLFOSCExtraPPM;       // Additional PPM configured by the user, applicable when using LFOSC (default: 1500ppm)
+  uint8                   useDFL;                 // Use dynamic filter list
+  uint8 				  useAE;
 } llUserCfg_t;
 
 /*******************************************************************************

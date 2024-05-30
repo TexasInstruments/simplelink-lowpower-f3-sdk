@@ -1,7 +1,7 @@
 {
     "name": "simplelink_lowpower_f3_sdk",
     "displayName": "SimpleLink Low Power F3 SDK",
-    "version": "7.40.00.64",
+    "version": "8.10.00.55",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",
@@ -31,5 +31,5 @@
         "none",
         "nortos"
     ],
-    "minToolVersion": "1.18.1"
+    "minToolVersion": "1.20.0"
 }

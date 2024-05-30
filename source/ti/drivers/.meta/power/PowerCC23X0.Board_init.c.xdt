@@ -129,6 +129,9 @@
 %   else if (CCFG.$static.srcClkLF === "LF RCOSC") {
     PowerLPF3_selectLFOSC();
 %   }
+%   else if (CCFG.$static.srcClkLF === "External LF clock") {
+    PowerLPF3_selectEXTLF();
+%   }
 %   if (!isFPGA && CCFG.$static.voltageRegulator == 'DCDC') {
     PMCTLSetVoltageRegulator(PMCTL_VOLTAGE_REGULATOR_DCDC);
 %   }

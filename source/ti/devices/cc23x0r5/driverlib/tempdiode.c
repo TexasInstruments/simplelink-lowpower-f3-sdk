@@ -61,14 +61,6 @@ static void enableADC(void);
 static int32_t voltageToTemp(uint32_t microVolts);
 static uint64_t isqrt(uint64_t n);
 
-/* Temporary PMUD PREFSYS register definition. */
-#ifdef PMUD_O_PREFSYS
-    #error "PMUD_O_PREFSYS defined in DOC release! Remove definitition below."
-#endif
-
-#define PMUD_O_PREFSYS     0x00000080U
-#define PMUD_PREFSYS_TEST2 0x00000004U
-
 /* Macros for finding minimum between two and three numbers */
 #define MIN2(a, b)    ((a) < (b) ? (a) : (b))
 #define MIN3(a, b, c) MIN2(MIN2((a), (b)), (c))

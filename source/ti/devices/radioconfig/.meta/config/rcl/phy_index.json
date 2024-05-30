@@ -4,45 +4,59 @@
   "prop868": [],
   "ble": [
     {
-      "file8": "ble_bt5_1m_2m_coded_cc23x0r5.json",
+      "file8": {
+        "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.json",
+        "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.json"
+      },
       "name": "ble",
       "description": "1 Mbps / 2 Mbps / Coded",
       "phyName": "1 Mbps / 2 Mbps / Coded",
       "usage": "stack"
     },
     {
-      "file8": "ble_bt5_generic_cc23x0r5.json",
+      "file8": {
+        "cc23xx": "ble_bt5_generic_cc23xx.json",
+        "cc27xx": "ble_bt5_generic_cc27xx.json"
+      },
       "name": "ble_gen",
       "description": "Generic 1 Mbps / 2 Mbps / Coded",
-      "phyName": "1 Mbps / 2 Mbps / Coded",
+      "phyName": "Generic 1 Mbps / 2 Mbps / Coded",
       "usage": "generic"
     }
   ],
   "ieee": [],
   "prop2400": [
     {
-      "file8": "gfsk_2m_cc23x0r5.json",
+      "file8": {
+        "cc23xx": "gfsk_2m_cc23xx.json"
+      },
       "name": "gfsk_2_mbps",
       "description": "2 Mbps, 320 kHz dev, GFSK",
       "phyName": "Proprietary\\2 Mbps, 320 kHz dev, GFSK",
       "usage": "stack"
     },
     {
-      "file8": "msk_250k_cc23x0r5.json",
+      "file8": {
+        "cc23xx": "msk_250k_cc23xx.json"
+      },
       "name": "msk_250_kbps",
       "description": "250 Kbps, MSK",
       "phyName": "Proprietary\\250 kbps, MSK",
       "usage": "stack"
     },
     {
-      "file8": "msk_250k_fec_cc23x0r5.json",
+      "file8": {
+        "cc23xx": "msk_250k_fec_cc23xx.json"
+      },
       "name": "msk_250_kbps_fec",
       "description": "250 Kbps, MSK, FEC",
       "phyName": "Proprietary\\250 kbps, MSK, FEC",
       "usage": "stack"
     },
     {
-      "file8": "nesb_1m_2m_cc23x0r5.json",
+      "file8": {
+        "cc23xx": "nesb_1m_2m_cc23xx.json"
+      },
       "name": "nesb",
       "description": "1 Mbps / 2 Mbps",
       "phyName": "NESB\\1 Mbps / 2 Mbps",

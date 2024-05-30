@@ -179,8 +179,10 @@ function maxConnNumDefaultValue()
     {
         maxConnNum = 4;
     }
-    else if(Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-            Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
+    else if( (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+             (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+             (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+             (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
     {
         maxConnNum = 1;
     }

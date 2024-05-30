@@ -55,6 +55,8 @@
 #define RCL_EventRxBufferUpdate        ((RCL_Events){ .value = (1 << 16)})  /*!< RX buffer has been updated */
 #define RCL_EventTxBufferUpdate        ((RCL_Events){ .value = (1 << 17)})  /*!< TX buffer has been updated */
 #define RCL_EventHandlerCmdUpdate      ((RCL_Events){ .value = (1 << 18)})  /*!< A property of a running command has been updated, to be detailed by handler */
+#define RCL_EventCmdStepDone           ((RCL_Events){ .value = (1 << 19)})  /*!< A step of the command has been done; details are command specific */
+#define RCL_EventStopTimesUpdated      ((RCL_Events){ .value = (1 << 20)})  /*!< A change was made to the stop times */
 
 
 union RCL_Events_u {
@@ -78,6 +80,8 @@ union RCL_Events_u {
         uint32_t rxBufferUpdate      : 1; /*!< RX buffer has been updated */
         uint32_t txBufferUpdate      : 1; /*!< TX buffer has been updated */
         uint32_t handlerCmdUpdate    : 1; /*!< A property of a running command has been updated, to be detailed by handler */
+        uint32_t cmdStepDone         : 1; /*!< A step of the command has been done; details are command specific */
+        uint32_t stopTimesUpdated    : 1; /*!< A change was made to the stop times */
     };
     uint32_t value;
 };

@@ -35,9 +35,7 @@ find_package("DriverlibCC23X0R5" REQUIRED)
 find_package("DriverlibCC23X0R2" REQUIRED)
 find_package("DriverlibCC23X0R5" REQUIRED)
 find_package("DriverlibCC23X0R2" REQUIRED)
-find_package("DriverlibCC27XX" REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/DriversDisplayM0PTargets.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/DriversDisplayM33FTargets.cmake")
 
 check_required_components(DriversDisplay)

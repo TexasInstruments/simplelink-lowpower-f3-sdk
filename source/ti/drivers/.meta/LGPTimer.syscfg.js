@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,8 @@ let base = {
     displayName         : "LGPTimer",
     description         : "LGPTimer Driver",
     longDescription     : `
-The [__Timer driver__][1] allows you to manage a LGPTimer peripheral via simple
-and portable APIs.
+The [__LGPTimer driver__][1] allows you to manage a LGPTimer peripheral via
+simple and portable APIs.
 
 * [Peripheral properties][2]
 * [Example][3]

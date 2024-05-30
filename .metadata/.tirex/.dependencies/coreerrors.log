@@ -53,6 +53,48 @@ Unable to parse files
 In project: examples/nortos/LP_EM_CC2340R5/drivers/watchdog/iar/watchdog_LP_EM_CC2340R5_nortos_iar.ipcf
 
 Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/comparatorinterrupt/iar/comparatorinterrupt_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/empty/iar/empty_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/fatsdraw/iar/fatsdraw_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/gpiointerrupt/iar/gpiointerrupt_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/gpioshutdown/iar/gpioshutdown_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/nvsexternal/iar/nvsexternal_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/nvsinternal/iar/nvsinternal_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/pwmled1/iar/pwmled1_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/s2rram/iar/s2rram_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/sha2hash/iar/sha2hash_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/systimtimestamp/iar/systimtimestamp_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/temperatureNotify/iar/temperatureNotify_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/uart2echo/iar/uart2echo_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
+In project: examples/nortos/LP_EM_CC2340R53/drivers/watchdog/iar/watchdog_LP_EM_CC2340R53_nortos_iar.ipcf
+
+Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/demos/portable/freertos/iar/portable_LP_EM_CC2340R5_freertos_iar.ipcf
 
 Unable to parse files
@@ -129,4 +171,70 @@ In project: examples/rtos/LP_EM_CC2340R5/drivers/uart2echo/freertos/iar/uart2ech
 
 Unable to parse files
 In project: examples/rtos/LP_EM_CC2340R5/drivers/watchdog/freertos/iar/watchdog_LP_EM_CC2340R5_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/demos/portable/freertos/iar/portable_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/adcsinglechannel/freertos/iar/adcsinglechannel_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/buttonled/freertos/iar/buttonled_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/canloopback/freertos/iar/canloopback_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/comparatorinterrupt/freertos/iar/comparatorinterrupt_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/empty/freertos/iar/empty_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/fatsdraw/freertos/iar/fatsdraw_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/gpioshutdown/freertos/iar/gpioshutdown_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/log/freertos/iar/log_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/nvsexternal/freertos/iar/nvsexternal_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/nvsinternal/freertos/iar/nvsinternal_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/pwmled1/freertos/iar/pwmled1_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/s2rram/freertos/iar/s2rram_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/sha2hash/freertos/iar/sha2hash_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/spicontroller/freertos/iar/spicontroller_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/spiperipheral/freertos/iar/spiperipheral_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/systimtimestamp/freertos/iar/systimtimestamp_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/temperatureNotify/freertos/iar/temperatureNotify_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/uart2callback/freertos/iar/uart2callback_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/uart2echo/freertos/iar/uart2echo_LP_EM_CC2340R53_freertos_iar.ipcf
+
+Unable to parse files
+In project: examples/rtos/LP_EM_CC2340R53/drivers/watchdog/freertos/iar/watchdog_LP_EM_CC2340R53_freertos_iar.ipcf
 

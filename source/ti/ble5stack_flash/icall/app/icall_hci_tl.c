@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2016-2023, Texas Instruments Incorporated
+ Copyright (c) 2016-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,6 @@
 #include "icall_ble_api.h"
 #include "icall_hci_tl.h"
 #include "ll.h"
-#include "sm_internal.h"
 
 #ifdef CC33xx
 #include "icall_porting.h"
@@ -77,6 +76,7 @@
 
 #ifndef CONTROLLER_ONLY
 #include "gap_internal.h"
+#include "sm_internal.h"
 #if defined(GAP_BOND_MGR)
 #include "gapbondmgr_internal.h"
 #endif // GAP_BOND_MGR
@@ -2160,7 +2160,10 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
                 // If set already exist, parameters will be updated,
                 // even if the call to  LE_SetExtAdvParams fails
                 pAdvSet->advCmdParams = *((aeSetParamCmd_t *)param);
-
+                // Deactivate zeroDelay, so the controller will add a delay to the advertise interval.
+#ifndef CONTROLLER_ONLY
+                pAdvSet->advCmdParams.zeroDelay = FALSE;
+#endif
                 // Check if data len is smaller from the max data len,
                 // max data len configure as function of:  max_interval,
                 //                                         properties,
@@ -2197,7 +2200,7 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
         case HCI_LE_SET_EXT_ADV_ENABLE:
         {
             hci_tl_advSet_t *pAdvSet;
-            llStatus_t status;
+            llStatus_t status = LL_STATUS_SUCCESS;
             uint8 i;
 
             // Check if a legacy/extended command mixing is allowed
@@ -2219,7 +2222,7 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
                     status = LL_STATUS_ERROR_BAD_PARAMETER;
                 }
                 // DISABLE ALL ADV SETS
-                else if (param[0] == LL_ADV_MODE_OFF)
+                else
                 {
                     // Point ot start of the ADV set list
                     pAdvSet = hci_tl_advSetList;
@@ -3626,7 +3629,7 @@ static void host_tl_scanEvtCallback(uint32_t event, void *pData, uintptr_t arg)
 
     if (event != GAP_EVT_INSUFFICIENT_MEMORY)
     {
-      scanEvtCallback = ICall_malloc(sizeof(scanEvtCallback_t));
+      scanEvtCallback = ICall_mallocLimited(sizeof(scanEvtCallback_t));
     }
 
     if (scanEvtCallback)
@@ -3656,7 +3659,7 @@ static void host_tl_scanEvtCallback(uint32_t event, void *pData, uintptr_t arg)
           }
         }
         ICall_free(scanEvtCallback);
-        HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_EXT_GAP_ADV_SCAN_EVENT);
+        /* three is no heap memory exceeded callback here anymore due to app floating */
       }
     }
     else
@@ -3682,7 +3685,6 @@ static void host_tl_scanEvtCallback(uint32_t event, void *pData, uintptr_t arg)
       HCI_TL_sendSystemReport(HOST_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_EXT_GAP_ADV_SCAN_EVENT);
     }
   }
-
 }
 
 /*********************************************************************
@@ -3731,16 +3733,16 @@ static void host_tl_scanEvtCallbackProcess(scanEvtCallback_t * scanEvtCallback)
         }
         else
         {
-          uint8_t *pDataOut = NULL;
-          if( maxNumReports )
+          if( maxNumReports && (NULL != deviceInfoArr) )
           {
-            uint8_t pktLen = 4 + 8*numDev;
+            uint8_t *pDataOut = NULL;
+            uint16_t pktLen = 4 + 8*numDev;
             uint8_t i;
 
-            pDataOut = ICall_malloc(pktLen);
+            pDataOut = ICall_mallocLimited(pktLen);
             if( pDataOut )
             {
-              uint8_t ind = 4;
+              uint16_t ind = 4;
               pDataOut[0] = LO_UINT16(HCI_EXT_GAP_DEVICE_DISCOVERY_EVENT);
               pDataOut[1] = HI_UINT16(HCI_EXT_GAP_DEVICE_DISCOVERY_EVENT);
               pDataOut[2] = 0;      // Status
@@ -3758,11 +3760,9 @@ static void host_tl_scanEvtCallbackProcess(scanEvtCallback_t * scanEvtCallback)
               HCI_TL_SendVSEvent(pDataOut, pktLen);
               scanSummarySent = 1;
               numDev = 0;
+
+              ICall_free(pDataOut);
             }
-          }
-          if( pDataOut )
-          {
-            ICall_free(pDataOut);
           }
         }
 #else // !BLE3_CMD
@@ -3887,14 +3887,14 @@ static void host_tl_sendAdvReport(uint32_t event, GapScan_Evt_AdvRpt_t * advRpt)
     // BLE3 reports only Legacy advertisement
     if( advRpt->evtType & 0x10 )
     {
-      uint8_t rptLen = 13 + dataLen;
-      uint8_t *dataOut = NULL;
-
-      dataOut = (uint8_t *)osal_mem_alloc(rptLen);
-      if( dataOut )
+      if( (maxNumReports) && (numDev < maxNumReports) ||
+          (!maxNumReports))
       {
-        if( (maxNumReports) && (numDev < maxNumReports) ||
-            (!maxNumReports))
+        uint8_t rptLen = 13 + dataLen;
+        uint8_t *dataOut = NULL;
+
+        dataOut = (uint8_t *)osal_mem_allocLimited(rptLen);
+        if( dataOut )
         {
           // Build the event
           dataOut[0] = LO_UINT16(HCI_EXT_GAP_DEVICE_INFO_EVENT);
@@ -3912,16 +3912,18 @@ static void host_tl_sendAdvReport(uint32_t event, GapScan_Evt_AdvRpt_t * advRpt)
           HCI_TL_SendVSEvent(dataOut, rptLen);
 
           // Saving the device info
-          deviceInfoArr[numDev].evtType = dataOut[3];
-          deviceInfoArr[numDev].addrType = dataOut[4];
-          osal_memcpy(deviceInfoArr[numDev].addr, advRpt->addr, B_ADDR_LEN);
-          numDev++;
+          // Do it only once, so in case the report is split into few iterations we won't add the same device multiple times)
+          if ( maxNumReports && (NULL != deviceInfoArr ) && (dataLen == remainingLength))
+          {
+            deviceInfoArr[numDev].evtType = dataOut[3];
+            deviceInfoArr[numDev].addrType = dataOut[4];
+            osal_memcpy(deviceInfoArr[numDev].addr, advRpt->addr, B_ADDR_LEN);
+            numDev++;
+          }
+
+          //Free the message and the payload
+          ICall_free(dataOut);
         }
-      }
-      //Free the message and the payload
-      if (dataOut)
-      {
-        ICall_free(dataOut);
       }
     }
 #else // !BLE3_CMD
@@ -4670,21 +4672,19 @@ static void HCI_TL_SendDataPkt(uint8_t *pMsg)
   // LE only accepts Data packets of type ACL.
   if ((pDataPkt) && (pDataPkt->pktType == HCI_ACL_DATA_PACKET))
   {
-    uint8_t *pData = pDataPkt->pData;
-
-    // Replace data with bm data
-    pDataPkt->pData = (uint8_t *) HCI_bm_alloc(pDataPkt->pktLen);
+    // Allocate data with bm data
+    uint8_t *pData = (uint8_t *) HCI_bm_alloc(pDataPkt->pktLen);
 
     if ((pDataPkt->pData) && (pData))
     {
-      memcpy(pDataPkt->pData, pData, pDataPkt->pktLen);
+      memcpy(pData, pDataPkt->pData, pDataPkt->pktLen);
 
       if (HCI_SendDataPkt(pDataPkt->connHandle,
                           pDataPkt->pbFlag,
                           pDataPkt->pktLen,
-                          pDataPkt->pData) != HCI_SUCCESS )
+                          pData) != HCI_SUCCESS )
       {
-        HCI_bm_free(pDataPkt->pData);
+        HCI_bm_free(pData);
       }
     }
   }
@@ -4707,7 +4707,7 @@ static void HCI_TL_SendVSEvent(uint8_t *pBuf, uint16_t dataLen)
   }
 
   // allocate memory for OSAL hdr + packet
-  msg = (hciPacket_t *)ICall_allocMsg(totalLength);
+  msg = (hciPacket_t *)ICall_allocMsgLimited(totalLength);
 
   if (msg)
   {
@@ -6978,24 +6978,33 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
       GapAdv_freeBufferOptions_t freeOption = (GapAdv_freeBufferOptions_t) (pBuf[1] + 1);
       uint16_t length = BUILD_UINT16(pBuf[2], pBuf[3]);
 
-      // Pause advertising and free old buffer if it exists
-      GapAdv_prepareLoadByHandle(handle, freeOption);
-
-      // Allocate memory for the new buffers
-      uint8_t *pData = ICall_mallocLimited(length);
-
-      // If successfully allocated
-      if(pData)
+      if (length == 0)
       {
-        // Copy data from transport layer to new buffer
-        memcpy(pData, &pBuf[4], length);
-
-        // Load new buffer and restart advertising if it was paused
-        stat = GapAdv_loadByHandle(handle, pBuf[1], length, pData);
+        // No Adv Data to load
+        stat = SUCCESS;
       }
       else
       {
-        stat = bleMemAllocError;
+
+        // Pause advertising and free old buffer if it exists
+        GapAdv_prepareLoadByHandle(handle, freeOption);
+
+        // Allocate memory for the new buffers
+        uint8_t *pData = ICall_mallocLimited(length);
+
+        // If successfully allocated
+        if(pData)
+        {
+          // Copy data from transport layer to new buffer
+          memcpy(pData, &pBuf[4], length);
+
+          // Load new buffer and restart advertising if it was paused
+          stat = GapAdv_loadByHandle(handle, pBuf[1], length, pData);
+        }
+        else
+        {
+          stat = bleMemAllocError;
+        }
       }
     }
     break;
@@ -7249,6 +7258,12 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
       {
         uint8_t tempKey[KEYLEN] = {0};
         GapConfig_SetParameter(GAP_CONFIG_PARAM_IRK, tempKey);
+      }
+      // Set the BD address
+      if ( addrType == ADDRMODE_PUBLIC )
+      {
+        osal_memcpy(addr, &pBuf[1], B_ADDR_LEN);
+        HCI_EXT_SetBDADDRCmd(addr);
       }
 
       // if address type is random or public set irk to 0 if not 0 already
@@ -7972,6 +7987,7 @@ static uint8_t processEvents(ICall_Hdr *pMsg)
   if(pLongMsg)
   {
     MAP_osal_mem_free(pLongMsg);
+    pLongMsg = NULL;
   }
 
   return(TRUE);

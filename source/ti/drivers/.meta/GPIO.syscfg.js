@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -178,6 +178,13 @@ This parameter configures when the GPIO pin interrupt will trigger. Even when th
                 { name: "Both Edges" }
             ]
         },
+        {
+            name: "doNotConfig",
+            displayName: "Do Not Configure",
+            description: "Pin is initialized before the GPIO driver, and should not be configured by it.",
+            hidden: false,
+            default:false
+        },
         /* Compatibility - these deprecated options mirror PIN configurables */
         {
             name: "outputState",
@@ -231,12 +238,6 @@ This parameter configures when the GPIO pin interrupt will trigger. Even when th
     if (family == "LPF3")
     {
         /* CC23XX devices have hysteresis forcibly enabled to lower glitch sensitivity */
-        removeConfigElement("hysteresis");
-    }
-    else if (family == "CC32XX")
-    {
-        removeConfigElement("invert");
-        removeConfigElement("outputSlew");
         removeConfigElement("hysteresis");
     }
     else if (family == "WFF3")
@@ -652,6 +653,12 @@ function getAttrs(inst)
     };
 
     let listOfDefines = [];
+
+    if(inst.doNotConfig)
+    {
+        listOfDefines.push("GPIO_CFG_DO_NOT_CONFIG");
+        return listOfDefines;
+    }
 
     if (inst.mode == "Output") {
         listOfDefines.push("GPIO_CFG_OUTPUT_INTERNAL");

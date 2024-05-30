@@ -62,7 +62,8 @@ typedef enum {
  * @brief Global shared driver state
  */
 typedef struct RCL_s {
-    uint16_t                  numClients;
+    uint8_t                   numClients;
+    uint8_t                   powerNotifyEnableCount;
     LRF_RadioState            lrfState;
     RCL_PowerState            powerState;
     const LRF_Config         *lrfConfig;
@@ -95,6 +96,16 @@ RCL_Handle RCL_open(RCL_Client *c, const LRF_Config *lrfConfig);
  * @param[in] h - Client handle
  */
 void RCL_close(RCL_Handle h);
+
+/**
+ * @brief Request RCL power notifications
+ */
+void RCL_openPowerNotifications(void);
+
+/**
+ * @brief Remove RCL power notification request
+ */
+void RCL_closePowerNotifications(void);
 
 /**
  * @brief Submit RCL command object to be scheduled for execution

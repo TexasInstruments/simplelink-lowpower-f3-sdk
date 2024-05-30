@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -166,12 +166,20 @@ extern "C"
 #define NUM_RX_DATA_ENTRIES             4
 
 #ifndef MAX_NUM_AL_ENTRIES
+#ifdef USE_DFL // (Radio core using dynamic filter list)
+#define MAX_NUM_AL_ENTRIES              GAP_BONDINGS_MAX  // at 8 bytes per AL entry
+#else // !(Radio core using dynamic filter list)
 #define MAX_NUM_AL_ENTRIES              16  // at 8 bytes per AL entry
-#endif
+#endif // (Radio core using dynamic filter list)
+#endif // (MAX_NUM_AL_ENTRIES undefined)
 
 #ifndef MAX_NUM_RL_ENTRIES
+#ifdef USE_DFL // (Radio core using dynamic filter list)
+#define MAX_NUM_RL_ENTRIES              GAP_BONDINGS_MAX  // at 60 bytes per RL entry
+#else // !(Radio core using dynamic filter list)
 #define MAX_NUM_RL_ENTRIES              10  // at 60 bytes per RL entry
-#endif
+#endif // (Radio core using dynamic filter list)
+#endif // (MAX_NUM_RL_ENTRIES undefined)
 
 // Number of CTE Sampling Buffers
 #ifndef MAX_NUM_CTE_BUFS
@@ -317,6 +325,8 @@ extern uint32 extStackSettings;
 
 extern uint16  llUserConfig_maxPduSize;
 extern const llCfgTable_t llConfigTable;
+
+extern uint8 useDFL;
 
 #ifdef __cplusplus
 }

@@ -15,7 +15,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2013-2023, Texas Instruments Incorporated
+ Copyright (c) 2013-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -159,6 +159,7 @@ typedef uint32_t * Task_Handle;
  * Creation of the synchronous object between application and service
  */
 
+#define ICALL_POSIX_HEAP_THRESHOLD_U                             1000U
 
 
 #ifdef ICALL_EVENTS
@@ -358,8 +359,8 @@ ICall_CSState ICall_enterCSImpl(void)
 {
 
   ICall_CSStateUnion cu;
-  cu.each.swikey = (uint_least16_t) Swi_disable();
   cu.each.hwikey = (uint_least16_t) Hwi_disable();
+  cu.each.swikey = (uint_least16_t) Swi_disable();
   return cu.state;
 }
 
@@ -381,8 +382,8 @@ ICall_EnterCS ICall_enterCriticalSection = ICall_enterCSImpl;
 void ICall_leaveCSImpl(ICall_CSState key)
 {
   ICall_CSStateUnion *cu = (ICall_CSStateUnion *) &key;
-  Hwi_restore((uint32_t) cu->each.hwikey);
   Swi_restore((uint32_t) cu->each.swikey);
+  Hwi_restore((uint32_t) cu->each.hwikey);
 }
 
 /* See header file for comment */
@@ -2700,6 +2701,30 @@ void *ICall_allocMsg(size_t size)
 }
 
 /**
+ * Allocates memory block for only if heap left is higher than threshold
+ * @param size   size of the message body in bytes.
+ * @return pointer to the start of the message body of the newly
+ *         allocated memory block, or NULL if the allocation
+ *         failed.
+ */
+void *ICall_allocMsgLimited(size_t size)
+{
+  void * msg;
+  ICall_heapStats_t pStats;
+  ICall_getHeapStats(&pStats);
+  if(pStats.totalFreeSize - (uint32_t)size > ICALL_POSIX_HEAP_THRESHOLD_U)
+  {
+    msg = ICall_allocMsg(size);
+  }
+  else
+  {
+    msg = NULL;
+  }
+
+  return msg;
+}
+
+/**
  * Frees the memory block allocated for a message.
  * @param msg   pointer to the start of the message body
  *              which was returned from ICall_allocMsg().
@@ -2997,8 +3022,11 @@ void ICall_heapGetStats(ICall_heapStats_t *pStats)
 {
   struct xHeapStats pHeapStats;
 
+  ICall_CSState key;
+  key = ICall_enterCSImpl();
   vPortGetHeapStats(&pHeapStats);
 
+  ICall_leaveCSImpl(key);
   pStats->totalFreeSize = pHeapStats.xAvailableHeapSpaceInBytes;
   pStats->totalSize = configTOTAL_HEAP_SIZE;
 }
@@ -3033,7 +3061,19 @@ void ICall_free(void *msg)
 
 void *ICall_mallocLimited(uint_least16_t size)
 {
-   return (ICall_heapMalloc(size));
+  ICall_heapStats_t pStats;
+  void *msg;
+  ICall_getHeapStats(&pStats);
+  if(pStats.totalFreeSize - (uint32_t)size > ICALL_POSIX_HEAP_THRESHOLD_U)
+  {
+      msg = ICall_heapMalloc(size);
+  }
+  else
+  {
+    msg = NULL;
+  }
+
+  return msg;
 }
 
 /**

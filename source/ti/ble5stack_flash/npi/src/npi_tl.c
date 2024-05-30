@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2015-2023, Texas Instruments Incorporated
+ Copyright (c) 2015-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,11 @@
 #endif
 
 #if defined( CC23X0 )
+#ifdef DeviceFamily_CC27XX
+#include <ti/drivers/power/PowerCC27XX.h>
+#else
 #include <ti/drivers/power/PowerCC23X0.h>
+#endif
 #else
 #include <ti/drivers/power/PowerCC26XX.h>
 #endif
@@ -171,9 +175,6 @@ static void NPITL_MRDYPinHwiFxn(uint_least8_t index);
 // -----------------------------------------------------------------------------
 void NPITL_initTL(npiRtosCB_t npiCBTx, npiRtosCB_t npiCBRx, npiRtosCB_t npiCBMrdy)
 {
-    ICall_CSState key;
-    key = ICall_enterCriticalSection();
-
     taskTxCB = npiCBTx;
     taskRxCB = npiCBRx;
 #if (NPI_FLOW_CTRL == 1)
@@ -194,8 +195,6 @@ void NPITL_initTL(npiRtosCB_t npiCBTx, npiRtosCB_t npiCBRx, npiRtosCB_t npiCBMrd
     GPIO_enableInt(MRDY_PIN);
     mrdy_state = GPIO_read(MRDY_PIN);
 #endif // NPI_FLOW_CTRL = 1
-
-    ICall_leaveCriticalSection(key);
 
     return;
 }

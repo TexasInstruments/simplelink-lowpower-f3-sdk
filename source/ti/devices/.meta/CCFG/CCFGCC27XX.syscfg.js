@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,28 +55,51 @@ The device has 3 dedicated configuration areas in flash that must contain a vali
 
 All of these configurations are done by simply letting SysConfig generate file ti_devices_config.c and including it in the project.`;
 
+let board = system.deviceData.board;
+let defaultOverrideHfxtCapArray = false;
+let defaultHfxtCapArrayQ1 = 0x00;
+let defaultHfxtCapArrayQ2 = 0x00;
+
+/* Override cap array values for LP_EM_CC2745R10_Q1 */
+if (board !== undefined) {
+    if (board.name.match(/LP_EM_CC2745R10_Q1/)) {
+        defaultOverrideHfxtCapArray = true;
+        defaultHfxtCapArrayQ1 = 0x27;
+        defaultHfxtCapArrayQ2 = 0x27;
+    }
+}
+
 let devSpecific = {
     longDescription: moduleDesc,
+    templates: {
+        /* Contributes CRC symbols to linker file */
+        "/ti/utils/build/GenMap.cmd.xdt": { modName: "/ti/devices/CCFG", getLinkerSyms: getLinkerSyms }
+    },
     moduleStatic: {
+        modules: modules,
         validate: validate,
         config: [
             {
                 name: "srcClkLF",
                 displayName: "Low Frequency Clock Source",
                 description: "Low frequency clock source",
+                longDescription: `When choosing the external clock, supply
+a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the appropriate pin.`,
                 readOnly: false,
                 hidden: false,
                 options: [
                     { name: "LF XOSC" },
-                    { name: "LF RCOSC" }
+                    { name: "LF RCOSC" },
+                    { name: "External LF clock" }
                 ],
-                default: "LF XOSC"
+                default: "LF XOSC",
+                onChange: onChangeSrcClkLF
             },
             {
                 name: "overrideHfxtCapArray",
                 displayName: "Override HFXT Cap Array Trims",
                 description: "Enables setting the HFXT cap-array ramp and target values",
-                default: false,
+                default: defaultOverrideHfxtCapArray,
                 readOnly: false,
                 hidden: false,
                 onChange: (inst, ui) => {
@@ -98,9 +121,9 @@ let devSpecific = {
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: 0x00,
+                default: defaultHfxtCapArrayQ1,
                 readOnly: false,
-                hidden: true
+                hidden: !defaultOverrideHfxtCapArray
             },
             {
                 name: "hfxtCapArrayQ2",
@@ -110,9 +133,52 @@ Q1 and Q2 should not differ by more than one step.`,
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: 0x00,
+                default: defaultHfxtCapArrayQ2,
                 readOnly: false,
-                hidden: true
+                hidden: !defaultOverrideHfxtCapArray
+            },
+            {
+                name: "enableInitialHfxtAmpComp",
+                displayName: "Initial HFXT Amplitude Compensation",
+                longDescription: `This enables the [__Initial HFXT Amplitude Compensation__][1] feature.
+
+[1]: /drivers/doxygen/html/_power_c_c27_x_x_8h#ti_drivers_PowerCC27XX_Initial_HFXT_Amplitude_Compensation "Initial HFXT Amplitude Compensation"
+`,
+                default: false
+            },
+            {
+                name: "lfoscCompConfig",
+                displayName: "LFOSC Compensation",
+                longDescription: `Settings for LFOSC compensation. When LFOSC Compensation is enabled, HFXT will
+periodically be turned on to calibrate the LFOSC.
+
+Note, the LFOSC Compensation is to be considered beta quality. An improved
+accuracy of LFOSC is expected with best effort, but an absolute accuracy cannot
+be guaranteed.`,
+                config: [
+                    {
+                        name: "enableLfoscComp",
+                        displayName: "Enable LFOSC Compensation",
+                        hidden: true,
+                        default: false,
+                        onChange: onChangeLfoscComp
+                    },
+                    {
+                        displayName: "Default Compensation Profile",
+                        longDescription: `Selects the default LFOSC Compensation Profile to be used after startup.
+If a profile is selected, the Board_init() function will configure the LFOSC
+Compensation to use the selected profile and also enable LFOSC Compensation.
+If no profile is selected, the application must set the profile and
+enable compensation.`,
+                        hideNoneOption: false,
+                        isArray: false,
+                        hidden: true,
+                        name: "defaultLfoscCompProfile",
+                        options: function (inst) {
+                            return system.modules["/ti/drivers/power/PowerLPF3LfoscCompProfiles"].$instances;
+                        }
+                    }
+                ]
             },
             {
                 displayName: "Bootloader Configuration",
@@ -479,6 +545,7 @@ The User Record Macro must be defined in the User Record File to be a list of va
                             let setHidden = !(inst.enableUserRecord);
                             ui["userRecordMacro"].hidden = setHidden;
                             ui["userRecordFile"].hidden = setHidden;
+                            ui["userRecordCRC"].hidden = setHidden;
                         }
                     },
                     {
@@ -495,6 +562,14 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         hidden: true,
                         default: "",
                         fileFilter: ".h,.hpp,.txt"
+                    },
+                    {
+                        name: "userRecordCRC",
+                        displayName: "User Record CRC",
+                        longDescription: `Enable generation of user record begin/end symbols in the ELF executable.
+These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optional user record's CRC.`,
+                        hidden: true,
+                        default: false
                     }
                 ]
             },
@@ -593,6 +668,36 @@ automatically turn on and take over if the voltage drops too low.
     }
 };
 
+/*!
+ * ======== getLinkerSyms ========
+ *  Used by GenMaps to define linker symbols, for example CRC checksum symbols
+ */
+function getLinkerSyms(inst) {
+
+    let linkerSyms = [
+
+        { name: "CRC_CCFG_BOOT_CFG_begin", value: 0x4e020000 },
+        { name: "CRC_CCFG_BOOT_CFG_end", value: 0x4e02000B },
+
+        { name: "CRC_CCFG_begin", value: 0x4E020010 },
+        { name: "CRC_CCFG_end", value: 0x4E02074B },
+
+        { name: "CRC_CCFG_DEBUG_begin", value: 0x4E0207D0 },
+        { name: "CRC_CCFG_DEBUG_end", value: 0x4E0207FB },
+
+        { name: "CRC_SCFG_begin", value: 0x4e040000 },
+        { name: "CRC_SCFG_end", value: 0x4e04003B }
+    ];
+
+    if (inst.$static.enableUserRecord && inst.$static.userRecordCRC) {
+        linkerSyms.push(
+            { name: "CRC_CCFG_USER_RECORD_begin", value: 0x4E020750 },
+            { name: "CRC_CCFG_USER_RECORD_end", value: 0x4E0207CB },
+        );
+    }
+
+    return linkerSyms;
+}
 
 /*!
  *  ======== updateBldrVisibility ========
@@ -617,6 +722,26 @@ function updateBldrVisibility(inst, ui) {
     ui["pinTriggerLevel"].hidden = setHidden;
 }
 
+/*
+ *  ======== onChangeSrcClkLF ========
+ *  onChange callback function for the srcClkLF config
+ */
+function onChangeSrcClkLF(inst, ui) {
+    ui.enableLfoscComp.hidden = inst.srcClkLF != "LF RCOSC";
+    if (ui.enableLfoscComp.hidden) {
+        inst.enableLfoscComp = false;
+    }
+    onChangeLfoscComp(inst, ui);
+}
+
+/*
+ *  ======== onChangeLfoscComp ========
+ *  onChange callback function for the LFOSC Compensation config
+ */
+function onChangeLfoscComp(inst, ui) {
+    ui.defaultLfoscCompProfile.hidden = !inst.enableLfoscComp;
+}
+
 /*!
  *  ======== validate ========
  *  Validate this module's configuration
@@ -625,6 +750,12 @@ function updateBldrVisibility(inst, ui) {
  *  @param validation - Issue reporting object
  */
 function validate(inst, validation) {
+
+    if(inst.enableLfoscComp === true)
+    {
+        Common.logInfo(validation, inst, "enableLfoscComp",
+            "The LFOSC Compensation is to be considered beta quality. An improved accuracy of LFOSC is expected with best effort, but an absolute accuracy cannot be guaranteed.");
+    }
 
     if (inst.hfxtCapArrayQ1 > MAX_CAP_ARRAY) {
         Common.logError(validation, inst, "hfxtCapArrayQ1",
@@ -739,6 +870,100 @@ function validate(inst, validation) {
     }
 }
 
+/*
+ *  ======== modules ========
+ */
+function modules(inst) {
+    let tmpModules = [];
+
+    /* If LFOSC compensation is enabled, include the temperature driver. */
+    if (inst.srcClkLF === "LF RCOSC" && inst.enableLfoscComp) {
+        tmpModules.push({
+            name: "Temperature",
+            moduleName: "/ti/drivers/Temperature"
+        });
+    }
+
+    /* If LFOSC compensation is enabled, include LFOSC compensation profiles. */
+    if (inst.srcClkLF === "LF RCOSC" && inst.enableLfoscComp) {
+        tmpModules.push({
+            name: "LF RCOSC Compensation Profiles",
+            moduleName: "/ti/drivers/power/PowerLPF3LfoscCompProfiles"
+        });
+    }
+    return tmpModules;
+}
+
+/*
+ * ======== moduleInstances ========
+ * This overrides the base versions since we want to add our
+ * module instances tot he base ones.
+ */
+function moduleInstances(inst, $super) {
+
+    let modInstances = new Array();
+
+    if (inst.srcClkLF === "External LF clock") {
+        modInstances.push({
+            name: "extlfPinInstance",
+            displayName: "Low Frequency Clock Pin",
+            moduleName: "/ti/drivers/GPIO",
+            collapsed: true,
+            hidden: false,
+            requiredArgs: {
+                parentInterfaceName: "extlf",
+                parentSignalName: "extlfPin",
+                parentSignalDisplayName: "Low frequency clock pin",
+                mode: "Input",
+                doNotConfig: true,
+                invert: false
+            },
+            args: {
+                $name: "CONFIG_GPIO_EXTLF"
+            }
+        });
+    }
+
+
+    /* If LFOSC compensation is enabled, add LFOSC compensation profile instance
+     * adder. Enabling the user to create as many profiles as they want.
+     */
+    if (inst.srcClkLF === "LF RCOSC" && inst.enableLfoscComp) {
+        modInstances.push({
+            name: "lfoscCompProfiles",
+            displayName: "LFOSC Compensation Profiles",
+            moduleName: "/ti/drivers/power/PowerLPF3LfoscCompProfiles",
+            useArray: true, /* Create an instance adder */
+            group: "lfoscCompConfig",
+            collapsed: false
+        });
+    }
+
+    return $super.moduleStatic.moduleInstances().concat(modInstances);
+}
+
+/*
+ *  ======== pinmuxRequirements ========
+ *  Returns peripheral pin requirements of the specified instance
+ */
+function pinmuxRequirements(inst) {
+    let extlfBypass = {
+        name: "extlfPin",    /* config script name */
+        displayName: "External LF clock pin",   /* GUI name */
+        interfaceNames: ["BYPASS"]      /* pinmux tool name */
+    };
+    let extlf = [];
+    if (inst.srcClkLF === "External LF clock") {
+        extlf.push({
+            name: "extlf",
+            displayName: "External LF clock",
+            interfaceName: "LFXT",
+            resources: [extlfBypass]
+        });
+    }
+
+    return (extlf);
+}
 
 /*
  *  ======== extend ========
@@ -747,9 +972,16 @@ function extend(base) {
     /* merge and overwrite base module attributes */
     let result = Object.assign({}, base, devSpecific);
 
-    /* moduleInstances should be retained from base */
-    result.moduleStatic.moduleInstances = base.moduleStatic.moduleInstances;
+    /* moduleInstances should be retained from base, but we are
+     * also adding our own modules. This is needed so the shown module
+     * instances update dynamically.
+     */
+    result.moduleStatic.moduleInstances =
+        function (inst) {
+            return moduleInstances(inst, base);
+        };
 
+    result.moduleStatic.pinmuxRequirements = pinmuxRequirements;
     /* concatenate device-specific configs */
     result.moduleStatic.config = base.moduleStatic.config.concat(devSpecific.moduleStatic.config);
 

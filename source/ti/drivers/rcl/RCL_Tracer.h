@@ -34,8 +34,12 @@
 #define ti_drivers_RCL_Tracer_h__include
 
 
-extern void __attribute__((weak)) RCL_Tracer_enable(void);
-extern void __attribute__((weak)) RCL_Tracer_disable(void);
+extern void RCL_Tracer_enable(void);
+extern void RCL_Tracer_disable(void);
+extern void RCL_Tracer_wakeup(void);
+extern void RCL_Tracer_standby(void);
+extern void RCL_GPIO_enable(void);
+extern void RCL_GPIO_disable(void);
 
 
 #endif /* ti_drivers_RCL_Tracer_h__include */

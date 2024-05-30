@@ -11,7 +11,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -673,7 +673,12 @@ uint16 HCI_ProcessEvent( uint8 task_id, uint16 events )
         // All HCI_CTRL_TO_HOST_EVENT messages are of type hciPacket_t
         osal_bm_free( ((hciPacket_t *)pMsg)->pData );
       }
-
+      else
+      {
+          /* this else clause is required, even if the
+            programmer expects this will never be reached
+            Fix Misra-C Required: MISRA.IF.NO_ELSE */
+      }
       // deallocate the message
       (void)osal_msg_deallocate( (uint8 *)pMsg );
 #endif // !HCI_TL_NONE && !ICALL_LITE

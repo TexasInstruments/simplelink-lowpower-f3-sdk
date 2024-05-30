@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  */
 
 /* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
- * SHA-2 driver is non-functional on CC27CC devices, as it returns incorrect digest.
+ * For CC27XX implementation, please refer to SHA2LPF3HSM.c instead
  */
 
 #include <stdint.h>
@@ -255,7 +255,7 @@ int_fast16_t SHA2_hashData(SHA2_Handle handle, const void *data, size_t dataLeng
  *      - The intermediate output is saved by the SHA2 driver as usual in
  *        SHA2LPF3SW_Object.sha256swObject
  */
-int_fast16_t SHA2_setupHmac(SHA2_Handle handle, CryptoKey *key)
+int_fast16_t SHA2_setupHmac(SHA2_Handle handle, const CryptoKey *key)
 {
     uint32_t xorBuffer[(uint32_t)SHA2_BLOCK_SIZE_BYTES_256 / sizeof(uint32_t)];
     SHA2LPF3SW_Object *object = SHA2LPF3SW_getObject(handle);
@@ -414,7 +414,7 @@ int_fast16_t SHA2_finalizeHmac(SHA2_Handle handle, void *hmac)
  *  to concatenate intermediate results and the message, this function is not
  *  actually faster than an application using the segmented APIs.
  */
-int_fast16_t SHA2_hmac(SHA2_Handle handle, CryptoKey *key, const void *data, size_t dataLength, void *hmac)
+int_fast16_t SHA2_hmac(SHA2_Handle handle, const CryptoKey *key, const void *data, size_t dataLength, void *hmac)
 {
     int_fast16_t result;
 

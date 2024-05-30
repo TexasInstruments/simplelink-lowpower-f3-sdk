@@ -5,8 +5,8 @@
 // This file is generated
 //
 // Tool name           SmartRF Studio 8
-// Tool version        0.6.0.316 INTERNAL
-// Created             2023-12-20 13:23:33.767
+// Tool version        0.6.0.323 INTERNAL
+// Created             2024-05-15 07:35:19.567
 // Computer            swtools
 // User                -
 //
@@ -17,7 +17,7 @@
 // Device              CC2340R5
 //     Package         QFN40 5x5 RKP
 //     Revision(s)     B (2.0)
-// SDK                 SimpleLink LPF3 SDK 7.40.00.57
+// SDK                 SimpleLink LPF3 SDK 8.10.00.108
 // Board               LP-EM-CC2340R5
 // PHY                 ADC Noise
 // PHY abbreviation    adc_noise
@@ -34,7 +34,7 @@
 // Configuration: Common
 static const uint32_t LRF_commonRegConfig[] =
 {
-    0x0000002B,                          // Segment length = 43
+    0x0000002C,                          // Segment length = 44
     0x0000A002,                          //     Data structure 32-bit region (start byte position = 0, count = 3)
     (uint32_t) &LRF_swConfigAdcNoise,    //         LRF_swParam : swConfig
     0x00000000,                          //         LRF_swParam : txPowerTable
@@ -44,9 +44,10 @@ static const uint32_t LRF_commonRegConfig[] =
     0x30880000,                          //         LRFDRFE.RSSIOFFSET
     0x31201820,                          //         LRFDRFE.MISC0
     0x31300C07,                          //         LRFDRFE.PHEDISC
-    0x30A01006,                          //     HW 16-bit region (start address = 0x30A0, count = 7)
+    0x30A01002,                          //     HW 16-bit region (start address = 0x30A0, count = 3)
     0x1F40A246,                          //         LRFDRFE.SPARE3                      LRFDRFE.SPARE2
-    0x7C000000,                          //         LRFDRFE.SPARE5                      LRFDRFE.SPARE4
+    0x00000000,                          //         -                                   LRFDRFE.SPARE4
+    0x30B01002,                          //     HW 16-bit region (start address = 0x30B0, count = 3)
     0x0006000A,                          //         LRFDRFE.IFAMPRFLDO                  LRFDRFE.LNA
     0x00000000,                          //         -                                   LRFDRFE.PA0
     0x30C40005,                          //     HW zero region (start address = 0x30C4, count = 6)

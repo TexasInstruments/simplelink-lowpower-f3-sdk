@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
+/* Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -353,14 +353,22 @@ responsible for defining vPortFree and pvPortMalloc with their custom heap confi
         "/freertos/ti_freertos_portable_config.c.xdt": true,
         "/ti/utils/build/GenLibs.cmd.xdt": { modName: "/freertos/FreeRTOS", getLibs: getLibs },
 
-        "/ti/utils/rov/syscfg_c.rov.xs.xdt": ["/kernel/freertos/rov/heap.rov.js",
-                                              "/kernel/freertos/rov/helper.rov.js",
-                                              "/kernel/freertos/rov/mutex.rov.js",
-                                              "/kernel/freertos/rov/queue.rov.js",
-                                              "/kernel/freertos/rov/semaphore.rov.js",
-                                              "/kernel/freertos/rov/stack.rov.js",
-                                              "/kernel/freertos/rov/task.rov.js",
-                                              "/kernel/freertos/rov/timer.rov.js"]
+        "/ti/utils/rov/syscfg_c.rov.xs.xdt": ["crov:/kernel/freertos/rov/heap.rov.js",
+                                              "crov:/kernel/freertos/rov/helper.rov.js",
+                                              "crov:/kernel/freertos/rov/mutex.rov.js",
+                                              "crov:/kernel/freertos/rov/queue.rov.js",
+                                              "crov:/kernel/freertos/rov/semaphore.rov.js",
+                                              "crov:/kernel/freertos/rov/stack.rov.js",
+                                              "crov:/kernel/freertos/rov/task.rov.js",
+                                              "crov:/kernel/freertos/rov/timer.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/heap.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/helper.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/mutex.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/queue.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/semaphore.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/stack.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/task.rov.js",
+                                              "objView:/kernel/freertos/rov_theia/timer.rov.js"]
     },
     getCFiles: getCFiles,
     getPortableFiles: getPortableFiles

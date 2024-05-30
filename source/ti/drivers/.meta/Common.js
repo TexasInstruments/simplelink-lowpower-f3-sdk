@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,6 @@ exports = {
 
     boardName: boardName,  /* get /ti/boards name */
 
-    /* CC32XX specific function to convert package pin to device pin */
-    cc32xxPackage2DevicePin : cc32xxPackage2DevicePin,
 
     device2Family: device2Family,  /* get /ti/drivers device family name */
     device2DeviceFamily: device2DeviceFamily, /* get driverlib DeviceFamily_xxx name */
@@ -288,27 +286,6 @@ function boardName()
     return (boardName);
 }
 
-/*!
- *  ======== cc32xxPackage2DevicePin ========
- *  Converts a CC32XX package pin number to the device pin number
- *
- *  @param packagePinName  The packagePinName returned to a $solution
- *
- *  @returns String  The device pin number as an integer.
- */
-function cc32xxPackage2DevicePin(packagePinName)
-{
-    let pin = "";
-    let key = String(packagePinName);
-    let devicePins = system.deviceData.devicePins;
-
-    if (devicePins[key]) {
-        pin = devicePins[key].controlRegisterOffset;
-        pin = pin.padStart(2, "0");
-    }
-
-    return (pin);
-}
 
 /*!
  *  ======== device2Family ========
@@ -337,7 +314,6 @@ function device2Family(device, mod)
         {prefix: "CC26",     family: "CC26XX"},
         {prefix: "CC23.0",   family: "CC23X0"},
         {prefix: "CC27",     family: "CC27XX"},
-        {prefix: "CC32",     family: "CC32XX"},
         {prefix: "CC35",     family: "CC35XX"}
     ];
 
@@ -397,12 +373,17 @@ function device2Family(device, mod)
         "CAN" :            "CC27XX",
         "CCFG" :           "CC27XX",
         "Power" :          "CC27XX",
-        "ECDH" :           "LPF3SW",
-        "SHA2" :           "LPF3SW",
-        "RNG"  :           "LPF3HSM"
+        "ECDH" :           "LPF3HSM",
+        "ECDSA" :          "LPF3HSM",
+        "SHA2" :           "LPF3HSM",
+        "RNG"  :           "LPF3HSM",
+        "AESGCM":          "LPF3HSM"
     };
 
-    /* CC35XX specific module delegates */
+    /* CC35XX specific module delegates
+     * Note, the default family name returned below is WFF3, so this list must
+     * contain all CC35XX specific modules
+     */
     let cc35xxMods = {
     };
 

@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2012-2023, Texas Instruments Incorporated
+ Copyright (c) 2012-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,12 @@
  *                                          Includes
  */
 
-#include "sign_util.h"
-#include "flash_interface.h"
-#include "ext_flash.h"
+#include "ti/common/cc26xx/ecc/sign_util.h"
+#include "ti/common/cc26xx/flash_interface/flash_interface.h"
+#include "ti/common/flash/no_rtos/extFlash/ext_flash.h"
 
 #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
-#include "sha2_driverlib.h"
+#include "ti/common/cc26xx/sha2/sha2_driverlib.h"
 #else
 #include DeviceFamily_constructPath(driverlib/rom_sha256.h)
 #include DeviceFamily_constructPath(driverlib/rom_ecc.h)

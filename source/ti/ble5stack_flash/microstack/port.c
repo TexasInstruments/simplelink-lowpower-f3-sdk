@@ -12,7 +12,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2017-2023, Texas Instruments Incorporated
+ Copyright (c) 2017-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -264,13 +264,14 @@ void port_queueGet( struct port_queueObject_s *handle,
  * @param port_queueElement - pointer to the queue element.
  * @param size - the size of this element. This is ignored in TIRTOS.
  *
- * @return none
+ * @return 0        : if the command succeed
+ * @return non-zero : if the command failed
  */
-void port_queuePut( struct port_queueObject_s *handle,
+int port_queuePut( struct port_queueObject_s *handle,
                     char *queueElement,
                     uint16_t size )
 {
-  (void) mq_send(handle->mqDescriptor,
+  return mq_send(handle->mqDescriptor,
                  queueElement,
                  size,
                  0);

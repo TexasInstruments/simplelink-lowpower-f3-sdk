@@ -5,7 +5,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -594,6 +594,21 @@ extern void SM_SetECCRegenerationCount(uint8 count);
    * @param       taskID - SM task ID.
    */
   extern void SM_Init( uint8 task_id );
+
+  /**
+   * @fn          SM_InitLTKReqProcess
+   *
+   * @brief       Gets the flag that determines where the HCI_BLE_LTK_REQUESTED_EVENT
+   *              event is processed, in the SM or in the application level.
+   *              If the is_app_proccess_ltk_request parameter is set to true,
+   *              the application level will handle the event.
+   *              If set to false, the SM will handle the event.
+   *
+   * @param       app_proccess_ltk_request - should be set to true or false.
+   *
+   * @return      void
+   */
+  extern void SM_InitLTKReqProcess( uint8 is_app_proccess_ltk_request );
 
   /**
    * @internal

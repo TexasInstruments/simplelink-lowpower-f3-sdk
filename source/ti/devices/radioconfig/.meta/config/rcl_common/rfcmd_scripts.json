@@ -698,6 +698,84 @@
       }
     }
   },
+  "ieee_802_15_4": {
+    "CMD_GENERIC_TX_TEST": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "config.whitenMode": {
+        "#text": "getTestProperty(\"txWhitening\")",
+        "role": "update"
+      },
+      "config.sendCw": {
+        "#text": "getTestProperty(\"txSignalType\") == 0",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_RX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWordA": {
+        "#text": "getPhyProperty(\"sfd\")",
+        "role": "update"
+      },
+      "maxPktLen": {
+        "#text": "(getPhyProperty(\"packetLengthSize\") == 0) ? getTestProperty(\"rxFixedPayloadLength\") : 255",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"sfd\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      }
+    },
+    "CMD_GENERIC_TX_REPEAT": {
+      "rfFrequency": {
+        "#text": "Math.floor(getPhyProperty(\"frequency\") * 1e6)",
+        "role": "update"
+      },
+      "syncWord": {
+        "#text": "getPhyProperty(\"sfd\")",
+        "role": "update"
+      },
+      "txPower.fraction": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) & 1",
+        "role": "update"
+      },
+      "txPower.dBm": {
+        "#text": "Math.ceil(getTxPowerValue() * 2) >> 1",
+        "role": "update"
+      },
+      "numPackets": {
+        "#text": "getTestProperty(\"packetCount\")",
+        "role": "update"
+      }
+    }
+  },
   "ieee_diff": {
     "CMD_GENERIC_TX_TEST": {
       "rfFrequency": {

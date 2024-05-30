@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,14 +74,14 @@ const Watchdog_FxnTable WatchdogLPF3_fxnTable = {WatchdogLPF3_clear,
 #define MS_RATIO         1000       /* millisecond to second ratio */
 #define WATCHDOG_UNLOCK  0x1ACCE551 /* Watchdog unlocking value */
 
-// /* TODO: Remove once CC23X0R2 and CC27XX register names catch up */
-// #if (DeviceFamily_ID == DeviceFamily_ID_CC23X0R2)
-//     #define CKMD_O_WDTLOCK           CKMD_O_LOCK
-//     #define CKMD_O_WDTCNT            CKMD_O_CNT
-//     #define CKMD_O_WDTTEST           CKMD_TEST_STALLEN
-//     #define CKMD_WDTTEST_STALLEN_EN  CKMD_TEST_STALLEN
-//     #define CKMD_WDTTEST_STALLEN_DIS CKMD_TEST_STALLEN_DIS
-// #endif
+/* TODO: Remove once CC27XX register names catch up */
+#if (DeviceFamily_ID == DeviceFamily_ID_CC27XX)
+    #define CKMD_O_WDTLOCK           CKMD_O_LOCK
+    #define CKMD_O_WDTCNT            CKMD_O_CNT
+    #define CKMD_O_WDTTEST           CKMD_O_TEST
+    #define CKMD_WDTTEST_STALLEN_EN  CKMD_TEST_STALLEN_EN
+    #define CKMD_WDTTEST_STALLEN_DIS CKMD_TEST_STALLEN_DIS
+#endif
 
 /*
  *  ======== WatchdogLPF3_lock ========

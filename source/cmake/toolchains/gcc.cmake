@@ -42,11 +42,13 @@ if(WIN32)
     set(CMAKE_CXX_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc.exe")
     set(CMAKE_ASM_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc.exe")
     set(CMAKE_AR "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc-ar.exe")
+    set(CMAKE_RANLIB "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc-ranlib.exe")
 else()
     set(CMAKE_C_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc")
     set(CMAKE_CXX_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc")
     set(CMAKE_ASM_COMPILER "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc")
     set(CMAKE_AR "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc-ar")
+    set(CMAKE_RANLIB "${GCC_ARMCOMPILER}/bin/arm-none-eabi-gcc-ranlib")
 endif()
 
 #Specify how the compilers should be invoked

@@ -146,7 +146,6 @@ void GPIO_init()
     HwiP_Params hwiParams;
     uint32_t outputEnableMask = 0x0;
     uint32_t intEnableMask    = 0x0;
-    uint32_t tempPinConfigs[32];
 
     key = HwiP_disable();
 
@@ -169,8 +168,11 @@ void GPIO_init()
     {
         uint32_t pinConfig = GPIO_config.configs[i];
 
-        /* Mask off the bits containing non-IOC configuration values */
-        tempPinConfigs[i] = pinConfig & GPIOLPF3_CFG_IOC_M;
+        /* Skip handling any DO_NOT_CONFIG IOs */
+        if (pinConfig & GPIO_CFG_DO_NOT_CONFIG)
+        {
+            continue;
+        }
 
         if (pinConfig & GPIOLPF3_CFG_PIN_IS_INPUT_INTERNAL)
         {
@@ -184,15 +186,13 @@ void GPIO_init()
             outputEnableMask |= 1 << i;
             GPIO_write(i, pinConfig & GPIO_CFG_OUT_HIGH ? 1 : 0);
         }
+
+        /* Mask off the three mux bits, since they contain special configs */
+        HWREG(IOC_ADDR(i)) = pinConfig & GPIOLPF3_CFG_IOC_M;
     }
 
     HWREG(GPIO_BASE + GPIO_O_DOE31_0) = outputEnableMask;
     HWREG(GPIO_BASE + GPIO_O_IMASK)   = intEnableMask;
-
-    /* Apply all the masked values directly to IOC */
-    memcpy((void *)IOC_ADDR(GPIO_pinLowerBound),
-           (void *)&tempPinConfigs[GPIO_pinLowerBound],
-           (GPIO_pinUpperBound - GPIO_pinLowerBound + 1) * sizeof(uint32_t));
 }
 
 /*
@@ -327,6 +327,12 @@ uint32_t GPIO_getMux(uint_least8_t index)
  */
 int_fast16_t GPIO_setConfigAndMux(uint_least8_t index, GPIO_PinConfig pinConfig, uint32_t mux)
 {
+    /* Return immediately if pin should not be configured */
+    if (pinConfig & GPIO_CFG_DO_NOT_CONFIG)
+    {
+        return GPIO_STATUS_SUCCESS;
+    }
+
     if (index == GPIO_INVALID_INDEX)
     {
         return GPIO_STATUS_ERROR;

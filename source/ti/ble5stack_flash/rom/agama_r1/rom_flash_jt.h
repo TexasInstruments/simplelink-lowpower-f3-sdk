@@ -34,7 +34,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2014-2023, Texas Instruments Incorporated
+ Copyright (c) 2014-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -523,7 +523,7 @@ extern uint32 RAM_BASE_ADDR[];
 #define MAP_llCheckAcceptListUsage                       ((uint8                    (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(294))
 #define MAP_llClearRatCompare                            ((void                     (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(295))
 #define MAP_llConnCleanup                                ((void                     (*) (llConnState_t *))                                                                                             ROM_BLE_JT_OFFSET(296))
-#define MAP_llConnExists                                 ((uint8                    (*) (uint8, uint8 *, uint8))                                                                                       ROM_BLE_JT_OFFSET(297))
+#define MAP_llConnExists                                 ((uint8                    (*) (uint8 *, uint8))                                                                                              ROM_BLE_JT_OFFSET(297))
 #define MAP_llConnTerminate                              ((void                     (*) (llConnState_t *, uint8))                                                                                      ROM_BLE_JT_OFFSET(298))
 #define MAP_llConvertCtrlProcTimeoutToEvent              ((void                     (*) (llConnState_t *))                                                                                             ROM_BLE_JT_OFFSET(299))
 #define MAP_llConvertLstoToEvent                         ((void                     (*) (llConnState_t *, connParam_t *))                                                                              ROM_BLE_JT_OFFSET(300))
@@ -1131,14 +1131,14 @@ extern uint32 RAM_BASE_ADDR[];
 #define MAP_smFinishPublicKeyExchange                    ((uint8                    (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(783))
 #define MAP_smResponderAuthStageTwo                      ((void                     (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(784))
 #define MAP_smpResponderProcessEncryptionInformation     ((uint8                    (*) (smpEncInfo_t *))                                                                                              ROM_BLE_JT_OFFSET(785))
-#define MAP_smpResponderProcessIdentityAddrInfo          ((uint8                    (*) (smpIdentityAddrInfo_t *))                                                                                     ROM_BLE_JT_OFFSET(786))
-#define MAP_smpResponderProcessIdentityInfo              ((uint8                    (*) (smpIdentityInfo_t *))                                                                                         ROM_BLE_JT_OFFSET(787))
+#define MAP_smpResponderProcessIdAddrInfo                ((uint8                    (*) (smpIdentityAddrInfo_t *))                                                                                     ROM_BLE_JT_OFFSET(786))
+#define MAP_smpResponderProcessIdInfo                    ((uint8                    (*) (smpIdentityInfo_t *))                                                                                         ROM_BLE_JT_OFFSET(787))
 #define MAP_smpResponderProcessCentralID                 ((uint8                    (*) (smpCentralID_t *))                                                                                             ROM_BLE_JT_OFFSET(788))
 #define MAP_smpResponderProcessPairingConfirm            ((uint8                    (*) (smpPairingConfirm_t *))                                                                                       ROM_BLE_JT_OFFSET(789))
 #define MAP_smpResponderProcessPairingDHKeyCheck         ((uint8                    (*) (smpPairingDHKeyCheck_t *))                                                                                    ROM_BLE_JT_OFFSET(790))
 #define MAP_smpResponderProcessPairingPublicKey          ((uint8                    (*) (smpPairingPublicKey_t *))                                                                                     ROM_BLE_JT_OFFSET(791))
-#define MAP_smpResponderProcessPairingRandom             ((uint8                    (*) (smpPairingRandom_t *))                                                                                        ROM_BLE_JT_OFFSET(792))
-#define MAP_smpResponderProcessPairingReq                ((uint8                    (*) (smpPairingReq_t *))                                                                                           ROM_BLE_JT_OFFSET(793))
+#define MAP_smpResponderProcessPairRandom                ((uint8                    (*) (smpPairingRandom_t *))                                                                                        ROM_BLE_JT_OFFSET(792))
+#define MAP_smpResponderProcessPairReq                   ((uint8                    (*) (smpPairingReq_t *))                                                                                           ROM_BLE_JT_OFFSET(793))
 #define MAP_smpResponderProcessSigningInfo               ((uint8                    (*) (smpSigningInfo_t *))                                                                                          ROM_BLE_JT_OFFSET(794))
 // SM Protocol
 #define MAP_smpBuildEncInfo                              ((bStatus_t                (*) (smpEncInfo_t *, uint8 *))                                                                                     ROM_BLE_JT_OFFSET(795))
@@ -1170,19 +1170,19 @@ extern uint32 RAM_BASE_ADDR[];
 #define MAP_smpParseSecurityReq                          ((bStatus_t                (*) (uint8 *, smpSecurityReq_t *))                                                                                 ROM_BLE_JT_OFFSET(821))
 #define MAP_smpParseSigningInfo                          ((bStatus_t                (*) (uint8 *, smpSigningInfo_t *))                                                                                 ROM_BLE_JT_OFFSET(822))
 #define MAP_smSendSMMsg                                  ((bStatus_t                (*) (uint16 connHandle, uint8, smpMsgs_t *, pfnSMBuildCmd_t))                                                      ROM_BLE_JT_OFFSET(823))
-#define MAP_smpInitiatorProcessPairingRsp                ((uint8                    (*) (smpPairingRsp_t *))                                                                                           ROM_BLE_JT_OFFSET(824))
+#define MAP_smpInitiatorProcessPairRsp                   ((uint8                    (*) (smpPairingRsp_t *))                                                                                           ROM_BLE_JT_OFFSET(824))
 #define MAP_smpInitiatorProcessPairingPubKey             ((uint8                    (*) (smpPairingPublicKey_t *))                                                                                     ROM_BLE_JT_OFFSET(825))
 #define MAP_smpInitiatorProcessPairingDHKeyCheck         ((uint8                    (*) (smpPairingDHKeyCheck_t *))                                                                                    ROM_BLE_JT_OFFSET(826))
 #define MAP_smpInitiatorProcessPairingConfirm            ((uint8                    (*) (smpPairingConfirm_t *))                                                                                       ROM_BLE_JT_OFFSET(827))
 // <<INSERT:#if ( HOST_CONFIG & CENTRAL_CFG )>>
-#define MAP_smpInitiatorProcessPairingRandom             ((uint8                    (*) (smpPairingRandom_t *, uint16))                                                                                ROM_BLE_JT_OFFSET(828))
+#define MAP_smpInitiatorProcessPairRandom                ((uint8                    (*) (smpPairingRandom_t *, uint16))                                                                                ROM_BLE_JT_OFFSET(828))
 // <<INSERT:#else //>>
 // <<INSERT:  (uint32)ROM_Spinlock,>>
 // <<INSERT:#endif>>
 #define MAP_smpInitiatorProcessEncryptionInformation     ((uint8                    (*) (smpEncInfo_t *))                                                                                              ROM_BLE_JT_OFFSET(829))
 #define MAP_smpInitiatorProcessCentralID                 ((uint8                    (*) (smpCentralID_t *))                                                                                             ROM_BLE_JT_OFFSET(830))
-#define MAP_smpInitiatorProcessIdentityInfo              ((uint8                    (*) (smpIdentityInfo_t *))                                                                                         ROM_BLE_JT_OFFSET(831))
-#define MAP_smpInitiatorProcessIdentityAddrInfo          ((uint8                    (*) (smpIdentityAddrInfo_t *))                                                                                     ROM_BLE_JT_OFFSET(832))
+#define MAP_smpInitiatorProcessIdInfo                    ((uint8                    (*) (smpIdentityInfo_t *))                                                                                         ROM_BLE_JT_OFFSET(831))
+#define MAP_smpInitiatorProcessIdAddrInfo                ((uint8                    (*) (smpIdentityAddrInfo_t *))                                                                                     ROM_BLE_JT_OFFSET(832))
 #define MAP_smpInitiatorProcessSigningInfo               ((uint8                    (*) (smpSigningInfo_t *))                                                                                          ROM_BLE_JT_OFFSET(833))
 #define MAP_smInitiatorAuthStageTwo                      ((void                     (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(834))
 #define MAP_setupInitiatorKeys                           ((void                     (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(835))

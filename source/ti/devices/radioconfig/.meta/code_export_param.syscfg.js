@@ -323,7 +323,7 @@ function getSymNames(inst) {
  *
  */
 function onPatchUpdateLaunch(inst) {
-    const deviceFamily = DevInfo.getDeviceFamily();
+    const deviceFamily = Common.getDeviceFamily();
     return {
         command: ExtPath + "get_patches.bat",
         args: ["$comFile", deviceFamily],

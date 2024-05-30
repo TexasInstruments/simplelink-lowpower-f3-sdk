@@ -1,0 +1,40 @@
+# Example of user record txt file format, blank lines and lines starting with "#" will be ignored.
+# Format is a series of hexadecimal integers separated by whitespace/newlines.
+# Integers are inserted in little endian.
+
+# Integers must consist of an even number of hex characters.
+# 1 is invalid, 01 is valid
+
+# Here is the actual data, the integers are numbered in order to be recognized later:
+# integer #1       #2   #3   #4    #5
+0x0123456789ABCDEF EF  0123 0000 0x0ABCDE
+
+# Newline can also be used as divider
+# Integer #6
+BCDE
+
+# In order to convert this, run:
+# crc_tool generate-user-record --user-record-file user_record_example.txt
+# This will then generate a binary file called user_record.bin
+
+# hexump gives us the following data, which you can see has been padded to 124 bytes, plus 4 bytes CRC:
+
+# ------------------- hexdump -C <output_file> ----------------------
+# 00000000  ef cd ab 89 67 45 23 01  ef 23 01 00 00 de bc 0a  |....gE#..#......|
+# 00000010  de bc 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+# 00000020  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+# *
+# 00000070  00 00 00 00 00 00 00 00  00 00 00 00 52 14 8f e6  |............R...|
+# 00000080
+
+
+
+# Marking the integers from above:
+#           -----integer # 1-------  #2 --#3- -#4-- ---#5---
+# 00000000  ef cd ab 89 67 45 23 01  ef 23 01 00 00 de bc 0a  |....gE#..#......|
+#           -#6--
+# 00000010  de bc 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+# 00000020  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+# *
+# 00000070  00 00 00 00 00 00 00 00  00 00 00 00 52 14 8f e6  |............R...|
+# 00000080

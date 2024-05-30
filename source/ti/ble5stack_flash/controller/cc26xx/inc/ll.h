@@ -15,7 +15,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -327,19 +327,19 @@ extern "C"
 
 // LL Address Type
 #define LL_DEV_ADDR_TYPE_MASK                          0x01
-#define LL_DEV_ADDR_TYPE_ID_MASK                       0x02
+#define LL_DEV_ADDR_TYPE_ID_MASK                       0x02U
 //
-#define LL_DEV_ADDR_TYPE_PUBLIC                        0
+#define LL_DEV_ADDR_TYPE_PUBLIC                        0U
 #define LL_DEV_ADDR_TYPE_RANDOM                        1
 #define LL_DEV_ADDR_TYPE_PUBLIC_ID                     2
 #define LL_DEV_ADDR_TYPE_RANDOM_ID                     3
 #define LL_INVALID_DEV_ADDR_TYPE                       0xFF
 
 // Advertiser Accept List Policy
-#define LL_ADV_AL_POLICY_ANY_REQ                       0  // any scan request, any connect request
-#define LL_ADV_AL_POLICY_AL_SCAN_REQ                   1  // any connect request, accept list scan request
-#define LL_ADV_AL_POLICY_AL_CONNECT_IND                2  // any scan request, accept list connect request
-#define LL_ADV_AL_POLICY_AL_ALL_REQ                    3  // accept list scan request and accept list connect request
+#define LL_ADV_AL_POLICY_ANY_REQ                       0U  // any scan request, any connect request
+#define LL_ADV_AL_POLICY_AL_SCAN_REQ                   1U  // any connect request, accept list scan request
+#define LL_ADV_AL_POLICY_AL_CONNECT_IND                2U  // any scan request, accept list connect request
+#define LL_ADV_AL_POLICY_AL_ALL_REQ                    3U  // accept list scan request and accept list connect request
 
 // Scanner Accept List Policy
 #define LL_SCAN_AL_POLICY_ANY_ADV_PKTS                 0
@@ -589,6 +589,8 @@ extern "C"
 #define LL_MAX_SCAN_DATA_LEN                           31
 #define LL_MAX_SCAN_PAYLOAD_LEN                        (LL_DEVICE_ADDR_LEN + LL_MAX_SCAN_DATA_LEN)
 #define LL_MAX_DISCOVERY_DATA_LEN                      31
+#define LL_MAX_EXT_DATA_LEN                            254
+
 //
 #define LL_MIN_LINK_DATA_LEN                           27    // in bytes
 #define LL_MIN_LINK_DATA_TIME                          328   // in us
@@ -783,7 +785,7 @@ extern uint16 LL_ProcessEvent( uint8  task_id,
 /*******************************************************************************
  * @fn          LL_IsRLActiveTasksRunning
  *
- * @brief       This function checks if Adv/Scan/Init/periodec_sync is/are active
+ * @brief       This function checks if Adv/Scan/Init/periodic_sync is/are active
  *
  * input parameters
  *
@@ -793,7 +795,7 @@ extern uint16 LL_ProcessEvent( uint8  task_id,
  *
  * @param       None.
  *
- * @return      True if Adv/Scan/Init/periodec_sync is/are active
+ * @return      True if Adv/Scan/Init/periodic_sync is/are active
  *              O.W return False.
  */
 extern uint8 LL_IsRLActiveTasksRunning( void );
@@ -902,6 +904,7 @@ extern void *LL_RX_bm_alloc( uint16 size );
 extern llStatus_t LL_Reset( void );
 
 #ifdef CC23X0
+#ifndef USE_HSM
 /*******************************************************************************
  * @fn          LL_initRNGNoise API
  *
@@ -922,7 +925,7 @@ extern llStatus_t LL_Reset( void );
  */
 extern llStatus_t LL_initRNGNoise( void );
 #endif
-
+#endif
 /*******************************************************************************
  * @fn          LL_ReadBDADDR API
  *

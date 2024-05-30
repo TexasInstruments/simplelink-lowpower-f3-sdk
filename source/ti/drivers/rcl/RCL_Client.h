@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,13 +39,15 @@
 
 #include <ti/drivers/dpl/SemaphoreP.h>
 
-
+/**
+ *  @brief  RCL Client object
+ *
+ *  The application must not access any member variables of this structure!
+ */
 struct RCL_Client_s {
     RCL_Command      *pendCmd;
     SemaphoreP_Struct pendSem;
     RCL_Events        deferredRclEvents; /* Deferred from cmd -> cmd */
-    LRF_Events        deferredLrfEvents; /* Deferred from cmd -> cmd */
-    uint32_t          deferredTime;
     const LRF_Config *lrfConfig;
 };
 

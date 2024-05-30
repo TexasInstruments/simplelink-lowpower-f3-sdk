@@ -43,4 +43,4 @@
     RNG_init();
 % }
 
-    // Board_shutDownExtFlash();
+    Board_shutDownExtFlash();

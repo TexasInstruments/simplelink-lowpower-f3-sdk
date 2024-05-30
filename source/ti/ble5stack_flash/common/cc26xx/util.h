@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2014-2023, Texas Instruments Incorporated
+ Copyright (c) 2014-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -110,10 +110,12 @@ extern "C" {
  */
 
 #ifdef FREERTOS
+typedef void (*UtilTimerCback)(uint32_t arg);
+
 typedef struct Clock_Struct
 {
     timer_t clock;
-    void *cback;
+    UtilTimerCback cback;
     uint32_t arg;
     sigevent evnt;
     pthread_attr_t timerThrdAttr;
@@ -150,7 +152,7 @@ typedef struct
  * @return  Clock_Handle  - a handle to the clock instance.
  */
 #ifdef FREERTOS
-void* Util_constructClock(Clock_Struct *entry, void *clockCB,
+void* Util_constructClock(Clock_Struct *entry, UtilTimerCback clockCB,
                           uint32_t clockDuration, uint32_t clockPeriod,
                           uint8_t startFlag, uint32_t arg);
 

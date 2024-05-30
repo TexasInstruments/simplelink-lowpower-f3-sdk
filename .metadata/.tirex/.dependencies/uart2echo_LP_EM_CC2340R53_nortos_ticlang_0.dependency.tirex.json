@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../uart2echo.c -> uart2echo.c",
+            "+../README.md -> README.md",
+            "+../README.html -> README.html",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../uart2echo.syscfg -> uart2echo.syscfg",
+            "+../../../../../../source/ti/boards/LP_EM_CC2340R53/Board.html -> Board.html",
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
+        ]
+    }
+]

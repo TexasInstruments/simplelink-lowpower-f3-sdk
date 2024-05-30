@@ -55,7 +55,7 @@ const deviceInfoLongDescription = ` *Need to Add*.\n
 __Default__: True\n`
 
 const maxNumPrepareWritesLongDescription =
-`The maximum number of prepare write (GATT_MAX_NUM_PREPARE_WRITES) on the GATT Server.\n
+`The maximum number of prepare write (GATT_MAX_PREPARE_WRITES) on the GATT Server.\n
 __Default__: 5\n
 __Range__: 0 to 255\n`
 

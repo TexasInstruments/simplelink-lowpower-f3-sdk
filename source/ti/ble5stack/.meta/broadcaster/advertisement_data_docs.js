@@ -80,6 +80,14 @@ LE General Discoverable Mode |
 BR/EDR Not Supported |\n\n
 __Note__: If the Flags AD type is not present in a non-connectable advertisement,\
 the Flags should be considered as unknown and no assumptions should be made by the scanner.\n
+__Note__:\n
+When using Limited Discoverable Mode with enableOptions of type GAP_ADV_ENABLE_OPTIONS_USE_DURATION,\
+ the duration should be between 10 [ms] to 180 [s].\n
+When using Limited Discoverable Mode with enableOptions of type GAP_ADV_ENABLE_OPTIONS_USE_MAX_EVENTS,\
+ the number of events 'n' should be a value which satisfies one of the following terms:\n
+1. n = 1
+2. (1 < n < 256) __and__ (n * (intervalMin + 10 [ms]) <= 180000 [ms])\n
+where intervalMin is the Primary PHY Interval Minimum value in milliseconds\n
 __Default__: False (unchecked)\n
 For more information, refer to the [Bluetooth Core Specification Supplement Document]\
 (https://www.bluetooth\.com/specifications/bluetooth-core-specification/)\n`

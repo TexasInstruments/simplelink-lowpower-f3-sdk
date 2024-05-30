@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,6 @@ static void LRF_programShape(const LRF_TxShape *txShape, uint32_t deviation, uin
 static uint32_t LRF_findLog2Bde1(uint32_t demmisc3);
 static uint32_t LRF_programPQ(uint32_t pllMBase);
 static void LRF_programCMixN(int32_t rxIntFrequency, uint32_t invSynthFreq);
-static void LRF_applyNewClockEnable(void);
 static void LRF_applyTrim(const LRF_TrimDef *trimDef, const LRF_SwConfig *swConfig);
 static void LRF_updateTrim(const LRF_TrimDef *trimDef, const LRF_SwConfig *swConfig);
 static void LRF_setTrimCommon(const LRF_TrimDef *trimDef, const LRF_SwConfig *swConfig);
@@ -81,7 +80,6 @@ static struct {
     const LRF_TOPsmImage   *mceLoaded;
     const LRF_TOPsmImage   *rfeLoaded;
     uint16_t                phyFeatures;
-    uint16_t                clockEnable[LRF_NUM_CLK_ENA];
     LRF_TxPowerTable_Entry  currentTxPower;
     LRF_TxPowerTable_Entry  rawTxPower;
 } lrfPhyState = {0};
@@ -157,9 +155,9 @@ LRF_SetupResult LRF_setupRadio(const LRF_Config *lrfConfig, uint16_t phyFeatures
             }
         }
         /* Invalidate RSSI value to cover the case in which no RX has run before. */
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_RSSI) = LRF_RSSI_INVALID;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSI) = LRF_RSSI_INVALID;
         /* Set PBE to writing FIFO commands to FCMD */
-        HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
     }
 
     if (result == SetupResult_Ok)
@@ -202,27 +200,69 @@ static void LRF_applyTrim(const LRF_TrimDef *trimDef, const LRF_SwConfig *swConf
     if (trimDef != NULL)
     {
 #ifdef DeviceFamily_CC27XX
-        /* Workaround: Write trim0.pa0 to all trim fields until fields are made available in apptrims */
-        uint16_t paTrim = trimDef->trim0.pa0;
-        HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM01) = (paTrim << RFE_COMMON_RAM_PATRIM01_VAL1_S) | (paTrim << RFE_COMMON_RAM_PATRIM01_VAL0_S);
-        HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM23) = (paTrim << RFE_COMMON_RAM_PATRIM23_VAL3_S) | (paTrim << RFE_COMMON_RAM_PATRIM23_VAL2_S);
+        if (trimDef->revision >= LRF_TRIM_VERSION_CORRECT_AMOUNT_OF_PA_TRIMS_CC27XX)
+        {
+            HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM01) = trimDef->trim0.pa2trim01;
+            HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM23) = trimDef->trim4.pa2trim23;
+        }
+        else
+        {
+            /* Workaround: Write trim0.pa2trim01 to all trim fields for revisions where all trim fields are not available in apptrims */
+            uint16_t paTrim = trimDef->trim0.pa2trim01;
+            HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM01) = (paTrim << RFE_COMMON_RAM_PATRIM01_VAL1_S) | (paTrim << RFE_COMMON_RAM_PATRIM01_VAL0_S);
+            HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM23) = (paTrim << RFE_COMMON_RAM_PATRIM23_VAL3_S) | (paTrim << RFE_COMMON_RAM_PATRIM23_VAL2_S);
+        }
 #else
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_PA0)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_PA0) | trimDef->trim0.pa0;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_PA0)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_PA0) | trimDef->trim0.pa0;
 #endif
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_ATSTREFH)   = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_ATSTREFH) | trimDef->trim0.atstRefH;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_ATSTREFH)   = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_ATSTREFH) | trimDef->trim0.atstRefH;
 
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_LNA)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA) | trimDef->trim1.lna;
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) | trimDef->trim1.ifampRfLdo;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_LNA) | trimDef->trim1.lna;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) | trimDef->trim1.ifampRfLdo;
 
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0) | trimDef->trim2.dcoLdo0;
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADCALDO)  = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCALDO) | trimDef->trim2.ifadcAldo;
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADCDLDO)  = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCDLDO) | trimDef->trim2.ifadcDldo;
+#ifdef DeviceFamily_CC27XX
+        /* DCOLDO0 Workaround: DCOLDO0:FIRSTTRIM is hardcoded to 8U and DCOLDO0:SECONDTRIM is increased by 10 for CC27XX state B devices (see: RCL-616)
+         * ASSUMPTION: AppTrims revision on CC27XX state C devices is not smaller than 7
+         */
+        if (trimDef->revision >= LRF_TRIM_VERSION_STATE_C_TRIM_WORKAROUND_CC27XX)
+        {
+            HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0) | trimDef->trim2.dcoLdo0;
+        }
+        else
+        {
+            uint32_t trimDcoldo0Val = trimDef->trim2.dcoLdo0;
+            uint32_t secondTrimVal = (trimDcoldo0Val & LRFDRFE_DCOLDO0_SECONDTRIM_M) >> LRFDRFE_DCOLDO0_SECONDTRIM_S;
+
+            /* Invert bit 3 and 5 to decode the SECONDTRIM value */
+            uint32_t secondTrimValDecoded = secondTrimVal ^ LRF_TRIM_DCOLDO0_SECONDTRIM_CODED_BITS_MASK_STATE_B_DCOLDO_WORKAROUND_CC27XX;
+            uint32_t newSecondTrimVal = secondTrimValDecoded + LRF_TRIM_DCOLDO0_SECONDTRIM_INC_STATE_B_DCOLDO_WORKAROUND_CC27XX;
+
+            /* DCOLDO0[13:8]SECONDTRIM is saturated at 63U */
+            if (newSecondTrimVal > LRF_TRIM_DCOLDO0_SECONDTRIM_MAX_STATE_B_DCOLDO_WORKAROUND_CC27XX)
+            {
+                newSecondTrimVal = LRF_TRIM_DCOLDO0_SECONDTRIM_MAX_STATE_B_DCOLDO_WORKAROUND_CC27XX;
+            }
+
+            /* Invert bit 3 and 5 to encode the SECONDTRIM value */
+            uint32_t newSecondTrimValCoded = newSecondTrimVal ^ LRF_TRIM_DCOLDO0_SECONDTRIM_CODED_BITS_MASK_STATE_B_DCOLDO_WORKAROUND_CC27XX;
+
+            /* Hardcode the FIRSTTRIM to 8U */
+            trimDcoldo0Val = (trimDcoldo0Val & ~LRFDRFE_DCOLDO0_FIRSTTRIM_M) | (LRF_TRIM_DCOLDO0_FIRSTTRIM_VALUE_STATE_B_DCOLDO_WORKAROUND_CC27XX << LRFDRFE_DCOLDO0_FIRSTTRIM_S);
+
+            trimDcoldo0Val = (trimDcoldo0Val & ~LRFDRFE_DCOLDO0_SECONDTRIM_M) | (newSecondTrimValCoded << LRFDRFE_DCOLDO0_SECONDTRIM_S);
+            HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0) | trimDcoldo0Val;
+        }
+#else
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCOLDO0) | trimDef->trim2.dcoLdo0;
+#endif
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCALDO)  = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCALDO) | trimDef->trim2.ifadcAldo;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCDLDO)  = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCDLDO) | trimDef->trim2.ifadcDldo;
 
         /* DEMIQMC0 has no fields not to be trimmed */
-        HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMIQMC0)   =  trimDef->trim4.demIQMC0;
+        HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMIQMC0)   =  trimDef->trim4.demIQMC0;
 
         /* Write trim to shadow registers */
-        HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_IFAMPRFLDODEFAULT) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) & LRFDRFE_IFAMPRFLDO_TRIM_M;
+        HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_IFAMPRFLDODEFAULT) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) & LRFDRFE_IFAMPRFLDO_TRIM_M;
 
         LRF_setTrimCommon(trimDef, swConfig);
         LRF_temperatureCompensateTrim(trimDef);
@@ -234,11 +274,11 @@ static void LRF_updateTrim(const LRF_TrimDef *trimDef, const LRF_SwConfig *swCon
     if (trimDef != NULL)
     {
         /* Remove trim fields from registers with BW variations */
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT) & (~(LRFDRFE_IFADCQUANT_QUANTTHR_M));
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADC0)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) & (~(LRFDRFE_IFADC0_AAFCAP_M | LRFDRFE_IFADC0_INT2ADJ_M | LRFDRFE_IFADC0_DITHEREN_M | LRFDRFE_IFADC0_DITHERTRIM_M));
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADC1)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC1) & (~(LRFDRFE_IFADC1_TRIM_M | LRFDRFE_IFADC1_NRZ_M));
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADCLF)       = 0; /* All fields are trimmed so everything needs to be cleared */
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) & (~LRFDRFE_IFAMPRFLDO_AAFCAP_M);
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT) & (~(LRFDRFE_IFADCQUANT_QUANTTHR_M));
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) & (~(LRFDRFE_IFADC0_AAFCAP_M | LRFDRFE_IFADC0_INT2ADJ_M | LRFDRFE_IFADC0_DITHEREN_M | LRFDRFE_IFADC0_DITHERTRIM_M));
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC1)        = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC1) & (~(LRFDRFE_IFADC1_TRIM_M | LRFDRFE_IFADC1_NRZ_M));
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCLF)       = 0; /* All fields are trimmed so everything needs to be cleared */
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) & (~LRFDRFE_IFAMPRFLDO_AAFCAP_M);
 
         LRF_setTrimCommon(trimDef, swConfig);
         LRF_setTemperatureTrim(trimDef);
@@ -255,20 +295,20 @@ static void LRF_setTrimCommon(const LRF_TrimDef *trimDef, const LRF_SwConfig *sw
         bwIndex = swConfig->bwIndex;
         bwIndexDither = swConfig->bwIndexDither;
     }
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT) | trimDef->trimVariant[bwIndex].ifadcQuant;
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADC0)     = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) | trimDef->trimVariant[bwIndex].ifadc0;
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADC1)     = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC1) | trimDef->trimVariant[bwIndex].ifadc1;
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADCLF)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCLF) | trimDef->trimVariant[bwIndex].ifadclf;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCQUANT) | trimDef->trimVariant[bwIndex].ifadcQuant;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0)     = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) | trimDef->trimVariant[bwIndex].ifadc0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC1)     = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC1) | trimDef->trimVariant[bwIndex].ifadc1;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCLF)    = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADCLF) | trimDef->trimVariant[bwIndex].ifadclf;
 
     if (revision >= LRF_TRIM_MIN_VERSION_FULL_FEATURES)
     {
         /* Set AAFCAP according to BW */
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) | trimDef->trim4.ifamprfldo[bwIndex];
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFAMPRFLDO) | trimDef->trim4.ifamprfldo[bwIndex];
 
         if (bwIndexDither != bwIndex)
         {
             /* Use different setting of dither settings compared to the rest of the IFADC0 register. */
-            HWREG(LRFDRFE_BASE + LRFDRFE_O_IFADC0) = (HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) & ~(LRFDRFE_IFADC0_DITHEREN_M | LRFDRFE_IFADC0_DITHERTRIM_M)) |
+            HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) = (HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_IFADC0) & ~(LRFDRFE_IFADC0_DITHEREN_M | LRFDRFE_IFADC0_DITHERTRIM_M)) |
                 (trimDef->trimVariant[bwIndexDither].ifadc0 & (LRFDRFE_IFADC0_DITHEREN_M | LRFDRFE_IFADC0_DITHERTRIM_M));
         }
     }
@@ -279,10 +319,10 @@ static void LRF_setTemperatureTrim(const LRF_TrimDef *trimDef)
     if (trimDef != NULL)
     {
         /* Remove trim fields from registers with temperature compensation */
-        HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) & (~RFE_COMMON_RAM_DIVLDOF_VOUTTRIM_M);
-        HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) & (~RFE_COMMON_RAM_DIVLDOI_VOUTTRIM_M);
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_TDCLDO)              = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_TDCLDO) & (~LRFDRFE_TDCLDO_VOUTTRIM_M);
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_DCO)                 = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCO) & (~LRFDRFE_DCO_TAILRESTRIM_M);
+        HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) & (~RFE_COMMON_RAM_DIVLDOF_VOUTTRIM_M);
+        HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) & (~RFE_COMMON_RAM_DIVLDOI_VOUTTRIM_M);
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_TDCLDO)              = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_TDCLDO) & (~LRFDRFE_TDCLDO_VOUTTRIM_M);
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_DCO)                 = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCO) & (~LRFDRFE_DCO_TAILRESTRIM_M);
 
         LRF_temperatureCompensateTrim(trimDef);
     }
@@ -302,8 +342,8 @@ static void LRF_setTemperatureTrim(const LRF_TrimDef *trimDef)
 #define LRF_RTRIM_LOW_TEMP_ADJ_FACTOR 1U
 /* Adjustment per step of RTRIM at highest temperature */
 #define LRF_RTRIM_HIGH_TEMP_ADJ_FACTOR 1U
-/* Maximum allowed value (saturation value) for RTRIM */
-#define LRF_RTRIM_MAX 12U
+/* Maximum allowed value (saturation value) for RTRIM, except if RTRIM value in FCFG is above this level */
+#define LRF_DEFAULT_RTRIM_MAX 12U
 
 /* Number of shifts in temperature compensation for fields in lrfdrfeExtTrim0 */
 #define LRF_EXTTRIM0_TEMPERATURE_SCALE_EXP 7
@@ -369,7 +409,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
 
         rssiTempOffset = LRF_findExtTrim0TrimAdjustment(temperature, trimDef->trim3.fields.lrfdrfeExtTrim0.rssiTcomp, 0);
 
-        if (((HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_AGCINFO) & RFE_COMMON_RAM_AGCINFO_MODE_M) >> RFE_COMMON_RAM_AGCINFO_MODE_S) == (RFE_COMMON_RAM_AGCINFO_MODE_FAST >> RFE_COMMON_RAM_AGCINFO_MODE_S))
+        if (((HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_AGCINFO) & RFE_COMMON_RAM_AGCINFO_MODE_M) >> RFE_COMMON_RAM_AGCINFO_MODE_S) == (RFE_COMMON_RAM_AGCINFO_MODE_FAST >> RFE_COMMON_RAM_AGCINFO_MODE_S))
         {
             /* Fast AGC */
             agcValOffset =LRF_findExtTrim0TrimAdjustment(temperature, trimDef->trim3.fields.lrfdrfeExtTrim0.agcThrTcomp,
@@ -398,7 +438,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
         divLdoVoutTrim = (LRFDRFE_DIVLDO_VOUTTRIM_ONES >> LRFDRFE_DIVLDO_VOUTTRIM_S);
     }
     /* Write back with most signigicant bit inverted back */
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) | ((divLdoVoutTrim ^ 0x40) << RFE_COMMON_RAM_DIVLDOF_VOUTTRIM_S);
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOF) | ((divLdoVoutTrim ^ 0x40) << RFE_COMMON_RAM_DIVLDOF_VOUTTRIM_S);
 
     /* Add offset to initial value */
     divLdoVoutTrim += HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOIOFF);
@@ -409,7 +449,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
         divLdoVoutTrim = (LRFDRFE_DIVLDO_VOUTTRIM_ONES >> LRFDRFE_DIVLDO_VOUTTRIM_S);
     }
     /* Write back with most signigicant bit inverted back */
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) | ((divLdoVoutTrim ^ 0x40) << RFE_COMMON_RAM_DIVLDOI_VOUTTRIM_S);
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_DIVLDOI) | ((divLdoVoutTrim ^ 0x40) << RFE_COMMON_RAM_DIVLDOI_VOUTTRIM_S);
 
     uint32_t tdcLdoVoutTrim = trimDef->trim1.fields.tdcLdo.voutTrim;
 
@@ -430,20 +470,39 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
         tdcLdoVoutTrim ^= 0x40;
     }
     /* Write back */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_TDCLDO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_TDCLDO) | (tdcLdoVoutTrim << LRFDRFE_TDCLDO_VOUTTRIM_S);
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_TDCLDO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_TDCLDO) | (tdcLdoVoutTrim << LRFDRFE_TDCLDO_VOUTTRIM_S);
 
-    uint32_t rtrim = trimDef->trim2.fields.dco.tailresTrim;
-
-    /* Add offset from temperature compensation */
-    rtrim += rtrimTempOffset;
-
-    /* Add offset from PHY */
-    rtrim += HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RTRIMOFF);
-
-    /* Saturate */
-    if (rtrim > LRF_RTRIM_MAX)
+#ifdef DeviceFamily_CC27XX
+    /* RTRIM Workaround: hardcode the RTRIM to 10U rather than read it from FCFG for CC27XX state B devices (see: RCL-591)
+     * ASSUMPTION: AppTrims revision on CC27XX state C devices is not smaller than 7
+     */
+    uint32_t rtrim;
+    if (trimDef->revision >= LRF_TRIM_VERSION_STATE_C_TRIM_WORKAROUND_CC27XX)
     {
-        rtrim = LRF_RTRIM_MAX;
+        rtrim = trimDef->trim2.fields.dco.tailresTrim;
+    }
+    else
+    {
+        rtrim = LRF_TRIM_RTRIM_VALUE_STATE_B_RTRIM_WORKAROUND_CC27XX;
+    }
+#else
+    uint32_t rtrim = trimDef->trim2.fields.dco.tailresTrim;
+#endif
+    /* Temperature compensation and PHY offset can only be applied if the value is not above the saturation level */
+    /* If RTRIM from FCFG is above this, always use that level */
+    if (rtrim < LRF_DEFAULT_RTRIM_MAX)
+    {
+        /* Add offset from temperature compensation */
+        rtrim += rtrimTempOffset;
+
+        /* Add offset from PHY */
+        rtrim += HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RTRIMOFF);
+
+        /* Saturate */
+        if (rtrim > LRF_DEFAULT_RTRIM_MAX)
+        {
+            rtrim = LRF_DEFAULT_RTRIM_MAX;
+        }
     }
 
     /* Ensure it is not smaller than minimum from PHY */
@@ -454,19 +513,21 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
     }
 
     /* Write into register */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_DCO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCO) | (rtrim << LRFDRFE_DCO_TAILRESTRIM_S);
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_DCO) = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DCO) | (rtrim << LRFDRFE_DCO_TAILRESTRIM_S);
 
     /* Get RSSI offset from FCFG */
     int32_t rssiOffset = trimDef->trim4.rssiOffset;
 
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC2340R53)
     /* RCL-335: Some devices (State D) have an error in the programmed RSSI offset */
-    if (trimDef->revision == LRF_TRIM_VERSION_RSSIOFFSET_ISSUE)
+    if (trimDef->revision == LRF_TRIM_VERSION_RSSIOFFSET_ISSUE_CC23X0R5)
     {
-        if (rssiOffset <= LRF_TRIM_LIMIT_RSSIOFFSET_ISSUE)
+        if (rssiOffset <= LRF_TRIM_LIMIT_RSSIOFFSET_ISSUE_CC23X0R5)
         {
-            rssiOffset += LRF_TRIM_CORRECTION_RSSIOFFSET_ISSUE;
+            rssiOffset += LRF_TRIM_CORRECTION_RSSIOFFSET_ISSUE_CC23X0R5;
         }
     }
+#endif
 
     /* Apply temperature compensation */
     rssiOffset += rssiTempOffset;
@@ -475,7 +536,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
     rssiOffset += HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PHYRSSIOFFSET);
 
     /* Store in HW register */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_RSSIOFFSET) = rssiOffset;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSIOFFSET) = rssiOffset;
 
     if (((HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_AGCINFO) & RFE_COMMON_RAM_AGCINFO_MODE_M) >> RFE_COMMON_RAM_AGCINFO_MODE_S) == (RFE_COMMON_RAM_AGCINFO_MODE_FAST >> RFE_COMMON_RAM_AGCINFO_MODE_S))
     {
@@ -511,7 +572,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
             spare0Val = (spare0Val & ~(RFE_SPARE0_LOW_GAIN_BM | RFE_SPARE0_HIGH_GAIN_BM)) |
                 (lowGain << RFE_SPARE0_LOW_GAIN) | (highGain << RFE_SPARE0_HIGH_GAIN);
         }
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_SPARE0) = spare0Val;
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE0) = spare0Val;
     }
 
     uint32_t spare1Val = HWREGH_READ_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_SPARE1SHADOW);
@@ -529,7 +590,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
         }
         spare1Val = (spare1Val & ~RFE_SPARE1_AGC_VALUE_BM) | (agcVal << RFE_SPARE1_AGC_VALUE);
     }
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_SPARE1) = spare1Val;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE1) = spare1Val;
 }
 
 /* Represent 1/3 with the approximation LRF_ONE_THIRD_MANTISSA * 2^(-LRF_ONE_THIRD_NEG_EXP) */
@@ -588,47 +649,47 @@ static int32_t LRF_findExtTrim0TrimAdjustment(int32_t temperature, int32_t tempC
 void LRF_enable(void)
 {
     /* Set MSGBOX register to 0 */
-    HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_MSGBOX) = 0;
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_MSGBOX) = 0;
 
     /* Initialize and enable PBE TOPsm and FIFO */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_INIT)   = ((1 << LRFDPBE_INIT_MDMF_S)   |
-                                              (1 << LRFDPBE_INIT_TOPSM_S));
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_ENABLE) = ((1 << LRFDPBE_ENABLE_MDMF_S) |
-                                              (1 << LRFDPBE_ENABLE_TOPSM_S));
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_INIT)   = ((1 << LRFDPBE_INIT_MDMF_S)   |
+                                                       (1 << LRFDPBE_INIT_TOPSM_S));
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_ENABLE) = ((1 << LRFDPBE_ENABLE_MDMF_S) |
+                                                       (1 << LRFDPBE_ENABLE_TOPSM_S));
 
     /* Initialize and enable MCE TOPsm and FIFO */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_INIT)   = ((1 << LRFDMDM_INIT_TXRXFIFO_S)  |
-                                              (1 << LRFDMDM_INIT_TOPSM_S));
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = ((1 << LRFDMDM_ENABLE_TXRXFIFO_S)|
-                                              (1 << LRFDMDM_ENABLE_TOPSM_S));
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_INIT)   = ((1 << LRFDMDM_INIT_TXRXFIFO_S)  |
+                                                       (1 << LRFDMDM_INIT_TOPSM_S));
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = ((1 << LRFDMDM_ENABLE_TXRXFIFO_S)|
+                                                       (1 << LRFDMDM_ENABLE_TOPSM_S));
 
     /* Initialize and enable RFE TOPsm */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_INIT)   = (1 << LRFDRFE_INIT_TOPSM_S);
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = (1 << LRFDRFE_ENABLE_TOPSM_S);
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_INIT)   = (1 << LRFDRFE_INIT_TOPSM_S);
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = (1 << LRFDRFE_ENABLE_TOPSM_S);
 }
 
 void LRF_disable(void)
 {
     /* Request PBE powerdown */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_PDREQ) = LRFDPBE_PDREQ_TOPSMPDREQ_M;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_PDREQ) = LRFDPBE_PDREQ_TOPSMPDREQ_M;
     /* Disable all PBE modules */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_ENABLE) = 0;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_ENABLE) = 0;
     /* Stop powerdown request */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_PDREQ) = 0;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_PDREQ) = 0;
 
     /* Request MCE powerdown */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_PDREQ) = LRFDMDM_PDREQ_TOPSMPDREQ_M;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_PDREQ) = LRFDMDM_PDREQ_TOPSMPDREQ_M;
     /* Disable all MDM modules */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = 0;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_ENABLE) = 0;
     /* Stop powerdown request */
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_PDREQ) = 0;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_PDREQ) = 0;
 
     /* Request RFE powerdown */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = LRFDRFE_PDREQ_TOPSMPDREQ_M;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = LRFDRFE_PDREQ_TOPSMPDREQ_M;
     /* Disable all RFE modules */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_ENABLE) = 0;
     /* Stop powerdown request */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = 0;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_PDREQ) = 0;
 }
 
 void LRF_waitForTopsmReady(void)
@@ -644,16 +705,16 @@ uint32_t LRF_prepareRxFifo(void)
 {
     uint32_t fifoSize;
     /* Reset RXFIFO. NOTE: Only allowed while PBE is not running, ref. RCL-367 */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_RXFIFO_RESET >> LRFDPBE_FCMD_DATA_S);
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_RXFIFO_RESET >> LRFDPBE_FCMD_DATA_S);
     /* Set up RXFIFO without auto commit or deallocate */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG0) = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) & (~(LRFDPBE_FCFG0_RXADEAL_M | LRFDPBE_FCFG0_RXACOM_M));
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) & (~(LRFDPBE_FCFG0_RXADEAL_M | LRFDPBE_FCFG0_RXACOM_M));
     /* Read writable bytes, which is the FIFO size */
     fifoSize = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFWRITABLE);
     /* Write SRP to 0. This sets no available space for writing; to be updated
        by calling LRF_setRxFifoEffSz().
        This write can be done without protection since PBE is not allowed to be
        running here, ref RCL-367 */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_RXFSRP) = 0;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFSRP) = 0;
     rxFifoDeallocated = false;
 
     return fifoSize;
@@ -662,12 +723,12 @@ uint32_t LRF_prepareRxFifo(void)
 uint32_t LRF_prepareTxFifo(void)
 {
     /* Reset RXFIFO. NOTE: Only allowed while PBE is not running, ref. RCL-367 */
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_TXFIFO_RESET >> LRFDPBE_FCMD_DATA_S);
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_TXFIFO_RESET >> LRFDPBE_FCMD_DATA_S);
     /* Set up TXFIFO with auto commit, without auto deallocate */
     uint32_t fcfg0 = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0);
     fcfg0 &= ~LRFDPBE_FCFG0_TXADEAL_M;
     fcfg0 |=  LRFDPBE_FCFG0_TXACOM_M;
-    HWREG(LRFDPBE_BASE + LRFDPBE_O_FCFG0) = fcfg0;
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) = fcfg0;
     /* Return writable bytes, which is the FIFO size */
     return HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE);
 }
@@ -680,7 +741,8 @@ uint32_t LRF_peekRxFifo(int32_t offset)
     {
         index -= fifosz;
     }
-    return *(uint32_t *) (LRFD_BUFRAM_BASE + (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG3) << 2) + index);
+
+    return HWREG_READ_LRF(LRFD_BUFRAM_BASE + (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG3) << 2) + index);
 }
 
 uint32_t LRF_peekTxFifo(int32_t offset)
@@ -691,7 +753,7 @@ uint32_t LRF_peekTxFifo(int32_t offset)
     {
         index -= fifosz;
     }
-    return *(uint32_t *) (LRFD_BUFRAM_BASE + (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG1) << 2) + index);
+    return HWREG_READ_LRF(LRFD_BUFRAM_BASE + (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG1) << 2) + index);
 }
 
 uint8_t *LRF_getTxFifoWrAddr(int32_t offset)
@@ -708,15 +770,15 @@ static void LRF_writeFifoPtr(uint32_t value, uintptr_t regAddr)
     /* Run in protected region to avoid unnecessary delays */
     uintptr_t key = HwiP_disable();
     /* Direct PBE to write FIFO commands to FSTAT register to make them ignored */
-    HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FSTAT) & 0x0FFF) >> 2;
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FSTAT) & 0x0FFF) >> 2;
     /* Wait a little so that PBE has time to finish any pending command writes */
     /* Do the wait by dummy reads of FIFOCMDADD */
-    (void) HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
-    (void) HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
+    (void) HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
+    (void) HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
     /* Write to specified register */
-    HWREG(regAddr) = value;
+    HWREG_WRITE_LRF(regAddr) = value;
     /* Set PBE back to writing FIFO commands to FCMD */
-    HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
 
     HwiP_restore(key);
 }
@@ -729,16 +791,16 @@ static void LRF_writeFifoPtrs(uint32_t value, uintptr_t regAddr0, uintptr_t regA
     /* Run in protected region to avoid unnecessary delays */
     uintptr_t key = HwiP_disable();
     /* Direct PBE to write FIFO commands to FSTAT register to make them ignored */
-    HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FSTAT) & 0x0FFF) >> 2;
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FSTAT) & 0x0FFF) >> 2;
     /* Wait a little so that PBE has time to finish any pending command writes */
     /* Do the wait by dummy reads of FIFOCMDADD */
-    (void) HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
-    (void) HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
+    (void) HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
+    (void) HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD);
     /* Write to specified registers */
-    HWREG(regAddr0) = value;
-    HWREG(regAddr1) = value;
+    HWREG_WRITE_LRF(regAddr0) = value;
+    HWREG_WRITE_LRF(regAddr1) = value;
     /* Set PBE back to writing FIFO commands to FCMD */
-    HWREGH(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
 
 
     HwiP_restore(key);
@@ -776,6 +838,11 @@ void LRF_readRxFifoWords(uint32_t *data32, uint32_t wordLength)
     uint32_t fifoStart = ((HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG3) & LRFDPBE_FCFG3_RXSTRT_M) >> LRFDPBE_FCFG3_RXSTRT_S) << 2;
     uint32_t readPointer = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRP) & ~0x0003;
     volatile uint32_t *fifoReadPtr = (volatile uint32_t *) (RXF_UNWRAPPED_BASE_ADDR + fifoStart + readPointer);
+
+    /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
+#ifdef DeviceFamily_CC27XX
+    ASM_4_NOPS();
+#endif //DeviceFamily_CC27XX
     for (uint32_t i = 0; i < wordLength; i++) {
         *data32++ = *fifoReadPtr++;
     }
@@ -798,6 +865,11 @@ void LRF_writeTxFifoWords(const uint32_t *data32, uint32_t wordLength)
     uint32_t fifoStart = ((HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG1) & LRFDPBE_FCFG1_TXSTRT_M) >> LRFDPBE_FCFG1_TXSTRT_S) << 2;
     uint32_t writePointer = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWP) & ~0x0003;
     volatile uint32_t *fifoWritePtr = (volatile uint32_t *) (TXF_UNWRAPPED_BASE_ADDR + fifoStart + writePointer);
+
+    /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
+#ifdef DeviceFamily_CC27XX
+    ASM_4_NOPS();
+#endif //DeviceFamily_CC27XX
     for (uint32_t i = 0; i < wordLength; i++) {
         *fifoWritePtr++ = *data32++;
     }
@@ -1008,6 +1080,10 @@ static void LRF_programShape(const LRF_TxShape *txShape, uint32_t deviation, uin
                 ((deviationFactor2 * txShape->coeff[i]) + (1 << (18 + shapeGain))) >> (19 + shapeGain);
         }
 
+        /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
+#ifdef DeviceFamily_CC27XX
+        ASM_4_NOPS();
+#endif //DeviceFamily_CC27XX
         for (int i = 0; i <  NUM_TX_FILTER_TAPS / 4; i++)
         {
             *((unsigned long*) (LRFDRFE32_BASE + LRFDRFE32_O_DTX1_DTX0) + i) = filterCoeff.w[i];
@@ -1017,7 +1093,7 @@ static void LRF_programShape(const LRF_TxShape *txShape, uint32_t deviation, uin
             /* TODO: Scale by adjusting the symbol mapping */
             shapeGain = 3;
         }
-        HWREG(LRFDRFE_BASE + LRFDRFE_O_MOD0) = (HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_MOD0) & ~LRFDRFE_MOD0_SHPGAIN_M) | (shapeGain << LRFDRFE_MOD0_SHPGAIN_S);
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_MOD0) = (HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_MOD0) & ~LRFDRFE_MOD0_SHPGAIN_M) | (shapeGain << LRFDRFE_MOD0_SHPGAIN_S);
     }
 }
 
@@ -1128,8 +1204,18 @@ static uint32_t LRF_programPQ(uint32_t pllMBase)
         Log_printf(RclCore, Log_INFO, "PLLM base rounded from %08X to %08X to fit in fractional resampler", pllMBase, pllMBaseRounded);
     }
 
-    HWREG(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC1_DEMFRAC0) = demFracP;
-    HWREG(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC3_DEMFRAC2) = demFracQ;
+#ifdef DeviceFamily_CC27XX
+    /* Check if shadow register for downsampler coefficient P is in use */
+    if ((HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_BAUDCOMP) & LRFDMDM_BAUDCOMP_FRAC_SHADOW) != 0)
+    {
+        /* Write downsampler coefficient P to shadow registers for new Rx operations to restore */
+        HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMCOHR3) = demFracP & 0x0000FFFFU;
+        HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMCOHR4) = demFracP >> 16;
+    }
+#endif /* DeviceFamily_CC27XX */
+
+    HWREG_WRITE_LRF(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC1_DEMFRAC0) = demFracP;
+    HWREG_WRITE_LRF(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC3_DEMFRAC2) = demFracQ;
 
     return pllMBaseRounded;
 }
@@ -1177,8 +1263,8 @@ static void LRF_programCMixN(int32_t rxIntFrequency, uint32_t invSynthFreq)
 #endif
 
     cMixN = (uint32_t)(signedCMixN & LRFDMDM_DEMMISC0_CMIXN_M);
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMMISC0) = cMixN;
-    HWREG(LRFDMDM_BASE + LRFDMDM_O_SPARE3) = cMixN;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMMISC0) = cMixN;
+    HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_SPARE3) = cMixN;
 }
 
 void LRF_programFrequency(uint32_t frequency, bool tx)
@@ -1206,11 +1292,11 @@ void LRF_programFrequency(uint32_t frequency, bool tx)
     uint32_t frequencyDiv2_16 = (synthFrequency + (1 << 15)) >> 16;
 
     /* Start calculating 2^47/frequency (approximated as 2^31/(synthFrequency/2^16)) */
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_DIVIDEND) = 1U << 31;
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_DIVISOR) = frequencyDiv2_16;
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_DIVIDEND) = 1U << 31;
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_DIVISOR) = frequencyDiv2_16;
 
     /* Write approximate freuency to RFE */
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_K5) = frequencyDiv2_16;
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_K5) = frequencyDiv2_16;
 
     /* Find setting for coarse and mid calibration */
     uint32_t precalSetting = HWREG_READ_LRF(LRFDRFE32_BASE + LRFDRFE32_O_PRE3_PRE2);
@@ -1229,7 +1315,7 @@ void LRF_programFrequency(uint32_t frequency, bool tx)
     {
         calMMid = LRF_findCalM(synthFrequency, midPrecal);
     }
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_CALMMID_CALMCRS) = (calMCoarse << LRFDRFE32_CALMMID_CALMCRS_CALMCRS_VAL_S) |
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_CALMMID_CALMCRS) = (calMCoarse << LRFDRFE32_CALMMID_CALMCRS_CALMCRS_VAL_S) |
         (calMMid << LRFDRFE32_CALMMID_CALMCRS_CALMMID_VAL_S);
 
     precalSetting = HWREG_READ_LRF(LRFDRFE32_BASE + LRFDRFE32_O_PRE1_PRE0);
@@ -1250,8 +1336,8 @@ void LRF_programFrequency(uint32_t frequency, bool tx)
         pllMBaseCompensated = LRF_findPllMBase(synthFrequencyCompensated);
     }
 
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_PLLM0) = ((pllMBaseCompensated * precal0) << LRFDRFE32_PLLM0_VAL_S);
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_PLLM1) = ((pllMBaseCompensated * precal1) << LRFDRFE32_PLLM1_VAL_S);
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_PLLM0) = ((pllMBaseCompensated * precal0) << LRFDRFE32_PLLM0_VAL_S);
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_PLLM1) = ((pllMBaseCompensated * precal1) << LRFDRFE32_PLLM1_VAL_S);
 
     /* Read out division result to find invSynthFreq */
     while ((HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_DIVSTA) & LRFDRFE_DIVSTA_STAT_M) != 0)
@@ -1260,8 +1346,8 @@ void LRF_programFrequency(uint32_t frequency, bool tx)
     uint32_t invSynthFreq = HWREG_READ_LRF(LRFDRFE32_BASE + LRFDRFE32_O_QUOTIENT);
 
     /* Calculate intermediate frequencies */
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RXIF) = LRF_findFoff(swConfig->rxFrequencyOffset, invSynthFreq);
-    HWREGH(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_TXIF) = LRF_findFoff(swConfig->txFrequencyOffset, invSynthFreq);
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_RXIF) = LRF_findFoff(swConfig->rxFrequencyOffset, invSynthFreq);
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_TXIF) = LRF_findFoff(swConfig->txFrequencyOffset, invSynthFreq);
 
     /* Calculate CMIXN */
     LRF_programCMixN(swConfig->rxIntFrequency, invSynthFreq);
@@ -1280,7 +1366,7 @@ uint32_t LRF_enableSynthRefsys(void)
     if ((atstref & LRFDRFE32_ATSTREF_BIAS_M) == 0)
     {
         /* Bias not already enabled - enable it now */
-        HWREG(LRFDRFE32_BASE + LRFDRFE32_O_ATSTREF) = atstref | LRFDRFE32_ATSTREF_BIAS_M;
+        HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_ATSTREF) = atstref | LRFDRFE32_ATSTREF_BIAS_M;
         /* Set earliest start time of synth to some later time */
         earliestStartTime = LRF_REFSYS_ENABLE_TIME;
     }
@@ -1297,65 +1383,31 @@ uint32_t LRF_enableSynthRefsys(void)
 
 void LRF_disableSynthRefsys(void)
 {
-    HWREG(LRFDRFE32_BASE + LRFDRFE32_O_ATSTREF) = HWREG_READ_LRF(LRFDRFE32_BASE + LRFDRFE32_O_ATSTREF) & (~LRFDRFE32_ATSTREF_BIAS_M);
-}
-
-
-void LRF_setClockEnable(uint16_t mask, uint8_t entryNumber)
-{
-    if (entryNumber < LRF_NUM_CLK_ENA)
-    {
-        lrfPhyState.clockEnable[entryNumber] |= mask;
-    }
-    LRF_applyNewClockEnable();
-}
-
-void LRF_clearClockEnable(uint16_t mask, uint8_t entryNumber)
-{
-    if (entryNumber < LRF_NUM_CLK_ENA)
-    {
-        lrfPhyState.clockEnable[entryNumber] &= ~mask;
-    }
-    LRF_applyNewClockEnable();
-}
-
-static void LRF_applyNewClockEnable(void)
-{
-    uint16_t clkEna = 0;
-    uintptr_t key = HwiP_disable();
-    for (int i = 0; i < LRF_NUM_CLK_ENA; i++)
-    {
-        clkEna |= lrfPhyState.clockEnable[i];
-    }
-
-    hal_set_clkctl(clkEna);
-    HwiP_restore(key);
+    HWREG_WRITE_LRF(LRFDRFE32_BASE + LRFDRFE32_O_ATSTREF) = HWREG_READ_LRF(LRFDRFE32_BASE + LRFDRFE32_O_ATSTREF) & (~LRFDRFE32_ATSTREF_BIAS_M);
 }
 
 void LRF_rclEnableRadioClocks(void)
 {
-    LRF_setClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M |
-                       LRFDDBELL_CLKCTL_DSBRAM_M |
-                       LRFDDBELL_CLKCTL_RFERAM_M |
-                       LRFDDBELL_CLKCTL_MCERAM_M |
-                       LRFDDBELL_CLKCTL_PBERAM_M |
-                       LRFDDBELL_CLKCTL_RFE_M |
-                       LRFDDBELL_CLKCTL_MDM_M |
-                       LRFDDBELL_CLKCTL_PBE_M,
-                       LRF_CLK_ENA_RCL);
+    LRF_setRclClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M |
+                          LRFDDBELL_CLKCTL_DSBRAM_M |
+                          LRFDDBELL_CLKCTL_RFERAM_M |
+                          LRFDDBELL_CLKCTL_MCERAM_M |
+                          LRFDDBELL_CLKCTL_PBERAM_M |
+                          LRFDDBELL_CLKCTL_RFE_M |
+                          LRFDDBELL_CLKCTL_MDM_M |
+                          LRFDDBELL_CLKCTL_PBE_M);
 }
 
 void LRF_rclDisableRadioClocks(void)
 {
-    LRF_clearClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M |
-                         LRFDDBELL_CLKCTL_DSBRAM_M |
-                         LRFDDBELL_CLKCTL_RFERAM_M |
-                         LRFDDBELL_CLKCTL_MCERAM_M |
-                         LRFDDBELL_CLKCTL_PBERAM_M |
-                         LRFDDBELL_CLKCTL_RFE_M |
-                         LRFDDBELL_CLKCTL_MDM_M |
-                         LRFDDBELL_CLKCTL_PBE_M,
-                         LRF_CLK_ENA_RCL);
+    LRF_clearRclClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M |
+                            LRFDDBELL_CLKCTL_DSBRAM_M |
+                            LRFDDBELL_CLKCTL_RFERAM_M |
+                            LRFDDBELL_CLKCTL_MCERAM_M |
+                            LRFDDBELL_CLKCTL_PBERAM_M |
+                            LRFDDBELL_CLKCTL_RFE_M |
+                            LRFDDBELL_CLKCTL_MDM_M |
+                            LRFDDBELL_CLKCTL_PBE_M);
 }
 
 int8_t LRF_readRssi(void)
@@ -1419,7 +1471,7 @@ void LRF_programTemperatureCompensatedTxPower(void)
         txPowerEntry.value.ib = ib;
     }
     /* Program into RFE shadow register for PA power */
-    HWREG(LRFDRFE_BASE + LRFDRFE_O_SPARE5) = txPowerEntry.value.rawValue;
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE5) = txPowerEntry.value.rawValue;
 }
 
 LRF_TxPowerResult LRF_programTxPower(LRF_TxPowerTable_Index powerLevel)

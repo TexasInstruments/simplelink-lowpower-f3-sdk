@@ -1,0 +1,23 @@
+{
+  "CC2340R5": [
+    "BLE",
+    "Proprietary"
+  ],
+  "CC2340R5Q1": [
+    "BLE"
+  ],
+  "CC2340R2": [
+    "BLE"
+  ],
+  "CC2340R53": [
+    "BLE",
+    "Proprietary"
+  ],
+  "CC2340R22": [
+    "BLE",
+    "Proprietary"
+  ],
+  "CC2745P10Q1": [
+    "BLE"
+  ]
+}

@@ -5,7 +5,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2013-2023, Texas Instruments Incorporated
+ Copyright (c) 2013-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -1140,6 +1140,15 @@ ICall_Errno ICall_registerApp(ICall_EntityID *entity, ICall_SyncHandle *msgSyncH
  *         failed.
  */
 void *ICall_allocMsg(size_t size);
+
+/**
+ * Allocates memory block for a message, but check if enough memory will be left after the allocation.
+ * @param size   size of the message body in bytes.
+ * @return pointer to the start of the message body of the newly
+ *         allocated memory block, or NULL if the allocation
+ *         failed.
+ */
+void *ICall_allocMsgLimited(size_t size);
 
 /**
  * @brief       Frees the memory block allocated for a message.

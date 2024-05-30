@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,6 @@
  *
  */
 
-#ifndef __TI_DEVICES_CC27XX_CONFIG_C__
-#define __TI_DEVICES_CC27XX_CONFIG_C__
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_ccfg.h)
@@ -201,11 +199,12 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .userRecord = {`inst.userRecordMacro`},
 
 % }
-    /* Set to 0. This checksum must be calculated and updated prior to
-     * programming the application to the device (this is normally handled as a
-     * post-build step, or by the flashloader).
-     */
-    .userRecord.crc32 = 0x00000000,
+% else {
+    /* No user record */
+%   // Note, we also don't initialize userRecord.crc32.  The user is not
+%   // providing a user record, there's no requirement (ROM-wise) for the
+%   // .userRecord.crc32 to be initialized.
+%}
 
 % if(inst.debugAuthorization == "Require debug authentication"){
     .debugCfg.authorization = CCFG_DBGAUTH_REQAUTH,
@@ -292,5 +291,3 @@ const hsmotp_t hsmotp __attribute__((section(".hsmotp"), used)) =
 {
     HSMOTP_DEFAULT_VALUES
 };
-
-#endif // __TI_DEVICES_CC27XX_CONFIG_C__

@@ -57,7 +57,7 @@
 #define RCL_SCHEDULER_MARGIN_LOAD        RCL_SCHEDULER_SYSTIM_US(460U) /*!< Time to load TOPsm images */
 #define RCL_SCHEDULER_SLEEP_CUTOFF       RCL_SCHEDULER_SYSTIM_MS(10U)  /*!< Time margin when not to arm LRF immediately */
 #define RCL_SCHEDULER_TRIG_NOW_DELAY     RCL_SCHEDULER_SYSTIM_US(50U)  /*!< Delay to add to current time to allow start to be in the future */
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC2340R53)
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(390U) /*!< Wakeup margin to allow for varying command and setup time */
 #else
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(1000U)/*!< Wakeup margin to allow for varying command and setup time */
@@ -147,6 +147,42 @@ RCL_CommandStatus RCL_Scheduler_setStartStopTime(const RCL_Command *cmd);
 RCL_CommandStatus RCL_Scheduler_setStartStopTimeEarliestStart(const RCL_Command *cmd, uint32_t earliestStartTime);
 
 /**
+ *  @brief  Set start and stop time for LRF
+ *
+ *  Sets start and stop times for LRF based on provided times
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ *  @param  timing Start and stop times to set
+ *
+ *  @param  scheduling Scheduling type
+ *
+ *  @param  allowDelay True if start may be delayed; false if late start is an error
+ *
+ *  @return Command status that should be produced if the command should end or RCL_CmdStatus_Active to go on
+ */
+RCL_CommandStatus RCL_Scheduler_setCustomStartStopTime(const RCL_CommandTiming *timing, RCL_ScheduleType scheduling, bool allowDelay);
+
+/**
+ *  @brief  Set start and stop time for LRF with earliest start time
+ *
+ *  Sets start and stop times for LRF based on provided times, but delay start if needed due to hardware startup time
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ *  @param  timing Start and stop times to set
+ *
+ *  @param  scheduling Scheduling type
+ *
+ *  @param  allowDelay True if start may be delayed; false if late start is an error
+ *
+ *  @param  earliestStartTime Start at earliest at this time, or fail if delay not allowed
+ *
+ *  @return Command status that should be produced if the command should end or RCL_CmdStatus_Active to go on
+ */
+RCL_CommandStatus RCL_Scheduler_setCustomStartStopTimeEarliestStart(const RCL_CommandTiming *timing, RCL_ScheduleType scheduling, bool allowDelay, uint32_t earliestStartTime);
+
+/**
  *  @brief  Set stop time for LRF based on command when it does not need a start trigger
  *
  *  Sets stop times for LRF based on scheduled times, but do not program any start trigger
@@ -175,9 +211,11 @@ RCL_CommandStatus RCL_Scheduler_setNewStartNow(void);
  *
  *  @param  startTime Absloute start time
  *
+ *  @param  allowDelay True if start may be delayed; false if late start is an error
+ *
  *  @return Command status that should be produced if the command should end or RCL_CmdStatus_Active to go on
  */
-RCL_CommandStatus RCL_Scheduler_setNewStartAbsTime(uint32_t startTime);
+RCL_CommandStatus RCL_Scheduler_setNewStartAbsTime(uint32_t startTime, bool allowDelay);
 
 /**
  *  @brief  Set new start time for LRF to given time relative to previous LRF start
@@ -256,7 +294,7 @@ static inline uint32_t RCL_Scheduler_getCurrentTime(void)
  *  @brief  Set scheduler stop time
  *
  * Sets scheduler stop time for the given stop type, finds which of the
- * stop active times comes first, sets selection bits accordingly and
+ * active stop times comes first, sets selection bits accordingly and
  * reprograms the stop time if it was already programmed.
  *
  *  @param  stopInfo Pointer to stop info for the relevant stop type
@@ -266,6 +304,47 @@ static inline uint32_t RCL_Scheduler_getCurrentTime(void)
  *  @return Stop type if stop needs to be applied immediately
  */
 RCL_StopType RCL_Scheduler_setSchedStopTime(RCL_SchedulerStopInfo *stopInfo, uint32_t schedStopTime);
+
+/**
+ *  @brief  Set command stop time
+ *
+ * Sets command stop time for the given stop type, finds which of the
+ * active stop times comes first, sets selection bits accordingly and
+ * reprograms the stop time if it was already programmed.
+ *
+ *  @param  stopInfo Pointer to stop info for the relevant stop type
+ *
+ *  @param  cmdStopTime New command stop time to apply
+ *
+ *  @return Stop type if stop needs to be applied immediately
+ */
+RCL_StopType RCL_Scheduler_setCmdStopTime(RCL_SchedulerStopInfo *stopInfo, uint32_t cmdStopTime);
+
+/**
+ *  @brief  Cancel scheduler stop time
+ *
+ * Cancels scheduler stop time for the given stop type, finds if there
+ * is still an active stop time, cancels or reprograms the stop time
+ * if it was already programmed.
+ *
+ *  @param  stopInfo Pointer to stop info for the relevant stop type
+ *
+ *  @return Stop type if stop needs to be applied immediately
+ */
+RCL_StopType RCL_Scheduler_cancelSchedStopTime(RCL_SchedulerStopInfo *stopInfo);
+
+/**
+ *  @brief  Cancel command stop time
+ *
+ * Cancels command stop time for the given stop type, finds if there
+ * is still an active stop time, cancels or reprograms the stop time
+ * if it was already programmed.
+ *
+ *  @param  stopInfo Pointer to stop info for the relevant stop type
+ *
+ *  @return Stop type if stop needs to be applied immediately
+ */
+RCL_StopType RCL_Scheduler_cancelCmdStopTime(RCL_SchedulerStopInfo *stopInfo);
 
 /**
  * @brief Post event to command handler

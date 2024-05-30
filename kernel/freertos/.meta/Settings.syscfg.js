@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,28 +91,6 @@ let deviceSettingsTable = {
         iarPortableFiles: [
             "../portable/IAR/ARM_CM33_NTZ/non_secure/port.c"
         ]
-    },
-    "cc32xx": {
-        defaultHeapSize: 0x8000,
-        defaultCpuFrequency: 80000000,
-        defaultIdleSleepTicks: 5,
-        defaultPortTaskSelection: 1,
-        defaultMaxInterruptPriority: 1,
-        defaultNvicPriBits: 3,
-        defaultFpuEnabled: false,
-        gccPortableFiles: ["../portable/GCC/ARM_CM3/port.c"],
-        iarPortableFiles: ["../portable/IAR/ARM_CM3/port.c"]
-    },
-    "cc32xxsf": {
-        defaultHeapSize: 0x8000,
-        defaultCpuFrequency: 80000000,
-        defaultIdleSleepTicks: 5,
-        defaultPortTaskSelection: 1,
-        defaultMaxInterruptPriority: 1,
-        defaultNvicPriBits: 3,
-        defaultFpuEnabled: false,
-        gccPortableFiles: ["../portable/GCC/ARM_CM3/port.c"],
-        iarPortableFiles: ["../portable/IAR/ARM_CM3/port.c"]
     },
     "cc23x0": {
         defaultHeapSize: 0x2000,
@@ -219,14 +197,6 @@ else if (deviceId.match(/CC13.4.*|CC26.4.*|CC2653.*/)) {
     else {
         deviceSettings = deviceSettingsTable.cc13x4_cc26x4;
     }
-}
-else if (deviceId.match(/CC32..SF.*/)) {
-    /* CC32XXSF */
-    deviceSettings = deviceSettingsTable.cc32xxsf;
-}
-else if (deviceId.match(/CC32.*/)) {
-    /* CC32XX */
-    deviceSettings = deviceSettingsTable.cc32xx;
 }
 else if (deviceId.match(/CC35.*/)) {
     /* CC35XX. Choose between a TFM-enabled or TFM-disabled

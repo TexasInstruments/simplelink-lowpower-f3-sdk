@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1788,7 +1788,12 @@ static bool configSPI(uint32_t baseAddr,
     mask = (SPI_CLKCFG1_DSAMPLE_M | SPI_CLKCFG1_SCR_M);
 
     /* Calculate scr variable */
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    ratio = (freq / 2) / (2 * bitRate);
+#else
     ratio = freq / (2 * bitRate);
+#endif
+
     if (ratio > 0 && ratio <= SERIAL_CLK_DIVIDER_MAX)
     {
         scr = (uint16_t)(ratio - 1);

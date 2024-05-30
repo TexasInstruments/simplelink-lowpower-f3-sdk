@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 #include <ti/devices/DeviceFamily.h>
 #ifdef DeviceFamily_CC23X0R2
     #include DeviceFamily_constructPath(cmsis/cc23x0r2.h)
-#elif defined(DeviceFamily_CC23X0R5)
+#elif (defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R22))
     #include DeviceFamily_constructPath(cmsis/cc23x0r5.h)
 #else
     #error "Unsupported DeviceFamily specified!"

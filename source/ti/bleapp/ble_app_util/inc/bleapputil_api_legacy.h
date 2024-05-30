@@ -10,7 +10,7 @@ Target Device: cc23xx
 
 ******************************************************************************
 
- Copyright (c) 2022-2023, Texas Instruments Incorporated
+ Copyright (c) 2022-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@ extern "C"
  */
 
 /* Map for legacy devices */
-#if !defined(DeviceFamily_CC26X1) && !defined(DeviceFamily_CC13X4) && !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC26X4) && !defined(DeviceFamily_CC23X0R2)
+#if !defined(DeviceFamily_CC26X1) && !defined(DeviceFamily_CC13X4) && !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC26X4) && !defined(DeviceFamily_CC27XX) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC23X0R53)
 
 #define GAP_PERIPHERAL_REQUESTED_SECURITY_EVENT   GAP_SLAVE_REQUESTED_SECURITY_EVENT
 #define gapPeripheralSecurityReqEvent_t           gapSlaveSecurityReqEvent_t

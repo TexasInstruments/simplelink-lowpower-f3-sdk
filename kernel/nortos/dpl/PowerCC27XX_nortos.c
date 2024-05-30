@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@
 #include DeviceFamily_constructPath(driverlib/systick.h)
 #include DeviceFamily_constructPath(driverlib/cpu.h)
 #include DeviceFamily_constructPath(driverlib/lrfd.h)
+#include DeviceFamily_constructPath(driverlib/ull.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
@@ -258,22 +259,39 @@ void PowerCC27XX_standbyPolicy(void)
             /* Go to standby mode */
             Power_sleep(PowerLPF3_STANDBY);
 
-            /* Clear the wakeup event */
+            /* Disarm RTC compare event in case we woke up from a GPIO or BATMON
+             * event. If the RTC times out after clearing RIS and the pending
+             * NVIC bit but before we swap event fabric subscribers for the
+             * shared interrupt line, we will be left with a pending interrupt
+             * in the NVIC that the ClockP callback may not gracefully handle
+             * since it did not cause it itself.
+             */
+            HWREG(RTC_BASE + RTC_O_ARMCLR) = RTC_ARMCLR_CH0_CLR;
+
+            /* Clear the RTC wakeup event */
             HWREG(RTC_BASE + RTC_O_ICLR) = RTC_ICLR_EV0_CLR;
+
+            /* Explicitly read back from ULL domain to guarantee clearing RIS
+             * takes effect before clearing the pending NVIC interrupt to avoid
+             * the NVIC re-asserting on a set RIS.
+             */
+            ULLSync();
+
+            /* Clear any pending interrupt in the NVIC */
             HwiP_clearInterrupt(INT_CPUIRQ16);
 
             /* Switch EVTSVT_O_CPUIRQ16SEL in eventfabric back to SysTimer */
             HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
 
-            /* If waking up from an async event (not RTC), the SysTimer may not
-             * have synchronised with the RTC by now and will read out 0. If we
-             * wait for the register to take on a non-zero value, we know the
-             * SysTimer time and any generated events from code below are valid.
+            /* When waking up from standby, the SysTimer may not have
+             * synchronised with the RTC by now. Wait for SysTimer
+             * synchronisation with the RTC to complete. This should not take
+             * more than one LFCLK period.
              *
-             * 0 is a legal value so we will need to wait 1us for that 1 in 2^32
-             * -1 case that we woke up just after rollover.
+             * We need to wait both for RUN to be set and SYNCUP to go low. Any
+             * other register state will cause undefined behaviour.
              */
-            while (HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U) == 0) {}
+            while (HWREG(SYSTIM_BASE + SYSTIM_O_STATUS) != SYSTIM_STATUS_VAL_RUN) {}
 
             /* Restore SysTimer timeouts since standby wiped them */
             for (sysTimerIndex = 0; sysTimerIndex < SYSTIMER_CHANNEL_COUNT; sysTimerIndex++)

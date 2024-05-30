@@ -5,7 +5,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -445,6 +445,18 @@ extern "C"
 #define UBLE_EVTDST_GAP      1      //!< GAP
 #define UBLE_NUM_EVTDST      2      //!< Number of Event Destinations
 
+/**
+ *
+ * Monitor Complete Status
+ * MONITOR_SUCCESS : There was two packets in the RX window.
+ * MONITOR_CONTINUE: The timing wasn't good for the rcl.
+ * MONITOR_UNSTABLE: There was number of packets in the RX window that is differ from 2
+ * MONITOR_INVALID : There was a failure duing monitoring the session
+ */
+#define MONITOR_SUCCESS      0
+#define MONITOR_CONTINUE     1
+#define MONITOR_UNSTABLE     2
+#define MONITOR_INVALID      3
 /**
  * Unit conversions
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,6 +98,9 @@ struct
             uint32_t        longNokCount;
             uint16_t        demc1be1;
             uint16_t        demc1be2;
+#ifdef DeviceFamily_CC27XX
+            uint16_t        demc1be12;
+#endif
             bool            restoreThresh;
         } rx;
         struct {
@@ -116,7 +119,7 @@ static void RCL_Handler_Generic_setSynthPowerState(bool fsOff);
 static void RCL_Handler_Generic_updateRxCurBufferAndFifo(List_List *rxBuffers);
 static RCL_CommandStatus RCL_Handler_Generic_findPbeErrorEndStatus(uint16_t pbeEndStatus);
 static uint32_t RCL_Handler_Generic_updateTxBuffers(List_List *txBuffers, uint32_t maxBuffers);
-static uint32_t RCL_Handler_Generic_maskEventsByFifoConf(uint32_t mask, uint16_t fifoConfVal);
+static uint32_t RCL_Handler_Generic_maskEventsByFifoConf(uint32_t mask, uint16_t fifoConfVal, bool activeUpdate);
 static void RCL_Handler_Generic_updateRxStats(RCL_StatsGeneric *stats, uint32_t startTime);
 static void RCL_Handler_Generic_updateLongStats(void);
 static bool RCL_Handler_Generic_initRxStats(RCL_StatsGeneric *stats, uint32_t startTime);
@@ -126,9 +129,6 @@ static void RCL_Handler_Nesb_updateHeader(List_List *txBuffers, uint8_t autoRetr
 static void RCL_Handler_Nesb_updateStats(RCL_StatsNesb *stats, uint32_t startTime);
 static void RCL_Handler_Nesb_updateLongStats(void);
 static bool RCL_Handler_Nesb_initStats(RCL_StatsNesb *stats, uint32_t startTime);
-
-
-#define RAMREG32(addr) (*((volatile uint32_t *)(addr)))
 
 /*
  *  ======== RCL_Handler_Generic_Fs ========
@@ -155,7 +155,7 @@ RCL_Events RCL_Handler_Generic_Fs(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         cmd->status = RCL_CommandStatus_Active;
         /* Default end status */
         genericHandlerState.common.endStatus = RCL_CommandStatus_Finished;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = 0 << PBE_GENERIC_RAM_OPCFG_START_S;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = 0 << PBE_GENERIC_RAM_OPCFG_START_S;
 
         RCL_CommandStatus startTimeStatus = RCL_Scheduler_setStartStopTimeEarliestStart(cmd, earliestStartTime);
         if (startTimeStatus >= RCL_CommandStatus_Finished)
@@ -166,12 +166,12 @@ RCL_Events RCL_Handler_Generic_Fs(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         else
         {
             /* Enable interrupts */
-            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+            LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
             Log_printf(RclCore, Log_VERBOSE, "Starting FS");
             LRF_waitForTopsmReady();
-            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_FS;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_FS;
         }
     }
 
@@ -244,15 +244,15 @@ RCL_Events RCL_Handler_Generic_FsOff(RCL_Command *cmd, LRF_Events lrfEvents, RCL
         }
         else
         {
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = 0;
 
             /* Enable interrupts */
-            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+            LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
             Log_printf(RclCore, Log_VERBOSE, "Turning off FS");
             LRF_waitForTopsmReady();
-            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
         }
     }
 
@@ -304,7 +304,7 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         }
         else
         {
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
             uint32_t opCfgVal =
                 (0 << PBE_GENERIC_RAM_OPCFG_TXINFINITE_S) |
                 (0 << PBE_GENERIC_RAM_OPCFG_TXPATTERN_S) |
@@ -328,8 +328,8 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                 opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
 
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -371,13 +371,13 @@ RCL_Events RCL_Handler_Generic_Tx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                 else
                 {
                     /* Enable interrupts */
-                    HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+                    LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
                     /* Post cmd */
                     Log_printf(RclCore, Log_VERBOSE, "Starting TX");
                     LRF_waitForTopsmReady();
                     RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-                    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
+                    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
                 }
             }
         }
@@ -456,7 +456,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
         }
         else
         {
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
             /* Handle FS off in the end, so disable it in PBE */
             uint32_t opCfgVal =
                 (0 << PBE_GENERIC_RAM_OPCFG_TXINFINITE_S) |
@@ -479,8 +479,8 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
             {
                 opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_KEEPON_M);
             }
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -568,12 +568,12 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
             }
             else {
                 /* Retry TX FIFO. Writing to FCMD is safe because PBE is finished, ref. RCL-367 */
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_TXFIFO_RETRY;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_TXFIFO_RETRY;
 
                 if (txCmd->numPackets == 0 || genericHandlerState.tx.txCount < txCmd->numPackets)
                 {
                     /* Reset PBE */
-                    HWREG(LRFDPBE_BASE + LRFDPBE_O_INIT) = 1 << LRFDPBE_INIT_TOPSM_S;
+                    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_INIT) = 1 << LRFDPBE_INIT_TOPSM_S;
 
                     runTx = true;
                     if (rclEventsIn.hardStop != 0)
@@ -620,7 +620,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
                 {
                     /* Send stop FS */
                     LRF_waitForTopsmReady();
-                    HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
+                    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
                     genericHandlerState.tx.stopFs = true;
                 }
                 else {
@@ -641,7 +641,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
             {
                 /* Synth was turned on, but should be off. Send stop FS */
                 LRF_waitForTopsmReady();
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOPFS;
                 genericHandlerState.tx.stopFs = true;
             }
             else
@@ -661,7 +661,7 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
             if (txCount != 0 && txCmd->config.fsRecal == 0)
             {
                 /* Frequency programming only for the first packet */
-                HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) | PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) | PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M;
             }
             txCount++;
             if (txCount != 0)
@@ -670,13 +670,13 @@ RCL_Events RCL_Handler_Generic_TxRepeat(RCL_Command *cmd, LRF_Events lrfEvents, 
                 genericHandlerState.tx.txCount = txCount;
             }
             /* Enable interrupts */
-            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+            LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
             Log_printf(RclCore, Log_VERBOSE, "Starting TX");
 
             LRF_waitForTopsmReady();
-            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
         }
     }
     if (rclEvents.lastCmdDone != 0)
@@ -733,8 +733,8 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 opCfgVal &= ~(PBE_GENERIC_RAM_OPCFG_FS_NOCAL_M);
             }
 
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -748,10 +748,10 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
             }
 
             /* Enter configuration */
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PATTERN) = txCmd->config.txWord;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PATTERN) = txCmd->config.txWord;
             if (txCmd->config.sendCw != 0)
             {
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) | LRFDMDM_MODCTRL_TONEINSERT_M;
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) | LRFDMDM_MODCTRL_TONEINSERT_M;
                 genericHandlerState.txTest.restoreOpt = RCL_HANDLER_GENERIC_RESTORE_MODCTRL;
             }
             else
@@ -762,9 +762,9 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 {
                     genericHandlerState.txTest.restoreOpt = RCL_HANDLER_GENERIC_RESTORE_WHITEN_INIT;
                     genericHandlerState.txTest.storedWhitenInit = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT);
-                    HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = 0;
+                    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = 0;
                     /* Use pattern as sync word */
-                    HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->config.txWord | (txCmd->config.txWord << 16));
+                    HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->config.txWord | (txCmd->config.txWord << 16));
                 }
                 else
                 {
@@ -775,16 +775,16 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
                         genericHandlerState.txTest.storedWhitenInit = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT);
                         if (whitenMode > RCL_CMD_GENERIC_WH_MODE_PRBS15)
                         {
-                            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = RCL_HANDLER_GENERIC_PRBS15_POLY;
+                            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = RCL_HANDLER_GENERIC_PRBS15_POLY;
                         }
                         else
                         {
-                            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = RCL_HANDLER_GENERIC_PRBS32_POLY;
+                            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = RCL_HANDLER_GENERIC_PRBS32_POLY;
                         }
-                        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = RCL_HANDLER_GENERIC_PRBS_INIT;
+                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = RCL_HANDLER_GENERIC_PRBS_INIT;
                     }
                     /* Use pseudo-random sync word (not necessarily matching selected PRBS) */
-                    HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_HANDLER_GENERIC_PRBS_SYNC;
+                    HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_HANDLER_GENERIC_PRBS_SYNC;
                 }
             }
             /* Enable radio */
@@ -805,13 +805,13 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 }
 
                 /* Enable interrupts */
-                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+                LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
                 /* Post cmd */
                 Log_printf(RclCore, Log_VERBOSE, "Starting infinite TX");
 
                 LRF_waitForTopsmReady();
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
             }
         }
     }
@@ -851,15 +851,15 @@ RCL_Events RCL_Handler_Generic_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RC
         LRF_disable();
         RCL_Handler_Generic_setSynthPowerState(txCmd->config.fsOff);
         if ((genericHandlerState.txTest.restoreOpt & RCL_HANDLER_GENERIC_RESTORE_MODCTRL) != 0)        {
-            HWREG(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) & (~LRFDMDM_MODCTRL_TONEINSERT_M);
+            HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) & (~LRFDMDM_MODCTRL_TONEINSERT_M);
         }
         if ((genericHandlerState.txTest.restoreOpt & RCL_HANDLER_GENERIC_RESTORE_WHITEN_INIT) != 0)
         {
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = genericHandlerState.txTest.storedWhitenInit;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_WHITEINIT) = genericHandlerState.txTest.storedWhitenInit;
         }
         if ((genericHandlerState.txTest.restoreOpt & RCL_HANDLER_GENERIC_RESTORE_WHITEN_POLY) != 0)
         {
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = genericHandlerState.txTest.storedWhitenPoly;
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = genericHandlerState.txTest.storedWhitenPoly;
         }
     }
 
@@ -889,8 +889,8 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         }
         else
         {
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
             uint32_t opCfgVal =
                 (0 << PBE_GENERIC_RAM_OPCFG_RXFILTEROP_S) |
                 (1 << PBE_GENERIC_RAM_OPCFG_RXINCLUDEHDR_S) |
@@ -921,31 +921,43 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                 opCfgVal |= PBE_GENERIC_RAM_OPCFG_SINGLE_M;
             }
 
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = rxCmd->maxPktLen;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = (PBE_GENERIC_RAM_NESB_NESBMODE_OFF);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = rxCmd->maxPktLen;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 0; /* No timeout except from SYSTIM */
 
             /* If needed, configure demodulator correlator engine for syncwordA and syncwordB */
             if (rxCmd->config.disableSyncA != 0 || rxCmd->config.disableSyncB != 0)
             {
                 uint16_t demc1be1 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1);
                 uint16_t demc1be2 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2);
+#ifdef DeviceFamily_CC27XX
+                uint16_t demc1be12 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12);
+#endif
                 genericHandlerState.rx.restoreThresh = true;
                 genericHandlerState.rx.demc1be1 = demc1be1;
                 genericHandlerState.rx.demc1be2 = demc1be2;
+#ifdef DeviceFamily_CC27XX
+                genericHandlerState.rx.demc1be12 = demc1be12;
+#endif
                 if (rxCmd->config.disableSyncA != 0)
                 {
                     demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDA_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDA_S);
                     demc1be2 = (demc1be2 & ~LRFDMDM_DEMC1BE2_THRESHOLDC_M) | (0x7F << LRFDMDM_DEMC1BE2_THRESHOLDC_S);
+#ifdef DeviceFamily_CC27XX
+                    demc1be12 = (demc1be12 & ~LRFDMDM_DEMC1BE12_THRESHOLDG_M) | (0x7F << LRFDMDM_DEMC1BE12_THRESHOLDG_S);
+#endif
                 }
                 if (rxCmd->config.disableSyncB != 0)
                 {
                     demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDB_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDB_S);
                 }
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
+#ifdef DeviceFamily_CC27XX
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = demc1be12;
+#endif
             }
             else
             {
@@ -992,21 +1004,22 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
 
                 /* Enable interrupts */
                 uint16_t fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIFOCFG);
-                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |
-                                                                            RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
-                                                                                                                     LRF_EventRxOk.value | LRF_EventRxNok.value, fifoCfg);
+                LRF_enableHwInterrupt(RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
+                                                                               LRF_EventRxOk.value | LRF_EventRxNok.value |
+                                                                               LRF_EventRxBufFull.value,
+                                                                               fifoCfg, genericHandlerState.common.activeUpdate));
 
                 /* Post cmd */
                 Log_printf(RclCore, Log_VERBOSE, "Starting Rx");
                 LRF_waitForTopsmReady();
                 RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_RX;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_RX;
             }
         }
     }
     else
     {
-        if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0)
+        if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0 || lrfEvents.rxBufFull != 0)
         {
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
@@ -1030,7 +1043,7 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                             /* Error */
                             genericHandlerState.common.endStatus = RCL_CommandStatus_Error_RxBufferCorruption;
                             /* Send abort */
-                            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
+                            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
                             /* Do not check for more packets from the RX FIFO */
                             break;
                         }
@@ -1101,9 +1114,11 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         /* Restore changed thresholds */
         if (genericHandlerState.rx.restoreThresh)
         {
-            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
-            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
-
+            HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
+            HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
+#ifdef DeviceFamily_CC27XX
+            HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = genericHandlerState.rx.demc1be12;
+#endif
         }
     }
 
@@ -1135,11 +1150,11 @@ RCL_Events RCL_Handler_Generic_PbeOperation(RCL_Command *cmd, LRF_Events lrfEven
         else
         {
             /* Enable interrupts */
-            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+            LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
             /* Post cmd */
             LRF_waitForTopsmReady();
-            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = pbeCmd->pbeOperation;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = pbeCmd->pbeOperation;
         }
     }
 
@@ -1192,8 +1207,8 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
         }
         else
         {
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(txCmd->syncWord);
 
             uint32_t opCfgVal = (PBE_GENERIC_RAM_OPCFG_NEXTOP_SWITCH) |
                                 (PBE_GENERIC_RAM_OPCFG_TXFCMD_NONE) |
@@ -1229,12 +1244,12 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
             uint32_t seqStat0Val = (txCmd->config.autoRetransmitMode << PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_S)
                                     & PBE_GENERIC_RAM_SEQSTAT0_STOPAUTO_M;
 
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 2500;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 800;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = 255;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = nesbVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) = seqStat0Val;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 2500;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 800;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = 255;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = nesbVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) = seqStat0Val;
 
             /* Mark as active */
             cmd->status = RCL_CommandStatus_Active;
@@ -1306,7 +1321,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
     if (cmd->status == RCL_CommandStatus_Active)
     {
         /* We only get an Rx LRF event if an Acknowledge is expected */
-        if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0)
+        if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0 || lrfEvents.rxIgnored != 0 || lrfEvents.rxBufFull != 0)
         {
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
@@ -1332,7 +1347,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
                         /* Error */
                         genericHandlerState.common.endStatus = RCL_CommandStatus_Error_RxBufferCorruption;
                         /* Send abort */
-                        HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
+                        HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
                         /* Do not check for more packets from the RX FIFO */
                         break;
                     }
@@ -1364,7 +1379,7 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
         if (lrfEvents.opDone != 0)
         {
             /* Retry TX FIFO. Writing to FCMD is safe because PBE is finished, ref. RCL-367 */
-            HWREG(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_TXFIFO_RETRY;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_TXFIFO_RETRY;
 
             uint16_t endCause = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_ENDCAUSE);
 
@@ -1387,10 +1402,10 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
                 RCL_Profiling_eventHook(RCL_ProfilingEvent_PostprocStart);
             }
             /* Handle missed ACKs or ACKs with the wrong address */
-            else if (endCause == PBE_COMMON_RAM_ENDCAUSE_STAT_NOSYNC || lrfEvents.rxIgnored != 0)
+            else if (endCause == PBE_COMMON_RAM_ENDCAUSE_STAT_NOSYNC)
             {
                 /* Reset PBE */
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_INIT) = 1 << LRFDPBE_INIT_TOPSM_S;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_INIT) = 1 << LRFDPBE_INIT_TOPSM_S;
 
                 /* Attempt to retransmit the packet */
                 if (genericHandlerState.tx.txCount <= txCmd->maxRetrans)
@@ -1449,19 +1464,20 @@ RCL_Events RCL_Handler_Nesb_Ptx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
             if (listenAck)
             {
                 uint16_t fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIFOCFG);
-                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |
-                                                             RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
-                                                                                                      LRF_EventRxOk.value | LRF_EventRxNok.value, fifoCfg);
+                LRF_enableHwInterrupt(RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
+                                                                               LRF_EventRxOk.value | LRF_EventRxNok.value |
+                                                                               LRF_EventRxIgnored.value | LRF_EventRxBufFull.value,
+                                                                               fifoCfg, genericHandlerState.common.activeUpdate));
             }
             else
             {
-                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) | (LRF_EventOpDone.value | LRF_EventOpError.value);
+                LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
             }
             /* Post cmd */
             Log_printf(RclCore, Log_VERBOSE, "Start of PTX operation");
             LRF_waitForTopsmReady();
             RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_TX;
         }
     }
     if (rclEvents.lastCmdDone != 0)
@@ -1497,8 +1513,8 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
         }
         else
         {
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
-            HWREG(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordA);
+            HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCB) = RCL_Handler_Generic_updateSyncWord(rxCmd->syncWordB);
 
             uint32_t opCfgVal = (PBE_GENERIC_RAM_OPCFG_NEXTOP_SWITCH) |
                                 (PBE_GENERIC_RAM_OPCFG_TXFCMD_RETRY) |
@@ -1547,21 +1563,21 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
                            & PBE_GENERIC_RAM_SEQSTAT1_STOPAUTO_M;
 
             /* Set the addresses that will be used for address filtering */
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0AL) = (rxCmd->syncWord[0].address & PBE_GENERIC_RAM_PEERADR0AL_VAL_M);
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0AH) = (rxCmd->syncWord[0].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0AH_VAL_M;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0BL) = (rxCmd->syncWord[1].address & PBE_GENERIC_RAM_PEERADR0BL_VAL_M);
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0BH) = (rxCmd->syncWord[1].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0BH_VAL_M;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0AL) = (rxCmd->syncWord[0].address & PBE_GENERIC_RAM_PEERADR0AL_VAL_M);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0AH) = (rxCmd->syncWord[0].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0AH_VAL_M;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0BL) = (rxCmd->syncWord[1].address & PBE_GENERIC_RAM_PEERADR0BL_VAL_M);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PEERADR0BH) = (rxCmd->syncWord[1].address >> 0x10) & PBE_GENERIC_RAM_PEERADR0BH_VAL_M;
 
             /* Set timeouts for the Rx operation */
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 0; /* No timeout except from SYSTIM */
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIRSTRXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
 
             /* Set remaining configuration registers */
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = nesbVal;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) = seqStat0Val;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT1) = seqStat1Val;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = 255;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_OPCFG) = opCfgVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NESB) = nesbVal;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT0) = seqStat0Val;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_SEQSTAT1) = seqStat1Val;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_MAXLEN) = 255;
 
             /* If needed, configure demodulator correlator engine for syncwordA and syncwordB */
             if (rxCmd->config.disableSyncA != 0 || rxCmd->config.disableSyncB != 0)
@@ -1580,8 +1596,8 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
                 {
                     demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDB_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDB_S);
                 }
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
-                HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
+                HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
             }
             else
             {
@@ -1642,21 +1658,21 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
 
                 /* Enable interrupts */
                 uint16_t fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_FIFOCFG);
-                HWREG(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) = HWREG_READ_LRF(LRFDDBELL_BASE + LRFDDBELL_O_IMASK0) |
-                                                             RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
-                                                                                                      LRF_EventRxOk.value | LRF_EventRxNok.value |
-                                                                                                      LRF_EventRxIgnored.value, fifoCfg);
+                LRF_enableHwInterrupt(RCL_Handler_Generic_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
+                                                                               LRF_EventRxOk.value | LRF_EventRxNok.value |
+                                                                               LRF_EventRxIgnored.value | LRF_EventRxBufFull.value,
+                                                                               fifoCfg, genericHandlerState.common.activeUpdate));
                 /* Post cmd */
                 Log_printf(RclCore, Log_VERBOSE, "Starting of PRX operation");
                 LRF_waitForTopsmReady();
                 RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
-                HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_RX;
+                HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_RX;
             }
         }
     }
     else
     {
-        if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0)
+        if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0 || lrfEvents.rxIgnored != 0 || lrfEvents.rxBufFull != 0)
         {
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
@@ -1682,7 +1698,7 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
                             /* Error */
                             genericHandlerState.common.endStatus = RCL_CommandStatus_Error_RxBufferCorruption;
                             /* Send abort */
-                            HWREG(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
+                            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_GENERIC_REGDEF_API_OP_STOP;
                             /* Do not check for more packets from the RX FIFO */
                             break;
                         }
@@ -1760,8 +1776,8 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
         /* Restore changed thresholds */
         if (genericHandlerState.rx.restoreThresh)
         {
-            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
-            HWREG(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
+            HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
+            HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
         }
     }
 
@@ -1891,12 +1907,15 @@ static uint32_t RCL_Handler_Generic_updateTxBuffers(List_List *txBuffers,
 /*
  *  ======== RCL_Handler_Generic_maskEventsByFifoConf ========
  */
-static uint32_t RCL_Handler_Generic_maskEventsByFifoConf(uint32_t mask, uint16_t fifoConfVal)
+static uint32_t RCL_Handler_Generic_maskEventsByFifoConf(uint32_t mask, uint16_t fifoConfVal, bool activeUpdate)
 {
-    /* Remove events that will not give an entry in the RX FIFO, based on FIFOCFG. */
-    mask &= ~(((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHIGN_M) ? 0 : LRF_EventRxIgnored.value) |
-              ((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHEMPTY_M) ? 0 : LRF_EventRxEmpty.value));
-
+    /* Remove events that will not give an entry in the RX FIFO, based on FIFOCFG, unless active update is used
+       Note: never remove the CRC error event, as it is needed to update the long CRC error counter */
+    if (!activeUpdate)
+    {
+        mask &= ~(((fifoConfVal & PBE_GENERIC_RAM_FIFOCFG_AUTOFLUSHIGN_M) ? LRF_EventRxIgnored.value : 0) |
+                  LRF_EventRxBufFull.value);
+    }
     return mask;
 }
 
@@ -1907,7 +1926,7 @@ static void RCL_Handler_Generic_updateRxStats(RCL_StatsGeneric *stats, uint32_t 
 {
     if (stats != NULL)
     {
-        uint32_t lastTimestamp = RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL));
+        uint32_t lastTimestamp = HWREG_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL);
         /* Check if a new value is found in the first timestamp */
         if (lastTimestamp == startTime)
         {
@@ -1954,24 +1973,24 @@ static bool RCL_Handler_Generic_initRxStats(RCL_StatsGeneric *stats, uint32_t st
     if (stats != NULL)
     {
         /* Set timestamp to start time of command (will not occur again) to know if a valid value has been found */
-        RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL)) = startTime;
+        HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL) = startTime;
         stats->timestampValid = false;
         stats->lastRssi = LRF_RSSI_INVALID;
         if (stats->config.accumulate != 0)
         {
             /* Copy existing values into PBE */
             genericHandlerState.rx.longNokCount = stats->nRxNok;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = stats->nRxNok & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = stats->nRxNok & 0xFFFF;
             genericHandlerState.rx.longOkCount = stats->nRxOk;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = stats->nRxOk & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = stats->nRxOk & 0xFFFF;
         }
         else
         {
             /* Reset existing values in PBE */
             genericHandlerState.rx.longNokCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
             genericHandlerState.rx.longOkCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
 
             stats->nRxNok = 0;
             stats->nRxOk = 0;
@@ -1982,9 +2001,9 @@ static bool RCL_Handler_Generic_initRxStats(RCL_StatsGeneric *stats, uint32_t st
     {
         /* Reset existing values in PBE */
         genericHandlerState.rx.longNokCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
         genericHandlerState.rx.longOkCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
 
         return false;
     }
@@ -2000,9 +2019,9 @@ static uint32_t RCL_Handler_Generic_updateSyncWord(uint32_t syncWord)
     if ((HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_PKTCFG) & PBE_GENERIC_RAM_PKTCFG_HDRORDER_M) != 0)
     {
         /* MSb first configured - bit reverse sync word */
-        HWREG(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0) = syncWord & 0x0000FFFF;
+        HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0) = syncWord & 0x0000FFFF;
         syncWordOut = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0BR) << 16;
-        HWREG(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0) = syncWord >> 16;
+        HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0) = syncWord >> 16;
         syncWordOut |= HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_PHAOUT0BR);
         /* Check sync word length to see ensure that sync word ends up in least significant bits */
         uint32_t syncWordLen = (HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMSWQU0) & LRFDMDM_DEMSWQU0_REFLEN_M) + 1;
@@ -2053,7 +2072,7 @@ static void RCL_Handler_Nesb_updateStats(RCL_StatsNesb *stats, uint32_t startTim
 {
     if (stats != NULL)
     {
-        uint32_t lastTimestamp = RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL));
+        uint32_t lastTimestamp = HWREG_READ_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL);
         /* Check if a new value is found in the first timestamp */
         if (lastTimestamp == startTime)
         {
@@ -2082,6 +2101,7 @@ static void RCL_Handler_Nesb_updateLongStats(void)
     uint32_t oldTx = genericHandlerState.nesb.longTxCount;
     uint32_t oldRxOk = genericHandlerState.nesb.longOkCount;
     uint32_t oldRxNok = genericHandlerState.nesb.longNokCount;
+    /* TODO: RCL-308: Long counters should not be needed for anything except RX Ok and CRC error */
     uint32_t oldRxIgnored = genericHandlerState.nesb.longRxIgnoredCount;
     uint32_t oldRxAddrMismatch = genericHandlerState.nesb.longRxAddrMismatchCount;
     uint32_t oldRxBufFull = genericHandlerState.nesb.longRxBufFullCount;
@@ -2134,40 +2154,40 @@ static bool RCL_Handler_Nesb_initStats(RCL_StatsNesb *stats, uint32_t startTime)
     if (stats != NULL)
     {
         /* Set timestamp to start time of command (will not occur again) to know if a valid value has been found */
-        RAMREG32((unsigned long*) (LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL)) = startTime;
+        HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_LASTTIMESTAMPL) = startTime;
         stats->timestampValid = false;
         stats->lastRssi = LRF_RSSI_INVALID;
         if (stats->config.accumulate != 0)
         {
             /* Copy existing values into PBE */
             genericHandlerState.nesb.longTxCount = stats->nTx;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = stats->nRxOk & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = stats->nRxOk & 0xFFFF;
             genericHandlerState.nesb.longOkCount = stats->nRxOk;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = stats->nRxOk & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = stats->nRxOk & 0xFFFF;
             genericHandlerState.nesb.longNokCount = stats->nRxNok;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = stats->nRxNok & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = stats->nRxNok & 0xFFFF;
             genericHandlerState.nesb.longRxIgnoredCount = stats->nRxIgnored;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = stats->nRxIgnored & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = stats->nRxIgnored & 0xFFFF;
             genericHandlerState.nesb.longRxAddrMismatchCount = stats->nRxAddrMismatch;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = stats->nRxAddrMismatch & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = stats->nRxAddrMismatch & 0xFFFF;
             genericHandlerState.nesb.longRxBufFullCount = stats->nRxBufFull;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = stats->nRxBufFull & 0xFFFF;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = stats->nRxBufFull & 0xFFFF;
         }
         else
         {
             /* Reset existing values in PBE */
             genericHandlerState.nesb.longTxCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = 0;
             genericHandlerState.nesb.longOkCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
             genericHandlerState.nesb.longNokCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
             genericHandlerState.nesb.longRxIgnoredCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
             genericHandlerState.nesb.longRxAddrMismatchCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
             genericHandlerState.nesb.longRxBufFullCount = 0;
-            HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = 0;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = 0;
 
             stats->nTx = 0;
             stats->nRxOk = 0;
@@ -2182,17 +2202,17 @@ static bool RCL_Handler_Nesb_initStats(RCL_StatsNesb *stats, uint32_t startTime)
     {
         /* Reset existing values in PBE */
         genericHandlerState.nesb.longTxCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NTX) = 0;
         genericHandlerState.nesb.longOkCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXOK) = 0;
         genericHandlerState.nesb.longNokCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXNOK) = 0;
         genericHandlerState.nesb.longRxIgnoredCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
         genericHandlerState.nesb.longRxAddrMismatchCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXIGNORED) = 0;
         genericHandlerState.nesb.longRxBufFullCount = 0;
-        HWREGH(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = 0;
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_GENERIC_RAM_O_NRXFIFOFULL) = 0;
 
         return false;
     }

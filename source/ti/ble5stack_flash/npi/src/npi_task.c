@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2015-2023, Texas Instruments Incorporated
+ Copyright (c) 2015-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -894,12 +894,11 @@ void NPITask_sendToHost(uint8_t *pMsg)
     NPI_QueueRec *recPtr;
 
     NPIMSG_msg_t *pNPIMsg = NPIFrame_frameMsg(pMsg);
-
     if(!pNPIMsg)
     {
       return;
     }
-    recPtr = ICall_malloc(sizeof(NPI_QueueRec));
+    recPtr = ICall_mallocLimited(sizeof(NPI_QueueRec));
 
     if(!recPtr)
     {
@@ -1057,7 +1056,7 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
     {
         NPI_QueueRec *recPtr;
 
-        recPtr = ICall_malloc(sizeof(NPI_QueueRec));
+        recPtr = ICall_mallocLimited(sizeof(NPI_QueueRec));
         if(recPtr != NULL)
         {
             ICall_CSState key;
@@ -1383,12 +1382,12 @@ static void NPITask_transportTxDoneCallBack(int size)
 static void NPITask_incomingFrameCB(uint16_t frameSize, uint8_t *pFrame,
                                     NPIMSG_Type msgType)
 {
-    NPI_QueueRec *recPtr = ICall_malloc(sizeof(NPI_QueueRec));
+    NPI_QueueRec *recPtr = ICall_mallocLimited(sizeof(NPI_QueueRec));
 
     if (recPtr != NULL)
     {
         // Allocate NPIMSG_msg_t container
-        NPIMSG_msg_t *npiMsgPtr = ICall_malloc(sizeof(NPIMSG_msg_t));
+        NPIMSG_msg_t *npiMsgPtr = ICall_mallocLimited(sizeof(NPIMSG_msg_t));
 
         if (npiMsgPtr != NULL)
         {
@@ -1553,3 +1552,26 @@ static void syncReqRspWatchDogTimeoutCB( UArg a0 )
     }
 }
 #endif // NPI_SREQRSP
+
+// -----------------------------------------------------------------------------
+//! \brief      API for application task to properly release the NPI message
+//!             container and internal buffer.
+//!
+//! \param[in]  pMsg    Pointer to message buffer.
+//!
+//! \return     void
+// -----------------------------------------------------------------------------
+void NPITask_freeNpiMsg(uint8_t *pMsg)
+{
+  if (NULL != pMsg)
+  {
+    if (((NPIMSG_msg_t *)pMsg)->pBuf && ((NPIMSG_msg_t *)pMsg)->pBufSize)
+    {
+      // The data is stored as a message, free this first.
+      ICall_freeMsg(((NPIMSG_msg_t *)pMsg)->pBuf);
+    }
+
+    // Free the pMsg container
+    ICall_free(pMsg);
+  }
+}

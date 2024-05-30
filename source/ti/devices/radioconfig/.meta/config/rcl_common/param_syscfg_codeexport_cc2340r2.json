@@ -84,7 +84,7 @@
           "default": "camelCase"
         },
         {
-          "name": "cmdList_prop",
+          "name": "cmdList_ieee_15_4",
           "displayName": "List of supported RCL Commands",
           "minSelections": 0,
           "default": [],
@@ -345,7 +345,8 @@
     "prop": {
       "swConfig": "LRF_swConfig",
       "config": "LRF_config",
-      "cfg_segment_list": "LRF_regConfigList"
+      "cfg_segment_list": "LRF_regConfigList",
+      "txPowerTable": "LRF_txPowerTable"
     }
   }
 }

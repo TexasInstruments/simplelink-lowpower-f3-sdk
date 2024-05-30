@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../../fatsdraw.c -> fatsdraw.c",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../fatsdraw.syscfg -> fatsdraw.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2340R53/Board.html -> Board.html",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+        ]
+    }
+]

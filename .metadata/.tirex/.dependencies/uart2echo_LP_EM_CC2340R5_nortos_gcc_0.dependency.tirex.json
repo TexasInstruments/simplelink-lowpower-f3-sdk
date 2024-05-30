@@ -7,7 +7,7 @@
             "+../main_nortos.c -> main_nortos.c",
             "+../uart2echo.syscfg -> uart2echo.syscfg",
             "+../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
-            "+cc23x0r5_nortos.lds -> cc23x0r5_nortos.lds"
+            "+lpf3_cc23xx_nortos.lds -> lpf3_cc23xx_nortos.lds"
         ]
     }
 ]

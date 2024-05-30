@@ -9,7 +9,7 @@
             "+../main_freertos.c -> main_freertos.c",
             "+../i2copt3001_cpp.syscfg -> i2copt3001_cpp.syscfg",
             "+../../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
-            "+cc23x0r5_freertos.cmd -> cc23x0r5_freertos.cmd"
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
         ]
     }
 ]

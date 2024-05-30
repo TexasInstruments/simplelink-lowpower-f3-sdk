@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2023, Texas Instruments Incorporated
+ Copyright (c) 2023-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -49,9 +49,9 @@
  */
 
 #include "string.h"
-#include "sign_util.h"
+#include "ti/common/cc23xx/ecc/sign_util.h"
 #include "ti/common/cc26xx/flash_interface/flash_interface.h"
-#include "ext_flash.h"
+#include "ti/common/flash/no_rtos/extFlash/ext_flash.h"
 #include "ti/common/ecdsa_lpf3/ecdsa_lpf3.h"
 #include "ti/common/cc26xx/crc/crc32.h"
 

@@ -75,7 +75,11 @@
  * to 0xa5a5a5a5. The stack peak can then be displayed in Runtime Object View.
  */
 #define configENABLE_ISR_STACK_INIT 1
-/* Enable debugging features in the UI to use the queue registry or ROV features */
+/*
+ * Kernel Object Tracking disabled.  Enable Kernel Object Tracking in SysConfig
+ * (FreeRTOS.rovQueueEnabled = true) to use the queue registry and/or ROV
+ * features.
+ */
 #define configQUEUE_REGISTRY_SIZE 0
 
 #define configASSERT(x)           \
@@ -149,7 +153,7 @@
  */
 #if defined(__TI_COMPILER_VERSION__) || defined(__ti_version__) || defined(__IAR_SYSTEMS_ICC__)
 
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 2
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 1
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__ti_version__)
 #define PTLS_TLS_INDEX 0 /* ti.posix.freertos.PTLS */
@@ -157,13 +161,9 @@
 #define MTX_TLS_INDEX 0 /* ti.posix.freertos.Mtx */
 #endif
 
-#define NDK_TLS_INDEX 1 /* Reserve an index for NDK TLS */
-
 #elif defined(__GNUC__)
 
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 1
-
-#define NDK_TLS_INDEX 0 /* Reserve an index for NDK TLS */
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 0
 
 /* note: system locks required by newlib are not implemented */
 #define configUSE_NEWLIB_REENTRANT 1

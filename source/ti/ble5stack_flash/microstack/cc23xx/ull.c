@@ -13,7 +13,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -94,6 +94,7 @@
 #include <ti/drivers/rcl/RCL_Buffer.h>
 #include <ti/drivers/rcl/LRFCC23X0.h>
 
+#include <drivers/dpl/HwiP.h>
 /*********************************************************************
  * MACROS
  */
@@ -117,6 +118,8 @@
 #define ULL_MONITOR_MODE_START          1
 #define ULL_MONITOR_MODE_RESCHEDULE     2
 
+/* RCL command start time ramp up */
+#define ULL_RX_RAMPUP_TIME_RAT          800
 /*********************************************************************
  * TYPEDEFS
  */
@@ -173,8 +176,8 @@ typedef struct
   uint8         monitorRxStatus;
   // Queue to handle CM RX Data
   rxDataQ_t     queue;
-  // Buffer to hold processed Packet info
-  uint8         pktInfo[ ULL_SUFFIX_MAX_SIZE ];
+  // number of the rx entry done in the current session
+  uint8         numRxSuccess;
 } ull_CmData_t;
 
 static ull_CmData_t gull_CmData =
@@ -182,7 +185,7 @@ static ull_CmData_t gull_CmData =
   .state            = ULL_STATE_STANDBY,
   .monitorRxStatus  = ULL_MONITOR_RX_SCHEDULED,
   .queue            = {0},
-  .pktInfo          = {0},
+  .numRxSuccess     = 0,
 };
 
 #endif /* FEATURE_MONITOR */
@@ -345,6 +348,7 @@ void ull_monitorDoneCb(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEve
     {
       /* Radio has received a packet. Process it and eventually post the result to the monitor app task */
       uble_buildAndPostEvt(UBLE_EVTDST_LL, ULL_EVT_MONITOR_RX_SUCCESS, NULL, 0);
+      gull_CmData.numRxSuccess++;
     }
   }
 
@@ -468,6 +472,8 @@ void ull_monitorRegisterCB(pfnMonitorIndCB_t pfnMonitorIndicationCB,
 bStatus_t ull_monitorSchedule(uint8 mode)
 {
   RCL_StopType stopType = RCL_StopType_Graceful;
+  ull_flushAllDataEntry( &gull_CmData.queue );
+  gull_CmData.numRxSuccess = 0;
 
   if (mode == ULL_MONITOR_MODE_START)
   {
@@ -529,7 +535,17 @@ bStatus_t ull_monitorSchedule(uint8 mode)
                                                            RCL_EventRxEntryAvail.value |
                                                            RCL_EventRxBufferFinished.value |
                                                            RCL_EventGracefulStop.value |
-                                                           RCL_EventHardStop.value;
+                                                           RCL_EventHardStop.value |
+                                                           RCL_EventStartRejected.value;
+
+  // Check if the start time requested is too close to the current time or it is in the past,
+  // if it meet the condition => ask the stack to schedule the next request
+  // NOTE - if we didn't take into consideration the ULL_RX_RAMPUP_TIME_RAT, the RCL_Command_submit will return error code.
+  if (uble_timeCompare(ull_getCurrentTime(), ubleParams.startTime - ULL_RX_RAMPUP_TIME_RAT))
+  {
+     uble_buildAndPostEvt(UBLE_EVTDST_LL, ULL_EVT_MONITOR_CONTINUE, NULL, 0);
+     return FAILURE;
+  }
 
   // post the command
   urcliGenericRxHandle = RCL_Command_submit(urcliHandle, (RCL_Command_Handle)&urcliGenericRxCmd);
@@ -537,6 +553,11 @@ bStatus_t ull_monitorSchedule(uint8 mode)
   if (stopType != RCL_StopType_Graceful)
   {
     RCL_Command_stop(&urcliGenericRxCmd, stopType);
+  }
+
+  if(urcliGenericRxHandle > RCL_CommandStatus_Error)
+  {
+    uble_buildAndPostEvt(UBLE_EVTDST_LL, ULL_EVT_MONITOR_CONTINUE, NULL, 0);
   }
 
   /* Save local session Id */
@@ -590,13 +611,8 @@ void ull_monitorStop(void)
     /* Cancel or stop generic Rx command */
     if (RCL_CommandStatus_Idle != urcliGenericRxHandle)
     {
-      /* flush RF commands */
-      RCL_Command_stop(&urcliGenericRxCmd, RCL_StopType_Hard);
-
-      /* flush RX queue data entries */
-      ull_flushAllDataEntry( &gull_CmData.queue);
-
-      urcliGenericRxHandle = URCLI_CMD_HANDLE_INVALID;
+        /* flush RF commands */
+        RCL_Command_stop(&urcliGenericRxCmd, RCL_StopType_Graceful);
     }
   }
 }
@@ -648,36 +664,53 @@ void ull_getPDU( uint8 *len, uint8 *payload, RCL_Buffer_DataEntry *pDataEntry )
 void ull_rxEntryDoneCback(void)
 {
   uint8 dataLen;
-  bool isEmpty = RCL_MultiBuffer_RxEntry_isEmpty(&gull_CmData.queue.multiBuffers);
+  volatile uint32_t keyHwi;
 
+  keyHwi = HwiP_disable();
+  bool isEmpty = RCL_MultiBuffer_RxEntry_isEmpty(&gull_CmData.queue.multiBuffers);
+  HwiP_restore(keyHwi);
   if (isEmpty)
   {
     /* nothing to do here */
     return;
   }
+
   RCL_Buffer_DataEntry *pDataEntry;
+  keyHwi = HwiP_disable();
+  uint8 *pktInfo = malloc( ULL_SUFFIX_MAX_SIZE);
+  HwiP_restore(keyHwi);
+
+  if (NULL == pktInfo)
+  {
+      return;
+  }
 
   /* get pointer to packet */
-  while ((pDataEntry = RCL_MultiBuffer_RxEntry_get(&gull_CmData.queue.multiBuffers, &gull_CmData.queue.finishedBuffers)) != NULL)
+  keyHwi = HwiP_disable();
+  pDataEntry = RCL_MultiBuffer_RxEntry_get(&gull_CmData.queue.multiBuffers, &gull_CmData.queue.finishedBuffers);
+  HwiP_restore(keyHwi);
+
+  if ( NULL != pDataEntry)
   {
     /* process RX FIFO data */
-    ull_getPDU( &dataLen, gull_CmData.pktInfo, pDataEntry);
+    ull_getPDU( &dataLen, pktInfo, pDataEntry);
     if (dataLen != 0)
     {
       if (ull_notifyMonitorIndication)
       {
-        ull_notifyMonitorIndication( SUCCESS, gull_CmData.sessionId, dataLen, gull_CmData.pktInfo );
+
+        ull_notifyMonitorIndication( SUCCESS, gull_CmData.sessionId, dataLen, pktInfo );
       }
     }
+    else
+    {
+      free(pktInfo);
+    }
   }
-  /* in all cases, mark the RX queue data entry as free
-   * Note: Even if there isn't any heap to copy to, this packet is considered
-   *       lost, and the queue entry is marked free for radio use.
-   */
-  ull_ClearRxDataEntry( &gull_CmData.queue );
-
-  urcliCtxGenericRx.rxBuffers.head = gull_CmData.queue.multiBuffers.head;
-  urcliCtxGenericRx.rxBuffers.tail = gull_CmData.queue.multiBuffers.tail;
+  else
+  {
+    free(pktInfo);
+  }
 
   return;
 }
@@ -730,14 +763,17 @@ void uble_processLLMsg(ubleEvtMsg_t *pEvtMsg)
 
   case ULL_EVT_MONITOR_RX_WINDOW_COMPLETE:
   {
-    /* Flush the data queue, we don't need whatever is there at this point
-     * since all packets should have been processed by now */
-    ull_flushAllDataEntry( &gull_CmData.queue );
-
     /* Monitoring scan rx window complete. */
     if (ull_notifyMonitorComplete)
     {
-      ull_notifyMonitorComplete(SUCCESS, gull_CmData.sessionId);
+      if (gull_CmData.numRxSuccess == 2)
+      {
+        ull_notifyMonitorComplete(MONITOR_SUCCESS, gull_CmData.sessionId);
+      }
+      else
+      {
+        ull_notifyMonitorComplete(MONITOR_UNSTABLE, gull_CmData.sessionId);
+      }
     }
   }
   break;
@@ -750,8 +786,18 @@ void uble_processLLMsg(ubleEvtMsg_t *pEvtMsg)
     break;
 
   case ULL_EVT_MONITOR_RX_STARTED:
+      gull_CmData.monitorRxStatus = ULL_MONITOR_RX_SCHEDULED;
       ull_monitorSchedule(ULL_MONITOR_MODE_START);
     break;
+
+  case ULL_EVT_MONITOR_CONTINUE:
+  {
+    if (ull_notifyMonitorComplete)
+    {
+      ull_notifyMonitorComplete(MONITOR_CONTINUE, gull_CmData.sessionId);
+    }
+  }
+      break;
 #endif /* FEATURE_MONITOR */
 
   default:

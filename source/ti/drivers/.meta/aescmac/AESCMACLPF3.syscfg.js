@@ -40,10 +40,32 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
+
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
 intPriority.displayName = "Interrupt Priority";
 intPriority.description = "Crypto peripheral interrupt priority";
+
+/*
+ *  ======== getLibs ========
+ *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
+ */
+function getLibs(mod)
+{
+    /* Get device information from GenLibs */
+    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
+
+    let libGroup = {
+        name: "/third_party/hsmddk",
+        deps: [],
+        libs: [GenLibs.libPath("third_party/hsmddk", "hsmddk.a")],
+        allowDuplicates: true
+    };
+
+    return (libGroup);
+}
 
 /*
  *  ======== devSpecific ========
@@ -69,6 +91,10 @@ function extend(base)
     /* display which driver implementation can be used */
     base = Common.addImplementationConfig(base, "AESCMAC", null,
         [{name: "AESCMACLPF3"}], null);
+
+    if (deviceId.match(/CC27/)) {
+        devSpecific["templates"]["/ti/utils/build/GenLibs.cmd.xdt"] = {modName: "/ti/drivers/AESCMAC", getLibs: getLibs};
+    }
 
     /* merge and overwrite base module attributes */
     return (Object.assign({}, base, devSpecific));

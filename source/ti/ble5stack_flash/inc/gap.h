@@ -5,7 +5,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -1906,6 +1906,36 @@ extern bStatus_t GAP_Signable(uint16_t connectionHandle, uint8_t authenticated,
 extern bStatus_t GAP_Bond(uint16_t connectionHandle, uint8_t authenticated,
                           uint8_t secureConnections, smSecurityInfo_t *pParams,
                           uint8_t startEncryption);
+
+/**
+ * Reply to an LTK request.
+ *
+ * This API should be called in response to receiving a
+ * @ref HCI_BLE_LTK_REQUESTED_EVENT
+ *
+ * If encryption parameters exist for the connectionHandle, and are equal
+ * to the ones recieved in the event, the LTK provided in the pParams
+ * will be used.
+ *
+ * If encryption parameters exist for the connectionHandle, but are not equal
+ * to the ones recieved in the event, the pParams will not be used.
+ *
+ * If encryption parameters doesn't exist for the connectionHandle,
+ * use the provided pParams for the LTK replay.
+ *
+ * @param connectionHandle connection handle of the signing information
+ * @param pParams the connected device's encription parameters and updated
+ *                LTK parameter
+ *
+ * @return @ref SUCCESS
+ * @return @ref bleIncorrectMode : Not correct profile role
+ * @return @ref INVALIDPARAMETER
+ * @return @ref bleNotConnected
+ * @return @ref bleGAPBondRejected
+ */
+extern bStatus_t Gap_ReplyToLTKReq( uint16_t connectionHandle,
+                                    smSecurityInfo_t * const pParams,
+                                    uint8_t *isLTKUpdated );
 
 /*-------------------------------------------------------------------
  * TASK FUNCTIONS - To only be used in osal_icall_ble.c

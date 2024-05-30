@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,8 @@ const base = {
 
 /* get the family-specific RCL module */
 const rcldriver = system.getScript("/ti/drivers/rcl/rcldriver");
+const rclgpio = system.getScript("/ti/drivers/rcl/rclgpio");
 
 /* extend our common exports to include the family-specific content */
-exports = rcldriver.extend(base);
+
+exports = rclgpio.extend(base);

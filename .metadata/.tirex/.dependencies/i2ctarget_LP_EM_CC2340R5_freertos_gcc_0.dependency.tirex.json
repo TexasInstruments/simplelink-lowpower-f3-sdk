@@ -8,7 +8,7 @@
             "+../main_freertos.c -> main_freertos.c",
             "+../i2ctarget.syscfg -> i2ctarget.syscfg",
             "+../../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
-            "+cc23x0r5_freertos.lds -> cc23x0r5_freertos.lds"
+            "+lpf3_cc23xx_freertos.lds -> lpf3_cc23xx_freertos.lds"
         ]
     }
 ]

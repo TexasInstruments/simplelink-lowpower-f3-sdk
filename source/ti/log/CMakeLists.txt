@@ -24,14 +24,6 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
                                                               CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
             ADD_SDK_INCLUDE_PATH "source"
         )
-    elseif(${TI_PLATFORM} MATCHES "cc32")
-        set(SOURCES ${SOURCES_ITM})
-        ti_add_package_dependency(DriverlibCC32XX)
-        ti_add_library(
-            log_${TI_PLATFORM} SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM} TiUtils::tiutils
-                                                              CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-            ADD_SDK_INCLUDE_PATH "source"
-        )
     elseif(${TI_PLATFORM} MATCHES "cc27")
         set(SOURCES ${SOURCES_ITM})
         ti_add_package_dependency(DriverlibCC27XX)

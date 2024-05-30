@@ -11,7 +11,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2012-2023, Texas Instruments Incorporated
+ Copyright (c) 2012-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -98,9 +98,6 @@ ubleAntSwitchCB_t ubleAntSwitchSel = NULL;
 /*********************************************************************
  * EXTERNAL VARIABLES
  */
-#ifndef USE_RCL
-extern RF_RadioSetup urSetup;
-#endif
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
@@ -487,39 +484,6 @@ bStatus_t uble_setParameter(uint8 param, uint8 len, void *pValue)
     switch (param)
     {
     case UBLE_PARAM_TXPOWER:
-#ifndef USE_RCL
-        /* Not relevant for RX in RCL (CM monitor uses only the RX mode)*/
-      temp16 = urfi_getTxPowerVal(*((int8*) pValue));
-      if (temp16 == UBLE_TX_POWER_INVALID)
-      {
-        ret = bleInvalidRange;
-      }
-      else
-      {
-        RF_InfoVal info;
-
-        RF_getInfo(urfiHandle, RF_GET_RADIO_STATE, &info);
-
-        /* If radio is active, we can change TX Power right now */
-        if (info.bRadioState)
-        {
-          rfc_CMD_SET_TX_POWER_t cmd;
-
-          /* setup TX Power command */
-          cmd.commandNo = CMD_SET_TX_POWER;
-          cmd.txPower = temp16;
-
-          /* issue immediate command */
-          RF_runImmediateCmd(urfiHandle, (uint32_t*) &cmd);
-        }
-
-        /* Change TX Power in the setup command will take effect
-           from the next power up */
-        urSetup.common.txPower = temp16;
-
-        RF_control(urfiHandle, RF_CTRL_UPDATE_SETUP_CMD, NULL);
-      }
-#endif
       break;
 
 #if defined(FEATURE_ADVERTISER)
@@ -844,13 +808,12 @@ void uble_processMsg(void)
 {
   port_key_t key;
 
-  while (!port_queueEmpty(qEvtMsg))
+  if (!port_queueEmpty(qEvtMsg))
   {
     // Dequeue event message
     ubleEvtMsg_t pEvtMsg;
 
     port_queueGet(qEvtMsg, (char *)&pEvtMsg);
-
     ubProcessMsg[pEvtMsg.hdr.dst](&pEvtMsg);
 
     if (pEvtMsg.msg)
@@ -920,7 +883,7 @@ bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
 {
   port_key_t key;
   ubleEvtMsg_t evtMsg;
-
+  int status;
   // This function is entered in SW critical section.
   key = port_enterCS_HW();
   if ((len) && (NULL != pMsg))
@@ -950,7 +913,12 @@ bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
   evtMsg.hdr.dst = evtDst;
   evtMsg.hdr.evt = evt;
 
-  port_queuePut(qEvtMsg, (char *)&evtMsg, sizeof(ubleEvtMsg_t));
+  status = port_queuePut(qEvtMsg, (char *)&evtMsg, sizeof(ubleEvtMsg_t));
+
+  if (0 != status)
+  {
+      free(evtMsg.msg);
+  }
   uble_postEvtProxy();
 
   return SUCCESS;

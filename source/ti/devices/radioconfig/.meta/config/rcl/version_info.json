@@ -1,6 +1,6 @@
 {
-  "radioconfig": "7.40.00.07_eng",
-  "sdk": "simplelink_lpf3_sdk_7_40_00_57",
-  "rfconfig": "7.40.00.57",
+  "radioconfig": "8.10.00.08_eng",
+  "sdk": "simplelink_lpf3_sdk_8_10_00_108",
+  "rfconfig": "8.10.00.108",
   "release": "external"
 }

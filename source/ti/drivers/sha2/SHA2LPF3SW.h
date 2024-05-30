@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@
  */
 
 /* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
- * SHA-2 driver is non-functional on CC27CC devices, as it returns incorrect digest.
+ * For CC27XX implementation, please refer to SHA2LPF3HSM.h instead
  */
 
 #ifndef ti_drivers_sha2_SHA2LPF3SW__include

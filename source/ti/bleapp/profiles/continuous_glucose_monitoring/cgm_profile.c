@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2010-2023, Texas Instruments Incorporated
+ Copyright (c) 2010-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -177,14 +177,14 @@ bStatus_t CGMP_start( CGMP_cb_t *appCallbacks, CGMS_feat_t feat, uint16 timeOffs
   if ( cgmp_cgmcpCommInterval != CGMS_CGMCP_COMM_INT_VAL_NON )
   {
     // Create and CGMP activity timer
-    Util_constructClock( &cgmp_CommIntClk,(void *)BLEAppUtil_invokeFunctionNoData,
+    Util_constructClock( &cgmp_CommIntClk, CGMP_clockCB,
                          cgmp_cgmcpCommInterval, cgmp_cgmcpCommInterval,
                          TRUE, (uint32)CGMP_CommIntClkTimeout );
   }
   else
   {
     // There is no communication interval, only construct clock
-    Util_constructClock( &cgmp_CommIntClk,(void *)BLEAppUtil_invokeFunctionNoData,
+    Util_constructClock( &cgmp_CommIntClk, CGMP_clockCB,
                          CGMS_CGMCP_COMM_INT_VAL_NON, CGMS_CGMCP_COMM_INT_VAL_NON,
                          FALSE, (uint32)CGMP_CommIntClkTimeout );
   }
@@ -841,6 +841,24 @@ static void CGMP_sendRecords( uint16 minTimeOffset, uint16 maxTimeOffset )
 static void CGMP_CommIntClkTimeout( char *pData)
 {
   // Currently not supported
+}
+
+/*
+ * @fn      CGMP_clockCB
+ *
+ * @brief   Callback function for clock module
+ *
+ * @param   arg - argument passed to callback function.
+ *
+ * @return  none
+ */
+#ifdef FREERTOS
+void CGMP_clockCB( uint32_t arg )
+#else
+void CGMP_clockCB( uintptr_t arg )
+#endif // FREERTOS
+{
+  BLEAppUtil_invokeFunctionNoData((InvokeFromBLEAppUtilContext_t)arg);
 }
 
 /*********************************************************************

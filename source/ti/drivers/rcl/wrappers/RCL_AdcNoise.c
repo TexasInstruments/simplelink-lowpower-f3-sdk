@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,8 @@
 
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/commands/adc_noise.h>
+
+#include <ti/drivers/Power.h>
 
 #include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
@@ -86,7 +88,7 @@ static void adcNoiseCallback(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events 
     RCL_close(cmd->runtime.client);
 
     /* This must come after closing because command and client structs are in BUFRAM */
-    LRF_clearAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
+    Power_releaseDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Release power constraint to allow standby */
     hal_power_release_constraint();
@@ -106,7 +108,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
     RCL_CmdAdcNoiseGet *adcNoiseCmd = RCL_ADC_NOISE_CMD_PTR;
 
     /* Turn on BUFRAM before calling RCL_open, since the RCL_client resides in BUFRAM */
-    LRF_setAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
+    Power_setDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Prevent the system from going to standby because BUFRAM doesn't have retention */
     hal_power_set_constraint();
@@ -135,7 +137,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
     RCL_close(h);
 
     /* This must come after closing because command and client structs are in BUFRAM */
-    LRF_clearAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
+    Power_releaseDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Release power constraint to allow standby */
     hal_power_release_constraint();
@@ -154,7 +156,7 @@ int_fast16_t RCL_AdcNoise_get_samples_callback(uint32_t* buffer, uint32_t numWor
     RCL_CmdAdcNoiseGet *adcNoiseCmd = RCL_ADC_NOISE_CMD_PTR;
 
     /* Turn on BUFRAM before calling RCL_open, since the RCL_client resides in BUFRAM */
-    LRF_setAppClockEnable(LRFDDBELL_CLKCTL_BUFRAM_M);
+    Power_setDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Prevent the system from going to standby because BUFRAM doesn't have retention */
     hal_power_set_constraint();

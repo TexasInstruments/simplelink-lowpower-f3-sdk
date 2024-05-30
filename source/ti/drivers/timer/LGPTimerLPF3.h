@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,13 +41,13 @@
  *  In addition the driver supports APIs for both capture and compare of
  *  of IO signals muxable to the three channels of each LGPT peripheral
  *  instance. The channel capture functionality can be used to measure period
- *  and dutcy cycle of an input signal. The channel compare functionality can
+ *  and duty cycle of an input signal. The channel compare functionality can
  *  be used for generating PWM signals.
  *
  *  The LGPTimer driver also handles the general purpose timer resource allocation.
  *  For each driver that requires use of a general purpose timer, it calls
- *  LGPTimerLPF3_open() to occupy the specified timer, and calls
- *  LGPTimerLPF3_close() to release the occupied timer resource.
+ *  #LGPTimerLPF3_open() to occupy the specified timer, and calls
+ *  #LGPTimerLPF3_close() to release the occupied timer resource.
  *
  *  @anchor ti_drivers_LGPTimer_PeripheralProperties
  *  # LGPT peripheral properties #
@@ -65,21 +65,21 @@
  * |---------------|---------|---------|---------|---------|
  * | CC2340R2      | 16 bits | 16 bits |   N.A   |   N.A   |
  * | CC2340R5      | 16 bits | 16 bits | 16 bits | 24 bits |
- * | CC27X5        | 16 bits | 16 bits | 16 bits | 24 bits |
+ * | CC27XX        | 16 bits | 16 bits | 16 bits | 32 bits |
  *
  *  @anchor ti_drivers_LGPTimer_CounterModes
  *  # Counter Modes #
  *  The LGPTimer driver supports the following timer counter modes:
  *    - Oneshot mode counting upwards. When the counter reaches the target value, the
  *      timer is stopped automatically and the TGT interrupt status flag
- *      (@ref LGPTimerLPF3_INT_TGT) is set.
+ *      (#LGPTimerLPF3_INT_TGT) is set.
  *    - Periodic mode counting upwards. When the counter reaches target value it wraps
  *      and restarts counting from 0 again. The TGT interrupt status flag is set each
  *      time the target value is reached. The ZERO interrupt status flag
- *      (@ref LGPTimerLPF3_INT_ZERO) is set each time the counter restarts from 0.
- *    - Periodic mode counting upwards/downwads. When the counter reaches target value
+ *      (#LGPTimerLPF3_INT_ZERO) is set each time the counter restarts from 0.
+ *    - Periodic mode counting upwards/downwards. When the counter reaches target value
  *      while counting upwards the TGT interrupt flag is set and it starts counting
- *      downwards to 0. When 0 is reached the ZERO insterrupt status flag is set
+ *      downwards to 0. When 0 is reached the ZERO interrupt status flag is set
  *      and the sequence is repeated.
  *
  *  @anchor ti_drivers_LGPTimer_UnsupportedFeatures
@@ -105,20 +105,20 @@
  *  The LGPTimer driver will set constraints on disallowed power modes when
  *  needed, removing the need for the application to handle this.
  *  The following statements are valid:
- *    - After LGPTimerLPF3_open():
+ *    - After #LGPTimerLPF3_open():
  *        The device is still allowed to enter Standby. When the device is
  *        active, the corresponding LGPT peripheral will be enabled and clocked.
  *        Note that a configured counter target and configured channels, will not
  *        be retained when going in and out of Standby.
  *        The counter target is set by the functions
- *        LGPTimerLPF3_setInitialCounterTarget() and LGPTimerLPF3_setNextCounterTarget().
- *    - After LGPTimerLPF3_start():
+ *        #LGPTimerLPF3_setInitialCounterTarget() and #LGPTimerLPF3_setNextCounterTarget().
+ *    - After #LGPTimerLPF3_start():
  *        The device will only go to Idle power mode since the high frequency
  *        clock (CLKSVT) is needed for timer operation.
- *    - After LGPTimerLPF3_stop():
+ *    - After #LGPTimerLPF3_stop():
  *        The device is still allowed to enter Standby. When the device is
  *        active, the corresponding LGPT peripheral will be enabled and clocked.
- *    - After LGPTimerLPF3_close():
+ *    - After #LGPTimerLPF3_close():
  *        The underlying LGPT peripheral is turned off. The device is allowed to
  *        enter Standby.
  *
@@ -234,13 +234,13 @@
  *  ## Opening the LGPTimerLPF3 Driver #
  *
  *  Opening a LGPTimerLPF3 requires four steps:
- *  1.  Create and initialize a LGPTimerLPF3_Params structure.
+ *  1.  Create and initialize a #LGPTimerLPF3_Params structure.
  *  2.  Set non-default parameter values.
- *  3.  Call LGPTimerLPF3_open(), passing the index of the timer in the
- *      LGPTimerLPF3_config structure, and the address of the LGPTimerLPF3_Params
+ *  3.  Call #LGPTimerLPF3_open(), passing the index of the timer in the
+ *      #LGPTimerLPF3_Config structure, and the address of the #LGPTimerLPF3_Params
  *      structure. The timer instance is specified by the index in the
- *      LGPTimerLPF3_config structure.
- *  4.  Verify that the timer handle returned by LGPTimerLPF3_open() is non-NULL.
+ *      #LGPTimerLPF3_Config structure.
+ *  4.  Verify that the timer handle returned by #LGPTimerLPF3_open() is non-NULL.
  *      The handle will be used to operate the timer driver instance you just opened.
  *
  *  <hr>
@@ -417,42 +417,42 @@ typedef enum
     /*! Toggle on compare repeatedly.
      *
      * Toggle channel output when the timer counter equals the compare value set by either
-     * LGPTimerLPF3_setInitialChannelCompVal() or LGPTimerLPF3_setNextChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal() or #LGPTimerLPF3_setNextChannelCompVal().
      */
     LGPTimerLPF3_CH_TOGGLE_ON_COMPARE_PERIODIC = LGPT_C0CFG_CCACT_TGL_ON_CMP,
 
     /*! Toggle on compare, and then disable channel.
      *
      * Toggle channel output when the timer counter equals the compare value set by
-     * LGPTimerLPF3_setInitialChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal().
      */
     LGPTimerLPF3_CH_TOGGLE_ON_COMPARE_ONCE = LGPT_C0CFG_CCACT_TGL_ON_CMP_DIS,
 
     /*! Set on compare repeatedly.
      *
      * Set channel output when the timer counter equals the compare value set by either
-     * LGPTimerLPF3_setInitialChannelCompVal() or LGPTimerLPF3_setNextChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal() or #LGPTimerLPF3_setNextChannelCompVal().
      */
     LGPTimerLPF3_CH_SET_ON_COMPARE_PERIODIC = LGPT_C0CFG_CCACT_SET_ON_CMP,
 
     /*! Set on compare, and then disable channel.
      *
      * Set channel output when the timer counter equals the compare value set by
-     * LGPTimerLPF3_setInitialChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal().
      */
     LGPTimerLPF3_CH_SET_ON_COMPARE_ONCE = LGPT_C0CFG_CCACT_SET_ON_CMP_DIS,
 
     /*! Clear on compare repeatedly.
      *
      * Clear channel output when the timer counter equals the compare value set by either
-     * LGPTimerLPF3_setInitialChannelCompVal() or LGPTimerLPF3_setNextChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal() or #LGPTimerLPF3_setNextChannelCompVal().
      */
     LGPTimerLPF3_CH_CLEAR_ON_COMPARE_PERIODIC = LGPT_C0CFG_CCACT_CLR_ON_CMP,
 
     /*! Clear on compare, and then disable channel.
      *
      * Clear channel output when the timer counter equals the compare value set by
-     * LGPTimerLPF3_setInitialChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal().
      */
     LGPTimerLPF3_CH_CLEAR_ON_COMPARE_ONCE = LGPT_C0CFG_CCACT_CLR_ON_CMP_DIS,
 
@@ -460,7 +460,7 @@ typedef enum
      *
      * Set channel output when timer counter value equals zero.
      * Toggle channel output when the timer counter equals the compare value set by either
-     * LGPTimerLPF3_setInitialChannelCompVal() or LGPTimerLPF3_setNextChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal() or #LGPTimerLPF3_setNextChannelCompVal().
      */
     LGPTimerLPF3_CH_SET_ON_0_TOGGLE_ON_CMP_PERIODIC = LGPT_C0CFG_CCACT_SET_ON_0_TGL_ON_CMP,
 
@@ -468,7 +468,7 @@ typedef enum
      *
      * Set channel output when timer counter equals zero.
      * Toggle channel output when the timer counter equals the compare value set by
-     * LGPTimerLPF3_setInitialChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal().
      */
     LGPTimerLPF3_CH_SET_ON_0_TOGGLE_ON_COMPARE_ONCE = LGPT_C0CFG_CCACT_SET_ON_0_TGL_ON_CMP_DIS,
 
@@ -476,7 +476,7 @@ typedef enum
      *
      * Clear channel output when timer counter equals zero.
      * Toggle channel output when the timer counter equals the compare value set by either
-     * LGPTimerLPF3_setInitialChannelCompVal() or LGPTimerLPF3_setNextChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal() or #LGPTimerLPF3_setNextChannelCompVal().
      */
     LGPTimerLPF3_CH_CLR_ON_0_TOGGLE_ON_COMPARE_PERIODIC = LGPT_C0CFG_CCACT_CLR_ON_0_TGL_ON_CMP,
 
@@ -484,14 +484,14 @@ typedef enum
      *
      * Clear channel output when timer counter equals zero.
      * Toggle channel output when the timer counter equals the compare value set by
-     * LGPTimerLPF3_setInitialChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal().
      */
     LGPTimerLPF3_CH_CLR_ON_0_TOGGLE_ON_COMPARE_ONCE = LGPT_C0CFG_CCACT_CLR_ON_0_TGL_ON_CMP_DIS,
 
     /*! Pulse on compare repeatedly.
      *
      * Pulse channel output when the timer counter equals the compare value set by either
-     * LGPTimerLPF3_setInitialChannelCompVal() or LGPTimerLPF3_setNextChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal() or #LGPTimerLPF3_setNextChannelCompVal().
      * The channel output is high for two timer clock periods.
      */
     LGPTimerLPF3_CH_PULSE_ON_COMPARE_PERIODIC = LGPT_C0CFG_CCACT_PULSE_ON_CMP,
@@ -499,7 +499,7 @@ typedef enum
     /*! Pulse on compare, and then disable channel.
      *
      * Pulse channel output when the timer counter equals the compare value set by
-     * LGPTimerLPF3_setInitialChannelCompVal().
+     * #LGPTimerLPF3_setInitialChannelCompVal().
      * The channel output is high for two timer clock periods.
      */
     LGPTimerLPF3_CH_PULSE_ON_COMPARE_ONCE = LGPT_C0CFG_CCACT_PULSE_ON_CMP_DIS,
@@ -510,13 +510,13 @@ typedef enum
      * The following list of channel actions will force the channel to be configured as  *
      * an input.                                                                         *
      * The counter value will be captured and the captured value can be read by the      *
-     * @ref LGPTimerLPF3_getChCompareVal() and @ref LGPTimerLPF3_getNextChCompareVal()   *
+     * #LGPTimerLPF3_getChCompareVal() and #LGPTimerLPF3_getNextChCompareVal()           *
      * functions.                                                                        *
      ************************************************************************************/
     /*! Set on capture repeatedly.
      *
-     * The channel number dependent interrupt status flag (@ref LGPTimerLPF3_INT_CH0_CC
-     * for channel number @ref LGPTimerLPF3_CH_NO_0) will be set when the signal edge
+     * The channel number dependent interrupt status flag (#LGPTimerLPF3_INT_CH0_CC
+     * for channel number #LGPTimerLPF3_CH_NO_0) will be set when the signal edge
      * selected by the ch<x>InputEdge element in the LGPTimerLPF3_Params structure,
      * is detected on the channel input signal.
      */
@@ -524,8 +524,8 @@ typedef enum
 
     /*! Set on capture, and then disable channel.
      *
-     * The channel number dependent interrupt status flag (@ref LGPTimerLPF3_INT_CH0_CC
-     * for channel number @ref LGPTimerLPF3_CH_NO_0) will be set when the signal edge
+     * The channel number dependent interrupt status flag (#LGPTimerLPF3_INT_CH0_CC
+     * for channel number #LGPTimerLPF3_CH_NO_0) will be set when the signal edge
      * selected by the ch<x>InputEdge element in the LGPTimerLPF3_Params structure,
      * is detected on the channel input signal.
      */
@@ -536,16 +536,16 @@ typedef enum
      * Continuously capture period and pulse width of the channel input signal relative to
      * the signal edge selected by the ch<x>InputEdge element in the LGPTimerLPF3_Params
      * structure.
-     * The channel number dependent interrupt status flag (@ref LGPTimerLPF3_INT_CH0_CC
-     * for channel number @ref LGPTimerLPF3_CH_NO_0) will be set when the signal
+     * The channel number dependent interrupt status flag (#LGPTimerLPF3_INT_CH0_CC
+     * for channel number #LGPTimerLPF3_CH_NO_0) will be set when the signal
      * period and pulse width have been captured. The period and pulse width are reported
-     * in numbers of counter ticks. The @ref LGPTimerLPF3_getChCompareVal() function returns
-     * the measured period and the @ref LGPTimerLPF3_getNextChCompareVal() functions returns
+     * in numbers of counter ticks. The #LGPTimerLPF3_getChCompareVal() function returns
+     * the measured period and the #LGPTimerLPF3_getNextChCompareVal() functions returns
      * the measured pulse width.
      *
      * @note
-     * Note that when selecting this channel action, @ref LGPTimerLPF3_start() function must
-     * be called with either @ref LGPTimerLPF3_CTL_MODE_UP_ONCE or @ref LGPTimerLPF3_CTL_MODE_UP_PER
+     * Note that when selecting this channel action, #LGPTimerLPF3_start() function must
+     * be called with either #LGPTimerLPF3_CTL_MODE_UP_ONCE or #LGPTimerLPF3_CTL_MODE_UP_PER
      * as function argument.
      *
      * @note
@@ -588,7 +588,7 @@ typedef void (*LGPTimerLPF3_HwiFxn)(LGPTimerLPF3_Handle handle, LGPTimerLPF3_Int
 /*!
  *  @brief LGPTimerLPF3 channel dependent properties struct.
  *
- *  LGPTimer struct used by the @ref LGPTimerLPF3_Params.
+ *  LGPTimer struct used by the #LGPTimerLPF3_Params.
  *
  */
 typedef struct LGPTimerLPF3_ChannelProp
@@ -602,8 +602,8 @@ typedef struct LGPTimerLPF3_ChannelProp
 /*!
  *  @brief LGPTimerLPF3 Parameters
  *
- *  LGPTimer parameters are used by the LGPTimerLPF3_open() call.
- *  Default values for these parameters are set using LGPTimerLPF3_Params_init().
+ *  LGPTimer parameters are used by the #LGPTimerLPF3_open() call.
+ *  Default values for these parameters are set using #LGPTimerLPF3_Params_init().
  *
  * @note
  *  The prescalerDiv parameter determines the division factor of the
@@ -614,14 +614,14 @@ typedef struct LGPTimerLPF3_ChannelProp
  *  - 0xFF: Divide by 256
  *
  * @note
- *  The intPhaseLate parameter which determines if the @ref LGPTimerLPF3_INT_TGT
- *  and @ref LGPTimerLPF3_INT_ZERO interrupt status flags will be set early or late, is
+ *  The intPhaseLate parameter which determines if the #LGPTimerLPF3_INT_TGT
+ *  and #LGPTimerLPF3_INT_ZERO interrupt status flags will be set early or late, is
  *  specified as follows:
  *  - false: Interrupt status flags are set one system clock cycle after counter = TARGET/ZERO.
  *  - true : Interrupt status flags are set one timer clock cycle after counter = TARGET/ZERO.
  *
  *  Please note that if the value of the intPhaseLate parameter is set to false while the prescalerDiv
- *  parameter value is high and either the @ref LGPTimerLPF3_INT_TGT or @ref LGPTimerLPF3_INT_ZERO
+ *  parameter value is high and either the #LGPTimerLPF3_INT_TGT or #LGPTimerLPF3_INT_ZERO
  *  interrupts are enabled, these interrupts might occur multiple times back-to-back when the
  *  interrupts are first triggered.
  *  While the counter is active, the timer will hold the state of the counter for one clock period
@@ -633,12 +633,12 @@ typedef struct LGPTimerLPF3_ChannelProp
  *  counter has reached the TARGET/ZERO value, meaning that the described hold time is reduced to 0.
  *
  *
- *  @sa     LGPTimerLPF3_Params_init()
+ *  @sa     #LGPTimerLPF3_Params_init()
  */
 typedef struct LGPTimerLPF3_Params
 {
     /*! Hardware interrupt callback function.
-     *  This pointer is optional and is only required if LGPTimerLPF3_enableInterrupt() is called. */
+     *  This pointer is optional and is only required if #LGPTimerLPF3_enableInterrupt() is called. */
     LGPTimerLPF3_HwiFxn hwiCallbackFxn;
     /*! Interrupt phase early or late for TGT and ZERO interrupts */
     bool intPhaseLate;
@@ -655,7 +655,7 @@ typedef struct LGPTimerLPF3_Params
 /*!
  *  @brief LGPTimerLPF3 channel dependent pin configuration struct.
  *
- *  LGPTimer struct used by the @ref LGPTimerLPF3_HWAttrs.
+ *  LGPTimer struct used by the #LGPTimerLPF3_HWAttrs.
  *
  */
 typedef struct LGPTimerLPF3_ChannelConf
@@ -724,8 +724,8 @@ typedef struct LGPTimerLPF3_HWAttrs
 /*!
  *  @brief  LGPTimerLPF3 Object
  *
- * These fields are used by the driver to store and modify LGPTimer configuration
- * during run-time.
+ * These fields are used by the driver to store and modify LGPTimer
+ * configuration during run-time.
  * The application must not edit any member variables of this structure.
  * Appplications should also not access member variables of this structure
  * as backwards compatibility is not guaranteed. An example structure is shown
@@ -752,9 +752,8 @@ typedef struct LGPTimerLPF3_Object
 /*!
  *  @brief  LGPTimer Global configuration
  *
- *  The LGPTimerLPF3_Config structure contains a set of pointers
- *  used to characterize the LGPTimer driver implementation.
- *  An example is shown below:
+ *  The #LGPTimerLPF3_Config structure contains a set of pointers used to
+ *  characterize the LGPTimer driver implementation. An example is shown below:
  *  @code
  *  // LGPTimer configuration (used as LGPTimer_Handle by driver and application)
  *  const LGPTimerLPF3_Config LGPTimerLPF3_config[] = {
@@ -777,51 +776,54 @@ struct LGPTimerLPF3_Config
  *
  *  @param[in]  params  An pointer to LGPTimerLPF3_Params structure for initialization
  *
- *  Default values are:
- *  Interrupt callback fxn: NULL,
- *  Interrupt phase late  : true,
- *  Prescaler division    : 0,
- *  Timer debug stall mode: LGPTimerLPF3_DEBUG_STALL_OFF,
- *  Counter dir ch cmp    : LGPTimerLPF3_CH_COMPARE_COUNTER_DIR_BOTH,
- *  Channel 0 action      : LGPTimerLPF3_CH_DISABLE,
- *  Channel 0 input edge  : LGPTimerLPF3_CH_EDGE_NONE,
- *  Channel 1 action      : LGPTimerLPF3_CH_DISABLE,
- *  Channel 1 input edge  : LGPTimerLPF3_CH_EDGE_NONE,
- *  Channel 2 action      : LGPTimerLPF3_CH_DISABLE,
- *  Channel 2 input edge  : LGPTimerLPF3_CH_EDGE_NONE
+ *  Default values:
+ * | Parameter              | Default value                             |
+ * |------------------------|-------------------------------------------|
+ * | Interrupt callback fxn | \c NULL                                   |
+ * | Interrupt phase late   | \c true                                   |
+ * | Prescaler division     | \c 0                                      |
+ * | Timer debug stall mode | #LGPTimerLPF3_DEBUG_STALL_OFF             |
+ * | Counter dir ch cmp     | #LGPTimerLPF3_CH_COMPARE_COUNTER_DIR_BOTH |
+ * | Channel 0 action       | #LGPTimerLPF3_CH_DISABLE                  |
+ * | Channel 0 input edge   | #LGPTimerLPF3_CH_EDGE_NONE                |
+ * | Channel 1 action       | #LGPTimerLPF3_CH_DISABLE                  |
+ * | Channel 1 input edge   | #LGPTimerLPF3_CH_EDGE_NONE                |
+ * | Channel 2 action       | #LGPTimerLPF3_CH_DISABLE                  |
+ * | Channel 2 input edge   | #LGPTimerLPF3_CH_EDGE_NONE                |
  */
 extern void LGPTimerLPF3_Params_init(LGPTimerLPF3_Params *params);
 
 /*!
  *  @brief  Function that opens a driver for the given LGPT peripheral. Will set
- *          power dependency on timer and configure it into specified configuration.
+ *          power dependency on timer and configure it into specified
+ *          configuration.
  *
  *  @param[in]  index     Index in the LGPTimerLPF3_config table.
  *
  *  @param[in]  params    Pointer to a parameter block. If NULL, it will use
  *                        default values.
  *
- *  @return A LGPTimerLPF3_Handle on success or NULL on an error or if it has been
- *          opened already. If NULL is returned, further LGPTimerLPF3 API calls will
- *          result in undefined behaviour.
+ *  @return A #LGPTimerLPF3_Handle on success or NULL on an error or if it has
+ *          been opened already. If NULL is returned, further LGPTimerLPF3 API
+ *          calls will result in undefined behaviour.
  *
- *  @sa     LGPTimerLPF3_close()
+ *  @sa     #LGPTimerLPF3_close()
  */
 extern LGPTimerLPF3_Handle LGPTimerLPF3_open(uint_least8_t index, const LGPTimerLPF3_Params *params);
 
 /*!
- *  @brief  Function that closes a LGPTimer driver specified by the LGPTimer handle.
- *          Closing LGPTimer driver will release power dependency on timer and clear
- *          configuration.
+ *  @brief  Function that closes a LGPTimer driver specified by the LGPTimer
+ *          handle. Closing LGPTimer driver will release power dependency on
+ *          timer and clear configuration.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first.
- *  @pre    LGPTimerLPF3_stop() should to be called first if LGPTimer is started.
+ *  @pre    #LGPTimerLPF3_open() has to be called first.
+ *  @pre    #LGPTimerLPF3_stop() should to be called first if LGPTimer is started.
  *
- *  @param[in]  handle A LGPTimerLPF3 handle returned from LGPTimerLPF3_open()
+ *  @param[in]  handle A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_start()
- *  @sa     LGPTimerLPF3_stop()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_start()
+ *  @sa     #LGPTimerLPF3_stop()
  */
 extern void LGPTimerLPF3_close(LGPTimerLPF3_Handle handle);
 
@@ -829,134 +831,141 @@ extern void LGPTimerLPF3_close(LGPTimerLPF3_Handle handle);
  *  @brief  Function that starts the timer counter of the specified LGPTimer
  *          handle with current settings and specified timer counter mode.
  *
- *  @note  The LGPT3 timer has timer counter width of 24-bits. The others have 16-bits.
+ *  @note  The timer counter width may be 16, 24, or 32 bits depending on the
+ *         LGPT instance (see @ref ti_drivers_LGPTimer_PeripheralProperties
+ *         "LGPT peripheral properties").
  *
- *  @note  When signal measurement ( @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE) has been
- *         selected for one or more channels, the value of mode must be either
- *         LGPTimerLPF3_CTL_MODE_UP_ONCE or LGPTimerLPF3_CTL_MODE_UP_PER.
+ *  @note  When signal measurement (#LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE) has
+ *         been selected for one or more channels, the value of mode must be
+ *         either #LGPTimerLPF3_CTL_MODE_UP_ONCE or
+ *         #LGPTimerLPF3_CTL_MODE_UP_PER.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully.
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully.
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open().
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open().
  *  @param[in]  mode      The timer counter mode.
  *
- *  @post   LGPTimerLPF3_stop()
+ *  @post   #LGPTimerLPF3_stop()
  */
 extern void LGPTimerLPF3_start(LGPTimerLPF3_Handle handle, LGPTimerLPF3_Mode mode);
 
 /*!
  *  @brief  Function that stops the timer counter of the specified LGPTimer driver.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully.
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully.
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open()
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_start()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_start()
  */
 extern void LGPTimerLPF3_stop(LGPTimerLPF3_Handle handle);
 
 /*!
- *  @brief  Function that sets the initial timer counter target on the specified LGPTimer.
- *          This function must be called before the timer is started.
- *          Timer counter width (16 or 24 bits) depends on selected peripheral instance.
+ *  @brief  Function that sets the initial timer counter target on the specified
+ *          LGPTimer. This function must be called before the timer is started.
+ *          Timer counter width (16, 24, or 32 bits) depends on selected
+ *          peripheral instance (see @ref ti_drivers_LGPTimer_PeripheralProperties
+ *          "LGPT peripheral properties").
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle     A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle     A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  value      Initial target value of the timer counter.
  *                         Max value: @ref ti_drivers_LGPTimer_PeripheralProperties "LGPT peripheral properties"
  *                         The number of counter ticks required to reach target value is value + 1.
- *                         Note that if either @ref LGPTimerLPF3_CTL_MODE_UP_ONCE or
- *                         @ref LGPTimerLPF3_CTL_MODE_UP_PER counter modes are used for generating
+ *                         Note that if either #LGPTimerLPF3_CTL_MODE_UP_ONCE or
+ *                         #LGPTimerLPF3_CTL_MODE_UP_PER counter modes are used for generating
  *                         a PWM signal, the signal period equals value + 1.
- *                         Note that if @ref LGPTimerLPF3_CTL_MODE_UPDWN_PER counter mode is used for
+ *                         Note that if #LGPTimerLPF3_CTL_MODE_UPDWN_PER counter mode is used for
  *                         generating a PWM signal, the signal period equals value * 2.
- *  @param[in]  intFlagClr Controls if the @ref LGPTimerLPF3_INT_TGT and @ref LGPTimerLPF3_INT_ZERO
+ *  @param[in]  intFlagClr Controls if the #LGPTimerLPF3_INT_TGT and #LGPTimerLPF3_INT_ZERO
  *                         interrupt status flags are cleared or not when this function is executed.
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_start()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_start()
  */
 extern void LGPTimerLPF3_setInitialCounterTarget(LGPTimerLPF3_Handle handle, uint32_t value, bool intFlagClr);
 
 /*!
- *  @brief  Function that sets the timer counter target for the next counter period on the specified LGPTimer.
- *          The specified target value will be valid as timer counter target on the upcoming zero crossing.
- *          When counting repeatedly upwards a zero crossing is regarded as when the timer counter restarts
- *          counting from 0.
- *          This function can be called after the timer has started.
- *          Timer counter width (16 or 24 bits) depends on selected peripheral instance.
+ *  @brief  Function that sets the timer counter target for the next counter
+ *          period on the specified LGPTimer. The specified target value will be
+ *          valid as timer counter target on the upcoming zero crossing. When
+ *          counting repeatedly upwards a zero crossing is regarded as when the
+ *          timer counter restarts counting from 0. This function can be called
+ *          after the timer has started. Timer counter width (16, 24, or 32
+ *          bits) depends on selected peripheral instance
+ *          (see @ref ti_drivers_LGPTimer_PeripheralProperties "LGPT peripheral properties").
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle     A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle     A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  value      Next target value of the timer counter.
  *                         Max value Max value: @ref ti_drivers_LGPTimer_PeripheralProperties "LGPT peripheral
  *                         properties"
  *                         The number of counter ticks required to reach target value on the next counter
  *                         period is value + 1.
- *                         Note that if either @ref LGPTimerLPF3_CTL_MODE_UP_ONCE or
- *                         @ref LGPTimerLPF3_CTL_MODE_UP_PER counter modes are used for generating
+ *                         Note that if either #LGPTimerLPF3_CTL_MODE_UP_ONCE or
+ *                         #LGPTimerLPF3_CTL_MODE_UP_PER counter modes are used for generating
  *                         a PWM signal, the signal period equals value + 1.
- *                         Note that if @ref LGPTimerLPF3_CTL_MODE_UPDWN_PER counter mode is used for
+ *                         Note that if #LGPTimerLPF3_CTL_MODE_UPDWN_PER counter mode is used for
  *                         generating a PWM signal, the signal period equals value * 2.
  *
- *  @param[in]  intFlagClr Controls if the @ref LGPTimerLPF3_INT_TGT and @ref LGPTimerLPF3_INT_ZERO
+ *  @param[in]  intFlagClr Controls if the #LGPTimerLPF3_INT_TGT and #LGPTimerLPF3_INT_ZERO
  *                         interrupt status flags are cleared or not when this function is executed.
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_start()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_start()
  */
 extern void LGPTimerLPF3_setNextCounterTarget(LGPTimerLPF3_Handle handle, uint32_t value, bool intFlagClr);
 
 /*!
  *  @brief  Function that returns the current timer counter value.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *
  *  @return  The current timer counter value
  *
- *  @sa     LGPTimerLPF3_open
+ *  @sa     #LGPTimerLPF3_open()
  */
 extern uint32_t LGPTimerLPF3_getCounter(LGPTimerLPF3_Handle handle);
 
 /*!
  *  @brief  Function to get a custom argument.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_setArg() has to be called first
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_setArg() has to be called first
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *
  *  @return  The custom argument
  *
- *  @sa     LGPTimerLPF3_setArg
- *  @sa     LGPTimerLPF3_open
+ *  @sa     #LGPTimerLPF3_setArg()
+ *  @sa     #LGPTimerLPF3_open()
  */
 extern uint32_t LGPTimerLPF3_getArg(LGPTimerLPF3_Handle handle);
 
 /*!
  *  @brief  Function to set a custom argument.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  arg       Pointer to a custom argument
  *
- *  @sa     LGPTimerLPF3_getArg
- *  @sa     LGPTimerLPF3_open
+ *  @sa     #LGPTimerLPF3_getArg()
+ *  @sa     #LGPTimerLPF3_open()
  */
 extern void LGPTimerLPF3_setArg(LGPTimerLPF3_Handle handle, void *arg);
 
 /*!
  *  @brief  Enable interrupt source for the LGPTimer handle.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- * @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ * @param[in]  handle    A #LGPTimerLPF3_Handle returned from LGPTimerLPF3_open()
  * @param[in]  intMask   A bit mask of interrupt flags to enable
  *
  */
@@ -965,37 +974,38 @@ void LGPTimerLPF3_enableInterrupt(LGPTimerLPF3_Handle handle, LGPTimerLPF3_IntMa
 /*!
  *  @brief  Disable interrupt source for the LGPTimer handle.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_enableInterrupt() has to be called first
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_enableInterrupt() has to be called first
  *
- * @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ * @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  * @param[in]  intMask   A bit mask of interrupt flags to disable
  *
  */
 void LGPTimerLPF3_disableInterrupt(LGPTimerLPF3_Handle handle, LGPTimerLPF3_IntMask intMask);
 
 /*!
- *  @brief  Function that sets the initial channel compare value on the specified LGPTimer
- *          and channel.
- *          The compare value for the specified channel will be used by any compare type
- *          channel action @ref LGPTimerLPF3_ChannelAction specified by the LGPTimer
- *          params.
- *          The channel number dependent interrupt status flag (@ref LGPTimerLPF3_INT_CH0_CC
- *          for channel number @ref LGPTimerLPF3_CH_NO_0) will be set when the timer counter
- *          equals the channel compare value.
- *          This function must be called prior to @ref LGPTimerLPF3_start().
- *          Timer compare value width (16 or 24 bits) depends on selected peripheral instance.
+ *  @brief  Function that sets the initial channel compare value on the
+ *          specified LGPTimer and channel. The compare value for the specified
+ *          channel will be used by any compare type channel action
+ *          #LGPTimerLPF3_ChannelAction specified by the LGPTimer params. The
+ *          channel number dependent interrupt status flag
+ *          (#LGPTimerLPF3_INT_CH0_CC for channel number #LGPTimerLPF3_CH_NO_0)
+ *          will be set when the timer counter equals the channel compare value.
+ *          This function must be called prior to #LGPTimerLPF3_start(). Timer
+ *          compare value width (16, 24, or 32 bits) depends on selected
+ *          peripheral instance
+ *          (see @ref ti_drivers_LGPTimer_PeripheralProperties "LGPT peripheral properties").
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle     A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle     A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo       Channel number
  *  @param[in]  value      Channel compare value for specified channel number
  *
  *  @param[in]  intFlagClr Controls if the channel number dependent compare/capture interrupt
  *                         status flag is cleared or not when this function is executed.
  *
- *  @sa     LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_open()
  */
 void LGPTimerLPF3_setInitialChannelCompVal(LGPTimerLPF3_Handle handle,
                                            LGPTimerLPF3_ChannelNo chNo,
@@ -1003,30 +1013,31 @@ void LGPTimerLPF3_setInitialChannelCompVal(LGPTimerLPF3_Handle handle,
                                            bool intFlagClr);
 
 /*!
- *  @brief  Function that sets the channel compare value on the specified LGPTimer for
- *          the next cycle of the already started timer counter.
- *          The compare value for the specified channel is valid for any compare type
- *          channel action @ref LGPTimerLPF3_ChannelAction specified by the LGPTimer
- *          params.
- *          The channel number dependent interrupt status flag (@ref LGPTimerLPF3_INT_CH0_CC
- *          for channel number @ref LGPTimerLPF3_CH_NO_0) will be set when the timer counter
- *          equals the channel compare value in the next and following timer counter cycles.
- *          This function can be called while the timer is active.
+ *  @brief  Function that sets the channel compare value on the specified
+ *          LGPTimer for the next cycle of the already started timer counter.
+ *          The compare value for the specified channel is valid for any compare
+ *          type channel action #LGPTimerLPF3_ChannelAction specified by the
+ *          LGPTimer params. The channel number dependent interrupt status flag
+ *          (#LGPTimerLPF3_INT_CH0_CC for channel number #LGPTimerLPF3_CH_NO_0)
+ *          will be set when the timer counter equals the channel compare value
+ *          in the next and following timer counter cycles. This function can be
+ *          called while the timer is active.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_setInitialChannelCompVal has to be called first successfully
- *  @pre    LGPTimerLPF3_start() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_setInitialChannelCompVal() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_start() has to be called first successfully
  *
- *  @param[in]  handle     A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle     A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo       Channel number
  *  @param[in]  value      Channel compare value for specified channel number.
- *                         Width (16 or 24 bits) of value depends on selected peripheral instance.
+ *                         Width (16, 24, or 32 bits) of value depends on selected peripheral instance
+ *                         (see @ref ti_drivers_LGPTimer_PeripheralProperties "LGPT peripheral properties").
  *
  *  @param[in]  intFlagClr Controls if the channel number dependent compare/capture interrupt
  *                         status flag is cleared or not when this function is executed.
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_setInitialChannelCompVal()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_setInitialChannelCompVal()
  */
 void LGPTimerLPF3_setNextChannelCompVal(LGPTimerLPF3_Handle handle,
                                         LGPTimerLPF3_ChannelNo chNo,
@@ -1034,145 +1045,143 @@ void LGPTimerLPF3_setNextChannelCompVal(LGPTimerLPF3_Handle handle,
                                         bool intFlagClr);
 
 /*!
- *  @brief  Function that manually sets the current channel output level high or low.
- *          Manual update of a channel output takes priority over automatic channel
- *          updates to the same output when occurring at the same time.
- *          The complementary channel output will be set to the complementary level
- *          of the specified level.
+ *  @brief  Function that manually sets the current channel output level high or
+ *          low. Manual update of a channel output takes priority over automatic
+ *          channel updates to the same output when occurring at the same time.
+ *          The complementary channel output will be set to the complementary
+ *          level of the specified level.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle     A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle     A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo       Channel number
  *  @param[in]  level      Channel level for specified channel number
  *
  *
- *  @sa     LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_open()
  */
 void LGPTimerLPF3_setChannelOutputLevel(LGPTimerLPF3_Handle handle,
                                         LGPTimerLPF3_ChannelNo chNo,
                                         LGPTimerLPF3_ChannelLevel level);
 
 /*!
- *  @brief  Function to get the channel compare value or channel-updated capture value.
- *          Dependent on the selected channel action for the specified channel,
- *          the function will return either the current channel compare value or
- *          the channel-updated capture value.
- *          The channel-updated capture value is returned if a successful channel
- *          capture event, as specified by the channel action, has occured on the
- *          specified channel.
- *          For a channel action of @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE,
- *          the returned value after a successful channel capture event, represents
- *          the measured period of the selected channel input signal.
+ *  @brief  Function to get the channel compare value or channel-updated capture
+ *          value. Dependent on the selected channel action for the specified
+ *          channel, the function will return either the current channel compare
+ *          value or the channel-updated capture value. The channel-updated
+ *          capture value is returned if a successful channel capture event, as
+ *          specified by the channel action, has occured on the specified
+ *          channel. For a channel action of
+ *          #LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the returned value after a
+ *          successful channel capture event, represents the measured period of
+ *          the selected channel input signal.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
  *          channel compare action type is used.
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo      Channel number
  *
  *  @return  The compare value or input signal pulse width
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_setInitialChannelCompVal()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_setInitialChannelCompVal()
  */
 uint32_t LGPTimerLPF3_getChCompareVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo);
 
 /*!
- *  @brief  Function to get the channel compare value or channel-updated capture value.
- *          Dependent on the selected channel action for the specified channel,
- *          the function will return either the current channel compare value or
- *          the channel-updated capture value.
- *          The channel-updated capture value is returned if a successful channel
- *          capture event, as specified by the channel action, has occured on the
- *          specified channel.
- *          For a channel action of @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE,
- *          the returned value after a successful channel capture event, represents
- *          the measured period of the selected channel input signal.
+ *  @brief  Function to get the channel compare value or channel-updated capture
+ *          value. Dependent on the selected channel action for the specified
+ *          channel, the function will return either the current channel compare
+ *          value or the channel-updated capture value. The channel-updated
+ *          capture value is returned if a successful channel capture event, as
+ *          specified by the channel action, has occured on the specified
+ *          channel. For a channel action of
+ *          #LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the returned value after a
+ *          successful channel capture event, represents the measured period of
+ *          the selected channel input signal.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
  *          channel compare action type is used.
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo      Channel number
  *
  *  @return  The compare value or input signal pulse width
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_setInitialChannelCompVal()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_setInitialChannelCompVal()
  */
 uint32_t LGPTimerLPF3_getChCaptureVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo);
 
 /*!
- *  @brief  Function to get the channel compare value for the next counter cycle or
- *          the channel-updated capture value.
- *          Dependent on the selected channel action for the specified channel,
- *          the function will return either the channel compare value for the next
- *          counter cycle or the channel-updated capture value.
- *          For a channel action mode of @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE,
- *          the returned value after a successful capture event will be the width of
- *          the low or high phase of the selected channel input signal.
- *          The phase is specified by @ref LGPTimerLPF3_ChannelInputEdge parameter
- *          for the selected channel.
+ *  @brief  Function to get the channel compare value for the next counter cycle
+ *          or the channel-updated capture value. Dependent on the selected
+ *          channel action for the specified channel, the function will return
+ *          either the channel compare value for the next counter cycle or the
+ *          channel-updated capture value. For a channel action mode of
+ *          #LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the returned value after a
+ *          successful capture event will be the width of the low or high phase
+ *          of the selected channel input signal. The phase is specified by
+ *          #LGPTimerLPF3_ChannelInputEdge parameter for the selected channel.
  *          In order to get the channel-updated capture value for other capture
- *          channel actions than @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the
- *          function @ref LGPTimerLPF3_getChCompareVal should be used.
+ *          channel actions than #LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the
+ *          function #LGPTimerLPF3_getChCompareVal should be used.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
  *          channel compare action type is used.
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo      Channel number
  *
  *  @return  The custom argument
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_setInitialChannelCompVal()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_setInitialChannelCompVal()
  */
 uint32_t LGPTimerLPF3_getNextChCompareVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo);
 
 /*!
- *  @brief  Function to get the channel compare value for the next counter cycle or
- *          the channel-updated capture value.
- *          Dependent on the selected channel action for the specified channel,
- *          the function will return either the channel compare value for the next
- *          counter cycle or the channel-updated capture value.
- *          For a channel action mode of @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE,
- *          the returned value after a successful capture event will be the width of
- *          the low or high phase of the selected channel input signal.
- *          The phase is specified by @ref LGPTimerLPF3_ChannelInputEdge parameter
- *          for the selected channel.
+ *  @brief  Function to get the channel compare value for the next counter cycle
+ *          or the channel-updated capture value. Dependent on the selected
+ *          channel action for the specified channel, the function will return
+ *          either the channel compare value for the next counter cycle or the
+ *          channel-updated capture value. For a channel action mode of
+ *          #LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the returned value after a
+ *          successful capture event will be the width of the low or high phase
+ *          of the selected channel input signal. The phase is specified by
+ *          #LGPTimerLPF3_ChannelInputEdge parameter for the selected channel.
  *          In order to get the channel-updated capture value for other capture
- *          channel actions than @ref LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the
- *          function @ref LGPTimerLPF3_getChCompareVal should be used.
+ *          channel actions than #LGPTimerLPF3_CH_PULSE_WIDTH_MEASURE, the
+ *          function #LGPTimerLPF3_getChCompareVal() should be used.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
- *  @pre    LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_setInitialChannelCompVal() has to be called first when
  *          channel compare action type is used.
  *
- *  @param[in]  handle    A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle    A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *  @param[in]  chNo      Channel number
  *
  *  @return  The custom argument
  *
- *  @sa     LGPTimerLPF3_open()
- *  @sa     LGPTimerLPF3_setInitialChannelCompVal()
+ *  @sa     #LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_setInitialChannelCompVal()
  */
 uint32_t LGPTimerLPF3_getNextChCaptureVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_ChannelNo chNo);
 
 /*!
  *  @brief  Function to get the width of the timer counter in number of bits.
  *
- *  @pre    LGPTimerLPF3_open() has to be called first successfully
+ *  @pre    #LGPTimerLPF3_open() has to be called first successfully
  *
- *  @param[in]  handle     A LGPTimerLPF3 handle returned from LGPTimerLPF3_open
+ *  @param[in]  handle     A #LGPTimerLPF3_Handle returned from #LGPTimerLPF3_open()
  *
  *  @return  The timer counter width in number of bits
  *
- *  @sa     LGPTimerLPF3_open()
+ *  @sa     #LGPTimerLPF3_open()
  */
 uint32_t LGPTimerLPF3_getCounterWidth(LGPTimerLPF3_Handle handle);
 

@@ -7,7 +7,7 @@
             "+../main_nortos.c -> main_nortos.c",
             "+../sdraw.syscfg -> sdraw.syscfg",
             "+../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
-            "+cc23x0r5_nortos.cmd -> cc23x0r5_nortos.cmd"
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
         ]
     }
 ]

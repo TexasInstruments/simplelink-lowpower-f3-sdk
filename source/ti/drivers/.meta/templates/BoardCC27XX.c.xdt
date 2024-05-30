@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
 
     /* Get boolean template mode */
     let mode = args[0];
+    let board = system.deviceData.board;
 
 %%}
 % if (mode === "prologue") {
@@ -50,19 +51,24 @@
 %     /* Initialization functions template content */
 #include <stdbool.h>
 
-// #include <ti/devices/cc27xx/driverlib/ioc.h>
-// #include <ti/devices/cc27xx/driverlib/cpu.h>
+#include <ti/devices/cc27xx/driverlib/cpu.h>
+#include <ti/devices/cc27xx/driverlib/hapi.h>
 
 #include <ti/drivers/GPIO.h>
 
+% if (board !== undefined && board.name.match(/SOCKET/)) {
 /* Board GPIO defines */
-/* TODO: Update when CC27XX LaunchPad design is known */
-#define BOARD_EXT_FLASH_SPI_CS      20
-#define BOARD_EXT_FLASH_SPI_CLK     10
-#define BOARD_EXT_FLASH_SPI_PICO    9
-#define BOARD_EXT_FLASH_SPI_POCI    8
-
-#if 0
+#define BOARD_EXT_FLASH_SPI_CS      7
+#define BOARD_EXT_FLASH_SPI_CLK     3
+#define BOARD_EXT_FLASH_SPI_PICO    5
+#define BOARD_EXT_FLASH_SPI_POCI    4
+% } else {
+/* Board GPIO defines */
+#define BOARD_EXT_FLASH_SPI_CS      19
+#define BOARD_EXT_FLASH_SPI_CLK     3
+#define BOARD_EXT_FLASH_SPI_PICO    5
+#define BOARD_EXT_FLASH_SPI_POCI    4
+% }
 /*
  *  ======== Board_sendExtFlashByte ========
  */
@@ -80,22 +86,18 @@ void Board_sendExtFlashByte(uint8_t byte)
         GPIO_write(BOARD_EXT_FLASH_SPI_PICO, (byte >> (7 - i)) & 0x01);
         GPIO_write(BOARD_EXT_FLASH_SPI_CLK, 1);  /* SPI Flash CLK */
 
-        /*
-         * Waste a few cycles to keep the CLK high for at
+        /* Waste a few cycles to keep the CLK high for at
          * least 45% of the period.
-         * 3 cycles per loop: 8 loops @ 48 Mhz = 0.5 us.
+         * 3 cycles per loop: 16 loops @ 96 MHz = 0.5 us.
          */
-        CPUDelay(8);
+        CPUDelay(16);
     }
 
     GPIO_write(BOARD_EXT_FLASH_SPI_CLK, 0);  /* CLK */
     GPIO_write(BOARD_EXT_FLASH_SPI_CS, 1);  /* CS */
 
-    /*
-     * Keep CS high at least 40 us
-     * 3 cycles per loop: 700 loops @ 48 Mhz ~= 44 us
-     */
-    CPUDelay(700);
+    /* Keep CS high at least 40 us */
+    HapiWaitUs(40);
 }
 
 /*
@@ -106,18 +108,17 @@ void Board_wakeUpExtFlash(void)
     /* SPI Flash CS*/
     GPIO_setConfig(BOARD_EXT_FLASH_SPI_CS, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_HIGH | GPIO_CFG_OUT_STR_MED);
 
-    /*
-     *  To wake up we need to toggle the chip select at
-     *  least 20 ns and ten wait at least 35 us.
+    /* To wake up we need to toggle the chip select at
+     * least 20 ns and then wait at least 35 us.
      */
 
     /* Toggle chip select for ~20ns to wake ext. flash */
     GPIO_write(BOARD_EXT_FLASH_SPI_CS, 0);
-    /* 3 cycles per loop: 1 loop @ 48 Mhz ~= 62 ns */
-    CPUDelay(1);
+    /* 3 cycles per loop: 2 loop @ 96 MHz ~= 62 ns */
+    CPUDelay(2);
     GPIO_write(BOARD_EXT_FLASH_SPI_CS, 1);
-    /* 3 cycles per loop: 560 loops @ 48 Mhz ~= 35 us */
-    CPUDelay(560);
+    /* Wait for 35 us */
+    HapiWaitUs(35);
 }
 
 /*
@@ -125,9 +126,8 @@ void Board_wakeUpExtFlash(void)
  */
 void Board_shutDownExtFlash(void)
 {
-    /*
-     *  To be sure we are putting the flash into sleep and not waking it,
-     *  we first have to make a wake up call
+    /* To be sure we are putting the flash into sleep and not waking it,
+     * we first have to make a wake up call
      */
     Board_wakeUpExtFlash();
 
@@ -149,6 +149,5 @@ void Board_shutDownExtFlash(void)
     GPIO_resetConfig(BOARD_EXT_FLASH_SPI_PICO);
     GPIO_resetConfig(BOARD_EXT_FLASH_SPI_POCI);
 }
-#endif
 
 % }

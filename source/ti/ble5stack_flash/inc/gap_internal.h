@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -144,6 +144,15 @@ extern "C"
  * Range of a passkey can be 0 - 999,999.
  */
 #define GAP_PASSCODE_MAX                 999999
+
+// Limited Discoverable Mode Max ADV Duration [10*ms]
+#define GAP_LIMITED_ADV_MAX_DURATION_10MS       18000
+// Limited Discoverable Mode Min ADV Duration [10*ms]
+#define GAP_LIMITED_ADV_MIN_DURATION_10MS       1
+// Limited Discoverable Mode Min ADV Duration [s]
+#define GAP_LIMITED_ADV_MAX_DURATION_SEC        180
+// Max value of advertising delay in ms
+#define GAP_MAX_ADV_DELAY_MS                    10
 
 /*********************************************************************
  * TYPEDEFS

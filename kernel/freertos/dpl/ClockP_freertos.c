@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -321,6 +321,21 @@ void ClockP_Params_init(ClockP_Params *params)
     params->arg       = (uintptr_t)0;
     params->startFlag = false;
     params->period    = 0;
+}
+
+/*
+ *  ======== ClockP_setFunc ========
+ */
+void ClockP_setFunc(ClockP_Handle handle, ClockP_Fxn clockFxn, uintptr_t arg)
+{
+    ClockP_FreeRTOSObj *obj = (ClockP_FreeRTOSObj *)handle;
+
+    uintptr_t key = HwiP_disable();
+
+    obj->fxn = clockFxn;
+    obj->arg = arg;
+
+    HwiP_restore(key);
 }
 
 /*

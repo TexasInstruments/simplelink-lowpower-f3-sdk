@@ -18,7 +18,7 @@ let rfdesign;
 let frontEnd;
 let bias;
 
-if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+if( (devFamily != "DeviceFamily_CC23X0R5")  && (devFamily != "DeviceFamily_CC23X0R53") && (devFamily != "DeviceFamily_CC23X0R2") && (devFamily != "DeviceFamily_CC27XX") && (devFamily != "DeviceFamily_CC23X0R22") )
 {
     rfdesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
 
@@ -49,7 +49,7 @@ if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
 % if(ble.bondManager == true) {
 #include <gapbondmgr.h>
 %}
-% if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+% if( (devFamily != "DeviceFamily_CC23X0R5")  && (devFamily != "DeviceFamily_CC23X0R53") && (devFamily != "DeviceFamily_CC23X0R2")  && (devFamily != "DeviceFamily_CC27XX") && (devFamily != "DeviceFamily_CC23X0R22") )
 % {
 #include <ti_radio_config.h>
 %}
@@ -62,14 +62,14 @@ extern uint8_t attDeviceName[GAP_DEVICE_NAME_LEN];
 % if(ble.basicBLE){
 extern void init_profiles(void);
 %}
-%if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+%if( (devFamily != "DeviceFamily_CC23X0R5")  && (devFamily != "DeviceFamily_CC23X0R53") && (devFamily != "DeviceFamily_CC23X0R2")  && (devFamily != "DeviceFamily_CC27XX") && (devFamily != "DeviceFamily_CC23X0R22") )
 %{
 % if(rfdesign){
 #define RF_FE_MODE_AND_BIAS            `frontEnd` | `bias`
 %}
 %}
 
-% if(devFamily == "DeviceFamily_CC23X0R5" || devFamily == "DeviceFamily_CC23X0R2")
+% if( (devFamily == "DeviceFamily_CC23X0R5") || (devFamily == "DeviceFamily_CC23X0R53") || (devFamily == "DeviceFamily_CC23X0R2")  || (devFamily == "DeviceFamily_CC27XX") || (devFamily == "DeviceFamily_CC23X0R22") )
 % {
 // Default Tx Power value in dBm
 #define DEFAULT_TX_POWER               `ble.defaultTxPowerValue`
@@ -78,6 +78,23 @@ extern void init_profiles(void);
 % {
 // Default Tx Power Index
 #define DEFAULT_TX_POWER               `common.convertTxPowerValueToIndex(ble.defaultTxPowerValue)`
+% }
+
+% if( common.isLPF3Device() )
+% {
+// User configurable extra PPM for peripheral RX window widening
+// This only applies if SRC_CLK_IS_LFOSC is set to 1
+#define USER_CFG_LFOSC_EXTRA_PPM        `ble.peripheralExtraLFOSCPPM`
+% }
+
+// Specifies whether LFOSC (RCOSC) was configured in CCFG module by the user
+% if( common.isLPF3Device() && ble.useRcosc)
+% {
+#define SRC_CLK_IS_LFOSC        		1
+% }
+% else if (common.isLPF3Device() && !ble.useRcosc)
+% {
+#define SRC_CLK_IS_LFOSC        		0
 % }
 
 //Random Address
@@ -105,7 +122,6 @@ extern uint8_t pRandomAddress[B_ADDR_LEN];
  * Bond Manager Configuration
  */
 
-#define GAP_BONDINGS_MAX                      `ble.maxBonds`
 #define GAP_CHAR_CFG_MAX                      `ble.maxCharCfg`
 
 extern gapBondParams_t gapBondParams;
@@ -299,5 +315,17 @@ extern uint8_t `ble["advSet"+i]["scanRes"+i].name`[`common.advDataTotalLength(sc
 #define L2CAP_CREDITS_THRESHOLD           `ble.L2CAPCOCcreditsThreshold`
 #define L2CAP_CONN_ESTABLISH_ROLE         `ble.L2CAPCOCInitiator`
 %}
+
+// SDAA parameters
+% if(ble.sdaa)
+% {
+#define SDAA_MAX_THRESHOLD                  `ble.txUsageThresh`
+#define SDAA_RX_WINDOW_DURATION             `ble.rxWindowDuration`
+#define SDAA_RSSI_THRESHOLD                 `ble.rssiThreshold`
+#define SDAA_MAX_ALLOWED_NOISY_SAMPLES      `ble.numberOfNoisySamples`
+#define SDAA_MAX_BLOCKED_CHANNEL_TIME       `ble.blockingChannelTime`
+#define SDAA_CONST_OBSERV_TIME              `ble.fixedObservTime`
+#define SDAA_OBSERVATION_TIME               `ble.observationTime`
+% }
 
 #endif /* TI_BLE_CONFIG_H */

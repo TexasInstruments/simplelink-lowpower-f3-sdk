@@ -42,6 +42,9 @@ const Common = system.getScript("/ti/ble5stack/ble_common.js");
 
 // Long description for the maxBonds configuration parameter
 const maxBondsLongDescription = `Maximum number of bonds that can be saved in NV.\n
+__Note__: When setting maxBonds parameter to a value greater than 5, \
+ensure that the number of NV pages is fits, \
+and the region size of NVS is suitable to the number of NV pages. \n
 __Default__: ${Common.defaultBondValue()}\n`
 
 // Long description for the maxCharCfg configuration parameter

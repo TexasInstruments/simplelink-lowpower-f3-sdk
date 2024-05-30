@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,11 +47,11 @@ const MIN_TEMP_THRESHOLD = -41;
 
 /* Default HFXT parameters for LP_EM_CC2340R5 launchpad */
 const hfxtDefaultParams = {
-    "P0" : 14.56160,
-    "P1" : -0.43677,
-    "P2" : -0.00853,
-    "P3" : 0.00010,
-    "shift":  22
+    "P0": 14.56160,
+    "P1": -0.43677,
+    "P2": -0.00853,
+    "P3": 0.00010,
+    "shift": 22
 };
 
 const moduleDesc = `
@@ -64,19 +64,26 @@ ti_devices_config.c and including it in the project.`;
 let devSpecific = {
     hfxtDefaultParams: hfxtDefaultParams,
     longDescription: moduleDesc,
+    templates: {
+        /* Contributes CRC symbols to linker file */
+        "/ti/utils/build/GenMap.cmd.xdt": { modName: "/ti/devices/CCFG", getLinkerSyms: getLinkerSyms }
+    },
     moduleStatic: {
         modules: modules,
         validate: validate,
-        config : [
+        config: [
             {
                 name: "srcClkLF",
                 displayName: "Low Frequency Clock Source",
                 description: "Low frequency clock source",
+                longDescription: `When choosing the external clock, supply
+a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the appropriate pin.`,
                 readOnly: false,
                 hidden: false,
                 options: [
-                    {name: "LF XOSC"},
-                    {name: "LF RCOSC"}
+                    { name: "LF XOSC" },
+                    { name: "LF RCOSC" },
+                    { name: "External LF clock" }
                 ],
                 default: "LF XOSC"
             },
@@ -105,7 +112,7 @@ let devSpecific = {
                 longDescription: `The cap-array Q1 value is used when turning on HFXT.
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
-                displayFormat: {radix: "hex", bitSize: 2},
+                displayFormat: { radix: "hex", bitSize: 2 },
                 default: 0x00,
                 readOnly: false,
                 hidden: true
@@ -117,34 +124,43 @@ Q1 and Q2 should not differ by more than one step.`,
                 longDescription: `The cap-array Q2 value is used when turning on HFXT.
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
-                displayFormat: {radix: "hex", bitSize: 2},
+                displayFormat: { radix: "hex", bitSize: 2 },
                 default: 0x00,
                 readOnly: false,
                 hidden: true
             },
             {
-                name        : "voltageRegulator",
-                displayName : "Voltage Regulator",
-                description : "Choose between using the internal DCDC or GLDO voltage regulator",
-                default     : "DCDC",
+                name: "voltageRegulator",
+                displayName: "Voltage Regulator",
+                description: "Choose between using the internal DCDC or GLDO voltage regulator",
+                default: "DCDC",
                 longDescription: `On the CC23X0 devices, the DCDC regulator is
 disabled by default in hardware. This setting enables the DCDC regulator upon
 device startup. It is possible to choose between using the internal DCDC or GLDO
 regulator. Enabling the DCDC regulator means that it is predominantly used, but the GLDO will still
 automatically turn on and take over if the voltage drops too low.
 `,
-                options     :
-                [
-                    {
-                        name: "DCDC",
-                        description: "The internal DCDC regulator will be enabled for use."
-                    },
-                    {
-                        name: "GLDO",
-                        description: "The internal GLDO regulator will be enabled for use."+
-                              "This will disable the DCDC regulator."
-                    }
-                ]
+                options:
+                    [
+                        {
+                            name: "DCDC",
+                            description: "The internal DCDC regulator will be enabled for use."
+                        },
+                        {
+                            name: "GLDO",
+                            description: "The internal GLDO regulator will be enabled for use." +
+                                "This will disable the DCDC regulator."
+                        }
+                    ]
+            },
+            {
+                name: "enableInitialHfxtAmpComp",
+                displayName: "Initial HFXT Amplitude Compensation",
+                longDescription: `This enables the [__Initial HFXT Amplitude Compensation__][1] feature.
+
+[1]: /drivers/doxygen/html/_power_c_c23_x0_8h.html#ti_drivers_PowerCC23X0_Initial_HFXT_Amplitude_Compensation "Initial HFXT Amplitude Compensation"
+`,
+                default: false
             },
             {
                 displayName: "RF Temperature Compensation",
@@ -163,66 +179,66 @@ source is not accurate enough for the selected RF protocol.`,
                         onChange: onChangeHFXT
                     },
                     {
-                        name        : "HFXTCompTempThreshold",
-                        displayName : "HFXT Compensation Threshold",
-                        description : `Perform compensation only above this temperature`,
-                        longDescription : `HFXT will only be automatically compensated when the measured device
+                        name: "HFXTCompTempThreshold",
+                        displayName: "HFXT Compensation Threshold",
+                        description: `Perform compensation only above this temperature`,
+                        longDescription: `HFXT will only be automatically compensated when the measured device
 temperature exceeds this threshold (in degrees Celsius). This can help to reduce power consumption if temperature
 compensation is not required below a certain temperature. If set to -41, then compensation will be enabled across the
 entire operating temperature range of [-40, +125].`,
-                        default     : -41,
-                        hidden      : true
+                        default: -41,
+                        hidden: true
                     },
                     {
-                        name        : "HFXTCompTempDelta",
-                        displayName : "HFXT Compensation Delta",
-                        description : `How much the temperature must change before compensation is performed`,
-                        longDescription : `HFXT will be automatically compensated if the temperature drifts more than
+                        name: "HFXTCompTempDelta",
+                        displayName: "HFXT Compensation Delta",
+                        description: `How much the temperature must change before compensation is performed`,
+                        longDescription: `HFXT will be automatically compensated if the temperature drifts more than
 this delta-value in either direction (in degrees Celsius). For example, if the temperature is measured to 30 degrees
 when the device boots, but later drifts to 30 + delta or 30 - delta, then HFXT temperature compensation will be
 performed, and the temperature setpoint updated accordingly.`,
-                        default     : 2,
-                        hidden      : true
+                        default: 2,
+                        hidden: true
                     },
                     {
-                        name        : "customHFXTCoeff",
-                        displayName : "Custom HFXT Coefficients",
-                        description : "Use Custome HFXT Temperature Coefficients",
-                        longDescription:`If the ppm offset of the HFXT can be approximated by a third order polynomial
+                        name: "customHFXTCoeff",
+                        displayName: "Custom HFXT Coefficients",
+                        description: "Use Custome HFXT Temperature Coefficients",
+                        longDescription: `If the ppm offset of the HFXT can be approximated by a third order polynomial
 function of temperature (degrees Celsius), ppm(T) = P3*T^3 + P2*T^2 + P1*T + P0, where the coefficients
 P3, P2, P1, and P0 are known, they can be supplied below. The default coefficients represent the characteristics of the
 48 MHz crystal (part number TZ3908AAAO43) mounted on the LP_EM_CC2340R5 LaunchPad.`,
-                        default     : false,
-                        hidden      : true,
-                        onChange    : onChangeHFXT
+                        default: false,
+                        hidden: true,
+                        onChange: onChangeHFXT
                     },
                     {
-                        name        : "HFXTCoefficientP0",
-                        displayName : "HFXT Coefficient P0",
-                        description : "HFXT Coefficient P0",
-                        default     : hfxtDefaultParams["P0"],
-                        hidden      : true
+                        name: "HFXTCoefficientP0",
+                        displayName: "HFXT Coefficient P0",
+                        description: "HFXT Coefficient P0",
+                        default: hfxtDefaultParams["P0"],
+                        hidden: true
                     },
                     {
-                        name        : "HFXTCoefficientP1",
-                        displayName : "HFXT Coefficient P1",
-                        description : "HFXT Coefficient P1",
-                        default     : hfxtDefaultParams["P1"],
-                        hidden      : true
+                        name: "HFXTCoefficientP1",
+                        displayName: "HFXT Coefficient P1",
+                        description: "HFXT Coefficient P1",
+                        default: hfxtDefaultParams["P1"],
+                        hidden: true
                     },
                     {
-                        name        : "HFXTCoefficientP2",
-                        displayName : "HFXT Coefficient P2",
-                        description : "HFXT Coefficient P2",
-                        default     : hfxtDefaultParams["P2"],
-                        hidden      : true
+                        name: "HFXTCoefficientP2",
+                        displayName: "HFXT Coefficient P2",
+                        description: "HFXT Coefficient P2",
+                        default: hfxtDefaultParams["P2"],
+                        hidden: true
                     },
                     {
-                        name        : "HFXTCoefficientP3",
-                        displayName : "HFXT Coefficient P3",
-                        description : "HFXT Coefficient P3",
-                        default     : hfxtDefaultParams["P3"],
-                        hidden      : true
+                        name: "HFXTCoefficientP3",
+                        displayName: "HFXT Coefficient P3",
+                        description: "HFXT Coefficient P3",
+                        default: hfxtDefaultParams["P3"],
+                        hidden: true
                     }
                 ]
             },
@@ -236,10 +252,10 @@ P3, P2, P1, and P0 are known, they can be supplied below. The default coefficien
 default bootloader with customer settings, or user-specific bootloader`,
                         default: "Default FCFG bootloader",
                         options: [
-                            {name: "Default FCFG bootloader"},
-                            {name: "Default FCFG bootloader, with CCFG settings"},
-                            {name: "User-specific bootloader"},
-                            {name: "Any bootloader forbidden"}
+                            { name: "Default FCFG bootloader" },
+                            { name: "Default FCFG bootloader, with CCFG settings" },
+                            { name: "User-specific bootloader" },
+                            { name: "Any bootloader forbidden" }
                         ],
                         onChange: function (inst, ui) {
                             updateBldrVisibility(inst, ui);
@@ -251,7 +267,7 @@ default bootloader with customer settings, or user-specific bootloader`,
                         description: "Bootloader vector table address",
                         longDescription: `This configurable sets the address of the user-specific bootloader`,
                         hidden: true,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00000000
                     },
                     {
@@ -262,7 +278,7 @@ default bootloader with customer settings, or user-specific bootloader`,
 or invoked directly by boot sequence if neither user bootloader nor default bootloader is allowed.
 0xFFFFFFFF: No user application vector table`,
                         hidden: true,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00000000
                     },
                     {
@@ -308,9 +324,9 @@ false: All serial bootloader commands except BLDR_CMD_GET_STATUS are rejected.`,
 to be triggered during boot. Only valid if pin triggering is enabled.`,
                         hidden: true,
                         default: "LOW",
-                        options :[
-                            {name: "HIGH"},
-                            {name: "LOW"}
+                        options: [
+                            { name: "HIGH" },
+                            { name: "LOW" }
                         ]
                     }
                 ]
@@ -324,7 +340,7 @@ to be triggered during boot. Only valid if pin triggering is enabled.`,
                         description: "Hardware Options 1",
                         longDescription: `Value written to both the PMCTL:HWOPT0 and CLKCTL:HWOPT0 registers by ROM code
 on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -333,7 +349,7 @@ on PRODDEV at execution transfer from boot code/bootloader to application image`
                         description: "Hardware Options 2",
                         longDescription: `Value written to both the PMCTL:HWOPT1 and CLKCTL:HWOPT1 registers by ROM code
 on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     }
                 ]
@@ -429,7 +445,7 @@ Any other: (2^saciTimeout)*64 ms`,
                         description: "Sets write/erase protection for main sectors 0-31 (1 sector/bit)",
                         longDescription: `Value is written to VIMS:WEPRA register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -438,7 +454,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         description: "Sets write/erase protection for main sectors 32-255 (8 sectors/bit)",
                         longDescription: `Value is written to VIMS:WEPRB register by ROM code on PRODDEV at execution transfer
 from boot code/bootloader to application image. The register has sticky-0 bits.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
@@ -464,7 +480,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         displayName: "Erase/Retain, Main Sectors 0-31",
                         description: "Sets chip write/erase protection for main sectors 0-31",
                         longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00
                     },
                     {
@@ -472,7 +488,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         displayName: "Erase/Retain, Main Sectors 32-255",
                         description: "Sets chip write/erase protection for main sectors 32-255",
                         longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
-                        displayFormat: {radix: "hex", bitSize: 32},
+                        displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00
                     }
                 ]
@@ -543,6 +559,7 @@ The User Record Macro must be defined in the User Record File to be a list of va
                             let setHidden = !(inst.enableUserRecord);
                             ui["userRecordMacro"].hidden = setHidden;
                             ui["userRecordFile"].hidden = setHidden;
+                            ui["userRecordCRC"].hidden = setHidden;
                         }
                     },
                     {
@@ -559,6 +576,14 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         hidden: true,
                         default: "",
                         fileFilter: ".h,.hpp,.txt"
+                    },
+                    {
+                        name: "userRecordCRC",
+                        displayName: "User Record CRC",
+                        longDescription: `Enable generation of user record begin/end symbols in the ELF executable.
+These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optional user record's CRC.`,
+                        hidden: true,
+                        default: false
                     }
                 ]
             },
@@ -570,9 +595,9 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         displayName: "Debug Authorization Configuration",
                         default: "Debug always allowed",
                         options: [
-                            {name: "Debug always allowed"},
-                            {name: "Require debug authentication"},
-                            {name: "Debug not allowed"}
+                            { name: "Debug always allowed" },
+                            { name: "Require debug authentication" },
+                            { name: "Debug not allowed" }
                         ],
                         onChange: (inst, ui) => {
                             ui["debugAllowBldr"].hidden = (inst.debugAuthorization == "Debug not allowed");
@@ -606,6 +631,33 @@ The User Record Macro must be defined in the User Record File to be a list of va
     }
 };
 
+/*!
+ * ======== getLinkerSyms ========
+ *  Used by GenMaps to define linker symbols, for example CRC checksum symbols
+ */
+function getLinkerSyms(inst) {
+
+    let linkerSyms = [
+
+        { name: "CRC_CCFG_BOOT_CFG_begin", value: 0x4e020000 },
+        { name: "CRC_CCFG_BOOT_CFG_end", value: 0x4e02000B },
+
+        { name: "CRC_CCFG_begin", value: 0x4E020010 },
+        { name: "CRC_CCFG_end", value: 0x4E02074B },
+
+        { name: "CRC_CCFG_DEBUG_begin", value: 0x4E0207D0 },
+        { name: "CRC_CCFG_DEBUG_end", value: 0x4E0207FB }
+    ];
+
+    if (inst.$static.enableUserRecord && inst.$static.userRecordCRC) {
+        linkerSyms.push(
+            { name: "CRC_CCFG_USER_RECORD_begin", value: 0x4E020750 },
+            { name: "CRC_CCFG_USER_RECORD_end", value: 0x4E0207CB },
+        );
+    }
+
+    return linkerSyms;
+}
 
 /*!
  *  ======== updateBldrVisibility ========
@@ -615,7 +667,7 @@ The User Record Macro must be defined in the User Record File to be a list of va
  *  @param inst - CCFG instance to be validated
  *  @param ui   -   GUI state
  */
-function updateBldrVisibility(inst, ui){
+function updateBldrVisibility(inst, ui) {
     let setHidden = inst.bldrSetting == "Any bootloader forbidden" || inst.bldrSetting == "Default FCFG bootloader";
     ui["pBldrVtor"].hidden = setHidden;
     ui["pAppVtor"].hidden = setHidden;
@@ -634,8 +686,7 @@ function updateBldrVisibility(inst, ui){
  *  ======== onChangeEnableHFXTComp ========
  *  onChange callback function for the enableHFXTComp config
  */
-function onChangeHFXT(inst, ui)
-{
+function onChangeHFXT(inst, ui) {
     let subState = (inst.enableHFXTComp == false);
     ui.customHFXTCoeff.hidden = subState;
     ui.HFXTCompTempThreshold.hidden = subState;
@@ -659,24 +710,24 @@ function validate(inst, validation) {
 
     if (inst.hfxtCapArrayQ1 > MAX_CAP_ARRAY) {
         Common.logError(validation, inst, "hfxtCapArrayQ1",
-        "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
+            "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
     }
 
     if (inst.hfxtCapArrayQ2 > MAX_CAP_ARRAY) {
         Common.logError(validation, inst, "hfxtCapArrayQ2",
-        "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
+            "Must be less than 0x" + (MAX_CAP_ARRAY + 1).toString(16));
     }
 
-    if (Math.abs(inst.hfxtCapArrayQ1 - inst.hfxtCapArrayQ2 ) > 1) {
+    if (Math.abs(inst.hfxtCapArrayQ1 - inst.hfxtCapArrayQ2) > 1) {
         Common.logError(validation, inst, "hfxtCapArrayQ1",
-        "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
+            "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
         Common.logError(validation, inst, "hfxtCapArrayQ2",
-        "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
+            "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
     }
 
     if (inst.pBldrVtor > MAX_PBLDRVTOR) {
         Common.logError(validation, inst, "pBldrVtor",
-        "Must be less than 0x" + (MAX_PBLDRVTOR + 1).toString(16));
+            "Must be less than 0x" + (MAX_PBLDRVTOR + 1).toString(16));
     }
 
     if (inst.serialIoCfgIndex > MAX_SERIALIOCFGINDEX) {
@@ -768,16 +819,76 @@ function modules(inst) {
 }
 
 /*
+ * ======== moduleInstances ========
+ * This overrides the base versions since we want to add our
+ * module instances tot he base ones.
+ */
+function moduleInstances(inst, $super) {
+
+    let pinInstances = [];
+    if (inst.srcClkLF === "External LF clock") {
+        pinInstances.push({
+            name: "extlfPinInstance",
+            displayName: "Low Frequency Clock Pin",
+            moduleName: "/ti/drivers/GPIO",
+            collapsed: true,
+            hidden: false,
+            requiredArgs: {
+                parentInterfaceName: "extlf",
+                parentSignalName: "extlfPin",
+                parentSignalDisplayName: "Low frequency clock pin",
+                mode: "Input",
+                doNotConfig: true,
+                invert: false
+            },
+            args: {
+                $name: "CONFIG_GPIO_EXTLF"
+            }
+        });
+    }
+    return $super.moduleStatic.moduleInstances().concat(pinInstances);
+}
+
+/*
+ *  ======== pinmuxRequirements ========
+ *  Returns peripheral pin requirements of the specified instance
+ */
+function pinmuxRequirements(inst) {
+    let extlfBypass = {
+        name: "extlfPin",    /* config script name */
+        displayName: "External LF clock pin",   /* GUI name */
+        interfaceNames: ["BYPASS"]      /* pinmux tool name */
+    };
+    let extlf = [];
+    if (inst.srcClkLF === "External LF clock") {
+        extlf.push({
+            name: "extlf",
+            displayName: "External LF clock",
+            interfaceName: "LFXT",
+            resources: [extlfBypass]
+        });
+    }
+
+    return (extlf);
+}
+
+/*
  *  ======== extend ========
  */
-function extend(base)
-{
+function extend(base) {
     /* merge and overwrite base module attributes */
     let result = Object.assign({}, base, devSpecific);
 
-    /* moduleInstances should be retained from base */
-    result.moduleStatic.moduleInstances = base.moduleStatic.moduleInstances;
+    /* moduleInstances should be retained from base, but we are
+     * also adding our own modules. This is needed so the shown module
+     * instances update dynamically.
+    */
+    result.moduleStatic.moduleInstances =
+        function (inst) {
+            return moduleInstances(inst, base);
+        };
 
+    result.moduleStatic.pinmuxRequirements = pinmuxRequirements;
     /* concatenate device-specific configs */
     result.moduleStatic.config = base.moduleStatic.config.concat(devSpecific.moduleStatic.config);
 

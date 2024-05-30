@@ -55,8 +55,9 @@
      LGPTimerLPF3_INT_CH0_CC | LGPTimerLPF3_INT_CH1_CC | LGPTimerLPF3_INT_CH2_CC)
 
 /* Field mask defines */
-#define COUNTER_MASK_16_BIT 0x00FFFF
-#define COUNTER_MASK_24_BIT 0xFFFFFF
+#define COUNTER_MASK_16_BIT 0x0000FFFFU
+#define COUNTER_MASK_24_BIT 0x00FFFFFFU
+#define COUNTER_MASK_32_BIT 0xFFFFFFFFU
 
 /* LGPTimer configuration */
 extern const LGPTimerLPF3_Config LGPTimerLPF3_config[];
@@ -73,6 +74,7 @@ static void LGPTimerLPF3_configurePrescaler(LGPTimerLPF3_Handle handle, uint8_t 
 static void LGPTimerLPF3_configureChannels(LGPTimerLPF3_Handle handle);
 static void LGPTimerLPF3HwiFxn(uintptr_t a0);
 static int LGPTimerLPF3_postNotifyFxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg);
+static uint32_t LGPTimerLPF3_getCounterMask(LGPTimerLPF3_Handle handle);
 
 /* Default LGPTimer parameters */
 static const LGPTimerLPF3_Params LGPTimerLPF3_defaultParams = {
@@ -255,19 +257,17 @@ void LGPTimerLPF3_setInitialCounterTarget(LGPTimerLPF3_Handle handle, uint32_t v
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Set timer counter target value. Timer width (16 or 24 bits) depends on
-     * the selected peripheral instance.
+    /* Set timer counter target value. Timer width (16, 24, or 32 bits) depends
+     * on the selected peripheral instance.
      */
     uint32_t targetReg = LGPT_O_TGT;
-    uint32_t fieldMask = COUNTER_MASK_16_BIT;
-    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
-    {
-        fieldMask = COUNTER_MASK_24_BIT;
-    }
+    uint32_t fieldMask = LGPTimerLPF3_getCounterMask(handle);
+
     if (!intFlagClr)
     {
         targetReg = LGPT_O_TGTNC;
     }
+
     HWREG(hwAttrs->baseAddr + targetReg) = value & fieldMask;
 }
 
@@ -279,15 +279,11 @@ void LGPTimerLPF3_setNextCounterTarget(LGPTimerLPF3_Handle handle, uint32_t valu
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Set timer counter target value for next period. Timer width (16 or 24 bits)
-     * depends on the selected peripheral instance.
+    /* Set timer counter target value for next period. Timer width (16, 24, or
+     * 32 bits) depends on the selected peripheral instance.
      */
     uint32_t targetReg = LGPT_O_PTGT;
-    uint32_t fieldMask = COUNTER_MASK_16_BIT;
-    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
-    {
-        fieldMask = COUNTER_MASK_24_BIT;
-    }
+    uint32_t fieldMask = LGPTimerLPF3_getCounterMask(handle);
     if (!intFlagClr)
     {
         targetReg = LGPT_O_PTGTNC;
@@ -309,15 +305,11 @@ void LGPTimerLPF3_setInitialChannelCompVal(LGPTimerLPF3_Handle handle,
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Set channel compare value. Compare value width (16 or 24 bits) depends on
-     * the selected peripheral instance.
+    /* Set channel compare value. Compare value width (16, 24, or 32 bits)
+     * depends on the selected peripheral instance.
      */
     uint32_t regAddr   = LGPT_O_C0CC + regOffset;
-    uint32_t fieldMask = COUNTER_MASK_16_BIT;
-    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
-    {
-        fieldMask = COUNTER_MASK_24_BIT;
-    }
+    uint32_t fieldMask = LGPTimerLPF3_getCounterMask(handle);
     if (!intFlagClr)
     {
         /* Use No clear variant of the C0CC register */
@@ -340,15 +332,11 @@ void LGPTimerLPF3_setNextChannelCompVal(LGPTimerLPF3_Handle handle,
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Set channel compare value for next period. Compare value width (16 or 24 bits)
-     * depends on the selected peripheral instance.
+    /* Set channel compare value for next period. Compare value width (16, 24,
+     * or 32 bits) depends on the selected peripheral instance.
      */
     uint32_t regAddr   = LGPT_O_PC0CC + regOffset;
-    uint32_t fieldMask = COUNTER_MASK_16_BIT;
-    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
-    {
-        fieldMask = COUNTER_MASK_24_BIT;
-    }
+    uint32_t fieldMask = LGPTimerLPF3_getCounterMask(handle);
     if (!intFlagClr)
     {
         /* Use No clear variant of the PC0CC register */
@@ -367,7 +355,9 @@ void LGPTimerLPF3_setChannelOutputLevel(LGPTimerLPF3_Handle handle,
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Manually override the current channel output level on the selected peripheral instance */
+    /* Manually override the current channel output level on the selected
+     * peripheral instance.
+     */
     uint32_t regVal                          = level << (chNo * 2);
     HWREG(hwAttrs->baseAddr + LGPT_O_OUTCTL) = regVal;
 }
@@ -380,8 +370,8 @@ uint32_t LGPTimerLPF3_getChCompareVal(LGPTimerLPF3_Handle handle, LGPTimerLPF3_C
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Get channel compare value. Timer width (16 or 24 bits) depends on
-     * the selected peripheral instance.
+    /* Get channel compare value. Timer width (16, 24, or 32 bits) depends on the
+     * selected peripheral instance.
      */
     uint32_t targetReg = LGPT_O_C0CCNC + (sizeof(uint32_t) * chNo);
 
@@ -408,7 +398,7 @@ uint32_t LGPTimerLPF3_getNextChCompareVal(LGPTimerLPF3_Handle handle, LGPTimerLP
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    /* Get channel compare value. Timer width (16 or 24 bits) depends on
+    /* Get channel compare value. Timer width (16, 24, or 32 bits) depends on
      * the selected peripheral instance.
      */
     uint32_t targetReg = LGPT_O_PC0CCNC + (sizeof(uint32_t) * chNo);
@@ -476,10 +466,19 @@ uint32_t LGPTimerLPF3_getCounterWidth(LGPTimerLPF3_Handle handle)
     /* Get the pointer to the hwAttrs */
     LGPTimerLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
 
-    uint32_t counterWidth = 16;
-    if ((HWREG(hwAttrs->baseAddr + LGPT_O_DESCEX) & LGPT_DESCEX_CNTRW_M) == LGPT_DESCEX_CNTRW_CNTR24)
+    uint32_t counterWidth;
+    uint32_t regField = HWREG(hwAttrs->baseAddr + LGPT_O_DESCEX) & LGPT_DESCEX_CNTRW_M;
+    switch (regField)
     {
-        counterWidth = 24;
+        case LGPT_DESCEX_CNTRW_CNTR32:
+            counterWidth = 32;
+            break;
+        case LGPT_DESCEX_CNTRW_CNTR24:
+            counterWidth = 24;
+            break;
+        case LGPT_DESCEX_CNTRW_CNTR16:
+        default:
+            counterWidth = 16;
     }
 
     return counterWidth;
@@ -601,13 +600,9 @@ static void LGPTimerLPF3_resetHw(LGPTimerLPF3_Handle handle)
     HWREG(base + LGPT_O_CNTR) = 0x0;
 
     /* Reset timer counter target registers.
-     * Supported counter widths are 16 bits and 24 bits.
+     * Supported counter widths are 16, 24, and 32 bits.
      */
-    uint32_t resetVal = COUNTER_MASK_16_BIT;
-    if (LGPTimerLPF3_getCounterWidth(handle) == 24)
-    {
-        resetVal = COUNTER_MASK_24_BIT;
-    }
+    uint32_t resetVal           = LGPTimerLPF3_getCounterMask(handle);
     HWREG(base + LGPT_O_TGT)    = resetVal;
     HWREG(base + LGPT_O_TGTNC)  = resetVal;
     HWREG(base + LGPT_O_PTGT)   = 0x00;
@@ -789,4 +784,28 @@ static int LGPTimerLPF3_postNotifyFxn(unsigned int eventType, uintptr_t eventArg
     }
 
     return Power_NOTIFYDONE;
+}
+
+/*
+ *  ======== LGPTimerLPF3_getCounterMask ========
+ *  Get counter field mask value based on the counter width.
+ */
+static uint32_t LGPTimerLPF3_getCounterMask(LGPTimerLPF3_Handle handle)
+{
+    uint32_t fieldMask;
+    uint32_t counterWidth = LGPTimerLPF3_getCounterWidth(handle);
+    switch (counterWidth)
+    {
+        case 32:
+            fieldMask = COUNTER_MASK_32_BIT;
+            break;
+        case 24:
+            fieldMask = COUNTER_MASK_24_BIT;
+            break;
+        case 16:
+        default:
+            fieldMask = COUNTER_MASK_16_BIT;
+    }
+
+    return fieldMask;
 }

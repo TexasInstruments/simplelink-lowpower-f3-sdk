@@ -105,6 +105,7 @@ typedef enum RCL_CommandStatus_e {
     RCL_CommandStatus_HardStopScheduling,           /*!< Command ended due to scheduling where interrupting command had RCL_ConflictPolicy_AlwaysInterrupt */
     RCL_CommandStatus_Connect = 0x40,               /*!< Command has finished and a connection may be established (BLE5 advertiser and initiator) */
     RCL_CommandStatus_MaxNak,                       /*!< Command ended because more subsequent NAKs than supported were received (BLE5) */
+    RCL_CommandStatus_MaxAuxWaitTimeExceeded,       /*!< Command ended because the wait time for a new packet following an AuxPtr was exceeded (BLE5 scanner and initiator) */
     RCL_CommandStatus_Error  = 0x80,                /*!< Command ended with unknown error */
     RCL_CommandStatus_Error_Setup,                  /*!< Command ended because of an error in the setup */
     RCL_CommandStatus_Error_Param,                  /*!< Command ended because of an error with a parameter */

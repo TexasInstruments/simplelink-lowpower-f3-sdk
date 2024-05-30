@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2016-2023, Texas Instruments Incorporated
+ Copyright (c) 2016-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -141,6 +141,7 @@
 #define IDX_GAP_SendPeripheralSecurityRequest         GAP_SendPeripheralSecurityRequest
 #define IDX_GAP_Signable                              GAP_Signable
 #define IDX_GAP_Bond                                  GAP_Bond
+#define IDX_Gap_ReplyToLTKReq                         Gap_ReplyToLTKReq
 
 /* RTLS Services API */
 /*********************/

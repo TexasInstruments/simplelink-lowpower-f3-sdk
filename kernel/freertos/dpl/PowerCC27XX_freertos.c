@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,11 +51,15 @@
 #include <task.h>
 #include <portmacro.h>
 
+/* Log header file */
+#include <ti/log/Log.h>
+
 /* Driverlib header files */
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/systick.h)
 #include DeviceFamily_constructPath(driverlib/cpu.h)
 #include DeviceFamily_constructPath(driverlib/lrfd.h)
+#include DeviceFamily_constructPath(driverlib/ull.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
@@ -135,6 +139,8 @@ void PowerCC27XX_standbyPolicy(void)
     uint8_t sysTimerIndex;
     uint32_t sysTickDelta;
     uintptr_t key;
+    bool standbyAllowed;
+    bool idleAllowed;
 
     key = __get_PRIMASK();
     __set_PRIMASK(1);
@@ -147,21 +153,42 @@ void PowerCC27XX_standbyPolicy(void)
         return;
     }
 
-    constraints = Power_getConstraintMask();
+    /* Check state of constraints */
+    constraints    = Power_getConstraintMask();
+    standbyAllowed = (constraints & (1 << PowerLPF3_DISALLOW_STANDBY)) == 0;
+    idleAllowed    = (constraints & (1 << PowerLPF3_DISALLOW_IDLE)) == 0;
+
+    /* If we are using LFOSC, we need to wait for the LFINC filter to settle
+     * before entering standby. We also cannot enter idle instead of standby
+     * because otherwise we could end up waiting for the next standby wakeup
+     * signal from the RTC or another wakeup source while we are still in idle.
+     * That could be a very long time.
+     * But if standby is currently disallowed from the constraints, that means
+     * we do want to enter idle since something set that constraint and will
+     * lift it again.
+     */
+    if ((HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) & CKMD_LFCLKSEL_MAIN_M) == CKMD_LFCLKSEL_MAIN_LFOSC)
+    {
+        if (((HWREG(CKMD_BASE + CKMD_O_LFCLKSTAT) & CKMD_LFCLKSTAT_FLTSETTLED_M) == false) && (standbyAllowed == true))
+        {
+            standbyAllowed = false;
+            idleAllowed    = false;
+
+            Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_standbyPolicy: Waiting on LFCLK settled");
+        }
+    }
+
+    Log_printf(LogModule_Power,
+               Log_VERBOSE,
+               "PowerCC27XX_standbyPolicy: Standby constraint count = %d. Idle constraint count = %d",
+               Power_getConstraintCount(PowerLPF3_DISALLOW_STANDBY),
+               Power_getConstraintCount(PowerLPF3_DISALLOW_IDLE));
 
     /* Do quick check to see if only WFI allowed; if yes, do it now. */
-    if ((constraints & (1 << PowerLPF3_DISALLOW_STANDBY)) == (1 << PowerLPF3_DISALLOW_STANDBY))
+    if (standbyAllowed)
     {
-        __WFI();
-    }
-    else
-    {
-        /* Else check whether the next timeout is far enough away to warrant
-         * entering standby instead.
-         */
-
-        /* TODO: How to check whether a timeout value has been programmed or not?
-         * Currently using IMASK to check for armed or not
+        /* If we are allowed to enter standby, check whether the next timeout is
+         * far enough away for it to make sense.
          */
 
         /* Save SysTimer IMASK to restore afterwards */
@@ -244,6 +271,11 @@ void PowerCC27XX_standbyPolicy(void)
         /* Check soonestDelta time vs STANDBY latency */
         if (soonestDelta > PowerCC27XX_TOTALTIMESTANDBY)
         {
+            Log_printf(LogModule_Power,
+                       Log_INFO,
+                       "PowerCC27XX_standbyPolicy: Entering standby. Soonest timeout = 0x%x",
+                       (soonestDelta + HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U)));
+
             /* Disable scheduling */
             PowerCC27XX_schedulerDisable();
 
@@ -308,19 +340,43 @@ void PowerCC27XX_standbyPolicy(void)
             /* Go to standby mode */
             Power_sleep(PowerLPF3_STANDBY);
 
-            /* Clear the wakeup event */
+            /* Disarm RTC compare event in case we woke up from a GPIO or BATMON
+             * event. If the RTC times out after clearing RIS and the pending
+             * NVIC bit but before we swap event fabric subscribers for the
+             * shared interrupt line, we will be left with a pending interrupt
+             * in the NVIC that the ClockP callback may not gracefully handle
+             * since it did not cause it itself.
+             */
+            HWREG(RTC_BASE + RTC_O_ARMCLR) = RTC_ARMCLR_CH0_CLR;
+
+            /* Clear the RTC wakeup event */
             HWREG(RTC_BASE + RTC_O_ICLR) = RTC_ICLR_EV0_CLR;
+
+            /* Explicitly read back from ULL domain to guarantee clearing RIS
+             * takes effect before clearing the pending NVIC interrupt to avoid
+             * the NVIC re-asserting on a set RIS.
+             */
+            ULLSync();
+
+            /* Clear any pending interrupt in the NVIC */
             HwiP_clearInterrupt(INT_CPUIRQ16);
 
             /* Switch EVTSVT_O_CPUIRQ16SEL in eventfabric back to SysTimer */
             HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
 
+            /* When waking up from standby, the SysTimer may not have
+             * synchronised with the RTC by now. Wait for SysTimer
+             * synchronisation with the RTC to complete. This should not take
+             * more than one LFCLK period.
+             *
+             * We need to wait both for RUN to be set and SYNCUP to go low. Any
+             * other register state will cause undefined behaviour.
+             */
+            while (HWREG(SYSTIM_BASE + SYSTIM_O_STATUS) != SYSTIM_STATUS_VAL_RUN) {}
+
             /* Restore SysTimer timeouts since standby wiped them */
             for (sysTimerIndex = 0; sysTimerIndex < SYSTIMER_CHANNEL_COUNT; sysTimerIndex++)
             {
-                /* TODO: skip this conditional check and replace with one
-                 * memcpy when the SYSTIMER IMASK issue is fixed
-                 */
                 if (sysTimerIMASK & (1 << sysTimerIndex))
                 {
                     HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC + sysTimerIndex * sizeof(uint32_t)) = sysTimerTimeouts[sysTimerIndex];
@@ -346,7 +402,18 @@ void PowerCC27XX_standbyPolicy(void)
 
             /* Calculate elapsed FreeRTOS tick periods in STANDBY */
             sleptTicks = (ticksAfter - ticksBefore) * CLOCK_FREQUENCY_DIVIDER * RTC_TO_SYSTIMER_TICKS;
-            sleptTicks = sleptTicks / 1000;
+
+    #if (FREERTOS_TICKPERIOD_US == 1000)
+            /* Use a dedicated divide by 1000 function to run in 16 cycles
+             * instead of 95. This shaves about 1.6us off in real-time.
+             */
+            sleptTicks = Math_divideBy1000(sleptTicks);
+    #else
+            /* If we are not using the default tick rate, do a slow
+             * divide
+             */
+            sleptTicks = sleptTicks / FREERTOS_TICKPERIOD_US;
+    #endif
 
             /* Update FreeRTOS tick count for time spent in STANDBY */
             vTaskStepTick(sleptTicks);
@@ -384,7 +451,35 @@ void PowerCC27XX_standbyPolicy(void)
              * ISR registered.
              */
             PowerCC27XX_schedulerRestore();
+
+            Log_printf(LogModule_Power,
+                       Log_INFO,
+                       "PowerCC27XX_standbyPolicy: Exit standby after %d FreeRTOS ticks",
+                       sleptTicks);
         }
+        else if (idleAllowed)
+        {
+            /* If we would be allowed to enter standby but there is not enough
+             * time for it to make sense from an overhead perspective, enter idle
+             * instead.
+             */
+            Log_printf(LogModule_Power,
+                   Log_INFO,
+                   "PowerCC27XX_standbyPolicy: Only WFI allowed");
+
+            __WFI();
+        }
+    }
+    else if (idleAllowed)
+    {
+        /* We are not allowed to enter standby.
+         * Enter idle instead if it is allowed.
+         */
+        Log_printf(LogModule_Power,
+                   Log_INFO,
+                   "PowerCC27XX_standbyPolicy: Only WFI allowed");
+
+        __WFI();
     }
 
     __set_PRIMASK(key);
@@ -396,7 +491,6 @@ void PowerCC27XX_standbyPolicy(void)
  */
 void PowerCC27XX_schedulerDisable()
 {
-    /* TODO: don't need this if keep using vPortSuppressTicksAndSleep */
     vTaskSuspendAll();
 }
 
@@ -405,18 +499,12 @@ void PowerCC27XX_schedulerDisable()
  */
 void PowerCC27XX_schedulerRestore()
 {
-    /* TODO: don't need this if keep using vPortSuppressTicksAndSleep */
     xTaskResumeAll();
 }
 
 /*
  *  ======== vPortSuppressTicksAndSleep ========
  *  FreeRTOS hook function invoked when Idle when configUSE_TICKLESS_IDLE
- *
- *  TODO: see if can use vApplicationIdleHook instead so don't need minimum
- *  config of 2 ticks before this hook gets called. This requires mimicing
- *  what is done in static function prvGetExpectedIdleTime() to get expected
- *  idle time.
  */
 void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime)
 {

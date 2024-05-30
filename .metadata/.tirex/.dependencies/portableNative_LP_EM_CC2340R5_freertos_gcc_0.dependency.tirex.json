@@ -8,7 +8,7 @@
             "+../temperature_freertos.c -> freertos/temperature_freertos.c",
             "+../portableNative.syscfg -> portableNative.syscfg",
             "+../../../../../../../source/ti/boards/LP_EM_CC2340R5/Board.html -> Board.html",
-            "+cc23x0r5_freertos.lds -> cc23x0r5_freertos.lds"
+            "+lpf3_cc23xx_freertos.lds -> lpf3_cc23xx_freertos.lds"
         ]
     }
 ]

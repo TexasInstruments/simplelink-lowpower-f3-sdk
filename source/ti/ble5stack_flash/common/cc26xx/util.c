@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2014-2023, Texas Instruments Incorporated
+ Copyright (c) 2014-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -102,7 +102,6 @@ typedef struct _queueRec_
  */
 
 #ifdef FREERTOS
-typedef void (*UtilTimerCback)(uint32_t arg);
 void Util_stopClock(Clock_Struct *pClock);
 
 /**
@@ -157,7 +156,7 @@ static void UtilclockFunc(union sigval sv)
  */
 
 #ifdef FREERTOS
-void* Util_constructClock(Clock_Struct *entry, void *clockCB,
+void* Util_constructClock(Clock_Struct *entry, UtilTimerCback clockCB,
                           uint32_t clockDuration, uint32_t clockPeriod,
                           uint8_t startFlag, uint32_t arg)
 {

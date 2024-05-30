@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,21 +39,28 @@ void hal_init_fsm(void (*setupFsmCb)(void), void (*schedFsmCb)(void),
                   void (*commandFsmCb)(void));
 void hal_trigger_command_fsm(void);
 void hal_trigger_dispatch_fsm(void);
-void hal_trigger_scheduler_fsm();
-uint32_t hal_get_ifg_reg(void);
+void hal_trigger_scheduler_fsm(void);
+uint32_t hal_get_command_ifg_reg(void);
+uint32_t hal_get_dispatch_ifg_reg(void);
 uint32_t hal_get_current_time(void);
 void hal_enable_setup_time_irq(void);
 void hal_setup_setup_time(uint32_t setupTime);
 void hal_setup_start_time(uint32_t startTime);
 void hal_setup_hard_stop_time(uint32_t stopTime);
 void hal_enable_hard_stop_time_irq(void);
+void hal_disable_hard_stop_time_irq(void);
 void hal_setup_graceful_stop_time(uint32_t stopTime);
 void hal_enable_graceful_stop_time_irq(void);
 void hal_cancel_setup_time(void);
 void hal_cancel_start_time(void);
 void hal_cancel_hard_stop_time(void);
 void hal_cancel_graceful_stop_time(void);
-void hal_disable_radio_interrupts(void);
+void hal_init_dispatch_radio_interrupts(uint32_t mask);
+void hal_enable_command_radio_interrupt(uint32_t mask);
+void hal_disable_command_radio_interrupt(uint32_t mask);
+void hal_clear_command_radio_interrupt(uint32_t mask);
+void hal_disable_all_command_radio_interrupts(void);
+void hal_disable_all_dispatch_radio_interrupts(void);
 void hal_temperature_init(void);
 int16_t hal_get_temperature(void);
 uint32_t hal_get_hfxt_ratio(void);
@@ -70,6 +77,7 @@ typedef enum {
 typedef enum {
     RCL_POWER_STANDBY_AWAKE = 0,
     RCL_POWER_XTAL_AVAILABLE = 1,
+    RCL_POWER_STANDBY_ENTER = 2,
 } RCL_PowerEvent;
 
 HalTimerEvent hal_check_clear_timer_compare(void);
@@ -82,7 +90,8 @@ uint32_t hal_get_sync_found_cap(void);
 void hal_setup_cmd_done_cap(void);
 void hal_arm_cmd_done_cap(void);
 uint32_t hal_get_cmd_done_cap(void);
-void hal_set_clkctl(uint32_t clkctl);
+void hal_set_rcl_clock_enable(uint16_t mask);
+void hal_clear_rcl_clock_enable(uint16_t mask);
 void hal_enable_clk_buffer(void);
 void hal_power_set_constraint(void);
 void hal_power_release_constraint(void);

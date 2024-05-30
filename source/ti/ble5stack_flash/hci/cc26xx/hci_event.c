@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -1761,6 +1761,9 @@ void LL_EnhancedConnectionCompleteCback( uint8   reasonCode,
       (void)MAP_osal_msg_send( hciTaskID, (uint8 *)msg );
     }
   }
+
+  /**** UPDATE DEBUG INFO MODULE ****/
+  (void)MAP_DbgInf_addConnEst(connHandle, role, UFALSE);
 }
 
 
@@ -2187,6 +2190,9 @@ void LL_DisconnectCback( uint16 connHandle,
       (void)MAP_osal_msg_send( hciTaskID, (uint8 *)msg );
     }
   }
+
+  /**** UPDATE DEBUG INFO MODULE ****/
+  (void)MAP_llDbgInf_addConnTerm(connHandle, reasonCode);
 }
 
 

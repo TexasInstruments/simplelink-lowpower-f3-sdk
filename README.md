@@ -1,17 +1,6 @@
 # SIMPLELINK LOW POWER F3 SDK
 This repository contains TI's SimpleLink Low Power F3 Software Development Kit (SDK).
 
-### Special Notice for CC2340R5
-
-#### CC2340R5: Recommended IAR version for F3 SDK 7.40.00.64
-IAR Embedded Workbench users are recommend to use IAR 9.40.2 with F3 SDK 7.40.00.64. This information has not been properly reported in the release notes of the SDK.
-
-Using previous IAR versions may lead to issue during the launch of debugging sessions.
-
-So far, no issue have been reported while using newer IAR versions (such as 9.50.2).
-
-[E2E Link](https://e2e.ti.com/support/wireless-connectivity/bluetooth-group/bluetooth/f/bluetooth-forum/1339511/faq-cc2340r5-recommended-iar-version-for-f3-sdk-7-40-00-64)
-
 ## Summary
 
 The SimpleLink™ Low Power F3 Software Development Kit provides a comprehensive software package for developing 2.4 GHz applications, including support for Bluetooth® Low and proprietary RF solutions on the SimpleLink CC23xx wireless MCUs.

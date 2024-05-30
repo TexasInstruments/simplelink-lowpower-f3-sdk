@@ -73,6 +73,10 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
                 i++;
             }
             /* Load most of the image using aligned 128-bit reads */
+#ifdef DeviceFamily_CC27XX
+            /* We don't need to use HWREG_READ_LRF every time, as the loop only writes to RAM without registers inbetween, but we should protect the first write */
+            ASM_4_NOPS();
+#endif //DeviceFamily_CC27XX
             while (i < length - 3)
             {
 #ifdef NO_INLINE_ASM
@@ -358,7 +362,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                         volatile uint32_t *clear32 = (uint32_t *) address;
                         for (uint32_t i = 0; i < regionLength; i++)
                         {
+#ifdef DeviceFamily_CC27XX
+                            HWREG_WRITE_LRF(clear32++) = 0;
+#else
                             *clear32++ = 0;
+#endif //DeviceFamily_CC27XX
                         }
                         regionLength = 0;
                         numWords = 0;
@@ -374,7 +382,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                         volatile uint16_t *clear16 = (uint16_t *) address;
                         for (uint32_t i = 0; i < regionLength; i++)
                         {
+#ifdef DeviceFamily_CC27XX
+                            HWREGH_WRITE_LRF(clear16++) = 0;
+#else
                             *clear16++ = 0;
+#endif //DeviceFamily_CC27XX
                         }
                         regionLength = 0;
                         numWords = 0;
@@ -441,8 +453,14 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
 #ifdef LRF_DEBUG_TRACE
                                 Log_printf(RclCore, Log_INFO1, "HW_Write_16bit: %04X = %08X, ", dst32&0xFFFF, curWord.value32);
 #endif
+
+#ifdef DeviceFamily_CC27XX
+                                HWREG_WRITE_LRF(dst32++) = curWord.value16[0];
+                                HWREG_WRITE_LRF(dst32++) = curWord.value16[1];
+#else
                                 *dst32++ = curWord.value16[0];
                                 *dst32++ = curWord.value16[1];
+#endif //DeviceFamily_CC27XX
                             }
                             regionLength -= 2 * numWords;
                             address = (uintptr_t) dst32;
@@ -454,7 +472,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                             volatile uint32_t *dst32 = (volatile uint32_t *) address;
                             for (uint32_t i = 0; i < numWords; i++)
                             {
-                                LRF_ConfigWord curWord;
+                                LRF_ConfigWord curWord;                  
                                 curWord.value32 = *curEntry++;
 #ifdef LRF_DEBUG_TRACE
                                 Log_printf(RclCoreShort, Log_INFO1, "HW_Write_16bit_Masked: %04X: mask %04X value %04X, ",
@@ -463,14 +481,23 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                                 /* On full setup, do not apply mask, as the register is assumed to start at 0 */
                                 if (state->includeBase)
                                 {
+#ifdef DeviceFamily_CC27XX
+                                    HWREG_WRITE_LRF(dst32++) = curWord.masked.value16;
+#else
                                     *dst32++ = curWord.masked.value16;
+#endif //DeviceFamily_CC27XX
                                 }
                                 else
                                 {
                                     /* The type is intended for 16-bit registers with 32-bit aperture */
                                     /* If used on a true 32-bit register, the 16 most significant bits will not be changed */
+#ifdef DeviceFamily_CC27XX
+                                    uint32_t oldValue = HWREG_READ_LRF(dst32);
+                                    HWREG_WRITE_LRF(dst32++) = (oldValue & ~curWord.masked.mask16) | curWord.masked.value16;
+#else
                                     uint32_t oldValue = *dst32;
                                     *dst32++ = (oldValue & ~curWord.masked.mask16) | curWord.masked.value16;
+#endif //DeviceFamily_CC27XX
                                 }
                             }
                             regionLength -= numWords;
@@ -488,8 +515,14 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
 #ifdef LRF_DEBUG_TRACE
                                 Log_printf(RclCore, Log_INFO1, "SW_Write_16bit: %04X = %08X, ", dst16&0xFFFF, curWord.value32);
 #endif
+
+#ifdef DeviceFamily_CC27XX
+                                HWREGH_WRITE_LRF(dst16++) = curWord.value16[0];
+                                HWREGH_WRITE_LRF(dst16++) = curWord.value16[1];
+#else
                                 *dst16++ = curWord.value16[0];
                                 *dst16++ = curWord.value16[1];
+#endif //DeviceFamily_CC27XX
                             }
                             regionLength -= 2 * numWords;
                             address = (uintptr_t) dst16;
@@ -519,7 +552,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                                         break;
                                 }
 #endif
+#ifdef DeviceFamily_CC27XX
+                                HWREG_WRITE_LRF(dst32++) = *curEntry++;
+#else
                                 *dst32++ = *curEntry++;
+#endif //DeviceFamily_CC27XX
                             }
                             regionLength -= numWords;
                             address = (uintptr_t) dst32;
@@ -555,13 +592,21 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                             {
                                 /* Word aligned access to hardware */
                                 uint32_t *dst32 = (uint32_t *)(address + curAddress);
+#ifdef DeviceFamily_CC27XX
+                                HWREG_WRITE_LRF(dst32) = curWord.sparse.value16;
+#else
                                 *dst32          = curWord.sparse.value16;
+#endif //DeviceFamily_CC27XX
                             }
                             else if ((curAddress & 1) == 0)
                             {
                                 /* Halfword aligned */
                                 uint16_t *dst16 = (uint16_t *)(address + curAddress);
+#ifdef DeviceFamily_CC27XX
+                                HWREGH_WRITE_LRF(dst16) = curWord.sparse.value16;
+#else
                                 *dst16          = curWord.sparse.value16;
+#endif //DeviceFamily_CC27XX
                             }
                             else
                             {
@@ -583,7 +628,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                             {
                                 /* Word aligned 16 bit access  */
                                 uint16_t *dst16 = (uint16_t *)(address + curWord.sparse.address);
+#ifdef DeviceFamily_CC27XX
+                                HWREGH_WRITE_LRF(dst16) = curWord.sparse.value16;
+#else
                                 *dst16          = curWord.sparse.value16;
+#endif
                             }
                             else
                             {
@@ -620,7 +669,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                     volatile uint16_t *dst16 = (volatile uint16_t *) address;
                     LRF_ConfigWord curWord;
                     curWord.value32 = *curEntry++;
+#ifdef DeviceFamily_CC27XX
+                    HWREGH_WRITE_LRF(dst16) = curWord.value16[0];
+#else
                     *dst16 = curWord.value16[0];
+#endif //DeviceFamily_CC27XX
 #ifdef LRF_DEBUG_TRACE
                     Log_printf(RclCoreShort, Log_INFO, "SW_Write_16bit: 0x%04X = 0x%04X, ", dst16&0xFFFF, curWord.value16[0]);
 #endif
@@ -630,7 +683,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                     volatile uint32_t *dst32 = (volatile uint32_t *) address;
                     LRF_ConfigWord curWord;
                     curWord.value32 = *curEntry++;
+#ifdef DeviceFamily_CC27XX
+                    HWREG_WRITE_LRF(dst32) = curWord.value16[0];
+#else
                     *dst32 = curWord.value16[0];
+#endif //DeviceFamily_CC27XX
 #ifdef LRF_DEBUG_TRACE
                     Log_printf(RclCoreShort, Log_INFO, "HW_Write_16bit: 0x%04X = 0x%04X, ", dst32&0xFFFF, curWord.value16[0]);
 #endif

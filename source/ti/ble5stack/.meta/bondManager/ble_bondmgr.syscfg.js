@@ -242,8 +242,10 @@ const config = {
  */
 function validate(inst, validation)
 {
-    if( Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5" &&
-        Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R2")
+    if( (Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R5")  &&
+        (Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R2")  &&
+        (Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R22") &&
+        (Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC27XX") )
     {
        //check what is the max value
        if(inst.maxBonds < 0 || inst.maxBonds > 32)
@@ -251,25 +253,31 @@ function validate(inst, validation)
            validation.logError("The Max number of bonds that can be saved in NV is 32"
                                , inst, "maxBonds");
        }
-
-       if(inst.maxBonds > 21)
-       {
-           validation.logWarning("If scanning or connection initiation on the 2M PHY is used, "
-           + "the max number of bonds that can be saved in NV is 21.", inst, "maxBonds");
-       }
     }
     else
     {
-        // Check what is the max value
-        if ( inst.maxBonds > 5 )
+        // Check if the device role is peripheral, if so the max value can be 50
+        if ((inst.deviceRole == "PERIPHERAL_CFG") && (Common.device2DeviceFamily(system.deviceData.deviceId) != "DeviceFamily_CC23X0R2"))
         {
-            validation.logWarning("When using privacy the maxBonds should not be greater than 5",
-                                   inst, "maxBonds");
+            if ( (inst.maxBonds < 0) || (inst.maxBonds > 50) )
+            {
+                validation.logError("Maximum number of bonds allowed is 50",
+                                     inst, "maxBonds");
+            }
         }
-        if ( (inst.maxBonds < 0) || (inst.maxBonds > 15) )
+        else
         {
-            validation.logError("Maximum number of bonds allowed is 15",
-                                 inst, "maxBonds");
+            // Check what is the max value
+            if ( inst.maxBonds > 5 )
+            {
+                validation.logWarning("When using privacy the maxBonds should not be greater than 5",
+                                       inst, "maxBonds");
+            }
+            if ( (inst.maxBonds < 0) || (inst.maxBonds > 15) )
+            {
+                validation.logError("Maximum number of bonds allowed is 15",
+                                     inst, "maxBonds");
+            }
         }
     }
 

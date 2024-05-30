@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,11 @@
 
 typedef struct RCL_FL_ENTRY_t     RCL_FL_Entry;
 typedef struct RCL_FILTER_LIST_t  RCL_FilterList;
+typedef struct RCL_ADI_FILTER_LIST_t  RCL_AdiFilterList;
+
 typedef struct RCL_ADDR_TYPE_t    RCL_AddrType;
 
-typedef struct RCL_CMD_BLE5_ADV_t          RCL_CmdBle5Advertiser;
+typedef struct RCL_CMD_BLE5_ADV_t        RCL_CmdBle5Advertiser;
 typedef struct RCL_CMD_BLE5_AUX_ADV_t    RCL_CmdBle5AuxAdvertiser;
 typedef struct RCL_CMD_BLE5_INITIATOR_t  RCL_CmdBle5Initiator;
 typedef struct RCL_CMD_BLE5_SCANNER_t    RCL_CmdBle5Scanner;
@@ -155,6 +157,16 @@ struct RCL_FILTER_LIST_t {
     RCL_FL_Entry entries[16];
 };
 
+
+/**
+ *  @brief ADI Filter list object
+ *
+ *  ADI filter list - Not supported in this release
+ */
+struct RCL_ADI_FILTER_LIST_t {
+    uint32_t     numEntries;
+};
+
 /**
  *  @brief Address type
  *
@@ -174,10 +186,10 @@ struct RCL_ADDR_TYPE_t {
 struct RCL_CMD_BLE5_ADV_t {
     RCL_Command  common;
     uint8_t chanMap;              /*!< Channel map. Bit positions 0-2 correspond to channels 37-39; a 1 means channel enabled */
-    uint8_t order;                /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
     RCL_Command_TxPower txPower;  /*!< Transmit power */
+    uint8_t order;                /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
     uint8_t highDuty;             /*!< High duty-cycle advertising (directed advertising only) 0: Disabled. 1 Enabled */
-    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND packet is returned if connection is formed */
+    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND or AUX_CONNECT_REQ packet is returned if connection is formed */
     RCL_CtxAdvertiser *ctx;       /*!< Pointer to context structure */
     RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
 };
@@ -187,8 +199,8 @@ struct RCL_CMD_BLE5_ADV_t {
     .common = RCL_Command_Default(RCL_CMDID_BLE5_ADVERTISER,    \
                                   RCL_Handler_BLE5_adv),        \
     .chanMap = 0x7,                                             \
-    .order = 0,                                                 \
     .txPower = {.dBm = 0, .fraction = 0},                       \
+    .order = 0,                                                 \
     .highDuty = 0,                                              \
     .ctx = NULL,                                                \
     .stats = NULL,                                              \
@@ -235,8 +247,8 @@ struct RCL_CTX_ADVERTISER_t {
     uint16_t peerA[3];                  /*!< Directed advertising: Peer device address of type %addrType.peer */
     RCL_AddrType addrType;              /*!< Address types */
     uint8_t filterPolicy: 2;            /*!< Filter policy */
-    uint8_t privIgnMode:1;              /*!< Privacy ignore mode. 0: Use filter list only when filter policy says. 1: Use filter list to ignore packets with privIgn bit set for all filter policies */
-    uint8_t rpaModePeer:1;              /*!< RPA mode for peer address. 0: Treat RPA normally. 1: Report packets where advertiser address is an unknown RPA */
+    uint8_t privIgnMode: 1;              /*!< Privacy ignore mode. 0: Use filter list only when filter policy says. 1: Use filter list to ignore packets with privIgn bit set for all filter policies */
+    uint8_t rpaModePeer: 1;              /*!< RPA mode for peer address. 0: Treat RPA normally. 1: Report packets where advertiser address is an unknown RPA */
     uint8_t acceptAllRpaConnectInd: 1;  /*!< CONNECT_IND RPA treatment. 0: Treat RPA in InitA normally. 1: Accept all RPA in InitA of CONNECT_IND. */
 };
 
@@ -264,7 +276,10 @@ struct RCL_CMD_BLE5_INITIATOR_t {
     RCL_Command common;
     RCL_Ble5Channel channel;      /*!< Channel index */
     RCL_Command_TxPower txPower;  /*!< Transmit power */
+    uint16_t maxAuxPtrWaitTime;    /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit - Not supported in this release */
     bool dynamicWinOffset;        /*!< Window offset processing. 0: Fixed. 1: Dynamic */
+    bool acceptLegacy : 1;         /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
+    bool acceptExtended : 1;       /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
     uint32_t connectTime;         /*!< For dynamic window offset, wanted connect time is given as input. In all cases, actual connect time is returned. */
     RCL_CtxScanInit *ctx;         /*!< Pointer to context structure */
     RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
@@ -276,7 +291,10 @@ struct RCL_CMD_BLE5_INITIATOR_t {
                                   RCL_Handler_BLE5_scan_init),      \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .maxAuxPtrWaitTime = 30000,                                     \
     .dynamicWinOffset = 0,                                          \
+    .acceptLegacy = 1,                                              \
+    .acceptExtended = 0,                                            \
     .connectTime = 0,                                               \
     .ctx = NULL,                                                    \
     .stats = NULL,                                                  \
@@ -291,8 +309,11 @@ struct RCL_CMD_BLE5_INITIATOR_t {
 struct RCL_CMD_BLE5_SCANNER_t {
     RCL_Command common;
     RCL_Ble5Channel channel;       /*!< Channel index */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
+    RCL_Command_TxPower txPower;   /*!< Transmit power */
+    uint16_t maxAuxPtrWaitTime;    /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
     bool activeScan;               /*!< Scan type. 0: Passive. 1: Active */
+    bool acceptLegacy : 1;         /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
+    bool acceptExtended : 1;       /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
     RCL_CtxScanInit *ctx;          /*!< Pointer to context structure */
     RCL_StatsAdvScanInit *stats;   /*!< Pointer to statistics structure */
 };
@@ -303,7 +324,10 @@ struct RCL_CMD_BLE5_SCANNER_t {
                                   RCL_Handler_BLE5_scan_init),      \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .maxAuxPtrWaitTime = 20000,                                     \
     .activeScan = 0,                                                \
+    .acceptLegacy = 1,                                              \
+    .acceptExtended = 0,                                            \
     .ctx = NULL,                                                    \
     .stats = NULL,                                                  \
 }
@@ -315,29 +339,34 @@ struct RCL_CMD_BLE5_SCANNER_t {
  *  Context for scanner or initiator command
  */
 struct RCL_CTX_SCAN_INIT_t {
-    RCL_FilterList *filterList;     /*!< Filter list */
-    List_List txBuffers;            /*!< Linked list of packets to transmit: Only CONNECT_IND */
-    List_List rxBuffers;            /*!< Linked list of buffers for storing received packets */
-    uint16_t ownA[3];               /*!< Own device address of type %addrType.own */
-    uint16_t peerA[3];              /*!< Initiator: Peer device address of type %addrType.peer */
-    RCL_AddrType addrType;          /*!< Address types */
-    uint8_t filterPolicy : 1;       /*!< Filter policy */
-    uint8_t scanExtFilterPolicy: 1; /*!< Extended filter policy for scanners */
-    uint8_t rpaModeOwn:1;           /*!< RPA mode for own address. 0: Treat RPA normally. 1: Report packets where target address is an unknown RPA */
-    uint8_t rpaModePeer:1;          /*!< RPA mode for peer address. 0: Treat RPA normally. 1: Report packets where advertiser address is an unknown RPA */
-    uint16_t initialBackoff;        /*!< Initial backoff value */
-    uint8_t backoffUpper;           /*!< Backoff parameter */
+    RCL_FilterList *filterList;           /*!< Filter list */
+    RCL_AdiFilterList *adiFilterList;     /*!< AdvDataInfo filter list - Not supported in this release */
+    List_List txBuffers;                  /*!< Linked list of packets to transmit: Only CONNECT_IND and AUX_CONNECT_REQ*/
+    List_List rxBuffers;                  /*!< Linked list of buffers for storing received packets */
+    uint16_t ownA[3];                     /*!< Own device address of type %addrType.own */
+    uint16_t peerA[3];                    /*!< Initiator: Peer device address of type %addrType.peer */
+    RCL_AddrType addrType;                /*!< Address types */
+    uint8_t filterPolicy : 1;             /*!< Filter policy */
+    uint8_t scanExtFilterPolicy: 1;       /*!< Extended filter policy for scanners */
+    uint8_t rpaModeOwn: 1;                /*!< RPA mode for own address. 0: Treat RPA normally. 1: Report packets where target address is an unknown RPA */
+    uint8_t rpaModePeer: 1;               /*!< RPA mode for peer address. 0: Treat RPA normally. 1: Report packets where advertiser address is an unknown RPA */
+    uint8_t acceptAllRpaConnectRsp: 1;    /*!< AUX_CONNECT_RSP RPA treatment. 0: Treat RPA in TargetA normally. 1: Accept all RPA in TargetA of AUX_CONNECT_RSP - Not supported in this release */
+    uint8_t periodicSyncEstablishment: 1; /*!< Synchronization to periodic advertisement. 0: Disabled. 1: Report all packets with SyncInfo present - Not supported in this release */
+    uint16_t initialBackoff;              /*!< Initial backoff value */
+    uint8_t backoffUpper;                 /*!< Backoff parameter */
     struct
     {
         uint8_t backOffLastFail : 1;
         uint8_t backOffLastSucceed : 1;
         uint8_t reserved  : 6;
-    } backoffStatus;              /*!< Backoff parameter */
+    } backoffStatus;                      /*!< Backoff parameter */
+    uint16_t localClockAccuracy;          /*!< Maximum relative local clock error (in ppm) scaled by 2^26 */
 };
 
 #define RCL_CtxScanInit_Default()   \
 {                                   \
     .filterList = NULL,             \
+    .adiFilterList = NULL,          \
     .txBuffers = { 0 },             \
     .rxBuffers = { 0 },             \
     .ownA = { 0 },                  \
@@ -347,9 +376,12 @@ struct RCL_CTX_SCAN_INIT_t {
     .scanExtFilterPolicy = 0,       \
     .rpaModeOwn = 0,                \
     .rpaModePeer = 0,               \
+    .acceptAllRpaConnectRsp = 0,    \
+    .periodicSyncEstablishment = 0, \
     .initialBackoff = 1,            \
     .backoffUpper = 0,              \
     .backoffStatus = { 0 },         \
+    .localClockAccuracy = 3355,     \
 }
 #define RCL_CtxScanInit_DefaultRuntime() (RCL_CtxScanInit) RCL_CtxScanInit_Default()
 

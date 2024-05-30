@@ -82,15 +82,15 @@ const meshFeaturesScript = system.getScript("/ti/ble5stack/mesh/"
 //Get mesh provisioning data Script
 const meshProvDataScript = system.getScript("/ti/ble5stack/mesh/"
                             + "ble_mesh_prov_data");
+
 // Get common Script
 const Common = system.getScript("/ti/ble5stack/ble_common.js");
 
 // Get profiles Script
 const profilesScript = system.getScript("/ti/ble5stack/profiles/ble_profiles_config");
 
-// Ext Adv default values
-const defaultExtAdvVal = Common.defaultValue();
-const readOnlyExtAdvVal = Common.readOnlyValue();
+// Periodic should not be displayed or enabled for Loki
+const hiddenPeriodicVal = Common.hiddenValue();
 
 //static implementation of the BLE module
 const moduleStatic = {
@@ -205,8 +205,7 @@ const moduleStatic = {
                     description: "BLE5 extended advertising feature",
                     longDescription: Docs.extAdvLongDescription,
                     onChange: onExtAdvChange,
-                    default: defaultExtAdvVal,
-                    readOnly: readOnlyExtAdvVal
+                    default: false
                 },
                 {
                     name: "disableConfig",
@@ -220,7 +219,7 @@ const moduleStatic = {
                     name: "periodicAdv",
                     displayName: "Periodic Advertising",
                     longDescription: Docs.periodicAdvLongDescription,
-                    hidden: false,
+                    hidden: hiddenPeriodicVal,
                     default: false
                 },
                 {
@@ -327,7 +326,22 @@ const moduleStatic = {
                     displayName: "Network Processor Mode",
                     default: false,
                     hidden: true
-                }
+                },
+                {
+                    name:"healthToolkit",
+                    displayName: "Health Toolkit",
+                    longDescription: Docs.bleHealthLongDescription,
+                    default: false,
+                    hidden: true,
+                },
+                {
+                    name: "hideHealthToolkit",
+                    displayName: "Hide Health Toolkit",
+                    default: true,
+                    hidden: true,
+                    description: "Used to hide the Health Toolkit configurable. Always hidden",
+                    onChange: onHideHealthToolkitChange
+                },
             ]
         },
         {
@@ -356,6 +370,25 @@ const moduleStatic = {
         bleMeshScript.config,
         l2capScript.config,
     ],
+
+    dependencies: {
+		modules: { "/ti/devices/CCFG": ["srcClkLF"] },
+		// This function will be run when the dependent module is added/removed or if any configurables listed in the map are changed
+		onModuleChanged: function (inst, depInst, moduleName, configurable) {
+            let ui = inst.$uiState;
+			if (depInst) {
+				if (depInst.srcClkLF == "LF RCOSC") {
+                    inst.useRcosc = true;
+                    ui.peripheralExtraLFOSCPPM.hidden = false;
+                }
+                else {
+                    inst.useRcosc = false;
+                    ui.peripheralExtraLFOSCPPM.hidden = true;
+
+                }
+			}
+		}
+	},
 
     validate: validate,
     migrateLegacyConfiguration: migrateLegacyConfiguration,
@@ -402,6 +435,15 @@ function validate(inst, validation)
     {
         validation.logWarning("For OAD projects, the LF Clock configuration is set in the CCFG file of the BIM project", inst, "useRcosc");
     }
+    // Throw an "Preview" warning to Health Toolkit and Extended Advertisement when enabled.
+    if (inst.healthToolkit)
+    {
+        validation.logWarning("Preview", inst, "healthToolkit");
+    }
+    if (inst.extAdv)
+    {
+        validation.logWarning("Extended Advertising preview (Not yet certified)", inst, "extAdv");
+    }
 }
 
 /*
@@ -413,10 +455,13 @@ function validate(inst, validation)
 function isFlashOnlyDevice() {
     return (
         // Return true if the device is from CC26X1 family
-        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC26X1" ||
-        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC13X4" ||
-        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC26X1"    ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC13X4"    ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5"  ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53" ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2"  ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22" ||
+        Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX"    ||
         Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC26X4"
     );
 }
@@ -526,6 +571,15 @@ function onBasicBLEChange(inst,ui)
 function onExtAdvChange(inst,ui)
 {
     const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
+    if(devFamily == "DeviceFamily_CC23X0R5"  ||
+       devFamily == "DeviceFamily_CC27XX"    ||
+       devFamily == "DeviceFamily_CC23X0R2"  ||
+       devFamily == "DeviceFamily_CC23X0R22" ||
+       devFamily == "DeviceFamily_CC23X0R53")
+    {
+        // Do nothing
+        return;
+    }
     // Hide/UnHide periodicAdv if extended advertising is enabled and the Broadcaster/Peripheral roles
     // is used
     inst.extAdv && (inst.deviceRole.includes("BROADCASTER_CFG") || inst.deviceRole.includes("PERIPHERAL_CFG")) ?
@@ -533,7 +587,9 @@ function onExtAdvChange(inst,ui)
     // Hide/UnHide periodicAdv if extended advertising is enabled and the Observer/Central roles
     // is used
     // CC26X1 only support periodic advertising
-    if(devFamily != "DeviceFamily_CC26X1" && devFamily != "DeviceFamily_CC26X4" && devFamily != "DeviceFamily_CC13X4")
+    if(devFamily != "DeviceFamily_CC26X1" &&
+       devFamily != "DeviceFamily_CC26X4" &&
+       devFamily != "DeviceFamily_CC13X4")
     {
         inst.extAdv && (inst.deviceRole.includes("OBSERVER_CFG") || inst.deviceRole.includes("CENTRAL_CFG")) ?
         ui.periodicAdvSync.hidden = false : ui.periodicAdvSync.hidden = true;
@@ -608,6 +664,18 @@ function onDisablePairingChange(inst,ui)
 }
 
 /*
+ *  ======== onHideHealthToolkitChange ========
+ * disable/enable the Health Toolkit configurable.
+ * @param inst  - Module instance containing the config that changed
+ * @param ui    - The User Interface object
+ */
+function onHideHealthToolkitChange(inst,ui)
+{
+    inst.hideHealthToolkit ? ui.healthToolkit.hidden = true :
+                             ui.healthToolkit.hidden = false;
+}
+
+/*
  *  ======== onEnableGattBuildeChange ========
  * Lock or unlock the enableGattBuilder configurable,
  * disable/enable the option to change the enableGattBuilder.
@@ -629,7 +697,11 @@ function onEnableGattBuildeChange(inst,ui)
  */
 function onL2CAPCOCChange(inst,ui)
 {
-    if(Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX")
+    if((Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX")    ||
+       (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+       (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
+       (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+       (Common.device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22"))
     {
         inst.hideL2CAPGroup = inst.L2CAPCOC ? false : true;
         Common.hideGroup(Common.getGroupByName(inst.$module.config, "l2capConfig"), inst.hideL2CAPGroup, ui);
@@ -819,7 +891,11 @@ function getLibs(inst)
         let basePath = "ti/ble5stack/libraries/";
         let LPName;
 
-        if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+        if( (devFamily != "DeviceFamily_CC23X0R5")  &&
+            (devFamily != "DeviceFamily_CC23X0R53") &&
+            (devFamily != "DeviceFamily_CC23X0R2")  &&
+            (devFamily != "DeviceFamily_CC23X0R22") &&
+            (devFamily != "DeviceFamily_CC27XX") )
         {
             let rfDesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
             LPName = rfDesign.rfDesign;
@@ -893,7 +969,10 @@ function getLibs(inst)
             }
             basePath = "ti/ble5stack_flash/libraries/";
         }
-        else if(devFamily == "DeviceFamily_CC23X0R5" || devFamily == "DeviceFamily_CC23X0R2")
+        else if(devFamily == "DeviceFamily_CC23X0R5"  ||
+                devFamily == "DeviceFamily_CC23X0R2"  ||
+                devFamily == "DeviceFamily_CC23X0R22" ||
+                devFamily == "DeviceFamily_CC23X0R53")
         {
             // Add OneLib library
             basePath = `ti/ble5stack_flash/lib_projects/CC2340R5/OneLib/lib/${toolchain}/m0p`
@@ -904,18 +983,37 @@ function getLibs(inst)
             devLibsFolder = ""
             libs.push(basePath + devLibsFolder + "/StackWrapper.a");
         }
-        if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+        else if(devFamily == "DeviceFamily_CC27XX")
+        {
+            // Add OneLib library
+            basePath = `ti/ble5stack_flash/lib_projects/CC27XXX10/OneLib/lib/${toolchain}/m33f`
+            devLibsFolder = ""
+            libs.push(basePath + devLibsFolder + "/OneLib.a");
+            // Add StackWrapper library
+            basePath = `ti/ble5stack_flash/lib_projects/CC27XXX10/StackWrapper/lib/${toolchain}/m33f`
+            devLibsFolder = ""
+            libs.push(basePath + devLibsFolder + "/StackWrapper.a");
+        }
+
+        if( (devFamily != "DeviceFamily_CC23X0R5")  &&
+            (devFamily != "DeviceFamily_CC23X0R53") &&
+            (devFamily != "DeviceFamily_CC23X0R2")  &&
+            (devFamily != "DeviceFamily_CC23X0R22") &&
+            (devFamily != "DeviceFamily_CC27XX") )
         {
             libs.push(basePath + devLibsFolder + "/OneLib.a");
             libs.push(basePath + devLibsFolder + "/StackWrapper.a");
         }
 
         // Devices are using FlashOnly libs, which not required the ROM symbols
-        if(devFamily != "DeviceFamily_CC26X1" &&
-           devFamily != "DeviceFamily_CC26X4" &&
-           devFamily != "DeviceFamily_CC13X4" &&
-           devFamily != "DeviceFamily_CC23X0R5" &&
-           devFamily != "DeviceFamily_CC23X0R2")
+        if(devFamily != "DeviceFamily_CC26X1"    &&
+           devFamily != "DeviceFamily_CC26X4"    &&
+           devFamily != "DeviceFamily_CC13X4"    &&
+           devFamily != "DeviceFamily_CC23X0R5"  &&
+           devFamily != "DeviceFamily_CC23X0R53" &&
+           devFamily != "DeviceFamily_CC23X0R2"  &&
+           devFamily != "DeviceFamily_CC23X0R22" &&
+           devFamily != "DeviceFamily_CC27XX" )
         {
             libs.push(basePath + devLibsFolder + "/ble_r2.symbols");
         }
@@ -998,15 +1096,23 @@ function getBuildConfigOpts()
     result.push("-D"+bleMod.trensLayer);
 
     if(bleMod.extAdv &&
-       (devFamily == "DeviceFamily_CC26X1" ||
-        devFamily == "DeviceFamily_CC13X4" ||
-        devFamily == "DeviceFamily_CC26X4"))
+       (devFamily == "DeviceFamily_CC26X1"    ||
+        devFamily == "DeviceFamily_CC13X4"    ||
+        devFamily == "DeviceFamily_CC26X4"    ||
+        devFamily == "DeviceFamily_CC23X0R2"  ||
+        devFamily == "DeviceFamily_CC23X0R22" ||
+        devFamily == "DeviceFamily_CC23X0R53" ||
+        devFamily == "DeviceFamily_CC27XX"    ||
+        devFamily == "DeviceFamily_CC23X0R5"))
     {
         result.push("-DUSE_AE");
     }
     else if(!bleMod.extAdv &&
-            devFamily != "DeviceFamily_CC26X1" &&
-            devFamily != "DeviceFamily_CC23X0R5" &&
+            devFamily != "DeviceFamily_CC26X1"    &&
+            devFamily != "DeviceFamily_CC23X0R5"  &&
+            devFamily != "DeviceFamily_CC23X0R53" &&
+            devFamily != "DeviceFamily_CC23X0R22" &&
+            devFamily != "DeviceFamily_CC27XX"    &&
             devFamily != "DeviceFamily_CC23X0R2")
     {
         result.push("-DEXCLUDE_AE");
@@ -1050,13 +1156,19 @@ function getAppConfigOpts()
                 "-DGATT_MAX_PREPARE_WRITES="+bleMod.maxNumPrepareWrites,
                 "-DEXTENDED_STACK_SETTINGS="+bleMod.extendedStackSettings);
 
-    if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+    if(devFamily != "DeviceFamily_CC23X0R5"  &&
+       devFamily != "DeviceFamily_CC23X0R2"  &&
+       devFamily != "DeviceFamily_CC23X0R22" &&
+       devFamily != "DeviceFamily_CC23X0R53" &&
+       devFamily != "DeviceFamily_CC27XX")
     {
         let rfDesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
 
         // Get the device defines from the list
         result.push(Common.deviceToDefines[rfDesign.rfDesign]);
     }
+
+    bleMod.bondManager && result.push("-DGAP_BONDINGS_MAX="+bleMod.maxBonds);
 
     bleMod.disableDisplayModule && result.push("-DDisplay_DISABLE_ALL");
     bleMod.powerMamagement && result.push("-DPOWER_SAVING");
@@ -1082,11 +1194,17 @@ function getAppConfigOpts()
     bleMod.oadDebug && result.push("-DOAD_DEBUG");
     bleMod.oadFeature && result.push("-DFEATURE_OAD");
     bleMod.oadBleSecurity && result.push("-DOAD_BLE_SECURITY");
+    bleMod.sdaa && result.push("-DSDAA_ENABLE");
 
-    if(!(ccfg===undefined))
+    // Health Toolkit parameters
+    if (bleMod.healthToolkit == true){
+        result.push("-DBLE_HEALTH");
+    }
+
+    if(!(ccfg===undefined) && !Common.isLPF3Device())
     {
-        (ccfg.srcClkLF == "LF RCOSC" || bleMod.useRcosc) && result.push("-DUSE_RCOSC");
-        ccfg.disableCache && result.push("-DCACHE_AS_RAM");
+        (ccfg.$static.srcClkLF == "LF RCOSC" || bleMod.useRcosc) && result.push("-DUSE_RCOSC");
+        ccfg.$static.disableCache && result.push("-DCACHE_AS_RAM");
     }
 
     if ((_.isEqual(bleMod.deviceRole, "PERIPHERAL_CFG")) || (bleMod.ptm))
@@ -1099,7 +1217,11 @@ function getAppConfigOpts()
         result.push("-DPTM_MODE", "-DNPI_FLOW_CTRL="+flowCtrlValue);
     }
 
-    if(devFamily != "DeviceFamily_CC23X0R5" && devFamily != "DeviceFamily_CC23X0R2")
+    if(devFamily != "DeviceFamily_CC23X0R5"  &&
+       devFamily != "DeviceFamily_CC23X0R53" &&
+       devFamily != "DeviceFamily_CC23X0R2"  &&
+       devFamily != "DeviceFamily_CC27XX"    &&
+       devFamily != "DeviceFamily_CC23X0R22")
     {
         let rf = system.modules["/ti/drivers/RF"].$static;
         if(!(rf===undefined) && rf.coexEnable == true)
@@ -1173,8 +1295,9 @@ function moduleInstances(inst)
  */
 function modules(inst)
 {
-    const dependencyModule = [];
+    let dependencyModule = [];
 
+    dependencyModule = advSetScript.modules(inst);
     // Pull in Multi-Stack validation module
     dependencyModule.push({
         name: "multiStack",

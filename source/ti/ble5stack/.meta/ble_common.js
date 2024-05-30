@@ -453,8 +453,12 @@ const deviceToBoard = {
   LP_EM_CC1354P10_1: "LP_EM_CC1354P10_1",
   LP_EM_CC1354P10_6: "LP_EM_CC1354P10_6",
   CC2340R5: "LP_EM_CC2340R5",
+  CC2340R53: "LP_EM_CC2340R53",
   CC2340R5_Q1: "LP_EM_CC2340R5_Q1",
+  CC2340R22: "LP_EM_CC2340R22",
   CC2340R2: "LP_EM_CC2340R2",
+  CC2745P10: "LP_EM_CC2745P10_SOCKET",
+  CC2745R10_Q1: "LP_EM_CC2745R10_Q1",
   CC2674R10RGZ: "LP_CC2674R10_RGZ",
   CC2674P10RGZ: "LP_CC2674P10_RGZ"
 };
@@ -480,7 +484,9 @@ const deviceToDefines = {
   "LP_EM_CC1354P10_1": ["-DCC1354P10_1_LP", "-DCC13X4", "-DCC13XX"],
   "LP_EM_CC1354P10_6": ["-DCC1354P10_6_LP", "-DCC13X4", "-DCC13XX"],
   "LP_CC2340R2": ["-DCC23X0"],
+  "LP_CC2340R22": ["-DCC23X0"],
   "LP_CC2340R5": ["-DCC23X0"],
+  "LP_CC2340R53": ["-DCC23X0"],
   "LP_CC2340R5_Q1": ["-DCC23X0"]
 };
 
@@ -622,28 +628,61 @@ const supportedMigrations = {
   ],
   LP_EM_CC2340R5: [
     {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R5_Q1"},
+    {target: "LP_EM_CC2340R2"},
+    {target: "LP_EM_CC2340R22"},
     {target: "CC2340R5RGE"},
     {target: "CC2340R5RKP"},
-    {target: "LP_EM_CC2340R5_Q1"},
     {target: "CC2340R5RHB"},
     {target: "CC2340R2RGE"},
+    {target: "CC2340R22RKP"},
+    {target: "CC2340R53RKP"},
+  ],
+  LP_EM_CC2340R53: [
+    {target: "LP_EM_CC2340R53"},
+    {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R5_Q1"},
     {target: "LP_EM_CC2340R2"},
+    {target: "LP_EM_CC2340R22"},
+    {target: "CC2340R5RGE"},
+    {target: "CC2340R5RKP"},
+    {target: "CC2340R5RHB"},
+    {target: "CC2340R2RGE"},
+    {target: "CC2340R22RKP"},
+    {target: "CC2340R53RKP"},
   ],
   LP_EM_CC2340R5_Q1: [
     {target: "LP_EM_CC2340R5_Q1"},
     {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
     {target: "CC2340R5RGE"},
     {target: "CC2340R5RKP"},
     {target: "CC2340R5RHB"},
   ],
   LP_EM_CC2340R2: [
     {target: "LP_EM_CC2340R2"},
-    {target: "CC2340R2RGE"},
     {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
+    {target: "CC2340R2RGE"},
     {target: "CC2340R5RGE"},
     {target: "CC2340R5RKP"},
   ],
-
+  LP_EM_CC2340R22: [
+    {target: "LP_EM_CC2340R22"},
+    {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
+    {target: "CC2340R22RKP"},
+    {target: "CC2340R5RGE"},
+    {target: "CC2340R5RKP"},
+  ],
+  LP_EM_CC2745R10_Q1: [
+    {target: "LP_EM_CC2745R10_Q1"},
+    {target: "CC2745R10RHAQ1"},
+  ],
+  LP_EM_CC2745P10_SOCKET: [
+    {target: "LP_EM_CC2745P10_SOCKET"},
+    {target: "CC2745P10RHAQ1"},
+  ],
   //Devices
   CC1352R1F3RGZ: [
     {target: "CC1352R1F3RGZ"},
@@ -749,34 +788,77 @@ const supportedMigrations = {
     {target: "CC2340R5RKP"},
     {target: "CC2340R5RGE"},
     {target: "CC2340R5RHB"},
+    {target: "CC2340R2RGE"},
+    {target: "CC2340R22RKP"},
     {target: "LP_EM_CC2340R5_Q1"},
     {target: "LP_EM_CC2340R5"},
-    {target: "CC2340R2RGE"},
+    {target: "LP_EM_CC2340R53"},
     {target: "LP_EM_CC2340R2"},
+    {target: "LP_EM_CC2340R22"},
   ],
+
+  "CC2340R53RKP": [
+    {target: "CC2340R53RKP"},
+    {target: "CC2340R5RKP"},
+    {target: "CC2340R5RGE"},
+    {target: "CC2340R5RHB"},
+    {target: "CC2340R2RGE"},
+    {target: "CC2340R22RKP"},
+    {target: "LP_EM_CC2340R5_Q1"},
+    {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
+    {target: "LP_EM_CC2340R2"},
+    {target: "LP_EM_CC2340R22"},
+  ],
+
   "CC2340R5RGE": [
     {target: "CC2340R5RGE"},
+    {target: "CC2340R53RKP"},
     {target: "CC2340R5RKP"},
     {target: "CC2340R5RHB"},
+    {target: "CC2340R2RGE"},
+    {target: "CC2340R22RKP"},
     {target: "LP_EM_CC2340R5_Q1"},
     {target: "LP_EM_CC2340R5"},
-    {target: "CC2340R2RGE"},
+    {target: "LP_EM_CC2340R53"},
     {target: "LP_EM_CC2340R2"},
+    {target: "LP_EM_CC2340R22"},
   ],
   "CC2340R5RHB": [
     {target: "CC2340R5RHB"},
     {target: "CC2340R5RGE"},
+    {target: "CC2340R53RKP"},
     {target: "CC2340R5RKP"},
     {target: "LP_EM_CC2340R5_Q1"},
     {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
   ],
   "CC2340R2RGE": [
     {target: "CC2340R2RGE"},
     {target: "CC2340R5RGE"},
     {target: "CC2340R5RKP"},
+    {target: "CC2340R53RKP"},
     {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
     {target: "LP_EM_CC2340R2"},
   ],
+  "CC2340R22RKP": [
+    {target: "CC2340R22RKP"},
+    {target: "CC2340R5RGE"},
+    {target: "CC2340R5RKP"},
+    {target: "CC2340R53RKP"},
+    {target: "LP_EM_CC2340R5"},
+    {target: "LP_EM_CC2340R53"},
+    {target: "LP_EM_CC2340R22"},
+  ],
+  "CC2745P10RHAQ1": [
+    {target: "CC2745R10RHAQ1"},
+    {target: "LP_EM_CC2745P10_SOCKET"},
+  ],
+  "CC2745R10RHAQ1": [
+    {target: "CC2745R10RHAQ1"},
+    {target: "LP_EM_CC2745R10_Q1"},
+  ]
 };
 
 const boardName = getBoardOrLaunchPadName(true);
@@ -1342,9 +1424,21 @@ function device2DeviceFamily(deviceId)
     {
         driverString = "DeviceFamily_CC23X0R5";
     }
+    else if(deviceId.match(/CC2340R53/))
+    {
+        driverString = "DeviceFamily_CC23X0R53"; // Need to verify with CoreSDK team !!!!!!
+    }
     else if(deviceId.match(/CC2340R2/))
     {
         driverString = "DeviceFamily_CC23X0R2";
+    }
+    else if(deviceId.match(/CC27../))
+    {
+        driverString = "DeviceFamily_CC27XX";
+    }
+    else if(deviceId.match(/CC23.0R22/))
+    {
+        driverString = "DeviceFamily_CC23X0R22";
     }
     else
     {
@@ -1450,7 +1544,7 @@ function getRadioScript(rfDesign, deviceId)
             radioSettings = system.getScript("/ti/ble5stack/rf_config/"
                 + "LP_EM_CC1354P10_6_rf_defaults.js");
         }
-        else if(rfDesign === "LP_EM_CC2340R2")
+        else if(rfDesign === "LP_EM_CC2340R5_RGE_4X4_IS24")
         {
             radioSettings = system.getScript("/ti/ble5stack/rf_config/"
                 + "LP_EM_CC2340R2_rf_defaults.js");
@@ -1460,10 +1554,20 @@ function getRadioScript(rfDesign, deviceId)
             radioSettings = system.getScript("/ti/ble5stack/rf_config/"
                 + "LP_EM_CC2340R5_rf_defaults.js");
         }
+        else if(rfDesign === "LP_EM_CC2340R53")
+        {
+            radioSettings = system.getScript("/ti/ble5stack/rf_config/"
+                + "LP_EM_CC2340R5_rf_defaults.js");
+        }
         else if(rfDesign === "LP_EM_CC2340R5_Q1")
         {
             radioSettings = system.getScript("/ti/ble5stack/rf_config/"
                 + "LP_EM_CC2340R5_Q1_rf_defaults.js");
+        }
+        else if( rfDesign === "LP_EM_CC2745R10_Q1" )
+        {
+            radioSettings = system.getScript("/ti/ble5stack/rf_config/"
+            + "LP_EM_CC2745R10_Q1_rf_defaults.js");
         }
     }
     else if(deviceId === "CC1352P1F3RGZ")
@@ -1682,8 +1786,11 @@ function getMigrationMarkdown(currTarget)
 */
 function defaultValue()
 {
-    if( device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-        device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
+    if( (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
     {
         return false;
     }
@@ -1697,10 +1804,13 @@ function defaultValue()
 */
 function readOnlyValue()
 {
-    if( device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-        device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
+    if( (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
     {
-        return "Currently not supported for CC23X0";
+        return "Currently not supported for CC23X0 or CC27XX";
     }
     return false;
 }
@@ -1713,8 +1823,11 @@ function readOnlyValue()
 */
 function defaultBondValue()
 {
-    if( device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-        device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
+    if( (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
     {
         return 5;
     }
@@ -1823,8 +1936,11 @@ function getOptionsOfFilterPolicy()
 */
 function hiddenValue()
 {
-    if( device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5" ||
-        device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2" )
+    if( (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
     {
         return true;
     }
@@ -1842,13 +1958,35 @@ const devFamily = device2DeviceFamily(system.deviceData.deviceId);
 
     // Return true if the device is from flash family
     return (
-        ((devFamily == "DeviceFamily_CC26X1") ||
-         (devFamily == "DeviceFamily_CC13X4") ||
-         (devFamily == "DeviceFamily_CC26X4") ||
-         (devFamily == "DeviceFamily_CC23X0R5") ||
-         (devFamily == "DeviceFamily_CC23X0R2"))
+        ((devFamily == "DeviceFamily_CC26X1")    ||
+         (devFamily == "DeviceFamily_CC13X4")    ||
+         (devFamily == "DeviceFamily_CC26X4")    ||
+         (devFamily == "DeviceFamily_CC23X0R5")  ||
+         (devFamily == "DeviceFamily_CC23X0R53") ||
+         (devFamily == "DeviceFamily_CC23X0R2")  ||
+         (devFamily == "DeviceFamily_CC23X0R22") ||
+         (devFamily == "DeviceFamily_CC27XX") )
     );
 }
+
+/*
+ *  ======== isLPF3Device ========
+ *  Check if LPF3 device family.
+ *  @return Bool - True if LPF3 device family
+ *                 False if other device family
+ */
+function isLPF3Device() {
+  const devFamily = device2DeviceFamily(system.deviceData.deviceId);
+
+      // Return true if the device is from flash family
+      return (
+           ((devFamily == "DeviceFamily_CC23X0R5")  ||
+           (devFamily == "DeviceFamily_CC23X0R53") ||
+           (devFamily == "DeviceFamily_CC23X0R2")  ||
+           (devFamily == "DeviceFamily_CC23X0R22") ||
+           (devFamily == "DeviceFamily_CC27XX") )
+      );
+  }
 
 /* ======== peripheralConnIntervalRange ========
 * Returns the proper define for CONN_INTERVAL_RANGE
@@ -2029,10 +2167,10 @@ exports = {
     migrate: migrate,
     getMigrationMarkdown: getMigrationMarkdown,
     hiddenValue: hiddenValue,
-    readOnlyValue: readOnlyValue,
     defaultValue: defaultValue,
     defaultBondValue: defaultBondValue,
     isFlashOnlyDevice: isFlashOnlyDevice,
+    isLPF3Device: isLPF3Device,
     getPeripheralConnIntervalRange: getPeripheralConnIntervalRange,
     getOptionsKeyDistList: getOptionsKeyDistList,
     getDefaultKeyDistList: getDefaultKeyDistList,

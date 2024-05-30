@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2016-2023, Texas Instruments Incorporated
+ Copyright (c) 2016-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -404,6 +404,19 @@ const extflashDrvTblPtr_t extflashDriverTable[] =
   (uint32) ExtFlash_erase
 };
 #endif // OSAL_SNV_EXTFLASH
+
+#ifdef SDAA_ENABLE
+sdaaUsrCfg_t sdaaCfgTable =
+{
+  .rxWindowDuration        = SDAA_RX_WINDOW_DURATION,
+  .txUsageTresh            = SDAA_MAX_THRESHOLD,
+  .rssithreshold           = SDAA_RSSI_THRESHOLD,
+  .numberofnoisysamples    = SDAA_MAX_ALLOWED_NOISY_SAMPLES,
+  .blockingchanneltime     = SDAA_MAX_BLOCKED_CHANNEL_TIME,
+  .constobservtime         = SDAA_CONST_OBSERV_TIME,
+  .observationtime         = SDAA_OBSERVATION_TIME
+};
+#endif //SDAA_ENABLE
 
 #ifndef CC23X0
 // Table for Driver can be found in icall_user_config.c

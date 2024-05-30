@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,13 +34,14 @@
  *
  *  @brief      AESCBC driver implementation for the Low Power F3 devices
  *
- *  # Hardware Accelerator #
- *  The Low Power F3 family of devices has a dedicated AES hardware that can perform
- *  AES encryption operations with 128-bit keys. Only one operation
- *  can be carried out on the accelerator at a time. Mutual exclusion is
- *  implemented at the driver level and coordinated between all drivers
- *  relying on the accelerator. It is transparent to the application and only
- *  noted to ensure sensible access timeouts are set.
+ * # Hardware Accelerator #
+ * The Low Power F3 family of devices has dedicated hardware accelerators.
+ * CC23XX devices have one dedicated accelerator whereas CC27XX devices have two
+ * (Primary and Secondary). Combined they can perform AES encryption operations with
+ * 128-bit, 192-bit and 256-bit keys. Only one operation can be carried out on the
+ * accelerator at a time. Mutual exclusion is implemented at the driver level and
+ * coordinated between all drivers relying on the accelerator. It is transparent to
+ * the application and only noted to ensure sensible access timeouts are set.
  *
  *  # Implementation Limitations
  *  - Decryption is not supported since the AES HW only supports encryption.
@@ -89,10 +90,24 @@ typedef struct
     /* Common member first to allow struct to be cast to the common type */
     AESCommonLPF3_Object common;
     volatile uint32_t iv[AES_IV_LENGTH_BYTES / 4];
+    const uint8_t *input;
+    uint8_t *output;
     AESCBC_CallbackFxn callbackFxn;
     AESCBC_OperationUnion *operation;
     AESCBC_OperationType operationType;
     bool threadSafe;
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    size_t inputLength;
+    /*!
+     * @brief The staus of the HSM Boot up process
+     * if HSMLPF3_STATUS_SUCCESS, the HSM booted properly.
+     * if HSMLPF3_STATUS_ERROR, the HSM did not boot properly.
+     */
+    int_fast16_t hsmStatus;
+    /* To indicate whether a segmented operation is in progress
+     */
+    bool segmentedOperationInProgress;
+#endif
 } AESCBCLPF3_Object;
 
 /*!

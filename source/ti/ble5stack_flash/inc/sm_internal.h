@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2009-2023, Texas Instruments Incorporated
+ Copyright (c) 2009-2024, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -232,6 +232,13 @@ typedef struct
 
 } smPairingParams_t;
 
+// hciEvt_BLELTKReq_t wrapper to save pkt details
+typedef struct
+{
+  uint8 bHandled;
+  hciEvt_BLELTKReq_t ltkReqPkt;
+} sm_hciEvtBLELTKReqWrapper_t;
+
 // Callback when an SMP message has been received on the Initiator or Responder.
 typedef uint8 (*smProcessMsg_t)( linkDBItem_t *pLinkItem, uint8 cmdID, smpMsgs_t *pParsedMsg );
 
@@ -251,6 +258,9 @@ typedef uint8 (*smFinishPKEx_t)( void );
 // Callback when authentication stage 2 after a passkey/numeric comparison is received.
 typedef void (*smAuthStageTwo_t)( void );
 
+// Callback to fill the sm_hciEvtBLELTKReqWrapper_t struct with the LTK request details
+typedef void (*smGetLtkReqDetails_t)( sm_hciEvtBLELTKReqWrapper_t** pLtkReqDetails );
+
 // Callback where a Responder will send its pairing response to the initiator.
 // Note: this callback helps decrease the runtime call stack's peak.
 typedef void (*smProcessPairRsp_t)( void );
@@ -267,12 +277,13 @@ typedef struct
 // Responder callback structure - must be setup by the Initiator.
 typedef struct
 {
-  smProcessMsg_t      pfnProcessMsg;       // When SMP message received
-  smSendNextKeyInfo_t pfnSendNextKeyInfo;  // When need to send next key message
-  smProcessPairRsp_t  pfnProcessPairRsp;   // When a SMP pairing Response is to be sent
-  smProcessLTKReq_t   pfnProcessLTKReq;    // When HCI BLE LTK Request received
-  smFinishPKEx_t      pfnFinishPKExchange; // When public key exchange must wait until public keys are generated.
-  smAuthStageTwo_t    pfnAuthStageTwo;     // When Secure Connections Authentication stage 2 begins
+  smProcessMsg_t       pfnProcessMsg;       // When SMP message received
+  smSendNextKeyInfo_t  pfnSendNextKeyInfo;  // When need to send next key message
+  smProcessPairRsp_t   pfnProcessPairRsp;   // When a SMP pairing Response is to be sent
+  smProcessLTKReq_t    pfnProcessLTKReq;    // When HCI BLE LTK Request received
+  smFinishPKEx_t       pfnFinishPKExchange; // When public key exchange must wait until public keys are generated.
+  smAuthStageTwo_t     pfnAuthStageTwo;     // When Secure Connections Authentication stage 2 begins
+  smGetLtkReqDetails_t pfnGetLTKReqDetails; // Fill the LTK request details in the input parameter
 } smResponderCBs_t;
 
 // Container for keys when Bond Manager does not want regeneration on every pairing.
@@ -291,13 +302,6 @@ typedef struct
   uint8 plainTextData[KEYLEN];    // Plain Text data to encrypt
   uint8 result[KEYLEN];           // Result of encrypt (key + Plain Text data)
 } sm_Encrypt_t;
-
-// hciEvt_BLELTKReq_t wrapper to save pkt details
-typedef struct
-{
-  uint8 bHandled;
-  hciEvt_BLELTKReq_t ltkReqPkt;
-} sm_hciEvtBLELTKReqWrapper_t;
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -435,10 +439,8 @@ extern void smResponderAuthStageTwo( void );
 extern uint8 smResponderProcessLTKReq( uint16 connectionHandle, uint8 *pRandom, uint16 encDiv );
 extern void smResponderSendNextKeyInfo( void );
 
-#ifndef GAP_BOND_MGR
 extern void smGetLtkReqDetails( sm_hciEvtBLELTKReqWrapper_t** pLtkReqDetails );
-extern void smTriggerProcessLTKReq( uint16 connHandle);
-#endif //GAP_BOND_MGR
+extern void smTriggerProcessLTKReq( uint16 connHandle );
 
 extern uint8 smpResponderProcessEncryptionInformation( smpEncInfo_t *pParsedMsg );
 extern uint8 smpResponderProcessIdentityAddrInfo( smpIdentityAddrInfo_t *pParsedMsg );

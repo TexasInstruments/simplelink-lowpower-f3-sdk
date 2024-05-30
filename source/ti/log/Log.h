@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -530,6 +530,35 @@ extern "C" {
 #define Log_MODULE_DEFINE(name, init) const Log_Module LogMod_ ## name = init
 
 /**
+ *  @brief Defines Log module as weak
+ *
+ *  If there are multiple modules containing Log statements per library,
+ *  special care must be taken not to create link-time failures.
+ *  Whether Log statements from a library are present in the final binary is
+ *  determined by the library configuration the application links against
+ *  (instrumented vs uninstrumented).
+ *  Each Log statement has a link-time dependency on its Log module. Enabling
+ *  only a subset of Log modules contained within the library will cause any
+ *  Log statements from other Log modules of that library to fail at link-time.
+ *  This is avoided by declaring a weak instance of each Log module in C code
+ *  that is compiled into the library. That way, the SysConfig-generated Log
+ *  module definitions will override the weak library ones but they are there
+ *  if SysConfig does not define that particular module.
+ *
+ *  @param[in]  name    Name of the log module. Gets prefixed with `LogMod_`.
+ *  @param[in]  init    Initialization value of the Log_Module struct.
+ */
+#if defined(__IAR_SYSTEMS_ICC__)
+#define Log_MODULE_DEFINE_WEAK(name, init) const __weak Log_Module LogMod_ ## name = init
+#elif defined(__TI_COMPILER_VERSION__) || (defined(__clang__) && defined(__ti_version__)) || defined(__GNUC__)
+#define Log_MODULE_DEFINE_WEAK(name, init) const Log_Module LogMod_ ## name __attribute__((weak)) = init
+#else
+#error "Incompatible compiler: Logging is currently supported by the following \
+compilers: TI ARM Compiler, TI CLANG Compiler, GCC, IAR. Please migrate to a \
+a supported compiler."
+#endif
+
+/**
  *  @brief Declares a reference to a log module
  *
  *  Declares that a log module is defined in another file so that it can be
@@ -632,9 +661,9 @@ extern "C" {
             static const char * const _Log_CONCAT2(Ptr, name)                  \
             __attribute__((used,section(_Log_TOKEN2STRING(_Log_CONCAT3(.log_ptr, __LINE__, module))))) = name;
 #else
-#error Incompatible compiler: Logging is currently supported by the following \
+#error "Incompatible compiler: Logging is currently supported by the following \
 compilers: TI ARM Compiler, TI CLANG Compiler, GCC, IAR. Please migrate to a \
-a supported compiler.
+a supported compiler."
 #endif
 
 /*
@@ -864,9 +893,9 @@ a supported compiler.
                                         fmt,                                \
                                         0)
 #else
-#error Incompatible compiler: Logging is currently supported by the following \
+#error "Incompatible compiler: Logging is currently supported by the following \
 compilers: TI ARM Compiler, TI CLANG Compiler, GCC, IAR. Please migrate to a \
-a supported compiler.
+a supported compiler."
 #endif
 
 /**
@@ -946,9 +975,9 @@ a supported compiler.
                                                 0,                              \
                                                 0)
 #else
-#error Incompatible compiler: Logging is currently supported by the following \
+#error "Incompatible compiler: Logging is currently supported by the following \
 compilers: TI ARM Compiler, TI CLANG Compiler, GCC, IAR. Please migrate to a \
-a supported compiler.
+a supported compiler."
 #endif
 
 /* Generate a symbol in the elf file that defines the version of the Log API */
@@ -963,6 +992,7 @@ _Log_DEFINE_LOG_VERSION(Log, Log_TI_LOG_VERSION);
  */
 
 #define Log_MODULE_DEFINE(...)
+#define Log_MODULE_DEFINE_WEAK(name, init)
 #define Log_MODULE_USE(...)
 #define Log_EVENT_DEFINE(name, fmt)
 #define Log_EVENT_USE(name, fmt)
@@ -1006,7 +1036,6 @@ struct Log_Module {
     const Log_buf_fxn     buf;
     uint32_t              levels;
 };
-
 
 /*! @} */
 #if defined (__cplusplus)

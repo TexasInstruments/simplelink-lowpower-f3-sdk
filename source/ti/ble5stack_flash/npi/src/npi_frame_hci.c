@@ -10,7 +10,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2015-2023, Texas Instruments Incorporated
+ Copyright (c) 2015-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -168,7 +168,7 @@ NPIMSG_msg_t *NPIFrame_frameMsg(uint8_t *pMsg)
     pFromStackMsg = (npiPkt_t *)pMsg;
 
     // Alloc NPI Message
-    NPIMSG_msg_t *npiMsg = (NPIMSG_msg_t *)ICall_malloc(sizeof(NPIMSG_msg_t));
+    NPIMSG_msg_t *npiMsg = (NPIMSG_msg_t *)ICall_mallocLimited(sizeof(NPIMSG_msg_t));
 
     if (npiMsg)
     {
@@ -176,7 +176,7 @@ NPIMSG_msg_t *NPIFrame_frameMsg(uint8_t *pMsg)
       npiMsg->msgType = NPIMSG_Type_ASYNC;
 
       // Allocate memory for container, and pkt payload
-      npiMsg->pBuf = (uint8_t *)ICall_allocMsg(pFromStackMsg->pktLen);
+      npiMsg->pBuf = (uint8_t *)ICall_allocMsgLimited(pFromStackMsg->pktLen);
       npiMsg->pBufSize = pFromStackMsg->pktLen;
 
       if (npiMsg->pBuf)

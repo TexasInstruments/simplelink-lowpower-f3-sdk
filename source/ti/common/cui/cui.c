@@ -23,7 +23,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2016-2023, Texas Instruments Incorporated
+ Copyright (c) 2016-2024, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@
  
  
  *****************************************************************************/
- 
+
 /******************************************************************************
  Includes
  *****************************************************************************/
@@ -76,7 +76,7 @@
 #include DeviceFamily_constructPath(driverlib/cpu.h)
 #include "ti_drivers_config.h"
 
-#include "cui.h"
+#include "ti/common/cc26xx/cui/cui.h"
 
 
 #define CUI_INITIAL_STATUS_OFFSET 5
