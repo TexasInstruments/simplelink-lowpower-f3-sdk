@@ -518,6 +518,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/buttonled/README.html",
+        "resourceType": "categoryInfo",
+        "name": "buttonled",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/buttonled/freertos/gcc/buttonled_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "buttonled",
+        "description": "buttonled",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "buttonled",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/buttonled/freertos/ticlang/buttonled_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "buttonled",
+        "description": "buttonled",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "buttonled",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -591,6 +701,492 @@
         "subCategories": [
             "TI Drivers",
             "buttonled",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/buttonled/freertos/iar/buttonled_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "buttonled",
+        "description": "buttonled",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "buttonled",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canInitiator/README.html",
+        "resourceType": "categoryInfo",
+        "name": "canInitiator",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canInitiator/freertos/gcc/canInitiator_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "canInitiator",
+        "description": "canInitiator",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canInitiator",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canInitiator/freertos/ticlang/canInitiator_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "canInitiator",
+        "description": "canInitiator",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canInitiator",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canInitiator/freertos/iar/canInitiator_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "canInitiator",
+        "description": "canInitiator",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canInitiator",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canResponder/README.html",
+        "resourceType": "categoryInfo",
+        "name": "canResponder",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canResponder/freertos/gcc/canResponder_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "canResponder",
+        "description": "canResponder",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canResponder",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canResponder/freertos/ticlang/canResponder_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "canResponder",
+        "description": "canResponder",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canResponder",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canResponder/freertos/iar/canResponder_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "canResponder",
+        "description": "canResponder",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canResponder",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canTimeSync/README.html",
+        "resourceType": "categoryInfo",
+        "name": "canTimeSync",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canTimeSync/freertos/gcc/canTimeSync_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "canTimeSync",
+        "description": "canTimeSync",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canTimeSync",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canTimeSync/freertos/ticlang/canTimeSync_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "canTimeSync",
+        "description": "canTimeSync",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canTimeSync",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/canTimeSync/freertos/iar/canTimeSync_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "canTimeSync",
+        "description": "canTimeSync",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "canTimeSync",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -1472,6 +2068,243 @@
         ]
     },
     {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/ecdsaSignVerify/gcc/ecdsaSignVerify_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "ecdsaSignVerify",
+        "description": "ecdsaSignVerify",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "ecdsaSignVerify",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/ecdsaSignVerify/ticlang/ecdsaSignVerify_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
+        "name": "ecdsaSignVerify",
+        "description": "ecdsaSignVerify",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "ecdsaSignVerify",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/ecdsaSignVerify/freertos/gcc/ecdsaSignVerify_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "ecdsaSignVerify",
+        "description": "ecdsaSignVerify",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "ecdsaSignVerify",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/ecdsaSignVerify/freertos/ticlang/ecdsaSignVerify_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "ecdsaSignVerify",
+        "description": "ecdsaSignVerify",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "ecdsaSignVerify",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/ecdsaSignVerify/iar/ecdsaSignVerify_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "ecdsaSignVerify",
+        "description": "ecdsaSignVerify",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "ecdsaSignVerify",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/ecdsaSignVerify/freertos/iar/ecdsaSignVerify_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "ecdsaSignVerify",
+        "description": "ecdsaSignVerify",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "ecdsaSignVerify",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
         "location": "../../examples/nortos/LP_EM_CC2340R53/drivers/empty/README.html",
         "resourceType": "categoryInfo",
         "name": "empty",
@@ -1661,6 +2494,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/empty/ticlang/empty_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "empty",
+        "description": "empty",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "empty",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/empty/README.html",
+        "resourceType": "categoryInfo",
+        "name": "empty",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/empty/gcc/empty_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "empty",
+        "description": "empty",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "empty",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/empty/ticlang/empty_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "empty",
         "description": "empty",
         "compiler": [
@@ -1900,6 +2837,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/empty/README.html",
+        "resourceType": "categoryInfo",
+        "name": "empty",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/empty/freertos/gcc/empty_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "empty",
+        "description": "empty",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "empty",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/empty/freertos/ticlang/empty_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "empty",
+        "description": "empty",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "empty",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -1980,6 +3027,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/empty/iar/empty_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "empty",
+        "description": "empty",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "empty",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -2028,6 +3111,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/empty/freertos/iar/empty_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "empty",
+        "description": "empty",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "empty",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/empty/freertos/iar/empty_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "empty",
         "description": "empty",
         "kernel": [
@@ -2180,6 +3302,71 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/fatsd/README.html",
+        "resourceType": "categoryInfo",
+        "name": "fatsd",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/fatsd/ticlang/fatsd_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
+        "name": "fatsd",
+        "description": "fatsd",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsd",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/rtos/LP_EM_CC2340R53/drivers/fatsd/README.html",
         "resourceType": "categoryInfo",
         "name": "fatsd",
@@ -2294,6 +3481,74 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/fatsd/freertos/ticlang/fatsd_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "fatsd",
+        "description": "fatsd",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsd",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/fatsd/README.html",
+        "resourceType": "categoryInfo",
+        "name": "fatsd",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/fatsd/freertos/ticlang/fatsd_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
         "name": "fatsd",
         "description": "fatsd",
         "kernel": [
@@ -2505,6 +3760,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/fatsdraw/ticlang/fatsdraw_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "fatsdraw",
+        "description": "fatsdraw",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsdraw",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/README.html",
+        "resourceType": "categoryInfo",
+        "name": "fatsdraw",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/gcc/fatsdraw_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "fatsdraw",
+        "description": "fatsdraw",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsdraw",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/ticlang/fatsdraw_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "fatsdraw",
         "description": "fatsdraw",
         "compiler": [
@@ -2744,6 +4103,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/README.html",
+        "resourceType": "categoryInfo",
+        "name": "fatsdraw",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/freertos/gcc/fatsdraw_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "fatsdraw",
+        "description": "fatsdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsdraw",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/freertos/ticlang/fatsdraw_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "fatsdraw",
+        "description": "fatsdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsdraw",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -2824,6 +4293,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/iar/fatsdraw_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "fatsdraw",
+        "description": "fatsdraw",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsdraw",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -2872,6 +4377,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/fatsdraw/freertos/iar/fatsdraw_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "fatsdraw",
+        "description": "fatsdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "fatsdraw",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/fatsdraw/freertos/iar/fatsdraw_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "fatsdraw",
         "description": "fatsdraw",
         "kernel": [
@@ -3083,6 +4627,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpiointerrupt/ticlang/gpiointerrupt_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpiointerrupt",
+        "description": "gpiointerrupt",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpiointerrupt",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpiointerrupt",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/gcc/gpiointerrupt_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "gpiointerrupt",
+        "description": "gpiointerrupt",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpiointerrupt",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/ticlang/gpiointerrupt_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "gpiointerrupt",
         "description": "gpiointerrupt",
         "compiler": [
@@ -3322,6 +4970,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpiointerrupt",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/freertos/gcc/gpiointerrupt_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "gpiointerrupt",
+        "description": "gpiointerrupt",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpiointerrupt",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/freertos/ticlang/gpiointerrupt_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "gpiointerrupt",
+        "description": "gpiointerrupt",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpiointerrupt",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -3402,6 +5160,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/iar/gpiointerrupt_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "gpiointerrupt",
+        "description": "gpiointerrupt",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpiointerrupt",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -3450,6 +5244,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "gpiointerrupt",
+        "description": "gpiointerrupt",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpiointerrupt",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpiointerrupt/freertos/iar/gpiointerrupt_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "gpiointerrupt",
         "description": "gpiointerrupt",
         "kernel": [
@@ -3661,6 +5494,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/gpioshutdown/ticlang/gpioshutdown_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpioshutdown",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/gcc/gpioshutdown_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/ticlang/gpioshutdown_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "gpioshutdown",
         "description": "gpioshutdown",
         "compiler": [
@@ -3900,6 +5837,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpioshutdown",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/freertos/gcc/gpioshutdown_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/freertos/ticlang/gpioshutdown_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -3980,6 +6027,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/iar/gpioshutdown_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -4028,6 +6111,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/gpioshutdown/freertos/iar/gpioshutdown_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "gpioshutdown",
+        "description": "gpioshutdown",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "gpioshutdown",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/gpioshutdown/freertos/iar/gpioshutdown_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "gpioshutdown",
         "description": "gpioshutdown",
         "kernel": [
@@ -4135,6 +6257,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ccontroller/ticlang/i2ccontroller_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ccontroller",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/gcc/i2ccontroller_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/ticlang/i2ccontroller_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "i2ccontroller",
         "description": "i2ccontroller",
         "compiler": [
@@ -4264,6 +6490,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ccontroller",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/freertos/gcc/i2ccontroller_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/freertos/ticlang/i2ccontroller_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -4308,6 +6644,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/iar/i2ccontroller_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R5"
         ],
         "coreTypes": [
@@ -4317,6 +6689,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ccontroller/freertos/iar/i2ccontroller_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "i2ccontroller",
+        "description": "i2ccontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ccontroller",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ccontroller/freertos/iar/i2ccontroller_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "i2ccontroller",
         "description": "i2ccontroller",
         "kernel": [
@@ -4559,6 +6970,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2copt3001_cpp/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2copt3001_cpp",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2copt3001_cpp/freertos/gcc/i2copt3001_cpp_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "i2copt3001_cpp",
+        "description": "i2copt3001_cpp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2copt3001_cpp",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2copt3001_cpp/freertos/ticlang/i2copt3001_cpp_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "i2copt3001_cpp",
+        "description": "i2copt3001_cpp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2copt3001_cpp",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/README.html",
         "resourceType": "categoryInfo",
         "name": "i2ctarget",
@@ -4644,6 +7165,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctarget/ticlang/i2ctarget_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ctarget",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/gcc/i2ctarget_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/ticlang/i2ctarget_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "i2ctarget",
         "description": "i2ctarget",
         "compiler": [
@@ -4773,6 +7398,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ctarget",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/freertos/gcc/i2ctarget_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/freertos/ticlang/i2ctarget_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -4817,6 +7552,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/iar/i2ctarget_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R5"
         ],
         "coreTypes": [
@@ -4826,6 +7597,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/i2ctarget/freertos/iar/i2ctarget_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "i2ctarget",
+        "description": "i2ctarget",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctarget",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctarget/freertos/iar/i2ctarget_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "i2ctarget",
         "description": "i2ctarget",
         "kernel": [
@@ -4933,6 +7743,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/ticlang/i2ctmp_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "i2ctmp",
+        "description": "i2ctmp",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctmp",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ctmp",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/gcc/i2ctmp_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "i2ctmp",
+        "description": "i2ctmp",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctmp",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/ticlang/i2ctmp_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "i2ctmp",
         "description": "i2ctmp",
         "compiler": [
@@ -5062,6 +7976,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2ctmp",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/freertos/gcc/i2ctmp_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "i2ctmp",
+        "description": "i2ctmp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctmp",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/freertos/ticlang/i2ctmp_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "i2ctmp",
+        "description": "i2ctmp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctmp",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -5079,6 +8103,42 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/i2ctmp/iar/i2ctmp_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "i2ctmp",
+        "description": "i2ctmp",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctmp",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/iar/i2ctmp_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
         "name": "i2ctmp",
         "description": "i2ctmp",
         "compiler": [
@@ -5132,6 +8192,343 @@
         "subCategories": [
             "TI Drivers",
             "i2ctmp",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2ctmp/freertos/iar/i2ctmp_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "i2ctmp",
+        "description": "i2ctmp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2ctmp",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2secho/README.html",
+        "resourceType": "categoryInfo",
+        "name": "i2secho",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2secho/freertos/gcc/i2secho_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "i2secho",
+        "description": "i2secho",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2secho",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2secho/freertos/ticlang/i2secho_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "i2secho",
+        "description": "i2secho",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2secho",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/i2secho/freertos/iar/i2secho_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "i2secho",
+        "description": "i2secho",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "i2secho",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/itmwrite/README.html",
+        "resourceType": "categoryInfo",
+        "name": "itmwrite",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/itmwrite/freertos/gcc/itmwrite_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "itmwrite",
+        "description": "itmwrite",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "itmwrite",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/itmwrite/freertos/ticlang/itmwrite_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "itmwrite",
+        "description": "itmwrite",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "itmwrite",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/itmwrite/freertos/iar/itmwrite_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "itmwrite",
+        "description": "itmwrite",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "itmwrite",
             "FreeRTOS",
             "IAR Compiler"
         ]
@@ -5357,6 +8754,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/log/README.html",
+        "resourceType": "categoryInfo",
+        "name": "log",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/log/freertos/gcc/log_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "log",
+        "description": "log",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "log",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/log/freertos/ticlang/log_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "log",
+        "description": "log",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "log",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -5413,6 +8920,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/log/freertos/iar/log_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "log",
+        "description": "log",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "log",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/log/freertos/iar/log_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "log",
         "description": "log",
         "kernel": [
@@ -6677,6 +10223,110 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/README.html",
+        "resourceType": "categoryInfo",
+        "name": "nvsinternal",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/gcc/nvsinternal_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "nvsinternal",
+        "description": "nvsinternal",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "nvsinternal",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/ticlang/nvsinternal_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
+        "name": "nvsinternal",
+        "description": "nvsinternal",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "nvsinternal",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/rtos/LP_EM_CC2340R53/drivers/nvsinternal/README.html",
         "resourceType": "categoryInfo",
         "name": "nvsinternal",
@@ -6897,6 +10547,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/README.html",
+        "resourceType": "categoryInfo",
+        "name": "nvsinternal",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/freertos/gcc/nvsinternal_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "nvsinternal",
+        "description": "nvsinternal",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "nvsinternal",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/freertos/ticlang/nvsinternal_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "nvsinternal",
+        "description": "nvsinternal",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "nvsinternal",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -6977,6 +10737,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/iar/nvsinternal_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "nvsinternal",
+        "description": "nvsinternal",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "nvsinternal",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -7025,6 +10821,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/nvsinternal/freertos/iar/nvsinternal_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "nvsinternal",
+        "description": "nvsinternal",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "nvsinternal",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/nvsinternal/freertos/iar/nvsinternal_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "nvsinternal",
         "description": "nvsinternal",
         "kernel": [
@@ -7851,6 +11686,110 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/pwmled1/README.html",
+        "resourceType": "categoryInfo",
+        "name": "pwmled1",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/pwmled1/gcc/pwmled1_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "pwmled1",
+        "description": "pwmled1",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "pwmled1",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/pwmled1/ticlang/pwmled1_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
+        "name": "pwmled1",
+        "description": "pwmled1",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "pwmled1",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/rtos/LP_EM_CC2340R53/drivers/pwmled1/README.html",
         "resourceType": "categoryInfo",
         "name": "pwmled1",
@@ -8071,6 +12010,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/pwmled1/README.html",
+        "resourceType": "categoryInfo",
+        "name": "pwmled1",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/pwmled1/freertos/gcc/pwmled1_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "pwmled1",
+        "description": "pwmled1",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "pwmled1",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/pwmled1/freertos/ticlang/pwmled1_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "pwmled1",
+        "description": "pwmled1",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "pwmled1",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -8151,6 +12200,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/pwmled1/iar/pwmled1_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "pwmled1",
+        "description": "pwmled1",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "pwmled1",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -8199,6 +12284,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/pwmled1/freertos/iar/pwmled1_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "pwmled1",
+        "description": "pwmled1",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "pwmled1",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/pwmled1/freertos/iar/pwmled1_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "pwmled1",
         "description": "pwmled1",
         "kernel": [
@@ -8903,6 +13027,110 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sdraw/README.html",
+        "resourceType": "categoryInfo",
+        "name": "sdraw",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sdraw/gcc/sdraw_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sdraw/ticlang/sdraw_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sdraw/README.html",
         "resourceType": "categoryInfo",
         "name": "sdraw",
@@ -9013,6 +13241,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sdraw/README.html",
+        "resourceType": "categoryInfo",
+        "name": "sdraw",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sdraw/freertos/gcc/sdraw_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sdraw/freertos/ticlang/sdraw_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "sdraw",
+        "description": "sdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -9057,6 +13395,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sdraw/iar/sdraw_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "sdraw",
+        "description": "sdraw",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R5"
         ],
         "coreTypes": [
@@ -9066,6 +13440,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sdraw/freertos/iar/sdraw_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "sdraw",
+        "description": "sdraw",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sdraw",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sdraw/freertos/iar/sdraw_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "sdraw",
         "description": "sdraw",
         "kernel": [
@@ -9277,6 +13690,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/sha2hash/ticlang/sha2hash_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "sha2hash",
+        "description": "sha2hash",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sha2hash",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sha2hash/README.html",
+        "resourceType": "categoryInfo",
+        "name": "sha2hash",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sha2hash/gcc/sha2hash_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "sha2hash",
+        "description": "sha2hash",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sha2hash",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sha2hash/ticlang/sha2hash_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "sha2hash",
         "description": "sha2hash",
         "compiler": [
@@ -9516,6 +14033,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sha2hash/README.html",
+        "resourceType": "categoryInfo",
+        "name": "sha2hash",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sha2hash/freertos/gcc/sha2hash_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "sha2hash",
+        "description": "sha2hash",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sha2hash",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sha2hash/freertos/ticlang/sha2hash_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "sha2hash",
+        "description": "sha2hash",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sha2hash",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -9596,6 +14223,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/sha2hash/iar/sha2hash_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "sha2hash",
+        "description": "sha2hash",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sha2hash",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -9644,6 +14307,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/sha2hash/freertos/iar/sha2hash_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "sha2hash",
+        "description": "sha2hash",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "sha2hash",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/sha2hash/freertos/iar/sha2hash_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "sha2hash",
         "description": "sha2hash",
         "kernel": [
@@ -9886,6 +14588,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spicontroller/README.html",
+        "resourceType": "categoryInfo",
+        "name": "spicontroller",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spicontroller/freertos/gcc/spicontroller_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "spicontroller",
+        "description": "spicontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "spicontroller",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spicontroller/freertos/ticlang/spicontroller_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "spicontroller",
+        "description": "spicontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "spicontroller",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -9942,6 +14754,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/spicontroller/freertos/iar/spicontroller_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "spicontroller",
+        "description": "spicontroller",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "spicontroller",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spicontroller/freertos/iar/spicontroller_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "spicontroller",
         "description": "spicontroller",
         "kernel": [
@@ -10184,6 +15035,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spiperipheral/README.html",
+        "resourceType": "categoryInfo",
+        "name": "spiperipheral",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spiperipheral/freertos/gcc/spiperipheral_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "spiperipheral",
+        "description": "spiperipheral",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "spiperipheral",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spiperipheral/freertos/ticlang/spiperipheral_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "spiperipheral",
+        "description": "spiperipheral",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "spiperipheral",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -10240,6 +15201,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/spiperipheral/freertos/iar/spiperipheral_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "spiperipheral",
+        "description": "spiperipheral",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "spiperipheral",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/spiperipheral/freertos/iar/spiperipheral_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "spiperipheral",
         "description": "spiperipheral",
         "kernel": [
@@ -10451,6 +15451,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/systimtimestamp/ticlang/systimtimestamp_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/README.html",
+        "resourceType": "categoryInfo",
+        "name": "systimtimestamp",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/gcc/systimtimestamp_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/ticlang/systimtimestamp_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "systimtimestamp",
         "description": "systimtimestamp",
         "compiler": [
@@ -10690,6 +15794,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/README.html",
+        "resourceType": "categoryInfo",
+        "name": "systimtimestamp",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/freertos/gcc/systimtimestamp_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/freertos/ticlang/systimtimestamp_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -10770,6 +15984,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/iar/systimtimestamp_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -10818,6 +16068,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/systimtimestamp/freertos/iar/systimtimestamp_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "systimtimestamp",
+        "description": "systimtimestamp",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "systimtimestamp",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/systimtimestamp/freertos/iar/systimtimestamp_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "systimtimestamp",
         "description": "systimtimestamp",
         "kernel": [
@@ -11029,6 +16318,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/temperatureNotify/ticlang/temperatureNotify_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "temperatureNotify",
+        "description": "temperatureNotify",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "temperatureNotify",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/README.html",
+        "resourceType": "categoryInfo",
+        "name": "temperatureNotify",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/gcc/temperatureNotify_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "temperatureNotify",
+        "description": "temperatureNotify",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "temperatureNotify",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/ticlang/temperatureNotify_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "temperatureNotify",
         "description": "temperatureNotify",
         "compiler": [
@@ -11268,6 +16661,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/README.html",
+        "resourceType": "categoryInfo",
+        "name": "temperatureNotify",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/freertos/gcc/temperatureNotify_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "temperatureNotify",
+        "description": "temperatureNotify",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "temperatureNotify",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/freertos/ticlang/temperatureNotify_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "temperatureNotify",
+        "description": "temperatureNotify",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "temperatureNotify",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -11348,6 +16851,42 @@
             "example.general"
         ],
         "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/iar/temperatureNotify_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "temperatureNotify",
+        "description": "temperatureNotify",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "temperatureNotify",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
             "CC2340R53"
         ],
         "coreTypes": [
@@ -11396,6 +16935,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/temperatureNotify/freertos/iar/temperatureNotify_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "temperatureNotify",
+        "description": "temperatureNotify",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "temperatureNotify",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/temperatureNotify/freertos/iar/temperatureNotify_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "temperatureNotify",
         "description": "temperatureNotify",
         "kernel": [
@@ -11638,6 +17216,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2callback/README.html",
+        "resourceType": "categoryInfo",
+        "name": "uart2callback",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2callback/freertos/gcc/uart2callback_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "uart2callback",
+        "description": "uart2callback",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2callback",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2callback/freertos/ticlang/uart2callback_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "uart2callback",
+        "description": "uart2callback",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2callback",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -11694,6 +17382,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/drivers/uart2callback/freertos/iar/uart2callback_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "uart2callback",
+        "description": "uart2callback",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2callback",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2callback/freertos/iar/uart2callback_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "uart2callback",
         "description": "uart2callback",
         "kernel": [
@@ -11905,6 +17632,110 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/ticlang/uart2echo_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "uart2echo",
+        "description": "uart2echo",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2echo",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/uart2echo/README.html",
+        "resourceType": "categoryInfo",
+        "name": "uart2echo",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/uart2echo/gcc/uart2echo_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "uart2echo",
+        "description": "uart2echo",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2echo",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/uart2echo/ticlang/uart2echo_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
         "name": "uart2echo",
         "description": "uart2echo",
         "compiler": [
@@ -12144,6 +17975,116 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2echo/README.html",
+        "resourceType": "categoryInfo",
+        "name": "uart2echo",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2echo/freertos/gcc/uart2echo_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "uart2echo",
+        "description": "uart2echo",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2echo",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2echo/freertos/ticlang/uart2echo_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "uart2echo",
+        "description": "uart2echo",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2echo",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -12197,6 +18138,42 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/nortos/LP_EM_CC2340R5/drivers/uart2echo/iar/uart2echo_LP_EM_CC2340R5_nortos_iar.ipcf",
+        "name": "uart2echo",
+        "description": "uart2echo",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2echo",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/uart2echo/iar/uart2echo_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
         "name": "uart2echo",
         "description": "uart2echo",
         "compiler": [
@@ -12289,6 +18266,334 @@
         "subCategories": [
             "TI Drivers",
             "uart2echo",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/uart2echo/freertos/iar/uart2echo_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "uart2echo",
+        "description": "uart2echo",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "uart2echo",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/vce_music/README.html",
+        "resourceType": "categoryInfo",
+        "name": "vce_music",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/vce_music/gcc/vce_music_LP_EM_CC2745R10_Q1_nortos_gcc.projectspec",
+        "name": "vce_music",
+        "description": "vce_music",
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "vce_music",
+            "No RTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/vce_music/ticlang/vce_music_LP_EM_CC2745R10_Q1_nortos_ticlang.projectspec",
+        "name": "vce_music",
+        "description": "vce_music",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "vce_music",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/vce_music/README.html",
+        "resourceType": "categoryInfo",
+        "name": "vce_music",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/vce_music/freertos/gcc/vce_music_LP_EM_CC2745R10_Q1_freertos_gcc.projectspec",
+        "name": "vce_music",
+        "description": "vce_music",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "gcc"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "vce_music",
+            "FreeRTOS",
+            "GCC Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/vce_music/freertos/ticlang/vce_music_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "vce_music",
+        "description": "vce_music",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "vce_music",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2745R10_Q1/drivers/vce_music/iar/vce_music_LP_EM_CC2745R10_Q1_nortos_iar.ipcf",
+        "name": "vce_music",
+        "description": "vce_music",
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "vce_music",
+            "No RTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/drivers/vce_music/freertos/iar/vce_music_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
+        "name": "vce_music",
+        "description": "vce_music",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers",
+            "vce_music",
             "FreeRTOS",
             "IAR Compiler"
         ]

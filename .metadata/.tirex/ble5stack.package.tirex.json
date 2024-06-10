@@ -3,7 +3,7 @@
         "metadataVersion": "3.0.0",
         "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK_BLE5STACK_MODULE",
         "name": "TI Bluetooth® Low Energy 5.x Stack Stack Core",
-        "version": "8.10.00.55",
+        "version": "8.10.01.02",
         "type": "software",
         "devices": [
             "CC23x0"
@@ -12,7 +12,7 @@
         "description": "Low Power F3 TI Bluetooth® Low Energy 5.x Stack Stack",
         "moduleOf": {
             "packageId": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
-            "semver": "8.10.0"
+            "semver": "8.10.1"
         }
     }
 ]

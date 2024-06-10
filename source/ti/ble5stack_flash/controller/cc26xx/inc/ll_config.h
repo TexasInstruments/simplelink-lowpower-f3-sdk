@@ -326,8 +326,6 @@ extern uint32 extStackSettings;
 extern uint16  llUserConfig_maxPduSize;
 extern const llCfgTable_t llConfigTable;
 
-extern uint8 useDFL;
-
 #ifdef __cplusplus
 }
 #endif

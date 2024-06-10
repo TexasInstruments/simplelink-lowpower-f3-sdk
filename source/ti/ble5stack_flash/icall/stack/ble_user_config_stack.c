@@ -148,6 +148,8 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
     llUserConfig.maxAlElems    = stackConfig->maxAcceptListElems;
     llUserConfig.maxRlElems    = stackConfig->maxResolvListElems;
     llUserConfig.advReportIncChannel = stackConfig->advReportIncChannel;
+    // Set useDFL to false initially
+    llUserConfig.useDFL = stackConfig->useDFL;
 #ifndef CC23X0
     llUserConfig.maxNumCteBufs = stackConfig->maxNumCteBuffers;
 
@@ -346,19 +348,6 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
   llUserConfig.useAE = FALSE;
 #endif
 
-  // Set useDFL to false initially
-  llUserConfig.useDFL = FALSE;
-
-
-  // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
-  #if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
-  #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
-  #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
-  llUserConfig.useDFL = TRUE;
-  #endif // (advertiser only)
-  #endif // (number of bondings greater than 5)
-  #endif // (supported devices)
-
   return;
 }
 #else /* !(ICALL_JT) */
@@ -500,18 +489,6 @@ void setBleUserConfig( bleUserCfg_t *userCfg )
 
   llUserConfig.useSrcClkLFOSC = SRC_CLK_IS_LFOSC;
   llUserConfig.cfgLFOSCExtraPPM = USER_CFG_LFOSC_EXTRA_PPM;
-
-  // Set useDFL to false initially
-  llUserConfig.useDFL = FALSE;
-
-  // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
-  #if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
-  #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
-  #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
-  llUserConfig.useDFL = TRUE;
-  #endif // (advertiser only)
-  #endif // (number of bondings greater than 5)
-  #endif // (supported devices)
 
   return;
 }

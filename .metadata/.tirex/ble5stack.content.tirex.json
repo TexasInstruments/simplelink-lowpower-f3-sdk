@@ -136,6 +136,74 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/README.html",
+        "resourceType": "categoryInfo",
+        "name": "basic_ble",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "basic_ble",
+        "description": "basic_ble",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "basic_ble",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -192,6 +260,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/basic_ble/freertos/iar/basic_ble_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "basic_ble",
+        "description": "basic_ble",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "basic_ble",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/iar/basic_ble_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "basic_ble",
         "description": "basic_ble",
         "kernel": [
@@ -1796,6 +1903,74 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/README.html",
+        "resourceType": "categoryInfo",
+        "name": "data_stream",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "data_stream",
+        "description": "data_stream",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "data_stream",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -1852,6 +2027,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/data_stream/freertos/iar/data_stream_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "data_stream",
+        "description": "data_stream",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "data_stream",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/iar/data_stream_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "data_stream",
         "description": "data_stream",
         "kernel": [
@@ -2010,6 +2224,74 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/README.html",
+        "resourceType": "categoryInfo",
+        "name": "host_test",
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec",
+        "name": "host_test",
+        "description": "host_test",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "host_test",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "resourceType": "project.iar",
         "resourceClass": [
             "example"
@@ -2066,6 +2348,45 @@
             "LP-EM-CC2340R5"
         ],
         "location": "../../examples/rtos/LP_EM_CC2340R5/ble5stack/host_test/freertos/iar/host_test_LP_EM_CC2340R5_freertos_iar.ipcf",
+        "name": "host_test",
+        "description": "host_test",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "iar"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "BLE5-Stack",
+            "host_test",
+            "FreeRTOS",
+            "IAR Compiler"
+        ]
+    },
+    {
+        "resourceType": "project.iar",
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2745R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2745R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2745R10-Q1"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/iar/host_test_LP_EM_CC2745R10_Q1_freertos_iar.ipcf",
         "name": "host_test",
         "description": "host_test",
         "kernel": [

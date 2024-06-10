@@ -595,6 +595,7 @@ typedef struct
   uint8                       maxNumCteBuffers;
 #endif
   uint8                       advReportIncChannel;
+  uint8                       useDFL;
 } stackSpecific_t;
 
 #else /* !(ICALL_JT) */

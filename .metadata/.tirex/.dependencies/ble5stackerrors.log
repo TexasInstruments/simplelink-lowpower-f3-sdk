@@ -2608,3 +2608,504 @@ In project: examples/rtos/LP_EM_CC2340R53/ble5stack/host_test/freertos/ticlang/h
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall_user_config.h
 In project: examples/rtos/LP_EM_CC2340R53/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2340R53_freertos_ticlang.projectspec
 
+File not found: ../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/board.html
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/iar/basic_ble_LP_EM_CC2745R10_Q1_freertos_iar.ipcf
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/inc/bleapputil_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_task.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_init.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_process.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_stack_callbacks.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/services/dev_info/dev_info_service.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/services/dev_info/dev_info_service.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/rom/agama_r1/rom_init.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/stack/ble_user_config_stack.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvintf.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/icall_addrs.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_cc23x0.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_platform.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_user_config.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall_user_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/ble_stack_api.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/ble_stack_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/ble_user_config.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/ble_user_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/icall_api_lite.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/icall_ble_apimsg.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/menu_module/menu_module.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/menu_module/menu_module.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/profiles/simple_gatt/simple_gatt_profile.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/profiles/simple_gatt/simple_gatt_profile.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_POSIX.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/boards/LP_EM_CC2745R10_Q1/board.html
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/board.html
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/iar/data_stream_LP_EM_CC2745R10_Q1_freertos_iar.ipcf
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/inc/bleapputil_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_task.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_init.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_process.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/ble_app_util/src/bleapputil_stack_callbacks.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/services/dev_info/dev_info_service.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/services/dev_info/dev_info_service.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/rom/agama_r1/rom_init.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/stack/ble_user_config_stack.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvintf.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/icall_addrs.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_cc23x0.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_platform.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_user_config.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall_user_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/ble_stack_api.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/ble_stack_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/ble_user_config.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/ble_user_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/icall_api_lite.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/icall_ble_apimsg.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/profiles/data_stream/data_stream_profile.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/profiles/data_stream/data_stream_profile.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/services/data_stream/data_stream_server.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/services/data_stream/data_stream_server.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/menu_module/menu_module.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/bleapp/menu_module/menu_module.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/health_toolkit/inc/debugInfo.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/health_toolkit/inc/debugInfo_errno.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/health_toolkit/src/debugInfo.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_POSIX.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/boards/LP_EM_CC2745R10_Q1/board.html
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/board.html
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/iar/host_test_LP_EM_CC2745R10_Q1_freertos_iar.ipcf
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/common/cc26xx/util.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/common/cc26xx/util.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvintf.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/ble_user_config.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/ble_user_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/stack/ble_user_config_stack.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/icall_api_lite.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/icall_ble_apimsg.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/app/icall_hci_tl.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/npi_tl_spi.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_tl_spi.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/npi_tl_uart.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_tl_uart.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/npi_tl.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_tl.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_ble.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_frame.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/npi_frame_hci.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/npi_rxbuf.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_rxbuf.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/npi_task.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/npi/src/inc/npi_task.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/crypto_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/ecc_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/rf_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/rtos_drivers.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/trng_api.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/common/hal_assert.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_adc.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_assert.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_board.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_defs.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_key.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_lcd.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_led.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_sleep.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_timer.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/inc/hal_uart.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/hal_mcu.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/rf_hal.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/hal_board_cfg.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/hal_flash_wrapper.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/hal/src/target/_common/hal_rtc_wrapper.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/host/gap.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/host/gapbondmgr.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/inc/gapbondmgr.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/inc/gapgattserver.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/host/gatt_uuid.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/inc/gatt_uuid.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/inc/gattservapp.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/host/gattservapp_util.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/host/sm_ecc.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/ble_dispatch.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/stack/ble_dispatch_JT.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/stack/ble_dispatch_lite.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_lite_translation.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/comdef.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_bufmgr.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_bufmgr.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_cbtimer.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_cbtimer.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_clock.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_clock.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_list.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_list.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_memory.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_memory_icall.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_pwrmgr.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_pwrmgr.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_snv.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/mcu/cc26xx/osal_snv_wrapper.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_task.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/common/osal_timers.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/osal/src/inc/osal_timers.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/rom/agama_r1/common_rom_init.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/rom/agama_r1/rom_flash_jt.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/common/cc26xx/icall_startup.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/common/cc26xx/onboard.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/common/cc26xx/onboard.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/rom/agama_r1/rom_init.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_POSIX.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/inc/icall_addrs.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_cc23x0.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_platform.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/icall_user_config.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble5stack_flash/icall/src/inc/icall_user_config.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/boards/LP_EM_CC2745R10_Q1/board.html
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+

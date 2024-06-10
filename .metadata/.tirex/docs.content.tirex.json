@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_10_00_55.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_10_01_02.html",
         "devices": [
             "CC2340R5"
         ],
@@ -54,23 +54,6 @@
         "name": "SimpleLink MCU SDK User's Guide",
         "resourceType": "file",
         "location": "../../docs/simplelink_mcu_sdk/Users_Guide.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
-        ],
-        "mainCategories": [
-            "Documents"
-        ]
-    },
-    {
-        "name": "SimpleLink MCU SDK Migration Guide",
-        "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/Migration_Guide.html",
         "devices": [
             "CC2340R5"
         ],

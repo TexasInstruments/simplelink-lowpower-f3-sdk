@@ -37,14 +37,82 @@
   <h2>Table of Contents</h2>
 <div id="TOC">
 <ul>
+<li><a href="#simplelink-low-power-sdk-f3-8.10.01">SimpleLink™ Low Power SDK F3 8.10.01</a><ul>
 <li><a href="#new-features">New Features</a></li>
 <li><a href="#fixed-issues">Fixed Issues</a></li>
 <li><a href="#known-issues">Known Issues</a></li>
+</ul></li>
+<li><a href="#simplelink-low-power-sdk-f3-8.10.00">SimpleLink™ Low Power SDK F3 8.10.00</a><ul>
+<li><a href="#new-features-1">New Features</a></li>
+<li><a href="#fixed-issues-1">Fixed Issues</a></li>
+<li><a href="#known-issues-1">Known Issues</a></li>
+</ul></li>
 </ul>
 </div>
+<h1 id="simplelink-low-power-sdk-f3-8.10.01">SimpleLink™ Low Power SDK F3 8.10.01</h1>
 <p> </p>
 <h2 id="new-features">New Features</h2>
 <h3 id="ble5-stack">BLE5-Stack</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">None</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p> </p>
+<h2 id="fixed-issues">Fixed Issues</h2>
+<h3 id="ble5-stack-1">BLE5-Stack</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11779">BLE_LOKI-1893</a></td>
+<td align="left"><span>The host_test example fails to build on Linux/MacOS</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11781">BLE_LOKI-1848</a></td>
+<td align="left"><span>When using same value for Scan Window and Scan Interval, the interval size is not accurate</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11778">BLE_LOKI-1578</a></td>
+<td align="left"><span>After multiple GATT data transmissions, a blePending error was return.</span></td>
+</tr>
+</tbody>
+</table>
+<p> </p>
+<h2 id="known-issues">Known Issues</h2>
+<h3 id="ble5-stack-2">BLE5-Stack</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">None</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<h1 id="simplelink-low-power-sdk-f3-8.10.00">SimpleLink™ Low Power SDK F3 8.10.00</h1>
+<p> </p>
+<h2 id="new-features-1">New Features</h2>
+<h3 id="ble5-stack-3">BLE5-Stack</h3>
 <table>
 <thead>
 <tr class="header">
@@ -244,8 +312,8 @@
 </tbody>
 </table>
 <p> </p>
-<h2 id="fixed-issues">Fixed Issues</h2>
-<h3 id="ble5-stack-1">BLE5-Stack</h3>
+<h2 id="fixed-issues-1">Fixed Issues</h2>
+<h3 id="ble5-stack-4">BLE5-Stack</h3>
 <table>
 <thead>
 <tr class="header">
@@ -272,7 +340,7 @@
 </tr>
 <tr class="odd">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11615">BLE_LOKI-1247</a></td>
-<td align="left"><span>[SWAT][Data Stream] Gatt_WriteLongCharValue() calls with size 512 bytes fails when using TI Clang Compiler</span></td>
+<td align="left"><span>Gatt_WriteLongCharValue() calls with size 512 bytes fails when using TI Clang Compiler</span></td>
 </tr>
 <tr class="even">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11608">BLE_LOKI-1161</a></td>
@@ -372,8 +440,8 @@
 <h3 id="radio-control-library-rcl-1">Radio Control Library (RCL)</h3>
 <p>${project in (RCL) AND issuetype in (Bug, Task) AND resolution != unresolved AND fixVersion ~ LOKI_RCL_8_10_00 AND labels in (ReleaseNote) ORDER BY project desc, priority}</p>
 <p> </p>
-<h2 id="known-issues">Known Issues</h2>
-<h3 id="ble5-stack-2">BLE5-Stack</h3>
+<h2 id="known-issues-1">Known Issues</h2>
+<h3 id="ble5-stack-5">BLE5-Stack</h3>
 <table>
 <thead>
 <tr class="header">
@@ -392,7 +460,7 @@
 </tr>
 <tr class="odd">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11763">BLE_LOKI-1661</a></td>
-<td align="left"><span>Peripheral fails to enable legacy adv set 2 after create connection to adv set 1 if they are using different address types.</span></td>
+<td align="left"><span>[Dual ADV] Peripheral fails to enable legacy adv set 2 after create connection to adv set 1 if they are using different address types.</span></td>
 </tr>
 <tr class="even">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11765">BLE_LOKI-1653</a></td>
