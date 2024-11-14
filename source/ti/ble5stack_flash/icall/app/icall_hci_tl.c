@@ -48,6 +48,7 @@
 /*********************************************************************
  * INCLUDES
  */
+#include "hci_event.h"
 #include <string.h>
 #include <icall.h>
 #include "comdef.h"
@@ -55,24 +56,14 @@
 #include "icall_ble_api.h"
 #include "icall_hci_tl.h"
 #include "ll.h"
+#include "map_direct.h"
 
-#ifdef CC33xx
-#include "icall_porting.h"
-#include "npi_ble.h"
-#include "npi_task.h"
-#else
-#include "util.h"
-#ifdef FREERTOS
-#include <FreeRTOS.h>
-#include <task.h>
-#else
-#include <ti/sysbios/knl/Task.h>
-#endif // FREERTOS
+#ifndef CONFIG_ZEPHYR
 #if (defined(HCI_TL_FULL) || defined(PTM_MODE))
 #include "inc/npi_ble.h"
 #include "inc/npi_task.h"
 #endif // (defined(HCI_TL_FULL) || defined(PTM_MODE))
-#endif // CC33xx
+#endif //CONFIG_ZEPHYR
 
 #ifndef CONTROLLER_ONLY
 #include "gap_internal.h"
@@ -472,6 +463,10 @@ static hciEntry_t hciTranslationTable[] =
   HCI_TRANSLATION_ENTRY(HCI_LE_READ_BUFFER_SIZE,                       IDX_CAST IDX_HCI_LE_ReadBufSizeCmd,                        HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_LE_SET_RANDOM_ADDR,                        IDX_CAST IDX_HCI_LE_SetRandomAddressCmd,                   HU8PTR,  HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
 
+#ifndef CONTROLLER_ONLY
+  HCI_TRANSLATION_ENTRY(HCI_LE_SET_HOST_FEATURE,                       IDX_CAST IDX_HCI_LE_SetHostFeature,                        HU8,     HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+#endif // CONTROLLER_ONLY
+
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
   HCI_TRANSLATION_ENTRY(HCI_LE_READ_ADV_CHANNEL_TX_POWER,              IDX_CAST IDX_HCI_LE_ReadAdvChanTxPowerCmd,                 HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
 #endif // (defined(CTRL_CONFIG) && ((CTRL_CONFIG & ADV_NCONN_CFG) || (CTRL_CONFIG & ADV_CONN_CFG)))
@@ -607,7 +602,6 @@ static hciEntry_t hciTranslationTable[] =
 #endif
 
   // Vendor Specific HCI Commands
-  HCI_TRANSLATION_ENTRY(HCI_EXT_SET_TX_POWER,                          IDX_CAST IDX_HCI_EXT_SetTxPowerCmd,                        HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_TX_POWER_DBM,                      IDX_CAST IDX_HCI_EXT_SetTxPowerDbmCmd,                     HU8,     HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_BUILD_REVISION,                        IDX_CAST IDX_HCI_EXT_BuildRevisionCmd,                     HU8,     HU16,    HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_DELAY_SLEEP,                           IDX_CAST IDX_HCI_EXT_DelaySleepCmd,                        HU16,    HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
@@ -623,7 +617,6 @@ static hciEntry_t hciTranslationTable[] =
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_BDADDR,                            IDX_CAST IDX_HCI_EXT_SetBDADDRCmd,                         HAB,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_RESET_SYSTEM,                          IDX_CAST IDX_HCI_EXT_ResetSystemCmd,                       HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_LOCAL_SUPPORTED_FEATURES,          IDX_CAST IDX_HCI_EXT_SetLocalSupportedFeaturesCmd,         H8B,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
-  HCI_TRANSLATION_ENTRY(HCI_EXT_SET_MAX_DTM_TX_POWER,                  IDX_CAST IDX_HCI_EXT_SetMaxDtmTxPowerCmd,                  HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_MAX_DTM_TX_POWER_DBM,              IDX_CAST IDX_HCI_EXT_SetMaxDtmTxPowerDbmCmd,               HU8,     HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_RX_GAIN,                           IDX_CAST IDX_HCI_EXT_SetRxGainCmd,                         HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_EXTEND_RF_RANGE,                       IDX_CAST IDX_HCI_EXT_ExtendRfRangeCmd,                     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
@@ -672,6 +665,20 @@ static hciEntry_t hciTranslationTable[] =
   HCI_TRANSLATION_ENTRY(HCI_EXT_GET_TX_STATS,                          IDX_CAST IDX_HCI_EXT_GetTxStatisticsCmd,                   HU16,    HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_GET_COEX_STATS,                        IDX_CAST IDX_HCI_EXT_GetCoexStatisticsCmd,                 HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
 
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES,   IDX_CAST IDX_HCI_LE_CS_ReadLocalSupportedCapabilities,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES,  IDX_CAST IDX_HCI_LE_CS_ReadRemoteSupportedCapabilities,    HU16,    HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_CREATE_CONFIG,                       IDX_CAST IDX_HCI_LE_CS_CreateConfig,                       HU16,    HU8,     HU8,     HU8PTR,  HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_REMOVE_CONFIG,                       IDX_CAST IDX_HCI_LE_CS_RemoveConfig,                       HU16,    HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_SECURITY_ENABLE,                     IDX_CAST IDX_HCI_LE_CS_SecurityEnable,                     HU16,    HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_SET_DEFAULT_SETTINGS,                IDX_CAST IDX_HCI_LE_CS_SetDefaultSettings,                 HU16,    HU8,     HU8,     HU8,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_READ_LOCAL_FAE_TABLE,                IDX_CAST IDX_HCI_LE_CS_ReadLocalFAETable,                  HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_READ_REMOTE_FAE_TABLE,               IDX_CAST IDX_HCI_LE_CS_ReadRemoteFAETable,                 HU16,    HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_WRITE_REMOTE_FAE_TABLE,              IDX_CAST IDX_HCI_LE_CS_WriteRemoteFAETable,                HU16,    HU8PTR,  HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_SET_CHANNEL_CLASSIFICATION,          IDX_CAST IDX_HCI_LE_CS_SetChannelClassification,           HU8PTR,  HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_SET_PROCEDURE_PARAMS,                IDX_CAST IDX_HCI_LE_CS_SetProcedureParameters,             HU16,    HU8,  HU8PTR,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_PROCEDURE_ENABLE,                    IDX_CAST IDX_HCI_LE_CS_ProcedureEnable,                    HU16,    HU8,     HU8,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_TEST,                                IDX_CAST IDX_HCI_LE_CS_Test,                               HU8PTR,  HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
+  HCI_TRANSLATION_ENTRY(HCI_LE_CS_TEST_END,                            IDX_CAST IDX_HCI_LE_CS_TestEnd,                            HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   // LL Test Mode
 #ifdef LL_TEST_MODE
   HCI_TRANSLATION_ENTRY(HCI_EXT_LL_TEST_MODE,                          IDX_CAST IDX_HCI_EXT_LLTestModeCmd,                        HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP)
@@ -702,9 +709,7 @@ static hciEntry_t hciTranslationTable[] =
   // LE Commands - General
   HCI_TRANSLATION_ENTRY(HCI_READ_BDADDR,                               IDX_CAST IDX_HCI_ReadBDADDRCmd,                            HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_BDADDR,                            IDX_CAST IDX_HCI_EXT_SetBDADDRCmd,                         HAB,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
-  HCI_TRANSLATION_ENTRY(HCI_EXT_SET_TX_POWER,                          IDX_CAST IDX_HCI_EXT_SetTxPowerCmd,                        HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_TX_POWER_DBM,                      IDX_CAST IDX_HCI_EXT_SetTxPowerDbmCmd,                     HU8,     HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
-  HCI_TRANSLATION_ENTRY(HCI_EXT_SET_MAX_DTM_TX_POWER,                  IDX_CAST IDX_HCI_EXT_SetMaxDtmTxPowerCmd,                  HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_SET_MAX_DTM_TX_POWER_DBM,              IDX_CAST IDX_HCI_EXT_SetMaxDtmTxPowerDbmCmd,               HU8,     HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_EXTEND_RF_RANGE,                       IDX_CAST IDX_HCI_EXT_ExtendRfRangeCmd,                     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
   HCI_TRANSLATION_ENTRY(HCI_EXT_HALT_DURING_RF,                        IDX_CAST IDX_HCI_EXT_HaltDuringRfCmd,                      HU8,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP,     HNP),
@@ -727,7 +732,7 @@ static hciEntry_t hciTranslationTable[] = { 0 };
 #endif // defined (PTM_MODE) or defined (HCI_TL_FULL)
 
 // Callback for overriding contents of serial buffer.
-HCI_TL_ParameterOverwriteCB_t HCI_TL_ParameterOverwriteCB = NULL;
+static HCI_TL_ParameterOverwriteCB_t HCI_TL_ParameterOverwriteCB = NULL;
 
 #if (defined(HCI_TL_FULL) || defined(PTM_MODE))  && defined(HOST_CONFIG)
 static ICall_EntityID appTaskID;
@@ -751,7 +756,7 @@ static HCI_TL_CommandStatusCB_t HCI_TL_CommandStatusCB = NULL;
 static HCI_TL_CalllbackEvtProcessCB_t HCI_TL_CallbackEvtProcessCB = NULL;
 
 #ifdef LEGACY_CMD
-// Store the type of commmand that are used.
+// Store the type of command that are used.
 // Once it is set, it can only be change by reset HCI (HCI_RESET command)
 uint8_t legacyCmdStatusAdv = HCI_LEGACY_CMD_STATUS_UNDEFINED;
 uint8_t legacyCmdStatusScan = HCI_LEGACY_CMD_STATUS_UNDEFINED;
@@ -768,34 +773,36 @@ uint8_t legacyCmdStatusScan = HCI_LEGACY_CMD_STATUS_UNDEFINED;
 //                                         skip.
 uint8 isDataLenLessThanMaxDataSize( hci_tl_advSet_t *pAdvSet )
 {
-    uint8 arrayIntMax[4];
+    uint32 intMax;
+    uint16 eventprops;
 
-    // adv set exists
+    // Check that adv set exists
     if( pAdvSet == NULL )
     {
       return TRUE;
     }
 
-    arrayIntMax[3] = 0;
-    osal_memcpy( &arrayIntMax, &pAdvSet->advCmdParams.primIntMax, 3);
+    // Construct integer variables that contains max interval and event properties
+    intMax = BUILD_UINT32(pAdvSet->advCmdParams.primIntMax[0], pAdvSet->advCmdParams.primIntMax[1], pAdvSet->advCmdParams.primIntMax[2], 0);
+    eventprops = BUILD_UINT16(pAdvSet->advCmdParams.eventProps[0], pAdvSet->advCmdParams.eventProps[1]);
 
-    //TO_DO:
-    //Need to check the rate of sending data
-    // with consider the parametes: max_interval,
+    // TO_DO:
+    // Need to check the rate of sending data
+    // with consider the parameter: max_interval,
     //                              properties,
     //                              primary_PHY,
     //                              primary_PHY,
     //                              skip.
-    // to check if the device can advertise the data.
+    // To check if the device can advertise the data.
 
-    //For now this function check only specific case that required
+    // For now this function check only specific case that required
     // in the spec (test: HCI/DDI/BI-62-C), only to pass hci qual.
 
-    if ( ( pAdvSet->advCmdData.dataLen >= 0xFB )                &&   // dataLen >=251
-         ( *(uint16*)(pAdvSet->advCmdParams.eventProps) == 0 )  &&   // properties = 0
-         ( pAdvSet->advCmdParams.secMaxSkip == 0 )              &&   // skip = 0
-         ( pAdvSet->advCmdParams.primPhy == AE_PHY_CODED )      &&   // primary_PHY = CODED
-         ( *(int*)arrayIntMax == 0x20 )                              // max_interval = 32(0x20)
+    if ( ( pAdvSet->advCmdData.dataLen >= 0xFB )              &&   // dataLen >=251
+         ( eventprops == 0 )                                  &&   // properties = 0
+         ( pAdvSet->advCmdParams.secMaxSkip == 0 )            &&   // skip = 0
+         ( pAdvSet->advCmdParams.primPhy == AE_PHY_CODED )    &&   // primary_PHY = CODED
+         ( intMax == 0x20 )                                        // max_interval = 32(0x20)
        )
     {
       return FALSE;
@@ -928,17 +935,12 @@ static uint8_t*  hci_tl_createPendingData(uint8_t *pNewData, uint16_t len, uint8
 static void      hci_tl_managedAEdata(uint16_t mode, aeSetDataCmd_t * pCmddata, uint8_t *pData);
 static uint8_t*  hci_tl_appendPendingData(uint8_t *pStorage, uint16_t lenStorage,
                                           uint8_t* pData, int16_t len);
-static void      hci_tl_aeAdvCback(uint8_t event, void *pData);
-static void      hci_tl_aeAdvCbackSendEvent(uint8_t eventId, uint8_t  handle);
-static void      hci_tl_aeAdvCbackProcess(hci_tl_AdvEvtCallback_t*  evtCallback);
 static uint8     hci_tl_isValidRandomAddressForAdv (hci_tl_advSet_t *pAdvSet);
 #endif // ADV_NCONN_CFG || CTRL_CONFIG & ADV_CONN_CFG
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & SCAN_CFG)
-static void      hci_tl_aeScanCback(uint8_t event, aeExtAdvRptEvt_t *extAdvRpt);
 static void      hci_tl_setDefaultScanParams (aeSetScanParamCmd_t *pcmdScanParams);
-static void      hci_tl_aeScanEventCallbackProcess(hci_tl_ScanEvtCallback_t *extAdvRpt);
-static uint8     hci_tl_isValidRandomAddressForScan (aeSetScanParamCmd_t hci_tl_cmdScanParams);
+static uint8     hci_tl_isValidRandomAddressForScan (aeSetScanParamCmd_t *cmdScanParams);
 #ifdef LEGACY_CMD
 static void      hci_tl_legacyScanCback(uint8_t event, aeExtAdvRptEvt_t *extAdvRpt);
 static void      hci_tl_legacyScanEventCallbackProcess(hci_tl_ScanEvtCallback_t *extAdvRpt);
@@ -1055,7 +1057,7 @@ void HCI_TL_sendMemoryReport(uint8_t reportMask)
 {
     // Unsupported Event for now...
     uint8_t data[30];
-    uint8_t len;
+    uint8_t len = 0;
     //Gather Memory Stat Buffer
     data[0] = LO_UINT16(HCI_EXT_UTIL_MEM_STATS_EVENT);
     data[1] = HI_UINT16(HCI_EXT_UTIL_MEM_STATS_EVENT);
@@ -1077,7 +1079,6 @@ void HCI_TL_sendMemoryReport(uint8_t reportMask)
  */
 static void HCI_TL_getMemStats(uint8_t memStatCmd, uint8_t* rspBuf, uint8_t *len)
 {
-#ifndef CC23X0  /* Currently not supported for CC23X0 */
     uint8_t rspIndex = 0;
 
     rspBuf[rspIndex++] = 0;
@@ -1105,68 +1106,7 @@ static void HCI_TL_getMemStats(uint8_t memStatCmd, uint8_t* rspBuf, uint8_t *len
         rspBuf[rspIndex++] = BREAK_UINT32(stats.largestFreeSize, 2);
         rspBuf[rspIndex++] = BREAK_UINT32(stats.largestFreeSize, 3);
     }
-// heap stats for Osprey are removed
-#ifdef HEAPMGR_METRICS
-    if (memStatCmd & GET_HEAP_STATS_FULL)
-    {
-        rspBuf[0] |= GET_HEAP_STATS_FULL;
-        rspBuf[rspIndex++]   = GET_HEAP_STATS_FULL;
-        // return number of memory allocation failure
-        extern uint16_t heapmgrMemFail;
-        rspBuf[rspIndex++] = BREAK_UINT32(heapmgrMemFail, 0);
-        rspBuf[rspIndex++] = BREAK_UINT32(heapmgrMemFail, 1);
-        // return current number of heap allocated
-        extern uint32_t heapmgrMemAlo;
-        rspBuf[rspIndex++] = BREAK_UINT32(heapmgrMemAlo, 0);
-        rspBuf[rspIndex++] = BREAK_UINT32(heapmgrMemAlo, 1);
-        rspBuf[rspIndex++] = BREAK_UINT32(heapmgrMemAlo, 2);
-        rspBuf[rspIndex++] = BREAK_UINT32(heapmgrMemAlo, 3);
-
-        // Return max allocated heap size.
-        extern uint32_t heapmgrMemMax;
-        rspBuf[rspIndex++]  = BREAK_UINT32(heapmgrMemMax, 0);
-        rspBuf[rspIndex++]  = BREAK_UINT32(heapmgrMemMax, 1);
-        rspBuf[rspIndex++]  = BREAK_UINT32(heapmgrMemMax, 2);
-        rspBuf[rspIndex++] =  BREAK_UINT32(heapmgrMemMax, 3);
-    }
-    if (memStatCmd & GET_THREAD_STATS)
-    {
-        Task_Stat stats;
-        uint8_t nbThoffset;
-        Task_Handle tempHandle;
-        tempHandle = Task_Object_first();
-
-        rspBuf[0] |= GET_THREAD_STATS;
-        rspBuf[rspIndex++]   = GET_THREAD_STATS;
-        // Number of Thread will be contains in the second  byte, set it to 0
-        nbThoffset = rspIndex;
-        rspBuf[rspIndex++] = 0;
-
-        do
-        {
-            // no more static thread, continue with dynamic thread.
-            if ((tempHandle) && (rspIndex <= ( MAX_RSP_BUF - 8)))
-            {
-                Task_stat(tempHandle, &stats);
-                rspBuf[rspIndex++] = stats.priority;
-                rspBuf[rspIndex++] = BREAK_UINT32((uint32_t)tempHandle, 0);
-                rspBuf[rspIndex++] = BREAK_UINT32((uint32_t)tempHandle, 1);
-                rspBuf[rspIndex++] = BREAK_UINT32(stats.used, 0);
-                rspBuf[rspIndex++] = BREAK_UINT32(stats.used, 1);
-                rspBuf[rspIndex++] = BREAK_UINT32(stats.stackSize, 0);
-                rspBuf[rspIndex++] = BREAK_UINT32(stats.stackSize, 1);
-                rspBuf[nbThoffset]++;
-                tempHandle = Task_Object_next(tempHandle);
-            }
-            else
-            {
-                break;
-            }
-        }while(1);
-    }
-#endif/* HEAPMGR_METRICS */
     *len = rspIndex;
-#endif/* CC23X0 */
 }
 #endif /* (defined(HCI_TL_FULL) || defined(PTM_MODE)) */
 
@@ -1213,18 +1153,18 @@ uint8_t HCI_TL_compareAppLastOpcodeSent(uint16_t opcode)
  * @fn      HCI_TL_SendToStack
  *
  * @brief   Translate serial buffer into it's corresponding function and
- *          parameterize the arguments to send to the Stack.
+ *          parameterize the arguments to send to the Stack (Host or controller).
  *
- * @param   msgToParse - pointer to a serialized HCI command or data packet.
+ * @param   pHciMsg - pointer to a serialized HCI command (hciPacket_t) or data packet (hciDataPacket_t) message structure.
  *
  * @return  none.
  */
-void HCI_TL_SendToStack(uint8_t *msgToParse)
+void HCI_TL_SendToStack(uint8_t *pHciMsg)
 {
 #if (defined(HCI_TL_FULL) || defined(PTM_MODE))
   hciPacket_t *pMsg;
 
-  pMsg = (hciPacket_t *)msgToParse;
+  pMsg = (hciPacket_t *)pHciMsg;
 
   // if there is a host configuration
 #ifdef HOST_CONFIG
@@ -1244,15 +1184,161 @@ void HCI_TL_SendToStack(uint8_t *msgToParse)
   }
   else if (pMsg->hdr.event == HCI_HOST_TO_CTRL_DATA_EVENT)
   {
-    HCI_TL_SendDataPkt(msgToParse);
+    HCI_TL_SendDataPkt(pHciMsg);
   }
-#ifdef CC33xx
-  else if (pMsg->hdr.event == HCI_EXT_CMD_EVENT)
-  {
-    GTRACE(GRP_BLE_DBG,"HCI_TL_SendToStack: Received unsupported HCI_EXT_CMD_EVENT");
-  }
-#endif /* CC33xx */
 #endif /* (defined(HCI_TL_FULL) || defined(PTM_MODE)) */
+}
+
+/*********************************************************************
+ * @fn      HCI_HostToController
+ *
+ * @brief   Translate HCI raw packet buffer into it's corresponding function and
+ *          parameterize the arguments to send to the controller only.
+ *
+ * @param   pHciPkt - pointer to a raw buffer of HCI command or data packet.
+ * @param   pktLen - the hci packet length
+ *
+ * @return  0 for success, negative number for error.
+ */
+int HCI_HostToController(uint8_t *pHciPkt, uint16_t pktLen)
+{
+    int status = HCI_STATUS_ERROR_OUT_OF_MEMORY;
+    uint8 pktType = 0;
+
+    // Validate packet buffer
+    if (NULL != pHciPkt)
+    {
+      // Get packet type
+      pktType = pHciPkt[0];
+
+      // Command packet type
+      if ((pktType == HCI_CMD_PACKET) || (pktType == HCI_EXTENDED_CMD_PACKET))
+      {
+        hciPacket_t *pCmdPkt = NULL;
+        uint8 cmdPktHdrLen = 0;
+        uint16 cmdPktParamLen = 0;
+        uint16 cmdPktTotalLen = 0;
+
+        // Parse the packet len
+        if (pktType == HCI_CMD_PACKET)
+        {
+          cmdPktHdrLen = HCI_CMD_MIN_LENGTH;
+          cmdPktParamLen = pHciPkt[3];
+        }
+        else // Extended command packet
+        {
+          cmdPktHdrLen = HCI_CMD_MIN_LENGTH + 1;
+          cmdPktParamLen = BUILD_UINT16(pHciPkt[3], pHciPkt[4]);
+        }
+
+        // Set command packet total length
+        cmdPktTotalLen = cmdPktHdrLen + cmdPktParamLen;
+
+        // Validate the packet length
+        if (cmdPktTotalLen == pktLen)
+        {
+          // Allocate memory for the command packet and its header + params
+          pCmdPkt = (hciPacket_t *) ICall_allocMsg(sizeof(hciPacket_t) + cmdPktTotalLen);
+
+          if(pCmdPkt)
+          {
+            // Set header specific fields
+            pCmdPkt->hdr.status = 0xFF;
+
+            // This is a normal host-to-controller event
+            pCmdPkt->hdr.event = HCI_HOST_TO_CTRL_CMD_EVENT;
+
+            // Set pData to the first byte after the hciPacket osal header
+            pCmdPkt->pData = (uint8_t *)pCmdPkt + sizeof(hciPacket_t);
+
+            // Copy the raw hci data
+            memcpy(pCmdPkt->pData, pHciPkt, cmdPktTotalLen);
+
+#if (defined(HCI_TL_FULL) || defined(PTM_MODE))
+            // Handoff the packet to the controller
+            HCI_TL_SendCommandPkt(pCmdPkt);
+#endif
+            // Free the allocated packet and its pData
+            ICall_freeMsg(pCmdPkt);
+
+            // Set the status to sucess
+            status = HCI_STATUS_SUCCESS;
+          }
+        }
+        else
+        {
+          // Wrong HCI packet length
+          status = HCI_STATUS_ERROR_INVALID_PACKET_LENGTH;
+        }
+      }
+      // ACL data packet type
+      else if (pktType == HCI_ACL_DATA_PACKET)
+      {
+        hciDataPacket_t *pDataPkt = NULL;
+        uint16 dataPktHandle = 0;
+        uint16 dataPktLen = 0;
+
+        // Parse the data packet connection handle and flags
+        dataPktHandle = BUILD_UINT16(pHciPkt[1], pHciPkt[2]);
+
+        // Parse the data packet length
+        dataPktLen = BUILD_UINT16(pHciPkt[3], pHciPkt[4]) + HCI_DATA_MIN_LENGTH;
+
+        // Validate the packet length
+        if (dataPktLen == pktLen)
+        {
+          // Allocate memory for the data pakets
+          pDataPkt = (hciDataPacket_t *) ICall_allocMsg(sizeof(hciDataPacket_t) + dataPktLen);
+
+          if (pDataPkt)
+          {
+            // Set packet header
+            pDataPkt->hdr.event = HCI_HOST_TO_CTRL_DATA_EVENT;
+            pDataPkt->hdr.status = 0xFF;
+            // Set packet type
+            pDataPkt->pktType = pktType;
+            // Mask out PB and BC Flags
+            pDataPkt->connHandle = dataPktHandle & 0x0FFF;
+            // Isolate PB Flag
+            pDataPkt->pbFlag = (dataPktHandle & 0x3000) >> 12;
+            // Set packet length
+            pDataPkt->pktLen = dataPktLen;
+
+            // Set pData to the first byte after the hciDataPacket_t osal header and packet attributes
+            pDataPkt->pData = (uint8_t *)pDataPkt + sizeof(hciDataPacket_t);
+
+            // Copy the payload portion to pData
+            memcpy(pDataPkt->pData, pHciPkt, dataPktLen);
+
+            // Handoff the packet to the controller
+            HCI_TL_SendDataPkt((uint8_t *)pDataPkt);
+
+            // Free the allocated packet and its pData
+            ICall_freeMsg(pDataPkt);
+
+            // Set the status to sucess
+            status = HCI_STATUS_SUCCESS;
+          }
+        }
+        else
+        {
+          // Wrong HCI packet length
+          status = HCI_STATUS_ERROR_INVALID_PACKET_LENGTH;
+        }
+      }
+      else
+      {
+        // Wrong HCI packet type
+        status = HCI_STATUS_ERROR_INVALID_PACKET_TYPE;
+      }
+    }
+    else
+    {
+      // Invalid HCI packet pointer
+      status = HCI_STATUS_ERROR_INVALID_PACKET_BUFFER;
+    }
+
+    return status;
 }
 
 #if (defined(HCI_TL_FULL) || defined(PTM_MODE))
@@ -1281,13 +1367,13 @@ static void HCI_TL_SendCommandPkt(hciPacket_t *pMsg)
 
   // retrieve pointer to parameter
   if (packetType == HCI_EXTENDED_CMD_PACKET)
-   {
-       param = &pMsg->pData[5];
-   }
-   else
-   {
-       param = &pMsg->pData[4];
-   }
+  {
+    param = &pMsg->pData[5];
+  }
+  else
+  {
+    param = &pMsg->pData[4];
+  }
 
   // If this is a command which the embedded "Host" must modify the parameters
   // to handle properly (e.g. taskEvent, taskID), it is handled here.
@@ -1455,9 +1541,20 @@ static void HCI_TL_SendCommandPkt(hciPacket_t *pMsg)
 #ifndef HOST_CONFIG
   else
   {
-      // Some HCI command are not send directly to the Controller and are
-      // instead interpreted in the application
-      processExtraHCICmd(cmdOpCode, param);
+    if(cmdOpCode == HCI_EXT_HOST_TO_CONTROLLER)
+    {
+      // This is a testing hook to activate the direct HCI_HostToController API.
+      // In order to activate it, The external host should create a raw
+      // HCI buffer with the HCI_EXT_HOST_TO_CONTROLLER prefix set in the
+      // first two bytes.
+      uint16 hciPktLen = BUILD_UINT16(param[0], param[1]);
+      uint8* pHciPkt = param + 2;
+      HCI_HostToController(pHciPkt, hciPktLen);
+    }
+    else
+    {
+        processExtraHCICmd(cmdOpCode, param);
+    }
   }
 #endif //!HOST_CONFIG
 }
@@ -1466,7 +1563,7 @@ static void HCI_TL_SendCommandPkt(hciPacket_t *pMsg)
 /*********************************************************************
  * @fn      checkLegacyHCICmdMode
  *
- * @brief   Check comand opcode and return operation mode.
+ * @brief   Check command opcode and return operation mode.
  *
  * @param   opcode - command opcode
  *
@@ -1497,7 +1594,7 @@ static uint8_t checkLegacyHCICmdMode(uint16_t opcode)
 /*********************************************************************
  * @fn      checkLegacyHCICmdStatus
  *
- * @brief   Check and set the legacy comand operation mode.
+ * @brief   Check and set the legacy command operation mode.
  *          if the mode is already set to a different mode, return failure (1)
  *          if the mode is not set, set it and return success (0)
  *          if the same mode is already set, return success (0)
@@ -1920,7 +2017,7 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
                 LL_AE_RegCBack(LL_CBACK_EXT_SCAN_REQ_RECEIVED, (void *)NULL);
                 LL_AE_RegCBack(LL_CBACK_ADV_SET_TERMINATED, (void *)NULL);
                 LL_AE_RegCBack(LL_CBACK_EXT_ADV_DATA_TRUNCATED, (void *)NULL);
-                LL_AE_RegCBack(LL_CBACK_OUT_OF_MEMORY, (void *)hci_tl_aeAdvCback);
+                LL_AE_RegCBack(LL_CBACK_OUT_OF_MEMORY, (void *)MAP_HCI_AeAdvCback);
 
                 pAdvSet->enableCmdParams.enable    = param[0];
                 pAdvSet->enableCmdParams.numSets   = 1;
@@ -2033,7 +2130,7 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
 
             // Check if HCI_LE_SetRandomAddressCmd() function not called before
             // while the own address type is random.
-            if ( hci_tl_isValidRandomAddressForScan(hci_tl_cmdScanParams) == FALSE )
+            if ( hci_tl_isValidRandomAddressForScan(&hci_tl_cmdScanParams) == FALSE )
             {
                 status = LL_STATUS_ERROR_BAD_PARAMETER;
                 HCI_CommandCompleteEvent(cmdOpCode,
@@ -2164,11 +2261,14 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
 #ifndef CONTROLLER_ONLY
                 pAdvSet->advCmdParams.zeroDelay = FALSE;
 #endif
+
                 // Check if data len is smaller from the max data len,
                 // max data len configure as function of:  max_interval,
                 //                                         properties,
                 //                                         primary_PHY,
                 //                                         skip.
+                // For now this part checks only specific case that required
+                // in the spec (test: HCI/DDI/BI-62-C), only to pass hci qual.
                 if ( isDataLenLessThanMaxDataSize( pAdvSet ) == FALSE )
                 {
                   rsp[0] = LL_STATUS_ERROR_PACKET_TOO_LONG;
@@ -2266,14 +2366,14 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
 
                     if(pAdvSet)
                     {
-                        LL_AE_RegCBack(LL_CBACK_ADV_START_AFTER_ENABLE, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_ADV_END_AFTER_DISABLE, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_ADV_START, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_ADV_END, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_EXT_SCAN_REQ_RECEIVED, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_ADV_SET_TERMINATED, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_EXT_ADV_DATA_TRUNCATED, (void *)hci_tl_aeAdvCback);
-                        LL_AE_RegCBack(LL_CBACK_OUT_OF_MEMORY, (void *)hci_tl_aeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_ADV_START_AFTER_ENABLE, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_ADV_END_AFTER_DISABLE, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_ADV_START, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_ADV_END, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_EXT_SCAN_REQ_RECEIVED, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_ADV_SET_TERMINATED, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_EXT_ADV_DATA_TRUNCATED, (void *)MAP_HCI_AeAdvCback);
+                        LL_AE_RegCBack(LL_CBACK_OUT_OF_MEMORY, (void *)MAP_HCI_AeAdvCback);
 
                         // Set command parameters
                         pAdvSet->enableCmdParams.enable = param[0];
@@ -2572,22 +2672,22 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
             }
 
             // Need to register the callback Function.
-            LL_AE_RegCBack(LL_CBACK_EXT_ADV_REPORT,        (void *)hci_tl_aeScanCback);
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_TIMEOUT,      (void *)hci_tl_aeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_ADV_REPORT,        (void *)MAP_HCI_AeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_TIMEOUT,      (void *)MAP_HCI_AeScanCback);
 #ifdef ENABLE_SCAN_CALLBACKS
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_START,        (void *)hci_tl_aeScanCback);
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_END,          (void *)hci_tl_aeScanCback);
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_WINDOW_END,   (void *)hci_tl_aeScanCback);
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_INTERVAL_END, (void *)hci_tl_aeScanCback);
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_DURATION_END, (void *)hci_tl_aeScanCback);
-            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_PERIOD_END,   (void *)hci_tl_aeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_START,        (void *)MAP_HCI_AeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_END,          (void *)MAP_HCI_AeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_WINDOW_END,   (void *)MAP_HCI_AeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_INTERVAL_END, (void *)MAP_HCI_AeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_DURATION_END, (void *)MAP_HCI_AeScanCback);
+            LL_AE_RegCBack(LL_CBACK_EXT_SCAN_PERIOD_END,   (void *)MAP_HCI_AeScanCback);
 #endif // ENABLE_SCAN_CALLBACKS
 
             hci_tl_cmdScanEnable = *((aeEnableScanCmd_t *)param);
 
             // Check if HCI_LE_SetRandomAddressCmd() function not called before
             // while the own address type is random.
-            if ( hci_tl_isValidRandomAddressForScan(hci_tl_cmdScanParams) == FALSE )
+            if ( hci_tl_isValidRandomAddressForScan(&hci_tl_cmdScanParams) == FALSE )
             {
                 status = LL_STATUS_ERROR_BAD_PARAMETER;
                 HCI_CommandCompleteEvent(cmdOpCode,
@@ -2711,291 +2811,6 @@ static void processExtraHCICmd(uint16_t cmdOpCode, uint8_t *param)
 }
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
-/*********************************************************************
- * @fn      hci_tl_aeAdvCback
- *
- * @brief   Callback for the advertising event send by LL.
- *          This function will send an event to the application so that process
- *          is execute outside of the SWI context.
- *
- * @param   event  - event trigging the callback.
- * @param   pData  - Pointer to the data that comes with the event (this is an union).
- *
- * @return  none
-*/
-static void hci_tl_aeAdvCback(uint8_t event, void *pData)
-{
-  if (HCI_TL_CallbackEvtProcessCB)
-  {
-    hci_tl_AdvEvtCallback_t * evtCallback;
-    evtCallback = (hci_tl_AdvEvtCallback_t *) ICall_malloc(sizeof(hci_tl_AdvEvtCallback_t));
-    if(evtCallback)
-    {
-      switch(event)
-      {
-        case LL_CBACK_ADV_SET_TERMINATED:
-        case LL_CBACK_EXT_SCAN_REQ_RECEIVED:
-        {
-          evtCallback->data.pData = pData;
-          break;
-        }
-        case LL_CBACK_ADV_START_AFTER_ENABLE:
-        case LL_CBACK_ADV_END_AFTER_DISABLE:
-        case LL_CBACK_ADV_START:
-        case LL_CBACK_ADV_END:
-        {
-          uint8_t handle = (uint8_t) *((uint8_t *) pData);
-          evtCallback->data.handle = handle;
-          break;
-        }
-        case LL_CBACK_EXT_ADV_DATA_TRUNCATED:
-        {
-          aeAdvTrucData_t* pAllocData = (aeAdvTrucData_t *) ICall_malloc(sizeof(aeAdvTrucData_t));
-          if(pAllocData)
-          {
-            aeAdvTrucData_t* pDataTrunc  = (aeAdvTrucData_t*) pData;
-            pAllocData->handle           = pDataTrunc->handle;
-            pAllocData->advDataLen       = pDataTrunc->advDataLen;
-            pAllocData->availAdvDataLen  = pDataTrunc->availAdvDataLen;
-            evtCallback->data.pData      = pAllocData;
-          }
-          else
-          {
-            uint8_t handle = (uint8_t) *((uint8_t *) pData);
-            evtCallback->data.handle = handle;
-          }
-          break;
-        }
-        default:
-        {
-          evtCallback->data.pData = NULL;
-          break;
-        }
-      }
-      evtCallback->event = event;
-      if(!HCI_TL_CallbackEvtProcessCB( (void*) evtCallback, (void*) hci_tl_aeAdvCbackProcess))
-      {
-        if ((event == LL_CBACK_ADV_SET_TERMINATED) || (event == LL_CBACK_EXT_SCAN_REQ_RECEIVED))
-        {
-          if (pData)
-          {
-            ICall_free(pData);
-          }
-        }
-        ICall_free(evtCallback);
-        HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_LE_EVENT_CODE);
-      }
-    }
-    else
-    {
-      if ((event == LL_CBACK_ADV_SET_TERMINATED) || (event == LL_CBACK_EXT_SCAN_REQ_RECEIVED))
-      {
-        if (pData)
-        {
-          ICall_free(pData);
-        }
-      }
-      HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_LE_EVENT_CODE);
-    }
-  }
-}
-
-/*********************************************************************
- * @fn      hci_tl_aeAdvCbackProcess
- *
- * @brief   Callback register with the application to handle LL callback event.
- *          Manage the following Event:
- *
- * @param   evtCallback - strucutre containing the parameter of the callback.
- *
- * @return  none
- */
-void hci_tl_aeAdvCbackProcess(hci_tl_AdvEvtCallback_t* evtCallback)
-{
-  npiPkt_t *msg;
-
-  if(evtCallback)
-  {
-    uint8_t event = evtCallback->event;
-    switch(event)
-    {
-      case LL_CBACK_ADV_SET_TERMINATED:
-      {
-        aeAdvSetTerm_t* pEvtData = (aeAdvSetTerm_t* )evtCallback->data.pData;
-
-        if ((pEvtData != NULL) && (pEvtData->subCode == HCI_BLE_ADV_SET_TERMINATED_EVENT))
-        {
-          uint8_t totalLength = sizeof(npiPkt_t) + HCI_EVENT_MIN_LENGTH + sizeof(aeAdvSetTerm_t);
-          msg = (npiPkt_t *)ICall_allocMsg(totalLength);
-          if(msg)
-          {
-            //Complete the packet and send it
-            // Convert the connection handle in case mask was set
-            // This is used to support power management in cc33xx, otherwise no change to the connection handle value
-            pEvtData->connHandle = CONN_HANDLE_CTRL_TO_HOST_CONVERT(pEvtData->connHandle);
-
-            // Icall message event, status, and pointer to packet
-            msg->hdr.event  = HCI_EVENT_PACKET;
-            msg->hdr.status = 0xFF;
-
-            // fill in length and data pointer
-            msg->pktLen = HCI_EVENT_MIN_LENGTH + sizeof(aeAdvSetTerm_t);
-            msg->pData  = (uint8*)(msg+1);
-            // fill in BLE Complete Event data
-            msg->pData[0] = HCI_EVENT_PACKET;
-            msg->pData[1] = HCI_LE_EVENT_CODE;
-            msg->pData[2] = sizeof(aeAdvSetTerm_t);
-
-            // We keep all the information the same across report, only the data type will change.
-            msg->pData[3]  = pEvtData->subCode;
-            msg->pData[4]  = pEvtData->status;
-            msg->pData[5]  = pEvtData->handle;
-            msg->pData[6]  = LO_UINT16(pEvtData->connHandle);
-            msg->pData[7]  = HI_UINT16(pEvtData->connHandle);
-            msg->pData[8]  = pEvtData->numCompAdvEvts;
-            NPITask_sendToHost((uint8_t *)msg);
-          }
-          else
-          {
-            // Out of Ressource
-            HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_LE_EVENT_CODE);
-          }
-        }
-        else
-        {
-          HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE, HCI_BLE_EXTENDED_ADV_REPORT_EVENT);
-        }
-        //Free the message
-        if (pEvtData != NULL)
-        {
-          ICall_free(pEvtData);
-        }
-        break;
-      }
-      case LL_CBACK_EXT_SCAN_REQ_RECEIVED:
-      {
-        aeScanReqReceived_t *extAdvRpt;
-        extAdvRpt = (aeScanReqReceived_t*) evtCallback->data.pData;
-        if ((extAdvRpt != NULL) && (extAdvRpt->subCode == HCI_BLE_SCAN_REQUEST_RECEIVED_EVENT))
-        {
-          uint8_t totalLength = sizeof(npiPkt_t) + HCI_EVENT_MIN_LENGTH + sizeof(aeScanReqReceived_t) ;
-          msg = (npiPkt_t *)ICall_allocMsg(totalLength);
-          if(msg)
-          {
-            //Complete the packet and send it
-            // Icall message event, status, and pointer to packet
-            msg->hdr.event  = HCI_EVENT_PACKET;
-            msg->hdr.status = 0xFF;
-
-            // fill in length and data pointer
-            msg->pktLen = HCI_EVENT_MIN_LENGTH + sizeof(aeScanReqReceived_t);
-            msg->pData  = (uint8*)(msg+1);
-
-            // fill in BLE Complete Event data
-            msg->pData[0] = HCI_EVENT_PACKET;
-            msg->pData[1] = HCI_LE_EVENT_CODE;
-
-            // fill in the packet length
-            msg->pData[2] = sizeof(aeScanReqReceived_t);
-
-            // We keep all the information the same across report, only the data type will change.
-            msg->pData[3] = extAdvRpt->subCode;
-            msg->pData[4] = extAdvRpt->handle;
-            msg->pData[5] = extAdvRpt->scanAddrType;
-            memcpy(&msg->pData[6], extAdvRpt->scanAddr, B_ADDR_LEN);
-
-#ifdef QUAL_TEST
-            // according to specification the channel and rssi are not part of the event packet so exclude them
-            msg->pktLen -= 2;
-            msg->pData[2] -= 2;
-#else
-            msg->pData[12] = extAdvRpt->channel;
-            msg->pData[13] = extAdvRpt->rssi;
-#endif
-
-            NPITask_sendToHost((uint8_t *)msg);
-          }
-        }
-        else
-        {
-          HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE, HCI_BLE_EXTENDED_ADV_REPORT_EVENT);
-        }
-        //Free the message
-        if (extAdvRpt != NULL)
-        {
-          ICall_free(extAdvRpt);
-        }
-        break;
-      }
-      case LL_CBACK_ADV_START_AFTER_ENABLE:
-      case LL_CBACK_ADV_END_AFTER_DISABLE:
-      case LL_CBACK_ADV_START:
-      case LL_CBACK_ADV_END:
-      {
-        hci_tl_aeAdvCbackSendEvent(evtCallback->event, (uint8_t ) evtCallback->data.handle);
-        break;
-      }
-      case LL_CBACK_EXT_ADV_DATA_TRUNCATED:
-      {
-        aeAdvTrucData_t *extAdvTrunc;
-        extAdvTrunc = (aeAdvTrucData_t*) evtCallback->data.pData;
-        if (extAdvTrunc)
-        {
-          uint8_t data[7];
-
-          data[0] = LO_UINT16(HCI_EXT_LE_ADV_EVENT);
-          data[1] = HI_UINT16(HCI_EXT_LE_ADV_EVENT);
-          data[2] = LL_CBACK_EXT_ADV_DATA_TRUNCATED;
-          data[3] = extAdvTrunc->handle;
-          data[4] = LO_UINT16(extAdvTrunc->advDataLen);
-          data[5] = HI_UINT16(extAdvTrunc->advDataLen);
-          data[6] = extAdvTrunc->availAdvDataLen;
-
-          HCI_TL_SendVSEvent(data, sizeof(data));
-          ICall_free(extAdvTrunc);
-        }
-        else
-        {
-        hci_tl_aeAdvCbackSendEvent(evtCallback->event, (uint8_t ) evtCallback->data.handle);
-        }
-        break;
-      }
-      case LL_CBACK_OUT_OF_MEMORY:
-      {
-        HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_LE_EVENT_CODE);
-      }
-
-      default:
-      {
-        HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE, HCI_BLE_EXTENDED_ADV_REPORT_EVENT);
-      }
-
-    }
-    ICall_free(evtCallback);
-  }
-}
-
-/*********************************************************************
- * @fn      hci_tl_aeAdvCbackSendEvent
- *
- * @brief   Create and send vendor specific event for Advertising Extension.
- *
- * @param   pParams - data of the report.
- *
- * @return  none
- */
-static void hci_tl_aeAdvCbackSendEvent(uint8_t eventId, uint8_t  handle)
-{
-    uint8_t data[4];
-
-    data[0] = LO_UINT16(HCI_EXT_LE_ADV_EVENT);
-    data[1] = HI_UINT16(HCI_EXT_LE_ADV_EVENT);
-    data[2] = eventId;
-    data[3] = handle;
-
-    HCI_TL_SendVSEvent(data, sizeof(data));
-}
-
 /*******************************************************************************
  * check that if the own address type for ADV is random, HCI_LE_SetRandomAddressCmd was called.
  * If the own address Type is not random return TRUE.
@@ -3034,78 +2849,6 @@ static void hci_tl_setDefaultScanParams (aeSetScanParamCmd_t *pcmdScanParams)
     pcmdScanParams->extScanParam[0].scanType     = LL_SCAN_ACTIVE;
     pcmdScanParams->extScanParam[0].scanInterval = 800; //500ms
     pcmdScanParams->extScanParam[0].scanWindow   = 800; //500ms
-}
-/*********************************************************************
- * @fn      hci_tl_aeScanCback
- *
- * @brief   Callback for the advertising report send by LL.
- *          This callback is executed in SWI context
- *
- * @param   extAdvRpt - data of the Advertising report.
- *
- * @return  none
- */
-static void hci_tl_aeScanCback(uint8_t event, aeExtAdvRptEvt_t *extAdvRpt)
-{
-  if (HCI_TL_CallbackEvtProcessCB)
-  {
-    // Decide what to do with the pointer based on Event.
-    hci_tl_ScanEvtCallback_t * evtCallback;
-    evtCallback = (hci_tl_ScanEvtCallback_t *) ICall_malloc(sizeof(hci_tl_ScanEvtCallback_t));
-    if(evtCallback)
-    {
-      switch(event)
-      {
-        case LL_CBACK_EXT_ADV_REPORT:
-        {
-          evtCallback->pData = extAdvRpt;
-          break;
-        }
-        case LL_CBACK_EXT_SCAN_TIMEOUT:
-        case LL_CBACK_EXT_SCAN_START:
-        case LL_CBACK_EXT_SCAN_PERIOD_END:
-        case LL_CBACK_EXT_SCAN_END:
-        case LL_CBACK_EXT_SCAN_WINDOW_END:
-        case LL_CBACK_EXT_SCAN_INTERVAL_END:
-        case LL_CBACK_EXT_SCAN_DURATION_END:
-        default:
-        {
-          evtCallback->pData = NULL; // Value of handle
-          break;
-        }
-      }
-      evtCallback->event = event;
-      if(!HCI_TL_CallbackEvtProcessCB( (void*) evtCallback, (void*) hci_tl_aeScanEventCallbackProcess))
-      {
-        // Not enough Heap...
-        if ( event == LL_CBACK_EXT_ADV_REPORT )
-        {
-          if (extAdvRpt->pData)
-          {
-            ICall_free(extAdvRpt->pData);
-          }
-          ICall_free(extAdvRpt);
-        }
-        ICall_free(evtCallback);
-        HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_LE_EVENT_CODE);
-      }
-    }
-    else
-    {
-      if ( event == LL_CBACK_EXT_ADV_REPORT )
-      {
-        if(extAdvRpt)
-        {
-          if (extAdvRpt->pData)
-          {
-            ICall_free(extAdvRpt->pData);
-          }
-          ICall_free(extAdvRpt);
-        }
-      }
-      HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_LE_EVENT_CODE);
-    }
-  }
 }
 
 #ifdef LEGACY_CMD
@@ -3180,201 +2923,15 @@ static void hci_tl_legacyScanCback(uint8_t event, aeExtAdvRptEvt_t *extAdvRpt)
 }
 #endif // LEGACY_CMD
 
-/*********************************************************************
- * @fn      hci_tl_aeScanEventCallbackProcess
- *
- * @brief   Process the advertising report send by LL.
- *          This function will send the extended advertising report (per core spec).
- *
- * @param   extAdvRpt - data of the Advertising report.
- *
- * @return  none
- */
-static void hci_tl_aeScanEventCallbackProcess(hci_tl_ScanEvtCallback_t *evtCallback)
-{
-  uint8_t dataLen;
-  uint8_t remainingLength;
-  npiPkt_t *msg;
-  uint8_t totalLength = 0;
-
-  if (evtCallback != NULL)
-  {
-    uint8_t event = evtCallback->event;
-
-    switch(event)
-    {
-      case LL_CBACK_EXT_ADV_REPORT:
-      {
-          aeExtAdvRptEvt_t *extAdvRpt;
-          extAdvRpt = (aeExtAdvRptEvt_t*) evtCallback->pData;
-
-          // DEBUG CODE.
-          // Add a Filter on RSSI to avoid being flooded and doomed by
-          // all the crazy IOT devicein the world.
-          // Uncoment the following to only report Adv with RSSI high enough
-          // so they match teh board that are less than 1m from each other.
-          //if (extAdvRpt->rssi < -37)
-          //{
-          //  // Reject this report...
-          //
-          //}
-          //else
-          // END of Debug Code
-
-          if ((extAdvRpt != NULL) && (extAdvRpt->subCode == HCI_BLE_EXTENDED_ADV_REPORT_EVENT))
-          {
-            remainingLength = extAdvRpt->dataLen;
-            // Got the Report, Map it to the Extended Report Event...
-            do
-            {
-                //Check Length, if bigger than MAX_REPORT_DATA_SIZE, split it...
-                if (remainingLength > MAX_REPORT_DATA_SIZE)
-                {
-                    dataLen = MAX_REPORT_DATA_SIZE;
-                }
-                else
-                {
-                    dataLen = remainingLength;
-                }
-                totalLength = sizeof(npiPkt_t) + HCI_EVENT_MIN_LENGTH + HCI_AE_EVENT_LENGTH + dataLen;
-                msg = (npiPkt_t *)ICall_allocMsg(totalLength);
-                if(msg)
-                {
-                  //Complete the packet and send it
-                  // Icall message event, status, and pointer to packet
-                  msg->hdr.event  = HCI_EVENT_PACKET;
-                  msg->hdr.status = 0xFF;
-
-                  // fill in length and data pointer
-                  msg->pktLen = HCI_EVENT_MIN_LENGTH + HCI_AE_EVENT_LENGTH + dataLen;
-                  msg->pData  = (uint8*)(msg+1);
-                  // fill in BLE Complete Event data
-                  msg->pData[0] = HCI_EVENT_PACKET;
-                  msg->pData[1] = HCI_LE_EVENT_CODE;
-                  msg->pData[2] = HCI_AE_EVENT_LENGTH + dataLen;
-
-                  // We keep all the information the same across report, only the data type will change.
-                  msg->pData[3]  = extAdvRpt->subCode;
-                  msg->pData[4]  = extAdvRpt->numRpts;
-                  msg->pData[5]  = LO_UINT16(extAdvRpt->evtType);
-                  msg->pData[6]  = HI_UINT16(extAdvRpt->evtType);
-                  msg->pData[7]  = extAdvRpt->addrType;
-                  memcpy(&msg->pData[8], extAdvRpt->addr, B_ADDR_LEN);
-                  msg->pData[14] = extAdvRpt->primPhy;
-                  msg->pData[15] = extAdvRpt->secPhy;
-                  msg->pData[16] = extAdvRpt->advSid;
-                  msg->pData[17] = extAdvRpt->txPower;
-                  msg->pData[18] = extAdvRpt->rssi;
-                  msg->pData[19] = LO_UINT16(extAdvRpt->periodicAdvInt);
-                  msg->pData[20] = HI_UINT16(extAdvRpt->periodicAdvInt);
-                  msg->pData[21] = extAdvRpt->directAddrType;
-                  memcpy(&msg->pData[22], extAdvRpt->directAddr, B_ADDR_LEN);
-                  msg->pData[28] = dataLen;
-
-                  if (dataLen)
-                  {
-                    memcpy( &msg->pData[HCI_AE_EVENT_LENGTH+HCI_EVENT_MIN_LENGTH],
-                            extAdvRpt->pData + (extAdvRpt->dataLen - remainingLength),
-                            dataLen);
-                  }
-
-                  // Update the type to incomplete with more data to follow
-                  if (remainingLength > MAX_REPORT_DATA_SIZE)
-                  {
-                      // This is not the last packet
-                     ((aeExtAdvRptEvt_t *) &(msg->pData[3]))->evtType &= AE_EVT_TYPE_COMPLETE_MASK;
-                     ((aeExtAdvRptEvt_t *) &(msg->pData[3]))->evtType |= AE_EVT_TYPE_INCOMPLETE_MORE_TO_COME;
-                  }
-
-                  NPITask_sendToHost((uint8_t *)msg);
-
-                }
-                else
-                {
-                  HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_OUT_OF_HEAP, HCI_BLE_EXTENDED_ADV_REPORT_EVENT);
-                  HCI_TL_sendMemoryReport(0x3);
-                  break;
-                }
-                // Update the local variable to send the rest of the payload.
-                remainingLength-=dataLen;
-            }while(remainingLength > 0);
-          }
-          else
-          {
-              HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE, HCI_BLE_EXTENDED_ADV_REPORT_EVENT);
-          }
-          //Free the message and the payload
-          if (extAdvRpt != NULL)
-          {
-            if (extAdvRpt->pData != NULL)
-            {
-              ICall_free(extAdvRpt->pData);
-            }
-            ICall_free(extAdvRpt);
-          }
-        break;
-      }
-      case LL_CBACK_EXT_SCAN_TIMEOUT:
-      {
-        uint8_t totalLength = sizeof(npiPkt_t) + HCI_EVENT_MIN_LENGTH + sizeof(aeScanTimeout_t) ;
-        msg = (npiPkt_t *)ICall_allocMsg(totalLength);
-        if(msg)
-        {
-          //Complete the packet and send it
-          // Icall message event, status, and pointer to packet
-          msg->hdr.event  = HCI_EVENT_PACKET;
-          msg->hdr.status = 0xFF;
-
-          // fill in length and data pointer
-          msg->pktLen = HCI_EVENT_MIN_LENGTH + sizeof(aeScanTimeout_t);
-          msg->pData  = (uint8*)(msg+1);
-          // fill in BLE Complete Event data
-          msg->pData[0] = HCI_EVENT_PACKET;
-          msg->pData[1] = HCI_LE_EVENT_CODE;
-          msg->pData[2] = sizeof(aeScanTimeout_t);
-
-          // We keep all the information the same across report, only the data type will change.
-          msg->pData[3]  = HCI_BLE_SCAN_TIMEOUT_EVENT;  // Only one possible Subcode
-          NPITask_sendToHost((uint8_t *)msg);
-        }
-        break;
-      }
-      case LL_CBACK_EXT_SCAN_START:
-      case LL_CBACK_EXT_SCAN_PERIOD_END:
-      case LL_CBACK_EXT_SCAN_END:
-      case LL_CBACK_EXT_SCAN_WINDOW_END:
-      case LL_CBACK_EXT_SCAN_INTERVAL_END:
-      case LL_CBACK_EXT_SCAN_DURATION_END:
-      {
-        // For those event, return a vendor specific Event.
-        uint8_t data[3];
-        data[0] = LO_UINT16(HCI_EXT_LE_SCAN_EVENT);
-        data[1] = HI_UINT16(HCI_EXT_LE_SCAN_EVENT);
-        data[2] = event;
-        HCI_TL_SendVSEvent(data, sizeof(data));
-        break;
-      }
-      default:
-      {
-        //Unknow Event, just free the message.
-        HCI_TL_sendSystemReport(HCI_TL_ID, LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE, HCI_EXT_LE_SCAN_EVENT);
-        break;
-      }
-    } // end Switch
-
-    ICall_free(evtCallback);
-  }
-}
-
 /*******************************************************************************
  * check that if the own address type for scan is random, HCI_LE_SetRandomAddressCmd was called.
  * If the own address Type is not random return TRUE.
  */
-uint8 hci_tl_isValidRandomAddressForScan (aeSetScanParamCmd_t hci_tl_cmdScanParams)
+uint8 hci_tl_isValidRandomAddressForScan (aeSetScanParamCmd_t *cmdScanParams)
 {
   // If the own address Type is not random return TRUE
-  if ((hci_tl_cmdScanParams.ownAddrType != LL_DEV_ADDR_TYPE_RANDOM) &&
-      (hci_tl_cmdScanParams.ownAddrType != LL_DEV_ADDR_TYPE_RANDOM_ID))
+  if ((cmdScanParams->ownAddrType != LL_DEV_ADDR_TYPE_RANDOM) &&
+      (cmdScanParams->ownAddrType != LL_DEV_ADDR_TYPE_RANDOM_ID))
   {
     return TRUE;
   }
@@ -3414,8 +2971,8 @@ static void hci_tl_legacyScanEventCallbackProcess(hci_tl_ScanEvtCallback_t *evtC
 
           // DEBUG CODE.
           // Add a Filter on RSSI to avoid being flooded and doomed by
-          // all the crazy IOT devicein the world.
-          // Uncoment the following to only report Adv with RSSI high enough
+          // all the crazy IOT devices in the world.
+          // Uncomment the following to only report Adv with RSSI high enough
           // so they match teh board that are less than 1m from each other.
           //if (extAdvRpt->rssi < -37)
           //{
@@ -3474,8 +3031,7 @@ static void hci_tl_legacyScanEventCallbackProcess(hci_tl_ScanEvtCallback_t *evtC
 #endif
               {
                   // check if LE Meta-Events are enabled and this event is enabled
-                  if ( ((pHciEvtMask[BT_EVT_INDEX_LE_META_EVENT] & BT_EVT_MASK_LE_META_EVENT) == 0) ||
-                       (((pBleEvtMask[LE_EVT_INDEX_ADV_REPORT] & LE_EVT_MASK_ADV_REPORT) == 0 )) )
+                  if ( MAP_HCI_CheckEventMaskLe(LE_EVT_ADV_REPORT_BIT) == 0 )
                   {
                     // the event mask is not set for this event
                     break;
@@ -3852,7 +3408,7 @@ static void host_tl_scanEvtCallbackProcess(scanEvtCallback_t * scanEvtCallback)
  *
  * @brief   Send a advertisement report as a vendor specific event.
  *
- * @param   advRpt - poiner to the report.
+ * @param   advRpt - pointer to the report.
  *
  * @return  none
  */
@@ -4197,7 +3753,7 @@ static void hci_tl_managedAEdata(uint16_t mode, aeSetDataCmd_t *pCmdData, uint8_
 {
     llStatus_t status = LL_STATUS_ERROR_BAD_PARAMETER;
 
-    // The hypothesis is that setting fragmentat of advertisement payload will be
+    // The hypothesis is that setting fragment of advertisement payload will be
     // done for only one Advertisement Set at a time:
     // - no interleaving between adv set
     // - no interleaving between the mode (adv data or scan response data)
@@ -4249,7 +3805,7 @@ static void hci_tl_managedAEdata(uint16_t mode, aeSetDataCmd_t *pCmdData, uint8_
                 }
 
                 // Passing NULL as the first parameter prevent to free any existing data.
-                // Data will be used only if the fragmentation is successfull, meaning:
+                // Data will be used only if the fragmentation is successful, meaning:
                 // First --> intermediate --> Last segment  happens.
                 // if the sequence does not happens, all pre-allocated buffer will be free
                 // but the existing data will still exist and be used.
@@ -4340,16 +3896,10 @@ static void hci_tl_managedAEdata(uint16_t mode, aeSetDataCmd_t *pCmdData, uint8_
             }
             case AE_DATA_OP_COMPLETE:
             {
-                // if the lenght of the data is 0 return SUCCESS and do not continue to memory allocation
-                if (pCmdData->dataLen == 0)
-                {
-                    status = LL_STATUS_SUCCESS;
-                    break;
-                }
-
+                // Free the previous allocated data and allocate the a pointer for the new data
                 pCmdData->pData = hci_tl_createPendingData(pCmdData->pData, pCmdData->dataLen, pData);
 
-                if(pCmdData->pData)
+                if(pCmdData->dataLen == 0 || pCmdData->pData != NULL)
                 {
                     if ((mode == HCI_LE_SET_EXT_ADV_DATA)     ||
                         (mode == HCI_EXT_LE_SET_EXT_ADV_DATA) ||
@@ -4418,19 +3968,22 @@ static void hci_tl_removePendingData(uint8_t* pendingAdvData)
  */
 static uint8_t* hci_tl_createPendingData(uint8_t *pStorage, uint16_t len, uint8_t* pData)
 {
-    uint8_t* pDataStore;
-    pDataStore = ICall_malloc(len);
-    if (pDataStore)
+    uint8_t* pDataStore = NULL;
+    if(len > 0)
     {
-        memcpy(pDataStore, pData, len);
+        pDataStore = ICall_malloc(len);
+        if(pDataStore != NULL)
+        {
+            memcpy(pDataStore, pData, len);
+        }
     }
-    if(pStorage)
+    if(pStorage != NULL)
     {
         ICall_free(pStorage);
     }
     return pDataStore;
-
 }
+
 /*********************************************************************
  * @fn      hci_tl_appendPendingData
  *
@@ -4466,7 +4019,7 @@ static uint8_t* hci_tl_appendPendingData(uint8_t *pStorage, uint16_t lenStorage,
     }
     else
     {
-        // NULL pointer pass has paramameter, wrong behavior, free everything.
+        // NULL pointer pass has parameter, wrong behavior, free everything.
         return NULL;
     }
     return pDataStore;
@@ -4666,7 +4219,7 @@ static void HCI_TL_SendDataPkt(uint8_t *pMsg)
 {
 #ifndef HOST_CONFIG
 #if defined(CTRL_CONFIG) && ((CTRL_CONFIG & ADV_CONN_CFG) || (CTRL_CONFIG & INIT_CFG))
-  /* Host configurstion should never access directly HCI_TL_SendDataPkt */
+  /* Host configuration should never access directly HCI_TL_SendDataPkt */
   hciDataPacket_t *pDataPkt = (hciDataPacket_t *) pMsg;
 
   // LE only accepts Data packets of type ACL.
@@ -4868,7 +4421,7 @@ static uint8_t processExtMsg(hciPacket_t *pMsg)
 #ifdef BLE3_CMD
   if( sendEstEvt )
   {
-    // An error occured when "HCI_EXT_GAP_EST_LINK_REQ" was called
+    // An error occurred when "HCI_EXT_GAP_EST_LINK_REQ" was called
     uint8_t pDataOut[20] = {0};
 
     pDataOut[0] = LO_UINT16(HCI_EXT_GAP_LINK_ESTABLISHED_EVENT);
@@ -5278,7 +4831,7 @@ static uint8_t processExtMsgATT(uint8_t cmdID, hciExtCmd_t *pCmd)
   attMsg_t msg;
   bStatus_t stat = bleInvalidPDU;
 
-  // Make sure received buffer contains at lease connection handle (2 otects)
+  // Make sure received buffer contains at least connection handle (2 octets)
   if (pCmd->len < 2)
   {
     return(stat);
@@ -5843,7 +5396,7 @@ static uint8_t processExtMsgGATT(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRsp
   attMsg_t msg;
   bStatus_t stat = bleInvalidPDU;
 
-  // Make sure received buffer is at lease 2-otect long
+  // Make sure received buffer is at least 2-octet long
   if (pCmd->len < 2)
   {
     return(stat);
@@ -6349,7 +5902,7 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
       uint8_t profileRole = pBuf[0];
       uint8_t IRK[KEYLEN] = {0};
       uint8_t SRK[KEYLEN] = {0};
-	  uint8_t addr[B_ADDR_LEN] = {0}; // The decvice address type and address must be configures with GAP_configDeviceAddr
+	  uint8_t addr[B_ADDR_LEN] = {0}; // The device address type and address must be configures with GAP_configDeviceAddr
 
 #if defined(GAP_BOND_MGR)
       // Register with bond manager after starting device - not to prevent using GapBondMgr with BLE3_CMD flag
@@ -7039,15 +6592,23 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
 
      pPeriodicData.operation = pBuf[1];
      pPeriodicData.dataLength = pBuf[2];
-     pPeriodicData.pData = MAP_osal_mem_alloc(pPeriodicData.dataLength);
 
-     if(pPeriodicData.pData)
+     if ( (pPeriodicData.dataLength > 0) )
      {
        // Copy the data
-       MAP_osal_memcpy(pPeriodicData.pData, &pBuf[3], pPeriodicData.dataLength);
+       pPeriodicData.pData = MAP_osal_mem_alloc(pPeriodicData.dataLength);
+       if ( pPeriodicData.pData != NULL )
+       {
+         MAP_osal_memcpy(pPeriodicData.pData, &pBuf[3], pPeriodicData.dataLength);
+         stat = GapAdv_SetPeriodicAdvData( pBuf[0], &pPeriodicData);
+
+         // Free the allocated memory
+         ICall_free(pPeriodicData.pData);
+       }
+     }
+     else
+     {
        stat = GapAdv_SetPeriodicAdvData( pBuf[0], &pPeriodicData);
-       // Free the allocated memory
-       ICall_free(pPeriodicData.pData);
      }
      break;
    }
@@ -7284,7 +6845,7 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
         }
         else if(!(GAP_IS_ADDR_RS(addr)))
         {
-           // This is an invalid ramdom static address
+           // This is an invalid random static address
            GAP_MAKE_ADDR_RS(addr);
          }
          // If valid random static address, put it to the controller
@@ -7309,7 +6870,7 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
       if( eventProps & GAP_ADV_PROP_CONNECTABLE )
       {
         // This is a connectable advertising
-        // check if we havn't reached the maximum number of connections
+        // check if we haven't reached the maximum number of connections
         uint8_t numConns = linkDB_NumActive();
 
         if( numConns >= MAX_NUM_BLE_CONNS )
@@ -7419,7 +6980,7 @@ static uint8_t processExtMsgGAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRspD
       }
       else
       {
-        // Time limeted advertising
+        // Time limited advertising
         stat = GapAdv_enable(advHandleLegacy, GAP_ADV_ENABLE_OPTIONS_USE_DURATION, advDuration);
       }
       if( (stat != SUCCESS) && (stat != bleInvalidRange) )
@@ -8465,9 +8026,13 @@ static uint8_t *processEventsGAP(gapEventHdr_t *pMsg, uint8_t *pOutMsg, uint16_t
           pLongMsg[6] = pEvt->cteType;
           pLongMsg[7] = pEvt->dataStatus;
           pLongMsg[8] = pEvt->dataLen;
-          MAP_osal_memcpy(&pLongMsg[9], pEvt->pData, pEvt->dataLen);
 
-          MAP_osal_mem_free(pEvt->pData);
+          if ( (pEvt->pData != NULL) && (pEvt->dataLen > 0) )
+          {
+            MAP_osal_memcpy(&pLongMsg[9], pEvt->pData, pEvt->dataLen);
+            MAP_osal_mem_free(pEvt->pData);
+          }
+
           pBuf = pLongMsg;
           msgLen = 9 + pEvt->dataLen;
         }

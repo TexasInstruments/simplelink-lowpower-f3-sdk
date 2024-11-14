@@ -118,6 +118,7 @@ typedef enum RCL_CommandStatus_e {
     RCL_CommandStatus_Error_Synth,                  /*!< Command ended because of synth programming error */
     RCL_CommandStatus_Error_UnknownOp,              /*!< Command ended because radio did not recognize command; probably wrong image for given command */
     RCL_CommandStatus_Error_AlreadySubmitted,       /*!< Command is already submitted and planned or running and can't be submitted again without calling stop first */
+    RCL_CommandStatus_Error_CommandQueueFull        /*!< Command was not submitted because there is no space in the pending commands queue */
 } RCL_CommandStatus;
 
 /**

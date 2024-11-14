@@ -110,7 +110,7 @@ static SimpleGattProfile_CBs_t *simpleGattProfile_appCBs = NULL;
  */
 
 // Simple GATT Profile Service attribute
-static CONST gattAttrType_t simpleGattProfile_Service = { ATT_BT_UUID_SIZE, simpleGattProfile_ServUUID };
+static const gattAttrType_t simpleGattProfile_Service = { ATT_BT_UUID_SIZE, simpleGattProfile_ServUUID };
 
 
 // Simple GATT Profile Characteristic 1 Properties
@@ -240,7 +240,7 @@ bStatus_t SimpleGattProfile_writeAttrCB( uint16_t connHandle,
 // pfnAuthorizeAttrCB to check a client's authorization prior to calling
 // pfnReadAttrCB or pfnWriteAttrCB, so no checks for authorization need to be
 // made within these functions.
-CONST gattServiceCBs_t simpleGattProfile_CBs =
+const gattServiceCBs_t simpleGattProfile_CBs =
 {
   SimpleGattProfile_readAttrCB,  // Read callback function pointer
   SimpleGattProfile_writeAttrCB, // Write callback function pointer

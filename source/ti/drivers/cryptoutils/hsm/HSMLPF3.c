@@ -89,11 +89,56 @@
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 
 /* Defines and enumerations */
+typedef struct
+{
+    uint8_t patch;
+    uint8_t minor;
+    uint8_t major;
+} HSMLPF3_systemInfoVersion_t;
+
+typedef struct
+{
+    /* Word 0 is omitted */
+    /* Word 1 */
+    HSMLPF3_systemInfoVersion_t rambusFwVersion;
+    uint8_t rollbackID;
+    /* Word 2 */
+    HSMLPF3_systemInfoVersion_t rambusHwVersion;
+    uint8_t res0;
+    /* Word 3 */
+    uint16_t memorySize;
+    uint16_t hostId:3;
+    uint16_t ns:1;
+    uint16_t res1:7;
+    uint16_t co:1;
+    uint16_t mode:4;
+    /* Word 4 */
+    uint32_t identity;
+    /* Word 5 */
+    uint16_t res2:12;
+    uint16_t otpAnomaly:4;
+    uint16_t selfTestActive:16;
+    /* Word 6 */
+    HSMLPF3_systemInfoVersion_t rambusBootFwVersion;
+    uint8_t res3;
+    /* Word 7 */
+    HSMLPF3_systemInfoVersion_t customBootFwVersion;
+    uint8_t res4;
+    /* Word 8 */
+    HSMLPF3_systemInfoVersion_t customFwVersion;
+    uint8_t res5;
+    /* Word 9 */
+    HSMLPF3_systemInfoVersion_t customHwVersion;
+    uint8_t res6;
+} HSMLPF3_SystemInfo_t;
+
 #define BOOT_DELAY 0xFFFFF
 
 #define SLEEP_TOKEN_WORD0 0x5F000000
 
 #define BOOT_TOKEN_WORD0 0xCF000000
+
+#define SYSTEMINFO_TOKEN_WORD0 0x0F030000
 
 #define CRYPTO_OFFICER_ID 0x03725746
 
@@ -104,6 +149,8 @@
 #define AES_BLOCK_SIZE_ALIGN 0X0F
 
 #define BLOCK_SIZE 16U
+
+#define HSM_TOKEN_WORD1_OFFSET 0x4
 
 /* Synchronizes access to the HSM */
 static SemaphoreP_Struct HSMLPF3_accessSemaphore;
@@ -172,6 +219,56 @@ static void HSMLPF3_hwiFxn(uintptr_t arg0)
 }
 
 /*
+ *  ======== HSMLPF3_systemInfoToken ========
+ */
+static int_fast16_t HSMLPF3_systemInfoToken(void)
+{
+    uint32_t token[2];
+    uint32_t result = HSMLPF3_STATUS_ERROR;
+    volatile HSMLPF3_SystemInfo_t outputToken;
+
+    /* Construct a system info token */
+    (void)memset(token, 0, sizeof(token));
+
+    token[0] = SYSTEMINFO_TOKEN_WORD0;
+    token[1] = CRYPTO_OFFICER_ID;
+
+    /* Write token to mbx1_in */
+    HSMLPF3_writeToken(token, sizeof(token) / sizeof(uint32_t));
+
+    /* Wait for result in mbx1_out */
+    while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBXSTAT) & HSMCRYPTO_MBXSTAT_MBX1OUTFULL) !=
+            HSMCRYPTO_MBXSTAT_MBX1OUTFULL)
+    {}
+
+    /* Read the output result token
+     * The code below does not process the output token necessarily
+     * but adds critical delay for HSM to finalize its boot up operations
+     */
+    (void)memset((void *)&outputToken, 0, sizeof(HSMLPF3_SystemInfo_t));
+
+    uint32_t *output = (uint32_t *)(HSMCRYPTO_BASE + HSM_TOKEN_WORD1_OFFSET);
+
+    (void)memcpy((void *)&outputToken, (void *)&output[0], sizeof(HSMLPF3_SystemInfo_t));
+
+    if ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBX1OUT) & OUTPUT_TOKEN_ERROR) != 0)
+    {
+        /* Notify the HSM that the mailbox has been read */
+        HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBXCTRL) = HSMCRYPTO_MBXCTRL_MBX1OUTEMPTY;
+        /* The result returned from this path is HSMLPF3_STATUS_ERROR */
+    }
+    else
+    {
+        /* Notify the HSM that the mailbox has been read */
+        HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBXCTRL) = HSMCRYPTO_MBXCTRL_MBX1OUTEMPTY;
+
+        result = HSMLPF3_STATUS_SUCCESS;
+    }
+
+    return result;
+}
+
+/*
  *  ======== HSMLPF3_boot ========
  */
 static int_fast16_t HSMLPF3_boot(void)
@@ -223,7 +320,7 @@ static int_fast16_t HSMLPF3_boot(void)
                     if ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MODULESTATUS) & HSMCRYPTO_MODULESTATUS_FWIMGACCEPTED) ==
                          HSMCRYPTO_MODULESTATUS_FWIMGACCEPTED)
                     {
-                        result = HSMLPF3_STATUS_SUCCESS;
+                        result = HSMLPF3_systemInfoToken();
                         break;
                     }
                 }
@@ -351,6 +448,8 @@ int_fast16_t HSMLPF3_sleep(void)
  */
 int_fast16_t HSMLPF3_init(void)
 {
+    uintptr_t key;
+
     if (!HSMLPF3_isInitialized)
     {
         /* Initialize HSM clock and mailbox, then boot it */
@@ -358,12 +457,18 @@ int_fast16_t HSMLPF3_init(void)
 
         HSMLPF3_initMbox();
 
+        key = HwiP_disable();
+
         if (HSMLPF3_boot() != HSMLPF3_STATUS_SUCCESS)
         {
             HSMLPF3_hsmReturnStatus = HSMLPF3_STATUS_ERROR;
+
+            HwiP_restore(key);
         }
         else
         {
+            HwiP_restore(key);
+
             if (HSMSAL_Init() != HSMSAL_SUCCESS)
             {
                 HSMLPF3_hsmReturnStatus = HSMLPF3_STATUS_ERROR;

@@ -172,6 +172,8 @@ extern void port_timerStop( struct port_timerObject_s *handle );
  * @param portQueueName - null terminated string. Used in POSIX only.
  *        Ignored in TIRTOS.
  *
+ * @param size - The size of the massages in the queue.
+ *
  * @return pointer to port_queueObject_s.
  */
 extern struct port_queueObject_s *port_queueCreate( const char *portQueueName, long size );

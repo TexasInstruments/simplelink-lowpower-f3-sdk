@@ -42,7 +42,13 @@ const radioConfigParams = {
 
 const rfDesignParams = {};
 
+const adcNoiseParams = {
+    symGenMethod: "Custom",
+    phyAbbr: true
+};
+
 exports = {
     radioConfigParams: radioConfigParams,
-    rfDesignParams: rfDesignParams
+    rfDesignParams: rfDesignParams,
+    adcNoiseParams: adcNoiseParams
 };

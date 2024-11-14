@@ -342,16 +342,10 @@ extern "C"
 /** @defgroup UBLE_Radio_Priority Micro BLE Stack Radio Priorities
  * @{
  */
-#ifdef USE_RCL
 #define UBLE_RF_PRI_NORMAL      ((uint8) RCL_Schedule_Now)   //!< Normal Priority
 #define UBLE_RF_PRI_HIGH        ((uint8) RCL_Schedule_Now)   //!< High Priority
 #define UBLE_RF_PRI_HIGHEST     ((uint8) RCL_Schedule_Now)   //!< Highest Priority
 
-#else
-#define UBLE_RF_PRI_NORMAL      ((uint8) RF_PriorityNormal)  //!< Normal Priority
-#define UBLE_RF_PRI_HIGH        ((uint8) RF_PriorityHigh)    //!< High Priority
-#define UBLE_RF_PRI_HIGHEST     ((uint8) RF_PriorityHighest) //!< Highest Priority
-#endif
 /** @} End UBLE_Radio_Priority */
 
 /** @defgroup UBLE_Radio_Criticality Micro BLE Stack Radio Criticality
@@ -412,11 +406,7 @@ extern "C"
 /* Default Parameter Values */
 #define UBLE_PARAM_DFLT_RFPRIORITY      UBLE_RF_PRI_NORMAL  //!< RF_PriorityNormal
 #define UBLE_PARAM_DFLT_RFTIMECRIT      RF_TIME_RELAXED   //!< Time-relaxed
-#ifdef USE_RCL
 #define UBLE_PARAM_DFLT_TXPOWER         0    //!< 0 dBm
-#else
-#define UBLE_PARAM_DFLT_TXPOWER         TX_POWER_0_DBM    //!< 0 dBm
-#endif
 #define UBLE_PARAM_DFLT_ADVINTERVAL     1600              //!< 1 sec
 #define UBLE_PARAM_DFLT_ADVCHANMAP      UBLE_ADV_CHAN_ALL   //!< All Channels
 #define UBLE_PARAM_DFLT_ADVTYPE         UBLE_ADVTYPE_ADV_NC //!< ADV_NONCONN_IND

@@ -46,6 +46,7 @@ uint32_t hal_get_current_time(void);
 void hal_enable_setup_time_irq(void);
 void hal_setup_setup_time(uint32_t setupTime);
 void hal_setup_start_time(uint32_t startTime);
+void hal_setup_packet_timeout(uint32_t stopTime);
 void hal_setup_hard_stop_time(uint32_t stopTime);
 void hal_enable_hard_stop_time_irq(void);
 void hal_disable_hard_stop_time_irq(void);
@@ -53,6 +54,7 @@ void hal_setup_graceful_stop_time(uint32_t stopTime);
 void hal_enable_graceful_stop_time_irq(void);
 void hal_cancel_setup_time(void);
 void hal_cancel_start_time(void);
+void hal_cancel_packet_timeout(void);
 void hal_cancel_hard_stop_time(void);
 void hal_cancel_graceful_stop_time(void);
 void hal_init_dispatch_radio_interrupts(uint32_t mask);
@@ -72,6 +74,7 @@ typedef enum {
     HAL_TIMER_EVT_START = 2,
     HAL_TIMER_EVT_GRACEFUL_STOP = 3,
     HAL_TIMER_EVT_HARD_STOP = 4,
+    HAL_TIMER_EVT_PACKET_TIMEOUT = 5,
 } HalTimerEvent;
 
 typedef enum {

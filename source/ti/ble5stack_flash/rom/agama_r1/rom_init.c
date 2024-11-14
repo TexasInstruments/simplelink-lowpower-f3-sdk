@@ -84,6 +84,7 @@
 #include <health_toolkit/inc/debugInfo_internal.h>
 #endif // BLE_HEALTH
 
+#ifndef CONTROLLER_ONLY
 #include "gap_advertiser_internal.h"
 #include "gap_scanner_internal.h"
 #include "gap_internal.h"
@@ -93,6 +94,14 @@
 #include "gap_initiator.h"
 #include "gap_initiator_internal.h"
 #include "sm_internal.h"
+#endif //CONTROLLER_ONLY
+
+#ifdef CHANNEL_SOUNDING
+#include "cs/ll_cs_mgr.h"
+#include "cs/ll_cs_procedure.h"
+#include "cs/ll_cs_ctrl_pkt_mgr.h"
+#include "cs/ll_cs_rcl.h"
+#endif
 
 #else
 #include "bcomdef.h"
@@ -493,6 +502,7 @@ typedef void (*RT_Init_fp)(void);
  * TYPEDEFS
  */
 // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
+#ifndef USE_DFL
 #if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
 #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
@@ -500,6 +510,7 @@ typedef void (*RT_Init_fp)(void);
 #endif // (advertiser only)
 #endif // (number of bondings greater than 5)
 #endif // (supported devices)
+#endif // !USE_DFL
 
 
 /*******************************************************************************
@@ -588,15 +599,14 @@ void ROM_Init( void )
 extern uint8 llLastCmdDoneEventHandleConnectRequest( advSet_t *pAdvSet );
 extern uint8 llLastCmdDoneEventHandleConnectRequestDFL( advSet_t *pAdvSet );
 extern uint8 llRxEntryDoneEventHandleConnectRequest( advSet_t *pAdvSet, uint8 *PeerA, uint8 PeerAdd, uint8 chSel );
-extern uint8 llRxIgnoreEventHandleConnectRequest( advSet_t *pAdvSet, uint8 *PeerA, uint8 PeerAdd, uint8 chSel );
 extern uint8 llAbortEventHandleStateAdv( uint8 preempted );
 extern uint8 llLastCmdDoneEventHandleStateAdv( void );
+extern uint8 llLastCmdDoneEventHandleStatePeriodicAdv( void );
 extern uint8 llTxDoneEventHandleStateAdv( void );
-extern uint8 llRxIgnoreEventHandleStateAdv( void );
-extern uint8 llRxEmptyEventHandleStateAdv( void );
 extern uint8 llRxEntryDoneEventHandleStateAdv( void );
 extern uint8 llAbortEventHandleStateScan( uint8 preempted );
 extern uint8 llLastCmdDoneEventHandleStateScan( void );
+extern uint8 llLastCmdDoneEventHandleStatePeriodicScan( void );
 extern uint8 llRxIgnoreEventHandleStateScan( void );
 extern uint8 llRxIgnoreEventHandleConnectResponse( uint8 *OwnA, uint8 OwnAdd, uint8 *PeerA, uint8 PeerAdd );
 extern uint8 llAbortEventHandleStateInit( uint8 preempted );
@@ -629,7 +639,7 @@ extern uint8 llCheckIsSecTaskCollideWithPrimTaskInLsto( taskInfo_t *secTask,uint
 extern llStatus_t llPostProcessExtendedAdv( advSet_t *pAdvSet );
 extern uint8 llTxDoneEventHandleStateExtAdv( advSet_t *pAdvSet );
 extern void llSetupExtendedAdvData( advSet_t *pAdvSet );
-extern uint8 llSetExtendedAdvReport(aeExtAdvRptEvt_t *extAdvRpt, uint8 *pPkt, uint16 evtType,uint8 extHdrFlgs, uint8 pHdr, uint8 dataLen, uint8 **pSyncInfo,uint8 *secPhy, uint8 *pChannelIndex);
+extern uint8 llSetExtendedAdvReport(aeExtAdvRptEvt_t *extAdvRpt, uint8 *pPkt, uint16 evtType,uint8 extHdrFlgs, uint8 pHdr,uint8 *pData, uint8 dataLen, uint8 **pSyncInfo,uint8 currPhy, uint8 *pChannelIndex);
 
 /*******************************************************************************
  * INIT_CFG and SCAN_CFG hooks
@@ -696,24 +706,6 @@ uint8 MAP_llTxDoneEventHandleStateAdv( void )
 #endif
 }
 
-uint8 MAP_llRxIgnoreEventHandleStateAdv( void )
-{
-#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
-  return llRxIgnoreEventHandleStateAdv();
-#else
-  return 0;
-#endif
-}
-
-uint8 MAP_llRxEmptyEventHandleStateAdv( void )
-{
-#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
-  return llRxEmptyEventHandleStateAdv();
-#else
-  return 0;
-#endif
-}
-
 uint8 MAP_llRxEntryDoneEventHandleStateAdv( void )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
@@ -723,6 +715,14 @@ uint8 MAP_llRxEntryDoneEventHandleStateAdv( void )
 #endif
 }
 
+uint8 MAP_llLastCmdDoneEventHandleStatePeriodicAdv( void )
+{
+#ifdef USE_PERIODIC_ADV
+  return llLastCmdDoneEventHandleStatePeriodicAdv();
+#else
+  return FALSE;
+#endif
+}
 uint8 MAP_llAbortEventHandleStateScan( uint8 preempted )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & SCAN_CFG)
@@ -736,6 +736,15 @@ uint8 MAP_llLastCmdDoneEventHandleStateScan( void )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & SCAN_CFG)
   return llLastCmdDoneEventHandleStateScan();
+#else
+  return 0;
+#endif
+}
+
+uint8 MAP_llLastCmdDoneEventHandleStatePeriodicScan( void )
+{
+#ifdef USE_PERIODIC_SCAN
+  return llLastCmdDoneEventHandleStatePeriodicScan();
 #else
   return 0;
 #endif
@@ -959,7 +968,7 @@ void *MAP_llSelectTaskPeriodicScan( uint8 secTaskID, uint32 timeGap )
 
 void *MAP_llSelectTaskPeriodicAdv( uint8 secTaskID, uint32 timeGap )
 {
-#if ( HOST_CONFIG & ( PERIPHERAL_CFG | BROADCASTER_CFG ) ) && defined ( USE_PERIODIC_ADV )
+#ifdef USE_PERIODIC_ADV
   return llSelectTaskPeriodicAdv(secTaskID,timeGap);
 #else
   return NULL;
@@ -1137,15 +1146,6 @@ uint8 MAP_llRxEntryDoneEventHandleConnectRequest( void *pAdvSet, uint8 *PeerA, u
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_CONN_CFG)
   return llRxEntryDoneEventHandleConnectRequest(pAdvSet,PeerA,PeerAdd,chSel);
-#else
-  return 0;
-#endif
-}
-
-uint8 MAP_llRxIgnoreEventHandleConnectRequest( void *pAdvSet, uint8 *PeerA, uint8 PeerAdd, uint8 chSel )
-{
-#if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_CONN_CFG)
-  return llRxIgnoreEventHandleConnectRequest(pAdvSet,PeerA,PeerAdd,chSel);
 #else
   return 0;
 #endif
@@ -1515,6 +1515,7 @@ uint8 MAP_LL_EXT_CoexEnable(uint8 enable)
   return 1;
 #endif
 }
+#endif //!CC23X0
 
 /*******************************************************************************
  * Periodic Adv hooks
@@ -1581,10 +1582,10 @@ void *MAP_llGetPeriodicAdv( uint8 handle )
 #endif
 }
 
-void MAP_llUpdatePeriodicAdvChainPacket( void )
+void MAP_llUpdatePeriodicAdvChainPacket( void *pPeriodicAdv )
 {
 #ifdef USE_PERIODIC_ADV
-  llUpdatePeriodicAdvChainPacket();
+  llUpdatePeriodicAdvChainPacket( pPeriodicAdv );
 #endif
 }
 
@@ -1613,7 +1614,7 @@ uint8 MAP_llTrigPeriodicAdv( void *pAdvSet, void *pPeriodicAdv )
 
 uint8 MAP_llSetupPeriodicAdv( void *pAdvSet )
 {
-#if defined ( USE_PERIODIC_ADV ) && (!defined( DeviceFamily_CC13X4 ) || !defined( DeviceFamily_CC26X4 ))
+#ifdef USE_PERIODIC_ADV
   return llSetupPeriodicAdv( pAdvSet );
 #else
   return 0;
@@ -1668,18 +1669,24 @@ void MAP_llClearPeriodicAdvSets( void )
 #endif // USE_PERIODIC_ADV
 }
 
+uint8 MAP_llAddPeriodicAdvPacketToTx( void *pPeriodicAdv, uint8 pktType, uint8 payloadLen )
+{
+#ifdef USE_PERIODIC_ADV
+  return llAddPeriodicAdvPacketToTx( pPeriodicAdv, pktType, payloadLen );
+#else
+  return TRUE;
+#endif
+}
+
 /*******************************************************************************
  * Periodic Scan hooks
  */
-extern void llProcessPeriodicScanSyncInfo( uint8 *pPkt, aeExtAdvRptEvt_t *advEvent, uint32 timeStamp, uint8 phy );
-extern ble5OpCmd_t *llFindNextPeriodicScan( void );
-extern void llUpdateExtScanAcceptSyncInfo( void );
 
 uint8 MAP_LE_PeriodicAdvCreateSync( uint8  options, uint8  advSID, uint8  advAddrType, uint8  *advAddress,
                                     uint16 skip, uint16 syncTimeout, uint8  syncCteType )
 {
 #ifdef USE_PERIODIC_SCAN
-  return LE_PeriodicAdvCreateSync( options, advSID, advAddrType, advAddress, skip,syncTimeout,syncCteType);
+  return LE_PeriodicAdvCreateSync( options, advSID, advAddrType, advAddress, skip, syncTimeout, syncCteType );
 #else
   return 1;
 #endif
@@ -1832,43 +1839,49 @@ uint8 MAP_llGetPeriodicScanCteTasks( void )
 
 uint8_t MAP_gapScan_periodicAdvCmdCompleteCBs( void *pMsg )
 {
+  uint8_t status = TRUE;
+#ifndef CONTROLLER_ONLY
 #ifdef USE_PERIODIC_SCAN
-  #ifdef USE_PERIODIC_RTLS
-    hciEvt_CmdComplete_t *pEvt = (hciEvt_CmdComplete_t *)pMsg;
-    return RTLSSrv_processHciEvent(pEvt->cmdOpcode, sizeof(pEvt->pReturnParam), pEvt->pReturnParam);
-  #else
-    return gapScan_periodicAdvCmdCompleteCBs(pMsg);
-  #endif
+#ifdef USE_PERIODIC_RTLS
+  hciEvt_CmdComplete_t *pEvt = (hciEvt_CmdComplete_t *)pMsg;
+  status = RTLSSrv_processHciEvent(pEvt->cmdOpcode, sizeof(pEvt->pReturnParam), pEvt->pReturnParam);
 #else
-  return TRUE;
+  status = gapScan_periodicAdvCmdCompleteCBs(pMsg);
 #endif
+#endif // USE_PERIODIC_SCAN
+#endif // CONTROLLER_ONLY
+  return status;
 }
 
 uint8_t MAP_gapScan_periodicAdvCmdStatusCBs( void *pMsg )
 {
+  uint8_t status = TRUE;
+#ifndef CONTROLLER_ONLY
 #ifdef USE_PERIODIC_SCAN
-  #ifdef USE_PERIODIC_RTLS
-    hciEvt_CommandStatus_t *pEvt = (hciEvt_CommandStatus_t *)pMsg;
-    return RTLSSrv_processHciEvent(pEvt->cmdOpcode, sizeof(pEvt->cmdStatus), &pEvt->cmdStatus);
- #else
-    return gapScan_periodicAdvCmdStatusCBs(pMsg);
- #endif
+#ifdef USE_PERIODIC_RTLS
+  hciEvt_CommandStatus_t *pEvt = (hciEvt_CommandStatus_t *)pMsg;
+  status = RTLSSrv_processHciEvent(pEvt->cmdOpcode, sizeof(pEvt->cmdStatus), &pEvt->cmdStatus);
 #else
-  return TRUE;
+  status = gapScan_periodicAdvCmdStatusCBs(pMsg);
 #endif
+#endif // USE_PERIODIC_SCAN
+#endif // CONTROLLER_ONLY
+  return status;
 }
 
 uint8_t MAP_gapScan_processBLEPeriodicAdvCBs( void *pMsg )
 {
+  uint8_t status = TRUE;
+#ifndef CONTROLLER_ONLY
 #ifdef USE_PERIODIC_SCAN
-  #ifdef USE_PERIODIC_RTLS
-    return RTLSSrv_processPeriodicAdvEvent(pMsg);
-  #else
-    return gapScan_processBLEPeriodicAdvCBs(pMsg);
-  #endif
+#ifdef USE_PERIODIC_RTLS
+  status = RTLSSrv_processPeriodicAdvEvent(pMsg);
 #else
-  return TRUE;
+  status = gapScan_processBLEPeriodicAdvCBs(pMsg);
 #endif
+#endif // USE_PERIODIC_SCAN
+#endif // CONTROLLER_ONLY
+  return status;
 }
 
 void MAP_llClearPeriodicScanSets( void )
@@ -1884,7 +1897,7 @@ void MAP_llUpdateExtScanAcceptSyncInfo( void )
   llUpdateExtScanAcceptSyncInfo();
 #endif
 }
-#endif //!CC23X0
+
 /*******************************************************************************
  * Extended Advertising hooks
  */
@@ -1936,16 +1949,44 @@ uint8 MAP_llSetExtendedAdvReport(void *extAdvRpt,
                                  uint16 evtType,
                                  uint8 extHdrFlgs,
                                  uint8 pHdr,
+                                 uint8 *pData,
                                  uint8 dataLen,
                                  uint8 **pSyncInfo,
-                                 uint8 *secPhy,
+                                 uint8 currPhy,
                                  uint8 *pChannelIndex)
 {
 #ifdef USE_AE
   return llSetExtendedAdvReport(extAdvRpt,pPkt,evtType,extHdrFlgs,
-                                pHdr,dataLen,pSyncInfo,secPhy,pChannelIndex);
+                                pHdr,pData ,dataLen,pSyncInfo,currPhy,pChannelIndex);
 #else
   return 0;
+#endif
+}
+
+uint8 MAP_llAddExtAdvPacketToTx(void *pAdvSet, uint8 pktType, uint8 payloadLen)
+{
+#ifdef USE_AE
+  return llAddExtAdvPacketToTx(pAdvSet, pktType, payloadLen);
+#else
+  return 1;
+#endif
+}
+
+uint8 MAP_llBuildExtAdvPacket(void *pPkt, void *comPkt, uint8 pktType, uint8 payloadLen, uint8 peerAddrType, uint8 ownAddrType)
+{
+#ifdef USE_AE
+  return llBuildExtAdvPacket(pPkt, comPkt, pktType, payloadLen, peerAddrType, ownAddrType);
+#else
+  return 1;
+#endif
+}
+
+uint8 MAP_llupdateAuxHdrPacket(void *pAdvSet)
+{
+#ifdef USE_AE
+  return llupdateAuxHdrPacket(pAdvSet);
+#else
+  return 1;
 #endif
 }
 
@@ -2063,25 +2104,12 @@ uint8_t MAP_checkVsEventsStatus(void)
  */
 uint8 MAP_llAddExtAlAndSetIgnBit(void *extAdvRpt, uint8 ignoreBit)
 {
-#if defined(SCAN_OPTIMIZATION) && !defined(USE_RCL)
-  return llAddExtAlAndSetIgnBit((aeExtAdvRptEvt_t *)extAdvRpt, ignoreBit);
-#endif
   return ignoreBit;
 }
 
 uint8 MAP_llFlushIgnoredRxEntry(uint8 ignoreBit)
 {
-#if defined(SCAN_OPTIMIZATION) && !defined(USE_RCL)
-  return llFlushIgnoredRxEntry(ignoreBit);
-#endif
   return FALSE;
-}
-
-void MAP_llSetRxCfg(void)
-{
-#if defined(SCAN_OPTIMIZATION) && !defined(USE_RCL)
-  llSetRxCfg();
-#endif
 }
 
 /*******************************************************************************
@@ -2408,6 +2436,33 @@ uint8 MAP_llHandleSDAAControlTX(void            *nextConnPtr,
 }
 
 /*******************************************************************************
+* Control packet setup function
+*/
+void MAP_llBuildCtrlPktPeri( llConnState_t *connPtr, uint8 *pData, uint8_t ctrlPkt )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_CONN_CFG)
+  llBuildCtrlPktPeri(connPtr, pData, ctrlPkt);
+#endif
+}
+void MAP_llBuildCtrlPktCent( llConnState_t *connPtr, uint8 *pData, uint8_t ctrlPkt )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
+  llBuildCtrlPktCent(connPtr, pData, ctrlPkt);
+#endif
+}
+void MAP_llPostSetupCtrlPktPeri( llConnState_t *connPtr, uint8_t ctrlPkt )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_CONN_CFG)
+  llPostSetupCtrlPktPeri(connPtr, ctrlPkt);
+#endif
+}
+void MAP_llPostSetupCtrlPktCent( llConnState_t *connPtr, uint8_t ctrlPkt )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
+  llPostSetupCtrlPktCent(connPtr, ctrlPkt);
+#endif
+}
+/*******************************************************************************
 * Health Toolkit
 */
 
@@ -2464,6 +2519,400 @@ uint8_t MAP_DbgInf_addErrorRec(uint16_t newError)
    return UFAILURE;
 #endif
 }
+
+/*******************************************************************************
+ * BLE Scheduler preemption
+ */
+
+uint8 MAP_llCheckRfCmdPreemption(uint32 endTime, uint8 priority)
+{
+#ifdef BLE_SCHEDULER_PREEMPTION
+    return llCheckRfCmdPreemption(endTime, priority);
+#else
+    return (FALSE);
+#endif
+}
+
+/*******************************************************************************
+ * Channel Sounding
+ */
+
+// CS APIs
+uint8 MAP_LL_CS_ReadLocalSupportedCapabilites(void * pCapabilities)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_ReadLocalSupportedCapabilites(pCapabilities);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_ReadRemoteSupportedCapabilities(uint16 connId)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_ReadRemoteSupportedCapabilities(connId);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_CreateConfig(uint16 connId, void *pConfig, uint8 createContext)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_CreateConfig(connId, pConfig, createContext);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_RemoveConfig(uint16 connId, uint8 configId)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_RemoveConfig(connId, configId);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_SecurityEnable(uint16 connId)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_SecurityEnable(connId);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_SetDefaultSettings(uint16 connId, void * pDefSettings)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_SetDefaultSettings(connId, pDefSettings);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_ReadLocalFAETable(void * pFaeTbl)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_ReadLocalFAETable(pFaeTbl);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_ReadRemoteFAETable(uint16 connId)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_ReadRemoteFAETable(connId);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_WriteRemoteFAETable(uint16 connId, void * pFaeTbl)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_WriteRemoteFAETable(connId, pFaeTbl);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_SetChannelClassification(void * pChannelClassification)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_SetChannelClassification(pChannelClassification);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_SetProcedureParameters(uint16 connId, uint8 configId, void * pProcParams)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_SetProcedureParameters(connId, configId, pProcParams);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_ProcedureEnable(uint16 connId, uint8 configId, uint8 enable)
+{
+#ifdef CHANNEL_SOUNDING
+  return LL_CS_ProcedureEnable(connId, configId, enable);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_Test( uint8* pTestParams )
+{
+#if defined(CHANNEL_SOUNDING) && defined(CS_TEST)
+  return LL_CS_Test( (csTestParams_t*)pTestParams);
+#else
+  *pTestParams = 0U;
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_LL_CS_TestEnd(void)
+{
+#if defined(CHANNEL_SOUNDING) && defined(CS_TEST)
+  return LL_CS_TestEnd();
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+void MAP_HCI_CS_ReadRemoteSupportedCapabilitiesCback(uint8 status, uint16 connHandle, void * pCapabilities)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_ReadRemoteSupportedCapabilitiesCback(status, connHandle, pCapabilities);
+#endif
+}
+
+void MAP_HCI_CS_ConfigCompleteCback(uint8 status, uint16 connHandle, void * pConfig)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_ConfigCompleteCback(status, connHandle, pConfig);
+#endif
+}
+
+void MAP_HCI_CS_ReadRemoteFAETableCompleteCback(uint8 status, uint16 connHandle, void * pFaeTbl)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_ReadRemoteFAETableCompleteCback(status, connHandle, pFaeTbl);
+#endif
+}
+
+void MAP_HCI_CS_SecurityEnableCompleteCback(uint8 status, uint16 connId)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_SecurityEnableCompleteCback(status, connId);
+#endif
+}
+
+void MAP_HCI_CS_ProcedureEnableCompleteCback(uint8 status, uint16 connId, uint8 enable, void * pEnableData)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_ProcedureEnableCompleteCback(status, connId, enable, pEnableData);
+#endif
+}
+
+void MAP_HCI_CS_SubeventResultCback(void* pData, uint16 dataLength)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_SubeventResultCback(pData, dataLength);
+#endif
+}
+
+void MAP_HCI_CS_SubeventResultContinueCback(void * hdr, void * data, uint16 dataLength)
+{
+#ifdef CHANNEL_SOUNDING
+  HCI_CS_SubeventResultContinueCback(hdr, data, dataLength);
+#endif
+}
+
+void MAP_HCI_CS_TestEndCompleteCback(uint8 status)
+{
+#if defined(CHANNEL_SOUNDING) && defined(CS_TEST)
+  HCI_CS_TestEndCompleteCback(status);
+#endif
+}
+
+// CS LL PKT MGR
+uint8 MAP_llCsProcessCsControlPacket(uint8 ctrlType, void * connPtr, void * pBuf)
+{
+#ifdef CHANNEL_SOUNDING
+  return llCsProcessCsControlPacket(ctrlType, connPtr, pBuf);
+#else
+	return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_llCsProcessCsCtrlProcedures(void * connPtr, uint8 ctrlPkt)
+{
+#ifdef CHANNEL_SOUNDING
+  return llCsProcessCsCtrlProcedures(connPtr, ctrlPkt);
+#else
+  return LL_CTRL_PROC_STATUS_SUCCESS;
+#endif
+}
+
+// CS PROCEDURES
+uint8 MAP_llCsInit(void)
+{
+#ifdef CHANNEL_SOUNDING
+    return llCsInit();
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+void MAP_llCsClearConnProcedures(uint16 connId)
+{
+#ifdef CHANNEL_SOUNDING
+  llCsClearConnProcedures(connId);
+#endif
+}
+
+void MAP_llCsFreeAll(void)
+{
+#ifdef CHANNEL_SOUNDING
+  llCsFreeAll();
+#endif
+}
+
+void MAP_llCsSetFeatureBit(void)
+{
+#ifdef CHANNEL_SOUNDING
+  llCsSetFeatureBit();
+#endif
+}
+
+uint8 MAP_llCsStartProcedure(void * connPtr)
+{
+#ifdef CHANNEL_SOUNDING
+  return llCsStartProcedure(connPtr);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+uint8 MAP_llCsStartStepListGen(uint16 connId)
+{
+#ifdef CHANNEL_SOUNDING
+  return llCsStartStepListGen(connId);
+#else
+  return LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
+#endif
+}
+
+void MAP_llCsSubevent_PostProcess(void)
+{
+#ifdef CHANNEL_SOUNDING
+  llCsSubevent_PostProcess();
+#else
+  return;
+#endif
+}
+
+void MAP_llCsSteps_PostProcess(void)
+{
+#ifdef CHANNEL_SOUNDING
+  llCsSteps_PostProcess();
+#else
+  return;
+#endif
+}
+
+void* MAP_llScheduler_getHandle(uint16 taskID)
+{
+#ifdef CHANNEL_SOUNDING
+  return (void*) llScheduler_getHandle(taskID);
+#else
+  return (void*) llScheduler_getBleHandle();
+#endif
+}
+
+uint32 MAP_llScheduler_getSwitchTime(uint16 taskID)
+{
+#ifdef CHANNEL_SOUNDING
+  return llScheduler_getSwitchTime(taskID);
+#else
+  return 0;
+#endif
+}
+
+uint8 MAP_llCsInitChanIdxArr(uint8 configId, uint16 connId, uint8* config)
+{
+#ifdef CHANNEL_SOUNDING
+#ifdef CS_TEST
+  return llCsInitChanIdxArrOverride(configId, connId, (csConfigurationSet_t*)config);
+#else
+  return llCsInitChanIdxArr(configId, connId, (csConfigurationSet_t*)config);
+#endif
+#else
+  return 0;
+#endif
+}
+
+uint8 MAP_llCsSelectStepChannel(uint16 connId, uint8* config, uint8 stepMode)
+{
+#ifdef CHANNEL_SOUNDING
+#ifdef CS_TEST
+  return llCsSelectStepChanOverride(stepMode, connId, config);
+#else
+  return llCsSelectStepChannel(stepMode, connId, FALSE, (csConfigurationSet_t*)config);
+#endif
+#else
+  return 0;
+#endif
+}
+
+void MAP_llCsSelectAA(uint8 csRole, uint32_t* aaRx, uint32_t* aaTx)
+{
+#ifdef CHANNEL_SOUNDING
+#ifdef CS_TEST
+  llCsSelectAAOverride(csRole, aaRx, aaTx);
+#else
+  llCsSelectAA(csRole, aaRx, aaTx);
+#endif
+#endif
+}
+
+void MAP_llCsGetRandomSequence(uint8 csRole, uint32_t* pTx, uint32_t* pRx, uint8 plLen)
+{
+#ifdef CHANNEL_SOUNDING
+#ifdef CS_TEST
+  llCsGetRandomSequenceOveride(csRole, pTx, pRx, plLen);
+#else
+  llCsGetRandomSequence(csRole, pTx, pRx, plLen);
+#endif
+#endif
+}
+
+uint8 MAP_llCsGetToneExtention(void)
+{
+#ifdef CHANNEL_SOUNDING
+#ifdef CS_TEST
+  return llCsGetToneExtentionOverride();
+#else
+  return llCsGetToneExtention();
+#endif
+#else
+  return 0xFF;
+#endif
+}
+
+uint8 MAP_llUpdateSIDFilterScanRsp(uint8 sendReport,uint8 advSid,uint8 advScanState)
+{
+#ifdef SID_FILTERING
+  return llUpdateSIDFilterScanRsp(sendReport,advSid,advScanState);
+#else
+  return sendReport;
+#endif
+}
+
+void MAP_llSetSIDFilterScanRsp(void)
+{
+#ifdef SID_FILTERING
+  llSetSIDFilterScanRsp();
+#else
+  return;
+#endif
+}
+
+uint32 MAP_llReturnCurrentPeriodicStartTime(void)
+{
+#ifdef USE_PERIODIC_SCAN
+  return llReturnCurrentPeriodicStartTime();
+#else
+  return 0;
+#endif
+}
+
 
 /*******************************************************************************
  */

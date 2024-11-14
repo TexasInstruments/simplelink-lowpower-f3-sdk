@@ -50,7 +50,7 @@ extern const uint_least8_t AESCTRDRBG_count;
 
 const AESCTRDRBG_Params AESCTRDRBG_defaultParams = {
     .keyLength                 = AESCTRDRBG_AES_KEY_LENGTH_128,
-    .reseedInterval            = 10000,
+    .reseedInterval            = 0xFFFFFFFF, /* Default should be the maximum possible interval. */
     .seed                      = NULL,
     .personalizationData       = NULL,
     .personalizationDataLength = 0,

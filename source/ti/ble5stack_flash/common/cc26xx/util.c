@@ -82,9 +82,6 @@
 #endif //ICALL_TIMER_TASK_STACK_SIZE
 #endif//FREERTOS
 
-#ifdef FREERTOS
-extern mqd_t g_EventsQueueID;
-#endif
 /*********************************************************************
  * TYPEDEFS
  */

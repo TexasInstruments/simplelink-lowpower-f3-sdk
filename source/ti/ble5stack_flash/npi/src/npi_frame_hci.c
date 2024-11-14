@@ -184,6 +184,11 @@ NPIMSG_msg_t *NPIFrame_frameMsg(uint8_t *pMsg)
           // Payload
           memcpy(npiMsg->pBuf,pFromStackMsg->pData,pFromStackMsg->pktLen);
       }
+      else
+      {
+          ICall_free(npiMsg);
+          npiMsg = NULL;
+      }
     }
 
     // Free original message and send new NPIMSG to a TX Queue

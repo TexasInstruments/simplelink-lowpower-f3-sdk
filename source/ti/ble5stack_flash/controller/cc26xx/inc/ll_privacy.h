@@ -89,10 +89,6 @@
  * INCLUDES
  */
 
-#ifdef USE_RCL
-#else
-#include "rf_hal.h"
-#endif
 #include "bcomdef.h"
 #include "ll.h"
 #include "ll_common.h"
@@ -130,7 +126,7 @@
 #define SET_RESOLVABLE_RPA_TEST( privPolicyFlags )                             \
   (privPolicyFlags) |= BV(1)
 #define IS_RESOLVABLE_RPA_TEST_TEST_REQUIRED( privPolicyFlags )                \
-  ((privPolicyFlags) & BV(1)) != 0
+  (((privPolicyFlags) & BV(1)) != 0)
 
 // Address is in accept list flag - set, clear and test
 #define CLEAR_ADDRESS_IN_ACCEPT_LIST_TEST( privPolicyFlags )                   \
@@ -138,7 +134,7 @@
 #define SET_ADDRESS_IN_ACCEPT_LIST_TEST( privPolicyFlags )                     \
   (privPolicyFlags) |= BV(2)
 #define IS_ADDRESS_IN_ACCEPT_LIST_TEST_REQUIRED( privPolicyFlags )             \
-  ((privPolicyFlags) & BV(2)) != 0
+  (((privPolicyFlags) & BV(2)) != 0)
 
 // Device privacy mode or valid IRK flag - set, clear and test
 #define CLEAR_DPM_OR_INVALID_IRK_TEST( privPolicyFlags )                       \
@@ -146,7 +142,7 @@
 #define SET_DPM_OR_INVALID_IRK_TEST( privPolicyFlags )                         \
   (privPolicyFlags) |= BV(3)
 #define IS_DPM_OR_INVALID_IRK_TEST_REQUIRED( privPolicyFlags )                 \
-  ((privPolicyFlags) & BV(3)) != 0
+  (((privPolicyFlags) & BV(3)) != 0)
 
 /*******************************************************************************
  * CONSTANTS

@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../gpd_switch.c -> gpd_switch.c",
+            "+../gpd_switch.syscfg -> gpd_switch.syscfg",
+            "+../README.md -> README.md",
+            "+../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
+        ]
+    }
+]

@@ -54,6 +54,8 @@ Target Device: cc23xx
 /*********************************************************************
  * MACROS
  */
+#define BLEAPPUTIL_PAIR_STATE_TABLE_SIZE 7
+
 #define BLEAPPUTIL_GAP_PERIODIC_TABLE_SIZE      14
 #define BLEAPPUTIL_GAP_PERIODIC_EVENTS_OFFSET   0x19
 
@@ -68,6 +70,18 @@ Target Device: cc23xx
 /*********************************************************************
 * CONSTANTS
 */
+// The following look up table is used to convert PairState events
+// received from the BLE stack to BLEAppUtil PairState events
+const uint8_t pairStateLookupTable[BLEAPPUTIL_PAIR_STATE_TABLE_SIZE] =
+{
+    BLEAPPUTIL_PAIRING_STATE_STARTED,
+    BLEAPPUTIL_PAIRING_STATE_COMPLETE,
+    BLEAPPUTIL_PAIRING_STATE_ENCRYPTED,
+    BLEAPPUTIL_PAIRING_STATE_BOND_SAVED,
+    BLEAPPUTIL_PAIRING_STATE_CAR_READ,
+    BLEAPPUTIL_PAIRING_STATE_RPAO_READ,
+    BLEAPPUTIL_GENERATE_ECC_DONE
+};
 
 // The following look up table is used to convert GAP periodic events
 // received from the BLE stack to BLEAppUtil periodic events
@@ -170,6 +184,7 @@ const uint32_t l2capSignalEventsLookupTable[BLEAPPUTIL_L2CAP_SIGNAL_TABLE_SIZE] 
     BLEAPPUTIL_L2CAP_SEND_SDU_DONE_EVT,
     BLEAPPUTIL_L2CAP_NUM_CTRL_DATA_PKT_EVT
 };
+
 /*********************************************************************
 * TYPEDEFS
 */
@@ -177,7 +192,7 @@ const uint32_t l2capSignalEventsLookupTable[BLEAPPUTIL_L2CAP_SIGNAL_TABLE_SIZE] 
 /*********************************************************************
 * GLOBAL VARIABLES
 */
-
+StackInitDone_t appInitDoneHandler;
 
 /*********************************************************************
 * LOCAL VARIABLES
@@ -193,31 +208,159 @@ const uint32_t l2capSignalEventsLookupTable[BLEAPPUTIL_L2CAP_SIGNAL_TABLE_SIZE] 
  */
 
 /*********************************************************************
- * @fn      BLEAppUtil_processGAPEvents
+ * @fn      BLEAppUtil_processStackEvents
+ *
+ * @brief   Process the stack event dequeued from the BLEAPPUtil queue
+ *          and calls the relevant event handle using @refs BLEAppUtil_callEventHandler.
+ *          There are 2 special cases:
+ *          - GAP_DEVICE_INIT_DONE_EVENT - the application callback is called
+ *                                         directly.
+ *          - L2CAP_DATA_EVENT - there is only data attached, no sub events.
+ *
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - the event and handler
+ *
+ * @return  none
+ */
+void BLEAppUtil_processStackEvents(BLEAppUtil_msgHdr_t *pMsg ,BLEAppUtil_eventAndHandlerType_t bleAppUtilEventAndHandle)
+{
+    // If a device init done event was received handle it directly since it's independent,
+    // it's not part of any of the event handler types (it has it's own callback).
+    if((pMsg->event == GAP_MSG_EVENT) && ((gapEventHdr_t *)pMsg)->opcode == GAP_DEVICE_INIT_DONE_EVENT)
+    {
+        // This event will not be received in one of the event handlers
+        // registered by the application, the StackInitDone_t handler provided
+        // by BLEAppUtil_init is called.
+        if(appInitDoneHandler != NULL)
+        {
+            appInitDoneHandler((gapDeviceInitDoneEvent_t *)pMsg);
+        }
+    }
+    // All other BLE stack events are handled by the events handlers
+    else
+    {
+        // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
+        // handler of the application
+        BLEAppUtil_callEventHandler(bleAppUtilEventAndHandle.event,
+                                    pMsg,
+                                    bleAppUtilEventAndHandle.handlerType);
+
+        // Free the data of a CTRL_TO_HOST_EVENT if exist
+        if(pMsg->event == HCI_CTRL_TO_HOST_EVENT)
+        {
+            hciPacket_t *pBuf = (hciPacket_t *)pMsg;
+            if(pBuf->pData != NULL)
+            {
+                switch (pBuf->pData[0])
+                {
+                    case HCI_ACL_DATA_PACKET:
+                    case HCI_SCO_DATA_PACKET:
+                        if(pBuf->pData != NULL)
+                        {
+                            BM_free(pBuf->pData);
+                        }
+                    default:
+                      break;
+                }
+            }
+        }
+    }
+}
+
+/*********************************************************************
+ * @fn      isStackEventRequired
+ *
+ * @brief   Checks if the event is required by the application
+ *          level.
+ *          If it is required return true, else return false.
+ *
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type, the function
+ *                                     fill these parameters
+ *
+ * @return  True/False
+ */
+uint8_t BLEAppUtil_isStackEventRequired(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
+{
+    uint8_t isRequired = false;
+
+    switch (pMsg->event)
+    {
+        case GAP_MSG_EVENT:
+            isRequired = BLEAppUtil_convertGAPEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case GATT_MSG_EVENT:
+            isRequired = BLEAppUtil_convertGATTEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case L2CAP_DATA_EVENT:
+            isRequired = BLEAppUtil_convertL2CAPDataMsg(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case L2CAP_SIGNAL_EVENT:
+            isRequired = BLEAppUtil_convertL2CAPSignalEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case HCI_GAP_EVENT_EVENT:
+            isRequired = BLEAppUtil_convertHCIGAPEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case HCI_DATA_EVENT:
+            isRequired = BLEAppUtil_convertHCIDataEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case HCI_SMP_EVENT_EVENT:
+            isRequired = BLEAppUtil_convertHCISMPEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case HCI_SMP_META_EVENT_EVENT:
+            isRequired = BLEAppUtil_convertHCISMPMetaEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        case HCI_CTRL_TO_HOST_EVENT:
+            isRequired = BLEAppUtil_convertHCICTRLToHostEvents(pMsg, bleAppUtilEventAndHandle);
+            break;
+
+        default:
+            break;
+    }
+    return isRequired;
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_convertGAPEvents
  *
  * @brief   Process GAP events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processGAPEvents(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_convertGAPEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     gapEventHdr_t * pMsgData = (gapEventHdr_t *)pMsg;
+    BLEAppUtil_eventHandlerType_e handlerType;
+    uint8_t isRequired = false;
+    uint32_t event = 0;
 
     switch(pMsgData->opcode)
     {
-
         // This event will not be received in one of the event handlers
         // registered by the application, the StackInitDone_t handler provided
         // by BLEAppUtil_init is called.
         case GAP_DEVICE_INIT_DONE_EVENT:
         {
-            appInitDoneHandler((gapDeviceInitDoneEvent_t *)pMsgData);
+            isRequired = true;
             break;
         }
 
@@ -238,11 +381,12 @@ void BLEAppUtil_processGAPEvents(BLEAppUtil_msgHdr_t *pMsg)
         case GAP_BOND_LOST_EVENT:
         case GAP_LINK_PARAM_UPDATE_REJECT_EVENT:
         {
-            // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-            // handler of the application
-            BLEAppUtil_callEventHandler(
-                    gapConnEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_GAP_CONN_EVENTS_OFFSET],
-                    pMsg, BLEAPPUTIL_GAP_CONN_TYPE);
+            // Get the "BLE App Util" event format
+            event = gapConnEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_GAP_CONN_EVENTS_OFFSET];
+            // Handler type for these events
+            handlerType = BLEAPPUTIL_GAP_CONN_TYPE;
+            // Get the event mask of handlers form BLEAPPUTIL_GAP_CONN_TYPE
+            isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_GAP_CONN_TYPE, event);
             break;
         }
 
@@ -263,40 +407,53 @@ void BLEAppUtil_processGAPEvents(BLEAppUtil_msgHdr_t *pMsg)
         case GAP_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT:
         case GAP_SCAN_PERIODIC_ADV_REPORT_EVENT:
         {
-            // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-            // handler of the application
-            BLEAppUtil_callEventHandler(
-                    periodicEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_GAP_PERIODIC_EVENTS_OFFSET],
-                    pMsg, BLEAPPUTIL_GAP_PERIODIC_TYPE);
+            // Get the "BLE App Util" event format
+            event = periodicEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_GAP_PERIODIC_EVENTS_OFFSET];
+            // Handler type for these events
+            handlerType = BLEAPPUTIL_GAP_PERIODIC_TYPE;
+            // Get the event mask of handlers form BLEAPPUTIL_GAP_PERIODIC_TYPE
+            isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_GAP_PERIODIC_TYPE, event);
             break;
         }
-
         default:
         {
             break;
         }
-
     }
+
+    // If the received event is required by the application, save
+    // the event and handler
+    if(isRequired && (pMsgData->opcode != GAP_DEVICE_INIT_DONE_EVENT))
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = handlerType;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processGATTEvents
+ * @fn      BLEAppUtil_convertGATTEvents
  *
  * @brief   Process GATT events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_GATT_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processGATTEvents(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_convertGATTEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     gattMsgEvent_t * pMsgData = (gattMsgEvent_t *)pMsg;
+    uint8_t isRequired = false;
     uint32_t event = 0;
 
     switch (pMsgData->method)
@@ -338,29 +495,40 @@ void BLEAppUtil_processGATTEvents(BLEAppUtil_msgHdr_t *pMsg)
         }
     }
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event, pMsg, BLEAPPUTIL_GATT_TYPE);
+    // Get the event mask of handlers form BLEAPPUTIL_GATT_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_GATT_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_GATT_TYPE;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processHCIGAPEvents
+ * @fn      BLEAppUtil_convertHCIGAPEvents
  *
  * @brief   Process HCI GAP events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_HCI_GAP_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processHCIGAPEvents(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_convertHCIGAPEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     ICall_Hdr * pMsgData = (ICall_Hdr *)pMsg;
+    uint8_t isRequired = false;
     uint32_t event = 0;
 
     switch(pMsgData->status)
@@ -407,29 +575,40 @@ void BLEAppUtil_processHCIGAPEvents(BLEAppUtil_msgHdr_t *pMsg)
         }
     }
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event, pMsg, BLEAPPUTIL_HCI_GAP_TYPE);
+    // Get the event mask of handlers form BLEAPPUTIL_HCI_GAP_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_HCI_GAP_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_HCI_GAP_TYPE;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processHCIDataEvents
+ * @fn      BLEAppUtil_convertHCIDataEvents
  *
  * @brief   Process HCI Data events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_HCI_DATA_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processHCIDataEvents(bleStack_msgHdt_t *pMsg)
+uint8_t BLEAppUtil_convertHCIDataEvents(bleStack_msgHdt_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     hciDataEvent_t * pMsgData = (hciDataEvent_t *)pMsg;
+    uint8_t isRequired = false;
     uint32_t event = 0;
 
     switch(pMsgData->hdr.status)
@@ -452,29 +631,40 @@ void BLEAppUtil_processHCIDataEvents(bleStack_msgHdt_t *pMsg)
         }
     }
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event, pMsg, BLEAPPUTIL_HCI_DATA_TYPE);
+    // Get the event mask of handlers form BLEAPPUTIL_HCI_DATA_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_HCI_DATA_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_HCI_DATA_TYPE;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processHCISMPEvents
+ * @fn      BLEAppUtil_convertHCISMPEvents
  *
  * @brief   Process HCI SMP events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_HCI_SMP_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processHCISMPEvents(bleStack_msgHdt_t *pMsg)
+uint8_t BLEAppUtil_convertHCISMPEvents(bleStack_msgHdt_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     ICall_HciExtEvt * pMsgData = (ICall_HciExtEvt *)pMsg;
+    uint8_t isRequired = false;
     uint32_t event = 0;
 
     switch(pMsgData->hdr.status)
@@ -497,29 +687,40 @@ void BLEAppUtil_processHCISMPEvents(bleStack_msgHdt_t *pMsg)
         }
     }
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event, pMsg, BLEAPPUTIL_HCI_SMP_TYPE);
+    // Get the event mask of handlers form BLEAPPUTIL_HCI_SMP_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_HCI_SMP_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_HCI_SMP_TYPE;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processHCISMPMetaEvents
+ * @fn      BLEAppUtil_convertHCISMPMetaEvents
  *
  * @brief   Process HCI SMP Meta events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_HCI_SMP_META_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processHCICTRLToHostEvents(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_convertHCICTRLToHostEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     hciPacket_t *pBuf = (hciPacket_t *)pMsg;
+    uint8_t isRequired = false;
     uint32_t event = 0;
 
     switch(pBuf->pData[0])
@@ -542,28 +743,39 @@ void BLEAppUtil_processHCICTRLToHostEvents(BLEAppUtil_msgHdr_t *pMsg)
         }
     }
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event, pMsg, BLEAPPUTIL_HCI_CTRL_TO_HOST_TYPE);
+    // Get the event mask of handlers form BLEAPPUTIL_HCI_CTRL_TO_HOST_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_HCI_CTRL_TO_HOST_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_HCI_CTRL_TO_HOST_TYPE;
+    }
+    return isRequired;
 }
 /*********************************************************************
- * @fn      BLEAppUtil_processHCISMPMetaEvents
+ * @fn      BLEAppUtil_convertHCISMPMetaEvents
  *
  * @brief   Process HCI SMP Meta events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_HCI_SMP_META_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processHCISMPMetaEvents(bleStack_msgHdt_t *pMsg)
+uint8_t BLEAppUtil_convertHCISMPMetaEvents(bleStack_msgHdt_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     ICall_HciExtEvt * pMsgData = (ICall_HciExtEvt *)pMsg;
+    uint8_t isRequired = false;
     uint32_t event = 0;
 
     switch(pMsgData->hdr.status)
@@ -580,54 +792,81 @@ void BLEAppUtil_processHCISMPMetaEvents(bleStack_msgHdt_t *pMsg)
         }
     }
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event, pMsg, BLEAPPUTIL_HCI_SMP_META_TYPE);
+    // Get the event mask of handlers form BLEAPPUTIL_HCI_SMP_META_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_HCI_SMP_META_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_HCI_SMP_META_TYPE;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processL2CAPDataMsg
+ * @fn      BLEAppUtil_convertL2CAPDataMsg
  *
  * @brief   Process L2CAP Data received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function calls @ref BLEAppUtil_callEventHandler.
  *          The handler is from the type of BLEAPPUTIL_L2CAP_DATA_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processL2CAPDataMsg(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_convertL2CAPDataMsg(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
-    // Pass the msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    // Note: The event is not needed since the L2CAP data contains only data
-    BLEAppUtil_callEventHandler(0, pMsg, BLEAPPUTIL_L2CAP_DATA_TYPE);
+    uint8_t isRequired = false;
+
+    // Check if there is a registered handler from the BLEAPPUTIL_L2CAP_DATA_TYPE type
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_L2CAP_DATA_TYPE, 0);
+
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_L2CAP_DATA_TYPE;
+    }
+
+    return isRequired;
 }
 
 /*********************************************************************
- * @fn      BLEAppUtil_processL2CAPSignalEvents
+ * @fn      BLEAppUtil_convertL2CAPSignalEvents
  *
  * @brief   Process L2CAP Signal events received from the BLE stack, called
- *          from BLEAppUtil task context.
+ *          from BLE Stack context.
  *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
+ *          events (which are bit mask events) and checks if the event
+ *          is required by the application level.
+ *          If the event is required, fills the bleAppUtilEventAndHandle
+ *          structure with the event and handler type.
  *          All the events processed in this function will be received by
  *          handlers form type of BLEAPPUTIL_L2CAP_SIGNAL_TYPE
  *
- * @param   pMsg - the message the process
+ * @param   pMsg - The msg containing the data to send to the application
+ * @param   bleAppUtilEventAndHandle - structure of the event in BLE App Util
+ *                                     format and handler type
  *
- * @return  None
+ * @return  True/False
  */
-void BLEAppUtil_processL2CAPSignalEvents(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_convertL2CAPSignalEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle)
 {
     l2capSignalEvent_t *pMsgData = (l2capSignalEvent_t *)pMsg;
+    uint8_t isRequired = false;
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(l2capSignalEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_L2CAP_SIGNAL_EVENTS_OFFSET],
-                                pMsg, BLEAPPUTIL_L2CAP_SIGNAL_TYPE);
+    // Get the "BLE App Util" event format
+    uint32_t event = l2capSignalEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_L2CAP_SIGNAL_EVENTS_OFFSET];
+    // Get the event mask of handlers form BLEAPPUTIL_L2CAP_SIGNAL_TYPE
+    isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_L2CAP_SIGNAL_TYPE, event);
+    // Check if the received event is required by the application
+    if(isRequired)
+    {
+        bleAppUtilEventAndHandle->event = event;
+        bleAppUtilEventAndHandle->handlerType = BLEAPPUTIL_L2CAP_SIGNAL_TYPE;
+    }
+    return isRequired;
 }
 
 /*********************************************************************
@@ -651,6 +890,13 @@ void BLEAppUtil_processAdvEventMsg(BLEAppUtil_msgHdr_t *pMsg)
     // handler of the application
     BLEAppUtil_callEventHandler(((BLEAppUtil_AdvEventData_t *)pMsg)->event,
                                 pMsg, BLEAPPUTIL_GAP_ADV_TYPE);
+
+    // Free the data that was received from the stack CB
+    if (((BLEAppUtil_AdvEventData_t *)pMsg)->event != BLEAPPUTIL_ADV_INSUFFICIENT_MEMORY &&
+        ((BLEAppUtil_AdvEventData_t *)pMsg)->pBuf)
+    {
+        BLEAppUtil_free(((BLEAppUtil_AdvEventData_t *)pMsg)->pBuf);
+    }
 }
 
 /*********************************************************************
@@ -674,6 +920,18 @@ void BLEAppUtil_processScanEventMsg(BLEAppUtil_msgHdr_t *pMsg)
     // handler of the application
     BLEAppUtil_callEventHandler(((BLEAppUtil_ScanEventData_t *)pMsg)->event,
                                 pMsg, BLEAPPUTIL_GAP_SCAN_TYPE);
+
+    // Free the data that was received from the stack CB
+    if (((BLEAppUtil_ScanEventData_t *)pMsg)->event == BLEAPPUTIL_ADV_REPORT &&
+        ((BLEAppUtil_ScanEventData_t *)pMsg)->pBuf->pAdvReport.pData)
+    {
+        BLEAppUtil_free(((BLEAppUtil_ScanEventData_t *)pMsg)->pBuf->pAdvReport.pData);
+    }
+    if (((BLEAppUtil_ScanEventData_t *)pMsg)->event != BLEAPPUTIL_SCAN_INSUFFICIENT_MEMORY &&
+        ((BLEAppUtil_ScanEventData_t *)pMsg)->pBuf)
+    {
+        BLEAppUtil_free(((BLEAppUtil_ScanEventData_t *)pMsg)->pBuf);
+    }
 }
 
 /*********************************************************************
@@ -722,8 +980,27 @@ void BLEAppUtil_processPasscodeMsg(BLEAppUtil_msgHdr_t *pMsgData)
 /*********************************************************************
  * @fn      BLEAppUtil_processConnEventMsg
  *
- * @brief   Process L2CAP Signal events received from the BLE stack, called
+ * @brief   Process Connection events received from the BLE stack, called
  *          from BLEAppUtil task context.
+ *          This function calls @ref BLEAppUtil_callEventHandler.
+ *          The handler is from the type of BLEAPPUTIL_CONN_NOTI_TYPE
+ *
+ * @param   pMsg - the message the process
+ *
+ * @return  None
+ */
+void BLEAppUtil_processConnEventMsg(BLEAppUtil_connEventNoti_t *pMsg)
+{
+    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
+    // handler of the application
+    BLEAppUtil_callEventHandler(pMsg->event ,(BLEAppUtil_msgHdr_t *)pMsg->connEventReport, BLEAPPUTIL_CONN_NOTI_TYPE);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_isConnEventRequired
+ *
+ * @brief   Process Connection events received from the BLE stack, called
+ *          from BLE stack context.
  *          This function converts the BLE stack events to BLEAppUtil
  *          events (which are bit mask events) and calls @ref
  *          BLEAppUtil_callEventHandler.
@@ -734,34 +1011,28 @@ void BLEAppUtil_processPasscodeMsg(BLEAppUtil_msgHdr_t *pMsgData)
  *
  * @return  None
  */
-void BLEAppUtil_processConnEventMsg(BLEAppUtil_msgHdr_t *pMsg)
+uint8_t BLEAppUtil_isConnEventRequired(Gap_ConnEventRpt_t *pMsg,
+                                       uint32_t *event)
 {
     Gap_ConnEventRpt_t * pMsgData = (Gap_ConnEventRpt_t *)pMsg;
-    uint32_t event = 0;
 
     switch(pMsgData->eventType)
     {
-        case GAP_CB_EVENT_INVALID:
-        {
-            event = BLEAPPUTIL_CONN_NOTI_EVENT_INVALID;
-            break;
-        }
-
         case GAP_CB_CONN_ESTABLISHED:
         {
-            event = BLEAPPUTIL_CONN_NOTI_CONN_ESTABLISHED;
+            *event = BLEAPPUTIL_CONN_NOTI_CONN_ESTABLISHED;
             break;
         }
 
         case GAP_CB_PHY_UPDATE:
         {
-            event = BLEAPPUTIL_CONN_NOTI_PHY_UPDATE;
+            *event = BLEAPPUTIL_CONN_NOTI_PHY_UPDATE;
             break;
         }
 
         case GAP_CB_CONN_EVENT_ALL:
         {
-            event = BLEAPPUTIL_CONN_NOTI_CONN_EVENT_ALL;
+            *event = BLEAPPUTIL_CONN_NOTI_CONN_EVENT_ALL;
             break;
         }
 
@@ -770,22 +1041,44 @@ void BLEAppUtil_processConnEventMsg(BLEAppUtil_msgHdr_t *pMsg)
             break;
         }
     }
+    return BLEAppUtil_isEventEnabled(BLEAPPUTIL_CONN_NOTI_TYPE, *event);
+}
 
-    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
-    // handler of the application
-    BLEAppUtil_callEventHandler(event ,pMsg, BLEAPPUTIL_CONN_NOTI_TYPE);
+/*********************************************************************
+ * @fn      BLEAppUtil_isPairStateEventRequired
+ *
+ * @brief   Checks if the event is required by the application
+ *          level.
+ *          If it is required return true, else return false.
+ *
+ * @param   event - The event received
+ *
+ * @return  True/False
+ */
+uint8_t BLEAppUtil_isPairStateEventRequired(uint8_t event,
+                                            uint32_t *bleAppUtilEvent)
+{
+    uint8_t isRequired = false;
+
+    // If the event is in valid
+    if(event <= BLEAPPUTIL_PAIR_STATE_TABLE_SIZE)
+    {
+        // Convert the event
+        *bleAppUtilEvent = pairStateLookupTable[event];
+        // Check if the event is required by the application
+        isRequired = BLEAppUtil_isEventEnabled(BLEAPPUTIL_PAIR_STATE_TYPE, *bleAppUtilEvent);
+    }
+
+    return isRequired;
 }
 
 /*********************************************************************
  * @fn      BLEAppUtil_callEventHandler
  *
- * @brief   Process L2CAP Signal events received from the BLE stack, called
- *          from BLEAppUtil task context.
- *          This function converts the BLE stack events to BLEAppUtil
- *          events (which are bit mask events) and calls @ref
- *          BLEAppUtil_callEventHandler.
- *          All the events processed in this function will be received by
- *          handlers form type of BLEAPPUTIL_CONN_NOTI_TYPE
+ * @brief   Send the received msg to the handlers from the received
+ *          type if it's eventMask contains the received event or
+ *          if are from the type receiving data only:
+ *          BLEAPPUTIL_PASSCODE_TYPE and BLEAPPUTIL_L2CAP_DATA_TYPE
  *
  * @param   event   - The event the application handler will receive
  * @param   pMsg    - The msg the application handler will receive
@@ -795,32 +1088,112 @@ void BLEAppUtil_processConnEventMsg(BLEAppUtil_msgHdr_t *pMsg)
  */
 void BLEAppUtil_callEventHandler(uint32_t event, BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventHandlerType_e type)
 {
-    BLEAppUtil_EventHandlersList_t *iter = BLEAppUtilEventHandlersHead;
+    BLEAppUtil_EventHandlersList_t *handler = NULL;
 
     // Lock the Mutex
     pthread_mutex_lock(&mutex);
 
-    // Iterat over the handlers list
+    // Get the handler if exist
+    handler = BLEAppUtil_getEventHandler(handler, type);
+    // Iterate over the handlers list
+    while(handler != NULL)
+    {
+        // If the handler is from PASSCODE or L2CAP_DATA types or
+        // (for all other types) the event is part of the event mask,
+        // call the handler
+        if((type == BLEAPPUTIL_PASSCODE_TYPE) ||
+           (type == BLEAPPUTIL_L2CAP_DATA_TYPE) ||
+           (handler->eventHandler->eventMask & event))
+        {
+            handler->eventHandler->pEventHandler(event, pMsg);
+        }
+
+        // Get the next handler if exist
+        handler = BLEAppUtil_getEventHandler(handler, type);
+    }
+
+    // Unlock the Mutex - handlers were called
+    pthread_mutex_unlock(&mutex);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_isEventEnabled
+ *
+ * @brief   Returns the event mask of all registered event handlers from
+ *          a specific event handler type.
+ *
+ * @param   eventHandlerType - Handler type to get the event masks for
+ * @param   event - The event to verify that is required
+ *
+ * @return  The bieMask of all relevant event handlers
+ */
+uint8_t BLEAppUtil_isEventEnabled(BLEAppUtil_eventHandlerType_e eventHandlerType,
+                                  uint32_t event)
+{
+    uint8_t isRequired = false;
+    BLEAppUtil_EventHandlersList_t *handler = NULL;
+
+    // Get the handler if exist
+    handler = BLEAppUtil_getEventHandler(handler, eventHandlerType);
+    while(handler != NULL)
+    {
+        // Check if it's event mask contains the event
+        if((eventHandlerType == BLEAPPUTIL_PASSCODE_TYPE) ||
+           (eventHandlerType == BLEAPPUTIL_L2CAP_DATA_TYPE) ||
+           (handler->eventHandler->eventMask & event))
+        {
+            isRequired = true;
+            break;
+        }
+
+        // Get the next handler if exist
+        handler = BLEAppUtil_getEventHandler(handler, eventHandlerType);
+    }
+
+    return isRequired;
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_getEventHandler
+ *
+ * @brief   Search for an event handler from a given type starting
+ *          from the given handler pointer of from the head of the
+ *          handlers list if NULL is received.
+ *
+ * @param   handler - The handler to start the search from (start from head if NULL)
+ * @param   eventHandlerType - Handler type to get the event masks for
+ *
+ * @return  The bieMask of all relevant event handlers
+ */
+BLEAppUtil_EventHandlersList_t *BLEAppUtil_getEventHandler(BLEAppUtil_EventHandlersList_t *handler,
+                                                           BLEAppUtil_eventHandlerType_e eventHandlerType)
+{
+    BLEAppUtil_EventHandlersList_t *iter = NULL;
+
+    // If the header value is NULL start the search from the head of the list
+    if(handler == NULL)
+    {
+        iter = BLEAppUtilEventHandlersHead;
+    }
+    // Start the search from the next handler
+    else
+    {
+        iter = (BLEAppUtil_EventHandlersList_t *)handler->next;
+    }
+
+    // Iterate over the handlers list
     while(iter != NULL)
     {
-        // Verify that the handler exist and it is from the correct type
-        if(iter->eventHandler->pEventHandler && iter->eventHandler->handlerType == type)
+        // If this is an handler from the required type
+        if(iter->eventHandler->handlerType == eventHandlerType)
         {
-            // If the handler is from PASSCODE or L2CAP_DATA types or
-            // (for all other types) the event is part of the event mask,
-            // call the handler
-            if(type == BLEAPPUTIL_PASSCODE_TYPE ||
-               type == BLEAPPUTIL_L2CAP_DATA_TYPE ||
-               (iter->eventHandler->eventMask & event))
-            {
-                iter->eventHandler->pEventHandler(event, pMsg);
-            }
+            // Break from the loop to return the current item in the list
+            break;
         }
 
         // Next item in the list
         iter = (BLEAppUtil_EventHandlersList_t *)iter->next;
     }
 
-    // Unlock the Mutex - handlers were called
-    pthread_mutex_unlock(&mutex);
+    return iter;
 }

@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_10_01_02.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_20_00_119.html",
         "devices": [
             "CC2340R5"
         ],
@@ -264,7 +264,7 @@
     {
         "name": "TI BLE5-Stack Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble5stack_3_03_01_00.html",
+        "location": "../../docs/ble5stack/release_notes_ble5stack_3_03_02_00.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -281,9 +281,28 @@
         ]
     },
     {
+        "name": "TI Z-Stack Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/zigbee/release_notes_zigbee_0_95_00.html",
+        "devices": [
+            "CC1352R1F3",
+            "CC2642R1F"
+        ],
+        "devtools": [
+            "LAUNCHXL-CC13X2R1",
+            "LAUNCHXL-CC26X2R1"
+        ],
+        "mainCategories": [
+            "Documents"
+        ],
+        "subCategories": [
+            "TI Z-Stack"
+        ]
+    },
+    {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_8_10_01_04.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_8_10_03_01.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"
@@ -321,7 +340,7 @@
     {
         "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_8_10_00.html",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_8_20_00.html",
         "devices": [
             "CC1352R1F3",
             "CC2642R1F"

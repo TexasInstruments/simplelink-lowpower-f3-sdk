@@ -134,7 +134,7 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
                 /* Configure S2R */
                 RCL_Handler_Adc_Noise_configureS2R(adcCmd->numWords);
 
-                Log_printf(RclCore, Log_VERBOSE, "RFE powered up. Configured S2R for %d words, buffer: 0x%x", adcCmd->numWords, adcCmd->output);
+                Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_ADC_Noise_getNoise: RFE powered up. Configured S2R for %d words, buffer: 0x%x", adcCmd->numWords, adcCmd->output);
 
                 adcNoiseHandlerState.synthRefsys = 0;
                 adcNoiseHandlerState.powerUp = 1;

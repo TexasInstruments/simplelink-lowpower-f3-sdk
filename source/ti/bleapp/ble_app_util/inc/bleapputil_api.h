@@ -85,7 +85,7 @@ extern "C"
 
 /**
  *  @defgroup BLEAppUtil_Functions_Typedefs BLEAppUtil Functions Typedefs
- *  @brief This module implements BLEAppUtil Funcctions Typedefs
+ *  @brief This module implements BLEAppUtil Functions Typedefs
  *  @{
  */
 
@@ -154,7 +154,7 @@ typedef void (*InvokeFromBLEAppUtilContext_t)(char *pData);
 typedef enum BLEAppUtil_eventHandlerType_e
 {
     BLEAPPUTIL_GAP_CONN_TYPE,           //!< GAP Connection type
-    BLEAPPUTIL_CONN_NOTI_TYPE,          //!< Connection Notification Ttype
+    BLEAPPUTIL_CONN_NOTI_TYPE,          //!< Connection Event Notification type
     BLEAPPUTIL_GAP_ADV_TYPE,            //!< GAP Advertise type
     BLEAPPUTIL_GAP_SCAN_TYPE,           //!< GAP Scan type
     BLEAPPUTIL_GAP_PERIODIC_TYPE,       //!< GAP Periodic type
@@ -192,10 +192,9 @@ typedef enum BLEAppUtil_GAPConnEventMaskFlags_e
 /// Connection event event mask
 typedef enum BLEAppUtil_ConnEventNotiEventMaskFlags_e
 {
-    BLEAPPUTIL_CONN_NOTI_EVENT_INVALID             = (uint32_t)BV(0),  //!< @ref GAP_CB_EVENT_INVALID
-    BLEAPPUTIL_CONN_NOTI_CONN_ESTABLISHED          = (uint32_t)BV(1),  //!< @ref GAP_CB_CONN_ESTABLISHED
-    BLEAPPUTIL_CONN_NOTI_PHY_UPDATE                = (uint32_t)BV(2),  //!< @ref GAP_CB_PHY_UPDATE
-    BLEAPPUTIL_CONN_NOTI_CONN_EVENT_ALL            = (uint32_t)BV(3),  //!< @ref GAP_CB_CONN_EVENT_ALL
+    BLEAPPUTIL_CONN_NOTI_CONN_ESTABLISHED          = (uint32_t)BV(0),  //!< @ref GAP_CB_CONN_ESTABLISHED
+    BLEAPPUTIL_CONN_NOTI_PHY_UPDATE                = (uint32_t)BV(1),  //!< @ref GAP_CB_PHY_UPDATE
+    BLEAPPUTIL_CONN_NOTI_CONN_EVENT_ALL            = (uint32_t)BV(2),  //!< @ref GAP_CB_CONN_EVENT_ALL
 } BLEAppUtil_ConnEventNotiEventMaskFlags_e;
 
 /// GAP ADV event mask
@@ -407,7 +406,7 @@ typedef struct
     uint8_t         *advData;           //!< pointer to array containing the advertise data
     uint16_t        scanRespDataLen;    //!< length (in bytes) of scanRespData
     uint8_t         *scanRespData;      //!< pointer to array containing the scan response data
-    GapAdv_params_t *advParam;          //!< pointer to structure of adversing parameters
+    GapAdv_params_t *advParam;          //!< pointer to structure of advertising parameters
 } BLEAppUtil_AdvInit_t;
 
 /**
@@ -566,7 +565,7 @@ typedef struct
  */
 typedef struct
 {
-    gapBondParams_t             *gapBondParams;             //!< GAP bond manager parameters structre
+    gapBondParams_t             *gapBondParams;             //!< GAP bond manager parameters structure
     Gap_updateDecision_t        connParamUpdateDecision;    //!< The param update configuration
 } BLEAppUtil_PeriCentParams_t;
 
@@ -589,7 +588,7 @@ typedef union
     gapBondCompleteEvent_t          bondCompleteEvent;          //!< see @ref gapBondCompleteEvent_t.           BLEAPPUTIL_BOND_COMPLETE_EVENT
     gapPairingReqEvent_t            pairingReqEvent;            //!< see @ref gapPairingReqEvent_t.             BLEAPPUTIL_PAIRING_REQ_EVENT
     gapBondLostEvent_t              bondLostEvent;              //!< see @ref gapBondLostEvent_t.               BLEAPPUTIL_AUTHENTICATION_FAILURE_EVT - no data. BLEAPPUTIL_BOND_LOST_EVENT
-    Gap_ConnEventRpt_t              connEventRpt;               //!< see @ref Gap_ConnEventRpt_t.               BLEAPPUTIL_GAP_CB_EVENT_INVALID , @ref BLEAPPUTIL_GAP_CB_CONN_ESTABLISHED and @ref BLEAPPUTIL_GAP_CB_PHY_UPDATE
+    Gap_ConnEventRpt_t              connEventRpt;               //!< see @ref Gap_ConnEventRpt_t.               BLEAPPUTIL_GAP_CB_CONN_ESTABLISHED ,BLEAPPUTIL_GAP_CB_PHY_UPDATE and BLEAPPUTIL_CONN_NOTI_CONN_EVENT_ALL
     gapAuthParams_t                 authParams;                 //!< see @ref gapAuthParams_t.
     gapPairingReq_t                 pairingReq;                 //!< see @ref gapPairingReq_t.                  BLEAPPUTIL_PAIRING_REQ_EVENT
     gapUpdateLinkParamReq_t         paramUpdateReq;             //!< see @ref gapUpdateLinkParamReq_t.          BLEAPPUTIL_LINK_PARAM_UPDATE_REQ_EVENT
@@ -879,25 +878,32 @@ bStatus_t BLEAppUtil_setConnPhy(BLEAppUtil_ConnPhyParams_t *phyParams);
 // Connection Event notifications
 
 /**
- * @brief   Register a connection event callback.
- *          It is only possible to register for one connection handle of for all connection handles.
+ * @brief   Register to receive a connection events notifications.
+ *          It is only possible to register for one connection handle or for all connection handles.
  *          It it possible to register to certain type of connection event.
  *
- * @note    The callback needs to be registered for each reconnection. It is not retained across a disconnect / reconnect.
+ * @note    The events are received in an event handlers from type @ref BLEAPPUTIL_CONN_NOTI_TYPE.
+ *          Registration of event handlers is done using the @ref BLEAppUtil_registerEventHandler
+ *          for events from @ref BLEAppUtil_ConnEventNotiEventMaskFlags_e.
+ *
+ *          If a specific connection handle is registered using this function,
+ *          the function should be called to register for each reconnection.
+ *          It is not retained across a disconnect / reconnect.
  *
  * @param   connHandle - if @ref LINKDB_CONNHANDLE_ALL, apply to all connections.
  *                       else, apply only for a specific connection.
  *
  * @return  @ref SUCCESS
  * @return  @ref bleGAPNotFound : connection handle not found
- * @return  @ref bleMemAllocError : there is not enough memory to register the callback.
+ * @return  @ref bleMemAllocError : there is not enough memory to register.
  */
 bStatus_t BLEAppUtil_registerConnNotifHandler(uint16_t connHandle);
 
 /**
  * @brief   Unregister a connection event callback.
  *
- * @note    There is no need to unregister in order to change the type of connection event registered. It can be changed with a new call.
+ * @note    There is no need to unregister in order to change connection handle registered.
+ *          It can be changed with a new call to @ref BLEAppUtil_registerConnNotifHandler.
  *
  * @return  @ref SUCCESS
  * @return  @ref bleGAPNotFound : connection handle not found

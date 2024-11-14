@@ -242,6 +242,7 @@ TaskHandle_t npiTask = NULL;
 static Task_Struct npiTaskStruct;
 #endif
 
+#ifndef FREERTOS
 //! \brief Allocated memory block for NPI task's stack
 //!
 #if defined __TI_COMPILER_VERSION__
@@ -251,7 +252,8 @@ __attribute__ ((aligned (8)))
 #else
 #pragma data_alignment=8
 #endif
-uint8_t npiTaskStack[NPITASK_STACK_SIZE];
+static uint8_t npiTaskStack[NPITASK_STACK_SIZE];
+#endif
 
 //! \brief Handle for the ASYNC TX Queue
 //!
@@ -818,8 +820,6 @@ void NPITask_createTask(uint32_t stackID)
     // Set stackID for future ICall Messaging
     stackServiceID = stackID;
 
-    memset(&npiTaskStack, 0xBB, sizeof(npiTaskStack));
-
 #ifdef FREERTOS
     BaseType_t xReturned;
     /* Create the task, storing the handle. */
@@ -836,6 +836,8 @@ void NPITask_createTask(uint32_t stackID)
       while(1);
     }
 #else
+    memset(&npiTaskStack, 0xBB, sizeof(npiTaskStack));
+
     // Configure and create the NPI task.
     Task_Params npiTaskParams;
     Task_Params_init(&npiTaskParams);
@@ -893,16 +895,20 @@ void NPITask_sendToHost(uint8_t *pMsg)
     ICall_CSState key;
     NPI_QueueRec *recPtr;
 
+    // NPIFrame_frameMsg will always free pMsg when it's done
     NPIMSG_msg_t *pNPIMsg = NPIFrame_frameMsg(pMsg);
-    if(!pNPIMsg)
+    if(pNPIMsg == NULL)
     {
       return;
     }
+
     recPtr = ICall_mallocLimited(sizeof(NPI_QueueRec));
 
-    if(!recPtr)
+    if(recPtr == NULL)
     {
-      ICall_free(pNPIMsg);
+      // Free NPI Message and NPI buffer in case it allocated.
+      NPITask_freeNpiMsg((uint8_t *)pNPIMsg);
+
       return;
     }
 
@@ -933,7 +939,8 @@ void NPITask_sendToHost(uint8_t *pMsg)
 #ifdef FREERTOS
             if(Queue_enqueue(npiTxQueue, (char*)&recPtr) == FAILURE)
             {
-                ICall_free(pNPIMsg);
+                // Free NPI Message and NPI buffer in case it allocated.
+                NPITask_freeNpiMsg((uint8_t *)pNPIMsg);
                 ICall_free(recPtr);
                 ICall_leaveCriticalSection(key);
                 return;
@@ -1089,7 +1096,8 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
                     if(Queue_enqueue(npiTxQueue, (char*)&recPtr) == FAILURE)
                     {
                         ICall_free(recPtr);
-                        ICall_free(pNPIMsg);
+                        // Free NPI Message and NPI buffer in case it allocated.
+                        NPITask_freeNpiMsg((uint8_t *)pNPIMsg);
                         return;
                     }
 #else
@@ -1107,7 +1115,8 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
                 {
                     /* Fail - unsupported message type */
                     ICall_free(recPtr);
-                    ICall_free(pNPIMsg);
+                    // Free NPI Message and NPI buffer in case it allocated.
+                    NPITask_freeNpiMsg((uint8_t *)pNPIMsg);
                     break;
                 }
             }
@@ -1117,7 +1126,8 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
         else
         {
             /* Fail - couldn't get queue record */
-            ICall_free(pNPIMsg);
+            // Free NPI Message and NPI buffer in case it allocated.
+            NPITask_freeNpiMsg((uint8_t *)pNPIMsg);
         }
     }
 }
@@ -1382,12 +1392,13 @@ static void NPITask_transportTxDoneCallBack(int size)
 static void NPITask_incomingFrameCB(uint16_t frameSize, uint8_t *pFrame,
                                     NPIMSG_Type msgType)
 {
-    NPI_QueueRec *recPtr = ICall_mallocLimited(sizeof(NPI_QueueRec));
+
+    NPI_QueueRec *recPtr = ICall_malloc(sizeof(NPI_QueueRec));
 
     if (recPtr != NULL)
     {
         // Allocate NPIMSG_msg_t container
-        NPIMSG_msg_t *npiMsgPtr = ICall_mallocLimited(sizeof(NPIMSG_msg_t));
+        NPIMSG_msg_t *npiMsgPtr = ICall_malloc(sizeof(NPIMSG_msg_t));
 
         if (npiMsgPtr != NULL)
         {
@@ -1454,7 +1465,12 @@ static void NPITask_incomingFrameCB(uint16_t frameSize, uint8_t *pFrame,
         {
             // Malloc failed - release previous dynamic allocation
             ICall_free(recPtr);
+            ICall_freeMsg(pFrame);
         }
+    }
+    else
+    {
+        ICall_freeMsg(pFrame);
     }
 }
 

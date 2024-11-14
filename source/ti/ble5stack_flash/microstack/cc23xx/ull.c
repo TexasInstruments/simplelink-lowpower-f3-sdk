@@ -77,7 +77,6 @@
 /*********************************************************************
  * INCLUDES
  */
-#ifdef USE_RCL
 
 #include <stdlib.h>
 #include <string.h>
@@ -225,7 +224,7 @@ void ull_setupMonitorDataEntryQueue( void )
   // set the Scan receive buffers
   for (uint8 i = 0; i < ULL_NUM_RX_MONITOR_ENTRIES; i++)
   {
-    port_key_t key;
+    volatile port_key_t key;
 
     key = port_enterCS_HW();
     gull_CmData.queue.dataBuffers[i] = (RCL_MultiBuffer *) malloc( gull_CmData.queue.length );
@@ -290,7 +289,7 @@ void ull_ClearRxDataEntry( rxDataQ_t *pQueue)
  *              data entry queue as Pending so that the radio can once again
  *              use all available data entry queue. It should be called after
  *              the user has processed after the Rx buffer full is reported.
- *              NOTE: this assumes a ring buffer is used.
+ *              NOTE: This function should not be used by the application.
  *
  * input parameters
  *
@@ -302,7 +301,7 @@ void ull_ClearRxDataEntry( rxDataQ_t *pQueue)
  *
  * @return      None.
  */
-void ull_flushAllDataEntry( rxDataQ_t *pQueue )
+static void ull_flushAllDataEntry( rxDataQ_t *pQueue )
 {
 
   while (RCL_MultiBuffer_RxEntry_get(&pQueue->multiBuffers, &pQueue->finishedBuffers) != NULL)
@@ -629,11 +628,11 @@ void ull_monitorStop(void)
  * output parameters
  *
  * @param       len      - Pointer to payload length.
- * @param       payload  - Pointer to payload.
+ * @param       pPayload  - Pointer to payload.
  *
  * @return      None.
  */
-void ull_getPDU( uint8 *len, uint8 *payload, RCL_Buffer_DataEntry *pDataEntry )
+void ull_getPDU( uint8 *len, uint8 *pPayload, RCL_Buffer_DataEntry *pDataEntry )
 {
   int8_t rssi = RCL_BLE5_getRxRssi(pDataEntry);
   uint32_t timestamp = RCL_BLE5_getRxTimestamp(pDataEntry);
@@ -648,8 +647,8 @@ void ull_getPDU( uint8 *len, uint8 *payload, RCL_Buffer_DataEntry *pDataEntry )
    */
 
   /* The memcpy is used here to avoid memory alignment issues (ie in FREERTOS) */
-  memcpy(payload, &rssi, ULL_SUFFIX_RSSI_SIZE);
-  memcpy(payload + ULL_SUFFIX_RSSI_SIZE + DUMMY_PAYLOAD_SIZE, &timestamp, ULL_SUFFIX_TIMESTAMP_SIZE);
+  memcpy(pPayload, &rssi, ULL_SUFFIX_RSSI_SIZE);
+  memcpy(pPayload + ULL_SUFFIX_RSSI_SIZE + DUMMY_PAYLOAD_SIZE, &timestamp, ULL_SUFFIX_TIMESTAMP_SIZE);
 }
 
 /*********************************************************************
@@ -675,7 +674,7 @@ void ull_rxEntryDoneCback(void)
     return;
   }
 
-  RCL_Buffer_DataEntry *pDataEntry;
+  RCL_Buffer_DataEntry *pDataEntry = NULL;
   keyHwi = HwiP_disable();
   uint8 *pktInfo = malloc( ULL_SUFFIX_MAX_SIZE);
   HwiP_restore(keyHwi);
@@ -704,12 +703,16 @@ void ull_rxEntryDoneCback(void)
     }
     else
     {
+      keyHwi = HwiP_disable();
       free(pktInfo);
+      HwiP_restore(keyHwi);
     }
   }
   else
   {
+    keyHwi = HwiP_disable();
     free(pktInfo);
+    HwiP_restore(keyHwi);
   }
 
   return;
@@ -817,4 +820,3 @@ uint32_t ull_convertRatTicksToUs(uint32_t time)
 
 /*********************************************************************
 *********************************************************************/
-#endif //USE_RCL

@@ -347,10 +347,12 @@ function moduleInstances(inst)
 {
     const dependencyModule = [];
     let args;
+    let adcNoiseArgs;
     let modulePath;
 
     // Get the board default rf settings
     const radioSettings = Common.getRadioScript(inst.rfDesign,system.deviceData.deviceId).radioConfigParams;
+    const adcNoiseSettings = Common.getRadioScript(inst.rfDesign,system.deviceData.deviceId).adcNoiseParams;
 
     if(!hideRadioConfig())
     {
@@ -398,6 +400,13 @@ function moduleInstances(inst)
             paramVisibility: false,
             permission: "ReadOnly"
         }
+        adcNoiseArgs = {
+            $name: "Adc_noise",
+            phyType: "adc_noise",
+            codeExportConfig: adcNoiseSettings,
+            paramVisibility: false,
+            permission: "ReadOnly"
+        }
     }
 
     dependencyModule.push({
@@ -407,6 +416,15 @@ function moduleInstances(inst)
         moduleName: modulePath,
         collapsed: true,
         args: args
+    });
+
+    dependencyModule.push({
+        name: "adcNoiseConfig",
+        group: "bleRadioConfig",
+        displayName: "ADC Noise Configuration",
+        moduleName: modulePath,
+        collapsed: true,
+        args: adcNoiseArgs
     });
 
     return(dependencyModule);

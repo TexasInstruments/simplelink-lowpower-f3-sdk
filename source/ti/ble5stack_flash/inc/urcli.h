@@ -73,7 +73,6 @@
 #ifndef URFI_H
 #define URFI_H
 
-#ifdef USE_RCL
 
 #ifdef __cplusplus
 extern "C"
@@ -129,5 +128,4 @@ extern RCL_CommandStatus urcliGenericRxHandle;
 }
 #endif
 
-#endif
 #endif /* URFI_H */

@@ -112,7 +112,7 @@ static CGMS_cb_t *cgms_profileCBs = NULL;
  */
 
 // CGM Service declaration
-static CONST gattAttrType_t cgms_service = { ATT_BT_UUID_SIZE, cgms_serv_UUID };
+static const gattAttrType_t cgms_service = { ATT_BT_UUID_SIZE, cgms_serv_UUID };
 
 // CGM Measurement
 static uint8 cgms_meas_props = GATT_PROP_NOTIFY;    // Characteristic properties
@@ -252,7 +252,7 @@ static void CGM_sstUpdate( uint8 *pValue );
  * made within these functions.
  *
  */
-CONST gattServiceCBs_t cgms_servCB =
+const gattServiceCBs_t cgms_servCB =
 {
   CGMS_readAttrCB,   // Read callback function pointer
   CGMS_writeAttrCB,  // Write callback function pointer

@@ -62,7 +62,6 @@
 #include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
 #include DeviceFamily_constructPath(inc/pbe_ieee_regdef_regs.h)
 
-
 /** Polynomial to use for PRBS9 data */
 #define RCL_HANDLER_IEEE_PRBS9_POLY             0x08800000
 /** Polynomial to use for PRBS15 data */
@@ -73,7 +72,7 @@
 
 #define RCL_HANDLER_IEEE_RESTORE_NONE           0x0000
 #define RCL_HANDLER_IEEE_RESTORE_MODCTRL        0x0001
-#define RCL_HANDLER_IEEE_RESTORE_WHITEN_POLY    0x0002
+#define RCL_HANDLER_IEEE_RESTORE_WHITENING      0x0002
 #define RCL_HANDLER_IEEE_RESTORE_SFD            0x0004
 
 /* Byte length of IEEE 802.15.4 frame fields */
@@ -92,6 +91,7 @@ typedef enum
     txStateNewAction,
     txStateSetupCca,
     txStateWaitForCca,
+    txStateStopToSetTx,
     txStateSetTxTime,
     txStateWaitForTx,
     txStateTx,
@@ -131,6 +131,7 @@ struct
     union {
         struct {
             uint16_t        restoreOpt;
+            uint16_t        storedWhitenInit;
             uint32_t        storedWhitenPoly;
             uint32_t        storedMdmSyncA;
         } txTest;
@@ -142,7 +143,7 @@ struct
             bool            allowTxDelay;
             bool            alwaysStoreAck;
             uint8_t         expSeqNo;
-            uint32_t        txStartTime;
+            uint32_t        ccaTxStartTime;
             RCL_StopType    txActionStop;
         } rxTx;
     };
@@ -212,6 +213,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
         {
             if (rxAction->numPan > RCL_CMD_IEEE_MAX_NUM_PAN)
             {
+                cmd->status = RCL_CommandStatus_Error_Param;
                 rclEvents.lastCmdDone = 1;
                 return rclEvents;
             }
@@ -244,7 +246,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 {
                     /* Check if the command should go directly to TX */
                     uint32_t txTime = txActionTime + txAction->relativeTxStartTime;
-                    ieeeHandlerState.rxTx.txStartTime = txTime;
+                    ieeeHandlerState.rxTx.ccaTxStartTime = txTime;
                     ieeeHandlerState.rxTx.allowTxDelay = txAction->allowDelay || txAction->allowTxDelay;
                     if (rxAction == NULL || RCL_Scheduler_delta(cmdTime, txTime) < (2 * IEEE_CCA_START_TIME_MARGIN))
                     {
@@ -254,11 +256,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                     else
                     {
                         /* Set receiver to stop in time for TX */
-                        bool timeSet = RCL_Handler_Ieee_setCustomEventTime(txTime - IEEE_CCA_START_TIME_MARGIN, IEEE_CCA_START_TIME_MARGIN, true);
-                        if (timeSet)
-                        {
-                            ieeeHandlerState.rxTx.txState = txStateSetTxTime;
-                        }
+                        ieeeHandlerState.rxTx.txState = txStateStopToSetTx;
                     }
                 }
                 else
@@ -294,7 +292,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             if (startTx)
             {
                 RCL_CommandTiming timing = cmd->timing;
-                timing.absStartTime = ieeeHandlerState.rxTx.txStartTime;
+                timing.absStartTime = ieeeHandlerState.rxTx.ccaTxStartTime;
                 startTimeStatus = RCL_Scheduler_setCustomStartStopTimeEarliestStart(&timing, RCL_Schedule_AbsTime,
                     ieeeHandlerState.rxTx.allowTxDelay, earliestStartTime);
                 ieeeHandlerState.rxTx.txState = txStateWaitForTx;
@@ -311,74 +309,136 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             }
         }
 
+        if (rclEvents.lastCmdDone == 0 && rxAction != NULL)
+        {
+            /* Prepare receiver */
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
+
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_PIB) = rxAction->numPan;
+
+            uint32_t panRegOffset = 0;
+            uint32_t sourceMatchHeaderOffset = 0;
+            uint32_t sourceMatchTableOffset = 0;
+            for (int i = 0; i < rxAction->numPan; i++)
+            {
+                RCL_CmdIeee_PanConfig *panConfig = &rxAction->panConfig[i];
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_PANID0) = panConfig->localPanId;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_SHORTADDR0) = panConfig->localShortAddr;
+                HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_EXTADDR00) = (uint32_t) panConfig->localExtAddr;
+                HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_EXTADDR02) = (uint32_t) (panConfig->localExtAddr >> 32);
+                uint32_t frameFilteringOption =
+                    (panConfig->maxFrameVersion << PBE_IEEE_RAM_FFOPT0_MAXFRAME_S) |
+                    (panConfig->panCoord << PBE_IEEE_RAM_FFOPT0_PANCOORD_S) |
+                    (panConfig->defaultPend << PBE_IEEE_RAM_FFOPT0_DEFPEND_S);
+
+                switch (panConfig->autoAckMode)
+                {
+                    case RCL_CmdIeee_AutoAck_Off:
+                    default:
+                        frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_DISABLE |
+                            PBE_IEEE_RAM_FFOPT0_AUTOPEND_DISABLE |
+                            PBE_IEEE_RAM_FFOPT0_PREQONLY_ANY;
+                        break;
+
+                    case RCL_CmdIeee_AutoAck_ImmAckNoAutoPend:
+                        frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_EN |
+                            PBE_IEEE_RAM_FFOPT0_AUTOPEND_DISABLE |
+                            PBE_IEEE_RAM_FFOPT0_PREQONLY_ANY;
+                        break;
+
+                    case RCL_CmdIeee_AutoAck_ImmAckAutoPendAll:
+                        frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_EN |
+                            PBE_IEEE_RAM_FFOPT0_AUTOPEND_EN |
+                            PBE_IEEE_RAM_FFOPT0_PREQONLY_ANY;
+                        break;
+
+                    case RCL_CmdIeee_AutoAck_ImmAckAutoPendDataReq:
+                        frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_EN |
+                            PBE_IEEE_RAM_FFOPT0_AUTOPEND_EN |
+                            PBE_IEEE_RAM_FFOPT0_PREQONLY_DATAREQ;
+                        break;
+                }
+
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_FFOPT0) = frameFilteringOption;
+
+                /* Set up source matching */
+                if (panConfig->sourceMatchingTableExt != NULL)
+                {
+                    /* Extended source matching: Not yet supported */
+                    cmd->status = RCL_CommandStatus_Error_Param;
+                    rclEvents.lastCmdDone = 1;
+                    break;
+                }
+                if (panConfig->sourceMatchingTableShort != NULL)
+                {
+                    RCL_CmdIeee_SourceMatchingTableShort *sourceMatchingTable = panConfig->sourceMatchingTableShort;
+                    uint32_t numEntries = sourceMatchingTable->numEntries;
+                    if (numEntries > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN)
+                    {
+                        cmd->status = RCL_CommandStatus_Error_Param;
+                        rclEvents.lastCmdDone = 1;
+                        break;
+                    }
+                    uint32_t entryNo = 0;
+                    uint32_t index = 0;
+                    while (entryNo < numEntries)
+                    {
+                        uint16_t mask = 0xFFFF;
+                        if ((numEntries - entryNo) < 16)
+                        {
+                            mask >>= (16 - (numEntries - entryNo));
+                        }
+                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE00 + (index << 1)) =
+                            sourceMatchingTable->entryEnable[index] & mask;
+                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_FRAMEPENDING00 + (index << 1)) =
+                            sourceMatchingTable->framePending[index] & mask;
+                        index++;
+                        entryNo += 16;
+                    }
+                    while (index < RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS)
+                    {
+                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_ENTRYENABLE00 + (index << 1)) = 0;
+                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FRAMEPENDING00 + (index << 1)) = 0;
+                        index++;
+                    }
+                    for (entryNo = 0; entryNo < numEntries; entryNo++)
+                    {
+                        HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchTableOffset + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START + (entryNo << 2)) =
+                            sourceMatchingTable->shortEntry[entryNo].combined;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS; i++)
+                    {
+                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE00 + (i << 1)) = 0;
+                    }
+                }
+
+                panRegOffset += PBE_IEEE_RAM_O_PANID1 - PBE_IEEE_RAM_O_PANID0;
+                sourceMatchHeaderOffset += PBE_IEEE_RAM_O_ENTRYENABLE10 - PBE_IEEE_RAM_O_ENTRYENABLE00;
+                sourceMatchTableOffset += PBE_IEEE_RAM_O_PAN1_SRC_MATCH_SHORT_START - PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START;
+            }
+            uint16_t ffType =
+                PBE_IEEE_RAM_FFTYPE_MACCMD1_M |
+                PBE_IEEE_RAM_FFTYPE_DATA1_M |
+                PBE_IEEE_RAM_FFTYPE_BEACON1_M |
+                PBE_IEEE_RAM_FFTYPE_MACCMD0_M |
+                PBE_IEEE_RAM_FFTYPE_DATA0_M |
+                PBE_IEEE_RAM_FFTYPE_BEACON0_M;
+            ieeeHandlerState.rxTx.alwaysStoreAck = rxAction->alwaysStoreAck;
+            if (ieeeHandlerState.rxTx.alwaysStoreAck)
+            {
+                ffType |= PBE_IEEE_RAM_FFTYPE_ACK1_M | PBE_IEEE_RAM_FFTYPE_ACK0_M;
+            }
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FFTYPE) = ffType;
+        }
+
         if (rclEvents.lastCmdDone == 0)
         {
             if (rxAction != NULL)
             {
                 /* Start receiver */
-                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_RXTIMEOUT) = 0; /* No timeout except from SYSTIM */
-
-                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_PIB) = rxAction->numPan;
-
-                uint32_t regOffset = 0;
-                for (int i = 0; i < rxAction->numPan; i++)
-                {
-                    RCL_CmdIeee_PanConfig *panConfig = &rxAction->panConfig[i];
-                    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + regOffset + PBE_IEEE_RAM_O_PANID0) = panConfig->localPanId;
-                    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + regOffset + PBE_IEEE_RAM_O_SHORTADDR0) = panConfig->localShortAddr;
-                    HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + regOffset + PBE_IEEE_RAM_O_EXTADDR00) = (uint32_t) panConfig->localExtAddr;
-                    HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + regOffset + PBE_IEEE_RAM_O_EXTADDR02) = (uint32_t) (panConfig->localExtAddr >> 32);
-                    uint32_t frameFilteringOption =
-                        (panConfig->maxFrameVersion << PBE_IEEE_RAM_FFOPT0_MAXFRAME_S) |
-                        (panConfig->panCoord << PBE_IEEE_RAM_FFOPT0_PANCOORD_S) |
-                        (panConfig->defaultPend << PBE_IEEE_RAM_FFOPT0_DEFPEND_S);
-
-                    switch (panConfig->autoAckMode)
-                    {
-                        case RCL_CmdIeee_AutoAck_Off:
-                        default:
-                                frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_DISABLE |
-                                    PBE_IEEE_RAM_FFOPT0_AUTOPEND_DISABLE |
-                                    PBE_IEEE_RAM_FFOPT0_PREQONLY_ANY;
-                            break;
-
-                        case RCL_CmdIeee_AutoAck_ImmAckNoAutoPend:
-                                frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_EN |
-                                    PBE_IEEE_RAM_FFOPT0_AUTOPEND_DISABLE |
-                                    PBE_IEEE_RAM_FFOPT0_PREQONLY_ANY;
-                            break;
-
-                        case RCL_CmdIeee_AutoAck_ImmAckAutoPendAll:
-                                frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_EN |
-                                    PBE_IEEE_RAM_FFOPT0_AUTOPEND_EN |
-                                    PBE_IEEE_RAM_FFOPT0_PREQONLY_ANY;
-                            break;
-
-                        case RCL_CmdIeee_AutoAck_ImmAckAutoPendDataReq:
-                                frameFilteringOption |= PBE_IEEE_RAM_FFOPT0_AUTOACK_EN |
-                                    PBE_IEEE_RAM_FFOPT0_AUTOPEND_EN |
-                                    PBE_IEEE_RAM_FFOPT0_PREQONLY_DATAREQ;
-                            break;
-                    }
-
-                    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + regOffset + PBE_IEEE_RAM_O_FFOPT0) = frameFilteringOption;
-
-                    regOffset += PBE_IEEE_RAM_O_PANID1 - PBE_IEEE_RAM_O_PANID0;
-                }
-                uint16_t fftype =
-                    PBE_IEEE_RAM_FFTYPE_MACCMD1_M |
-                    PBE_IEEE_RAM_FFTYPE_DATA1_M |
-                    PBE_IEEE_RAM_FFTYPE_BEACON1_M |
-                    PBE_IEEE_RAM_FFTYPE_MACCMD0_M |
-                    PBE_IEEE_RAM_FFTYPE_DATA0_M |
-                    PBE_IEEE_RAM_FFTYPE_BEACON0_M;
-                ieeeHandlerState.rxTx.alwaysStoreAck = rxAction->alwaysStoreAck;
-                if (ieeeHandlerState.rxTx.alwaysStoreAck)
-                {
-                    fftype |= PBE_IEEE_RAM_FFTYPE_ACK1_M | PBE_IEEE_RAM_FFTYPE_ACK0_M;
-                }
-                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FFTYPE) = fftype;
-
                 /* Set up sync found capture */
                 hal_setup_sync_found_cap();
                 /* Initialize RF FIFOs */
@@ -391,27 +451,25 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 LRF_enableHwInterrupt(RCL_Handler_Ieee_maskEventsByFifoConf(LRF_EventOpDone.value | LRF_EventOpError.value |
                                                                             LRF_EventRxOk.value | LRF_EventRxNok.value |
                                                                             LRF_EventRxIgnored.value | LRF_EventRxBufFull.value |
-                                                                            (ieeeHandlerState.common.activeUpdate ? LRF_EventRxCtrlAck.value :0),
+                                                                            (ieeeHandlerState.common.activeUpdate ? LRF_EventTxAck.value : 0),
                                                                             fifoCfg, ieeeHandlerState.common.activeUpdate));
                 if (!startTx)
                 {
                     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_OPCFG) =
-                        PBE_IEEE_RAM_OPCFG_STOP_SOFTEND |
+                        (rxAction->frameFiltStop ? PBE_IEEE_RAM_OPCFG_STOP_HARDEND : PBE_IEEE_RAM_OPCFG_STOP_SOFTEND) |
                         PBE_IEEE_RAM_OPCFG_RXREPEATOK_YES |
                         PBE_IEEE_RAM_OPCFG_RXREPEATNOK_YES |
                         PBE_IEEE_RAM_OPCFG_TXINFINITE_NO |
                         PBE_IEEE_RAM_OPCFG_TXPATTERN_NO |
                         PBE_IEEE_RAM_OPCFG_TXFCMD_NONE |
                         PBE_IEEE_RAM_OPCFG_START_SYNC |
-                        PBE_IEEE_RAM_OPCFG_FSCAL_CAL |
-                        PBE_IEEE_RAM_OPCFG_FSOFF_YES |
                         PBE_IEEE_RAM_OPCFG_SINGLE_DIS |
                         PBE_IEEE_RAM_OPCFG_IFSPERIOD_EN;
                     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_RXTIMEOUT) = 0;
                     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_CFGAUTOACK) =
                         PBE_IEEE_RAM_CFGAUTOACK_ACKMODE_NOFILT | PBE_IEEE_RAM_CFGAUTOACK_FLAGREQ_DIS;
                     /* Post cmd */
-                    Log_printf(RclCore, Log_VERBOSE, "Starting IEEE RX");
+                    Log_printf(LogModule_RCL, Log_INFO, "RCL_Handler_Ieee_RxTx: Starting IEEE RX");
                     LRF_waitForTopsmReady();
                     RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
                     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_IEEE_REGDEF_API_OP_RX;
@@ -449,7 +507,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             {
                 if (txAction->txStatus < RCL_CommandStatus_Active)
                 {
-                    Log_printf(RclCore, Log_VERBOSE, "Descheduling pending TX action");
+                    Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Descheduling pending TX action");
                     /* TX action can be descheduled */
                     txAction->txStatus = RCL_CommandStatus_DescheduledApi;
                     ieeeHandlerState.rxTx.txState = txStateFinished;
@@ -460,7 +518,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                     if (txActionStop == RCL_StopType_Graceful || txActionStop == RCL_StopType_Hard)
                     {
                         RCL_Handler_Ieee_restoreStopTime();
-                        Log_printf(RclCore, Log_VERBOSE, "Stopping pending CCA or TX");
+                        Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Stopping pending CCA or TX");
                         txAction->txStatus = (txActionStop == RCL_StopType_Graceful) ? RCL_CommandStatus_GracefulStopApi : RCL_CommandStatus_HardStopApi;
                         ieeeHandlerState.rxTx.txState = txStateFinished;
                         startTx = false;
@@ -473,7 +531,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 {
                     if (txActionStop == RCL_StopType_Hard)
                     {
-                        Log_printf(RclCore, Log_VERBOSE, "Stopping TX due to hard stop");
+                        Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Stopping TX due to hard stop");
                         /* Send hard stop to PBE */
                         LRF_sendHardStop();
                         /* TX action will end when PBE is finished */
@@ -520,7 +578,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                     {
                         /* Check if the command should go directly to TX */
                         uint32_t txTime = txActionTime + txAction->relativeTxStartTime;
-                        ieeeHandlerState.rxTx.txStartTime = txTime;
+                        ieeeHandlerState.rxTx.ccaTxStartTime = txTime;
                         ieeeHandlerState.rxTx.allowTxDelay = txAction->allowDelay || txAction->allowTxDelay;
 
                         if (RCL_Scheduler_delta(currentTime, txTime) < IEEE_CCA_START_TIME_MARGIN)
@@ -533,16 +591,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                         else
                         {
                             /* Set receiver to stop in time for TX */
-                            bool timeSet = RCL_Handler_Ieee_setCustomEventTime(txTime - IEEE_CCA_START_TIME_MARGIN, IEEE_CCA_START_TIME_MARGIN, true);
-                            if (timeSet)
-                            {
-                                ieeeHandlerState.rxTx.txState = txStateSetTxTime;
-                            }
-                            else
-                            {
-                                /* Command will end soon - park TX action until then */
-                                ieeeHandlerState.rxTx.txState = txStateWaitForCmdEnd;
-                            }
+                            ieeeHandlerState.rxTx.txState = txStateStopToSetTx;
                         }
                     }
                     else
@@ -561,6 +610,30 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 ieeeHandlerState.rxTx.rxState = rxStateRunning;
             }
         }
+        if (rclEventsIn.rxBufferUpdate != 0)
+        {
+            RCL_CmdIeee_RxAction *rxAction = ieeeCmd->rxAction;
+            if (rxAction != NULL)
+            {
+                RCL_Handler_Ieee_updateRxCurBufferAndFifo(&rxAction->rxBuffers);
+            }
+        }
+
+        if (ieeeHandlerState.rxTx.txState == txStateStopToSetTx && ieeeHandlerState.rxTx.rxState == rxStateRunning)
+        {
+            /* Set receiver to stop in time for TX */
+            bool timeSet = RCL_Handler_Ieee_setCustomEventTime(ieeeHandlerState.rxTx.ccaTxStartTime - IEEE_CCA_START_TIME_MARGIN, IEEE_CCA_START_TIME_MARGIN, true);
+            if (timeSet)
+            {
+                ieeeHandlerState.rxTx.txState = txStateSetTxTime;
+            }
+            else
+            {
+                /* Command will end soon - park TX action until then */
+                ieeeHandlerState.rxTx.txState = txStateWaitForCmdEnd;
+            }
+        }
+
         if (ieeeHandlerState.rxTx.txState == txStateSetupCca && ieeeHandlerState.rxTx.rxState == rxStateRunning)
         {
             RCL_CmdIeee_TxAction *txAction = ieeeCmd->txAction;
@@ -581,14 +654,24 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             if (ccaScheduling == RCL_Schedule_AbsTime &&
                 RCL_Scheduler_isLater(currentTime + IEEE_CCA_START_TIME_MARGIN, ccaTime))
             {
-                bool timeSet = RCL_Handler_Ieee_setCustomEventTime(txAction->absCcaStartTime, ccaDuration + IEEE_CCA_START_TIME_MARGIN, false);
+                bool timeSet = RCL_Handler_Ieee_setCustomEventTime(ccaTime, ccaDuration + IEEE_CCA_START_TIME_MARGIN, false);
+                ieeeHandlerState.rxTx.ccaTxStartTime = ccaTime;
                 if (timeSet)
                 {
                     ieeeHandlerState.rxTx.txState = txStateWaitForCca;
                 }
             }
-            else if (allowDelay)
+            else if (allowDelay || ccaScheduling == RCL_Schedule_Now)
             {
+                if (ccaScheduling == RCL_Schedule_Now)
+                {
+                    ieeeHandlerState.rxTx.ccaTxStartTime = currentTime;
+                }
+                else
+                {
+                    /* Use programmed CCA time for future calculations even if it was in the past */
+                    ieeeHandlerState.rxTx.ccaTxStartTime = ccaTime;
+                }
                 ieeeHandlerState.rxTx.txState = txStateWaitForCca;
                 /* Start immediately */
                 doCca = true;
@@ -609,7 +692,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             {
                 /* The hard stop event means "do CCA" and will not cause PBE to stop */
                 doCca = true;
-                Log_printf(RclCore, Log_VERBOSE, "Perform CCA");
+                Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Perform CCA");
                 /* Set back stop event */
                 RCL_Handler_Ieee_restoreStopTime();
             }
@@ -626,26 +709,38 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_RXSTATUS) != 0)
             {
                 busy = true;
-                Log_printf(RclCore, Log_VERBOSE, "CCA busy because packet is in progress");
+                Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: CCA busy because packet is in progress");
+                if (ieeeHandlerState.rxTx.waitingForValidRssi)
+                {
+                    LRF_disableHwInterrupt(LRF_EventRfesoft0.value);
+                    ieeeHandlerState.rxTx.waitingForValidRssi = false;
+                }
             }
-            if (!busy && (ccaMode == RCL_CmdIeee_CcaMode1Energy))
+
+            if (!busy && (ccaMode != RCL_CmdIeee_CcaMode4Aloha))
             {
-                /* CCA mode 1: Check RSSI */
+                /* Check RSSI */
                 int8_t rssi = LRF_readRssi();
+                /* RSSI is checked even for CCA mode 2, as invalid RSSI means that correlation result is not yet ready */
                 if (rssi == LRF_RSSI_INVALID && !ieeeHandlerState.rxTx.waitingForValidRssi)
                 {
                     /* Wait for RSSI valid */
-                    Log_printf(RclCore, Log_VERBOSE, "CCA invalid; check again");
+                    Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: CCA invalid; check again");
 
                     ieeeHandlerState.rxTx.waitingForValidRssi = true;
                     /* Wait 1 backoff period for valid RSSI */
-                    uint32_t ccaTime =  ieeeHandlerState.common.nextEventTime;
+                    uint32_t ccaTime = ieeeHandlerState.rxTx.ccaTxStartTime;
                     ccaTime += IEEE_BACKOFF_PERIOD;
                     if (txAction->ccaContentionWindow <= 1)
                     {
                         /* Non-slotted CSMA - wait only until the RSSI is ready, but use the backoff period as a timeout */
                         /* Enable notification on RSSI available */
                         LRF_enableHwInterrupt(LRF_EventRfesoft0.value);
+                    }
+                    else
+                    {
+                        /* Store updated CCA time only for slotted CCA */
+                        ieeeHandlerState.rxTx.ccaTxStartTime = ccaTime;
                     }
 
                     /* Set new compare time  */
@@ -655,20 +750,57 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 }
                 else
                 {
+                    bool busyRssi = false;
+                    bool busySignal = false;
+
                     LRF_disableHwInterrupt(LRF_EventRfesoft0.value);
                     ieeeHandlerState.rxTx.waitingForValidRssi = false;
                     if (rssi >= txAction->rssiLimit)
                     {
-                        busy = true;
-                        Log_printf(RclCore, Log_VERBOSE, "CCA busy; RSSI = %1d dBm", rssi);
+                        busyRssi = true;
+                    }
+
+                    uint16_t corrCount = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_CORRCNT);
+
+                    if (corrCount > txAction->ccaCorrThresh || rssi == LRF_RSSI_INVALID)
+                    {
+                        busySignal = true;
+                    }
+
+                    switch (ccaMode)
+                    {
+                        case RCL_CmdIeee_CcaMode1Energy:
+                            busy = busyRssi;
+                            break;
+
+                        case RCL_CmdIeee_CcaMode2Signal:
+                            busy = busySignal;
+                            break;
+
+                        case RCL_CmdIeee_CcaMode3EnergyOrSignal:
+                            busy = busyRssi || busySignal;
+                            break;
+
+                        case RCL_CmdIeee_CcaMode3EnergyAndSignal:
+                            busy = busyRssi && busySignal;
+                            break;
+
+                        default:
+                            /* Other values are invalid or should not be processed here - treat as busy */
+                            busy = true;
+                            break;
+                    }
+                    if (busy)
+                    {
+                        Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: CCA busy; RSSI = %1d dBm, correlation top count = %1d", rssi, corrCount);
                     }
                     else
                     {
-                        Log_printf(RclCore, Log_VERBOSE, "CCA idle; RSSI = %1d dBm", rssi);
+                        Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: CCA idle; RSSI = %1d dBm, correlation top count = %1d", rssi, corrCount);
                     }
                 }
             }
-            /* CCA modes 2 and 3 not yet supported */
+
             if (!ieeeHandlerState.rxTx.waitingForValidRssi)
             {
                 if (busy)
@@ -679,15 +811,15 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 }
                 else
                 {
-                    uint32_t ccaTime =  ieeeHandlerState.common.nextEventTime;
+                    uint32_t ccaTime = ieeeHandlerState.rxTx.ccaTxStartTime;
                     ieeeHandlerState.rxTx.ccaContentionWindow -= 1;
                     if (ieeeHandlerState.rxTx.ccaContentionWindow == 0)
                     {
                         /* Channel idle - transmit */
                         ieeeHandlerState.rxTx.txState = txStateSetTxTime;
-                        ieeeHandlerState.rxTx.txStartTime = ccaTime + txAction->relativeTxStartTime;
+                        ieeeHandlerState.rxTx.ccaTxStartTime = ccaTime + txAction->relativeTxStartTime;
                         ieeeHandlerState.rxTx.allowTxDelay = txAction->allowTxDelay;
-                        Log_printf(RclCore, Log_VERBOSE, "Stop RX to go to TX");
+                        Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Stop RX to go to TX");
                         /* Stop running RX */
                         LRF_sendHardStop();
                     }
@@ -697,10 +829,12 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                         ccaTime += IEEE_BACKOFF_PERIOD;
                         /* Set new compare time  */
                         RCL_Handler_Ieee_setCustomEventTime(ccaTime, IEEE_CCA_START_TIME_MARGIN, false);
+                        ieeeHandlerState.rxTx.ccaTxStartTime = ccaTime;
                     }
                 }
             }
         }
+
         if (lrfEvents.rxEmpty != 0)
         {
             /* Timeout or ACK reception */
@@ -758,7 +892,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             if (ieeeHandlerState.rxTx.txState == txStateSetTxTime)
             {
                 /* Set up TX start time */
-                RCL_CommandStatus status = RCL_Scheduler_setNewStartAbsTime(ieeeHandlerState.rxTx.txStartTime, ieeeHandlerState.rxTx.allowTxDelay);
+                RCL_CommandStatus status = RCL_Scheduler_setNewStartAbsTime(ieeeHandlerState.rxTx.ccaTxStartTime, ieeeHandlerState.rxTx.allowTxDelay);
                 if (status != RCL_CommandStatus_Active)
                 {
                     ieeeCmd->txAction->txStatus = status;
@@ -844,6 +978,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             {
                 /* Set TX to proceed with RX */
                 HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_OPCFG) =
+                    (ieeeCmd->rxAction->frameFiltStop ? PBE_IEEE_RAM_OPCFG_STOP_HARDEND : PBE_IEEE_RAM_OPCFG_STOP_SOFTEND) |
                     PBE_IEEE_RAM_OPCFG_STOP_SOFTEND |
                     PBE_IEEE_RAM_OPCFG_RXREPEATOK_YES |
                     PBE_IEEE_RAM_OPCFG_RXREPEATNOK_YES |
@@ -851,8 +986,6 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                     PBE_IEEE_RAM_OPCFG_TXPATTERN_NO |
                     PBE_IEEE_RAM_OPCFG_TXFCMD_NONE |
                     PBE_IEEE_RAM_OPCFG_START_SYNC |
-                    PBE_IEEE_RAM_OPCFG_FSCAL_CAL |
-                    PBE_IEEE_RAM_OPCFG_FSOFF_YES |
                     PBE_IEEE_RAM_OPCFG_SINGLE_DIS |
                     PBE_IEEE_RAM_OPCFG_IFSPERIOD_EN;
                 /* RX will be running when TX is done */
@@ -861,15 +994,12 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
             else
             {
                 HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_OPCFG) =
-                    PBE_IEEE_RAM_OPCFG_STOP_SOFTEND |
                     PBE_IEEE_RAM_OPCFG_RXREPEATOK_YES |
                     PBE_IEEE_RAM_OPCFG_RXREPEATNOK_YES |
                     PBE_IEEE_RAM_OPCFG_TXINFINITE_NO |
                     PBE_IEEE_RAM_OPCFG_TXPATTERN_NO |
                     PBE_IEEE_RAM_OPCFG_TXFCMD_NONE |
                     PBE_IEEE_RAM_OPCFG_START_SYNC |
-                    PBE_IEEE_RAM_OPCFG_FSCAL_CAL |
-                    PBE_IEEE_RAM_OPCFG_FSOFF_YES |
                     PBE_IEEE_RAM_OPCFG_SINGLE_EN |
                     PBE_IEEE_RAM_OPCFG_IFSPERIOD_DIS;
             }
@@ -945,7 +1075,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                     LRF_enableHwInterrupt(interrupts.value);
 
                     /* Post cmd */
-                    Log_printf(RclCore, Log_VERBOSE, "Starting IEEE TX");
+                    Log_printf(LogModule_RCL, Log_INFO, "RCL_Handler_Ieee_RxTx: Starting IEEE TX");
                     LRF_waitForTopsmReady();
                     RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
                     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_IEEE_REGDEF_API_OP_TX;
@@ -1047,7 +1177,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
                 {
                     /* Stop running RX and let it finish */
                     ieeeHandlerState.common.endStatus = ieeeCmd->txAction->txStatus;
-                    Log_printf(RclCore, Log_VERBOSE, "Stop RX as command should end");
+                    Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Stop RX as command should end");
                     LRF_sendHardStop();
                     ieeeHandlerState.rxTx.txState = txStateWaitForCmdEnd;
                 }
@@ -1082,19 +1212,17 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
         {
             /* Set up for RX */
             HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_OPCFG) =
-                PBE_IEEE_RAM_OPCFG_STOP_SOFTEND |
+                (ieeeCmd->rxAction->frameFiltStop ? PBE_IEEE_RAM_OPCFG_STOP_HARDEND : PBE_IEEE_RAM_OPCFG_STOP_SOFTEND) |
                 PBE_IEEE_RAM_OPCFG_RXREPEATOK_YES |
                 PBE_IEEE_RAM_OPCFG_RXREPEATNOK_YES |
                 PBE_IEEE_RAM_OPCFG_TXINFINITE_NO |
                 PBE_IEEE_RAM_OPCFG_TXPATTERN_NO |
                 PBE_IEEE_RAM_OPCFG_TXFCMD_NONE |
                 PBE_IEEE_RAM_OPCFG_START_SYNC |
-                PBE_IEEE_RAM_OPCFG_FSCAL_CAL |
-                PBE_IEEE_RAM_OPCFG_FSOFF_YES |
                 PBE_IEEE_RAM_OPCFG_SINGLE_DIS |
                 PBE_IEEE_RAM_OPCFG_IFSPERIOD_EN;
             /* Post cmd */
-            Log_printf(RclCore, Log_VERBOSE, "Restarting IEEE RX");
+            Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: Restarting IEEE RX");
             LRF_waitForTopsmReady();
             HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_IEEE_REGDEF_API_OP_RX;
             /* Clear RSSI valid interrupt flag */
@@ -1113,7 +1241,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
         /* Check if TX action has finished */
         if (ieeeHandlerState.rxTx.txState != txStateNoTx)
         {
-            Log_printf(RclCore, Log_VERBOSE, "TX action ending because command ended");
+            Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_Ieee_RxTx: TX action ending because command ended");
             if (ieeeCmd->txAction != NULL && ieeeCmd->txAction->txStatus < RCL_CommandStatus_Finished)
             {
                 /* End status not set - use command end status to show it ended with command */
@@ -1159,8 +1287,6 @@ RCL_Events RCL_Handler_Ieee_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
                 PBE_IEEE_RAM_OPCFG_TXPATTERN_YES |
                 PBE_IEEE_RAM_OPCFG_TXFCMD_NONE |
                 PBE_IEEE_RAM_OPCFG_START_SYNC |
-                PBE_IEEE_RAM_OPCFG_FSCAL_CAL |
-                PBE_IEEE_RAM_OPCFG_FSOFF_YES |
                 PBE_IEEE_RAM_OPCFG_SINGLE_EN |
                 PBE_IEEE_RAM_OPCFG_IFSPERIOD_DIS;
 
@@ -1186,14 +1312,29 @@ RCL_Events RCL_Handler_Ieee_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
             {
                 uint32_t whitenMode = txCmd->config.whitenMode;
                 /* Configure whitening */
-                if (whitenMode != RCL_CMD_IEEE_WH_MODE_DEFAULT)
+                if (whitenMode != RCL_CMD_IEEE_WH_MODE_OFF)
                 {
-                    ieeeHandlerState.txTest.restoreOpt = RCL_HANDLER_IEEE_RESTORE_WHITEN_POLY;
+                    ieeeHandlerState.txTest.restoreOpt = RCL_HANDLER_IEEE_RESTORE_WHITENING;
                     ieeeHandlerState.txTest.storedWhitenPoly = HWREG_READ_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0);
-                    HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = (whitenMode == RCL_CMD_IEEE_WH_MODE_PRBS32) ? RCL_HANDLER_IEEE_PRBS32_POLY :
-                        ((whitenMode == RCL_CMD_IEEE_WH_MODE_PRBS15) ? RCL_HANDLER_IEEE_PRBS15_POLY : RCL_HANDLER_IEEE_PRBS9_POLY);
-                    HWREGH_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_LFSR0) = RCL_HANDLER_IEEE_PRBS_INIT;
+                    ieeeHandlerState.txTest.storedWhitenInit = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_WHITEINIT);
+                    uint32_t whitenPoly;
+                    switch (whitenMode)
+                    {
+                        case RCL_CMD_IEEE_WH_MODE_PRBS9:
+                        default:
+                            whitenPoly = RCL_HANDLER_IEEE_PRBS9_POLY;
+                            break;
+                        case RCL_CMD_IEEE_WH_MODE_PRBS15:
+                            whitenPoly = RCL_HANDLER_IEEE_PRBS15_POLY;
+                            break;
+                        case RCL_CMD_IEEE_WH_MODE_PRBS32:
+                            whitenPoly = RCL_HANDLER_IEEE_PRBS32_POLY;
+                            break;
+                    }
+                    HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = whitenPoly;
+                    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_WHITEINIT) = RCL_HANDLER_IEEE_PRBS_INIT;
                 }
+
                 ieeeHandlerState.txTest.restoreOpt |= RCL_HANDLER_IEEE_RESTORE_SFD;
                 ieeeHandlerState.txTest.storedMdmSyncA = HWREG_READ_LRF(LRFDPBE32_BASE + LRFDPBE32_O_MDMSYNCA);
                 /* Set non-standard SFD */
@@ -1217,7 +1358,7 @@ RCL_Events RCL_Handler_Ieee_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
                 LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
 
                 /* Post cmd */
-                Log_printf(RclCore, Log_VERBOSE, "Starting infinite TX");
+                Log_printf(LogModule_RCL, Log_INFO, "RCL_Handler_Ieee_TxTest: Starting infinite TX");
 
                 LRF_waitForTopsmReady();
                 HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_IEEE_REGDEF_API_OP_TX;
@@ -1271,9 +1412,10 @@ RCL_Events RCL_Handler_Ieee_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
         {
             HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_MODCTRL) & (~LRFDMDM_MODCTRL_TONEINSERT_M);
         }
-        if ((ieeeHandlerState.txTest.restoreOpt & RCL_HANDLER_IEEE_RESTORE_WHITEN_POLY) != 0)
+        if ((ieeeHandlerState.txTest.restoreOpt & RCL_HANDLER_IEEE_RESTORE_WHITENING) != 0)
         {
             HWREG_WRITE_LRF(LRFDPBE32_BASE + LRFDPBE32_O_POLY0) = ieeeHandlerState.txTest.storedWhitenPoly;
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_WHITEINIT) = ieeeHandlerState.txTest.storedWhitenInit;
         }
         if ((ieeeHandlerState.txTest.restoreOpt & RCL_HANDLER_IEEE_RESTORE_SFD) != 0)
         {
@@ -1301,7 +1443,7 @@ RCL_CommandStatus RCL_IEEE_Tx_submit(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_TxAction 
     if (cmd == NULL || cmd->common.status >= RCL_CommandStatus_Finished)
     {
         /* TODO: New status */
-        Log_printf(RclCore, Log_ERROR, "Command ended before TX action was submitted");
+        Log_printf(LogModule_RCL, Log_ERROR, "RCL_IEEE_Tx_submit: Command ended before TX action was submitted");
         status = RCL_CommandStatus_Error;
     }
     else if (cmd->txAction != NULL && cmd->txAction->txStatus != RCL_CommandStatus_Idle && cmd->txAction->txStatus < RCL_CommandStatus_Finished)
@@ -1434,7 +1576,7 @@ static RCL_CommandStatus RCL_Handler_Ieee_findPbeErrorEndStatus(uint16_t pbeEndS
         status = RCL_CommandStatus_Error_UnknownOp;
         break;
     default:
-        Log_printf(RclCore, Log_ERROR, "Unexpected error 0x%04X from PBE", pbeEndStatus);
+        Log_printf(logModule_RCL, Log_ERROR, "RCL_Handler_Ieee_findPbeErrorEndStatus: Unexpected error 0x%04X from PBE", pbeEndStatus);
         status = RCL_CommandStatus_Error;
         break;
     }
@@ -1569,7 +1711,6 @@ static bool RCL_Handler_Ieee_setCustomEventTime(uint32_t eventTime, uint32_t tim
             /* Flag as custom time */
             ieeeHandlerState.common.nextEventTime = eventTime;
             ieeeHandlerState.common.eventTimeType = customHardStop;
-
         }
         else
         {
@@ -1598,7 +1739,7 @@ static bool RCL_Handler_Ieee_restoreStopTime(void)
 {
     if (ieeeHandlerState.common.eventTimeType != noEvent)
     {
-        hal_disable_hard_stop_time_irq();
+        hal_cancel_hard_stop_time();
         /* Set back stop event */
         RCL_StopType stopType = RCL_Scheduler_setStopTimes();
 

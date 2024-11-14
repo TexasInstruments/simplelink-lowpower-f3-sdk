@@ -72,18 +72,18 @@
  */
 
 // OAD Reset Service UUID
-CONST uint8 oadResetServUUID[ATT_UUID_SIZE] =
+const uint8 oadResetServUUID[ATT_UUID_SIZE] =
 {
     TI_BASE_UUID_128(OAD_RESET_SERVICE_UUID)
 };
 
-CONST uint8 oadResetCharUUID[ATT_UUID_SIZE] =
+const uint8 oadResetCharUUID[ATT_UUID_SIZE] =
 {
     TI_BASE_UUID_128(OAD_RESET_CHAR_UUID)
 };
 
 // OAD Reset Service attribute
-CONST gattAttrType_t oadResetService = { ATT_UUID_SIZE, oadResetServUUID };
+const gattAttrType_t oadResetService = { ATT_UUID_SIZE, oadResetServUUID };
 
 // OAD Reset Service Characteristic Properties
 static uint8 oadResetCharProps = GATT_PROP_WRITE_NO_RSP | GATT_PROP_WRITE;
@@ -142,7 +142,7 @@ static bStatus_t OadResetWriteAttrCB(uint16 connHandle, gattAttribute_t *pAttr,
 // pfnAuthorizeAttrCB to check a client's authorization prior to calling
 // pfnReadAttrCB or pfnWriteAttrCB, so no checks for authorization need to be
 // made within these functions.
-CONST gattServiceCBs_t oadResetServiceCBs =
+const gattServiceCBs_t oadResetServiceCBs =
 {
     OadResetReadAttrCB,  // Read callback function pointer
     OadResetWriteAttrCB, // Write callback function pointer

@@ -279,7 +279,7 @@ extern "C"
  */
 
 /// @cond NODOC
-extern CONST uint8 btBaseUUID[ATT_UUID_SIZE];
+extern const uint8 btBaseUUID[ATT_UUID_SIZE];
 /// @endcond // NODOC
 
 /*********************************************************************

@@ -46,9 +46,6 @@ const Common = system.getScript("/ti/ble5stack/ble_common.js");
 // OAD hidden value
 const oadHiddenVal = Common.hiddenValue();
 
-// Loki hidden value
-const lokiHiddenVal = Common.hiddenValue();
-
 // TBM values
 const defaultTBMVal = Common.defaultValue();
 const hiddenTBMVal = Common.hiddenValue();
@@ -434,7 +431,7 @@ function validate(inst, validation)
     {
         validation.logError("The value must be >=10 or <=100", inst, "observationTime");
     }
-    if(system.modules["/ti/devices/CCFG"].$static.srcClkLF == "LF RCOSC" && Common.isLPF3Device() && ( inst.peripheralExtraLFOSCPPM < 0 || inst.peripheralExtraLFOSCPPM > 65535) )
+    if((system.modules["/ti/devices/CCFG"] && (system.modules["/ti/devices/CCFG"].$static.srcClkLF == "LF RCOSC")) && Common.isLPF3Device() && ( inst.peripheralExtraLFOSCPPM < 0 || inst.peripheralExtraLFOSCPPM > 65535) )
     {
         validation.logError("The value must be greater than 0 or smaller than 65535 ", inst, "peripheralExtraLFOSCPPM");
     }

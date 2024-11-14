@@ -205,26 +205,6 @@ typedef bool halIntState_t;
   IntEnable(INT_RFCOREERR);             \
 }
 
-#ifndef USE_RCL
-/* Enable interrupts */
-#define HAL_ENABLE_INTERRUPTS()     IntMasterEnable()
-
-/* Disable interrupts */
-#define HAL_DISABLE_INTERRUPTS()    IntMasterDisable()
-
-static bool halIntsAreEnabled(void)
-{
-  bool status = !IntMasterDisable();
-  if (status)
-  {
-    IntMasterEnable();
-  }
-  return status;
-}
-
-#define HAL_INTERRUPTS_ARE_ENABLED() halIntsAreEnabled()
-#endif
-
 #ifdef CC23X0
 #define HAL_ENTER_CRITICAL_SECTION(x)  \
   do { (x) = !IntDisableMaster(); } while (0)

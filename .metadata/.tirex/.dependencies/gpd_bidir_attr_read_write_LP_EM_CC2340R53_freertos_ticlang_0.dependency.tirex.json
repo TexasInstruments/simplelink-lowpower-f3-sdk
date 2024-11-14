@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../../gpd_bidir_attr_read_write.c -> gpd_bidir_attr_read_write.c",
+            "+../../gpd_bidir_attr_read_write.syscfg -> gpd_bidir_attr_read_write.syscfg",
+            "+../../README.md -> README.md",
+            "+../../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+        ]
+    }
+]

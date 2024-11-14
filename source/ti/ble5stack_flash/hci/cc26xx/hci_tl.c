@@ -3,7 +3,7 @@
  @file  hci_tl.c
 
  @brief This file includes implementation for HCI task, event handler,
-        HCI Command, Data, and Event procoessing and sending, for the
+        HCI Command, Data, and Event processing and sending, for the
         BLE Transport Layer.
 
  Group: WCS, BTS
@@ -79,10 +79,11 @@
 #include "hci_event.h"
 #include "hci_tl.h"
 #include "osal_bufmgr.h"
+#include "map_direct.h"
 
-#ifndef CC33xx
+#ifndef CONFIG_ZEPHYR
 #include "npi.h"
-#endif // CC33xx
+#endif // CONFIG_ZEPHYR
 
 #if defined( CC26XX ) || defined( CC13XX ) || defined( CC23X0 )
 #include "ll_common.h"
@@ -588,10 +589,7 @@ void HCI_Init( uint8 taskID )
   hciSmpTaskID   = 0;
 
   // reset the Bluetooth and the BLE event mask bits
-  hciInitEventMasks();
-
-  // set again here to avoid patch. Updated LE_EVT_MASK_BYTE2 to include CTE related events.
-  pBleEvtMask[2] = LE_EVT_MASK_BYTE2;
+  MAP_HCI_InitEventMasks();
 
   // disable PTM runtime flag
   hciPTMenabled = FALSE;
@@ -3111,27 +3109,6 @@ hciStatus_t hciExtSetRxGain( uint8 *pBuf )
 
 
 /*******************************************************************************
- * @fn          hciExtSetTxPower
- *
- * @brief       Serial interface translation function for HCI API.
- *
- * input parameters
- *
- * @param       pBuf - Pointer to command parameters and payload.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      hciStatus_t
- */
-hciStatus_t hciExtSetTxPower( uint8 *pBuf )
-{
-  return HCI_EXT_SetTxPowerCmd( pBuf[0] );
-}
-
-
-/*******************************************************************************
  * @fn          hciExtSetTxPowerDbm
  *
  * @brief       Serial interface translation function for HCI API.
@@ -3195,27 +3172,6 @@ hciStatus_t hciExtExtendRfRange( uint8 *pBuf )
 hciStatus_t hciExtHaltDuringRf( uint8 *pBuf )
 {
   return HCI_EXT_HaltDuringRfCmd( pBuf[0] );
-}
-
-
-/*******************************************************************************
- * @fn          hciExtSetMaxDtmTxPower
- *
- * @brief       Serial interface translation function for HCI API.
- *
- * input parameters
- *
- * @param       pBuf - Pointer to command parameters and payload.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      hciStatus_t
- */
-hciStatus_t hciExtSetMaxDtmTxPower( uint8 *pBuf )
-{
-  return HCI_EXT_SetMaxDtmTxPowerCmd( pBuf[0] );
 }
 
 

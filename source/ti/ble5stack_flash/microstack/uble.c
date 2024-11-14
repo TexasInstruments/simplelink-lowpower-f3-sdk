@@ -56,12 +56,9 @@
 #include <ll_common.h>
 
 #include <port.h>
-#ifdef USE_RCL
 #include <urcli.h>
 #include DeviceFamily_constructPath(inc/hw_fcfg.h)
-#else
-#include <urfi.h>
-#endif
+
 #include <uble.h>
 #include <ull.h>
 #include <ugap.h>
@@ -806,7 +803,7 @@ bStatus_t uble_registerAntSwitchCB(ubleAntSwitchCB_t pfnAntSwitchCB)
  */
 void uble_processMsg(void)
 {
-  port_key_t key;
+  volatile port_key_t key;
 
   if (!port_queueEmpty(qEvtMsg))
   {
@@ -881,7 +878,7 @@ void uble_getPublicAddr(uint8 *pPublicAddr)
 bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
                                uint8 *pMsg, uint16 len)
 {
-  port_key_t key;
+  volatile port_key_t key;
   ubleEvtMsg_t evtMsg;
   int status;
   // This function is entered in SW critical section.
@@ -915,9 +912,11 @@ bStatus_t uble_buildAndPostEvt(ubleEvtDst_t evtDst, ubleEvt_t evt,
 
   status = port_queuePut(qEvtMsg, (char *)&evtMsg, sizeof(ubleEvtMsg_t));
 
-  if (0 != status)
+  if (SUCCESS != status && NULL != evtMsg.msg)
   {
+      key = port_enterCS_HW();
       free(evtMsg.msg);
+      port_exitCS_HW(key);
   }
   uble_postEvtProxy();
 

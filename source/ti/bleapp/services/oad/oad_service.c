@@ -76,12 +76,12 @@
  */
 
 // OAD Service UUID
-CONST uint8 oadServUUID[ATT_UUID_SIZE] =
+const uint8 oadServUUID[ATT_UUID_SIZE] =
 {
     TI_BASE_UUID_128(OAD_SERVICE_UUID)
 };
 
-CONST uint8 oadCharUUID[OAD_CHAR_CNT][ATT_UUID_SIZE] =
+const uint8 oadCharUUID[OAD_CHAR_CNT][ATT_UUID_SIZE] =
 {
     // OAD Image Identify UUID
     TI_BASE_UUID_128(OAD_IMG_IDENTIFY_UUID),
@@ -94,7 +94,7 @@ CONST uint8 oadCharUUID[OAD_CHAR_CNT][ATT_UUID_SIZE] =
 };
 
 // OAD Service attribute
-CONST gattAttrType_t oadService = { ATT_UUID_SIZE, oadServUUID };
+const gattAttrType_t oadService = { ATT_UUID_SIZE, oadServUUID };
 
 // OAD Characteristic Properties
 static uint8 oadCharProps = GATT_PROP_WRITE_NO_RSP | GATT_PROP_WRITE | GATT_PROP_NOTIFY;
@@ -186,7 +186,7 @@ static bStatus_t OadWriteAttrCB(uint16 connHandle, gattAttribute_t *pAttr,
 // pfnAuthorizeAttrCB to check a client's authorization prior to calling
 // pfnReadAttrCB or pfnWriteAttrCB, so no checks for authorization need to be
 // made within these functions.
-CONST gattServiceCBs_t oadServiceCBs =
+const gattServiceCBs_t oadServiceCBs =
 {
     OadReadAttrCB,  // Read callback function pointer.
     OadWriteAttrCB, // Write callback function pointer.
@@ -302,7 +302,7 @@ bStatus_t OADService_setParameter(oadServiceChar_e srvChar, uint8 len, void *val
                                             len, NULL);
         if (NULL == notification.pValue)
         {
-            return (ATT_ERR_INSUFFICIENT_RESOURCES);
+            status = ATT_ERR_INSUFFICIENT_RESOURCES;
         }
         else
         {
@@ -314,16 +314,17 @@ bStatus_t OADService_setParameter(oadServiceChar_e srvChar, uint8 len, void *val
             if(pAttr == NULL)
             {
                 // If we cannot find the attribute, report an error
-                return (ATT_ERR_ATTR_NOT_FOUND);
+                status = ATT_ERR_ATTR_NOT_FOUND;
             }
+            else
+            {
+                notification.handle = pAttr->handle;
+                notification.len = len;
 
-            notification.handle = pAttr->handle;
-            notification.len = len;
+                memcpy(notification.pValue, value, len);
 
-            memcpy(notification.pValue, value, len);
-
-            status = GATT_Notification(activeOadCxnHandle, &notification, FALSE);
-
+                status = GATT_Notification(activeOadCxnHandle, &notification, FALSE);
+            }
             if (status != SUCCESS)
             {
                 // The stack will free the memory for us if the
@@ -339,7 +340,6 @@ bStatus_t OADService_setParameter(oadServiceChar_e srvChar, uint8 len, void *val
         // the process cannot continue
         status = bleIncorrectMode;
     }
-
     return (status);
 }
 

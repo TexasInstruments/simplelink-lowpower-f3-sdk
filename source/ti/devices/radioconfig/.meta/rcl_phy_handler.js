@@ -2391,19 +2391,19 @@ ${symNameCode}
      *  Get the value of a RCL register field, filtered by feature group/filter
      *
      *  @param featureGroup - sub_phy, coded_tx_rate ...
-     *  @param featFilter   - Feature filter, e.g. "1_MBS" or "coded"
+     *  @param desiredFeatureFilter   - Feature filter, e.g. "1_MBS" or "coded"
      *  @param fieldName    - Full path of the register field (module.register.field)
      *
      *  @returns The value of the register or null if not found
      */
-    function getRclRegFieldValue(featureGroup, featFilter, fieldName) {
+    function getRclRegFieldValue(featureGroup, desiredFeatureFilter, fieldName) {
         // Iterate feature groups
         for (const item of Common.forceArray(PhyDef.rcl_registers)) {
             if (item.feature_group === featureGroup || featureGroup === "Combined") {
                 // Iterate fields
                 for (const rfsData of item.rcl_register_field_settings) {
-                    // Check filter
-                    if (rfsData.feature_filter === featFilter) {
+                    // Check if any of the stated feature filters match what we are looking for
+                    if (rfsData.feature_filter === desiredFeatureFilter) {
                         // Iterate registers
                         for (const data of rfsData.data) {
                             // Iterate register fields
@@ -2632,16 +2632,16 @@ ${symNameCode}
      *  Get a set of values from 'n' feature group items
      *
      * @param featGroup   - The given feature group
-     * @param featFilters - List of feature filters
+     * @param featureFilters - List of feature filters
      * @param fieldName   - Name of field
      * @param valCommon   - Value of "common" filter used as fallback
      * @param width       - Width of a given field
      * @returns Object with validity and list of feature group values
      */
-    function getFeatGroupValues(featGroup, featFilters, fieldName, valCommon, width) {
+    function getFeatGroupValues(featGroup, featureFilters, fieldName, valCommon, width) {
         const values = {isValid: false, data: []};
-        for (const featFilter of featFilters) {
-            let val = getRclRegFieldValue(featGroup, featFilter, fieldName);
+        for (const featureFilter of featureFilters) {
+            let val = getRclRegFieldValue(featGroup, featureFilter, fieldName);
             if (val === null || val === "") {
                 val = valCommon;
             }
@@ -2901,7 +2901,7 @@ ${symNameCode}
         getPhyGroup: () => PhyGroup,
         getPhyName: () => PhyID,
         getPhydefFile: () => PhyDefFile,
-        getPhydefLongName: () => PhyInfo.description,
+        getPhydefLongName: () => PhyInfo.label,
         is154g: is154g,
         initConfigurables: initConfigurables,
         isExternalRelease: () => IsExternalReleasePhy,

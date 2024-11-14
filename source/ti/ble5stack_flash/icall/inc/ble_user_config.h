@@ -120,10 +120,6 @@ extern "C"
 
 #ifdef ICALL_JT
 #include "icall_user_config.h"
-#ifndef USE_RCL
-#include <ti/drivers/rf/RF.h>
-#include "rf_hal.h"
-#endif
 #endif /* ICALL_JT */
 
 #include "ble_dispatch.h"
@@ -169,9 +165,9 @@ extern "C"
 //       is only defined for the Application project
 #if defined(ICALL_STACK0_ADDR)
 
-#ifndef CC33xx
+#ifndef CONFIG_ZEPHYR
 #include <ti_drivers_config.h>
-#endif // CC33xx
+#endif // CONFIG_ZEPHYR
 
 // RF Front End Settings
 // Note: The use of these values completely depends on how the PCB is laid out.
@@ -292,6 +288,17 @@ extern "C"
 #ifndef L2CAP_NUM_CO_CHANNELS
   #define L2CAP_NUM_CO_CHANNELS         8
 #endif
+
+// Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5
+#ifndef USE_DFL
+#if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
+#if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
+    #define USE_DFL
+#endif // (advertiser only)
+#endif // (number of bondings greater than 5)
+#endif // (supported devices)
+#endif // !USE_DFL
 
 #ifndef MAX_NUM_AL_ENTRIES // MAX_NUM_AL_ENTRIES
 #ifdef CC23X0 // CC23X0

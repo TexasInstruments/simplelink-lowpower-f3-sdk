@@ -2008,52 +2008,66 @@ static void gapBondMgr_PeripheralReqSecurity(uint16_t connHandle, uint8_t authRe
       uint8_t prevAuthReq = gapBondMgrGetStateFlags(idx);
       bool repair = FALSE;
 
-      // Is LTK >= Requested Security Level where the relevant security levels
-      // are defined as such:
-      // 2. Unauthenticated pairing
-      // 3. Authenticated pairing
-      // 4. Authenticated LE Secure Connections pairing
-      switch (authReq & (SM_AUTH_STATE_AUTHENTICATED |
-                         SM_AUTH_STATE_SECURECONNECTION))
+      if(prevAuthReq == GAP_BONDED_STATE_NO_RECORD)
       {
-        // Peripheral is asking for authenticated legacy pairing
-        case SM_AUTH_STATE_AUTHENTICATED:
-        {
-          // Repair if not currently authenticated
-          if (!(prevAuthReq & GAP_BONDED_STATE_AUTHENTICATED))
-          {
-            repair = TRUE;
-          }
-        }
-        break;
-
-        // Peripheral is asking for unauthenticated secure connections
-        case SM_AUTH_STATE_SECURECONNECTION:
-        {
-          // Repair if not currently authenticated or secure connections
-          if (!(prevAuthReq & (GAP_BONDED_STATE_AUTHENTICATED |
-                               GAP_BONDED_STATE_SECURECONNECTION)))
-          {
-            repair = TRUE;
-          }
-        }
-        break;
-
-        // Peripheral is asking for authenticated secure connections
-        case (SM_AUTH_STATE_AUTHENTICATED | SM_AUTH_STATE_SECURECONNECTION):
-        {
-          // Repair unless currently authenticated with secure connections
-          if (!((prevAuthReq & GAP_BONDED_STATE_AUTHENTICATED ) &&
-                (prevAuthReq & GAP_BONDED_STATE_SECURECONNECTION )))
-          {
-            repair = TRUE;
-          }
-        }
-        break;
-
-        default:
-        break;
+        // No record in NV
+        repair = TRUE;
       }
+      else if (!(authReq & SM_AUTH_STATE_AUTHENTICATED) && (prevAuthReq == GAP_BONDED_STATE_UNAUTHENTICATED))
+      {
+        // Record in NV, Unauthenticated pairing with encryption
+        repair = FALSE;
+      }
+      else
+      {
+        // Is LTK >= Requested Security Level where the relevant security levels
+        // are defined as such:
+        // 2. Unauthenticated pairing
+        // 3. Authenticated pairing
+        // 4. Authenticated LE Secure Connections pairing
+        switch (authReq & (SM_AUTH_STATE_AUTHENTICATED |
+                           SM_AUTH_STATE_SECURECONNECTION))
+        {
+          // Peripheral is asking for authenticated legacy pairing
+          case SM_AUTH_STATE_AUTHENTICATED:
+          {
+            // Repair if not currently authenticated
+            if (!(prevAuthReq & GAP_BONDED_STATE_AUTHENTICATED))
+            {
+              repair = TRUE;
+            }
+          }
+          break;
+
+          // Peripheral is asking for unauthenticated secure connections
+          case SM_AUTH_STATE_SECURECONNECTION:
+          {
+            // Repair if not currently authenticated or secure connections
+            if (!(prevAuthReq & (GAP_BONDED_STATE_AUTHENTICATED |
+                                 GAP_BONDED_STATE_SECURECONNECTION)))
+            {
+              repair = TRUE;
+            }
+          }
+          break;
+
+          // Peripheral is asking for authenticated secure connections
+          case (SM_AUTH_STATE_AUTHENTICATED | SM_AUTH_STATE_SECURECONNECTION):
+          {
+            // Repair unless currently authenticated with secure connections
+            if (!((prevAuthReq & GAP_BONDED_STATE_AUTHENTICATED ) &&
+                  (prevAuthReq & GAP_BONDED_STATE_SECURECONNECTION )))
+            {
+              repair = TRUE;
+            }
+          }
+          break;
+
+          default:
+          break;
+        } // End switch
+      }
+
 
       // Repair if it was found to be needed above
       if (repair == TRUE)
@@ -2441,7 +2455,7 @@ static uint8_t gapBondMgrAddBond(gapBondRec_t *pBondRec,
   if( ( rlIndex != INVALID_RESOLVE_LIST_INDEX ) &&
       ( findStatus == bleGAPNotFound ) )
   {
-    // This means we have two differen Identity Addresses with the same IRK
+    // This means we have two different Identity Addresses with the same IRK
     switch(gapBond_SamelIrkOption)
     {
       case GAPBOND_SAME_IRK_UPDATE_BOND_REC:
@@ -2741,15 +2755,20 @@ uint8_t gapBondMgrReadBondRec(GAP_Peer_Addr_Types_t addrType,
  */
 static uint8_t gapBondMgrGetStateFlags(uint8_t idx)
 {
+  uint8_t retVal;
   gapBondRec_t bondRec;
 
   if(osal_snv_read(MAIN_RECORD_NV_ID(idx), sizeof(gapBondRec_t),
                    &bondRec) == SUCCESS)
   {
-    return (bondRec.stateFlags);
+    retVal = bondRec.stateFlags;
+  }
+  else
+  {
+    retVal = GAP_BONDED_STATE_NO_RECORD;
   }
 
-  return (0);
+  return retVal;
 }
 
 /*********************************************************************

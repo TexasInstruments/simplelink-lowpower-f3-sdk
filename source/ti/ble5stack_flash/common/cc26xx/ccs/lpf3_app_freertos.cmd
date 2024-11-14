@@ -54,7 +54,7 @@
 /* include to the file that generates the globals which holds the size of the regions */
 #include "ti_utils_build_linker.cmd.genmap"
 
---stack_size=800
+--stack_size=1024
 --heap_size=0
 --entry_point resetISR
 

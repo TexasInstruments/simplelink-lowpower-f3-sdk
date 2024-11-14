@@ -190,7 +190,7 @@ void NPITLUART_initializeTransport(Char *tRxBuf, Char *tTxBuf, npiCB_t npiCBack)
     uartHandle = UART2_open(CONFIG_DISPLAY_UART, &params);
     if (uartHandle == NULL)
     {
-      // An error occured, or indexed UART peripheral is already opened
+      // An error occurred, or indexed UART peripheral is already opened
       HAL_ASSERT( HAL_ASSERT_CAUSE_UNEXPECTED_ERROR );
     }
 

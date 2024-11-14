@@ -1,0 +1,1004 @@
+[
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_attr_reporting",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "gpd_attr_reporting",
+        "description": "gpd_attr_reporting",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_attr_reporting",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_attr_reporting",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpd_attr_reporting",
+        "description": "gpd_attr_reporting",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_attr_reporting",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_attr_reporting",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "gpd_attr_reporting",
+        "description": "gpd_attr_reporting",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_attr_reporting",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_attr_reporting",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "gpd_attr_reporting",
+        "description": "gpd_attr_reporting",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_attr_reporting",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_bidir_attr_read_write",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "gpd_bidir_attr_read_write",
+        "description": "gpd_bidir_attr_read_write",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_bidir_attr_read_write",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_bidir_attr_read_write",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpd_bidir_attr_read_write",
+        "description": "gpd_bidir_attr_read_write",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_bidir_attr_read_write",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_bidir_attr_read_write",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "gpd_bidir_attr_read_write",
+        "description": "gpd_bidir_attr_read_write",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_bidir_attr_read_write",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_bidir_attr_read_write",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "gpd_bidir_attr_read_write",
+        "description": "gpd_bidir_attr_read_write",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_bidir_attr_read_write",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_switch",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "gpd_switch",
+        "description": "gpd_switch",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_switch",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_switch",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpd_switch",
+        "description": "gpd_switch",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_switch",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_switch",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "gpd_switch",
+        "description": "gpd_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "gpd_switch",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "gpd_switch",
+        "description": "gpd_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "gpd_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_light/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_light",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "onoff_light",
+        "description": "onoff_light",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_light",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    }
+]

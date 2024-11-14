@@ -96,16 +96,10 @@ extern "C"
  * INCLUDES
  */
 
-#ifdef USE_RCL
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>
 #include <ti/drivers/RNG.h>
 #include "ti/drivers/utils/List.h"
-#else
-#include <ti/drivers/rf/RF.h>
-#include <ti/drivers/TRNG.h>
-#include "rf_hal.h"
-#endif //USE_RCL
 
 #include "osal.h"
 #include "ll.h"
@@ -158,9 +152,7 @@ extern "C"
 #define LL_ADV_HDR_GET_CHSEL( hdr )      (((hdr) &  0x20) >> 5)
 #define LL_ADV_HDR_SET_CHSEL( hdr, v )   (((hdr) & ~0x20) | ((v) << 5))
 
-#ifdef USE_RCL
 #define LL_GET_PDU_HEADER(data, pad)      ( data + (pad - RCL_HEADER_BYTE) )
-#endif
 
 // Address types
 // Check if the address type is RPA
@@ -180,17 +172,6 @@ extern "C"
 #define LL_ASSERT(cond) HAL_ASSERT(cond)
 #endif // DEBUG
 
-// RSSI Correction
-#ifndef USE_RCL
-#define ADI0_TRIM_MASK                           BV(5)
-
-#define GET_RSSI_OFFSET()                                                      \
-  ((*((uint32 *)(FCFG1_BASE + LL_RSSI_OFFSET))>>9) & 0xFF)
-
-#define GET_RSSI_CORRECTION( rfConfig )                                        \
-  ((rfConfig) & ADI0_TRIM_MASK) ? (int8)GET_RSSI_OFFSET() : (int8)0
-#endif
-
 // checks if RSSI is valid - returns boolean
 #define LL_CHECK_RSSI_VALID( rssi )                                            \
           ((rssi) == LL_RF_RSSI_UNDEFINED || (rssi) == LL_RF_RSSI_INVALID)) ?  \
@@ -199,14 +180,7 @@ extern "C"
 
 // corrects RSSI if valid, otherwise returns not available
 // Note: Input is uint8, output int8.
-#ifdef USE_RCL
 #define LL_CHECK_LAST_RSSI( rssi ) (rssi)
-#else
-#define LL_CHECK_LAST_RSSI( rssi )                                             \
-          ((rssi) == LL_RF_RSSI_UNDEFINED || (rssi) == LL_RF_RSSI_INVALID)  ?  \
-          (int8)LL_RSSI_NOT_AVAILABLE                                       :  \
-          ((int8)(rssi) - rssiCorrection)
-#endif
 #define CHECK_CRITICAL_SECTION() (__get_BASEPRI() & 0x20 )
 
 #define LL_CMP_BDADDR( dstPtr, srcPtr )                                        \
@@ -235,6 +209,11 @@ extern "C"
 // Microsecond to/from RAT Tick Conversion
 #define US_TO_RAT_TICKS( us )              ((us) << 2)
 #define RAT_TICKS_TO_US( rat )             ((rat) >> 2)
+
+#define SW_TX_POWER_TABLE (llUserConfig.lrfTxPowerTablePtr)
+
+#define CONVERT_1US_TO_0_625MS( us )         ( us / 625 )     //!< Convert US to 0.625 ms
+#define CONVERT_1_25MS_TO_0_625MS( ms )      ( ms << 1 )      //!< Convert 1.25 ms to 0.625 ms
 
 /*******************************************************************************
  * CONSTANTS
@@ -340,6 +319,7 @@ extern "C"
 #define LL_PKT_HDR_LEN                                 2
 #define LL_PKT_MIC_LEN                                 4
 #define LL_PKT_CRC_LEN                                 3
+#define LL_PKT_DATAENTRY_DATA_OFFSET                   4
 
 // Payload sizes
 // Note: For control packets, this is the Opcode + CtrData.
@@ -371,8 +351,23 @@ extern "C"
 #define LL_MIN_USED_CHANNELS_IND_LEN                   3
 #define LL_CTE_REQ_PAYLOAD_LEN                         2
 #define LL_CTE_RSP_PAYLOAD_LEN                         1
+#define LL_CS_CHANNEL_MAP_IND_PL_LEN                   11
+#define LL_CS_FAE_RSP_PL_LEN                           73
+#define LL_CS_FAE_REQ_PL_LEN                           1
+#define LL_CS_TERMINATE_REQ_PL_LEN                     5
+#define LL_CS_TERMINATE_RSP_PL_LEN                     5
+#define LL_CS_IND_PL_LEN                               19
+#define LL_CS_RSP_PL_LEN                               22
+#define LL_CS_REQ_PL_LEN                               29
+#define LL_CS_CONFIG_RSP_PL_LEN                        2
+#define LL_CS_CONFIG_REQ_PL_LEN                        28
+#define LL_CS_CAPABILITIES_RSP_PAYLOAD_LEN             26
+#define LL_CS_CAPABILITIES_REQ_PAYLOAD_LEN             26
+#define LL_CS_SEC_RSP_PL_LEN                           21
+#define LL_CS_SEC_REQ_PL_LEN                           21
+
 // set to one byte larger than the largest control packet length
-#define LL_INVALID_CTRL_LEN                            25
+#define LL_INVALID_CTRL_LEN                            74
 
 // miscellaneous fields, in bytes
 #define LL_CONNECT_IND_LL_DATA_LEN                     22
@@ -409,10 +404,10 @@ extern "C"
 #define LL_WINDOW_SIZE                                 2  // 2.5ms in 1.25ms ticks
 #define LL_WINDOW_OFFSET                               0  // 1.25ms + 0
 #define LL_LINK_SETUP_TIMEOUT                          5  // 6 connection intervals (i.e. 0..5)
-#define LL_LINK_MIN_WIN_OFFSET                         2  // in 625us units
+#define LL_TRANSMIT_WIN_DELAY_LEGACY                   2  // in 625us units ~ 1.25ms
 //
-#define LL_LINK_MIN_WIN_OFFSET_AE_UNCODED              4  // in 625us units
-#define LL_LINK_MIN_WIN_OFFSET_AE_CODED                6  // in 625us units
+#define LL_TRANSMIT_WIN_DELAY_AE_UNCODED               4  // in 625us units ~ 2.5ms
+#define LL_TRANSMIT_WIN_DELAY_LEGACY_AE_CODED          6  // in 625us units ~ 3.75 ms
 
 // Adv PDU Header Fields
 #define LL_ADV_PDU_HDR_TXADDR                          6
@@ -447,42 +442,65 @@ extern "C"
 #define LL_DATA_HCI_OVERHEAD_LENGTH                    5
 
 // Data PDU Control Packet Types
-#define LL_CTRL_CONNECTION_UPDATE_IND                  0  // M
-#define LL_CTRL_CHANNEL_MAP_IND                        1  // M
-#define LL_CTRL_TERMINATE_IND                          2  // M, S
-#define LL_CTRL_ENC_REQ                                3  // M
-#define LL_CTRL_ENC_RSP                                4  //  , S
-#define LL_CTRL_START_ENC_REQ                          5  //  , S
-#define LL_CTRL_START_ENC_RSP                          6  // M, S
-#define LL_CTRL_UNKNOWN_RSP                            7  // M, S
-#define LL_CTRL_FEATURE_REQ                            8  // M
-#define LL_CTRL_FEATURE_RSP                            9  // M, S
-#define LL_CTRL_PAUSE_ENC_REQ                          10 // M
-#define LL_CTRL_PAUSE_ENC_RSP                          11 //  , S
-#define LL_CTRL_VERSION_IND                            12 // M, S
-#define LL_CTRL_REJECT_IND                             13 //  , S
-#define LL_CTRL_PERIPHERAL_FEATURE_REQ                 14 //  , S
-#define LL_CTRL_CONNECTION_PARAM_REQ                   15 // M, S
-#define LL_CTRL_CONNECTION_PARAM_RSP                   16 //  , S
-#define LL_CTRL_REJECT_EXT_IND                         17 // M, S
-#define LL_CTRL_PING_REQ                               18 // M, S
-#define LL_CTRL_PING_RSP                               19 // M, S
-#define LL_CTRL_LENGTH_REQ                             20 // M, S
-#define LL_CTRL_LENGTH_RSP                             21 // M, S
-#define LL_CTRL_PHY_REQ                                22 // M, S
-#define LL_CTRL_PHY_RSP                                23 //  , S
-#define LL_CTRL_PHY_UPDATE_REQ                         24 // M
-#define LL_CTRL_MIN_USED_CHANNELS_IND                  25 //  , S
-#define LL_CTRL_CTE_REQ                                26 // M, S
-#define LL_CTRL_CTE_RSP                                27 // M, S
-//
-#define LL_CTRL_INVALID_OPCODE                         200
+// Note: When adding packets here, note that the LL_CTRL_PKT_VERIFY_RANGE macro needs to be updated
+#define  LL_CTRL_CONNECTION_UPDATE_IND                 0x00 // C
+#define  LL_CTRL_CHANNEL_MAP_IND                       0x01 // C
+#define  LL_CTRL_TERMINATE_IND                         0x02 // C, P
+#define  LL_CTRL_ENC_REQ                               0x03 // C
+#define  LL_CTRL_ENC_RSP                               0x04 //  , P
+#define  LL_CTRL_START_ENC_REQ                         0x05 //  , P
+#define  LL_CTRL_START_ENC_RSP                         0x06 // C, P
+#define  LL_CTRL_UNKNOWN_RSP                           0x07 // C, P
+#define  LL_CTRL_FEATURE_REQ                           0x08 // C
+#define  LL_CTRL_FEATURE_RSP                           0x09 // C, P
+#define  LL_CTRL_PAUSE_ENC_REQ                         0x0A // C
+#define  LL_CTRL_PAUSE_ENC_RSP                         0x0B //  , P
+#define  LL_CTRL_VERSION_IND                           0x0C // C, P
+#define  LL_CTRL_REJECT_IND                            0x0D //  , P
+#define  LL_CTRL_PERIPHERAL_FEATURE_REQ                0x0E //  , P
+#define  LL_CTRL_CONNECTION_PARAM_REQ                  0x0F // C, P
+#define  LL_CTRL_CONNECTION_PARAM_RSP                  0x10 //  , P
+#define  LL_CTRL_REJECT_EXT_IND                        0x11 // C, P
+#define  LL_CTRL_PING_REQ                              0x12 // C, P
+#define  LL_CTRL_PING_RSP                              0x13 // C, P
+#define  LL_CTRL_LENGTH_REQ                            0x14 // C, P
+#define  LL_CTRL_LENGTH_RSP                            0x15 // C, P
+#define  LL_CTRL_PHY_REQ                               0x16 // C, P
+#define  LL_CTRL_PHY_RSP                               0x17 //  , P
+#define  LL_CTRL_PHY_UPDATE_REQ                        0x18 // C
+#define  LL_CTRL_MIN_USED_CHANNELS_IND                 0x19 //  , P
+#define  LL_CTRL_CTE_REQ                               0x1A // C, P
+#define  LL_CTRL_CTE_RSP                               0x1B // C, P
 
-//
-#define LL_CTRL_TERMINATE_RX_WAIT_FOR_TX_ACK           0xF0 // M (internal to LL only)
+// Returns true if the opcode is in range
+// opcode is treated as unsigned int so there is no point in checking if its >= 0
+#define  LL_CTRL_PKT_VERIFY_RANGE(opcode)              (opcode <= LL_CTRL_CTE_RSP)
 
-#define LL_CTRL_BLE_LOG_STRINGS_MAX 27
-extern char *llCtrl_BleLogStrings[];
+// Channel Sounding Control Procedures
+// Note: When adding packets here, note that the LL_CTRL_CS_PKT_VERIFY_RANGE macro and
+// LL_CTRL_CS_PKT_CALC_LEN_INDEX macro needs to be updated
+#define LL_CTRL_CS_SEC_RSP                             0x2DU //  , P
+#define LL_CTRL_CS_CAPABILITIES_REQ                    0x2EU // C, P
+#define LL_CTRL_CS_CAPABILITIES_RSP                    0x2FU // C, P
+#define LL_CTRL_CS_CONFIG_REQ                          0x30U // C, P
+#define LL_CTRL_CS_CONFIG_RSP                          0x31U // C, P
+#define LL_CTRL_CS_REQ                                 0x32U // C, P
+#define LL_CTRL_CS_RSP                                 0x33U //  , P
+#define LL_CTRL_CS_IND                                 0x34U // C
+#define LL_CTRL_CS_TERMINATE_REQ                       0x35U // C
+#define LL_CTRL_CS_FAE_REQ                             0x36U // C, P
+#define LL_CTRL_CS_FAE_RSP                             0x37U // C, P
+#define LL_CTRL_CS_CHANNEL_MAP_IND                     0x38U // C
+#define LL_CTRL_CS_SEC_REQ                             0x39U // C
+#define LL_CTRL_CS_TERMINATE_RSP                       0x3AU // C, P
+
+// Returns true if the opcode is in range
+#define LL_CTRL_CS_PKT_VERIFY_RANGE(opcode)            (opcode >= LL_CTRL_CS_SEC_RSP && opcode <= LL_CTRL_CS_TERMINATE_RSP)
+
+// Calculate the CS offset in packet length table
+#define LL_CTRL_CS_PKT_CALC_LEN_INDEX(opcode)          (opcode - LL_CTRL_CS_SEC_RSP)
+
+#define  LL_CTRL_INVALID_OPCODE                        0xC8
 //
 // The following "control packet types" are internally defined to assist the
 // Link Layer with control procedure processing.
@@ -499,16 +517,24 @@ extern char *llCtrl_BleLogStrings[];
 // caused by a received packet, must be dequeued and restored at a later time
 // without being re-queued on the Tx FIFO.
 //
+#define  LL_CTRL_TERMINATE_RX_WAIT_FOR_TX_ACK          0xF0 // C (internal to LL only)
+
 // The LL_CTRL_DUMMY_PLACE_HOLDER_RECEIVE type is used to delay the processing
 // of a received control packet.
-#define LL_CTRL_DUMMY_PLACE_HOLDER_TRANSMIT            0xFC
-#define LL_CTRL_DUMMY_PLACE_HOLDER_TX_PENDING          0xFD
-#define LL_CTRL_DUMMY_PLACE_HOLDER_RECEIVE             0xFE
-#define LL_CTRL_UNDEFINED_PKT                          0xFF
+#define  LL_CTRL_DUMMY_PLACE_HOLDER_TRANSMIT            0xFC
+#define  LL_CTRL_DUMMY_PLACE_HOLDER_TX_PENDING          0xFD
+#define  LL_CTRL_DUMMY_PLACE_HOLDER_RECEIVE             0xFE
+#define  LL_CTRL_UNDEFINED_PKT                          0xFF
+
+#define NUM_OF_CTRL_PKT                                 28
+#define NUM_OF_CS_CTRL_PKT                              14
+
+#define LL_CTRL_BLE_LOG_STRINGS_MAX                     27
+extern char *llCtrl_BleLogStrings[];
 
 // There is only supposed to be at most one control procedure pending, but some
 // extra space is allocated here just in case some queueing is required.
-#define LL_MAX_NUM_CTRL_PROC_PKTS                      4
+#define LL_MAX_NUM_CTRL_PROC_PKTS                      10
 
 // Control Procedure Actions
 #define LL_CTRL_PROC_STATUS_SUCCESS                    0
@@ -533,9 +559,6 @@ extern char *llCtrl_BleLogStrings[];
 // Advertiser Synchronization Word
 #define ADV_SYNCH_WORD                                 0x8E89BED6  // Adv channel sync
 #define ADV_CRC_INIT_VALUE                             0x00555555  // not needed; handled by NR hardware automatically
-
-// Advertise Packets Data Index
-#define ADV_DATA_INDEX                                2
 
 // Connection Related
 #define LL_INVALID_CONNECTION_ID                       0xFF
@@ -770,7 +793,25 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_FEATURE_CONNECTION_SUBRATING                0x20          //     "Y"
 #define LL_FEATURE_CONNECTION_SUBRAING_HOST_SUPPORT    0x40          //     "Y"
 #define LL_FEATURE_CHANNEL_CLASSIFICATION              0x80          //     "Y"
-// Byte 5 - Byte 7
+// Byte 5
+#define LL_FEATURE_RESERVED0                           0x01
+#define LL_FEATURE_RESERVED1                           0x02
+#define LL_FEATURE_RESERVED2                           0x04
+#define LL_FEATURE_RESERVED3                           0x08
+#define LL_FEATURE_RESERVED4                           0x10
+#define LL_FEATURE_RESERVED5                           0x20
+#define LL_FEATURE_CS                                  0x40
+#define LL_FEATURE_CS_HOST                             0x80
+// Byte 6
+#define LL_FEATURE_RESERVED0                           0x01
+#define LL_FEATURE_RESERVED1                           0x02
+#define LL_FEATURE_RESERVED2                           0x04
+#define LL_FEATURE_RESERVED3                           0x08
+#define LL_FEATURE_RESERVED4                           0x10
+#define LL_FEATURE_RESERVED5                           0x20
+#define LL_FEATURE_RESERVED6                           0x40
+#define LL_FEATURE_RESERVED7                           0x80
+// Byte 7
 #define LL_FEATURE_RESERVED0                           0x01
 #define LL_FEATURE_RESERVED1                           0x02
 #define LL_FEATURE_RESERVED2                           0x04
@@ -1038,6 +1079,8 @@ extern char *llCtrl_BleLogStrings[];
 
 #define LL_RCL_PKT_NUM_PAD_BTYES             3
 #define LL_RCL_PKT_HDR_LEN                   2
+
+#define LL_MAX_HCI_EVENT_LEN                 244
 /*******************************************************************************
  * TYPEDEFS
  */
@@ -1056,7 +1099,7 @@ typedef struct
   uint8  winSize;                                    // window size
   uint16 winOffset;                                  // window offset
   uint16 connInterval;                               // connection interval
-  uint16 peripheralLatency;                               // number of connection events the peripheral can ignore
+  uint16 peripheralLatency;                          // number of connection events the peripheral can ignore
   uint16 connTimeout;                                // supervision connection timeout
 } connParam_t;
 
@@ -1212,19 +1255,19 @@ typedef struct
 // Reject Indication Extended
 typedef struct
 {
-  uint8 rejectOpcode;                                // opcode that was rejected
-  uint8 errorCode;                                   // error code for rejection
+  uint8              rejectOpcode;                                // opcode that was rejected
+  uint8              errorCode;                                   // error code for rejection
 } rejectIndExt_t;
 
 // Control Procedure Information
 typedef struct
 {
-  uint8  ctrlPktActive;                              // control packet at head of queue has been queued for Tx
-  uint8  ctrlPkts[ LL_MAX_NUM_CTRL_PROC_PKTS ];      // queue of control packets to be processed
-  uint8  ctrlPktCount;                               // number of queued control packets
-  uint16 ctrlTimeoutVal;                             // timeout in CI events for control procedure for this connection
-  uint16 ctrlTimeout;                                // timeout counter in CI events for control procedure
-  uint8  ctrlPktPending;                             // type of received control packet whose processing has been delayed
+  uint8               ctrlPktActive;                              // control packet at head of queue has been queued for Tx
+  uint8               ctrlPkts[ LL_MAX_NUM_CTRL_PROC_PKTS ];      // queue of control packets to be processed
+  uint8               ctrlPktCount;                               // number of queued control packets
+  uint16              ctrlTimeoutVal;                             // timeout in CI events for control procedure for this connection
+  uint16              ctrlTimeout;                                // timeout counter in CI events for control procedure
+  uint8               ctrlPktPending;                             // type of received control packet whose processing has been delayed
 } ctrlPktInfo_t;
 
 // Packet Error Rate Information - General
@@ -1298,10 +1341,10 @@ typedef struct
 // Length Information
 typedef struct
 {
-  uint16 connMaxTxOctets;                            // max payload bytes sent by this device
   uint16 connMaxRxOctets;                            // max payload bytes this device can receive
-  uint16 connMaxTxTime;                              // max time (us) this device will take to transmit payload
   uint16 connMaxRxTime;                              // max time (us) this device can take to receive payload
+  uint16 connMaxTxOctets;                            // max payload bytes sent by this device
+  uint16 connMaxTxTime;                              // max time (us) this device will take to transmit payload
   uint16 connRemoteMaxTxOctets;                      // max payload bytes peer device will send
   uint16 connRemoteMaxRxOctets;                      // max payload bytes peer can receive
   uint16 connRemoteMaxTxTime;                        // max time (us) peer will take to transmit
@@ -1350,7 +1393,7 @@ typedef struct
   uint16_t packets;
   // Total number of CRC errors for this connection.
   uint16_t errors;
-  uint8_t  nextTaskType; // Type of next BLE task
+  uint16_t nextTaskType; // Type of next BLE task
   uint32_t nextTaskTime; // time to next BLE task
   uint16_t eventCounter; // event Counter
   uint32_t timeStamp;    // timestamp (anchor point)
@@ -1458,7 +1501,7 @@ struct llConn_t
   // Note: Address must start on word boundary!
   peerInfo_t        peerInfo;                           // peer device address and address type
   // Connection Event Notification
-  uint8             taskID;                             // user task ID to send task event
+  uint16            taskID;                             // user task ID to send task event
   uint16            taskEvent;                          // user event to send at end of connection event
 
   // TEMP: THIS BELONGS IN taskInfo_t, BUT THEN ANOTHER MALLOC IS NEEDED.
@@ -1825,11 +1868,6 @@ typedef struct
  * GLOBAL VARIABLES
  */
 
-#ifndef USE_RCL
-// FW Parameter structure (for Extended Data Length)
-extern rfOpImmedCmd_RW_FwParam_t fwParCmd;
-extern rfOpCmd_runImmedCmd_t     runFwParCmd;
-#endif
 // Device Addresses
 extern uint8 ownPublicAddr[];
 extern uint8 ownRandomAddr[];
@@ -1858,7 +1896,6 @@ extern uint8         numComplPktsFlush;               // flag to indicate send n
 #if defined( CC26XX ) || defined( CC13XX )
 extern uint16        rfCfgAdiVal;                     // RF Config Value for ADI init
 #endif // CC26XX/CC13XX
-extern uint8         scanReqRpt;                      // Scan Request Report flag
 #if defined(CC13X2P)
 extern uint8         txPwrRfGainReg;                  // index into common override register table for HP PA RF Gain
 #endif // CC13X2P
@@ -1945,6 +1982,9 @@ extern uint8  qosDefaultPriorityPerAdvParameter;
 extern uint8  qosDefaultPriorityPerScnParameter;
 extern uint8  defaultChannelMap[LL_NUM_BYTES_FOR_CHAN_MAP];
 
+extern const uint8 ctrlPktLenTable[NUM_OF_CTRL_PKT];
+extern const uint8 ctrlCsPktLenTable[NUM_OF_CS_CTRL_PKT];
+
 /*******************************************************************************
  * FUNCTIONS
  */
@@ -1967,6 +2007,7 @@ extern void                 llProcessPostRfOps( void );
 extern void                 llSetTxPower( RFBLEDPL_TX_POWER_TYPE );
 extern void                 llSetTxPwrLegacy( uint8 );
 extern int8                 llGetTxPower( void );
+extern uint16               llGetCsConnTaskID( void );
 extern uint8                llTxPwrPoutLU( int8 );
 extern uint8                llTxPwrLU( uint16 );
 extern void                 llTxPwrSetRfGainIndex( uint32 *);
@@ -1983,37 +2024,17 @@ extern void                 llRfOverrideCommonValue(uint32,uint8);
 #endif
 extern uint16               llBleToRfChannel(uint8);
 //
-#ifdef USE_RCL
-extern RCL_Handle            rfHandle;
-#else
-extern RF_EventMask         rfEvent;
-extern RF_Handle            rfHandle;
-extern RF_CmdHandle         rfCmdHandle;
-#endif
+extern RCL_Handle           rfHandle;
 // Control Procedure Setup
-extern uint8                llSetupUpdateParamReq( llConnState_t * );           // M
-extern uint8                llSetupUpdateChanReq( llConnState_t * );            // M
-extern uint8                llSetupEncReq( llConnState_t * );                   // M
-extern uint8                llSetupEncRsp( llConnState_t * );                   // S
-extern uint8                llSetupStartEncReq( llConnState_t * );              // S
-extern uint8                llSetupStartEncRsp( llConnState_t * );              // M, S
-extern uint8                llSetupPauseEncReq( llConnState_t * );              // M
-extern uint8                llSetupPauseEncRsp( llConnState_t * );              // S
-extern uint8                llSetupRejectInd( llConnState_t * );                // S
-extern uint8                llSetupFeatureSetReq( llConnState_t * );            // M, S
-extern uint8                llSetupFeatureSetRsp( llConnState_t * );            // M, S
-extern uint8                llSetupVersionIndReq( llConnState_t * );            // M
-extern uint8                llSetupTermInd( llConnState_t * );                  // M, S
-extern uint8                llSetupUnknownRsp( llConnState_t * );               // M, S
-extern uint8                llSetupPingReq( llConnState_t * );                  // M, S
-extern uint8                llSetupPingRsp( llConnState_t * );                  // M, S
-extern uint8                llSetupConnParamReq( llConnState_t * );             // M, S
-extern uint8                llSetupConnParamRsp( llConnState_t * );             //  , S
-extern uint8                llSetupRejectIndExt( llConnState_t * );             // M, S
+
+uint8_t              llSetupCtrlPkt( llConnState_t *connPtr, uint8_t ctrlPkt );
+void                 llBuildCtrlPktPeri( llConnState_t *connPtr, uint8 *pData, uint8_t ctrlPkt );
+void                 llBuildCtrlPktCent( llConnState_t *connPtr,uint8 *pData, uint8_t ctrlPkt );
+void                 llPostSetupCtrlPktPeri( llConnState_t *connPtr, uint8_t ctrlPkt );
+void                 llPostSetupCtrlPktCent( llConnState_t *connPtr, uint8_t ctrlPkt );
 //
-extern uint8                llSetupPhyCtrlPkt( llConnState_t *, uint8 );        // M, S
-extern uint8                llSetupLenCtrlPkt( llConnState_t *, uint8 );        // M, S
-extern uint8                llSetupCte( llConnState_t *, uint8 );               // M, S
+extern uint8                llSetupCte( llConnState_t *, uint8 );               // C, P
+extern void                 llSetupDataEntry( RCL_Buffer_TxBuffer *dataEntry, uint8 cmdLen, uint8 encEnabled ); // TODO add C, P thing
 
 // Control Procedure Management
 extern void                 llEnqueueCtrlPkt( llConnState_t *, uint8 );
@@ -2096,11 +2117,7 @@ extern void                 llCombinePDU( uint16, uint8 *, uint16, uint8 );
 extern uint8                llFragmentPDU( llConnState_t *, uint8 *, uint16 );
 extern uint8                *llMemCopySrc( uint8 *, uint8 *, uint8 );
 extern uint8                *llMemCopyDst( uint8 *, uint8 *, uint8 );
-#ifdef USE_RCL
 extern void                 llUpdateRxBuffersForActiveConnections(List_List *rxBuffers);
-#else
-extern void                 llCreateRxBuffer( llConnState_t *, dataEntry_t *);
-#endif
 extern void                 llCheckRxBuffers( llConnState_t *connPtr );
 extern void                 llReplaceRxBuffers( llConnState_t * );
 extern uint16               llTime2Octets( uint8, uint8, uint16, uint8 );
@@ -2127,6 +2144,7 @@ extern void                 llProcessScanRxFIFO( uint8 scanStatus );
 
 // Initiator Task End Cause
 extern void                 llInit_TaskConnect( void );
+extern void                 llExtInit_ResolveConnRsp( void );
 extern void                 llInit_TaskEnd( void );
 
 // Central Task End Cause
@@ -2168,15 +2186,16 @@ extern void                 llProcessPeripheralConnectionCreated( void );
 extern void                 llProcessAdvAddrResolutionTimeout( void );
 extern void                 llProcessConnectionEstablishFailed( uint8 role, uint8 reason );
 
-extern uint8                llConvertBlePhyToLlPhy(uint8 blePhy, uint8 *llPhy);
+extern uint8                llConvertBlePhyToLlPhy(uint8 blePhy, uint8 *llPhy, uint8 *llPhyCodedOpt);
 extern uint8                llConvertLlPhyToBlePhy(uint8 llPhy, uint8 *blePhy);
 extern uint8                llConvertLlPhyOptToBlePhyOpt(uint8 llPhyOpt, uint8 *blePhyOpt);
+extern void                 llConvertAePhyToBlePhy(uint8 llPhy, uint8 *blePhy);
 
 extern uint8                llSetPhy(llConnState_t *connPtr, uint8 rxPhy);
 extern void                 llSetRangeDelay(llConnState_t *connPtr);
 
 extern uint8                RfBleDpl_setConnPhy(uint8 connId, uint8 phy, uint8 phyOpts);
-extern uint8                RfBleDpl_setAdvPhy(void *pRfCmd, uint8 phy);
+extern uint8                RfBleDpl_setAdvPhy(void *pRfCmd, uint8 primPhy, uint8 secPhy);
 extern void                 RfBleDpl_setRangeDelay(uint8 connId, uint8 rangeDelay);
 
 /* Tx Power apis */

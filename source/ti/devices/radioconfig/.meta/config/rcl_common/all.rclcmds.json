@@ -1061,7 +1061,7 @@
         "field_value": [
           {
             "name": "common.cmdId",
-            "value": "0x1001"
+            "value": "0x1101"
           },
           {
             "name": "common.runtime.handler",
@@ -1113,19 +1113,61 @@
             "name": "mode.repeatSteps",
             "type": "uint16_t",
             "size": "1",
-            "desc": "Enable continuous repetition of step list"
+            "desc": "Enable continuous repetition of step list",
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "0",
+                "label": "Disable"
+              },
+              {
+                "symbol": "1",
+                "value": "1",
+                "label": "Infinite"
+              }
+            ]
           },
           {
             "name": "mode.chFilterEnable",
             "type": "uint16_t",
             "size": "1",
-            "desc": "Enable filtering restricted channels (2402, 2403, 2425, 2426, 2527, 2479, 2480 MHz)"
+            "desc": "Enable filtering restricted channels (2402, 2403, 2425, 2426, 2427, 2479, 2480 MHz)",
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "0",
+                "label": "Disable"
+              },
+              {
+                "symbol": "1",
+                "value": "1",
+                "label": "Enable"
+              }
+            ]
           },
           {
-            "name": "mode.nS2R",
+            "name": "mode.precal",
             "type": "uint16_t",
-            "size": "4",
-            "desc": "Total number of Samples-To-Ram containers in the list"
+            "size": "1",
+            "desc": "Enable using the DC precalibration table",
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "0",
+                "label": "Disable"
+              },
+              {
+                "symbol": "1",
+                "value": "1",
+                "label": "Enable"
+              }
+            ]
+          },
+          {
+            "name": "mode.reserved",
+            "type": "uint16_t",
+            "size": "3",
+            "desc": "Reserved for future use"
           },
           {
             "name": "mode.nSteps",
@@ -1137,7 +1179,7 @@
             "name": "antennaConfig.select",
             "type": "uint8_t",
             "size": "8",
-            "desc": "Antenna pattern selection by index ref RCL_CmdBleCs_AntennaConfig"
+            "desc": "Antenna pattern selection by index (0-7)"
           },
           {
             "name": "antennaConfig.gpoMask",
@@ -1146,28 +1188,10 @@
             "desc": "Mask of GPOs on the LRF controlling the antennas"
           },
           {
-            "name": "antennaConfig.gpoCtrl0",
+            "name": "antennaConfig.gpoVal[4]",
             "type": "uint8_t",
             "size": "8",
-            "desc": "GPOCTRL word for antenna path 0"
-          },
-          {
-            "name": "antennaConfig.gpoCtrl1",
-            "type": "uint8_t",
-            "size": "8",
-            "desc": "GPOCTRL word for antenna path 1"
-          },
-          {
-            "name": "antennaConfig.gpoCtrl2",
-            "type": "uint8_t",
-            "size": "8",
-            "desc": "GPOCTRL word for antenna path 2"
-          },
-          {
-            "name": "antennaConfig.gpoCtrl3",
-            "type": "uint8_t",
-            "size": "8",
-            "desc": "GPOCTRL word for antenna path 3"
+            "desc": "GPOCTRL word for antenna path 0..3"
           },
           {
             "name": "timing.tFcs",
@@ -1200,9 +1224,10 @@
             "desc": "Config of time of Interlude Period 2 ref RCL_CmdBleCs_Tip"
           },
           {
-            "name": "timing.reserved",
+            "name": "timing.tRxWideningR0",
             "type": "uint16_t",
-            "size": "16"
+            "size": "16",
+            "desc": "Config of window widening time of mode-0 steps on reflector"
           },
           {
             "name": "timing.tSw",
@@ -1214,67 +1239,138 @@
             "name": "timing.tSwAdjustA",
             "type": "uint16_t",
             "size": "16",
-            "desc": "Time adjustment of first set of antenna switching within a step"
+            "desc": "Config of time of adjustment of first antenna switching for mode 2 steps"
           },
           {
             "name": "timing.tSwAdjustB",
             "type": "uint16_t",
             "size": "16",
-            "desc": "Time adjustment of second set of antenna switching within a step"
+            "desc": "Config of time of adjustment of first antenna switching for mode 2 steps"
           },
           {
-            "name": "frontend.txPower",
+            "name": "frontend.txPower.fraction",
             "type": "uint8_t",
-            "size": "8",
-            "desc": "Index value of TX power"
+            "size": "1",
+            "default": "0",
+            "desc": "Transmit power, fractional part"
+          },
+          {
+            "name": "frontend.txPower.dBm",
+            "type": "int8_t",
+            "size": "7",
+            "default": "0",
+            "desc": "Transmit power, integer part"
           },
           {
             "name": "frontend.rxGain",
             "type": "uint8_t",
             "size": "8",
-            "desc": "Index value of RX gain"
+            "desc": "Index value of RX gain",
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "0",
+                "label": "Auto"
+              },
+              {
+                "symbol": "7",
+                "value": "1",
+                "label": "Low_Gain"
+              },
+              {
+                "symbol": "15",
+                "value": "1",
+                "label": "High_Gain"
+              }
+            ]
           },
           {
             "name": "frontend.foffOverride",
-            "type": "uint8_t",
-            "size": "8",
+            "type": "int16_t",
+            "size": "16",
             "desc": "Frequency offset compensation override value in [4x FOFF] units."
           },
           {
             "name": "frontend.foffOverrideEnable",
-            "type": "uint8_t",
+            "type": "uint16_t",
             "size": "1",
             "desc": "Disables automatic estimate foff estimation and enforces the use of the provided override"
           },
           {
             "name": "frontend.reserved",
-            "type": "uint8_t",
-            "size": "7"
+            "type": "uint16_t",
+            "size": "15",
+            "desc": "Reserved"
           },
           {
-            "name": "reserved1",
-            "type": "uint8_t",
-            "size": "8"
-          },
-          {
-            "name": "steps",
-            "type": "RCL_CmdBleCs_Step*",
-            "desc": "Pointer to step list"
+            "name": "precalTable",
+            "type": "RCL_CmdBleCs_PrecalTable*",
+            "desc": "Pointer to a precalibration table used for DC compensation"
           },
           {
             "name": "results",
-            "type": "RCL_CmdBleCs_StepResult*",
+            "type": "RCL_CmdBleCs_StepResult_Internal*",
             "desc": "Pointer to result list"
           },
           {
-            "name": "s2rResults",
-            "type": "RCL_CmdBleCs_S2r*",
-            "desc": "Pointer to container list"
+            "name": "stats",
+            "type": "RCL_CmdBleCs_Stats*",
+            "desc": "Pointer to statistics"
           },
           {
-            "name": "output",
-            "type": "RCL_CmdBleCs_Output*",
-            "desc": "Pointer to statistics"
+            "name": "stepBuffers",
+            "type": "List_List",
+            "desc": "Linked list of steps"
+          },
+          {
+            "name": "stepBuffersDone",
+            "type": "List_List",
+            "desc": "Linked list of steps that have been executed"
+          },
+          {
+            "name": "resultBuffers",
+            "type": "List_List",
+            "desc": "Linked list of empty results"
+          },
+          {
+            "name": "resultBuffersDone",
+            "type": "List_List",
+            "desc": "Linked list of results containing data"
+          },
+          {
+            "name": "s2rBuffers",
+            "type": "List_List",
+            "desc": "Linked list of empty s2r containers"
+          },
+          {
+            "name": "s2rBuffersDone",
+            "type": "List_List",
+            "desc": "Linked list of s2r containers with data"
+          }
+        ]
+      },
+      {
+        "name": "CMD_BLE_CS_PRECAL",
+        "desc": "BLE channel sounding DC precalibration",
+        "field_value": [
+          {
+            "name": "common.cmdId",
+            "value": "0x1102"
+          },
+          {
+            "name": "common.runtime.handler",
+            "value": "RCL_Handler_BLE_CS_Precal"
+          }
+        ],
+        "field": [
+          {
+            "name": "common",
+            "type": "RCL_Command"
+          },
+          {
+            "name": "table",
+            "type": "RCL_CmdBleCs_PrecalTable*",
+            "desc": "Table containing the configuration and results of DC calibration"
           }
         ]
       }

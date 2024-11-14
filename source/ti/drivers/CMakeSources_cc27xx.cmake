@@ -80,9 +80,10 @@ set(SOURCES_SEC_ONLY_CC27XX
     aesecb/AESECBLPF3.c
     aesgcm/AESGCMLPF3HSM.c
     cryptoutils/aes/AESCommonLPF3.c
-    cryptoutils/ecc/ECCParamsLPF3HSM.c
+    #cryptoutils/ecc/ECCParamsLPF3HSM.c
+    cryptoutils/ecc/ECCParamsLPF3SW.c
     cryptoutils/ecc/ECCInitLPF3SW.c
-    ecdh/ECDHLPF3HSM.c
+    #ecdh/ECDHLPF3HSM.c
     ecdh/ECDHLPF3SW.c
     ecdsa/ECDSALPF3HSM.c
     # ecjpake/ECJPAKECC26X2.c

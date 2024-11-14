@@ -87,7 +87,7 @@ static HTS_cb_t *hts_profileCBs = NULL;
  * Service Attributes - variables
  */
 // HTS Service declaration
-static CONST gattAttrType_t hts_service = { ATT_BT_UUID_SIZE, hts_serv_UUID };
+static const gattAttrType_t hts_service = { ATT_BT_UUID_SIZE, hts_serv_UUID };
 
 // HTS Temperature Measurement
 static uint8 hts_meas_props = GATT_PROP_INDICATE;               // Characteristic properties
@@ -153,7 +153,7 @@ BLEAppUtil_EventHandler_t htGATTHandler =
  * made within these functions.
  *
  */
-CONST gattServiceCBs_t hts_servCB =
+const gattServiceCBs_t hts_servCB =
 {
   NULL,             // Read callback function pointer
   HTS_writeAttrCB,  // Write callback function pointer

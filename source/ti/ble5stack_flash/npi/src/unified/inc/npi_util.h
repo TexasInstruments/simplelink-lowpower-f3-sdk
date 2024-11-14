@@ -64,7 +64,6 @@ extern "C"
 
 #include "util.h"
 #include <ti/drivers/dpl/TaskP.h>
-#ifdef USE_RCL
 #include <drivers/dpl/HwiP.h>
 #define Hwi_disable()  HwiP_disable()
 #define Hwi_restore(a) HwiP_restore(a)
@@ -72,10 +71,7 @@ extern "C"
 #define Swi_disable()  SwiP_disable()
 #define Swi_restore(a) SwiP_restore(a)
 #include <drivers/dpl/TaskP.h>
-#else
-#include <ti/sysbios/hal/Hwi.h>
-#include <ti/sysbios/knl/Swi.h>
-#endif
+
 
 
 // ****************************************************************************

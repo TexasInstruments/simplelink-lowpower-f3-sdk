@@ -1,7 +1,7 @@
 {
     "name": "simplelink_lowpower_f3_sdk",
     "displayName": "SimpleLink Low Power F3 SDK",
-    "version": "8.10.01.02",
+    "version": "8.20.00.119",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",
@@ -21,6 +21,7 @@
         "/ti/utils/tiutils.component.js",
         "/ti/utils/build/build.component.js",
         "/ti/utils/rov/rov.component.js",
+        "/ti/zigbee/zigbee.component.js",
         "/freertos/freertos.component.js"
     ],
     "devices": [

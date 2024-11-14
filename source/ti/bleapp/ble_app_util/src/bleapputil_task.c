@@ -192,91 +192,33 @@ void *BLEAppUtil_Task(void *arg)
             {
               case BLEAPPUTIL_EVT_STACK_CALLBACK:
               {
-                  // Set the flag to true to indicate that BLEAppUtil_freeMsg
-                  // should be used to free the msg
-                  freeMsg = TRUE;
+                  // Cast to the stack MSG pointer format passed to the enqueue function
+                  BLEAppUtil_stackMsgData_t *stackMsg = (BLEAppUtil_stackMsgData_t *)pAppEvt.pData;
 
-                  switch (pMsgData->event)
+                  if(stackMsg != NULL)
                   {
-                      case GAP_MSG_EVENT:
-                          BLEAppUtil_processGAPEvents(pMsgData);
-                          break;
+                      // Set the flag to true to indicate that BLEAppUtil_freeMsg
+                      // should be used to free the msg
+                      freeMsg = TRUE;
+                      // Point to the msg that was received from the stack,
+                      // it will be freed in the end of this function
+                      pMsgData = stackMsg->pMessage;
 
-                      case GATT_MSG_EVENT:
-                          BLEAppUtil_processGATTEvents(pMsgData);
-                          break;
+                      // Process the stack event received
+                      BLEAppUtil_processStackEvents(stackMsg->pMessage, stackMsg->eventAndHandlerType);
 
-                      case L2CAP_DATA_EVENT:
-                          BLEAppUtil_processL2CAPDataMsg(pMsgData);
-                          break;
-
-                      case L2CAP_SIGNAL_EVENT:
-                          BLEAppUtil_processL2CAPSignalEvents(pMsgData);
-                          break;
-
-                      case HCI_GAP_EVENT_EVENT:
-                          BLEAppUtil_processHCIGAPEvents(pMsgData);
-                          break;
-
-                      case HCI_DATA_EVENT:
-                          BLEAppUtil_processHCIDataEvents(pMsgData);
-                          break;
-
-                      case HCI_SMP_EVENT_EVENT:
-                          BLEAppUtil_processHCISMPEvents(pMsgData);
-                          break;
-
-                      case HCI_SMP_META_EVENT_EVENT:
-                          BLEAppUtil_processHCISMPMetaEvents(pMsgData);
-                          break;
-
-                    case HCI_CTRL_TO_HOST_EVENT:
-                    {
-                        BLEAppUtil_processHCICTRLToHostEvents(pMsgData);
-                        hciPacket_t *pBuf = (hciPacket_t *)pMsgData;
-                        switch (pBuf->pData[0])
-                        {
-                          case HCI_ACL_DATA_PACKET:
-                          case HCI_SCO_DATA_PACKET:
-                            BM_free(pBuf->pData);
-                          default:
-                            break;
-                        }
-                        break;
-                    }
-
-
-                    default:
-                        break;
-                }
+                      // Free the stack msg
+                      BLEAppUtil_free(stackMsg);
+                  }
                 break;
             }
               case BLEAPPUTIL_EVT_ADV_CB_EVENT:
-              {
                   BLEAppUtil_processAdvEventMsg(pMsgData);
-                  if (((BLEAppUtil_AdvEventData_t *)pMsgData)->event != BLEAPPUTIL_ADV_INSUFFICIENT_MEMORY &&
-                      ((BLEAppUtil_AdvEventData_t *)pMsgData)->pBuf)
-                  {
-                      BLEAppUtil_free(((BLEAppUtil_AdvEventData_t *)pMsgData)->pBuf);
-                  }
                   break;
-              }
 
               case BLEAPPUTIL_EVT_SCAN_CB_EVENT:
-              {
                   BLEAppUtil_processScanEventMsg(pMsgData);
-                  if (((BLEAppUtil_ScanEventData_t *)pMsgData)->event == BLEAPPUTIL_ADV_REPORT &&
-                      ((BLEAppUtil_ScanEventData_t *)pMsgData)->pBuf->pAdvReport.pData)
-                  {
-                      BLEAppUtil_free(((BLEAppUtil_ScanEventData_t *)pMsgData)->pBuf->pAdvReport.pData);
-                  }
-                  if (((BLEAppUtil_ScanEventData_t *)pMsgData)->event != BLEAPPUTIL_SCAN_INSUFFICIENT_MEMORY &&
-                      ((BLEAppUtil_ScanEventData_t *)pMsgData)->pBuf)
-                  {
-                      BLEAppUtil_free(((BLEAppUtil_ScanEventData_t *)pMsgData)->pBuf);
-                  }
                   break;
-              }
 
               case BLEAPPUTIL_EVT_PAIRING_STATE_CB:
                   BLEAppUtil_processPairStateMsg(pMsgData);
@@ -287,8 +229,20 @@ void *BLEAppUtil_Task(void *arg)
                   break;
 
               case BLEAPPUTIL_EVT_CONN_EVENT_CB:
-                  BLEAppUtil_processConnEventMsg(pMsgData);
+              {
+                  // Cast to a msg from the type allocated in the callback
+                  BLEAppUtil_connEventNoti_t *connNotiData = (BLEAppUtil_connEventNoti_t *)pMsgData;
+
+                  // Point to the msg that was received from the stack,
+                  // it will be freed in the end of this function
+                  pMsgData = (BLEAppUtil_msgHdr_t *)connNotiData->connEventReport;
+
+                  BLEAppUtil_processConnEventMsg(connNotiData);
+
+                  // Free the data allocated in the callback
+                  BLEAppUtil_free(connNotiData);
                   break;
+              }
 
               case BLEAPPUTIL_EVT_CALL_IN_BLEAPPUTIL_CONTEXT:
               {

@@ -6,6 +6,10 @@
       "description": "Selects the PHY setting",
       "options": [
         {
+          "name": "adc_noise",
+          "displayName": "ADC Noise"
+        },
+        {
           "name": "ble",
           "displayName": "1 Mbps / 2 Mbps / Coded"
         },
@@ -14,7 +18,7 @@
           "displayName": "Generic 1 Mbps / 2 Mbps / Coded"
         }
       ],
-      "default": "ble",
+      "default": "adc_noise",
       "hidden": true
     },
     {
@@ -305,17 +309,23 @@
   "phys": {
     "ble": [
       {
+        "file8": "adc_noise_bt5_cc23xx.json",
+        "name": "adc_noise",
+        "label": "ADC Noise",
+        "protocol": "ADC Noise, BLE based"
+      },
+      {
         "file8": "ble_bt5_1m_2m_coded_cc23xx.json",
         "name": "ble",
-        "description": "1 Mbps / 2 Mbps / Coded",
-        "phyName": "1 Mbps / 2 Mbps / Coded",
+        "label": "1 Mbps / 2 Mbps / Coded",
+        "protocol": "Bluetooth 5, LE",
         "usage": "stack"
       },
       {
         "file8": "ble_bt5_generic_cc23xx.json",
         "name": "ble_gen",
-        "description": "Generic 1 Mbps / 2 Mbps / Coded",
-        "phyName": "Generic 1 Mbps / 2 Mbps / Coded",
+        "label": "Generic 1 Mbps / 2 Mbps / Coded",
+        "protocol": "Bluetooth 5, LE",
         "usage": "generic"
       }
     ]

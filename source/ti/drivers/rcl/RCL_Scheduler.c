@@ -417,7 +417,7 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
 
     HwiP_restore(key);
 
-    Log_printf(RclCore, Log_DEBUG, "Using PBE start time 0x%08X (current time 0x%08X)", actualStartTime, RCL_Scheduler_getCurrentTime());
+    Log_printf(LogModule_RCL, Log_VERBOSE, "rclSchedulerProcessCmdStartStopTime: Using PBE start time 0x%08X (current time 0x%08X)", actualStartTime, RCL_Scheduler_getCurrentTime());
 
     return RCL_CommandStatus_Active;
 }

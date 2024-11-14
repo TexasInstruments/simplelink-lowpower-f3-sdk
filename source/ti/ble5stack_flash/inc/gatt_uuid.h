@@ -146,43 +146,43 @@ extern "C"
 /**
  * GATT Services
  */
-extern CONST uint8 gapServiceUUID[];
-extern CONST uint8 gattServiceUUID[];
+extern const uint8 gapServiceUUID[];
+extern const uint8 gattServiceUUID[];
 
 /**
  * GATT Attribute Types
  */
-extern CONST uint8 primaryServiceUUID[];
-extern CONST uint8 secondaryServiceUUID[];
-extern CONST uint8 includeUUID[];
-extern CONST uint8 characterUUID[];
+extern const uint8 primaryServiceUUID[];
+extern const uint8 secondaryServiceUUID[];
+extern const uint8 includeUUID[];
+extern const uint8 characterUUID[];
 
 /**
  * GATT Characteristic Descriptors
  */
-extern CONST uint8 charExtPropsUUID[];
-extern CONST uint8 charUserDescUUID[];
-extern CONST uint8 clientCharCfgUUID[];
-extern CONST uint8 servCharCfgUUID[];
-extern CONST uint8 charFormatUUID[];
-extern CONST uint8 charAggFormatUUID[];
-extern CONST uint8 validRangeUUID[];
-extern CONST uint8 extReportRefUUID[];
-extern CONST uint8 reportRefUUID[];
+extern const uint8 charExtPropsUUID[];
+extern const uint8 charUserDescUUID[];
+extern const uint8 clientCharCfgUUID[];
+extern const uint8 servCharCfgUUID[];
+extern const uint8 charFormatUUID[];
+extern const uint8 charAggFormatUUID[];
+extern const uint8 validRangeUUID[];
+extern const uint8 extReportRefUUID[];
+extern const uint8 reportRefUUID[];
 
 /**
  * GATT Characteristic Types
  */
-extern CONST uint8 deviceNameUUID[];
-extern CONST uint8 appearanceUUID[];
-extern CONST uint8 reconnectAddrUUID[];
-extern CONST uint8 periConnParamUUID[];
-extern CONST uint8 centAddrResUUID[];
-extern CONST uint8 resPrivAddrOnlyUUID[];
-extern CONST uint8 serviceChangedUUID[];
-extern CONST uint8 manuNameUUID[];
-extern CONST uint8 serialNumUUID[];
-extern CONST uint8 manuAddrUUID[];
+extern const uint8 deviceNameUUID[];
+extern const uint8 appearanceUUID[];
+extern const uint8 reconnectAddrUUID[];
+extern const uint8 periConnParamUUID[];
+extern const uint8 centAddrResUUID[];
+extern const uint8 resPrivAddrOnlyUUID[];
+extern const uint8 serviceChangedUUID[];
+extern const uint8 manuNameUUID[];
+extern const uint8 serialNumUUID[];
+extern const uint8 manuAddrUUID[];
 
 /*********************************************************************
  * FUNCTIONS

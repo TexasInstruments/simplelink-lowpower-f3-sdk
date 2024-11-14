@@ -57,10 +57,6 @@ extern "C"
 
 #include <stdlib.h>
 
-#ifndef USE_RCL
-#include "rf_hal.h"
-#endif
-
 #if !defined(CC23X0) && !defined(CC33xx)
 #include "nvintf.h"
 #endif // !defined(CC23X0) && !defined(CC33xx)

@@ -55,26 +55,9 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
 #include <ti/drivers/utils/Random.h>
 
-#ifdef CC33xx
-#include "hci.h"
-#endif // CC33xx
-
-#if !defined(CC23X0) && !defined(CC33xx)
-#include "ble_overrides.h"
-#include "ecc/ECCROMCC26XX.h"
-#endif // !defined(CC23X0) && !defined(CC33xx)
-
-#ifndef CC23X0
-#include "ti_radio_config.h"
-#include <ti/drivers/rf/RF.h>
-#include <ti/drivers/aesccm/AESCCMCC26XX.h>
-#include <ti/drivers/aesecb/AESECBCC26XX.h>
-#include <ti/drivers/TRNG.h>
-#else
 #include <ti/drivers/aesccm/AESCCMLPF3.h>
 #include <ti/drivers/aesecb/AESECBLPF3.h>
 #include <ti/drivers/RNG.h>
-#endif // CC23X0
 
 #ifdef SYSCFG
 #include "ti_ble_config.h"
@@ -84,14 +67,9 @@
 #endif // CONTROLLER_ONLY
 #endif // SYSCFG
 
-#if defined(FREERTOS) || defined(CC33xx)
 #define Swi_restore SwiP_restore
 #define Swi_disable SwiP_disable
 #include <ti/drivers/dpl/SwiP.h>
-#else
-#include <ti/sysbios/knl/Swi.h>
-#include <ti/sysbios/BIOS.h>
-#endif // FREERTOS || CC33xx
 
 #ifndef CC23X0
 #if !defined(DeviceFamily_CC26X1)
@@ -125,21 +103,10 @@
 // Tx Power
 #define NUM_TX_POWER_VALUES (RF_BLE_TX_POWER_TABLE_SIZE - 1)
 
-// Override NOP
-#define OVERRIDE_NOP                   0xC0000001
-
 
 /*******************************************************************************
  * TYPEDEFS
  */
-// Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5
-#if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
-#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
-#if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
-#define USE_DFL
-#endif // (advertiser only)
-#endif // (number of bondings greater than 5)
-#endif // (supported devices)
 
 /*******************************************************************************
  * LOCAL VARIABLES
@@ -675,7 +642,7 @@ void driverTable_fnSpinlock(void)
  *
  * @return      None.
  */
-void DefaultAssertCback(uint8 assertCause, uint8 assertSubcause)
+void DefaultAssertCback(uint8 assertCause, uint8 assertSubCause)
 {
 #ifdef HAL_ASSERT_SPIN
   driverTable_fnSpinlock();

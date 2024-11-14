@@ -185,10 +185,21 @@ function getLibs(mod)
         }
     }
 
-    if (system.modules["/ti/drivers/ECDSA"] || system.modules["/ti/drivers/ECIES"]
-        || system.modules["/ti/drivers/ECDH"]) {
+    if (system.modules["/ti/drivers/ECDSA"] || system.modules["/ti/drivers/ECIES"])
+    {
         /* Add dependency on ECC library for CC13x1/CC26x1 and CC23x0 */
         if (family.match(/cc13.1/) || family.match(/cc26.1/) || family.match(/cc23.0/)) {
+            linkOpts.deps.push("/third_party/ecc");
+        }
+    }
+
+    if (system.modules["/ti/drivers/ECDH"])
+    {
+        /* Add dependency on ECC library for CC13x1/CC26x1, CC23x0, and CC27xx.
+         * TODO: Remove CC27xx when SW implementation is no longer needed.
+         */
+        if (family.match(/cc13.1/) || family.match(/cc26.1/) || family.match(/cc23.0/)
+            || family.match(/cc27/)) {
             linkOpts.deps.push("/third_party/ecc");
         }
     }
@@ -201,7 +212,7 @@ function getLibs(mod)
         system.modules["/ti/drivers/AESCTRDRBG"] ||
         system.modules["/ti/drivers/AESGCM"] ||
         system.modules["/ti/drivers/AESCBC"] ||
-        system.modules["/ti/drivers/ECDH"] ||
+        // system.modules["/ti/drivers/ECDH"] ||
         system.modules["/ti/drivers/ECDSA"]) {
         /* Add dependency on HSMDDK library for CC27XX */
         if (family.match(/cc27/)) {

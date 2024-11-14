@@ -90,16 +90,6 @@
           "default": [],
           "options": [
             {
-              "name": "cmdGenericFs",
-              "displayName": "CMD_GENERIC_FS",
-              "description": "Frequency programming command"
-            },
-            {
-              "name": "cmdGenericFsOff",
-              "displayName": "CMD_GENERIC_FS_OFF",
-              "description": "Stop frequency synthesizer command"
-            },
-            {
               "name": "cmdGenericTx",
               "displayName": "CMD_GENERIC_TX",
               "description": "Generic transmit command"
@@ -118,21 +108,6 @@
               "name": "cmdGenericRx",
               "displayName": "CMD_GENERIC_RX",
               "description": "Generic receive command"
-            },
-            {
-              "name": "cmdGenericPbeOperation",
-              "displayName": "CMD_GENERIC_PBE_OPERATION",
-              "description": "Generic PBE operation"
-            },
-            {
-              "name": "cmdNesbPtx",
-              "displayName": "CMD_NESB_PTX",
-              "description": "NESB transmit command"
-            },
-            {
-              "name": "cmdNesbPrx",
-              "displayName": "CMD_NESB_PRX",
-              "description": "NESB receive command"
             }
           ]
         },
@@ -143,16 +118,6 @@
           "default": [],
           "options": [
             {
-              "name": "cmdGenericFs",
-              "displayName": "CMD_GENERIC_FS",
-              "description": "Frequency programming command"
-            },
-            {
-              "name": "cmdGenericFsOff",
-              "displayName": "CMD_GENERIC_FS_OFF",
-              "description": "Stop frequency synthesizer command"
-            },
-            {
               "name": "cmdGenericTx",
               "displayName": "CMD_GENERIC_TX",
               "description": "Generic transmit command"
@@ -171,21 +136,6 @@
               "name": "cmdGenericRx",
               "displayName": "CMD_GENERIC_RX",
               "description": "Generic receive command"
-            },
-            {
-              "name": "cmdGenericPbeOperation",
-              "displayName": "CMD_GENERIC_PBE_OPERATION",
-              "description": "Generic PBE operation"
-            },
-            {
-              "name": "cmdNesbPtx",
-              "displayName": "CMD_NESB_PTX",
-              "description": "NESB transmit command"
-            },
-            {
-              "name": "cmdNesbPrx",
-              "displayName": "CMD_NESB_PRX",
-              "description": "NESB receive command"
             }
           ]
         },
@@ -196,16 +146,6 @@
           "default": [],
           "options": [
             {
-              "name": "cmdGenericFs",
-              "displayName": "CMD_GENERIC_FS",
-              "description": "Frequency programming command"
-            },
-            {
-              "name": "cmdGenericFsOff",
-              "displayName": "CMD_GENERIC_FS_OFF",
-              "description": "Stop frequency synthesizer command"
-            },
-            {
               "name": "cmdGenericTx",
               "displayName": "CMD_GENERIC_TX",
               "description": "Generic transmit command"
@@ -224,26 +164,6 @@
               "name": "cmdGenericRx",
               "displayName": "CMD_GENERIC_RX",
               "description": "Generic receive command"
-            },
-            {
-              "name": "cmdGenericPbeOperation",
-              "displayName": "CMD_GENERIC_PBE_OPERATION",
-              "description": "Generic PBE operation"
-            },
-            {
-              "name": "cmdNesbPtx",
-              "displayName": "CMD_NESB_PTX",
-              "description": "NESB transmit command"
-            },
-            {
-              "name": "cmdNesbPrx",
-              "displayName": "CMD_NESB_PRX",
-              "description": "NESB receive command"
-            },
-            {
-              "name": "cmdBleCs",
-              "displayName": "CMD_BLE_CS",
-              "description": "BLE channel sounding"
             }
           ]
         }
@@ -316,20 +236,6 @@
   "commands": {
     "common": [
       {
-        "name": "cmdGenericFs",
-        "displayName": "CMD_GENERIC_FS",
-        "description": "Frequency programming command",
-        "hidden": true,
-        "default": "rclCmdGenericFs"
-      },
-      {
-        "name": "cmdGenericFsOff",
-        "displayName": "CMD_GENERIC_FS_OFF",
-        "description": "Stop frequency synthesizer command",
-        "hidden": true,
-        "default": "rclCmdGenericFsOff"
-      },
-      {
         "name": "cmdGenericTx",
         "displayName": "CMD_GENERIC_TX",
         "description": "Generic transmit command",
@@ -356,40 +262,11 @@
         "description": "Generic receive command",
         "hidden": true,
         "default": "rclPacketRxCmdGenericRx"
-      },
-      {
-        "name": "cmdGenericPbeOperation",
-        "displayName": "CMD_GENERIC_PBE_OPERATION",
-        "description": "Generic PBE operation",
-        "hidden": true,
-        "default": "rclCmdGenericPbeOperation"
-      },
-      {
-        "name": "cmdNesbPtx",
-        "displayName": "CMD_NESB_PTX",
-        "description": "NESB transmit command",
-        "hidden": true,
-        "default": "rclPacketTxCmdNesbPtx"
-      },
-      {
-        "name": "cmdNesbPrx",
-        "displayName": "CMD_NESB_PRX",
-        "description": "NESB receive command",
-        "hidden": true,
-        "default": "rclPacketRxCmdNesbPrx"
       }
     ],
     "prop": [],
     "ieee_15_4": [],
-    "ble": [
-      {
-        "name": "cmdBleCs",
-        "displayName": "CMD_BLE_CS",
-        "description": "BLE channel sounding",
-        "hidden": true,
-        "default": "rclCmdBleCs"
-      }
-    ]
+    "ble": []
   },
   "symbols": {
     "ble": {
@@ -403,14 +280,14 @@
     },
     "ieee_15_4": {},
     "prop": {
+      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
       "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
-      "swConfig": "LRF_swConfig",
+      "swConfig1Mbps": "LRF_swConfig1Mbps",
+      "swConfig2Mbps": "LRF_swConfig2Mbps",
       "txPowerTable": "LRF_txPowerTable",
       "config": "LRF_config",
       "cfg_segment_list": "LRF_regConfigList",
-      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
-      "swConfig1Mbps": "LRF_swConfig1Mbps",
-      "swConfig2Mbps": "LRF_swConfig2Mbps",
+      "swConfig": "LRF_swConfig",
       "shapeBaseGfsk20": "LRF_shapeBaseGfsk20"
     }
   }

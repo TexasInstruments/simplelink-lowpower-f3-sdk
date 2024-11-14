@@ -89,9 +89,6 @@ const Common = system.getScript("/ti/ble5stack/ble_common.js");
 // Get profiles Script
 const profilesScript = system.getScript("/ti/ble5stack/profiles/ble_profiles_config");
 
-// Periodic should not be displayed or enabled for Loki
-const hiddenPeriodicVal = Common.hiddenValue();
-
 //static implementation of the BLE module
 const moduleStatic = {
 
@@ -219,7 +216,7 @@ const moduleStatic = {
                     name: "periodicAdv",
                     displayName: "Periodic Advertising",
                     longDescription: Docs.periodicAdvLongDescription,
-                    hidden: hiddenPeriodicVal,
+                    hidden: false,
                     default: false
                 },
                 {
@@ -293,7 +290,7 @@ const moduleStatic = {
                     name:"mesh",
                     displayName: "Mesh",
                     default: false,
-                    hidden: false,
+                    hidden: Common.isLPF3Device(), // This feature is not supported on CC23xx!
                     onChange: onMeshChange
                 },
                 {
@@ -440,10 +437,6 @@ function validate(inst, validation)
     {
         validation.logWarning("Preview", inst, "healthToolkit");
     }
-    if (inst.extAdv)
-    {
-        validation.logWarning("Extended Advertising preview (Not yet certified)", inst, "extAdv");
-    }
 }
 
 /*
@@ -500,16 +493,6 @@ function ondeviceRoleChange(inst,ui)
         }
     }
 
-    // Enable bondFailAction only when using Central role
-    if(inst.deviceRole.includes("CENTRAL_CFG"))
-    {
-        ui.bondFailAction.hidden = false;
-    }
-    else
-    {
-        ui.bondFailAction.hidden = true;
-    }
-
     // Enable peerConnParamUpdateRejectInd only when using Central or Peripheral role combinations
     if(inst.deviceRole == "BROADCASTER_CFG" || inst.deviceRole == "OBSERVER_CFG" || inst.deviceRole == "BROADCASTER_CFG+OBSERVER_CFG")
     {
@@ -527,6 +510,16 @@ function ondeviceRoleChange(inst,ui)
 
     // Change the Periodic configurable state
     onExtAdvChange(inst,ui);
+
+    // Enable bondFailAction only when using Central role
+    if(inst.deviceRole.includes("CENTRAL_CFG"))
+    {
+        ui.bondFailAction.hidden = false;
+    }
+    else
+    {
+        ui.bondFailAction.hidden = true;
+    }
 }
 
 /*
@@ -571,15 +564,7 @@ function onBasicBLEChange(inst,ui)
 function onExtAdvChange(inst,ui)
 {
     const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
-    if(devFamily == "DeviceFamily_CC23X0R5"  ||
-       devFamily == "DeviceFamily_CC27XX"    ||
-       devFamily == "DeviceFamily_CC23X0R2"  ||
-       devFamily == "DeviceFamily_CC23X0R22" ||
-       devFamily == "DeviceFamily_CC23X0R53")
-    {
-        // Do nothing
-        return;
-    }
+
     // Hide/UnHide periodicAdv if extended advertising is enabled and the Broadcaster/Peripheral roles
     // is used
     inst.extAdv && (inst.deviceRole.includes("BROADCASTER_CFG") || inst.deviceRole.includes("PERIPHERAL_CFG")) ?
@@ -863,6 +848,12 @@ function changeGroupsState(inst,ui)
     {
         ui.L2CAPCOC.hidden = true;
         Common.hideGroup(Common.getGroupByName(inst.$module.config, "l2capConfig"), true, ui);
+    }
+
+    // RSSI Polling Period is not supported on cc23xx
+    if(Common.isLPF3Device() && inst.deviceRole.includes("CENTRAL_CFG"))
+    {
+        ui.rssiPollingPeriod.hidden = true;
     }
 }
 

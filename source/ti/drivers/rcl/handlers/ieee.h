@@ -75,12 +75,13 @@ typedef enum
  *  Update the given source matching table filter list in a way that is safe even if a running command is using
  *  the filter table.
  *
- *  @param  newAddr            New address and PAN ID to apply; NULL to leave unchanged
- *  @param  framePending       Value of frame pending bit
- *  @param  table              Source matching table to update
- *  @param  index              Index into source matching table to update
+ *  @param  newAddr             New address and PAN ID to apply; NULL to leave unchanged
+ *  @param  framePending        Value of frame pending bit
+ *  @param  table               Source matching table to update
+ *  @param  index               Index into source matching table to update
  *
- * @return                     Result telling if update was successful
+ * @return                      Result telling if update was successful
+ * @note                        Not supported in this version
  *
  */
 RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeee_PanIdAddr *newAddr, uint8_t framePending, RCL_CmdIeee_SourceMatchingTableShort *table, uint32_t index);
@@ -90,11 +91,12 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeee_PanIdA
  *
  *  Update the given frame filtering settings in a way that is safe even if a running command is receiving a frame
  *
- *  @param  cmd                Existing IEEE command to update
- *  @param  newPanConfig       New PAN configuration to apply
- *  @param  panNumber          Index of PAN to update
+ *  @param  cmd                 Existing IEEE command to update
+ *  @param  newPanConfig        New PAN configuration to apply
+ *  @param  panNumber           Index of PAN to update
  *
- * @return                     Result telling if update was successful
+ * @return                      Result telling if update was successful
+ * @note                        Not supported in this version
  *
  */
 RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_PanConfig *newPanConfig, uint32_t panNumber);
@@ -104,10 +106,11 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd
  *
  *  Provide an ACK frame, which will be transmitted if the frame was received successfully
  *
- *  @param  cmd                Existing IEEE command for which to enter ACK
- *  @param  ackEntry           ACK to be transmitted over the air
+ *  @param  cmd                 Existing IEEE command for which to enter ACK
+ *  @param  ackEntry            ACK to be transmitted over the air
  *
- * @return                     Result telling if update was successful
+ * @return                      Result telling if update was successful
+ * @note                        Not supported in this version
  *
  */
 RCL_IEEE_AckEntryResult RCL_IEEE_enterAck(RCL_CmdIeeeRxTx *cmd, RCL_Buffer_DataEntry *ackEntry);
@@ -115,10 +118,10 @@ RCL_IEEE_AckEntryResult RCL_IEEE_enterAck(RCL_CmdIeeeRxTx *cmd, RCL_Buffer_DataE
 /**
  *  @brief  Update tx action
  *
- *  @param  cmd                Existing IEEE command to submit the TX on top of
- *  @param  txAction           TX action to apply
+ *  @param  cmd                 Existing IEEE command to submit the TX on top of
+ *  @param  txAction            TX action to apply
  *
- * @return %RCL_CommandStatus result of the submission
+ * @return                      %RCL_CommandStatus result of the submission
  *
  */
 RCL_CommandStatus RCL_IEEE_Tx_submit(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_TxAction *txAction);
@@ -129,10 +132,11 @@ RCL_CommandStatus RCL_IEEE_Tx_submit(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_TxAction 
  * Sends the message to try to stop a TX action. When the function returns, the command may still be
  * running. Depending on the stop type, the operation may stop after some time.
  *
- * @param cmd [in] - IEEE command
- * @param stopType [in] - Stop type; telling which situations the operation will stop
+ * @param cmd [in]              IEEE command
+ * @param stopType [in]         Stop type; telling which situations the operation will stop
  *
- * @return Status of the TX operation; if the operation is not finished, a wait is needed.
+ * @return                      Status of the TX operation; if the operation is not finished, a wait is needed.
+ *
  */
 RCL_CommandStatus RCL_IEEE_Tx_stop(RCL_CmdIeeeRxTx *cmd, RCL_StopType stopType);
 
@@ -143,33 +147,39 @@ RCL_CommandStatus RCL_IEEE_Tx_stop(RCL_CmdIeeeRxTx *cmd, RCL_StopType stopType);
  *
  * @pre This function must be called from a task context, with interrupts enabled.
  *
- * @param[in] cmd - IEEE command running
+ * @param[in] cmd               IEEE command running
  *
- * @return Status of the TX operation
+ * @return                      Status of the TX operation
+ * @note                        Not supported in this version
+ *
  */
 RCL_CommandStatus RCL_IEEE_Tx_pend(RCL_CmdIeeeRxTx *cmd);
 
 /**
- *  @brief  Get received RSSI from packet
+ * @brief  Get received RSSI from packet
  *
- *  Returns the RSSI field of a received packet, or LRF_RSSI_INVALID if RSSI is not enabled
+ * Returns the RSSI field of a received packet, or LRF_RSSI_INVALID if RSSI is not enabled
  *
- *  @param  rxEntry            Received data entry
+ * @param  rxEntry              Received data entry
  *
- *  @return Reported RSSI of received packet
+ * @return                      Reported RSSI of received packet
+ * @note                        Not supported in this version
+ *
  */
 int8_t RCL_IEEE_getRxRssi(const RCL_Buffer_DataEntry *rxEntry);
 
 /**
- *  @brief  Get received timestamp from packet
+ * @brief  Get received timestamp from packet
  *
- *  Returns the timestamp a received packet, adjusted to point to the start of the preamble.
- *  If timestamp is not enabled, 0 is returned.
- *  Note that this is a valid value, so it can not be used for error checking.
+ * Returns the timestamp a received packet, adjusted to point to the start of the preamble.
+ * If timestamp is not enabled, 0 is returned.
+ * Note that 0 is a valid value, so it cannot be used for error checking.
  *
- *  @param  rxEntry            Received data entry
+ * @param  rxEntry              Received data entry
  *
- *  @return Timestamp of received packet
+ * @return                      Timestamp of received packet
+ * @note                        Not supported in this version
+ *
  */
 uint32_t RCL_IEEE_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry);
 

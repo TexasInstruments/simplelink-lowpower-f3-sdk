@@ -23,15 +23,15 @@
         },
         {
           "name": "msk_250_kbps",
-          "displayName": "250 Kbps, MSK"
+          "displayName": "250 kbps, MSK"
         },
         {
           "name": "msk_250_kbps_fec",
-          "displayName": "250 Kbps, MSK, FEC"
+          "displayName": "250 kbps, MSK, FEC"
         },
         {
           "name": "nesb",
-          "displayName": "NESB/1 Mbps / 2 Mbps"
+          "displayName": "1 Mbps / 2 Mbps"
         }
       ],
       "default": "gfsk_2_mbps"
@@ -147,29 +147,29 @@
       {
         "file8": "gfsk_2m_cc23xx.json",
         "name": "gfsk_2_mbps",
-        "description": "2 Mbps, 320 kHz dev, GFSK",
-        "phyName": "Proprietary\\2 Mbps, 320 kHz dev, GFSK",
+        "label": "2 Mbps, 320 kHz dev, GFSK",
+        "protocol": "Proprietary",
         "usage": "stack"
       },
       {
         "file8": "msk_250k_cc23xx.json",
         "name": "msk_250_kbps",
-        "description": "250 Kbps, MSK",
-        "phyName": "Proprietary\\250 kbps, MSK",
+        "label": "250 kbps, MSK",
+        "protocol": "Proprietary",
         "usage": "stack"
       },
       {
         "file8": "msk_250k_fec_cc23xx.json",
         "name": "msk_250_kbps_fec",
-        "description": "250 Kbps, MSK, FEC",
-        "phyName": "Proprietary\\250 kbps, MSK, FEC",
+        "label": "250 kbps, MSK, FEC",
+        "protocol": "Proprietary",
         "usage": "stack"
       },
       {
         "file8": "nesb_1m_2m_cc23xx.json",
         "name": "nesb",
-        "description": "1 Mbps / 2 Mbps",
-        "phyName": "NESB\\1 Mbps / 2 Mbps",
+        "label": "1 Mbps / 2 Mbps",
+        "protocol": "NESB",
         "usage": "stack"
       }
     ]

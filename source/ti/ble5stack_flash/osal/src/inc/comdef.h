@@ -97,10 +97,6 @@ extern "C"
   #define true 1
 #endif
 
-#ifndef CONST
-  #define CONST const
-#endif
-
 #ifndef GENERIC
   #define GENERIC
 #endif

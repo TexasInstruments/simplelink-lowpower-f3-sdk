@@ -95,6 +95,117 @@ function create(phyGroup) {
         return convBleChannelToFreq(getPhyProperty("bleChannel"), getPhyProperty("frequency"));
     }
 
+    function packetTxGenView() {
+        var sections = [];
+
+        // Add header
+        var n = 0;
+        sections[n++] = "Transmitted packet (non-connectable advertising event)";
+
+        // Add preamble
+        sections[n++] = "Preamble;010101...";
+
+        // Add access address
+        sections[n++] = "Access address;" + byteString(valueToBytesBe(getRclCommandField("CMD_GENERIC_TX.syncWord"), 4));
+
+        // Add PDU header
+        var packetData = [getDataArray()];
+        sections[n++] = "PDU header;" + byteString(packetData.slice(0, 0 + 2));
+
+        // Add advertising address
+        sections[n++] = "Advertising address;" + byteString(packetData.slice(2, 2 + 2)) + ";" + byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
+
+        // Add payload
+        if (getTestProperty("seqNumberEnable") == 0) {
+            sections[n++] = "Advertising data;%" + byteString(packetData.slice(12));
+        } else {
+            sections[n++] = "Advertising data;Seq.;%" + byteString(packetData.slice(14));
+        }
+
+        // Add CRC
+        sections[n++] = genCrcSection(getRclRegisterField("PBE_GENERIC_RAM.NUMCRCBITS.VAL,sub_phy:1_mbps,test"));
+
+        return sections;
+    }
+
+    function packetTxGenView() {
+        var sections = [];
+
+        // Add header
+        var n = 0;
+        sections[n++] = "Transmitted packet";
+
+        // Add preamble
+        sections[n++] = "Preamble;010101...";
+
+        // Add synchronization word
+        sections[n++] = "Sync. word;" + byteString(valueToBytesBe(getPhyProperty("syncWord"), 4));
+
+        // Add header?
+        var packetLengthSize = getPhyProperty("packetLengthSize");
+        var packetData = [getDataArray()];
+        if (packetLengthSize > 0) {
+            sections[n++] = "Header;" + byteString(packetData.slice(0, 0 + packetLengthSize));
+        }
+
+        // Constrain displayed payload to 100 bytes
+        var payloadSuffix = "";
+        var maxPayloadLength = 100;
+        var payloadLength = packetData.length - packetLengthSize;
+        if (payloadLength > maxPayloadLength) {
+            payloadSuffix = " + " + (payloadLength - maxPayloadLength) + " byte(s)"
+            payloadLength = maxPayloadLength;
+        }
+
+        // Add payload
+        if (getTestProperty("seqNumberEnable") == 0) {
+            sections[n++] = "Payload;%" + byteString(packetData.slice(packetLengthSize, packetLengthSize + payloadLength)) + payloadSuffix;
+        } else {
+            sections[n++] = "Payload;Seq.;%" + byteString(packetData.slice(packetLengthSize + 2, packetLengthSize + payloadLength)) + payloadSuffix;
+        }
+
+        // Add CRC
+        sections[n++] = genCrcSection(getRclRegisterField("PBE_GENERIC_RAM.NUMCRCBITS.VAL,test"));
+
+        return sections;
+    }
+
+    function hexString(value, width) {
+        return Number(value).toString(16).padStart(width, "0");
+    }
+
+    function byteString(values) {
+        var bytes = [];
+        for (i = 0; i < values.length; i++) {
+            bytes[i] = Number(values[i]).toString(16).padStart(2, "0");
+        }
+        return bytes.join(" ");
+    }
+
+    function valueToBytesBe(value, byteCount) {
+        var bytes = [];
+        for (i = 0; i < byteCount; i++) {
+            bytes[i] = (value >> (8 * (byteCount - 1 - i))) & 0xFF;
+        }
+        return bytes
+    }
+
+    function valueToBytesLe(value, byteCount) {
+        var bytes = [];
+        for (i = 0; i < byteCount; i++) {
+            bytes[i] = (value >> (8 * i)) & 0xFF;
+        }
+        return bytes
+    }
+
+    function genCrcSection(bitCount) {
+        section = "CRC-" + bitCount + ";XX";
+        for (n = 1; n < (bitCount / 8); n++) {
+            section = section + " XX";
+        }
+        return section;
+    }
+
     function updCfRfFrequency() {
         return Math.floor(getPpFrequency() * 1e6);
     }
@@ -107,6 +218,9 @@ function create(phyGroup) {
         convPaTableSettingToBinary: convPaTableSettingToBinary,
         convPaTableSettingToString: convPaTableSettingToString,
         getPpFrequencyBle: getPpFrequencyBle,
+        packetTxGenView: packetTxGenView,
+        packetTxGenView: packetTxGenView,
+        genCrcSection: genCrcSection,
         updCfRfFrequency: updCfRfFrequency
     }
 }

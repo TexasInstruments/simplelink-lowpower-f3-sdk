@@ -244,7 +244,7 @@ extern uint32 RAM_BASE_ADDR[];
 #define MAP_HCI_ValidConnTimeParams                      ((uint8                    (*) (uint16, uint16, uint16, uint16))                                                                              ROM_BLE_JT_OFFSET(71))
 #define MAP_HCI_VendorSpecifcCommandCompleteEvent        ((void                     (*) (uint16, uint8, uint8 *))                                                                                      ROM_BLE_JT_OFFSET(72))
 // HCI Bluetooth Internal
-#define MAP_hciInitEventMasks                            ((uint8                    (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(73))
+#define MAP_HCI_InitEventMasks                           ((uint8                    (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(73))
 // HCI BLE
 #define MAP_HCI_LE_ConnUpdateCmd                         ((uint8                    (*) (uint16, uint16, uint16, uint16, uint16, uint16, uint16))                                                      ROM_BLE_JT_OFFSET(74))
 #define MAP_HCI_LE_CreateConnCancelCmd                   ((hciStatus_t              (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(75))
@@ -1088,7 +1088,7 @@ extern uint32 RAM_BASE_ADDR[];
 #define MAP_sm_g2                                        ((bStatus_t                (*) (uint8 *, uint8 *, uint8 *, uint8 *, uint32 *))                                                                ROM_BLE_JT_OFFSET(742))
 #define MAP_sm_s1                                        ((bStatus_t                (*) (uint8 *, uint8 *, uint8 *, uint8 *))                                                                          ROM_BLE_JT_OFFSET(743))
 #define MAP_sm_xor                                       ((void                     (*) (uint8 *, uint8 *))                                                                                            ROM_BLE_JT_OFFSET(744))
-#define MAP_xor_128                                      ((void                     (*) (uint8 *, CONST uint8 *, uint8 *))                                                                             ROM_BLE_JT_OFFSET(745))
+#define MAP_xor_128                                      ((void                     (*) (uint8 *, const uint8 *, uint8 *))                                                                             ROM_BLE_JT_OFFSET(745))
 // SM Pairing Manager
 #define MAP_smDetermineIOCaps                            ((bStatus_t                (*) (uint8, uint8))                                                                                                ROM_BLE_JT_OFFSET(746))
 #define MAP_smDetermineKeySize                           ((uint8                    (*) (void))                                                                                                        ROM_BLE_JT_OFFSET(747))

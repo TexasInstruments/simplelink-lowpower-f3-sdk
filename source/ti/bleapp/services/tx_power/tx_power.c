@@ -67,7 +67,7 @@ GATT_BT_UUID( txPwrLevelServUUID, TPL_SERV_UUID );
 GATT_BT_UUID( tx_power_level_UUID, TPLS_TX_POWER_LEVEL_UUID );
 
 // Tx Power Level Service.
-static CONST gattAttrType_t txPwrLevelService = { ATT_BT_UUID_SIZE,
+static const gattAttrType_t txPwrLevelService = { ATT_BT_UUID_SIZE,
                                                   txPwrLevelServUUID };
 
 /*********************************************************************
@@ -129,7 +129,7 @@ static bStatus_t TPLS_readAttrCB( uint16_t connHandle, gattAttribute_t *pAttr,
  * made within these functions.
  *
  */
-CONST gattServiceCBs_t tpls_servCB =
+const gattServiceCBs_t tpls_servCB =
 {
  TPLS_readAttrCB,   // Read callback function pointer
   NULL,  // Write callback function pointer

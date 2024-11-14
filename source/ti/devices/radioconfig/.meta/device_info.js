@@ -41,10 +41,6 @@
 // Common utility functions
 const Common = system.getScript("/ti/devices/radioconfig/radioconfig_common.js");
 
-// RF Driver patch information file
-const PatchInfo = Common.isPlatformRFD()
-    ? system.getScript("/ti/devices/radioconfig/config/rfd/patch_info.json") : null;
-
 // Global path to Radio configuration root
 const ConfigPath = Common.ConfigPath;
 const ConfigPathRclCommon = Common.ConfigPathRclCommon;
@@ -233,43 +229,6 @@ function loadCommands() {
 }
 
 /**
- * ======== getPatchInfo ========
- * Return the patch list for the current device.
- * @returns Patch list for current device
- */
-function getPatchInfo() {
-    if (PatchInfo == null) {
-        // Not applicable for RCL
-        return [];
-    }
-
-    const devFamily = Common.getDeviceFamily();
-
-    if (devFamily) {
-        return PatchInfo[devFamily];
-    }
-    return [];
-}
-
-/**
- * ======== setPatchInfo ========
- * Update the current patch information
- *
- *  @param patches - List of current patches in the SDK
- */
-function setPatchInfo(patches) {
-    if (PatchInfo == null) {
-        // Not applicable for RCL
-        return;
-    }
-    const devFamily = Common.getDeviceFamily();
-
-    if (devFamily) {
-        PatchInfo[devFamily] = patches;
-    }
-}
-
-/**
  *  ======== getFrontendSettings ========
  *  Get the current frontend settings.
  *
@@ -313,8 +272,6 @@ exports = {
     getDeviceName: getDeviceName,
     hasHighPaSupport: () => DevInfo.highPaSupport,
     hasWbmsSupport: () => WbmsSupport,
-    setPatchInfo: setPatchInfo,
-    getPatchInfo: getPatchInfo,
     loadCommands: loadCommands,
     getFrontendSettings: getFrontendSettings,
     getModuleDefinition: getModuleDefinition,

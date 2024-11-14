@@ -48,7 +48,7 @@ typedef struct RCL_CmdIeee_TxAction_t          RCL_CmdIeee_TxAction;
 #define RCL_CMDID_IEEE_RX_TX            0x2001U
 #define RCL_CMDID_IEEE_TX_TEST          0x2002U
 
-/* Macro for finding RF frequency from channel */
+/** Macro for finding RF frequency from channel */
 #define RCL_CMD_IEEE_CHANNEL_FREQUENCY(channel) ((((channel) - 11UL) * 5000000UL) + 2405000000UL)
 
 /**
@@ -83,6 +83,7 @@ struct RCL_CMD_IEEE_RX_TX_t {
     .common = RCL_Command_Default(RCL_CMDID_IEEE_RX_TX,     \
                                   RCL_Handler_Ieee_RxTx),   \
     .rfFrequency = 2440000000U,                             \
+    .txPower = {.dBm = 0, .fraction = 0},                   \
     .rxAction = NULL,                                       \
     .txAction = NULL,                                       \
     .stats = NULL,                                          \
@@ -95,13 +96,16 @@ typedef enum
     RCL_CmdIeee_AutoAck_ImmAckNoAutoPend,       /*!< Send automatic Imm-Ack with frame pending from setting */
     RCL_CmdIeee_AutoAck_ImmAckAutoPendAll,      /*!< Send automatic Imm-Ack with frame pending from source matching table */
     RCL_CmdIeee_AutoAck_ImmAckAutoPendDataReq,  /*!< Send automatic Imm-Ack with frame pending from source matching table for data requests */
-    RCL_CmdIeee_AutoAck_ProvidedFrame,          /*!< Send ACK frame provided externally */
+    RCL_CmdIeee_AutoAck_ProvidedFrame,          /*!< Send ACK frame provided externally (not supported in this version) */
 } RCL_CmdIeee_AutoAckMode;
 
-typedef struct
+typedef union
 {
-    uint16_t panId;                      /*!< Pan ID of the entry */
-    uint16_t shortAddr;                  /*!< Short address of the entry */
+    struct {
+        uint16_t panId;                      /*!< Pan ID of the entry */
+        uint16_t shortAddr;                  /*!< Short address of the entry */
+    };
+    uint32_t combined;
 } RCL_CmdIeee_PanIdAddr;
 
 /** Maximum number of entries in %RCL_CmdIeee_SourceMatchingTableShort (assuming no extended entry) */
@@ -145,7 +149,7 @@ typedef struct RCL_CmdIeee_PanConfig_t
     uint8_t panCoord : 1;                       /*!< 0: Device is not pan coordinator. 1: Device is PAN coordinator */
     uint8_t maxFrameVersion : 2;                /*!< Maximum frame version to accept */
     RCL_CmdIeee_SourceMatchingTableShort *sourceMatchingTableShort; /*!< Source matching table for short addresses */
-    RCL_CmdIeee_SourceMatchingTableExt *sourceMatchingTableExt;     /*!< Source matching table for extended addresses */
+    RCL_CmdIeee_SourceMatchingTableExt *sourceMatchingTableExt;     /*!< Source matching table for extended addresses (not supported in this version)*/
 } RCL_CmdIeee_PanConfig;
 
 #define RCL_CmdIeee_PanConfig_Default()                     \
@@ -166,16 +170,16 @@ typedef struct RCL_CmdIeee_PanConfig_t
 #include <ti/drivers/rcl/handlers/ieee.h>
 
 /** Maximum number of simultaneously supported PANs */
-#define RCL_CMD_IEEE_MAX_NUM_PAN    1 /* Dual PAN not supported in this version */
+#define RCL_CMD_IEEE_MAX_NUM_PAN    1   /* Maximum number of PANs; will be updated to 2 when dual PAN support is added */
 
 struct RCL_CmdIeee_RxAction_t
 {
     List_List rxBuffers;                /*!< Linked list of buffers for storing received packets */
-    uint8_t numPan;                     /*!< Number of PANs to support. 0: Frame filtering disabled (promiscuous mode). 0 and 1 supported in this version. */
-    bool frameFiltStop;                 /*!< 0: Receive frame to the end on frame filtering mismatch. 1: Go back to sync search on frame filtering mismatch. Not supported in this version. */
-    bool disableSync;                   /*!< 0: Receive packets normally. 1: Do not sync to received SFD. Not supported in this version.  */
-    bool alwaysStoreAck;                /*!< 0: Store ACKs received after transmission only. 1: Store all received ACKs. Not supported in this version. */
-    RCL_CmdIeee_PanConfig panConfig[];  /*!< PAN configuration for the supplied PANs */
+    uint8_t numPan;                     /*!< Number of PANs to support. 0: Frame filtering disabled (promiscuous mode). 1: Single PAN. 2: Dual PAN (not supported in this version). */
+    bool frameFiltStop;                 /*!< 0: Receive frame to the end on frame filtering mismatch. 1: Go back to sync search on frame filtering mismatch. */
+    bool disableSync;                   /*!< 0: Receive packets normally. 1: Do not sync to received SFD (not supported in this version). */
+    bool alwaysStoreAck;                /*!< 0: Store ACKs received after transmission only. 1: Store all received ACKs. */
+    RCL_CmdIeee_PanConfig panConfig[RCL_CMD_IEEE_MAX_NUM_PAN];  /*!< PAN configuration for the supplied PANs */
 };
 
 #define RCL_CmdIeee_RxAction_Default()                      \
@@ -185,6 +189,7 @@ struct RCL_CmdIeee_RxAction_t
     .frameFiltStop = false,                                 \
     .disableSync = false,                                   \
     .alwaysStoreAck = false,                                \
+    .panConfig = {RCL_CmdIeee_PanConfig_Default()}          \
 }
 #define RCL_CmdIeee_RxAction_DefaultRuntime() (RCL_CmdIeee_RxAction) RCL_CmdIeee_RxAction_Default()
 
@@ -200,20 +205,20 @@ typedef enum
 
 struct RCL_CmdIeee_TxAction_t
 {
-    RCL_CommandStatus txStatus;         /*!< Returned status of TX operation. Not supported in this version. */
-    int8_t rssiLimit;                   /*!< RSSI limit for energy based CCA. Not supported in this version. */
+    RCL_CommandStatus txStatus;         /*!< Returned status of TX operation */
+    int8_t rssiLimit;                   /*!< RSSI limit (dBm) for energy based CCA */
     RCL_ScheduleType ccaScheduling : 1; /*!< Schedule type for the CCA part */
     uint16_t allowDelay : 1;            /*!< 0: Give error if CCA time is in the past. 1: Start immediately if CCA time is in the past */
-    RCL_CmdIeee_CcaMode ccaMode : 3;    /*!< CCA mode. Not supported in this version. */
-    uint16_t ccaCorrThresh : 2;         /*!< Correlation threshold for signal based CCA. Not supported in this version. */
-    uint16_t ccaContentionWindow : 2;   /*!< Initial contention window value for CCA. Not supported in this version. */
-    uint16_t expectImmAck : 1;          /*!< 0: Immediate ACK not expected. 1: Immediate ACK expected. Not supported in this version. */
+    RCL_CmdIeee_CcaMode ccaMode : 3;    /*!< CCA mode */
+    uint16_t ccaCorrThresh : 3;         /*!< Correlation threshold for signal based CCA (0-7; correlation tops in 128 us window) */
+    uint16_t ccaContentionWindow : 2;   /*!< Initial contention window value for CCA */
+    uint16_t expectImmAck : 1;          /*!< 0: Immediate ACK not expected. 1: Immediate ACK expected */
     uint16_t expectEnhAck : 1;          /*!< 0: Enhanced ACK not expected. 1: Enhanced ACK expected. Not supported in this version. */
     uint16_t allowTxDelay : 1;          /*!< 0: Give error if TX time is in the past. 1: Send TX packet immediately if TX time is in the past */
-    uint16_t endCmdWhenDone : 1;        /*!< 0: Keep command and RX action alive after TX action is done. 1: End command after TX action is done. . Not supported in this version. */
+    uint16_t endCmdWhenDone : 1;        /*!< 0: Keep command and RX action alive after TX action is done. 1: End command after TX action is done */
     uint32_t absCcaStartTime;           /*!< Absolute start time of the CCA part */
     uint16_t relativeTxStartTime;       /*!< Start time of TX packet relative to the CCA start time */
-    uint16_t ackTimeout;                /*!< Timeout for getting sync on ACK relative to end of transmitted packet. Not supported in this version. */
+    uint16_t ackTimeout;                /*!< Timeout for getting sync on ACK relative to end of transmitted packet */
     RCL_Buffer_DataEntry *txEntry;      /*!< Entry holding frame to be transmitted */
     uint32_t txTimeStamp;               /*!< Returned time stamp of transmitted packet. Not supported in this version. */
 };
@@ -224,7 +229,7 @@ struct RCL_CmdIeee_TxAction_t
     .ccaScheduling = RCL_Schedule_Now,                      \
     .allowDelay = 1,                                        \
     .ccaMode = RCL_CmdIeee_NoCca,                           \
-    .ccaCorrThresh = 2,                                     \
+    .ccaCorrThresh = 3,                                     \
     .ccaContentionWindow = 1,                               \
     .expectImmAck = 0,                                      \
     .expectEnhAck = 0,                                      \
@@ -246,11 +251,11 @@ struct RCL_CmdIeee_TxAction_t
  */
 struct RCL_CMD_IEEE_TX_TEST_t {
     RCL_Command     common;
-    uint32_t        rfFrequency;    /*!< RF frequency in Hz to program. 0: Do not program frequency */
+    uint32_t        rfFrequency;    /*!< RF frequency in Hz to program */
     RCL_Command_TxPower txPower;    /*!< Transmit power */
     uint16_t     txWord;            /*!< Repeated word to transmit */
     struct {
-        uint8_t  whitenMode: 2;     /*!< 0. No or default whitening. 1: PRBS-9. 2: PRBS-15. 3: PRBS-32 */
+        uint8_t  whitenMode: 2;     /*!< 0. No whitening. 1: PRBS-9. 2: PRBS-15. 3: PRBS-32 */
         uint8_t  sendCw: 1;         /*!< 0: Send modulated signal. 1: Send CW */
         uint8_t  reserved: 5;       /*!< Reserved, set to 0 */
     } config;
@@ -270,10 +275,11 @@ struct RCL_CMD_IEEE_TX_TEST_t {
 }
 #define RCL_CmdIeeeTxTest_DefaultRuntime() (RCL_CmdIeeeTxTest) RCL_CmdIeeeTxTest_Default()
 
-#define RCL_CMD_IEEE_WH_MODE_DEFAULT     0 /*!< config.whitenMode: No whitening */
+#define RCL_CMD_IEEE_WH_MODE_OFF         0 /*!< config.whitenMode: No whitening */
 #define RCL_CMD_IEEE_WH_MODE_PRBS9       1 /*!< config.whitenMode: PRBS-9 */
 #define RCL_CMD_IEEE_WH_MODE_PRBS15      2 /*!< config.whitenMode: PRBS-15 */
 #define RCL_CMD_IEEE_WH_MODE_PRBS32      3 /*!< config.whitenMode: PRBS-32 */
+
 struct RCL_STATS_IEEE_t {
     struct
     {
@@ -282,14 +288,14 @@ struct RCL_STATS_IEEE_t {
         uint8_t reserved : 6;        /*!< Reserved, set to 0 */
     } config;                        /*!< Configuration provided to RCL */
     uint8_t   timestampValid;        /*!< Returns 1 if %lastTimestamp is updated; 0 otherwise */
-    int8_t    lastRssi;              /*!< RSSI of last received packet. */
+    int8_t    lastRssi;              /*!< RSSI of last received packet */
     int8_t    maxRssi;               /*!< Highest RSSI observed during the operation (only updated after packets and at the end of operation). Not supported in this version. */
     uint32_t  lastTimestamp;         /*!< Timestamp of last successfully received packet */
     uint16_t  nRxNok;                /*!< Number of packets received with CRC error */
     uint16_t  nRxFifoFull;           /*!< Number of packets received that did not fit in RX FIFO */
     uint16_t  nRxOk;                 /*!< Number of correctly received packets */
-    uint16_t  nRxIgnored;            /*!< Number of ignored packets received. Not supported in this version. */
-    uint16_t  nTxAck;                /*!< Number of auto-ACKs transmitted. Not supported in this version. */
+    uint16_t  nRxIgnored;            /*!< Number of ignored packets received */
+    uint16_t  nTxAck;                /*!< Number of auto-ACKs transmitted */
     uint16_t  nTx;                   /*!< Number of frames transmitted */
 };
 

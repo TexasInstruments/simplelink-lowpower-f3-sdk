@@ -311,26 +311,6 @@ function getSymNames(inst) {
     return cache;
 }
 
-/*
- * Callbacks for configurable change handling
- *
- */
-/**
- * ======== onPatchUpdateLaunch ========
- * Launch a patch update by scanning SDK for existing patches.
- *
- * @param inst - Code Export Param instance
- *
- */
-function onPatchUpdateLaunch(inst) {
-    const deviceFamily = Common.getDeviceFamily();
-    return {
-        command: ExtPath + "get_patches.bat",
-        args: ["$comFile", deviceFamily],
-        initialData: ""
-    };
-}
-
 /**
  * ======== onPatchUpdateComplete ========
  * Launch a patch update by scanning SDK for existing patches.

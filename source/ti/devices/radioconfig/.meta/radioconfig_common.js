@@ -245,7 +245,7 @@ function int2hex(num, width) {
     // Handle negative numbers
     let numl = num;
     if (numl < 0) {
-        numl = 2 ** (width * 4) + num;
+        numl = 2 ** (width * 4) + Number(num);
     }
     // Convert to HEX string
     const numStr = Number(numl).toString(16);
@@ -802,7 +802,7 @@ function getPhyInfo(phyList, phyGroup, phyName) {
 
     return {
         file: item[0].file8,
-        description: item[0].description
+        label: item[0].label
     };
 }
 
@@ -933,6 +933,8 @@ function ieee154FreqToChan(freq) {
  *
  * @returns name of device family, currently cc23xx or cc27xx
  */
+// TODO - Find a way to remove all references to hand-maintained device family
+// https://jira.itg.ti.com/browse/SLWSTUDIO-1955
 function getDeviceFamily() {
     return DevFamilyMap[DeviceName];
 }

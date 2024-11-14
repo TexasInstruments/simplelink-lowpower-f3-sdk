@@ -89,7 +89,7 @@ static DSS_cb_t *dss_profileCBs = NULL;
  */
 
 // Data Stream Server Service declaration
-static CONST gattAttrType_t dss_service = { ATT_UUID_SIZE, dss_serv_UUID };
+static const gattAttrType_t dss_service = { ATT_UUID_SIZE, dss_serv_UUID };
 
 // Characteristic "DataIn" Properties
 static uint8 dss_dataIn_props = GATT_PROP_WRITE;
@@ -164,7 +164,7 @@ static bStatus_t DSS_sendNotification( uint8 *pValue, uint16 len );
 // pfnAuthorizeAttrCB to check a client's authorization prior to calling
 // pfnReadAttrCB or pfnWriteAttrCB, so no checks for authorization need to be
 // made within these functions.
-CONST gattServiceCBs_t dss_servCBs =
+const gattServiceCBs_t dss_servCBs =
 {
   NULL,                           // Read callback function pointer
   DSS_writeAttrCB,                // Write callback function pointer

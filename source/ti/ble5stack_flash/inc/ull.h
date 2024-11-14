@@ -143,7 +143,6 @@ extern "C"
 #define ULL_MAX_BLE_PKT_SIZE              255 //!< Payload size.
 #endif
 
-#ifdef USE_RCL
 /**
  * Link layer Receive Suffix Data Sizes
  */
@@ -154,16 +153,6 @@ extern "C"
 #define RCL_BUFFER_MAX_HEADER_PAD_BYTES     2 // padding of 2 bytes will be located before the packet header
 
 #define DUMMY_PAYLOAD_SIZE                  1 /* Dummy byte for alignment with RF AGAMA*/
-#else
-/**
- * Link layer Receive Suffix Data Sizes
- */
-#define ULL_SUFFIX_CRC_SIZE             3
-#define ULL_SUFFIX_RSSI_SIZE            1
-#define ULL_SUFFIX_STATUS_SIZE          1
-#define ULL_SUFFIX_TIMESTAMP_SIZE       4
-#endif
-
 
 
 #define ULL_SUFFIX_MAX_SIZE             (ULL_SUFFIX_CRC_SIZE    +              \

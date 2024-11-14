@@ -286,6 +286,21 @@ let config = [
             }]}
     ]},
     {
+        name: "rclConfig",
+            displayName: Docs.config.rclConfig.displayName,
+            longDescription: Docs.config.rclConfig.longDescription,
+            collapsed: false,
+            config: [
+                {
+                    name: "loggingEnabled",
+                    displayName: Docs.config.loggingEnabled.displayName,
+                    hidden : false,
+                    description: Docs.config.loggingEnabled.longDescription,
+                    default: false
+                },
+            ]
+        },
+    {
     name: "rclObservables",
         displayName: Docs.config.rclObservables.displayName,
         longDescription: Docs.config.rclObservables.longDescription,
@@ -317,7 +332,6 @@ let config = [
             }
         ]
     }
-
 ];
 
 /*
@@ -592,9 +606,26 @@ function moduleInstances(inst) {
         }
     });
 
-
-
-
+    /* If logging is enabled, push a dependency on a log module */
+    if (inst.loggingEnabled) {
+        dependencyModules.push(
+            {
+                name: "LogModule",
+                displayName: "RCL Log Configuration",
+                moduleName: "/ti/log/LogModule",
+                collapsed: true,
+                args: {
+                    $name: "LogModule_RCL",
+                    enable_DEBUG: false,
+                    enable_INFO: false,
+                    enable_VERBOSE: false,
+                    // Only enable WARNING and ERROR by default
+                    enable_WARNING: true,
+                    enable_ERROR: true
+                }
+            }
+        );
+    }
     return dependencyModules;
 }
 
@@ -645,6 +676,7 @@ function getLibs(mod) {
 
     /* get device information from DriverLib */
     const deviceId = system.deviceData.deviceId;
+    var log_suffix = mod.$static.loggingEnabled ? "_log" : "";
     var libName = DriverLib.getAttrs(deviceId).libName;
 
     var link_info = {
@@ -653,7 +685,7 @@ function getLibs(mod) {
             "/ti/drivers"
         ],
         libs: [
-            GenLibs.libPath('ti/drivers/rcl', `rcl_${libName}.a`),
+            GenLibs.libPath('ti/drivers/rcl', `rcl_${libName}${log_suffix}.a`),
             GenLibs.libPath(`ti/devices/${libName}/rf_patches`, `lrf_${libName}.a`)
         ]
     };

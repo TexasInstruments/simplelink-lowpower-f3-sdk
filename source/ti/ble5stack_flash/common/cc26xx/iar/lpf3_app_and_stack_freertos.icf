@@ -164,10 +164,13 @@ define symbol RAM_END             = RAM_START+RAM_SIZE-1;
 define region RAM                 = mem:[from RAM_START   to RAM_END];
 
 /* Define a Stack top                                                   */
-define symbol STACK_SIZE          = 0x800;
+define symbol STACK_SIZE          = 1024;
 /* Export stack top symbol. Used by startup file */
 define symbol STACK_TOP           = RAM_END + 1;
 export symbol STACK_TOP;
+
+define symbol STACK_START          = RAM_END - STACK_SIZE;
+export symbol STACK_START;
 
 /* Define a region for the SRAM                                         */
 if (isdefinedsymbol(ti_utils_build_GenMap_S2RRAM_BASE)) {
@@ -289,10 +292,6 @@ else
   place in FLASH_ALL                   { readonly };
 }
 
-/* Define a placment for RAM Vector Table                                 */
-define block VTABLE with alignment = 256  { section .ramVecs  };
-do not initialize                         { section .ramVecs };
-
 /* Define a placment for CSTACK
  * Define CSTACK block to contain .stack section. This enables the IAR IDE
  * to properly show the stack content during debug. Place stack at end of
@@ -302,22 +301,13 @@ do not initialize                         { section .ramVecs };
  */
 define block CSTACK with alignment = 8, size = STACK_SIZE { section .stack };
 
+define region RWRAM_region   = mem:[from RAM_START to STACK_START];
+
 /* Define a placment for RWDATA Vector Table                               */
-define block RWDATA with alignment = 8 { rw };
+place in RWRAM_region { rw, section .ramVecs };
 
-/* Define a placment for heap                                              */
-define section .heap_start                { public heapStart: };
-define section .heap_end                  { public heapEnd: };
-define block   HEAP_END with size = 1     { section .heap_end };
 
-define block END_OF_RAM with fixed order  {block HEAP_END,
-                                           block CSTACK};
-
-place at end of RAM { block END_OF_RAM };
-
-place in RAM { block VTABLE,
-               block RWDATA,
-               last section .heap_start};
+place at end of RAM { block CSTACK };
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialization
@@ -327,6 +317,7 @@ initialize by copy { readwrite };
 
 do not initialize
 {
+  section .ramVecs,
   section .noinit,
   section .stack,
 };

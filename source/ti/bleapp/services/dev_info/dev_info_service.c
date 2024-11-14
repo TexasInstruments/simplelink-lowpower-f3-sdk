@@ -117,7 +117,7 @@ GATT_BT_UUID(devInfoPnpIdUUID, PNP_ID_UUID);
  */
 
 // Device Information Service attribute
-static CONST gattAttrType_t devInfoService = GATT_ATT_BT_UUID_TYPE(devInfoServUUID);
+static const gattAttrType_t devInfoService = GATT_ATT_BT_UUID_TYPE(devInfoServUUID);
 
 // System ID characteristic
 static uint8 devInfoSystemIdProps = GATT_PROP_READ;
@@ -247,7 +247,7 @@ static bStatus_t DevInfo_readAttrCB( uint16 connHandle, gattAttribute_t *pAttr,
 // pfnAuthorizeAttrCB to check a client's authorization prior to calling
 // pfnReadAttrCB or pfnWriteAttrCB, so no checks for authorization need to be
 // made within these functions.
-CONST gattServiceCBs_t devInfoCBs =
+const gattServiceCBs_t devInfoCBs =
 {
   DevInfo_readAttrCB, // Read callback function pointer
   NULL,               // Write callback function pointer
@@ -263,7 +263,7 @@ CONST gattServiceCBs_t devInfoCBs =
  */
 
 /*********************************************************************
- * @fn      DevInfo_AddService
+ * @fn      DevInfo_addService
  *
  * @brief   Initializes the Device Information service by registering
  *          GATT attributes with the GATT server.

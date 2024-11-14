@@ -43,11 +43,7 @@
 #include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
 
-#ifdef DeviceFamily_CC27XX
-#include <ti/boards/cc27xx/rcl_settings_adc_noise.h>
-#else
-#include <ti/boards/cc23x0/rcl_settings_adc_noise.h>
-#endif
+extern const LRF_Config LRF_configAdcNoise;
 
 /* Place necessary RCL structs in BUFRAM to avoid using static SYSRAM. This saves 148 B */
 /* Note that we need to skip the part of the BUFRAM used by common RAM variables, as they

@@ -1,0 +1,18 @@
+[
+    {
+        "metadataVersion": "3.0.0",
+        "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK_ZIGBEE_MODULE",
+        "name": "TI Zigbee® (Z-Stack) Stack Core",
+        "version": "8.20.00.119",
+        "type": "software",
+        "devices": [
+            "CC23x0"
+        ],
+        "image": "None",
+        "description": "Low Power F3 TI Zigbee® (Z-Stack) Stack",
+        "moduleOf": {
+            "packageId": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
+            "semver": "8.20.0"
+        }
+    }
+]

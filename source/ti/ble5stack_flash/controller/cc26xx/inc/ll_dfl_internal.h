@@ -100,9 +100,9 @@
 // Dynamic filter list flags
 // Note: Assumes dflFlags = dynamic filter list entry's flags.
 #define CLR_DFL_ENTRY( dflFlags )               \
-  (dflFlags) = 0;
+  (dflFlags) = 0
 #define IS_DFL_ENTRY_FREE( dflFlags )           \
-  ((dflFlags) & BV(0)) == 0
+  (((dflFlags) & BV(0)) == 0)
 #define SET_DFL_ENTRY_BUSY( dflFlags )          \
   (dflFlags) |= BV(0)
 #define SET_DFL_ENTRY_FREE( dflFlags )          \
@@ -147,7 +147,7 @@ PACKED_TYPEDEF_STRUCT
 // Note: see RCL filter list struct (RCL_FilterList).
 PACKED_TYPEDEF_STRUCT
 {
-  uint8            numEntries;
+  uint8             numEntries;
   dynamicFLEntry_t  entries[DFL_SIZE];
 } dynamicFL_t;
 

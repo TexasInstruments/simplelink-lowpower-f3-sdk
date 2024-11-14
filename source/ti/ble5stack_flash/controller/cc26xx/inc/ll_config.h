@@ -109,19 +109,11 @@ extern "C"
  */
 
 // Receive Suffix Data Sizes
-#ifdef USE_RCL
 #define SUFFIX_SIZE_NONE                0
 #define SUFFIX_CRC_SIZE                 3
 #define SUFFIX_RSSI_SIZE                1
 #define SUFFIX_STATUS_SIZE              1 // RCL status byte is 1
 #define SUFFIX_TIMESTAMP_SIZE           4
-#else
-#define SUFFIX_SIZE_NONE                0
-#define SUFFIX_CRC_SIZE                 3
-#define SUFFIX_RSSI_SIZE                1
-#define SUFFIX_STATUS_SIZE              2
-#define SUFFIX_TIMESTAMP_SIZE           4
-#endif
 
 #define SUFFIX_MAX_SIZE                 (SUFFIX_CRC_SIZE    +                  \
                                          SUFFIX_RSSI_SIZE   +                  \
@@ -286,16 +278,6 @@ PACKED_TYPEDEF_STRUCT
 {
   const uint8           *placeHolder0;
   patchCM0_t            *patchCM0Ptr;
-#ifndef USE_RCL
-  const rfOp_t          *rfOpPtr;
-  const rfCfgVal_t      *rfCfgValPtr;
-  const uint8           *placeHolder1;
-  const pktSuffix_t     *rxPktSuffixPtr;
-  const pktSuffix_t     *advPktSuffixPtr;
-  const pktSuffix_t     *scanPktSuffixPtr;
-  const pktSuffix_t     *initPktSuffixPtr;
-  const maxPktsPerEvt_t *maxPktsPerEvtPtr;
-#endif
   const uint8           *cryptoMode;
   const uint8           *ecdhMode;
   const uint32          *connEvtCutoff;

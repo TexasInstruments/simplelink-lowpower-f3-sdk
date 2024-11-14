@@ -1,0 +1,17 @@
+{
+    "../../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_nortos_ticlang.projectspec": "gpd_attr_reporting_LP_EM_CC2340R5_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_nortos_ticlang.projectspec": "gpd_bidir_attr_read_write_LP_EM_CC2340R5_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R5_nortos_ticlang.projectspec": "gpd_switch_LP_EM_CC2340R5_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_nortos_ticlang.projectspec": "gpd_attr_reporting_LP_EM_CC2340R53_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_nortos_ticlang.projectspec": "gpd_bidir_attr_read_write_LP_EM_CC2340R53_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R53_nortos_ticlang.projectspec": "gpd_switch_LP_EM_CC2340R53_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_freertos_ticlang.projectspec": "gpd_attr_reporting_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_freertos_ticlang.projectspec": "gpd_bidir_attr_read_write_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec": "gpd_switch_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec": "onoff_switch_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_freertos_ticlang.projectspec": "gpd_attr_reporting_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_freertos_ticlang.projectspec": "gpd_bidir_attr_read_write_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec": "gpd_switch_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2340R53_freertos_ticlang.projectspec": "onoff_light_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec": "onoff_switch_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json"
+}

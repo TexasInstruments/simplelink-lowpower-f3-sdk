@@ -416,7 +416,7 @@ void hal_power_set_constraint(void)
 #ifndef SOCFPGA
     /* FPGA doesn't support standby */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-    Log_printf(RclCore, Log_INFO, "Power constraints set");
+    Log_printf(LogModule_RCL, Log_INFO, "hal_power_set_constraint: Power constraints set");
 #endif
 }
 
@@ -425,7 +425,7 @@ void hal_power_release_constraint(void)
 #ifndef SOCFPGA
     /* FPGA doesn't support standby */
     Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    Log_printf(RclCore, Log_INFO, "Power constraints released");
+    Log_printf(LogModule_RCL, Log_INFO, "hal_power_release_constraint: Power constraints released");
 #endif
 }
 

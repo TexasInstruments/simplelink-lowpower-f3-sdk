@@ -36,13 +36,13 @@
  *  ======== phyheader.xdt ========
  */
 const cmdHandler = args[0];
-const phyName = cmdHandler.getPhydefLongName();
+const phyLabel = cmdHandler.getPhydefLongName();
 const phyFile = cmdHandler.getPhydefFile();
 const phyAbbr = cmdHandler.getPhyName();
 
 %%}
 // ****************************************************************
-//  PHY name:            `phyName`
+//  PHY name:            `phyLabel`
 //  PHY abbreviation/ID: `phyAbbr`
 //  PHY definition file: `phyFile`
 // ****************************************************************

@@ -228,12 +228,14 @@ extern gapCentralConnCBs_t *pfnCentralConnCBs;
 // Peripheral variables
 extern gapPeripheralConnCBs_t *pfnPeripheralConnCBs;
 
-extern uint16 peripheralConnHandle;
+extern uint16 gParamUpdateConnHandle;
 
 // Common variables
 extern gapAuthStateParams_t *pAuthLink;
 
-extern l2capParamUpdateReq_t peripheralUpdateReq;
+extern l2capParamUpdateReq_t gParamUpdateReq;
+
+extern gapBondMgrCBs_t *pfnBondMgrCBs;
 
 /*********************************************************************
  * GAP Task Functions

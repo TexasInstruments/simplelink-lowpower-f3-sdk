@@ -195,7 +195,7 @@ static ugapMonitorCBs_t ugmAppCBs;
  */
 static bStatus_t ugap_bcastChangeState(ugapBcastState_t state)
 {
-  port_key_t key;
+  volatile port_key_t key;
   bStatus_t status = SUCCESS;
 
   key = port_enterCS_SW();
@@ -338,7 +338,7 @@ static uint8_t ugap_observerChanMapToIndex(uint8_t *pChanMap)
  */
 static bStatus_t ugap_observerChangeState(ugapObserverScan_State_t state)
 {
-  port_key_t key;
+  volatile port_key_t key;
   bStatus_t status = SUCCESS;
 
   key = port_enterCS_SW();
@@ -439,7 +439,7 @@ static bStatus_t ugap_observerChangeState(ugapObserverScan_State_t state)
  */
 static bStatus_t ugap_monitorChangeState(ugapMonitorState_t state)
 {
-  port_key_t key;
+  volatile port_key_t key;
 
   bStatus_t status = SUCCESS;
 
@@ -565,7 +565,7 @@ void ugap_clockHandler(uint32_t a0)
  */
 void ugb_advPrepareCB(void)
 {
-  port_key_t key;
+  volatile port_key_t key;
 
   key = port_enterCS_SW();
   if (ubleParams.timeToAdv > 0)
@@ -589,7 +589,7 @@ void ugb_advPrepareCB(void)
 void ugb_advPostprocessCB(bStatus_t status)
 {
   ugapBcastMsgAdvPostprocess_t msg;
-  port_key_t key;
+  volatile port_key_t key;
 
   key = port_enterCS_SW();
 #ifndef RF_MULTIMODE
@@ -634,7 +634,7 @@ void ugb_advPostprocessCB(bStatus_t status)
 void ugap_observerScanIndicationCB(bStatus_t status, uint8_t len, uint8_t *pPayload)
 {
   ugapObserverMsgScanIndication_t msg;
-  port_key_t key;
+  volatile port_key_t key;
 
   key = port_enterCS_SW();
   msg.status = status;
@@ -660,7 +660,7 @@ void ugap_observerScanIndicationCB(bStatus_t status, uint8_t len, uint8_t *pPayl
 static void ugap_observerScanWindowCompleteCB(bStatus_t status)
 {
   ugapObserverMsgScanWindowComplete_t msg;
-  port_key_t key;
+  volatile port_key_t key;
 
   key = port_enterCS_SW();
   msg.status = status;
@@ -688,7 +688,7 @@ static void ugap_observerScanWindowCompleteCB(bStatus_t status)
 static void upag_monitorIndicationCB(bStatus_t status, uint8_t sessionId, uint8_t len, uint8_t *pPayload)
 {
   ugapMsgMonitorIndication_t msg;
-  port_key_t key;
+  volatile port_key_t key;
   key = port_enterCS_SW();
 
   msg.status = status;
@@ -715,7 +715,7 @@ static void upag_monitorIndicationCB(bStatus_t status, uint8_t sessionId, uint8_
 static void ugap_monitorCompleteCB(bStatus_t status, uint8_t sessionId)
 {
   ugapMsgMonitorComplete_t msg;
-  port_key_t key;
+  volatile port_key_t key;
 
   key = port_enterCS_SW();
   msg.status = status;

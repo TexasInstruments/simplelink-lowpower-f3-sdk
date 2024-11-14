@@ -324,7 +324,7 @@ extern bStatus_t               gattServApp_ProcessReadReq( gattMsgEvent_t *pMsg,
 extern bStatus_t               gattServApp_ProcessWriteReq( gattMsgEvent_t *pMsg, uint16 *pErrHandle, uint8 *pSafeToDealloc );
 extern bStatus_t               gattServApp_ProcessFindByTypeValueReq( gattMsgEvent_t *pMsg, uint16 *pErrHandle );
 extern uint8                   gattServApp_PrepareWriteQInUse( void );
-extern CONST gattServiceCBs_t *gattServApp_FindServiceCBs( uint16 service );
+extern const gattServiceCBs_t *gattServApp_FindServiceCBs( uint16 service );
 
 /*********************************************************************
 *********************************************************************/

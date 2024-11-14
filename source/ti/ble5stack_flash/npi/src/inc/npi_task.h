@@ -79,7 +79,7 @@ extern "C"
 // -----------------------------------------------------------------------------
 typedef void (*npiIncomingEventCBack_t)(uint8_t *pMsg);
 
-//! \brief      numeration used to determine the type of NPI Rerouting requested
+//! \brief      Enumeration used to determine the type of NPI Rerouting requested
 //!             by the application.
 //!
 //!             NONE: no rerouting despite callback non-null registered callback

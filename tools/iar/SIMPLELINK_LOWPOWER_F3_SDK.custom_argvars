@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <iarUserArgVars>
-  <group active="true" name="SIMPLELINK_LOWPOWER_F3_SDK_8_10_01_02">
+  <group active="true" name="SIMPLELINK_LOWPOWER_F3_SDK_8_20_00_119">
     <variable>
       <name>SYSCONFIG_ROOT</name>
       <value>c:/ti/sysconfig_1.20.0</value>
@@ -12,15 +12,15 @@
     </variable>
     <variable>
       <name>SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_8_10_01_02</value>
+      <value>c:/ti/simplelink_lowpower_f3_sdk_8_20_00_119</value>
     </variable>
     <variable>
       <name>COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_8_10_01_02</value>
+      <value>c:/ti/simplelink_lowpower_f3_sdk_8_20_00_119</value>
     </variable>
     <variable>
       <name>EXAMPLE_ROOT</name>
-      <value>c:/ti/simplelink_lowpower_f3_sdk_8_10_01_02/tools/iar</value>
+      <value>c:/ti/simplelink_lowpower_f3_sdk_8_20_00_119/tools/iar</value>
     </variable>
   </group>
 </iarUserArgVars>

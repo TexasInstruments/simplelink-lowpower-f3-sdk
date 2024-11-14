@@ -91,11 +91,11 @@ typedef enum LRF_TxPowerResult_e {
 #define LRF_EventNone                  ((LRF_Events){ .value = (0U << 0U)})   /*!< No events */
 #define LRF_EventOpDone                ((LRF_Events){ .value = (1U << 0U)})   /*!< The PBE operation has finished */
 #define LRF_EventPingRsp               ((LRF_Events){ .value = (1U << 1U)})   /*!< When receiving a CMD_PING, PBE responds with a PINGRSP. */
-#define LRF_EventRxCtrl                ((LRF_Events){ .value = (1U << 2U)})   /*!< LL control packet received correctly */
+#define LRF_EventRxCtrl                ((LRF_Events){ .value = (1U << 2U)})   /*!< Frame filtering passed, or LL control packet received correctly */
 #define LRF_EventRxCtrlAck             ((LRF_Events){ .value = (1U << 3U)})   /*!< LL control packet received with CRC OK, not to be ignored, then acknowledgement sent */
 #define LRF_EventRxNok                 ((LRF_Events){ .value = (1U << 4U)})   /*!< Packet received with CRC error */
 #define LRF_EventRxIgnored             ((LRF_Events){ .value = (1U << 5U)})   /*!< Packet received, but may be ignored by MCU */
-#define LRF_EventRxEmpty               ((LRF_Events){ .value = (1U << 6U)})   /*!< Empty packet received */
+#define LRF_EventRxEmpty               ((LRF_Events){ .value = (1U << 6U)})   /*!< Empty packet received, or Rx ACK treatment finished */
 #define LRF_EventRxBufFull             ((LRF_Events){ .value = (1U << 7U)})   /*!< Packet received which did not fit in the RX FIFO and was not to be discarded.  */
 #define LRF_EventRxOk                  ((LRF_Events){ .value = (1U << 8U)})   /*!< Packet received with CRC OK and not to be ignored by the MCU */
 #define LRF_EventTxCtrl                ((LRF_Events){ .value = (1U << 9U)})   /*!< Transmitted LL control packet */
@@ -234,9 +234,6 @@ typedef struct LRF_TxShape_s {
 #define LRF_TRIM_DCOLDO0_SECONDTRIM_INC_STATE_B_DCOLDO_WORKAROUND_CC27XX 10U    /* DCOLDO0:SECONDTRIM needs to be increased by 10 on CC27XX state B devices */
 #define LRF_TRIM_DCOLDO0_SECONDTRIM_CODED_BITS_MASK_STATE_B_DCOLDO_WORKAROUND_CC27XX ((1U << 3U) | (1U << 5U))    /* Bits mask for bit 3 and 5 of DCOLDO0:SECONDTRIM */
 #define LRF_TRIM_DCOLDO0_SECONDTRIM_MAX_STATE_B_DCOLDO_WORKAROUND_CC27XX 63U    /* DCOLDO0:SECONDTRIM maximum value allowed within the range of 6-bit representation */
-
-/* CC27XX devices with revision numbers below 5 only have one PA trim value (instead of four) in CFG and need a workaround */
-#define LRF_TRIM_VERSION_CORRECT_AMOUNT_OF_PA_TRIMS_CC27XX 5
 
 /* Definitions for trim */
 typedef struct {
@@ -414,12 +411,19 @@ typedef struct {
     int32_t highGainOffset : 4;
 } LRF_Trim_tempRssiAgc;
 
+typedef struct {
+    uint8_t dcoldoFirstMinOffset       : 2;
+    uint8_t dcoldoFirstMaxOffset       : 2;
+    uint8_t dcoldoSecondMinOffset      : 2;
+    uint8_t dcoldoSecondMaxOffset      : 2;
+} LRF_Trim_dcoldoOffset;
+
 typedef union {
     struct {
         struct {    // length: 4B
             LRF_Trim_tempLdoRtrim tempLdoRtrim;
             uint8_t hfxtPdError;
-            uint8_t res;
+            LRF_Trim_dcoldoOffset dcoldoOffset; /* Revision >= 8 only */
          } lrfdrfeExtTrim1;                  /* Revision >= 4 only */
         // Trim values for synth divider 0
         LRF_Trim_tempRssiAgc lrfdrfeExtTrim0;

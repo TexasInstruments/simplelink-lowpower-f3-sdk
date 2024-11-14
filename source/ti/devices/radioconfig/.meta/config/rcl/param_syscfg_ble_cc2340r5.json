@@ -6,15 +6,23 @@
       "description": "Selects the PHY setting",
       "options": [
         {
+          "name": "adc_noise",
+          "displayName": "ADC Noise"
+        },
+        {
           "name": "ble",
           "displayName": "1 Mbps / 2 Mbps / Coded"
         },
         {
           "name": "ble_gen",
           "displayName": "Generic 1 Mbps / 2 Mbps / Coded"
+        },
+        {
+          "name": "ble_cs_hp",
+          "displayName": "Channel Sounding High Performance"
         }
       ],
-      "default": "ble",
+      "default": "adc_noise",
       "hidden": true
     },
     {
@@ -305,18 +313,31 @@
   "phys": {
     "ble": [
       {
+        "file8": "adc_noise_bt5_cc23xx.json",
+        "name": "adc_noise",
+        "label": "ADC Noise",
+        "protocol": "ADC Noise, BLE based"
+      },
+      {
         "file8": "ble_bt5_1m_2m_coded_cc23xx.json",
         "name": "ble",
-        "description": "1 Mbps / 2 Mbps / Coded",
-        "phyName": "1 Mbps / 2 Mbps / Coded",
+        "label": "1 Mbps / 2 Mbps / Coded",
+        "protocol": "Bluetooth 5, LE",
         "usage": "stack"
       },
       {
         "file8": "ble_bt5_generic_cc23xx.json",
         "name": "ble_gen",
-        "description": "Generic 1 Mbps / 2 Mbps / Coded",
-        "phyName": "Generic 1 Mbps / 2 Mbps / Coded",
+        "label": "Generic 1 Mbps / 2 Mbps / Coded",
+        "protocol": "Bluetooth 5, LE",
         "usage": "generic"
+      },
+      {
+        "file8": "ble_bt6_cs_hp_cc23xx.json",
+        "name": "ble_cs_hp",
+        "label": "Channel Sounding High Performance",
+        "protocol": "Bluetooth 6, LE",
+        "usage": "stack"
       }
     ]
   },

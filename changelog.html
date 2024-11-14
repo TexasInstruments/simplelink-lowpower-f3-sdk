@@ -37,19 +37,11 @@
   <h2>Table of Contents</h2>
 <div id="TOC">
 <ul>
-<li><a href="#simplelink-low-power-sdk-f3-8.10.01">SimpleLink™ Low Power SDK F3 8.10.01</a><ul>
 <li><a href="#new-features">New Features</a></li>
 <li><a href="#fixed-issues">Fixed Issues</a></li>
 <li><a href="#known-issues">Known Issues</a></li>
-</ul></li>
-<li><a href="#simplelink-low-power-sdk-f3-8.10.00">SimpleLink™ Low Power SDK F3 8.10.00</a><ul>
-<li><a href="#new-features-1">New Features</a></li>
-<li><a href="#fixed-issues-1">Fixed Issues</a></li>
-<li><a href="#known-issues-1">Known Issues</a></li>
-</ul></li>
 </ul>
 </div>
-<h1 id="simplelink-low-power-sdk-f3-8.10.01">SimpleLink™ Low Power SDK F3 8.10.01</h1>
 <p> </p>
 <h2 id="new-features">New Features</h2>
 <h3 id="ble5-stack">BLE5-Stack</h3>
@@ -62,8 +54,127 @@
 </thead>
 <tbody>
 <tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11917">BLE_LOKI-1932</a></td>
+<td align="left"><span>Periodic Scan Support</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11957">BLE_LOKI-1731</a></td>
+<td align="left"><span>[QUALIFICATION] AE &amp; Periodic Advertisement Qualification</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11916">BLE_LOKI-1253</a></td>
+<td align="left"><span>Periodic Adv Support </span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ti-proprietary-rf">TI Proprietary RF</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
 <td align="center">None</td>
 <td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ti-zigbee">TI Zigbee</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">None</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="simplelink-common-commponents-module-sccm">SimpleLink Common Commponents Module (SCCM)</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">SCCM-375</td>
+<td align="left"><span>Updated the mcuboot readme file</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ti-rtos-and-drivers">TI-RTOS and Drivers</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">None</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="radio-control-library-rcl">Radio Control Library (RCL)</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">RCL-98</td>
+<td align="left"><span>Support Periodic Advertising</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-689</td>
+<td align="left"><span>Support for different connection parameters based on the received AuxPHY</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-376</td>
+<td align="left"><span>Support Periodic Advertising Setup</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-810</td>
+<td align="left"><span>AUX_SCAN_REQ packet to be built by the BLE stack</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-807</td>
+<td align="left"><span>CC23XX: Enable DCOLDO temperature compensation</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-425</td>
+<td align="left"><span>Support for AE Privacy changes</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-672</td>
+<td align="left"><span>Provide lastCmdDone callbacks for descheduled commands</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-118</td>
+<td align="left"><span>IEEE: Support CCA before TX operation</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-635</td>
+<td align="left"><span>IEEE: Support for source matching on incoming packets</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-557</td>
+<td align="left"><span>Extern ADC noise definition from RCL to radioconfig</span></td>
 </tr>
 </tbody>
 </table>
@@ -79,284 +190,56 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11779">BLE_LOKI-1893</a></td>
-<td align="left"><span>The host_test example fails to build on Linux/MacOS</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11956">BLE_LOKI-1994</a></td>
+<td align="left"><span>GATTServApp_ReadRsp API documentation error </span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11781">BLE_LOKI-1848</a></td>
-<td align="left"><span>When using same value for Scan Window and Scan Interval, the interval size is not accurate</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11827">BLE_LOKI-1910</a></td>
+<td align="left"><span>GapAdv_prepareLoadByHandle may cause memory issues when executed on a NULL pointer</span></td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11778">BLE_LOKI-1578</a></td>
-<td align="left"><span>After multiple GATT data transmissions, a blePending error was return.</span></td>
-</tr>
-</tbody>
-</table>
-<p> </p>
-<h2 id="known-issues">Known Issues</h2>
-<h3 id="ble5-stack-2">BLE5-Stack</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center">None</td>
-<td align="left">None</td>
-</tr>
-</tbody>
-</table>
-<h1 id="simplelink-low-power-sdk-f3-8.10.00">SimpleLink™ Low Power SDK F3 8.10.00</h1>
-<p> </p>
-<h2 id="new-features-1">New Features</h2>
-<h3 id="ble5-stack-3">BLE5-Stack</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11760">BLE_LOKI-1122</a></td>
-<td align="left"><span>[SPS] BLE Stack supports Connectable/Scannable Extended Advertising</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11918">BLE_LOKI-1690</a></td>
+<td align="left"><span>SysConfig BLE menus exposes non-available features</span></td>
 </tr>
 <tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11762">BLE_LOKI-923</a></td>
-<td align="left"><span>Health Tool Kit</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11759">BLE_LOKI-1672</a></td>
+<td align="left"><span>Scanner may report incorrect Tx Power value for advertiser using advertising sets with different Tx Power values</span></td>
 </tr>
-</tbody>
-</table>
-<h3 id="ti-proprietary-rf">TI Proprietary RF</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
 <tr class="odd">
-<td align="center">PROPRF-1256</td>
-<td align="left"><span>Add support for GenMaps to F3 family PropRF Examples</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11765">BLE_LOKI-1653</a></td>
+<td align="left"><span>In rare cases, when RPA refresh interval is low, a connection may fail to be established</span></td>
 </tr>
 <tr class="even">
-<td align="center">PROPRF-1254</td>
-<td align="left"><span>Add support for the CC2340R53 to Prop-RF </span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11757">BLE_LOKI-1649</a></td>
+<td align="left"><span>[Extender Advertisement] When using Coded PHY as secondary, only S=8 will be used regardless of configuration</span></td>
 </tr>
 <tr class="odd">
-<td align="center">PROPRF-1252</td>
-<td align="left"><span>Add support for CC2340R22 devices to PropRF</span></td>
-</tr>
-</tbody>
-</table>
-<h3 id="simplelink-common-commponents-module-sccm">SimpleLink Common Commponents Module (SCCM)</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center">SCCM-396</td>
-<td align="left"><span>MCUboot examples created for CC2340R53</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11915">BLE_LOKI-1644</a></td>
+<td align="left"><span>GAP_UpdateLinkParamReq interface keeps returning bleAlreadyInRequestedMode when requesting parameters update as a peripheral after having requested as a central</span></td>
 </tr>
 <tr class="even">
-<td align="center">SCCM-394</td>
-<td align="left"><span>Add support for CC2340R53 and CC2340R22 device </span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11764">BLE_LOKI-1612</a></td>
+<td align="left"><span>[AE] [Initiator] Connection is established with wrong connection parameters when using different PHY's for Primary &amp; Secondary channels</span></td>
 </tr>
 <tr class="odd">
-<td align="center">SCCM-385</td>
-<td align="left"><span>Removed the limit on the number of NVOCMP pages</span></td>
-</tr>
-</tbody>
-</table>
-<h3 id="ti-rtos-and-drivers">TI-RTOS and Drivers</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center">TIUTILS-121</td>
-<td align="left"><span>Add symbol generation for tools to GenMap</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11914">BLE_LOKI-1584</a></td>
+<td align="left"><span>Memory leak in OADService_setParameter inside oad_service.c</span></td>
 </tr>
 <tr class="even">
-<td align="center">TIUTILS-120</td>
-<td align="left"><span>The tilogger terminal window sometimes reports an error when used with LogSinkUART</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11921">BLE_LOKI-1491</a></td>
+<td align="left"><span>Update Documentation for HW platform for HCI APIs</span></td>
 </tr>
 <tr class="odd">
-<td align="center">TIUTILS-118</td>
-<td align="left"><span>Generate linker definitions file from Component contributions</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11924">BLE_LOKI-1339</a></td>
+<td align="left"><span>DTM Testing Packet Errors</span></td>
 </tr>
 <tr class="even">
-<td align="center">TIUTILS-108</td>
-<td align="left"><span>Add Log_MODULE_DEFINE_WEAK() macro to support weak Log module allocation</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11610">BLE_LOKI-1199</a></td>
+<td align="left"><span>[SWAT] GATT_ReadLongCharValue fails after 307 iterations during stress test</span></td>
 </tr>
 <tr class="odd">
-<td align="center">TIRTOS-2206</td>
-<td align="left"><span>Package CRC Tool With LPF3 CoreSDK</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6544</td>
-<td align="left"><span>Fix camel case naming and prescaler spelling for CAN driver</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6417</td>
-<td align="left"><span>S2RRAM example should use portable <strong>attribute</strong>((section())) for all toolchains</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6377</td>
-<td align="left"><span>Improve RNG driver doxygen to show the steps to use RNG with Radio Noise with example</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6357</td>
-<td align="left"><span>Add HFXT amplitude compensation functionality to CC23X0 and CC27XX Power driver</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6352</td>
-<td align="left"><span>Add support for CC2340R22</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6349</td>
-<td align="left"><span>Remove include guards from ti_devices_config.c templates</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6339</td>
-<td align="left"><span>Update Temperature driver documentation</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6333</td>
-<td align="left"><span>Utilize GenMap to generate memory and NVS definitions for LPF3 devices</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6322</td>
-<td align="left"><span>UML diagrams are not generated correctly</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6275</td>
-<td align="left"><span>Add support for CC2340R53</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6234</td>
-<td align="left"><span>Add DO_NOT_CONFIG macro to GPIO configuration options</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6183</td>
-<td align="left"><span>Add Log statements to Power driver</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6118</td>
-<td align="left"><span>Add support for 32-bit LGPT instances</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-5397</td>
-<td align="left"><span>Add support for EXTLF as LFCLK source</span></td>
-</tr>
-<tr class="even">
-<td align="center">FREERTOS-25</td>
-<td align="left"><span>Add Theia ROV support to display FreeRTOS objects</span></td>
-</tr>
-<tr class="odd">
-<td align="center">FREERTOS-13</td>
-<td align="left"><span>Remove unused Thread Local Storage slot</span></td>
-</tr>
-</tbody>
-</table>
-<h3 id="radio-control-library-rcl">Radio Control Library (RCL)</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center">RCL-591</td>
-<td align="left"><span>CC27XX: Override FCFG RTRIM value for State B devices. Set to 10.</span></td>
-</tr>
-<tr class="even">
-<td align="center">RCL-424</td>
-<td align="left"><span>Support for AE Initiator</span></td>
-</tr>
-<tr class="odd">
-<td align="center">RCL-499</td>
-<td align="left"><span>CC27XX: Enable BLE Coded PHY support</span></td>
-</tr>
-<tr class="even">
-<td align="center">RCL-16</td>
-<td align="left"><span>Support for AE Active Scanning</span></td>
-</tr>
-<tr class="odd">
-<td align="center">RCL-224</td>
-<td align="left"><span>CC27XX: Implement RCL support for +10 dBm PA </span></td>
-</tr>
-<tr class="even">
-<td align="center">RCL-632</td>
-<td align="left"><span>Guard RCL_init() so it is safe to call multiple times</span></td>
-</tr>
-<tr class="odd">
-<td align="center">RCL-96</td>
-<td align="left"><span>New SysConfig module for selecting LRF pins and muxes</span></td>
-</tr>
-</tbody>
-</table>
-<p> </p>
-<h2 id="fixed-issues-1">Fixed Issues</h2>
-<h3 id="ble5-stack-4">BLE5-Stack</h3>
-<table>
-<thead>
-<tr class="header">
-<th align="center">ID</th>
-<th align="left">Summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11761">BLE_LOKI-1623</a></td>
-<td align="left"><span>Scannable advertiser only responds to single scan request received in advertisement</span></td>
-</tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11751">BLE_LOKI-1443</a></td>
-<td align="left"><span>Gatt Notifications cannot be received on Central after erasing all bonds.</span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11755">BLE_LOKI-1353</a></td>
-<td align="left"><span>SysConfig error when altering the advertisement parameters in Broadcaster role</span></td>
-</tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11754">BLE_LOKI-1352</a></td>
-<td align="left"><span>Target Address not changing when using directed advertising</span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11615">BLE_LOKI-1247</a></td>
-<td align="left"><span>Gatt_WriteLongCharValue() calls with size 512 bytes fails when using TI Clang Compiler</span></td>
-</tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11608">BLE_LOKI-1161</a></td>
-<td align="left"><span>[PSIRT] Stack generates unexpected RPA during fuzz attack when using speed optimization </span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11753">BLE_LOKI-1146</a></td>
-<td align="left"><span>Advertisements with Limited Discoverable Flag not terminating within lim_adv_timeout (180 s)</span></td>
-</tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11609">BLE_LOKI-1034</a></td>
-<td align="left"><span>Critical Section order not optimal in ICall_leaveCSImpl &amp; ICall_enterCSImpl functions</span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11752">BLE_LOKI-949</a></td>
-<td align="left"><span>BLE stack does not remove the att rsp msg even when the BLE connection is lost </span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11952">BLE_LOKI-935</a></td>
+<td align="left"><span>HCIExt_EnhancedModemHopTestTxCmd returns success, but test does not start</span></td>
 </tr>
 </tbody>
 </table>
@@ -372,6 +255,33 @@
 <tr class="odd">
 <td align="center">None</td>
 <td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ti-zigbee-1">TI Zigbee</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">TI_ZIGBEE-113</td>
+<td align="left"><span>Inconsistent binding to an R22 device</span></td>
+</tr>
+<tr class="even">
+<td align="center">TI_ZIGBEE-91</td>
+<td align="left"><span>Sleepy ZED not going to deep sleep/standby power mode</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TI_ZIGBEE-90</td>
+<td align="left"><span>Inconsistent joining of sleepy ZEDs</span></td>
+</tr>
+<tr class="even">
+<td align="center">TI_ZIGBEE-77</td>
+<td align="left"><span>Unexpected packets seen OTA after beacon from ZC</span></td>
 </tr>
 </tbody>
 </table>
@@ -400,48 +310,12 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">TIPOSIX-34</td>
-<td align="left"><span>Mtx_releaseLock fails due to wrongly passed parameter to xSemaphoreGive</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIPOSIX-32</td>
-<td align="left"><span>Misra compliance: Remove the use of volatile in infinite loops</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6445</td>
-<td align="left"><span>ULL-SVT synchronisation issues may cause spurious ClockP callbacks</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6442</td>
-<td align="left"><span>LPF3 CCFG SysConfig module always zero-initializes the last 4 bytes of the user record</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6437</td>
-<td align="left"><span>CCFG SysConfig: Generated code for Erase/Retain, Main Sectors is wrong</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6381</td>
-<td align="left"><span>ClockP_stop() might corrupt other clocks if stopping a clock in the past</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6375</td>
-<td align="left"><span>TI Clang TaskP object is 200+ bytes larger than intended</span></td>
-</tr>
-<tr class="even">
-<td align="center">TIDRIVERS-6336</td>
-<td align="left"><span>Increase RNG's minimum entropy raw noise words from 80 to 152 to add margin for CC23x0</span></td>
-</tr>
-<tr class="odd">
-<td align="center">TIDRIVERS-6320</td>
-<td align="left"><span>Pregenerated FreeRTOSConfig.h not included in release</span></td>
+<td align="center">TIDRIVERS-6982</td>
+<td align="left"><span>RNG driver to default to max reseed Interval</span></td>
 </tr>
 </tbody>
 </table>
 <h3 id="radio-control-library-rcl-1">Radio Control Library (RCL)</h3>
-<p>${project in (RCL) AND issuetype in (Bug, Task) AND resolution != unresolved AND fixVersion ~ LOKI_RCL_8_10_00 AND labels in (ReleaseNote) ORDER BY project desc, priority}</p>
-<p> </p>
-<h2 id="known-issues-1">Known Issues</h2>
-<h3 id="ble5-stack-5">BLE5-Stack</h3>
 <table>
 <thead>
 <tr class="header">
@@ -451,32 +325,117 @@
 </thead>
 <tbody>
 <tr class="odd">
+<td align="center">RCL-806</td>
+<td align="left"><span>BLE AE: LastCmdDone is not received after RCL_command_stop is called for advertiser command</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-804</td>
+<td align="left"><span>BLE AE: LastCmdDone is not received after the RCL_command_stop API is called</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-803</td>
+<td align="left"><span>BLE AE: lastCmdDone callback is not invoked when using the initiator with privacy</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-764</td>
+<td align="left"><span>BLE AE: Backoff is not updated as expected when failing to receive AUX_CONNECT_RSP</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-795</td>
+<td align="left"><span>LastCmdDone is not received after RCL_command_stop is called</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-792</td>
+<td align="left"><span>BLE AE: RCL_BLE5_getAuxAdvStartTimeDelta returns a wrong value when primary PHY is 1M and secondary PHY is 2M</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-761</td>
+<td align="left"><span>BLE AE: Erroneous AuxPtr handling for periodic advertising</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-776</td>
+<td align="left"><span>[Initiator] when using privacy, lastCmdDone callback is not invoked</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-808</td>
+<td align="left"><span>BLE AE: Missing handler state member for periodic scanner </span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-811</td>
+<td align="left"><span>BLE AE: AUX_CONNECT_RSP PDUs with unknown RPAs in AdvA are ignored by the LRF</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-693</td>
+<td align="left"><span>Scan Response is sent in response to a connection indication</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-739</td>
+<td align="left"><span>Handling of extended header lengths equal to zero leads to erroneous behavior </span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-801</td>
+<td align="left"><span>NESB: PRX command hangs after device is subjected to intermittent noise</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-694</td>
+<td align="left"><span>When initiator receives aux_conn_rsp with unknown address the device ignores it and keep scanning </span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-691</td>
+<td align="left"><span>Filtering based on presence of syncInfo field not working as expected</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-796</td>
+<td align="left"><span>Initiator successfully establishes a connection with a public BD device address not on the accepted list</span></td>
+</tr>
+</tbody>
+</table>
+<p> </p>
+<h2 id="known-issues">Known Issues</h2>
+<h3 id="ble5-stack-2">BLE5-Stack</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11959">BLE_LOKI-2511</a></td>
+<td align="left"><span>[Multi Connect][Stability] CC2340R53 Coded PHY Links Terminate when Hold More Than 8 Multiple Connections and Switching Connection PHY Between Coded to 1M/2M PHY`s</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11958">BLE_LOKI-2484</a></td>
+<td align="left"><span>Setting data length to 0 in GapAdv_loadByHandle causes SW to enter hard fault</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11953">BLE_LOKI-2373</a></td>
+<td align="left"><span>[PADV][Configuration] CC2340 MAX periodic adv list size is hard coded and can't be configure by SYSconfig</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11954">BLE_LOKI-2358</a></td>
+<td align="left"><span>[Stability] cc2340r5 Basic MR printed peripheral initial RPA after bond and pair, instead of its Public Address</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11955">BLE_LOKI-2108</a></td>
+<td align="left"><span>[IOP] IOS device doesn't find peer running extended ADV with secondary PHY of 1M</span></td>
+</tr>
+<tr class="even">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11756">BLE_LOKI-1674</a></td>
 <td align="left"><span>Connection Monitor failed to start monitoring after about 6 hours</span></td>
 </tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11759">BLE_LOKI-1672</a></td>
-<td align="left"><span>Scanner may report incorrect Tx Power value for advertiser using advertising sets with different Tx Power values</span></td>
-</tr>
 <tr class="odd">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11763">BLE_LOKI-1661</a></td>
-<td align="left"><span>[Dual ADV] Peripheral fails to enable legacy adv set 2 after create connection to adv set 1 if they are using different address types.</span></td>
-</tr>
-<tr class="even">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11765">BLE_LOKI-1653</a></td>
-<td align="left"><span>[AE] In rare cases, when RPA refresh interval is low, a connection may fail to be established</span></td>
-</tr>
-<tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11757">BLE_LOKI-1649</a></td>
-<td align="left"><span>[Extender Advertisement] When using Coded PHY as secondary, only S=8 will be used regardless of configuration</span></td>
+<td align="left"><span>[SWAT][Dual ADV] Peripheral fails to enable legacy adv set 2 after create connection to adv set 1 if they are using different address types.</span></td>
 </tr>
 <tr class="even">
 <td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11758">BLE_LOKI-1630</a></td>
-<td align="left"><span>[SCAN_PARAM_FLT_DUP] Extender Advertisement Reports Are Not Filtered When SCAN_PARAM_FLT_DUP is Enabled</span></td>
+<td align="left"><span>[SCAN_PARAM_FLT_DUP] Extended Advertisement Reports Are Not Filtered When SCAN_PARAM_FLT_DUP is Enabled</span></td>
 </tr>
 <tr class="odd">
-<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11764">BLE_LOKI-1612</a></td>
-<td align="left"><span>[AE] [Initiator] Connection is established with wrong connection parameters when using different PHY's for Primary &amp; Secondary channels</span></td>
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-11607">BLE_LOKI-1245</a></td>
+<td align="left"><span>[Build][MAC OS] BLE5-Stack Projects using SysConfig 1.18.1 fail to build on MacOS Intel i5 models</span></td>
 </tr>
 </tbody>
 </table>
@@ -490,8 +449,27 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">None</td>
-<td align="left">None</td>
+<td align="center">LPRFDOCS-2025</td>
+<td align="left"><span>TIDRIVERS-6626 (DIO16/17 not configured with pull up/down out of reset which is not respected by syscfg, will be configured as no pull by syscfg)</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ti-zigbee-2">TI Zigbee</h3>
+<table>
+<thead>
+<tr class="header">
+<th align="center">ID</th>
+<th align="left">Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">TI_ZIGBEE-129</td>
+<td align="left"><span>Zigbee device may become unresponsive under heavy traffic load</span></td>
+</tr>
+<tr class="even">
+<td align="center">TI_ZIGBEE-89</td>
+<td align="left"><span>Failure to commission R23 ZED/ZR to Amazon Echo 4th Generation ZC</span></td>
 </tr>
 </tbody>
 </table>
@@ -520,8 +498,32 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">FREERTOS-8</td>
-<td align="left"><span>Tasks view in ROV for FreeRTOS does not show if a task is blocked on a semaphore or mutex</span></td>
+<td align="center">TIDRIVERS-6899</td>
+<td align="left"><span>AES drivers (all modes) for the CC27xx do not support non block-multiple input/output data size when using HSM</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6863</td>
+<td align="left"><span>JSON library unstable for gcc 12.3</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6794</td>
+<td align="left"><span>CC27xx Crypto drivers do not support non 32-bit aligned output buffer pointer address when using HSM</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6774</td>
+<td align="left"><span>CC27xx psa_verify_message and psa_verify_hash fail for BRP384 &amp; BRP512 curves </span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6729</td>
+<td align="left"><span>CC27xx AESCCM/AESGCM driver do not support segmented operations when using HSM</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-6550</td>
+<td align="left"><span>AES-CCM/GCM drivers do not support mac length of 0 for CC27xx devices using HSM</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-6394</td>
+<td align="left"><span>Matrix inverse sometimes sometimes fails on the VCE </span></td>
 </tr>
 </tbody>
 </table>

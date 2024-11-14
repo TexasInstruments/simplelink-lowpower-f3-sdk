@@ -373,7 +373,7 @@ function device2Family(device, mod)
         "CAN" :            "CC27XX",
         "CCFG" :           "CC27XX",
         "Power" :          "CC27XX",
-        "ECDH" :           "LPF3HSM",
+        "ECDH" :           "LPF3SW",
         "ECDSA" :          "LPF3HSM",
         "SHA2" :           "LPF3HSM",
         "RNG"  :           "LPF3HSM",

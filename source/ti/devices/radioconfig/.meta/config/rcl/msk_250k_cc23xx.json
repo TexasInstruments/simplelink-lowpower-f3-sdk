@@ -216,660 +216,432 @@
           "feature_filter": "common",
           "data": [
             {
-              "file": "./lrf_pbe_cfg_cc25x0_cc23xx.txt",
-              "name": "LRF_PBE_CFG_MSK",
-              "desc": "PBE config phy test configuration",
               "reg": {
-                "LRFDPBE.MDMCMDPAR0.val": {
-                  "value": "0x0037"
+                "LRFDPBE.MDMCMDPAR0.VAL": {
+                  "value": "55"
                 },
-                "LRFDPBE.MDMCMDPAR1.val": {
+                "LRFDPBE.MDMCMDPAR1.VAL": {
                   "value": "0"
                 },
-                "LRFDPBE.MDMCMDPAR2.val": {
-                  "value": "0xAAAA"
+                "LRFDPBE.MDMCMDPAR2.VAL": {
+                  "value": "43690"
                 },
-                "LRFDPBE.POLY0L.vallsb": {
-                  "value": "0x0000"
-                },
-                "LRFDPBE.POLY0H.valmsb": {
-                  "value": "0x0000"
-                },
-                "LRFDPBE.POLY1L.vallsb": {
-                  "value": "0x0000"
-                },
-                "LRFDPBE.POLY1H.valmsb": {
-                  "value": "0x8005"
-                },
-                "LRFDPBE.PHACFG.mode1": {
+                "LRFDPBE.POLY0L.VALLSB": {
                   "value": "0"
                 },
-                "LRFDPBE.PHACFG.mode0": {
+                "LRFDPBE.POLY0H.VALMSB": {
                   "value": "0"
                 },
-                "LRFDPBE.FCFG0.txacom": {
+                "LRFDPBE.POLY1L.VALLSB": {
+                  "value": "0"
+                },
+                "LRFDPBE.POLY1H.VALMSB": {
+                  "value": "32773"
+                },
+                "LRFDPBE.PHACFG.MODE1": {
+                  "value": "0"
+                },
+                "LRFDPBE.PHACFG.MODE0": {
+                  "value": "0"
+                },
+                "LRFDPBE.FCFG0.TXACOM": {
                   "value": "1"
                 },
-                "LRFDPBE.FCFG0.txadeal": {
+                "LRFDPBE.FCFG0.TXADEAL": {
                   "value": "0"
                 },
-                "LRFDPBE.FCFG0.rxacom": {
+                "LRFDPBE.FCFG0.RXACOM": {
                   "value": "0"
                 },
-                "LRFDPBE.FCFG0.rxadeal": {
+                "LRFDPBE.FCFG0.RXADEAL": {
                   "value": "1"
                 },
-                "LRFDPBE.FCFG1.txstrt": {
+                "LRFDPBE.FCFG1.TXSTRT": {
                   "value": "196"
                 },
-                "LRFDPBE.FCFG2.txsize": {
+                "LRFDPBE.FCFG2.TXSIZE": {
                   "value": "134"
                 },
-                "LRFDPBE.FCFG3.rxstrt": {
+                "LRFDPBE.FCFG3.RXSTRT": {
                   "value": "128"
                 },
-                "LRFDPBE.FCFG4.rxsize": {
+                "LRFDPBE.FCFG4.RXSIZE": {
                   "value": "67"
                 },
-                "LRFDPBE.FCFG5.dmareq": {
-                  "value": ""
-                },
-                "LRFDPBE.TXFWBTHRS.bytes": {
+                "LRFDPBE.TXFWBTHRS.BYTES": {
                   "value": "2"
                 },
-                "LRFDPBE.TXFRBTHRS.bytes": {
-                  "value": ""
-                },
-                "LRFDPBE.RXFWBTHRS.bytes": {
-                  "value": ""
-                },
-                "LRFDPBE.RXFRBTHRS.bytes": {
+                "LRFDPBE.RXFRBTHRS.BYTES": {
                   "value": "4"
                 },
-                "LRFDPBE.TIMCTL.src0": {
+                "LRFDPBE.TIMCTL.SRC0": {
                   "value": "1"
                 },
-                "LRFDPBE.TIMPRE.pre0": {
+                "LRFDPBE.TIMPRE.PRE0": {
                   "value": "11"
-                }
-              }
-            },
-            {
-              "file": "./lrf_pbe_cfg_cc25x0_ram_cc23xx.txt",
-              "name": "LRF_PBE_CFG_MSK_RAM",
-              "desc": "PBE ram register config for generic operation",
-              "reg": {
-                "PBE_GENERIC_RAM.RXTIMEOUT.val": {
-                  "value": ""
                 },
-                "PBE_GENERIC_RAM.RFINTERVAL.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.PRERXIFS.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.PRETXIFS.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.MAXLEN.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.PATTERN.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRCFG.addrpos": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRCFG.addrsz": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRCFG.addrtype": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add15sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add14sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add13sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add12sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add11sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add10sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add9sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add8sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add7sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add6sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add5sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add4sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add3sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add2sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add1sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADDRSW.add0sw": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD0.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD1.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD2.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD3.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD4.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD5.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD6.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD7.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD8.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD9.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD10.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD11.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD12.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD13.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.ADD15.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.PHY.rfesel": {
+                "PBE_GENERIC_RAM.PHY.RFESEL": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.PHY.mcesel": {
+                "PBE_GENERIC_RAM.PHY.MCESEL": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.SYNTHCALTIMEOUT.val": {
+                "PBE_GENERIC_RAM.SYNTHCALTIMEOUT.VAL": {
                   "value": "180"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.whiteorder": {
+                "PBE_GENERIC_RAM.PKTCFG.WHITEORDER": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.crcorder": {
+                "PBE_GENERIC_RAM.PKTCFG.CRCORDER": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.bitorder": {
+                "PBE_GENERIC_RAM.PKTCFG.BITORDER": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.hdrorder": {
+                "PBE_GENERIC_RAM.PKTCFG.HDRORDER": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.crcinchdr": {
+                "PBE_GENERIC_RAM.PKTCFG.CRCINCHDR": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.crcincsw": {
+                "PBE_GENERIC_RAM.PKTCFG.CRCINCSW": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.PKTCFG.numhdrbits": {
+                "PBE_GENERIC_RAM.PKTCFG.NUMHDRBITS": {
                   "value": "8"
                 },
-                "PBE_GENERIC_RAM.NUMCRCBITS.val": {
+                "PBE_GENERIC_RAM.NUMCRCBITS.VAL": {
                   "value": "16"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.appendtimestamp": {
+                "PBE_GENERIC_RAM.FIFOCFG.APPENDTIMESTAMP": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.appendrssi": {
+                "PBE_GENERIC_RAM.FIFOCFG.APPENDRSSI": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.appendfreqest": {
+                "PBE_GENERIC_RAM.FIFOCFG.APPENDFREQEST": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.appendlqi": {
+                "PBE_GENERIC_RAM.FIFOCFG.APPENDLQI": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.appendstatus": {
+                "PBE_GENERIC_RAM.FIFOCFG.APPENDSTATUS": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.appendcrc": {
+                "PBE_GENERIC_RAM.FIFOCFG.APPENDCRC": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.autoflushempty": {
+                "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHEMPTY": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.autoflushign": {
+                "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHIGN": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.autoflushcrc": {
+                "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHCRC": {
                   "value": "1"
                 },
-                "PBE_GENERIC_RAM.FIFOCFG.lenoptpad": {
+                "PBE_GENERIC_RAM.FIFOCFG.LENOPTPAD": {
                   "value": "3"
                 },
-                "PBE_GENERIC_RAM.EXTRABYTES.val": {
+                "PBE_GENERIC_RAM.EXTRABYTES.VAL": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.WHITEINIT.val": {
-                  "value": "0x00"
+                "PBE_GENERIC_RAM.WHITEINIT.VAL": {
+                  "value": "0"
                 },
-                "PBE_GENERIC_RAM.CRCINITL.vallsb": {
-                  "value": "0x0000"
+                "PBE_GENERIC_RAM.CRCINITL.VALLSB": {
+                  "value": "0"
                 },
-                "PBE_GENERIC_RAM.CRCINITH.valmsb": {
-                  "value": "0xFFFF"
+                "PBE_GENERIC_RAM.CRCINITH.VALMSB": {
+                  "value": "65535"
                 },
-                "PBE_GENERIC_RAM.LENCFG.numlenbits": {
+                "PBE_GENERIC_RAM.LENCFG.NUMLENBITS": {
                   "value": "8"
                 },
-                "PBE_GENERIC_RAM.LENCFG.lenpos": {
+                "PBE_GENERIC_RAM.LENCFG.LENPOS": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.LENOFFSET.val": {
+                "PBE_GENERIC_RAM.LENOFFSET.VAL": {
                   "value": "0"
                 },
-                "PBE_GENERIC_RAM.NRXNOK.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.NRXIGNORED.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.NRXEMPTY.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.NRXFIFOFULL.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.NRXOK.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.NTX.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.NRXTIMEOUT.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.LASTRSSI.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.LASTFREQOFF.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.LASTLQI.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.LASTTIMESTAMPL.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.LASTTIMESTAMPH.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.TMPBYTE2.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.TMPBYTE3.val": {
-                  "value": ""
-                },
-                "PBE_GENERIC_RAM.TMPBYTE4.val": {
-                  "value": ""
-                }
-              }
-            },
-            {
-              "file": "./lrf_mdm_cfg_msk_250kbps_cc23xx.txt",
-              "name": "LRF_MDM_CFG_MSK_250KBPS",
-              "desc": "Modem Config MSK 250kbps",
-              "reg": {
-                "LRFDMDM.ADCDIGCONF.qbranchen": {
+                "LRFDMDM.ADCDIGCONF.QBRANCHEN": {
                   "value": "1"
                 },
-                "LRFDMDM.ADCDIGCONF.ibranchen": {
+                "LRFDMDM.ADCDIGCONF.IBRANCHEN": {
                   "value": "1"
                 },
-                "LRFDMDM.MODSYMMAP0.sym0": {
-                  "value": "0x1"
+                "LRFDMDM.MODSYMMAP0.SYM0": {
+                  "value": "1"
                 },
-                "LRFDMDM.MODSYMMAP0.sym1": {
-                  "value": "0xF"
+                "LRFDMDM.MODSYMMAP0.SYM1": {
+                  "value": "15"
                 },
-                "LRFDMDM.MODSYMMAP0.sym2": {
-                  "value": ""
-                },
-                "LRFDMDM.MODSYMMAP0.sym3": {
-                  "value": ""
-                },
-                "LRFDMDM.MODSYMMAP1.sym4": {
-                  "value": ""
-                },
-                "LRFDMDM.MODSYMMAP1.sym5": {
-                  "value": ""
-                },
-                "LRFDMDM.MODSYMMAP1.sym6": {
-                  "value": ""
-                },
-                "LRFDMDM.MODSYMMAP1.sym7": {
-                  "value": ""
-                },
-                "LRFDMDM.BAUD.rateword": {
+                "LRFDMDM.BAUD.RATEWORD": {
                   "value": "5120"
                 },
-                "LRFDMDM.BAUDPRE.prescaler": {
+                "LRFDMDM.BAUDPRE.PRESCALER": {
                   "value": "15"
                 },
-                "LRFDMDM.BAUDPRE.alignvalue": {
+                "LRFDMDM.BAUDPRE.ALIGNVALUE": {
                   "value": "0"
                 },
-                "LRFDMDM.BAUDPRE.extrateword": {
+                "LRFDMDM.BAUDPRE.EXTRATEWORD": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMISC3.bde1numstages": {
+                "LRFDMDM.DEMMISC3.BDE1NUMSTAGES": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC3.bde1dvga": {
+                "LRFDMDM.DEMMISC3.BDE1DVGA": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC3.bde1filtmode": {
+                "LRFDMDM.DEMMISC3.BDE1FILTMODE": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC3.bde2decratio": {
+                "LRFDMDM.DEMMISC3.BDE2DECRATIO": {
                   "value": "8"
                 },
-                "LRFDMDM.DEMMISC3.bde2dvga": {
+                "LRFDMDM.DEMMISC3.BDE2DVGA": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMMISC1.chfibw": {
+                "LRFDMDM.DEMMISC1.CHFIBW": {
                   "value": "0"
                 },
-                "LRFDMDM.SPARE0.val": {
-                  "value": "0x0A18"
+                "LRFDMDM.SPARE0.VAL": {
+                  "value": "2584"
                 },
-                "LRFDMDM.SPARE1.val": {
-                  "value": "0x4000"
+                "LRFDMDM.SPARE1.VAL": {
+                  "value": "16384"
                 },
-                "LRFDMDM.SPARE2.val": {
+                "LRFDMDM.SPARE2.VAL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.finefoesel": {
+                "LRFDMDM.DEMFIFE0.FINEFOESEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.focffsel": {
+                "LRFDMDM.DEMFIFE0.FOCFFSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.acccntmode": {
+                "LRFDMDM.DEMFIFE0.ACCCNTMODE": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.accperiod": {
+                "LRFDMDM.DEMFIFE0.ACCPERIOD": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.accen": {
+                "LRFDMDM.DEMFIFE0.ACCEN": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.iiruseinitial": {
+                "LRFDMDM.DEMFIFE0.IIRUSEINITIAL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIFE0.iirgain": {
+                "LRFDMDM.DEMFIFE0.IIRGAIN": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMFIFE0.iiren": {
+                "LRFDMDM.DEMFIFE0.IIREN": {
                   "value": "1"
                 },
-                "LRFDMDM.MODMAIN.fecselect": {
+                "LRFDMDM.MODMAIN.FECSELECT": {
                   "value": "0"
                 },
-                "LRFDMDM.MODMAIN.modlevels": {
+                "LRFDMDM.MODMAIN.MODLEVELS": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMISC1.mge1srcsel": {
+                "LRFDMDM.DEMMISC1.MGE1SRCSEL": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMMISC1.cdccolrst": {
+                "LRFDMDM.DEMMISC1.CDCCOLRST": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMIQMC0.phasefactor": {
+                "LRFDMDM.DEMIQMC0.PHASEFACTOR": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMIQMC0.gainfactor": {
+                "LRFDMDM.DEMIQMC0.GAINFACTOR": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMISC3.lqiperiod": {
+                "LRFDMDM.DEMMISC3.LQIPERIOD": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC2.stimestonly": {
+                "LRFDMDM.DEMMISC2.STIMESTONLY": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMISC2.stimteaperiod": {
+                "LRFDMDM.DEMMISC2.STIMTEAPERIOD": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC2.stimteagain": {
+                "LRFDMDM.DEMMISC2.STIMTEAGAIN": {
                   "value": "7"
                 },
-                "LRFDMDM.DEMMISC2.pdiflinpreden": {
+                "LRFDMDM.DEMMISC2.PDIFLINPREDEN": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMISC2.pdifdespeck": {
+                "LRFDMDM.DEMMISC2.PDIFDESPECK": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC2.pdifiqconjen": {
+                "LRFDMDM.DEMMISC2.PDIFIQCONJEN": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC2.pdiflimitrange": {
+                "LRFDMDM.DEMMISC2.PDIFLIMITRANGE": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMMISC3.pdifdecim": {
+                "LRFDMDM.DEMMISC3.PDIFDECIM": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMISC2.mafcgain": {
+                "LRFDMDM.DEMMISC2.MAFCGAIN": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMDSBU.dsbuavglength": {
+                "LRFDMDM.DEMDSBU.DSBUAVGLENGTH": {
                   "value": "128"
                 },
-                "LRFDMDM.DEMDSBU.dsbudelay": {
+                "LRFDMDM.DEMDSBU.DSBUDELAY": {
                   "value": "146"
                 },
-                "LRFDMDM.DEMCODC0.estsel": {
+                "LRFDMDM.DEMCODC0.ESTSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMCODC0.compsel": {
+                "LRFDMDM.DEMCODC0.COMPSEL": {
                   "value": "3"
                 },
-                "LRFDMDM.DEMCODC0.iiruseinitial": {
+                "LRFDMDM.DEMCODC0.IIRUSEINITIAL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMCODC0.iirgain": {
+                "LRFDMDM.DEMCODC0.IIRGAIN": {
                   "value": "3"
                 },
-                "LRFDMDM.DEMCODC0.iiren": {
+                "LRFDMDM.DEMCODC0.IIREN": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMCODC0.accmode": {
+                "LRFDMDM.DEMCODC0.ACCMODE": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMCODC0.accperiod": {
+                "LRFDMDM.DEMCODC0.ACCPERIOD": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMCODC0.accen": {
+                "LRFDMDM.DEMCODC0.ACCEN": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIDC0.compsel": {
+                "LRFDMDM.DEMFIDC0.COMPSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIDC0.accperiod": {
+                "LRFDMDM.DEMFIDC0.ACCPERIOD": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIDC0.accmode": {
+                "LRFDMDM.DEMFIDC0.ACCMODE": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFIDC0.accen": {
+                "LRFDMDM.DEMFIDC0.ACCEN": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFEXB0.out2passthrough": {
+                "LRFDMDM.DEMFEXB0.OUT2PASSTHROUGH": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFEXB0.out2srcsel": {
+                "LRFDMDM.DEMFEXB0.OUT2SRCSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFEXB0.out1passthrough": {
+                "LRFDMDM.DEMFEXB0.OUT1PASSTHROUGH": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMFEXB0.out1srcsel": {
+                "LRFDMDM.DEMFEXB0.OUT1SRCSEL": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMFEXB0.b3srcsel": {
+                "LRFDMDM.DEMFEXB0.B3SRCSEL": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMFEXB0.b2srcsel": {
+                "LRFDMDM.DEMFEXB0.B2SRCSEL": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMFEXB0.b1srcsel": {
+                "LRFDMDM.DEMFEXB0.B1SRCSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMDSXB0.b2srcsel": {
+                "LRFDMDM.DEMDSXB0.B2SRCSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMDSXB0.b1srcsel": {
+                "LRFDMDM.DEMDSXB0.B1SRCSEL": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMDSXB0.outsrcsel1": {
+                "LRFDMDM.DEMDSXB0.OUTSRCSEL1": {
                   "value": "1"
                 },
-                "LRFDMDM.DEMDSXB0.outsrcsel2": {
+                "LRFDMDM.DEMDSXB0.OUTSRCSEL2": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMAFI0.c0c8": {
+                "LRFDMDM.DEMMAFI0.C0C8": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMMAFI0.c1c7": {
+                "LRFDMDM.DEMMAFI0.C1C7": {
                   "value": "4"
                 },
-                "LRFDMDM.DEMMAFI1.c2c6": {
+                "LRFDMDM.DEMMAFI1.C2C6": {
                   "value": "32"
                 },
-                "LRFDMDM.DEMMAFI1.c3c5": {
+                "LRFDMDM.DEMMAFI1.C3C5": {
                   "value": "124"
                 },
-                "LRFDMDM.DEMMAFI2.c4": {
+                "LRFDMDM.DEMMAFI2.C4": {
                   "value": "194"
                 },
-                "LRFDMDM.DEMC1BE0.maskb": {
+                "LRFDMDM.DEMC1BE0.MASKB": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMC1BE0.maska": {
+                "LRFDMDM.DEMC1BE0.MASKA": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMC1BE0.cascconf": {
+                "LRFDMDM.DEMC1BE0.CASCCONF": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMC1BE0.copyconf": {
+                "LRFDMDM.DEMC1BE0.COPYCONF": {
                   "value": "15"
                 },
-                "LRFDMDM.DEMC1BE1.thresholdb": {
+                "LRFDMDM.DEMC1BE1.THRESHOLDB": {
                   "value": "44"
                 },
-                "LRFDMDM.DEMC1BE1.thresholda": {
+                "LRFDMDM.DEMC1BE1.THRESHOLDA": {
                   "value": "44"
                 },
-                "LRFDMDM.DEMC1BE2.peakconf": {
+                "LRFDMDM.DEMC1BE2.PEAKCONF": {
                   "value": "2"
                 },
-                "LRFDMDM.DEMC1BE2.thresholdc": {
+                "LRFDMDM.DEMC1BE2.THRESHOLDC": {
                   "value": "127"
                 },
-                "LRFDMDM.DEMSWQU0.automafc": {
+                "LRFDMDM.DEMSWQU0.AUTOMAFC": {
                   "value": "0"
                 },
-                "LRFDMDM.DEMSWQU0.reflen": {
+                "LRFDMDM.DEMSWQU0.REFLEN": {
                   "value": "31"
                 },
-                "LRFDMDM.VITBRMETRIC10.met0": {
-                  "value": ""
+                "LRFDMDM.VITBRMETRIC54.MET5": {
+                  "value": "6"
                 },
-                "LRFDMDM.VITBRMETRIC10.met1": {
-                  "value": ""
+                "LRFDMDM.VITBRMETRIC54.MET4": {
+                  "value": "48"
                 },
-                "LRFDMDM.VITBRMETRIC32.met2": {
-                  "value": ""
+                "LRFDMDM.VITBRMETRIC76.MET7": {
+                  "value": "6"
                 },
-                "LRFDMDM.VITBRMETRIC32.met3": {
-                  "value": ""
+                "LRFDMDM.VITBRMETRIC76.MET6": {
+                  "value": "112"
                 },
-                "LRFDMDM.VITBRMETRIC54.met5": {
-                  "value": "0x06"
-                },
-                "LRFDMDM.VITBRMETRIC54.met4": {
-                  "value": "0x30"
-                },
-                "LRFDMDM.VITBRMETRIC76.met7": {
-                  "value": "0x06"
-                },
-                "LRFDMDM.VITBRMETRIC76.met6": {
-                  "value": "0x70"
-                }
-              }
-            },
-            {
-              "file": "./lrf_rfe_cfg_msk_250kbps_cc23xx.txt",
-              "name": "LRF_RFE_CFG_MSK_250kbps",
-              "desc": "RFE config for MSK 250kbps",
-              "reg": {
-                "LRFDRFE.RSSIOFFSET.val": {
+                "LRFDRFE.RSSIOFFSET.VAL": {
                   "value": "0"
                 },
-                "LRFDRFE.MAGNCTL1.permode": {
+                "LRFDRFE.MAGNCTL1.PERMODE": {
                   "value": "1"
                 },
-                "LRFDRFE.MAGNCTL1.scl": {
+                "LRFDRFE.MAGNCTL1.SCL": {
                   "value": "3"
                 },
-                "LRFDRFE.MAGNCTL1.per": {
+                "LRFDRFE.MAGNCTL1.PER": {
                   "value": "7"
                 },
-                "LRFDRFE.SPARE0.val": {
-                  "value": "0x34F2"
+                "LRFDRFE.SPARE0.VAL": {
+                  "value": "13554"
                 },
-                "LRFDRFE.SPARE2.val": {
-                  "value": "0x3F13"
+                "LRFDRFE.SPARE2.VAL": {
+                  "value": "16147"
                 },
-                "LRFDRFE.SPARE3.val": {
-                  "value": "0x0AB0"
+                "LRFDRFE.SPARE3.VAL": {
+                  "value": "2736"
                 },
-                "LRFDRFE.SPARE4.val": {
-                  "value": "0x0000"
+                "LRFDRFE.SPARE4.VAL": {
+                  "value": "0"
                 },
                 "LRFDRFE.MOD0.SCHEME": {
                   "value": "3"
@@ -877,777 +649,278 @@
                 "LRFDRFE.MOD0.SYMSHP": {
                   "value": "2"
                 },
-                "LRFDRFE.MOD0.SHPGAIN": {
-                  "value": ""
-                },
-                "LRFDRFE.MOD0.INTPFACT": {
-                  "value": ""
-                },
                 "LRFDRFE.DTX0.SHP0": {
-                  "value": "0x9A"
+                  "value": "154"
                 },
                 "LRFDRFE.DTX0.SHP1": {
-                  "value": "0xB1"
+                  "value": "177"
                 },
                 "LRFDRFE.DTX1.SHP2": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX1.SHP3": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX2.SHP4": {
-                  "value": "0x99"
+                  "value": "153"
                 },
                 "LRFDRFE.DTX2.SHP5": {
-                  "value": "0x31"
+                  "value": "49"
                 },
                 "LRFDRFE.DTX3.SHP6": {
-                  "value": "0x01"
+                  "value": "1"
                 },
                 "LRFDRFE.DTX3.SHP7": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX4.SHP8": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX4.SHP9": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX5.SHP10": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX5.SHP11": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX6.SHP12": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX6.SHP13": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX7.SHP14": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX7.SHP15": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX8.SHP16": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX8.SHP17": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX9.SHP18": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX9.SHP19": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX10.SHP20": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX10.SHP21": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX11.SHP22": {
-                  "value": "0x00"
+                  "value": "0"
                 },
                 "LRFDRFE.DTX11.SHP23": {
-                  "value": "0x00"
-                }
-              }
-            },
-            {
-              "file": "./lrf_rfe_cfg_msk_250kbps_ram_cc23xx.txt",
-              "name": "LRF_RFE_CFG_MSK_250kbps_RAM",
-              "desc": "RFE ram register config MSK 250kbps",
-              "reg": {
-                "RFE_COMMON_RAM.PHYRSSIOFFSET.val": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.PHYRSSIOFFSET.VAL": {
                   "value": "87"
                 },
-                "RFE_COMMON_RAM.SPARE1SHADOW.val": {
-                  "value": "0x002E"
+                "RFE_COMMON_RAM.SPARE1SHADOW.VAL": {
+                  "value": "46"
                 },
-                "RFE_COMMON_RAM.AGCINFO.mode": {
-                  "value": "1"
-                }
-              }
-            },
-            {
-              "file": "./lrf_rfe_cfg_fe_common_cc23xx.txt",
-              "name": "LRF_RFE_CFG_FE_COMMON",
-              "desc": "Common frontend settings",
-              "reg": {
-                "LRFDRFE.LNA.trim": {
-                  "value": "0"
-                },
-                "LRFDRFE.LNA.ib": {
+                "RFE_COMMON_RAM.AGCINFO.MODE": {
                   "value": "1"
                 },
-                "LRFDRFE.LNA.bias": {
+                "LRFDRFE.LNA.TRIM": {
+                  "value": "0"
+                },
+                "LRFDRFE.LNA.IB": {
                   "value": "1"
                 },
-                "LRFDRFE.LNA.en": {
-                  "value": ""
+                "LRFDRFE.LNA.BIAS": {
+                  "value": "1"
                 },
-                "LRFDRFE.IFAMPRFLDO.trim": {
+                "LRFDRFE.IFAMPRFLDO.TRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.IFAMPRFLDO.en": {
-                  "value": ""
-                },
-                "LRFDRFE.IFAMPRFLDO.aafcap": {
+                "LRFDRFE.IFAMPRFLDO.AAFCAP": {
                   "value": "0"
                 },
-                "LRFDRFE.IFAMPRFLDO.ifampib": {
+                "LRFDRFE.IFAMPRFLDO.IFAMPIB": {
                   "value": "3"
                 },
-                "LRFDRFE.IFAMPRFLDO.ifamp": {
-                  "value": ""
-                },
-                "LRFDRFE.PA0.gain": {
-                  "value": ""
-                },
-                "LRFDRFE.PA0.ib": {
-                  "value": ""
-                },
-                "LRFDRFE.PA0.trim": {
+                "LRFDRFE.PA0.TRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.PA0.mode": {
-                  "value": ""
-                },
-                "LRFDRFE.PA1.ramp": {
-                  "value": ""
-                },
-                "LRFDRFE.PA1.en": {
-                  "value": ""
-                },
-                "LRFDRFE.PA1.spare": {
-                  "value": ""
-                },
-                "LRFDRFE.PA1.ldoitst": {
-                  "value": ""
-                },
-                "LRFDRFE.PA1.ldoatst": {
-                  "value": ""
-                },
-                "LRFDRFE.PA1.rc": {
-                  "value": ""
-                },
-                "LRFDRFE.ULNA.spare": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC0.extclk": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC0.dithertrim": {
+                "LRFDRFE.IFADC0.DITHERTRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADC0.ditheren": {
+                "LRFDRFE.IFADC0.DITHEREN": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADC0.adcien": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC0.adcqen": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC0.int2adj": {
+                "LRFDRFE.IFADC0.INT2ADJ": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADC0.aafcap": {
+                "LRFDRFE.IFADC0.AAFCAP": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADC0.reserved": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.nrz": {
+                "LRFDRFE.IFADC1.NRZ": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADC1.trim": {
+                "LRFDRFE.IFADC1.TRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADC1.reserved8": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.invclkout": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.lpftstmode": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.adclfsrout": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.adcdigclk": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.clkgen": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADC1.rstn": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCLF.ff3": {
+                "LRFDRFE.IFADCLF.FF3": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCLF.ff2": {
+                "LRFDRFE.IFADCLF.FF2": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCLF.ff1": {
+                "LRFDRFE.IFADCLF.FF1": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCLF.int3": {
+                "LRFDRFE.IFADCLF.INT3": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCQUANT.clkdlytrim": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCQUANT.dbgcalvalin": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCQUANT.dbgcalleg": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCQUANT.dbgcalmq": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCQUANT.dbgcalmi": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCQUANT.autocal": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCQUANT.quantthr": {
+                "LRFDRFE.IFADCQUANT.QUANTTHR": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCALDO.reserved": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.trimout": {
+                "LRFDRFE.IFADCALDO.TRIMOUT": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCALDO.dummy": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.atesterramp": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.atstldofb": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.atestout": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.itest": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.bypass": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.clamp": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCALDO.ctl": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.reserved": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.trimout": {
+                "LRFDRFE.IFADCDLDO.TRIMOUT": {
                   "value": "0"
                 },
-                "LRFDRFE.IFADCDLDO.dummy": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.atesterramp": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.atstbgp": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.atestout": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.itest": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.bypass": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.clamp": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCDLDO.ctl": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCTST.extcurr": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCTST.qcaldbiq": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCTST.qcaldbc": {
-                  "value": ""
-                },
-                "LRFDRFE.IFADCTST.sel": {
-                  "value": ""
-                },
-                "LRFDRFE.ATSTREFH.bias": {
+                "LRFDRFE.ATSTREFH.BIAS": {
                   "value": "1"
                 },
-                "LRFDRFE.ATSTREFH.ireftrim": {
-                  "value": "0"
-                }
-              }
-            },
-            {
-              "file": "./lrf_rfe_cfg_synth_common_cc23xx.txt",
-              "name": "LRF_RFE_CFG_SYNTH_COMMON",
-              "desc": "Common synth setting",
-              "reg": {
-                "LRFDRFE.DCO.mtdcspare": {
-                  "value": ""
-                },
-                "LRFDRFE.DCO.spare7": {
-                  "value": ""
-                },
-                "LRFDRFE.DCO.tailrestrim": {
+                "LRFDRFE.ATSTREFH.IREFTRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.DCO.rtrimcap": {
-                  "value": ""
-                },
-                "LRFDRFE.DCO.cnrcap": {
-                  "value": ""
-                },
-                "LRFDRFE.DCO.crscapcm": {
+                "LRFDRFE.DCO.TAILRESTRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.DIV.nmireftrim": {
+                "LRFDRFE.DCO.CRSCAPCM": {
                   "value": "0"
                 },
-                "LRFDRFE.DIV.pmireftrim": {
+                "LRFDRFE.DIV.PDET": {
                   "value": "0"
                 },
-                "LRFDRFE.DIV.txbboost": {
-                  "value": ""
+                "LRFDRFE.DIV.NMIREFTRIM": {
+                  "value": "0"
                 },
-                "LRFDRFE.DIV.s1gfrc": {
-                  "value": ""
+                "LRFDRFE.DIV.PMIREFTRIM": {
+                  "value": "0"
                 },
-                "LRFDRFE.DIV.bufgain": {
-                  "value": ""
+                "LRFDRFE.DIV.TXBBOOST": {
+                  "value": "0"
                 },
-                "LRFDRFE.DIV.bias": {
-                  "value": ""
+                "LRFDRFE.DIV.S1GFRC": {
+                  "value": "0"
                 },
-                "LRFDRFE.DIV.out": {
+                "LRFDRFE.DIV.BUFGAIN": {
+                  "value": "0"
+                },
+                "LRFDRFE.DIV.BIAS": {
+                  "value": "0"
+                },
+                "LRFDRFE.DIV.OUT": {
                   "value": "1"
                 },
-                "LRFDRFE.DIV.ratio": {
+                "LRFDRFE.DIV.RATIO": {
                   "value": "0"
                 },
-                "LRFDRFE.DIVLDO.spare15": {
-                  "value": ""
-                },
-                "LRFDRFE.DIVLDO.vouttrim": {
+                "LRFDRFE.DIVLDO.SPARE15": {
                   "value": "0"
                 },
-                "LRFDRFE.DIVLDO.itst": {
-                  "value": ""
-                },
-                "LRFDRFE.DIVLDO.tmux": {
-                  "value": ""
-                },
-                "LRFDRFE.DIVLDO.spare3": {
-                  "value": ""
-                },
-                "LRFDRFE.DIVLDO.mode": {
-                  "value": ""
-                },
-                "LRFDRFE.DIVLDO.bypass": {
-                  "value": ""
-                },
-                "LRFDRFE.DIVLDO.ctl": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.itestctl": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.vouttrim": {
+                "LRFDRFE.DIVLDO.VOUTTRIM": {
                   "value": "0"
                 },
-                "LRFDRFE.TDCLDO.itestbufctl": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.tmux": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.pdsel": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.mode": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.bypass": {
-                  "value": ""
-                },
-                "LRFDRFE.TDCLDO.ctl": {
-                  "value": ""
-                },
-                "LRFDRFE.DCOLDO0.firsttrim": {
+                "LRFDRFE.DIVLDO.ITST": {
                   "value": "0"
                 },
-                "LRFDRFE.DCOLDO0.secondtrim": {
+                "LRFDRFE.DIVLDO.TMUX": {
                   "value": "0"
                 },
-                "LRFDRFE.DCOLDO0.pdn": {
-                  "value": ""
-                },
-                "LRFDRFE.DCOLDO0.itst": {
-                  "value": ""
-                },
-                "LRFDRFE.DCOLDO0.bypfirst": {
-                  "value": ""
-                },
-                "LRFDRFE.DCOLDO0.bypboth": {
-                  "value": ""
-                },
-                "LRFDRFE.DCOLDO0.ctl": {
-                  "value": ""
-                },
-                "LRFDRFE.DCOLDO1.refsrc": {
+                "LRFDRFE.DIVLDO.SPARE3": {
                   "value": "0"
                 },
-                "LRFDRFE.DCOLDO1.divatst": {
+                "LRFDRFE.DIVLDO.MODE": {
                   "value": "0"
                 },
-                "LRFDRFE.DCOLDO1.atst": {
-                  "value": ""
-                },
-                "LRFDRFE.PRE1.iirbw": {
-                  "value": ""
-                },
-                "LRFDRFE.PRE1.iirord": {
-                  "value": ""
-                },
-                "LRFDRFE.PRE1.iirdiv": {
-                  "value": ""
-                },
-                "LRFDRFE.PRE1.calhsddc": {
-                  "value": ""
-                },
-                "LRFDRFE.PRE1.hsddc": {
+                "LRFDRFE.DIVLDO.BYPASS": {
                   "value": "0"
                 },
-                "LRFDRFE.PRE2.midcaldivlsb": {
+                "LRFDRFE.DIVLDO.CTL": {
                   "value": "0"
                 },
-                "LRFDRFE.PRE2.crscaldiv": {
+                "LRFDRFE.TDCLDO.VOUTTRIM": {
+                  "value": "0"
+                },
+                "LRFDRFE.DCOLDO0.FIRSTTRIM": {
+                  "value": "0"
+                },
+                "LRFDRFE.DCOLDO0.SECONDTRIM": {
+                  "value": "0"
+                },
+                "LRFDRFE.DCOLDO1.REFSRC": {
+                  "value": "0"
+                },
+                "LRFDRFE.DCOLDO1.DIVATST": {
+                  "value": "0"
+                },
+                "LRFDRFE.PRE1.HSDDC": {
+                  "value": "0"
+                },
+                "LRFDRFE.PRE2.MIDCALDIVLSB": {
+                  "value": "0"
+                },
+                "LRFDRFE.PRE2.CRSCALDIV": {
                   "value": "24"
                 },
-                "LRFDRFE.PRE2.fsmdiv": {
+                "LRFDRFE.PRE2.FSMDIV": {
                   "value": "5"
                 },
-                "LRFDRFE.PRE3.finecaldiv": {
+                "LRFDRFE.PRE3.FINECALDIV": {
                   "value": "48"
                 },
-                "LRFDRFE.PRE3.midcaldivmsb": {
+                "LRFDRFE.PRE3.MIDCALDIVMSB": {
                   "value": "3"
                 },
-                "LRFDRFE.CAL0.tdcavg": {
+                "LRFDRFE.CAL0.TDCAVG": {
                   "value": "2"
                 },
-                "LRFDRFE.CAL0.tdc_spare": {
-                  "value": ""
-                },
-                "LRFDRFE.CAL2.ktdcinv": {
-                  "value": ""
-                },
-                "LRFDRFE.CAL3.dtxgain": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC0.phcpt": {
+                "LRFDRFE.MISC0.PHCPT": {
                   "value": "0"
                 },
-                "LRFDRFE.MISC0.tdccalcorr": {
+                "LRFDRFE.MISC0.TDCCALCORR": {
                   "value": "1"
                 },
-                "LRFDRFE.MISC0.tdcmsbcorr": {
+                "LRFDRFE.MISC0.TDCMSBCORR": {
                   "value": "1"
                 },
-                "LRFDRFE.MISC0.sdmdem": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC0.dlysdm": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC0.dlyphvalid": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC0.dlycancrs": {
+                "LRFDRFE.MISC0.DLYCANCRS": {
                   "value": "2"
                 },
-                "LRFDRFE.MISC0.dlycanfine": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC0.dlyadd": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.fcdemclk": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.fcdemupd": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.tdcinl": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.tdcinlctl": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.phinit": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.sdmoovrctl": {
-                  "value": ""
-                },
-                "LRFDRFE.MISC1.sdmoovr": {
-                  "value": ""
-                },
-                "LRFDRFE.LF0.kiprec": {
-                  "value": ""
-                },
-                "LRFDRFE.LF0.ki": {
-                  "value": ""
-                },
-                "LRFDRFE.LF1.kp": {
-                  "value": ""
-                },
-                "LRFDRFE.PHEDISC.cnt": {
+                "LRFDRFE.PHEDISC.CNT": {
                   "value": "3"
                 },
-                "LRFDRFE.PHEDISC.thr": {
+                "LRFDRFE.PHEDISC.THR": {
                   "value": "7"
                 },
-                "LRFDRFE.PHINIT.off": {
-                  "value": ""
-                },
-                "LRFDRFE.PLLMON0.phelolcnt": {
+                "LRFDRFE.PLLMON0.PHELOLCNT": {
                   "value": "3"
                 },
-                "LRFDRFE.PLLMON0.phelolthr": {
+                "LRFDRFE.PLLMON0.PHELOLTHR": {
                   "value": "31"
                 },
-                "LRFDRFE.PLLMON0.fcthr": {
+                "LRFDRFE.PLLMON0.FCTHR": {
                   "value": "127"
                 },
-                "LRFDRFE.PLLMON1.phelockcnt": {
+                "LRFDRFE.PLLMON1.PHELOCKCNT": {
                   "value": "4"
                 },
-                "LRFDRFE.PLLMON1.phelockthr": {
+                "LRFDRFE.PLLMON1.PHELOCKTHR": {
                   "value": "127"
-                },
-                "LRFDRFE.PRE0.PLLDIV0": {
-                  "value": "6"
-                },
-                "LRFDRFE.PRE0.PLLDIV1": {
-                  "value": "7"
-                },
-                "LRFDRFE.CAL1.FCTOP": {
-                  "value": "127"
-                },
-                "LRFDRFE.CAL1.FCBOT": {
-                  "value": "0"
-                },
-                "LRFDRFE.CAL0.FCSTART": {
-                  "value": "64"
-                }
-              }
-            },
-            {
-              "file": "./lrf_rfe_cfg_synth_common_ram_cc23xx.txt",
-              "name": "LRF_RFE_CFG_SYNTH_COMMON_RAM",
-              "desc": "Common synth setting",
-              "reg": {
-                "RFE_COMMON_RAM.CHRGSETTLE.VAL": {
-                  "value": "0x02E"
-                },
-                "RFE_COMMON_RAM.DCOSETTLE.VAL": {
-                  "value": "0x005"
-                },
-                "RFE_COMMON_RAM.DIVF.BIAS": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVF.BUFGAIN": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVF.NMIREFTRIM": {
-                  "value": "4"
-                },
-                "RFE_COMMON_RAM.DIVF.OUT": {
-                  "value": "1"
-                },
-                "RFE_COMMON_RAM.DIVF.PDET": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVF.PMIREFTRIM": {
-                  "value": "4"
-                },
-                "RFE_COMMON_RAM.DIVF.RATIO": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVF.S1GFRC": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVF.TXBOOST": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVI.BIAS": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVI.BUFGAIN": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVI.NMIREFTRIM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVI.OUT": {
-                  "value": "1"
-                },
-                "RFE_COMMON_RAM.DIVI.PDET": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVI.PMIREFTRIM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVI.RATIO": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVI.S1GFRC": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVI.TXBOOST": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOF.BYPASS": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOF.CTL": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVLDOF.ITEST": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOF.ITST": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOF.MODE": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOF.TMUX": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOF.VOUTTRIM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVLDOI.BYPASS": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOI.CTL": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVLDOI.ITEST": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOI.ITST": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOI.MODE": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOI.TMUX": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.DIVLDOI.VOUTTRIM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.DIVLDOIOFF.VAL": {
-                  "value": "20"
-                },
-                "RFE_COMMON_RAM.IFAMPRFLDODEFAULT.TRIM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.IFAMPRFLDOTX.TRIM": {
-                  "value": "0x7F"
-                },
-                "RFE_COMMON_RAM.IKT.VAL": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.K1LSB.VAL": {
-                  "value": "0x569b"
-                },
-                "RFE_COMMON_RAM.K1MSB.VAL": {
-                  "value": "0x010a"
-                },
-                "RFE_COMMON_RAM.K2AL.HPM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.K2AL.VAL": {
-                  "value": "0x0034"
-                },
-                "RFE_COMMON_RAM.K2BL.HPM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.K2BL.VAL": {
-                  "value": "0x012d"
-                },
-                "RFE_COMMON_RAM.K3AL.VAL": {
-                  "value": "0x07ab"
-                },
-                "RFE_COMMON_RAM.K3BL.VAL": {
-                  "value": "0x132c"
-                },
-                "RFE_COMMON_RAM.K5.VAL": {
-                  "value": "0x916f"
-                },
-                "RFE_COMMON_RAM.LDOSETTLE.VAL": {
-                  "value": "0x047"
-                },
-                "RFE_COMMON_RAM.RTRIMMIN.VAL": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.RTRIMOFF.VAL": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.RXIF.FOFF": {
-                  "value": ""
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.CHRGFILT": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.FCDEM": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.IIR": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.PHEDISC": {
-                  "value": "1"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.REFDTHR": {
-                  "value": "1"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.RTRIMTST": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.TXWAITMOD": {
-                  "value": "0"
-                },
-                "RFE_COMMON_RAM.SYNTHCTL.VREFBP": {
-                  "value": "0"
                 },
                 "RFE_COMMON_RAM.TDCCAL0.STOP": {
                   "value": "3"
@@ -1658,11 +931,194 @@
                 "RFE_COMMON_RAM.TDCCAL2.AVG": {
                   "value": "16"
                 },
+                "RFE_COMMON_RAM.DIVI.NMIREFTRIM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.PMIREFTRIM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.BIAS": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.BUFGAIN": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.OUT": {
+                  "value": "1"
+                },
+                "RFE_COMMON_RAM.DIVI.PDET": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.RATIO": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.S1GFRC": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVI.TXBOOST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVF.NMIREFTRIM": {
+                  "value": "4"
+                },
+                "RFE_COMMON_RAM.DIVF.PMIREFTRIM": {
+                  "value": "4"
+                },
+                "RFE_COMMON_RAM.DIVF.BIAS": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVF.BUFGAIN": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVF.OUT": {
+                  "value": "1"
+                },
+                "RFE_COMMON_RAM.DIVF.PDET": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVF.RATIO": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVF.S1GFRC": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVF.TXBOOST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.BYPASS": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.CTL": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.ITEST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.MODE": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.ITST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.TMUX": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOI.VOUTTRIM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.BYPASS": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.CTL": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.ITEST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.MODE": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.ITST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.TMUX": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOF.VOUTTRIM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.DIVLDOIOFF.VAL": {
+                  "value": "20"
+                },
+                "RFE_COMMON_RAM.LDOSETTLE.VAL": {
+                  "value": "71"
+                },
+                "RFE_COMMON_RAM.CHRGSETTLE.VAL": {
+                  "value": "46"
+                },
+                "RFE_COMMON_RAM.DCOSETTLE.VAL": {
+                  "value": "5"
+                },
+                "RFE_COMMON_RAM.IFAMPRFLDODEFAULT.TRIM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.IFAMPRFLDOTX.TRIM": {
+                  "value": "127"
+                },
+                "RFE_COMMON_RAM.RTRIMMIN.VAL": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.RTRIMOFF.VAL": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.CHRGFILT": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.VREFBP": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.TXWAITMOD": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.PHEDISC": {
+                  "value": "1"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.RTRIMTST": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.IIR": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.REFDTHR": {
+                  "value": "1"
+                },
+                "RFE_COMMON_RAM.SYNTHCTL.FCDEM": {
+                  "value": "0"
+                },
                 "RFE_COMMON_RAM.TDCPLL.STOP": {
                   "value": "4"
                 },
-                "RFE_COMMON_RAM.TXIF.FOFF": {
-                  "value": ""
+                "LRFDRFE.CAL1.FCTOP": {
+                  "value": "127"
+                },
+                "LRFDRFE.CAL0.FCSTART": {
+                  "value": "64"
+                },
+                "LRFDRFE.CAL1.FCBOT": {
+                  "value": "0"
+                },
+                "LRFDRFE.PRE0.PLLDIV0": {
+                  "value": "6"
+                },
+                "LRFDRFE.PRE0.PLLDIV1": {
+                  "value": "7"
+                },
+                "RFE_COMMON_RAM.K1MSB.VAL": {
+                  "value": "266"
+                },
+                "RFE_COMMON_RAM.K1LSB.VAL": {
+                  "value": "22171"
+                },
+                "RFE_COMMON_RAM.K2BL.VAL": {
+                  "value": "301"
+                },
+                "RFE_COMMON_RAM.K2BL.HPM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.K2AL.VAL": {
+                  "value": "52"
+                },
+                "RFE_COMMON_RAM.K2AL.HPM": {
+                  "value": "0"
+                },
+                "RFE_COMMON_RAM.K3BL.VAL": {
+                  "value": "4908"
+                },
+                "RFE_COMMON_RAM.K3AL.VAL": {
+                  "value": "1963"
+                },
+                "RFE_COMMON_RAM.K5.VAL": {
+                  "value": "37231"
                 }
               }
             }

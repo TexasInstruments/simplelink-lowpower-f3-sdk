@@ -104,13 +104,34 @@ typedef struct
     InvokeFromBLEAppUtilContext_t   callback;
     // The data that will be passed as an input to the callback
     char                            *data;
-}BLEAppUtil_CallbackToInvoke_t;
+} BLEAppUtil_CallbackToInvoke_t;
 
 typedef struct
 {
     uint8_t event;                // event type
     void    *pData;               // pointer to message
 } BLEAppUtil_appEvt_t;
+
+// Used to pass the event from a "BLE App Util" event and it's handler
+typedef struct
+{
+    uint32_t                        event;          // the BLE App Util event
+    BLEAppUtil_eventHandlerType_e   handlerType;    // the event handler type
+} BLEAppUtil_eventAndHandlerType_t;
+
+// The stack msg format passed to the BLE App Util event queue
+typedef struct
+{
+    BLEAppUtil_msgHdr_t               *pMessage;            // the stack event MSG
+    BLEAppUtil_eventAndHandlerType_t   eventAndHandlerType; // the BLE App Util event + handler type
+} BLEAppUtil_stackMsgData_t;
+
+// The connection events notifications
+typedef struct
+{
+    uint32_t event;
+    Gap_ConnEventRpt_t *connEventReport;
+} BLEAppUtil_connEventNoti_t;
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -132,24 +153,16 @@ extern BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
  */
 
 /*********************************************************************
- * Process stack events - divided by layers
+ * Process stack events
  */
-void BLEAppUtil_processGAPEvents(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processGATTEvents(BLEAppUtil_msgHdr_t *pMsg);
-void BLEAppUtil_processHCIGAPEvents(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processHCIDataEvents(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processHCISMPEvents(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processHCISMPMetaEvents(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processL2CAPDataMsg(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processL2CAPSignalEvents(bleStack_msgHdt_t *pMsg);
-void BLEAppUtil_processHCICTRLToHostEvents(bleStack_msgHdt_t *pMsg);
+void BLEAppUtil_processStackEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventAndHandlerType_t bleAppUtilEventAndHandle);
 
 /*********************************************************************
  * Process stack callbacks
  */
 void BLEAppUtil_processPasscodeMsg(bleStack_msgHdt_t *pMsgData);
 void BLEAppUtil_processPairStateMsg(bleStack_msgHdt_t *pMsgData);
-void BLEAppUtil_processConnEventMsg(BLEAppUtil_msgHdr_t *pMsg);
+void BLEAppUtil_processConnEventMsg(BLEAppUtil_connEventNoti_t *pMsg);
 void BLEAppUtil_processScanEventMsg(bleStack_msgHdt_t *pMsg);
 void BLEAppUtil_processAdvEventMsg(bleStack_msgHdt_t *pMsg);
 
@@ -178,6 +191,38 @@ status_t BLEAppUtil_enqueueMsg(uint8_t event, void *pData);
  */
 void BLEAppUtil_callEventHandler(uint32_t event, BLEAppUtil_msgHdr_t *pMsg,
                                  BLEAppUtil_eventHandlerType_e type);
+uint8_t BLEAppUtil_isEventEnabled(BLEAppUtil_eventHandlerType_e eventHandlerType,
+                                  uint32_t event);
+BLEAppUtil_EventHandlersList_t *BLEAppUtil_getEventHandler(BLEAppUtil_EventHandlersList_t *handler,
+                                                           BLEAppUtil_eventHandlerType_e eventHandlerType);
+
+/*********************************************************************
+ * Convert and validate received events before enqueue
+ */
+uint8_t BLEAppUtil_convertGAPEvents(bleStack_msgHdt_t *pMsg,
+                                    BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertGATTEvents(BLEAppUtil_msgHdr_t *pMsg,
+                                     BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertHCIGAPEvents(bleStack_msgHdt_t *pMsg,
+                                       BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertHCIDataEvents(bleStack_msgHdt_t *pMsg,
+                                        BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertHCISMPEvents(bleStack_msgHdt_t *pMsg,
+                                       BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertHCISMPMetaEvents(bleStack_msgHdt_t *pMsg,
+                                           BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertL2CAPDataMsg(bleStack_msgHdt_t *pMsg,
+                                       BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertL2CAPSignalEvents(bleStack_msgHdt_t *pMsg,
+                                            BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_convertHCICTRLToHostEvents(bleStack_msgHdt_t *pMsg,
+                                              BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_isConnEventRequired(Gap_ConnEventRpt_t *pMsg,
+                                       uint32_t *event);
+uint8_t BLEAppUtil_isStackEventRequired(BLEAppUtil_msgHdr_t *pMsg,
+                                        BLEAppUtil_eventAndHandlerType_t *bleAppUtilEventAndHandle);
+uint8_t BLEAppUtil_isPairStateEventRequired(uint8_t event,
+                                            uint32_t *bleAppUtilEvent);
 
 /*********************************************************************
 *********************************************************************/

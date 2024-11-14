@@ -98,7 +98,7 @@ static GLS_cb_t *gls_profileCBs = NULL;
  */
 
 // GLS Service declaration
-static CONST gattAttrType_t gls_service = { ATT_BT_UUID_SIZE, gls_serv_UUID };
+static const gattAttrType_t gls_service = { ATT_BT_UUID_SIZE, gls_serv_UUID };
 
 // GLS Measurement
 static uint8 gls_meas_props = GATT_PROP_NOTIFY;    // Characteristic properties
@@ -184,7 +184,7 @@ static bStatus_t GLS_initCCC( void );
  * made within these functions.
  *
  */
-CONST gattServiceCBs_t gls_servCB =
+const gattServiceCBs_t gls_servCB =
 {
   GLS_readAttrCB,   // Read callback function pointer
   GLS_writeAttrCB,  // Write callback function pointer

@@ -81,7 +81,6 @@ BLEAppUtil_PeriCentParams_t *BLEAppUtilLocal_PeriCentParams = NULL;
 
 // Callback functions handlers
 ErrorHandler_t errorHandlerCb;
-StackInitDone_t appInitDoneHandler;
 BLEAppUtil_EventHandlersList_t *BLEAppUtilEventHandlersHead = NULL;
 
 // GAP Bond Manager Callbacks
@@ -301,7 +300,7 @@ bStatus_t BLEAppUtil_invokeFunction(InvokeFromBLEAppUtilContext_t callback, char
 {
     BLEAppUtil_CallbackToInvoke_t *pDataMsg = NULL;
 
-    // If the callback doesn't exist retun an error
+    // If the callback doesn't exist return an error
     if(callback == NULL)
     {
         return FAILURE;

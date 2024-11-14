@@ -44,7 +44,7 @@
 #endif
 
 #ifdef TI_BOOT_USE_EXTERNAL_FLASH
-#include <ext_flash.h>
+#include <ti/common/flash/no_rtos/extFlash/ext_flash.h>
 #endif /* TI_BOOT_USE_EXTERNAL_FLASH */
 
 #define FLASH_BASE_ADDRESS          0

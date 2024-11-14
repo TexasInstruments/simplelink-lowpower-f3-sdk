@@ -235,13 +235,13 @@ extern "C"
 #define GATT_ATT_UUID_TYPE(type) {ATT_UUID_SIZE,type}
 
 /// @brief GATT BT UUID
-#define GATT_BT_UUID(name, UUID) CONST uint8 name[ATT_BT_UUID_SIZE] =\
+#define GATT_BT_UUID(name, UUID) const uint8 name[ATT_BT_UUID_SIZE] =\
 {\
   LO_UINT16(UUID), HI_UINT16(UUID)\
 }
 
 /// @brief GATT Custom UUID
-#define GATT_UUID(name, UUID) CONST uint8 name[ATT_UUID_SIZE] =\
+#define GATT_UUID(name, UUID) const uint8 name[ATT_UUID_SIZE] =\
 {\
   TI_BASE_UUID_128(UUID)\
 }
@@ -428,7 +428,7 @@ typedef struct
 typedef struct
 {
   uint16 handle;                //!< Service handle - assigned internally by GATT Server
-  CONST gattServiceCBs_t *pCBs; //!< Service callback function pointers
+  const gattServiceCBs_t *pCBs; //!< Service callback function pointers
 } gattServiceCBsInfo_t;
 
 /// @brief Service callbacks list item
@@ -480,7 +480,7 @@ extern void GATTServApp_RegisterForMsg( uint8 taskID );
  */
 extern bStatus_t GATTServApp_RegisterService( gattAttribute_t *pAttrs,
                                               uint16 numAttrs, uint8 encKeySize,
-                                              CONST gattServiceCBs_t *pServiceCBs );
+                                              const gattServiceCBs_t *pServiceCBs );
 
 /**
  * @brief   Deregister a service's attribute list and callback functions from
@@ -748,13 +748,13 @@ extern uint8 GATTServApp_WriteAttr( uint16 connHandle, uint16 handle,
  * @param   connHandle - connection read request was received on
  * @param   pValue - pointer to data to be read (to be returned)
  * @param   pLen - length of data (to be returned)
- * @param   offset - offset of the first octet to be read
+ * @param   attrHandle - attribute handle read
  *
  * @return  @ref SUCCESS : Read was successfully added to response.
  * @return  @ref bleNotConnected : Connection associated with read req is down.
  */
 extern bStatus_t GATTServApp_ReadRsp( uint16 connHandle, uint8 *pValue,
-                                      uint16 pLen, uint16 offset );
+                                      uint16 pLen, uint16 attrHandle );
 
 /**
  * @brief   Set a GATT Server Application Parameter value. Use this

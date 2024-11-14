@@ -365,7 +365,7 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     pImgHdr->secInfoSeg.verifStat = 0xFF;
 #endif
 
-    uint32_t addrRead = imgStartAddr + SHABuffLen;
+    uint32_t addrRead = ((pImgHdr->fixedHdr.len > SHABuffLen) ? imgStartAddr + SHABuffLen : imgStartAddr);
     uint32_t secHdrLen = HDR_LEN_WITH_SECURITY_INFO;
 
 #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
@@ -382,8 +382,8 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     SHA256_process(&sha256_workzone, &SHABuff[secHdrLen], SHABuffLen - secHdrLen);
 #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
-    uint32_t imgLengthLeft = pImgHdr->fixedHdr.len - SHABuffLen;
-    uint32_t byteToRead = SHABuffLen;
+    uint32_t imgLengthLeft = ((pImgHdr->fixedHdr.len > SHABuffLen) ? pImgHdr->fixedHdr.len - SHABuffLen : pImgHdr->fixedHdr.len);
+    uint32_t byteToRead = ((imgLengthLeft < SHABuffLen) ? imgLengthLeft : SHABuffLen);
 
     /* Read over image pages. */
     while(imgLengthLeft > 0)

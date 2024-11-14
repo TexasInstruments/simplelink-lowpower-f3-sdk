@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,6 +48,8 @@ RCL_Events RCL_Handler_BLE5_genericRx(RCL_Command *cmd, LRF_Events lrfEvents, RC
 RCL_Events RCL_Handler_BLE5_genericTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 RCL_Events RCL_Handler_Ble5_txTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 RCL_Events RCL_Handler_BLE5_aux_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
+RCL_Events RCL_Handler_BLE5_periodicAdv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
+RCL_Events RCL_Handler_BLE5_periodicScan(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 
 /**
  *  @brief Result of filter list update API
@@ -86,7 +88,7 @@ RCL_BLE5_FilterListUpdateResult RCL_BLE5_updateFilterList(const RCL_FL_Entry *ne
 /**
  *  @brief  Set RF frequency to use if custom frequency is specified
  *
- *  If a command specifies to use a custom frequncy, it will program the freuqncy last set using
+ *  If a command specifies to use a custom frequency, it will program the frequency last set using
  *  this function.
  *
  *  @param  rfFrequency        RF frequency in Hz
@@ -142,5 +144,21 @@ int8_t RCL_BLE5_getRxRssi(const RCL_Buffer_DataEntry *rxEntry);
  *  @return Timestamp of received packet
  */
 uint32_t RCL_BLE5_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry);
+
+/**
+ *  @brief  Get the expected start time delta associated with sending an auxiliary advertising indication
+ *
+ *  Returns the expected time delta between the start time of a non-connectable/non-scannable ADV_EXT_IND
+ *  sent over a specific PHY on a defined channel map, and the start time of an AUX_ADV_IND that contains
+ *  the SyncInfo field needed for periodic advertising establishment.
+ *
+ *  @param  primaryPhyFeatures         PHY feature selector corresponding to the primary PHY
+ *  @param  secondaryPhyFeatures       PHY feature selector corresponding to the secondary PHY
+ *  @param  chMap                      Channel map. Bit positions 0-2 correspond to channels 37-39
+ *  @param  advPayloadLen              Payload length of ADV_EXT_IND
+ *
+ *  @return Time delta in 250[ns] units between the start time of the ADV_EXT_IND and the start time of the AUX_ADV_IND
+ */
+uint32_t RCL_BLE5_getAuxAdvStartTimeDelta(uint16_t primaryPhyFeatures, uint16_t secondaryPhyFeatures, uint8_t chMap, uint8_t advPayloadLen);
 
 #endif /* ti_drivers_RCL_handlers_ble5_h__include */

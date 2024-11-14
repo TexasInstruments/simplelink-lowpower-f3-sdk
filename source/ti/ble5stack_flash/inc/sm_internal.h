@@ -358,7 +358,7 @@ extern bStatus_t sm_f6( uint8 *W, uint8 *N1, uint8 *N2, uint8 *R, uint8 * IOCap,
 extern bStatus_t sm_g2( uint8 *U, uint8 *V, uint8 *X, uint8 *Y, uint32 *output );
 extern bStatus_t sm_s1( uint8 *pK, uint8 *pR1, uint8 *pR2, uint8 *pS1 );
 extern void sm_xor( uint8 *p1, uint8* p2 );
-extern void xor_128( uint8 *pA, CONST uint8 *pB, uint8 *pOutcome );
+extern void xor_128( uint8 *pA, const uint8 *pB, uint8 *pOutcome );
 
 /*********************************************************************
  * SM Pairing Manager Internal Functions

@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../../gpd_attr_reporting.c -> gpd_attr_reporting.c",
+            "+../../gpd_attr_reporting.syscfg -> gpd_attr_reporting.syscfg",
+            "+../../README.md -> README.md",
+            "+../../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+        ]
+    }
+]

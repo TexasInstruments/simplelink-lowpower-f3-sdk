@@ -68,31 +68,31 @@
             },
             {
               "tx_power": "0",
-              "value": "0x28193",
+              "value": "0x28195",
               "rf_port": "tx_rx_2p4_ghz",
               "option_list": "normal_vddr"
             },
             {
               "tx_power": "-4",
-              "value": "0x19151",
+              "value": "0x1C0E8",
               "rf_port": "tx_rx_2p4_ghz",
               "option_list": "normal_vddr"
             },
             {
               "tx_power": "-8",
-              "value": "0xC111",
+              "value": "0x1206C",
               "rf_port": "tx_rx_2p4_ghz",
               "option_list": "normal_vddr"
             },
             {
               "tx_power": "-12",
-              "value": "0x50D1",
+              "value": "0x505D",
               "rf_port": "tx_rx_2p4_ghz",
               "option_list": "normal_vddr"
             },
             {
               "tx_power": "-16",
-              "value": "0x54",
+              "value": "0x19",
               "rf_port": "tx_rx_2p4_ghz",
               "option_list": "normal_vddr"
             },

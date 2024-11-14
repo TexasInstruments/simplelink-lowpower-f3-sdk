@@ -144,6 +144,15 @@ The clock speed of the RF Tracer may need to be reduced if experiencing signal q
         description: "Divide clock by 4"
     }
 },
+rclConfig: {
+    displayName: "RCL Configuration",
+    longDescription: `
+Enable and disable different settings for the RCL module.`
+},
+loggingEnabled: {
+    displayName: "Enable Logging",
+    longDescription: 'This setting will enable logging for the RCL module.'
+    },
 rclObservables: {
     displayName: "RCL Observables",
     longDescription: `

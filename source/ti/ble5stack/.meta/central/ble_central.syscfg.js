@@ -84,8 +84,8 @@ const config = {
             displayName: "RSSI Polling Period (ms)",
             description: "How often to read the RSSI value (For example: read RSSI value every 3000 ms)",
             default: 3000,
-            hidden: true,
-            longDescription: Docs.rssiPollingPeriodLongDescription
+            longDescription: Docs.rssiPollingPeriodLongDescription,
+            hidden: true
         },
         {
             name: "connIntMin",

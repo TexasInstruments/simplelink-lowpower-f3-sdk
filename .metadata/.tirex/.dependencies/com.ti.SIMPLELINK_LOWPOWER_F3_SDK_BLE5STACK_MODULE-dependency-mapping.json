@@ -38,11 +38,5 @@
     "../../../examples/rtos/LP_EM_CC2340R53/ble5stack/data_stream/freertos/iar/data_stream_LP_EM_CC2340R53_freertos_iar.ipcf": "data_stream_LP_EM_CC2340R53_freertos_iar_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R53/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2340R53_freertos_ticlang.projectspec": "data_stream_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R53/ble5stack/host_test/freertos/iar/host_test_LP_EM_CC2340R53_freertos_iar.ipcf": "host_test_LP_EM_CC2340R53_freertos_iar_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2340R53/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2340R53_freertos_ticlang.projectspec": "host_test_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/iar/basic_ble_LP_EM_CC2745R10_Q1_freertos_iar.ipcf": "basic_ble_LP_EM_CC2745R10_Q1_freertos_iar_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec": "basic_ble_LP_EM_CC2745R10_Q1_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/iar/data_stream_LP_EM_CC2745R10_Q1_freertos_iar.ipcf": "data_stream_LP_EM_CC2745R10_Q1_freertos_iar_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/data_stream/freertos/ticlang/data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec": "data_stream_LP_EM_CC2745R10_Q1_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/iar/host_test_LP_EM_CC2745R10_Q1_freertos_iar.ipcf": "host_test_LP_EM_CC2745R10_Q1_freertos_iar_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2745R10_Q1/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec": "host_test_LP_EM_CC2745R10_Q1_freertos_ticlang_0.dependency.tirex.json"
+    "../../../examples/rtos/LP_EM_CC2340R53/ble5stack/host_test/freertos/ticlang/host_test_LP_EM_CC2340R53_freertos_ticlang.projectspec": "host_test_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json"
 }

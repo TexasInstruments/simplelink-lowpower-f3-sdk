@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,5 +39,6 @@
 
 /* Handler functions */
 RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
+RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 
 #endif /* ti_drivers_RCL_handlers_ble_cs_h__include */

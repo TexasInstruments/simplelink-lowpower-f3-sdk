@@ -129,7 +129,7 @@ typedef struct
 // Temporary advertising record
 typedef struct
 {
-  uint8  eventType;               // Avertisement or SCAN_RSP
+  uint8  eventType;               // Advertisement or SCAN_RSP
   uint8  addrType;                // Advertiser's address type
   uint8  addr[B_ADDR_LEN];        // Advertiser's address
   gapAdvertRecData_t *pAdData;    // Advertising data field. This space is allocated.
