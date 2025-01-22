@@ -1,11 +1,11 @@
 # SimpleLink&trade; CC2340R53 LaunchPad&trade; Settings & Resources
 
-The [__SimpleLink&trade; CC2340R53 LaunchPad&trade;__][launchpad] contains a
+The [__SimpleLink&trade; CC2340R53 LaunchPad&trade;__][board] contains a
 [__CC2340R53E0RKPR__][device] device.
 
 ## Jumper Settings
 
-* Close the __`LEDs`__ jumper to enable the on-board LEDs.
+* Close the __`LEDs`__ jumpers to enable the on-board LEDs.
 
 ## SysConfig Board File
 
@@ -50,9 +50,23 @@ Place the BoosterPack directly atop the LaunchPad.
 
 * No modifications are needed.
 
+### [__BP-EM-CS BoosterPack__][bp-em-cs]
+
+When using a CC23X0 board, connect the P3 and P4 jumpers, and disconnect the P1
+and P2 jumpers on the BoosterPack. Add only the VC pins labelled CC23X0 in
+SysConfig and make sure they are configured as output.
+
+The VC pins are used to select the antenna on the BoosterPack:
+
+|     | RF1 (J2) | RF2 (A1) | RF3 (A2) | RF4 (J3) |
+|-----|----------|----------|----------|----------|
+| VC1 | 0        | 0        | 1        | 1        |
+| VC2 | 0        | 1        | 0        | 1        |
+
 [device]: https://www.ti.com/product/CC2340R53
-[launchpad]: https://www.ti.com/tool/LP-EM-CC2340R53
+[board]: https://www.ti.com/tool/LP-EM-CC2340R53
 [boostxl-canfd-lin]: https://www.ti.com/tool/BOOSTXL-CANFD-LIN
 [boostxl-sharp128]: https://www.ti.com/tool/BOOSTXL-SHARP128
 [bp-bassensorsmkii]: https://www.ti.com/tool/BP-BASSENSORSMKII
 [cc3200audboost]: https://www.ti.com/tool/CC3200AUDBOOST
+[bp-em-cs]: https://www.ti.com/tool/BP-EM-CS

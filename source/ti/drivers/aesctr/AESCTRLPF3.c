@@ -41,16 +41,6 @@
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 #include <ti/drivers/dma/UDMALPF3.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
-    #include <third_party/hsmddk/include/Integration/Adapter_DriverInit/incl/api_driver_init.h>
-    #include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>
-    #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_exchangetoken.h>
-    #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_asset.h>
-    #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_result.h>
-    #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_asset.h>
-#endif
-
 #include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
@@ -59,6 +49,24 @@
 #include DeviceFamily_constructPath(driverlib/aes.h)
 #include DeviceFamily_constructPath(inc/hw_aes.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
+
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23XX) && (ENABLE_KEY_STORAGE == 1))
+    #error "Key storage is not supported for CC23XX"
+#endif
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+    #include <third_party/hsmddk/include/Integration/Adapter_DriverInit/incl/api_driver_init.h>
+    #include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>
+    #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_exchangetoken.h>
+    #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_asset.h>
+    #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_result.h>
+    #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_asset.h>
+    #if (ENABLE_KEY_STORAGE == 1)
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
+    #endif
+#endif
 
 /**
  * The threshold at which blocking and callback mode transfers will utilize DMA.
@@ -83,13 +91,9 @@
  *    ADRCHB = TXT0
  *    TRGCHB = WRTXT3
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESCTRLPF3_DMA_CONFIG                                                                            \
         ((uint32_t)AES_DMA_ADRCHA_TXTX0 | (uint32_t)AES_DMA_TRGCHA_AESDONE | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
-         (uint32_t)AES_DMA_TRGCHB_WRTXT3)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESCTRLPF3_DMA_CONFIG                                                                            \
-        ((uint32_t)AES_DMA_ADRCHA_TXTX0 | (uint32_t)AES_DMA_TRGCHA_ECBDONE | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
          (uint32_t)AES_DMA_TRGCHB_WRTXT3)
 #else
     #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
@@ -109,10 +113,8 @@
  *    ADRCHB = TXT0
  *    TRGCHB = WRTXT3
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESCTRLPF3_GATE_CHA_DMA_CONFIG (AESCTRLPF3_DMA_CONFIG | (uint32_t)AES_DMA_DONEACT_GATE_TRGAES_ON_CHA)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESCTRLPF3_GATE_CHA_DMA_CONFIG (AESCTRLPF3_DMA_CONFIG | (uint32_t)AES_DMA_DONEACT_GATE_TRGECB_ON_CHA)
 #else
     #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
 #endif
@@ -129,6 +131,7 @@ static int_fast16_t AESCTRLPF3_waitForResult(AESCTR_Handle handle);
 static int_fast16_t AESCTRLPF3HSM_oneStepOperation(AESCTR_Handle handle,
                                                    AESCTR_OneStepOperation *operation,
                                                    AESCTR_OperationType operationType);
+
 static int_fast16_t AESCTRLPF3HSM_processOneStepOperation(AESCTR_Handle handle);
 
 int_fast16_t AESCTRLPF3HSM_addData(AESCTR_Handle handle, AESCTR_SegmentedOperation *operation);
@@ -297,7 +300,8 @@ int_fast16_t AESCTR_oneStepEncrypt(AESCTR_Handle handle, AESCTR_OneStepOperation
         status = AESCTRLPF3_oneStepOperation(handle, operationStruct, AESCTR_OPERATION_TYPE_ENCRYPT);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operationStruct->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (operationStruct->key->encoding == CryptoKey_PLAINTEXT_HSM ||
+             operationStruct->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         status = AESCTRLPF3HSM_oneStepOperation(handle, operationStruct, AESCTR_OPERATION_TYPE_ENCRYPT);
     }
@@ -321,7 +325,8 @@ int_fast16_t AESCTR_oneStepDecrypt(AESCTR_Handle handle, AESCTR_OneStepOperation
         status = AESCTRLPF3_oneStepOperation(handle, operationStruct, AESCTR_OPERATION_TYPE_DECRYPT);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operationStruct->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (operationStruct->key->encoding == CryptoKey_PLAINTEXT_HSM ||
+             operationStruct->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         status = AESCTRLPF3HSM_oneStepOperation(handle, operationStruct, AESCTR_OPERATION_TYPE_DECRYPT);
     }
@@ -433,10 +438,51 @@ static int_fast16_t AESCTRLPF3_startOperation(AESCTR_Handle handle, bool isOneSt
     AESCTRLPF3_Object *object = AESCTRLPF3_getObject(handle);
     int_fast16_t status       = AESCTR_STATUS_SUCCESS;
     size_t bytesProcessed;
+#if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage = ((object->operationType & AESCTR_OP_MODE_MASK) == AESCTR_MODE_ENCRYPT)
+                                      ? KEYSTORE_PSA_KEY_USAGE_ENCRYPT
+                                      : KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+#endif
 
-    /* Set up the key and AES engine to begin an operation */
-    AESCommonLPF3_setupOperation(&object->common.key, AESCTRLPF3_DEFAULT_AUTOCFG);
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT)
+    {
+        /* Set up the key and AES engine to begin an operation */
+        AESCommonLPF3_setupOperation(&object->common.key, AESCTRLPF3_DEFAULT_AUTOCFG);
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE)
+    {
+        keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                           &KeyStore_keyingMaterial[0],
+                                                           sizeof(KeyStore_keyingMaterial),
+                                                           &object->keyAssetID,
+                                                           KEYSTORE_PSA_ALG_CTR,
+                                                           usage);
 
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            /* Write key material retrieved from KeyStore */
+            AESWriteKEY(KeyStore_keyingMaterial);
+
+            /* Set AUTOCFG */
+            AESSetAUTOCFG(AESCTRLPF3_DEFAULT_AUTOCFG);
+        }
+        else if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESCTR_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else
+        {
+            return AESCTR_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+#endif
+    else
+    {
+        return AESCTR_STATUS_FEATURE_NOT_SUPPORTED;
+    }
     /*
      * Process all operations with data length less than the DMA size
      * threshold as a polling mode operation.
@@ -689,7 +735,7 @@ int_fast16_t AESCTR_addData(AESCTR_Handle handle, AESCTR_SegmentedOperation *ope
     int_fast16_t status;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM || object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
     {
         return AESCTRLPF3HSM_addData(handle, operation);
     }
@@ -766,7 +812,7 @@ int_fast16_t AESCTR_finalize(AESCTR_Handle handle, AESCTR_SegmentedOperation *op
     int_fast16_t status;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM || object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
     {
         return AESCTRLPF3HSM_finalize(handle, operation);
     }
@@ -877,13 +923,13 @@ static int_fast16_t AESCTRLPF3_setupSegmentedOperation(AESCTRLPF3_Object *object
      * Key material pointer and length are not checked until adding or
      * finalizing data.
      */
-    if (key->encoding == CryptoKey_PLAINTEXT)
+    if (key->encoding == CryptoKey_PLAINTEXT || key->encoding == CryptoKey_KEYSTORE)
     {
         /* When using the AES driver with the LAES engine */
         status = AESCommonLPF3_setupSegmentedOperation(&object->common, key);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (key->encoding == CryptoKey_PLAINTEXT_HSM || key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         /* A segmented operation may have been started but not finalized yet */
         if (object->segmentedOperationInProgress)
@@ -930,7 +976,8 @@ int_fast16_t AESCTR_setupEncrypt(AESCTR_Handle handle, const CryptoKey *key, con
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
-    if ((key->encoding == CryptoKey_PLAINTEXT_HSM) && (object->hsmStatus != HSMLPF3_STATUS_SUCCESS))
+    if (((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM)) &&
+        (object->hsmStatus != HSMLPF3_STATUS_SUCCESS))
     {
         return AESCTR_STATUS_ERROR;
     }
@@ -957,7 +1004,8 @@ int_fast16_t AESCTR_setupDecrypt(AESCTR_Handle handle, const CryptoKey *key, con
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
-    if ((key->encoding == CryptoKey_PLAINTEXT_HSM) && (object->hsmStatus != HSMLPF3_STATUS_SUCCESS))
+    if (((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM)) &&
+        (object->hsmStatus != HSMLPF3_STATUS_SUCCESS))
     {
         return AESCTR_STATUS_ERROR;
     }
@@ -1033,7 +1081,6 @@ int_fast16_t AESCTR_cancelOperation(AESCTR_Handle handle)
 }
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-
 /*
  *  ======== AESCTRLPF3HSM_oneStepOperation ========
  */
@@ -1105,8 +1152,6 @@ static inline void AESCTRLPF3HSM_OneStepOperationPostProcessing(uintptr_t arg0)
 
     HSMLPF3_releaseLock();
 
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
     if ((object->operationType == AESCTR_OPERATION_TYPE_ENCRYPT_FINALIZE) ||
         (object->operationType == AESCTR_OPERATION_TYPE_DECRYPT_FINALIZE) ||
         (object->operationType == AESCTR_OPERATION_TYPE_ENCRYPT) ||
@@ -1129,19 +1174,84 @@ static int_fast16_t AESCTRLPF3HSM_processOneStepOperation(AESCTR_Handle handle)
     int_fast16_t status       = AESCTR_STATUS_ERROR;
     int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
     AESCTRLPF3_Object *object = AESCTRLPF3_getObject(handle);
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    uint8_t *keyMaterial      = NULL;
+    #if (ENABLE_KEY_STORAGE == 1)
+    KeyStore_PSA_KeyFileId keyID;
+    KeyStore_PSA_KeyAttributes attributes = KEYSTORE_PSA_KEY_ATTRIBUTES_INIT;
+    KeyStore_PSA_KeyLifetime lifetime;
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage = ((object->operationType & AESCTR_OP_MODE_MASK) == AESCTR_MODE_ENCRYPT)
+                                      ? KEYSTORE_PSA_KEY_USAGE_ENCRYPT
+                                      : KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+    #endif
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
     {
         return AESCTR_STATUS_RESOURCE_UNAVAILABLE;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    {
+        keyMaterial = object->common.key.u.plaintext.keyMaterial;
+    }
+    #if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        GET_KEY_ID(keyID, object->common.key.u.keyStore.keyID);
 
-    HSMLPF3_constructAESCTROneStepPhysicalToken(object);
+        keyStoreStatus = KeyStore_PSA_getKeyAttributes(keyID, &attributes);
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                               &KeyStore_keyingMaterial[0],
+                                                               sizeof(KeyStore_keyingMaterial),
+                                                               &object->keyAssetID,
+                                                               KEYSTORE_PSA_ALG_CTR,
+                                                               usage);
+
+            if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+            {
+                lifetime = KeyStore_PSA_getKeyLifetime(&attributes);
+
+                object->keyLocation = KEYSTORE_PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
+
+                keyMaterial = &KeyStore_keyingMaterial[0];
+
+                status = AESCTR_STATUS_SUCCESS;
+            }
+        }
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            status = AESCTR_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else if (keyStoreStatus != KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            status = AESCTR_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+
+        if (status != AESCTR_STATUS_SUCCESS)
+        {
+            HSMLPF3_releaseLock();
+
+            return status;
+        }
+    }
+    #endif
+    else
+    {
+        HSMLPF3_releaseLock();
+
+        return AESCTR_STATUS_FEATURE_NOT_SUPPORTED;
+    }
+
+    HSMLPF3_constructAESCTROneStepPhysicalToken(object, keyMaterial);
 
     hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
                                     AESCTRLPF3HSM_OneStepOperationPostProcessing,
                                     (uintptr_t)handle);
+
     if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
     {
         hsmRetval = HSMLPF3_waitForResult();
@@ -1154,8 +1264,6 @@ static int_fast16_t AESCTRLPF3HSM_processOneStepOperation(AESCTR_Handle handle)
 
     if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
     {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
         HSMLPF3_releaseLock();
     }
 

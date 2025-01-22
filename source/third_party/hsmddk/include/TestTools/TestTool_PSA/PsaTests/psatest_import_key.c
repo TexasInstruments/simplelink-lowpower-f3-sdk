@@ -334,13 +334,13 @@ START_TEST(test_NegImportKey)
     TestVector_AES_BASIC_t tv_p;
     uint32_t ndx, ndx2;
     psa_status_t Status;
-    psa_key_id_t key[PSA_MAX_KEY_BUFF_ENTRIES + 1U];
+    psa_key_id_t key[MBEDTLS_MAX_KEY_BUFF_ENTRIES + 1U];
     psa_key_attributes_t attributes = { 0 };
     psa_key_lifetime_t lifetime;
     uint8_t DataBuffer[400U/8U] = { 0 };
 
     /* Clear key table before test */
-    for (ndx = 1; ndx <= PSA_MAX_KEY_BUFF_ENTRIES; ndx++)
+    for (ndx = 1; ndx <= MBEDTLS_MAX_KEY_BUFF_ENTRIES; ndx++)
     {
         (void)psa_destroy_key(ndx);
     }
@@ -357,7 +357,7 @@ START_TEST(test_NegImportKey)
                      (tv_p->KeyLen * 8U), lifetime, 0U);
     /* Note: PSA_ERROR_INVALID_HANDLE is returned when the key table is full
      *       and PSA_ERROR_INSUFFICIENT_STORAGE when memory is full */
-    for (ndx = 0; ndx < (PSA_MAX_KEY_BUFF_ENTRIES + 1U); ndx++)
+    for (ndx = 0; ndx < (MBEDTLS_MAX_KEY_BUFF_ENTRIES + 1U); ndx++)
     {
         Status = psa_import_key(&attributes, tv_p->Key_p, tv_p->KeyLen, &key[ndx]);
         if ((PSA_ERROR_INSUFFICIENT_STORAGE != Status) &&
@@ -956,14 +956,14 @@ START_TEST(test_NegDestroyPurgeKey)
     Status = psa_destroy_key(0);
     fail_if((PSA_ERROR_INVALID_HANDLE != Status), "psa_destroy_key(0)=", Status);
 
-    Status = psa_destroy_key(PSA_MAX_KEY_BUFF_ENTRIES + 1);
+    Status = psa_destroy_key(MBEDTLS_MAX_KEY_BUFF_ENTRIES + 1);
     fail_if((PSA_ERROR_INVALID_HANDLE != Status), "psa_destroy_key(MAX)=", Status);
 
     /* Purge key */
     Status = psa_purge_key(0);
     fail_if((PSA_ERROR_INVALID_HANDLE != Status), "psa_purge_key(0)=", Status);
 
-    Status = psa_purge_key(PSA_MAX_KEY_BUFF_ENTRIES + 1);
+    Status = psa_purge_key(MBEDTLS_MAX_KEY_BUFF_ENTRIES + 1);
     fail_if((PSA_ERROR_INVALID_HANDLE != Status), "psa_purge_key(MAX)=", Status);
 }
 END_TEST

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,15 @@
  *  for Low Power F3 devices.
  *
  *  Refer to @ref ADC.h for a complete description of APIs & example of use.
+ *
+ * # Limitations #
+ *
+ * ## #ADC_Params Attributes Limitations ##
+ *
+ * Some attributes in the #ADC_Params structure have a limited set of supported
+ * values. These limitations are described below:
+ *  - #ADC_Params.isProtected
+ *    - Must be true. If this is false, #ADC_open() will fail and return NULL.
  *
  ******************************************************************************
  */
@@ -130,7 +139,7 @@ typedef struct
     uint8_t adcRefNegDIO;
     /*! Internal signal routed to ADC */
     uint8_t internalChannel;
-    /*! Should the raw output be trimmed before returning it */
+    /*! Should the raw output be trimmed before returning it by adjusting for gain */
     bool returnAdjustedVal;
     /*! Reference voltage in microvolts*/
     uint_fast32_t refVoltage;
@@ -154,8 +163,6 @@ typedef struct
 {
     /*! Flag if the instance is in use */
     bool isOpen;
-    /*! Flag to indicate if thread safety is ensured by the driver */
-    bool isProtected;
 } ADCLPF3_Object;
 
 #ifdef __cplusplus

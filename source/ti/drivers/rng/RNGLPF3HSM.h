@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,6 @@
  *        RNG_RETURN_BEHAVIOR_BLOCKING.
  */
 
-/* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
- * RNG driver is non-functional on CC27CC devices, as it uses a constant seed.
- */
-
 #ifndef ti_drivers_rng_RNGLPF3HSM__include
 #define ti_drivers_rng_RNGLPF3HSM__include
 
@@ -65,6 +61,13 @@ extern "C" {
 #endif
 
 /*! \cond Internal APIs */
+
+/*!
+ * @brief   Invalid Input Key encoding
+ *
+ *  User needs to either use CryptoKey_BLANK_PLAINTEXT_HSM or CryptoKey_BLANK_PLAINTEXT
+ */
+#define RNG_STATUS_INVALID_KEY_ENCODING ((int_fast16_t)(RNG_STATUS_RESERVED - 0))
 
 /*!
  *  @brief RNGLPF3HSM Object

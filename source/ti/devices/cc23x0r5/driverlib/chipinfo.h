@@ -3,7 +3,7 @@
  *
  *  Description:    Collection of functions returning chip information.
  *
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2024 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -108,6 +108,8 @@ typedef enum
     CC2340R52E0RGER    = 0x012DDAU, //!< Part ID is CC2340R52E0RGER
     CC2340R52E0RKPR    = 0x3B2DDAU, //!< Part ID is CC2340R52E0RKPR
     CC2340R52E0WRHBRQ1 = 0x0F2DDAU, //!< Part ID is CC2340R52E0WRHBRQ1
+    CC2340R22E0RKPR    = 0x9E2DDAU, //!< Part ID is CC2340R22E0RKPR (memory spin
+                                    //!< of CC2340R52E0RKPR)
 } ChipPartId;
 
 //*****************************************************************************

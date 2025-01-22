@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2023, Texas Instruments Incorporated
+ * Copyright (c) 2017-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -132,6 +132,10 @@
  *        processing AAD. AESCCM_SegmentedDataOperation must be initialized and set when
  *        dealing with payload data (plaintext or ciphertext). AESCCM_SegmentedFinalizeOperation
  *        must be initialized and set when finalizing the segmented operation.
+ *
+ *  ## Device-Specific Requirements #
+ *
+ *  For CC27XX devices, the output buffer address must be 32-bit aligned.
  *
  *  ## Starting a CCM operation #
  *
@@ -482,7 +486,7 @@
  *  }
  *
  *  AESCCM_SegmentedFinalizeOperation segmentedFinalizeOperation;
- *  AESCCM_SegmentedFinalizeOperation_init(&egmentedFinalizeOperation);
+ *  AESCCM_SegmentedFinalizeOperation_init(&segmentedFinalizeOperation);
  *  segmentedFinalizeOperation.input = plaintext;
  *  segmentedFinalizeOperation.output = ciphertext;
  *
@@ -617,7 +621,7 @@
  *      }
  *
  *      AESCCM_SegmentedFinalizeOperation segmentedFinalizeOperation;
- *      AESCCM_SegmentedFinalizeOperation_init(&egmentedFinalizeOperation);
+ *      AESCCM_SegmentedFinalizeOperation_init(&segmentedFinalizeOperation);
  *      segmentedFinalizeOperation.input = ciphertext + AES_BLOCK_SIZE;
  *      segmentedFinalizeOperation.output = plaintext + AES_BLOCK_SIZE;
  *      segmentedFinalizeOperation.inputLength = sizeof(ciphertext) - AES_BLOCK_SIZE;
@@ -755,7 +759,7 @@
  *      }
  *
  *      AESCCM_SegmentedFinalizeOperation segmentedFinalizeOperation;
- *      AESCCM_SegmentedFinalizeOperation_init(&egmentedFinalizeOperation);
+ *      AESCCM_SegmentedFinalizeOperation_init(&segmentedFinalizeOperation);
  *      segmentedFinalizeOperation.input = ciphertext + AES_BLOCK_SIZE;
  *      segmentedFinalizeOperation.output = plaintext + AES_BLOCK_SIZE;
  *      segmentedFinalizeOperation.inputLength = sizeof(ciphertext) - AES_BLOCK_SIZE;
@@ -957,6 +961,8 @@ typedef struct
                                     *   is copied to.
                                     *   - Decryption: The plaintext derived from the decrypted and verified
                                     *   ciphertext is copied here.
+                                    *
+                                    *   For CC27XX devices, the output buffer needs to be 32-bit aligned.
                                     */
     uint8_t *nonce;                /*!< A buffer containing a nonce. Nonces must be unique to
                                     *   each CCM operation and may not be reused. If
@@ -973,6 +979,9 @@ typedef struct
                                     *   \c inputLength must be non-zero. Unlike this field in
                                     *   AESCCM_SegmentedAADOperation, the length doesn't need to be
                                     *   block-aligned.
+                                    *
+                                    *   For CC27XX devices with _HSM-suffixed key encoding,
+                                    *   the aadLength must be block-size aligned.
                                     */
     size_t inputLength;            /*!< Length of the input/output data in bytes. Either \c aadLength or
                                     *   \c inputLength must be non-zero. Unlike this field in
@@ -1009,6 +1018,9 @@ typedef struct
                        *   of the AES block size (16 bytes) unless the last chunk of
                        *   AAD is being passed in. In that case, this value doesn't
                        *   need to be an AES block-sized multiple.
+                       *
+                       *   For CC27XX devices with _HSM-suffixed key encoding,
+                       *   the aadLength must be block-size aligned.
                        */
 } AESCCM_SegmentedAADOperation;
 
@@ -1029,6 +1041,8 @@ typedef struct
                          *   is copied to.
                          *   - Decryption: The plaintext derived from the decrypted and verified
                          *   ciphertext is copied here.
+                         *
+                         *   For CC27XX devices, the output buffer needs to be 32-bit aligned.
                          */
     size_t inputLength; /*!< Length of the input/output data in bytes. Must be non-zero, multiple
                          *   of the AES block size (16 bytes) unless the last chunk of data is being
@@ -1054,6 +1068,8 @@ typedef struct
                          *   is copied to.
                          *   - Decryption: The plaintext derived from the decrypted and verified
                          *   ciphertext is copied here.
+                         *
+                         *   For CC27XX devices, the output buffer needs to be 32-bit aligned.
                          */
     uint8_t *mac;       /*!<
                          *   - Encryption: The buffer where the message authentication

@@ -100,11 +100,6 @@ vex_Init(void)
         }
     }
 
-    if (funcres != -2)
-    {
-        vex_InitBufManager();
-    }
-
     return funcres;
 }
 

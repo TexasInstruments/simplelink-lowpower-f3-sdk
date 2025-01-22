@@ -263,7 +263,8 @@ extern const ECCParams_CurveParams ECCParams_Ed25519;
  */
 #define ECC_LENGTH_PREFIX_BYTES 4
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || \
+    (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
 
     /*!
      *  @defgroup nistp256_params NIST P256 curve params to be used with ECC SW library
@@ -436,7 +437,7 @@ typedef union
 } ECC_Param;
 
 #endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) \
-        */
+          || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) */
 
 /*!
  *  @brief Length of Curve25519 curve parameters in bytes

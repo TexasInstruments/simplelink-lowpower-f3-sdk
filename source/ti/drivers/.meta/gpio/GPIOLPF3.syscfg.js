@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,8 @@
 
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
 
 /*
  *  ======== devSpecific ========
@@ -53,6 +55,7 @@ let devSpecific = {
     },
 
     _getPinResources: _getPinResources,
+    _getDefaultAttrs: _getDefaultAttrs,
     _getHwSpecificAttrs: _getHwSpecificAttrs,
     _pinToDio: _pinToDio,
     _getPinMuxMode: _getPinMuxMode
@@ -74,6 +77,36 @@ function _getPinResources(inst) {
     }
 
     return (pin);
+}
+
+/*
+ *  ======== _getDefaultAttrs ========
+ */
+/* istanbul ignore next */
+function _getDefaultAttrs(dioNumber)
+{
+    /* By default, SysConfig configures all pins to have no pull. However, this
+     * should not occur for all DIOs. Some DIOs should configure a pull up/down
+     * resistor by default, as seen from their reset value in the I/O controller
+     * register summary. For such DIOs, their config value is set to
+     * "GPIO_CFG_DO_NOT_CONFIG" so the reset value is not modified and the pull
+     * is maintained.
+     */
+    if (deviceId.match(/CC23/))
+    {
+        if (dioNumber == "16" || dioNumber == "17")
+        {
+            return "GPIO_CFG_DO_NOT_CONFIG";
+        }
+    }
+    else if (deviceId.match(/CC27/))
+    {
+        if (dioNumber == "9" || dioNumber == "10")
+        {
+            return "GPIO_CFG_DO_NOT_CONFIG";
+        }
+    }
+    return "GPIO_CFG_NO_DIR";
 }
 
 /*

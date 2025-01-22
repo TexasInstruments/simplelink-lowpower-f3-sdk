@@ -1,0 +1,292 @@
+{
+  "config": [
+    {
+      "name": "symGenMethod",
+      "displayName": "Symbol Name Generation Method",
+      "options": [
+        {
+          "name": "Legacy",
+          "displayName": "SmartRF Studio"
+        },
+        {
+          "name": "Automatic"
+        },
+        {
+          "name": "Custom"
+        }
+      ],
+      "default": "Legacy"
+    },
+    {
+      "name": "phyGroup",
+      "default": "none",
+      "hidden": true
+    },
+    {
+      "name": "phyType",
+      "default": "none",
+      "hidden": true
+    },
+    {
+      "name": "useConst",
+      "displayName": "Make Generated RF Commands Constant",
+      "description": "Use 'const' qualifier for RF Core commands.",
+      "default": false
+    },
+    {
+      "name": "phyAbbr",
+      "displayName": "Use PHY abbreviation",
+      "description": "Append the PHY abbreviation to generated symbols.",
+      "default": false
+    },
+    {
+      "name": "lrfImages",
+      "displayName": "LRF Images",
+      "description": "Embed firmware images in generated code or refer to firmware via header files",
+      "default": "header",
+      "options": [
+        {
+          "name": "none",
+          "displayName": "None"
+        },
+        {
+          "name": "header",
+          "displayName": "Include Header Files"
+        }
+      ]
+    },
+    {
+      "name": "registerFieldDefines",
+      "displayName": "Register Field Defines",
+      "longDescription": "A string of comma separated register field names to to generate defines for in the format: MODULE_REGISTER_FIELD.\n    See the register configuration summary comments in the generated header file for valid names.\n\n    For example: \n        \"PBE_GENERIC_RAM_LENCFG_LENPOS,PBE_GENERIC_RAM_LENCFG_NUMLENBITS\"",
+      "default": ""
+    },
+    {
+      "displayName": "RCL Command Symbols",
+      "collapsed": true,
+      "config": [
+        {
+          "name": "cmdPrefix",
+          "displayName": "RCL Command Variable Prefix",
+          "default": "rcl"
+        },
+        {
+          "name": "cmdFormat",
+          "displayName": "RCL Command Variable Format",
+          "options": [
+            {
+              "name": "camelCase"
+            },
+            {
+              "name": "underscore_case"
+            }
+          ],
+          "default": "camelCase"
+        },
+        {
+          "name": "cmdList_prop",
+          "displayName": "List of supported RCL Commands",
+          "minSelections": 0,
+          "default": [],
+          "options": [
+            {
+              "name": "cmdGenericTx",
+              "displayName": "CMD_GENERIC_TX",
+              "description": "Generic transmit command"
+            },
+            {
+              "name": "cmdGenericTxRepeat",
+              "displayName": "CMD_GENERIC_TX_REPEAT",
+              "description": "Generic repeated packet transmit command"
+            },
+            {
+              "name": "cmdGenericTxTest",
+              "displayName": "CMD_GENERIC_TX_TEST",
+              "description": "Generic transmitter test command"
+            },
+            {
+              "name": "cmdGenericRx",
+              "displayName": "CMD_GENERIC_RX",
+              "description": "Generic receive command"
+            }
+          ]
+        },
+        {
+          "name": "cmdList_ieee_15_4",
+          "displayName": "List of supported RCL Commands",
+          "minSelections": 0,
+          "default": [],
+          "options": [
+            {
+              "name": "cmdGenericTx",
+              "displayName": "CMD_GENERIC_TX",
+              "description": "Generic transmit command"
+            },
+            {
+              "name": "cmdGenericTxRepeat",
+              "displayName": "CMD_GENERIC_TX_REPEAT",
+              "description": "Generic repeated packet transmit command"
+            },
+            {
+              "name": "cmdGenericTxTest",
+              "displayName": "CMD_GENERIC_TX_TEST",
+              "description": "Generic transmitter test command"
+            },
+            {
+              "name": "cmdGenericRx",
+              "displayName": "CMD_GENERIC_RX",
+              "description": "Generic receive command"
+            }
+          ]
+        },
+        {
+          "name": "cmdList_ble",
+          "displayName": "List of supported RCL Commands",
+          "minSelections": 0,
+          "default": [],
+          "options": [
+            {
+              "name": "cmdGenericTx",
+              "displayName": "CMD_GENERIC_TX",
+              "description": "Generic transmit command"
+            },
+            {
+              "name": "cmdGenericTxRepeat",
+              "displayName": "CMD_GENERIC_TX_REPEAT",
+              "description": "Generic repeated packet transmit command"
+            },
+            {
+              "name": "cmdGenericTxTest",
+              "displayName": "CMD_GENERIC_TX_TEST",
+              "description": "Generic transmitter test command"
+            },
+            {
+              "name": "cmdGenericRx",
+              "displayName": "CMD_GENERIC_RX",
+              "description": "Generic receive command"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "displayName": "Data structs",
+      "longDescription": "Software structure symbol name",
+      "collapsed": true,
+      "config": [
+        {
+          "name": "shapeBaseGfsk067",
+          "displayName": "LRF shapeBaseGfsk067",
+          "default": "LRF_shapeBaseGfsk067",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "shapeBaseGfsk05",
+          "displayName": "LRF shapeBaseGfsk05",
+          "default": "LRF_shapeBaseGfsk05",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "swConfig1Mbps",
+          "displayName": "LRF swConfig1Mbps",
+          "default": "LRF_swConfig1Mbps",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "swConfig2Mbps",
+          "displayName": "LRF swConfig2Mbps",
+          "default": "LRF_swConfig2Mbps",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "config",
+          "displayName": "LRF config",
+          "default": "LRF_config",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "cfg_segment_list",
+          "displayName": "LRF regConfigList",
+          "default": "LRF_regConfigList",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "swConfig",
+          "displayName": "LRF swConfig",
+          "default": "LRF_swConfig",
+          "readOnly": true,
+          "hidden": true
+        },
+        {
+          "name": "shapeBaseGfsk20",
+          "displayName": "LRF shapeBaseGfsk20",
+          "default": "LRF_shapeBaseGfsk20",
+          "readOnly": true,
+          "hidden": true
+        }
+      ]
+    }
+  ],
+  "commands": {
+    "common": [
+      {
+        "name": "cmdGenericTx",
+        "displayName": "CMD_GENERIC_TX",
+        "description": "Generic transmit command",
+        "hidden": true,
+        "default": "rclPacketTxCmdGenericTx"
+      },
+      {
+        "name": "cmdGenericTxRepeat",
+        "displayName": "CMD_GENERIC_TX_REPEAT",
+        "description": "Generic repeated packet transmit command",
+        "hidden": true,
+        "default": "rclPacketTxCmdGenericTxRepeat"
+      },
+      {
+        "name": "cmdGenericTxTest",
+        "displayName": "CMD_GENERIC_TX_TEST",
+        "description": "Generic transmitter test command",
+        "hidden": true,
+        "default": "rclPacketTxCmdGenericTxTest"
+      },
+      {
+        "name": "cmdGenericRx",
+        "displayName": "CMD_GENERIC_RX",
+        "description": "Generic receive command",
+        "hidden": true,
+        "default": "rclPacketRxCmdGenericRx"
+      }
+    ],
+    "prop": [],
+    "ieee_15_4": [],
+    "ble": []
+  },
+  "symbols": {
+    "ble": {
+      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
+      "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
+      "swConfig1Mbps": "LRF_swConfig1Mbps",
+      "swConfig2Mbps": "LRF_swConfig2Mbps",
+      "txPowerTable": "LRF_txPowerTable",
+      "config": "LRF_config",
+      "cfg_segment_list": "LRF_regConfigList"
+    },
+    "ieee_15_4": {},
+    "prop": {
+      "swConfig": "LRF_swConfig",
+      "txPowerTable": "LRF_txPowerTable",
+      "config": "LRF_config",
+      "cfg_segment_list": "LRF_regConfigList",
+      "shapeBaseGfsk20": "LRF_shapeBaseGfsk20",
+      "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
+      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067"
+    }
+  }
+}

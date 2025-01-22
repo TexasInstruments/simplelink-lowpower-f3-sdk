@@ -1,5 +1,5 @@
 """
-CRC Tool
+TI SimpleLink CRC Tool
 
 Tool to insert CRCs into ELF files or generate binary for programming
 ccfg user region
@@ -40,10 +40,7 @@ from typing import List
 import logging
 
 from crc_tool.util import util
-from crc_tool.util.consts import (
-    USER_RECORD_CONTENT_LENGTH,
-    BYTE_ORDER
-)
+from crc_tool.util.consts import USER_RECORD_CONTENT_LENGTH, BYTE_ORDER
 
 
 class TxtHandler:
@@ -84,7 +81,9 @@ class TxtHandler:
             num_hex_chars = len(hex_string)
             # Must be an even number of hex characters
             if num_hex_chars % 2 == 1:
-                raise ValueError(f"Input value {hex_string} is invalid, length must be a multiple of two")
+                raise ValueError(
+                    f"Input value {hex_string} is invalid, length must be a multiple of two"
+                )
 
             # Two hex characters to every byte
             num_bytes_in_integer = num_hex_chars // 2
@@ -92,7 +91,7 @@ class TxtHandler:
             desired_integer = int(hex_string, 16)
             self.data += list(
                 desired_integer.to_bytes(
-                    length=num_bytes_in_integer, byteorder=BYTE_ORDER
+                    length=num_bytes_in_integer, byteorder=BYTE_ORDER  # type: ignore
                 )
             )
         logging.debug(
@@ -101,15 +100,20 @@ class TxtHandler:
 
         if len(self.data) > USER_RECORD_CONTENT_LENGTH:
             raise ValueError(
-                f"Value passed to TxtHandler is too long at {len(self.data)} bytes, max length is {USER_RECORD_CONTENT_LENGTH}"
+                f"Value passed to TxtHandler is too long at {len(self.data)} bytes, "
+                    + f"max length is {USER_RECORD_CONTENT_LENGTH}"
             )
         pad_length = USER_RECORD_CONTENT_LENGTH - len(self.data)
         logging.debug("Padding data with %d zeroes", pad_length)
         self.data += [0] * pad_length
-        logging.debug("Calculating CRC for %s", util.int_list_to_hex_string_list(self.data))
+        logging.debug(
+            "Calculating CRC for %s", util.int_list_to_hex_string_list(self.data)
+        )
 
         self.crc = util.get_crc_bytes(self.data)
-        logging.debug("Calculated CRC is %s", util.int_list_to_hex_string_list(self.crc))
+        logging.debug(
+            "Calculated CRC is %s", util.int_list_to_hex_string_list(self.crc)
+        )
 
     def write(self, dst: str):
         """Write current state of file to disk."""

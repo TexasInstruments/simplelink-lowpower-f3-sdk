@@ -162,7 +162,7 @@ extern void GAPBondMgr_Init(uint8_t task_id, uint8_t cfg_gapBond_maxBonds, uint8
  *
  * @return bitmask of events that weren't processed
  */
-extern uint16_t GAPBondMgr_ProcessEvent(uint8_t task_id, uint16_t events);
+extern uint32 GAPBondMgr_ProcessEvent(uint8_t task_id, uint32 events);
 
 /*********************************************************************
 *********************************************************************/

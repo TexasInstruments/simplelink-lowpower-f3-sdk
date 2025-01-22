@@ -40,7 +40,7 @@
     var inst = module.$static;
     const Common = system.getScript("/ti/drivers/Common.js");
     var i = 0;
-
+    const isCC27xxx7 = system.deviceData.deviceId.match(/CC27...7/) !== null;
 %%}
 /*
  *  ======== ti_devices_config.c ========
@@ -54,12 +54,26 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_ccfg.h)
 #include DeviceFamily_constructPath(inc/hw_scfg.h)
-#include DeviceFamily_constructPath(inc/hw_hsmotp.h)
+% if (inst.authMethod != "No Authentication") {
+#include "sb_key_ring_init.h"
+% } else {
+
+#define SCFG_INVALID_KEY_ENTRY \
+        .type = 0, .keyHash = {0}, .crc32 = 0, .status = 0,
+
+% }
 % if(inst.useHwInitCopyList){
 #include "`inst.hwInitCopyListFile`"    //hardware initialisation copy list
 % }
 % if(inst.enableUserRecord){
 #include "`inst.userRecordFile`"    //user record
+% }
+%
+% if(Common.isCName(inst.pAppVtorStr)) {
+extern void (*const `inst.pAppVtorStr`[])(void);
+% }
+% if(Common.isCName(inst.pBldrVtorStr)) {
+extern void (*const `inst.pBldrVtorStr`[])(void);
 % }
 
 #if defined(__IAR_SYSTEMS_ICC__)
@@ -78,7 +92,11 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .bootCfg.pBldrVtor = CCFG_BC_PBLDR_USE_FCFG,
 % }
 % else if(inst.bldrSetting == "User-specific bootloader"){
-    .bootCfg.pBldrVtor = (void*)0x`inst.pBldrVtor.toString(16)`,
+%   if(Common.isCName(inst.pBldrVtorStr)) {
+    .bootCfg.pBldrVtor = (void*)&`inst.pBldrVtorStr`,
+%   } else {
+    .bootCfg.pBldrVtor = (void*)`inst.pBldrVtorStr`,
+%   }
 % }
 % else if(inst.bldrSetting == "Any bootloader forbidden"){
     .bootCfg.pBldrVtor = XCFG_BC_PBLDR_FORBID,
@@ -104,15 +122,22 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 % } else {
     .bootCfg.bldrParam.serialRomBldrParamStruct.pinTriggerLevel = XCFG_BC_PINTRIG_LEVEL_LO,
 % }
-    .bootCfg.pAppVtor = (void*)0x`inst.pAppVtor.toString(16)`,
+% if(Common.isCName(inst.pAppVtorStr)) {
+    .bootCfg.pAppVtor = (void*)&`inst.pAppVtorStr`,
+% } else {
+    .bootCfg.pAppVtor = (void*)`inst.pAppVtorStr`,
+% }
 
     /* Set to 0. This checksum must be calculated and updated prior to
      * programming the application to the device (this is normally handled as a
      * post-build step, or by the flashloader).
      */
     .bootCfg.crc32 = 0x00000000,
-
-    .hwOpts = {0x`inst.hwOpts0.toString(16)`, 0x`inst.hwOpts1.toString(16)`},
+% if(isCC27xxx7) {
+    .hwOpts = {0xFFFFFFFF, 0xDFFFFFFF},
+% } else {
+    .hwOpts = {0xFFFFFFFF, 0xFFFFFFFF},
+% }
 
 % if(inst.allowDebugPort){
     .permissions.allowDebugPort = CCFG_PERMISSION_ALLOW,
@@ -139,28 +164,15 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 % } else {
     .permissions.allowChipErase = CCFG_PERMISSION_FORBID,
 % }
-% if(inst.allowToolsClientMode){
     .permissions.allowToolsClientMode = CCFG_PERMISSION_ALLOW,
-% } else {
-    .permissions.allowToolsClientMode = CCFG_PERMISSION_FORBID,
-% }
-% if(inst.allowFakeStby){
     .permissions.allowFakeStby = CCFG_PERMISSION_ALLOW,
-% } else {
-    .permissions.allowFakeStby = CCFG_PERMISSION_FORBID,
-% }
 % if(inst.allowReturnToFactory){
     .permissions.allowReturnToFactory = CCFG_PERMISSION_ALLOW,
 % } else {
     .permissions.allowReturnToFactory = CCFG_PERMISSION_FORBID,
 % }
 
-% if(inst.saciTimeoutOverride){
-    .misc.saciTimeoutOverride = 1U,
-    .misc.saciTimeoutExp = `inst.saciTimeoutExp`,
-% } else {
     .misc.saciTimeoutOverride = 0U,
-% }
 
 % if(inst.allowMainAppErase){
     .misc.allowMainAppErase    = CCFG_PERMISSION_ALLOW,
@@ -208,11 +220,11 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 
 % if(inst.debugAuthorization == "Require debug authentication"){
     .debugCfg.authorization = CCFG_DBGAUTH_REQAUTH,
-% }
-% else if(inst.debugAuthorization == "Debug not allowed"){
+% } else if (inst.debugAuthorization == "Non-Invasive only"){
+    .debugCfg.authorization = CCFG_DBGAUTH_ONLY_NON_INVASIVE,
+% } else if(inst.debugAuthorization == "Debug not allowed"){
     .debugCfg.authorization = CCFG_DBGAUTH_DBGFORBID,
-% }
-% else {
+% } else {
     .debugCfg.authorization = CCFG_DBGAUTH_DBGOPEN,
 % }
 
@@ -261,9 +273,115 @@ for(i=0; i<tempArray.length; i++){
 
     /* Overwrite default SCFG values */
     .hsmCfg.publicKeyHash = {`arrStr`},
-    .hsmCfg.hsmSize = `inst.hsmSize`,
+% if (inst.authMethod != "No Authentication") {
+    /* Boot Seed configuration */
+    .bootSeedOffset = 0x`inst.bootSeedOffset.toString(16)`,
 
-    .flashCfg.flashBanks.mode = `inst.flashBanksMode.match(/\(([^)]+)\)/)[1]`,
+% if(inst.scfgAllowDebugPort){
+    .permissions.allowDebugPort = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowDebugPort = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowEnergyTrace){
+    .permissions.allowEnergyTrace = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowEnergyTrace = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowFlashVerify){
+    .permissions.allowFlashVerify = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowFlashVerify = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowFlashProgram){
+    .permissions.allowFlashProgram = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowFlashProgram = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowChipErase){
+    .permissions.allowChipErase = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowChipErase = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowToolsClientMode){
+    .permissions.allowToolsClientMode = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowToolsClientMode = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowReturnToFactory){
+    .permissions.allowReturnToFactory = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowReturnToFactory = SCFG_PERMISSION_FORBID,
+% }
+% if(inst.scfgAllowMainAppErase){
+    .permissions.allowMainAppErase = SCFG_PERMISSION_ALLOW,
+% } else {
+    .permissions.allowMainAppErase = SCFG_PERMISSION_FORBID,
+% }
+
+%   if (inst.ssbEnabled) {
+    /* Secure Secondary Bootloader slot configuration */
+    .flashCfg.flashLayout.bldrSlot.addr = 0x`inst.ssbStart.toString(16)`,
+    .flashCfg.flashLayout.bldrSlot.len = 0x`inst.ssbLen.toString(16)`,
+%   }
+
+    /* Primary 0 slot configuration */
+%   if (system.modules["/ti/utils/TrustZone"]) {
+    .flashCfg.flashLayout.primaryAppSlots[0].addr = 0x`inst.prim0StartSecure.toString(16)`,
+    .flashCfg.flashLayout.primaryAppSlots[0].len = 0x`inst.prim0LenSecure.toString(16)`,
+
+    /* Primary 1 slot configuration */
+    .flashCfg.flashLayout.primaryAppSlots[1].addr = 0x`inst.prim1Start.toString(16)`,
+    .flashCfg.flashLayout.primaryAppSlots[1].len = 0x`inst.prim1Len.toString(16)`,
+
+    /* Secondary 0 slot configuration */
+    .flashCfg.flashLayout.secondaryAppSlots[0].addr = 0x`inst.sec0StartSecure.toString(16)`,
+    .flashCfg.flashLayout.secondaryAppSlots[0].len = 0x`inst.sec0LenSecure.toString(16)`,
+
+    /* Secondary 1 slot configuration */
+    .flashCfg.flashLayout.secondaryAppSlots[1].addr = 0x`inst.sec1Start.toString(16)`,
+    .flashCfg.flashLayout.secondaryAppSlots[1].len = 0x`inst.sec1Len.toString(16)`,
+%   } else {
+    .flashCfg.flashLayout.primaryAppSlots[0].addr = 0x`inst.prim0StartSingle.toString(16)`,
+    .flashCfg.flashLayout.primaryAppSlots[0].len = 0x`inst.prim0LenSingle.toString(16)`,
+
+    /* Secondary 0 slot configuration */
+    .flashCfg.flashLayout.secondaryAppSlots[0].addr = 0x`inst.sec0StartSingle.toString(16)`,
+    .flashCfg.flashLayout.secondaryAppSlots[0].len = 0x`inst.sec0LenSingle.toString(16)`,
+%   }
+
+% if (inst.authMethod == "Signature") {
+    .secBootCfg.policyCfg.authMethod = SCFG_POLICY_SIGNATURE,
+% } else if (inst.authMethod == "Hash Lock") {
+    .secBootCfg.policyCfg.authMethod = SCFG_POLICY_HASH_LOCK,
+% }
+
+% if (inst.authAlg == "RSA 3K PKCS") {
+    .secBootCfg.policyCfg.authAlgorithm = SCFG_POLICY_ALG_RSA_3K_SHA256,
+% } else if (inst.authAlg == "ECDSA P256") {
+    .secBootCfg.policyCfg.authAlgorithm = SCFG_POLICY_ALG_ECDSA_P256_SHA256,
+% } else if (inst.authAlg == "ECDSA P521") {
+    .secBootCfg.policyCfg.authAlgorithm = SCFG_POLICY_ALG_ECDSA_P521_SHA512,
+% }
+
+% if (inst.mode == "Overwrite") {
+    .secBootCfg.policyCfg.mode = SCFG_POLICY_OVRWRT,
+% } else if (inst.mode == "XIP Revert Enabled") {
+    .secBootCfg.policyCfg.mode = SCFG_POLICY_XIP_REVERT_ENABLED,
+% } else if (inst.mode == "XIP Revert Disabled") {
+    .secBootCfg.policyCfg.mode = SCFG_POLICY_XIP_REVERT_DISABLED,
+% }
+
+    .secBootCfg.keyUpdateKeyHash = SCFG_KEY_RING_MASTER_HASH,
+    SCFG_KEY_RING_CONFIG,
+% } else {
+    .keyRingCfg = {
+        .keyEntries = {
+%     for (i=0; i < 18 /* SCFG_KEY_HASH_RING_NUM */; i++) {
+            { SCFG_INVALID_KEY_ENTRY },
+%     }
+        },
+    },
+% }
 
     /* Set to 0. This checksum must be calculated and updated prior to
      * programming the application to the device (this is normally handled as a
@@ -276,18 +394,3 @@ for(i=0; i<tempArray.length; i++){
 /* Restore the original set of diagnostics */
 #pragma clang diagnostic pop
 #endif
-
-#if defined(__IAR_SYSTEMS_ICC__)
-__root const hsmotp_t hsmotp @ ".hsmotp" =
-#elif defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(hsmotp, ".hsmotp")
-#pragma RETAIN(hsmotp)
-const hsmotp_t hsmotp =
-#elif defined(__llvm__)
-const hsmotp_t hsmotp __attribute__((section(".hsmotp"), retain)) =
-#else
-const hsmotp_t hsmotp __attribute__((section(".hsmotp"), used)) =
-#endif
-{
-    HSMOTP_DEFAULT_VALUES
-};

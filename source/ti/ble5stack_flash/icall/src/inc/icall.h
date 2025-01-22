@@ -51,6 +51,7 @@
 #ifndef ICALL_H
 #define ICALL_H
 
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -1045,9 +1046,9 @@ extern void ICall_createRemoteTasksAtRuntime(ICall_RemoteTask_t *remoteTaskTable
  *               in the table of task. max possible
  *               number of task is ICALL_MAX_NUM_TASKS.
  *               value 0 is for the first create remote
- *               task, (done generaly in main() through
+ *               task, (done generally in main() through
  *               ICall_createRemoteTasks).
- *               Then index is incremeted by 1 for each
+ *               Then index is incremented by 1 for each
  *               new remote task create, or service
  *               register, or application register.
  *               value 1 for the second, etc...
@@ -1065,6 +1066,9 @@ extern ICall_TaskHandle ICall_getRemoteTaskHandle(uint8 index);
  */
 extern ICall_EntityID ICall_searchServiceEntity(ICall_ServiceEnum service);
 
+bool BLE_isInvokeRequired(void);
+bool BLE_invokeIfRequired(const void *pFxn, uint32_t *result, ...);
+
 #ifdef CC23X0
 /**
  * @brief   Send message to the worker thread queue for execute a function call
@@ -1080,20 +1084,33 @@ extern int ICall_workerThreadSendMsg(void *func, void *arg, uint16 size);
 #ifdef ICALL_LITE
  /**
  * @brief       generic variadic function to translate API id to a functional
- *              call in the stack context,
+ *              call to the BLE service in the stack context.
  *
  *              Maximum number of supported parameters is define in the stack
  *              build, can be 4, 8 or 12 parameters (uint32_t).
  *
- * @param       service: service the API belongs to
  * @param       id: Id of the stack API to call.
  * @param       ... : all parameters corresponding to the stack API to call.
  *
  * @return      register r0 will be populated with any return value fill by the Stack API.
  */
-uint32_t icall_directAPI( uint8_t service, icall_lite_id_t id, ... );
+uint32_t icall_directAPI(icall_lite_id_t id, ... );
 
  /**
+ * @brief       generic function to translate API id to a functional
+ *              call to the BLE service in the stack context.
+ *
+ *              Maximum number of supported parameters is define in the stack
+ *              build, can be 4, 8 or 12 parameters (uint32_t).
+ *
+ * @param       id: Id of the stack API to call.
+ * @param       argp : va_list of parameters corresponding to the stack API to call.
+ *
+ * @return      register r0 will be populated with any return value fill by the Stack API.
+ */
+uint32_t icall_directAPIva(icall_lite_id_t id, va_list argp);
+
+/**
  * @brief       function to indicate that servicing an direct  API call is done
  *
  * @param       src:     entity id of the sender
@@ -2935,17 +2952,24 @@ ICall_threadServes(ICall_ServiceEnum service)
 static uint_fast8_t
 ICall_getLocalMsgEntityId(ICall_ServiceEnum service, ICall_EntityID entity)
 {
-  ICall_GetLocalMsgEntityIdArgs args;
-  ICall_Errno errno;
-  args.hdr.service = service;
-  args.hdr.func = ICALL_MSG_FUNC_GET_LOCAL_MSG_ENTITY_ID;
-  args.entity = entity;
-  errno = ICall_dispatcher((ICall_FuncArgsHdr *)&args);
-  if (errno == ICALL_ERRNO_SUCCESS)
-  {
-    return args.localId;
-  }
-  return 0xFF;
+    // Getting the entity ID only if must invoke
+    if (BLE_isInvokeRequired())
+    {
+        ICall_GetLocalMsgEntityIdArgs args;
+        ICall_Errno errno;
+        args.hdr.service = service;
+        args.hdr.func = ICALL_MSG_FUNC_GET_LOCAL_MSG_ENTITY_ID;
+        args.entity = entity;
+        errno = ICall_dispatcher((ICall_FuncArgsHdr *)&args);
+        if (errno == ICALL_ERRNO_SUCCESS)
+        {
+          return args.localId;
+        }
+        return 0xFF;
+    }
+
+    // Otherwise, not in application context and invalid ID is returned
+    return 0xFF;
 }
 
 

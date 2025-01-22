@@ -58,6 +58,7 @@
 #define RCL_EventCmdStepDone           ((RCL_Events){ .value = (1 << 19)})  /*!< A step of the command has been done; details are command specific */
 #define RCL_EventStopTimesUpdated      ((RCL_Events){ .value = (1 << 20)})  /*!< A change was made to the stop times */
 #define RCL_EventPacketTimeout         ((RCL_Events){ .value = (1 << 21)})  /*!< A manually set packet-specific timeout has expired */
+#define RCL_EventSilentlyRestartRadio  ((RCL_Events){ .value = (1 << 22)})  /*!< Restart radio to perform updates, to be detailed by handler */
 
 union RCL_Events_u {
     struct {
@@ -83,6 +84,7 @@ union RCL_Events_u {
         uint32_t cmdStepDone         : 1; /*!< A step of the command has been done; details are command specific */
         uint32_t stopTimesUpdated    : 1; /*!< A change was made to the stop times */
         uint32_t packetTimeout       : 1; /*!< A manually set packet-specific timeout has expired */
+        uint32_t silentlyRestartRadio: 1; /*!< Restart radio to perform updates, to be detailed by handler */
     };
     uint32_t value;
 };

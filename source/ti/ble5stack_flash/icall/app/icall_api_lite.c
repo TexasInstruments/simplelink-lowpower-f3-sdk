@@ -71,8 +71,6 @@
 pfnBMAlloc_t pfnBMAlloc = NULL;
 pfnBMFree_t  pfnBMFree  = NULL;
 
-uint32 lastAppOpcodeIdxSent = 0xFFFFFFFF;
-
 #ifndef STACK_LIBRARY
 /* This variable exit on teh stack side, and it is always equal to the maximum
  number of possible connection. It is also used in a file share between

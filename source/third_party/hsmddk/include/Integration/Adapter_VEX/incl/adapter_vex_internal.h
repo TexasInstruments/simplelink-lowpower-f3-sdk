@@ -740,6 +740,21 @@ uint8_t
 vex_MailboxGet(
         uint32_t Identity);
 
+/*----------------------------------------------------------------------------
+ * vex_IdentityCryptoOfficer
+ *
+ * This function sets the identity of the Crypto Officer
+ * Officer.
+ *
+ * CryptoOfficerId
+ *     Identity of the Crypto Officer.
+ *
+ * Return Value:
+ *     -
+ */
+void
+vex_IdentityCryptoOfficer(
+        uint32_t CryptoOfficerId);
 
 /*----------------------------------------------------------------------------
  * vex_IdentityGet

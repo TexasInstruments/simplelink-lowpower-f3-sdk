@@ -291,26 +291,37 @@ extern "C"
 
 // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5
 #ifndef USE_DFL
-#if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
 #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
-    #define USE_DFL
+  #define USE_DFL
 #endif // (advertiser only)
 #endif // (number of bondings greater than 5)
-#endif // (supported devices)
 #endif // !USE_DFL
 
 #ifndef MAX_NUM_AL_ENTRIES // MAX_NUM_AL_ENTRIES
-#ifdef CC23X0 // CC23X0
 #if defined(USE_DFL) && defined(GAP_BOND_MGR) // (Radio core using dynamic filter list)
 #define MAX_NUM_AL_ENTRIES             GAP_BONDINGS_MAX
 #else // !(Radio core using dynamic filter list)
 #define MAX_NUM_AL_ENTRIES             5
 #endif // (Radio core using dynamic filter list)
-#else
-#define MAX_NUM_AL_ENTRIES             16  // at 8 bytes per AL entry
-#endif // CC23X0
 #endif// MAX_NUM_AL_ENTRIES
+
+#ifndef MAX_NUM_RL_ENTRIES
+#define MAX_NUM_RL_ENTRIES              10  // at 60 bytes per RL entry
+#endif // (MAX_NUM_RL_ENTRIES undefined)
+
+// Redefine MAX_NUM_AL_ENTRIES and MAX_NUM_RL_ENTRIES to GAP_BONDINGS_MAX
+// when using dynamic filter list.
+#ifdef USE_DFL // (Radio core using dynamic filter list)
+#ifdef MAX_NUM_AL_ENTRIES
+#undef MAX_NUM_AL_ENTRIES
+#endif // MAX_NUM_AL_ENTRIES
+#ifdef MAX_NUM_RL_ENTRIES
+#undef MAX_NUM_RL_ENTRIES
+#endif // MAX_NUM_RL_ENTRIES
+#define MAX_NUM_AL_ENTRIES              GAP_BONDINGS_MAX  // at 8 bytes per AL entry
+#define MAX_NUM_RL_ENTRIES              GAP_BONDINGS_MAX  // at 60 bytes per RL entry
+#endif // (Radio core using dynamic filter list)
 
 #ifndef CFG_MAX_NUM_RL_ENTRIES
 #ifdef GAP_BOND_MGR
@@ -654,7 +665,6 @@ typedef struct
   uint8_t              maxNumConns;             // Max number of BLE connections
   uint8_t              maxNumPDUs;              // Max number of BLE PDUs
   uint8_t              maxPduSize;              // Max size of the BLE PDU.
-  uint8_t              rfFeModeBias;            // RF Front End Mode and Bias (based on package)
 #ifndef CC23X0
   regOverride_t        *rfRegTbl;               // RF Common Override Register Table
   regOverride_t        *rfRegTbl1M;             // RF 1M Override Register Table

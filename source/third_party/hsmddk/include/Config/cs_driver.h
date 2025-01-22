@@ -101,7 +101,13 @@
 /*-----------------------------------------------------------------------------
  * Include platform specific driver configuration
  */
-#include <third_party/hsmddk/include/Config/cc27xx/cs_driver_ext.h>
+#include <DeviceFamily.h>
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <third_party/hsmddk/include/Config/cc35xx/cs_driver_ext.h>
+#else
+    #include <third_party/hsmddk/include/Config/cc27xx/cs_driver_ext.h>
+#endif
+
 
 
 #endif /* INCLUDE_GUARD_CS_DRIVER_H */

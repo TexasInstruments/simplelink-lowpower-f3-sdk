@@ -3,7 +3,7 @@
  *
  *  Description:    Prototypes and defines for the ADC API.
  *
- *  Copyright (c) 2022 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2024 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -113,6 +113,14 @@ extern "C" {
 //! \brief Set ADC reference to VDDS
 #define ADC_VDDS_REFERENCE 3
 
+//! \brief ADC is powered down on completion of a conversion if there is no
+//! pending trigger. To be used with \ref ADCSetPowerDownPolicy()
+#define ADC_POWER_DOWN_POLICY_AUTO ADC_CTL0_PWRDN_AUTO
+
+//! \brief ADC remains powered on as long as the power mode it set to manual.
+//! To be used with \ref ADCSetPowerDownPolicy()
+#define ADC_POWER_DOWN_POLICY_MANUAL ADC_CTL0_PWRDN_MANUAL
+
 //! \brief Set ADC conversion sequence to repeat control registers defined by start and stop address,
 //! as set by \ref ADCSetMemctlRange
 #define ADC_SEQUENCE_REPEATSEQUENCE ADC_CTL1_CONSEQ_REPEATSEQUENCE
@@ -127,6 +135,40 @@ extern "C" {
 //! \brief Set ADC conversion sequence to do a single conversion of control register defined by start,
 //! as set by \ref ADCSetMemctlRange
 #define ADC_SEQUENCE_SINGLE ADC_CTL1_CONSEQ_SINGLE
+
+//! \brief Sample duration is controlled by values set using
+//! \ref ADCSetSampleDuration()
+#define ADC_SAMPLE_MODE_AUTO ADC_CTL1_SAMPMODE_AUTO
+
+//! \brief Sample phase is manually started using \ref ADCStartConversion() and
+//! manually stopped using \ref ADCStopConversion()
+//!
+//! This can only be used when the trigger source selected by
+//! \ref ADCSetTriggerSource() is \ref ADC_TRIGGER_SOURCE_SOFTWARE
+#define ADC_SAMPLE_MODE_MANUAL ADC_CTL1_SAMPMODE_MANUAL
+
+//! \brief The ADC trigger source is a hardware event.
+//!
+//! Can only be used when the sample mode configured using
+//! \ref ADCSetSamplingMode() is \ref ADC_SAMPLE_MODE_AUTO
+#define ADC_TRIGGER_SOURCE_EVENT ADC_CTL1_TRIGSRC_EVENT
+
+//! \brief The ADC trigger source is software.
+//!
+//! \ref ADCStartConversion() is used to trigger the start of a conversion.
+//! If the sampling mode configured using \ref ADCSetSamplingMode() is
+//! \ref ADC_SAMPLE_MODE_MANUAL, then the sample phase must also be manually
+//! stopped using \ref ADCStopConversion()
+#define ADC_TRIGGER_SOURCE_SOFTWARE ADC_CTL1_TRIGSRC_SOFTWARE
+
+//! \brief The next conversion is automatically started after the completion of
+//! the previous conversion.
+//!
+//! This means that no trigger is needed to start the next conversion.
+#define ADC_TRIGGER_POLICY_AUTO_NEXT ADC_MEMCTL0_TRG_AUTO_NEXT
+
+//! \brief The next conversion requires a trigger
+#define ADC_TRIGGER_POLICY_TRIGGER_NEXT ADC_MEMCTL0_TRG_TRIGGER_NEXT
 
 //! \brief Result ready in memory result register 23
 #define ADC_INT_MEMRES_23 ADC_IMASK0_MEMRESIFG23
@@ -271,15 +313,15 @@ extern void ADCSetSampleDuration(uint32_t clkDiv, uint16_t clkCycles);
 //! This function sets the resolution of the ADC conversion.
 //!
 //! \param resolution Bit resolution to be used in conversion
-//! - \ref ADC_RESOLUTION_12_BIT
-//! - \ref ADC_RESOLUTION_10_BIT
 //! - \ref ADC_RESOLUTION_8_BIT
+//! - \ref ADC_RESOLUTION_10_BIT
+//! - \ref ADC_RESOLUTION_12_BIT
 //!
 //! \note
 //! The resolution will affect how long a conversion will take.
-//! - 12 bit: 14 clock cycles
-//! - 10 bit: 12 clock cycles
-//! - 8 bit: 9 clock cycles
+//! - 8 bit: 9 conversion clock cycles
+//! - 10 bit: 12 conversion clock cycles
+//! - 12 bit: 14 conversion clock cycles
 //!
 //! \return None
 //
@@ -327,6 +369,21 @@ extern void ADCSetMemctlRange(uint32_t start, uint32_t stop);
 
 //*****************************************************************************
 //
+//! \brief Set power down policy
+//!
+//! This function sets the power down policy for the ADC.
+//!
+//! \param powerDownPolicy
+//! - \ref ADC_POWER_DOWN_POLICY_MANUAL
+//! - \ref ADC_POWER_DOWN_POLICY_AUTO
+//!
+//! \return None
+//
+//*****************************************************************************
+extern void ADCSetPowerDownPolicy(uint32_t powerDownPolicy);
+
+//*****************************************************************************
+//
 //! \brief Set conversion sequence
 //!
 //! This function sets the sequence for ADC conversions. The actual sequence is
@@ -346,11 +403,55 @@ extern void ADCSetSequence(uint32_t sequence);
 
 //*****************************************************************************
 //
-//! \brief Triggers an ADC conversion
+//! \brief Set ADC sampling mode
 //!
-//! This function manually triggers an ADC conversion sequence, based on the
-//! settings in the control registers in the start and stop range. See
-//! \ref ADCSetMemctlRange and \ref ADCSetSequence
+//! \param samplingMode
+//! - \ref ADC_SAMPLE_MODE_MANUAL
+//! - \ref ADC_SAMPLE_MODE_AUTO
+//!
+//! \return None
+//
+//*****************************************************************************
+extern void ADCSetSamplingMode(uint32_t samplingMode);
+
+//*****************************************************************************
+//
+//! \brief Set ADC trigger source
+//!
+//! \param triggerSource
+//! - \ref ADC_TRIGGER_SOURCE_SOFTWARE
+//! - \ref ADC_TRIGGER_SOURCE_EVENT
+//!
+//! \return None
+//
+//*****************************************************************************
+extern void ADCSetTriggerSource(uint32_t triggerSource);
+
+//*****************************************************************************
+//
+//! \brief Set ADC trigger policy
+//!
+//! This not applicable when the sequence set by \ref ADCSetSequence() is
+//! \ref ADC_SEQUENCE_SINGLE
+//!
+//! \param triggerPolicy
+//! - \ref ADC_TRIGGER_POLICY_AUTO_NEXT
+//! - \ref ADC_TRIGGER_POLICY_TRIGGER_NEXT
+//!
+//! \param index Index of which control register to write to. See device data
+//!              for valid indexes.
+//!
+//! \return None
+//
+//*****************************************************************************
+extern void ADCSetTriggerPolicy(uint32_t triggerPolicy, uint32_t index);
+
+//*****************************************************************************
+//
+//! \brief Start conversion.
+//!
+//! Can only be used if the trigger source is set to
+//! \ref ADC_TRIGGER_SOURCE_SOFTWARE using \ref ADCSetTriggerSource()
 //!
 //! \note It takes a minimum of 9 system-clock cycles for the BUSY-bit
 //! in the STATUS register to go high after calling this function.
@@ -358,7 +459,95 @@ extern void ADCSetSequence(uint32_t sequence);
 //! \return None
 //
 //*****************************************************************************
-extern void ADCManualTrigger(void);
+__STATIC_INLINE void ADCStartConversion(void)
+{
+    HWREG(ADC_BASE + ADC_O_CTL1) |= ADC_CTL1_SC_START;
+}
+
+//*****************************************************************************
+//
+//! \brief Stop sample phase of a conversion.
+//!
+//! Only applicable if the trigger source is set to
+//! \ref ADC_TRIGGER_SOURCE_SOFTWARE using \ref ADCSetTriggerSource() and if the
+//! sampling mode is set to \ref ADC_SAMPLE_MODE_MANUAL using
+//! \ref ADCSetSamplingMode().
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void ADCStopConversion(void)
+{
+    HWREG(ADC_BASE + ADC_O_CTL1) &= ~ADC_CTL1_SC_M;
+}
+
+//*****************************************************************************
+//
+//! \brief Enable conversion
+//!
+//! This will enable ADC conversions. The ADC sequencer will wait for the
+//! trigger configured using \ref ADCSetTriggerSource() before the first
+//! conversion is started.
+//!
+//! If the trigger source has been configured to
+//! \ref ADC_TRIGGER_SOURCE_SOFTWARE, then the conversion can be started using
+//! \ref ADCStartConversion().
+//!
+//! \note While conversion is enabled, configuration of the ADC is not possible,
+//! so all configurations must be done before enabling conversion.
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void ADCEnableConversion(void)
+{
+    HWREG(ADC_BASE + ADC_O_CTL0) |= ADC_CTL0_ENC_ON;
+}
+
+//*****************************************************************************
+//
+//! \brief Disable conversion
+//!
+//! This will disable ADC conversions. The current conversion will finish and
+//! the result can be read out using \ref ADCReadResult() or
+//! \ref ADCReadResultNonBlocking(). Any subsequent conversions in a sequence
+//! will be aborted.
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void ADCDisableConversion(void)
+{
+    HWREG(ADC_BASE + ADC_O_CTL0) &= ~ADC_CTL0_ENC_M;
+}
+
+//*****************************************************************************
+//
+//! \brief Enable DMA trigger for data transfer.
+//!
+//! \note The DMA trigger is automatically cleared by hardware based on DMA done
+//! signal at the end of data transfer. Software has to re-enable the DMA
+//! trigger for ADC to generate DMA triggers after the DMA done signal.
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void ADCEnableDmaTrigger(void)
+{
+    HWREG(ADC_BASE + ADC_O_CTL2) |= ADC_CTL2_DMAEN_EN;
+}
+
+//*****************************************************************************
+//
+//! \brief Disable DMA trigger for data transfer.
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void ADCDisableDmaTrigger(void)
+{
+    HWREG(ADC_BASE + ADC_O_CTL2) &= ~ADC_CTL2_DMAEN_M;
+}
 
 //*****************************************************************************
 //
@@ -631,7 +820,10 @@ extern void ADCSetAdjustmentOffset(uint32_t reference);
 //! \param adcValue
 //!     ADC unadjusted value
 //! \param bitResolution
-//!     ADC bit resolution
+//!     ADC bit resolution. Valid options are:
+//!     - \ref ADC_RESOLUTION_8_BIT
+//!     - \ref ADC_RESOLUTION_10_BIT
+//!     - \ref ADC_RESOLUTION_12_BIT
 //! \param gain
 //!     Gain adjustment value provided by \ref ADCGetAdjustmentGain()
 //!

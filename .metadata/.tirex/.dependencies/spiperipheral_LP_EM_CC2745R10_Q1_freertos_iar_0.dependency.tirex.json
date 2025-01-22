@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../README.html -> README.html",
+            "+../../README.md -> README.md",
+            "+../../spiperipheral.c -> spiperipheral.c",
+            "+../spiperipheral.syscfg -> spiperipheral.syscfg"
+        ]
+    }
+]

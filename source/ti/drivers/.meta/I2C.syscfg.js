@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,12 +43,12 @@
  *    operated at a lower bus speed. Ultra Fast-mode devices are not
  *    compatible with previous versions since the bus is unidirectional.
  *        Bidirectional bus:
- *            o Standard-mode (Sm), with a bit rate up to 100 kbit/s
- *            o Fast-mode (Fm), with a bit rate up to 400 kbit/s
- *            o Fast-mode Plus (Fm+), with a bit rate up to 1 Mbit/s
- *            o High-speed mode (Hs-mode), with a bit rate up to 3.4 Mbit/s.
+ *            * Standard-mode (Sm), with a bit rate up to 100 kbit/s
+ *            * Fast-mode (Fm), with a bit rate up to 400 kbit/s
+ *            * Fast-mode Plus (Fm+), with a bit rate up to 1 Mbit/s
+ *            * High-speed mode (Hs-mode), with a bit rate up to 3.4 Mbit/s.
  *        Unidirectional bus:
- *            o Ultra Fast-mode (UFm), with a bit rate up to 5 Mbit/s
+ *            * Ultra Fast-mode (UFm), with a bit rate up to 5 Mbit/s
  *
  * Each device connected to the bus is software addressable by a unique
  * address and simple controller/target relationships exist at all times.
@@ -75,15 +75,18 @@ let config = [
         name        : "maxBitRate",
         displayName : "Maximum Bit Rate",
         description : "Maximum bit rate (kbps) supported by this bus",
-        longDescription: `This parameter determines the value of a 'maximum"
-bitrate' symbol declared in the generated ti_drivers_config.h file. This symbol
-can be used in code to portably open the bus at a speed that's likely to work.
+        longDescription: `
+This parameter determines the value of a 'maximum bitrate' symbol declared in
+the generated ti_drivers_config.h file. This symbol can be used in code to
+portably open the bus at a speed that's likely to work. This is because the
+parameter is rounded down to the nearest bit rate supported by the hardware.
 
 If this configuration parameter is set to zero, the maximum speed for this
 instance is the maximum speed supported by the slowest attached target. If no
 target devices are attached, the maximum bit rate is 100 kbps.
 
-The symbol is named (instance name)_MAXBITRATE.`,
+The symbol is named (instance name)_MAXBITRATE.
+`,
         default     : 0
     },
     {
@@ -167,7 +170,7 @@ let logHandlers = {"Warn": logWarning, "Fail": logError, "Remark": logInfo};
  *  @returns {Array} - numeric addresses declared by the HW component's
  *                     meta-data specification.  If a component is not an I2C
  *                     component or no addresses are declared in the the
- *                     componnet's meta-data, an empty array is returned.
+ *                     component's meta-data, an empty array is returned.
  */
 function getAddresses(component)
 {
@@ -281,10 +284,10 @@ function getDisabledAddrs(component, i2cAddrs)
 }
 
 /*
- *  ======== getCompSpeed ========
+ *  ======== getCompMaxSpeed ========
  *  Get a component's maximum supported speed (declared in board files)
  */
-function getCompSpeed(comp, unknownDefault)
+function getCompMaxSpeed(comp, unknownDefault)
 {
     let speed = comp.settings.maxSpeed;
     if (speed != null)  {
@@ -325,6 +328,14 @@ function validate(inst, vo)
             vo.logError("Invalid timeout specified! Value must be between 0" +
                 " and 0xFF", inst, "sclTimeout");
         }
+    }
+
+    /* If the max bit rate is lower than the lowest supported by the I2C spec */
+    let minimumSupportedBitRate = Math.min(...inst.$module._supportedBitRates);
+    if (inst.maxBitRate > 0 && inst.maxBitRate < minimumSupportedBitRate) {
+
+        logError(vo, inst, "maxBitRate", "Lowest bit rate supported is " +
+            minimumSupportedBitRate + " kbps.");
     }
 }
 
@@ -457,7 +468,7 @@ function _genConflictMsg(ca, msgs, header)
     let caddrs = ca[i - 1].addrs;
 
     /* ignore components that don't overlap with these addresses (caddrs) */
-    let overlaps = {}; /* map overlaping comps to their referencing insts */
+    let overlaps = {}; /* map overlapping comps to their referencing insts */
     let prefix = "";
     for (let j = 0; j < i; j++) {
         let comp = ca[j];
@@ -532,7 +543,7 @@ function _genConflictMsg(ca, msgs, header)
  *
  *  @param ca - the array of objects returned from _solve()
  *  @returns  - a string containing an informative message,
- *              or "" in the case there is novalid solution.
+ *              or "" in the case there is no valid solution.
  */
 function _genSolutionMsg(ca, header)
 {
@@ -753,52 +764,52 @@ function _solve(ca)
  *  addresses that are initialized at runtime; e.g., the INA226
  *  on the BOOSTXL-TLV8544PIR.  We use a simple solver to tell
  *  us whether
- *      o there exists any solution (including unused components) and
- *      o if there is a solution, which components need to be actively
+ *      * there exists any solution (including unused components) and
+ *      * if there is a solution, which components need to be actively
  *        "managed" to properly initialize the HW component so
  *        as to not conflict with addresses being actively used by
  *        the application.
  *
  *  Assumptions:
- *      o all I2C addresses are configured by module instances that have
+ *      * all I2C addresses are configured by module instances that have
  *        a config property named "i2cAddress".
- *      o each module instance using an I2C bus validates that its I2C
+ *      * each module instance using an I2C bus validates that its I2C
  *        address is in the set of addresses allowed by the HW component.
- *      o the first entry in a HW component's I2C address array is its
+ *      * the first entry in a HW component's I2C address array is its
  *        "default" address; i.e., in the absence of any SW initialization
  *        of the HW component, the device will respond to this default
  *        address.
  *
  *  Address Checks:
- *      o all _used_ components connected to the I2C bus have unique addresses.
+ *      * all _used_ components connected to the I2C bus have unique addresses.
  *            - detects BoosterPack combos that break the application, but
  *            - intentionally allows conflicts between unused components
- *      o the set of default addresses of all unused components is disjoint
+ *      * the set of default addresses of all unused components is disjoint
  *        from the set of addresses assigned to the used components.
  *            - detects an initialization problem (unused HW interfering with
  *              properly configured instances)
- *      o all instances bound to a common HW component on the bus are
+ *      * all instances bound to a common HW component on the bus are
  *        configured with a common I2C address.
  *            - detects probable user error (requires runtime I2C addr control)
- *      o all components on the bus have unique default addresses
+ *      * all components on the bus have unique default addresses
  *            - detects potential issue using the conflicting components
  *
  *  Validation Messages:
- *      o in the event of address conflict between two used components, a
+ *      * in the event of address conflict between two used components, a
  *        valid assignment is computed.  If there is a solution:
  *            all references are "tagged" with an error message suggesting
  *            the valid computed alternative
  *        otherwise:
  *            the I2C bus is tagged with an irreconcilable conflict error
- *      o in the event of a conflict between used and unused components:
+ *      * in the event of a conflict between used and unused components:
  *            all references are tagged with an error that identifies the
  *            conflicting unused component.
- *      o in the event that different addresses are used to reference the
+ *      * in the event that different addresses are used to reference the
  *        same component:
  *            all references are tagged with an error that lists all
  *            instances referencing the same component and the address
  *            they're using
- *      o in the event that different unused components have the same
+ *      * in the event that different unused components have the same
  *        default address:
  *            optionally emit a warning identifying the overlapping
  *            components
@@ -907,14 +918,14 @@ function _validateAddrs(inst, components, vo)
  *  components connected to the bus
  *
  * Speed Checks:
- *      o the declared max speeds of all components on the bus are verified
- *        to be >= the I2C bus's maxBitRate
+ *     * the declared max speeds of all components on the bus are verified
+ *       to be >= the I2C bus's maxBitRate
  *
  *  Validation Messages:
- *      o if a HW component's declared maxSeed values is less than the bus's
- *        maxBitRate:
- *            the maxBitRate configuration parameter is tagged with a message
- *            that identifies the offending components
+ *     * if a HW component's declared maxSpeed values is less than the bus's
+ *       maxBitRate:
+ *           the maxBitRate configuration parameter is tagged with a message
+ *           that identifies the offending components
  *
  * http://cache.freescale.com/files/sensors/doc/app_note/AN4481.pdf
  *     "All Freescale sensors support an I2C bus speed of 400 kHz. Faster
@@ -927,9 +938,9 @@ function _validateAddrs(inst, components, vo)
  *     points."
  *
  * http://www.advamation.com/knowhow/raspberrypi/rpi-i2c-bug.html
- *     o Don't use I2C-devices which use clock-stretching with the Raspberry
+ *     * Don't use I2C-devices which use clock-stretching with the Raspberry
  *       Pi. Fortunately, many I2C-sensors do not use clock-stretching.
- *     o If you know how fast your I2C-device is, you could chose a slower
+ *     * If you know how fast your I2C-device is, you could chose a slower
  *       I2C-clock-frequency, so that the device does not stretch the clock.
  *
  * https://www.i2cchip.com/pdfs/I2C_Clock_Stretch_Probe.pdf
@@ -946,7 +957,7 @@ function _validateSpeed(inst, components, vo)
 
     for (let j = 0; j < components.length; j++) {
         let comp = components[j];
-        let speed = getCompSpeed(comp, 5000);
+        let speed = getCompMaxSpeed(comp, 5000);
         if (speed < inst.maxBitRate) {
             let msg = "the component " + comp.name
                 + " can only support speeds up to " + speed + " kbps";
@@ -1000,18 +1011,23 @@ interface to access peripherals on an I2C bus.
     filterHardware:      filterHardware,
     pinmuxRequirements:  pinmuxRequirements,
 
-    _getPinResources: _getPinResources,
+    _getPinResources:    _getPinResources,
 
     /* I2C interface exported for other modules/templates */
     getAddresses:        getAddresses,
     getCompAddress:      getCompAddress,
-    getCompSpeed:        getCompSpeed,
+    getCompMaxSpeed:     getCompMaxSpeed,
     getDisabledAddrs:    getDisabledAddrs,
 
     /* internal methods exposed for testing only */
     _genConflictMsg:     _genConflictMsg,
     _genSolutionMsg:     _genSolutionMsg,
-    _solve:              _solve
+    _solve:              _solve,
+
+    /* I2C supported bit rates, to be overridden by family specific module.
+     * Defined pessimistically with the lowest supported bit rate mode.
+     */
+    _supportedBitRates:  [100]
 };
 
 /* extend the base exports to include family-specific content */

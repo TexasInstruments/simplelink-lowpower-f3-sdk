@@ -106,6 +106,9 @@ extern HwiP_Struct clockHwi;
 /* The names of these variables are used by ROV */
 static bool ClockP_initialized = false;
 
+/* Upper 32 bits of the 64-bit SysTickCount */
+static uint32_t upperSystemTicks64 = 0;
+
 /* The existence of a variable with this name is the signal to ROV
  * that it is used on a CC23XX/CC27XX device
  */
@@ -127,6 +130,8 @@ static void sleepTicks(uint32_t ticks);
 static void sleepClkFxn(uintptr_t arg0);
 static void ClockP_scheduleNextTick(uint32_t absTick);
 
+/* Callback function to increment 64-bit counter on 32-bit counter overflow */
+static void systemTicks64Callback(uintptr_t arg);
 /*
  *  ======== ClockP_Params_init ========
  */
@@ -731,6 +736,112 @@ uint32_t ClockP_getSystemTicks(void)
 {
     /* SysTimer is always running */
     return (getClockPTick());
+}
+
+/*
+ *  ======== systemTicks64Callback ========
+ */
+static void systemTicks64Callback(uintptr_t arg)
+{
+    /* Disable interrupts while updating upper global upperSystemTicks64 */
+    uintptr_t key = HwiP_disable();
+
+    /* Update upper 32 bits of 64 bit system ticks if overflow has occurred */
+    if (HWREG(SYSTIM_BASE + SYSTIM_O_RIS) & SYSTIM_RIS_OVFL_M)
+    {
+        /* Update upper 32 bits of 64 bit system ticks */
+        upperSystemTicks64++;
+
+        /* Clear overflow flag */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_OVFL_CLR;
+    }
+
+    HwiP_restore(key);
+}
+
+/*
+ *  ======== ClockP_getSystemTicks64 ========
+ */
+uint64_t ClockP_getSystemTicks64(void)
+{
+    static ClockP_Struct systemTicks64Clock;
+    static bool systemTicks64Initialised = false;
+    ClockP_Params params;
+    uint32_t lowerSystemTicks64;
+    uintptr_t key;
+    uint64_t tickValue;
+
+    key = HwiP_disable();
+
+    /* Initialise clock needed to maintain 64-bit SystemTicks when function
+     * is called for the first time.
+     */
+    if (!systemTicks64Initialised)
+    {
+        /* Clear overflow flag in case it is already set */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_OVFL_CLR;
+
+        ClockP_Params_init(&params);
+
+        /* Start clock immediately when created */
+        params.startFlag = true;
+        /* The clock should ideally trigger with same frequency as 32-bit
+         * overflow, but that would require a period longer than
+         * ClockP_PERIOD_MAX. So we use double the frequency and only update
+         * upperSystemTicks64 in the callback function if the overflow (OVFL)
+         * interrupt flag is set.
+         */
+        params.period    = ((uint64_t)UINT32_MAX + 1) / 2;
+
+        uint32_t currentTick = ClockP_getSystemTicks();
+
+        /* The clock must be synchronized with the overflow event.
+         * Calculate ticks until next overflow.
+         */
+        uint32_t delayedStart = UINT32_MAX - currentTick + 1;
+
+        /* If the next overflow is too far in the future, then subtract the
+         * period of the clock.
+         */
+        if (delayedStart > ClockP_PERIOD_MAX)
+        {
+            delayedStart -= params.period;
+        }
+
+        /* Construct and start the clock */
+        ClockP_construct(&systemTicks64Clock, systemTicks64Callback, delayedStart, &params);
+
+        systemTicks64Initialised = true;
+    }
+
+    lowerSystemTicks64 = ClockP_getSystemTicks();
+
+    /* If the lower 32 bits have recently overflowed, but the upper 32 bits
+     * have not yet been incremented (i.e. systemTicks64Callback() has not yet
+     * executed) then increment the upper 32 bits here.
+     */
+    if (HWREG(SYSTIM_BASE + SYSTIM_O_RIS) & SYSTIM_RIS_OVFL_M)
+    {
+        /* Update upper 32 bits of 64 bit system ticks */
+        upperSystemTicks64++;
+
+        /* Clear overflow flag, to prevent upper 32 bits from also being
+         * incremented in systemTicks64Callback()
+         */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_OVFL_CLR;
+
+        /* Read the lower 32 bits again since the overflow might have happened
+         * after the last read
+         */
+        lowerSystemTicks64 = ClockP_getSystemTicks();
+    }
+
+    /* Return the upper 32 bits + lower 32 bits as is */
+    tickValue = ((uint64_t)upperSystemTicks64 << 32) | lowerSystemTicks64;
+
+    HwiP_restore(key);
+
+    return tickValue;
 }
 
 /*

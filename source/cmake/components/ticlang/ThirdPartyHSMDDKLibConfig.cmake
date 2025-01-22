@@ -31,6 +31,7 @@ endmacro()
 ####################################################################################
 
 find_package("DriverlibCC27XX" REQUIRED)
+find_package("DriverlibCC35XX" REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartyHSMDDKLibM33FTargets.cmake")
 

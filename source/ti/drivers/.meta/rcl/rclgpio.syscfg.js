@@ -45,11 +45,6 @@ const Docs = system.getScript("/ti/drivers/rcl/RCL_GPIO.docs.js");
 
 let signalList = [
     {
-        name: "RFCTRC",
-        displayName: Docs.config.rclPinOptions.tracerEnable.displayName,
-        description: Docs.config.rclPinOptions.tracerEnable.description,
-    },
-    {
         name: "RFEGPO0",
         displayName: Docs.config.rclPinOptions.paEnable.displayName,
         description: Docs.config.rclPinOptions.paEnable.description
@@ -172,7 +167,6 @@ let signalList = [
 
 /* This maps each use case to their signals */
 let useCaseMap = {
-    tracer: ["RFCTRC"],
     debugSignals: ["RFEGPO0","RFEGPO1"]
 }
 
@@ -204,88 +198,6 @@ let arrayContains = (arr, target) => target.every(v => arr.includes(v));
 
 let config = [
     {
-        name: "rfcTraceGroup",
-        displayName: "RF Tracer",
-        longDescription: Docs.config.rftracer.longDescription,
-        collapsed: false,
-        config: [
-            {
-            name: "rfTracer",
-            displayName: Docs.config.rftracer.displayName,
-            description: Docs.config.rftracer.description,
-            default: false,
-            hidden: true,
-            onChange: onTracerChanged
-        },
-        {
-            name: "rftrcMode",
-            displayName: Docs.config.rftrcMode.displayName,
-            description: Docs.config.rftrcMode.description,
-            longDescription: Docs.config.rftrcMode.longDescription,
-            hidden: true,
-            default: 2,
-            options: [{
-                name: 0,
-                displayName: Docs.config.rftrcMode.cpu.displayName,
-                description: Docs.config.rftrcMode.cpu.description
-            },
-            {
-                name: 1,
-                displayName: Docs.config.rftrcMode.radio.displayName,
-                description: Docs.config.rftrcMode.radio.description
-            },
-            {
-                name: 2,
-                displayName: Docs.config.rftrcMode.both.displayName,
-                description: Docs.config.rftrcMode.both.description
-            }]
-        },
-        {
-            name: "rftrcTimestamp",
-            displayName: Docs.config.rftrcTimestamp.displayName,
-            description: Docs.config.rftrcTimestamp.description,
-            longDescription: Docs.config.rftrcTimestamp.longDescription,
-            hidden: true,
-            default: 1,
-            options: [{
-                name: 1,
-                displayName: Docs.config.rftrcTimestamp.on.displayName,
-                description: Docs.config.rftrcTimestamp.on.description
-            },
-            {
-                name: 0,
-                displayName: Docs.config.rftrcTimestamp.off.displayName,
-                description: Docs.config.rftrcTimestamp.off.description
-            }]
-        },{
-            name: "rftrc_prescal",
-            displayName: Docs.config.rftrcPrescaler.displayName,
-            description: Docs.config.rftrcPrescaler.description,
-            longDescription: Docs.config.rftrcPrescaler.longDescription,
-            hidden: true,
-            default: 1,
-            options: [{
-                name: 1,
-                displayName: Docs.config.rftrcPrescaler.div1.displayName,
-                description: Docs.config.rftrcPrescaler.div1.description
-            },
-            {
-                name: 2,
-                displayName: Docs.config.rftrcPrescaler.div2.displayName,
-                description: Docs.config.rftrcPrescaler.div2.description
-            },
-            {
-                name: 3,
-                displayName: Docs.config.rftrcPrescaler.div3.displayName,
-                description: Docs.config.rftrcPrescaler.div3.description
-            },
-            {
-                name: 4,
-                displayName: Docs.config.rftrcPrescaler.div4.displayName,
-                description: Docs.config.rftrcPrescaler.div4.description
-            }]}
-    ]},
-    {
         name: "rclConfig",
             displayName: Docs.config.rclConfig.displayName,
             longDescription: Docs.config.rclConfig.longDescription,
@@ -299,7 +211,7 @@ let config = [
                     default: false
                 },
             ]
-        },
+    },
     {
     name: "rclObservables",
         displayName: Docs.config.rclObservables.displayName,
@@ -367,40 +279,6 @@ function filterHardware(component) {
 function onHardwareChanged(inst, ui) {
 }
 
-function onTracerChanged(inst,ui) {
-    if (inst.signals.length <= 7){
-        if (inst.rfTracer == true) {
-            ui.rftrcMode.hidden = false;
-            ui.rftrc_prescal.hidden = false;
-            updateConfigValue(inst, ui, "signals",  [ ...inst.signals, ...useCaseMap.tracer])
-            inst.signals = [ ...inst.signals, ...useCaseMap.tracer]
-        }
-        else {
-            ui.rftrcMode.hidden = true;
-            ui.rftrc_prescal.hidden = true;
-        }
-    }
-
-    if (inst.rfTracer == false)
-    {
-        if (arrayContains(inst.signals,useCaseMap.tracer ))
-            {
-                let templist = []
-                let index = 0
-                inst.signals.forEach(signal => {
-                    if (useCaseMap.tracer.includes(signal))
-                    {
-                        templist = [...inst.signals]
-                        index = templist.indexOf(signal);
-                        templist.splice(index,1)
-                        inst.signals = templist
-                    }
-                });
-            }
-
-    }
-
-}
 function onSignalsChanged(inst, ui){
 
 }
@@ -556,9 +434,10 @@ function pinmuxRequirements(inst) {
     if (inst.signals.length > 0){
         let lrfGpio = {
             name          : "lrfGpio",
-            hidden: true,
+            readOnly      : true,
             displayName   : "LRF GPIO",
             interfaceName : "LRF",
+            canShareWith  : "LRF",
             resources     : resources,
             signalTypes   : {
             }
@@ -711,28 +590,6 @@ function getLibs(mod) {
 //function validate(inst, validation){}
 function validate(inst, validation) {
 
-    if (inst.rfTracer) {
-        if(inst.rftrcTimestamp === 0){
-            Common.logWarning(validation, inst, "rftrcTimestamp",
-                "Timestamps are turned off. The tracer will not give timestamps with the traces.");
-        }
-        useCaseMap.tracer.forEach(signal => {
-            if (!inst.signals.includes(signal))
-            {
-                Common.logWarning(validation, inst,"signals",
-                "Tracer signal is not set");
-            }
-        });
-    }
-    if (!inst.rfTracer){
-        useCaseMap.tracer.forEach(signal => {
-            if (inst.signals.includes(signal))
-            {
-                Common.logWarning(validation, inst,"rfTracer",
-                "RF Tracer is not enabled");
-            }
-        });
-    }
     if (inst.useCase.includes("rfDebugSignals")){
         useCaseMap.debugSignals.forEach(signal => {
             if (!inst.signals.includes(signal))

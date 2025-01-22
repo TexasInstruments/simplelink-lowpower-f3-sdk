@@ -280,6 +280,35 @@ uint32_t ClockP_getSystemTicks(void)
 }
 
 /*
+ *  ======== ClockP_getSystemTicks64 ========
+ */
+uint64_t ClockP_getSystemTicks64(void)
+{
+    uint32_t lowerSystemTicks64;
+    uint32_t upperSystemTicks64;
+    uint64_t systemTicks64;
+    uintptr_t key;
+    TimeOut_t timeout;
+
+    key = HwiP_disable();
+    /*
+     *  This gets the number of tick count overflows as well as the tick
+     *  count.  We use the internal API (new in FreeRTOS 10), since it can be
+     *  called from an ISR.  Calling the public API, vTaskSetTimeOutState,
+     *  will cause an exception if called from an ISR.
+     */
+    vTaskInternalSetTimeOutState(&timeout);
+
+    HwiP_restore(key);
+
+    lowerSystemTicks64 = (uint32_t)timeout.xTimeOnEntering;
+    upperSystemTicks64 = (uint32_t)timeout.xOverflowCount;
+    systemTicks64      = ((uint64_t)upperSystemTicks64 << 32) | lowerSystemTicks64;
+
+    return (systemTicks64);
+}
+
+/*
  *  ======== ClockP_getTimeout ========
  */
 uint32_t ClockP_getTimeout(ClockP_Handle handle)

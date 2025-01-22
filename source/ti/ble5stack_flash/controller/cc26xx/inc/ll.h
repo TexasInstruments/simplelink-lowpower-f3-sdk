@@ -215,9 +215,13 @@ extern "C"
 #define LL_STATUS_ERROR_OP_CANCELLED_BY_HOST           0x44 // Operation Cancelled by Host
 #define LL_STATUS_ERROR_INSUFFICIENT_CHANNELS          0x48U // Number of channels is insufficient
 #define LL_STATUS_ERROR_PACKET_TOO_LONG                0x45 // Packet Too Long
+
 // Internal
-#define LL_STATUS_WARNING_TX_DISABLED                  0xFF // only used internally, so value doesn't matter
-#define LL_STATUS_WARNING_FLAG_UNCHANGED               0xFF // only used internally, so value doesn't matter
+// Handover
+#define LL_STATUS_HANDOVER_SUCCESSFUL                  0xFEU // This will be used for a new VS terminate reason
+// General
+#define LL_STATUS_WARNING_TX_DISABLED                  0xFF  // only used internally, so value doesn't matter
+#define LL_STATUS_WARNING_FLAG_UNCHANGED               0xFF  // only used internally, so value doesn't matter
 
 // Encryption Key Request Reason Codes
 #define LL_ENC_KEY_REQ_ACCEPTED                        LL_STATUS_SUCCESS
@@ -239,6 +243,9 @@ extern "C"
 #define LL_UNACCEPTABLE_CONN_INTERVAL_TERM             LL_STATUS_ERROR_UNACCEPTABLE_CONN_INTERVAL
 #define LL_MIC_FAILURE_TERM                            LL_STATUS_ERROR_CONN_TERM_DUE_TO_MIC_FAILURE
 #define LL_CONN_ESTABLISHMENT_FAILED_TERM              LL_STATUS_ERROR_CONN_FAILED_TO_BE_ESTABLISHED
+
+// Handover terminate reason
+#define LL_CONN_TERMINATE_SUCCESSFUL_HANDOVER          LL_STATUS_HANDOVER_SUCCESSFUL
 
 // Disconnect API Parameter
 #define LL_DISCONNECT_AUTH_FAILURE                     LL_STATUS_ERROR_AUTH_FAILURE
@@ -598,7 +605,7 @@ extern "C"
 
 #define LL_MAX_LINK_DATA_TIME_CODED                    17040 // in us
 
-#define LL_MAX_LINK_DATA_TIME                          MAX( LL_MAX_LINK_DATA_TIME_CODED, LL_MAX_LINK_DATA_TIME_UNCODED )
+#define LL_MAX_LINK_DATA_TIME                          LL_MAX_LINK_DATA_TIME_CODED // Coded is the maximum
 
 /*
 ** Event Parameters
@@ -706,6 +713,7 @@ extern "C"
 #define LL_MIN_MAX_CONN_TIME_LENGTH_MASK                        0x7FFFFFFF
 #define LL_MAX_PERIPHERAL_NUM_LSTO_RETRIES                      2
 #define LL_MAX_CENTRAL_NUM_LSTO_RETRIES                         1
+#define LL_MAX_WINDOW_OFFSET_SIZE                               0xFFFF
 #define LL_MIN_NUM_EVENTS_LEFT_LSTO_MARGIN                      3
 #define LL_SET_STARVATION_MODE_OFF                              0
 #define LL_SET_STARVATION_MODE_ON                               1
@@ -776,8 +784,8 @@ extern void LL_Init( uint8 taskId );
  *
  * @return      Unprocessed event flags.
  */
-extern uint16 LL_ProcessEvent( uint8  task_id,
-                               uint16 events );
+extern uint32 LL_ProcessEvent( uint8  task_id,
+                               uint32 events );
 
 /*******************************************************************************
  * @fn          LL_IsRLActiveTasksRunning
@@ -1828,16 +1836,23 @@ extern llStatus_t LL_ConnUpdate( uint16 connId,
  *
  * @brief       This API is called by the HCI to update the Host data channels
  *              initiating an Update Data Channel control procedure.
+ *              (For a specific connection, or for all active connections)
  *
  *              Note: While it isn't specified, it is assumed that the Host
  *                    expects an update channel map on all active connections.
  *
- *              Note: This API currently only supports one connection.
  *
  * input parameters
  *
  * @param       chanMap - A five byte array containing one bit per data channel
  *                        where a 1 means the channel is "used".
+ * @param       connID  - The connection handle. If equals to maxNumConns, it is
+ *                        assumed  that the Host expects an update channel map
+ *                        on all active Master connections. if connID > maxNumConns
+ *                        or connection isnt active,LL_STATUS_ERROR_BAD_PARAMETER
+ *                        status will return. When in specific connection mode, if the
+ *                        channel map control procedure is already pending,
+ *                        LL_STATUS_ERROR_CTRL_PROC_ALREADY_ACTIVE will return.
  *
  * output parameters
  *
@@ -1845,6 +1860,7 @@ extern llStatus_t LL_ConnUpdate( uint16 connId,
  *
  * @return      LL_STATUS_SUCCESS, LL_STATUS_ERROR_BAD_PARAMETER,
  *              LL_STATUS_ERROR_ILLEGAL_PARAM_COMBINATION
+ *              LL_STATUS_ERROR_CTRL_PROC_ALREADY_ACTIVE
  */
 extern llStatus_t LL_ChanMapUpdate( uint8 *chanMap , uint16 connID );
 

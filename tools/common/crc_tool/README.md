@@ -1,21 +1,28 @@
- # CRC tool
+# TI SimpleLink CRC Tool
 
-crc_tool is a tool with two primary use cases:
+The TI SimpleLink CRC Tool is created by Texas Instruments to support building FW 
+images for the CC23xx and CC27xx device families.
 
- 1. To input an ELF file, parse begin and end of section through symbols originally defined in the linker file, and add crc after the end address, as defined by these symbols.
-    * This is Intended to be used as a post build step in CCS to add CRCs to the generated ELF file
- 2. To parse a txt file, containing one or more hexadecimal values, calculate the crc of this value, and generate a binary file containing hex data and crc.
-    * This is intended to be given as input to a SACI command for programming the user record in the ccfg.
+This tool can be used to modify an ELF file by calculating a 4-byte CRC value
+for a given memory region and inserting it into the next 4 bytes after the
+end of the region.
+Which flash regions to insert CRC values for is configurable.
+
+The tool does also support generation of a binary image with data for the user record.
+The user record is a specific region in CCFG for Texas Instruments CC23xx and CC27xx devices.
 
 ## Dependencies
+
 The Python script relies on the external library [LIEF](https://pypi.org/project/lief/0.8.3/)
 
 This libary is included in the packaged executable.
 
 ## Use case 1 - Adding CRC to ELF file
+
 This use case is accessed through using the subcommand ``patch-image`` when invoking ``crc_tool``.
 
 This use case will:
+
  1. Parse symbols with a given prefix from the stated ELF file.
  2. Use these symbols and their values to find sections to calculate CRC for.
  3. Insert CRCs in the next four bytes after the given end of the region.
@@ -37,6 +44,7 @@ The following command line options are available in the ``patch-image`` use-case
 
 
 ### Required modifications:
+
 For ``crc_tool`` to know where to insert crc32 values
 it needs to be able to find symbols in the ELF file which matches the stated
 prefix. All symbols without a matching prefix are ignored.
@@ -68,6 +76,7 @@ __my_prefix_debug_cfg_crc32_end = 0x4E0207FB;
 ```
 
 The following example lists **invalid** symbols, all of these will be ignored:
+
 ```c
 // Ignored because no corresponding _end value
 __my_prefix_boot_cfg_begin = 0x4E020000;
@@ -86,6 +95,7 @@ debug_cfg_crc32_end = 0x4E0207FB;
 
 The following example lists **invalid** symbols, all of the following will cause
 the program to throw an error.
+
 ```c
 // Throw error because end is before beginning
 __my_prefix_main_begin = 0x4E020010;
@@ -100,6 +110,7 @@ __my_prefix_overlap2_end = 0x4E02100;
 ```
 
 ### Example 1:
+
 In order to overwrite an ELF file named ``empty.out`` with a file with CRCs inserted,
 using the above symbols, the following cli invocation can be used:
 
@@ -108,6 +119,7 @@ crc_tool patch-image --elf empty.out --symbol-prefix __my_prefix -o empty.out
 ```
 
 ## Use case 2 - generate binary with crc:
+
 This use case is accessed through using the subcommand "generate-bin" when invoking crc_tool.
 
 Currently only text files are supported, using the ``--user-record-file`` flag.
@@ -124,6 +136,7 @@ The following command line options are available in the generate-bin use-case.
 
 
 ### Input file format:
+
 The input text file must contain one or more valid hex values (0x prefix is optional).
 Separate integers are separated by whitespace or newlines.
 
@@ -141,6 +154,7 @@ This file is found in ``docs/example/generate_user_record/`` during development,
 but is placed alongside the source files during packaging.
 
 ### Output file format:
+
 The output file will be a 128 byte binary file, containing integers in the same order as the input data,
 With the first integer at the lowest address.
 
@@ -150,6 +164,7 @@ there will be four CRC bytes.
 Each integer will be written to file using little endian.
 
 ### Example 1:
+
 In order to write to a binary file named ``output.bin`` with input data and CRC,
 the following cli invocation can be used:
 
@@ -160,8 +175,6 @@ crc_tool generate-bin --user-record-file input.txt -o output.bin
 ## Generic options
 
 A ``--version`` flag is available to check what version of crc_tool you are using.
-
-This version number is parsed from the latest git tag when the tool was built.
 
 Using ``--version`` will override any other options stated.
 

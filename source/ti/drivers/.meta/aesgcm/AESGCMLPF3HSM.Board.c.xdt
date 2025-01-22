@@ -33,7 +33,7 @@
  */
 
 /*
- *  ======== AESGCMLPF3.Board.c.xdt ========
+ *  ======== AESGCMLPF3HSM.Board.c.xdt ========
  */
 
     let AESGCM = args[0];
@@ -53,15 +53,16 @@
  */
 
 #include <ti/drivers/AESGCM.h>
-#include <ti/drivers/aesgcm/AESGCMLPF3.h>
+#include <ti/drivers/aesgcm/AESGCMLPF3HSM.h>
 
 #define `countDef` `instances.length`
-AESGCMLPF3_Object AESGCMLPF3_objects[`countDef`];
+
+AESGCMLPF3HSM_Object AESGCMLPF3HSM_objects[`countDef`];
 
 /*
- *  ======== AESGCMLPF3_hwAttrs ========
+ *  ======== AESGCMLPF3HSM_hwAttrs ========
  */
-const AESGCMLPF3_HWAttrs AESGCMLPF3_hwAttrs[`countDef`] = {
+const AESGCMLPF3HSM_HWAttrs AESGCMLPF3HSM_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
 %     let inst        = instances[i];
     {
@@ -74,8 +75,8 @@ const AESGCM_Config AESGCM_config[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
 %     let inst    = instances[i];
     {   /* `inst.$name` */
-        .object  = &AESGCMLPF3_objects[`inst.$name`],
-        .hwAttrs = &AESGCMLPF3_hwAttrs[`inst.$name`]
+        .object  = &AESGCMLPF3HSM_objects[`inst.$name`],
+        .hwAttrs = &AESGCMLPF3HSM_hwAttrs[`inst.$name`]
     },
 % }
 };

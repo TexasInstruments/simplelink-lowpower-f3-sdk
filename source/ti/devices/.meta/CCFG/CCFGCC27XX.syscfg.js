@@ -39,37 +39,61 @@ const Common = system.getScript("/ti/drivers/Common.js");
 
 const MAX_PBLDRVTOR = 0xFFFFFFEF;
 const MAX_SERIALIOCFGINDEX = 0x07;
-const MAX_SACITIMEOUTEXP = 0x07;
 const MAX_READPROT_MAINSECTORS = 0x0F;
 const MAX_READPROT_CCFGSECTOR = 0x3F;
 const MAX_PIN_TRIGGER_DIO = 0x3F; // TODO: Find correct value for CC27XX
 const MAX_CAP_ARRAY = 0x3F;
-const MAX_HSM_SIZE = 0x07;
+const MAX_TEMP_THRESHOLD = 125;
+const MIN_TEMP_THRESHOLD = -50;
+const SCFG_UNDEFINED_SLOT_ADDRESS = 0xFFFFFFFF;
+const SCFG_UNDEFINED_SLOT_LENGTH = 0xFFFFFFFF;
+const SCFG_BOOT_SEED_DISABLED = 0xFF;
+const SECTORSIZE = 0x800;
+const FLASHSIZE = 0x100000;
 
 const moduleDesc = `
-The device has 3 dedicated configuration areas in flash that must contain a valid configuration
+The device has 2 dedicated configuration areas in flash that must contain a valid configuration
 
 * The Customer Configuration Area (CCFG) is used by boot ROM and TI provided drivers to configure the device. It starts at 0x4E020000 and has a size of 0x800 bytes.
 * The Security Configuration Area (SCFG) must contain a valid Security Configuration. It starts at 0x4E040000 and has a size of 0x400 bytes.
-* The HSM OTP area (HSMOTP) must contain a valid configuration for the HSM. It starts at 0x4E020800 and has a size of 0x800 bytes.
 
 All of these configurations are done by simply letting SysConfig generate file ti_devices_config.c and including it in the project.`;
 
 let board = system.deviceData.board;
+let tzEnabled = system.modules["/ti/utils/TrustZone"]; /* UI callbacks cannot access system modules. Preload into variable */
 let defaultOverrideHfxtCapArray = false;
-let defaultHfxtCapArrayQ1 = 0x00;
-let defaultHfxtCapArrayQ2 = 0x00;
+let hfxtDefaultParams = {
+    "P0": 14.56160,
+    "P1": -0.43677,
+    "P2": -0.00853,
+    "P3": 0.00010,
+    "shift": 22,
+    "hfxtCapArrayQ1" : 0,
+    "hfxtCapArrayQ2" : 0
+};
 
-/* Override cap array values for LP_EM_CC2745R10_Q1 */
-if (board !== undefined) {
-    if (board.name.match(/LP_EM_CC2745R10_Q1/)) {
-        defaultOverrideHfxtCapArray = true;
-        defaultHfxtCapArrayQ1 = 0x27;
-        defaultHfxtCapArrayQ2 = 0x27;
+if(board !== undefined) {
+    let crystal = board.components.HFXT;
+    if(crystal !== undefined)
+    {
+        if (crystal.settings.overrideCapArray !== undefined)
+        {
+            defaultOverrideHfxtCapArray = crystal.settings.overrideCapArray;
+        }
+        hfxtDefaultParams = crystal.settings;
     }
 }
 
+let defaultpAppVtorStr = "resetVectors";
+
+if (system.compiler == "iar")
+{
+    defaultpAppVtorStr = "__vector_table";
+}
+
+
 let devSpecific = {
+    hfxtDefaultParams: hfxtDefaultParams,
     longDescription: moduleDesc,
     templates: {
         /* Contributes CRC symbols to linker file */
@@ -78,13 +102,14 @@ let devSpecific = {
     moduleStatic: {
         modules: modules,
         validate: validate,
+        migrateLegacyConfiguration: migrateLegacyConfiguration,
         config: [
             {
                 name: "srcClkLF",
                 displayName: "Low Frequency Clock Source",
                 description: "Low frequency clock source",
                 longDescription: `When choosing the external clock, supply
-a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the appropriate pin.`,
+a 31.25 kHz square wave, with a peak voltage of VDDS and an offset of VDDS/2 to the appropriate pin.`,
                 readOnly: false,
                 hidden: false,
                 options: [
@@ -121,7 +146,7 @@ a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the 
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: defaultHfxtCapArrayQ1,
+                default: hfxtDefaultParams.hfxtCapArrayQ1,
                 readOnly: false,
                 hidden: !defaultOverrideHfxtCapArray
             },
@@ -133,7 +158,7 @@ Q1 and Q2 should not differ by more than one step.`,
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: defaultHfxtCapArrayQ2,
+                default: hfxtDefaultParams.hfxtCapArrayQ2,
                 readOnly: false,
                 hidden: !defaultOverrideHfxtCapArray
             },
@@ -147,14 +172,89 @@ Q1 and Q2 should not differ by more than one step.`,
                 default: false
             },
             {
+                displayName: "RF Temperature Compensation",
+                longDescription: `Settings for temperature compensation of HFXT. This will enable temperature
+compensation of the system clock (CLKSVT) and the RF reference clock (CLKREF) to improve the frequency
+stability over temperature.`,
+                config: [
+                    {
+                        name: "enableHFXTComp",
+                        displayName: "RF Temperature Compensation",
+                        description: "Compensate HFXT frequency for temperature during radio transmissions.",
+                        longDescription: `This feature improves the accuracy of the CLKSVT and CLKREF over temperature.
+This should only be enabled if the selected HFXT source is not accurate enough for the selected RF protocol.`,
+                        default: true,
+                        onChange: onChangeHFXT
+                    },
+                    {
+                        name: "HFXTCompTempThreshold",
+                        displayName: "HFXT Compensation Threshold",
+                        description: `Perform compensation only above this temperature`,
+                        longDescription: `HFXT will only be automatically compensated when the measured device
+temperature exceeds this threshold (in degrees Celsius). This can help to reduce power consumption if temperature
+compensation is not required below a certain temperature. The device is only required to compensate in the range of [-40, +125],
+but this threshold can be set as low as -50. This can be done to ensure compensation will trigger correctly at low temperatures, close to -40.`,
+                        default: -50,
+                        range: [MIN_TEMP_THRESHOLD, MAX_TEMP_THRESHOLD]
+                    },
+                    {
+                        name: "HFXTCompTempDelta",
+                        displayName: "HFXT Compensation Delta",
+                        description: `How much the temperature must change before compensation is performed`,
+                        longDescription: `HFXT will be automatically compensated if the temperature drifts more than
+this delta-value in either direction (in degrees Celsius). For example, if the temperature is measured to 30 degrees
+when the device boots, but later drifts to 30 + delta or 30 - delta, then HFXT temperature compensation will be
+performed, and the temperature setpoint updated accordingly.`,
+                        default: 2,
+                        hidden: false
+                    },
+                    {
+                        name: "customHFXTCoeff",
+                        displayName: "Custom HFXT Coefficients",
+                        description: "Use Custome HFXT Temperature Coefficients",
+                        longDescription: `If the ppm offset of the HFXT can be approximated by a third order polynomial
+function of temperature (degrees Celsius), ppm(T) = P3*T^3 + P2*T^2 + P1*T + P0, where the coefficients
+P3, P2, P1, and P0 are known, they can be supplied below. The default coefficients represent the characteristics of the
+48 MHz crystal mounted on the LaunchPad.`,
+                        default: false,
+                        hidden: false,
+                        onChange: onChangeHFXT
+                    },
+                    {
+                        name: "HFXTCoefficientP0",
+                        displayName: "HFXT Coefficient P0",
+                        description: "HFXT Coefficient P0",
+                        default: hfxtDefaultParams["P0"],
+                        hidden: true
+                    },
+                    {
+                        name: "HFXTCoefficientP1",
+                        displayName: "HFXT Coefficient P1",
+                        description: "HFXT Coefficient P1",
+                        default: hfxtDefaultParams["P1"],
+                        hidden: true
+                    },
+                    {
+                        name: "HFXTCoefficientP2",
+                        displayName: "HFXT Coefficient P2",
+                        description: "HFXT Coefficient P2",
+                        default: hfxtDefaultParams["P2"],
+                        hidden: true
+                    },
+                    {
+                        name: "HFXTCoefficientP3",
+                        displayName: "HFXT Coefficient P3",
+                        description: "HFXT Coefficient P3",
+                        default: hfxtDefaultParams["P3"],
+                        hidden: true
+                    }
+                ]
+            },
+            {
                 name: "lfoscCompConfig",
                 displayName: "LFOSC Compensation",
                 longDescription: `Settings for LFOSC compensation. When LFOSC Compensation is enabled, HFXT will
-periodically be turned on to calibrate the LFOSC.
-
-Note, the LFOSC Compensation is to be considered beta quality. An improved
-accuracy of LFOSC is expected with best effort, but an absolute accuracy cannot
-be guaranteed.`,
+periodically be turned on to calibrate the LFOSC.`,
                 config: [
                     {
                         name: "enableLfoscComp",
@@ -181,11 +281,28 @@ enable compensation.`,
                 ]
             },
             {
-                displayName: "Bootloader Configuration",
+                displayName: "Boot Configuration",
                 config: [
                     {
+                        name: "pAppVtor",
+                        description: "Application vector table address",
+                        default: 0x00000000,
+                        deprecated: true
+                    },
+                    {
+                        name: "pAppVtorStr",
+                        displayName: "Application Vector Table",
+                        description: "App vector table symbol or address",
+                        longDescription: `Pointer to application vector table. Used by bootloader upon exit
+or invoked directly by boot sequence if neither user bootloader nor default bootloader is allowed.
+This can either be a the C symbol name of the vector table, for example resetVectors, or an integer specifying the
+address of the vector table, for example 2048 or 0x800.
+0xFFFFFFFF: No user application vector table`,
+                        default: defaultpAppVtorStr
+                    },
+                    {
                         name: "bldrSetting",
-                        displayName: "Bootloader Configration",
+                        displayName: "Bootloader Configuration",
                         longDescription: `This configurable chooses whether to use default bootloader,
 default bootloader with customer settings, or user-specific bootloader`,
                         default: "Default FCFG bootloader, with CCFG settings",
@@ -201,23 +318,19 @@ default bootloader with customer settings, or user-specific bootloader`,
                     },
                     {
                         name: "pBldrVtor",
-                        displayName: "Bootloader Vector Table",
                         description: "Bootloader vector table address",
-                        longDescription: `This configurable sets the address of the user-specific bootloader`,
-                        hidden: false,
-                        displayFormat: { radix: "hex", bitSize: 32 },
+                        deprecated: true,
                         default: 0x00000000
                     },
                     {
-                        name: "pAppVtor",
-                        displayName: "Application Vector Table",
-                        description: "Application vector table address",
-                        longDescription: `Pointer to application vector table. Used by bootloader upon exit
-or invoked directly by boot sequence if neither user bootloader nor default bootloader is allowed.
-0xFFFFFFFF: No user application vector table`,
-                        hidden: false,
-                        displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0x00000000
+                        name: "pBldrVtorStr",
+                        displayName: "Bootloader Vector Table",
+                        description: "Bldr vector table address or symbol",
+                        longDescription: `This configurable sets the address of the user-specific bootloader.
+This can either be a the C symbol name of the vector table, or an integer specifying the address of the vector table,
+for example 2048 or 0x800.`,
+                        hidden: true,
+                        default: "0x00000000"
                     },
                     {
                         name: "bldrEnabled",
@@ -274,6 +387,7 @@ to be triggered during boot. Only valid if pin triggering is enabled.`,
                 config: [
                     {
                         name: "hwOpts0",
+                        deprecated: true,
                         displayName: "Hardware Options 1",
                         description: "Hardware Options 1",
                         longDescription: `Value written to both the PMCTL:HWOPT0 and CLKCTL:HWOPT0 registers by ROM code
@@ -283,6 +397,7 @@ on PRODDEV at execution transfer from boot code/bootloader to application image`
                     },
                     {
                         name: "hwOpts1",
+                        deprecated: true,
                         displayName: "Hardware Options 2",
                         description: "Hardware Options 2",
                         longDescription: `Value written to both the PMCTL:HWOPT1 and CLKCTL:HWOPT1 registers by ROM code
@@ -296,57 +411,138 @@ on PRODDEV at execution transfer from boot code/bootloader to application image`
                 displayName: "Device Permission Settings",
                 config: [
                     {
-                        name: "allowDebugPort",
-                        displayName: "Allow SWD Debug Port",
-                        description: "Allow access to SWD Debug Port",
-                        longDescription: `If not allowed, it will not be possible to access any part of the debug
-system, meaning that it will not be possible to program or erase the chip.`,
-                        default: true
+                        displayName: "Customer Configuration Permissions",
+                        config: [
+                            {
+                                name: "allowDebugPort",
+                                displayName: "Allow SWD Debug Port",
+                                description: "Allow access to SWD Debug Port",
+                                longDescription: `If not allowed, the SWD port will be disabled when the device boots into the application in flash.
+Must match the Secure Configuration Permissions to be effective.`,
+                                default: true
+                            },
+                            {
+                                name: "allowEnergyTrace",
+                                displayName: "Allow Energy Trace",
+                                description: "Allow access to energy trace AP",
+                                longDescription: `Allow access to energy trace AP (if present). Must match the Secure Configuration Permissions to be effective.`,
+                                hidden: true,
+                                default: true
+                            },
+                            {
+                                name: "allowFlashVerify",
+                                displayName: "Allow Flash Verify",
+                                description: "Allow Flash Verify by SACI.",
+                                longDescription: "Allow flash verify by SACI. Must match the Secure Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "allowFlashProgram",
+                                displayName: "Allow Flash Program",
+                                description: "Allow Flash Program by SACI",
+                                longDescription: "Allow Flash Program by SACI. Must match the Secure Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "allowChipErase",
+                                displayName: "Allow Chip Erase",
+                                description: "Allow Chip Erase by SACI",
+                                longDescription: "Allow Chip Erase by SACI. Must match the Secure Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "allowToolsClientMode",
+                                deprecated: true,
+                                displayName: "Allow Tools Client Mode",
+                                description: "Allow RAM-only tools client mode to be enabled by SACI.",
+                                longDescription: "Allow RAM-only tools client mode to be enabled by SACI. Must match the Secure Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "allowFakeStby",
+                                displayName: "Allow Fake Standby",
+                                longDescription: `Allow fake standby. Controls setting of the
+        DBGSS:SPECIAL_AUTH_CLR.FAKESTBYEN_CLR register bit field done by ROM code.`,
+                                default: true,
+                                deprecated: true
+                            },
+                            {
+                                name: "allowReturnToFactory",
+                                displayName: "Allow Return To Factory",
+                                description: "Allow return to factory by SACI.",
+                                longDescription: "Allow return to factory by SACI. Must match the Secure Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "allowMainAppErase",
+                                displayName: "Allow Main App Erase",
+                                description: "Allow Main App Erase by SACI.",
+                                longDescription: "Allow Main App Erase by SACI. Must match the Secure Configuration Permissions to be effective.",
+                                default: true
+                            }
+                        ]
                     },
                     {
-                        name: "allowEnergyTrace",
-                        displayName: "Allow Energy Trace",
-                        description: "Allow access to energy trace AP",
-                        longDescription: `Allow access to energy trace AP (if present)`,
-                        hidden: true,
-                        default: true
-                    },
-                    {
-                        name: "allowFlashVerify",
-                        displayName: "Allow Flash Verify",
-                        description: "Allow flash verify by SACI.",
-                        default: true
-                    },
-                    {
-                        name: "allowFlashProgram",
-                        displayName: "Allow Flash Program",
-                        description: "Allow Flash Program by SACI",
-                        default: true
-                    },
-                    {
-                        name: "allowChipErase",
-                        displayName: "Allow Chip Erase",
-                        description: "Allow Chip Erase by SACI",
-                        default: true
-                    },
-                    {
-                        name: "allowToolsClientMode",
-                        displayName: "Allow Tools Client Mode",
-                        description: "Allow RAM-only tools client mode to be enabled by SACI.",
-                        default: true
-                    },
-                    {
-                        name: "allowFakeStby",
-                        displayName: "Allow Fake Standby",
-                        longDescription: `Allow fake standby. Controls setting of the
-DBGSS:SPECIAL_AUTH_CLR.FAKESTBYEN_CLR register bit field done by ROM code.`,
-                        default: true
-                    },
-                    {
-                        name: "allowReturnToFactory",
-                        displayName: "Allow Return To Factory",
-                        description: "Allow return to factory by SACI.",
-                        default: true
+                        displayName: "Secure Configuration Permissions",
+                        config: [
+                            {
+                                name: "scfgAllowDebugPort",
+                                displayName: "Allow SWD Debug Port",
+                                description: "Allow access to SWD Debug Port",
+                                longDescription: `If not allowed, it will not be possible to access any part of the debug system. Must match the Customer Configuration Permissions to be effective.`,
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowEnergyTrace",
+                                displayName: "Allow Energy Trace",
+                                description: "Allow access to energy trace AP",
+                                longDescription: `Allow access to energy trace AP (if present). Must match the Customer Configuration Permissions to be effective.`,
+                                hidden: true,
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowFlashVerify",
+                                displayName: "Allow Flash Verify",
+                                description: "Allow Flash Verify by SACI.",
+                                longDescription: "Allow flash verify by SACI. Must match the Customer Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowFlashProgram",
+                                displayName: "Allow Flash Program",
+                                description: "Allow Flash Program by SACI",
+                                longDescription: "Allow Flash Program by SACI. Must match the Customer Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowChipErase",
+                                displayName: "Allow Chip Erase",
+                                description: "Allow Chip Erase by SACI",
+                                longDescription: "Allow Chip Erase by SACI. Must match the Customer Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowToolsClientMode",
+                                displayName: "Allow Tools Client Mode",
+                                description: "Allow RAM-only tools client mode to be enabled by SACI.",
+                                longDescription: "Allow RAM-only tools client mode to be enabled by SACI. Must match the Customer Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowReturnToFactory",
+                                displayName: "Allow Return To Factory",
+                                description: "Allow return to factory by SACI.",
+                                longDescription: "Allow return to factory by SACI. Must match the Customer Configuration Permissions to be effective.",
+                                default: true
+                            },
+                            {
+                                name: "scfgAllowMainAppErase",
+                                displayName: "Allow Main App Erase",
+                                description: "Allow Main App Erase by SACI.",
+                                longDescription: "Allow Main App Erase by SACI. Must match the Customer Configuration Permissions to be effective.",
+                                default: true
+                            }
+                        ]
                     }
                 ]
             },
@@ -355,17 +551,16 @@ DBGSS:SPECIAL_AUTH_CLR.FAKESTBYEN_CLR register bit field done by ROM code.`,
                 config: [
                     {
                         name: "saciTimeoutOverride",
+                        deprecated: true,
                         displayName: "SACI Timeout Override",
                         description: "Override FCFG SACI timeout value",
                         longDescription: `This configurable chooses whether to use the FCFG SACI timeout value,
 or override it with the Customer Configured SACI timeout value defined below.`,
-                        default: true,
-                        onChange: (inst, ui) => {
-                            ui["saciTimeoutExp"].hidden = !(inst.saciTimeoutOverride);
-                        }
+                        default: false
                     },
                     {
                         name: "saciTimeoutExp",
+                        deprecated: true,
                         displayName: "SACI Timeout Override Value",
                         longDescription: `This configurable sets the SACI timeout, if override is enabled.
 0: Infinite
@@ -539,13 +734,14 @@ Also used to pad out CCFG to correct size.`,
                         description: "Enable user record area in CCFG",
                         longDescription: `User record can contain any data, it has no dependencies in ROM boot code. This area is also
 programmable through separate SACI command. User record size is fixed at 124 bytes, plus an additional 4 bytes to hold a CRC32 checksum.
-The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area`,
+The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area.
+The CRC32 checksum for the User Record will automatically be calculated and inserted regardless of whether the User Record is enabled or not`,
                         default: false,
                         onChange: (inst, ui) => {
                             let setHidden = !(inst.enableUserRecord);
                             ui["userRecordMacro"].hidden = setHidden;
                             ui["userRecordFile"].hidden = setHidden;
-                            ui["userRecordCRC"].hidden = setHidden;
+                            /* Also apply this to userRecordCRC once it's no longer unconditionally applied */
                         }
                     },
                     {
@@ -569,7 +765,7 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         longDescription: `Enable generation of user record begin/end symbols in the ELF executable.
 These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optional user record's CRC.`,
                         hidden: true,
-                        default: false
+                        default: true
                     }
                 ]
             },
@@ -582,19 +778,16 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                         default: "Debug always allowed",
                         options: [
                             { name: "Debug always allowed" },
+                            { name: "Non-Invasive only"},
                             { name: "Require debug authentication" },
                             { name: "Debug not allowed" }
-                        ],
-                        onChange: (inst, ui) => {
-                            ui["debugAllowBldr"].hidden = (inst.debugAuthorization == "Debug not allowed");
-                            ui["debugPwdId"].hidden = (inst.debugAuthorization != "Require debug authentication");
-                            ui["debugPwdHash"].hidden = (inst.debugAuthorization != "Require debug authentication");
-                        }
+                        ]
                     },
                     {
                         name: "debugAllowBldr",
                         displayName: "Allow Bootloader Debugging",
-                        default: true
+                        default: true,
+                        deprecated  : true
                     },
                     {
                         name: "debugPwdId",
@@ -602,6 +795,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                         description: "Hex-formatted password ID",
                         longDescription: `64-bit customer-defined password ID readable through SACI command (may be used by to calculate or look up debug password)`,
                         hidden: true,
+                        deprecated: true,
                         default: "0101020305080D15"
                     },
                     {
@@ -609,6 +803,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                         displayName: "Password Hash",
                         description: "Hex-formatted SHA256-hash of user-supplied password",
                         hidden: true,
+                        deprecated: true,
                         default: "6dd7e436ebf431df95ae15ee03ba8ee4c4c63fd8453f675e74d7c2012c9058e5"
                     }
                 ]
@@ -619,23 +814,283 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                     {
                         name: "hsmPublicKeyHash",
                         displayName: "HSM Public Key Hash",
-                        longDescription: `Optional customer public key hash for authenticating HSM updates.`,
-                        default: "c665564a4785eaf7e2c41e4508dd95517a3e7d849fe0c133a76455284a6c9d42"
+                        longDescription: "Optional customer public key hash for authenticating HSM updates.",
+                        default: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                     },
                     {
-                        name: "hsmSize",
-                        displayName: "HSM Size",
-                        longDescription: `This value is copied to VIMS.CFG.HSM_SIZE to during bootup sequence.`,
-                        default: 0x03
-                    },
-                    {
-                        name: "flashBanksMode",
-                        displayName: "Flash Banks Mode",
-                        longDescription: `This value is copied to VIMS.CFG.SPLMODE`,
-                        default: "Monolithic (0x00)",
+                        name: "authMethod",
+                        displayName: "Authentication Method",
+                        description: "Authentication method for image verification",
+                        longDescription: "Authentication method for image verification. No Authentication: Secure Boot will not perform any validation. Signature: Secure Boot will perform signature verification every time. Hash Lock: Secure Boot will perform a signature verification once, and a sha256 check on the image at subsequent times.",
+                        default: "No Authentication",
                         options: [
-                            { name: "Monolithic (0x00)" },
-                            { name: "Split (0x01)" }
+                            { name: "No Authentication" },
+                            { name: "Signature" },
+                            { name: "Hash Lock" }
+                        ],
+                        onChange: onChangeAuthMethod
+                    },
+                    {
+                        name: "authAlg",
+                        displayName: "Authentication Algorithm",
+                        description: "Authentication Algorithm for image verification",
+                        longDescription: "Authentication algorithm for image verification. Supported algorithms are RSA 3K PKCS, ECDSA P256, and ECDSA P521.",
+                        default: "RSA 3K PKCS",
+                        hidden: true,
+                        options: [
+                            { name: "RSA 3K PKCS" },
+                            { name: "ECDSA P256" },
+                            { name: "ECDSA P521" }
+                        ]
+                    },
+                    {
+                        name: "mode",
+                        displayName: "Update Mode",
+                        description: "Application update mode",
+                        longDescription: "Application updates will be performed based on the selected mode. In Overwrite mode, the current image will be overwritten with the new image. In XIP Revert Enabled mode, the new image will be executed, but it is possible to revert to the previous image if the new image becomes invalid. In XIP Revert Disabled mode, when a new image is accepted, the previous image will be deleted.",
+                        default: "Overwrite",
+                        hidden: true,
+                        options: [
+                            { name: "Overwrite" },
+                            { name: "XIP Revert Enabled" },
+                            { name: "XIP Revert Disabled" }
+                        ],
+                        onChange: onChangeMode
+                    },
+                    {
+                        name: "ssbEnabled",
+                        displayName: "Secondary Secure Bootloader Enabled",
+                        description: "Enables/Disables Secondary Secure Bootloader support",
+                        longDescription: "Enables/Disables Secondary Secure Bootloader support. The application must send a command to ROM using HAPI to request that ROM boots the Secondary Secure Bootloader. Refer to the Technical Reference Manual (TRM) for usage details.",
+                        hidden: true,
+                        default: false,
+                        onChange: onChangeSsbEnabled
+                    },
+                    {
+                        name: "bootSeedOffset",
+                        displayName: "Boot Seed",
+                        description: "Enables/Disabled Boot Seed at boot time",
+                        longDescription: "Boot Seed offset from RAM base, in multiples of 16-byte blocks, up to an offset of 208 bytes (13 16-byte blocks). Min: 0, Max: 0x0D (13), Disabled: 0xFF.",
+                        displayFormat: "hex",
+                        default: 0xff,
+                        hidden: true
+                    },
+                    {
+                        name: "imgTypeSingleOvrWrt",
+                        displayName: "Image Type",
+                        description: "Image type of build target",
+                        longDescription: "Image type associated with the current build target. APP: Application, SSB: Secondary Secure Bootloader.",
+                        default: "APP",
+                        hidden: true,
+                        options: [
+                            { name: "APP" },
+                            { name: "SSB" }
+                        ]
+                    },
+                    {
+                        name: "imgTypeSingleXIP",
+                        displayName: "Image Type",
+                        description: "Image type of build target",
+                        longDescription: "Image type associated with the current build target. APP for Primary: Application to be executed from Primary slot, APP for Secondary: Application to be executed from Secondary slot, SSB: Secondary Secure Bootloader.",
+                        default: "APP for Primary",
+                        hidden: true,
+                        options: [
+                            { name: "APP for Primary" },
+                            { name: "APP for Secondary" },
+                            { name: "SSB" }
+                        ]
+                    },
+                    {
+                        name: "imgTypeDual",
+                        displayName: "Image Type",
+                        description: "Image type of build target",
+                        longDescription: "Image type associated with the current build target. APP 0: Application for Primary Secure slot, APP 1: Application for Primary Non-Secure slot, SSB: Secondary Secure Bootloader.",
+                        default: "APP 0",
+                        hidden: true,
+                        options: [
+                            { name: "APP 0" },
+                            { name: "APP 1" },
+                            { name: "SSB" }
+                        ]
+                    },
+                    {
+                        name: "secCnt",
+                        displayName: "Security Counter",
+                        description: "Security Counter for Antirollback validation",
+                        longDescription: "Security Counter associated to the current image to perform Antirollback validation.",
+                        default: 0,
+                        hidden: true
+                    },
+                    {
+                        name: "hdrSize",
+                        displayName: "Secure Boot Header size",
+                        description: "Secure Boot Header size.",
+                        readOnly: true,
+                        displayFormat: "hex",
+                        default : 0x80,
+                        hidden: true
+                    },
+                    {
+                        name: "version",
+                        displayName: "Version",
+                        description: "Version associated with this image.",
+                        default: "1.0",
+                        hidden: true
+                    },
+                    {
+                        name: "privKey",
+                        displayName: "Private Key",
+                        description: "Private key to sign the target image",
+                        longDescription: "Private key to be used to sign the target image. The key type must match the Authentication Algorithm selected.",
+                        hidden: true,
+                        default: "",
+                        fileFilter: ".pem"
+                    },
+                    {
+                        displayName: "Secondary Secure Bootloader",
+                        config: [
+                            {
+                                name: "ssbStart",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "ssbLen",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
+                        ]
+                    },
+                    {
+                        displayName: "Primary",
+                        config: [
+                            {
+                                name: "prim0StartSingle",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "prim0LenSingle",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
+                        ]
+                    },
+                    {
+                        displayName: "Primary Secure",
+                        config: [
+                            {
+                                name: "prim0StartSecure",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "prim0LenSecure",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
+                        ]
+                    },
+                    {
+                        displayName: "Primary Non-Secure",
+                        config: [
+                            {
+                                name: "prim1Start",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "prim1Len",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
+                        ]
+                    },
+                    {
+                        displayName: "Secondary",
+                        config: [
+                            {
+                                name: "sec0StartSingle",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "sec0LenSingle",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
+                        ]
+                    },
+                    {
+                        displayName: "Secondary Secure",
+                        config: [
+                            {
+                                name: "sec0StartSecure",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "sec0LenSecure",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
+                        ]
+                    },
+                    {
+                        displayName: "Secondary Non-Secure",
+                        config: [
+                            {
+                                name: "sec1Start",
+                                displayName: "Start",
+                                description: "Slot start address",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            },
+                            {
+                                name: "sec1Len",
+                                displayName: "Length",
+                                description: "Slot length in bytes",
+                                displayFormat: "hex",
+                                hidden: true,
+                                default      : 0xFFFFFFFF
+                            }
                         ]
                     }
                 ]
@@ -669,6 +1124,22 @@ automatically turn on and take over if the voltage drops too low.
 };
 
 /*!
+ * ======== migrateLegacyConfiguration ========
+ *  Migrate deprecated configurations to the current configurations
+ */
+function migrateLegacyConfiguration(inst)
+{
+    if (inst.pAppVtor != undefined)
+    {
+        inst.pAppVtorStr = "0x" + inst.pAppVtor.toString(16).toUpperCase();
+    }
+    if (inst.pBldrVtor != undefined)
+    {
+        inst.pBldrVtorStr = "0x" + inst.pBldrVtor.toString(16).toUpperCase();
+    }
+}
+
+/*!
  * ======== getLinkerSyms ========
  *  Used by GenMaps to define linker symbols, for example CRC checksum symbols
  */
@@ -686,10 +1157,10 @@ function getLinkerSyms(inst) {
         { name: "CRC_CCFG_DEBUG_end", value: 0x4E0207FB },
 
         { name: "CRC_SCFG_begin", value: 0x4e040000 },
-        { name: "CRC_SCFG_end", value: 0x4e04003B }
+        { name: "CRC_SCFG_end", value: 0x4e0400E3 }
     ];
 
-    if (inst.$static.enableUserRecord && inst.$static.userRecordCRC) {
+    if (inst.$static.userRecordCRC) {
         linkerSyms.push(
             { name: "CRC_CCFG_USER_RECORD_begin", value: 0x4E020750 },
             { name: "CRC_CCFG_USER_RECORD_end", value: 0x4E0207CB },
@@ -708,9 +1179,9 @@ function getLinkerSyms(inst) {
  *  @param ui   -   GUI state
  */
 function updateBldrVisibility(inst, ui) {
-    let setHidden = inst.bldrSetting == "Any bootloader forbidden" || inst.bldrSetting == "Default FCFG bootloader";
-    ui["pBldrVtor"].hidden = setHidden;
-    ui["pAppVtor"].hidden = setHidden;
+    ui["pBldrVtorStr"].hidden = (inst.bldrSetting != "User-specific bootloader");
+
+    let setHidden = (inst.bldrSetting == "Any bootloader forbidden") || (inst.bldrSetting == "Default FCFG bootloader");
     ui["bldrEnabled"].hidden = setHidden;
 
     setHidden = setHidden || !(inst.bldrEnabled);
@@ -720,6 +1191,23 @@ function updateBldrVisibility(inst, ui) {
     setHidden = setHidden || !(inst.pinTriggerEnabled);
     ui["pinTriggerDio"].hidden = setHidden;
     ui["pinTriggerLevel"].hidden = setHidden;
+}
+
+/*
+ *  ======== onChangeEnableHFXTComp ========
+ *  onChange callback function for the enableHFXTComp config
+ */
+function onChangeHFXT(inst, ui) {
+    let subState = (inst.enableHFXTComp == false);
+    ui.customHFXTCoeff.hidden = subState;
+    ui.HFXTCompTempThreshold.hidden = subState;
+    ui.HFXTCompTempDelta.hidden = subState;
+    subState = subState || (inst.customHFXTCoeff == false);
+    ui.HFXTCoefficientP0.hidden = subState;
+    ui.HFXTCoefficientP1.hidden = subState;
+    ui.HFXTCoefficientP2.hidden = subState;
+    ui.HFXTCoefficientP3.hidden = subState;
+
 }
 
 /*
@@ -742,6 +1230,379 @@ function onChangeLfoscComp(inst, ui) {
     ui.defaultLfoscCompProfile.hidden = !inst.enableLfoscComp;
 }
 
+/*
+ *  ======== onChangeMode ========
+ *  onChange callback function for Secure Boot mode config
+ */
+function onChangeMode(inst, ui) {
+    /* Prevent UI calling this function asynchronously when sysconfig file is loaded */
+    if (inst.authMethod == "No Authentication") {
+        return;
+    }
+
+    if (!tzEnabled) {
+        if (inst.mode == "Overwrite") {
+            ui.imgTypeSingleOvrWrt.hidden = false;
+            ui.imgTypeSingleXIP.hidden = true;
+            ui.imgTypeDual.hidden = true;
+        } else {
+            ui.imgTypeSingleOvrWrt.hidden = true;
+            ui.imgTypeSingleXIP.hidden = false;
+            ui.imgTypeDual.hidden = true;
+        }
+
+        ui.prim0StartSingle.hidden = false;
+        ui.prim0LenSingle.hidden = false;
+        ui.prim0StartSecure.hidden = true;
+        ui.prim0LenSecure.hidden = true;
+        ui.sec0StartSingle.hidden = false;
+        ui.sec0LenSingle.hidden = false;
+        ui.sec0StartSecure.hidden = true;
+        ui.sec0LenSecure.hidden = true;
+
+        ui.prim1Start.hidden = true;
+        ui.prim1Len.hidden = true;
+        ui.sec1Start.hidden = true;
+        ui.sec1Len.hidden = true;
+    } else {
+        ui.imgTypeSingleOvrWrt.hidden = true;
+        ui.imgTypeSingleXIP.hidden = true;
+        ui.imgTypeDual.hidden = false;
+
+        ui.prim0StartSingle.hidden = true;
+        ui.prim0LenSingle.hidden = true;
+        ui.prim0StartSecure.hidden = false;
+        ui.prim0LenSecure.hidden = false;
+        ui.sec0StartSingle.hidden = true;
+        ui.sec0LenSingle.hidden = true;
+        ui.sec0StartSecure.hidden = false;
+        ui.sec0LenSecure.hidden = false;
+
+        ui.prim1Start.hidden = false;
+        ui.prim1Len.hidden = false;
+        ui.sec1Start.hidden = false;
+        ui.sec1Len.hidden = false;
+    }
+}
+
+/*
+ *  ======== onChangeSsbEnabled ========
+ *  onChange callback function for Secondary Secure Bootloader
+ */
+function onChangeSsbEnabled(inst, ui) {
+    /* Prevent UI calling this function asynchronously when sysconfig file is loaded */
+    if (inst.authMethod == "No Authentication") {
+        return;
+    }
+
+    if (inst.ssbEnabled) {
+        ui.ssbStart.hidden = false;
+        ui.ssbLen.hidden = false;
+    } else {
+        ui.ssbStart.hidden = true;
+        ui.ssbLen.hidden = true;
+    }
+}
+
+/*
+ *  ======== onChangeAuthMethod ========
+ *  onChange callback function for Secure Boot authMethod config
+ */
+
+function onChangeAuthMethod(inst, ui) {
+    let setHidden = false;
+
+    if (inst.authMethod == "No Authentication") {
+        setHidden = true;
+    } else {
+        setHidden = false;
+    }
+
+    if (setHidden) {
+        ui.imgTypeSingleOvrWrt.hidden = setHidden;
+        ui.imgTypeSingleXIP.hidden = setHidden;
+        ui.imgTypeDual.hidden = setHidden;
+        ui.prim0StartSingle.hidden = setHidden;
+        ui.prim0LenSingle.hidden = setHidden;
+        ui.prim0StartSecure.hidden = setHidden;
+        ui.prim0LenSecure.hidden = setHidden;
+        ui.sec0StartSingle.hidden = setHidden;
+        ui.sec0LenSingle.hidden = setHidden;
+        ui.sec0StartSecure.hidden = setHidden;
+        ui.sec0LenSecure.hidden = setHidden;
+        ui.prim1Start.hidden = setHidden;
+        ui.prim1Len.hidden = setHidden;
+        ui.sec1Start.hidden = setHidden;
+        ui.sec1Len.hidden = setHidden;
+    } else {
+        onChangeMode(inst, ui);
+    }
+
+    ui.authAlg.hidden = setHidden;
+    ui.mode.hidden = setHidden;
+    ui.bootSeedOffset.hidden = setHidden;
+    ui.ssbEnabled.hidden = setHidden;
+    ui.privKey.hidden = setHidden;
+    ui.secCnt.hidden = setHidden;
+    ui.hdrSize.hidden = setHidden;
+    ui.version.hidden = setHidden;
+
+    if (setHidden) {
+        ui.ssbStart.hidden = setHidden;
+        ui.ssbLen.hidden = setHidden;
+    } else {
+        onChangeSsbEnabled(inst, ui);
+    }
+}
+
+/*
+ *  ======== checkSlotStart ========
+ *  checkSlotStart function to perform sanity check on configured slots address field
+ */
+function checkSlotStart(inst, validation, field, name)
+{
+    if (field != SCFG_UNDEFINED_SLOT_ADDRESS) {
+        if (0 != (field % SECTORSIZE))
+        {
+            Common.logError(validation, inst, name,
+                "Slot start address must be aligned to a 0x" + SECTORSIZE.toString(16) + " boundary");
+        }
+    }
+}
+
+/*
+ *  ======== checkSlotLength ========
+ *  checkSlotLength function to perform sanity check on configured slots length field
+ */
+function checkSlotLength(inst, validation, field, name)
+{
+
+    if ((field != SCFG_UNDEFINED_SLOT_LENGTH) && (0 != (field % SECTORSIZE))) {
+        Common.logError(validation, inst, name,
+            "Slot length must be a multiple of 0x" + SECTORSIZE.toString(16));
+    }
+}
+
+/*
+ *  ======== checkSlotParameters ========
+ *  checkSlotParameters function to perform sanity check on slot parameters (start and length)
+ */
+function checkSlotParameters (inst, validation, name_start, start, name_len, len)
+{
+    if (IsSlotDefined(start, len)) {
+        checkSlotStart(inst, validation, start, name_start);
+        if ((start != SCFG_UNDEFINED_SLOT_ADDRESS) && (len == SCFG_UNDEFINED_SLOT_LENGTH)) {
+            Common.logError(validation, inst, name_len,
+                "Slot length must be defined if its start address is defined");
+        }
+
+        checkSlotLength(inst, validation, len, name_len);
+        if ((start == SCFG_UNDEFINED_SLOT_ADDRESS) && (len != SCFG_UNDEFINED_SLOT_LENGTH)) {
+            Common.logError(validation, inst, name_start,
+                "Slot start must be defined if its length is defined");
+        }
+
+        if ((start + len) > FLASHSIZE) {
+            Common.logError(validation, inst, name_start,
+                "Slot start address + length must be less than max flash size of 0x" + FLASHSIZE.toString(16));
+            Common.logError(validation, inst, name_len,
+                "Slot start address + length must be less than max flash size of 0x" + FLASHSIZE.toString(16));
+        }
+    }
+}
+
+/*
+ *  ======== checkMode ========
+ *  checkMode function to perform sanity check on allowed Secure Boot mode configuration
+ */
+function checkMode(inst, validation)
+{
+
+    if ((inst.mode == "XIP Revert Enabled") && (inst.authMethod == "Hash Lock")) {
+        Common.logError(validation, inst, "mode",
+            "Hash Lock is not allowed for XIP Revert Enabled");
+    }
+
+    if ((inst.mode != "Overwrite") && tzEnabled) {
+        Common.logError(validation, inst, "mode",
+            "XIP is not allowed for TrustZone Enabled mode, only Overwrite");
+    }
+}
+
+/*
+ *  ======== checkBootSeedOffset ========
+ *  checkBootSeedOffset function to perform sanity check Boot Seed configuration
+ */
+function checkBootSeedOffset(inst, validation)
+{
+
+    if (SCFG_BOOT_SEED_DISABLED != inst.bootSeedOffset) {
+        if (inst.bootSeedOffset < 0) {
+            Common.logError(validation, inst, "bootSeedOffset",
+                "Boot Seed offset min value is 0");
+        } else if (inst.bootSeedOffset > 13) {
+            Common.logError(validation, inst, "bootSeedOffset",
+                "Boot Seed offset max value is 13");
+        }
+    }
+}
+
+/*
+ *  ======== CheckRegionOverlap ========
+ *  Helper function to detect slot overlap
+ */
+function CheckRegionOverlap (start_a, end_a,
+                             start_b, end_b)
+{
+    if ((start_b >= start_a) && (start_b <= end_a)) {
+        return true;
+    } else if ((end_b >= start_a) && (end_b <= end_a)) {
+        return true;
+    }
+
+    if ((start_a >= start_b) && (start_a <= end_b)) {
+        return true;
+    } else if ((end_a > start_b) && (end_a <= end_b)) {
+        return true;
+    }
+
+    return false;
+}
+
+/*
+ *  ======== IsSlotDefined ========
+ *  Helper function to detect if slot start and length are defined
+ */
+function IsSlotDefined (start, len)
+{
+    if ((start != SCFG_UNDEFINED_SLOT_ADDRESS) && (len != SCFG_UNDEFINED_SLOT_LENGTH)) {
+        return true;
+    }
+
+    return false;
+}
+
+/*
+ *  ======== checkSlotConfiguration ========
+ *  checkSlotConfiguration function to validate that slots do not overlap
+ *  (if slot is valid). Although ROM Secure Boot allows for scattered slots,
+ *  here the following order is enforced:
+ *  - SSB
+ *  - Primary 0
+ *  - Primary 1
+ *  - Secondary 0
+ *  - Secondary 1
+ *
+ */
+function checkSlotConfiguration(inst, validation)
+{
+    if (tzEnabled) { /* The following is just to throw an error if TrustZone module is */
+        Common.logError(validation, inst, "authMethod", "The combination of TrustZone and Secure Boot is not yet supported. Before TrustZone can be enabled, this combination must be properly handled. Please reach out to R&D");
+    }
+
+    let slots = [
+        {cond: inst.ssbEnabled, name: "Secondary Secure Bootloader", name_start: "ssbStart",   name_len: "ssbLen",   start: inst.ssbStart, len: inst.ssbLen},
+        {cond: !tzEnabled, name: "Primary",  name_start: "prim0StartSingle", name_len: "prim0LenSingle", start: inst.prim0StartSingle, len: inst.prim0LenSingle},
+        {cond: tzEnabled, name: "Primary Secure",  name_start: "prim0StartSecure", name_len: "prim0LenSecure", start: inst.prim0StartSecure, len: inst.prim0LenSecure},
+        {cond: tzEnabled, name: "Primary Non-Secure",  name_start: "prim1Start", name_len: "prim1Len", start: inst.prim1Start, len: inst.prim1Len},
+        {cond: !tzEnabled, name: "Secondary",  name_start: "sec0StartSingle", name_len: "sec0LenSingle", start: inst.sec0StartSingle, len: inst.sec0LenSingle},
+        {cond: tzEnabled, name: "Secondary Secure",  name_start: "sec0StartSecure", name_len: "sec0LenSecure", start: inst.sec0StartSecure, len: inst.sec0LenSecure},
+        {cond: tzEnabled, name: "Secondary Non-Secure",  name_start: "sec1Start", name_len: "sec1Len", start: inst.sec1Start, len: inst.sec1Len}
+    ];
+    let start_a, end_a, start_b, end_b;
+
+    for (let i=0; i < slots.length; i++) {
+        if (slots[i].cond) {
+
+            checkSlotParameters(inst, validation, slots[i].name_start, slots[i].start, slots[i].name_len, slots[i].len);
+
+            for (let j=i+1; j < slots.length; j++) {
+                if (slots[j].cond &&
+                    IsSlotDefined(slots[i].start, slots[i].len) &&
+                    IsSlotDefined(slots[j].start, slots[j].len)) {
+
+                    start_a = slots[i].start;
+                    end_a = start_a + slots[i].len - 1;
+                    start_b = slots[j].start;
+                    end_b = start_b + slots[j].len - 1;
+
+                    if (true == CheckRegionOverlap(start_a, end_a, start_b, end_b)) {
+                        Common.logError(validation, inst, slots[i].name_start, slots[i].name + " overlaps with " + slots[j].name);
+                        Common.logError(validation, inst, slots[i].name_len, slots[i].name + " overlaps with " + slots[j].name);
+                        Common.logError(validation, inst, slots[j].name_start, slots[j].name + " overlaps with " + slots[i].name);
+                        Common.logError(validation, inst, slots[j].name_len, slots[j].name + " overlaps with " + slots[i].name);
+                    }
+
+                    if (slots[i].start >= slots[j].start) {
+                        Common.logError(validation, inst, slots[i].name_start, slots[i].name + " must be located before " + slots[j].name);
+                        Common.logError(validation, inst, slots[i].name_len, slots[i].name + " must be located before " + slots[j].name);
+                        Common.logError(validation, inst, slots[j].name_start, slots[j].name + " must be located after " + slots[i].name);
+                        Common.logError(validation, inst, slots[j].name_len, slots[j].name + " must be located after " + slots[i].name);
+                    }
+                }
+            }
+        }
+    }
+
+    if (inst.ssbEnabled) {
+        if (inst.ssbStart == SCFG_UNDEFINED_SLOT_ADDRESS) {
+            Common.logError(validation, inst, "ssbStart", "Start must be defined if Secondary Secure Bootloader is Enabled");
+        }
+        if (inst.ssbLen == SCFG_UNDEFINED_SLOT_LENGTH) {
+            Common.logError(validation, inst, "ssbLen", "Length must be defined if Secondary Secure Bootloader is Enabled");
+        }
+    }
+
+    if (tzEnabled) {
+        if (inst.prim0StartSecure == SCFG_UNDEFINED_SLOT_ADDRESS) {
+            Common.logError(validation, inst, "prim0StartSecure", "Start must be defined in TrustZone Enabled mode");
+        }
+        if (inst.prim0LenSecure == SCFG_UNDEFINED_SLOT_LENGTH) {
+            Common.logError(validation, inst, "prim0LenSecure", "Length must be defined in TrustZone Enabled mode");
+        }
+        if (inst.prim1Start == SCFG_UNDEFINED_SLOT_ADDRESS) {
+            Common.logError(validation, inst, "prim1Start", "Start must be defined in TrustZone Enabled mode");
+        }
+        if (inst.prim1Len == SCFG_UNDEFINED_SLOT_LENGTH) {
+            Common.logError(validation, inst, "prim1Len", "Length must be defined in TrustZone Enabled mode");
+        }
+        if (inst.sec1Len != SCFG_UNDEFINED_SLOT_LENGTH) {
+            if (inst.sec1Len != inst.prim1Len) {
+                Common.logError(validation, inst, "sec1Len", "Secondary Non-Secure slot length must match Primary Non-Secure slot length");
+            }
+        }
+    }
+
+    if (inst.mode == "Overwrite") {
+        if (tzEnabled) {
+            if (inst.sec0LenSecure != SCFG_UNDEFINED_SLOT_LENGTH) {
+                if (inst.sec0LenSecure != inst.prim0LenSecure) {
+                    Common.logError(validation, inst, "sec0LenSecure", "Secondary Secure slot length must match Primary Secure slot length");
+                }
+            }
+        } else {
+            if (inst.sec0LenSingle != SCFG_UNDEFINED_SLOT_LENGTH) {
+                if (inst.sec0LenSingle != inst.prim0LenSingle) {
+                    Common.logError(validation, inst, "sec0LenSingle", "Secondary slot length must match Primary slot length");
+                }
+            }
+        }
+    }
+}
+
+/*
+ *  ======== checkPrivateKey ========
+ *  checkPrivateKey funtion to validate that a private key file has been specified
+ */
+function checkPrivateKey (inst, validation)
+{
+    if (inst.authMethod != "No Authentication") {
+        if (inst.privKey == "") {
+            Common.logError(validation, inst, "privKey", "A private key must be specified if Secure Boot is enabled");
+        }
+    }
+}
+
 /*!
  *  ======== validate ========
  *  Validate this module's configuration
@@ -751,10 +1612,14 @@ function onChangeLfoscComp(inst, ui) {
  */
 function validate(inst, validation) {
 
-    if(inst.enableLfoscComp === true)
-    {
-        Common.logInfo(validation, inst, "enableLfoscComp",
-            "The LFOSC Compensation is to be considered beta quality. An improved accuracy of LFOSC is expected with best effort, but an absolute accuracy cannot be guaranteed.");
+    checkBootSeedOffset(inst, validation);
+    checkMode(inst, validation);
+    checkSlotConfiguration(inst, validation);
+    checkPrivateKey(inst, validation);
+
+    if (inst.debugAuthorization == "Require debug authentication") {
+        Common.logError(validation, inst, "debugAuthorization",
+            "Public Key based authentication is not implemented");
     }
 
     if (inst.hfxtCapArrayQ1 > MAX_CAP_ARRAY) {
@@ -774,9 +1639,14 @@ function validate(inst, validation) {
             "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
     }
 
-    if (inst.pBldrVtor > MAX_PBLDRVTOR) {
-        Common.logError(validation, inst, "pBldrVtor",
-            "Must be less than 0x" + (MAX_PBLDRVTOR + 1).toString(16));
+    if (Common.isCName(inst.pBldrVtorStr) == false)
+    {
+        let pBldrVtorInt = parseInt(inst.pBldrVtorStr);
+        if (isNaN(pBldrVtorInt) || pBldrVtorInt > MAX_PBLDRVTOR || pBldrVtorInt < 0)
+        {
+            Common.logError(validation, inst, "pAppVtorStr",
+            "Must be either a C symbol or an unsigned integer less than 0x" + (MAX_PBLDRVTOR + 1).toString(16).toUpperCase());
+        }
     }
 
     if (inst.serialIoCfgIndex > MAX_SERIALIOCFGINDEX) {
@@ -789,34 +1659,14 @@ function validate(inst, validation) {
             "Must be less than 0x" + (MAX_PIN_TRIGGER_DIO + 1).toString(16));
     }
 
-    if (inst.saciTimeoutExp > MAX_SACITIMEOUTEXP) {
-        Common.logError(validation, inst, "saciTimeoutExp",
-            "Must be less than 0x" + (MAX_SACITIMEOUTEXP + 1).toString(16));
-    }
-
-    if (!(inst.debugPwdHash.match(/^[a-fA-F0-9]{0,64}$/))) {
-        Common.logError(validation, inst, "debugPwdHash",
-            "Must be valid hex-formatted SHA256 hash");
-    }
-
-    if (!(inst.debugPwdId.match(/^[a-fA-F0-9]{0,16}$/))) {
-        Common.logError(validation, inst, "debugPwdId",
-            "Must be 64-bit hex-formatted value");
-    }
-
-    if (inst.hwOpts0 > 0xFFFFFFFF) {
-        Common.logError(validation, inst, "hwOpts0",
-            "Must be 32-bit value");
-    }
-
-    if (inst.hwOpts1 > 0xFFFFFFFF) {
-        Common.logError(validation, inst, "hwOpts1",
-            "Must be 32-bit value");
-    }
-
-    if (inst.pAppVtor > 0xFFFFFFFF) {
-        Common.logError(validation, inst, "pAppVtor",
-            "Must be 32-bit value");
+    if (Common.isCName(inst.pAppVtorStr) == false)
+    {
+        let pAppVtorInt = parseInt(inst.pAppVtorStr);
+        if (isNaN(pAppVtorInt) || pAppVtorInt > 0xFFFFFFFF || pAppVtorInt < 0)
+        {
+            Common.logError(validation, inst, "pAppVtorStr",
+            "Must be either a C symbol or a 32-bit value");
+        }
     }
 
     if (inst.writeEraseProt_mainSectors0_31 > 0xFFFFFFFF) {
@@ -864,9 +1714,9 @@ function validate(inst, validation) {
             "Must be valid hex-formatted SHA256 hash");
     }
 
-    if (inst.hsmSize > MAX_HSM_SIZE) {
-        Common.logError(validation, inst, "hsmSize",
-            "Must be less than 0x" + (MAX_HSM_SIZE + 1).toString(16));
+    if (inst.HFXTCompTempDelta < 1) {
+        Common.logError(validation, inst, "HFXTCompTempDelta",
+            "Must be an integer greater than 0");
     }
 }
 
@@ -877,7 +1727,7 @@ function modules(inst) {
     let tmpModules = [];
 
     /* If LFOSC compensation is enabled, include the temperature driver. */
-    if (inst.srcClkLF === "LF RCOSC" && inst.enableLfoscComp) {
+    if (inst.enableHFXTComp || (inst.srcClkLF === "LF RCOSC" && inst.enableLfoscComp)) {
         tmpModules.push({
             name: "Temperature",
             moduleName: "/ti/drivers/Temperature"
@@ -891,6 +1741,7 @@ function modules(inst) {
             moduleName: "/ti/drivers/power/PowerLPF3LfoscCompProfiles"
         });
     }
+
     return tmpModules;
 }
 

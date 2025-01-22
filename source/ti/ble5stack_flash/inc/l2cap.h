@@ -478,6 +478,7 @@ typedef struct
 /// @brief Connection oriented channel information format.
 typedef struct
 {
+  uint16 connHandle;          //!< Connection handle the channel belongs to
   uint16 psm;                 //!< PSM that channel belongs to
   uint16 mtu;                 //!< Maximum SDU size that can be received by local device
   uint16 mps;                 //!< Maximum payload size that can be received by local device
@@ -495,6 +496,13 @@ typedef struct
   uint8 state;         //!< Channel connection state: @ref L2CAP_CHANNEL_STATES
   l2capCoCInfo_t info; //!< Channel info
 } l2capChannelInfo_t;
+
+/// @brief Local connection handle and channel pair format.
+typedef struct
+{
+  uint16 connHandle;   //!< Connection handle
+  uint16 CID;          //!< Channel CID
+} l2capLocalChannelInfo_t;
 
 /** @} End L2CAP_Structs */
 
@@ -613,11 +621,12 @@ typedef struct
 /// @brief L2CAP packet structure.
 typedef struct
 {
-  uint16 CID;      //!< local channel id
-  uint8 *pPayload; //!< pointer to information payload. This contains the payload
-                   //!< received from the upper layer protocol (outgoing packet),
-                   //!< or delivered to the upper layer protocol (incoming packet).
-  uint16 len;      //!< length of information payload
+  uint16 connHandle; //!< connection handle
+  uint16 CID;        //!< local channel id
+  uint8 *pPayload;   //!< pointer to information payload. This contains the payload
+                     //!< received from the upper layer protocol (outgoing packet),
+                     //!< or delivered to the upper layer protocol (incoming packet).
+  uint16 len;        //!< length of information payload
 } l2capPacket_t;
 
 /**
@@ -633,7 +642,6 @@ typedef struct
 typedef struct
 {
   osal_event_hdr_t hdr; //!< L2CAP_DATA_EVENT and status
-  uint16 connHandle;    //!< connection packet was received on
   l2capPacket_t pkt;    //!< received packet
 } l2capDataEvent_t;
 
@@ -724,7 +732,6 @@ extern void L2CAP_RegisterFlowCtrlTask( uint8 taskId );
  * If SUCCESS is NOT returned to the user upon calling this API,
  * 'pPayload' is STILL owned by the user - the BLE Stack will NOT free 'pPayload'.
  *
- * @param   connHandle - connection to be used.
  * @param   pPkt - pointer to packet to be sent.
  *
  * @return  @ref SUCCESS : Data was sent successfully.
@@ -735,7 +742,7 @@ extern void L2CAP_RegisterFlowCtrlTask( uint8 taskId );
  * @return  @ref blePending : In the middle of another transmit.
  * @return  @ref bleInvalidMtuSize : Packet length is larger than MTU size.
  */
-extern bStatus_t L2CAP_SendData( uint16 connHandle, l2capPacket_t *pPkt );
+extern bStatus_t L2CAP_SendData( l2capPacket_t *pPkt );
 
 /**
  * @brief   Register a Protocol/Service Multiplexer (PSM) with L2CAP.
@@ -779,23 +786,24 @@ extern bStatus_t L2CAP_PsmInfo( uint16 psm, l2capPsmInfo_t *pInfo );
  *
  * @param   psm - PSM Id.
  * @param   numCIDs - number of CIDs can be copied.
- * @param   pCIDs - structure to copy CIDs into.
+ * @param   pCIDs - structure to copy CIDs with connection handle into.
  *
  * @return  @ref SUCCESS : Operation was successful.
  * @return  @ref INVALIDPARAMETER : PSM is not registered.
  */
-extern bStatus_t L2CAP_PsmChannels( uint16 psm, uint8 numCIDs, uint16 *pCIDs );
+extern bStatus_t L2CAP_PsmChannels( uint16 psm, uint8 numCIDs, l2capLocalChannelInfo_t *pCIDs );
 
 /**
  * @brief   Get information about a given active Connection Oriented Channel.
  *
+ * @param   connHandle - connection related to the channel
  * @param   CID - local channel id.
  * @param   pInfo - structure to copy channel info into.
  *
  * @return  @ref SUCCESS : Operation was successful.
  * @return  @ref INVALIDPARAMETER : No such a channel.
  */
-extern bStatus_t L2CAP_ChannelInfo( uint16 CID, l2capChannelInfo_t *pInfo );
+extern bStatus_t L2CAP_ChannelInfo( uint16 connHandle, uint16 CID, l2capChannelInfo_t *pInfo );
 
 /**
  * @brief   Send Connection Request.
@@ -832,6 +840,7 @@ extern bStatus_t L2CAP_ConnectRsp( uint16 connHandle, uint8 id, uint16 result );
 /**
  * @brief   Send Disconnection Request.
  *
+ * @param   connHandle - connection to create channel on
  * @param   CID - local CID to disconnect
  *
  * @return  @ref SUCCESS : Request was sent successfully.
@@ -841,11 +850,12 @@ extern bStatus_t L2CAP_ConnectRsp( uint16 connHandle, uint8 id, uint16 result );
  * @return  @ref bleNoResources
  * @return  @ref bleMemAllocError
  */
-extern bStatus_t L2CAP_DisconnectReq( uint16 CID );
+extern bStatus_t L2CAP_DisconnectReq( uint16 connHandle, uint16 CID );
 
 /**
  * @brief   Send Flow Control Credit.
  *
+ * @param   connHandle - connection related to the channel
  * @param   CID - local CID
  * @param   peerCredits - number of credits to give to peer device
  *
@@ -856,7 +866,7 @@ extern bStatus_t L2CAP_DisconnectReq( uint16 CID );
  * @return  @ref bleInvalidRange : Credits is out of range.
  * @return  @ref bleMemAllocError
  */
-extern bStatus_t L2CAP_FlowCtrlCredit( uint16 CID, uint16 peerCredits );
+extern bStatus_t L2CAP_FlowCtrlCredit( uint16 connHandle, uint16 CID, uint16 peerCredits );
 
 /**
  * @brief   Send data packet over an L2CAP connection oriented channel
@@ -1135,7 +1145,7 @@ extern void L2CAP_Init( uint8 taskId );
  * @param   taskId - Task ID
  * @param   events  - Bitmap of events
  */
-extern uint16 L2CAP_ProcessEvent( uint8 taskId, uint16 events );
+extern uint32 L2CAP_ProcessEvent( uint8 taskId, uint32 events );
 
 /// @endcond // NODOC
 

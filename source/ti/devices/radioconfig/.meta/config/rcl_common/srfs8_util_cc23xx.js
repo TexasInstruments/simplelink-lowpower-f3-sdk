@@ -124,8 +124,9 @@ function create(phyGroup) {
         var packetData = [getDataArray()];
         sections[n++] = "PDU header;" + byteString(packetData.slice(0, 0 + 2));
 
-        // Add advertising address
-        sections[n++] = "Advertising address;" + byteString(packetData.slice(2, 2 + 2)) + ";" + byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
+        // Add extended header
+        sections[n++] = "Extended header;" + byteString(packetData.slice(2, 2 + 1)) + ";" + byteString(packetData.slice(3, 3 + 1)) + ";" +
+                        byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
 
         // Add payload
         if (getTestProperty("seqNumberEnable") == 0) {

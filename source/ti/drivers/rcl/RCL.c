@@ -43,7 +43,7 @@
 #include <ti/drivers/rcl/LRF.h>
 #include <ti/drivers/rcl/RCL_Scheduler.h>
 #include <ti/drivers/rcl/RCL_Profiling.h>
-#include <ti/drivers/rcl/RCL_Tracer.h>
+#include <ti/drivers/rcl/RCL_Gpio.h>
 #include <ti/drivers/rcl/RCL_Debug.h>
 #include <ti/drivers/rcl/RCL_Version.h>
 
@@ -209,7 +209,7 @@ static void rclCommandHwi(void)
         /* Set power constraints since the radio has been set up */
         if (rclState.powerState == RCL_standbyAllow)
         {
-            hal_power_set_constraint();
+            hal_power_set_standby_constraint();
             rclState.powerState = RCL_standbyDisallow;
         }
     }
@@ -284,7 +284,7 @@ static void rclCommandHwi(void)
             /* It's now safe to go into standby */
             if (rclState.powerState != RCL_standbyAllow)
             {
-                hal_power_release_constraint();
+                hal_power_release_standby_constraint();
                 rclState.powerState = RCL_standbyAllow;
             }
         }
@@ -551,8 +551,6 @@ static void rclPowerNotify(RCL_PowerEvent eventType)
         /*
         * Executed every time the device exits the standby sleep state.
         */
-        /* Reinitialize the tracer */
-        RCL_Tracer_wakeup();
 
         /* The rest is only done if at least one client is open */
         if (rclState.numClients > 0)
@@ -578,7 +576,6 @@ static void rclPowerNotify(RCL_PowerEvent eventType)
     }
     else if (eventType == RCL_POWER_STANDBY_ENTER)
     {
-        RCL_Tracer_standby();
         /* The rest is only done if at least one client is open */
         if (rclState.numClients > 0)
         {
@@ -609,8 +606,6 @@ void RCL_init(void)
         /* Ensure temperature compensation of TX output power and RF Trims */
         hal_temperature_init();
         isInitialized = true;
-        /* Initialize the RF Tracer */
-        RCL_Tracer_enable();
     }
 }
 

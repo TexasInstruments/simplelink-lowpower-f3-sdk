@@ -55,10 +55,12 @@
 #define RCL_SCHEDULER_MARGIN_ARM         RCL_SCHEDULER_SYSTIM_US(40U)  /*!< Time to prepare FIFO + PBE */
 #define RCL_SCHEDULER_MARGIN_CONFIGURE   RCL_SCHEDULER_SYSTIM_US(76U)  /*!< Time to reload REGBANKs */
 #define RCL_SCHEDULER_MARGIN_LOAD        RCL_SCHEDULER_SYSTIM_US(460U) /*!< Time to load TOPsm images */
-#define RCL_SCHEDULER_SLEEP_CUTOFF       RCL_SCHEDULER_SYSTIM_MS(10U)  /*!< Time margin when not to arm LRF immediately */
+#define RCL_SCHEDULER_SLEEP_CUTOFF       RCL_SCHEDULER_SYSTIM_MS(5U)  /*!< Time margin when not to arm LRF immediately */
 #define RCL_SCHEDULER_TRIG_NOW_DELAY     RCL_SCHEDULER_SYSTIM_US(50U)  /*!< Delay to add to current time to allow start to be in the future */
 #if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC2340R53)
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(390U) /*!< Wakeup margin to allow for varying command and setup time */
+#elif defined(DeviceFamily_CC27XX)
+#define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(150U) /*!< Wakeup margin to allow for varying command and setup time */
 #else
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(1000U)/*!< Wakeup margin to allow for varying command and setup time */
 #endif

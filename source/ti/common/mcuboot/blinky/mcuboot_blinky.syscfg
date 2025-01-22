@@ -37,6 +37,10 @@
 
 const Board = scripting.addModule("/ti/drivers/Board");
 const Power = scripting.addModule("/ti/drivers/Power");
+const CCFG = scripting.addModule("/ti/devices/CCFG");
+
+/* Disable CCFG section generation as it shall be owned/linked by MCUBoot */
+CCFG.enableCodeGeneration = false;
 
 /* ======== Board ======== */
 var boardName = system.deviceData.board.name;

@@ -63,7 +63,7 @@ class Semaphore {
         }
         let sem = makeDetailed ? new DetailedSemaphore() : new BasicSemaphore();
         sem.Name = map["Name"];
-        sem.Address = map["Address"];
+        sem.Address = this.helper.helperGetHexString(map["Address"]);
         sem.MaxCnt = map["uxLength"];
         sem.Type = map["Type"];
         sem.Available = map["uxMessagesWaiting"];

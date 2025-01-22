@@ -81,7 +81,9 @@ const channelOptions = [
     {name: 26, displayName: "26 - 2480 MHz"}
 ];
 
-const rfModule = {
+const config = {
+    displayName: "Radio",
+    description: "Configure default radio channel",
     config: [
         {
             name: "primaryChannels",
@@ -96,5 +98,17 @@ const rfModule = {
     ]
 }
 
+/* Function to handle changes in deviceType configurable */
+function onDeviceTypeChange(inst, ui)
+{
+    let element = null;
+    for(element of config.config)
+    {
+        ui[element.name].hidden = inst.deviceType.includes("gpd");
+    }
+}
 
-exports = rfModule;
+exports = {
+    config: config,
+    onDeviceTypeChange: onDeviceTypeChange
+};

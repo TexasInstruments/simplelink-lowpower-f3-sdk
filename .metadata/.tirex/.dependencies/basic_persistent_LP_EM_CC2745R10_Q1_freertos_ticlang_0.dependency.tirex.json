@@ -1,0 +1,19 @@
+[
+    {
+        "files": [
+            "+../../README.html -> README.html",
+            "+../../app-rsa-3k-pkcs-priv.pem -> app-rsa-3k-pkcs-priv.pem",
+            "+../../sb_key_ring_init.h -> sb_key_ring_init.h",
+            "+../../app/app_main.c -> app/app_main.c",
+            "+../../app/app_main.h -> app/app_main.h",
+            "+../../app/app_peripheral.c -> app/app_peripheral.c",
+            "+../../app/app_pairing.c -> app/app_pairing.c",
+            "+../../app/app_connection.c -> app/app_connection.c",
+            "+../../app/Profiles/app_dev_info.c -> app/Profiles/app_dev_info.c",
+            "+../../common/Startup/osal_icall_ble.c -> common/Startup/osal_icall_ble.c",
+            "+../basic_persistent.syscfg -> basic_persistent.syscfg",
+            "+../../common/Startup/main_freertos.c -> main_freertos.c",
+            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+        ]
+    }
+]

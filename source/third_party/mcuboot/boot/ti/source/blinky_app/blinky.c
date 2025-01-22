@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2021, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,6 @@
 /* Driver configuration */
 #include "ti_drivers_config.h"
 
-#include "bootutil/bootutil.h"
 #include "bootutil/image.h"
 
 #include "trace.h"

@@ -95,12 +95,23 @@ typedef uint32_t PsaAssetId_t;
 #define PSA_KEYBLOB_AAD_MAX_SIZE     224U
 
 
+/** The extra wrapping bits necessary in an AES-SIV keyblob. */
+#define PSA_KEYBLOB_ADDITIONAL_BYTES (128U / 8U)
+
 /** The expected size of an AES-SIV keyblob.\n
  *  Note: AssetSize is the size of the Asset in octects (bytes). */
 static inline size_t
 PSA_KEYBLOB_SIZE(const size_t AssetSize)
 {
-    return ((128U / 8U) + AssetSize);
+    return (PSA_KEYBLOB_ADDITIONAL_BYTES + AssetSize);
+}
+
+/** The expected size of key material wrapped by AES-SIV.\n
+ *  Note: KeyBlobSize is the size of the key blob in octects (bytes). */
+static inline size_t
+PSA_KEYMATERIAL_SIZE(const size_t KeyBlobSize)
+{
+    return (KeyBlobSize - PSA_KEYBLOB_ADDITIONAL_BYTES);
 }
 
 /** Asset Policy is a bitmask that defines the type and use of an Asset.\n
@@ -189,8 +200,8 @@ psaInt_AssetSearch(const uint16_t StaticAssetNumber,
                    PsaAssetId_t * const AssetId_p,
                    size_t * const AssetSize_p);
 
-PsaAssetId_t
-psaInt_AssetGetKeyBlobKEK(void);
+psa_status_t
+psaInt_AssetGetKeyBlobKEK(PsaAssetId_t * const KekAssetId);
 
 void
 psaInt_AssetGetKeyBlobLabel(uint8_t *pData,

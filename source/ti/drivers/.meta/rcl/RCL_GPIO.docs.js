@@ -72,78 +72,6 @@ const base = {
         description: "Choose which signals to enable",
         longDescription:`Enable specific radio signals beyond the selected use case  `
     },
-    rftracer: {
-        displayName: "RF Tracer",
-        description: "Enable the RF Tracer as log sink",
-        longDescription: `
-Enable and configure radio trace output.
-
-The RF Tracer is a dedicated hardware module in the radio
-used to serialize log statements (traces) embedded in the radio code.
-
-**Requrirements:**
-* This feature requires the use of an output pin, which can be configured in the options below.
-* The traces are given in a proprietary serial format, and decoding the trace messages will require support from TI.
-
-**Note:** Enabling of trace messages may affect radio performance.
-        `
-},
-rftrcMode: {
-    displayName: "RF Tracer Mode",
-    description: "Mode for RF Tracer",
-    longDescription:`
-The RF tracer modes allows for selecting the source of the trace messages.
-The source can be the radio (LRF domain) and/or the system CPU (Radio Control Layer).
-    `,
-    cpu: {
-        displayName: "CPU only",
-    },
-    radio: {
-        displayName: "Radio only",
-    },
-    both: {
-        displayName: "CPU + Radio",
-    }
-},
-rftrcTimestamp: {
-    displayName: "Timestamp Enabled",
-    description: "Enables Timestamp setting",
-    longDescription: `
-When timestamps are enabled, the log elements have timestamps beside them. This option is enabled and hidden by default.
-    `,
-    on: {
-        displayName: "Enabled",
-        description: "Timestamps are enabled"
-    },
-    off: {
-        displayName: "Disabled",
-        description: "Timestamps are disabled"
-    }
-},
-rftrcPrescaler: {
-    displayName: "RF Tracer Prescaler",
-    description: "Set speed of RF Tracer",
-    longDescription: `
-This variable is the divisor that the max clock speed is divided by. DIV3, for example, divides the clock speed by 3.
-The clock speed of the RF Tracer may need to be reduced if experiencing signal quality issues on the tracer signal.
-    `,
-    div1: {
-        displayName: "Divide by 1",
-        description: "Divide clock by 1"
-    },
-    div2: {
-        displayName: "Divide by 2",
-        description: "Divide clock by 2"
-    },
-    div3: {
-        displayName: "Divide by 3",
-        description: "Divide clock by 3"
-    },
-    div4: {
-        displayName: "Divide by 4",
-        description: "Divide clock by 4"
-    }
-},
 rclConfig: {
     displayName: "RCL Configuration",
     longDescription: `
@@ -167,10 +95,6 @@ rclPinOptions: {
     lnaEnable: {
         displayName: "RFEGPO1 (LNA_EN)",
         description: "Select RFE output line 1"
-    },
-    tracerEnable: {
-        displayName: "RFCTRC (Tracer)",
-        description: "Select RFCTRC output line 7"
     },
     rfeGpo2: {
         displayName: "RFEGPO2",

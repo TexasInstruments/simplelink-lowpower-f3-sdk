@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,6 +97,27 @@ Buffer size determines the maximum amount of data that can be flushed at each
 tick of the idle loop / LogSinkUART_flush() call.
 `,
         default     : 1024
+    },
+    {
+        name: "printfDelegate",
+        displayName: "Printf Delegate Function",
+        default: "LogSinkUART_printfDepInjection",
+        readOnly: true,
+        /* getValue is evaluated every time printfDelgate is read in either a configurable or a template. */
+        getValue: () => {
+            /* Only return the singleton function if we have one instance */
+            if (system.modules["/ti/log/LogSinkUART"].$instances.length == 1) {
+                return "LogSinkUART_printfSingleton";
+            }
+            /* Return the regular dependency injection implementation by default. */
+            return "LogSinkUART_printfDepInjection";
+        }
+    },
+    {
+        name: "bufDelegate",
+        displayName: "Buf Delegate Function",
+        default: "LogSinkUART_bufDepInjection",
+        readOnly: true
     }
 ];
 
@@ -144,14 +165,15 @@ function moduleInstances(inst)
 }
 
 /*
- *  ======== sharedModuleInstances ========
+ *  ======== moduleInstancesStatic ========
+ *  returns static instances
  */
-function sharedModuleInstances(inst) {
-    let sharedInstance = new Array();
+function moduleInstancesStatic(inst) {
+    let staticInstances = new Array();
 
     if (system.getRTOS() == "freertos")
     {
-        sharedInstance.push(
+        staticInstances.push(
             {
                 name       : "idleHooks",
                 displayName: "IDLE HOOK",
@@ -166,7 +188,7 @@ function sharedModuleInstances(inst) {
     }
     else if (system.getRTOS() == "tirtos7")
     {
-        sharedInstance.push(
+        staticInstances.push(
             {
                 name       : "idleHooks",
                 displayName: "IDLE HOOK",
@@ -180,7 +202,7 @@ function sharedModuleInstances(inst) {
         );
     }
 
-    return (sharedInstance);
+    return (staticInstances);
 }
 
 /*
@@ -220,7 +242,9 @@ which can be received by the tilogger host-side tool.
     config              : config_instance,
     defaultInstanceName : "CONFIG_ti_log_LogSinkUART_",
     moduleInstances     : moduleInstances,
-    sharedModuleInstances: sharedModuleInstances,
+    moduleStatic        : {
+        moduleInstances: moduleInstancesStatic
+    },
     validate: validate,
     /* Board_init() priority to guarantee that the LogSink is initialized after GPIO */
     initPriority        : 5,

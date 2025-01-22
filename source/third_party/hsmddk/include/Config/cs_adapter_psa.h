@@ -71,11 +71,6 @@
  */
 #define PSA_AS_DERIVE_MC_ASSETNUMBER  0
 
-/* PSA_MAX_KEY_BUFF_ENTRIES specifies the number keys (entries) that can be
- * stored in the PSA key storage
- */
-#define PSA_MAX_KEY_BUFF_ENTRIES 100U
-
 /* Token use related defines */
 #define PSA_USE_TOKEN_INTERMEDIATE_STATE /* Hash intermediate state is going via the token */
 #define PSA_USE_TOKEN_KEY               /* (Encryption) Key is going via the token */

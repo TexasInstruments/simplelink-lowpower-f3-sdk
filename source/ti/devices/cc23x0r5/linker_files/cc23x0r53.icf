@@ -32,6 +32,16 @@
 //
 //****************************************************************************/
 
+/* Symbols used for checksum generation */
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_BOOT_CFG_begin = 0x4e020000;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_BOOT_CFG_end = 0x4e02000b;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_begin = 0x4e020010;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_end = 0x4e02074b;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_DEBUG_begin = 0x4e0207d0;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_DEBUG_end = 0x4e0207fb;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_USER_RECORD_begin = 0x4e020750;
+define exported symbol ti_utils_build_GenMap_sym_CRC_CCFG_USER_RECORD_end = 0x4e0207cb;
+
 /*###ICF### Section handled by ICF editor, don't touch! ****/
 /*-Editor annotation file-*/
 /* IcfEditorFile="$TOOLKIT_DIR$\config\ide\IcfEditor\cortex_v1_0.xml" */
@@ -78,24 +88,6 @@ keep { section .resetVecs };
 define region CCFG_region    = mem:[from __CCFG_START__ to __CCFG_END__];
 place in CCFG_region {section .ccfg};
 keep { section .ccfg };
-
-//
-// Define symbols required for CRC32 checksum generation within CCFG.
-// Post-build step example:
-// ielftool --checksum __ccfg_boot_cfg_crc32_end+1:4,crc32:1mi,0xFFFFFFFF;__ccfg_boot_cfg_crc32_begin-__ccfg_boot_cfg_crc32_end
-//          --checksum __ccfg_crc32_end+1:4,crc32:1mi,0xFFFFFFFF;__ccfg_crc32_begin-__ccfg_crc32_end
-//          --checksum __ccfg_user_record_crc32_end+1:4,crc32:1mi,0xFFFFFFFF;__ccfg_user_record_crc32_begin-__ccfg_user_record_crc32_end
-//          --checksum __ccfg_debug_cfg_crc32_end+1:4,crc32:1mi,0xFFFFFFFF;__ccfg_debug_cfg_crc32_begin-__ccfg_debug_cfg_crc32_end
-//          "$TARGET_PATH$" "$TARGET_PATH$"
-//
-define exported symbol __ccfg_boot_cfg_crc32_begin      = 0x4E020000;
-define exported symbol __ccfg_boot_cfg_crc32_end        = 0x4E02000B;
-define exported symbol __ccfg_crc32_begin               = 0x4E020010;
-define exported symbol __ccfg_crc32_end                 = 0x4E02074B;
-define exported symbol __ccfg_user_record_crc32_begin   = 0x4E020750;
-define exported symbol __ccfg_user_record_crc32_end     = 0x4E0207CB;
-define exported symbol __ccfg_debug_cfg_crc32_begin     = 0x4E0207D0;
-define exported symbol __ccfg_debug_cfg_crc32_end       = 0x4E0207FB;
 
 //
 // Place remaining 'read only' in Flash

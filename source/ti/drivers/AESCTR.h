@@ -103,6 +103,13 @@
  *       a segmented AESCTR operation, use #AESCTR_SegmentedOperation_init() instead.
  *       Then set all the fields of the one-step or segmented operation struct accordingly.
  *
+ *  ## Device-Specific Requirements #
+ *
+ *  For CC27XX devices, CTR operations leveraging the HSM engine
+ *  (key encoding suffixed with _HSM) have the following requirements:
+ *      - Output buffer address must be 32-bit aligned.
+ *      - Input length must be a block-size (16-byte) multiple.
+ *
  * <h4> Starting a CTR operation </h4>
  *
  * The AESCTR_oneStepEncrypt() and AESCTR_oneStepDecrypt() functions perform a CTR operation
@@ -592,6 +599,10 @@ typedef struct
                                     *     decrypted ciphertext is copied here.
                                     *   Size of the output buffer must be greater than
                                     *   or equal to the inputLength.
+                                    *
+                                    *   For cc27XX devices, when key encoding is
+                                    *   _HSM suffixed, the output buffer needs to
+                                    *   be 32-bit aligned.
                                     */
     const uint8_t *initialCounter; /*!< A buffer containing an initial counter. Under
                                     *   the same key, each counter value may only be
@@ -604,6 +615,9 @@ typedef struct
                                     *   of bytes will be output by the operation.
                                     *   Max length supported may be limited depending on
                                     *   the return behavior.
+                                    *
+                                    *   For CC27XX devices with _HSM-suffixed key encoding,
+                                    *   the inputLength must be block-size aligned.
                                     */
 } AESCTR_OneStepOperation;
 
@@ -628,8 +642,13 @@ typedef struct
                            *     the encrypted plaintext is copied to.
                            *   - Decryption: The plaintext derived from the
                            *     decrypted ciphertext is copied here.
+                           *
                            *   Size of the output buffer must be greater than
                            *   or equal to the inputLength.
+                           *
+                           *   For CC27XX devices with _HSM-suffixed key encoding,
+                           *   the output buffer needs to
+                           *   be 32-bit aligned.
                            */
     size_t inputLength;   /*!< Length of the input in bytes. An equal number
                            *   of bytes will be output by the operation. Must
@@ -637,6 +656,9 @@ typedef struct
                            *   calling #AESCTR_addData(). May be zero when calling
                            *   #AESCTR_finalize() to finalize a segmented
                            *   operation without additional data.
+                           *
+                           *   For CC27XX devices with _HSM-suffixed key encoding,
+                           *   the inputLength must be block-size aligned.
                            */
 } AESCTR_SegmentedOperation;
 

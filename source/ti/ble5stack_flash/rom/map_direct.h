@@ -76,6 +76,9 @@
 #include "ll_common.h"
 #include "hci_event.h"
 #include "ll_ae.h"
+#ifndef CONTROLLER_ONLY
+#include "l2cap_handover.h"
+#endif // CONTROLLER_ONLY
 
 // Link Layer
 #define MAP_LL_AddDeviceToResolvingList                              LL_AddDeviceToResolvingList
@@ -348,7 +351,6 @@
 #define MAP_llPendingUpdateParam                                     llPendingUpdateParam
 #define MAP_llProcessChanMap                                         llProcessChanMap
 #define MAP_llProcessCentralControlProcedures                        llProcessCentralControlProcedures
-#define MAP_llProcessPostRfOps                                       llProcessPostRfOps
 #define MAP_llProcessScanRxFIFO                                      llProcessScanRxFIFO
 #define MAP_llProcessPeripheralControlProcedures                     llProcessPeripheralControlProcedures
 #define MAP_llProcessTxData                                          llProcessTxData
@@ -677,6 +679,7 @@
 #define MAP_L2CAP_SetBufSize                                         L2CAP_SetBufSize
 #define MAP_L2CAP_SetControllerToHostFlowCtrl                        L2CAP_SetControllerToHostFlowCtrl
 #define MAP_L2CAP_bm_alloc                                           L2CAP_bm_alloc
+#define MAP_L2CAP_HandoverTriggerDataTransfer                        L2CAP_HandoverTriggerDataTransfer
 #define MAP_l2capAllocChannel                                        l2capAllocChannel
 #define MAP_l2capAllocConnChannel                                    l2capAllocConnChannel
 #define MAP_l2capAllocPsm                                            l2capAllocPsm
@@ -1212,8 +1215,8 @@
 #define MAP_osal_memcmp                                              osal_memcmp
 #define MAP_osal_memcpy                                              osal_memcpy
 #define MAP_osal_memdup                                              osal_memdup
-#define MAP_osal_memset                                              osal_memset
 #define MAP_osal_CbTimerStart                                        osal_CbTimerStart
+#define MAP_osal_memset                                              osal_memset
 #define MAP_osal_CbTimerStop                                         osal_CbTimerStop
 #define MAP_osal_CbTimerUpdate                                       osal_CbTimerUpdate
 #define MAP_osal_mem_alloc                                           osal_mem_alloc
@@ -1280,6 +1283,7 @@ extern uint8 MAP_llRxEntryDoneEventHandleConnectRequest( void *,uint8 *,uint8 ,u
 extern uint8 MAP_llRxIgnoreEventHandleConnectRequest( void *,uint8 *,uint8 ,uint8 );
 extern uint8 MAP_llAbortEventHandleStateAdv( uint8 );
 extern uint8 MAP_llLastCmdDoneEventHandleStateAdv( void );
+extern uint8 MAP_llLSBPreamSimilar(uint32 AccessAddress);
 extern uint8 MAP_llLastCmdDoneEventHandleStatePeriodicAdv( void );
 extern uint8 MAP_llTxDoneEventHandleStateAdv( void );
 extern uint8 MAP_llRxIgnoreEventHandleStateAdv( void );
@@ -1296,9 +1300,10 @@ extern uint8 MAP_llRxIgnoreEventHandleStateInit( void );
 extern uint8 MAP_llRxEntryDoneEventHandleStateInit( void );
 extern uint8 MAP_llAbortEventHandleStatePeripheral( uint8 );
 extern uint8 MAP_llLastCmdDoneEventHandleStatePeripheral( void );
+extern uint8 MAP_llRfProcessConnRxEntryAvail( void );
 extern uint8 MAP_llAbortEventHandleStateCentral( uint8 );
 extern uint8 MAP_llLastCmdDoneEventHandleStateCentral( void );
-extern uint8 MAP_llRxEntryDoneEventHandleStateConnection( uint8 );
+extern uint8 MAP_llRxEntryDoneEventHandleStateConnection( void );
 extern uint8 MAP_llLastCmdDoneEventHandleStateTest( void );
 extern uint8 MAP_llRxEntryDoneEventHandleStateTest( void );
 extern void MAP_llProcessCentralControlPacket(void *, uint8 *);
@@ -1511,6 +1516,8 @@ extern uint8 MAP_llAddPeriodicAdvPacketToTx(void *pPeriodicAdv, uint8 pktType, u
 extern uint8 MAP_llUpdateSIDFilterScanRsp(uint8 ,uint8 ,uint8);
 extern void  MAP_llSetSIDFilterScanRsp(void);
 extern uint32 MAP_llReturnCurrentPeriodicStartTime(void);
+extern uint32 MAP_llExtAdvTxTime(void * pAdvSet, uint8 primPhy, uint8 secPhy);
+extern uint32 MAP_llEstimateAuxOtaTime(void * pAdvSet, uint8 secPhy);
 /*******************************************************************************
  * Health check
  */
@@ -1565,20 +1572,20 @@ extern void  MAP_llExtInit_PostProcess( void );
 
 // (L2CAP_COC_CFG) functions
 extern uint8  MAP_l2capSendNextSegment( void );
-extern uint8  MAP_l2capReassembleSegment( uint16 connHandle, void *pPkt );
+extern uint8  MAP_l2capReassembleSegment( void *pPkt );
 extern uint8  MAP_L2CAP_ParseConnectReq( void *pCmd, uint8 *pData, uint16 len );
 extern uint8  MAP_l2capParseConnectRsp( void *pCmd, uint8 *pData, uint16 len );
 extern uint8  MAP_L2CAP_ParseFlowCtrlCredit( void *pCmd, uint8 *pData, uint16 len );
 extern uint8  MAP_l2capParseDisconnectReq( void *pCmd, uint8 *pData, uint16 len );
 extern uint8  MAP_l2capParseDisconnectRsp( void *pCmd, uint8 *pData, uint16 len );
-extern uint8  MAP_L2CAP_DisconnectReq( uint16 CID );
+extern uint8  MAP_L2CAP_DisconnectReq( uint16 connHandle, uint16 CID );
 extern uint16 MAP_l2capBuildDisconnectRsp( uint8 *pBuf, uint8 *pData );
 extern void   MAP_l2capProcessConnectReq( uint16 connHandle, uint8 id, void *pConnReq );
-extern void   MAP_l2capGetCoChannelInfo( void *pCoC, void *pInfo );
+extern void   MAP_l2capGetCoChannelInfo( void *pChannel, void *pInfo );
 extern void   MAP_l2capNotifyChannelEstEvt( void *pChannel, uint8 status, uint16 result );
 extern void  *MAP_l2capFindRemoteCID( uint16 connHandle, uint16 CID );
 extern void   MAP_l2capNotifyChannelTermEvt( void *pChannel, uint8 status, uint16 reason );
-extern void  *MAP_l2capFindLocalCID( uint16 CID );
+extern void  *MAP_l2capFindLocalCID( uint16 connHandle, uint16 CID );
 extern void   MAP_l2capDisconnectChannel( void *pChannel, uint16 reason );
 
 // (CENTRAL_CFG) functions
@@ -1689,6 +1696,38 @@ uint8 MAP_llCsSelectStepChannel(uint16 connId, uint8* config, uint8 stepMode);
 void MAP_llCsSelectAA(uint8 csRole, uint32_t* aaRx, uint32_t* aaTx);
 void MAP_llCsGetRandomSequence(uint8 csRole, uint32_t* pTx, uint32_t* pRx, uint8 plLen);
 uint8 MAP_llCsGetToneExtention(void);
+void MAP_llInitCompleteNotify(int status);
 
+/*******************************************************************************
+* Connection Handover
+*/
+uint8 MAP_llHandoverTriggerDataTransfer( void );
+void MAP_llRemoveHandoverConn(uint8 *activeConnsArray, uint8 numActiveConns);
+uint16 MAP_llReturnNonHandoverConn( void );
+void MAP_llHandoverCheckTermConnAndTerm( void );
+uint8 MAP_llHandoverNotifyConnStatus(uint16_t connHandle, uint32_t handoverStatus);
+uint8 MAP_llIsHandoverInProgress( llConnState_t *connPtr );
+void MAP_L2CAP_HandoverInitSN( void );
+uint8 MAP_L2CAP_Handover_StartCN(uint8_t *pHandoverData, uint32_t dataSize );
+uint8 MAP_L2CAP_Handover_GetSNDataSize( uint16_t connHandle );
+void MAP_L2CAP_HandoverApplyDataCN(uint16_t connHandle);
+void *MAP_l2capHandoverGetPsm(void *pHandoverPsmData);
+/*******************************************************************************
+* HCI CMD parser functions
+*/
+
+uint8 MAP_hciCmdParserLegacy( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserConnection( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserAdvertiser( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserInitiator( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserPeripheral( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserPeriodicAdv( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserPeriodicScan( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserChannelSounding( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserHost( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserVendorSpecificConnection( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserVendorSpecificInitiator( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserVendorSpecificPeripheral( uint8 *pData, uint16 cmdOpCode );
+uint8 MAP_hciCmdParserVendorSpecificBroadcaster( uint8 *pData, uint16 cmdOpCode );
 /*******************************************************************************/
 #endif // MAP_DIRECT_H

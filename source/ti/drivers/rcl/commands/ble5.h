@@ -93,7 +93,7 @@ typedef union {
         RCL_Ble5_RxPhy phy       :2;     /*!< Received PHY */
         uint8_t crcError         :1;     /*!< True if packet had CRC error */
         uint8_t ignored          :1;     /*!< True if packet was ignored */
-        uint8_t ignoredRpa       :1;     /*!< True if packet should have been ignored due to unknown RPA, but was kept due to rpaMode */
+        uint8_t ignoredAddr      :1;     /*!< True if packet should have been ignored due to unknown address, but was kept due to addrMode */
         uint8_t syncInfoOnly     :1;     /*!< True if packet should have been ignored due to unknown RPA, but was kept for periodic Sync Establishment */
         uint8_t reserved         :2;
     };
@@ -266,8 +266,8 @@ struct RCL_CTX_ADVERTISER_t {
     RCL_AddrType addrType;              /*!< Address types */
     uint8_t filterPolicy: 2;            /*!< Filter policy */
     uint8_t privIgnMode: 1;             /*!< Privacy ignore mode. 0: Use filter list only when filter policy says. 1: Use filter list to ignore packets with privIgn bit set for all filter policies */
-    uint8_t rpaModePeer: 1;             /*!< RPA mode for peer address. 0: Treat RPA normally. 1: Report packets where the scanner/initiator address is an unknown RPA */
-    uint8_t acceptAllRpaConnectInd: 1;  /*!< CONNECT_IND RPA treatment. 0: Treat RPA in InitA normally. 1: Accept all RPA in InitA of CONNECT_IND. */
+    uint8_t addrModePeer: 1;            /*!< Address mode for peer address. 0: Treat address normally. 1: Report packets where the scanner/initiator address is an unknown address */
+    uint8_t acceptAllConnectInd: 1;     /*!< CONNECT_IND treatment. 0: Treat address in InitA based on configuration of addrModePeer. 1: Accept all addresses in InitA of CONNECT_IND. */
 };
 
 #define RCL_CtxAdvertiser_Default() \
@@ -281,8 +281,8 @@ struct RCL_CTX_ADVERTISER_t {
     .addrType =  { 0 },             \
     .filterPolicy = 0,              \
     .privIgnMode = 0,               \
-    .rpaModePeer = 0,               \
-    .acceptAllRpaConnectInd = 0     \
+    .addrModePeer = 0,              \
+    .acceptAllConnectInd = 0     \
 }
 #define RCL_CtxAdvertiser_DefaultRuntime() (RCL_CtxAdvertiser) RCL_CtxAdvertiser_Default()
 
@@ -410,8 +410,7 @@ struct RCL_CTX_SCAN_INIT_t {
     RCL_AddrType addrType;                /*!< Address types */
     uint8_t filterPolicy : 1;             /*!< Filter policy */
     uint8_t scanExtFilterPolicy: 1;       /*!< Extended filter policy for scanners */
-    uint8_t rpaModeOwn: 1;                /*!< RPA mode for own address. 0: Treat RPA normally. 1: Report packets where target address is an unknown RPA */
-    uint8_t rpaModePeer: 1;               /*!< RPA mode for peer address. 0: Treat RPA normally. 1: Report packets where advertiser address is an unknown RPA */
+    uint8_t addrModePeer: 1;              /*!< Address mode for peer address. 0: Treat address normally. 1: Report packets where advertiser address is an unknown address */
     uint8_t acceptAllRpaConnectRsp: 1;    /*!< AUX_CONNECT_RSP RPA treatment. 0: Treat RPA in TargetA normally. 1: Accept all RPA in TargetA of AUX_CONNECT_RSP */
     uint8_t periodicSyncEstablishment: 1; /*!< Synchronization to periodic advertisement. 0: Disabled. 1: Report all packets with SyncInfo present */
     uint16_t initialBackoff;              /*!< Initial backoff value */
@@ -437,8 +436,7 @@ struct RCL_CTX_SCAN_INIT_t {
     .addrType =  { 0 },             \
     .filterPolicy = 0,              \
     .scanExtFilterPolicy = 0,       \
-    .rpaModeOwn = 0,                \
-    .rpaModePeer = 0,               \
+    .addrModePeer = 0,              \
     .acceptAllRpaConnectRsp = 0,    \
     .periodicSyncEstablishment = 0, \
     .initialBackoff = 1,            \

@@ -51,7 +51,6 @@
 #include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>                // VexTokenCmd_*_t, VexTokenRslt_*_t
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_exchangetoken.h>
 
-
 /*----------------------------------------------------------------------------
  * psa_generate_random
  */

@@ -5,6 +5,38 @@
  * This file implements the system services.
  */
 
+/*
+ * Copyright (c) 2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                                                            */
 /*   Module        : DDK-130_bsd                                              */
@@ -48,11 +80,17 @@
 #include <third_party/hsmddk/include/Kit/Log/incl/log.h>
 #include <third_party/hsmddk/include/Kit/DriverFramework/CLib_Abstraction_API/incl/clib.h>                       // size_t
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>                 // the API to implement
-#include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>                // VexTokenCmd_*_t, VexTokenRslt_*_t
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_exchangetoken.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
 
+#include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_common.h>
+#include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_system.h>
+#include <third_party/hsmddk/include/Integration/HSMSAL/HSMSAL.h>
 
+
+static Eip130Token_Command_t commandToken;
+static Eip130Token_Result_t resultToken;
+Eip130Token_SystemInfo_t systemInfo;
 /*----------------------------------------------------------------------------
  * psaInt_SystemGetState
  */
@@ -66,100 +104,111 @@ psaInt_SystemGetState(uint8_t * const OtpErrorCode_p,
                       uint8_t * const NonSecure_p,
                       uint32_t * const Identity_p)
 {
-    VexTokenCmd_Generic_t t_cmd;
-    VexTokenRslt_SystemInfo_t t_res;
-    psa_status_t funcres;
+    psa_status_t funcres = PSA_ERROR_GENERIC_ERROR;
+    HSMSALStatus_t status;
+    int32_t tokenResult;
 
     /* Format service request */
-    t_cmd.OpCode = (uint32_t)VEXTOKEN_OPCODE_SYSTEM;
-    t_cmd.SubCode = (uint32_t)VEXTOKEN_SUBCODE_SYSTEMINFO;
-    (void)memset(&t_res, 0, sizeof(t_res));
+    (void)memset(&commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&resultToken, 0, sizeof(Eip130Token_Result_t));
 
-    /* Exchange service request with the next driver level */
-    funcres = psaInt_ExchangeToken(&t_cmd, sizeof(t_cmd),
-                                   (VexTokenRslt_Generic_t *)&t_res,
-                                   sizeof(t_res));
-    if (PSA_SUCCESS == funcres)
+    Eip130Token_Command_SystemInfo(&commandToken);
+
+    status = HSMSAL_SubmitPhysicalToken(&commandToken);
+
+    if (status == HSMSAL_SUCCESS)
     {
-        if (0 > t_res.Result)
+        status = HSMSAL_WaitForResultPolling(&resultToken);
+
+        if (status == HSMSAL_SUCCESS)
         {
-#ifdef PSA_LOG_LOWLEVEL_ERROR
-            LOG_WARN("Abort - %s()=%d\n", __func__, t_res.Result);
-#endif
-            funcres = PSA_ERROR_HARDWARE_FAILURE;
+            tokenResult = Eip130Token_Result_Code(&resultToken);
+
+            if ((tokenResult & MASK_8_BITS) == EIP130TOKEN_RESULT_SUCCESS)
+            {
+                funcres = PSA_SUCCESS;
+
+                Eip130Token_Result_SystemInfo(&resultToken, &systemInfo);
+
+                /* return requested information */
+                if (NULL != OtpErrorCode_p)
+                {
+                    *OtpErrorCode_p = systemInfo.OTP.ErrorCode;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != OtpErrorLocation_p)
+                {
+                    *OtpErrorLocation_p = systemInfo.OTP.ErrorLocation;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != Mode_p)
+                {
+                    *Mode_p = systemInfo.Self.Mode;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != SelfTestError_p)
+                {
+                    *SelfTestError_p = systemInfo.Self.ErrorTest;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != CryptoOfficer_p)
+                {
+                    *CryptoOfficer_p = systemInfo.Self.CryptoOfficer;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != HostID_p)
+                {
+                    *HostID_p = systemInfo.Self.HostID;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != NonSecure_p)
+                {
+                    *NonSecure_p = systemInfo.Self.NonSecure;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+                if (NULL != Identity_p)
+                {
+                    *Identity_p = systemInfo.Self.Identity;
+                }
+                else
+                {
+                    /* MISRA - Intentially empty */
+                }
+            }
+            else
+            {
+                funcres = PSA_ERROR_HARDWARE_FAILURE;
+            }
         }
         else
         {
-            /* return requested information */
-            if (NULL != OtpErrorCode_p)
-            {
-                *OtpErrorCode_p = t_res.OTP.ErrorCode;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != OtpErrorLocation_p)
-            {
-                *OtpErrorLocation_p = t_res.OTP.ErrorLocation;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != Mode_p)
-            {
-                *Mode_p = t_res.Self.Mode;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != SelfTestError_p)
-            {
-                *SelfTestError_p = t_res.Self.ErrorTest;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != CryptoOfficer_p)
-            {
-                *CryptoOfficer_p = t_res.Self.CryptoOfficer;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != HostID_p)
-            {
-                *HostID_p = t_res.Self.HostID;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != NonSecure_p)
-            {
-                *NonSecure_p = t_res.Self.NonSecure;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
-            if (NULL != Identity_p)
-            {
-                *Identity_p = t_res.Self.Identity;
-            }
-            else
-            {
-                /* MISRA - Intentially empty */
-            }
+            funcres = PSA_ERROR_HARDWARE_FAILURE;    
         }
     }
     else
     {
-        /* MISRA - Intentially empty */
+        funcres = PSA_ERROR_HARDWARE_FAILURE;
     }
 
     return funcres;

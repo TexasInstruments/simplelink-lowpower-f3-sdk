@@ -34,8 +34,10 @@
  */
 
 #include <stdbool.h>
+#include <string.h>
 
 /* Driver header files */
+#include <ti/drivers/ITM.h>
 #include <ti/drivers/Power.h>
 
 /* Utilities header files */
@@ -75,12 +77,6 @@ extern int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
  */
 #define MAX_SYSTIMER_DELTA 0xFFBFFFFFU
 
-/* The RTC has a time base of 8us and the SysTimer uses 1us or 250ns. The
- * conversion factor assumes that the SysTimer values have been converted to 1us
- * already.
- */
-#define RTC_TO_SYSTIMER_TICKS 8U
-
 #define SYSTIMER_CHANNEL_COUNT 5U
 
 /* Global to stash the SysTimer timeouts while we enter standby */
@@ -105,15 +101,16 @@ static const uint8_t sysTimerResolutionShift[SYSTIMER_CHANNEL_COUNT] = {
 void PowerCC27XX_standbyPolicy(void)
 {
     uint32_t constraints;
-    uint32_t ticksBefore;
     uint32_t sysTimerDelta;
     uint32_t sysTimerIMASK;
+    uint32_t sysTimerARMSET;
     uint32_t sysTimerLoopDelta;
     uint32_t sysTimerCurrTime;
     uint8_t sysTimerIndex;
     uintptr_t key;
     bool standbyAllowed;
     bool idleAllowed;
+    bool lfTick;
 
     key = HwiP_disable();
 
@@ -122,7 +119,13 @@ void PowerCC27XX_standbyPolicy(void)
     standbyAllowed = (constraints & (1 << PowerLPF3_DISALLOW_STANDBY)) == 0;
     idleAllowed    = (constraints & (1 << PowerLPF3_DISALLOW_IDLE)) == 0;
 
-    /* If we are using LFOSC, we need to wait for the LFINC filter to settle
+    /* If we are using LFOSC, it has been observed a brief period of ~15us
+     * occurring ~130us after starting HFXT where FLTSETTLED pulses high. If the
+     * idle loop attempts to enter standby while FLTSETTLED pulses high, it may
+     * enter standby before the filter is truly settled. To prevent this, we
+     * need to wait until the next LFTICK once HFXTGOOD is set before going to
+     * sleep. This is achieved by clearing the LFTICK interrupt once AMPSETTLED
+     * is set (which occurs after HFXTGOOD), and then check against LFTICK
      * before entering standby. We also cannot enter idle instead of standby
      * because otherwise we could end up waiting for the next standby wakeup
      * signal from the RTC or another wakeup source while we are still in idle.
@@ -133,10 +136,14 @@ void PowerCC27XX_standbyPolicy(void)
      */
     if ((HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) & CKMD_LFCLKSEL_MAIN_M) == CKMD_LFCLKSEL_MAIN_LFOSC)
     {
-        if (((HWREG(CKMD_BASE + CKMD_O_LFCLKSTAT) & CKMD_LFCLKSTAT_FLTSETTLED_M) == false) && (standbyAllowed == true))
+        if (standbyAllowed)
         {
-            standbyAllowed = false;
-            idleAllowed    = false;
+            lfTick = ((HWREG(CKMD_BASE + CKMD_O_RIS) & CKMD_RIS_LFTICK_M) == CKMD_RIS_LFTICK);
+            if (!lfTick)
+            {
+                standbyAllowed = false;
+                idleAllowed    = false;
+            }
         }
     }
 
@@ -150,6 +157,12 @@ void PowerCC27XX_standbyPolicy(void)
         /* Save SysTimer IMASK to restore afterwards */
         sysTimerIMASK = HWREG(SYSTIM_BASE + SYSTIM_O_IMASK);
 
+        /* Get current armed status amongst all SysTimer channels */
+        sysTimerARMSET = HWREG(SYSTIM_BASE + SYSTIM_O_ARMSET);
+
+        /* Get current time in 1us resolution */
+        sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+
         /* We only want to check the SysTimer channels if at least one of them
          * is active. It may be that no one is using ClockP or RCL in this
          * application or they have not been initialised yet.
@@ -162,9 +175,6 @@ void PowerCC27XX_standbyPolicy(void)
              */
             sysTimerDelta = 0xFFFFFFFF;
 
-            /* Get current time in 1us resolution */
-            sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
-
             /* Loop over all SysTimer channels and compute the soonest timeout.
              * Since the channels have different time bases (1us vs 250ns),
              * we need to shift all of that to a 1us time base to compare them.
@@ -175,26 +185,36 @@ void PowerCC27XX_standbyPolicy(void)
             {
                 if (sysTimerIMASK & (1 << sysTimerIndex))
                 {
-                    /* Stash SysTimer channel compare value */
-                    sysTimerTimeouts[sysTimerIndex] = HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC + sysTimerIndex * sizeof(uint32_t));
+                    /* Stash SysTimer channel compare value. Read CHnCCSR to
+                     * avoid clearing any pending events as side effect of
+                     * reading CHnCC.
+                     */
+                    sysTimerTimeouts[sysTimerIndex] = HWREG(SYSTIM_BASE + SYSTIM_O_CH0CCSR + sysTimerIndex * sizeof(uint32_t));
 
-                    /* Store current channel timeout in native channel resolution */
+                    /* Store current channel timeout in native channel
+                     * resolution
+                     */
                     sysTimerLoopDelta = sysTimerTimeouts[sysTimerIndex];
 
-                    /* Convert current time from 1us to native resolution and subtract from timeout to get delta in
-                     * in native channel resolution.
-                     * We compute the delta in the native resolution to correctly handle wrapping and underflow at the
-                     * 32-bit boundary.
-                     * To simplify code paths and SRAM, we shift up the 1us resolution time stamp instead of reading out
-                     * and keeping track of the 250ns time stamp and associating that with channels 2 to 4. The loss
-                     * of resolution for wakeup is not material as we wake up sufficiently early to handle timing jitter
-                     * in the wakeup duration.
+                    /* Convert current time from 1us to native resolution and
+                     * subtract from timeout to get delta in in native channel
+                     * resolution.
+                     * We compute the delta in the native resolution
+                     * to correctly handle wrapping and underflow at the 32-bit
+                     * boundary.
+                     * To simplify code paths and SRAM, we shift up the 1us
+                     * resolution time stamp instead of reading out and keeping
+                     * track of the 250ns time stamp and associating that with
+                     * channels 2 to 4. The loss of resolution for wakeup is not
+                     * material as we wake up sufficiently early to handle
+                     * timing jitter in the wakeup duration.
                      */
                     sysTimerLoopDelta -= sysTimerCurrTime << sysTimerResolutionShift[sysTimerIndex];
 
-                    /* If sysTimerDelta is larger than MAX_SYSTIMER_DELTA, the compare
-                     * event happened in the past and we need to abort entering standby to
-                     * handle the timeout instead of waiting a really long time.
+                    /* If sysTimerDelta is larger than MAX_SYSTIMER_DELTA, the
+                     * compare event happened in the past and we need to abort
+                     * entering standby to handle the timeout instead of waiting
+                     * a really long time.
                      */
                     if (sysTimerLoopDelta > MAX_SYSTIMER_DELTA)
                     {
@@ -242,22 +262,20 @@ void PowerCC27XX_standbyPolicy(void)
              */
             sysTimerDelta -= PowerCC27XX_WAKEDELAYSTANDBY;
 
-            /* The SysTimer has a time base of 1us while the RTC uses 8us.
-             * Divide by 8 to convert from SysTimer to RTC time base
-             */
-            sysTimerDelta /= RTC_TO_SYSTIMER_TICKS;
-
-            /* Save RTC tick count before sleep */
-            ticksBefore = HWREG(RTC_BASE + RTC_O_TIME8U);
-
             /* RTC channel 0 compare is automatically armed upon writing the
              * compare value. It will automatically be disarmed when it
              * triggers.
              */
-            HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticksBefore + sysTimerDelta;
+            HWREG(RTC_BASE + RTC_O_CH0CC1U) = sysTimerCurrTime + sysTimerDelta;
+
+            /* Flush any remaining log messages in the ITM */
+            ITM_flush();
 
             /* Go to standby mode */
             Power_sleep(PowerLPF3_STANDBY);
+
+            /* Restore ITM settings */
+            ITM_restore();
 
             /* Disarm RTC compare event in case we woke up from a GPIO or BATMON
              * event. If the RTC times out after clearing RIS and the pending
@@ -293,14 +311,14 @@ void PowerCC27XX_standbyPolicy(void)
              */
             while (HWREG(SYSTIM_BASE + SYSTIM_O_STATUS) != SYSTIM_STATUS_VAL_RUN) {}
 
-            /* Restore SysTimer timeouts since standby wiped them */
-            for (sysTimerIndex = 0; sysTimerIndex < SYSTIMER_CHANNEL_COUNT; sysTimerIndex++)
-            {
-                if (sysTimerIMASK & (1 << sysTimerIndex))
-                {
-                    HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC + sysTimerIndex * sizeof(uint32_t)) = sysTimerTimeouts[sysTimerIndex];
-                }
-            }
+            /* Restore SysTimer timeouts */
+            memcpy((void *)(SYSTIM_BASE + SYSTIM_O_CH0CCSR), sysTimerTimeouts, sizeof(sysTimerTimeouts));
+
+            /* Restore SysTimer armed state. This will rearm all previously
+             * armed timeouts restored above and cause any that occurred in the
+             * past to trigger immediately.
+             */
+            HWREG(SYSTIM_BASE + SYSTIM_O_ARMSET) = sysTimerARMSET;
 
             /* Restore SysTimer IMASK */
             HWREG(SYSTIM_BASE + SYSTIM_O_IMASK) = sysTimerIMASK;
@@ -322,7 +340,12 @@ void PowerCC27XX_standbyPolicy(void)
              * time for it to make sense from an overhead perspective, enter idle
              * instead.
              */
+
+            /* Flush any remaining log messages in the ITM */
+            ITM_flush();
             __WFI();
+            /* Restore ITM settings */
+            ITM_restore();
         }
     }
     else if (idleAllowed)
@@ -330,7 +353,12 @@ void PowerCC27XX_standbyPolicy(void)
         /* We are not allowed to enter standby.
          * Enter idle instead if it is allowed.
          */
+
+        /* Flush any remaining log messages in the ITM */
+        ITM_flush();
         __WFI();
+        /* Restore ITM settings */
+        ITM_restore();
     }
 
     HwiP_restore(key);

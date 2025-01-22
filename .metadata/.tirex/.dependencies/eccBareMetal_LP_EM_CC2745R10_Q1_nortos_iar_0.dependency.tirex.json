@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../eccBareMetal.c -> eccBareMetal.c",
+            "+../eccBareMetal.syscfg -> eccBareMetal.syscfg",
+            "+../HSMBareMetal.c -> HSMBareMetal.c",
+            "+../HSMBareMetalECCUtility.c -> HSMBareMetalECCUtility.c",
+            "+../lpf3_cc27xx_nortos.icf -> lpf3_cc27xx_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../../../../../../source/ti/common/hsm/eccBareMetal/README.md -> README.md"
+        ]
+    }
+]

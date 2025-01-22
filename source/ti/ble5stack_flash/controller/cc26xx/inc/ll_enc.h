@@ -132,9 +132,6 @@ extern "C"
  * GLOBAL VARIABLES
  */
 
-// ALT: Remove caching as CC26xx is fast enough.
-extern uint8 cachedTRNGdata[];
-
 /*******************************************************************************
  * Functions
  */

@@ -1,5 +1,7 @@
 [{
         "name": "Examples",
+        "resourceClass":["example"],
+        "resourceSubClass":["example.outofbox"],
         "mainCategories": [
             []
         ],
@@ -9,6 +11,7 @@
     },
     {
         "name": "Documents",
+        "resourceClass":["document"],
         "mainCategories": [
             []
         ],

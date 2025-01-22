@@ -64,6 +64,16 @@ zb_ret_t gboss_unidir_commissioning_step(const gboss_device_config_t* device_con
 zb_ret_t gboss_unidir_decommission(const gboss_device_config_t* device_config,
                                    const gboss_tx_cfg_t *tx_cfg);
 
+/**
+   Initializes bidirectional operational mode with an application parameters
+
+ * @param device_config GPD configuration data structure
+ * @param tx_cfg Configuration of transmission - channels and number of repetitions to be used
+ *
+ * @snippet zgpd_bidir_battery_attr_read_write.c bidir_init
+ */
+void gboss_bidir_operational_init(const gboss_device_config_t* device_config,
+                                  const gboss_tx_cfg_t *tx_cfg);
 
 /**
    Does one step of bidirectional commissioning.

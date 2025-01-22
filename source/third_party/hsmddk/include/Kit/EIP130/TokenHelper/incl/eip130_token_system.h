@@ -7,6 +7,38 @@
  * token, or parses a set of parameters from a Security Module Result token.
  */
 
+/*
+ * Copyright (c) 2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                                                            */
 /*   Module        : DDK-130_bsd                                              */
@@ -82,7 +114,11 @@ typedef struct
     {
         uint8_t HostID;
         uint32_t Identity;
-    } SelfIdentity;
+        uint8_t NonSecure;      /* 0=Secure, !0=Non-Secure */
+        uint8_t CryptoOfficer;  /* 0=Not available, !0=Available */
+        uint8_t Mode;           /* 0=Active mode, 4..6=Error modes, 15=Active mode, with successful Login */
+        uint8_t ErrorTest;      /* Self-test error (only valid when Fatal Error is caused by a self-test) */
+    } Self;
 
     struct
     {
@@ -148,9 +184,13 @@ Eip130Token_Result_SystemInfo(
 
     Info_p->Hardware.MemorySizeInBytes = (uint16_t)ResultToken_p->W[3];
 
-    Info_p->SelfIdentity.HostID = (uint8_t)((ResultToken_p->W[3] >> 16) & MASK_4_BITS);
-    Info_p->SelfIdentity.Identity = ResultToken_p->W[4];
-
+    Info_p->Self.HostID = (uint8_t)((ResultToken_p->W[3] >> 16) & MASK_4_BITS);
+    Info_p->Self.Identity = ResultToken_p->W[4];
+    Info_p->Self.NonSecure = (uint8_t)((ResultToken_p->W[3] >> 19) & MASK_1_BIT);
+    Info_p->Self.CryptoOfficer = (uint8_t)((ResultToken_p->W[3] >> 27) & MASK_1_BIT);
+    Info_p->Self.Mode = (uint8_t)((ResultToken_p->W[3] >> 28) & MASK_4_BITS);
+    Info_p->Self.ErrorTest = (uint8_t)((ResultToken_p->W[5] >> 16) & MASK_8_BITS);
+    
     Info_p->OTP.ErrorCode = (uint8_t)((ResultToken_p->W[5] >> 12) & MASK_4_BITS);
     Info_p->OTP.ErrorLocation = (uint16_t)(ResultToken_p->W[5] & MASK_12_BITS);
 }

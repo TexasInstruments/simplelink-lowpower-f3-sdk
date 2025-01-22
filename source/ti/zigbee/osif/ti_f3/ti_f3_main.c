@@ -77,11 +77,11 @@
 
 /* Stack size in bytes */
 /* Stack size in bytes */
-#if defined SNCP_MODE || defined ZB_ZGPD_ROLE
+#if defined SNCP_MODE || defined ZB_ZGPD_ROLE || defined ZBOSS_REV22
 /* increased because of large aps binding table */
 #define THREADSTACKSIZE    2048U
 #else //defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
-#define THREADSTACKSIZE    5120U
+#define THREADSTACKSIZE    6000U
 #endif // defined SNCP_MODE || defined ZB_ZGPD_ROLE
 #include <ti/log/Log.h>
 
@@ -440,4 +440,102 @@ void zb_memcpy( void *dst, const void *src, unsigned int len )
   while ( len-- )
     *pDst++ = *pSrc++;
 
+}
+
+zb_int8_t zb_memcmp(const void *src1, const void *src2, unsigned int len)
+{
+  const uint8_t *pSrc1;
+  const uint8_t *pSrc2;
+
+  pSrc1 = src1;
+  pSrc2 = src2;
+
+  while (len > 0)
+  {
+      if (*pSrc1 != *pSrc2)
+          return (*pSrc1 - *pSrc2);
+      len--;
+      pSrc1++;
+      pSrc2++;
+  }
+  return 0;
+}
+
+void zb_memset(void *str, unsigned int c, unsigned int len)
+{
+  uint8_t *pStr = str;
+
+  while (len > 0)
+  {
+      *pStr = c;
+      len--;
+      pStr++;
+  }
+}
+
+void zb_memmove(void *dst, const void *src, size_t len)
+{
+    size_t i;
+
+    /*
+      * If the buffers don't overlap, it doesn't matter what direction
+      * we copy in. If they do, it does, so just assume they always do.
+      * We don't concern ourselves with the possibility that the region
+      * to copy might roll over across the top of memory, because it's
+      * not going to happen.
+      *
+      * If the destination is above the source, we have to copy
+      * back to front to avoid overwriting the data we want to
+      * copy.
+      *
+      *      dest:       dddddddd
+      *      src:    ssssssss   ^
+      *              |   ^  |___|
+      *              |___|
+      *
+      * If the destination is below the source, we have to copy
+      * front to back.
+      *
+      *      dest:   dddddddd
+      *      src:    ^   ssssssss
+      *              |___|  ^   |
+      *                     |___|
+      */
+
+    if ((uintptr_t)dst < (uintptr_t)src)
+    {
+        zb_memcpy(dst, src, len);
+        return;
+    }
+
+    /*
+    * Copy by words in the common case.
+    */
+    if ((((uintptr_t)dst & 0x3) == 0) &&
+        (((uintptr_t)src & 0x3) == 0) &&
+        ((len % sizeof(zb_uint32_t)) == 0))
+    {
+
+        zb_uint32_t *d = dst;
+        const zb_uint32_t *s = src;
+
+        /*
+          * The reason we copy index i-1 and test i>0 is that
+          * i is unsigned -- so testing i>=0 doesn't work.
+          */
+        for (i=len/sizeof(zb_uint32_t); i>0; i--)
+        {
+                d[i-1] = s[i-1];
+        }
+    }
+    else
+    {
+        zb_uint8_t *d = dst;
+        const zb_uint8_t *s = src;
+
+        for (i=len; i>0; i--)
+        {
+                d[i-1] = s[i-1];
+        }
+    }
 }

@@ -3,6 +3,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_common.cmake)
 
 set(SOURCES_CC27XX
     ${SOURCES_COMMON}
+    ADC.c
+    adc/ADCLPF3.c
+    ADCBuf.c
+    adcbuf/ADCBufLPF3.c
     AESCBC.c
     AESCCM.c
     AESCMAC.c
@@ -10,6 +14,7 @@ set(SOURCES_CC27XX
     AESCTRDRBG.c
     AESECB.c
     AESGCM.c
+    apu/APULPF3.c
     batterymonitor/BatteryMonitorLPF3.c
     batterymonitor/BatMonSupportLPF3.c
     CAN.c
@@ -57,9 +62,9 @@ set(SOURCES_CC27XX
     Temperature.c
     temperature/TemperatureLPF3.c
     timer/LGPTimerLPF3.c
+    TRNG.c
     UART2.c
     uart2/UART2LPF3.c
-    vce/VCELPF3.c
     Watchdog.c
     watchdog/WatchdogLPF3.c
 )
@@ -76,15 +81,13 @@ set(SOURCES_SEC_ONLY_CC27XX
     aesccm/AESCCMLPF3.c
     aescmac/AESCMACLPF3.c
     aesctr/AESCTRLPF3.c
-    aesctrdrbg/AESCTRDRBGXX.c
     aesecb/AESECBLPF3.c
     aesgcm/AESGCMLPF3HSM.c
     cryptoutils/aes/AESCommonLPF3.c
-    #cryptoutils/ecc/ECCParamsLPF3HSM.c
-    cryptoutils/ecc/ECCParamsLPF3SW.c
-    cryptoutils/ecc/ECCInitLPF3SW.c
-    #ecdh/ECDHLPF3HSM.c
-    ecdh/ECDHLPF3SW.c
+    cryptoutils/ecc/ECCParamsLPF3HSM.c
+    cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.c
+    cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.c
+    ecdh/ECDHLPF3HSM.c
     ecdsa/ECDSALPF3HSM.c
     # ecjpake/ECJPAKECC26X2.c
     # eddsa/EDDSACC26X2.c
@@ -93,6 +96,7 @@ set(SOURCES_SEC_ONLY_CC27XX
     # power/PowerCC26X2_helpers.c
     rng/RNGLPF3HSM.c
     sha2/SHA2LPF3HSM.c
+    trng/TRNGLPF3HSM.c
 )
 
 set(SOURCES_NONSEC_CC27XX
@@ -113,6 +117,6 @@ set(SOURCES_NONSEC_CC27XX
     # ecdh/ECDHCC26X4_ns.c
     # nvs/flash/FlashCC26X4_ns.c
     # sha2/SHA2CC26X4_ns.c
-    # tfm/SecureCallback.c
+    tfm/SecureCallback.c
     # trng/TRNGCC26X4_ns.c
 )

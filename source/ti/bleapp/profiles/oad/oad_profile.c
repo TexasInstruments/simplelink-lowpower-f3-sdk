@@ -56,6 +56,9 @@
 #include "ti/bleapp/profiles/oad/oad_profile.h"
 #include "ti/bleapp/util/sw_update/sw_update.h"
 
+#ifdef SECURE_BOOT
+#include <ti/devices/cc27xx/driverlib/hapi.h>
+#endif
 #ifdef OAD_APP_ONCHIP
 #include "ti/bleapp/services/oad/oad_reset_service.h"
 #else
@@ -171,7 +174,12 @@ typedef enum
  * A generic external control response command
  * Most commands simply return a status, this will cover those commands
  */
+// Temporary workaround needed due to a collision on the __packed definition.
+#ifdef __IAR_SYSTEMS_ICC__
+typedef struct __attribute__((__packed__))
+#else
 PACKED_TYPEDEF_STRUCT
+#endif
 {
     uint8       cmdID;            //!< Ext Ctrl Op-code
     uint8       status;           //!< Status of command
@@ -180,7 +188,12 @@ PACKED_TYPEDEF_STRUCT
 /*!
  * Response to a @ref OAD_REQ_GET_BLK_SZ command
  */
+// Temporary workaround needed due to a collision on the __packed definition.
+#ifdef __IAR_SYSTEMS_ICC__
+typedef struct __attribute__((__packed__))
+#else
 PACKED_TYPEDEF_STRUCT
+#endif
 {
     uint8     cmdID;          //!< Ext Ctrl Op-code
     uint16    oadBlkSz;       //!< OAD block size
@@ -189,7 +202,12 @@ PACKED_TYPEDEF_STRUCT
 /*!
  * Block request payload
  */
+// Temporary workaround needed due to a collision on the __packed definition.
+#ifdef __IAR_SYSTEMS_ICC__
+typedef struct __attribute__((__packed__))
+#else
 PACKED_TYPEDEF_STRUCT
+#endif
 {
     uint8              cmdID;            //!< External control op-code
     uint8              prevBlkStat;      //!< Status of previous block write
@@ -199,7 +217,12 @@ PACKED_TYPEDEF_STRUCT
 /*!
  * Response to a @ref OAD_REQ_GET_SW_VER command
  */
+// Temporary workaround needed due to a collision on the __packed definition.
+#ifdef __IAR_SYSTEMS_ICC__
+typedef struct __attribute__((__packed__))
+#else
 PACKED_TYPEDEF_STRUCT
+#endif
 {
     uint8       cmdID;                     //!< Ctrl Op-code
     uint8       swVer[MCUBOOT_SW_VER_LEN]; //!< App version
@@ -1227,6 +1250,9 @@ static OADProfile_Status_e oadResetDevice(uint16 connHandle)
 {
     OADProfile_Status_e status = OAD_PROFILE_SUCCESS;
 
+#ifdef SECURE_BOOT
+    HapiSbSetId( 3 ); // Indicate to secure boot that new image is ready
+#endif
     status = (OADProfile_Status_e)BLEAppUtil_registerEventHandler(&oadConnHandler);
     if(SUCCESS == status)
     {

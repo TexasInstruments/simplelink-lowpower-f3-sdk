@@ -205,9 +205,9 @@ function validate(inst, validation)
     // Get the device family
     const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
 
-    if(inst.deviceName.length > 21)
+    if(inst.deviceName.length > 31)
     {
-        validation.logError("Max Length of Device Name Attribute is 21", inst, "deviceName");
+        validation.logError("Max Length of Device Name Attribute is 31", inst, "deviceName");
     }
 
     // Limit Maximum Number of Connections to be 8 for Agama Lite devices

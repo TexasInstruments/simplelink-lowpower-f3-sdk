@@ -325,6 +325,12 @@ const moduleStatic = {
                     hidden: true
                 },
                 {
+                    name: "appExternalControlMode",
+                    displayName: "App External Control Mode",
+                    default: false,
+                    hidden: true,
+                },
+                {
                     name:"healthToolkit",
                     displayName: "Health Toolkit",
                     longDescription: Docs.bleHealthLongDescription,
@@ -338,6 +344,12 @@ const moduleStatic = {
                     hidden: true,
                     description: "Used to hide the Health Toolkit configurable. Always hidden",
                     onChange: onHideHealthToolkitChange
+                },
+                {
+                    name: "connectionHandover",
+                    displayName: "Connection Handover",
+                    default: false,
+                    hidden: false,
                 },
             ]
         },
@@ -501,6 +513,18 @@ function ondeviceRoleChange(inst,ui)
     else
     {
         ui.peerConnParamUpdateRejectInd.hidden = false;
+    }
+
+    if ( inst.deviceRole.includes("PERIPHERAL_CFG") )
+    {
+        // Connection Handover is for peripheral role only
+        ui.connectionHandover.hidden = false;
+    }
+    else
+    {
+        // Connection Handover is for peripheral role only
+        inst.connectionHandover = false;
+        ui.connectionHandover.hidden = true;
     }
 
     inst.calledFromDeviceRole = true;
@@ -1129,6 +1153,11 @@ function getBuildConfigOpts()
     bleMod.delayingAttReadReq && result.push("-DATT_DELAYED_REQ");
     bleMod.gattBuilder && result.push("-DUSE_GATT_BUILDER");
 
+    if ( bleMod.deviceRole.includes("PERIPHERAL_CFG") )
+    {
+        bleMod.connectionHandover && result.push("-DCONNECTION_HANDOVER");
+    }
+
     return result;
 }
 
@@ -1154,7 +1183,7 @@ function getAppConfigOpts()
        devFamily != "DeviceFamily_CC27XX")
     {
         let rfDesign = system.modules["/ti/devices/radioconfig/rfdesign"].$static;
-
+Ctrl
         // Get the device defines from the list
         result.push(Common.deviceToDefines[rfDesign.rfDesign]);
     }
@@ -1175,6 +1204,7 @@ function getAppConfigOpts()
     bleMod.icallLite && result.push("-DICALL_LITE");
     bleMod.icallStackAddress && result.push("-DICALL_STACK0_ADDR");
     bleMod.useIcall && result.push("-DUSE_ICALL");
+    bleMod.appExternalControlMode && result.push("-DAPP_EXTERNAL_CONTROL");
 
     result.push("-DICALL_MAX_NUM_ENTITIES="+bleMod.maxNumEntIcall,
                 "-DICALL_MAX_NUM_TASKS="+bleMod.maxNumIcallEnabledTasks,
@@ -1198,7 +1228,7 @@ function getAppConfigOpts()
         ccfg.$static.disableCache && result.push("-DCACHE_AS_RAM");
     }
 
-    if ((_.isEqual(bleMod.deviceRole, "PERIPHERAL_CFG")) || (bleMod.ptm))
+    if ((_.isEqual(bleMod.deviceRole, "PERIPHERAL_CFG")) || (bleMod.ptm) || bleMod.appExternalControlMode)
     {
         result.push("-DNPI_USE_UART");
     }
@@ -1231,6 +1261,11 @@ function getAppConfigOpts()
     if( (bleMod.deviceRole.includes("OBSERVER_CFG") || bleMod.deviceRole.includes("CENTRAL_CFG")) && bleMod.advReportChanNum )
     {
         result.push("-DADV_RPT_INC_CHANNEL=1");
+    }
+
+    if(bleMod.enableFiftyBondsMR)
+    {
+        result.push("-DUSE_DFL");
     }
 
     return result;

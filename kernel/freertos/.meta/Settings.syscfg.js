@@ -44,6 +44,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 1,
         defaultNvicPriBits: 3,
         defaultFpuEnabled: false,
+        defaultInterruptCount: 54,
+        defaultSvCallHandler: "vPortSVCHandler",
+        defaultPendSvHandler: "xPortPendSVHandler",
+        defaultSysTickHandler: "xPortSysTickHandler",
         gccPortableFiles: ["../portable/GCC/ARM_CM3/port.c"],
         iarPortableFiles: ["../portable/IAR/ARM_CM3/port.c"]
     },
@@ -55,6 +59,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 1,
         defaultNvicPriBits: 3,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 54,
+        defaultSvCallHandler: "vPortSVCHandler",
+        defaultPendSvHandler: "xPortPendSVHandler",
+        defaultSysTickHandler: "xPortSysTickHandler",
         gccPortableFiles: ["../portable/GCC/ARM_CM4F/port.c"],
         iarPortableFiles: ["../portable/IAR/ARM_CM4F/port.c"]
     },
@@ -67,6 +75,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 1,
         defaultNvicPriBits: 3,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 63,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
         gccPortableFiles: [
             "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
             "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
@@ -84,6 +96,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 2,
         defaultNvicPriBits: 3,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 63,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
         gccPortableFiles: [
             "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
             "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
@@ -100,6 +116,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 1,
         defaultNvicPriBits: 2,
         defaultFpuEnabled: false,
+        defaultInterruptCount: 35,
+        defaultSvCallHandler: "vPortSVCHandler",
+        defaultPendSvHandler: "xPortPendSVHandler",
+        defaultSysTickHandler: "xPortSysTickHandler",
         gccPortableFiles: ["../portable/GCC/ARM_CM0/port.c"],
         iarPortableFiles: ["../portable/IAR/ARM_CM0/port.c"]
     },
@@ -112,6 +132,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 1,
         defaultNvicPriBits: 3,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 69,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
         gccPortableFiles: [
             "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
             "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
@@ -129,6 +153,10 @@ let deviceSettingsTable = {
         defaultMaxInterruptPriority: 2,
         defaultNvicPriBits: 3,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 69,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
         gccPortableFiles: [
             "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
             "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
@@ -144,8 +172,12 @@ let deviceSettingsTable = {
         /* The CM33 port does not have optimised task selection */
         defaultPortTaskSelection: 0,
         defaultMaxInterruptPriority: 1,
-        defaultNvicPriBits: 3,
+        defaultNvicPriBits: 4,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 51,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
         gccPortableFiles: [
             "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
             "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
@@ -161,8 +193,12 @@ let deviceSettingsTable = {
         /* The CM33 port does not have optimised task selection */
         defaultPortTaskSelection: 0,
         defaultMaxInterruptPriority: 2,
-        defaultNvicPriBits: 3,
+        defaultNvicPriBits: 4,
         defaultFpuEnabled: true,
+        defaultInterruptCount: 51,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
         gccPortableFiles: [
             "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
             "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
@@ -232,5 +268,9 @@ exports = {
     gccPortableFiles: deviceSettings.gccPortableFiles,
     gccPortableFilesTzEnabled: deviceSettings.gccPortableFilesTzEnabled,
     iarPortableFiles: deviceSettings.iarPortableFiles,
-    iarPortableFilesTzEnabled: deviceSettings.iarPortableFilesTzEnabled
+    iarPortableFilesTzEnabled: deviceSettings.iarPortableFilesTzEnabled,
+    defaultInterruptCount: deviceSettings.defaultInterruptCount,
+    defaultSvCallHandler: deviceSettings.defaultSvCallHandler,
+    defaultPendSvHandler: deviceSettings.defaultPendSvHandler,
+    defaultSysTickHandler: deviceSettings.defaultSysTickHandler
 };

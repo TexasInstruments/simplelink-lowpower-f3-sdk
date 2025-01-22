@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -731,6 +731,7 @@ typedef struct
                          *   May be zero for CMAC but must be non-zero for CBC-MAC.
                          *   See function descriptions for further restrictions.
                          *   Max length supported may be limited depending on the return behavior.
+                         *
                          */
     size_t macLength;   /*!< Length of the MAC in bytes.
                          *   Must be <= 16. A length of < 8 is not recommended and

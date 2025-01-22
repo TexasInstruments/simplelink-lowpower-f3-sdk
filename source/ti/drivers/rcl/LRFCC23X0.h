@@ -49,10 +49,6 @@
  * Register value to be written to registers, prior to temperature compensation
  */
 #ifdef DeviceFamily_CC27XX
-/* TODO: See RCL-556 */
-#define LRFDPBE32_BASE          0x40081400 // LRFDPBE32
-#define LRFDMDM32_BASE          0x40082400 // LRFDMDM32
-#define LRFDRFE32_BASE          0x40083400 // LRFDRFE32
 typedef union
 {
     struct {
@@ -130,7 +126,6 @@ union LRF_Events_u {
         uint32_t rxCtrl              : 1; /*!< LL control packet received correctly */
         uint32_t rxCtrlAck           : 1; /*!< LL control packet received with CRC OK, not to be ignored, then acknowledgement sent */
         uint32_t rxNok               : 1; /*!< Packet received with CRC error */
-
         uint32_t rxIgnored           : 1; /*!< Packet received, but may be ignored by MCU */
         uint32_t rxEmpty             : 1; /*!< Empty packet received */
         uint32_t rxBufFull           : 1; /*!< Packet received which did not fit in the RX FIFO and was not to be discarded.  */
@@ -215,27 +210,10 @@ typedef struct LRF_TxShape_s {
     uint8_t       coeff[];
 } LRF_TxShape;
 
-#define LRF_TRIM_NUM_VARIANTS 2
-#define LRF_TRIM_NORMAL_BW    0
-#define LRF_TRIM_HIGH_BW      1                 /* Revision >= 4 only */
-
-#define LRF_TRIM_MIN_VERSION_FULL_FEATURES  4    /* Only AppTrims revision 4 and above has all features */
-
-/* RCL-335: Some CC23X0R5 devices (State D) have an error in the programmed RSSI offset */
-#define LRF_TRIM_VERSION_RSSIOFFSET_ISSUE_CC23X0R5 4     /* AppTrims revision with issue in rssiOffset field */
-#define LRF_TRIM_LIMIT_RSSIOFFSET_ISSUE_CC23X0R5  (-4)   /* If rssiOffset is less or equal to this, apply correction */
-#define LRF_TRIM_CORRECTION_RSSIOFFSET_ISSUE_CC23X0R5 5  /* Correction to apply to devices with wrong RSSI offset */
-
-#define LRF_TRIM_VERSION_STATE_C_TRIM_WORKAROUND_CC27XX 7U                /* AppTrims revision of CC27XX devices in state C and beyond */
-/* RCL-591: RTRIM is hardcoded to 10 for CC27XX state B devices */
-#define LRF_TRIM_RTRIM_VALUE_STATE_B_RTRIM_WORKAROUND_CC27XX 10U          /* RTRIM value used on CC27XX state B devices */
-/* RCL-616: DCOLDO0:FIRSTTRIM is hardcoded to 8 and DCOLDO0:SECONDTRIM is increased by 10 for CC27XX state B devices */
-#define LRF_TRIM_DCOLDO0_FIRSTTRIM_VALUE_STATE_B_DCOLDO_WORKAROUND_CC27XX 8U    /* DCOLDO0:FIRSTTRIM value used on CC27XX state B devices */
-#define LRF_TRIM_DCOLDO0_SECONDTRIM_INC_STATE_B_DCOLDO_WORKAROUND_CC27XX 10U    /* DCOLDO0:SECONDTRIM needs to be increased by 10 on CC27XX state B devices */
-#define LRF_TRIM_DCOLDO0_SECONDTRIM_CODED_BITS_MASK_STATE_B_DCOLDO_WORKAROUND_CC27XX ((1U << 3U) | (1U << 5U))    /* Bits mask for bit 3 and 5 of DCOLDO0:SECONDTRIM */
-#define LRF_TRIM_DCOLDO0_SECONDTRIM_MAX_STATE_B_DCOLDO_WORKAROUND_CC27XX 63U    /* DCOLDO0:SECONDTRIM maximum value allowed within the range of 6-bit representation */
 
 /* Definitions for trim */
+#define LRF_TRIM_NUM_VARIANTS 2
+
 typedef struct {
     uint32_t word[2];
 } LRF_DoubleWord;
@@ -417,7 +395,6 @@ typedef struct {
     uint8_t dcoldoSecondMinOffset      : 2;
     uint8_t dcoldoSecondMaxOffset      : 2;
 } LRF_Trim_dcoldoOffset;
-
 typedef union {
     struct {
         struct {    // length: 4B
@@ -586,6 +563,16 @@ void LRF_programTemperatureCompensatedTxPower(void);
 LRF_TxPowerResult LRF_programTxPower(LRF_TxPowerTable_Index powerLevel);
 
 /**
+ * @brief Reads maximum RSSI from register
+ */
+int8_t LRF_readMaxRssi(void);
+
+/**
+ * @brief Initialize maximum RSSI register
+ */
+void LRF_initializeMaxRssi(int8_t initRssi);
+
+/**
  * @brief Request specific clock enable bits for use by the RCL
  *
  *  @param  mask Bit mask of clock enable bits to be set; bit positions as in LRFDDBELL_CLKCTL
@@ -606,6 +593,41 @@ static inline void LRF_clearRclClockEnable(uint16_t mask)
 {
     hal_clear_rcl_clock_enable(mask);
 }
+
+/**
+ * @brief Enable temperature monitoring to allow handlers to update temperature compensation
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_enableTemperatureMonitoring(void);
+
+/**
+ * @brief Disable temperature monitoring
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_disableTemperatureMonitoring(void);
+
+/**
+ * @brief Update temperature compensation in radio
+ *
+ * Update temperature compensation by allowing TCXO updates, set new RF frequency correction,
+ * update temperature compensated trim values, and update temperature compensation for TX power
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ *  @param rfFrequency RF frequency at which the command is operating
+ *  @param tx True if radio will be starting in TX; false if it will be starting in RX
+ *
+ */
+void LRF_updateTemperatureCompensation(uint32_t rfFrequency, bool tx);
+
+/**
+ * @brief Get temperature used in last setting of trims
+ */
+int16_t LRF_getLastTrimTemperature(void);
 
 /* Temporarily added definitions until https://jira.itg.ti.com/browse/TIDRIVERS-6489 is implemented */
 #ifndef NO_DRIVERS

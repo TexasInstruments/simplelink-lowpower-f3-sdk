@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2024 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -43,15 +43,15 @@ extern void (*const resetVectors[])(void);
  *  installation.
  */
 #if defined(__IAR_SYSTEMS_ICC__)
-__root const ccfg_t __ccfg @ ".ccfg" =
+__root const ccfg_t ccfg @ ".ccfg" =
 #elif defined(__llvm__)
     #pragma GCC diagnostic ignored "-Woverride-init"
     #pragma GCC diagnostic ignored "-Wmissing-braces"
-const ccfg_t __ccfg __attribute__((section(".ccfg"), retain)) =
+const ccfg_t ccfg __attribute__((section(".ccfg"), retain)) =
 #elif (defined(__GNUC__))
     #pragma GCC diagnostic ignored "-Woverride-init"
     #pragma GCC diagnostic ignored "-Wmissing-braces"
-const ccfg_t __ccfg __attribute__((section(".ccfg"), used)) =
+const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 #else
     #error "Unsupported compiler used. Expected one of [TI Clang, IAR, GCC]"
 #endif

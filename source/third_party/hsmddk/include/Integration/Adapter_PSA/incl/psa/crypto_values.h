@@ -55,13 +55,21 @@
 
 /*
  * Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
+/* TI Customizations: Added volatile and NULL key ID defines to this file.
+ * Added new error code for a key being in-use.
+ */
+
 #ifndef PSA_CRYPTO_VALUES_H
 #define PSA_CRYPTO_VALUES_H
+
+/* Needed for mbedtls configuration defines - MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER */
+#include <third_party/hsmddk/include/Config/cs_mbedtls.h>
 
 /** \defgroup error Error codes
  * @{
@@ -341,6 +349,36 @@
  */
 #define PSA_ERROR_DATA_INVALID          ((psa_status_t)-153)
 
+/** The specified key ID references a key that is already in use.
+ *
+ * This error indicates that the requested key has a lock on it, and
+ * needs to complete the operation it is currently being used in before
+ * its key entry in the cache can be modified or accessed.
+ *
+ * Callers are responsible for unlocking key entries in the cache that
+ * they retrieve and lock.
+*/
+#define PSA_ERROR_KEY_IN_USE            ((psa_status_t)-154)
+
+/** The operation required use of the HUK (root key) from OTP, and could not find it.
+ *
+ * This error indicates that the HUK has not yet been provisioned by the
+ * application. The application should submit the 'Provision Random HUK'
+ * token to fix this.
+ *
+ * The key management implementation returns this when failing to retrieve the HUK
+ * in order to derive the Key Blob KEK.
+ */
+#define PSA_ERROR_HUK_NOT_PROVISIONED   ((psa_status_t)-155)
+
+/** The operation attempted to create an asset, and the Asset Store did not have space.
+ *
+ * This error indicates that the HSM Asset Store is too full for the creation of a new asset
+ * with the requested size. To fix this, the application should remove assets from asset store
+ * using psa_destroy_key().
+ */
+#define PSA_ERROR_ASSET_STORE_FULL      ((psa_status_t)-158)
+
 /**@}*/
 
 /** \defgroup crypto_types Key and algorithm types
@@ -384,7 +422,9 @@
 #define PSA_KEY_TYPE_IS_UNSTRUCTURED(type) \
     ((((type) & PSA_KEY_TYPE_CATEGORY_MASK) == PSA_KEY_TYPE_CATEGORY_RAW) || \
      (((type) & PSA_KEY_TYPE_CATEGORY_MASK) == PSA_KEY_TYPE_CATEGORY_SYMMETRIC))
-
+/** Whether a key type is symmetric. */
+#define PSA_KEY_TYPE_IS_SYMMETRIC(type) \
+    ((((type) & PSA_KEY_TYPE_CATEGORY_MASK) == PSA_KEY_TYPE_CATEGORY_SYMMETRIC))
 /** Whether a key type is asymmetric: either a key pair or a public key. */
 #define PSA_KEY_TYPE_IS_ASYMMETRIC(type)                                \
     (((type) & PSA_KEY_TYPE_CATEGORY_MASK &                             \
@@ -1794,6 +1834,59 @@
 #define PSA_ALG_HKDF_GET_HASH(hkdf_alg)                         \
     (PSA_ALG_CATEGORY_HASH | ((hkdf_alg) & PSA_ALG_HASH_MASK))
 
+#define PSA_ALG_SP800_108_COUNTER_MAC_BASE      ((psa_algorithm_t)0x08000400U)
+
+/** Macro to build a NIST SP 800-108 conformant, counter-mode KDF algorithm based on CMAC.
+ *
+ * This is a CMAC-based, counter mode key derivation function, using the construction recommended by
+ * Section 4.1 of NIST Special Publication 800-108r1: Recommendation for Key Derivation Using Pseudorandom
+ * Functions.
+ *
+ *
+ * This key derivation algorithm uses the following inputs, which must be
+ * passed in the order given here:
+ * - #PSA_KEY_DERIVATION_INPUT_SECRET is the secret input keying material. This
+ *   must be a block-cipher key that is compatible with the CMAC algorithm,
+ *   and must be input using psa_key_derivation_input_key(). See also PSA_ALG_CMAC.
+ * - #PSA_KEY_DERIVATION_INPUT_LABEL is the label. It is optional; if omitted, it
+ *   is a zero-length string. If provided, it must not contain any null bytes.
+ * - #PSA_KEY_DERIVATION_INPUT_CONTEXT is the context. It is optional; if omitted,
+ *   context is a zero-length string.
+ *
+ * \note This algorithm should be used even when deriving the TKDK from the HUK, even
+ * though this derivation technically uses CMAC in feedback mode.
+*/
+#define PSA_ALG_SP800_108_COUNTER_CMAC                                  \
+    (PSA_ALG_SP800_108_COUNTER_MAC_BASE | (0x01))
+
+/** Macro to build a NIST SP 800-108 conformant, counter-mode KDF algorithm based on HMAC.
+ *
+ * This is an HMAC-based, counter mode key derivation function, using the construction recommended by
+ * Section 4.1 of NIST Special Publication 800-108r1: Recommendation for Key Derivation Using Pseudorandom
+ * Functions.
+ *
+ * This key derivation algorithm uses the following inputs, which must be
+ * passed in the order given here:
+ * - #PSA_KEY_DERIVATION_INPUT_SECRET is the secret input keying material.
+ * - #PSA_KEY_DERIVATION_INPUT_LABEL is the label. It is optional; if omitted, it
+ *   is a zero-length string. If provided, it must not contain any null bytes.
+ * - #PSA_KEY_DERIVATION_INPUT_CONTEXT is the context. It is optional; if omitted,
+ *   context is a zero-length string.
+*/
+#define PSA_ALG_SP800_108_COUNTER_HMAC(hash_alg)                                  \
+    (PSA_ALG_SP800_108_COUNTER_MAC_BASE | ((hash_alg) & PSA_ALG_HASH_MASK))
+
+/** Whether the specified algorithm is a NIST SP 800-108 conformant, counter-mode KDF algorithm.
+ *
+ * \param alg An algorithm identifier (value of type #psa_algorithm_t).
+ *
+ * \return 1 if \c alg is the specified algorithm, 0 otherwise.
+ *         This macro may return either 0 or 1 if \c alg is not a supported
+ *         key derivation algorithm identifier.
+ */
+#define PSA_ALG_IS_SP800_108_COUNTER_MAC(alg)                                    \
+    (((alg) & ~PSA_ALG_HASH_MASK) == PSA_ALG_SP800_108_COUNTER_MAC_BASE)
+
 #define PSA_ALG_TLS12_PRF_BASE                  ((psa_algorithm_t)0x08000200U)
 /** Macro to build a TLS-1.2 PRF algorithm.
  *
@@ -2227,9 +2320,17 @@
 
 #define PSA_KEY_LOCATION_VENDOR_FLAG            ((psa_key_location_t)0x800000U)
 
-/** The null key identifier.
+/** The null and initial key identifiers.
  */
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+    #define MBEDTLS_SVC_KEY_ID_NULL                 (mbedtls_svc_key_id_t){ 0, 0 }
+    #define MBEDTLS_SVC_KEY_ID_INIT                 ((mbedtls_svc_key_id_t){ 0, 0 })
+#else
+    #define MBEDTLS_SVC_KEY_ID_INIT                 ((psa_key_id_t) 0)
+#endif
+
 #define PSA_KEY_ID_NULL                         ((psa_key_id_t)0U)
+
 /** The minimum value for a key identifier chosen by the application.
  */
 #define PSA_KEY_ID_USER_MIN                     ((psa_key_id_t)0x00000001U)
@@ -2243,6 +2344,31 @@
  */
 #define PSA_KEY_ID_VENDOR_MAX                   ((psa_key_id_t)0x7fffffffU)
 
+#define PSA_KEY_ID_HSM_HUK                      ((psa_key_id_t)(PSA_KEY_ID_USER_MAX))
+
+#define PSA_KEY_ID_HSM_TKDK                     ((psa_key_id_t)(PSA_KEY_ID_USER_MAX - 1))
+
+/** Range of volatile key identifiers.
+ *
+ *  The last #MBEDTLS_KEY_VOLATILE_COUNT identifiers of the implementation
+ *  range of key identifiers are reserved for volatile key identifiers.
+ *  A volatile key identifier is equal to #PSA_KEY_ID_VOLATILE_MIN plus the
+ *  index offset (from the first volatile key slot) of the key slot containing
+ *  the volatile key definition.
+ */
+/** The minimum value for a volatile key identifier.
+ */
+#define PSA_KEY_ID_VOLATILE_MIN                 (PSA_KEY_ID_VENDOR_MAX - \
+                                                 MBEDTLS_KEY_VOLATILE_COUNT + 1)
+/** The maximum value for a volatile key identifier.
+ */
+#define PSA_KEY_ID_VOLATILE_MAX                 (PSA_KEY_ID_VENDOR_MAX)
+/** The maximum value for a pre-provisioned key identifier.
+ */
+#define MBEDTLS_PSA_KEY_ID_BUILTIN_MAX          ((psa_key_id_t)0x7fffefffU)
+/** The minimum value for a pre-provisioned key identifier.
+ */
+#define MBEDTLS_PSA_KEY_ID_BUILTIN_MIN          ((psa_key_id_t)0x7fff0000U)
 /**@}*/
 
 /** \defgroup policy Key policies
@@ -2455,6 +2581,13 @@
  * This must be a direct input, passed to psa_key_derivation_input_integer().
  */
 #define PSA_KEY_DERIVATION_INPUT_COST       ((psa_key_derivation_step_t)0x0205U)
+
+/** A context for key derivation.
+ *
+ * This is typically a direct input. It is currently unsupported to use it as a key
+ * of type PSA_KEY_TYPE_RAW_DATA.
+*/
+#define PSA_KEY_DERIVATION_INPUT_CONTEXT    ((psa_key_derivation_step_t)0x0206U)
 
 /**@}*/
 

@@ -188,31 +188,6 @@ uint8 llCsNumStepsPerSubEvent(csConfigurationSet_t* config,
 uint16 llCsMainModeDur(uint8 mode, csConfigurationSet_t* pConfig);
 
 /*******************************************************************************
- * @fn          llCsSetupStepBuffers
- *
- * @brief       Setup Step Buffers
- * Setup the step buffer by building each step in a loop.
- * Starting with mode 0 steps, moving on to the main mode steps.
- * Decides whether a single buffer is enough or not
- *
- * input parameters
- *
- * @param       connId - connection Id
- * @param       config - pointer to CS config
- * @param       nSubeventSteps - numver of steps in a subevent
- * @param       isFistSE - flag indicates if this is thfirst subevent
- *
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsSetupStepBuffers(uint16 connId, csConfigurationSet_t* config,
-                          uint8 nSubeventSteps, uint8 isFirstSE);
-
-/*******************************************************************************
  * @fn          llCsSetupStep
  *
  * @brief       Builds the CS Step depending on the stepMode that was provided
@@ -236,9 +211,9 @@ void llCsSetupStepBuffers(uint16 connId, csConfigurationSet_t* config,
  * @return      Status
  *
  */
-csStatus_e llCsSetupStep(uint8 stepMode, uint16 connId, uint8 isRepetition,
-                       RCL_CmdBleCs_Step* stepData,
-                       csConfigurationSet_t* csConfig);
+csStatus_e llCsSetupStep(uint8 stepMode, uint16 connId,
+                         RCL_CmdBleCs_Step* stepData,
+                         csConfigurationSet_t* csConfig);
 
 /*******************************************************************************
  * @fn          llCsSetupStep0
@@ -287,6 +262,7 @@ void llCsSetupStep1(uint8 role, RCL_CmdBleCs_Step* stepData, uint8 rttType);
  *
  * @param       role - CS initiator or reflector
  * @param       stepData - pointer to step data
+ * @param       rttType - RTT type
  *
  * output parameters
  *
@@ -294,7 +270,7 @@ void llCsSetupStep1(uint8 role, RCL_CmdBleCs_Step* stepData, uint8 rttType);
  *
  * @return      None
  */
-void llCsSetupStep2(uint8 role, RCL_CmdBleCs_Step* stepData);
+void llCsSetupStep2(uint8 role, RCL_CmdBleCs_Step* stepData, uint8 rttType);
 
 /*******************************************************************************
  * @fn          llCsSetupStep3

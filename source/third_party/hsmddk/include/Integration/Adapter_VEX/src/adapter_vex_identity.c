@@ -55,6 +55,8 @@
 #define VEX_IDENTITY_MAX_USERS 4
 #define VEX_IDENTITY_CO_INDEX  VEX_IDENTITY_MAX_USERS
 
+static uint32_t crypto_officer_id = (uint32_t)VEX_CRYPTO_OFFICER_ID;
+
 struct vex_identity
 {
    int32_t  ProcessId;
@@ -69,26 +71,6 @@ static struct vex_identity gl_Identities[VEX_IDENTITY_MAX_USERS + 1] =
     { 0, 0 },
     { 0, VEX_CRYPTO_OFFICER_ID }
 };
-
-
-/*----------------------------------------------------------------------------
- * vex_IdentityCryptoOfficer
- *
- * This function set the process id and optional the identity of the Crypto
- * Officer.
- *
- * CryptoOfficerId
- *     Identity of the Crypto Officer.
- *     Note: in case 0 is provided the configured one in cs/c_adapter_vex.h
- *           will be used.
- *
- * Return Value:
- *     -
- */
-void
-vex_IdentityCryptoOfficer(
-        uint32_t CryptoOfficerId);
-
 
 /*----------------------------------------------------------------------------
  * vex_IdentityUserAdd
@@ -121,27 +103,11 @@ vex_IdentityUserRemove(void);
 uint32_t
 vex_IdentityGet(void)
 {
-    int32_t local_pid = Adapter_GetPid();
     uint32_t identity = 0;
-    int32_t i;
-
-    for (i = 0; i < (VEX_IDENTITY_MAX_USERS + 1); i++)
-    {
-        if (gl_Identities[i].ProcessId == local_pid)
-        {
-            //identity = gl_Identities[i].Identity;
-            break;
-        }
-    }
-    if (identity == 0U)
-    {
-        // Add process if not known
-        //identity = vex_IdentityUserAdd();
-    }
 
     if (vex_DeviceIsSecureConnected())
     {
-        identity = (uint32_t)VEX_CRYPTO_OFFICER_ID;
+        identity = crypto_officer_id;
     }
     else
     {
@@ -158,14 +124,11 @@ vex_IdentityCryptoOfficer(
         uint32_t CryptoOfficerId)
 {
     gl_Identities[VEX_IDENTITY_CO_INDEX].ProcessId = Adapter_GetPid();
-    if (CryptoOfficerId != 0U)
-    {
-        gl_Identities[VEX_IDENTITY_CO_INDEX].Identity = CryptoOfficerId;
-    }
-    else
-    {
-        gl_Identities[VEX_IDENTITY_CO_INDEX].Identity = (uint32_t)VEX_CRYPTO_OFFICER_ID;
-    }
+
+    crypto_officer_id = CryptoOfficerId;
+
+    gl_Identities[VEX_IDENTITY_CO_INDEX].Identity = CryptoOfficerId;
+
     LOG_CRIT(VEX_LOG_PREFIX "Set CryptoOfficerId: Process ID=0x%x (%u)\n",
              gl_Identities[VEX_IDENTITY_CO_INDEX].ProcessId,
              gl_Identities[VEX_IDENTITY_CO_INDEX].Identity);

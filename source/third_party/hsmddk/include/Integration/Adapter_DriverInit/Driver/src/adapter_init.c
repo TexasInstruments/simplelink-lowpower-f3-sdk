@@ -68,9 +68,6 @@
 #include <third_party/hsmddk/include/Kit/DriverFramework/Device_API/incl/device_mgmt.h>                // Device_Initialize/UnInitialize
 #include <third_party/hsmddk/include/Kit/DriverFramework/Device_API/incl/device_rw.h>                  // Device_Read32, Device_Write32
 
-// Driver Framework DMAResource API
-#include <third_party/hsmddk/include/Kit/DriverFramework/DMAResource_API/incl/dmares_mgmt.h>                // DMAResource_Init/UnInit
-
 /*----------------------------------------------------------------------------
  * Local variables
  */
@@ -161,8 +158,6 @@ Adapter_UnInit(void)
 {
     if (gl_Adapter_IsInitialized)
     {
-        DMAResource_UnInit();
-
         (void)Adapter_Interrupts_UnInit(gl_Device_IRQ);
 
         Device_UnInitialize();

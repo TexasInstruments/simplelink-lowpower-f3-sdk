@@ -106,6 +106,12 @@
  *    makes more sense to use a dedicated stream cipher such as CTR (Counter) that
  *    does not have this restriction. CCM and GCM both use CTR for encryption.
  *
+ *  ## Device-Specific Requirements #
+ *
+ *  For CC27XX devices, CBC operations leveraging the HSM engine
+ *  (key encoding suffixed with _HSM) have the following requirements:
+ *      - Output buffer address must be 32-bit aligned.
+ *
  *  @anchor ti_drivers_AESCBC_Usage
  *  # Usage #
  *  ## Before starting a CBC operation #
@@ -797,6 +803,9 @@ typedef struct
                          *     the encrypted plaintext is copied to.
                          *   - Decryption: The plaintext derived from the
                          *     decrypted ciphertext is copied here.
+                         *
+                         *  For CC27XX devices with _HSM-suffixed key encoding,
+                         *  the output buffer needs to be 32-bit aligned.
                          */
     uint8_t *iv;        /*!< A buffer containing an IV. IVs must be unique to
                          *   each CBC operation and may not be reused. If
@@ -836,6 +845,9 @@ typedef struct
                          *     the encrypted plaintext is copied to.
                          *   - Decryption: The plaintext derived from the
                          *     decrypted ciphertext is copied here.
+                         *
+                         *  For CC27XX devices with _HSM-suffixed key encoding,
+                         *  the output buffer needs to be 32-bit aligned.
                          */
     size_t inputLength; /*!< Length of the input buffer in bytes for segmented
                          *   AES CBC operations. Must be a multiple

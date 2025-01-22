@@ -85,7 +85,7 @@ Target Device: cc23xx
  * @param   event    - todo - remove the event from BLEAppUtil_processStackMsgCB
  * @param   pMessage - message from ble stack
  *
- * @return  None
+ * @return  TRUE/FALSE  - whether if it is safe to dealloc the message.
  */
 uint8_t BLEAppUtil_processStackMsgCB(uint8_t event, uint8_t *pMessage)
 {
@@ -352,5 +352,65 @@ void BLEAppUtil_advCB(uint32_t event, GapAdv_data_t *pBuf, uint32_t *arg)
       {
         BLEAppUtil_free(pBuf);
       }
+    }
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_HandoverSNCB
+ *
+ * @brief   Replace the Serving node callback to BLEAppUtill Event
+ *
+ * @param   status - the stack status starting the serving node
+ *
+ * @return  none
+ */
+void BLEAppUtil_HandoverSNCB(uint16_t connHandle, uint32_t status)
+{
+    // Replace the callback to BLEAppUtill Event
+    // Queue the event
+    uint8_t *pData = BLEAppUtil_malloc(sizeof(uint16_t) + sizeof(uint32_t));
+
+    if(pData != NULL)
+    {
+        uint8_t *pEvt = pData;
+        // Copy the connection handle
+        memcpy(pEvt, &connHandle, sizeof(uint16));
+        pEvt += sizeof(uint16);
+
+        // Copy the status
+        memcpy(pEvt, &status, sizeof(uint32_t));
+
+        BLEAppUtil_enqueueMsg(BLEAPPUTIL_EVT_HANDOVER_SN_EVENT_CB, pData);
+    }
+}
+
+
+/*********************************************************************
+ * @fn      BLEAppUtil_HandoverCNCB
+ *
+ * @brief   Replace the Candidate node callback to BLEAppUtill Event
+ *
+ * @param   status - the stack status to starting the candidate node
+ *
+ * @return  none
+ */
+void BLEAppUtil_HandoverCNCB(uint16_t connHandle, uint32_t status)
+{
+    // Replace the callback to BLEAppUtill Event
+    // Queue the event
+    uint8_t *pData = BLEAppUtil_malloc(sizeof(uint16_t) + sizeof(uint32_t));
+
+    if(pData != NULL)
+    {
+        uint8_t *pEvt = pData;
+
+        // Copy the connection handle
+        memcpy(pEvt, &connHandle, sizeof(uint16));
+        pEvt += sizeof(uint16);
+
+        // Copy the status
+        memcpy(pEvt, &status, sizeof(uint32_t));
+
+        BLEAppUtil_enqueueMsg(BLEAPPUTIL_EVT_HANDOVER_CN_EVENT_CB, pData);
     }
 }

@@ -1,0 +1,433 @@
+/*
+ * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/*
+ *  ======== LP_EM_CC2745R10_Q1.syscfg.json ========
+ */
+ {
+    "name": "LP_EM_CC2745R10_Q1",
+    "displayName": "CC2745R10-Q1 Development Platform",
+    "device": "CC2745R10RHAQ1",
+    "part": "Default",
+    "package": "RHA",
+    "headers": [
+        {
+            "type": "BoosterPack 40 pin",
+            "default": true,
+            "name": "boosterpack",
+            "displayName": "BoosterPack Standard Header",
+            "dimensions": {
+                "columns": [
+                    {
+                        "top": 1,
+                        "bottom": 10
+                    },
+                    {
+                        "top": 21,
+                        "bottom": 30
+                    },
+                    {
+                        "blank": true
+                    },
+                    {
+                        "top": 40,
+                        "bottom": 31
+                    },
+                    {
+                        "top": 20,
+                        "bottom": 11
+                    }
+                ]
+            },
+            "pins": [
+                {
+                    "number": 1,
+                    "name": "3V3"
+                },
+                {
+                    "number": 2,
+                    "ball": "23",
+                    "name": "DIO21_A4"
+                },
+                {
+                    "number": 3,
+                    "ball": "5",
+                    "name": "DIO2"
+                },
+                {
+                    "number": 4,
+                    "ball": "4",
+                    "name": "DIO1"
+                },
+                {
+                    "number": 5,
+                    "name": "NC" // Can be connected to DIO23_X32P with R6
+                },
+                {
+                    "number": 6,
+                    "ball": "24",
+                    "name": "DIO22_A3"
+                },
+                {
+                    "number": 7,
+                    "ball": "6",
+                    "name": "DIO3",
+                    "preferredType": [
+                        "SPI_CLK"
+                    ]
+                },
+                {
+                    "number": 8,
+                    "name": "NC" // Can be connected to DIO24_X32N with R7
+                },
+                {
+                    "number": 9,
+                    "ball": "32",
+                    "name": "DIO27_A1",
+                    "preferredType": [
+                        "I2C_SCL"
+                    ]
+                },
+                {
+                    "number": 10,
+                    "ball": "33",
+                    "name": "DIO28_A0",
+                    "preferredType": [
+                        "I2C_SDA"
+                    ]
+                },
+                {
+                    "number": 11,
+                    "name": "NC"
+                },
+                {
+                    "number": 12,
+                    "name": "NC"
+                },
+                {
+                    "number": 13,
+                    "name": "NC"
+                },
+                {
+                    "number": 14,
+                    "ball": "7",
+                    "name": "DIO4",
+                    "preferredType": [
+                        "SPI_POCI"
+                    ]
+                },
+                {
+                    "number": 15,
+                    "ball": "8",
+                    "name": "DIO5",
+                    "preferredType": [
+                        "SPI_PICO"
+                    ]
+                },
+                {
+                    "number": 16,
+                    "name": "RESET_N"
+                },
+                {
+                    "number": 17,
+                    "name": "NC"
+                },
+                {
+                    "number": 18,
+                    "ball": "10",
+                    "name": "DIO7",
+                    "preferredType": [
+                        "SPI_CSN"
+                    ]
+                },
+                {
+                    "number": 19,
+                    "ball": "14",
+                    "name": "DIO12"
+                },
+                {
+                    "number": 20,
+                    "name": "GND"
+                },
+                {
+                    "number": 21,
+                    "name": "5V"
+                },
+                {
+                    "number": 22,
+                    "name": "GND"
+                },
+                {
+                    "number": 23,
+                    "name": "NC"
+                },
+                {
+                    "number": 24,
+                    "name": "NC"
+                },
+                {
+                    "number": 25,
+                    "name": "NC"
+                },
+                {
+                    "number": 26,
+                    "name": "NC"
+                },
+                {
+                    "number": 27,
+                    "name": "NC" // Can be connected to DIO18_A7 with R74
+                },
+                {
+                    "number": 28,
+                    "name": "NC" // Can be connected to DIO17_A8 with R75
+                },
+                {
+                    "number": 29,
+                    "name": "NC" // Can be connected to DIO19_A6 with R76
+                },
+                {
+                    "number": 30,
+                    "ball": "22",
+                    "name": "DIO20_A5"
+                },
+                {
+                    "number": 31,
+                    "ball": "20",
+                    "name": "DIO18_A7",
+                    "preferredType": [
+                        "CAN_RX"
+                    ]
+                },
+                {
+                    "number": 32,
+                    "ball": "19",
+                    "name": "DIO17_A8",
+                    "preferredType": [
+                        "CAN_TX"
+                    ]
+                },
+                {
+                    "number": 33,
+                    "ball": "12",
+                    "name": "SWDCK" // DIO10_SWDCK
+                },
+                {
+                    "number": 34,
+                    "ball": "11",
+                    "name": "SWDIO" // DIO9_SWDIO
+                },
+                {
+                    "number": 35,
+                    "ball": "15",
+                    "name": "DIO15"
+                },
+                {
+                    "number": 36,
+                    "ball": "16",
+                    "name": "DIO16"
+                },
+                {
+                    "number": 37,
+                    "name": "NC"
+                },
+                {
+                    "number": 38,
+                    "ball": "21",
+                    "name": "DIO19_A6" // FLASH_CS
+                },
+                {
+                    "number": 39,
+                    "ball": "13",
+                    "name": "DIO11"
+                },
+                {
+                    "number": 40,
+                    "ball": "3",
+                    "name": "DIO0"
+                }
+            ]
+        }
+    ],
+    "components": {
+        "LED_RED": {
+            "displayName": "LaunchPad LED Red",
+            "definition": "/ti/boards/components/led_dimmable.json",
+            "connections": {
+                "OUTPUT": "16" // DIO16
+            }
+        },
+        "LED_GREEN": {
+            "displayName": "LaunchPad LED Green",
+            "definition": "/ti/boards/components/led_dimmable.json",
+            "connections": {
+                "OUTPUT": "14" // DIO12
+            }
+        },
+        /* symbolic links/aliases for LED portability between LaunchPads */
+        "LED": {
+            "link": "LED_RED"
+        },
+        "LED_DIMMABLE": {
+            "link": "LED_GREEN"
+        },
+        "LED0": {
+            "link": "LED_RED"
+        },
+        "LED1": {
+            "link": "LED_GREEN"
+        },
+        "LED0_PWM": {
+            "link": "LED0"
+        },
+        "LED1_PWM": {
+            "link": "LED1"
+        },
+
+        "BTN-1": {
+            "displayName": "LaunchPad Button BTN-1 (Left)",
+            "definition": "/ti/boards/components/button.json",
+            "longDescription": "BTN-1 (Left) LaunchPad button with no external pull.",
+            "settings": {
+                "DIN": {
+                    "pull": "Internal",
+                    "polarity": "Active Low"
+                }
+            },
+            "connections": {
+                "INPUT": "22" // DIO20
+            }
+        },
+        "BTN-2": {
+            "displayName": "LaunchPad Button BTN-2 (Right)",
+            "definition": "/ti/boards/components/button.json",
+            "longDescription": "BTN-2 (Right) LaunchPad button with no external pull.",
+            "settings": {
+                "DIN": {
+                    "pull": "Internal",
+                    "polarity": "Active Low"
+                }
+            },
+            "connections": {
+                "INPUT": "3" // DIO0
+            }
+        },
+        /* symbolic links/aliases for BUTTON portability between LaunchPads */
+        "BUTTON0": {
+            "link": "BTN-1"
+        },
+        "BUTTON1": {
+            "link": "BTN-2"
+        },
+        "LP_CAN_BUS": {
+            "displayName": "LaunchPad CAN Bus",
+            "description": "Standard BoosterPack header CAN",
+            "longDescription": "Standard BoosterPack header CAN",
+            "definition": "/ti/boards/components/can.json",
+            "connections": {
+                "RX": "20", // DIO18
+                "TX": "19"  // DIO17
+            }
+        },
+        "LP_SPI_BUS": {
+            "displayName": "LaunchPad SPI Bus",
+            "description": "Standard BoosterPack header SPI",
+            "longDescription": "Standard BoosterPack header SPI",
+            "definition": "/ti/boards/components/spiBus.json",
+            "connections": {
+                "SCLK": "6", // DIO3
+                "PICO": "8", // DIO5
+                "POCI": "7"  // DIO4
+            }
+        },
+        "LP_SPI": {
+            "displayName": "LaunchPad SPI Bus with Chip Select",
+            "description": "Standard BoosterPack header SPI with Chip Select",
+            "longDescription": "Standard BoosterPack header SPI with Chip Select",
+            "definition": "/ti/boards/components/spiDevice.json",
+            "subComponents": {
+                "SPI": {
+                    "link": "LP_SPI_BUS"
+                },
+                "SELECT": {
+                    "displayName": "LaunchPad SPI Bus Chip Select",
+                    "description": "Standard BoosterPack header SPI Chip Select",
+                    "longDescription": "Standard BoosterPack header SPI Chip Select",
+                    "connections": {
+                        "CSN": "10" // DIO7
+                    }
+                }
+            }
+        },
+        "MX25R8035F": {
+            "displayName" : "MX25R8035F SPI Flash",
+            "description" : "MX25R8035F ultra low power, 8Mb CMOS serial multi I/O SPI flash memory",
+            "longDescription": "[__MX25R8035F__](https://www.macronix.com/en-us/products/NOR-Flash/Serial-NOR-Flash/Pages/spec.aspx?p=MX25R8035F&m=Serial+NOR+Flash&n=PM2164) is a 8Mb serial NOR flash memory, which is configured as 1,048,576 x 8 internally. When it is in four I/O mode, the structure becomes 2,097,152 bits x 4 or 4,194,304 bits x 2.",
+            "definition"  : "/ti/boards/components/spi25xFlash.json",
+            "settings" : {
+                "capacity" : 1048576
+            },
+            "subComponents": {
+                "SPI": {
+                    "link": "LP_SPI_BUS"
+                },
+                "SELECT": {
+                    "displayName" : "MX25R8035F SPI Flash Chip Select",
+                    "description" : "MX25R8035F SPI Flash Chip Select",
+                    "longDescription" : "MX25R8035F SPI flash Chip Select",
+                    "definition"  : "/ti/boards/components/spiSelect.json",
+                    "connections" : {
+                        "CSN": "21" // DIO19
+                    }
+                }
+            }
+        },
+        "SPI_FLASH" : {
+            "link": "MX25R8035F"
+        },
+        "XDS110UART": {
+            "definition": "/ti/boards/components/xds110Uart.json",
+            "connections": {
+                "RXD": "5", // DIO2
+                "TXD": "4"  // DIO1
+            }
+        },
+        "HFXT" : {
+            "definition": "/ti/boards/components/crystal_tz3908aaa043.json",
+            "settings": {
+                "overrideCapArray": true,
+                "hfxtCapArrayQ1" : 33,
+                "hfxtCapArrayQ2" : 33
+            }
+        }
+    }
+}

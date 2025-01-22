@@ -1,0 +1,40 @@
+[
+    {
+        "files": [
+            "+../../app/app_main.c -> app/app_main.c",
+            "+../../common/Startup/osal_icall_ble.c -> common/Startup/osal_icall_ble.c",
+            "+../../app/inc/app_main.h -> app/inc/app_main.h",
+            "+../../app/inc/app_extctrl_common.h -> app/inc/app_extctrl_common.h",
+            "+../../app/inc/app_central_api.h -> app/inc/app_central_api.h",
+            "+../../app/inc/app_peripheral_api.h -> app/inc/app_peripheral_api.h",
+            "+../../app/inc/app_connection_api.h -> app/inc/app_connection_api.h",
+            "+../../app/inc/app_pairing_api.h -> app/inc/app_pairing_api.h",
+            "+../../app/inc/app_handover_api.h -> app/inc/app_handover_api.h",
+            "+../../app/inc/app_common_api.h -> app/inc/app_common_api.h",
+            "+../../app/inc/app_l2cap_coc_api.h -> app/inc/app_l2cap_coc_api.h",
+            "+../../app/inc/app_extctrl_central.h -> app/inc/app_extctrl_central.h",
+            "+../../app/inc/app_extctrl_peripheral.h -> app/inc/app_extctrl_peripheral.h",
+            "+../../app/inc/app_extctrl_connection.h -> app/inc/app_extctrl_connection.h",
+            "+../../app/inc/app_extctrl_pairing.h -> app/inc/app_extctrl_pairing.h",
+            "+../../app/inc/app_extctrl_handover.h -> app/inc/app_extctrl_handover.h",
+            "+../../app/inc/app_extctrl_l2cap_coc.h -> app/inc/app_extctrl_l2cap_coc.h",
+            "+../../app/extctrl/app_extctrl_central.c -> app/extctrl/app_extctrl_central.c",
+            "+../../app/extctrl/app_extctrl_peripheral.c -> app/extctrl/app_extctrl_peripheral.c",
+            "+../../app/extctrl/app_extctrl_connection.c -> app/extctrl/app_extctrl_connection.c",
+            "+../../app/extctrl/app_extctrl_pairing.c -> app/extctrl/app_extctrl_pairing.c",
+            "+../../app/extctrl/app_extctrl_handover.c -> app/extctrl/app_extctrl_handover.c",
+            "+../../app/extctrl/app_extctrl_common.c -> app/extctrl/app_extctrl_common.c",
+            "+../../app/extctrl/app_extctrl_l2cap_coc.c -> app/extctrl/app_extctrl_l2cap_coc.c",
+            "+../../app/app_central.c -> app/app_central.c",
+            "+../../app/app_peripheral.c -> app/app_peripheral.c",
+            "+../../app/app_connection.c -> app/app_connection.c",
+            "+../../app/app_pairing.c -> app/app_pairing.c",
+            "+../../app/app_handover.c -> app/app_handover.c",
+            "+../../app/app_common.c -> app/app_common.c",
+            "+../../app/app_l2cap_coc.c -> app/app_l2cap_coc.c",
+            "+../basic_ble_extctrl.syscfg -> basic_ble_extctrl.syscfg",
+            "+../../common/Startup/main_freertos.c -> main_freertos.c",
+            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+        ]
+    }
+]

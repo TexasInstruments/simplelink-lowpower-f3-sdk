@@ -30,8 +30,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "mcuboot_config/mcuboot_config.h"
-#include "flash_map_backend/flash_map_backend.h"
+#include "mcuboot_config.h"
+#include "flash_map_backend.h"
+#include "mcuboot_config/mcuboot_assert.h"
 #include <sysflash/sysflash.h>
 
 #include "bootutil/bootutil_log.h"
@@ -57,8 +58,6 @@
 #endif
 
 #define FLASH_ERASE_VALUE           0xFF
-
-#define assert(x) if(x) {BOOT_LOG_ERR("assert: %s line %d", __FILE__, __LINE__);}
 
 #ifdef TI_FLASH_MAP_EXT_DESC
     /* Nothing to be there when external FlashMap Descriptors are used */
@@ -264,7 +263,7 @@ int flash_area_read(const struct flash_area *fa, uint32_t off, void *dst,
     addr = fa->fa_off + off;
 
     /* check if read is within bounds */
-    assert((addr + len) > (fa->fa_off + fa->fa_size))
+    assert((addr + len) <= (fa->fa_off + fa->fa_size))
 
     if (fa->fa_device_id == FLASH_DEVICE_INTERNAL_FLASH)
     {
@@ -322,7 +321,7 @@ int flash_area_write(const struct flash_area *fa, uint32_t off,
     write_start_addr = fa->fa_off + off;
 
     /* check if read is within bounds */
-    assert((write_start_addr + len) > (fa->fa_off + fa->fa_size))
+    assert((write_start_addr + len) <= (fa->fa_off + fa->fa_size))
 
     if (fa->fa_device_id == FLASH_DEVICE_INTERNAL_FLASH)
     {
@@ -375,7 +374,7 @@ int flash_area_erase(const struct flash_area *fa, uint32_t off, uint32_t len)
     erase_start_addr = fa->fa_off + off;
 
     /* check if read is within bounds */
-    assert((erase_start_addr + len) > (fa->fa_off + fa->fa_size))
+    assert((erase_start_addr + len) <= (fa->fa_off + fa->fa_size))
 
     if (fa->fa_device_id == FLASH_DEVICE_INTERNAL_FLASH)
     {
@@ -383,7 +382,7 @@ int flash_area_erase(const struct flash_area *fa, uint32_t off, uint32_t len)
         uint32_t pageAddr;
         uint32_t sectorSize = FlashSectorSizeGet();
 
-        assert(erase_start_addr % sectorSize);
+        assert((erase_start_addr % sectorSize) == 0);
 
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
         uint8_t cacheState = disableCache();
@@ -409,7 +408,7 @@ int flash_area_erase(const struct flash_area *fa, uint32_t off, uint32_t len)
 #ifdef TI_BOOT_USE_EXTERNAL_FLASH
     else if (fa->fa_device_id == FLASH_DEVICE_EXTERNAL_FLASH(0))
     {
-        assert(erase_start_addr % EXT_FLASH_PAGE_SIZE);
+        assert((erase_start_addr % EXT_FLASH_PAGE_SIZE) == 0);
         
         /* verify that flash is open */
         if (!extFlashStatus)

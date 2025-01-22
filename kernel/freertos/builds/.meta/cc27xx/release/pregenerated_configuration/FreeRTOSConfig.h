@@ -86,13 +86,6 @@
  */
 #define configQUEUE_REGISTRY_SIZE 0
 
-#define configASSERT(x)           \
-    if ((x) == 0)                 \
-    {                             \
-        taskDISABLE_INTERRUPTS(); \
-        for (;;)                  \
-            ;                     \
-    }
 
 /* Floating point unit enabled or disabled */
 #define configENABLE_FPU 1
@@ -202,13 +195,13 @@
 /* Use the system definition.
  * The number of priority bits is reduced by one for TFM-enabled configurations.
  */
-#define configPRIO_BITS 3
+#define configPRIO_BITS 4
 
 /*
  * The lowest interrupt priority that can be used in a call to a "set priority"
  * function.
  */
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY 0x07
+#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY 15
 
 /*
  * The highest interrupt priority that can be used by any interrupt service
@@ -228,9 +221,9 @@
  * !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
  * See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html.
  *
- * Priority 1 (shifted 5 since only the top 3 bits are implemented).
- * Priority 1 is the second highest priority.
+ * The priority is shifted since NVIC priority bits are placed MSB.
  * Priority 0 is the highest priority.
+ * Priority 1 is the second highest priority, etc.
  */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 

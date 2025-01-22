@@ -217,6 +217,7 @@ Device_GetProperties(
         bool * const fValid_p);
 
 
+#if HWPAL_DEVICE_ALLOW_ADD_DEVICE
 /*----------------------------------------------------------------------------
  * Device_Add
  *
@@ -262,6 +263,8 @@ Device_Add(
 int32_t
 Device_Remove(
         const uint32_t Index);
+
+#endif
 
 
 #endif /* INCLUDE_GUARD_DEVICE_MGMT_H */

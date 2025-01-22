@@ -1,0 +1,14 @@
+[
+    {
+        "files": [
+            "+../../../../../../../source/ti/boards/LP_EM_CC2340R53/Board.html -> Board.html",
+            "+../../cmdinterface.h -> cmdinterface.h",
+            "+../../i2ccontroller.c -> i2ccontroller.c",
+            "+../i2ccontroller.syscfg -> i2ccontroller.syscfg",
+            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../README.html -> README.html",
+            "+../../README.md -> README.md"
+        ]
+    }
+]

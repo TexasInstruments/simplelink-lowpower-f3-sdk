@@ -105,7 +105,7 @@ for(var setting in ccfgSettings)
 /* ======== Zigbee ======== */
 
 var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
-zigbee.deviceType                    = "zed";
+zigbee.deviceType                    = ["zed"];
 zigbee.deviceTypeReadOnly            = false;
 
 // Suppress warning on RNG module
@@ -113,6 +113,19 @@ const RNG = scripting.addModule("/ti/drivers/RNG", {}, false);
 scripting.suppress("This the default noise conditioning key provided by TI, which is acceptable per NIST SP 800-90B\\. However, TI recommends you change this default value to a custom random value for your product", RNG, "noiseConditioningKeyW3");
 RNG.rngPoolSize = 512;
 
-/* ======== FreeRTOS ======== */
-const FreeRTOS = scripting.addModule("/freertos/FreeRTOS");
-FreeRTOS.heapSize = 0x00001B58;
+if(system.getRTOS() === "freertos")
+{
+    /* ======== FreeRTOS ======== */
+    const FreeRTOS = scripting.addModule("/freertos/FreeRTOS");
+    FreeRTOS.heapSize = 0x00001BBC;
+    FreeRTOS.idleStackSize = 256;
+    FreeRTOS.timerStackSize = 256;
+}
+
+/* ======== RF Design ======== */
+var rfDesign = scripting.addModule("ti/devices/radioconfig/rfdesign");
+const rfDesignSettings = system.getScript("/ti/common/lprf_rf_design_settings.js").rfDesignSettings;
+for(var setting in rfDesignSettings)
+{
+    rfDesign[setting] = rfDesignSettings[setting];
+}

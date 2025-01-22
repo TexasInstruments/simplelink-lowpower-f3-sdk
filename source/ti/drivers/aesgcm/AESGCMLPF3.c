@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -412,7 +412,7 @@ static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object
                                                     uint32_t *output)
 {
     /* Set up the key and AES engine to begin an operation */
-    AESCommonLPF3_setupOperation(&object->key, AESEBCLPF3_SINGLE_BLOCK_AUTOCFG);
+    AESCommonLPF3_setupOperation(&object->key, AESECBLPF3_SINGLE_BLOCK_AUTOCFG);
 
     /* Process the single block with CPU R/W */
     AESProcessAlignedBlocksECB(input, output, (uint32_t)AES_GET_NUM_BLOCKS(AES_BLOCK_SIZE));

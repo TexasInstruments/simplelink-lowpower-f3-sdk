@@ -15,6 +15,7 @@
             "+../../app/app_pairing.c -> app/app_pairing.c",
             "+../../app/app_data.c -> app/app_data.c",
             "+../../app/Profiles/app_simple_gatt.c -> app/Profiles/app_simple_gatt.c",
+            "+../../app/app_l2cap_coc.c -> app/app_l2cap_coc.c",
             "+../basic_ble.syscfg -> basic_ble.syscfg",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",
             "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"

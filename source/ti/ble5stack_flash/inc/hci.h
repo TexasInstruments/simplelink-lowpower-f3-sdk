@@ -2290,7 +2290,7 @@ extern hciStatus_t HCI_LE_ReceiverTestCmd( uint8 rxChan );
  * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_TRANSMITTER_TEST
  *
  * @param txChan Tx RF frequency k=0..39, where F=2402+(k*2MHz).
- * @param dataLen Test data length: 0..37 bytes
+ * @param dataLen Test data length: 0..255 bytes
  * @param pktPayload @ref DTM_params
  *
  * @return @ref HCI_SUCCESS
@@ -2736,7 +2736,7 @@ extern hciStatus_t HCI_LE_EnhancedRxTestCmd( uint8 rxChan,
  * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_ENHANCED_TRANSMITTER_TEST
  *
  * @param txChan Tx RF channel k=0..39, where F=2402+(k*2MHz).
- * @param payloadLen Byte length (0..37) in payload for each packet.
+ * @param payloadLen Byte length (0..255) in payload for each packet.
  * @param payloadType @ref DTM_params
  * @param txPhy Tx PHY to use. See @ref PHY_2_CODED
  *
@@ -2785,7 +2785,7 @@ extern hciStatus_t HCI_LE_EnhancedCteRxTestCmd( uint8 rxChan,
  * @ref hciEvt_CmdComplete_t with cmdOpcode HCI_LE_ENHANCED_CTE_TRANSMITTER_TEST
  *
  * @param txChan Tx RF channel k=0..39, where F=2402+(k*2MHz).
- * @param payloadLen Byte length (0..37) in payload for each packet.
+ * @param payloadLen Byte length (0..255) in payload for each packet.
  * @param payloadType @ref DTM_params
  * @param txPhy Tx PHY to use. See @ref PHY_2_CODED
  * @param cteLength - CTE length in 8 &mu;s units.
@@ -3263,6 +3263,14 @@ extern hciStatus_t HCI_EXT_SetRxGainCmd( uint8 rxGain );
  * @par Corresponding Events
  * @ref hciEvt_VSCmdComplete_t with cmdOpcode @ref HCI_EXT_SET_TX_POWER_DBM
  *
+ * @param txPower This value represents the power level, in dBm,
+ *                at which the transmitter is operating. @ref TX_Power_Index
+ *
+ * @param fraction  If set to 1, raises the requested power level by 0.5 dB @ref LRF_TxPowerTable_Index
+ *                  In CC23xx Family devices, the fraction is currently not used (i.e. should be set to 0).
+ *
+ * @note This function will have no impact on the txPower used for DTM test functions.
+ *
  * @return @ref HCI_SUCCESS
  */
 extern hciStatus_t HCI_EXT_SetTxPowerDbmCmd( int8 txPower, uint8 fraction );
@@ -3425,7 +3433,8 @@ extern hciStatus_t HCI_EXT_SetPeripheralLatencyOverrideCmd( uint8 control );
  * specified RF channel. Use @ref HCI_EXT_EndModemTestCmd command to end the
  * test.
  *
- * The BLE device will transmit at maximum power.
+ * By default, the maximum transmit power is used.
+ * This value can be altered using HCI_EXT_SetTxPowerDbmCmd.
  *
  * This modem test can be used to satisfy in part radio regulation
  * requirements as specific in standards such as ARIB STD-T66.
@@ -3452,7 +3461,8 @@ extern hciStatus_t HCI_EXT_ModemTestTxCmd( uint8 cwMode,
  * channels 0..39) every 625 us. Use @ref HCI_EXT_EndModemTestCmd command to end
  * the test.
  *
- * The BLE device will transmit at maximum power.
+ * By default, the maximum transmit power is used.
+ * This value can be altered using HCI_EXT_SetTxPowerDbmCmd.
  *
  * This modem test can be used to satisfy in part radio regulation
  * requirements as specific in standards such as ARIB STD-T66.
@@ -3498,7 +3508,8 @@ extern hciStatus_t HCI_EXT_ModemTestRxCmd( uint8 rxChan );
  * to the specified RF channel for a given PHY (1M, 2M, Coded S2, or Coded S8).
  * Use @ref HCI_EXT_EndModemTestCmd command to end the test.
  *
- * The BLE device will transmit at maximum power.
+ * By default, the maximum transmit power is used.
+ * This value can be altered using HCI_EXT_SetTxPowerDbmCmd.
  *
  * This modem test can be used to satisfy in part radio regulation
  * requirements as specific in standards such as ARIB STD-T66.
@@ -3528,7 +3539,8 @@ extern hciStatus_t HCI_EXT_EnhancedModemTestTxCmd( uint8 cwMode,
  * payload length, as given Vol. 6, Part F, section 4.1.6). Use
  * @ref HCI_EXT_EndModemTestCmd command to end the test.
  *
- * The BLE device will transmit at maximum power.
+ * By default, the maximum transmit power is used.
+ * This value can be altered using HCI_EXT_SetTxPowerDbmCmd.
  *
  * This modem test can be used to satisfy in part radio regulation
  * requirements as specific in standards such as ARIB STD-T66.
@@ -3707,7 +3719,14 @@ extern hciStatus_t HCI_EXT_SaveFreqTuneCmd( void );
  * @par Corresponding Events
  * @ref hciEvt_VSCmdComplete_t with cmdOpcode @ref HCI_EXT_SET_MAX_DTM_TX_POWER_DBM
  *
- * @param txPower @ref TX_Power_Index
+ * @param txPower This value represents the power level, in dBm,
+ *                at which the transmitter is operating. @ref TX_Power_Index
+ *
+ * @param fraction  If set to 1, raises the requested power level by 0.5 dB @ref LRF_TxPowerTable_Index
+ *                  In CC23xx Family devices, the fraction is currently not used (i.e. should be set to 0).
+ *
+ * @note This function will have no impact on the txPower used for
+ *       non-DTM functionality such as advertising, connections, etc.
  *
  * @return @ref HCI_SUCCESS
  */
@@ -4533,21 +4552,6 @@ hciStatus_t HCI_LE_CS_SetDefaultSettings( uint16 connHandle,
 
 /**
  *  read the per-channel Mode 0 Frequency
- *  Actuation Error table of the local Controller
- * @design      BLE_LOKI-506
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode
- *      @ref HCI_LE_CS_READ_LOCAL_FAE_TABLE
- *
- * @param none
- *
- * @return @ref HCI_SUCCESS
- */
-hciStatus_t HCI_LE_CS_ReadLocalFAETable( void );
-
-/**
- *  read the per-channel Mode 0 Frequency
  *  Actuation Error table of the remote Controller
  * @design      BLE_LOKI-506
  *
@@ -4713,6 +4717,30 @@ hciStatus_t HCI_LE_CS_Test( uint8* pParams );
  * @return @ref HCI_SUCCESS
  */
 hciStatus_t HCI_LE_CS_TestEnd(void);
+
+/*******************************************************************************
+ * @fn          HCI_CMD_Parser
+ *
+ * @brief       This API is called by an external or internal host to send
+ *              a raw HCI packet command to the controller. The API runs on all
+ *              parser functions and looks for opcode matches. Inside the parser
+ *              function, a call is made to the HCI function, which returns the
+ *              HCI status or HCI_ERROR_CODE_UNKNOWN_HCI_CMD if the opcode
+ *              is not found.
+ *
+ * input parameters
+ *
+ * @param       pData - Pointer to packet's data.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return        HCI/LL status
+ *                HCI_ERROR_CODE_UNKNOWN_HCI_CMD.
+ *
+ */
+hciStatus_t HCI_CMD_Parser(uint8 *pData);
 
 #ifdef __cplusplus
 }

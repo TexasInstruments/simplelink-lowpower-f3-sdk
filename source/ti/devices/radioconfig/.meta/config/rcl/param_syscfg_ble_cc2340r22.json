@@ -310,19 +310,31 @@
     "ble": [
       {
         "file8": "adc_noise_bt5_cc23xx.json",
+        "phy_files": {
+          "cc23xx": "adc_noise_bt5_cc23xx.phy",
+          "cc27xx": "adc_noise_bt5_cc27xx.phy"
+        },
         "name": "adc_noise",
         "label": "ADC Noise",
         "protocol": "ADC Noise, BLE based"
       },
       {
         "file8": "ble_bt5_1m_2m_coded_cc23xx.json",
+        "phy_files": {
+          "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.phy",
+          "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.phy"
+        },
         "name": "ble",
         "label": "1 Mbps / 2 Mbps / Coded",
         "protocol": "Bluetooth 5, LE",
         "usage": "stack"
       },
       {
-        "file8": "ble_bt5_generic_cc23xx.json",
+        "file8": "ble_bt5_1m_2m_coded_generic_cc23xx.json",
+        "phy_files": {
+          "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.phy",
+          "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.phy"
+        },
         "name": "ble_gen",
         "label": "Generic 1 Mbps / 2 Mbps / Coded",
         "protocol": "Bluetooth 5, LE",

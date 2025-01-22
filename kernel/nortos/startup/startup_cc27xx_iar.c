@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -149,7 +149,7 @@ __root void (*const __vector_table[])(void) @ ".resetVecs" = {
                        // here UART1:MIS
     intDefaultHandler, // 39 SPI1 combined interrupt request, interrupt flags
                        // can be found here SPI1:MIS
-    intDefaultHandler, // 40 VCE IRQ
+    intDefaultHandler, // 40 APU IRQ
     intDefaultHandler, // 41 HSM Secure IRQ
     intDefaultHandler, // 42 HSM Non-secure IRQ
     intDefaultHandler, // 43 HSM OTP IRQ

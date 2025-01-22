@@ -245,11 +245,11 @@ extern l2capUserCfg_t l2capUserConfig;
  * FUNCTIONS - API
  */
 
-extern bStatus_t l2capStoreFCPkt( uint16 connHandle, l2capPacket_t *pPkt );
+extern bStatus_t l2capStoreFCPkt( l2capPacket_t *pPkt );
 
 extern uint8 l2capSendPkt( void );
 
-extern bStatus_t l2capEncapSendData( uint16 connHandle, l2capPacket_t *pPkt );
+extern bStatus_t l2capEncapSendData( l2capPacket_t *pPkt );
 
 extern bStatus_t l2capSendCmd( uint16 connHandle, uint8 opcode, uint8 id, uint8 *pCmd, pfnL2CAPBuildCmd_t pfnBuildCmd );
 
@@ -269,7 +269,7 @@ extern void l2capStopTimer( l2capChannel_t *pChannel );
 
 extern void l2capHandleRxError( uint16 connHandle );
 
-extern bStatus_t l2capNotifyData( uint8 taskId, uint16 connHandle, l2capPacket_t *pPkt );
+extern bStatus_t l2capNotifyData( uint8 taskId, l2capPacket_t *pPkt );
 
 extern void l2capNotifySignal( uint8 taskId, uint16 connHandle, uint8 status, uint8 opcode, uint8 id, l2capSignalCmd_t *pCmd );
 
@@ -293,7 +293,7 @@ extern uint8 l2capNumActiveChannnels( l2capPsm_t *pPsm );
 
 extern l2capPsm_t *l2capFindPsm( uint16 psm );
 
-extern uint8 l2capReassembleSegment( uint16 connHandle, l2capPacket_t *pPkt );
+extern uint8 l2capReassembleSegment( l2capPacket_t *pPkt );
 
 extern bStatus_t l2capSendConnectRsp( uint16 connHandle, uint8 id, uint16 result, l2capChannel_t *pChannel );
 
@@ -313,7 +313,7 @@ extern uint16 l2capBuildFlowCtrlCredit( uint8 *pBuf, uint8 *pCmd );
 
 extern l2capChannel_t *l2capFindRemoteId( uint16 connHandle, uint8 id );
 
-extern l2capChannel_t *l2capFindLocalCID( uint16 srcCID );
+extern l2capChannel_t *l2capFindLocalCID( uint16 connHandle, uint16 srcCID );
 
 extern l2capChannel_t *l2capFindRemoteCID( uint16 connHandle, uint16 CID );
 
@@ -321,7 +321,7 @@ extern void l2capDisconnectChannel( l2capChannel_t *pChannel, uint16 reason );
 
 extern bStatus_t l2capFlowCtrlCredit( uint16 connHandle, uint16 CID, uint16 peerCredits );
 
-extern void l2capGetCoChannelInfo( l2capCoChannel_t *pCoC, l2capCoCInfo_t *pInfo );
+extern void l2capGetCoChannelInfo( l2capChannel_t *pChannel, l2capCoCInfo_t *pInfo );
 
 extern void l2capNotifyChannelEstEvt( l2capChannel_t *pChannel, uint8 status, uint16 result );
 
@@ -357,7 +357,7 @@ extern void l2capProcessOSALMsg( osal_event_hdr_t *pMsg );
 
 extern void l2capProcessRxData( hciDataEvent_t *pHciMsg );
 
-extern void l2capProcessSignal( uint16 connHandle, l2capPacket_t *pPkt );
+extern void l2capProcessSignal( l2capPacket_t *pPkt );
 
 extern bStatus_t l2capProcessRsp( uint16 connHandle, l2capSignalHdr_t *pHdr, uint8 *pData );
 

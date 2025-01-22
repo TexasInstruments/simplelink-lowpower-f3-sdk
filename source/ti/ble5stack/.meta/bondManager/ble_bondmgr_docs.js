@@ -73,6 +73,10 @@ to encrypt the link if the device has previously paired/bonded.
 For more information, refer to the [BLE User's Guide](ble5stack/ble_user_guide/html/ble-stack-5.x/\
 gapbondmngr-cc13xx_cc26xx.html#gapbondmgr-examples-for-different-pairing-methods).\n`
 
+// Long description for the enableFiftyBondsMR configuration parameter
+const enableFiftyBondsMRLongDescription = `Enable 50 bonds for moltirole devices.\n
+__Default__: False (unchecked)\n`
+
 // Long description for the bondMITMProtection configuration parameter
 const bondMITMProtectionLongDescription = `Man in the Middle protection. MITM provides \
 authentication during the pairing process which helps prevent a malicious attacker \
@@ -238,6 +242,7 @@ Terminate link |\n`
     maxBondsLongDescription: maxBondsLongDescription,
     maxCharCfgLongDescription: maxCharCfgLongDescription,
     bondPairingLongDescription: bondPairingLongDescription,
+    enableFiftyBondsMRLongDescription: enableFiftyBondsMRLongDescription,
     bondMITMProtectionLongDescription: bondMITMProtectionLongDescription,
     bondIOCapsLongDescription: bondIOCapsLongDescription,
     bondingLongDescription:bondingLongDescription,

@@ -55,6 +55,7 @@
 const PowerLPF3_LfoscCompensationProfile `inst.$name` = {
     .systemWakeupIntervalUsec = `inst.systemWakeupInterval`,
     .ppmRequirement = `inst.ppmRequirement`,
+    .maxAllowedJitterUsec = `inst.maxAllowedJitter`,
     .temperatureGradientMilliCelsiusPerSec = `Math.round(inst.temperatureGradient * 1000)`,
 };
 % }

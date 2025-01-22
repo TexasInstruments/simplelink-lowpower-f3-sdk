@@ -136,8 +136,13 @@ typedef long int lint_t;
 // warning for side-effects on the following two macros since the arguments
 // are evaluated twice changing this to inline functions is problematic
 // because of type incompatibilities
+#ifndef MIN
 #define MIN(_x, _y) ((_x) < (_y) ? (_x) : (_y))
+#endif
+
+#ifndef MAX
 #define MAX(_x, _y) ((_x) > (_y) ? (_x) : (_y))
+#endif
 
 /* ============ BIT_n ============ */
 

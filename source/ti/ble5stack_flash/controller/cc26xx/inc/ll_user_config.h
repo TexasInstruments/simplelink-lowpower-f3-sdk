@@ -136,7 +136,6 @@ typedef struct
   uint8                 maxNumConns;           // Max number of BLE connections
   uint8                 numTxEntries;          // Max number of BLE connection Tx buffers
   uint8                 maxPduSize;            // Max PDU data size
-  uint8                 rfFeModeBias;          // RF Front End Mode and Bias
 #ifndef CC23X0
   rfDrvTblPtr_t         *rfDrvTblPtr;           // Table of Rf Driver API
   eccDrvTblPtr_t        *eccDrvTblPtr;          // Table of ECC Driver API

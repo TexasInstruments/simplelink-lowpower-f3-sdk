@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,34 +38,17 @@
 
     /* passed by /ti/drivers/templates/Board.c.xdt */
     let ADC = args[0];
+    let ADCLPF3Channel = system.modules["/ti/drivers/adc/ADCLPF3Channel"];
     let instances = ADC.$instances;
     if (instances.length == 0) return;
 
-    /* get Common /ti/drivers utility functions */
+    /* Get Common /ti/drivers utility functions */
     let Common = system.getScript("/ti/drivers/Common.js");
 
     let declarations = Common.genBoardDeclarations(instances);
 
     /* CONFIG_XXXCOUNT string, derived from defaultInstanceName */
     let countDef = ADC.defaultInstanceName + "COUNT";
-
-    let map = {
-        "1"   : "ADCLPF3_CLKDIV_1",
-        "2"   : "ADCLPF3_CLKDIV_2",
-        "4"   : "ADCLPF3_CLKDIV_4",
-        "8"   : "ADCLPF3_CLKDIV_8",
-        "16"  : "ADCLPF3_CLKDIV_16",
-        "24"  : "ADCLPF3_CLKDIV_24",
-        "32"  : "ADCLPF3_CLKDIV_32",
-        "48"  : "ADCLPF3_CLKDIV_48",
-        "12 Bits" : "ADCLPF3_RESOLUTION_12_BIT",
-        "10 Bits" : "ADCLPF3_RESOLUTION_10_BIT",
-        "8 Bits" : "ADCLPF3_RESOLUTION_8_BIT",
-        "VDDS" : "ADCLPF3_VDDS_REFERENCE",
-        "Internal 1.4V" : "ADCLPF3_FIXED_REFERENCE_1V4",
-        "Internal 2.5V" : "ADCLPF3_FIXED_REFERENCE_2V5",
-        "External reference" : "ADCLPF3_EXTERNAL_REFERENCE"
-    };
 
 %%}
 /*
@@ -79,57 +62,34 @@
 #define `countDef` `instances.length`
 
 /*
- *  ======== adcLpf3Objects ========
+ *  ======== ADCLPF3_objects ========
  */
-ADCLPF3_Object adcLpf3Objects[`countDef`];
+ADCLPF3_Object ADCLPF3_objects[`countDef`];
 
 /*
- *  ======== adcLpf3HWAttrs ========
+ *  ======== ADCLPF3_hwAttrs ========
  */
-const ADCLPF3_HWAttrs adcLpf3HWAttrs[`countDef`] = {
+const ADCLPF3_HWAttrs ADCLPF3_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
     % let inst = instances[i];
-    % let inputPin, refPosPin, refNegPin, adcChannel, refVoltage;
-    % if (inst.internalSignal === "None") {
-    %     inputPin = inst.adcPinInstance.$name;
-    %     adcChannel = ADC._pinToADCChannel(inst.adc.adcPin.$solution);
-    % }
-    % else {
-    %     inputPin = "GPIO_INVALID_INDEX";
-    %     adcChannel = 15;
-    % }
-    % if (inst.referenceSource === "External reference") {
-    %     refPosPin = inst.adcRefPInstance.$name;
-    %     refNegPin = inst.adcRefNInstance.$name;
-    % }
-    % else {
-    %     refPosPin = "GPIO_INVALID_INDEX";
-    %     refNegPin = "GPIO_INVALID_INDEX";
-    % }
+    % let channelInfo = ADCLPF3Channel._getChannelInfo(inst.adcChannel);
     /* `inst.$name` */
     % if (inst.$hardware) {
     %    if (inst.$hardware.displayName) {
     /* `inst.$hardware.displayName` */
     %    }
     % }
-    % if(map[inst.referenceSource] == "ADCLPF3_FIXED_REFERENCE_1V4"){
-    %   refVoltage = "1400000";
-    % } else if(map[inst.referenceSource] == "ADCLPF3_FIXED_REFERENCE_2V5"){
-    %   refVoltage = "2500000";
-    % } else {
-    %   refVoltage = inst.referenceVoltage;
-    % }
     {
-        .adcInputDIO         = `inputPin`,
-        .adcRefPosDIO        = `refPosPin`,
-        .adcRefNegDIO        = `refNegPin`,
-        .internalChannel     = `adcChannel`,
-        .refSource           = `map[inst.referenceSource]`,
+        .adcInputDIO         = `channelInfo.inputPin`,
+        .adcRefPosDIO        = `channelInfo.refPosPin`,
+        .adcRefNegDIO        = `channelInfo.refNegPin`,
+        .internalChannel     = `channelInfo.adcChannel`,
+        .refSource           = `channelInfo.refSource`,
         .samplingDuration    = `inst.adcSampleTime`,
-        .refVoltage          = `refVoltage`,
+        .refVoltage          = `channelInfo.refVoltage`,
         .returnAdjustedVal   = `inst.adjustSampleValue`,
-        .resolutionBits      = `map[inst.resolution]`,
-        .adcClkkDivider      = `map[inst.adcClockDivider]`
+        .resolutionBits      = `inst.resolution`,
+        .adcClkkDivider      = `inst.adcClockDivider`
     },
 % }
 };
@@ -147,9 +107,9 @@ const ADC_Config ADC_config[`countDef`] = {
     %    }
     % }
     {
-        .fxnTablePtr = &ADCLPF3_fxnTable,
-        .object = &adcLpf3Objects[`inst.$name`],
-        .hwAttrs = &adcLpf3HWAttrs[`inst.$name`]
+        .fxnTablePtr    = &ADCLPF3_fxnTable,
+        .object         = &ADCLPF3_objects[`inst.$name`],
+        .hwAttrs        = &ADCLPF3_hwAttrs[`inst.$name`]
     },
 % }
 };

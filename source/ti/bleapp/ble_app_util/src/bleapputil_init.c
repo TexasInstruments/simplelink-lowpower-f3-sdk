@@ -90,6 +90,17 @@ gapBondCBs_t BLEAppUtil_bondMgrCBs =
     BLEAppUtil_pairStateCB // Pairing/Bonding state Callback
 };
 
+// Handover Serving Node CB
+const handoverSNCBs_t BLEAppUtil_handoverSnCB =
+{
+     BLEAppUtil_HandoverSNCB
+};
+
+const handoverCNCBs_t BLEAppUtil_handoverCnCB =
+{
+     BLEAppUtil_HandoverCNCB
+};
+
 pthread_mutex_t mutex;
 
 /*********************************************************************
@@ -590,6 +601,11 @@ bStatus_t BLEAppUtil_disconnect(uint16 connHandle)
   return GAP_TerminateLinkReq(connHandle, HCI_DISCONNECT_REMOTE_USER_TERM);
 }
 
+GAP_Addr_Modes_t BLEAppUtil_getDevAddrMode(void)
+{
+  return BLEAppUtilLocal_GeneralParams->addressMode;
+}
+
 bStatus_t BLEAppUtil_setConnPhy(BLEAppUtil_ConnPhyParams_t *phyParams)
 {
     // Set Phy Preference on the current connection. Apply the same value
@@ -604,7 +620,7 @@ bStatus_t BLEAppUtil_registerConnNotifHandler(uint16_t connHandle)
 }
 bStatus_t BLEAppUtil_unRegisterConnNotifHandler()
 {
-    return Gap_RegisterConnEventCb(BLEAppUtil_connEventCB, GAP_CB_UNREGISTER, GAP_CB_CONN_EVENT_ALL, LINKDB_CONNHANDLE_INVALID);
+    return Gap_RegisterConnEventCb(BLEAppUtil_connEventCB, GAP_CB_UNREGISTER, GAP_CB_CONN_EVENT_ALL, LINKDB_CONNHANDLE_ALL);
 }
 
 /*********************************************************************
@@ -669,4 +685,32 @@ bStatus_t BLEAppUtil_paramUpdateRsp(gapUpdateLinkParamReqEvent_t *pReq, uint8 ac
     // Send Reply and return
 
     return (status);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_registerSNCB
+ *
+ * @brief   Register the serving node callback
+ *
+ * @param   None
+ *
+ * @return  SUCCESS, FAILURE
+ */
+bStatus_t BLEAppUtil_registerSNCB(void)
+{
+    return Handover_RegisterSNCBs(&BLEAppUtil_handoverSnCB);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_registerCNCB
+ *
+ * @brief   Register the serving node callback
+ *
+ * @param   None
+ *
+ * @return  SUCCESS, FAILURE
+ */
+bStatus_t BLEAppUtil_registerCNCB(void)
+{
+    return Handover_RegisterCNCBs(&BLEAppUtil_handoverCnCB);
 }

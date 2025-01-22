@@ -39,12 +39,90 @@
 
 #include <stdint.h>
 
-/* Defines */
-#define HSM_ASYM_DATA_VHEADER (4U)
-#define HSM_WORD_LENGTH       (4U)
-#define HSM_SIGNATURE_VCOUNT  (2U)
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/aes.h)
 
-#define BITS_TO_BYTES(bits) (((size_t)(bits) + 7U) / 8U)
+/* Defines */
+#define HSM_ASYM_DATA_VHEADER                (4U)
+#define HSM_WORD_LENGTH                      (4U)
+#define HSM_SIGNATURE_VCOUNT                 (2U)
+#define HSM_ASYM_ECC_PUB_KEY_VCOUNT          (2U)
+#define HSM_ASYM_CURVE25519_PUB_KEY_VCOUNT   (1U)
+#define HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG (1U)
+#define HSM_ASYM_ECC_UNCOMP_ENC_VALUE        (0x04U)
+#define HSM_ASYM_ECC_SRD_SCRT_ENC_VALUE      (0U)
+#define HSM_DRBG_RNG_BLOCK_SIZE              HSM_WORD_LENGTH
+#define HSM_RAW_RNG_BLOCK_SIZE               (256U)
+#define HSM_RAW_RNG_MAX_LENGTH               (65536U)
+#define HSM_MAC_MAX_LENGTH                   (AES_BLOCK_SIZE)
+#define HSM_AEAD_MIN_MAC_LENGTH              (2U)
+#define HSM_AEAD_TEMP_ASSET_SIZE             (48U)
+#define HSM_AES_128_KEY_LENGTH               (AES_128_KEY_LENGTH_BYTES)
+#define HSM_AES_192_KEY_LENGTH               (AES_128_KEY_LENGTH_BYTES + 8)
+#define HSM_AES_256_KEY_LENGTH               (2 * AES_128_KEY_LENGTH_BYTES)
+
+#define BITS_TO_BYTES(bits)  (((size_t)(bits) + 7U) / 8U)
+/* Left-shift by 3 to multiply by 8, to convert from bytes to bits */
+#define BYTES_TO_BITS(bytes) ((bytes) << 3)
+
+#define HSM_IS_SIZE_MULTIPLE_OF_WORD(x)           (((x) & (HSM_WORD_LENGTH - 1U)) == 0U)
+#define HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(x) (((x) & (AES_BLOCK_SIZE - 1U)) == 0U)
+#define HSM_IS_SIZE_MULTIPLE_OF_RAW_BLOCK(x)      (((x) & (HSM_RAW_RNG_BLOCK_SIZE - 1U)) == 0U)
+
+/* HSM token-related Defines */
+
+/* Asset Policy Codes */
+#define HSM_ASSET_POLICY_SYM_HASH_MAC 0X00012800
+#define HSM_ASSET_POLICY_SYM_AES_MAC  0X00022800
+#define HSM_ASSET_POLICY_SYM_AES_BULK 0X00032800
+#define HSM_ASSET_POLICY_SYM_AES_AUTH 0X00042800
+
+#define HSM_ASSET_POLICY_NON_MODIFIABLE 0x00000001
+#define HSM_ASSET_POLICY_TEMPORARY      0x00000002
+
+#define HSM_ASSET_POLICY_DIR_ENC_GEN  0X00100000
+#define HSM_ASSET_POLICY_DIR_DEC_VRFY 0X00200000
+
+#define HSM_ASSET_POLICY_SYM_MODE_ECB     0X00000000
+#define HSM_ASSET_POLICY_SYM_MODE_CBC     0X08000000
+#define HSM_ASSET_POLICY_SYM_MODE_CTR     0X18000000
+#define HSM_ASSET_POLICY_SYM_MODE_CCM     0X00000000
+#define HSM_ASSET_POLICY_SYM_MODE_GCM     0X08000000
+#define HSM_ASSET_POLICY_SYM_MODE_CMAC    0X00000000
+#define HSM_ASSET_POLICY_SYM_MODE_CBC_MAC 0X08000000
+
+/* Encryption Defines */
+#define HSM_ENCRYPTION_TOKEN_WORD0         0x01000000
+#define HSM_ENCRYPTION_TOKEN_WORD11        0x00004000
+#define HSM_ENCRYPTION_TOKEN_WORD11_ENC    0x00008000
+#define HSM_ENCRYPTION_TOKEN_WORD11_KEY128 0x00010000
+#define HSM_ENCRYPTION_TOKEN_WORD11_KEY192 0x00020000
+#define HSM_ENCRYPTION_TOKEN_WORD11_KEY256 0x00030000
+
+#define HSM_ENCRYPTION_TOKEN_WORD11_CCM 0x00000050
+#define HSM_ENCRYPTION_TOKEN_WORD11_GCM 0x00000070
+
+#define HSM_ENCRYPTION_TOKEN_WORD11_SAVEIV 0x00001000
+#define HSM_ENCRYPTION_TOKEN_WORD11_LOADIV 0X00000200
+
+#define HSM_ENCRYPTION_TOKEN_WORD16_GCM_IV 0x01000000
+
+/* MAC Defines */
+#define HSM_MAC_TOKEN_WORD0 0x13000000
+
+#define HSM_MAC_TOKEN_WORD6_CMAC    0x00000008
+#define HSM_MAC_TOKEN_WORD6_CBC_MAC 0x00000009
+
+#define HSM_MAC_TOKEN_WORD6_INIT2FINAL 0X00000000
+#define HSM_MAC_TOKEN_WORD6_CONT2FINAL 0X00000010
+#define HSM_MAC_TOKEN_WORD6_INIT2CONT  0X00000020
+#define HSM_MAC_TOKEN_WORD6_CONT2CONT  0X00000030
+
+typedef enum
+{
+    HSMLPF3_BIG_ENDIAN_KEY    = 0,
+    HSMLPF3_LITTLE_ENDIAN_KEY = 1,
+} HSMLPF3_KeyMaterialEndianness;
 
 /*!
  * HSM_ASYM_DATA_SIZE_B2W
@@ -93,12 +171,84 @@ static inline uint32_t HSMLPF3_getOutputBufferLength(const uint32_t inputLength)
 }
 
 /*!
+ *  @brief  Reverse a buffer into the destination address
+ *
+ *  @param  [in]  dest                  Destination address.
+ *  @param  [in]  src                   Source address.
+ *  @param  [in]  size                  Size of the data to reverse and copy.
+ */
+void *HSMLPF3_reverseMemCpy(void *dest, const void *src, size_t size);
+
+/*!
+ *  @brief  Format the header word in a vector component
+ *
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
+ *  @param  [in]  itemsLength           The number of sub-vector components.
+ *  @param  [in]  itemIdx               The index of the sub-vector component.
+ *  @param  [out] domainId              The domain to construct a vector header for (BrainPool or NIST).
+ *  @param  [out] blob                  Buffer to copy the output vector to.
+ */
+void HSMLPF3_asymVectorHeaderFormat(const size_t modulusSizeBits,
+                                    const uint8_t itemsLength,
+                                    const uint8_t itemIdx,
+                                    const uint8_t domainId,
+                                    uint32_t *blob);
+
+/*!
+ *  @brief  Constructs a vector component consistent with HSM format to hold the private key
+ *
+ *  @param  [in]  in                    Pointer of private key buffer
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
+ *  @param  [out] domainId              The domain to construct a vector header for (BrainPool or NIST).
+ *  @param  [in]  endianness            The endianness format to copy the output in.
+ *  @param  [out] blob                  Buffer to copy the output vector to.
+ */
+void HSMLPF3_asymDHPriKeyToHW(uint8_t *in,
+                              const size_t modulusSizeBits,
+                              const uint8_t domainId,
+                              HSMLPF3_KeyMaterialEndianness endianness,
+                              uint8_t *blob);
+
+/*!
+ *  @brief  Constructs a vector component consistent with HSM format to hold the public key
+ *
+ *  @param  [in]  in                    Pointer of public key buffer
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
+ *  @param  [in]  itemsLength           The number of sub-vector components.
+ *  @param  [in]  domainId              The domain to construct a vector header for (BrainPool or NIST).
+ *  @param  [in]  endianness            The endianness format to copy the output in.
+ *  @param  [out] blob                  Buffer to copy the output vector to.
+ */
+void HSMLPF3_asymDHPubKeyToHW(uint8_t *in,
+                              const size_t modulusSizeBits,
+                              const uint8_t itemsLength,
+                              const uint8_t domainId,
+                              HSMLPF3_KeyMaterialEndianness endianness,
+                              uint8_t *blob);
+
+/*!
+ *  @brief  Extracts the public key from HSM-formatted output.
+ *
+ *
+ *  @param  [in]  in                    Pointer to the input from HSM.
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
+ *  @param  [in]  itemsLength           The number of sub-vector components.
+ *  @param  [in]  endianness            The endianness format to copy the output in.
+ *  @param  [out] out_pubKey            Buffer to copy the public key to.
+ */
+void HSMLPF3_asymDHPubKeyFromHW(const uint8_t *const in,
+                                const size_t modulusSizeBits,
+                                const uint8_t itemsLength,
+                                HSMLPF3_KeyMaterialEndianness endianness,
+                                uint8_t *out_pubKey);
+
+/*!
  *  @brief  Extracts the signature from HSM-formatted output
  *
  *  @param  [in]  in                    Pointer to the input from HSM.
- *  @param  [in]  modulusSizeBits       size of each sub-vector component in bits.
- *  @param  [out] outu_r                Buffer to copy the R component of the signature to.
- *  @param  [out] outu_s                Buffer to copy the S component of the signature to.
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
+ *  @param  [out] out_r                 Buffer to copy the R component of the signature to.
+ *  @param  [out] out_s                 Buffer to copy the S component of the signature to.
  */
 void HSMLPF3_asymDsaSignatureFromHW(const uint8_t *const in,
                                     const size_t modulusSizeBits,
@@ -122,7 +272,7 @@ void HSMLPF3_asymDsaSignatureToHW(const uint8_t *const Signature_r,
  *  @brief  Constructs a vector component consistent with HSM format to hold a verify operation's public key.
  *
  *  @param  [in]  pubKey                Pointer to public key location to copy.
- *  @param  [in]  modulusSizeBits       size of each sub-vector component in bits.
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
  *  @param  [out] domainId              The domain to construct a vector header for (BrainPool or NIST).
  *  @param  [out] blob                  Buffer to copy the output vector to.
  */
@@ -135,7 +285,7 @@ void HSMLPF3_asymDsaPubKeyToHW(const uint8_t *const pubKey,
  *  @brief  Constructs a vector component consistent with HSM format to hold a sign operation's private key.
  *
  *  @param  [in]  pubKey                Pointer to private key location to copy.
- *  @param  [in]  modulusSizeBits       size of each sub-vector component in bits.
+ *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
  *  @param  [out] domainId              The domain to construct a vector header for (BrainPool or NIST).
  *  @param  [out] blob                  Buffer to copy the output vector to.
  */

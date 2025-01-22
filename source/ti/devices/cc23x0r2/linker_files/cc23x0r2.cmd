@@ -2,7 +2,7 @@
 //! @file       cc23x0r2.cmd
 //! @brief      CC23X0R2 linker file for TI CLANG/LLVM.
 //
-//  Copyright (c) 2022-2023 Texas Instruments Incorporated
+//  Copyright (c) 2022-2024 Texas Instruments Incorporated
 //
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are met:
@@ -63,6 +63,15 @@
 #define CCFG_BASE               0x4E020000
 #define CCFG_SIZE               0x800
 
+/* Symbols used for checksum generation */
+ti_utils_build_GenMap_sym_CRC_CCFG_BOOT_CFG_begin = 0x4e020000;
+ti_utils_build_GenMap_sym_CRC_CCFG_BOOT_CFG_end = 0x4e02000b;
+ti_utils_build_GenMap_sym_CRC_CCFG_begin = 0x4e020010;
+ti_utils_build_GenMap_sym_CRC_CCFG_end = 0x4e02074b;
+ti_utils_build_GenMap_sym_CRC_CCFG_DEBUG_begin = 0x4e0207d0;
+ti_utils_build_GenMap_sym_CRC_CCFG_DEBUG_end = 0x4e0207fb;
+ti_utils_build_GenMap_sym_CRC_CCFG_USER_RECORD_begin = 0x4e020750;
+ti_utils_build_GenMap_sym_CRC_CCFG_USER_RECORD_end = 0x4e0207cb;
 
 /* System memory map */
 

@@ -102,6 +102,7 @@ CAN_Handle CAN_open(uint_least8_t index, CAN_Params *params)
     else
     {
         object->eventMask = params->eventMask;
+        object->userArg   = params->userArg;
     }
 
     StructRingBuf_construct(&object->rxStructRingBuf,

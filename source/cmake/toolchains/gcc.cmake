@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, Texas Instruments Incorporated
+# Copyright (c) 2022-2024, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -105,7 +105,6 @@ if(NOT TARGET TOOLCHAIN_gcc)
         # If map-file property exists, set map file
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_LINKER_MAP_FILE>,>>:-Wl,-Map,$<TARGET_PROPERTY:TI_LINKER_MAP_FILE>>
         -specs=nano.specs
-        -specs=nosys.specs
         # Disables 0x10000 sector allocation boundaries, which interfere
         # with the SPE layouts and prevent proper secure operation
         -Wl,--nmagic

@@ -85,16 +85,10 @@ const timeoutValues = [
 ];
 
 /* Network submodule for the zstack module */
-const networkModule = {
+const config = {
+    displayName: "Network",
+    description: "Configure network identification and security settings",
     config: [
-        {
-            name: "deviceType",
-            displayName: "Device Type",
-            description: "Hidden configurable for passing in device type",
-            default: "",
-            hidden: true,
-            onChange: onDeviceTypeChange
-        },
         {
             name: "defaultNwkKey",
             displayName: "Default Network Key",
@@ -119,20 +113,35 @@ const networkModule = {
             options: timeoutValues
         },
     ],
-    validate: validate
 };
 
 /* Function to handle changes in deviceType configurable */
 function onDeviceTypeChange(inst, ui)
 {
-    if(inst.deviceType === "zc" || inst.deviceType === "zr"
-       || inst.deviceType === "znp")
+    if(!inst.deviceType.includes("gpd"))
     {
-        ui.nwkMaxChildren.hidden = false;
+        let element = null;
+        for(element of config.config)
+        {
+            ui[element.name].hidden = false;
+        }
+
+        if(inst.deviceType.includes("zc") || inst.deviceType.includes("zr"))
+        {
+            ui.nwkMaxChildren.hidden = false;
+        }
+        else /* zed */
+        {
+            ui.nwkMaxChildren.hidden = true;
+        }
     }
-    else /* zed */
+    else
     {
-        ui.nwkMaxChildren.hidden = true;
+        let element = null;
+        for(element of config.config)
+        {
+            ui[element.name].hidden = true;
+        }
     }
 }
 
@@ -169,4 +178,8 @@ function validate(inst, validation)
         "nwkMaxChildren", "Network Maximum Device List", 1, 255);
 }
 
-exports = networkModule;
+exports = {
+    config: config,
+    validate: validate,
+    onDeviceTypeChange: onDeviceTypeChange
+};

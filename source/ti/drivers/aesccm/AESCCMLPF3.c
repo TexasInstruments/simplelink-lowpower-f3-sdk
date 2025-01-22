@@ -54,10 +54,19 @@
 #include DeviceFamily_constructPath(inc/hw_aes.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23XX) && (ENABLE_KEY_STORAGE == 1))
+    #error "Key storage is not supported for CC23XX"
+#endif
+
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+    #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
     #include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_asset.h>
+    #if (ENABLE_KEY_STORAGE == 1)
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
+    #endif
 #endif
 
 #if (defined(__IAR_SYSTEMS_ICC__) || defined(__TI_COMPILER_VERSION__))
@@ -65,13 +74,6 @@
     #define REV32 __rev
 #else
     #define REV32 __builtin_bswap32
-#endif
-
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    #define PSA_SYM_MODE_GCM_NONE 0U
-
-    /* Size of state asset for GCM/CCM continuation */
-    #define KEY_TEMP_ASSET_SIZE 48U
 #endif
 
 /* Note: The AES-CCM one-step polling operations are specifically designed
@@ -144,6 +146,21 @@ static void AESCCMLPF3_processTagCTR(AESCCMLPF3_Object *object);
 static int_fast16_t AESCCMLPF3_waitForDMA(const AESCCMLPF3_Object *object);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if (ENABLE_KEY_STORAGE == 1)
+static int_fast16_t AESCCMLPF3HSM_getKeyMaterial(AESCCMLPF3_Object *object);
+    #endif
+static void AESCCMLPF3HSM_setupObjectMetaData(AESCCMLPF3_Object *object);
+static int_fast16_t AESCCMLPF3HSM_oneStepOperation(AESCCM_Handle handle,
+                                                   AESCCM_OneStepOperation *operation,
+                                                   AESCCM_OperationType operationType);
+static int_fast16_t AESCCMLPF3HSM_performHSMOperation(AESCCM_Handle handle);
+static void AESCCMLPF3HSM_postProcessingCommon(AESCCM_Handle handle, int_fast16_t status, int8_t tokenResult);
+static int_fast16_t AESCCMLPF3HSM_setupSegmentedOperation(AESCCM_Handle handle,
+                                                          AESCCM_OperationType operationType,
+                                                          const CryptoKey *key,
+                                                          size_t totalAADLength,
+                                                          size_t totalDataLength,
+                                                          size_t macLength);
 static int_fast16_t AESCCMLPF3HSM_setupEncrypt(AESCCM_Handle handle,
                                                const CryptoKey *key,
                                                size_t totalAADLength,
@@ -157,27 +174,19 @@ static int_fast16_t AESCCMLPF3HSM_setupDecrypt(AESCCM_Handle handle,
 static int_fast16_t AESCCMLPF3HSM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *operation);
 static int_fast16_t AESCCMLPF3HSM_addData(AESCCM_Handle handle,
                                           AESCCM_OperationType operationType,
-                                          AESCCM_OperationUnion *operation,
-                                          const uint8_t *input,
-                                          uint8_t *output,
-                                          size_t inputLength);
-static int_fast16_t AESCCMLPF3HSM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation);
-static int_fast16_t AESCCMLPF3HSM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation);
-static int_fast16_t AESCCMLPF3HSM_oneStepOperation(AESCCM_Handle handle,
-                                                   AESCCM_OneStepOperation *operation,
-                                                   AESCCM_OperationType operationType);
+                                          AESCCM_OperationUnion *operation);
 static int_fast16_t AESCCMLPF3HSM_performFinalizeChecks(const AESCCMLPF3_Object *object,
                                                         const AESCCM_SegmentedFinalizeOperation *operation);
-static int_fast16_t AESCCMLPF3HSM_setupSegmentedOperation(AESCCMLPF3_Object *object,
-                                                          const CryptoKey *key,
-                                                          size_t totalAADLength,
-                                                          size_t totalDataLength,
-                                                          size_t macLength);
-static int_fast16_t AESCCMLPF3HSM_createTempAssetID(AESCCM_Handle handle, AESCCM_Mode direction);
-static inline int_fast16_t AESCCMLPF3HSM_processOneStepOperation(AESCCM_Handle handle);
+static int_fast16_t AESCCMLPF3HSM_finalizeCommon(AESCCM_Handle handle,
+                                                 AESCCM_OperationType operationType,
+                                                 AESCCM_SegmentedFinalizeOperation *operation);
+static int_fast16_t AESCCMLPF3HSM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation);
+static int_fast16_t AESCCMLPF3HSM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation);
+
+static int_fast16_t AESCCMLPF3HSM_createTempAssetID(AESCCM_Handle handle);
+static int_fast16_t AESCCMLPF3HSM_freeAllAssets(AESCCM_Handle handle);
 static int_fast16_t AESCCMLPF3HSM_freeTempAssetID(AESCCM_Handle handle);
 #endif
-
 /*
  *  ======== AESCCMLPF3_getObject ========
  */
@@ -496,13 +505,7 @@ static void AESCCMLPF3_processCBCMACFinalBlock(const uint8_t *input, size_t byte
      */
     (void)memcpy((void *)(AES_BASE + AES_O_BUF0), input, bytesRemaining);
 
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
     AESSetTrigger((uint32_t)AES_TRG_AESOP_TXTXBUF);
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    AESSetTrigger((uint32_t)AES_TRG_ECBOP_TXTXBUF);
-#else
-    #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
-#endif
 }
 
 #define M_PRIME_OFFSET 3
@@ -823,6 +826,12 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
         bool dmaActive        = false;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
     int_fast16_t status;
+#if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage = (operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) ? KEYSTORE_PSA_KEY_USAGE_ENCRYPT
+                                                                                    : KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+#endif
 
 #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input & output pointers */
@@ -870,7 +879,44 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
     object->common.cryptoResourceLocked = true;
     object->common.returnStatus         = AESCCM_STATUS_SUCCESS;
 
-    AESCommonLPF3_loadKey(operation->key);
+    if (operation->key->encoding == CryptoKey_PLAINTEXT)
+    {
+        AESCommonLPF3_loadKey(operation->key);
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (operation->key->encoding == CryptoKey_KEYSTORE)
+    {
+        /* AES engine supports only 128-bit (16-byte) keys. */
+        DebugP_assert(operation->key->u.keyStore.keyLength == AES_128_KEY_LENGTH_BYTES);
+
+        keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(operation->key,
+                                                           &KeyStore_keyingMaterial[0],
+                                                           sizeof(KeyStore_keyingMaterial),
+                                                           &object->keyAssetID,
+                                                           KEYSTORE_PSA_ALG_CCM,
+                                                           usage);
+
+        /* KeyStore_PSA_retrieveFromKeyStore internally validates that the retrieved
+         * key material has a length matching that of the CryptoKey.
+         */
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            AESWriteKEY(KeyStore_keyingMaterial);
+        }
+        else if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESCCM_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else
+        {
+            return AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+#endif
+    else
+    {
+        return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
+    }
 
     /* Process all one-step operations with data length less than the DMA size
      * threshold as a polling mode operation.
@@ -962,12 +1008,13 @@ int_fast16_t AESCCM_oneStepEncrypt(AESCCM_Handle handle, AESCCM_OneStepOperation
 {
     int_fast16_t status = AESCCM_STATUS_SUCCESS;
 
-    if (operation->key->encoding == CryptoKey_PLAINTEXT || operation->key->encoding == CryptoKey_KEYSTORE)
+    if ((operation->key->encoding == CryptoKey_PLAINTEXT) || (operation->key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCCMLPF3_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_ENCRYPT);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if ((operation->key->encoding == CryptoKey_PLAINTEXT_HSM) ||
+             (operation->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCCMLPF3HSM_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_ENCRYPT);
     }
@@ -986,12 +1033,13 @@ int_fast16_t AESCCM_oneStepDecrypt(AESCCM_Handle handle, AESCCM_OneStepOperation
 {
     int_fast16_t status = AESCCM_STATUS_SUCCESS;
 
-    if (operation->key->encoding == CryptoKey_PLAINTEXT || operation->key->encoding == CryptoKey_KEYSTORE)
+    if ((operation->key->encoding == CryptoKey_PLAINTEXT) || (operation->key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCCMLPF3_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_DECRYPT);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if ((operation->key->encoding == CryptoKey_PLAINTEXT_HSM) ||
+             (operation->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCCMLPF3HSM_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_DECRYPT);
     }
@@ -1057,7 +1105,7 @@ int_fast16_t AESCCM_setupEncrypt(AESCCM_Handle handle,
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_setupEncrypt(handle, key, totalAADLength, totalPlaintextLength, macLength);
     }
@@ -1090,7 +1138,7 @@ int_fast16_t AESCCM_setupDecrypt(AESCCM_Handle handle,
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_setupDecrypt(handle, key, totalAADLength, totalPlaintextLength, macLength);
     }
@@ -1116,6 +1164,7 @@ int_fast16_t AESCCM_setLengths(AESCCM_Handle handle, size_t aadLength, size_t pl
 {
     DebugP_assert(handle);
 
+    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
     /* This shouldn't be called after addXXX() or finalizeXXX() */
@@ -1142,7 +1191,35 @@ int_fast16_t AESCCM_setLengths(AESCCM_Handle handle, size_t aadLength, size_t pl
     object->totalCTRLengthRemaining    = plaintextLength;
     object->macLength                  = (uint8_t)macLength;
 
-    return AESCCM_STATUS_SUCCESS;
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    object->aadBytesProcessed        = 0U;
+    object->bufferedAADLength        = 0U;
+    object->totalAADLengthRemaining  = aadLength;
+    object->totalDataLengthRemaining = plaintextLength;
+
+    if ((object->operationType == AESCCM_OPERATION_TYPE_ENCRYPT) && (macLength == 0U))
+    {
+        /* We are not supplied the macLength at this point of the segmented operation.
+         * Therefore, the driver gives it a dummy length which is the max length until
+         * the user supplies the desired macLength in _setLengths() API.
+         */
+        object->macLength = HSM_MAC_MAX_LENGTH;
+    }
+
+    if (((aadLength > AES_BLOCK_SIZE) || (plaintextLength > AES_BLOCK_SIZE)) && (object->tempAssetID == 0U))
+    {
+        if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+        {
+            return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+        }
+
+        status = AESCCMLPF3HSM_createTempAssetID(handle);
+
+        HSMLPF3_releaseLock();
+    }
+#endif
+
+    return status;
 }
 
 /*
@@ -1536,11 +1613,16 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
 {
     DebugP_assert(handle);
     DebugP_assert(operation);
-
+#if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage;
+#endif
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+        (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_addAAD(handle, operation);
     }
@@ -1603,7 +1685,45 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
     /* Load only the key into the AES engine now. The AUTOCFG values are loaded as needed
      * depending on whether it's a CTR operation or a CBC-MAC operation.
      */
-    AESCommonLPF3_loadKey(&object->common.key);
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT)
+    {
+        AESCommonLPF3_loadKey(&object->common.key);
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE)
+    {
+        /* AES engine supports only 128-bit (16-byte) keys. */
+        DebugP_assert(object->common.key.u.keyStore.keyLength == AES_128_KEY_LENGTH_BYTES);
+
+        usage = (direction == AESCCM_MODE_ENCRYPT) ? KEYSTORE_PSA_KEY_USAGE_ENCRYPT : KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+
+        keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                           &KeyStore_keyingMaterial[0],
+                                                           sizeof(KeyStore_keyingMaterial),
+                                                           &object->keyAssetID,
+                                                           KEYSTORE_PSA_ALG_CCM,
+                                                           usage);
+        /* KeyStore_PSA_retrieveFromKeyStore internally validates that the retrieved
+         * key material has a length matching that of the CryptoKey.
+         */
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            AESWriteKEY(KeyStore_keyingMaterial);
+        }
+        else if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESCCM_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else
+        {
+            return AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+#endif
+    else
+    {
+        return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
+    }
 
     object->operationType = operationType;
     object->aad           = operation->aad;
@@ -1685,6 +1805,23 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
 {
     int_fast16_t status       = AESCCM_STATUS_SUCCESS;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+#if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage;
+
+    if ((operationType == AESCCM_OP_TYPE_DATA_ENCRYPT) || (operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT))
+    {
+        usage = KEYSTORE_PSA_KEY_USAGE_ENCRYPT;
+    }
+    else
+    {
+        /* (operationType == AESCCM_OP_TYPE_DATA_DECRYPT) ||
+         * (operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT)
+         */
+        usage = KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+    }
+#endif
 
     if (!CryptoResourceLPF3_acquireLock(object->common.semaphoreTimeout))
     {
@@ -1696,7 +1833,43 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
     /* Load only the key into the AES engine now. The AUTOCFG values are loaded as needed
      * depending on whether it's a CTR operation or a CBC-MAC operation.
      */
-    AESCommonLPF3_loadKey(&object->common.key);
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT)
+    {
+        AESCommonLPF3_loadKey(&object->common.key);
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE)
+    {
+        /* AES engine supports only 128-bit (16-byte) keys. */
+        DebugP_assert(object->common.key.u.keyStore.keyLength == AES_128_KEY_LENGTH_BYTES);
+
+        keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                           &KeyStore_keyingMaterial[0],
+                                                           sizeof(KeyStore_keyingMaterial),
+                                                           &object->keyAssetID,
+                                                           KEYSTORE_PSA_ALG_CCM,
+                                                           usage);
+        /* KeyStore_PSA_retrieveFromKeyStore internally validates that the retrieved
+         * key material has a length matching that of the CryptoKey
+         */
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            AESWriteKEY(KeyStore_keyingMaterial);
+        }
+        else if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESCCM_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else
+        {
+            return AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+#endif
+    else
+    {
+        return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
+    }
 
     object->operationType = operationType;
     object->operation     = operation;
@@ -1787,7 +1960,8 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
 #endif
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+        (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
         /* The input length must be a non-zero multiple of an AES block size
          * unless you are dealing with the last chunk of payload data
@@ -1865,14 +2039,10 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
                                     operation->inputLength);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM ||
+             object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
     {
-        status = AESCCMLPF3HSM_addData(handle,
-                                       operationType,
-                                       (AESCCM_OperationUnion *)operation,
-                                       operation->input,
-                                       operation->output,
-                                       operation->inputLength);
+        status = AESCCMLPF3HSM_addData(handle, operationType, (AESCCM_OperationUnion *)operation);
         return status;
     }
 #endif
@@ -1904,7 +2074,8 @@ int_fast16_t AESCCM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+        (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_finalizeEncrypt(handle, operation);
     }
@@ -1974,7 +2145,8 @@ int_fast16_t AESCCM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+        (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_finalizeDecrypt(handle, operation);
     }
@@ -2068,7 +2240,7 @@ static int_fast16_t AESCCMLPF3_performFinalizeChecks(const AESCCMLPF3_Object *ob
         return AESCCM_STATUS_ERROR;
     }
 
-    /* Additional payload data can be passed in finalize */
+    /* Additional payload data cannot be passed in finalize */
     if (operation->inputLength != object->totalCBCMACLengthRemaining)
     {
         return AESCCM_STATUS_ERROR;
@@ -2092,11 +2264,12 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
     DebugP_assert(handle);
 
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
 
     /* Cancellation is only supported in callback mode */
     if (object->common.returnBehavior != AES_RETURN_BEHAVIOR_CALLBACK)
     {
-        return AESCCM_STATUS_ERROR;
+        return status;
     }
 
     uintptr_t interruptKey = HwiP_disable();
@@ -2130,11 +2303,8 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
 
         object->segmentedOperationInProgress = false;
 
-        int_fast16_t status = AESCCMLPF3HSM_freeTempAssetID(handle);
-        if (status != AESCCM_STATUS_SUCCESS)
-        {
-            return AESCCM_STATUS_ERROR;
-        }
+        /* Free all assets. This includes key-related asset and state-related asset (temporary asset). */
+        status = AESCCMLPF3HSM_freeAllAssets(handle);
 #endif
 
         /* Operation pointer could be NULL if a segmented operation was setup
@@ -2166,7 +2336,7 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
     object->macLength   = 0;
     object->nonceLength = 0;
 
-    return AESCCM_STATUS_SUCCESS;
+    return status;
 }
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
@@ -2216,49 +2386,28 @@ static inline void AESCCMLPF3HSM_createAssetPostProcessing(uintptr_t arg0)
     }
 
     object->common.returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
 
 /*
  *  ======== AESCCMLPF3HSM_createTempAssetID ========
  */
-static int_fast16_t AESCCMLPF3HSM_createTempAssetID(AESCCM_Handle handle, AESCCM_Mode direction)
+static int_fast16_t AESCCMLPF3HSM_createTempAssetID(AESCCM_Handle handle)
 {
     int_fast16_t status       = AESCCM_STATUS_ERROR;
     int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    uint64_t assetPolicy      = 0U;
+    uint64_t assetPolicy = HSM_ASSET_POLICY_SYM_AES_AUTH | HSM_ASSET_POLICY_TEMPORARY | HSM_ASSET_POLICY_SYM_MODE_CCM;
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    if (object->operationType == AESCCM_OPERATION_TYPE_ENCRYPT)
     {
-        return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
-    }
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    /* Lower 16-bit */
-    assetPolicy |= EIP130_ASSET_POLICY_MODIFIABLE;
-    assetPolicy |= EIP130_ASSET_POLICY_SOURCESECURE;
-    assetPolicy |= EIP130_ASSET_POLICY_NOTCROSSDOMAIN;
-    assetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA;
-    assetPolicy |= EIP130_ASSET_POLICY_TEMPORARY;
-    assetPolicy |= EIP130_ASSET_POLICY_SYMCRYPTO;
-
-    /* Upper 16-bit */
-    assetPolicy |= EIP130_ASSET_POLICY_SCUICIPHERAUTH;
-    if (direction == AESCCM_MODE_DECRYPT)
-    {
-        assetPolicy |= EIP130_ASSET_POLICY_SCDIRDECVRFY;
+        assetPolicy |= HSM_ASSET_POLICY_DIR_ENC_GEN;
     }
     else
     {
-        assetPolicy |= EIP130_ASSET_POLICY_SCDIRENCGEN;
+        assetPolicy |= HSM_ASSET_POLICY_DIR_DEC_VRFY;
     }
-    assetPolicy |= EIP130_ASSET_POLICY_SCACAES;
 
-    HSMLPF3_constructCreateAssetToken(assetPolicy, KEY_TEMP_ASSET_SIZE);
+    HSMLPF3_constructCreateAssetToken(assetPolicy, HSM_AEAD_TEMP_ASSET_SIZE);
 
     hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
                                     AESCCMLPF3HSM_createAssetPostProcessing,
@@ -2273,55 +2422,59 @@ static int_fast16_t AESCCMLPF3HSM_createTempAssetID(AESCCM_Handle handle, AESCCM
         }
     }
 
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-        HSMLPF3_releaseLock();
-    }
     return status;
 }
 
 /*
- *  ======== AESCCMLPF3HSM_oneStepPostProcessing ========
+ *  ======== AESCCMLPF3HSM_postProcessingCommon ========
  */
-static inline void AESCCMLPF3HSM_oneStepPostProcessing(uintptr_t arg0)
+static void AESCCMLPF3HSM_postProcessingCommon(AESCCM_Handle handle, int_fast16_t status, int8_t tokenResult)
 {
-    AESCCM_Handle handle                      = (AESCCM_Handle)arg0;
-    AESCCMLPF3_Object *object                 = AESCCMLPF3_getObject(handle);
-    AESCCM_OneStepOperation *oneStepOperation = (AESCCM_OneStepOperation *)object->operation;
-    int_fast16_t status                       = AESCCM_STATUS_ERROR;
-    int32_t physicalResult                    = HSMLPF3_getResultCode();
-    int8_t tokenResult                        = physicalResult & HSMLPF3_RETVAL_MASK;
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
-    /* The HSM IP will throw an error when operation->macLength is zero despite it producing a correct
-     * ciphertext/plaintext for both encrypt/decrypt operations and will compute a mac anyways.
-     */
-    if ((tokenResult == EIP130TOKEN_RESULT_INVALID_LENGTH) && (oneStepOperation->macLength == 0U))
-    {
-        tokenResult = EIP130TOKEN_RESULT_SUCCESS;
-    }
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    if (status == AESCCM_STATUS_SUCCESS)
     {
         if (object->operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT)
         {
-            HSMLPF3_getAESEncryptTag((void *)&oneStepOperation->mac[0]);
-        }
+            AESCCM_OneStepOperation *operation = (AESCCM_OneStepOperation *)object->operation;
 
-        status = AESCCM_STATUS_SUCCESS;
+            HSMLPF3_getAESEncryptTag(&operation->mac[0], operation->macLength);
+        }
+        else if ((object->operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT) &&
+                 ((object->inputLength != 0U) || (object->aadLength != 0U)))
+        {
+            AESCCM_SegmentedFinalizeOperation *operation = (AESCCM_SegmentedFinalizeOperation *)object->operation;
+
+            HSMLPF3_getAESEncryptTag(&operation->mac[0], operation->macLength);
+        }
+        else if (object->operationType == AESCCM_OP_TYPE_DATA_ENCRYPT)
+        {
+            HSMLPF3_getAESEncryptTag((void *)&object->intermediateTag[0], object->macLength);
+        }
+        else if ((tokenResult == EIP130TOKEN_RESULT_VERIFY_ERROR) &&
+                 ((object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT) ||
+                  (object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT) ||
+                  (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT)))
+        {
+            status = AESCCM_STATUS_MAC_INVALID;
+        }
     }
-    else if ((object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT) ||
-             (tokenResult == EIP130TOKEN_RESULT_VERIFY_ERROR))
+
+    if ((object->operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))
     {
-        status = AESCCM_STATUS_MAC_INVALID;
+        object->segmentedOperationInProgress = false;
+    }
+
+    /* Free all assets. This includes key-related asset and state-related asset (temporary asset). */
+    if (AESCCMLPF3HSM_freeAllAssets(handle) != AESCCM_STATUS_SUCCESS)
+    {
+        status = AESCCM_STATUS_ERROR;
     }
 
     object->common.returnStatus = status;
 
     HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 
     if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
     {
@@ -2330,26 +2483,493 @@ static inline void AESCCMLPF3HSM_oneStepPostProcessing(uintptr_t arg0)
 }
 
 /*
- *  ======== AESCCLPF3HSM_processOneStepHSM ========
+ *  ======== AESCCMLPF3HSM_processFinalBlockPostProcessing ========
  */
-static inline int_fast16_t AESCCMLPF3HSM_processOneStepOperation(AESCCM_Handle handle)
+inline static void AESCCMLPF3HSM_processFinalBlockPostProcessing(uintptr_t arg0)
 {
-    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
-    int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
+    AESCCM_Handle handle      = (AESCCM_Handle)arg0;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
+    int32_t physicalResult    = HSMLPF3_getResultCode();
+    int8_t tokenResult        = physicalResult & HSMLPF3_RETVAL_MASK;
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    /* The HSM IP will throw an error when operation->macLength is zero despite it producing a correct
+     * ciphertext/plaintext for both encrypt/decrypt operations and will compute a mac anyways.
+     */
+    if ((tokenResult == EIP130TOKEN_RESULT_SUCCESS) || ((tokenResult == EIP130TOKEN_RESULT_VERIFY_ERROR) &&
+                                                        ((object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT) ||
+                                                         (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT) ||
+                                                         (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))))
     {
-        return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+        object->totalDataLengthRemaining -= object->inputLength;
+
+        status = AESCCM_STATUS_SUCCESS;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+    if (status == AESCCM_STATUS_SUCCESS)
+    {
+        uint8_t *output = NULL;
 
-    HSMLPF3_constructAESCCMOneStepPhysicalToken(object);
+        if ((object->operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) ||
+            (object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT))
+        {
+            AESCCM_OneStepOperation *operation = (AESCCM_OneStepOperation *)object->operation;
+            output                             = operation->output + (object->totalDataLength - object->inputLength);
+        }
+        else if ((object->operationType == AESCCM_OP_TYPE_DATA_ENCRYPT) ||
+                 (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT))
+        {
+            AESCCM_SegmentedDataOperation *operation = (AESCCM_SegmentedDataOperation *)object->operation;
+            output = operation->output + (operation->inputLength - object->inputLength);
+        }
+        else
+        {
+            AESCCM_SegmentedFinalizeOperation *operation = (AESCCM_SegmentedFinalizeOperation *)object->operation;
+            output = operation->output + (operation->inputLength - object->inputLength);
+        }
+
+        (void)memcpy(output, object->outputFinalBlock, object->inputLength);
+    }
+
+    AESCCMLPF3HSM_postProcessingCommon(handle, status, tokenResult);
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_processFinalBlock ========
+ */
+static int_fast16_t AESCCMLPF3HSM_processFinalBlock(AESCCM_Handle handle)
+{
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
+    int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
+    size_t remainderLength    = 0U;
+    bool saveIV               = false;
+    bool loadIV               = true;
+
+    if ((object->operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))
+    {
+        remainderLength = object->totalDataLengthRemaining;
+    }
+    else
+    {
+        AESCCM_SegmentedDataOperation *operation = (AESCCM_SegmentedDataOperation *)object->operation;
+        remainderLength                          = operation->inputLength - object->inputLength;
+    }
+
+    (void)memset(object->inputFinalBlock, 0, AES_BLOCK_SIZE);
+    (void)memcpy(object->inputFinalBlock, object->input + object->inputLength, remainderLength);
+
+    (void)memset(object->outputFinalBlock, 0, AES_BLOCK_SIZE);
+
+    object->input       = object->inputFinalBlock;
+    object->output      = object->outputFinalBlock;
+    object->inputLength = remainderLength;
+    object->aadLength   = 0U;
+
+    HSMLPF3_constructCCMToken(object, saveIV, loadIV); /* only loadIV is true */
 
     hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
-                                    AESCCMLPF3HSM_oneStepPostProcessing,
+                                    AESCCMLPF3HSM_processFinalBlockPostProcessing,
                                     (uintptr_t)handle);
+
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_postProcessingFxn ========
+ */
+static inline void AESCCMLPF3HSM_postProcessingFxn(uintptr_t arg0)
+{
+    AESCCM_Handle handle      = (AESCCM_Handle)arg0;
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
+    int8_t tokenResult        = HSMLPF3_getResultCode() & HSMLPF3_RETVAL_MASK;
+    bool finalizeOp           = true;
+
+    if ((tokenResult == EIP130TOKEN_RESULT_SUCCESS) || ((tokenResult == EIP130TOKEN_RESULT_VERIFY_ERROR) &&
+                                                        ((object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT) ||
+                                                         (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT) ||
+                                                         (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))))
+    {
+        object->totalAADLengthRemaining -= object->aadLength;
+        object->totalDataLengthRemaining -= object->inputLength;
+
+        status = AESCCM_STATUS_SUCCESS;
+    }
+
+    if (status == AESCCM_STATUS_SUCCESS)
+    {
+        if ((object->operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) ||
+            (object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT))
+        {
+            AESCCM_OneStepOperation *operation = (AESCCM_OneStepOperation *)object->operation;
+
+            if (object->totalDataLengthRemaining > 0U)
+            {
+                status = AESCCMLPF3HSM_processFinalBlock(handle);
+
+                if (status == AESCCM_STATUS_SUCCESS)
+                {
+                    finalizeOp = false;
+                }
+            }
+            else if (operation->inputLength < AES_BLOCK_SIZE)
+            {
+                (void)memcpy(operation->output, object->output, operation->inputLength);
+            }
+        }
+        else if ((object->operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT) ||
+                 (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))
+        {
+            AESCCM_SegmentedFinalizeOperation *operation = (AESCCM_SegmentedFinalizeOperation *)object->operation;
+
+            if (object->totalDataLengthRemaining > 0U)
+            {
+                status = AESCCMLPF3HSM_processFinalBlock(handle);
+
+                if (status == AESCCM_STATUS_SUCCESS)
+                {
+                    finalizeOp = false;
+                }
+            }
+            else if (operation->inputLength < AES_BLOCK_SIZE)
+            {
+                (void)memcpy(operation->output, object->output, operation->inputLength);
+            }
+        }
+        else if ((object->operationType == AESCCM_OP_TYPE_DATA_ENCRYPT) ||
+                 (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT))
+        {
+            AESCCM_SegmentedDataOperation *operation = (AESCCM_SegmentedDataOperation *)object->operation;
+
+            if ((!HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength)) &&
+                (operation->inputLength > AES_BLOCK_SIZE))
+            {
+                status = AESCCMLPF3HSM_processFinalBlock(handle);
+
+                if (status == AESCCM_STATUS_SUCCESS)
+                {
+                    finalizeOp = false;
+                }
+            }
+            else if (operation->inputLength < AES_BLOCK_SIZE)
+            {
+                /* inputLength is not block multiple and therefore is the last data chunk. In this case, copy to use
+                 * buffer.
+                 */
+                (void)memcpy(operation->output, object->output, operation->inputLength);
+            }
+        }
+    }
+
+    if (finalizeOp)
+    {
+        AESCCMLPF3HSM_postProcessingCommon(handle, status, tokenResult);
+    }
+}
+
+    #if (ENABLE_KEY_STORAGE == 1)
+/*
+ *  ======== AESCCMLPF3HSM_getKeyMaterial ========
+ */
+static int_fast16_t AESCCMLPF3HSM_getKeyMaterial(AESCCMLPF3_Object *object)
+{
+    int_fast16_t status = AESCCM_STATUS_SUCCESS;
+
+    if (object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        KeyStore_PSA_KeyFileId keyID;
+        KeyStore_PSA_KeyAttributes attributes = KEYSTORE_PSA_KEY_ATTRIBUTES_INIT;
+        KeyStore_PSA_KeyUsage usage           = KEYSTORE_PSA_KEY_USAGE_ENCRYPT;
+        KeyStore_PSA_KeyLifetime lifetime;
+        int_fast16_t keyStoreStatus;
+
+        if ((object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT) ||
+            (object->operationType == AESCCM_OP_TYPE_AAD_DECRYPT) ||
+            (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT) ||
+            (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT))
+        {
+            usage = KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+        }
+
+        GET_KEY_ID(keyID, object->common.key.u.keyStore.keyID);
+
+        keyStoreStatus = KeyStore_PSA_getKeyAttributes(keyID, &attributes);
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                               &object->KeyStore_keyingMaterial[0],
+                                                               AESCommonLPF3_256_KEY_LENGTH_BYTES,
+                                                               &object->keyAssetID,
+                                                               KEYSTORE_PSA_ALG_CCM,
+                                                               usage);
+
+            if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+            {
+                lifetime = KeyStore_PSA_getKeyLifetime(&attributes);
+
+                object->keyLocation = KEYSTORE_PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
+            }
+        }
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            status = AESCCM_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else if (keyStoreStatus != KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            status = AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+
+    return status;
+}
+    #endif
+
+/*
+ *  ======== AESCCMLPF3HSM_setupObjectMetaData ========
+ */
+static void AESCCMLPF3HSM_setupObjectMetaData(AESCCMLPF3_Object *object)
+{
+    bool saveIV = false;
+    bool loadIV = false;
+
+    if ((object->operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_ONESTEP_DECRYPT))
+    {
+        AESCCM_OneStepOperation *operation = (AESCCM_OneStepOperation *)object->operation;
+
+        if (operation->inputLength < AES_BLOCK_SIZE)
+        {
+            (void)memset(object->inputFinalBlock, 0, AES_BLOCK_SIZE);
+            (void)memcpy(object->inputFinalBlock, operation->input, operation->inputLength);
+
+            (void)memset(object->outputFinalBlock, 0, AES_BLOCK_SIZE);
+
+            object->input       = object->inputFinalBlock;
+            object->output      = object->outputFinalBlock;
+            object->inputLength = operation->inputLength;
+        }
+        else if (HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength))
+        {
+            /* Get block-size aligned input length */
+            object->input       = operation->input;
+            object->output      = operation->output;
+            object->inputLength = operation->inputLength;
+        }
+        else
+        {
+            /* Get block-size aligned input length */
+            object->input       = operation->input;
+            object->output      = operation->output;
+            object->inputLength = operation->inputLength & AES_BLOCK_SIZE_MULTIPLE_MASK;
+
+            saveIV = true;
+        }
+    }
+    else if ((object->operationType == AESCCM_OP_TYPE_AAD_ENCRYPT) ||
+             (object->operationType == AESCCM_OP_TYPE_AAD_DECRYPT))
+    {
+        AESCCM_SegmentedAADOperation *operation = (AESCCM_SegmentedAADOperation *)object->operation;
+
+        object->input       = NULL;
+        object->output      = NULL;
+        object->inputLength = 0U;
+
+        if (HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->aadLength))
+        {
+            /* Get block-size aligned input length */
+            object->aad       = operation->aad;
+            object->aadLength = operation->aadLength;
+
+            if (operation->aadLength == object->totalAADLengthRemaining)
+            {
+                object->aadLength -= AES_BLOCK_SIZE;
+                object->bufferedAADLength = AES_BLOCK_SIZE;
+
+                (void)memset(object->aadFinalBlock, 0, AES_BLOCK_SIZE);
+                (void)memcpy(&object->aadFinalBlock[0], operation->aad + object->aadLength, object->bufferedAADLength);
+            }
+        }
+        else
+        {
+            /* Get block-size aligned input length */
+            object->aad               = operation->aad;
+            object->aadLength         = (operation->aadLength & AES_BLOCK_SIZE_MULTIPLE_MASK);
+            object->bufferedAADLength = (operation->aadLength & AES_NON_BLOCK_SIZE_MULTIPLE_MASK);
+
+            (void)memset(object->aadFinalBlock, 0, AES_BLOCK_SIZE);
+            (void)memcpy(&object->aadFinalBlock[0], operation->aad + object->aadLength, object->bufferedAADLength);
+        }
+
+        if (object->tempAssetID != 0U)
+        {
+            if (object->totalAADLengthRemaining != object->totalAADLength)
+            {
+                loadIV = true;
+            }
+
+            saveIV = true;
+        }
+    }
+    else if ((object->operationType == AESCCM_OP_TYPE_DATA_ENCRYPT) ||
+             (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT))
+    {
+        AESCCM_SegmentedDataOperation *operation = (AESCCM_SegmentedDataOperation *)object->operation;
+
+        if (object->totalAADLengthRemaining > 0U)
+        {
+            object->aad       = &object->aadFinalBlock[0];
+            object->aadLength = object->bufferedAADLength;
+        }
+        else
+        {
+            object->aad       = NULL;
+            object->aadLength = 0;
+        }
+
+        if (operation->inputLength == 0U)
+        {
+            /* Get block-size aligned input length */
+            object->input       = NULL;
+            object->output      = NULL;
+            object->inputLength = 0U;
+        }
+        else if (operation->inputLength < AES_BLOCK_SIZE)
+        {
+            (void)memset(object->inputFinalBlock, 0, AES_BLOCK_SIZE);
+            (void)memcpy(object->inputFinalBlock, operation->input, operation->inputLength);
+
+            (void)memset(object->outputFinalBlock, 0, AES_BLOCK_SIZE);
+
+            object->input       = object->inputFinalBlock;
+            object->output      = object->outputFinalBlock;
+            object->inputLength = operation->inputLength;
+        }
+        else if (HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength))
+        {
+            /* Get block-size aligned input length */
+            object->input       = operation->input;
+            object->output      = operation->output;
+            object->inputLength = operation->inputLength;
+        }
+        else
+        {
+            /* Get block-size aligned input length */
+            object->input       = operation->input;
+            object->output      = operation->output;
+            object->inputLength = operation->inputLength & AES_BLOCK_SIZE_MULTIPLE_MASK;
+        }
+
+        if (object->tempAssetID != 0U)
+        {
+            if ((object->totalAADLength != object->totalAADLengthRemaining) ||
+                (object->totalDataLength != object->totalDataLengthRemaining))
+            {
+                loadIV = true;
+            }
+
+            if (object->totalDataLengthRemaining != object->inputLength)
+            {
+                saveIV = true;
+            }
+        }
+    }
+    else
+    {
+        AESCCM_SegmentedFinalizeOperation *operation = (AESCCM_SegmentedFinalizeOperation *)object->operation;
+
+        if (object->totalAADLengthRemaining > 0U)
+        {
+            object->aad       = &object->aadFinalBlock[0];
+            object->aadLength = object->bufferedAADLength;
+        }
+        else
+        {
+            object->aad       = NULL;
+            object->aadLength = 0;
+        }
+
+        if (operation->inputLength == 0U)
+        {
+            /* Get block-size aligned input length */
+            object->input       = NULL;
+            object->output      = NULL;
+            object->inputLength = 0U;
+        }
+        else if (operation->inputLength < AES_BLOCK_SIZE)
+        {
+            (void)memset(object->inputFinalBlock, 0, AES_BLOCK_SIZE);
+            (void)memcpy(object->inputFinalBlock, operation->input, operation->inputLength);
+
+            (void)memset(object->outputFinalBlock, 0, AES_BLOCK_SIZE);
+
+            object->input       = object->inputFinalBlock;
+            object->output      = object->outputFinalBlock;
+            object->inputLength = operation->inputLength;
+        }
+        else if (HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength))
+        {
+            /* Get block-size aligned input length */
+            object->input       = operation->input;
+            object->output      = operation->output;
+            object->inputLength = operation->inputLength;
+        }
+        else
+        {
+            /* Get block-size aligned input length */
+            object->input       = operation->input;
+            object->output      = operation->output;
+            object->inputLength = operation->inputLength & AES_BLOCK_SIZE_MULTIPLE_MASK;
+        }
+
+        if (object->tempAssetID != 0U)
+        {
+            if ((object->totalAADLength != object->totalAADLengthRemaining) ||
+                (object->totalDataLength != object->totalDataLengthRemaining))
+            {
+                loadIV = true;
+            }
+
+            if (object->totalDataLengthRemaining != object->inputLength)
+            {
+                saveIV = true;
+            }
+        }
+    }
+
+    HSMLPF3_constructCCMToken(object, saveIV, loadIV);
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_performHSMOperation ========
+ */
+static int_fast16_t AESCCMLPF3HSM_performHSMOperation(AESCCM_Handle handle)
+{
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
+    int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
+
+    AESCCMLPF3HSM_setupObjectMetaData(object);
+
+    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
+                                    AESCCMLPF3HSM_postProcessingFxn,
+                                    (uintptr_t)handle);
+
     if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
     {
         hsmRetval = HSMLPF3_waitForResult();
@@ -2362,7 +2982,11 @@ static inline int_fast16_t AESCCMLPF3HSM_processOneStepOperation(AESCCM_Handle h
 
     if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
     {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+        /* In the case of failure to initialize the operation, we need to free all assets allocated.
+         * Capturing the return status of this operation is pointless since we are returning an
+         * error code anyways.
+         */
+        (void)AESCCMLPF3HSM_freeTempAssetID(handle);
 
         HSMLPF3_releaseLock();
     }
@@ -2390,6 +3014,7 @@ static int_fast16_t AESCCMLPF3HSM_oneStepOperation(AESCCM_Handle handle,
     DebugP_assert(operation->aadLength <= B1_AAD_LENGTH_SMALL_LIMIT);
 
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
 
     /* The nonce length must be 7 to 13 bytes long */
     if ((operation->nonceLength < (uint8_t)7U) || (operation->nonceLength > (uint8_t)13U))
@@ -2430,7 +3055,7 @@ static int_fast16_t AESCCMLPF3HSM_oneStepOperation(AESCCM_Handle handle,
     object->inputLength     = operation->inputLength;
     object->totalDataLength = operation->inputLength;
     object->macLength       = operation->macLength;
-    object->aadLength       = object->totalAADLength;
+    object->aadLength       = operation->aadLength;
     object->totalAADLength  = operation->aadLength;
     object->nonceLength     = operation->nonceLength;
 
@@ -2439,22 +3064,66 @@ static int_fast16_t AESCCMLPF3HSM_oneStepOperation(AESCCM_Handle handle,
 
     object->tempAssetID = 0U;
 
-    /* Process all one-step operations with data length less than the DMA size
-     * threshold as a polling mode operation.
+    if ((operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) && (operation->macLength == 0U))
+    {
+        /* We are not supplied the macLength at this point of the segmented operation.
+         * Therefore, the driver gives it a dummy length which is the max length until
+         * the user supplies the desired macLength in _setLengths() API.
+         */
+        object->macLength = HSM_MAC_MAX_LENGTH;
+    }
+
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+    {
+        return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+    }
+
+    /* If input length is larger than 1 block and it is not a multiple of block-size,
+     * then a one step operation becomes a segmented operation and requires a state
+     * asset to store the intermediate state of the MAC within the HSM.
      */
-    return AESCCMLPF3HSM_processOneStepOperation(handle);
+    if ((operation->inputLength > AES_BLOCK_SIZE) &&
+        (!HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE((operation->inputLength))))
+    {
+        status = AESCCMLPF3HSM_createTempAssetID(handle);
+    }
+
+    #if (ENABLE_KEY_STORAGE == 1)
+    status = AESCCMLPF3HSM_getKeyMaterial(object);
+    #endif
+
+    if (status != AESCCM_STATUS_SUCCESS)
+    {
+        /* In the case of failure to initialize the operation, we need to free all assets allocated.
+         * Capturing the return status of this operation is pointless since we are returning an
+         * error code anyways.
+         */
+        (void)AESCCMLPF3HSM_freeTempAssetID(handle);
+
+        HSMLPF3_releaseLock();
+    }
+    else
+    {
+        status = AESCCMLPF3HSM_performHSMOperation(handle);
+    }
+
+    return status;
 }
 
 /*
  *  ======== AESCCMLPF3HSM_setupSegmentedOperation ========
  */
-static int_fast16_t AESCCMLPF3HSM_setupSegmentedOperation(AESCCMLPF3_Object *object,
+static int_fast16_t AESCCMLPF3HSM_setupSegmentedOperation(AESCCM_Handle handle,
+                                                          AESCCM_OperationType operationType,
                                                           const CryptoKey *key,
                                                           size_t totalAADLength,
                                                           size_t totalDataLength,
                                                           size_t macLength)
 {
+    DebugP_assert(handle);
     DebugP_assert(key);
+    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
     if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
@@ -2476,22 +3145,32 @@ static int_fast16_t AESCCMLPF3HSM_setupSegmentedOperation(AESCCMLPF3_Object *obj
 
     object->segmentedOperationInProgress = true;
 
+    object->operationType = operationType;
+
     /* If the user doesn't provide the total lengths in the setupXXXX()
      * calls, they must provide the lengths in setLengths().
      */
-    object->totalAADLength  = totalAADLength;
-    object->totalDataLength = totalDataLength;
-    object->macLength       = (uint8_t)macLength;
-
-    object->totalCTRLengthRemaining    = totalDataLength;
-    object->totalCBCMACLengthRemaining = totalDataLength;
-    object->aadBytesProcessed          = 0U;
-    object->bufferedAADLength          = (uint8_t)0U;
-
-    object->totalDataLengthRemaining = totalDataLength;
+    object->totalAADLength           = totalAADLength;
+    object->totalDataLength          = totalDataLength;
+    object->macLength                = (uint8_t)macLength;
+    object->aadBytesProcessed        = 0U;
+    object->bufferedAADLength        = (uint8_t)0U;
     object->totalAADLengthRemaining  = totalAADLength;
-    object->inputLength              = 0U;
-    object->aadLength                = 0U;
+    object->totalDataLengthRemaining = totalDataLength;
+
+    if ((operationType == AESCCM_OPERATION_TYPE_ENCRYPT) && (macLength == 0U))
+    {
+        /* We are not supplied the macLength at this point of the segmented operation.
+         * Therefore, the driver gives it a dummy length which is the max length until
+         * the user supplies the desired macLength in _setLengths() API.
+         */
+        object->macLength = HSM_MAC_MAX_LENGTH;
+    }
+
+    (void)memset(object->KeyStore_keyingMaterial, 0, AESCommonLPF3_256_KEY_LENGTH_BYTES);
+    (void)memset(object->inputFinalBlock, 0, AES_BLOCK_SIZE);
+    (void)memset(object->outputFinalBlock, 0, AES_BLOCK_SIZE);
+    (void)memset(object->aadFinalBlock, 0, AES_BLOCK_SIZE);
 
     /* Initialize MAC pointer to NULL to avoid premature processing of the
      * MAC in the ISR.
@@ -2503,7 +3182,23 @@ static int_fast16_t AESCCMLPF3HSM_setupSegmentedOperation(AESCCMLPF3_Object *obj
      */
     object->operation = NULL;
 
-    return AESCCM_STATUS_SUCCESS;
+    #if (ENABLE_KEY_STORAGE == 1)
+    status = AESCCMLPF3HSM_getKeyMaterial(object);
+    #endif
+
+    if (((totalAADLength > AES_BLOCK_SIZE) || (totalDataLength > AES_BLOCK_SIZE)) && (object->tempAssetID == 0U))
+    {
+        if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+        {
+            return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+        }
+
+        status = AESCCMLPF3HSM_createTempAssetID(handle);
+
+        HSMLPF3_releaseLock();
+    }
+
+    return status;
 }
 
 /*
@@ -2515,18 +3210,12 @@ int_fast16_t AESCCMLPF3HSM_setupEncrypt(AESCCM_Handle handle,
                                         size_t totalPlaintextLength,
                                         size_t macLength)
 {
-    DebugP_assert(handle);
-    int_fast16_t status       = AESCCM_STATUS_ERROR;
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-
-    status = AESCCMLPF3HSM_setupSegmentedOperation(object, key, totalAADLength, totalPlaintextLength, macLength);
-    if (status == AESCCM_STATUS_SUCCESS)
-    {
-        object->operationType = AESCCM_OPERATION_TYPE_ENCRYPT;
-        status                = AESCCMLPF3HSM_createTempAssetID(handle, AESCCM_MODE_ENCRYPT);
-    }
-
-    return status;
+    return AESCCMLPF3HSM_setupSegmentedOperation(handle,
+                                                 AESCCM_OPERATION_TYPE_ENCRYPT,
+                                                 key,
+                                                 totalAADLength,
+                                                 totalPlaintextLength,
+                                                 macLength);
 }
 
 /*
@@ -2538,104 +3227,12 @@ int_fast16_t AESCCMLPF3HSM_setupDecrypt(AESCCM_Handle handle,
                                         size_t totalPlaintextLength,
                                         size_t macLength)
 {
-    DebugP_assert(handle);
-    int_fast16_t status       = AESCCM_STATUS_ERROR;
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-
-    status = AESCCMLPF3HSM_setupSegmentedOperation(object, key, totalAADLength, totalPlaintextLength, macLength);
-    if (status == AESCCM_STATUS_SUCCESS)
-    {
-        object->operationType = AESCCM_OPERATION_TYPE_DECRYPT;
-        status                = AESCCMLPF3HSM_createTempAssetID(handle, AESCCM_MODE_DECRYPT);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCCMLPF3HSM_SegmentedPostProcessing ========
- */
-static inline void AESCCMLPF3HSM_SegmentedPostProcessing(uintptr_t arg0)
-{
-    AESCCM_Handle handle      = (AESCCM_Handle)arg0;
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    int_fast16_t status       = AESCCM_STATUS_ERROR;
-    AESCCM_Mode direction     = AESCCM_MODE_ENCRYPT;
-    int32_t physicalResult    = HSMLPF3_getResultCode();
-    int8_t tokenResult        = physicalResult & HSMLPF3_RETVAL_MASK;
-
-    /* The HSM IP will throw an error when operation->macLength is zero despite it producing a correct
-     * ciphertext/plaintext for both encrypt/decrypt operations and will compute a mac anyways.
-     */
-    if ((tokenResult == EIP130TOKEN_RESULT_INVALID_LENGTH) && (object->macLength == 0U))
-    {
-        tokenResult = EIP130TOKEN_RESULT_SUCCESS;
-    }
-
-    if ((object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT) ||
-        (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))
-    {
-        direction = AESCCM_MODE_DECRYPT;
-    }
-
-    if ((object->operationType == AESCCM_OP_TYPE_AAD_ENCRYPT) || (object->operationType == AESCCM_OP_TYPE_AAD_DECRYPT))
-    {
-        if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-        {
-            object->totalAADLengthRemaining -= object->aadLength;
-            object->aadLength = 0U;
-
-            status = AESCCM_STATUS_SUCCESS;
-        }
-    }
-    else
-    {
-        if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-        {
-            object->totalAADLengthRemaining -= object->aadLength;
-            object->totalDataLengthRemaining -= object->inputLength;
-
-            if (direction == AESCCM_MODE_ENCRYPT)
-            {
-                HSMLPF3_getAESEncryptTag((uint8_t *)&object->intermediateTag[0]);
-
-                if ((object->operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT) &&
-                    ((object->totalDataLengthRemaining == 0U) && (object->totalAADLengthRemaining == 0U)))
-                {
-                    (void)memcpy((void *)&object->mac[0], (void *)&object->intermediateTag[0], object->macLength);
-                }
-            }
-
-            status = AESCCM_STATUS_SUCCESS;
-        }
-        else if ((tokenResult == EIP130TOKEN_RESULT_VERIFY_ERROR) &&
-                 (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))
-        {
-            object->totalAADLengthRemaining -= object->aadLength;
-            object->totalDataLengthRemaining -= object->inputLength;
-
-            status = AESCCM_STATUS_MAC_INVALID;
-        }
-    }
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    HSMLPF3_releaseLock();
-
-    if ((object->operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT) ||
-        (object->operationType == AESCCM_OP_TYPE_FINALIZE_DECRYPT))
-    {
-        status = AESCCMLPF3HSM_freeTempAssetID(handle);
-
-        object->segmentedOperationInProgress = false;
-    }
-
-    object->common.returnStatus = status;
-
-    if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
-    {
-        object->callbackFxn(handle, status, object->operation, object->operationType);
-    }
+    return AESCCMLPF3HSM_setupSegmentedOperation(handle,
+                                                 AESCCM_OPERATION_TYPE_DECRYPT,
+                                                 key,
+                                                 totalAADLength,
+                                                 totalPlaintextLength,
+                                                 macLength);
 }
 
 /*
@@ -2646,65 +3243,34 @@ int_fast16_t AESCCMLPF3HSM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOpera
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
-    int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
-
-    object->operation = (AESCCM_OperationUnion *)operation;
-
-    if (object->totalAADLengthRemaining == object->totalAADLength)
-    {
-        object->aad = operation->aad;
-    }
-
-    /* Don't continue the segmented operation if there
-     * was an error or a cancellation.
-     */
-    if (object->common.returnStatus != AESCCM_STATUS_SUCCESS)
-    {
-        return object->common.returnStatus;
-    }
+    AESCCMLPF3_Object *object          = AESCCMLPF3_getObject(handle);
+    object->operation                  = (AESCCM_OperationUnion *)operation;
+    AESCCM_OperationType operationType = AESCCM_OP_TYPE_AAD_ENCRYPT;
 
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
-    if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
+    if ((object->totalAADLength == 0U) || (object->hsmStatus != HSMLPF3_STATUS_SUCCESS))
     {
         return AESCCM_STATUS_ERROR;
     }
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    else if (object->common.returnStatus != AESCCM_STATUS_SUCCESS)
     {
-        return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+        /* Don't continue the segmented operation if there
+         * was an error or a cancellation.
+         */
+        return object->common.returnStatus;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+    if ((!HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->aadLength)) &&
+        (operation->aadLength != object->totalAADLengthRemaining))
+    {
+        return AESCCM_STATUS_ERROR;
+    }
 
     /* This operation can be called after setup or after addAAD again. */
     DebugP_assert((object->operationType == AESCCM_OPERATION_TYPE_DECRYPT) ||
                   (object->operationType == AESCCM_OPERATION_TYPE_ENCRYPT) ||
                   (object->operationType == AESCCM_OP_TYPE_AAD_DECRYPT) ||
                   (object->operationType == AESCCM_OP_TYPE_AAD_ENCRYPT));
-
-    uint8_t aadBytesProcessed = object->totalAADLength - object->totalAADLengthRemaining;
-    size_t calcAADLen         = aadBytesProcessed + operation->aadLength;
-
-    /* The total AAD input length must not exceed the total length specified
-     * in AESCCM_setLengths() or the setupXXXX() call.
-     */
-    if (calcAADLen > object->totalAADLength)
-    {
-        status = AESCCM_STATUS_ERROR;
-    }
-
-    if (status == AESCCM_STATUS_ERROR)
-    {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-        HSMLPF3_releaseLock();
-
-        return status;
-    }
-
-    AESCCM_OperationType operationType = AESCCM_OP_TYPE_AAD_ENCRYPT;
 
     if ((object->operationType == AESCCM_OPERATION_TYPE_DECRYPT) ||
         (object->operationType == AESCCM_OP_TYPE_AAD_DECRYPT))
@@ -2714,66 +3280,27 @@ int_fast16_t AESCCMLPF3HSM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOpera
 
     object->operationType = operationType;
 
-    uint8_t aadBytesToProcess = operation->aadLength;
-    uint8_t inputRemainder    = aadBytesToProcess % AES_BLOCK_SIZE;
-
-    if (inputRemainder > 0U)
+    if ((operation->aadLength <= AES_BLOCK_SIZE) && (operation->aadLength == object->totalAADLengthRemaining))
     {
-        aadBytesToProcess -= inputRemainder;
-    }
+        (void)memcpy(&object->aadFinalBlock[0], operation->aad, operation->aadLength);
+        object->bufferedAADLength = operation->aadLength;
 
-    if (aadBytesProcessed + aadBytesToProcess == object->totalAADLength)
-    {
-        aadBytesToProcess -= AES_BLOCK_SIZE;
-    }
-
-    object->aadLength   = aadBytesToProcess;
-    object->inputLength = 0U;
-
-    if (aadBytesToProcess > 0U)
-    {
-        HSMLPF3_constructAESCCMSegmentedAADPhysicalToken(object);
-
-        hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
-                                        AESCCMLPF3HSM_SegmentedPostProcessing,
-                                        (uintptr_t)handle);
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            hsmRetval = HSMLPF3_waitForResult();
-
-            if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-            {
-                status = object->common.returnStatus;
-            }
-        }
-
-        if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-        {
-            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-            HSMLPF3_releaseLock();
-        }
-
-        object->common.returnStatus = status;
-    }
-    else
-    {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-        HSMLPF3_releaseLock();
-
-        object->common.returnStatus = status;
+        object->common.returnStatus = AESCCM_STATUS_SUCCESS;
 
         if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
         {
-            object->callbackFxn(handle, status, (AESCCM_OperationUnion *)operation, operationType);
-
-            /* Always return success in callback mode */
-            status = AESCCM_STATUS_SUCCESS;
+            object->callbackFxn(handle, object->common.returnStatus, object->operation, object->operationType);
         }
+
+        return AESCCM_STATUS_SUCCESS;
     }
 
-    return status;
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+    {
+        return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+    }
+
+    return AESCCMLPF3HSM_performHSMOperation(handle);
 }
 
 /*
@@ -2781,15 +3308,9 @@ int_fast16_t AESCCMLPF3HSM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOpera
  */
 static int_fast16_t AESCCMLPF3HSM_addData(AESCCM_Handle handle,
                                           AESCCM_OperationType operationType,
-                                          AESCCM_OperationUnion *operation,
-                                          const uint8_t *input,
-                                          uint8_t *output,
-                                          size_t inputLength)
+                                          AESCCM_OperationUnion *operation)
 {
-    int_fast16_t status                               = AESCCM_STATUS_SUCCESS;
-    int_fast16_t hsmRetval                            = HSMLPF3_STATUS_ERROR;
-    AESCCMLPF3_Object *object                         = AESCCMLPF3_getObject(handle);
-    AESCCM_SegmentedDataOperation *segmentedOperation = (AESCCM_SegmentedDataOperation *)operation;
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
     if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
@@ -2797,226 +3318,15 @@ static int_fast16_t AESCCMLPF3HSM_addData(AESCCM_Handle handle,
         return AESCCM_STATUS_ERROR;
     }
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    object->operationType = operationType;
+    object->operation     = operation;
+
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
     {
         return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    object->operationType = operationType;
-    object->operation     = operation;
-
-    if (object->totalDataLengthRemaining == object->totalDataLength)
-    {
-        object->input  = segmentedOperation->input;
-        object->output = segmentedOperation->output;
-    }
-
-    object->aadLength   = object->totalAADLengthRemaining;
-    object->inputLength = inputLength;
-
-    HSMLPF3_constructAESCCMSegmentedDataPhysicalToken(object);
-
-    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
-                                    AESCCMLPF3HSM_SegmentedPostProcessing,
-                                    (uintptr_t)handle);
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-        HSMLPF3_releaseLock();
-    }
-
-    object->common.returnStatus = status;
-
-    return status;
-}
-
-/*
- *  ======== AESCCMLPF3HSM_freeAssetPostProcessing ========
- */
-static inline void AESCCMLPF3HSM_freeAssetPostProcessing(uintptr_t arg0)
-{
-    AESCCM_Handle handle      = (AESCCM_Handle)arg0;
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    int_fast16_t status       = AESCCM_STATUS_ERROR;
-    int8_t tokenResult        = HSMLPF3_getResultCode() & HSMLPF3_RETVAL_MASK;
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        object->tempAssetID = 0;
-        status              = AESCCM_STATUS_SUCCESS;
-    }
-
-    object->common.returnStatus = status;
-
-    if ((HSMLPF3_ReturnBehavior)object->common.returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-        HSMLPF3_releaseLock();
-    }
-}
-
-/*
- *  ======== AESCCMLPF3HSM_freeTempAssetID ========
- */
-static int_fast16_t AESCCMLPF3HSM_freeTempAssetID(AESCCM_Handle handle)
-{
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
-    int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
-
-    if (object->tempAssetID != 0)
-    {
-        if ((HSMLPF3_ReturnBehavior)object->common.returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-        {
-            if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-            {
-                return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
-            }
-            Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-        }
-
-        HSMLPF3_constructDeleteAssetToken(object->tempAssetID);
-
-        hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
-                                        AESCCMLPF3HSM_freeAssetPostProcessing,
-                                        (uintptr_t)handle);
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            hsmRetval = HSMLPF3_waitForResult();
-
-            if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-            {
-                status = object->common.returnStatus;
-            }
-        }
-    }
-
-    if (((HSMLPF3_ReturnBehavior)object->common.returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING) &&
-        (hsmRetval != HSMLPF3_STATUS_SUCCESS))
-    {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-        HSMLPF3_releaseLock();
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCCMLPF3HSM_finalizeEncrypt ========
- */
-int_fast16_t AESCCMLPF3HSM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation)
-{
-    DebugP_assert(handle);
-    DebugP_assert(operation);
-
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    int_fast16_t status;
-
-    status = AESCCMLPF3HSM_performFinalizeChecks(object, operation);
-
-    if (status != AESCCM_STATUS_SUCCESS)
-    {
-        return status;
-    }
-
-    if (object->totalDataLengthRemaining == object->totalDataLength)
-    {
-        object->input  = operation->input;
-        object->output = operation->output;
-    }
-
-    object->mac       = operation->mac;
-    object->macLength = operation->macLength;
-
-    if ((operation->inputLength > 0U) || (object->totalAADLengthRemaining > 0))
-    {
-        status = AESCCMLPF3HSM_addData(handle,
-                                       AESCCM_OP_TYPE_FINALIZE_ENCRYPT,
-                                       (AESCCM_OperationUnion *)operation,
-                                       operation->input,
-                                       operation->output,
-                                       operation->inputLength);
-    }
-    else
-    {
-        (void)memcpy(operation->mac, (uint32_t *)&object->intermediateTag[0], operation->macLength);
-
-        status = AESCCMLPF3HSM_freeTempAssetID(handle);
-
-        object->segmentedOperationInProgress = false;
-
-        if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
-        {
-            object->callbackFxn(handle, status, (AESCCM_OperationUnion *)operation, AESCCM_OP_TYPE_FINALIZE_ENCRYPT);
-        }
-    }
-    return status;
-}
-
-/*
- *  ======== AESCCMLPF3HSM_finalizeDecrypt ========
- */
-int_fast16_t AESCCMLPF3HSM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation)
-{
-    DebugP_assert(handle);
-    DebugP_assert(operation);
-
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-    int_fast16_t status;
-
-    status = AESCCMLPF3HSM_performFinalizeChecks(object, operation);
-
-    if (status != AESCCM_STATUS_SUCCESS)
-    {
-        return status;
-    }
-
-    if (object->totalDataLengthRemaining == object->totalDataLength)
-    {
-        object->input  = operation->input;
-        object->output = operation->output;
-    }
-
-    object->mac       = operation->mac;
-    object->macLength = operation->macLength;
-
-    if ((operation->inputLength > 0U) || (object->totalAADLengthRemaining > 0U))
-    {
-        status = AESCCMLPF3HSM_addData(handle,
-                                       AESCCM_OP_TYPE_FINALIZE_DECRYPT,
-                                       (AESCCM_OperationUnion *)operation,
-                                       operation->input,
-                                       operation->output,
-                                       operation->inputLength);
-    }
-    else
-    {
-        status = AESCCMLPF3HSM_freeTempAssetID(handle);
-
-        object->segmentedOperationInProgress = false;
-
-        if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
-        {
-            object->callbackFxn(handle, status, (AESCCM_OperationUnion *)operation, AESCCM_OP_TYPE_FINALIZE_DECRYPT);
-        }
-    }
-
-    return status;
+    return AESCCMLPF3HSM_performHSMOperation(handle);
 }
 
 /*
@@ -3043,13 +3353,200 @@ static int_fast16_t AESCCMLPF3HSM_performFinalizeChecks(const AESCCMLPF3_Object 
         return AESCCM_STATUS_ERROR;
     }
 
-    /* Additional payload data can be passed in finalize */
+    /* Additional payload data cannot be passed in finalize */
     if (operation->inputLength != object->totalDataLengthRemaining)
     {
         return AESCCM_STATUS_ERROR;
     }
 
     return AESCCM_STATUS_SUCCESS;
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_finalizeCommon ========
+ */
+static int_fast16_t AESCCMLPF3HSM_finalizeCommon(AESCCM_Handle handle,
+                                                 AESCCM_OperationType operationType,
+                                                 AESCCM_SegmentedFinalizeOperation *operation)
+{
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
+
+    status = AESCCMLPF3HSM_performFinalizeChecks(object, operation);
+
+    if (status != AESCCM_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    if (object->totalDataLengthRemaining == object->totalDataLength)
+    {
+        object->input  = operation->input;
+        object->output = operation->output;
+    }
+
+    object->mac       = operation->mac;
+    object->macLength = operation->macLength;
+
+    if ((operation->inputLength > 0U) || (object->totalAADLengthRemaining > 0U))
+    {
+        status = AESCCMLPF3HSM_addData(handle, operationType, (AESCCM_OperationUnion *)operation);
+    }
+    else
+    {
+        object->operationType = operationType;
+
+        if (operationType == AESCCM_OP_TYPE_FINALIZE_ENCRYPT)
+        {
+            (void)memcpy(operation->mac, (uint8_t *)&object->intermediateTag[0], operation->macLength);
+        }
+
+        if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+        {
+            return AESCCM_STATUS_RESOURCE_UNAVAILABLE;
+        }
+
+        object->aadLength   = 0U;
+        object->inputLength = 0U;
+
+        AESCCMLPF3HSM_postProcessingCommon(handle, status, (int8_t)AESCCM_STATUS_SUCCESS);
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_finalizeEncrypt ========
+ */
+int_fast16_t AESCCMLPF3HSM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation)
+{
+    DebugP_assert(handle);
+    DebugP_assert(operation);
+
+    return AESCCMLPF3HSM_finalizeCommon(handle, AESCCM_OP_TYPE_FINALIZE_ENCRYPT, operation);
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_finalizeDecrypt ========
+ */
+int_fast16_t AESCCMLPF3HSM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinalizeOperation *operation)
+{
+    DebugP_assert(handle);
+    DebugP_assert(operation);
+
+    return AESCCMLPF3HSM_finalizeCommon(handle, AESCCM_OP_TYPE_FINALIZE_DECRYPT, operation);
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_freeAllAssets ========
+ */
+static int_fast16_t AESCCMLPF3HSM_freeAllAssets(AESCCM_Handle handle)
+{
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
+    #if (ENABLE_KEY_STORAGE == 1)
+    KeyStore_PSA_KeyFileId keyID;
+    #endif
+
+    if ((object->operationType == AESCCM_OP_TYPE_AAD_ENCRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_AAD_DECRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_DATA_ENCRYPT) ||
+        (object->operationType == AESCCM_OP_TYPE_DATA_DECRYPT))
+    {
+        /* Operation is not done yet and therefore, do not free any asset. */
+        return AESCCM_STATUS_SUCCESS;
+    }
+
+    #if (ENABLE_KEY_STORAGE == 1)
+    if ((object->common.key.encoding == CryptoKey_KEYSTORE_HSM) &&
+        (object->keyLocation == KEYSTORE_PSA_KEY_LOCATION_HSM_ASSET_STORE))
+    {
+        GET_KEY_ID(keyID, object->common.key.u.keyStore.keyID);
+
+        /* For keys with a persistence that does not designate them to remain in asset store,
+         * the following function will remove them. Otherwise, the key will remain in asset store
+         * for future usage.
+         */
+        if (status == AESCCM_STATUS_SUCCESS)
+        {
+            status = KeyStore_PSA_assetPostProcessing(keyID);
+
+            if (status != KEYSTORE_PSA_STATUS_SUCCESS)
+            {
+                status = AESCCM_STATUS_ERROR;
+            }
+            else
+            {
+                status = AESCCM_STATUS_SUCCESS;
+            }
+        }
+        else
+        {
+            (void)KeyStore_PSA_assetPostProcessing(keyID);
+        }
+    }
+    #endif
+
+    if (status != AESCCM_STATUS_SUCCESS)
+    {
+        (void)AESCCMLPF3HSM_freeTempAssetID(handle);
+    }
+    else
+    {
+        status = AESCCMLPF3HSM_freeTempAssetID(handle);
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_freeAssetPostProcessing ========
+ */
+static inline void AESCCMLPF3HSM_freeAssetPostProcessing(uintptr_t arg0)
+{
+    AESCCM_Handle handle      = (AESCCM_Handle)arg0;
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_ERROR;
+    int8_t tokenResult        = HSMLPF3_getResultCode() & HSMLPF3_RETVAL_MASK;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        object->tempAssetID = 0;
+        status              = AESCCM_STATUS_SUCCESS;
+    }
+
+    object->common.returnStatus = status;
+}
+
+/*
+ *  ======== AESCCMLPF3HSM_freeTempAssetID ========
+ */
+static int_fast16_t AESCCMLPF3HSM_freeTempAssetID(AESCCM_Handle handle)
+{
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_SUCCESS;
+    int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
+
+    if (object->tempAssetID != 0)
+    {
+        HSMLPF3_constructDeleteAssetToken(object->tempAssetID);
+
+        hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
+                                        AESCCMLPF3HSM_freeAssetPostProcessing,
+                                        (uintptr_t)handle);
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            hsmRetval = HSMLPF3_waitForResult();
+
+            if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+            {
+                status = object->common.returnStatus;
+            }
+        }
+    }
+
+    return status;
 }
 
 #endif

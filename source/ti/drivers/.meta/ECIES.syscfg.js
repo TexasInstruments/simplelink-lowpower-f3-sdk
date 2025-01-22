@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,9 @@ let Common = system.getScript("/ti/drivers/Common.js");
 /* generic configuration parameters for ECIES instances */
 let config = [];
 
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
+
 /*
  *  ======== base ========
  *  Define the base ECIES properties and methods
@@ -70,7 +73,16 @@ a shared secret which is used as an input for ANSI X9.36 Key Derivation Function
     /* RNG module is required because it has a global configuration needed for
      * the dynamic RNG driver instance created by the ECIES driver.
      */
-    modules             : Common.autoForceModules(["Board", "Power", "RNG"])
+    modules: (inst) => {
+        let forcedModules = ["Board", "Power", "RNG"];
+
+        if (deviceId.match(/CC23/)) {
+            /* LAES driver requires DMA module */
+            forcedModules.push("DMA");
+        }
+
+        return Common.autoForceModules(forcedModules)();
+    }
 };
 
 /* For now, there is only one generic implementation. We may get dedicated hardware

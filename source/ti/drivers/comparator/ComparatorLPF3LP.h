@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,7 +68,7 @@ extern "C" {
  *  The Low-Power comparators on the Low Power F3 devices support four negative
  *  input sources:
  *  - internal voltage VDDD
- *  - internal voltage VDDA
+ *  - internal voltage VDDS
  *  - External pin PAD_A2
  *  - External pin PAD_A3
  *
@@ -80,7 +80,7 @@ extern "C" {
 typedef enum
 {
     ComparatorLPF3LP_NEG_INPUT_VDDD = LPCMP_NEG_INPUT_VDDD,
-    ComparatorLPF3LP_NEG_INPUT_VDDA = LPCMP_NEG_INPUT_VDDA,
+    ComparatorLPF3LP_NEG_INPUT_VDDS = LPCMP_NEG_INPUT_VDDS,
     ComparatorLPF3LP_NEG_INPUT_A2   = LPCMP_NEG_INPUT_A2,
     ComparatorLPF3LP_NEG_INPUT_A3   = LPCMP_NEG_INPUT_A3
 } ComparatorLPF3LP_NegativeInputChannel;
@@ -96,7 +96,7 @@ typedef enum
  *  - External pin PAD_A1
  *  - External pin PAD_A2
  *  - External pin PAD_A3
- *  - internal voltage VDDA
+ *  - Internal voltage VDDS
  *
  *  \note A fixed device-specific mapping exists between PAD_An and DIOn. Such
  *  mapping is automatically handled when using SysConfig. In case SysConfig is
@@ -108,7 +108,7 @@ typedef enum
     ComparatorLPF3LP_POS_INPUT_A1   = LPCMP_POS_INPUT_A1,
     ComparatorLPF3LP_POS_INPUT_A2   = LPCMP_POS_INPUT_A2,
     ComparatorLPF3LP_POS_INPUT_A3   = LPCMP_POS_INPUT_A3,
-    ComparatorLPF3LP_POS_INPUT_VDDA = LPCMP_POS_INPUT_VDDA
+    ComparatorLPF3LP_POS_INPUT_VDDS = LPCMP_POS_INPUT_VDDS
 } ComparatorLPF3LP_PositiveInputChannel;
 
 /*!
@@ -165,7 +165,7 @@ typedef enum
  *         .positiveInputChannel = ComparatorLPF3LP_POS_INPUT_A1,
  *         .negativeInputPin = GPIO_INVALID_INDEX,
  *         .negativeInputPinMux = GPIO_MUX_GPIO_INTERNAL,
- *         .negativeInputChannel = ComparatorLPF3LP_NEG_INPUT_VDDA,
+ *         .negativeInputChannel = ComparatorLPF3LP_NEG_INPUT_VDDS,
  *         .voltageDividerPath = ComparatorLPF3LP_V_DIV_PATH_NEG,
  *         .voltageDividerFactor = ComparatorLPF3LP_V_DIV_FACTOR_1_2,
  *     },

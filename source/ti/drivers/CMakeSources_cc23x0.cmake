@@ -5,6 +5,8 @@ set(SOURCES_CC23X0_COMMON
     ${SOURCES_COMMON}
     ADC.c
     adc/ADCLPF3.c
+    ADCBuf.c
+    adcbuf/ADCBufLPF3.c
     AESCBC.c
     aescbc/AESCBCLPF3.c
     AESCCM.c

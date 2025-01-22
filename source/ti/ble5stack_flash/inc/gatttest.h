@@ -155,7 +155,7 @@ extern void GATTTest_Init( uint8 taskId );
  *
  * @return  none
  */
-extern uint16 GATTTest_ProcessEvent( uint8 task_id, uint16 events );
+extern uint32 GATTTest_ProcessEvent( uint8 task_id, uint32 events );
 
 /**
  * @brief   Add function for the GATT Qualification Services.

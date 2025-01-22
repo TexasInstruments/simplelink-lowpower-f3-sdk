@@ -75,6 +75,7 @@ let config = [
         description: "Specifies the minimum transfer size in bytes for which"
             + " the DMA will be used. Otherwise a polling transfer will occur"
             + " with some exceptions.",
+        isInteger: true,
         default: 10
     },
     {
@@ -179,6 +180,11 @@ function filterHardware(component)
  */
 function validate(inst, validation)
 {
+    if (inst.minDmaTransferSize < 0) {
+        logError(validation, inst, 'minDmaTransferSize',
+            'Minimum DMA transfer size must be greater than or equal to zero.');
+    }
+
     /* Allow an input of 0 or ~0 */
     if (inst.defaultTxBufferValue.match( /((^0$)|(^~0$))/ )) {
         return;

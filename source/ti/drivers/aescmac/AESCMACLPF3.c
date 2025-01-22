@@ -47,8 +47,13 @@
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+    #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
     #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_asset_policy.h>
     #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_result.h>
+    #if (ENABLE_KEY_STORAGE == 1)
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
+    #endif
 #endif
 
 #include <ti/drivers/dpl/DebugP.h>
@@ -94,20 +99,27 @@ static inline int_fast16_t AESCMACLPF3_waitForResult(AESCMAC_Handle handle);
 static inline void AESCMACLPF3_xorBlock(uint32_t *block1_dst, const uint32_t *block2);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+/* OneStep-related internal APIs*/
 static int_fast16_t AESCMACLPF3HSM_oneStepOperation(AESCMAC_Handle handle,
                                                     AESCMAC_Operation *operation,
                                                     const CryptoKey *key,
                                                     AESCMAC_OperationType operationType);
-static int_fast16_t AESCMACLPF3HSM_SegmentedOperation(AESCMAC_Handle handle, AESCMAC_Operation *operation);
+static void AESCMACLPF3HSM_postProcessingCommon(AESCMAC_Handle handle, int_fast16_t status);
+static int_fast16_t AESCMACLPF3HSM_performHSMOperation(AESCMAC_Handle handle);
+static int_fast16_t AESCMACLPF3HSM_processFinalBlock(AESCMAC_Handle handle);
 
+/* Segmented addData-related internal APIs*/
+static int_fast16_t AESCMACLPF3HSM_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation);
+
+/* Segmented finalize-related internal APIs*/
 static int_fast16_t AESCMACLPF3HSM_finalize(AESCMAC_Handle handle, AESCMAC_Operation *operation);
 
-static int_fast16_t AESCMACLPF3HSM_processOneStepAndFinalizeOperation(AESCMAC_Handle handle);
-static int_fast16_t AESCMACLPF3HSM_processSegmentedOperation(AESCMAC_Handle handle);
-
+/* Asset management-related internal APIs*/
 static int_fast16_t AESCMACLPF3HSM_createAndLoadKeyAssetID(AESCMAC_Handle handle);
+static int_fast16_t AESCMACLPF3HSM_createKeyAsset(AESCMAC_Handle handle);
+static int_fast16_t AESCMACLPF3HSM_loadKeyAsset(AESCMAC_Handle handle, uint8_t *key);
 static int_fast16_t AESCMACLPF3HSM_CreateTempAssetID(AESCMAC_Handle handle);
-static int_fast16_t AESCMACLPF3HSM_freeAssets(AESCMAC_Handle handle);
+static int_fast16_t AESCMACLPF3HSM_freeAllAssets(AESCMAC_Handle handle);
 static int_fast16_t AESCMACLPF3HSM_freeAssetID(AESCMAC_Handle handle, uint32_t AssetID);
 #endif
 
@@ -208,6 +220,8 @@ AESCMAC_Handle AESCMAC_construct(AESCMAC_Config *config, const AESCMAC_Params *p
     }
 
     object->segmentedOperationInProgress = false;
+    object->keyAssetID                   = 0U;
+    object->tempAssetID                  = 0U;
 #endif
 
     /* If params are NULL, use defaults */
@@ -253,7 +267,7 @@ static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object)
 
     if (object->common.returnStatus == AESCMAC_STATUS_SUCCESS)
     {
-        if (object->common.key.encoding == CryptoKey_PLAINTEXT || object->common.key.encoding == CryptoKey_KEYSTORE)
+        if ((object->common.key.encoding == CryptoKey_PLAINTEXT) || (object->common.key.encoding == CryptoKey_KEYSTORE))
         {
             /* If One-step or Finalize operation, process the final input block */
             if (opcode != AESCMAC_OP_CODE_SEGMENTED)
@@ -264,7 +278,8 @@ static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object)
             AESCMACLPF3_readTag((uint32_t *)&object->intermediateTag[0]);
         }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-        else if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+        else if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+                 (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
         {
             /* Do nothing as HSM does not rely on AES engine */
         }
@@ -285,6 +300,12 @@ static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object)
                     object->common.returnStatus = AESCMAC_STATUS_MAC_INVALID;
                 }
             }
+
+            /* Zeroize the calculated MAC so that we are not keeping it in RAM unnecessarily */
+            CryptoUtils_memset((void *)&object->intermediateTag[0],
+                               sizeof(object->intermediateTag),
+                               (uint8_t)0U,
+                               sizeof(object->intermediateTag));
         }
     }
 }
@@ -296,6 +317,12 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
 {
     AESCMACLPF3_Object *object   = AESCMACLPF3_getObject(handle);
     AESCMAC_Operation *operation = object->operation;
+#if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage;
+    KeyStore_PSA_Algorithm alg;
+#endif
 
     /* Input pointer cannot be NULL if input length is non-zero */
     DebugP_assert((operation->inputLength == 0U) || operation->input);
@@ -313,7 +340,43 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
     size_t transactionLength = operation->inputLength;
 
     /* Load key */
-    AESCommonLPF3_loadKey(&object->common.key);
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT)
+    {
+        AESCommonLPF3_loadKey(&object->common.key);
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE)
+    {
+        usage = (object->operationType & AESCMAC_OP_FLAG_SIGN) ? KEYSTORE_PSA_KEY_USAGE_SIGN_MESSAGE
+                                                               : KEYSTORE_PSA_KEY_USAGE_VERIFY_MESSAGE;
+        alg   = (object->operationalMode == AESCMAC_OPMODE_CMAC) ? KEYSTORE_PSA_ALG_CMAC : KEYSTORE_PSA_ALG_CBC_MAC;
+
+        keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                           &KeyStore_keyingMaterial[0],
+                                                           sizeof(KeyStore_keyingMaterial),
+                                                           &object->keyAssetID,
+                                                           alg,
+                                                           usage);
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            AESWriteKEY(KeyStore_keyingMaterial);
+        }
+        else if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESCMAC_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else
+        {
+            return AESCMAC_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+#endif
+    else
+    {
+        /* This condition should not occur - a valid encoding is checked before this point */
+        return status;
+    }
 
     /*
      * If One-step or Finalization operation, prepare the final
@@ -417,9 +480,6 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
  */
 void AESCMACLPF3_processBlocks(const uint8_t *input, size_t transactionLength)
 {
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
-    AESProcessAlignedBlocksCMAC((const uint32_t *)input, (uint32_t)AES_GET_NUM_BLOCKS(transactionLength));
-#else
     size_t bytesProcessed                = 0;
     size_t transactionLengthDoubleBlocks = transactionLength & AES_DOUBLE_BLOCK_SIZE_MULTIPLE_MASK;
     size_t transactionLengthSingleBlocks = transactionLength & (size_t)~AES_DOUBLE_BLOCK_SIZE_MULTIPLE_MASK;
@@ -449,7 +509,6 @@ void AESCMACLPF3_processBlocks(const uint8_t *input, size_t transactionLength)
             AESWriteBUF(&input[bytesProcessed]);
         }
     }
-#endif
 }
 
 /*
@@ -668,12 +727,12 @@ int_fast16_t AESCMAC_oneStepSign(AESCMAC_Handle handle, AESCMAC_Operation *opera
 {
     int_fast16_t status;
 
-    if (key->encoding == CryptoKey_PLAINTEXT || key->encoding == CryptoKey_KEYSTORE)
+    if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCMACLPF3_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_SIGN);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCMACLPF3HSM_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_SIGN);
     }
@@ -692,12 +751,12 @@ int_fast16_t AESCMAC_oneStepVerify(AESCMAC_Handle handle, AESCMAC_Operation *ope
 {
     int_fast16_t status;
 
-    if (key->encoding == CryptoKey_PLAINTEXT || key->encoding == CryptoKey_KEYSTORE)
+    if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCMACLPF3_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_VERIFY);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCMACLPF3HSM_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_VERIFY);
     }
@@ -722,13 +781,13 @@ static int_fast16_t AESCMACLPF3_setupSegmentedOperation(AESCMACLPF3_Object *obje
      * Key material pointer and length are not asserted until adding or
      * finalizing data.
      */
-    if (key->encoding == CryptoKey_PLAINTEXT)
+    if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         /* When using the AES driver with the LAES engine */
         status = AESCommonLPF3_setupSegmentedOperation(&object->common, key);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         /* A segmented operation may have been started but not finalized yet */
         if (object->segmentedOperationInProgress)
@@ -743,6 +802,9 @@ static int_fast16_t AESCMACLPF3_setupSegmentedOperation(AESCMACLPF3_Object *obje
         object->common.returnStatus = AES_STATUS_SUCCESS;
 
         object->segmentedOperationInProgress = true;
+
+        object->keyAssetID  = 0U;
+        object->tempAssetID = 0U;
     }
 #endif
     else
@@ -783,14 +845,27 @@ int_fast16_t AESCMAC_setupSign(AESCMAC_Handle handle, const CryptoKey *key)
     {
         object->operationType = AESCMAC_OP_TYPE_SEGMENTED_SIGN;
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-        if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+        if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
         {
             /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
             if (object->hsmStatus == AESCMAC_STATUS_ERROR)
             {
                 return AESCMAC_STATUS_ERROR;
             }
+
+            if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+            {
+                return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
+            }
+
             status = AESCMACLPF3HSM_createAndLoadKeyAssetID(handle);
+
+            if (status != AESCMAC_STATUS_SUCCESS)
+            {
+                (void)AESCMACLPF3HSM_freeAllAssets(handle);
+            }
+
+            HSMLPF3_releaseLock();
         }
 #endif
     }
@@ -813,14 +888,27 @@ int_fast16_t AESCMAC_setupVerify(AESCMAC_Handle handle, const CryptoKey *key)
     {
         object->operationType = AESCMAC_OP_TYPE_SEGMENTED_VERIFY;
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-        if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+        if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
         {
             /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
             if (object->hsmStatus == AESCMAC_STATUS_ERROR)
             {
                 return AESCMAC_STATUS_ERROR;
             }
+
+            if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+            {
+                return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
+            }
+
             status = AESCMACLPF3HSM_createAndLoadKeyAssetID(handle);
+
+            if (status != AESCMAC_STATUS_SUCCESS)
+            {
+                (void)AESCMACLPF3HSM_freeAllAssets(handle);
+            }
+
+            HSMLPF3_releaseLock();
         }
 #endif
     }
@@ -840,9 +928,10 @@ int_fast16_t AESCMAC_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation
     int_fast16_t status        = AESCMAC_STATUS_ERROR;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+        (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
-        return AESCMACLPF3HSM_SegmentedOperation(handle, operation);
+        return AESCMACLPF3HSM_addData(handle, operation);
     }
 #endif
 
@@ -907,7 +996,7 @@ static inline void AESCMACLPF3_encryptZeroBlockECB(uint32_t output[AES_BLOCK_SIZ
 {
     const uint32_t zeroBlock[AES_BLOCK_SIZE_WORDS] = {0};
 
-    AESSetAUTOCFG(AESEBCLPF3_SINGLE_BLOCK_AUTOCFG);
+    AESSetAUTOCFG(AESECBLPF3_SINGLE_BLOCK_AUTOCFG);
 
     /* Write block of zeros to input */
     AESWriteBUF32(&zeroBlock[0]);
@@ -981,7 +1070,8 @@ int_fast16_t AESCMAC_finalize(AESCMAC_Handle handle, AESCMAC_Operation *operatio
     int_fast16_t status        = AESCMAC_STATUS_ERROR;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+        (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCMACLPF3HSM_finalize(handle, operation);
     }
@@ -1072,10 +1162,14 @@ void AESCMAC_close(AESCMAC_Handle handle)
     AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM &&
-        AESCMACLPF3HSM_freeAssets(handle) != AESCMAC_STATUS_SUCCESS)
+    if (object->common.key.encoding & CRYPTOKEY_HSM)
     {
-        /* empty */
+        /* Attempt to free all assets the driver created. If there is a failure,
+         * we cannot return so in this void API. This is a double-check cleanup
+         * anyways, since the driver should clean up these assets at the end of
+         * each operation.
+         */
+        (void)AESCMACLPF3HSM_freeAllAssets(handle);
     }
 #endif
 
@@ -1121,10 +1215,12 @@ int_fast16_t AESCMAC_cancelOperation(AESCMAC_Handle handle)
 
     object->segmentedOperationInProgress = false;
 
-    if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) &&
-        (AESCMACLPF3HSM_freeAssets(handle) != AESCMAC_STATUS_SUCCESS))
+    if (object->common.key.encoding & CRYPTOKEY_HSM)
     {
-        return AESCMAC_STATUS_ERROR;
+        /* Attempt to free all the assets the driver created. Whether or not this is successful,
+         * we should continue on to attempt cancellation of the operation.
+         */
+        (void)AESCMACLPF3HSM_freeAllAssets(handle);
     }
 #endif
 
@@ -1174,7 +1270,7 @@ static int_fast16_t AESCMACLPF3HSM_oneStepOperation(AESCMAC_Handle handle,
         return AESCMAC_STATUS_ERROR;
     }
 
-    if (operation->macLength > sizeof(object->intermediateTag))
+    if ((operation->macLength > sizeof(object->intermediateTag)) || (operation->macLength == 0U))
     {
         return AESCMAC_STATUS_ERROR;
     }
@@ -1191,6 +1287,8 @@ static int_fast16_t AESCMACLPF3HSM_oneStepOperation(AESCMAC_Handle handle,
     object->common.returnStatus = AESCMAC_STATUS_SUCCESS;
     /* Make internal copy of crypto key */
     object->common.key          = *key;
+    object->keyAssetID          = 0U;
+    object->tempAssetID         = 0U;
 
     /* Zero the intermediate tag because it will be used as the IV */
     CryptoUtils_memset((void *)&object->intermediateTag[0],
@@ -1198,19 +1296,711 @@ static int_fast16_t AESCMACLPF3HSM_oneStepOperation(AESCMAC_Handle handle,
                        (uint8_t)0U,
                        sizeof(object->intermediateTag));
 
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
     {
-        status = AESCMACLPF3HSM_createAndLoadKeyAssetID(handle);
+        return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
+    }
 
-        if (status == AESCMAC_STATUS_SUCCESS)
-        {
-            status = AESCMACLPF3HSM_processOneStepAndFinalizeOperation(handle);
-        }
+    status = AESCMACLPF3HSM_createAndLoadKeyAssetID(handle);
+
+    /* If input length is larger than 1 block and it is not a multiple of block-size,
+     * then a one step operation becomes a segmented operation and requires a state
+     * asset to store the intermediate state of the MAC within the HSM.
+     */
+    if ((operation->inputLength > AES_BLOCK_SIZE) && (!HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength)))
+    {
+        status = AESCMACLPF3HSM_CreateTempAssetID(handle);
+    }
+
+    if (status != AESCMAC_STATUS_SUCCESS)
+    {
+        /* In the case of failure to initialize the operation, we need to free all assets allocated.
+         * Capturing the return status of this operation is pointless since we are returning an
+         * error code anyways.
+         */
+        (void)AESCMACLPF3HSM_freeAllAssets(handle);
+
+        HSMLPF3_releaseLock();
     }
     else
     {
+        status = AESCMACLPF3HSM_performHSMOperation(handle);
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_postProcessingCommon ========
+ */
+static void AESCMACLPF3HSM_postProcessingCommon(AESCMAC_Handle handle, int_fast16_t status)
+{
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t finalStatus   = status;
+
+    if (status == AESCMAC_STATUS_SUCCESS)
+    {
+        /* For verification operations, the token will return success even if verification fails.
+         * That is because the driver is itself doing the comparison to the expected MAC.
+         * AESCMACLPF3_getResult will set object->common.returnStatus if the MACs do not match.
+         */
+        HSMLPF3_getAESCMACSignMac((void *)&object->intermediateTag[0], HSM_MAC_MAX_LENGTH);
+
+        AESCMACLPF3_getResult(object);
+
+        if (object->common.returnStatus == AESCMAC_STATUS_MAC_INVALID)
+        {
+            finalStatus = AESCMAC_STATUS_MAC_INVALID;
+        }
+        else
+        {
+            finalStatus = AESCMAC_STATUS_SUCCESS;
+        }
+    }
+
+    /* In the case the HSM returns a failure code, we need to free all assets allocated. */
+    if (AESCMACLPF3HSM_freeAllAssets(handle) != AESCMAC_STATUS_SUCCESS)
+    {
+        finalStatus = AESCMAC_STATUS_ERROR;
+    }
+
+    object->segmentedOperationInProgress = false;
+    object->common.returnStatus          = finalStatus;
+
+    HSMLPF3_releaseLock();
+
+    if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
+    {
+        object->callbackFxn(handle, object->common.returnStatus, object->operation, object->operationType);
+    }
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_processFinalBlockPostProcessing ========
+ */
+inline static void AESCMACLPF3HSM_processFinalBlockPostProcessing(uintptr_t arg0)
+{
+    AESCMAC_Handle handle  = (AESCMAC_Handle)arg0;
+    int_fast16_t status    = AESCMAC_STATUS_ERROR;
+    int32_t physicalResult = HSMLPF3_getResultCode();
+    int8_t tokenResult     = physicalResult & HSMLPF3_RETVAL_MASK;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        status = AESCMAC_STATUS_SUCCESS;
+    }
+
+    AESCMACLPF3HSM_postProcessingCommon(handle, status);
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_processFinalBlock ========
+ */
+static int_fast16_t AESCMACLPF3HSM_processFinalBlock(AESCMAC_Handle handle)
+{
+    AESCMACLPF3_Object *object   = AESCMACLPF3_getObject(handle);
+    AESCMAC_Operation *operation = object->operation;
+    int_fast16_t status          = AESCMAC_STATUS_ERROR;
+    int_fast16_t hsmRetval       = HSMLPF3_STATUS_ERROR;
+    size_t remainderLength       = operation->inputLength - object->inputLength;
+
+    (void)memset(object->finalInputBlock, 0, AES_BLOCK_SIZE);
+    (void)memcpy(object->finalInputBlock, operation->input + object->inputLength, remainderLength);
+
+    object->input       = (uint8_t *)object->finalInputBlock;
+    object->inputLength = remainderLength;
+
+    HSMLPF3_constructCMACToken(object, false, true);
+
+    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
+                                    AESCMACLPF3HSM_processFinalBlockPostProcessing,
+                                    (uintptr_t)handle);
+
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_performHSMOperationPostProcessing ========
+ */
+inline static void AESCMACLPF3HSM_performHSMOperationPostProcessing(uintptr_t arg0)
+{
+    AESCMAC_Handle handle        = (AESCMAC_Handle)arg0;
+    AESCMACLPF3_Object *object   = AESCMACLPF3_getObject(handle);
+    AESCMAC_Operation *operation = object->operation;
+    int_fast16_t status          = AESCMAC_STATUS_ERROR;
+    int32_t physicalResult       = HSMLPF3_getResultCode();
+    int8_t tokenResult           = physicalResult & HSMLPF3_RETVAL_MASK;
+    bool finalizeOp              = true;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        /* Check to see if one-step or finalize operations still have a remaining chunk to process. */
+        if ((operation->inputLength > AES_BLOCK_SIZE) &&
+            (!HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength)))
+        {
+            status = AESCMACLPF3HSM_processFinalBlock(handle);
+
+            if (status == AESCMAC_STATUS_SUCCESS)
+            {
+                finalizeOp = false;
+            }
+        }
+        else
+        {
+            status = AESCMAC_STATUS_SUCCESS;
+        }
+    }
+
+    if (finalizeOp)
+    {
+        AESCMACLPF3HSM_postProcessingCommon(handle, status);
+    }
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_performHSMOperation ========
+ */
+static int_fast16_t AESCMACLPF3HSM_performHSMOperation(AESCMAC_Handle handle)
+{
+    AESCMACLPF3_Object *object   = AESCMACLPF3_getObject(handle);
+    AESCMAC_Operation *operation = object->operation;
+    int_fast16_t status          = AESCMAC_STATUS_ERROR;
+    int_fast16_t hsmRetval       = HSMLPF3_STATUS_ERROR;
+    bool isNew                   = true;
+    bool isFinal                 = true;
+
+    /* If operation is a segmented operation (this include finalize operations too) then,
+     *  determine the values of isNew and isFinal based on whether the tempAsset has been created or not.
+     */
+    if ((object->operationType != AESCMAC_OP_TYPE_SIGN) && (object->operationType != AESCMAC_OP_TYPE_VERIFY))
+    {
+        if (object->tempAssetID == 0U)
+        {
+            status = AESCMACLPF3HSM_CreateTempAssetID(handle);
+        }
+        else
+        {
+            isNew = false;
+        }
+
+        /* If the operation is segmented, the user has to call #AESCMAC_finalize and therefore, the driver does not
+         * finalize the HSM operations yet. */
+        if ((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
+            (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY))
+        {
+            isFinal = false;
+        }
+    }
+
+    /* The AESCMAC-HSM operations can be summed up in 3 scenarios:
+     *  1. Operation input length (total length) is zero or less than AES_BLOCK_SIZE in which case the driver copies
+     *  the user data into an internal buffer for the HSM to process in ONE token.
+     *      - This applies to AESCMAC_oneStepSign, AESCMAC_oneStepVerify, and AESCMAC_finalize operations.
+     *  2. Operation input length (total length) is a block-size-multiple in which case the driver uses the user's
+     *  buffer for HSM to process in ONE token.
+     *      - This applies to AESCMAC_oneStepSign, AESCMAC_oneStepVerify, AESCMAC_finalize operations.
+     *      - This is also a rule for AESCMAC_addData operations.
+     *  3. Operation input length (total length) is a larger than AES_BLOCK_SIZE and non-block-size-multiple in
+     *  which case the driver truncates the last non-block-size-aligned input and for the HSM to process in the FIRST
+     *  token. A SECOND token is expected to contain the remainder data copied into an internal buffer for the HSM to
+     *  process it.
+     *      - This applies to AESCMAC_oneStepSign, AESCMAC_oneStepVerify, AESCMAC_finalize operations.
+     */
+    if (operation->inputLength < AES_BLOCK_SIZE)
+    {
+        (void)memset(object->finalInputBlock, 0, AES_BLOCK_SIZE);
+        (void)memcpy(object->finalInputBlock, operation->input, operation->inputLength);
+
+        object->input       = (uint8_t *)object->finalInputBlock;
+        object->inputLength = operation->inputLength;
+    }
+    else if (HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength))
+    {
+        /* Get block-size aligned input length */
+        object->input       = operation->input;
+        object->inputLength = operation->inputLength;
+    }
+    else
+    {
+        /* Get block-size aligned input length */
+        object->input       = operation->input;
+        object->inputLength = operation->inputLength & AES_BLOCK_SIZE_MULTIPLE_MASK;
+
+        isFinal = false;
+    }
+
+    HSMLPF3_constructCMACToken(object, isNew, isFinal);
+
+    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
+                                    AESCMACLPF3HSM_performHSMOperationPostProcessing,
+                                    (uintptr_t)handle);
+
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
+    {
+        /* In the case of failure to initialize the operation, we need to free all assets allocated
+         * Capturing the return status of this operation is pointless since we are returning an
+         * error code anyways.
+         */
+        (void)AESCMACLPF3HSM_freeAllAssets(handle);
+
+        HSMLPF3_releaseLock();
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_createAndLoadKeyAssetID ========
+ */
+static int_fast16_t AESCMACLPF3HSM_createAndLoadKeyAssetID(AESCMAC_Handle handle)
+{
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    uint8_t *keyMaterial       = NULL;
+    #if (ENABLE_KEY_STORAGE == 1)
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage = (object->operationType & AESCMAC_OP_FLAG_SIGN)
+                                      ? KEYSTORE_PSA_KEY_USAGE_SIGN_MESSAGE
+                                      : KEYSTORE_PSA_KEY_USAGE_VERIFY_MESSAGE;
+    KeyStore_PSA_Algorithm alg  = (object->operationalMode == AESCMAC_OPMODE_CMAC) ? KEYSTORE_PSA_ALG_CMAC
+                                                                                   : KEYSTORE_PSA_ALG_CBC_MAC;
+    #endif
+
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    {
+        keyMaterial = object->common.key.u.plaintext.keyMaterial;
+    }
+    #if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyMaterial = &KeyStore_keyingMaterial[0];
+
+        status = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                   &KeyStore_keyingMaterial[0],
+                                                   sizeof(KeyStore_keyingMaterial),
+                                                   &object->keyAssetID,
+                                                   alg,
+                                                   usage);
+
+        if (status != KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            return status;
+        }
+        else if (object->keyAssetID != 0)
+        {
+            /* In this case, we already retrieved an asset from KeyStore,
+             * so we don't need the driver to create and load an asset itself.
+             * We must mark this before validating key sizes to ensure we cleanup
+             * properly in the case that key size validation fails.
+             */
+            object->driverCreatedKeyAsset = false;
+        }
+        else
+        {
+            /* Key material has been retrieved in plaintext */
+        }
+    }
+    #endif
+    else
+    {
+        /* A valid encoding is checked before this point, so this condition should not happen */
         status = AESCMAC_STATUS_ERROR;
     }
+
+    /* If we haven't already retrieved an asset directly from KeyStore, then the driver
+     * will have to create and load an asset itself.
+     */
+    if (object->keyAssetID == 0)
+    {
+        status = AESCMACLPF3HSM_createKeyAsset(handle);
+        if (status == AESCMAC_STATUS_SUCCESS)
+        {
+            /* Now that the driver has successfully created an asset, object->keyAssetID is now non-zero.
+             * If any failure condition happens after this moment, the cleanup will expect
+             * object->driverCreatedKeyAsset to be accurate, since the keyAssetID will reflect that there
+             * is an asset to free, and the cleanup will need to know how to do that.
+             */
+            object->driverCreatedKeyAsset = true;
+
+            status = AESCMACLPF3HSM_loadKeyAsset(handle, keyMaterial);
+        }
+        else
+        {
+            /* object->keyAssetID is still 0, so cleanup knows there's no asset to free */
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_CreateKeyAssetPostProcessing ========
+ */
+static inline void AESCMACLPF3HSM_CreateKeyAssetPostProcessing(uintptr_t arg0)
+{
+    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int32_t physicalResult     = HSMLPF3_getResultCode();
+    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        object->keyAssetID = HSMLPF3_getResultAssetID();
+        status             = AESCMAC_STATUS_SUCCESS;
+    }
+
+    object->common.returnStatus = status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_createKeyAsset ========
+ */
+static int_fast16_t AESCMACLPF3HSM_createKeyAsset(AESCMAC_Handle handle)
+{
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    uint64_t assetPolicy       = 0U;
+    uint32_t keyLength         = 0U;
+
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    {
+        keyLength = object->common.key.u.plaintext.keyLength;
+    }
+    #if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyLength = object->common.key.u.keyStore.keyLength;
+    }
+    #endif
+
+    /* Operation (Lower 16-bits + general Operation) + Direction + Mode */
+    assetPolicy = EIP130_ASSET_POLICY_SYM_BASE | EIP130_ASSET_POLICY_SCUIMACCIPHER | EIP130_ASSET_POLICY_SCACAES |
+                  EIP130_ASSET_POLICY_SCDIRENCGEN;
+
+    if (object->operationalMode == AESCMAC_OPMODE_CMAC)
+    {
+        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCMAC;
+    }
+    else
+    {
+        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCBCMAC;
+    }
+
+    HSMLPF3_constructCreateAssetToken(assetPolicy, keyLength);
+
+    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
+                                    AESCMACLPF3HSM_CreateKeyAssetPostProcessing,
+                                    (uintptr_t)handle);
+
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_loadKeyAssetPostProcessing ========
+ */
+static inline void AESCMACLPF3HSM_loadKeyAssetPostProcessing(uintptr_t arg0)
+{
+    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int32_t physicalResult     = HSMLPF3_getResultCode();
+    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        status = AESCMAC_STATUS_SUCCESS;
+    }
+
+    object->hsmStatus = status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_loadKeyAsset ========
+ */
+static int_fast16_t AESCMACLPF3HSM_loadKeyAsset(AESCMAC_Handle handle, uint8_t *key)
+{
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    uint32_t keyLength         = 0U;
+
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    {
+        keyLength = object->common.key.u.plaintext.keyLength;
+    }
+    #if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyLength = object->common.key.u.keyStore.keyLength;
+    }
+    #endif
+
+    HSMLPF3_constructLoadPlaintextAssetToken(key, keyLength, object->keyAssetID);
+
+    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
+                                    AESCMACLPF3HSM_loadKeyAssetPostProcessing,
+                                    (uintptr_t)handle);
+
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_createTempAssetPostProcessing ========
+ */
+static inline void AESCMACLPF3HSM_createTempAssetPostProcessing(uintptr_t arg0)
+{
+    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int32_t physicalResult     = HSMLPF3_getResultCode();
+    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        object->tempAssetID = HSMLPF3_getResultAssetID();
+        status              = AESCMAC_STATUS_SUCCESS;
+    }
+
+    object->common.returnStatus = status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_CreateTempAssetID ========
+ */
+static int_fast16_t AESCMACLPF3HSM_CreateTempAssetID(AESCMAC_Handle handle)
+{
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    uint64_t assetPolicy       = 0U;
+
+    /* Operation (Lower 16-bits + general Operation) + Mode. */
+    assetPolicy = EIP130_ASSET_POLICY_SYM_TEMP | EIP130_ASSET_POLICY_SCUIMACCIPHER | EIP130_ASSET_POLICY_SCACAES |
+                  EIP130_ASSET_POLICY_SCDIRENCGEN;
+
+    if (object->operationalMode == AESCMAC_OPMODE_CMAC)
+    {
+        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCMAC;
+    }
+    else
+    {
+        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCBCMAC;
+    }
+
+    HSMLPF3_constructCreateAssetToken(assetPolicy, HSM_MAC_MAX_LENGTH);
+
+    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
+                                    AESCMACLPF3HSM_createTempAssetPostProcessing,
+                                    (uintptr_t)handle);
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_freeAllAssets ========
+ */
+static int_fast16_t AESCMACLPF3HSM_freeAllAssets(AESCMAC_Handle handle)
+{
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCCM_STATUS_SUCCESS;
+
+    object->common.cryptoResourceLocked = true;
+
+    if ((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
+        (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY))
+    {
+        return AESCCM_STATUS_SUCCESS;
+    }
+
+    if (object->keyAssetID != 0U)
+    {
+        /* If the object has a stored keyAssetID, then driverCreatedKeyAsset MUST
+         * be set. It can only be false if KeyStore is enabled. If it is false,
+         * it means that we retrieved an asset directly from KeyStore, so the
+         * driver should not free the asset. Instead, the driver should direct
+         * KeyStore to free the asset (which will perform the necessary persistence
+         * check and only free the asset if it should be freed).
+         */
+        if (object->driverCreatedKeyAsset == true)
+        {
+            status = AESCMACLPF3HSM_freeAssetID(handle, object->keyAssetID);
+        }
+    #if (ENABLE_KEY_STORAGE == 1)
+        else
+        {
+            KeyStore_PSA_KeyFileId keyID;
+
+            GET_KEY_ID(keyID, object->common.key.u.keyStore.keyID);
+
+            status = KeyStore_PSA_assetPostProcessing(keyID);
+        }
+
+        if (status == AESCMAC_STATUS_SUCCESS)
+        {
+            object->keyAssetID = 0;
+        }
+    #endif
+    }
+
+    if (object->tempAssetID != 0)
+    {
+        status = AESCMACLPF3HSM_freeAssetID(handle, object->tempAssetID);
+        if (status == AESCMAC_STATUS_SUCCESS)
+        {
+            object->tempAssetID = 0U;
+        }
+    }
+
+    object->common.cryptoResourceLocked = false;
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_FreeAssetPostProcessing ========
+ */
+static inline void AESCMACLPF3HSM_FreeAssetPostProcessing(uintptr_t arg0)
+{
+    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+    int32_t physicalResult     = HSMLPF3_getResultCode();
+    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
+
+    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
+    {
+        status = AESCMAC_STATUS_SUCCESS;
+    }
+
+    object->common.returnStatus = status;
+
+    if ((status == AESCMAC_STATUS_ERROR) && (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK))
+    {
+        object->callbackFxn(handle, object->common.returnStatus, object->operation, object->operationType);
+    }
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_freeAssetID ========
+ */
+static int_fast16_t AESCMACLPF3HSM_freeAssetID(AESCMAC_Handle handle, uint32_t AssetID)
+{
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCMAC_STATUS_SUCCESS;
+    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
+
+    HSMLPF3_constructDeleteAssetToken(AssetID);
+
+    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
+                                    AESCMACLPF3HSM_FreeAssetPostProcessing,
+                                    (uintptr_t)handle);
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            status = object->common.returnStatus;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== AESCMACLPF3HSM_addData ========
+ */
+static int_fast16_t AESCMACLPF3HSM_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation)
+{
+    DebugP_assert(handle);
+    DebugP_assert(operation);
+
+    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
+    int_fast16_t status        = AESCMAC_STATUS_ERROR;
+
+    /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
+    if (object->hsmStatus == AESCMAC_STATUS_ERROR)
+    {
+        return AESCMAC_STATUS_ERROR;
+    }
+
+    /* Assert the segmented operation was setup */
+    DebugP_assert((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
+                  (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY));
+
+    /* Check for previous failure or cancellation of segmented operation */
+    if (object->common.returnStatus != AESCMAC_STATUS_SUCCESS)
+    {
+        /* Return the status of the previous call.
+         * The callback function will not be executed.
+         */
+        return object->common.returnStatus;
+    }
+
+    if ((operation->inputLength == 0U) || (!HSM_IS_SIZE_MULTIPLE_OF_AES_BLOCK_SIZE(operation->inputLength)))
+    {
+        return AESCMAC_STATUS_ERROR;
+    }
+
+    object->operation = operation;
+
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
+    {
+        return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
+    }
+
+    status = AESCMACLPF3HSM_performHSMOperation(handle);
 
     return status;
 }
@@ -1264,558 +2054,12 @@ static int_fast16_t AESCMACLPF3HSM_finalize(AESCMAC_Handle handle, AESCMAC_Opera
         object->operationType = AESCMAC_OP_TYPE_FINALIZE_VERIFY;
     }
 
-    status = AESCMACLPF3HSM_processOneStepAndFinalizeOperation(handle);
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_CreateKeyAssetPostProcessing ========
- */
-static inline void AESCMACLPF3HSM_CreateKeyAssetPostProcessing(uintptr_t arg0)
-{
-    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int32_t physicalResult     = HSMLPF3_getResultCode();
-    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        object->keyAssetID = HSMLPF3_getResultAssetID();
-        status             = AESCMAC_STATUS_SUCCESS;
-    }
-
-    object->common.returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-}
-
-/*
- *  ======== AESCMACLPF3HSM_createKeyAssetID ========
- */
-static int_fast16_t AESCMACLPF3HSM_createKeyAsset(AESCMAC_Handle handle)
-{
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    uint64_t assetPolicy       = 0U;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
     {
         return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    /* Operation (Lower 16-bits + general Operation) + Direction + Mode */
-    assetPolicy = EIP130_ASSET_POLICY_SYM_BASE | EIP130_ASSET_POLICY_SCUIMACCIPHER | EIP130_ASSET_POLICY_SCACAES |
-                  EIP130_ASSET_POLICY_SCDIRENCGEN;
-
-    if (object->operationalMode == AESCMAC_OPMODE_CMAC)
-    {
-        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCMAC;
-    }
-    else
-    {
-        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCBCMAC;
-    }
-
-    HSMLPF3_constructCreateAssetToken(assetPolicy, (uint32_t)object->common.key.u.plaintext.keyLength);
-
-    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
-                                    AESCMACLPF3HSM_CreateKeyAssetPostProcessing,
-                                    (uintptr_t)handle);
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_LoadKeyAssetPostProcessing ========
- */
-static inline void AESCMACLPF3HSM_LoadKeyAssetPostProcessing(uintptr_t arg0)
-{
-    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int32_t physicalResult     = HSMLPF3_getResultCode();
-    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        status = AESCMAC_STATUS_SUCCESS;
-    }
-
-    object->hsmStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-}
-
-/*
- *  ======== AESCMACLPF3HSM_createKeyAssetID ========
- */
-static int_fast16_t AESCMACLPF3HSM_LoadKeyAsset(AESCMAC_Handle handle)
-{
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    HSMLPF3_constructLoadPlaintextAssetToken(object->common.key.u.plaintext.keyMaterial,
-                                             object->common.key.u.plaintext.keyLength,
-                                             object->keyAssetID);
-
-    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
-                                    AESCMACLPF3HSM_LoadKeyAssetPostProcessing,
-                                    (uintptr_t)handle);
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_createAndLoadKeyAssetID ========
- */
-static int_fast16_t AESCMACLPF3HSM_createAndLoadKeyAssetID(AESCMAC_Handle handle)
-{
-    int_fast16_t status = AESCMAC_STATUS_ERROR;
-
-    status = AESCMACLPF3HSM_createKeyAsset(handle);
-    if (status == AESCMAC_STATUS_SUCCESS)
-    {
-        status = AESCMACLPF3HSM_LoadKeyAsset(handle);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_CreateTempAssetPostProcessing ========
- */
-static inline void AESCMACLPF3HSM_CreateTempAssetPostProcessing(uintptr_t arg0)
-{
-    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int32_t physicalResult     = HSMLPF3_getResultCode();
-    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        object->tempAssetID = HSMLPF3_getResultAssetID();
-        status              = AESCMAC_STATUS_SUCCESS;
-    }
-
-    object->common.returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-}
-
-static int_fast16_t AESCMACLPF3HSM_CreateTempAssetID(AESCMAC_Handle handle)
-{
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    uint64_t assetPolicy       = 0U;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    /* Operation (Lower 16-bits + general Operation) + Direction + Mode */
-    assetPolicy = EIP130_ASSET_POLICY_SYM_TEMP | EIP130_ASSET_POLICY_SCUIMACCIPHER | EIP130_ASSET_POLICY_SCACAES |
-                  EIP130_ASSET_POLICY_SCDIRENCGEN;
-
-    if (object->operationalMode == AESCMAC_OPMODE_CMAC)
-    {
-        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCMAC;
-    }
-    else
-    {
-        assetPolicy |= EIP130_ASSET_POLICY_SCMCMCBCMAC;
-    }
-
-    HSMLPF3_constructCreateAssetToken(assetPolicy, AES_BLOCK_SIZE);
-
-    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
-                                    AESCMACLPF3HSM_CreateTempAssetPostProcessing,
-                                    (uintptr_t)handle);
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_oneStepAndFinalizePostProcessing ========
- */
-static inline void AESCMACLPF3HSM_oneStepAndFinalizePostProcessing(uintptr_t arg0)
-{
-    AESCMAC_Handle handle        = (AESCMAC_Handle)arg0;
-    AESCMACLPF3_Object *object   = AESCMACLPF3_getObject(handle);
-    AESCMAC_Operation *operation = object->operation;
-    int32_t physicalResult       = HSMLPF3_getResultCode();
-    int8_t tokenResult           = physicalResult & HSMLPF3_RETVAL_MASK;
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        HSMLPF3_getAESCMACSignMac((void *)&object->intermediateTag[0], operation->macLength);
-
-        object->common.returnStatus = AESCMAC_STATUS_SUCCESS;
-
-        AESCMACLPF3_getResult(object);
-    }
-    else
-    {
-        object->common.returnStatus = AESCMAC_STATUS_ERROR;
-    }
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    if (AESCMACLPF3HSM_freeAssets(handle) == AESCMAC_STATUS_ERROR)
-    {
-        object->common.returnStatus = AESCMAC_STATUS_ERROR;
-    }
-
-    object->segmentedOperationInProgress = false;
-
-    if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
-    {
-        object->callbackFxn(handle, object->common.returnStatus, object->operation, object->operationType);
-    }
-}
-
-/*
- *  ======== AESCMACLPF3HSM_processOneStepAndFinalizeOperation ========
- */
-static int_fast16_t AESCMACLPF3HSM_processOneStepAndFinalizeOperation(AESCMAC_Handle handle)
-{
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    HSMLPF3_constructAESCMACOneStepPhysicalToken(object);
-
-    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
-                                    AESCMACLPF3HSM_oneStepAndFinalizePostProcessing,
-                                    (uintptr_t)handle);
-
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_freeAssets ========
- */
-static int_fast16_t AESCMACLPF3HSM_freeAssets(AESCMAC_Handle handle)
-{
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-
-    object->common.cryptoResourceLocked = true;
-
-    if (object->keyAssetID != 0U)
-    {
-        status = AESCMACLPF3HSM_freeAssetID(handle, object->keyAssetID);
-        if (status != AESCMAC_STATUS_ERROR)
-        {
-            object->keyAssetID = 0U;
-        }
-    }
-
-    if (object->tempAssetID != 0)
-    {
-        status = AESCMACLPF3HSM_freeAssetID(handle, object->tempAssetID);
-        if (status != AESCMAC_STATUS_ERROR)
-        {
-            object->tempAssetID = 0U;
-        }
-    }
-
-    object->common.cryptoResourceLocked = false;
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_FreeAssetPostProcessing ========
- */
-static inline void AESCMACLPF3HSM_FreeAssetPostProcessing(uintptr_t arg0)
-{
-    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int32_t physicalResult     = HSMLPF3_getResultCode();
-    int8_t tokenResult         = physicalResult & HSMLPF3_RETVAL_MASK;
-
-    if (tokenResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        status = AESCMAC_STATUS_SUCCESS;
-    }
-
-    if (status == AESCMAC_STATUS_ERROR)
-    {
-        object->common.returnStatus = status;
-    }
-
-    if ((HSMLPF3_ReturnBehavior)object->common.returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    if (status == AESCMAC_STATUS_ERROR && object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
-    {
-        object->callbackFxn(handle, object->common.returnStatus, object->operation, object->operationType);
-    }
-}
-
-/*
- *  ======== AESCMACLPF3HSM_freeAssetID ========
- */
-static int_fast16_t AESCMACLPF3HSM_freeAssetID(AESCMAC_Handle handle, uint32_t AssetID)
-{
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_SUCCESS;
-    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
-
-    if ((HSMLPF3_ReturnBehavior)object->common.returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-        {
-            return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
-        }
-
-        Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    HSMLPF3_constructDeleteAssetToken(AssetID);
-
-    hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
-                                    AESCMACLPF3HSM_FreeAssetPostProcessing,
-                                    (uintptr_t)handle);
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (((HSMLPF3_ReturnBehavior)object->common.returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING) &&
-        (hsmRetval != HSMLPF3_STATUS_SUCCESS))
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_SegmentedOperation ========
- */
-static int_fast16_t AESCMACLPF3HSM_SegmentedOperation(AESCMAC_Handle handle, AESCMAC_Operation *operation)
-{
-    DebugP_assert(handle);
-    DebugP_assert(operation);
-
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-
-    /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
-    if (object->hsmStatus == AESCMAC_STATUS_ERROR)
-    {
-        return AESCMAC_STATUS_ERROR;
-    }
-
-    /* Assert the segmented operation was setup */
-    DebugP_assert((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
-                  (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY));
-
-    /* Check for previous failure or cancellation of segmented operation */
-    if (object->common.returnStatus != AESCMAC_STATUS_SUCCESS)
-    {
-        /* Return the status of the previous call.
-         * The callback function will not be executed.
-         */
-        return object->common.returnStatus;
-    }
-
-    if ((operation->inputLength == 0U) || (AES_NON_BLOCK_SIZE_MULTIPLE_LENGTH(operation->inputLength) > 0U))
-    {
-        return AESCMAC_STATUS_ERROR;
-    }
-
-    object->operation = operation;
-
-    status = AESCMACLPF3HSM_processSegmentedOperation(handle);
-
-    return status;
-}
-
-/*
- *  ======== AESCMACLPF3HSM_segmentedPostProcessing ========
- */
-static inline void AESCMACLPF3HSM_segmentedPostProcessing(uintptr_t arg0)
-{
-    AESCMAC_Handle handle      = (AESCMAC_Handle)arg0;
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_ERROR;
-    int32_t physicalResult     = HSMLPF3_getResultCode();
-
-    if (physicalResult == EIP130TOKEN_RESULT_SUCCESS)
-    {
-        status = AESCMAC_STATUS_SUCCESS;
-    }
-
-    object->common.returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    if (object->common.returnBehavior == AES_RETURN_BEHAVIOR_CALLBACK)
-    {
-        object->callbackFxn(handle, object->common.returnStatus, object->operation, object->operationType);
-    }
-}
-
-static int_fast16_t AESCMACLPF3HSM_processSegmentedOperation(AESCMAC_Handle handle)
-{
-    AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCMAC_STATUS_SUCCESS;
-    int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
-    bool isInitWithDefault     = true;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return AESCMAC_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    if (object->tempAssetID == 0U)
-    {
-        HSMLPF3_releaseLock();
-        status = AESCMACLPF3HSM_CreateTempAssetID(handle);
-    }
-    else
-    {
-        isInitWithDefault = false;
-    }
-
-    HSMLPF3_constructAESCMACUpdatePhysicalToken(object, isInitWithDefault);
-
-    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
-                                    AESCMACLPF3HSM_segmentedPostProcessing,
-                                    (uintptr_t)handle);
-
-    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-    {
-        hsmRetval = HSMLPF3_waitForResult();
-
-        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
-        {
-            status = object->common.returnStatus;
-        }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
+    status = AESCMACLPF3HSM_performHSMOperation(handle);
 
     return status;
 }

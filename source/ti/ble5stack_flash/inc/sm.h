@@ -620,7 +620,7 @@ extern void SM_SetECCRegenerationCount(uint8 count);
    *
    * @return      events not processed
    */
-  extern uint16 SM_ProcessEvent( uint8 task_id, uint16 events );
+  extern uint32 SM_ProcessEvent( uint8 task_id, uint32 events );
 
   /**
    * @internal

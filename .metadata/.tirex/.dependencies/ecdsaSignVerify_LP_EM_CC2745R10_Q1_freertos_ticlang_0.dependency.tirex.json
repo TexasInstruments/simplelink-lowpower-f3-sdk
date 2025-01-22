@@ -1,0 +1,14 @@
+[
+    {
+        "files": [
+            "+../../ecdsaSignVerify.c -> ecdsaSignVerify.c",
+            "+../../ecdsaTestVector.c -> ecdsaTestVector.c",
+            "+../../ecdsaTestVector.h -> ecdsaTestVector.h",
+            "+../../README.md -> README.md",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../ecdsaSignVerify.syscfg -> ecdsaSignVerify.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+        ]
+    }
+]

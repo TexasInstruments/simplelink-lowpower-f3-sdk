@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,30 +45,12 @@
 /* IAR includes */
 #include <intrinsics.h>
 
-// Forward declaration of the default fault and interrupt handlers.
-static void nmiISR(void);
-static void faultISR(void);
-static void intDefaultHandler(void);
-
-// FreeRTOS handlers
-extern void vPortSVCHandler(void);
-extern void xPortPendSVHandler(void);
-extern void xPortSysTickHandler(void);
-
 //*****************************************************************************
 //
 // The entry point for the application startup code.
 //
 //*****************************************************************************
-extern void __iar_program_start(void);
 int localProgramStart(void);
-
-//*****************************************************************************
-//
-// Linker variable that marks the top of the stack.
-//
-//*****************************************************************************
-extern const void *STACK_TOP;
 
 // Place something in the CSTACK segment to get the stack check feature
 // to work as expected
@@ -76,47 +58,10 @@ __root static void *dummy_stack @ ".stack";
 
 //*****************************************************************************
 //
-// The vector table in Flash. Note that the proper constructs must be placed
-// on this to ensure that it ends up at physical address 0x0000.0000.
+// Reset vectors defined and populated in SysConfig.
 //
 //*****************************************************************************
-__root void (*const __vector_table[])(void) @ ".resetVecs" = {
-    (void (*)(void)) & STACK_TOP, // The initial stack pointer
-    __iar_program_start,          //  1 The reset handler
-    nmiISR,                       //  2 The NMI handler
-    faultISR,                     //  3 The hard fault handler
-    intDefaultHandler,            //  4 Reserved
-    intDefaultHandler,            //  5 Reserved
-    intDefaultHandler,            //  6 The usage fault handler
-    intDefaultHandler,            //  7 Reserved
-    intDefaultHandler,            //  8 Reserved
-    intDefaultHandler,            //  9 Reserved
-    intDefaultHandler,            // 10 Reserved
-    vPortSVCHandler,              // 11 SVCall handler
-    intDefaultHandler,            // 12 Debug monitor handler
-    intDefaultHandler,            // 13 Reserved
-    xPortPendSVHandler,           // 14 The PendSV handler
-    xPortSysTickHandler,          // 15 The SysTick handler
-    intDefaultHandler,            // 16 CPUIRQ0
-    intDefaultHandler,            // 17 CPUIRQ1
-    intDefaultHandler,            // 18 CPUIRQ2
-    intDefaultHandler,            // 19 CPUIRQ3
-    intDefaultHandler,            // 20 CPUIRQ4
-    intDefaultHandler,            // 21 GPIO event interrupt
-    intDefaultHandler,            // 22 LRF interrupt 0
-    intDefaultHandler,            // 23 LRF interrupt 1
-    intDefaultHandler,            // 24 uDMA done events
-    intDefaultHandler,            // 25 AES interrupt
-    intDefaultHandler,            // 26 SPI0 combined interrupt
-    intDefaultHandler,            // 27 UART0 combined interrupt
-    intDefaultHandler,            // 28 I2C0 combined interrupt
-    intDefaultHandler,            // 29 LGPT0 interrupt
-    intDefaultHandler,            // 30 LGPT1 interrupt
-    intDefaultHandler,            // 31 ADC interrupt
-    intDefaultHandler,            // 32 CPUIRQ16
-    intDefaultHandler,            // 33 LGPT2 interrupt
-    intDefaultHandler,            // 34 LGPT3 interrupt
-};
+extern void (*const __vector_table[])(void);
 
 //*****************************************************************************
 //
@@ -164,44 +109,4 @@ int __low_level_init(void)
 
     /* Indicate that static and global variables shall be initialized */
     return 1;
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives an NMI.  This
-// simply enters an infinite loop, preserving the system state for examination
-// by a debugger.
-//
-//*****************************************************************************
-static void nmiISR(void)
-{
-    /* Enter an infinite loop. */
-    while (1) {}
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives a fault
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
-static void faultISR(void)
-{
-    /* Enter an infinite loop. */
-    while (1) {}
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives an unexpected
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
-
-static void intDefaultHandler(void)
-{
-    /* Enter an infinite loop. */
-    while (1) {}
 }

@@ -406,7 +406,7 @@
 
 // SID filtering
 #define AE_EXT_SID_FILTERING_ENTRY_EMPTY                    -1
-#define AE_EXT_SID_FILTERING_TIMEOUT                        RAT_TICKS_IN_1S * 5;
+#define AE_EXT_SID_FILTERING_TIMEOUT                        RAT_TICKS_IN_1S * 2;
 
 // Advertising Event Types for Legacy PDUs
 #define AE_EXT_ADV_RPT_EVT_TYPE_ADV_IND                     AE_EVT_TYPE_LEGACY    | \
@@ -458,13 +458,6 @@
 // Parameters to indicate if common data set operation is for Adv, Scan Response or update during Adv
 #define LE_AE_EXT_DATA_CMD_ADV                              0
 #define LE_AE_EXT_DATA_CMD_SCAN_RSP                         1
-#define LE_AE_EXT_DATA_CMD_ADV_LAST_CMD_DONE                2
-#define LE_AE_EXT_DATA_CMD_SCAN_LAST_CMD_DONE               3
-
-// Flags to identify which data was updated
-#define LE_AE_EXT_DATA_NO_PENDING                           0
-#define LE_AE_EXT_DATA_ADV_PENDING                          1
-#define LE_AE_EXT_DATA_SCAN_RSP_PENDING                     2
 
 // Indicate that the adv data was not changed during advertising
 #define EXT_DATA_NO_UPDATE_DURING_ADV                       0xFF
@@ -1230,6 +1223,7 @@ typedef struct
   uint8  lastScanRsp;            // indicate chain after AUX or after SCAN RSP
   uint8  directed;               // Indicate if received adv is directed or not
   uint8  advAddr[B_ADDR_LEN];    // advertising address
+  uint8  addrType;               // address type given by the advertiser
 }extScanReportState_t;
 
 //
@@ -1409,9 +1403,9 @@ struct advSet_t
   uint8           fragLen;                        // length of fragment
   uint8           lastFragLen;                    // length of last fragment
   uint8           numFrags;                       // number of advertising data fragments
-  aeSetDataCmd_t  *pPendingData;                  // pointer to the ext data that is pending while adv is on
-  uint8           pendingDataUpdate;              // flag to signal if there is a pending data update
 #endif
+  aeSetDataCmd_t  *pPendingAdvData;               // pointer to the ext data that is pending while adv is on
+  aeSetDataCmd_t  *pPendingScanRspData;           // pointer to the scan rsp data that is pending while adv is on
   uint16          dataLen;                        // original length of data
   uint8          *pData;                          // pointer to raw data
   // ISR Related
@@ -1806,6 +1800,7 @@ extern llStatus_t    LL_AE_RegCBack( uint8 cBackId, void * );
 extern advSet_t     *LL_GetAdvSet( uint8, uint8 );
 extern uint8         LL_CountAdvSets( uint8 );
 extern void          LL_DisableAdvSets( void );
+extern void          LL_AE_SetPendingData( advSet_t * );
 #ifdef USE_PERIODIC_ADV
 extern llPeriodicAdvSet_t *llGetPeriodicAdv( uint8 handle );
 extern llPeriodicAdvSet_t *llGetCurrentPeriodicAdv( void );
@@ -1911,8 +1906,13 @@ extern uint8 llFlushIgnoredRxEntry(uint8 ignoreBit);
 extern void llSetRxCfg(void);
 void  *llFindNextPeriodicScan( void );
 uint32 llReturnCurrentPeriodicStartTime();
+uint16 llReturnMinConnInterval( aeCreateConnCmd_t *pCmdParams);
 uint8  llUpdateSIDFilterScanRsp(uint8, uint8, uint8);
 void   llSetSIDFilterScanRsp(void);
+uint32 llExtAdvTxTime(advSet_t* pAdvSet, uint8 primPhy, uint8 secPhy);
+uint32 llEstimateAuxOtaTime(advSet_t * pAdvSet, uint8 secPhy);
+void   llSetExtHdrFlags( aeSetDataCmd_t *pCmdParams );
+
 /*******************************************************************************
  */
 

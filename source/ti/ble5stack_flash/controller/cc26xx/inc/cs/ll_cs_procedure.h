@@ -78,6 +78,7 @@
  */
 #include "ll_cs_common.h"
 #include "ll_csdrbg.h"
+#include "ll_cs_rcl.h"
 
 /*******************************************************************************
  * MACROS
@@ -185,13 +186,9 @@ void llCsFreeAll(void);
 void llCsSetFeatureBit(void);
 
 /*******************************************************************************
- * @fn          llCsSetupStepList
+ * @fn          llCsInitProcedureStepList
  *
- * @brief       This API builds the Step List
- * Double Buffer for the RF. The function selects the Step Modes to
- * build, then calls the internal function llCsSetupStep that
- * builds the step. This function allocates the Channel Index
- * Arrays Mode0ChIdxArray and NonMode0ChIdxArray.
+ * @brief       Initializes the Step List, step num and channel arrays
  *
  * @design      BLE_LOKI-506
  *
@@ -210,7 +207,37 @@ void llCsSetFeatureBit(void);
  *              LL_CS_STATUS_INVALID_CONN_PTR - invalid connection pointer
  *              LL_CS_STATUS_SUCCESS
  */
-csStatus_e llCsSetupStepList(uint16 connId, uint8 configId, uint8 isfirstSE);
+csStatus_e llCsInitProcedureStepList(uint16 connId, uint8 configId, uint8 isfirstSE);
+
+/*******************************************************************************
+ * @fn          llCsSetupStepBuffers
+ *
+ * @brief       Setup Step Buffers
+ * Setup Step Buffers for a new or an ongiong subevent.
+ * If a new subevent, the first buffer is built and begins with mode 0 steps.
+ * The second buffer is optional, depends on the availability of a second buffer.
+ * If it's an ongoing subevent, always opt to use csStepsBuff1, since we don't
+ * want it to begin with mode 0 steps.
+ *
+ * input parameters
+ *
+ * @param       connId       - Connection Id
+ * @param       configId     - CS Config Id
+ * @param       isNewSubevent- flag that indicates if this is a new subevent
+ * @param       csStepsBuff0 - Pointer to the first buffer. Use when setting up
+ *                             a new subevent. Otherwise, set to NULL.
+ * @param       csStepsBuff1 - Pointer to the second buffer. When not used, set
+ *                             to NULL.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None
+ */
+void llCsSetupStepBuffers(uint16 connId, uint8 configId, csNewSubevent_e isNewSubevent,
+                          csStepsBuffer_t* csStepsBuff0,
+                          csStepsBuffer_t* csStepsBuff1 );
 
 /*******************************************************************************
  * @fn          llCsStartProcedure
@@ -286,7 +313,7 @@ uint8 llCsStartStepListGen(uint16 connId);
 uint8 llCsSetupSubEvent(uint16 connId);
 
 /*******************************************************************************
- * @fn          freeCsStepsAndResults
+ * @fn          llCsFreeStepsAndResults
  *
  * @brief       Free CS step buffers and CS results buffer
  *
@@ -300,7 +327,7 @@ uint8 llCsSetupSubEvent(uint16 connId);
  *
  * @return      None
  */
-void freeCsStepsAndResults(void);
+void llCsFreeStepsAndResults(void);
 
 /*******************************************************************************
  * @fn          llCsSelectStepChannel

@@ -35,7 +35,6 @@
 #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
 
 /* Forward declarations for helper functions */
-static void *HSMLPF3_reverseMemCpy(void *dest, const void *src, size_t Size);
 static void HSMLPF3_asymBigIntToHw(const uint8_t *const data,
                                    const size_t modulusSizeBits,
                                    const uint8_t beginItem,
@@ -46,7 +45,7 @@ static void HSMLPF3_asymRsaSignatureFromHw(const uint8_t *const in, const size_t
 /*
  *  ======== HSMLPF3_reverseMemCpy ========
  */
-static void *HSMLPF3_reverseMemCpy(void *dest, const void *src, size_t size)
+void *HSMLPF3_reverseMemCpy(void *dest, const void *src, size_t size)
 {
     uint8_t *dp       = (uint8_t *)dest;
     const uint8_t *sp = (const uint8_t *)src;
@@ -121,6 +120,213 @@ static void HSMLPF3_asymBigIntToHw(const uint8_t *const data,
         /* MISRA - Intentially empty */
     }
 }
+
+/*
+ *  ======== HSMLPF3_asymVectorHeaderFormat ========
+ */
+void HSMLPF3_asymVectorHeaderFormat(const size_t modulusSizeBits,
+                                    const uint8_t itemsLength,
+                                    const uint8_t itemIdx,
+                                    const uint8_t domainId,
+                                    uint32_t *blob)
+{
+    *blob = ((domainId << 28) | (itemsLength << 24) | (itemIdx << 16) | (modulusSizeBits));
+}
+
+/*
+ *  ================ Helper APIs to handle DH related operation ================
+ */
+
+/*
+ *  ======== HSMLPF3_asymBEDHPriKeyToHW ========
+ */
+static void HSMLPF3_asymBEDHPriKeyToHW(uint8_t *in, const size_t modulusSizeBits, const uint8_t domainId, uint8_t *blob)
+{
+    HSMLPF3_asymVectorHeaderFormat(modulusSizeBits, 1, 0, domainId, (uint32_t *)blob);
+
+    HSMLPF3_reverseMemCpy(&blob[HSM_ASYM_DATA_VHEADER], &in[0], BITS_TO_BYTES(modulusSizeBits));
+}
+
+/*
+ *  ======== HSMLPF3_asymLEDHPriKeyToHW ========
+ */
+static void HSMLPF3_asymLEDHPriKeyToHW(uint8_t *in, const size_t modulusSizeBits, const uint8_t domainId, uint8_t *blob)
+{
+    HSMLPF3_asymVectorHeaderFormat(modulusSizeBits, 1, 0, domainId, (uint32_t *)blob);
+
+    memcpy(&blob[HSM_ASYM_DATA_VHEADER], &in[0], BITS_TO_BYTES(modulusSizeBits));
+}
+
+void HSMLPF3_asymDHPriKeyToHW(uint8_t *in,
+                              const size_t modulusSizeBits,
+                              const uint8_t domainId,
+                              HSMLPF3_KeyMaterialEndianness endianness,
+                              uint8_t *blob)
+{
+    if (endianness == HSMLPF3_BIG_ENDIAN_KEY)
+    {
+        HSMLPF3_asymBEDHPriKeyToHW(in, modulusSizeBits, domainId, blob);
+    }
+    else
+    {
+        HSMLPF3_asymLEDHPriKeyToHW(in, modulusSizeBits, domainId, blob);
+    }
+}
+
+/*
+ *  ======== HSMLPF3_asymBEDHPubKeyToHW ========
+ */
+static void HSMLPF3_asymBEDHPubKeyToHW(uint8_t *in,
+                                       const size_t modulusSizeBits,
+                                       const uint8_t itemsLength,
+                                       const uint8_t domainId,
+                                       uint8_t *blob)
+{
+    HSMLPF3_asymVectorHeaderFormat(modulusSizeBits, itemsLength, 0, domainId, (uint32_t *)blob);
+
+    HSMLPF3_reverseMemCpy(&blob[HSM_ASYM_DATA_VHEADER], &in[0], BITS_TO_BYTES(modulusSizeBits));
+
+    /* In the case of public key, curve25519 based public keys only offer one component pubkey.u.
+     * All other curves have two components pubkey.x and pubkey.y.
+     */
+    if (itemsLength == HSM_ASYM_ECC_PUB_KEY_VCOUNT)
+    {
+        HSMLPF3_asymVectorHeaderFormat(modulusSizeBits,
+                                       itemsLength,
+                                       1,
+                                       0,
+                                       (uint32_t *)&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)]);
+
+        HSMLPF3_reverseMemCpy(&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits) + HSM_ASYM_DATA_VHEADER],
+                              &in[BITS_TO_BYTES(modulusSizeBits)],
+                              BITS_TO_BYTES(modulusSizeBits));
+    }
+}
+
+/*
+ *  ======== HSMLPF3_asymLEDHPubKeyToHW ========
+ */
+static void HSMLPF3_asymLEDHPubKeyToHW(uint8_t *in,
+                                       const size_t modulusSizeBits,
+                                       const uint8_t itemsLength,
+                                       const uint8_t domainId,
+                                       uint8_t *blob)
+{
+    HSMLPF3_asymVectorHeaderFormat(modulusSizeBits, itemsLength, 0, domainId, (uint32_t *)blob);
+
+    memcpy(&blob[HSM_ASYM_DATA_VHEADER], &in[0], BITS_TO_BYTES(modulusSizeBits));
+
+    /* In the case of public key, curve25519 based public keys only offer one component pubkey.u.
+     * All other curves have two components pubkey.x and pubkey.y.
+     */
+    if (itemsLength == HSM_ASYM_ECC_PUB_KEY_VCOUNT)
+    {
+        HSMLPF3_asymVectorHeaderFormat(modulusSizeBits,
+                                       itemsLength,
+                                       1,
+                                       0,
+                                       (uint32_t *)&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)]);
+
+        memcpy(&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits) + HSM_ASYM_DATA_VHEADER],
+               &in[BITS_TO_BYTES(modulusSizeBits)],
+               BITS_TO_BYTES(modulusSizeBits));
+    }
+}
+
+/*
+ *  ======== HSMLPF3_asymDHPubKeyToHW ========
+ */
+void HSMLPF3_asymDHPubKeyToHW(uint8_t *in,
+                              const size_t modulusSizeBits,
+                              const uint8_t itemsLength,
+                              const uint8_t domainId,
+                              HSMLPF3_KeyMaterialEndianness endianness,
+                              uint8_t *blob)
+{
+    uint8_t *key_p = in;
+
+    if (endianness == HSMLPF3_BIG_ENDIAN_KEY)
+    {
+        /* Skip the octet string formatting (first byte) */
+        key_p = key_p + HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG;
+
+        HSMLPF3_asymBEDHPubKeyToHW(key_p, modulusSizeBits, itemsLength, domainId, blob);
+    }
+    else
+    {
+        HSMLPF3_asymLEDHPubKeyToHW(key_p, modulusSizeBits, itemsLength, domainId, blob);
+    }
+}
+
+/*
+ *  ======== HSMLPF3_asymBEDHPubKeyFromHW ========
+ */
+static void HSMLPF3_asymBEDHPubKeyFromHW(const uint8_t *const in,
+                                         const size_t modulusSizeBits,
+                                         const uint8_t itemsLength,
+                                         uint8_t *out_pubKey)
+{
+    HSMLPF3_asymRsaSignatureFromHw(in, modulusSizeBits, out_pubKey);
+
+    /* In the case of public key, curve25519 based public keys only offer one component pubkey.u.
+     * All other curves have two components pubkey.x and pubkey.y.
+     */
+    if (itemsLength == HSM_ASYM_ECC_PUB_KEY_VCOUNT)
+    {
+        HSMLPF3_asymRsaSignatureFromHw(&in[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)],
+                                       modulusSizeBits,
+                                       &out_pubKey[BITS_TO_BYTES(modulusSizeBits)]);
+    }
+}
+
+/*
+ *  ======== HSMLPF3_asymLEDHPubKeyFromHW ========
+ */
+static void HSMLPF3_asymLEDHPubKeyFromHW(const uint8_t *const in,
+                                         const size_t modulusSizeBits,
+                                         const uint8_t itemsLength,
+                                         uint8_t *out_pubKey)
+{
+    memcpy(&out_pubKey[0], &in[HSM_ASYM_DATA_VHEADER], HSM_ASYM_DATA_SIZE_B2WB(modulusSizeBits));
+
+    /* In the case of public key, curve25519 based public keys only offer one component pubkey.u.
+     * All other curves have two components pubkey.x and pubkey.y.
+     */
+    if (itemsLength == HSM_ASYM_ECC_PUB_KEY_VCOUNT)
+    {
+        memcpy(&out_pubKey[HSM_ASYM_DATA_SIZE_B2WB(modulusSizeBits)],
+               &in[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits) + HSM_ASYM_DATA_VHEADER],
+               HSM_ASYM_DATA_SIZE_B2WB(modulusSizeBits));
+    }
+}
+
+/*
+ *  ======== HSMLPF3_asymDHPubKeyFromHW ========
+ */
+void HSMLPF3_asymDHPubKeyFromHW(const uint8_t *const in,
+                                const size_t modulusSizeBits,
+                                const uint8_t itemsLength,
+                                HSMLPF3_KeyMaterialEndianness endianness,
+                                uint8_t *out_pubKey)
+{
+    uint8_t *key_p = out_pubKey;
+
+    if (endianness == HSMLPF3_BIG_ENDIAN_KEY)
+    {
+        *key_p = HSM_ASYM_ECC_UNCOMP_ENC_VALUE;
+        key_p  = key_p + HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG;
+
+        HSMLPF3_asymBEDHPubKeyFromHW(in, modulusSizeBits, itemsLength, key_p);
+    }
+    else
+    {
+        HSMLPF3_asymLEDHPubKeyFromHW(in, modulusSizeBits, itemsLength, key_p);
+    }
+}
+
+/*
+ *  ================ Helper APIs to handle DSA related operation ================
+ */
 
 /*
  *  ======== HSMLPF3_asymDsaSignatureFromHW ========

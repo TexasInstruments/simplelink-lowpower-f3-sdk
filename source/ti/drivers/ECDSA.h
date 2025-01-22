@@ -153,6 +153,20 @@
  * the hash function such as SHA-256 directly into #ECDSA_sign() or
  * #ECDSA_verify(). r and s will be interpreted as big-endian integers.
  *
+ *
+ * ## ECDSA Driver Limitation for CC27XX devices #
+ *
+ * For CC27XX devices, the driver expects the provided hash digest length to provide
+ * the same (or more) security strength than the selected curve length provides.
+ * In most cases, this means that the hash should be the same length as the curve.
+ * See the supported combinations below:
+ *
+ * 224-bit curve : 224-bit digest
+ * 256-bit curve : 256-bit digest
+ * 384-bit curve : 384-bit digest
+ * 512-bit curve : 512-bit digest
+ * 521-bit curve : 512-bit digest
+ *
  * @anchor ti_drivers_ECDSA_Synopsis
  * ## Synopsis
  * @anchor ti_drivers_ECDSA_Synopsis_Code
@@ -207,7 +221,7 @@
  * @anchor ti_drivers_ECDSA_Examples
  * # Examples #
  *
- * ## ECDSA sign with plaintext CryptoKeys for CC27XX devices ##
+ * ## ECDSA sign with plaintext CryptoKeys for CC27XX and CC35XX devices ##
  *
  * @code
  *
@@ -239,7 +253,7 @@
  *
  * ecdsaHandle = ECDSA_open(0, NULL);
  *
- * // Since the ECDSA driver for CC27XX relies on one HW engine (the HSM) for all of its operations
+ * // Since the ECDSA driver for CC27XX and CC35XX relies on one HW engine (the HSM) for all of its operations
  * // If the HSM boot up sequence fails, ECDSA_open() will return NULL.
  * if (!ecdsaHandle) {
  *     // Handle error
@@ -251,8 +265,8 @@
  *                            sizeof(myPrivateKeyingMaterial));
  *
  * // Initialize the operation
- * // For CC27XX devices, you must specify the curveType instead of providing the a pointer to the curve like the case
- * // with other devices.
+ * // For CC27XX and CC35XX devices, you must specify the curveType instead of providing a pointer to the curve like
+ * // the case with other devices.
  * ECDSA_OperationSign_init(&operationSign);
  * operationSign.curveType         = ECDSA_TYPE_SEC_P_256_R1;
  * operationSign.myPrivateKey      = &myPrivateKey;
@@ -558,25 +572,6 @@ extern "C" {
  */
 #define ECDSA_STATUS_KEYSTORE_ERROR (-11)
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-
-    /*!
-     *  @brief  The curve provided is not supported
-     */
-    #define ECDSA_STATUS_NO_VALID_CURVE_TYPE_PROVIDED (-12)
-
-    /*!
-     *  @brief  The key encoding is not HSM masked to signify an HSM operation
-     */
-    #define ECDSA_STATUS_INVALID_KEY_ENCODING (-13)
-
-    /*!
-     *  @brief  An error ocurred on the HW level
-     */
-    #define ECDSA_STATUS_HARDWARE_ERROR (-14)
-
-#endif
-
 /*!
  *  @brief ECDSA Global configuration
  *
@@ -642,7 +637,7 @@ typedef enum
                                          */
 } ECDSA_ReturnBehavior;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 /*!
  *  @brief  Enum for the curve types supported by the driver.
  */
@@ -687,7 +682,7 @@ typedef enum
  */
 typedef struct
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     ECDSA_CurveType curveType; /*!< An ECDSA_CurveType value indicating which EC curve to use for the operation*/
 #endif
     const ECCParams_CurveParams *curve; /*!< A pointer to the elliptic curve parameters */
@@ -716,7 +711,7 @@ typedef struct
  */
 typedef struct
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     ECDSA_CurveType curveType;
 #else
     const ECCParams_CurveParams *curve; /*!< A pointer to the elliptic curve parameters */

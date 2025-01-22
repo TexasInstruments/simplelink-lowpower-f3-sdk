@@ -44,11 +44,13 @@
 
 /*
  * Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 
+/* TI Customizations: Changed key ID type. */
 #ifndef PSA_CRYPTO_H
 #define PSA_CRYPTO_H
 
@@ -74,6 +76,9 @@ extern "C" {
 /* The file "crypto_types.h" declares types that encode errors,
  * algorithms, key types, policies, etc. */
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto_types.h>
+
+/* Prefixes all APIs with KeyMgmt_ to allow for integration with TI's PSA Crypto Wrapper */
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management_prefix.h>
 
 /** \defgroup version API version
  * @{
@@ -160,7 +165,7 @@ static psa_key_attributes_t psa_key_attributes_init(void);
  * \param key              The persistent identifier for the key.
  */
 static void psa_set_key_id(psa_key_attributes_t *attributes,
-                           psa_key_id_t key);
+                           mbedtls_svc_key_id_t key);
 
 /** Set the location of a persistent key.
  *
@@ -202,7 +207,7 @@ static void psa_set_key_lifetime(psa_key_attributes_t *attributes,
  *         This value is unspecified if the attribute structure declares
  *         the key as volatile.
  */
-static psa_key_id_t psa_get_key_id(const psa_key_attributes_t *attributes);
+static mbedtls_svc_key_id_t psa_get_key_id(const psa_key_attributes_t *attributes);
 
 /** Retrieve the lifetime from key attributes.
  *
@@ -383,7 +388,7 @@ static size_t psa_get_key_bits(const psa_key_attributes_t *attributes);
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_get_key_attributes(psa_key_id_t key,
+psa_status_t psa_get_key_attributes(mbedtls_svc_key_id_t key,
                                     psa_key_attributes_t *attributes);
 
 /** Reset a key attribute structure to a freshly initialized state.
@@ -427,7 +432,7 @@ void psa_reset_key_attributes(psa_key_attributes_t *attributes);
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_purge_key(psa_key_id_t key);
+psa_status_t psa_purge_key(mbedtls_svc_key_id_t key);
 
 /** Make a copy of a key.
  *
@@ -520,9 +525,9 @@ psa_status_t psa_purge_key(psa_key_id_t key);
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_copy_key(psa_key_id_t source_key,
+psa_status_t psa_copy_key(mbedtls_svc_key_id_t source_key,
                           const psa_key_attributes_t *attributes,
-                          psa_key_id_t *target_key);
+                          mbedtls_svc_key_id_t *target_key);
 
 
 /**
@@ -570,7 +575,7 @@ psa_status_t psa_copy_key(psa_key_id_t source_key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_destroy_key(psa_key_id_t key);
+psa_status_t psa_destroy_key(mbedtls_svc_key_id_t key);
 
 /**@}*/
 
@@ -654,7 +659,7 @@ psa_status_t psa_destroy_key(psa_key_id_t key);
 psa_status_t psa_import_key(const psa_key_attributes_t *attributes,
                             const uint8_t *data,
                             size_t data_length,
-                            psa_key_id_t *key);
+                            mbedtls_svc_key_id_t *key);
 
 
 
@@ -746,7 +751,7 @@ psa_status_t psa_import_key(const psa_key_attributes_t *attributes,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_export_key(psa_key_id_t key,
+psa_status_t psa_export_key(mbedtls_svc_key_id_t key,
                             uint8_t *data,
                             size_t data_size,
                             size_t *data_length);
@@ -821,7 +826,7 @@ psa_status_t psa_export_key(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_export_public_key(psa_key_id_t key,
+psa_status_t psa_export_public_key(mbedtls_svc_key_id_t key,
                                    uint8_t *data,
                                    size_t data_size,
                                    size_t *data_length);
@@ -1273,7 +1278,7 @@ psa_status_t psa_hash_clone(const psa_hash_operation_t *source_operation,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_mac_compute(psa_key_id_t key,
+psa_status_t psa_mac_compute(mbedtls_svc_key_id_t key,
                              psa_algorithm_t alg,
                              const uint8_t *input,
                              size_t input_length,
@@ -1314,7 +1319,7 @@ psa_status_t psa_mac_compute(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_mac_verify(psa_key_id_t key,
+psa_status_t psa_mac_verify(mbedtls_svc_key_id_t key,
                             psa_algorithm_t alg,
                             const uint8_t *input,
                             size_t input_length,
@@ -1416,7 +1421,7 @@ static psa_mac_operation_t psa_mac_operation_init(void);
  *         results in this error code.
  */
 psa_status_t psa_mac_sign_setup(psa_mac_operation_t *operation,
-                                psa_key_id_t key,
+                                mbedtls_svc_key_id_t key,
                                 psa_algorithm_t alg);
 
 /** Set up a multipart MAC verification operation.
@@ -1479,7 +1484,7 @@ psa_status_t psa_mac_sign_setup(psa_mac_operation_t *operation,
  *         results in this error code.
  */
 psa_status_t psa_mac_verify_setup(psa_mac_operation_t *operation,
-                                  psa_key_id_t key,
+                                  mbedtls_svc_key_id_t key,
                                   psa_algorithm_t alg);
 
 /** Add a message fragment to a multipart MAC operation.
@@ -1679,7 +1684,7 @@ psa_status_t psa_mac_abort(psa_mac_operation_t *operation);
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_cipher_encrypt(psa_key_id_t key,
+psa_status_t psa_cipher_encrypt(mbedtls_svc_key_id_t key,
                                 psa_algorithm_t alg,
                                 const uint8_t *input,
                                 size_t input_length,
@@ -1726,7 +1731,7 @@ psa_status_t psa_cipher_encrypt(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_cipher_decrypt(psa_key_id_t key,
+psa_status_t psa_cipher_decrypt(mbedtls_svc_key_id_t key,
                                 psa_algorithm_t alg,
                                 const uint8_t *input,
                                 size_t input_length,
@@ -1829,7 +1834,7 @@ static psa_cipher_operation_t psa_cipher_operation_init(void);
  *         results in this error code.
  */
 psa_status_t psa_cipher_encrypt_setup(psa_cipher_operation_t *operation,
-                                      psa_key_id_t key,
+                                      mbedtls_svc_key_id_t key,
                                       psa_algorithm_t alg);
 
 /** Set the key for a multipart symmetric decryption operation.
@@ -1893,7 +1898,7 @@ psa_status_t psa_cipher_encrypt_setup(psa_cipher_operation_t *operation,
  *         results in this error code.
  */
 psa_status_t psa_cipher_decrypt_setup(psa_cipher_operation_t *operation,
-                                      psa_key_id_t key,
+                                      mbedtls_svc_key_id_t key,
                                       psa_algorithm_t alg);
 
 /** Generate an IV for a symmetric encryption operation.
@@ -2166,7 +2171,7 @@ psa_status_t psa_cipher_abort(psa_cipher_operation_t *operation);
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_aead_encrypt(psa_key_id_t key,
+psa_status_t psa_aead_encrypt(mbedtls_svc_key_id_t key,
                               psa_algorithm_t alg,
                               const uint8_t *nonce,
                               size_t nonce_length,
@@ -2239,7 +2244,7 @@ psa_status_t psa_aead_encrypt(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_aead_decrypt(psa_key_id_t key,
+psa_status_t psa_aead_decrypt(mbedtls_svc_key_id_t key,
                               psa_algorithm_t alg,
                               const uint8_t *nonce,
                               size_t nonce_length,
@@ -2352,7 +2357,7 @@ static psa_aead_operation_t psa_aead_operation_init(void);
  *         results in this error code.
  */
 psa_status_t psa_aead_encrypt_setup(psa_aead_operation_t *operation,
-                                    psa_key_id_t key,
+                                    mbedtls_svc_key_id_t key,
                                     psa_algorithm_t alg);
 
 /** Set the key for a multipart authenticated decryption operation.
@@ -2419,7 +2424,7 @@ psa_status_t psa_aead_encrypt_setup(psa_aead_operation_t *operation,
  *         results in this error code.
  */
 psa_status_t psa_aead_decrypt_setup(psa_aead_operation_t *operation,
-                                    psa_key_id_t key,
+                                    mbedtls_svc_key_id_t key,
                                     psa_algorithm_t alg);
 
 /** Generate a random nonce for an authenticated encryption operation.
@@ -2951,7 +2956,7 @@ psa_status_t psa_aead_abort(psa_aead_operation_t *operation);
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_sign_message(psa_key_id_t key,
+psa_status_t psa_sign_message(mbedtls_svc_key_id_t key,
                               psa_algorithm_t alg,
                               const uint8_t * input,
                               size_t input_length,
@@ -3003,7 +3008,7 @@ psa_status_t psa_sign_message(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_verify_message(psa_key_id_t key,
+psa_status_t psa_verify_message(mbedtls_svc_key_id_t key,
                                 psa_algorithm_t alg,
                                 const uint8_t * input,
                                 size_t input_length,
@@ -3056,7 +3061,7 @@ psa_status_t psa_verify_message(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_sign_hash(psa_key_id_t key,
+psa_status_t psa_sign_hash(mbedtls_svc_key_id_t key,
                            psa_algorithm_t alg,
                            const uint8_t *hash,
                            size_t hash_length,
@@ -3107,7 +3112,7 @@ psa_status_t psa_sign_hash(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_verify_hash(psa_key_id_t key,
+psa_status_t psa_verify_hash(mbedtls_svc_key_id_t key,
                              psa_algorithm_t alg,
                              const uint8_t *hash,
                              size_t hash_length,
@@ -3165,7 +3170,7 @@ psa_status_t psa_verify_hash(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_asymmetric_encrypt(psa_key_id_t key,
+psa_status_t psa_asymmetric_encrypt(mbedtls_svc_key_id_t key,
                                     psa_algorithm_t alg,
                                     const uint8_t *input,
                                     size_t input_length,
@@ -3226,7 +3231,7 @@ psa_status_t psa_asymmetric_encrypt(psa_key_id_t key,
  *         It is implementation-dependent whether a failure to initialize
  *         results in this error code.
  */
-psa_status_t psa_asymmetric_decrypt(psa_key_id_t key,
+psa_status_t psa_asymmetric_decrypt(mbedtls_svc_key_id_t key,
                                     psa_algorithm_t alg,
                                     const uint8_t *input,
                                     size_t input_length,
@@ -3561,7 +3566,7 @@ psa_status_t psa_key_derivation_input_integer(
 psa_status_t psa_key_derivation_input_key(
     psa_key_derivation_operation_t *operation,
     psa_key_derivation_step_t step,
-    psa_key_id_t key);
+    mbedtls_svc_key_id_t key);
 
 /** Perform a key agreement and use the shared secret as input to a key
  * derivation.
@@ -3631,7 +3636,7 @@ psa_status_t psa_key_derivation_input_key(
 psa_status_t psa_key_derivation_key_agreement(
     psa_key_derivation_operation_t *operation,
     psa_key_derivation_step_t step,
-    psa_key_id_t private_key,
+    mbedtls_svc_key_id_t private_key,
     const uint8_t *peer_key,
     size_t peer_key_length);
 
@@ -3829,7 +3834,7 @@ psa_status_t psa_key_derivation_output_bytes(
 psa_status_t psa_key_derivation_output_key(
     const psa_key_attributes_t *attributes,
     psa_key_derivation_operation_t *operation,
-    psa_key_id_t *key);
+    mbedtls_svc_key_id_t *key);
 
 /** Compare output data from a key derivation operation to an expected value.
  *
@@ -3952,7 +3957,7 @@ psa_status_t psa_key_derivation_verify_bytes(
  */
 psa_status_t psa_key_derivation_verify_key(
     psa_key_derivation_operation_t *operation,
-    psa_key_id_t expected);
+    mbedtls_svc_key_id_t expected);
 
 /** Abort a key derivation operation.
  *
@@ -4032,7 +4037,7 @@ psa_status_t psa_key_derivation_abort(
  *         results in this error code.
  */
 psa_status_t psa_raw_key_agreement(psa_algorithm_t alg,
-                                   psa_key_id_t private_key,
+                                   mbedtls_svc_key_id_t private_key,
                                    const uint8_t *peer_key,
                                    size_t peer_key_length,
                                    uint8_t *output,
@@ -4117,7 +4122,7 @@ psa_status_t psa_generate_random(uint8_t *output,
  *         results in this error code.
  */
 psa_status_t psa_generate_key(const psa_key_attributes_t *attributes,
-                              psa_key_id_t *key);
+                              mbedtls_svc_key_id_t *key);
 
 /**@}*/
 
@@ -4133,7 +4138,6 @@ psa_status_t psa_generate_key(const psa_key_attributes_t *attributes,
  * whose definitions differ in the client view and the PSA server
  * implementation in TF-M. */
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto_client_struct.h>
-
 
 /* The file "crypto_struct.h" contains definitions for
  * implementation-specific structs that are declared above. */

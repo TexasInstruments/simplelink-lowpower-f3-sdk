@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../../psaAeadEncrypt.c -> psaAeadEncrypt.c",
+            "+../../README.md -> README.md",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../psaAeadEncrypt.syscfg -> psaAeadEncrypt.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+        ]
+    }
+]

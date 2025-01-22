@@ -92,7 +92,7 @@
 #define CS_FAE_TBL_LEN                         72 // octets
 #define CS_CHM_SIZE                            10U // octets
 #define CS_FILTERED_CHAN_MAX_SIZE              72
-#define CS_RNDM_SIZE                           16
+#define CS_RNDM_SIZE                           16U
 #define CS_MAX_NUM_CONFIG_IDS                  4
 #define CS_DRBG_NUM_BITS                       128
 #define CS_MAX_TRANSACTION_IDS                 10
@@ -103,11 +103,11 @@
 #define CS_MAX_SUBEVENT_LEN                    4000000 // us
 #define CS_RESULT_EVENT_HEADER_LEN             16      // The fields of the subevent results event
 #define CS_CONTINUE_RESULT_EVENT_HEADER_LEN    9
-#define CS_STEP_BUFF_MAX_SIZE                  30
+#define CS_STEP_BUFF_MAX_SIZE                  30U
 #define CS_MAX_RESULT_DATA_LEN                 15
 #define CS_MIN_STEPS_PER_SUBEVENT              2   // SPEC definition
 #define CS_MAX_STEPS_PER_SUBEVENT              160 // SPEC definition
-#define CS_MAX_STEPS_PER_PROCEDURE             256 // SPEC definition
+#define CS_MAX_STEPS_PER_PROCEDURE             256U // SPEC definition
 #define CS_RES_BUFF_MAX_SIZE                   CS_MAX_STEPS_PER_SUBEVENT // number of step results in the buffer.
 #define CS_SUBEVENT_RESULTS_LEN                sizeof(RCL_CmdBleCs_SubeventResults)
 #define CS_SUBEVENT_RESULTS_CONT_LEN           sizeof(RCL_CmdBleCs_SubeventResults) - 7
@@ -218,6 +218,8 @@
 #define CS_3_OCTETS_MASK                       0x00FFFFFF
 #define CS_RFU                                 0x0U
 #define CS_CTRL_PKT_OFFSET                     17U
+#define CS_8_BITS_SIZE                         8U
+#define CS_1_BYTE_MASK                         0xFFU
 
 // Procedure complete flag reset mask
 #define CS_RESET_START_PROCEDURE_FLAG          0x1F
@@ -401,7 +403,8 @@ typedef enum csStatus_e {
     CS_STATUS_SUBEVENT_SETUP_ERROR,
     CS_STATUS_DRBG_INIT_FAIL,
     CS_STATUS_CONFIG_ENABLED,
-    CS_STATUS_INVALID_CHAN_IDX
+    CS_STATUS_INVALID_CHAN_IDX,
+    CS_STATUS_INVALID_STEP_MODE
 } csStatus_e;
 
 typedef enum csProcDoneStat_e
@@ -454,6 +457,18 @@ typedef enum csACI_e
     ACI_A2_B2 = 7
 } csACI_e;
 
+typedef enum csNewSubevent_e
+{
+    CS_NEW_SUBEVENT,
+    CS_CONTINUE_SUBEVENT
+} csNewSubevent_e;
+
+typedef enum csNextSubevent_e
+{
+    CS_PREP_CURR_SUBEVENT,
+    CS_PREP_NEXT_SUBEVENT,
+} csNextSubevent_e;
+
 /*******************************************************************************
  * MACROS
  */
@@ -476,6 +491,10 @@ typedef enum csACI_e
 /* Tone Extension Bits are used in their reversed order */
 #define CS_REVERSE_TONE_EXTENSION_BITS(bits)                                   \
     ((((bits & 0x01U) << 1U) | ((bits & 0x02U) >> 1U)) & 0x3U)
+
+/* Determine Number of steps in buffer */
+#define CS_NUM_BUFF_STEPS(nSteps) ((nSteps > CS_STEP_BUFF_MAX_SIZE) ?            \
+                                                CS_STEP_BUFF_MAX_SIZE : nSteps)
 
 /*******************************************************************************
  * EXTERNS
@@ -678,6 +697,7 @@ typedef struct
     uint16      eventsPerProcedure; /* MAX_PROC_LEN / (EVENT_INTERVAL) * connEvent */
     uint32_t    eventAnchorPoint;   /* The time from which consecutive subevents are anchored. */
     uint8       nextProcedure;      /* Marks if a procedure is done and we need to prepare another */
+    csNextSubevent_e nextSubevent;  /* Marks if a subevent is submitted and we need to prepare another. */
 } csProcedureInfo_t;
 
 typedef struct csTerminateInfo
@@ -934,5 +954,22 @@ uint8 llCsGetAbortReason(uint8 connId);
  * @return      ProcedureDoneStatus
  */
 uint8 llCsGetProcDoneStatus(uint8 isProcedureDone, uint8 abortReason);
+
+/*******************************************************************************
+ * @fn          llCsDbGetNumStepsInBuffer
+ *
+ * @brief       llCsDbGetNumStepsInBuffer
+ *
+ * input parameters
+ *
+ * @param       connId - Connection Identifier
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      Num Steps in Buffer
+ */
+uint8 llCsGetNumStepsInBuffer(uint16 connId);
 
 #endif // LL_CS_COMMON_H

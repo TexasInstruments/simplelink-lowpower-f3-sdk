@@ -196,8 +196,10 @@ function moduleInstances(inst)
                 displayName: "Power Log Configuration",
                 moduleName: "/ti/log/LogModule",
                 collapsed: true,
+                requiredArgs: {
+                    $name: "LogModule_Power"
+                },
                 args: {
-                    $name: "LogModule_Power",
                     enable_DEBUG: false,
                     enable_INFO: false,
                     enable_VERBOSE: false,

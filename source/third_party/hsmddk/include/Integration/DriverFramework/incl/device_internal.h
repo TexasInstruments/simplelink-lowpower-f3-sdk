@@ -80,7 +80,7 @@ typedef struct
 // Internal statically configured device administration data
 typedef struct
 {
-    const char * DevName;
+    const char DevName[HWPAL_MAX_DEVICE_NAME_LENGTH];
     uint32_t DeviceNr;
     uint32_t FirstOfs;
     uint32_t LastOfs;
@@ -90,7 +90,7 @@ typedef struct
 // Internal device administration data
 typedef struct
 {
-    char * DevName;
+    char DevName[HWPAL_MAX_DEVICE_NAME_LENGTH];
     uint32_t DeviceNr;
     uint32_t FirstOfs;
     uint32_t LastOfs;

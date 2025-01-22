@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -576,9 +576,9 @@ typedef enum
 {
     I2C_100kHz  = 0, /*!< I2C Standard-mode. Up to 100 kbit/s. */
     I2C_400kHz  = 1, /*!< I2C Fast-mode. Up to 400 kbit/s. */
-    I2C_1000kHz = 2, /*!< I2C Fast-mode Plus. Up to 1Mbit/s. */
-    I2C_3330kHz = 3, /*!< I2C High-speed mode. Up to 3.4Mbit/s. */
-    I2C_3400kHz = 3, /*!< I2C High-speed mode. Up to 3.4Mbit/s. */
+    I2C_1000kHz = 2, /*!< I2C Fast-mode Plus. Up to 1 Mbit/s. */
+    I2C_3330kHz = 3, /*!< I2C High-speed mode. Up to 3.4 Mbit/s. Mantained for backwards compatibility. */
+    I2C_3400kHz = 3, /*!< I2C High-speed mode. Up to 3.4 Mbit/s. */
 } I2C_BitRate;
 
 /*!

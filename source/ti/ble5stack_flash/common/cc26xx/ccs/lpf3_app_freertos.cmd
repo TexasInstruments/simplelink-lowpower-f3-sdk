@@ -79,7 +79,14 @@
  */
 
 #define FLASH_BASE              ti_utils_build_GenMap_FLASH0_BASE
+#ifdef SECURE_BOOT
+/* Setting an hardcoded flash size is a workaround since the flash size */
+/* generated in ti_utils_build_linker.cmd.genmap when using Secure Boot */
+/* is the image size and not the total flash size required in this file. */
+#define FLASH_SIZE              0xE8000
+#else
 #define FLASH_SIZE              ti_utils_build_GenMap_FLASH0_SIZE
+#endif
 #define RAM_BASE                ti_utils_build_GenMap_RAM0_BASE
 #define RAM_SIZE                ti_utils_build_GenMap_RAM0_SIZE
 
@@ -117,15 +124,23 @@
  */
 
 #if defined(OAD_APP_OFFCHIP) || defined(OAD_APP_ONCHIP) || defined(OAD_PERSISTENT) || defined(OAD_DUAL_IMAGE)
+#ifdef SECURE_BOOT
+#define MCU_HDR_SIZE    0x80
+#else
 #define MCU_HDR_SIZE    0x100
 #define MCUBOOT_BASE    FLASH_BASE
 #define MCUBOOT_SIZE    0x6000
+#endif
 #define APP_HDR_BASE    APP_HDR_ADDR
 #define APP_BASE        (APP_HDR_BASE + MCU_HDR_SIZE)
 #endif //defined(OAD_APP_OFFCHIP) || defined(OAD_APP_ONCHIP) || defined(OAD_PERSISTENT) || defined(OAD_DUAL_IMAGE)
 
 #if defined(OAD_APP_ONCHIP)|| defined(OAD_PERSISTENT)
+#ifdef SECURE_BOOT
+#define PERSISTENT_HDR_BASE 0x00
+#else
 #define PERSISTENT_HDR_BASE 0x6000
+#endif
 #define PERSISTENT_BASE     (PERSISTENT_HDR_BASE + MCU_HDR_SIZE)
 #define PERSISTENT_SIZE     (APP_HDR_BASE - PERSISTENT_BASE)
 #define APP_SIZE            (FLASH_SIZE - APP_BASE - NVS_SIZE)
@@ -136,7 +151,11 @@
 #endif //OAD_APP_OFFCHIP
 
 #ifdef OAD_DUAL_IMAGE
+#ifdef SECURE_BOOT
+#define APP_SIZE        ((FLASH_SIZE - NVS_SIZE)/2 - MCU_HDR_SIZE)
+#else
 #define APP_SIZE        ((FLASH_SIZE - NVS_SIZE - MCUBOOT_SIZE)/2 - MCU_HDR_SIZE)
+#endif
 #endif //OAD_DUAL_IMAGE
 
 /*******************************************************************************
@@ -173,7 +192,9 @@ MEMORY
 
 #if defined(OAD_APP_OFFCHIP)|| defined(OAD_APP_ONCHIP) || defined(OAD_PERSISTENT) || defined(OAD_DUAL_IMAGE)
 
+#ifndef SECURE_BOOT
     MCUBOOT_SLOT(RX)       : origin = MCUBOOT_BASE        ,length = MCUBOOT_SIZE
+#endif
     APP_HDR_SLOT(RX)       : origin = APP_HDR_BASE        ,length = MCU_HDR_SIZE
     APP_SLOT (RX)          : origin = APP_BASE            ,length = APP_SIZE
 
@@ -186,12 +207,23 @@ MEMORY
 
 #else //Without mcuboot
 
+#ifdef SECURE_BOOT
+    /* Application stored in and executes from internal flash */
+    FLASH (RX) : origin = FLASH_BASE, length = FLASH_SIZE - 0x80 //size of header
+#else
     /* Application stored in and executes from internal flash */
     FLASH (RX) : origin = FLASH_BASE, length = (FLASH_SIZE - NVS_SIZE)
+#endif
+
 
 #endif //defined(OAD_APP_OFFCHIP)|| defined(OAD_APP_ONCHIP) || defined(OAD_PERSISTENT)
 
+#ifdef SECURE_BOOT
+    NVS_SLOT(RX) : origin = 0xE4000 ,length = NVS_SIZE
+#else
     NVS_SLOT(RX) : origin = NVS_BASE ,length = NVS_SIZE
+#endif
+
 
     /* Application uses internal RAM for data */
     SRAM (RWX) : origin = RAM_BASE, length = RAM_SIZE

@@ -35,7 +35,14 @@ include "ti_utils_build_linker.cmd.genmap";
 define symbol __intvec_start__ = 0x00000000;
 /*-Memory Regions-*/
 define symbol ROM_start__    = ti_utils_build_GenMap_FLASH0_BASE;
-define symbol ROM_end__      = ti_utils_build_GenMap_FLASH0_SIZE - 1;
+if (isdefinedsymbol(ti_utils_build_GenMap_HSM_FW_SIZE)) {
+    /* The last part of Flash is reserved for the HSM FW */
+    define symbol ROM_end__      = ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE - 1;
+}
+else
+{
+    define symbol ROM_end__      = ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE - 1;
+}
 define symbol RAM_start__    = ti_utils_build_GenMap_RAM0_BASE;
 define symbol RAM_end__      = ti_utils_build_GenMap_RAM0_BASE + ti_utils_build_GenMap_RAM0_SIZE - 1;
 if (isdefinedsymbol(ti_utils_build_GenMap_S2RRAM_BASE)) {
@@ -47,10 +54,6 @@ define symbol CCFG_END__     = ti_utils_build_GenMap_CCFG_BASE + ti_utils_build_
 if (isdefinedsymbol(ti_utils_build_GenMap_SCFG_BASE)) {
     define symbol SCFG_START__ = ti_utils_build_GenMap_SCFG_BASE;
     define symbol SCFG_END__   = ti_utils_build_GenMap_SCFG_BASE + ti_utils_build_GenMap_SCFG_SIZE - 1;
-}
-if (isdefinedsymbol(ti_utils_build_GenMap_HSMOTP_BASE)) {
-    define symbol __HSMOTP_START__ = ti_utils_build_GenMap_HSMOTP_BASE;
-    define symbol __HSMOTP_END__   = ti_utils_build_GenMap_HSMOTP_BASE + ti_utils_build_GenMap_HSMOTP_SIZE - 1;
 }
 
 /* Define a memory region that covers the entire 4 GB addressable space */
@@ -91,13 +94,6 @@ if (isdefinedsymbol(ti_utils_build_GenMap_SCFG_BASE)) {
     keep { section .scfg };
 }
 
-if (isdefinedsymbol(ti_utils_build_GenMap_HSMOTP_BASE)) {
-    /* Define a region for HSMOTP */
-    define region HSMOTP_region = mem:[from __HSMOTP_START__ to __HSMOTP_END__];
-    place in HSMOTP_region {section .hsmotp};
-    keep { section .hsmotp };
-}
-
 /*
  * Define symbols required for CRC32 checksum generation within CCFG (and
  * SCFG, if device supports it).
@@ -122,7 +118,7 @@ define exported symbol __ccfg_debug_cfg_crc32_begin     = ti_utils_build_GenMap_
 define exported symbol __ccfg_debug_cfg_crc32_end       = ti_utils_build_GenMap_CCFG_BASE + 0x07FB;
 if (isdefinedsymbol(ti_utils_build_GenMap_SCFG_BASE)) {
     define exported symbol __scfg_crc32_begin           = ti_utils_build_GenMap_SCFG_BASE;
-    define exported symbol __scfg_crc32_end             = ti_utils_build_GenMap_SCFG_BASE + 0x003B;
+    define exported symbol __scfg_crc32_end             = ti_utils_build_GenMap_SCFG_BASE + 0x00E3;
 }
 /* Place remaining 'read only' in Flash */
 place in FLASH_region { readonly };

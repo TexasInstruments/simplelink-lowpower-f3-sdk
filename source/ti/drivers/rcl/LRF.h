@@ -47,7 +47,12 @@
 
 #ifdef DeviceFamily_CC1308
 #  define BUFFER_SPLIT_SUPPORT
-#  include "LRFCC1308.h"
+#  include "ti/drivers/rcl/LRFCC1308.h"
+#endif
+
+#ifdef DeviceFamily_CC1404_CC1407
+#  define BUFFER_SPLIT_SUPPORT
+#  include "ti/drivers/rcl/LRFCC1407.h"
 #endif
 
 /**

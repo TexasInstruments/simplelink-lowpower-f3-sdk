@@ -449,6 +449,15 @@ extern "C" {
 #define SHA2_STATUS_DMA_ERROR ((int_fast16_t)-6)
 
 /*!
+ * @brief  The requested operation contains data that cannot be accessed by
+ * the HSM Module.
+ *
+ * Functions return SHA2_STATUS_DATA_INACCESSIBLE only on CC35XX devices, since
+ * HSM module on CC35XX cannot access external flash and data must be in RAM.
+ */
+#define SHA2_STATUS_DATA_INACCESSIBLE ((int_fast16_t)-7)
+
+/*!
  * @brief   The way in which SHA2 function calls return after performing an
  * operation.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ extern unsigned long __STACK_END;
 //! the program if located at a start address other than 0.
 //
 //*****************************************************************************
-__attribute__((section(".resetVecs"), retain)) static void (*const resetVectors[])(void) = {
+__attribute__((section(".resetVecs"), retain)) void (*const resetVectors[])(void) = {
     (void (*)(void))((unsigned long)&__STACK_END), //  0 The initial stack pointer
     resetISR,                                      //  1 The reset handler
     nmiISR,                                        //  2 The NMI handler
@@ -141,7 +141,7 @@ __attribute__((section(".resetVecs"), retain)) static void (*const resetVectors[
                        // here UART1:MIS
     intDefaultHandler, // 39 SPI1 combined interrupt request, interrupt flags
                        // can be found here SPI1:MIS
-    intDefaultHandler, // 40 VCE IRQ
+    intDefaultHandler, // 40 APU IRQ
     intDefaultHandler, // 41 HSM Secure IRQ
     intDefaultHandler, // 42 HSM Non-secure IRQ
     intDefaultHandler, // 43 HSM OTP IRQ

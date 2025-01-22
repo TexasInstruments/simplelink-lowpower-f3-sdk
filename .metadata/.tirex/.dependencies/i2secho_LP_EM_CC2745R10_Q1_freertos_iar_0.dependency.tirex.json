@@ -1,0 +1,16 @@
+[
+    {
+        "files": [
+            "+../../AudioCodec.c -> AudioCodec.c",
+            "+../../AudioCodec.h -> AudioCodec.h",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+../../i2secho.c -> i2secho.c",
+            "+../i2secho.syscfg -> i2secho.syscfg",
+            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../README.html -> README.html",
+            "+../../README.md -> README.md",
+            "+../../TI3254.h -> TI3254.h"
+        ]
+    }
+]

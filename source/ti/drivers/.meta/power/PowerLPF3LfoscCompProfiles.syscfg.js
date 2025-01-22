@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
+
 /*
  * ======== PowerLPF3LfoscCompProfiles.syscfg.js ========
  */
@@ -55,6 +55,17 @@ var instConfigs = [
                 name: "PowerLPF3_LFOSC_PPM_500"
             }
         ]
+    },
+    {
+        name: "maxAllowedJitter",
+        displayName: "Maximum Allowed Jitter",
+        description: "The maximum allowed jitter per system wakeup in microseconds.",
+        longDescription:
+`The jitter is added to the system's PPM requirement, relaxing the number of
+calibrations needed per system wakeup.`,
+        isInteger: true,
+        range: [16, 16],    /* For now, allow only a Jitter of 16 us */
+        default: 16
     },
     {
         name: "temperatureGradient",
@@ -96,4 +107,3 @@ exports = {
         boardh      : "/ti/drivers/power/PowerLPF3LfoscCompProfiles.Board.h.xdt"
     }
 };
-

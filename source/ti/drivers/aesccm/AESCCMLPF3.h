@@ -85,6 +85,10 @@ extern "C" {
 
 #define AESCCMLPF3_AAD_BUFFER_SIZE 2U
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+#endif
+
 /*!
  *  @brief      AESCCMLPF3 Hardware Attributes
  *
@@ -125,6 +129,10 @@ typedef struct
     uint8_t macLength;
     uint8_t nonceLength;
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    uint8_t inputFinalBlock[AES_BLOCK_SIZE];
+    uint8_t aadFinalBlock[AES_BLOCK_SIZE];
+    uint8_t outputFinalBlock[AES_BLOCK_SIZE] __attribute__((aligned(4)));
     size_t aadLength;
     volatile size_t totalDataLengthRemaining;
     volatile size_t totalAADLengthRemaining;
@@ -135,6 +143,8 @@ typedef struct
      */
     int_fast16_t hsmStatus;
     uint32_t tempAssetID;
+    uint32_t keyAssetID;
+    KeyStore_PSA_KeyLocation keyLocation;
     /* To indicate whether a segmented operation is in progress
      */
     bool segmentedOperationInProgress;

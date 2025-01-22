@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,11 @@
 
  "use strict";
 
- /* get ti/utils common utility functions */
+/* Get ti/utils common utility functions */
 let Common = system.getScript("/ti/utils/Common.js");
+
+/* Get device ID */
+let deviceId = system.deviceData.deviceId;
 
 /*
  *  ======== getLibs ========
@@ -53,7 +56,11 @@ function getLibs(mod)
 
     /* Select which secure veneer object to use */
     if (mod.$static.secureImage == "1") {
-        libs.push("build/cc26x4/production_full/Release/export/tfm/veneers/s_veneers.o");
+        if (deviceId.match(/CC27/)) {
+            libs.push("build/cc27xx/production_full/Release/export/tfm/veneers/s_veneers.o");
+        } else { /* This is sufficient as other than CC27XX, only Thor supports TrustZone */
+            libs.push("build/cc26x4/production_full/Release/export/tfm/veneers/s_veneers.o");
+        }
     }
 
     /* Create a GenLibs input argument */
@@ -66,6 +73,10 @@ function getLibs(mod)
     return (linkOpts);
 }
 
+function getOpts() {
+    return ["-DTFM_ENABLED=1"];
+}
+
 /*
  *  ======== modules ========
  *  Express dependencies for other modules
@@ -74,9 +85,14 @@ function getLibs(mod)
  */
 function modules(inst)
 {
-    let modules = new Array();
+    let forcedModules = ["/ti/drivers/tfm/SecureCallback"];
 
-    return (modules);
+    if (deviceId.match(/CC27/)) {
+        /* PSA Crypto + Key Store is always included in TFM */
+        forcedModules.push("/ti/drivers/CryptoKeyKeyStore_PSA");
+    }
+
+    return Common.autoForceModules(forcedModules)();
 }
 
 /*
@@ -117,7 +133,9 @@ let base = {
     templates: {
         /* contribute secure veneers object to linker command file */
         "/ti/utils/build/GenLibs.cmd.xdt"   :
-            {modName: "/ti/utils/TrustZone", getLibs: getLibs}
+            {modName: "/ti/utils/TrustZone", getLibs: getLibs},
+        "/ti/utils/build/GenOpts.opt.xdt"   :
+            {modName: "/ti/utils/TrustZone", getOpts: getOpts }
     }
 };
 

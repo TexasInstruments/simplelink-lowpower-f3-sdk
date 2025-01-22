@@ -190,7 +190,7 @@ function getVersionInfo() {
     // Currently 1-to-1. Some processing may be introduced before the final release,
     // (removing patch and build number).
     return {
-        toolVersion: version.radioconfig,
+        toolVersion: version.radioconfig8_source_version,
         settingsVersion: version.rfconfig,
         sdkVersion: version.sdk
     };

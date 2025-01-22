@@ -29,6 +29,7 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "ti/boards/lpf3/cc23xx_crc_linker_symbols.cmd"
 
 --stack_size=1024   /* C stack is also used for ISR stack */
 

@@ -1,0 +1,14 @@
+[
+    {
+        "files": [
+            "+../../../../../../source/ti/boards/LP_EM_CC2340R53/Board.html -> Board.html",
+            "+../cmdinterface.h -> cmdinterface.h",
+            "+../i2ctarget.c -> i2ctarget.c",
+            "+../i2ctarget.syscfg -> i2ctarget.syscfg",
+            "+lpf3_nortos.icf -> lpf3_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../README.html -> README.html",
+            "+../README.md -> README.md"
+        ]
+    }
+]

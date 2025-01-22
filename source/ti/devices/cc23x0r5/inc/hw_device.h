@@ -1,5 +1,5 @@
 /******************************************************************************
-*  Copyright (c) 2021-2023 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2021-2024 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -43,7 +43,7 @@
 /// Size of the call stack used in ROM, in number of bytes
 #define BOOT_CSTACK_SIZE                        (1024-sizeof(fcfg_appTrims_t))
 
-// --- FLASH definitions ---
+// --- Flash definitions ---
 /// Size of a 1T flash sector, in number of bytes
 #define FLASH_1T_SECTOR_SIZE                    2048
 /// Flash word width in number of bits
@@ -51,7 +51,9 @@
 /// Size of a 2T flash sector, in number of bytes
 #define FLASH_2T_SECTOR_SIZE                    (FLASH_1T_SECTOR_SIZE/2)
 /// Size of a MAIN flash sector, in number of bytes
-#define FLASH_MAIN_SECTOR_SIZE                  FLASH_1T_SECTOR_SIZE
+#define FLASH_MAIN_SECTOR_SIZE                  (FLASH_1T_SECTOR_SIZE)
+/// Available flash space for SW
+#define FLASH_MAIN_SW_SIZE                      (FLASH_MAIN_SIZE)
 
 // --- Factory Configuration (FCFG) definitions ---
 /// Size of generalTrims section in FCFG, in number of 32-bit words

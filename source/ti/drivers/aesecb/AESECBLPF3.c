@@ -42,8 +42,16 @@
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 #include <ti/drivers/dma/UDMALPF3.h>
 
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23XX) && (ENABLE_KEY_STORAGE == 1))
+    #error "Key storage is not supported for CC23XX"
+#endif
+
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+    #if (ENABLE_KEY_STORAGE == 1)
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+        #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
+    #endif
 #endif
 
 #include <ti/drivers/dpl/DebugP.h>
@@ -62,14 +70,10 @@
  *   (the first encryption starts by writing BUF3, the successive ones by reading TXT3)
  *  BUSHALT enabled
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESECBLPF3_DEFAULT_AUTOCFG                                             \
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | \
          (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESECBLPF3_DEFAULT_AUTOCFG                                             \
-        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | \
-         (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #else
     #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
 #endif
@@ -90,16 +94,11 @@
  *  - DONEACT = GATE_TRGECB_ON_CHA_DEL (to avoid spurious last ECB using DMA
  *                                      if data length > 1 block)
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESECBLPF3_DMA_CONFIG                                                           \
         ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_AESSTART |                \
          (uint32_t)AES_DMA_DONEACT_GATE_TRGAES_ON_CHA_DEL | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
          (uint32_t)AES_DMA_TRGCHB_AESDONE)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESECBLPF3_DMA_CONFIG                                                           \
-        ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_ECBSTART |                \
-         (uint32_t)AES_DMA_DONEACT_GATE_TRGECB_ON_CHA_DEL | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
-         (uint32_t)AES_DMA_TRGCHB_ECBDONE)
 #else
     #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
 #endif
@@ -127,6 +126,24 @@ static int_fast16_t AESECBLPF3HSM_addData(AESECB_Handle handle, AESECB_Operation
 
 static int_fast16_t AESECBLPF3HSM_finalize(AESECB_Handle handle, AESECB_Operation *operation);
 
+#endif
+
+#if (ENABLE_KEY_STORAGE == 1)
+static void AESECBLPF3HSM_keyUsageFromOperationType(KeyStore_PSA_KeyUsage *usage, AESECB_OperationType operationType);
+
+static void AESECBLPF3HSM_keyUsageFromOperationType(KeyStore_PSA_KeyUsage *usage, AESECB_OperationType operationType)
+{
+    if ((operationType == AESECB_OPERATION_TYPE_ENCRYPT) ||
+        (operationType == AESECB_OPERATION_TYPE_ENCRYPT_SEGMENTED) ||
+        (operationType == AESECB_OPERATION_TYPE_FINALIZE_ENCRYPT_SEGMENTED))
+    {
+        *usage = KEYSTORE_PSA_KEY_USAGE_ENCRYPT;
+    }
+    else
+    {
+        *usage = KEYSTORE_PSA_KEY_USAGE_DECRYPT;
+    }
+}
 #endif
 
 /*
@@ -267,7 +284,7 @@ int_fast16_t AESECB_oneStepEncrypt(AESECB_Handle handle, AESECB_Operation *opera
         status = AESECBLPF3_oneStepOperation(handle, operation, AESECB_OPERATION_TYPE_ENCRYPT);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         status = AESECBLPF3HSM_oneStepOperation(handle, operation, AESECB_OPERATION_TYPE_ENCRYPT);
     }
@@ -294,7 +311,7 @@ int_fast16_t AESECB_oneStepDecrypt(AESECB_Handle handle, AESECB_Operation *opera
         status = AESECB_STATUS_FEATURE_NOT_SUPPORTED;
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         status = AESECBLPF3HSM_oneStepOperation(handle, operation, AESECB_OPERATION_TYPE_DECRYPT);
     }
@@ -395,15 +412,63 @@ static int_fast16_t AESECBLPF3_startOperation(AESECB_Handle handle, AESECB_Opera
 {
     AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
     int_fast16_t status;
+#if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage;
+#endif
 
-    /* Set up the key and AES engine to begin an operation */
-    if (operation->inputLength == AES_BLOCK_SIZE)
+    if (operation->key->encoding == CryptoKey_PLAINTEXT)
     {
-        AESCommonLPF3_setupOperation(&object->common.key, AESEBCLPF3_SINGLE_BLOCK_AUTOCFG);
+        /* Set up the key and AES engine to begin an operation */
+        if (operation->inputLength == AES_BLOCK_SIZE)
+        {
+            AESCommonLPF3_setupOperation(&object->common.key, AESECBLPF3_SINGLE_BLOCK_AUTOCFG);
+        }
+        else
+        {
+            AESCommonLPF3_setupOperation(&object->common.key, AESECBLPF3_DEFAULT_AUTOCFG);
+        }
     }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (operation->key->encoding == CryptoKey_KEYSTORE)
+    {
+        AESECBLPF3HSM_keyUsageFromOperationType(&usage, object->operationType);
+
+        keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(operation->key,
+                                                           &KeyStore_keyingMaterial[0],
+                                                           sizeof(KeyStore_keyingMaterial),
+                                                           &object->keyAssetID,
+                                                           KEYSTORE_PSA_ALG_ECB_NO_PADDING,
+                                                           usage);
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            AESWriteKEY(KeyStore_keyingMaterial);
+
+            if (operation->inputLength == AES_BLOCK_SIZE)
+            {
+                /* Set AUTOCFG */
+                AESSetAUTOCFG(AESECBLPF3_SINGLE_BLOCK_AUTOCFG);
+            }
+            else
+            {
+                /* Set AUTOCFG */
+                AESSetAUTOCFG(AESECBLPF3_DEFAULT_AUTOCFG);
+            }
+        }
+        else if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESECB_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else
+        {
+            return AESECB_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+    }
+#endif
     else
     {
-        AESCommonLPF3_setupOperation(&object->common.key, AESECBLPF3_DEFAULT_AUTOCFG);
+        return AESECB_STATUS_FEATURE_NOT_SUPPORTED;
     }
 
     if ((object->common.returnBehavior != AES_RETURN_BEHAVIOR_POLLING) &&
@@ -592,13 +657,13 @@ int_fast16_t AESECB_setupEncrypt(AESECB_Handle handle, const CryptoKey *key)
      * Key material pointer and length are not checked until adding or
      * finalizing data.
      */
-    if (key->encoding == CryptoKey_PLAINTEXT)
+    if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         /* When using the AES driver with the LAES engine */
         status = AESCommonLPF3_setupSegmentedOperation(&object->common, key);
     }
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    else if (key->encoding == CryptoKey_PLAINTEXT_HSM || key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
         {
@@ -651,7 +716,7 @@ int_fast16_t AESECB_setupDecrypt(AESECB_Handle handle, const CryptoKey *key)
     int_fast16_t status       = AESECB_STATUS_SUCCESS;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if (key->encoding == CryptoKey_PLAINTEXT_HSM || key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
         if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
@@ -704,7 +769,7 @@ int_fast16_t AESECB_addData(AESECB_Handle handle, AESECB_Operation *operation)
     int_fast16_t status;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         return AESECBLPF3HSM_addData(handle, operation);
     }
@@ -760,7 +825,7 @@ int_fast16_t AESECB_finalize(AESECB_Handle handle, AESECB_Operation *operation)
     int_fast16_t status;
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         return AESECBLPF3HSM_finalize(handle, operation);
     }
@@ -965,8 +1030,6 @@ static inline void AESECBLPF3HSM_OneStepPostProcessing(uintptr_t arg0)
 
     HSMLPF3_releaseLock();
 
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
     if ((object->operationType == AESECB_OPERATION_TYPE_FINALIZE_ENCRYPT_SEGMENTED) ||
         (object->operationType == AESECB_OPERATION_TYPE_FINALIZE_DECRYPT_SEGMENTED) ||
         (object->operationType == AESECB_OPERATION_TYPE_ENCRYPT) ||
@@ -986,15 +1049,68 @@ static int_fast16_t AESECBLPF3HSM_processOneStep(AESECB_Handle handle)
     int_fast16_t status       = AESECB_STATUS_ERROR;
     int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
     AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    #if (ENABLE_KEY_STORAGE == 1)
+    KeyStore_PSA_KeyFileId keyID;
+    KeyStore_PSA_KeyAttributes attributes = KEYSTORE_PSA_KEY_ATTRIBUTES_INIT;
+    KeyStore_PSA_KeyLifetime lifetime;
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage;
+    #endif
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    if (!HSMLPF3_acquireLock(object->common.semaphoreTimeout, (uintptr_t)handle))
     {
         return AESECB_STATUS_RESOURCE_UNAVAILABLE;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+    if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM)
+    {
+        HSMLPF3_constructAESECBOneStepPhysicalToken(object, object->common.key.u.plaintext.keyMaterial);
+    }
+    #if (ENABLE_KEY_STORAGE == 1)
+    else if (object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        GET_KEY_ID(keyID, object->common.key.u.keyStore.keyID);
 
-    HSMLPF3_constructAESECBOneStepPhysicalToken(object);
+        keyStoreStatus = KeyStore_PSA_getKeyAttributes(keyID, &attributes);
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            AESECBLPF3HSM_keyUsageFromOperationType(&usage, object->operationType);
+
+            keyStoreStatus = KeyStore_PSA_retrieveFromKeyStore(&object->common.key,
+                                                               &KeyStore_keyingMaterial[0],
+                                                               sizeof(KeyStore_keyingMaterial),
+                                                               &object->keyAssetID,
+                                                               KEYSTORE_PSA_ALG_ECB_NO_PADDING,
+                                                               usage);
+
+            if (keyStoreStatus == KEYSTORE_PSA_STATUS_SUCCESS)
+            {
+                lifetime = KeyStore_PSA_getKeyLifetime(&attributes);
+
+                object->keyLocation = KEYSTORE_PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
+            }
+        }
+
+        if (keyStoreStatus == KEYSTORE_PSA_STATUS_INVALID_KEY_ID)
+        {
+            return AESECB_STATUS_KEYSTORE_INVALID_ID;
+        }
+        else if (keyStoreStatus != KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            return AESECB_STATUS_KEYSTORE_GENERIC_ERROR;
+        }
+
+        HSMLPF3_constructAESECBOneStepPhysicalToken(object, &KeyStore_keyingMaterial[0]);
+    }
+    #endif
+    else
+    {
+        HSMLPF3_releaseLock();
+
+        return AESECB_STATUS_FEATURE_NOT_SUPPORTED;
+    }
 
     hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->common.returnBehavior,
                                     AESECBLPF3HSM_OneStepPostProcessing,
@@ -1012,8 +1128,6 @@ static int_fast16_t AESECBLPF3HSM_processOneStep(AESECB_Handle handle)
 
     if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
     {
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
         HSMLPF3_releaseLock();
     }
 

@@ -22,7 +22,7 @@ const GPDF_SEC_KEY_LEN = 16;
 let gpdfSecurityKey = "";
 let defaultChanlist =  "0";
 
-if (zigbee.deviceType === "gpd")
+if (zigbee.deviceType.includes("gpd"))
 {
     gpdfSecurityKey = "{";
     let i;
@@ -37,7 +37,7 @@ if (zigbee.deviceType === "gpd")
 }
 else
 {
-    defaultChanlist = common.chanArrToBitmask(zigbee.rf.primaryChannels);
+    defaultChanlist = common.chanArrToBitmask(zigbee.primaryChannels);
 }
 %%}
 /*
@@ -61,7 +61,7 @@ extern "C"
 /******************************************************************************
  * INCLUDES
  */
-% if (zigbee.deviceType !== "gpd") {
+% if (!zigbee.deviceType.includes("gpd")) {
 #include "zboss_api.h"
 %}
 /******************************************************************************
@@ -72,7 +72,7 @@ extern "C"
  * CONFIGURATION
  */
 
-% if (zigbee.deviceType === "gpd") {
+% if (zigbee.deviceType.includes("gpd")) {
 #ifndef CHANNEL_LIST
 #define CHANNEL_LIST            {`zigbee.gpdRf.channels`}
 #endif
@@ -119,12 +119,12 @@ extern "C"
 
 /* Value used by end device when sending End Device Timeout Request */
 #ifndef ED_TIMEOUT_VALUE
-#define ED_TIMEOUT_VALUE        `zigbee.network.endDeviceTimeout`
+#define ED_TIMEOUT_VALUE        `zigbee.endDeviceTimeout`
 #endif
 
 %%{
 const allZeroReg = new RegExp("^[0]{" + common.NWK_KEY_LEN * 2 + "}$", "g");
-const allZeroKey = allZeroReg.test(zigbee.network.defaultNwkKey)
+const allZeroKey = allZeroReg.test(zigbee.defaultNwkKey)
 
 /* Default network key */
 let defaultNwkKey = "{";
@@ -132,7 +132,7 @@ let i = 0;
 for(i = 0; i < common.NWK_KEY_LEN; i++)
 {
     defaultNwkKey += "0x";
-    defaultNwkKey += zigbee.network.defaultNwkKey.substring((2*i), (2*i)+2);
+    defaultNwkKey += zigbee.defaultNwkKey.substring((2*i), (2*i)+2);
     defaultNwkKey += ",";
 }
 defaultNwkKey = defaultNwkKey.slice(0,-1);
@@ -146,16 +146,16 @@ defaultNwkKey += "}";
 %     }
 
 #ifndef MAX_CHILDREN
-#define MAX_CHILDREN             `zigbee.network.nwkMaxChildren`
+#define MAX_CHILDREN             `zigbee.nwkMaxChildren`
 #endif
 
 #ifndef ED_RX_ALWAYS_ON
-#define ED_RX_ALWAYS_ON         `(zigbee.pm.powerModeOperation === "alwaysOn") ? "ZB_TRUE" : "ZB_FALSE"`
+#define ED_RX_ALWAYS_ON         `(zigbee.powerModeOperation === "alwaysOn") ? "ZB_TRUE" : "ZB_FALSE"`
 #endif
 
 /* The number of milliseconds to wait between data request polls to the coordinator. */
 #ifndef ED_POLL_RATE
-#define ED_POLL_RATE             `zigbee.pm.pollPeriod`
+#define ED_POLL_RATE             `zigbee.pollPeriod`
 #endif
 % }
 

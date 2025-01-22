@@ -5,6 +5,38 @@
  * This file implements the Asymmetric crypto encryption services.
  */
 
+/*
+ * Copyright (c) 2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                                                            */
 /*   Module        : DDK-130_bsd                                              */
@@ -66,7 +98,7 @@
  * Encrypt a short message with public key.
  */
 psa_status_t
-psa_asymmetric_encrypt(psa_key_id_t key,
+psa_asymmetric_encrypt(mbedtls_svc_key_id_t key,
                        psa_algorithm_t alg,
                        const uint8_t * input,
                        size_t input_length,
@@ -88,11 +120,11 @@ psa_asymmetric_encrypt(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_ENCRYPT != (pKey->attributes.usage & PSA_KEY_USAGE_ENCRYPT))
+    else if (PSA_KEY_USAGE_ENCRYPT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_ENCRYPT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
-    else if (output_size < PSA_ASYMMETRIC_ENCRYPT_OUTPUT_SIZE(pKey->attributes.type,
+    else if (output_size < PSA_ASYMMETRIC_ENCRYPT_OUTPUT_SIZE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type),
                                                               pKey->modulus_size, alg))
     {
         funcres = PSA_ERROR_BUFFER_TOO_SMALL;
@@ -113,7 +145,7 @@ psa_asymmetric_encrypt(psa_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
         if (PSA_SUCCESS == funcres)
         {
             if (PSA_ALG_IS_RSA_OAEP(alg))
@@ -222,7 +254,7 @@ psa_asymmetric_encrypt(psa_key_id_t key,
             {
                 /* MISRA - Intentially empty */
             }
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {
@@ -240,7 +272,7 @@ psa_asymmetric_encrypt(psa_key_id_t key,
  * decrypt a short message with private key.
  */
 psa_status_t
-psa_asymmetric_decrypt(psa_key_id_t key,
+psa_asymmetric_decrypt(mbedtls_svc_key_id_t key,
                        psa_algorithm_t alg,
                        const uint8_t * input,
                        size_t input_length,
@@ -262,7 +294,7 @@ psa_asymmetric_decrypt(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_DECRYPT != (pKey->attributes.usage & PSA_KEY_USAGE_DECRYPT))
+    else if (PSA_KEY_USAGE_DECRYPT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_DECRYPT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -285,7 +317,7 @@ psa_asymmetric_decrypt(psa_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
         if (PSA_SUCCESS == funcres)
         {
             if (PSA_ALG_IS_RSA_OAEP(alg))
@@ -386,7 +418,7 @@ psa_asymmetric_decrypt(psa_key_id_t key,
             {
                 /* MISRA - Intentially empty */
             }
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {

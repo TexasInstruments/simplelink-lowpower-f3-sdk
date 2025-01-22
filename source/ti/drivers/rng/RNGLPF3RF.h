@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,24 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*!
+ * @brief Repetitive Count Test Failed
+ *
+ */
+#define RNG_STATUS_RCT_FAIL ((int_fast16_t)(RNG_STATUS_RESERVED - 0))
+
+/*!
+ * @brief Adaptive Proportion Test Failed
+ *
+ */
+#define RNG_STATUS_APT_FAIL ((int_fast16_t)(RNG_STATUS_RESERVED - 1))
+
+/*!
+ * @brief Adaptive Proportion Test (Bimodal) Failed
+ *
+ */
+#define RNG_STATUS_APT_BIMODAL_FAIL ((int_fast16_t)(RNG_STATUS_RESERVED - 2))
 
 /* Word length of the noise input from RCL */
 extern const uint32_t RNGLPF3RF_noiseInputWordLen;

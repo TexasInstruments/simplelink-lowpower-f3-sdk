@@ -8,6 +8,10 @@
         "cc23xx": "adc_noise_bt5_cc23xx.json",
         "cc27xx": "adc_noise_bt5_cc27xx.json"
       },
+      "phy_files": {
+        "cc23xx": "adc_noise_bt5_cc23xx.phy",
+        "cc27xx": "adc_noise_bt5_cc27xx.phy"
+      },
       "name": "adc_noise",
       "label": "ADC Noise",
       "protocol": "ADC Noise, BLE based"
@@ -17,6 +21,10 @@
         "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.json",
         "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.json"
       },
+      "phy_files": {
+        "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.phy",
+        "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.phy"
+      },
       "name": "ble",
       "label": "1 Mbps / 2 Mbps / Coded",
       "protocol": "Bluetooth 5, LE",
@@ -24,8 +32,12 @@
     },
     {
       "file8": {
-        "cc23xx": "ble_bt5_generic_cc23xx.json",
-        "cc27xx": "ble_bt5_generic_cc27xx.json"
+        "cc23xx": "ble_bt5_1m_2m_coded_generic_cc23xx.json",
+        "cc27xx": "ble_bt5_1m_2m_coded_generic_cc27xx.json"
+      },
+      "phy_files": {
+        "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.phy",
+        "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.phy"
       },
       "name": "ble_gen",
       "label": "Generic 1 Mbps / 2 Mbps / Coded",
@@ -37,8 +49,12 @@
         "cc23xx": "ble_bt6_cs_hp_cc23xx.json",
         "cc27xx": "ble_bt6_cs_hp_cc27xx.json"
       },
+      "phy_files": {
+        "cc23xx": "ble_bt6_cs_hp_cc23xx.phy",
+        "cc27xx": "ble_bt6_cs_hp_cc27xx.phy"
+      },
       "name": "ble_cs_hp",
-      "label": "Channel Sounding High Performance",
+      "label": "Channel Sounding",
       "protocol": "Bluetooth 6, LE",
       "usage": "stack"
     }
@@ -46,7 +62,12 @@
   "ieee": [
     {
       "file8": {
-        "cc23xx": "ieee_802_15_4_oqpsk_250k_cc23xx.json"
+        "cc23xx": "ieee_802_15_4_oqpsk_250k_cc23xx.json",
+        "cc27xx": "ieee_802_15_4_oqpsk_250k_cc27xx.json"
+      },
+      "phy_files": {
+        "cc23xx": "ieee_802_15_4_oqpsk_250k_cc23xx.phy",
+        "cc27xx": "ieee_802_15_4_oqpsk_250k_cc27xx.phy"
       },
       "name": "ieee_802_15_4",
       "label": "250 kbps, O-QPSK",
@@ -55,7 +76,12 @@
     },
     {
       "file8": {
-        "cc23xx": "ieee_802_15_4_oqpsk_250k_generic_cc23xx.json"
+        "cc23xx": "ieee_802_15_4_oqpsk_250k_generic_cc23xx.json",
+        "cc27xx": "ieee_802_15_4_oqpsk_250k_generic_cc27xx.json"
+      },
+      "phy_files": {
+        "cc23xx": "ieee_802_15_4_oqpsk_250k_cc23xx.phy",
+        "cc27xx": "ieee_802_15_4_oqpsk_250k_cc27xx.phy"
       },
       "name": "ieee_802_15_4_gen",
       "label": "Generic 250 kbps, O-QPSK",
@@ -68,6 +94,9 @@
       "file8": {
         "cc23xx": "gfsk_2m_cc23xx.json"
       },
+      "phy_files": {
+        "cc23xx": "gfsk_2m_cc23xx.phy"
+      },
       "name": "gfsk_2_mbps",
       "label": "2 Mbps, 320 kHz dev, GFSK",
       "protocol": "Proprietary",
@@ -76,6 +105,9 @@
     {
       "file8": {
         "cc23xx": "msk_250k_cc23xx.json"
+      },
+      "phy_files": {
+        "cc23xx": "msk_250k_cc23xx.phy"
       },
       "name": "msk_250_kbps",
       "label": "250 kbps, MSK",
@@ -86,6 +118,9 @@
       "file8": {
         "cc23xx": "msk_250k_fec_cc23xx.json"
       },
+      "phy_files": {
+        "cc23xx": "msk_250k_fec_cc23xx.phy"
+      },
       "name": "msk_250_kbps_fec",
       "label": "250 kbps, MSK, FEC",
       "protocol": "Proprietary",
@@ -94,6 +129,9 @@
     {
       "file8": {
         "cc23xx": "nesb_1m_2m_cc23xx.json"
+      },
+      "phy_files": {
+        "cc23xx": "nesb_1m_2m_cc23xx.phy"
       },
       "name": "nesb",
       "label": "1 Mbps / 2 Mbps",

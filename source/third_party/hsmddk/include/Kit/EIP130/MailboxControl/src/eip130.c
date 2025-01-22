@@ -566,7 +566,12 @@ EIP130_MailboxCanWriteToken(
         {
             *ModuleStatus = EIP130_RegisterReadModuleStatus(Device);
             Value = EIP130_RegisterReadOptions2(Device);
-            if (((*ModuleStatus & BIT_9) == 0U) ||
+            if (
+#ifdef EIP130_PERFORM_CRC24_OK_CHECK
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+                ((*ModuleStatus & BIT_9) == 0U) ||
+#endif
+#endif
                 (((Value & BIT_9) != 0U) && ((*ModuleStatus & BIT_23) == 0U)))
             {
                 /* EIP-130 is not (yet) useable:
@@ -575,7 +580,6 @@ EIP130_MailboxCanWriteToken(
                 rc = false;
             }
         }
-
         if (rc)
         {
             /* Read and validate mailbox write status */

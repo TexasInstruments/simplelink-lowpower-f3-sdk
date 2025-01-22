@@ -113,7 +113,7 @@
 % if (kernel.useTimers) {
 /* Software timer definitions. */
 #define configUSE_TIMERS 1
-#define configTIMER_TASK_PRIORITY (5)
+#define configTIMER_TASK_PRIORITY (`kernel.timerTaskPriority`)
 #define configTIMER_QUEUE_LENGTH (20)
 #define configTIMER_TASK_STACK_DEPTH ((unsigned short)(`kernel.timerStackSize / 4`))
 % }
@@ -162,9 +162,6 @@
             ;                     \
     }
 % }
-% else {
-#define configASSERT(x)
-% }
 
 /* Floating point unit enabled or disabled */
 #define configENABLE_FPU `kernel.fpuEnabled ? 1 : 0`
@@ -185,13 +182,13 @@
 /* Constants related to the behaviour or the scheduler. */
 #define configTICK_RATE_HZ (`kernel.tickRate`UL)
 #define configUSE_PREEMPTION 1
-#define configUSE_TIME_SLICING 0
-#define configMAX_PRIORITIES (10UL)
+#define configUSE_TIME_SLICING `kernel.useTimeSlicing ? 1 : 0`
+#define configMAX_PRIORITIES (`kernel.maxPriorities`UL)
 #define configIDLE_SHOULD_YIELD 0
 #define configUSE_16_BIT_TICKS 0 /* Only for 8 and 16-bit hardware. */
 
 /* Constants that describe the hardware and memory usage. */
-#define configMAX_TASK_NAME_LEN (12)
+#define configMAX_TASK_NAME_LEN (`kernel.maxTaskNameLen`)
 #define configRECORD_STACK_HIGH_ADDRESS 1
 
 /* Required by TI driver implementations */
@@ -284,7 +281,7 @@
  * The lowest interrupt priority that can be used in a call to a "set priority"
  * function.
  */
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY 0x07
+#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY `(2**kernel.nvicPriBits) - 1`
 
 /*
  * The highest interrupt priority that can be used by any interrupt service
@@ -304,9 +301,9 @@
  * !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
  * See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html.
  *
- * Priority 1 (shifted 5 since only the top 3 bits are implemented).
- * Priority 1 is the second highest priority.
+ * The priority is shifted since NVIC priority bits are placed MSB.
  * Priority 0 is the highest priority.
+ * Priority 1 is the second highest priority, etc.
  */
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 

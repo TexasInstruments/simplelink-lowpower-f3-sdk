@@ -5,6 +5,7 @@
             "+../../app/app_central.c -> app_central.c",
             "+../../app/app_connection.c -> app_connection.c",
             "+../../app/app_data.c -> app_data.c",
+            "+../../app/app_l2cap_coc.c -> app_l2cap_coc.c",
             "+../../app/app_main.c -> app_main.c",
             "+../../app/app_main.h -> app_main.h",
             "+../../app/app_menu.c -> app_menu.c",

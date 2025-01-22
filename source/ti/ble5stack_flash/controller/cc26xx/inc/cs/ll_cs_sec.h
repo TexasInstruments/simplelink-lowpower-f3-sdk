@@ -356,12 +356,11 @@ uint8 hr1(uint8 r, csTransactionId_e tId);
  *
  * output parameters
  *
- * @param       pRndBits.
+ * @param       pRndBits - pointer to random bits
  *
- * @return      Rout - random number
+ * @return      None
  */
-uint32 csDrbg(uint8 randomBitsRequired, uint8* pRndBits,
-              csTransactionId_e transactionId);
+void csDrbg(uint8 randomBitsRequired, uint8* pRndBits, csTransactionId_e transactionId);
 
 /*******************************************************************************
  * @fn          cr1

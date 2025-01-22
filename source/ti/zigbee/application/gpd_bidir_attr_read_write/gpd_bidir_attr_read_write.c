@@ -324,6 +324,8 @@ MAIN()
   /* ZPGD stack init */
   gboss_app_init(g_gboss_encryption_key, &g_device_config);
 
+  gboss_bidir_operational_init(&g_device_config, &g_tx_cfg);
+
   gboss_bidir_battery_mode();
 
   /* Inform platform layer about buttons number */

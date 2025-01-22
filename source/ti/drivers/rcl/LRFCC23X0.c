@@ -39,6 +39,7 @@
 #include <ti/drivers/rcl/LRF.h>
 #include <ti/drivers/rcl/RCL_Scheduler.h>
 #include <ti/drivers/rcl/RCL_Command.h>
+#include <ti/drivers/rcl/RCL_Feature.h>
 #include <ti/log/Log.h>
 #include <ti/drivers/dpl/HwiP.h>
 
@@ -54,7 +55,18 @@
 
 
 /* Definitions for trim */
+#define LRF_TRIM_NORMAL_BW    0
+#define LRF_TRIM_HIGH_BW      1                 /* Revision >= 4 only */s
+#define LRF_TRIM_MIN_VERSION_FULL_FEATURES  4    /* Only AppTrims revision 4 and above has all features */
 #define LRF_TRIM_VERSION_DCOLDO_TEMPERATURE_COMPENSATION 8 /* Only AppTrims revision 8 and above have DCOLDO temperature compensation */
+
+/* RCL-335: Some CC23X0R5 devices (State D) have an error in the programmed RSSI offset */
+#define LRF_TRIM_VERSION_RSSIOFFSET_ISSUE_CC23X0R5 4     /* AppTrims revision with issue in rssiOffset field */
+#define LRF_TRIM_LIMIT_RSSIOFFSET_ISSUE_CC23X0R5  (-4)   /* If rssiOffset is less or equal to this, apply correction */
+#define LRF_TRIM_CORRECTION_RSSIOFFSET_ISSUE_CC23X0R5 5  /* Correction to apply to devices with wrong RSSI offset */
+
+/* RCL-616: DCOLDO0:FIRSTTRIM is hardcoded to 8 and DCOLDO0:SECONDTRIM is increased by 10 for CC27XX state B devices */
+#define LRF_TRIM_DCOLDO0_SECONDTRIM_INC_STATE_B_DCOLDO_WORKAROUND_CC27XX 10U    /* DCOLDO0:SECONDTRIM needs to be increased by 10 on CC27XX state B devices */
 #define LRF_TRIM_DCOLDO0_SECONDTRIM_CODED_BITS_MASK ((1U << 3U) | (1U << 5U))    /* Bits mask for bit 3 and 5 of DCOLDO0:SECONDTRIM */
 #define LRF_TRIM_DCOLDO0_SECONDTRIM_MAX_STATE 63U    /* DCOLDO0:SECONDTRIM maximum value allowed within the range of 6-bit representation */
 #define LRF_TRIM_DCOLDO0_FIRSTTRIM_MIN_STATE -8    /* DCOLDO0:FIRSTTRIM minimum value allowed within the range of 4-bit two's complement representation */
@@ -64,7 +76,6 @@
 #define LRF_DCOLDOSECOND_LOW_TEMP_ADJ_FACTOR  5
 #define LRF_DCOLDO_DEADBAND 10
 #define LRF_DCOLDO_OFFSET_LOWER_SATURATION 0
-
 /* The adjacent factor for DCOLDOFIRST is 2.5, this is represented as "5 >> 1" with following macros to avoid using float values */
 #define LRF_DCOLDOFIRST_HIGH_TEMP_ADJ_FACTOR_S  1
 #define LRF_DCOLDOFIRST_HIGH_TEMP_ADJ_FACTOR_MUL 5
@@ -81,8 +92,10 @@
 #define LRF_DCOLDO_SHIFT_HIGH_TEMP 5
 #define LRF_DCOLDO_SHIFT_LOW_TEMP 25
 
-/* Nominal temperature for offset definitions */
+/* Nominal temperature (degrees C) for offset definitions */
 #define LRF_TEMPERATURE_NOM 25
+
+#define LRF_DCDC_IPEAK_RF_ACTIVITY  3
 
 static uint32_t LRF_findPllMBase(uint32_t frequency);
 static uint32_t countLeadingZeros(uint16_t value);
@@ -103,6 +116,7 @@ static int32_t LRF_findExtTrim0TrimAdjustment(int32_t temperature, int32_t tempC
 static uint32_t LRF_scaleFreqWithHFXTOffset(uint32_t frequency);
 static void LRF_writeFifoPtr(uint32_t value, uintptr_t regAddr);
 static void LRF_writeFifoPtrs(uint32_t value, uintptr_t regAddr0, uintptr_t regAddr1);
+static void LRF_temperatureNotification(int16_t currentTemperature);
 
 uint32_t swParamList[sizeof(LRF_SwParam)/sizeof(uint32_t)];
 const size_t swParamListSz = sizeof(LRF_SwParam);
@@ -112,6 +126,7 @@ static struct {
     const LRF_TOPsmImage   *mceLoaded;
     const LRF_TOPsmImage   *rfeLoaded;
     uint16_t                phyFeatures;
+    int16_t                 lastTrimTemperature;
     LRF_TxPowerTable_Entry  currentTxPower;
     LRF_TxPowerTable_Entry  rawTxPower;
 } lrfPhyState = {0};
@@ -121,6 +136,14 @@ static struct {
 
 /* Status to tell if the RX FIFO is already in a deallocated state (SRP and RP being the same) */
 static bool rxFifoDeallocated = true;
+
+#ifdef DeviceFamily_CC27XX
+/* Stores the previous DCDC IPEAK setting to be set after RF activity */
+static uint8_t dcdcIpeakRestoreSetting;
+#endif
+
+/* Temperature threshold (degrees C) for use by the temperature monitoring. A value of 0 disables the feature. */
+uint16_t rclTemperatureThreshold = 8;
 
 LRF_SetupResult LRF_setupRadio(const LRF_Config *lrfConfig, uint16_t phyFeatures, LRF_RadioState lrfState)
 {
@@ -363,10 +386,10 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
     int32_t agcLowGainOffset = 0;
     int32_t temperature = hal_get_temperature();
 
+    lrfPhyState.lastTrimTemperature = temperature;
+
     if (trimDef->revision >= LRF_TRIM_MIN_VERSION_FULL_FEATURES)
     {
-        int32_t temperature = hal_get_temperature();
-
         LRF_Trim_tempLdoRtrim tempLdoRtrim = trimDef->trim3.fields.lrfdrfeExtTrim1.tempLdoRtrim;
 
         int32_t tempThreshLow = LRF_TEMPERATURE_MIN + tempLdoRtrim.tThrl * (1 << LRF_EXTTRIM1_TEMPERATURE_SCALE_EXP);
@@ -411,6 +434,7 @@ static void LRF_temperatureCompensateTrim(const LRF_TrimDef *trimDef)
                                                           trimDef->trim3.fields.lrfdrfeExtTrim0.magnOffset);
         }
     }
+
     LRF_temperatureCompensateDcoldo(temperature, trimDef);
 
     uint32_t divLdoVoutTrim = trimDef->trim1.fields.divLdo.voutTrim;
@@ -733,6 +757,9 @@ void LRF_enable(void)
 {
     /* Set MSGBOX register to 0 */
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_MSGBOX) = 0;
+#ifdef DeviceFamily_CC27XX
+    dcdcIpeakRestoreSetting = hal_set_dcdc_ipeak_setting(LRF_DCDC_IPEAK_RF_ACTIVITY);
+#endif
 
     /* Initialize and enable PBE TOPsm and FIFO */
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_INIT)   = ((1 << LRFDPBE_INIT_MDMF_S)   |
@@ -753,6 +780,10 @@ void LRF_enable(void)
 
 void LRF_disable(void)
 {
+#ifdef DeviceFamily_CC27XX
+    hal_set_dcdc_ipeak_setting(dcdcIpeakRestoreSetting);
+#endif
+
     /* Request PBE powerdown */
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_PDREQ) = LRFDPBE_PDREQ_TOPSMPDREQ_M;
     /* Disable all PBE modules */
@@ -805,7 +836,7 @@ uint32_t LRF_prepareRxFifo(void)
 
 uint32_t LRF_prepareTxFifo(void)
 {
-    /* Reset RXFIFO. NOTE: Only allowed while PBE is not running, ref. RCL-367 */
+    /* Reset TXFIFO. NOTE: Only allowed while PBE is not running, ref. RCL-367 */
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_TXFIFO_RESET >> LRFDPBE_FCMD_DATA_S);
     /* Set up TXFIFO with auto commit, without auto deallocate */
     uint32_t fcfg0 = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0);
@@ -1498,6 +1529,16 @@ int8_t LRF_readRssi(void)
     return (int8_t)(HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSI) & LRFDRFE_RSSI_VAL_M);
 }
 
+int8_t LRF_readMaxRssi(void)
+{
+    return (int8_t)(HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSIMAX) & LRFDRFE_RSSIMAX_VAL_M);
+}
+
+void LRF_initializeMaxRssi(int8_t initRssi)
+{
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSIMAX) = ((uint32_t)initRssi) & LRFDRFE_RSSIMAX_VAL_M;
+}
+
 void LRF_setRawTxPower(uint32_t value, uint32_t temperatureCoefficient)
 {
     lrfPhyState.rawTxPower.value.rawValue = value;
@@ -1618,4 +1659,70 @@ static uint32_t LRF_scaleFreqWithHFXTOffset(uint32_t frequency)
     }
 
     return frequency;
+}
+
+/*
+ *  ======== LRF_temperatureNotification ========
+ */
+static void LRF_temperatureNotification(int16_t currentTemperature)
+{
+    (void) currentTemperature;
+    /* Post event to tell handler that radio operation should be restarted */
+    RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventSilentlyRestartRadio);
+}
+
+/*
+ *  ======== LRF_enableTemperatureMonitoring ========
+ */
+void LRF_enableTemperatureMonitoring(void)
+{
+    if (rclFeatureControl.enableTemperatureMonitoring)
+    {
+        if (rclTemperatureThreshold != 0)
+        {
+            hal_set_temperature_notification(lrfPhyState.lastTrimTemperature, rclTemperatureThreshold, LRF_temperatureNotification);
+        }
+    }
+}
+
+/*
+ *  ======== LRF_disableTemperatureMonitoring ========
+ */
+void LRF_disableTemperatureMonitoring(void)
+{
+    if (rclFeatureControl.enableTemperatureMonitoring)
+    {
+        hal_stop_temperature_notification();
+    }
+}
+
+/*
+ *  ======== LRF_updateTemperatureCompensation ========
+ */
+void LRF_updateTemperatureCompensation(uint32_t rfFrequency, bool tx)
+{
+    if (rclFeatureControl.enableTemperatureMonitoring)
+    {
+        LRF_SwParam *swParam = (LRF_SwParam *) swParamList;
+        /* Allow SWTCXO updates and adjust HFXT with missed updates */
+        hal_power_release_swtcxo_update_constraint();
+        /* Set RF frequency word based on updated HFXT value */
+        LRF_programFrequency(rfFrequency, tx);
+        /* Re-calculate temperature dependent trims */
+        LRF_setTemperatureTrim(swParam->trimDef);
+        /* Re-calculate TX power */
+        LRF_programTemperatureCompensatedTxPower();
+        /* Set new limit for temperature monitoring */
+        LRF_enableTemperatureMonitoring();
+        /* Stop SWTCXO updates again */
+        hal_power_set_swtcxo_update_constraint();
+    }
+}
+
+/*
+ *  ======== LRF_updateTemperatureCompensation ========
+ */
+int16_t LRF_getLastTrimTemperature(void)
+{
+    return lrfPhyState.lastTrimTemperature;
 }

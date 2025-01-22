@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,6 +73,9 @@ extern "C" {
 #define AESCommonLPF3_DMA_CHA_BITMASK ((uint32_t)1U << DMA_CH4)
 /* DMA Channel 5 is reserved for AES Channel B (output) */
 #define AESCommonLPF3_DMA_CHB_BITMASK ((uint32_t)1U << DMA_CH5)
+
+/* Max key length supported by HSM - needed for KeyStore material retrieval */
+#define AESCommonLPF3_256_KEY_LENGTH_BYTES (256U / 8U)
 
 /*!
  *  @brief      AESCommonLPF3 Hardware Attributes

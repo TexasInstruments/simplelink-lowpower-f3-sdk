@@ -202,7 +202,7 @@ class Queue {
         }
         let queue = makeDetailed ? new DetailedQueue() : new BasicQueue();
         queue.Name = map["Name"];
-        queue.Address = map["Address"];
+        queue.Address = this.helper.helperGetHexString(map["Address"]);
         queue.Length = map["uxLength"];
         queue.MsgWaiting = map["uxMessagesWaiting"];
         queue.ItemSize = map["uxItemSize"];

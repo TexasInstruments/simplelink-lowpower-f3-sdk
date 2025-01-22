@@ -56,14 +56,15 @@
 
 #define ZB_OSIF_NVRAM_PHY_PAGE_SIZE       0x0800UL /* 2KB */
 #define ZB_NVRAM_PAGE_COUNT               2
-#define ZB_NVRAM_PAGE_SIZE                0x4000UL /* 8KB */
 #define ZB_OSIF_NVRAM_PAGE_SIZE           ZB_OSIF_NVRAM_PHY_PAGE_SIZE
 #define ZB_NVRAM_PHY_PAGE_SIZE            ZB_OSIF_NVRAM_PHY_PAGE_SIZE
 
+#if defined(ZB_ZGPD_ROLE)
 /* 20480 */
 #define ZB_FLASH_MSS_TOTAL_BITS           (ZB_MSS_PAGE_COUNT * ZB_OSIF_NVRAM_PAGE_SIZE / ZB_FLASH_WORD_SIZE_BYTES * ZB_FLASH_MAX_WRITES)
 /* This value should be approximately equal to (ZB_FLASH_MSS_TOTAL_BITS ^ 1/3) / ZB_FLASH_MAX_WRITES */
 #define ZB_FLASH_MSS_ONE_LEVEL_WORDS      26u /* 78728 bytes of 81920 (10 pages) will be used */
+#endif // ZB_ZGPD_ROLE
 
 #if defined(ZB_USE_NVRAM)
 

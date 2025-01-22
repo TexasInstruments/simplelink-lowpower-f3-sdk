@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,21 @@
 let Common = system.getScript("/ti/drivers/Common.js");
 let logError = Common.logError;
 
+let powerFamily = Common.device2Family(system.deviceData, "Power");
+let Power = system.getScript("/ti/drivers/power/Power" + powerFamily);
+
+/* Calculate allowed SIRLPclockDivider values */
+let uartClockFrequency = Power.getClockFrequencies();
+if (powerFamily === "CC27XX") {
+    /* The CC27XX UART runs at half the CPU clock frequency */
+    uartClockFrequency = uartClockFrequency / 2;
+}
+/* Minimum and maximum frequencies in Hz */
+let minIRFrequency = 1420000;
+let maxIRFrequency = 2120000;
+let maxIRDivider = Math.floor(uartClockFrequency / (minIRFrequency * 3));
+let minIRDivider = Math.ceil(uartClockFrequency / (maxIRFrequency * 3));
+
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
 intPriority.displayName = "Interrupt Priority";
@@ -52,69 +67,45 @@ intPriority.description = "UART peripheral interrupt priority";
  */
 let devSpecific = {
     config: [
-        {
-            name        : "dataDirection",
-            displayName : "Data Direction",
-            default     : 'Send and Receive',
-            options     : [
-                { name : 'Send and Receive' },
-                { name : 'Send Only' },
-                { name : 'Receive Only' }
-            ],
-            onChange: function (inst, ui) {
-                ui["concatenateFIFOs"].hidden = (inst.dataDirection != 'Send Only');
-            }
-        },
-        {
-            name        : "flowControl",
-            displayName : "Flow Control",
-            default     : false,
-            description : "Enable hardware flow control",
-            longDescription : "Hardware flow control between two devices "
-                + "is accomplished by connecting the UART Request-To-Send "
-                + "(RTS) pin to the Clear-To-Send (CTS) input on the "
-                + "receiving device, and connecting the RTS output of the "
-                + "receiving device to the UART CTS pin"
-        },
         intPriority,
 
         /* RX and TX ring buffer sizes */
         {
-            name        : "rxRingBufferSize",
-            displayName : "RX Ring Buffer Size",
-            description : "Number of bytes in the RX ring buffer",
-            longDescription : "The RX ring buffer serves as an extension "
+            name: "rxRingBufferSize",
+            displayName: "RX Ring Buffer Size",
+            description: "Number of bytes in the RX ring buffer",
+            longDescription: "The RX ring buffer serves as an extension "
                 + "of the RX FIFO. If data is received when UART2_read() "
                 + "is not called, data will be stored in the RX ring "
                 + "buffer. The size can be changed to suit the "
                 + "application.",
-            default     : 32
+            default: 32
         },
         {
-            name        : "txRingBufferSize",
-            displayName : "TX Ring Buffer Size",
-            description : "Number of bytes in the TX ring buffer",
-            longDescription : "The TX ring buffer serves as an extension "
+            name: "txRingBufferSize",
+            displayName: "TX Ring Buffer Size",
+            description: "Number of bytes in the TX ring buffer",
+            longDescription: "The TX ring buffer serves as an extension "
                 + "of the TX FIFO. Data is written to the TX ring buffer "
                 + "when UART_write() is called. Data in the TX ring "
                 + "buffer is then copied by the DMA to the TX FIFO. The "
                 + "size can be changed to suit the application.",
-            default     : 32
+            default: 32
         },
         {
-            name        : "codingScheme",
-            displayName : "Coding/Decoding Scheme",
-            description : "Encoding/Decoding scheme for data on TXD/RXD pins",
-            longDescription : "UART: bits are encoded/decoded as standard UART bitstream" +
-                              "Serial Infrared: bits are encoded/decoded according to IrDA specification." +
-                              " - Low-level bits are transmitted as active high with a 3/16th period width" +
-                              "Low-Power Serial Infrared: bits are encoded/decoded according to IrDA specification." +
-                              " - Low-level bits are transmitted with a pulse width of 3/16 * (baud period) / (LP-SIR Clock Divider)",
-            default     : "UART",
-            options     : [
-                { name:   "UART" },
-                { name:   "Serial Infrared" },
-                { name:   "Low-Power Serial Infrared" }
+            name: "codingScheme",
+            displayName: "Coding/Decoding Scheme",
+            description: "Encoding/Decoding scheme for data on TXD/RXD pins",
+            longDescription: "UART: bits are encoded/decoded as standard UART bitstream" +
+                "Serial Infrared: bits are encoded/decoded according to IrDA specification." +
+                "\n - Low-level bits are transmitted as active high with a 3/16th period width" +
+                "\nLow-Power Serial Infrared: bits are encoded/decoded according to IrDA specification." +
+                "\n - Low-level bits are transmitted with a pulse width of  1/((" + uartClockFrequency/1000000 + " MHz) / (LP-SIR Clock Divider * 3))",
+            default: "UART",
+            options: [
+                { name: "UART" },
+                { name: "Serial Infrared" },
+                { name: "Low-Power Serial Infrared" }
             ],
             onChange: function (inst, ui) {
                 /* SIR Low-Power clock-divider is only relevant if in low-power mode */
@@ -122,37 +113,36 @@ let devSpecific = {
             }
         },
         {
-            name        : "SIRLPclockDivider",
-            displayName : "LP-SIR Clock Divider",
-            description : "Clock divider for low-power serial infrared",
-            default     : 0,
-            hidden      : true
+            name: "SIRLPclockDivider",
+            displayName: "LP-SIR Clock Divider",
+            description: "Clock divider for low-power serial infrared",
+            default: minIRDivider,
+            hidden: true,
+            isInteger: true,
+            range: [minIRDivider, maxIRDivider]
         },
         {
-            name        : "concatenateFIFOs",
-            displayName : "Concatenate RX And TX FIFO",
-            description : "Concatenate RX and TX FIFO into a single 16-byte TX FIFO",
-            default     : false,
-            hidden      : true
+            name: "concatenateFIFOs",
+            displayName: "Concatenate RX And TX FIFO",
+            description: "Concatenate RX and TX FIFO into a single 16-byte TX FIFO",
+            default: false,
+            hidden: true
         }
     ],
 
     /* override generic pin requirements */
-    pinmuxRequirements    : pinmuxRequirements,
-
-    /* PIN instances */
-    moduleInstances: moduleInstances,
+    pinmuxRequirements: pinmuxRequirements,
 
     onHardwareChanged: onHardwareChanged,
 
     /* override device-specific templates */
     templates: {
-        boardc : "/ti/drivers/uart2/UART2LPF3.Board.c.xdt",
-        boardh : "/ti/drivers/uart2/UART2.Board.h.xdt"
+        boardc: "/ti/drivers/uart2/UART2LPF3.Board.c.xdt",
+        boardh: "/ti/drivers/uart2/UART2.Board.h.xdt"
     },
 
     /* override generic filterHardware with ours */
-    filterHardware        : filterHardware,
+    filterHardware: filterHardware,
 
     _getPinResources: _getPinResources
 };
@@ -160,8 +150,7 @@ let devSpecific = {
 /*
  *  ======== _getPinResources ========
  */
-function _getPinResources(inst)
-{
+function _getPinResources(inst) {
     let pin;
     let rxPin = "Unassigned";
     let txPin = "Unassigned";
@@ -198,8 +187,7 @@ function _getPinResources(inst)
 /*
  *  ======== onHardwareChanged ========
  */
-function onHardwareChanged(inst, ui)
-{
+function onHardwareChanged(inst, ui) {
     if (inst.$hardware) {
         let component = inst.$hardware;
 
@@ -227,30 +215,29 @@ function onHardwareChanged(inst, ui)
  *
  *  returns req[] - array of requirements needed by inst
  */
-function pinmuxRequirements(inst)
-{
+function pinmuxRequirements(inst) {
     let cts = {
-        name           : "ctsPin",    /* config script name */
-        displayName    : "CTS Pin",   /* GUI name */
-        interfaceNames : ["CTS"]      /* pinmux tool name */
+        name: "ctsPin",    /* config script name */
+        displayName: "CTS Pin",   /* GUI name */
+        interfaceNames: ["CTS"]      /* pinmux tool name */
     };
 
     let rts = {
-        name           : "rtsPin",
-        displayName    : "RTS Pin",
-        interfaceNames : ["RTS"]
+        name: "rtsPin",
+        displayName: "RTS Pin",
+        interfaceNames: ["RTS"]
     };
 
     let tx = {
-        name              : "txPin",  /* config script name */
-        displayName       : "TX Pin", /* GUI name */
-        interfaceNames    : ["TXD"]   /* pinmux tool name */
+        name: "txPin",  /* config script name */
+        displayName: "TX Pin", /* GUI name */
+        interfaceNames: ["TXD"]   /* pinmux tool name */
     };
 
     let rx = {
-        name              : "rxPin",
-        displayName       : "RX Pin",
-        interfaceNames    : ["RXD"]
+        name: "rxPin",
+        displayName: "RX Pin",
+        interfaceNames: ["RXD"]
     };
 
     let dmaRxChannel = {
@@ -289,15 +276,15 @@ function pinmuxRequirements(inst)
     }
 
     let uart = {
-        name          : "uart",
-        displayName   : "UART Peripheral",
-        interfaceName : "UART",
-        resources     : resources,
-        signalTypes   : {
-            txPin     : ['UART_TXD'],
-            rxPin     : ['UART_RXD'],
-            ctsPin    : ['UART_CTS'],
-            rtsPin    : ['UART_RTS']
+        name: "uart",
+        displayName: "UART Peripheral",
+        interfaceName: "UART",
+        resources: resources,
+        signalTypes: {
+            txPin: ['UART_TXD'],
+            rxPin: ['UART_RXD'],
+            ctsPin: ['UART_CTS'],
+            rtsPin: ['UART_RTS']
         }
     };
 
@@ -314,100 +301,8 @@ function pinmuxRequirements(inst)
  *  returns Boolean indicating whether or not to allow the component to
  *           be assigned to an instance's $hardware config
  */
-function filterHardware(component)
-{
+function filterHardware(component) {
     return (Common.typeMatches(component.type, ["UART"]));
-}
-
-/*
- *  ======== moduleInstances ========
- *  returns PIN instances
- */
-function moduleInstances(inst)
-{
-    let pinInstances = new Array();
-    let shortName = inst.$name.replace("CONFIG_", "");
-
-    if (inst.dataDirection != "Receive Only") {
-        pinInstances.push(
-            {
-                name: "txPinInstance",
-                displayName: "TX configuration when not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                requiredArgs: {
-                    parentInterfaceName: "uart",
-                    parentSignalName: "txPin",
-                    parentSignalDisplayName: "TX"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_TX",
-                    initialOutputState: "High",
-                    mode: "Output",
-                    pull: "None"
-                }
-            }
-        );
-        if (inst.flowControl) {
-            pinInstances.push({
-                name: "ctsPinInstance",
-                displayName: "CTS configuration when not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                requiredArgs: {
-                    parentInterfaceName: "uart",
-                    parentSignalName: "ctsPin",
-                    parentSignalDisplayName: "CTS"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_CTS",
-                    mode: "Input",
-                    pull: "Pull Down"
-                }
-            });
-        }
-    }
-
-    if (inst.dataDirection != "Send Only") {
-        pinInstances.push({
-                name: "rxPinInstance",
-                displayName: "RX configuration when not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                requiredArgs: {
-                    parentInterfaceName: "uart",
-                    parentSignalName: "rxPin",
-                    parentSignalDisplayName: "RX"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_RX",
-                    mode: "Input",
-                    pull: "Pull Down"
-                }
-            }
-        );
-        if (inst.flowControl) {
-            pinInstances.push({
-                name: "rtsPinInstance",
-                displayName: "RTS configuration when not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                requiredArgs: {
-                    parentInterfaceName: "uart",
-                    parentSignalName: "rtsPin",
-                    parentSignalDisplayName: "RTS"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_RTS",
-                    initialOutputState: "Low",
-                    mode: "Output",
-                    pull: "None"
-                }
-            });
-        }
-    }
-
-    return (pinInstances);
 }
 
 /*
@@ -419,8 +314,7 @@ function moduleInstances(inst)
  *
  *  @param $super    - needed to call the generic module's functions
  */
-function validate(inst, validation, $super)
-{
+function validate(inst, validation, $super) {
     let minRingBufferSize = 16;
     let rxRingBufferSize = inst.rxRingBufferSize;
     let txRingBufferSize = inst.txRingBufferSize;
@@ -438,11 +332,7 @@ function validate(inst, validation, $super)
     if (txRingBufferSize < minRingBufferSize) {
         message = 'TX ring buffer size must be at least ' +
             minRingBufferSize + ' bytes';
-        logError(validation, inst, "rxRingBufferSize", message);
-    }
-    if (inst.SIRLPclockDivider < 0x00 || inst.SIRLPclockDivider > 0xFF) {
-        message = 'Clock divider must be unsigned 8-bit value';
-        logError(validation, inst, "SIRLPclockDivider", message);
+        logError(validation, inst, "txRingBufferSize", message);
     }
     if (inst.concatenateFIFOs && (inst.dataDirection != 'Send Only')) {
         message = 'Can only concatenate FIFOs when Data Direction is in Send Only mode';
@@ -453,11 +343,10 @@ function validate(inst, validation, $super)
 /*
  *  ======== extend ========
  */
-function extend(base)
-{
+function extend(base) {
     /* display which driver implementation can be used */
     base = Common.addImplementationConfig(base, "UART2", null,
-        [{name: "UART2LPF3"}], null);
+        [{ name: "UART2LPF3" }], null);
 
     /* override base validate */
     devSpecific.validate = function (inst, validation) {

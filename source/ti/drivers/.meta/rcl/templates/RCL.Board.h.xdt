@@ -44,7 +44,7 @@ const rclStatic = RCL.$static;
 /*
  *  ======== RCL GPIOs ========
 */
-#include <ti/drivers/rcl/RCL_Tracer.h>
+#include <ti/drivers/rcl/RCL_Gpio.h>
 
 %}
 %

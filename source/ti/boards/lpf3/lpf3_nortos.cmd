@@ -64,7 +64,12 @@
 /* The starting address of the application.  Normally the interrupt vectors  */
 /* must be located at the beginning of the application.                      */
 #define FLASH_BASE              ti_utils_build_GenMap_FLASH0_BASE
+#if defined(ti_utils_build_GenMap_HSM_FW_SIZE)
+/* The last part of Flash is reserved for the HSM FW                         */
+#define FLASH_SIZE              (ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE)
+#else
 #define FLASH_SIZE              ti_utils_build_GenMap_FLASH0_SIZE
+#endif
 #define RAM_BASE                ti_utils_build_GenMap_RAM0_BASE
 #define RAM_SIZE                ti_utils_build_GenMap_RAM0_SIZE
 #if defined(ti_utils_build_GenMap_S2RRAM_BASE) && \
@@ -78,11 +83,6 @@
     defined(ti_utils_build_GenMap_SCFG_SIZE)
 #define SCFG_BASE               ti_utils_build_GenMap_SCFG_BASE
 #define SCFG_SIZE               ti_utils_build_GenMap_SCFG_SIZE
-#endif
-#if defined(ti_utils_build_GenMap_HSMOTP_BASE) && \
-    defined(ti_utils_build_GenMap_HSMOTP_SIZE)
-#define HSMOTP_BASE             ti_utils_build_GenMap_HSMOTP_BASE
-#define HSMOTP_SIZE             ti_utils_build_GenMap_HSMOTP_SIZE
 #endif
 
 /* System memory map */
@@ -106,10 +106,6 @@ MEMORY
 #if defined(SCFG_BASE) && defined(SCFG_SIZE)
     /* Security configuration region */
     SCFG (R): origin = SCFG_BASE, length = SCFG_SIZE
-#endif
-#if defined(HSMOTP_BASE) && defined(HSMOTP_SIZE)
-    /* HSM OTP region */
-    HSMOTP (R): origin = HSMOTP_BASE, length = HSMOTP_SIZE
 #endif
 
     /* Explicitly placed off target for the storage of logging data.
@@ -139,9 +135,6 @@ SECTIONS
 
 #if defined(SCFG_BASE) && defined(SCFG_SIZE)
     .scfg           :   > SCFG
-#endif
-#if defined(HSMOTP_BASE) && defined(HSMOTP_SIZE)
-    .hsmotp         :   > HSMOTP
 #endif
 
     .ramVecs        :   > SRAM, type = NOLOAD, ALIGN(256)

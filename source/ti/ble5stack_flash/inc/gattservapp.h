@@ -443,12 +443,6 @@ typedef struct _serviceCBsList
  * VARIABLES
  */
 
-/// @brief Server Prepare Write table (one entry per each physical link)
-extern prepareWrites_t          *prepareWritesTbl;
-
-/// @brief Callbacks for services
-extern serviceCBsList_t         *serviceCBsList;
-
 /** @} End GATT_Serv_Structs */
 
 /*********************************************************************
@@ -756,6 +750,7 @@ extern uint8 GATTServApp_WriteAttr( uint16 connHandle, uint16 handle,
 extern bStatus_t GATTServApp_ReadRsp( uint16 connHandle, uint8 *pValue,
                                       uint16 pLen, uint16 attrHandle );
 
+#if defined ( TESTMODES )
 /**
  * @brief   Set a GATT Server Application Parameter value. Use this
  *          function to change the default GATT parameter values.
@@ -770,6 +765,7 @@ extern void GATTServApp_SetParamValue( uint16 value );
  * @return  GATT Parameter value
  */
 extern uint16 GATTServApp_GetParamValue( void );
+#endif
 
 /*-------------------------------------------------------------------
  * TASK API - These functions must only be called by OSAL.
@@ -800,7 +796,7 @@ extern void GATTServApp_Init( uint8 taskId, uint8_t cfg_GATTServApp_att_delayed_
  * @param   events - events to process. This is a bit map and can
  *                   contain more than one event.
  */
-extern uint16 GATTServApp_ProcessEvent( uint8 taskId, uint16 events );
+extern uint32 GATTServApp_ProcessEvent( uint8 taskId, uint32 events );
 
 /**
  * @internal
@@ -813,90 +809,6 @@ extern uint16 GATTServApp_ProcessEvent( uint8 taskId, uint16 events );
  */
 extern pfnGATTAuthorizeAttrCB_t  gattServApp_FindAuthorizeAttrCB( uint16 handle );
 
-/**
- * @internal
- *
- * @brief       Enqueue Prepare Write Request.
- *
- * @param       connHandle - connection packet was received on
- * @param       pReq - pointer to request
- *
- * @return      @ref SUCCESS or Failure
- */
-extern bStatus_t gattServApp_EnqueuePrepareWriteReq( uint16 connHandle, attPrepareWriteReq_t *pReq );
-
-/**
- * @internal
- *
- * @brief       Process a Write Long operation.
- *
- * @param       pMsg - pointer to received message
- * @param       pQueue - pointer to client prepare write queue
- * @param       pErrHandle - attribute handle that generates an error
- *
- * @return      @ref SUCCESS or Failure
- */
-extern bStatus_t gattServApp_ProcessWriteLong( gattMsgEvent_t *pMsg, prepareWrites_t *pQueue, uint16 *pErrHandle );
-
-/**
- * @internal
- *
- * @brief       Process a Reliable Writes operation.
- *
- * @param       pMsg - pointer to received message
- * @param       pQueue - pointer to client prepare write queue
- * @param       pErrHandle - attribute handle that generates an error
- *
- * @return      @ref SUCCESS or Failure
- */
-extern bStatus_t gattServApp_ProcessReliableWrites( gattMsgEvent_t *pMsg, prepareWrites_t *pQueue, uint16 *pErrHandle );
-
-/**
- * @internal
- *
- * @brief       Process attribute value received from service to build
- *              Read by Type Response message.
- *
- * @param       connHandle - connection message was received on
- * @param       pAttrValue - pointer to data read
- * @param       attrLen - length of data read
- * @param       attrHandle - handle of attribute read
- *
- * @return      @ref SUCCESS, Failure, or ATT_ERR_INSUFFICIENT_RESOURCES
- */
-extern bStatus_t gattServApp_buildReadByTypeRsp( uint16 connHandle, uint8 *pAttrValue, uint16 attrLen, uint16 attrHandle );
-
-/**
- * @internal
- *
- * @brief       Find client's queue.
- *
- * @param       connHandle - connection used by client
- *
- * @return      Pointer to queue. NULL, otherwise.
- */
-extern prepareWrites_t *gattServApp_FindPrepareWriteQ( uint16 connHandle );
-
-/**
- * @internal
- *
- * @brief       Check for a Write Long operation.
- *
- * @param       pMsg - pointer to received message
- * @param       pQueue - pointer to client prepare write queue
- *
- * @return      TRUE or FALSE
- */
-extern uint8 gattServApp_IsWriteLong( attExecuteWriteReq_t *pReq, prepareWrites_t *pQueue );
-
-/**
- * @internal
- *
- * @brief       Clear the prepare write queue for a GATT Client.
- *
- * @param       pQueue - pointer to client's queue
- */
-extern void gattServApp_ClearPrepareWriteQ( prepareWrites_t *pQueue );
 
 /**
  * @brief   Enqueue an ATT response retransmission
@@ -912,17 +824,6 @@ extern void gattServApp_ClearPrepareWriteQ( prepareWrites_t *pQueue );
  */
 extern bStatus_t gattServApp_EnqueueReTx( uint16 connHandle, uint8 method,
                                           gattMsg_t *pMsg );
-
-/**
- * @brief  Dequeue and try to send an ATT response retransmission
- *
- * Disable L2CAP signaling to GATT Serv App if the queue is empty
- *
- * @param       connHandle - connection event belongs to
- * @param       method - type of message
- * @param       pMsg - pointer to message to be sent
- */
-extern void gattServApp_DequeueReTx( void );
 
 /// @endcond // NODOC
 

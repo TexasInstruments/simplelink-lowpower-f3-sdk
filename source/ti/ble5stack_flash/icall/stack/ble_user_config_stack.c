@@ -160,12 +160,7 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
 
     // Point to the RF_mode Object
     llUserConfig.rfMode = &RF_modeBle;
-#endif // !CC23X0
 
-    // RF Front End Mode and Bias (based on package)
-    llUserConfig.rfFeModeBias  = userCfg->boardConfig->rfFeModeBias;
-
-#ifndef CC23X0
     // Privacy Override Offset
     llUserConfig.privOverrideOffset  = userCfg->boardConfig->privOverrideOffset;
 
@@ -354,18 +349,11 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
   llUserConfig.useAE = FALSE;
 #endif
 
-  // Set useDFL to false initially
-  llUserConfig.useDFL = FALSE;
-
-
-  // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
-  #if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
-  #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
-  #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
+#ifdef USE_DFL
   llUserConfig.useDFL = TRUE;
-  #endif // (advertiser only)
-  #endif // (number of bondings greater than 5)
-  #endif // (supported devices)
+#else
+  llUserConfig.useDFL = FALSE;
+#endif
 
   return;
 }
@@ -402,8 +390,6 @@ void setBleUserConfig( bleUserCfg_t *userCfg )
     // Point to the RF_mode Object
     llUserConfig.rfMode = &RF_modeBle;
 
-    // RF Front End Mode and Bias (based on package)
-    llUserConfig.rfFeModeBias = userCfg->rfFeModeBias;
 #ifndef CC23X0
     // Privacy Override Offset
     llUserConfig.privOverrideOffset  = userCfg->privOverrideOffset;

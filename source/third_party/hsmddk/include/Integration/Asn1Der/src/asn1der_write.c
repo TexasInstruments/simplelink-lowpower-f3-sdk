@@ -229,8 +229,10 @@ Asn1Der_WriteLength(uint8_t ** ppBufferInsert,
             rc = 4;
         }
     }
-    else if (Length <= (size_t)0xFFFFFFFFU)
+    else
     {
+        /* (Length <= (size_t)0xFFFFFFFFU) */
+
         if ((*ppBufferInsert - pBufferStart) < 5)
         {
             rc = ASN1DER_ERROR_BUFFER_TOO_SMALL;
@@ -249,10 +251,6 @@ Asn1Der_WriteLength(uint8_t ** ppBufferInsert,
             **ppBufferInsert = 0x84U;
             rc = 5;
         }
-    }
-    else
-    {
-        rc = ASN1DER_ERROR_INVALID_LENGTH;
     }
 
     return rc;

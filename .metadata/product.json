@@ -1,7 +1,7 @@
 {
     "name": "simplelink_lowpower_f3_sdk",
     "displayName": "SimpleLink Low Power F3 SDK",
-    "version": "8.20.00.119",
+    "version": "8.40.00.61",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",
@@ -10,6 +10,7 @@
     "components": [
         "/ti/ble5stack/aoa/aoa.component.js",
         "/ti/ble5stack/ble.component.js",
+        "/ti/common/common.component.js",
         "/ti/common/migration.component.js",
         "/ti/devices/devices.component.js",
         "/ti/devices/radioconfig/radioconfig.component.js",
@@ -32,5 +33,5 @@
         "none",
         "nortos"
     ],
-    "minToolVersion": "1.20.0"
+    "minToolVersion": "1.22.0"
 }

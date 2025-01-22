@@ -224,6 +224,7 @@
 #define RAT_TICKS_IN_2_5MS             10000     // DTM Packet Interval
 #define RAT_TICKS_IN_2_896MS           11584     // AUX_CONNECT_REQ in Coded S8
 #define RAT_TICKS_IN_5MS               20000
+#define RAT_TICKS_IN_3MS               12000     // Handover connection earlier start time
 #define RAT_TICKS_IN_10MS              40000     // General Purpose Delay
 #define RAT_TICKS_IN_12_5MS            50000     // DTM T(l) Compare
 #define RAT_TICKS_IN_16MS              64000     // Max time in Coded phy for fragments periodic adv
@@ -621,6 +622,7 @@ extern RCL_CmdBle5TxTest     txTestCmd;
  * APIs
  */
 extern void          llAddTxDataEntry( void *, void * );
+extern void          llClearTxDataQueue(txDataQ_t *);
 extern void          llProcessPeripheralControlPacket( llConnState_t *, uint8 * );
 extern void          llProcessCentralControlPacket( llConnState_t *, uint8 * );
 extern void          llMoveTempTxDataEntries( llConnState_t * );

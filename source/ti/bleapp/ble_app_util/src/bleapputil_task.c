@@ -211,7 +211,7 @@ void *BLEAppUtil_Task(void *arg)
                       BLEAppUtil_free(stackMsg);
                   }
                 break;
-            }
+              }
               case BLEAPPUTIL_EVT_ADV_CB_EVENT:
                   BLEAppUtil_processAdvEventMsg(pMsgData);
                   break;
@@ -256,9 +256,22 @@ void *BLEAppUtil_Task(void *arg)
                   break;
               }
 
+              case BLEAPPUTIL_EVT_HANDOVER_SN_EVENT_CB:
+              {
+                  BLEAppUtil_processHandoverEventMsg(BLEAPPUTIL_HANDOVER_START_SERVING_EVENT_CODE, pMsgData);
+                  break;
+              }
+
+              case BLEAPPUTIL_EVT_HANDOVER_CN_EVENT_CB:
+              {
+                  BLEAppUtil_processHandoverEventMsg(BLEAPPUTIL_HANDOVER_START_CANDIDATE_EVENT_CODE, pMsgData);
+                  break;
+              }
+
               default:
                   break;
             }
+
 
             // Free the data
             if (pMsgData && freeMsg)
@@ -270,6 +283,7 @@ void *BLEAppUtil_Task(void *arg)
             {
                 // Use free
                 BLEAppUtil_free(pMsgData);
+                pMsgData = NULL;
             }
             else
             {

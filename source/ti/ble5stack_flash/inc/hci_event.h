@@ -458,11 +458,6 @@ extern "C"
  * TYPEDEFS
  */
 
-typedef struct hci_c2h_cbs_t
-{
-  int (*send)(uint8 *pHciPkt, uint16 pktLen);
-}hci_c2h_cbs_t;
-
 /*******************************************************************************
  * LOCAL VARIABLES
  */
@@ -470,23 +465,6 @@ typedef struct hci_c2h_cbs_t
 /*******************************************************************************
  * API FUNCTIONS
  */
-
-/*******************************************************************************
- * @fn          HCI_ControllerToHostRegisterCb
- *
- * @brief       This function register callback function to HCI events
- *
- * input parameters
- *
- * @param       hci_c2h_cbs_t cb - callback function.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      SUCCESS / FAILURE.
- */
-uint8 HCI_ControllerToHostRegisterCb( hci_c2h_cbs_t cbs );
 
 /*******************************************************************************
  * @fn          HCI_SendEventToHost
@@ -877,6 +855,45 @@ void HCI_CommandStatusEvent( hciStatus_t status, uint16 opcode );
 void HCI_SendCommandCompleteEvent( uint8 eventCode, uint16 opcode,
                                    uint8 numParam, uint8 *param );
 
+/*******************************************************************************
+ * @fn          HCI_SendHandoverSNDataEvent
+ *
+ * @brief       This command prepare and send the handover data
+ *
+ * input parameters
+ *
+ * @param       status         - The event code.
+ * @param       dataSize       - The opcode of the command that generated this event.
+ * @param       pHandoverData  - The number of parameters in the event.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None.
+ */
+void HCI_SendHandoverSNDataEvent(uint8_t status,
+                                 uint16_t dataSize,
+                                 uint8_t *pHandoverData);
+
+/*******************************************************************************
+ * @fn          HCI_getPacketLen
+ *
+ * @brief       This function calculates and returns the length of the
+ *              input HCI packet.
+ *
+ * input parameters
+ *
+ * @param       *pEvt   - HCI packet.
+ *
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      pktLen - length of input packet or zero for invalid input.
+ */
+uint16 HCI_getPacketLen( hciPacket_t *pEvt );
 #ifdef __cplusplus
 }
 #endif

@@ -102,6 +102,9 @@
 #define ZB_LITE_NO_ZB_DIRECT
 #define ZB_DISABLE_ZBD_SUPPORT_ON_TC
 
-#define ZB_ENABLE_SE
 #define TC_SWAPOUT
+
+#define ZB_ENABLE_ZGP
+#define ZB_APS_USER_PAYLOAD
+
 #endif /* ZB_VENDOR_H */

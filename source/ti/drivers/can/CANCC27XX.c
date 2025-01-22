@@ -62,9 +62,8 @@
 /* CAN subsystem clock divider */
 #define CANCC27XX_CANSS_CLK_DIVIDER CANSS_CLK_DIVIDE_BY_2
 
-/* Oscillator frequencies in kHz */
+/* Oscillator frequency in kHz */
 #define AFOSC_FREQ_KHZ 80000U
-#define HFOSC_FREQ_KHZ 96000U
 
 /* Hwi object for handling CAN interrupt */
 static HwiP_Struct canHwi;
@@ -459,147 +458,6 @@ static void CANCC27XX_handleRxBuf(CAN_Handle handle)
     MCAN_clearNewDataStatus(&clearNewDataStatus);
 }
 
-#define CC27XX_PG11_WORKAROUNDS
-
-#ifdef CC27XX_PG11_WORKAROUNDS
-
-/*
- *  ======== CANCC27XX_setBitRate ========
- *  This function is hard-coded for 48 MHz MCAN clock from HFOSC source.
- */
-static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
-{
-    const CAN_HWAttrs *hwAttrs     = config->hwAttrs;
-    int_fast16_t status            = CAN_STATUS_SUCCESS;
-    MCAN_BitTimingParams bitTiming = {0};
-
-    /* NOTE: Add 1 to each programmed bit time to get functional value and +1 for for sync segment.
-     *    Bit Time = TSEG1 + TSEG2 + 1
-     *    Bit Rate = (MCAN clock / Prescaler) / (Bit Time)
-     *    Sample Point % = ((TSEG1 + 1) / (Bit Time)) * 100
-     * - All TSEG1 and TSEG2 values above refer to the functional values
-     *
-     * Sampling Point % was chosen to be < 80 according to CiA 601 CAN FD Node
-     * and System Design, Part 3 System Design Recommendation v1.0.0.
-     */
-    switch (hwAttrs->nominalBitRate)
-    {
-        case 125000U:
-            /* 125kbps nominal with 48MHz clk and 75% sample point: ((48E6 / 2) / (143 + 48 + 1) = 125E3) */
-            bitTiming.nomRatePrescaler  = 1U;
-            bitTiming.nomTimeSeg1       = 142U;
-            bitTiming.nomTimeSeg2       = 47U;
-            bitTiming.nomSynchJumpWidth = 47U; /* typically set equal to seg 2 */
-            break;
-
-        case 250000U:
-            /* 250kbps nominal with 48MHz clk and 75% sample point: ((48E6 / 2) / (71 + 24 + 1) = 250E3) */
-            bitTiming.nomRatePrescaler  = 1U;
-            bitTiming.nomTimeSeg1       = 70U;
-            bitTiming.nomTimeSeg2       = 23U;
-            bitTiming.nomSynchJumpWidth = 23U; /* typically set equal to seg 2 */
-            break;
-
-        case 500000U:
-            /* 500kbps nominal with 48MHz clk and 75% sample point ((48E6 / 2) / (35 + 12 + 1) = 500E3) */
-            bitTiming.nomRatePrescaler  = 1U;
-            bitTiming.nomTimeSeg1       = 34U;
-            bitTiming.nomTimeSeg2       = 11U;
-            bitTiming.nomSynchJumpWidth = 11U; /* typically set equal to seg 2 */
-            break;
-
-        case 1000000U:
-            /* 1Mbps with 48MHz clk and 75% sample point ((48E6 / 2) / (17 + 6 + 1) = 1E6) */
-            bitTiming.nomRatePrescaler  = 1U;
-            bitTiming.nomTimeSeg1       = 16U;
-            bitTiming.nomTimeSeg2       = 5U;
-            bitTiming.nomSynchJumpWidth = 5U; /* typically set equal to seg 2 */
-            break;
-
-        default:
-            status = CAN_STATUS_ERROR;
-            break;
-    }
-
-    if (hwAttrs->enableBRS)
-    {
-        switch (hwAttrs->dataBitRate)
-        {
-            case 125000U:
-                /* 125kbps with 48MHz clk and 75% sample point: ((48E6 / 16) / (17 + 6 + 1) = 125E3) */
-                bitTiming.dataRatePrescaler  = 15U;
-                bitTiming.dataTimeSeg1       = 16U;
-                bitTiming.dataTimeSeg2       = 5U;
-                bitTiming.dataSynchJumpWidth = 5U; /* typically set equal to seg 2 */
-                break;
-
-            case 250000U:
-                /* 250kbps with 48MHz clk and 75% sample point: ((48E6 / 8) / (17 + 6 + 1) = 250E3) */
-                bitTiming.dataRatePrescaler  = 7U;
-                bitTiming.dataTimeSeg1       = 16U;
-                bitTiming.dataTimeSeg2       = 5U;
-                bitTiming.dataSynchJumpWidth = 5U; /* typically set equal to seg 2 */
-                break;
-
-            case 500000U:
-                /* 500kbps with 48MHz clk and 75% sample point ((48E6 / 3) / (23 + 8 + 1) = 500E3)*/
-                bitTiming.dataRatePrescaler  = 2U;
-                bitTiming.dataTimeSeg1       = 22U;
-                bitTiming.dataTimeSeg2       = 7U;
-                bitTiming.dataSynchJumpWidth = 7U; /* typically set equal to seg 2 */
-                break;
-
-            case 1000000U:
-                /* 1Mbps with 48MHz clk and 75% sample point ((48E6 / 2) / (17 + 6 + 1) = 1E6) */
-                bitTiming.dataRatePrescaler  = 1U;
-                bitTiming.dataTimeSeg1       = 16U;
-                bitTiming.dataTimeSeg2       = 5U;
-                bitTiming.dataSynchJumpWidth = 5U;  /* typically set equal to seg 2 */
-                bitTiming.tdcConfig.tdco     = 16U; /* typically set equal to seg 1 */
-                break;
-
-            case 2000000U:
-                /* 2Mbps with 48MHz clk and 75% sample point ((48E6 / 2) / (8 + 3 + 1) = 2E6) */
-                bitTiming.dataRatePrescaler  = 1U;
-                bitTiming.dataTimeSeg1       = 7U;
-                bitTiming.dataTimeSeg2       = 2U;
-                bitTiming.dataSynchJumpWidth = 2U; /* typically set equal to seg 2 */
-                bitTiming.tdcConfig.tdco     = 7U; /* typically set equal to seg 1 */
-                break;
-
-            case 4000000U:
-                /* 4Mbps with 48MHz clk and 75% sample point ((48E6 / 1) / (8 + 3 + 1) = 4E6) */
-                bitTiming.dataRatePrescaler  = 0U;
-                bitTiming.dataTimeSeg1       = 7U;
-                bitTiming.dataTimeSeg2       = 2U;
-                bitTiming.dataSynchJumpWidth = 2U; /* typically set equal to seg 2 */
-                bitTiming.tdcConfig.tdco     = 7U; /* typically set equal to seg 1 */
-                break;
-
-            case 5000000U:
-                /* 5Mbps rate cannot be supported with 48MHz clk */
-                status = CAN_STATUS_NOT_SUPPORTED;
-                break;
-
-            default:
-                status = CAN_STATUS_ERROR;
-                break;
-        }
-    }
-
-    if (status == CAN_STATUS_SUCCESS)
-    {
-        if (MCAN_setBitTime(&bitTiming) != MCAN_STATUS_SUCCESS)
-        {
-            status = CAN_STATUS_ERROR;
-        }
-    }
-
-    return status;
-}
-
-#else
-
 /*
  *  ======== CANCC27XX_setBitRate ========
  *  This function is hard-coded for 40 MHz MCAN clock from AFOSC source.
@@ -699,7 +557,8 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
                 bitTiming.dataRatePrescaler  = 0U;
                 bitTiming.dataTimeSeg1       = 13U;
                 bitTiming.dataTimeSeg2       = 4U;
-                bitTiming.dataSynchJumpWidth = 4U; /* typically set equal to seg 2 */
+                bitTiming.dataSynchJumpWidth = 4U;  /* typically set equal to seg 2 */
+                bitTiming.tdcConfig.tdco     = 13U; /* typically set equal to seg 1 */
                 break;
 
             case 4000000U:
@@ -708,6 +567,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
                 bitTiming.dataTimeSeg1       = 5U;
                 bitTiming.dataTimeSeg2       = 2U;
                 bitTiming.dataSynchJumpWidth = 2U; /* typically set equal to seg 2 */
+                bitTiming.tdcConfig.tdco     = 5U; /* typically set equal to seg 1 */
                 break;
 
             case 5000000U:
@@ -716,6 +576,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
                 bitTiming.dataTimeSeg1       = 3U;
                 bitTiming.dataTimeSeg2       = 2U;
                 bitTiming.dataSynchJumpWidth = 2U; /* typically set equal to seg 2 */
+                bitTiming.tdcConfig.tdco     = 3U; /* typically set equal to seg 1 */
                 break;
 
             default:
@@ -734,8 +595,6 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
     return status;
 }
-
-#endif
 
 /*
  *  ======== CANCC27XX_init ========
@@ -903,10 +762,6 @@ int_fast16_t CAN_initDevice(uint_least8_t index, CAN_Params *params)
     HwiP_Params hwiParams;
     int_fast16_t status;
 
-#ifdef CC27XX_PG11_WORKAROUNDS
-    /* Set CAN functional clock to use HFOSC (96 MHz) */
-    HWREG(CKMD_BASE + CKMD_O_CANCLKSEL) |= CKMD_CANCLKSEL_SRC_CLKHF;
-#else
     /* Try to start and take ownership of AFOSC. Only a single driver is
      * permitted to have ownership of AFOSC at a time.
      */
@@ -918,7 +773,6 @@ int_fast16_t CAN_initDevice(uint_least8_t index, CAN_Params *params)
 
     /* Set CAN functional clock to use AFOSC (80 MHz) */
     HWREG(CKMD_BASE + CKMD_O_CANCLKSEL) |= CKMD_CANCLKSEL_SRC_CLKAF;
-#endif
 
     /* Power up and enable host clock for MCAN peripheral */
     Power_setDependency(PowerLPF3_PERIPH_MCAN);
@@ -952,10 +806,11 @@ int_fast16_t CAN_initDevice(uint_least8_t index, CAN_Params *params)
     }
     else
     {
-#ifndef CC27XX_PG11_WORKAROUNDS
         PowerLPF3_stopAFOSC();
-#endif
+
+        /* Power down and disable clock for MCAN peripheral */
         Power_releaseDependency(PowerLPF3_PERIPH_MCAN);
+
         status = CAN_STATUS_ERROR;
     }
 
@@ -975,9 +830,7 @@ void CAN_close(CAN_Handle handle)
     GPIO_resetConfig(hwAttrs->rxPin);
     GPIO_resetConfig(hwAttrs->txPin);
 
-#ifndef CC27XX_PG11_WORKAROUNDS
     PowerLPF3_stopAFOSC();
-#endif
 
     /* Power down and disable clock for MCAN peripheral */
     Power_releaseDependency(PowerLPF3_PERIPH_MCAN);
@@ -1058,9 +911,5 @@ void CAN_getBitTiming(CAN_Handle handle, CAN_BitTimingParams *bitTiming, uint32_
     /* Shift the oscillator frequency by the divider macro value to calculate
      * the CAN functional clock frequency.
      */
-#ifdef CC27XX_PG11_WORKAROUNDS
-    *clkFreq = HFOSC_FREQ_KHZ >> CANCC27XX_CANSS_CLK_DIVIDER;
-#else
     *clkFreq = AFOSC_FREQ_KHZ >> CANCC27XX_CANSS_CLK_DIVIDER;
-#endif
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2024 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -58,7 +58,6 @@ extern "C" {
 #include "../inc/hw_flash.h"
 #include "../inc/hw_memmap.h"
 #include "../inc/hw_ints.h"
-#include "../inc/hw_fcfg.h"
 #include "../inc/hw_vims.h"
 #include "hapi.h"
 #include "chipinfo.h"

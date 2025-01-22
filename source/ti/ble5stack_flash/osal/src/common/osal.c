@@ -102,6 +102,7 @@
 /*********************************************************************
  * GLOBAL VARIABLES
  */
+uint32 *tasksEvents;
 
 // Message Pool Definitions
 osal_msg_q_t osal_qHead;
@@ -122,6 +123,7 @@ osal_icallMsg_hook_t osal_icallMsg_hook = NULL;
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
+extern void MAP_llInitCompleteNotify(int status);
 
 /*********************************************************************
  * LOCAL VARIABLES
@@ -1194,9 +1196,9 @@ uint8 osal_msg_enqueue_max( osal_msg_q_t *q_ptr, void *msg_ptr, uint8 max )
  * @return  SUCCESS, MSG_BUFFER_NOT_AVAIL, FAILURE, INVALID_TASK
  */
 #if !defined USE_ICALL && !defined OSAL_PORT2TIRTOS
-uint8 osal_set_event_raw( uint8 task_id, uint16 event_flag )
+uint8 osal_set_event_raw( uint8 task_id, uint32 event_flag )
 #else /* OSAL_PORT2TIRTOS */
-uint8 osal_set_event( uint8 task_id, uint16 event_flag )
+uint8 osal_set_event( uint8 task_id, uint32 event_flag )
 #endif /* OSAL_PORT2TIRTOS */
 {
 #ifdef USE_ICALL
@@ -1210,7 +1212,7 @@ uint8 osal_set_event( uint8 task_id, uint16 event_flag )
     struct _osal_event_msg_t
     {
       uint16 signature;
-      uint16 event_flag;
+      uint32 event_flag;
     } *msg_ptr = (struct _osal_event_msg_t *)
       osal_msg_allocate(sizeof(*msg_ptr));
 
@@ -1295,7 +1297,7 @@ uint8 osal_set_event( uint8 task_id, uint16 event_flag )
  *
  * @return  SUCCESS, INVALID_TASK
  */
-uint8 osal_clear_event( uint8 task_id, uint16 event_flag )
+uint8 osal_clear_event( uint8 task_id, uint32 event_flag )
 {
   if ( task_id < tasksCnt )
   {
@@ -1395,6 +1397,23 @@ uint8 osal_int_disable( uint8 interrupt_id )
 }
 #endif // !CC33xx
 
+
+static uint8 osal_task_events_alloc( void )
+{
+  tasksEvents = (uint32 *)osal_mem_alloc( (uint16)(sizeof( uint32 ) * tasksCnt));
+
+  // Verify allocation succeeded
+  if ( NULL != tasksEvents )
+  {
+    ( void )memset( (void *)tasksEvents, 0, (sizeof( uint32 ) * tasksCnt));
+  }
+  else
+  {
+    HAL_ASSERT_FORCED();
+  }
+
+  return ( NULL != tasksEvents ) ? ( USUCCESS ) : ( UFAILURE );
+}
 /*********************************************************************
  * @fn      osal_init_system
  *
@@ -1409,11 +1428,16 @@ uint8 osal_int_disable( uint8 interrupt_id )
  */
 uint8 osal_init_system( void )
 {
+  uint8 ret = USUCCESS;
+
 #if !defined USE_ICALL && !defined OSAL_PORT2TIRTOS
   // Initialize the Memory Allocation System
   osal_mem_init();
 #endif /* !defined USE_ICALL && !defined OSAL_PORT2TIRTOS */
 
+  ret = osal_task_events_alloc();
+  if (USUCCESS == ret)
+  {
   // Initialize the message queue
   osal_qHead = NULL;
 
@@ -1447,8 +1471,9 @@ uint8 osal_init_system( void )
   /* Reduce ceiling considering potential latency */
   osal_max_msecs -= 2;
 #endif /* USE_ICALL */
+  }
 
-  return ( SUCCESS );
+  return ( ret );
 }
 
 /*********************************************************************
@@ -1486,6 +1511,11 @@ void osal_timer_init(uint_least32_t tickPeriod, uint_least32_t osalMaxMsecs )
  */
 void osal_start_system( void )
 {
+
+  /* The Stack Initialization has completed.
+   * Notify the Synchronous Task Create */
+  MAP_llInitCompleteNotify(SUCCESS);
+
 #ifdef USE_ICALL
   /* Kick off timer service in order to allocate resources upfront.
    * The first timeout is required to schedule next OSAL timer event
@@ -1774,7 +1804,7 @@ void osal_run_system( void )
 #endif /* USE_ICALL */
 
   do {
-    if (tasksEvents[idx])  // Task is highest priority that is ready.
+    if (tasksEvents[idx] != 0U)  // Task is highest priority that is ready.
     {
       break;
     }
@@ -1782,7 +1812,7 @@ void osal_run_system( void )
 
   if (idx < tasksCnt)
   {
-    uint16 events;
+    uint32 events;
     halIntState_t intState;
 
     HAL_ENTER_CRITICAL_SECTION(intState);

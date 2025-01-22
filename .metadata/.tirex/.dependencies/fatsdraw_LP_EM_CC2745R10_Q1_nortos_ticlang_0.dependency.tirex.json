@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../README.md -> README.md",
+            "+../README.html -> README.html",
+            "+../fatsdraw_nortos.c -> fatsdraw_nortos.c",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../fatsdraw.syscfg -> fatsdraw.syscfg",
+            "+../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
+        ]
+    }
+]

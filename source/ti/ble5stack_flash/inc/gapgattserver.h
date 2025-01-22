@@ -67,7 +67,7 @@ extern "C"
  */
 
 ///  Length of Device Name Attribute value excluding null-terminate char
-#define GAP_DEVICE_NAME_LEN                     21
+#define GAP_DEVICE_NAME_LEN                     31
 
 /// Central Address Resolution: Privacy is Disabled
 #define GAP_PRIVACY_DISABLED                    0x00

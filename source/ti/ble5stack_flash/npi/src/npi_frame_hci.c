@@ -56,7 +56,6 @@
 
 #include "inc/npi_rxbuf.h"
 #include "inc/npi_frame.h"
-
 #include "osal.h"
 #include "icall.h"
 #include <ti_drivers_config.h>
@@ -84,13 +83,13 @@
 #define NPIFRAMEHCI_CMD_STATE_OPCODE0           1
 #define NPIFRAMEHCI_CMD_STATE_OPCODE1           2
 #define NPIFRAMEHCI_CMD_STATE_LENGTH0           3
-#define NPIFRAMEHCI_CMD_STATE_LENGTH1           4
+#define NPIFRAMEHCI_CMD_STATE_HEADER            4
 #define NPIFRAMEHCI_CMD_STATE_DATA              5
 //
 #define NPIFRAMEHCI_DATA_STATE_HANDLE0          6
 #define NPIFRAMEHCI_DATA_STATE_HANDLE1          7
 #define NPIFRAMEHCI_DATA_STATE_LENGTH0          8
-#define NPIFRAMEHCI_DATA_STATE_LENGTH1          9
+#define NPIFRAMEHCI_DATA_STATE_HEADER           9
 #define NPIFRAMEHCI_DATA_STATE_DATA             10
 //
 #define NPIFRAMEHCI_STATE_FLUSH                 11
@@ -116,14 +115,19 @@ static uint8_t state = NPIFRAMEHCI_STATE_PKT_TYPE;
 static uint8_t PKT_Token = 0;
 static uint16_t LEN_Token = 0;
 static uint16_t OPCODE_Token = 0;
-static uint16_t HANDLE_Token = 0;
 static uint16_t bytesToFlush = 0;
+static npiPkt_t *pFromStackMsg = NULL;
+#ifdef NPI_RAW
+hciRawData_t *pHciRawMsg;
+static uint16_t payloadOffset = 0;
+#else
 static hciPacket_t *pCmdMsg = NULL;
 static hciDataPacket_t *pDataMsg = NULL;
-static npiPkt_t *pFromStackMsg = NULL;
+#endif
 
-static uint16_t tempDataLen;
-static uint16_t headerLength;
+static uint16_t HANDLE_Token = 0;
+static uint16_t tempDataLen = 0;
+static uint16_t headerLength = 0;
 
 extern ICall_EntityID npiAppEntityID;
 
@@ -196,6 +200,33 @@ NPIMSG_msg_t *NPIFrame_frameMsg(uint8_t *pMsg)
     return npiMsg;
 }
 
+#ifdef NPI_RAW
+// -----------------------------------------------------------------------------
+//! \brief      Allocate npiPkt_t pointer from raw data.
+//!
+//! \return     void
+// -----------------------------------------------------------------------------
+uint8_t* NPIFrame_createNpiPkt(uint8_t* pMsg)
+{
+    npiPkt_t* pNpiPkt = NULL;
+
+    if (pMsg)
+    {
+        hciRawData_t *pHciData = (hciRawData_t *)pMsg;
+        // Create NPI message from HCI packet.
+        pNpiPkt = (npiPkt_t *)ICall_allocMsgLimited(sizeof(npiPkt_t));
+        if( pNpiPkt != NULL)
+        {
+            pNpiPkt->hdr.event = pHciData->pData[0];
+            pNpiPkt->hdr.status = 0xff;
+            pNpiPkt->pktLen = pHciData->pktLen;
+            pNpiPkt->pData  = pHciData->pData;
+        }
+    }
+
+     return (uint8_t *)pNpiPkt;
+}
+
 // ----------------------------------------------------------------------------
 //! \brief  HCI command packet format:
 //!         Packet Type + Command opcode + length + command payload
@@ -252,18 +283,321 @@ void NPIFrame_collectFrameData(void)
                 }
                 else
                 {
-                    state = NPIFRAMEHCI_CMD_STATE_LENGTH1;
+                    state = NPIFRAMEHCI_CMD_STATE_HEADER;
                 }
                 break;
 
             // Extented Command Payload Length 0
             case NPIFRAMEHCI_CMD_STATE_LENGTH0:
                 LEN_Token = ch;
-                state = NPIFRAMEHCI_CMD_STATE_LENGTH1;
+                state = NPIFRAMEHCI_CMD_STATE_HEADER;
                 break;
 
             // Command Payload Length
-            case NPIFRAMEHCI_CMD_STATE_LENGTH1:
+            case NPIFRAMEHCI_CMD_STATE_HEADER:
+                if (PKT_Token == HCI_EXTENDED_CMD_PACKET)
+                {
+                    headerLength = NPIFRAMEHCI_EXTENDED_CMD_PKT_HDR_LEN;
+                    LEN_Token |= ((uint16_t)ch << 8);
+                }
+                else
+                {
+                    headerLength = NPIFRAMEHCI_CMD_PKT_HDR_LEN;
+                    LEN_Token = (uint16_t)ch;
+                }
+
+                tempDataLen = 0;
+                payloadOffset = 0;
+
+                if (LEN_Token > NPI_TL_BUF_SIZE)
+                {
+                    // Length of packet is greater than RX Buf size. Flush packet
+                    bytesToFlush = LEN_Token;
+                    state = NPIFRAMEHCI_STATE_FLUSH;
+                }
+                else
+                {
+                    /* Allocate memory for the data */
+                    pHciRawMsg = (hciRawData_t *) ICall_allocMsg( sizeof(hciRawData_t) + headerLength + LEN_Token );
+
+                    if (pHciRawMsg)
+                    {
+                        pHciRawMsg->pktLen = LEN_Token + headerLength;
+                        pHciRawMsg->pData = (uint8_t *)(pHciRawMsg + 1);
+
+                        pHciRawMsg->pData[payloadOffset++] = PKT_Token;
+                        pHciRawMsg->pData[payloadOffset++] = ((uint8_t *)&OPCODE_Token)[0];
+                        pHciRawMsg->pData[payloadOffset++] = ((uint8_t *)&OPCODE_Token)[1];
+                        if (PKT_Token == HCI_EXTENDED_CMD_PACKET)
+                        {
+                          pHciRawMsg->pData[payloadOffset++] = LO_UINT16(LEN_Token);
+                          pHciRawMsg->pData[payloadOffset++] = HI_UINT16(LEN_Token);;
+                        }
+                        else
+                        {
+                          pHciRawMsg->pData[payloadOffset++] = LEN_Token;
+
+                        }
+
+                        // check if a Controller Link Layer VS command
+                        if (((OPCODE_Token >> 10) == VENDOR_SPECIFIC_OGF) &&
+                            (((OPCODE_Token >> 7) & 0x07) != HCI_OPCODE_CSG_LINK_LAYER))
+                        {
+                            // this is a vendor specific command
+                            // so strip the OGF (i.e. the most significant 6
+                                                    // bits of the opcode)
+                          pHciRawMsg->pData[2] &= 0x03;
+                        }
+
+                        state = NPIFRAMEHCI_CMD_STATE_DATA;
+
+                        if (LEN_Token == 0)
+                        {
+                            // No Payload to read so go ahead and send to Stack
+                            if (incomingFrameCBFunc)
+                            {
+                                incomingFrameCBFunc(sizeof(hciRawData_t) + pHciRawMsg->pktLen,
+                                                    (uint8_t *)pHciRawMsg, NPIMSG_Type_ASYNC);
+                            }
+                            state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                        }
+                    }
+                }
+                break;
+
+            // Command Payload
+            case NPIFRAMEHCI_CMD_STATE_DATA:
+                // ch is the first char of the payload - we have just received it while this function was called.
+                // The rest of the payload will be copied by NPIRxBuf_ReadFromRxBuf()
+                pHciRawMsg->pData[payloadOffset++] = ch;
+                tempDataLen++;
+
+                rxBufLen = NPIRxBuf_GetRxBufCount();
+
+                /* If the remain of the data is there, read them all,
+                   otherwise, just read enough */
+                if (rxBufLen <= LEN_Token - tempDataLen)
+                {
+                    NPIRxBuf_ReadFromRxBuf(&pHciRawMsg->pData[payloadOffset], rxBufLen);
+                    payloadOffset  += rxBufLen;
+                    tempDataLen += rxBufLen;
+                }
+                else
+                {
+                    NPIRxBuf_ReadFromRxBuf(&pHciRawMsg->pData[payloadOffset], LEN_Token - tempDataLen);
+
+                    payloadOffset  += (LEN_Token - tempDataLen);
+                    tempDataLen += (LEN_Token - tempDataLen);
+                }
+
+                /* If number of bytes read is equal to data length,
+                   send msg back to NPI */
+                if (tempDataLen == LEN_Token)
+                {
+                    if (incomingFrameCBFunc)
+                    {
+                        incomingFrameCBFunc(sizeof(hciRawData_t) + pHciRawMsg->pktLen,
+                                            (uint8_t *)pHciRawMsg, NPIMSG_Type_ASYNC);
+                    }
+                    state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                }
+                break;
+
+            // Data Handle Byte 0
+            case NPIFRAMEHCI_DATA_STATE_HANDLE0:
+                HANDLE_Token = ch;
+                state = NPIFRAMEHCI_DATA_STATE_HANDLE1;
+                break;
+
+            // Data Handle Byte 1
+            case NPIFRAMEHCI_DATA_STATE_HANDLE1:
+                HANDLE_Token |= ((uint16_t)ch << 8);
+                state = NPIFRAMEHCI_DATA_STATE_LENGTH0;
+                break;
+
+            // Data Len Byte 0
+            case NPIFRAMEHCI_DATA_STATE_LENGTH0:
+                LEN_Token = ch;
+                state = NPIFRAMEHCI_DATA_STATE_HEADER;
+                break;
+
+            // Data Len Byte 1
+            case NPIFRAMEHCI_DATA_STATE_HEADER:
+                LEN_Token |= ((uint16_t)ch << 8);
+                tempDataLen = 0;
+                payloadOffset = 0;
+
+                if (LEN_Token > NPI_TL_BUF_SIZE)
+                {
+                    // Length of packet is greater than RX Buf size. Flush packet
+                    bytesToFlush = LEN_Token;
+                    state = NPIFRAMEHCI_STATE_FLUSH;
+                }
+                else
+                {
+                    /* Allocate memory for the data */
+                    pHciRawMsg = (hciRawData_t *) ICall_allocMsg( sizeof(hciRawData_t) +
+                                                                   NPIFRAMEHCI_DATA_PKT_HDR_LEN + LEN_Token );
+
+                    if (pHciRawMsg)
+                    {
+                        pHciRawMsg->pData = (uint8_t *)(pHciRawMsg + 1);
+                        pHciRawMsg->pktLen = LEN_Token + NPIFRAMEHCI_DATA_PKT_HDR_LEN;
+
+                        pHciRawMsg->pData[payloadOffset++] = PKT_Token;
+                        pHciRawMsg->pData[payloadOffset++] = LO_UINT16(HANDLE_Token);
+                        pHciRawMsg->pData[payloadOffset++] = HI_UINT16(HANDLE_Token);
+                        pHciRawMsg->pData[payloadOffset++] = LO_UINT16(LEN_Token);
+                        pHciRawMsg->pData[payloadOffset++] = HI_UINT16(LEN_Token);
+
+                        // Set pData to the first byte after the hciPacket bytes
+                        state = NPIFRAMEHCI_DATA_STATE_DATA;
+
+                        if (LEN_Token == 0)
+                        {
+                            if (incomingFrameCBFunc)
+                            {
+                                incomingFrameCBFunc(sizeof(hciRawData_t) + pHciRawMsg->pktLen,
+                                                    (uint8_t *)pHciRawMsg, NPIMSG_Type_ASYNC);
+                            }
+                            state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                        }
+                    }
+                    else
+                    {
+                        state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                        return;
+                    }
+
+                }
+                break;
+
+            // Data Payload
+            case NPIFRAMEHCI_DATA_STATE_DATA:
+                // ch is the first char of the payload - we have just received it while this function was called.
+                // The rest of the payload will be copied by NPIRxBuf_ReadFromRxBuf()
+                pHciRawMsg->pData[payloadOffset++] = ch;
+                tempDataLen++;
+
+                rxBufLen = NPIRxBuf_GetRxBufCount();
+
+                /* If the remain of the data is there, read them all,
+                   otherwise, just read enough */
+                if (rxBufLen <= LEN_Token - tempDataLen)
+                {
+                    NPIRxBuf_ReadFromRxBuf(&pHciRawMsg->pData[payloadOffset],
+                                             rxBufLen);
+
+                    tempDataLen += rxBufLen;
+                    payloadOffset += rxBufLen;
+                }
+                else
+                {
+                    NPIRxBuf_ReadFromRxBuf(&pHciRawMsg->pData[payloadOffset],
+                                             LEN_Token - tempDataLen);
+
+                    tempDataLen += (LEN_Token - tempDataLen);
+                    payloadOffset += (LEN_Token - tempDataLen);
+                }
+
+                /* If number of bytes read is equal to data length,
+                   send msg back to NPI */
+                if (tempDataLen == LEN_Token)
+                {
+                    if (incomingFrameCBFunc)
+                    {
+                        incomingFrameCBFunc(sizeof(hciRawData_t) + pHciRawMsg->pktLen,
+                                            (uint8_t *)pHciRawMsg, NPIMSG_Type_ASYNC);
+                    }
+                    state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                }
+                break;
+            case NPIFRAMEHCI_STATE_FLUSH:
+                bytesToFlush--;
+
+                if (bytesToFlush == 0)
+                {
+                    // Flushed all bytes in frame. Return to initial state to
+                    // parse next frame
+                    state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
+    return;
+}
+#else //NPI_RAW
+// ----------------------------------------------------------------------------
+//! \brief  HCI command packet format:
+//!         Packet Type + Command opcode + length + command payload
+//!         | 1 octet   |      2         |   1   |      n        |
+//!
+//!         HCI data packet format:
+//!         Packet Type +   Conn Handle  + length + data payload
+//!         | 1 octet   |      2         |   2   |      n      |
+//!
+//! \return     void
+// ----------------------------------------------------------------------------
+void NPIFrame_collectFrameData(void)
+{
+    uint16_t rxBufLen = 0;
+    uint8_t ch;
+
+    while (NPIRxBuf_GetRxBufCount())
+    {
+        NPIRxBuf_ReadFromRxBuf(&ch, 1);
+        switch (state)
+        {
+            // Packet Type
+            case NPIFRAMEHCI_STATE_PKT_TYPE:
+                PKT_Token = ch;
+                switch (ch)
+                {
+                    case HCI_CMD_PACKET:
+                    case HCI_EXTENDED_CMD_PACKET:
+                        state = NPIFRAMEHCI_CMD_STATE_OPCODE0;
+                        break;
+                    case HCI_ACL_DATA_PACKET:
+                    case HCI_SCO_DATA_PACKET:
+                        state = NPIFRAMEHCI_DATA_STATE_HANDLE0;
+                        break;
+                    default:
+                        // If we do not receive a legal packet type we will
+                        // skip this byte.
+                        state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                }
+                break;
+
+            // Command Opcode Byte 0
+            case NPIFRAMEHCI_CMD_STATE_OPCODE0:
+                OPCODE_Token = ch;
+                state = NPIFRAMEHCI_CMD_STATE_OPCODE1;
+                break;
+
+            // Command Opcode Byte 1
+            case NPIFRAMEHCI_CMD_STATE_OPCODE1:
+                OPCODE_Token |= ((uint16_t)ch << 8);
+                if (PKT_Token == HCI_EXTENDED_CMD_PACKET)
+                {
+                    state = NPIFRAMEHCI_CMD_STATE_LENGTH0;
+                }
+                else
+                {
+                    state = NPIFRAMEHCI_CMD_STATE_HEADER;
+                }
+                break;
+
+            // Extented Command Payload Length 0
+            case NPIFRAMEHCI_CMD_STATE_LENGTH0:
+                LEN_Token = ch;
+                state = NPIFRAMEHCI_CMD_STATE_HEADER;
+                break;
+
+            // Command Payload Length
+            case NPIFRAMEHCI_CMD_STATE_HEADER:
                 if (PKT_Token == HCI_EXTENDED_CMD_PACKET)
                 {
                     headerLength = NPIFRAMEHCI_EXTENDED_CMD_PKT_HDR_LEN;
@@ -330,17 +664,17 @@ void NPIFrame_collectFrameData(void)
 
 
                         state = NPIFRAMEHCI_CMD_STATE_DATA;
-                    }
 
-                    if (LEN_Token == 0)
-                    {
-                        // No Payload to read so go ahead and send to Stack
-                        if (incomingFrameCBFunc)
+                        if (LEN_Token == 0)
                         {
-                            incomingFrameCBFunc(sizeof(hciPacket_t) + headerLength,
-                                                  (uint8_t *)pCmdMsg, NPIMSG_Type_ASYNC);
+                            // No Payload to read so go ahead and send to Stack
+                            if (incomingFrameCBFunc)
+                            {
+                                incomingFrameCBFunc(sizeof(hciPacket_t) + headerLength,
+                                                      (uint8_t *)pCmdMsg, NPIMSG_Type_ASYNC);
+                            }
+                            state = NPIFRAMEHCI_STATE_PKT_TYPE;
                         }
-                        state = NPIFRAMEHCI_STATE_PKT_TYPE;
                     }
                 }
                 break;
@@ -396,11 +730,11 @@ void NPIFrame_collectFrameData(void)
             // Data Len Byte 0
             case NPIFRAMEHCI_DATA_STATE_LENGTH0:
                 LEN_Token = ch;
-                state = NPIFRAMEHCI_DATA_STATE_LENGTH1;
+                state = NPIFRAMEHCI_DATA_STATE_HEADER;
                 break;
 
             // Data Len Byte 1
-            case NPIFRAMEHCI_DATA_STATE_LENGTH1:
+            case NPIFRAMEHCI_DATA_STATE_HEADER:
                 LEN_Token |= ((uint16_t)ch << 8);
                 tempDataLen = 0;
 
@@ -431,21 +765,21 @@ void NPIFrame_collectFrameData(void)
                         pDataMsg->pData = (uint8_t *)pDataMsg + sizeof(hciDataPacket_t);
 
                         state = NPIFRAMEHCI_DATA_STATE_DATA;
+
+                        if (LEN_Token == 0)
+                        {
+                            if (incomingFrameCBFunc)
+                            {
+                                incomingFrameCBFunc(sizeof(hciDataPacket_t),
+                                                      (uint8_t *)pDataMsg, NPIMSG_Type_ASYNC);
+                            }
+                            state = NPIFRAMEHCI_STATE_PKT_TYPE;
+                        }
                     }
                     else
                     {
                         state = NPIFRAMEHCI_STATE_PKT_TYPE;
                         return;
-                    }
-
-                    if (LEN_Token == 0)
-                    {
-                        if (incomingFrameCBFunc)
-                        {
-                            incomingFrameCBFunc(sizeof(hciDataPacket_t),
-                                                  (uint8_t *)pDataMsg, NPIMSG_Type_ASYNC);
-                        }
-                        state = NPIFRAMEHCI_STATE_PKT_TYPE;
                     }
                 }
                 break;
@@ -502,3 +836,4 @@ void NPIFrame_collectFrameData(void)
     }
     return;
 }
+#endif //NPI_RAW

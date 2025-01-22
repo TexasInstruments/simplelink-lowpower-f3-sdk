@@ -150,7 +150,6 @@ typedef struct
 
 typedef struct
 {
-  uint8_t         rfFeModeBias;
 #ifndef CC23X0
   regOverride_t  *rfRegTbl;
   regOverride_t  *rfRegTbl1M;

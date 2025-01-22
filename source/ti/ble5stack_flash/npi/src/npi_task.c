@@ -825,8 +825,8 @@ void NPITask_createTask(uint32_t stackID)
     /* Create the task, storing the handle. */
     xReturned = xTaskCreate(
                 NPITask_Fxn,
-                "Host_Test NPI",
-                NPITASK_STACK_SIZE/ sizeof(uint32_t),
+                "NPI",
+                (NPI_TL_BUF_SIZE + NPITASK_STACK_SIZE)/ sizeof(uint32_t),
                 (void*) NULL,
                 NPITASK_PRIORITY,
                 &npiTask);
@@ -890,13 +890,19 @@ void NPITask_registerIncomingTXEventAppCB(npiIncomingEventCBack_t appTxCB,
 //!
 //! \return     void
 // -----------------------------------------------------------------------------
+
 void NPITask_sendToHost(uint8_t *pMsg)
 {
+#ifdef NPI_RAW
+  uint8_t *pTemp = NPIFrame_createNpiPkt(pMsg);
+#else
+  uint8_t *pTemp = (uint8_t *)pMsg;
+#endif
     ICall_CSState key;
     NPI_QueueRec *recPtr;
 
     // NPIFrame_frameMsg will always free pMsg when it's done
-    NPIMSG_msg_t *pNPIMsg = NPIFrame_frameMsg(pMsg);
+    NPIMSG_msg_t *pNPIMsg = NPIFrame_frameMsg(pTemp);
     if(pNPIMsg == NULL)
     {
       return;
@@ -1257,7 +1263,12 @@ static void NPITask_processRXQ(void)
                   {
                       // send a copy only to the application
                       // npiMsg need to be free in the callback
+#ifdef NPI_RAW
+                      incomingRXEventAppCBFunc((uint8_t *)recPtr->npiMsg->pBuf);
+                      NPITask_freeNpiMsg((uint8_t *)recPtr->npiMsg);
+#else
                       incomingRXEventAppCBFunc((uint8_t *)recPtr->npiMsg);
+#endif
                       break;
                   }
 

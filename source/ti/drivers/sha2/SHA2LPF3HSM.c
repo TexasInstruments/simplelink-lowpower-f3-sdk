@@ -36,6 +36,11 @@
 #include <ti/drivers/power/PowerCC27XX.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 
+#if (ENABLE_KEY_STORAGE == 1)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
+#endif
+
 #include <third_party/hsmddk/include/Integration/Adapter_DriverInit/incl/api_driver_init.h>
 #include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>
 #include <third_party/hsmddk/include/Integration/HSMSAL/HSMSAL.h>
@@ -48,6 +53,9 @@
 
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_hsmcrypto.h)
+
+/* Max key length supported by HSM for HMAC- needed for KeyStore material retrieval */
+#define SHA2LPF3HSM_MAX_HMAC_KEY_LENGTH_BYTES 128
 
 /* Forward declarations */
 static inline uint32_t SHA2LPF3HSM_largestBlockSizeMultiple(uint32_t length, uint32_t blockSize);
@@ -75,8 +83,10 @@ static void SHA2LPF3HSM_intermediateHashPostProcess(uintptr_t driverHandle);
 static int_fast16_t SHA2LPF3HSM_processOneStepAndFinalizeOperation(SHA2_Handle handle);
 
 static int_fast16_t SHA2LPF3HSM_createAndLoadKeyAssetID(SHA2_Handle handle);
+static int_fast16_t SHA2LPF3HSM_createKeyAsset(SHA2_Handle handle);
+static int_fast16_t SHA2LPF3HSM_LoadKeyAsset(SHA2_Handle handle, uint8_t *key);
 static int_fast16_t SHA2LPF3HSM_CreateTempAssetID(SHA2_Handle handle);
-static int_fast16_t SHA2LPF3HSM_freeAssets(SHA2_Handle handle);
+static int_fast16_t SHA2LPF3HSM_freeAllAssets(SHA2_Handle handle);
 static int_fast16_t SHA2LPF3HSM_freeAssetID(SHA2_Handle handle, uint32_t AssetID);
 
 /* This table converts from SHA2_HashType values to the corresponding block size. */
@@ -91,15 +101,6 @@ static uint8_t *SHA2_data;
 static uint32_t SHA2_dataBytesRemaining;
 
 static bool isInitialized = false;
-
-static VexTokenCmd_Hash_t t_cmd;
-
-static VexTokenRslt_Hash_t t_res;
-
-/* User-provided pointer to a result buffer */
-static void *userDigest;
-
-static uint32_t userDigestLength;
 
 /* Allows post-processing function to know transactionLength used in SHA2LPF3HSM_addData() */
 static uint32_t addDataTransactionLength;
@@ -233,8 +234,6 @@ static int_fast16_t SHA2LPF3HSM_computeIntermediateHash(SHA2_Handle handle)
             object->operationInProgress = false;
 
             HSMLPF3_releaseLock();
-
-            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
         }
     }
     else
@@ -248,8 +247,6 @@ static int_fast16_t SHA2LPF3HSM_computeIntermediateHash(SHA2_Handle handle)
          * release the lock and power constraint itself
          */
         HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 
         object->operationInProgress = false;
 
@@ -321,6 +318,8 @@ SHA2_Handle SHA2_construct(SHA2_Config *config, const SHA2_Params *params)
     object->returnBehavior = params->returnBehavior;
     object->callbackFxn    = params->callbackFxn;
     object->hashType       = params->hashType;
+    object->keyAssetID     = 0U;
+    object->tempAssetID    = 0U;
 
     if (params->returnBehavior == SHA2_RETURN_BEHAVIOR_BLOCKING)
     {
@@ -330,8 +329,6 @@ SHA2_Handle SHA2_construct(SHA2_Config *config, const SHA2_Params *params)
     {
         object->accessTimeout = SemaphoreP_NO_WAIT;
     }
-
-    Power_setDependency(PowerLPF3_PERIPH_HSM);
 
     return handle;
 }
@@ -348,6 +345,19 @@ void SHA2_close(SHA2_Handle handle)
     {
         SHA2_cancelOperation(handle);
     }
+
+    if (!HSMLPF3_acquireLock(object->accessTimeout, (uintptr_t)handle))
+    {
+        return;
+    }
+
+    /* SHA2_close() is a void function and cannot return the status of attempting to clean up.
+     * The best the driver can do is attempt to remove all assets it created, if they weren't
+     * already released like they should have been.
+     */
+    (void)SHA2LPF3HSM_freeAllAssets(handle);
+
+    HSMLPF3_releaseLock();
 
     object->isOpen = false;
 }
@@ -384,8 +394,6 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
         return SHA2_STATUS_RESOURCE_UNAVAILABLE;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
     if (length == 0)
     {
         /* No operation, as no new data has been provided. Any cleanup or intermediate hashes
@@ -419,8 +427,6 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
         if (transactionLength > DMA_MAX_TXN_LENGTH)
         {
             HSMLPF3_releaseLock();
-
-            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 
             return SHA2_STATUS_DMA_ERROR;
         }
@@ -501,6 +507,11 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
         /* Populates the HSMLPF3 commandToken as a hash token for a SHA2 operation. */
         HSMLPF3_constructSHA2PhysicalToken(object);
 
+        /* The postProcessFxn needs access to the transaction length
+         * that was determined above
+         */
+        addDataTransactionLength = transactionLength;
+
         /* Starting the operation and setting object->operationInProgress must be atomic */
         key = HwiP_disable();
 
@@ -515,11 +526,6 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
             HwiP_restore(key);
 
             tokenSubmitted = true;
-
-            /* The postProcessFxn needs access to the transaction length
-             * that was determined above
-             */
-            addDataTransactionLength = transactionLength;
 
             /* The return status is overwritten if this token submission
              * yields an error, or if SHA2LPF3HSM_computeIntermediateHash() gets
@@ -546,8 +552,6 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
                 object->operationInProgress = false;
 
                 HSMLPF3_releaseLock();
-
-                Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
             }
         }
         else
@@ -583,8 +587,6 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
 
         HSMLPF3_releaseLock();
 
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
         /* Since there's no HSM operation ongoing, we can call the application's
          * callback function now. Make sure not to call it if there was a
          * token submission error.
@@ -603,14 +605,6 @@ static int_fast16_t SHA2LPF3HSM_addData(SHA2_Handle handle, const void *data, si
  */
 int_fast16_t SHA2_finalize(SHA2_Handle handle, void *digest)
 {
-    SHA2LPF3HSM_Object *object = handle->object;
-
-    /* Try and obtain access to the crypto module */
-    if (!HSMLPF3_acquireLock(object->accessTimeout, (uintptr_t)handle))
-    {
-        return SHA2_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
     return SHA2LPF3HSM_finalize(handle, digest);
 }
 
@@ -620,15 +614,9 @@ int_fast16_t SHA2_finalize(SHA2_Handle handle, void *digest)
 static int_fast16_t SHA2LPF3HSM_finalize(SHA2_Handle handle, void *digest)
 {
     SHA2LPF3HSM_Object *object = handle->object;
-    uint32_t digestLength      = 0;
     int_fast16_t status        = SHA2_STATUS_ERROR;
     int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
     uintptr_t key;
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    (void)memset(&t_cmd, 0, sizeof(t_cmd));
-    (void)memset(&t_res, 0, sizeof(t_res));
 
     SHA2LPF3HSM_setAlgorithmAndDigestLength(object);
 
@@ -643,8 +631,8 @@ static int_fast16_t SHA2LPF3HSM_finalize(SHA2_Handle handle, void *digest)
     }
 
     object->input       = object->buffer;
+    object->output      = digest;
     object->inputLength = object->bytesInBuffer;
-    digestLength        = object->digestLength;
 
     if (object->bytesProcessed == 0)
     {
@@ -662,16 +650,32 @@ static int_fast16_t SHA2LPF3HSM_finalize(SHA2_Handle handle, void *digest)
     }
     else
     {
-        /* There should always at least be data in the buffer if any data was added before calling SHA2_finalize() */
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
         return SHA2_STATUS_ERROR;
+    }
+
+    /* Try and obtain access to the crypto module */
+    if (!HSMLPF3_acquireLock(object->accessTimeout, (uintptr_t)handle))
+    {
+        return SHA2_STATUS_RESOURCE_UNAVAILABLE;
     }
 
     /* Populates the HSMLPF3 commandToken as a hash token for a SHA2 operation. */
     HSMLPF3_constructSHA2PhysicalToken(object);
+
+    /* Revert the digest lengths for the special cases of SHA-224 and SHA-384.
+     * We must do so after constructing the token, which involves copying over the
+     * intermediate digest of modified length. However, reverting must come before
+     * submitting the token, since the post-processing function will retrieve the
+     * final digest of length matching the hashType.
+     */
+    if (object->hashType == SHA2_HASH_TYPE_224)
+    {
+        object->digestLength = SHA2_DIGEST_LENGTH_BYTES_224;
+    }
+    else if (object->hashType == SHA2_HASH_TYPE_384)
+    {
+        object->digestLength = SHA2_DIGEST_LENGTH_BYTES_384;
+    }
 
     key = HwiP_disable();
 
@@ -685,24 +689,6 @@ static int_fast16_t SHA2LPF3HSM_finalize(SHA2_Handle handle, void *digest)
         object->operationInProgress = true;
 
         HwiP_restore(key);
-
-        /* Revert the digest lengths for the special cases of SHA-224 and SHA-384, since
-         * we are now retrieving the final digest
-         */
-        if (object->hashType == SHA2_HASH_TYPE_224)
-        {
-            digestLength = SHA2_DIGEST_LENGTH_BYTES_224;
-        }
-        else if (object->hashType == SHA2_HASH_TYPE_384)
-        {
-            digestLength = SHA2_DIGEST_LENGTH_BYTES_384;
-        }
-
-        /* Populate global variables so that the post-processing function can write the digest
-         * back to the user-allocated buffer
-         */
-        userDigest       = digest;
-        userDigestLength = digestLength;
 
         /* Handles post command token submission mechanism.
          * Waits for a result token from the HSM IP in polling and blocking modes (and calls the drivers post-processing
@@ -721,8 +707,6 @@ static int_fast16_t SHA2LPF3HSM_finalize(SHA2_Handle handle, void *digest)
              * callback.
              */
             HSMLPF3_releaseLock();
-
-            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
         }
     }
     else
@@ -734,8 +718,6 @@ static int_fast16_t SHA2LPF3HSM_finalize(SHA2_Handle handle, void *digest)
         /* The application's callback is not called in this error case */
 
         HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
 
     return status;
@@ -770,8 +752,6 @@ static int_fast16_t SHA2LPF3HSM_hashData(SHA2_Handle handle, const void *data, s
         return SHA2_STATUS_RESOURCE_UNAVAILABLE;
     }
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
     SHA2LPF3HSM_setAlgorithmAndDigestLength(object);
 
     /* Calls to SHA2_hashData() clear intermediate data
@@ -785,7 +765,6 @@ static int_fast16_t SHA2LPF3HSM_hashData(SHA2_Handle handle, const void *data, s
     object->input           = (uint8_t *)data;
     object->output          = digest;
     object->inputLength     = dataLength;
-    object->outputLength    = object->digestLength;
     object->totalDataLength = object->inputLength;
     object->mode            = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2FINAL;
     object->key             = NULL;
@@ -815,14 +794,16 @@ static int_fast16_t SHA2LPF3HSM_hashData(SHA2_Handle handle, const void *data, s
         {
             status = object->returnStatus;
         }
+        else
+        {
+            HSMLPF3_releaseLock();
+        }
     }
     else
     {
         HwiP_restore(key);
 
         HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
 
     return status;
@@ -926,17 +907,34 @@ int_fast16_t SHA2_setupHmac(SHA2_Handle handle, const CryptoKey *key)
         object->digestLength = SHA2_DIGEST_LENGTH_BYTES_512;
     }
 
-    object->mode = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2CONT;
-    object->key  = (CryptoKey *)key;
+    object->mode        = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2CONT;
+    object->key         = (CryptoKey *)key;
+    object->keyAssetID  = 0U;
+    object->tempAssetID = 0U;
 
-    if (object->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->key->encoding == CryptoKey_PLAINTEXT_HSM) || (object->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
+        if (!HSMLPF3_acquireLock(object->accessTimeout, (uintptr_t)handle))
+        {
+            return SHA2_STATUS_RESOURCE_UNAVAILABLE;
+        }
+
         status = SHA2LPF3HSM_createAndLoadKeyAssetID(handle);
 
         if (status == SHA2_STATUS_SUCCESS)
         {
             status = SHA2LPF3HSM_CreateTempAssetID(handle);
         }
+
+        /* If an error occurred at any point AFTER successfully creating the key asset, then there
+         * is an allocated asset that the driver must clean up.
+         */
+        if (status != SHA2_STATUS_SUCCESS)
+        {
+            (void)SHA2LPF3HSM_freeAllAssets(handle);
+        }
+
+        HSMLPF3_releaseLock();
     }
 
     if ((status == SHA2_STATUS_SUCCESS) && (object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK))
@@ -972,14 +970,30 @@ int_fast16_t SHA2_hmac(SHA2_Handle handle, const CryptoKey *key, const void *dat
     object->input           = (uint8_t *)data;
     object->output          = hmac;
     object->inputLength     = size;
-    object->outputLength    = object->digestLength;
     object->totalDataLength = object->inputLength;
     object->mode            = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2FINAL;
     object->key             = (CryptoKey *)key;
+    object->keyAssetID      = 0U;
+    object->tempAssetID     = 0U;
 
-    if (object->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    if ((object->key->encoding == CryptoKey_PLAINTEXT_HSM) || (object->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
+        if (!HSMLPF3_acquireLock(object->accessTimeout, (uintptr_t)handle))
+        {
+            return SHA2_STATUS_RESOURCE_UNAVAILABLE;
+        }
+
         status = SHA2LPF3HSM_createAndLoadKeyAssetID(handle);
+
+        if (status != SHA2_STATUS_SUCCESS)
+        {
+            /* If an error occurred at any point AFTER successfully creating the key asset, then there
+             * is an allocated asset that the driver must clean up.
+             */
+            (void)SHA2LPF3HSM_freeAllAssets(handle);
+
+            HSMLPF3_releaseLock();
+        }
     }
 
     if (status == SHA2_STATUS_SUCCESS)
@@ -1004,23 +1018,21 @@ static inline void SHA2LPF3HSM_oneStepAndFinalizePostProcessing(uintptr_t arg0)
     {
         status = SHA2_STATUS_SUCCESS;
 
-        (void)HSMLPF3_getResultDigest((uint32_t *)object->output, object->outputLength);
+        HSMLPF3_getResultDigest(object->output, object->digestLength);
     }
     else
     {
         status = SHA2_STATUS_ERROR;
     }
 
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    object->returnStatus = status;
-
-    if (SHA2LPF3HSM_freeAssets(handle) == SHA2_STATUS_ERROR)
+    if (SHA2LPF3HSM_freeAllAssets(handle) != SHA2_STATUS_SUCCESS)
     {
         object->returnStatus = SHA2_STATUS_ERROR;
     }
+
+    object->returnStatus = status;
+
+    HSMLPF3_releaseLock();
 
     if (object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK)
     {
@@ -1035,13 +1047,6 @@ static int_fast16_t SHA2LPF3HSM_processOneStepAndFinalizeOperation(SHA2_Handle h
 {
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
     int_fast16_t status        = SHA2_STATUS_ERROR;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return SHA2_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
     (void)HSMLPF3_constructSHA2PhysicalToken(object);
 
@@ -1062,8 +1067,6 @@ static int_fast16_t SHA2LPF3HSM_processOneStepAndFinalizeOperation(SHA2_Handle h
     if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
     {
         HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
 
     return status;
@@ -1087,16 +1090,14 @@ static void SHA2LPF3HSM_hashPostProcess(uintptr_t driverHandle)
     {
         status = SHA2_STATUS_SUCCESS;
 
-        (void)HSMLPF3_getResultDigest((uint32_t *)object->output, object->outputLength);
+        HSMLPF3_getResultDigest(object->output, object->digestLength);
     }
 
     object->returnStatus = status;
 
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
     object->operationInProgress = false;
+
+    HSMLPF3_releaseLock();
 
     if (object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK)
     {
@@ -1124,7 +1125,7 @@ static void SHA2LPF3HSM_finalizePostProcess(uintptr_t driverHandle)
     else
     {
         object->returnStatus = SHA2_STATUS_SUCCESS;
-        HSMLPF3_getResultDigest(userDigest, userDigestLength);
+        HSMLPF3_getResultDigest(object->output, object->digestLength);
     }
 
     /* The multi-step operation is now complete, so reset any
@@ -1135,17 +1136,15 @@ static void SHA2LPF3HSM_finalizePostProcess(uintptr_t driverHandle)
     SHA2_data               = NULL;
     SHA2_dataBytesRemaining = 0;
 
-    HSMLPF3_releaseLock();
-
     if (object->key)
     {
-        if (SHA2LPF3HSM_freeAssets(handle) == SHA2_STATUS_ERROR)
+        if (SHA2LPF3HSM_freeAllAssets(handle) != SHA2_STATUS_SUCCESS)
         {
             object->returnStatus = SHA2_STATUS_ERROR;
         }
     }
 
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+    HSMLPF3_releaseLock();
 
     object->operationInProgress = false;
 
@@ -1178,8 +1177,6 @@ static void SHA2LPF3HSM_addDataPostProcess(uintptr_t driverHandle)
 
         HSMLPF3_releaseLock();
 
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
         object->operationInProgress = false;
 
         if (object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK)
@@ -1193,7 +1190,7 @@ static void SHA2LPF3HSM_addDataPostProcess(uintptr_t driverHandle)
 
         SHA2LPF3HSM_setIntermediateDigestLength(object->hashType, &digestLength);
 
-        /* Copy intermediate state to object*/
+        /* Copy intermediate state to object */
         HSMLPF3_getResultDigest(object->digest, digestLength);
 
         object->bytesProcessed += addDataTransactionLength;
@@ -1218,8 +1215,6 @@ static void SHA2LPF3HSM_addDataPostProcess(uintptr_t driverHandle)
             object->returnStatus = SHA2_STATUS_SUCCESS;
 
             HSMLPF3_releaseLock();
-
-            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 
             object->operationInProgress = false;
 
@@ -1284,8 +1279,6 @@ static void SHA2LPF3HSM_intermediateHashPostProcess(uintptr_t driverHandle)
 
     HSMLPF3_releaseLock();
 
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-
     object->operationInProgress = false;
 
     if (object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK)
@@ -1313,10 +1306,6 @@ static inline void SHA2LPF3HSM_CreateKeyAssetPostProcessing(uintptr_t arg0)
     }
 
     object->returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
 
 /*
@@ -1327,13 +1316,18 @@ static int_fast16_t SHA2LPF3HSM_createKeyAsset(SHA2_Handle handle)
     int_fast16_t status        = SHA2_STATUS_ERROR;
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
     uint64_t assetPolicy       = 0x0;
+    uint32_t keyLength         = 0U;
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    if (object->key->encoding == CryptoKey_PLAINTEXT_HSM)
     {
-        return SHA2_STATUS_RESOURCE_UNAVAILABLE;
+        keyLength = object->key->u.plaintext.keyLength;
     }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->key->encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyLength = object->key->u.keyStore.keyLength;
+    }
+#endif
 
     /* Operation (Lower 16-bits + general Operation) + Direction. No Mode */
     assetPolicy = EIP130_ASSET_POLICY_SYM_MACHASH | EIP130_ASSET_POLICY_SCDIRENCGEN;
@@ -1359,7 +1353,7 @@ static int_fast16_t SHA2LPF3HSM_createKeyAsset(SHA2_Handle handle)
             break;
     }
 
-    (void)HSMLPF3_constructCreateAssetToken(assetPolicy, (uint32_t)object->key->u.plaintext.keyLength);
+    HSMLPF3_constructCreateAssetToken(assetPolicy, keyLength);
 
     int_fast16_t hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
                                                  SHA2LPF3HSM_CreateKeyAssetPostProcessing,
@@ -1372,13 +1366,6 @@ static int_fast16_t SHA2LPF3HSM_createKeyAsset(SHA2_Handle handle)
         {
             status = object->returnStatus;
         }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
 
     return status;
@@ -1400,30 +1387,30 @@ static inline void SHA2LPF3HSM_LoadKeyAssetPostProcessing(uintptr_t arg0)
     }
 
     object->returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
 
 /*
  *  ======== SHA2LPF3HSM_LoadKeyAsset ========
  */
-static int_fast16_t SHA2LPF3HSM_LoadKeyAsset(SHA2_Handle handle)
+static int_fast16_t SHA2LPF3HSM_LoadKeyAsset(SHA2_Handle handle, uint8_t *key)
 {
     int_fast16_t status        = SHA2_STATUS_ERROR;
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
+    uint32_t keyLength         = 0U;
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    if (object->key->encoding == CryptoKey_PLAINTEXT_HSM)
     {
-        return SHA2_STATUS_RESOURCE_UNAVAILABLE;
+        keyLength = object->key->u.plaintext.keyLength;
     }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->key->encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyLength = object->key->u.keyStore.keyLength;
+    }
+#endif
 
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-
-    (void)HSMLPF3_constructLoadPlaintextAssetToken(object->key->u.plaintext.keyMaterial,
-                                                   object->key->u.plaintext.keyLength,
-                                                   object->keyAssetID);
+    /* Constructing an HSM token is a void operation that cannot fail */
+    (void)HSMLPF3_constructLoadPlaintextAssetToken(key, keyLength, object->keyAssetID);
 
     int_fast16_t hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
                                                  SHA2LPF3HSM_LoadKeyAssetPostProcessing,
@@ -1438,13 +1425,6 @@ static int_fast16_t SHA2LPF3HSM_LoadKeyAsset(SHA2_Handle handle)
         }
     }
 
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
     return status;
 }
 
@@ -1453,12 +1433,97 @@ static int_fast16_t SHA2LPF3HSM_LoadKeyAsset(SHA2_Handle handle)
  */
 static int_fast16_t SHA2LPF3HSM_createAndLoadKeyAssetID(SHA2_Handle handle)
 {
-    int_fast16_t status = SHA2_STATUS_ERROR;
+    int_fast16_t status        = SHA2_STATUS_ERROR;
+    SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
+    uint8_t *keyMaterial       = NULL;
+#if (ENABLE_KEY_STORAGE == 1)
+    uint8_t KeyStore_keyingMaterial[SHA2LPF3HSM_MAX_HMAC_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage = KEYSTORE_PSA_KEY_USAGE_SIGN_MESSAGE;
+    KeyStore_PSA_Algorithm alg;
 
-    status = SHA2LPF3HSM_createKeyAsset(handle);
-    if (status == SHA2_STATUS_SUCCESS)
+    switch (object->hashType)
     {
-        status = SHA2LPF3HSM_LoadKeyAsset(handle);
+        case SHA2_HASH_TYPE_224:
+            alg = KEYSTORE_PSA_ALG_HMAC(KEYSTORE_PSA_ALG_SHA_224);
+            break;
+        case SHA2_HASH_TYPE_256:
+            alg = KEYSTORE_PSA_ALG_HMAC(KEYSTORE_PSA_ALG_SHA_256);
+            break;
+        case SHA2_HASH_TYPE_384:
+            alg = KEYSTORE_PSA_ALG_HMAC(KEYSTORE_PSA_ALG_SHA_384);
+            break;
+        case SHA2_HASH_TYPE_512:
+            alg = KEYSTORE_PSA_ALG_HMAC(KEYSTORE_PSA_ALG_SHA_512);
+            break;
+        default:
+            return SHA2_STATUS_ERROR;
+            break;
+    }
+#endif
+
+    if (object->key->encoding == CryptoKey_PLAINTEXT_HSM)
+    {
+        keyMaterial = object->key->u.plaintext.keyMaterial;
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->key->encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyMaterial = &KeyStore_keyingMaterial[0];
+
+        status = KeyStore_PSA_retrieveFromKeyStore(object->key,
+                                                   &KeyStore_keyingMaterial[0],
+                                                   sizeof(KeyStore_keyingMaterial),
+                                                   &object->keyAssetID,
+                                                   alg,
+                                                   usage);
+
+        if (status != KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            return status;
+        }
+        else if (object->keyAssetID != 0)
+        {
+            /* In this case, we already retrieved an asset from KeyStore,
+             * so we don't need the driver to create and load an asset itself.
+             * We must mark this before validating key sizes to ensure we cleanup
+             * properly in the case that key size validation fails.
+             */
+            object->driverCreatedKeyAsset = false;
+        }
+        else
+        {
+            /* Key material has been retrieved in plaintext */
+        }
+    }
+#endif
+    else
+    {
+        /* Invalid key encoding */
+        return SHA2_STATUS_ERROR;
+    }
+
+    /* If we haven't already retrieved an asset directly from KeyStore, then the driver
+     * will have to create and load an asset itself.
+     */
+    if (object->keyAssetID == 0)
+    {
+        status = SHA2LPF3HSM_createKeyAsset(handle);
+
+        if (status == SHA2_STATUS_SUCCESS)
+        {
+            /* Now that the driver has successfully created an asset, object->keyAssetID is now non-zero.
+             * If any failure condition happens after this moment, the cleanup will expect
+             * object->driverCreatedKeyAsset to be accurate, since the keyAssetID will reflect that there
+             * is an asset to free, and the cleanup will need to know how to do that.
+             */
+            object->driverCreatedKeyAsset = true;
+
+            status = SHA2LPF3HSM_LoadKeyAsset(handle, keyMaterial);
+        }
+        else
+        {
+            /* object->keyAssetID is still 0, so cleanup knows there's no asset to free */
+        }
     }
 
     return status;
@@ -1481,10 +1546,6 @@ static inline void SHA2LPF3HSM_CreateTempAssetPostProcessing(uintptr_t arg0)
     }
 
     object->returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
-    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
 
 /*
@@ -1495,13 +1556,6 @@ static int_fast16_t SHA2LPF3HSM_CreateTempAssetID(SHA2_Handle handle)
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
     int_fast16_t status        = SHA2_STATUS_ERROR;
     uint64_t assetPolicy       = 0x0;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return SHA2_STATUS_RESOURCE_UNAVAILABLE;
-    }
-
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
     /* Operation (Lower 16-bits + general Operation) + Direction. No Mode */
     assetPolicy = EIP130_ASSET_POLICY_SYM_TEMP | EIP130_ASSET_POLICY_SCUIMACHASH | EIP130_ASSET_POLICY_SCDIRENCGEN;
@@ -1527,7 +1581,7 @@ static int_fast16_t SHA2LPF3HSM_CreateTempAssetID(SHA2_Handle handle)
             break;
     }
 
-    (void)HSMLPF3_constructCreateAssetToken(assetPolicy, object->digestLength);
+    HSMLPF3_constructCreateAssetToken(assetPolicy, object->digestLength);
 
     int_fast16_t hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
                                                  SHA2LPF3HSM_CreateTempAssetPostProcessing,
@@ -1540,13 +1594,6 @@ static int_fast16_t SHA2LPF3HSM_CreateTempAssetID(SHA2_Handle handle)
         {
             status = object->returnStatus;
         }
-    }
-
-    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
-    {
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     }
 
     return status;
@@ -1566,19 +1613,10 @@ static inline void SHA2LPF3HSM_FreeAssetPostProcessing(uintptr_t arg0)
     {
         status = SHA2_STATUS_SUCCESS;
     }
-    else
-    {
-        object->returnStatus = status;
-    }
 
-    if ((HSMLPF3_ReturnBehavior)object->returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        HSMLPF3_releaseLock();
+    object->returnStatus = status;
 
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
-    if (status == SHA2_STATUS_ERROR && object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK)
+    if ((status == SHA2_STATUS_ERROR) && (object->returnBehavior == SHA2_RETURN_BEHAVIOR_CALLBACK))
     {
         object->callbackFxn(handle, object->returnStatus);
     }
@@ -1591,16 +1629,6 @@ static int_fast16_t SHA2LPF3HSM_freeAssetID(SHA2_Handle handle, uint32_t AssetID
 {
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
     int_fast16_t status        = SHA2_STATUS_SUCCESS;
-
-    if ((HSMLPF3_ReturnBehavior)object->returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-        {
-            return SHA2_STATUS_RESOURCE_UNAVAILABLE;
-        }
-
-        Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
 
     (void)HSMLPF3_constructDeleteAssetToken(AssetID);
 
@@ -1617,33 +1645,48 @@ static int_fast16_t SHA2LPF3HSM_freeAssetID(SHA2_Handle handle, uint32_t AssetID
         }
     }
 
-    if (((HSMLPF3_ReturnBehavior)object->returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING) &&
-        (hsmRetval != HSMLPF3_STATUS_SUCCESS))
-    {
-
-        HSMLPF3_releaseLock();
-
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    }
-
     return status;
 }
 
 /*
- *  ======== SHA2LPF3HSM_freeAssets ========
+ *  ======== SHA2LPF3HSM_freeAllAssets ========
  */
-static int_fast16_t SHA2LPF3HSM_freeAssets(SHA2_Handle handle)
+static int_fast16_t SHA2LPF3HSM_freeAllAssets(SHA2_Handle handle)
 {
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)handle->object;
     int_fast16_t status        = SHA2_STATUS_ERROR;
 
     if (object->keyAssetID != 0)
     {
-        status = SHA2LPF3HSM_freeAssetID(handle, object->keyAssetID);
-        if (status == SHA2_STATUS_SUCCESS)
+        /* If the object has a stored keyAssetID, then driverCreatedKeyAsset MUST
+         * be set. It can only be false if KeyStore is enabled. If it is false,
+         * it means that we retrieved an asset directly from KeyStore, so the
+         * driver should not free the asset. Instead, the driver should direct
+         * KeyStore to free the asset (which will perform the necessary persistence
+         * check and only free the asset if it should be freed).
+         */
+        if (object->driverCreatedKeyAsset == true)
         {
-            object->keyAssetID = 0;
+            status = SHA2LPF3HSM_freeAssetID(handle, object->keyAssetID);
+            if (status == SHA2_STATUS_SUCCESS)
+            {
+                object->keyAssetID = 0;
+            }
         }
+#if (ENABLE_KEY_STORAGE == 1)
+        else
+        {
+            KeyStore_PSA_KeyFileId keyID;
+
+            GET_KEY_ID(keyID, object->key->u.keyStore.keyID);
+
+            status = KeyStore_PSA_assetPostProcessing(keyID);
+            if (status == KEYSTORE_PSA_STATUS_SUCCESS)
+            {
+                object->keyAssetID = 0;
+            }
+        }
+#endif
     }
 
     if (object->tempAssetID != 0)

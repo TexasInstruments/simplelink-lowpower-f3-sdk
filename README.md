@@ -7,30 +7,32 @@ is one of many within the [SimpleLink Low Power
 ecosystem](https://www.ti.com/tool/SIMPLELINK-LOWPOWER-SDK).
 
 The LPF3 SDK delivers components that enable engineers to develop applications
-on the Texas Instruments SimpleLink CC23xx family of wireless microcontrollers
-(MCUs). This software toolkit provides a cohesive and consistent software
-experience for all SimpleLink CC23xx wireless MCU users by packaging essential
-software components, such as:
+on the Texas Instruments SimpleLink CC23xx and CC27xx family of wireless
+microcontrollers (MCUs). This software toolkit provides a cohesive and
+consistent software experience for all SimpleLink CC23xx and CC27xx wireless MCU
+users by packaging essential software components, such as:
 
 * Bluetooth® Low Energy (BLE) protocol stack
 * Zigbee® protocol stack supporting low power wireless mesh networks
 * ProprietaryRF 2.4 GHz stack
 * TI Drivers
 
-> Note: The Zigbee stack and examples are in early access for the 8.20 F3 SDK,
-> and are not recommended for production.
-
 ## What's New
 
-This is version 8.20.00.119 of the LPF3 SDK. This release includes:
+This is version 8.40.00.61 of the LPF3 SDK. This release includes:
 
-* Bluetooth Low Energy 5.4 support
-* Bluetooth Advertisement Extension and Periodic Advertisement Qualification
-* Early access to Zigbee Stack; not recommended for production
-* CC2340R53 support
+* CC27xx family of devices are now supported.
+  * For more information regarding the new device, please visit [the product
+    page](https://www.ti.com/product/CC2745R10-Q1)
+  * The CC2745R10-Q1 is suitable to evaluate other device variants in the CC27xx
+    family of devices.
+  * Bluetooth LE 5.4 qualified stack for the CC27xx devices.
+* Controller-Only examples have been added for the CC23xx and CC27xx family of
+  devices.
+* Early access to Zigbee Stack; Fully qualified on CC2340Rx only.
 
 More details, including supported devices, IDEs, and toolchains are provided in
-the [LPF3 8.20.00.119 SDK release notes][sdk release notes].
+the [LPF3 8.40.00.61 SDK release notes][sdk release notes].
 
 ## About this Repository
 
@@ -115,8 +117,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.20.00.119
-[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.20.00.119
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__AIdWRFXHGgGjzzdkh3KP0A__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.00.61
+[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AE7zcXV6PmNpJMBljRPgJA__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.00.61
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

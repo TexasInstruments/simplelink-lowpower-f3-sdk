@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -258,7 +258,7 @@ Comparator_Handle ComparatorLPF3LP_open(Comparator_Handle handle, Comparator_Par
 
     /* Configure positive input */
     /* In case we are using an external pin we must configure the related GPIO */
-    if (hwAttrs->positiveInputChannel != ComparatorLPF3LP_POS_INPUT_VDDA)
+    if (hwAttrs->positiveInputChannel != ComparatorLPF3LP_POS_INPUT_VDDS)
     {
         GPIO_setConfigAndMux(hwAttrs->positiveInputPin, GPIO_CFG_NO_DIR, hwAttrs->positiveInputPinMux);
     }
@@ -266,7 +266,7 @@ Comparator_Handle ComparatorLPF3LP_open(Comparator_Handle handle, Comparator_Par
 
     /* Configure negative input */
     /* In case we are using an external pin we must configure the related GPIO */
-    if ((hwAttrs->negativeInputChannel != ComparatorLPF3LP_NEG_INPUT_VDDA) &&
+    if ((hwAttrs->negativeInputChannel != ComparatorLPF3LP_NEG_INPUT_VDDS) &&
         (hwAttrs->negativeInputChannel != ComparatorLPF3LP_NEG_INPUT_VDDD))
     {
         GPIO_setConfigAndMux(hwAttrs->negativeInputPin, GPIO_CFG_NO_DIR, hwAttrs->negativeInputPinMux);

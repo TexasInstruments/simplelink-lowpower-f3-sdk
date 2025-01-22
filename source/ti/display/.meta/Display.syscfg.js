@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -262,6 +262,41 @@ function moduleInstances(inst)
             }
         }
 
+        let lcdEnableRequiredArgs = {
+            /* Can't be changed by the user */
+            parentInterfaceName: "GPIO",
+            parentSignalName: "lcdEnablePin",
+            parentSignalDisplayName: enableName
+        };
+
+        let lcdPowerRequiredArgs = {
+            /* Can't be changed by the user */
+            parentInterfaceName: "GPIO",
+            parentSignalName: "lcdPowerPin",
+            parentSignalDisplayName: powerName
+        };
+
+        let lcsCSRequiredArgs = {
+            /* Can't be changed by the user */
+            parentInterfaceName: "GPIO",
+            parentSignalName: "lcdCSPin",
+            parentSignalDisplayName: selectName
+        };
+
+        /* Ensure selected hardware is not null */
+        if (enableHardware != null)
+        {
+            lcdEnableRequiredArgs.$hardware = enableHardware;
+        }
+        if (powerHardware != null)
+        {
+            lcdPowerRequiredArgs.$hardware = powerHardware;
+        }
+        if (selectHardware != null)
+        {
+            lcsCSRequiredArgs.$hardware = selectHardware;
+        }
+
         return ([
             {
                 name: "lcdEnable",
@@ -272,13 +307,7 @@ function moduleInstances(inst)
                     $name: "CONFIG_GPIO_" + shortName + "_ENABLE",
                     mode: "Output"
                 },
-                requiredArgs: {
-                    /* Can't be changed by the user */
-                    parentInterfaceName: "GPIO",
-                    parentSignalName: "lcdEnablePin",
-                    parentSignalDisplayName: enableName,
-                    $hardware: enableHardware
-                }
+                requiredArgs: lcdEnableRequiredArgs
             },
             {
                 name: "lcdPower",
@@ -289,13 +318,7 @@ function moduleInstances(inst)
                     $name: "CONFIG_GPIO_" + shortName + "_POWER",
                     mode: "Output"
                 },
-                requiredArgs: {
-                    /* Can't be changed by the user */
-                    parentInterfaceName: "GPIO",
-                    parentSignalName: "lcdPowerPin",
-                    parentSignalDisplayName: powerName,
-                    $hardware: powerHardware
-                }
+                requiredArgs: lcdPowerRequiredArgs
             },
             {
                 name: "lcdCS",
@@ -307,13 +330,7 @@ function moduleInstances(inst)
                     $name: "CONFIG_GPIO_" + shortName + "_SELECT",
                     mode: "Output"
                 },
-                requiredArgs: {
-                    /* Can't be changed by the user */
-                    parentInterfaceName: "GPIO",
-                    parentSignalName: "lcdCSPin",
-                    parentSignalDisplayName: selectName,
-                    $hardware: selectHardware
-                }
+                requiredArgs: lcsCSRequiredArgs
             }
         ]);
     }
@@ -381,7 +398,7 @@ function validate(inst, validation)
     {
         if (inst.lcdFontSize < 12 || inst.lcdFontSize > 48 || inst.lcdFontSize % 2 != 0)
         {
-            logError(validation, inst, 'lcdFontSize', 
+            logError(validation, inst, 'lcdFontSize',
                      'Must be an even integer between 12 and 48, both included.');
         }
     }
@@ -418,7 +435,7 @@ function onChange(inst, ui)
         ui.mutexTimeout.hidden = true;
         ui.mutexTimeoutValue.hidden = true;
         inst.displayImplementation = "DisplaySharp";
-        
+
         if(inst.lcdFont == "Fixed")
         {
             ui.lcdFontSize.hidden = true;
@@ -583,6 +600,7 @@ and portable APIs.
     templates             : {
         /* contribute to TI-DRIVERS configuration file */
         boardc: "/ti/display/Display.Board.c.xdt",
+        boardh: "/ti/display/Display.Board.h.xdt",
 
         /* contribute libraries to linker command file */
         "/ti/utils/build/GenLibs.cmd.xdt":

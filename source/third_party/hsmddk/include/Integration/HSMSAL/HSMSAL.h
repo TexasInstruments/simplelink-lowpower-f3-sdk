@@ -84,6 +84,28 @@ HSMSALStatus_t
 HSMSAL_Init(void);
 
 /*----------------------------------------------------------------------------
+ * HSMSAL_setCryptoOfficerID
+ *
+ * This function sets the crypto officer ID.
+ *
+ * crypto_officer_id
+ *     The crypto officer ID that was set during HUK provisioning
+ */
+void
+HSMSAL_setCryptoOfficerID(uint32_t crypto_officer_id);
+
+/*----------------------------------------------------------------------------
+ * HSMSAL_getCryptoOfficerID
+ *
+ * This function gets the crypto officer ID.
+ *
+ * Return Value:
+ *     The Crypto Officer ID.
+ */
+uint32_t
+HSMSAL_getCryptoOfficerID();
+
+/*----------------------------------------------------------------------------
  * HSMSAL_SubmitPhysicalToken
  *
  * This function handles EIP130 command tokens coming from the HSMLPF3 Utility Driver and
@@ -168,6 +190,20 @@ HSMSAL_GetEIP201InterruptStatus();
  */
 HSMSALStatus_t
 HSMSAL_ClearEIP201Interrupt(const int32_t nIRQ);
+
+/*----------------------------------------------------------------------------
+ * HSMSAL_ClearAndDisableEIP201Interrupt
+ *
+ * This function handles clearing and disabling specific IRQ raised by the EIP201 engine
+ *
+ * nIRQ number
+ *     irq number
+ *
+ * Return Value:
+ *     One of the HSMSALStatus_t values.
+ */
+HSMSALStatus_t
+HSMSAL_ClearAndDisableEIP201Interrupt(const int32_t nIRQ);
 
 #endif /* INCLUDE_GUARD_HSMSAL_H */
 

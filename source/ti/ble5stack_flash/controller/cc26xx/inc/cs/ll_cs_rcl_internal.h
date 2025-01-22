@@ -188,7 +188,6 @@ RCL_Command_TxPower llCsRclGetTxPower(int8 maxTxPower);
  * input parameters
  *
  * @param       csRclDataInt - RCL command data
- * @param       init - flag, whether to init the buffers
  *
  * output parameters
  *
@@ -196,7 +195,7 @@ RCL_Command_TxPower llCsRclGetTxPower(int8 maxTxPower);
  *
  * @return      None
  */
-void llCsRClBufferSetup(csRclCmdData_t csRclDataInt, bool init);
+void llCsRClBufferSetup(csRclCmdData_t csRclDataInt);
 
 /*******************************************************************************
  * @fn          llCsClearRclBuffers

@@ -190,6 +190,7 @@ MAIN()
   gboss_app_init(g_gboss_encryption_key, &g_device_config);
 
 #if ( UNIDIR_DEVICE == ZB_FALSE )
+  gboss_bidir_operational_init(&g_device_config, &g_tx_cfg);
 
 #if ( BATTERYLESS_DEVICE == ZB_TRUE )
   gboss_bidir_batteryless_mode();

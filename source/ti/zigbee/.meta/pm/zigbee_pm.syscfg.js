@@ -65,19 +65,13 @@ messages.
 **Range:** Minimal Poll Period - ${Common.POLL_PERIOD_MAX} ms`;
 
 /* Power management submodule for zstack module */
-const pmModule = {
+const config = {
+    displayName: "Power Management",
+    description: "Configure radio power settings",
     config: [
         {
-            name: "deviceType",
-            displayName: "Device Type",
-            description: "Hidden configurable for passing in device type",
-            default: "",
-            hidden: true,
-            onChange: onDeviceTypeChange
-        },
-        {
             name: "powerModeOperation",
-            displayName: "Power Mode of Operation",
+            displayName: "Power Mode of Operation of ZED",
             description: "Specify whether the radio should always be on "
                          + "or be allowed to sleep",
             longDescription: powerModeLongDescription,
@@ -104,39 +98,41 @@ const pmModule = {
             hidden: false
         },
     ],
-    validate: validate,
 };
 
 /* Function to handle changes in deviceType configurable */
 function onDeviceTypeChange(inst, ui)
 {
-    if(inst.deviceType === "zc")
+    if(!inst.deviceType.includes("gpd"))
     {
-        inst.powerModeOperation = "alwaysOn";
-        ui.powerModeOperation.readOnly = true;
-        ui.powerModeOperation.hidden = true;
-        ui.pollPeriod.hidden = true;
+        let element = null;
+        for(element of config.config)
+        {
+            ui[element.name].hidden = false;
+        }
+
+        if(!inst.deviceType.includes("zed"))
+        {
+            inst.powerModeOperation = "alwaysOn";
+            ui.powerModeOperation.readOnly = true;
+            ui.powerModeOperation.hidden = true;
+            ui.pollPeriod.hidden = true;
+        }
+        else
+        {
+            inst.powerModeOperation = "sleepy";
+            ui.powerModeOperation.readOnly = false;
+            ui.powerModeOperation.hidden = false;
+            ui.pollPeriod.hidden = false;
+        }
     }
-    else if(inst.deviceType === "zr") // || inst.deviceType === "zc")
+    else
     {
-        inst.powerModeOperation = "alwaysOn";
-        ui.powerModeOperation.readOnly = true;
-        ui.powerModeOperation.hidden = true;
-        ui.pollPeriod.hidden = true;
-    }
-    else if (inst.deviceType === "zed")
-    {
-        inst.powerModeOperation = "sleepy";
-        ui.powerModeOperation.readOnly = false;
-        ui.powerModeOperation.hidden = false;
-        ui.pollPeriod.hidden = false;
-    }
-    else if (inst.deviceType === "znp")
-    {
-        inst.powerModeOperation = "sleepy";
-        ui.powerModeOperation.readOnly = false;
-        ui.powerModeOperation.hidden = false;
-        ui.pollPeriod.hidden = false;
+        let element = null;
+        for(element of config.config)
+        {
+            ui[element.name].hidden = true;
+        }
     }
 }
 
@@ -168,4 +164,8 @@ function validate(inst, validation)
     }
 }
 
-exports = pmModule;
+exports = {
+    config: config,
+    validate: validate,
+    onDeviceTypeChange: onDeviceTypeChange
+};

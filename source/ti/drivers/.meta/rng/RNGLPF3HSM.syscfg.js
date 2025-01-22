@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,14 +40,34 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-let logError = Common.logError;
-let logInfo  = Common.logInfo;
-
 /* Interrupt Priority for internal AESCTR instance */
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
 intPriority.displayName = "Interrupt Priority";
 intPriority.description = "Crypto peripheral interrupt priority";
+
+/*
+ *  ======== getLibs ========
+ *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
+ */
+function getLibs(mod)
+{
+    /* Get device information from GenLibs */
+    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
+
+    let libGroup = {
+        name: "/third_party/hsmddk",
+        deps: [],
+        libs: [],
+        allowDuplicates: true
+    };
+
+    if (!system.modules["/ti/utils/TrustZone"]) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    }
+
+    return (libGroup);
+}
 
 /*
  *  ======== devSpecific ========
@@ -58,14 +78,6 @@ let devSpecific = {
         name: "rngSettings",
         displayName: "Settings for RNG",
         config: [
-            {
-                name        : "rngPoolSize",
-                displayName : "RNG Entropy Pool Size",
-                description : 'Size of entropy pool kept in memory by the RNG '
-                            + 'driver for faster responses to entropy '
-                            + 'requests.',
-                default     : 32
-            },
             {
                 name        : "rngReturnBehavior",
                 displayName : "Return Behavior",
@@ -83,51 +95,23 @@ let devSpecific = {
                                     displayName: "Blocking"
                                 }
                               ]
-            },
-            {
-                name: "HW_ATTR_GROUP",
-                displayName: "AESCTRDRBG HW Attributes",
-                collapsed: false,
-                config: [
-                    intPriority
-                ]
             }
-        ],
-
-        modules: Common.autoForceModules(["DMA"])
+        ]
     },
 
     config: [],
 
     templates : {
         boardc: "/ti/drivers/rng/RNGLPF3HSM.Board.c.xdt",
-        boardh: "/ti/drivers/rng/RNG.Board.h.xdt"
+        boardh: "/ti/drivers/rng/RNG.Board.h.xdt",
+
+        /* contribute libraries to linker command file */
+        "/ti/utils/build/GenLibs.cmd.xdt":
+                {modName: "/ti/drivers/RNG", getLibs: getLibs}
     }
 };
 
-function validate_pool_settings(inst, validation) {
-    let RNG = system.modules["/ti/drivers/RNG"];
-
-    if (RNG.$static.rngPoolSize < 16) {
-        logError(validation, RNG.$static, "rngPoolSize",
-                 "value must be 16 or greater");
-    }
-    else {
-        if (RNG.$static.rngPoolSize % 16 != 0) {
-            logError(validation, RNG.$static, "rngPoolSize",
-                     "value must be a multiple of 16");
-        }
-
-        if (RNG.$static.rngPoolSize < 32) {
-            logInfo(validation, RNG.$static, "rngPoolSize",
-                    "consider using a larger value for better performance");
-        }
-    }
-}
-
 function validate(inst, validation, $super) {
-    validate_pool_settings(inst, validation);
-
     if ($super.validate) {
         $super.validate(inst, validation);
     }

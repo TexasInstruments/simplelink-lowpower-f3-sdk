@@ -54,7 +54,6 @@ Target Device: cc23xx
 #include "icall.h"
 #include "ti/bleapp/util/sw_update/sw_update.h"
 #include "bootutil/image.h"
-#include "bootutil/bootutil.h"
 #include "flash_interface.h"
 
 /*********************************************************************

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,7 @@
     #endif
 #endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0)
     #include <ti/drivers/aesctr/AESCTRLPF3.h>
 #else
     #include <ti/drivers/aesctr/AESCTRCC26XX.h>
@@ -498,6 +498,10 @@ int_fast16_t AESCTRDRBG_getRandomBytes(AESCTRDRBG_Handle handle, void *randomByt
         if (status == AESCTR_STATUS_UNALIGNED_IO_NOT_SUPPORTED)
         {
             status = AESCTRDRBG_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
+        }
+        else if (status == AESCTR_STATUS_RESOURCE_UNAVAILABLE)
+        {
+            status = AESCTRDRBG_STATUS_RESOURCE_UNAVAILABLE;
         }
         else
         {

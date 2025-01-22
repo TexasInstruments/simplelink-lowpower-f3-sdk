@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2020-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,6 @@
     "name": "BP-BASSENSORSMKII",
     "displayName": "BAS Sensors BoosterPack Mark II",
     "description": "Building Automation Sensors BoosterPack Mark II",
-    "longDescription": "The [__BP-BASSENSORSMKII__](http://www.ti.com/tool/BP-BASSENSORSMKII) BoosterPack&trade; plug-in module is an easy way to add digital sensors to your LaunchPad&trade; development kit. MCU Launchpad developers can use this BoosterPack module to start developing sensor applications using the on-board temperature, humidity, ambient light, hall-effect, and accelerometer, gyroscope, and geomagnetic sensors.",
-
     "headerType": "BoosterPack 40 pin",
     "components": {
         "BP_BASSENSORSMKII_I2C": {

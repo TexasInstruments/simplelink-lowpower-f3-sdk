@@ -55,6 +55,9 @@
 #include "icall_ble_api.h"
 
 #include <ti/bleapp/services/dev_info/dev_info_service.h>
+
+#include <ti/drivers/utils/Math.h>
+
 /*********************************************************************
  * MACROS
  */
@@ -532,7 +535,7 @@ static bStatus_t DevInfo_readAttrCB( uint16 connHandle, gattAttribute_t *pAttr,
       else
       {
         // determine read length
-        *pLen = MIN(maxLen, (sizeof(devInfoSystemId) - offset));
+        *pLen = Math_MIN(maxLen, (sizeof(devInfoSystemId) - offset));
 
         // copy data
         memcpy(pValue, &devInfoSystemId[offset], *pLen);
@@ -556,7 +559,7 @@ static bStatus_t DevInfo_readAttrCB( uint16 connHandle, gattAttribute_t *pAttr,
         else
         {
           // determine read length (exclude null terminating character)
-          *pLen = MIN(maxLen, (len - offset));
+          *pLen = Math_MIN(maxLen, (len - offset));
 
           // copy data
           memcpy(pValue, &(pAttr->pValue[offset]), *pLen);
@@ -573,7 +576,7 @@ static bStatus_t DevInfo_readAttrCB( uint16 connHandle, gattAttribute_t *pAttr,
       else
       {
         // determine read length
-        *pLen = MIN(maxLen, (devInfo11073CertLen - offset));
+        *pLen = Math_MIN(maxLen, (devInfo11073CertLen - offset));
 
         // copy data
         memcpy(pValue, &devInfo11073Cert[offset], *pLen);
@@ -589,7 +592,7 @@ static bStatus_t DevInfo_readAttrCB( uint16 connHandle, gattAttribute_t *pAttr,
       else
       {
         // determine read length
-        *pLen = MIN(maxLen, (sizeof(devInfoPnpId) - offset));
+        *pLen = Math_MIN(maxLen, (sizeof(devInfoPnpId) - offset));
 
         // copy data
         memcpy(pValue, &devInfoPnpId[offset], *pLen);

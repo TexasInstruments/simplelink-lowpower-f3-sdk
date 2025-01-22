@@ -37,9 +37,65 @@
 #include <stdbool.h>
 #include <ti/drivers/ECDH.h>
 
+#include <third_party/hsmddk/include/Kit/EIP130/DomainHelper/incl/eip130_domain_ecc_curves.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Defines */
+/* The largest signature will be for NIST521 which will produce 72B per component (S and R) */
+#define ECDH_COMPONENT_VECTOR_LENGTH 144
+
+/*!
+ *  @brief  An error ocurred on the HW level
+ */
+#define ECDHLPF3HSM_STATUS_HARDWARE_ERROR (ECDH_STATUS_RESERVED - 0)
+
+/*!
+ *  @brief  The curve provided is not supported
+ */
+#define ECDHLPF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED (ECDH_STATUS_RESERVED - 1)
+
+/*!
+ *  @brief  The private key encoding is not HSM masked to signify an HSM operation
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_PRIVATE_KEY_ENCODING (ECDH_STATUS_RESERVED - 2)
+
+/*!
+ *  @brief  The public key encoding is not HSM masked to signify an HSM operation
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_PUBLIC_KEY_ENCODING (ECDH_STATUS_RESERVED - 3)
+
+/*!
+ *  @brief  The shared secret key encoding is not HSM masked to signify an HSM operation
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_SHARED_SECRET_KEY_ENCODING (ECDH_STATUS_RESERVED - 4)
+
+/*!
+ *  @brief  The private key length does not match the curve type length provided
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_PRIVATE_KEY_SIZE (ECDH_STATUS_RESERVED - 5)
+
+/*!
+ *  @brief  The public key length does not match the curve type length provided
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_PUBLIC_KEY_SIZE (ECDH_STATUS_RESERVED - 6)
+
+/*!
+ *  @brief  The shared secret key length does not match the curve type length provided
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_SHARED_SECRET_KEY_SIZE (ECDH_STATUS_RESERVED - 7)
+
+/*!
+ *  @brief  The public key length does not match the curve type length provided
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_ECC_KEYS (ECDH_STATUS_RESERVED - 8)
+
+/*!
+ *  @brief  The public key octet string value is incorrect
+ */
+#define ECDHLPF3HSM_STATUS_INVALID_PUBLIC_KEY_OCTET_VALUE (ECDH_STATUS_RESERVED - 9)
 
 /*!
  *  @brief Hardware-specific configuration attributes
@@ -53,24 +109,45 @@ typedef struct
 } ECDHLPF3HSM_HWAttrs;
 
 /*!
+ *  @brief  Enum for the curve domain id supported by the driver.
+ */
+typedef enum
+{
+    ECDH_DOMAIN_ID_SEC = 0,
+    ECDH_DOMAIN_ID_BRP = 1,
+} ECDH_DomainID;
+
+/*!
  *  @brief ECDHLPF3HSM Object
  *
  *  \note The application must not access any member variables of this structure!
  */
 typedef struct
 {
-    ECDH_Operation operation;
+    const CryptoKey *privateKey;
+    CryptoKey *publicKey;
+    CryptoKey *sharedSecret;
+    ECDH_CurveType curveType;
+    ECDH_CurveLength curveLength;
+    ECDH_DomainID domainId;
+    Eip130Domain_ECCurveFamily_t curveFamily;
+    ECDH_CallbackFxn callbackFxn;
+    ECDH_Operation *operation;
+    ECDH_OperationType operationType;
+    ECDH_ReturnBehavior returnBehavior;
+    ECDH_KeyMaterialEndianness keyMaterialEndianness;
     uint32_t accessTimeout;
     int_fast16_t returnStatus;
-    ECDH_CallbackFxn callbackFxn;
-    /* This flag is only used in callback mode to signify that a
-     * token has been submitted, but its corresponding callback
-     * has not yet posted
-     */
-    bool operationInProgress;
+    int_fast16_t hsmStatus;
+    uint32_t privateKeyAssetID;
+    uint32_t publicKeyAssetID;
+    uint32_t publicDataAssetID;
+    uint32_t paramAssetID;
+    const uint8_t *curveParam;
+    uint32_t curveParamSize;
+    uint8_t output[ECDH_COMPONENT_VECTOR_LENGTH];
+    bool driverCreatedKeyAsset;
     bool isOpen;
-    ECDH_ReturnBehavior returnBehavior;
-    ECDH_OperationType operationType;
 } ECDHLPF3HSM_Object;
 
 #ifdef __cplusplus

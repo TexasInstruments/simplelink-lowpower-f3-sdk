@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../aesecb.c -> aesecb.c",
+            "+../aesecb.syscfg -> aesecb.syscfg",
+            "+../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_nortos.icf -> lpf3_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../README.html -> README.html",
+            "+../README.md -> README.md"
+        ]
+    }
+]

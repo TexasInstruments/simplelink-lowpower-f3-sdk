@@ -66,6 +66,10 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -79,19 +83,10 @@ extern "C" {
  *  Counter endianness as Big Endian
  *  BUSHALT enabled
  */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    #define AES_AUTOCFG_CTRENDN_BIGENDIAN AES_AUTOCFG_CTRENDIAN_BIGENDIAN
-#endif
-
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESCTRLPF3_DEFAULT_AUTOCFG                                                \
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S |    \
          (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | \
-         (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESCTRLPF3_DEFAULT_AUTOCFG                                                \
-        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S |    \
-         (uint32_t)AES_AUTOCFG_TRGECB_RDTXT3 | (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | \
          (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #else
     #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
@@ -107,15 +102,11 @@ extern "C" {
  *   (the first encryption starts by writing BUF3)
  *  Counter size as 128-bits
  *  Counter endianness as Big Endian
+ *  BUSHALT enabled
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESCTRLPF3_LAST_BLOCK_AUTOCFG                                                 \
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S |        \
-         (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | \
-         (uint32_t)AES_AUTOCFG_BUSHALT_EN)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESCTRLPF3_LAST_BLOCK_AUTOCFG                                                 \
-        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S |        \
          (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | \
          (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #else
@@ -155,6 +146,8 @@ typedef struct
      * if HSMLPF3_STATUS_ERROR, the HSM did not boot properly.
      */
     int_fast16_t hsmStatus;
+    uint32_t keyAssetID;
+    KeyStore_PSA_KeyLocation keyLocation;
     /* To indicate whether a segmented operation is in progress
      */
     bool segmentedOperationInProgress;

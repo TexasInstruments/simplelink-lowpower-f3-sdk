@@ -201,13 +201,12 @@ function getLinkerDefs() {
         { name: "S2RRAM_BASE", value: 0x40098000 },
         { name: "S2RRAM_SIZE", value: 0x00001000 }
     ];
-    let hsmtp = [
-        { name: "HSMOTP_BASE", value: 0x4e020800 },
-        { name: "HSMOTP_SIZE", value: 0x00000800 }
-    ];
     let scfg = [
         { name: "SCFG_BASE", value: 0x4e040000 },
         { name: "SCFG_SIZE", value: 0x00000400 }
+    ];
+    let hsmFw = [
+        { name: "HSM_FW_SIZE", value: 0x00018000 }
     ];
     let flashBase = [
         { name: "FLASH0_BASE", value: 0x00000000 }
@@ -236,21 +235,107 @@ function getLinkerDefs() {
         "CC2745R7RHAQ1": [
             { name: "FLASH0_SIZE", value: 0x000C0000 },
             { name: "RAM0_SIZE",   value: 0x00020000 }
-        ].concat(s2rram, ccfg, hsmtp, scfg, flashBase, ramBase),
-        "CC2755R10RKP": [
+        ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase),
+        "CC2755R105RHA": [
             { name: "FLASH0_SIZE", value: 0x00100000 },
             { name: "RAM0_SIZE",   value: 0x00028800 }
-        ].concat(s2rram, ccfg, hsmtp, scfg, flashBase, ramBase)
+        ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase)
     };
 
     /* these devices reuse device defs above as they have the same memory map */
-    dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHB"] = dev2mem["CC2340R5RKP"];
+    dev2mem["CC2340R53YBG"] = dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHB"] = dev2mem["CC2340R5RKP"];
     dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
-    dev2mem["CC2745P7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
-    dev2mem["CC2755P10RGZ"] = dev2mem["CC2755P10RKP"] =
-        dev2mem["CC2755R10RGZ"] =
-        dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
-        dev2mem["CC2755R10RKP"];
+    dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
+    dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
+    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105RHA"];
+
+    var module = system.modules['/ti/devices/CCFG'];
+
+    /* Check if the device has a CCFG module */
+    if (module) {
+        var inst = module.$static;
+
+        /* Only override Flash/RAM, base/size if Secure Boot is enabled for CC27XX */
+        if (deviceId.match(/CC27../) &&
+            (dev2mem[deviceId] != undefined) &&
+            (inst.authMethod != "No Authentication")) {
+
+            let entry = dev2mem[deviceId];
+            let flash_base = 0, flash_size = 0, imgType;
+            let prim0Start, prim0Len, sec0Start, sec0Len;
+
+            /* Get active imgType, and Primary/Secondary slots */
+            if (!(system.modules["/ti/utils/TrustZone"])) {
+                if (inst.mode == "Overwrite") {
+                    imgType = inst.imgTypeSingleOvrWrt;
+                } else {
+                    imgType = inst.imgTypeSingleXIP;
+                }
+
+                prim0Start = inst.prim0StartSingle;
+                prim0Len = inst.prim0LenSingle;
+                sec0Start = inst.sec0StartSingle;
+                sec0Len = inst.sec0LenSingle;
+
+            } else {
+                imgType = inst.imgTypeDual;
+
+                prim0Start = inst.prim0StartSecure;
+                prim0Len = inst.prim0LenSecure;
+                sec0Start = inst.sec0StartSecure;
+                sec0Len = inst.sec0LenSecure;
+            }
+
+            if (inst.mode == "Overwrite") {
+                if (system.modules["/ti/utils/TrustZone"]) {
+                    if (imgType == "APP 1") {
+                        flash_base = inst.prim1Start + inst.hdrSize;
+                        flash_size = inst.prim1Len;
+                    } else {
+                        flash_base = prim0Start + inst.hdrSize;
+                        flash_size = prim0Len;
+                    }
+                } else {
+                    flash_base = prim0Start + inst.hdrSize;
+                    flash_size = prim0Len;
+                }
+            } else { /* XIP */
+                if (imgType == "APP for Primary") {
+                    flash_base = prim0Start + inst.hdrSize;
+                    flash_size = prim0Len;
+                } else {
+                    flash_base = sec0Start + inst.hdrSize;
+                    flash_size = sec0Len;
+                }
+            }
+
+            if (imgType == "SSB") {
+                flash_base = inst.ssbStart + inst.hdrSize;
+                flash_size = inst.ssbLen;
+            }
+
+            for (let i = 0; i < entry.length; i++) {
+                if (entry[i].name == "FLASH0_BASE") {
+                    entry[i].value = flash_base;
+                } else if (entry[i].name == "FLASH0_SIZE") {
+                    entry[i].value = flash_size;
+                }
+            }
+
+            /* In the following code, the CBOR prefix 8 bytes + 32 byte random number = 40 bytes,
+               so this is the offset at which the linker must see the start of physical SRAM.
+            */
+            if (inst.bootSeedOffset != 0xff) {
+                for (let i = 0; i < entry.length; i++) {
+                    if (entry[i].name == "RAM0_BASE") {
+                        entry[i].value = entry[i].value + (inst.bootSeedOffset * 16) + 40;
+                    } else if (entry[i].name == "RAM0_SIZE") {
+                        entry[i].value = entry[i].value - (inst.bootSeedOffset * 16) - 40;
+                    }
+                }
+            }
+        }
+    }
 
     return (dev2mem[deviceId] == undefined ? [] : dev2mem[deviceId]);
 }

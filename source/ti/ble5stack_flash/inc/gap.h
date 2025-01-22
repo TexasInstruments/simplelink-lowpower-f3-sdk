@@ -1960,7 +1960,7 @@ extern void GAP_Init(uint8_t task_id);
  *
  * @return bitmask of events that weren't processed
  */
-extern uint16_t GAP_ProcessEvent(uint8_t task_id, uint16_t events);
+extern uint32 GAP_ProcessEvent(uint8_t task_id, uint32 events);
 
 /*-------------------------------------------------------------------
 -------------------------------------------------------------------*/

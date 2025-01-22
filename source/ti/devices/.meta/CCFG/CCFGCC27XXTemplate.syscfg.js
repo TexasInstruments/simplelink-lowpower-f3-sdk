@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,9 @@
 exports = {
     templates:
         {
-            "/ti/devices/templates/ti_devices_CC27XX_config.c.xdt": "/ti/devices/templates/ti_devices_CC27XX_config.c.xdt"
+            "/ti/devices/templates/ti_devices_CC27XX_config.c.xdt": "/ti/devices/templates/ti_devices_CC27XX_config.c.xdt",
+            "/ti/devices/templates/ti_devices_CC27XX_secure_boot_properties.json.xdt": "/ti/devices/templates/ti_devices_CC27XX_secure_boot_properties.json.xdt",
+            "/ti/devices/templates/ti_devices_CC27XX_secure_boot_properties.h.xdt": "/ti/devices/templates/ti_devices_CC27XX_secure_boot_properties.h.xdt"
         },
     config: {}
 };

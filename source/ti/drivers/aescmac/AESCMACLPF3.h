@@ -80,16 +80,13 @@ extern "C" {
 
 /*
  * Default AES CMAC & CBC-MAC auto config:
- *  ECB SRC as TXTXBUF
- *  Trigger point for auto ECB as WRBUF3 (encryption starts by writing BUF3)
+ *  AES SRC as TXTXBUF
+ *  Trigger point for auto AES as WRBUF3 (encryption starts by writing BUF3)
  *  BUSHALT enabled
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESCMACLPF3_DEFAULT_AUTOCFG \
         ((uint32_t)AES_AUTOCFG_AESSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESCMACLPF3_DEFAULT_AUTOCFG \
-        ((uint32_t)AES_AUTOCFG_ECBSRC_TXTXBUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #else
     #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
 #endif
@@ -97,12 +94,10 @@ extern "C" {
 /*
  * AES CMAC DMA config:
  *  - ADRCHA = BUF0
- *  - TRGCHA = ECBSTART
+ *  - TRGCHA = AESSTART
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESCMACLPF3_DMA_CONFIG ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_AESSTART)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESCMACLPF3_DMA_CONFIG ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_ECBSTART)
 #else
     #error "Unsupported DeviceFamily_Parent for AESCMACLPF3!"
 #endif
@@ -132,21 +127,23 @@ typedef struct
     AESCMAC_Operation *operation;
     AESCMAC_OperationType operationType;
     AESCMAC_OperationalMode operationalMode;
-    bool threadSafe;
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    uint8_t *input;
     size_t inputLength;
+    uint32_t tempAssetID;
+    uint32_t keyAssetID;
     /*!
      * @brief The staus of the HSM Boot up process
      * if HSMLPF3_STATUS_SUCCESS, the HSM booted properly.
      * if HSMLPF3_STATUS_ERROR, the HSM did not boot properly.
      */
     int_fast16_t hsmStatus;
-    uint32_t tempAssetID;
-    uint32_t keyAssetID;
     /* To indicate whether a segmented operation is in progress
      */
     bool segmentedOperationInProgress;
+    bool driverCreatedKeyAsset;
 #endif
+    bool threadSafe;
 } AESCMACLPF3_Object;
 
 /*! @cond NODOC */

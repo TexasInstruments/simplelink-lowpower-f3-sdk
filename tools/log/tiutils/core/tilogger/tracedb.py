@@ -1,3 +1,35 @@
+"""
+Copyright (C) 2020-2024, Texas Instruments Incorporated
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+    Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the
+    distribution.
+
+    Neither the name of Texas Instruments Incorporated nor the names of
+    its contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
 import os
 import coloredlogs, logging
 import pickle
@@ -26,18 +58,15 @@ TRACE_SECTION_NAMES = [".log_data", ".log_ptr"]
 
 class Opcode(enum.Enum):
     FORMATTED_TEXT = 0
-    EVENT = 1
-    BUFFER = 2
-    RESET = 3
-    EVENT_CONSTRUCT = 4
+    BUFFER = 1
+    RESET = 2
+    REPLAY_FILE = 3
 
 
 # String to opcode dictionary
 log_string_to_opcode = {
     "LOG_OPCODE_FORMATED_TEXT": Opcode.FORMATTED_TEXT,
     "LOG_OPCODE_BUFFER": Opcode.BUFFER,
-    "LOG_OPCODE_EVENT": Opcode.EVENT,
-    "LOG_EVENT_CONSTRUCT": Opcode.EVENT_CONSTRUCT,
 }
 
 
@@ -62,13 +91,7 @@ class ElfString:
         self.nargs: int
         self.level: str
 
-        if self.opcode == Opcode.EVENT_CONSTRUCT:
-            self.file, self.line, self.event, self.module_id, self.string, tmp_nargs = value.split("\x1e")
-
-        elif self.opcode == Opcode.EVENT:
-            self.file, self.line, self.level, self.module_id, self.event, tmp_nargs = value.split("\x1e")
-
-        elif self.opcode == Opcode.FORMATTED_TEXT:
+        if self.opcode == Opcode.FORMATTED_TEXT:
             self.file, self.line, self.level, self.module_id, self.string, tmp_nargs = value.split("\x1e")
 
         elif self.opcode == Opcode.BUFFER:
@@ -106,6 +129,8 @@ class TraceDB:
         self.device = ""
         self._traceDB = {}
         self._eventDB = {}
+        self.timestamp_fmt_32 = b""
+        self.timestamp_fmt_64 = b""
         self.stringpointers = {}
 
         self.changed_event = threading.Event()
@@ -126,6 +151,8 @@ class TraceDB:
         # Clear existing info
         self._traceDB = {}
         self._eventDB = {}
+        self.timestamp_fmt_32 = b""
+        self.timestamp_fmt_64 = b""
         self.stringpointers = {}
 
         # Build current hash
@@ -140,6 +167,8 @@ class TraceDB:
 
         trace_db_pickle_file = (self.user_data_dir / f"{current_hash}.trace_db.pkl").resolve()
         event_db_pickle_file = (self.user_data_dir / f"{current_hash}.event_db.pkl").resolve()
+        timestamp_fmt_32_pickle_file = (self.user_data_dir / f"{current_hash}.timestamp_fmt_32.pkl").resolve()
+        timestamp_fmt_64_pickle_file = (self.user_data_dir / f"{current_hash}.timestamp_fmt_64.pkl").resolve()
 
         build_trace_db = False
         if not trace_db_pickle_file.exists():
@@ -157,7 +186,10 @@ class TraceDB:
                 for elfstring in self._eventDB:
                     self._eventDB[elfstring].trace_db = self
 
-                logger.info("Pickled trace and event databases successfully loaded")
+                self.timestamp_fmt_32 = pickle.loads(timestamp_fmt_32_pickle_file.read_bytes())
+                self.timestamp_fmt_64 = pickle.loads(timestamp_fmt_64_pickle_file.read_bytes())
+
+                logger.info("Pickled TraceDB, EventDB, and TimestampFormat have been successfully loaded")
             except Exception as e:
                 logger.error(e)
                 build_trace_db = True  # Build anyway
@@ -173,7 +205,13 @@ class TraceDB:
             # Pickle event database
             with open(event_db_pickle_file, "wb") as f:
                 pickle.dump(self._eventDB, f)
-            logger.info("TraceDB and EventDB have been pickled")
+            # Pickle timestamp format 32 information
+            with open(timestamp_fmt_32_pickle_file, "wb") as f:
+                pickle.dump(self.timestamp_fmt_32, f)
+            # Pickle timestamp format 64 information
+            with open(timestamp_fmt_64_pickle_file, "wb") as f:
+                pickle.dump(self.timestamp_fmt_64, f)
+            logger.info("TraceDB, EventDB, and TimestampFormat have been pickled")
         logger.info("Done configuring databases")
 
     @property
@@ -230,7 +268,15 @@ class TraceDB:
             if not sect:
                 continue
 
-            if "Ptr_LogSymbol_" in sym.name:
+            if "TimestampP_nativeFormat32_copy" in sym.name:
+                value = extract_symbol_value(sym)
+                self.timestamp_fmt_32 = value
+                logger.debug(f"{sym.name} = 0x{value.hex()}")
+            elif "TimestampP_nativeFormat64_copy" in sym.name:
+                value = extract_symbol_value(sym)
+                self.timestamp_fmt_64 = value
+                logger.debug(f"{sym.name} = 0x{value.hex()}")
+            elif "Ptr_LogSymbol_" in sym.name:
                 value = extract_symbol_value(sym)  # Find what it points to
                 sym_addr = struct.unpack("I", value)[0]
                 self.stringpointers[sym_addr] = sym.entry.st_value
@@ -245,14 +291,11 @@ class TraceDB:
                 value = value.decode("utf-8").split("\0")[0].replace('"', "")
                 # Create new ElfString to store in dictionary
                 elf_string = ElfString(value, self)
-                # Add to relevant database
-                if elf_string.opcode is Opcode.EVENT_CONSTRUCT:
-                    self._eventDB[elf_string.event] = elf_string
-                else:
-                    self._traceDB[sym.entry.st_value] = elf_string
-                    if sym.entry.st_value in self.stringpointers:
-                        # If is already found, update so that traceDB lookup for pointer resolves to this.
-                        self._traceDB[self.stringpointers[sym.entry.st_value]] = elf_string
+                # Add to database
+                self._traceDB[sym.entry.st_value] = elf_string
+                if sym.entry.st_value in self.stringpointers:
+                    # If is already found, update so that traceDB lookup for pointer resolves to this.
+                    self._traceDB[self.stringpointers[sym.entry.st_value]] = elf_string
 
                 logger.debug("0x%x --> %s", sym.entry.st_value, value.replace("\x1e", ", "))
 

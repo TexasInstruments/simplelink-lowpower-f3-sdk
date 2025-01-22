@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,7 @@
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
+#include DeviceFamily_constructPath(inc/hw_pmctl.h)
 
 static bool initCalled = false;
 
@@ -158,6 +159,13 @@ void GPIO_init()
     HwiP_restore(key);
 
     Power_setDependency(PowerLPF3_PERIPH_GPIO);
+
+#ifdef DeviceFamily_CC27XX
+    /* Enable pad power to use GPIOs by setting VDDIOPGIO. This is only done
+     * for CC27XX to support split rails.
+     */
+    HWREG(PMCTL_BASE + PMCTL_O_AONRSET1) |= PMCTL_AONRSET1_VDDIOPGIO_SET;
+#endif
 
     /* Setup HWI handler */
     HwiP_Params_init(&hwiParams);

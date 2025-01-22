@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== AESGCMLPF3.syscfg.js ========
+ *  ======== AESGCMLPF3HSM.syscfg.js ========
  */
 
 "use strict";
@@ -57,11 +57,15 @@ function getLibs(mod)
    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
 
    let libGroup = {
-       name: "/third_party/hsmddk",
-       deps: [],
-       libs: [GenLibs.libPath("third_party/hsmddk", "hsmddk.a")],
-       allowDuplicates: true
-   };
+        name: "/third_party/hsmddk",
+        deps: [],
+        libs: [],
+        allowDuplicates: true
+    };
+
+    if (!system.modules["/ti/utils/TrustZone"]) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    }
 
    return (libGroup);
 }
@@ -76,7 +80,7 @@ let devSpecific = {
     ],
 
     templates : {
-        boardc: "/ti/drivers/aesgcm/AESGCMLPF3.Board.c.xdt",
+        boardc: "/ti/drivers/aesgcm/AESGCMLPF3HSM.Board.c.xdt",
         boardh: "/ti/drivers/aesgcm/AESGCM.Board.h.xdt"
     }
 };

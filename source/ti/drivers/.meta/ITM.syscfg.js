@@ -199,7 +199,7 @@ to write logging or event words to a trace sink such as the TPIU.
 [2]: /drivers/doxygen/html/_i_t_m_8h.html#ti_drivers_ITM_Setup "C Setup"
 [3]: /drivers/doxygen/html/_i_t_m_8h.html#ti_drivers_ITM_PinMux "Pin Muxing"
 [4]: /drivers/doxygen/html/_i_t_m_8h.html#ti_drivers_ITM_SwMessages "Software Messages"
-[5]: https://static.docs.arm.com/ddi0403/e/DDI0403E_d_armv7m_arm.pdf
+[5]: https://developer.arm.com/documentation/ddi0403/latest
 `,
     maxInstances        : 1,    /* NB! Only one instance of ITM is supported */
     moduleStatic        : {

@@ -31,21 +31,57 @@ cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
 
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc27xx.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc35xx.cmake)
 
 ti_init_package(NAMESPACE ThirdPartyHSMDDKLib)
 
 foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
     if(${TI_PLATFORM} STREQUAL "cc27xx")
+        ti_init_package(NAMESPACE ThirdPartyHSMDDKLib PACKAGE_NAME CC27XX)
+
         ti_add_package_dependency(DriverlibCC27XX)
         ti_add_library(
-            hsmddk_cc27xx
-            OUTPUT_NAME hsmddk
+            hsmddk_${TI_PLATFORM}
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}
             SOURCES ${SOURCES_CC27XX}
             ARCH m33f
             ADD_SDK_INCLUDE_PATH source
-            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m33f Driverlib::cc27xx
+            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
         )
+
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}_its
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}_its
+            SOURCES ${SOURCES_ITS_CC27XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
+
+        if (${TI_TOOLCHAIN_NAME} MATCHES "ticlang|gcc")
+            target_compile_options(hsmddk_${TI_PLATFORM}_its PRIVATE -mcmse)
+        elseif (${TI_TOOLCHAIN_NAME} MATCHES "iar")
+            target_compile_options(hsmddk_${TI_PLATFORM}_its PRIVATE --cmse)
+        endif ()
+
+
+        ti_export_package()
+    elseif(${TI_PLATFORM} MATCHES "cc35")
+        ti_init_package(NAMESPACE ThirdPartyHSMDDKLib PACKAGE_NAME CC35XX)
+
+        ti_add_package_dependency(DriverlibCC35XX)
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}
+            SOURCES ${SOURCES_CC35XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
+
+        ti_export_package()
     endif()
 endforeach()
-
-ti_export_package()

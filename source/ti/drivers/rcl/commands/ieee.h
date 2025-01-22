@@ -96,7 +96,7 @@ typedef enum
     RCL_CmdIeee_AutoAck_ImmAckNoAutoPend,       /*!< Send automatic Imm-Ack with frame pending from setting */
     RCL_CmdIeee_AutoAck_ImmAckAutoPendAll,      /*!< Send automatic Imm-Ack with frame pending from source matching table */
     RCL_CmdIeee_AutoAck_ImmAckAutoPendDataReq,  /*!< Send automatic Imm-Ack with frame pending from source matching table for data requests */
-    RCL_CmdIeee_AutoAck_ProvidedFrame,          /*!< Send ACK frame provided externally (not supported in this version) */
+    RCL_CmdIeee_AutoAck_ImmAckProvidedFrame,    /*!< Send Imm-ACK frame provided externally */
 } RCL_CmdIeee_AutoAckMode;
 
 typedef union
@@ -177,7 +177,7 @@ struct RCL_CmdIeee_RxAction_t
     List_List rxBuffers;                /*!< Linked list of buffers for storing received packets */
     uint8_t numPan;                     /*!< Number of PANs to support. 0: Frame filtering disabled (promiscuous mode). 1: Single PAN. 2: Dual PAN (not supported in this version). */
     bool frameFiltStop;                 /*!< 0: Receive frame to the end on frame filtering mismatch. 1: Go back to sync search on frame filtering mismatch. */
-    bool disableSync;                   /*!< 0: Receive packets normally. 1: Do not sync to received SFD (not supported in this version). */
+    bool disableSync;                   /*!< 0: Receive packets normally. 1: Do not sync to received SFD */
     bool alwaysStoreAck;                /*!< 0: Store ACKs received after transmission only. 1: Store all received ACKs. */
     RCL_CmdIeee_PanConfig panConfig[RCL_CMD_IEEE_MAX_NUM_PAN];  /*!< PAN configuration for the supplied PANs */
 };
@@ -213,7 +213,7 @@ struct RCL_CmdIeee_TxAction_t
     uint16_t ccaCorrThresh : 3;         /*!< Correlation threshold for signal based CCA (0-7; correlation tops in 128 us window) */
     uint16_t ccaContentionWindow : 2;   /*!< Initial contention window value for CCA */
     uint16_t expectImmAck : 1;          /*!< 0: Immediate ACK not expected. 1: Immediate ACK expected */
-    uint16_t expectEnhAck : 1;          /*!< 0: Enhanced ACK not expected. 1: Enhanced ACK expected. Not supported in this version. */
+    uint16_t expectEnhAck : 1;          /*!< 0: Enhanced ACK not expected. 1: Enhanced ACK expected */
     uint16_t allowTxDelay : 1;          /*!< 0: Give error if TX time is in the past. 1: Send TX packet immediately if TX time is in the past */
     uint16_t endCmdWhenDone : 1;        /*!< 0: Keep command and RX action alive after TX action is done. 1: End command after TX action is done */
     uint32_t absCcaStartTime;           /*!< Absolute start time of the CCA part */
@@ -289,13 +289,14 @@ struct RCL_STATS_IEEE_t {
     } config;                        /*!< Configuration provided to RCL */
     uint8_t   timestampValid;        /*!< Returns 1 if %lastTimestamp is updated; 0 otherwise */
     int8_t    lastRssi;              /*!< RSSI of last received packet */
-    int8_t    maxRssi;               /*!< Highest RSSI observed during the operation (only updated after packets and at the end of operation). Not supported in this version. */
+    int8_t    maxRssi;               /*!< Highest RSSI observed during the operation (only updated after packets and at the end of operation) */
     uint32_t  lastTimestamp;         /*!< Timestamp of last successfully received packet */
     uint16_t  nRxNok;                /*!< Number of packets received with CRC error */
     uint16_t  nRxFifoFull;           /*!< Number of packets received that did not fit in RX FIFO */
     uint16_t  nRxOk;                 /*!< Number of correctly received packets */
     uint16_t  nRxIgnored;            /*!< Number of ignored packets received */
-    uint16_t  nTxAck;                /*!< Number of auto-ACKs transmitted */
+    uint16_t  nTxImmAck;             /*!< Number of Imm-ACKs transmitted */
+    uint16_t  nTxEnhAck;             /*!< Number of Enh-ACKs transmitted */
     uint16_t  nTx;                   /*!< Number of frames transmitted */
 };
 

@@ -98,10 +98,21 @@ extern "C"
 
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
 
+#if defined(DeviceFamily_CC26X4)
+
+#define BSP_IOID_FLASH_CS       IOID_20
+#define BSP_SPI_MOSI            IOID_9
+#define BSP_SPI_MISO            IOID_8
+#define BSP_SPI_CLK_FLASH       IOID_10
+
+#else
+
 #define BSP_IOID_FLASH_CS       IOID_38
 #define BSP_SPI_MOSI            IOID_36
 #define BSP_SPI_MISO            IOID_37
 #define BSP_SPI_CLK_FLASH       IOID_39
+
+#endif
 
 #elif defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53)
 

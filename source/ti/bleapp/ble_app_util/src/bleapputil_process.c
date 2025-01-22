@@ -997,6 +997,26 @@ void BLEAppUtil_processConnEventMsg(BLEAppUtil_connEventNoti_t *pMsg)
 }
 
 /*********************************************************************
+ * @fn      BLEAppUtil_processHandoverEventMsg
+ *
+ * @brief   Process Connection Handover events received from the BLE
+ *          stack, called from BLEAppUtil task context.
+ *          This function calls @ref BLEAppUtil_callEventHandler.
+ *          The handler is from the type of BLEAPPUTIL_HANDOVER_TYPE
+ *
+ * @param   event - event code. @ref BLEAppUtil_HandoverEventMaskFlags_e
+ * @param   pMsg - the message the process
+ *
+ * @return  None
+ */
+void BLEAppUtil_processHandoverEventMsg(uint32_t event, BLEAppUtil_msgHdr_t *pMsgData)
+{
+    // Pass the event and msg to BLEAppUtil_callEventHandler which calls the
+    // handler of the application
+    BLEAppUtil_callEventHandler(event, pMsgData, BLEAPPUTIL_HANDOVER_TYPE);
+}
+
+/*********************************************************************
  * @fn      BLEAppUtil_isConnEventRequired
  *
  * @brief   Process Connection events received from the BLE stack, called

@@ -45,6 +45,20 @@
 #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_asset_policy.h>
 #include <third_party/hsmddk/include/Kit/EIP130/DomainHelper/incl/eip130_domain_ecc_curves.h>
 
+#if (ENABLE_KEY_STORAGE == 1)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
+    #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_asset.h>
+
+    /* Note that this size is in terms of the HSM sub-vector format, which is how KeyStore will
+     * return the key material to the driver. The 521-bit curve length must be converted to a word boundary,
+     * multiplied by number of bytes per word, and added by 4 bytes for the additional header word per component.
+     * Since there are two components in the public key, multiply the whole prior value by 2.
+     */
+    #define ECDSALPF3HSM_MAX_PUBLIC_KEY_SIZE \
+        (HSM_ASYM_ECC_PUB_KEY_VCOUNT * (HSM_WORD_LENGTH * ((ECDSA_CURVE_LENGTH_521 + 31) / 32) + HSM_ASYM_DATA_VHEADER))
+#endif
+
 #include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/dpl/HwiP.h>
 
@@ -54,7 +68,7 @@ static int_fast16_t ECDSALPF3HSM_initializeHSMOperations(ECDSA_Handle handle);
 static int_fast16_t ECDSALPF3HSM_createAndLoadAllAssets(ECDSA_Handle handle);
 static int_fast16_t ECDSALPF3HSM_createAndLoadKeyAssetID(ECDSA_Handle handle);
 static int_fast16_t ECDSALPF3HSM_createKeyAsset(ECDSA_Handle handle);
-static int_fast16_t ECDSALPF3HSM_LoadKeyAsset(ECDSA_Handle handle);
+static int_fast16_t ECDSALPF3HSM_LoadKeyAsset(ECDSA_Handle handle, uint8_t *key, bool isFromKeyStore);
 
 static int_fast16_t ECDSALPF3HSM_createAndLoadECurveAssetID(ECDSA_Handle handle);
 static int_fast16_t ECDSALPF3HSM_createECurveAsset(ECDSA_Handle handle);
@@ -129,7 +143,10 @@ ECDSA_Handle ECDSA_construct(ECDSA_Config *config, const ECDSA_Params *params)
         HwiP_restore(key);
 
         object->returnBehavior = params->returnBehavior;
+        object->accessTimeout  = params->timeout;
         object->callbackFxn    = params->callbackFxn;
+        object->keyAssetID     = 0U;
+        object->paramAssetID   = 0U;
 
         handle = (ECDSA_Handle)config;
     }
@@ -223,7 +240,7 @@ static int_fast16_t ECDSALPF3HSM_setECCurveParameters(ECDSALPF3HSM_Object *objec
     }
     else
     {
-        status = ECDSA_STATUS_NO_VALID_CURVE_TYPE_PROVIDED;
+        status = ECDSALPF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED;
     }
 
     return status;
@@ -242,7 +259,7 @@ static int_fast16_t ECDSALPF3HSM_initializeHSMOperations(ECDSA_Handle handle)
      */
     if (object->hsmStatus == HSMLPF3_STATUS_ERROR)
     {
-        return ECDSA_STATUS_HARDWARE_ERROR;
+        return ECDSALPF3HSM_STATUS_HARDWARE_ERROR;
     }
 
     /* Initializes critical ECDSA driver metadata and retrieves and stores ECC curve parameters in the object */
@@ -253,31 +270,16 @@ static int_fast16_t ECDSALPF3HSM_initializeHSMOperations(ECDSA_Handle handle)
         return status;
     }
 
-    /* Create Two assets and load data into them:
+    if (!HSMLPF3_acquireLock(object->accessTimeout, (uintptr_t)handle))
+    {
+        return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
+    }
+
+    /* Create two assets and load data into them:
      * - First asset is the private key.
      * - Second asset is the ECC curve parameters.
      */
     status = ECDSALPF3HSM_createAndLoadAllAssets(handle);
-
-    if (status != ECDSA_STATUS_SUCCESS)
-    {
-        return status;
-    }
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        /* Free two assets (private key and ECC curve assets) */
-        status = ECDSALPF3HSM_freeAllAssets(handle);
-
-        if (status != ECDSA_STATUS_SUCCESS)
-        {
-            return status;
-        }
-        else
-        {
-            return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
-        }
-    }
 
     return status;
 }
@@ -293,7 +295,7 @@ static inline void ECDSALPF3HSM_ecdsaPostProcessing(uintptr_t arg0)
     int_fast16_t assetStatus    = ECDSA_STATUS_ERROR;
     int32_t tokenResult         = HSMLPF3_getResultCode();
 
-    /* TokenResult carries information regarding the operation result status as well as many other information such as
+    /* TokenResult carries information regarding the operation result status as well as other information such as
      * whether the operation is FIPS approved or not. The code below applies an HSMLPF3_RETVAL_MASK to extract only
      * relevant information to an operation's result status.
      */
@@ -315,17 +317,17 @@ static inline void ECDSALPF3HSM_ecdsaPostProcessing(uintptr_t arg0)
         }
     }
 
-    object->returnStatus = status;
-
-    HSMLPF3_releaseLock();
-
     /* Free two assets (private key and ECC curve assets) */
     assetStatus = ECDSALPF3HSM_freeAllAssets(handle);
 
-    if (assetStatus == ECDSA_STATUS_ERROR)
+    if (assetStatus != ECDSA_STATUS_SUCCESS)
     {
-        status = ECDSA_STATUS_ERROR;
+        status = assetStatus;
     }
+
+    object->returnStatus = status;
+
+    HSMLPF3_releaseLock();
 
     if (object->returnBehavior == ECDSA_RETURN_BEHAVIOR_CALLBACK)
     {
@@ -349,6 +351,8 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
     object->operationType       = ECDSA_OPERATION_TYPE_SIGN;
     object->operation           = (ECDSA_Operation *)operation;
     object->input               = (uint8_t *)operation->hash;
+    object->keyAssetID          = 0;
+    object->paramAssetID        = 0;
 
     /* Perform the following operations:
      * - Check the HSM HW status
@@ -360,6 +364,14 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
 
     if (status != ECDSA_STATUS_SUCCESS)
     {
+        /* In the case of failure to initialize the operation, we need to free all assets allocated
+         * Capturing the return status of this operation is pointless since we are retuning an
+         * error code anyways.
+         */
+        (void)ECDSALPF3HSM_freeAllAssets(handle);
+
+        HSMLPF3_releaseLock();
+
         return status;
     }
 
@@ -384,14 +396,17 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
         }
     }
 
-    if (hsmRetval == HSMLPF3_STATUS_ERROR)
+    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
     {
-        HSMLPF3_releaseLock();
+        status = ECDSA_STATUS_ERROR;
 
-        /* Free two assets (private key and ECC curve assets).
-         * Ignore the return value here since the driver status code is error.
+        /* In the case of failure to initialize the operation, we need to free all assets allocated
+         * Capturing the return status of this operation is pointless since we are retuning an
+         * error code anyways.
          */
         (void)ECDSALPF3HSM_freeAllAssets(handle);
+
+        HSMLPF3_releaseLock();
     }
 
     return status;
@@ -413,6 +428,8 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
     object->operationType       = ECDSA_OPERATION_TYPE_VERIFY;
     object->operation           = (ECDSA_Operation *)operation;
     object->input               = (uint8_t *)operation->hash;
+    object->keyAssetID          = 0;
+    object->paramAssetID        = 0;
 
     /* Perform the following operations:
      * - Check the HSM HW status
@@ -424,6 +441,14 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
 
     if (status != ECDSA_STATUS_SUCCESS)
     {
+        /* In the case of failure to initialize the operation, we need to free all assets allocated
+         * Capturing the return status of this operation is pointless since we are retuning an
+         * error code anyways.
+         */
+        (void)ECDSALPF3HSM_freeAllAssets(handle);
+
+        HSMLPF3_releaseLock();
+
         return status;
     }
 
@@ -459,14 +484,17 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
         }
     }
 
-    if (hsmRetval == HSMLPF3_STATUS_ERROR)
+    if (hsmRetval != HSMLPF3_STATUS_SUCCESS)
     {
-        HSMLPF3_releaseLock();
+        status = ECDSA_STATUS_ERROR;
 
-        /* Free two assets (private key and ECC curve assets).
-         * Ignore the return value here since the driver status code is error.
+        /* In the case of failure to initialize the operation, we need to free all assets allocated
+         * Capturing the return status of this operation is pointless since we are retuning an
+         * error code anyways.
          */
         (void)ECDSALPF3HSM_freeAllAssets(handle);
+
+        HSMLPF3_releaseLock();
     }
 
     return status;
@@ -480,7 +508,7 @@ static int_fast16_t ECDSALPF3HSM_createAndLoadAllAssets(ECDSA_Handle handle)
     int_fast16_t status = ECDSA_STATUS_ERROR;
 
     /* Perform two HSM operations:
-     * - Create An asset that holds the operation's asymmetric key
+     * - Create an asset that holds the operation's asymmetric key
      *   (private key for a sign operation or public key for a verify operation)
      * - Load the operation's asymmetric key onto HSM RAM
      */
@@ -504,21 +532,99 @@ static int_fast16_t ECDSALPF3HSM_createAndLoadKeyAssetID(ECDSA_Handle handle)
 {
     ECDSALPF3HSM_Object *object = handle->object;
     int_fast16_t status         = ECDSA_STATUS_ERROR;
+    uint32_t keyLength          = 0U;
+    bool isKeyStoreKeyMaterial  = false;
+    uint8_t *keyMaterial;
+#if (ENABLE_KEY_STORAGE == 1)
+    uint8_t KeyStore_keyingMaterial[ECDSALPF3HSM_MAX_PUBLIC_KEY_SIZE];
+    /* Although the key is used by ECDSA to sign or verify a HASH, we must provide the MESSAGE usage
+     * to support psa_sign_message() and psa_verify_message(). When a key imported with KEYSTORE_PSA_KEY_USAGE_SIGN_HASH
+     * or KEYSTORE_PSA_KEY_USAGE_VERIFY_HASH is retrieved, its allowed usage flags are extended to include the message
+     * variants. Therefore, we can always ask for the message usage from the driver.
+     */
+    KeyStore_PSA_KeyUsage usage = (object->operationType == ECDSA_OPERATION_TYPE_SIGN)
+                                      ? KEYSTORE_PSA_KEY_USAGE_SIGN_MESSAGE
+                                      : KEYSTORE_PSA_KEY_USAGE_VERIFY_MESSAGE;
+#endif
 
-    if (object->key->encoding != CryptoKey_PLAINTEXT_HSM)
+    /* While ECDSA only supports HSM operations on CC27XX, we will accept both
+     * key encodings for plaintext only.
+     */
+    if ((object->key->encoding == CryptoKey_PLAINTEXT_HSM) || (object->key->encoding == CryptoKey_PLAINTEXT))
     {
-        return ECDSA_STATUS_INVALID_KEY_ENCODING;
+        keyLength   = object->key->u.plaintext.keyLength;
+        keyMaterial = object->key->u.plaintext.keyMaterial;
+    }
+#if (ENABLE_KEY_STORAGE == 1)
+    else if (object->key->encoding == CryptoKey_KEYSTORE_HSM)
+    {
+        keyLength   = object->key->u.keyStore.keyLength;
+        keyMaterial = &KeyStore_keyingMaterial[0];
+
+        status = KeyStore_PSA_retrieveFromKeyStore(object->key,
+                                                   &KeyStore_keyingMaterial[0],
+                                                   sizeof(KeyStore_keyingMaterial),
+                                                   &object->keyAssetID,
+                                                   KEYSTORE_PSA_ALG_ECDSA,
+                                                   usage);
+
+        if (status != KEYSTORE_PSA_STATUS_SUCCESS)
+        {
+            return status;
+        }
+        else if (object->keyAssetID != 0)
+        {
+            /* In this case, we already retrieved an asset from KeyStore,
+             * so we don't need the driver to create and load an asset itself.
+             * We must mark this before validating key sizes to ensure we cleanup
+             * properly in the case that key size validation fails.
+             */
+            object->driverCreatedKeyAsset = false;
+        }
+        else
+        {
+            /* This variable is used to indicate that KeyStore has returned specifically plaintext
+             * key material. It is not considered true in the above condition where KeyStore
+             * retrieved an asset ID instead of plaintext key material. We must mark when plaintext
+             * is retrieved from KeyStore, because KeyStore has already placed it into HSM
+             * sub-vector format.
+             */
+            isKeyStoreKeyMaterial = true;
+        }
+    }
+#endif
+    else
+    {
+        return ECDSALPF3HSM_STATUS_INVALID_KEY_ENCODING;
     }
 
     /* Validate key sizes to make sure octet string format is used */
-    if ((object->operationType == ECDSA_OPERATION_TYPE_SIGN) &&
-        (object->key->u.plaintext.keyLength != object->curveLength))
+    if ((object->operationType == ECDSA_OPERATION_TYPE_SIGN) && (keyLength != BITS_TO_BYTES(object->curveLength)))
     {
         return ECDSA_STATUS_INVALID_KEY_SIZE;
     }
     else if ((object->operationType == ECDSA_OPERATION_TYPE_VERIFY) &&
-             ((object->key->u.plaintext.keyLength != (2 * object->curveLength + OCTET_STRING_OFFSET)) ||
-              (object->key->u.plaintext.keyMaterial[0] != 0x04)))
+             (keyLength != ((2 * BITS_TO_BYTES(object->curveLength)) + OCTET_STRING_OFFSET)))
+    {
+        /* The CryptoKey keyLength must always correspond to the public key's length. This is the case even
+         * when a key_pair key ID is used to perform a verification operation.
+         */
+        return ECDSA_STATUS_INVALID_KEY_SIZE;
+    }
+
+#if (ENABLE_KEY_STORAGE == 1)
+    if ((object->key->encoding == CryptoKey_KEYSTORE_HSM) && (object->keyAssetID != 0))
+    {
+        /* If we reached this point, then KeyStore_PSA_retrieveFromKeyStore() must have returned success */
+        return ECDSA_STATUS_SUCCESS;
+    }
+#endif
+
+    /* The keyMaterial may only be checked after verifying that we have not
+     * received an asset directly from KeyStore. We will also skip this check if we received
+     * plaintext from KeyStore, since it will be in HSM sub-vector format, not octet-string.
+     */
+    if ((!isKeyStoreKeyMaterial) && (object->operationType == ECDSA_OPERATION_TYPE_VERIFY) && (keyMaterial[0] != 0x04))
     {
         return ECDSA_STATUS_INVALID_KEY_SIZE;
     }
@@ -527,8 +633,26 @@ static int_fast16_t ECDSALPF3HSM_createAndLoadKeyAssetID(ECDSA_Handle handle)
     status = ECDSALPF3HSM_createKeyAsset(handle);
     if (status == ECDSA_STATUS_SUCCESS)
     {
-        /* Constructs an asset load token and submits it to the HSM IP */
-        status = ECDSALPF3HSM_LoadKeyAsset(handle);
+        /* Now that the driver has successfully created an asset, object->keyAssetID is now non-zero.
+         * If any failure condition happens after this moment, the cleanup will expect
+         * object->driverCreatedKeyAsset to be accurate, since the keyAssetID will reflect that there
+         * is an asset to free, and the cleanup will need to know how to do that.
+         */
+        object->driverCreatedKeyAsset = true;
+
+        /* Constructs an asset load token and submits it to the HSM IP. Note, when the driver
+         * retrieves plaintext key material from keystore, it is already in the HSM's sub-vector
+         * format. We must mark this so that the driver doesn't try to reformat the already-formatted
+         * key.
+         */
+        status = ECDSALPF3HSM_LoadKeyAsset(handle, keyMaterial, isKeyStoreKeyMaterial);
+    }
+    else
+    {
+        /* If the driver fails to create an asset, keyAssetID is already 0
+         * from the top of ECDSA_sign() and ECDSA_verify(), so the cleanup already
+         * knows there is nothing to do here.
+         */
     }
 
     return status;
@@ -555,8 +679,6 @@ static inline void ECDSALPF3HSM_CreateKeyAssetPostProcessing(uintptr_t arg0)
     }
 
     object->hsmStatus = status;
-
-    HSMLPF3_releaseLock();
 }
 
 /*
@@ -572,12 +694,7 @@ static int_fast16_t ECDSALPF3HSM_createKeyAsset(ECDSA_Handle handle)
 
     if (object->operationType == ECDSA_OPERATION_TYPE_VERIFY)
     {
-        assetSize *= 2;
-    }
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
+        assetSize *= HSM_ASYM_ECC_PUB_KEY_VCOUNT;
     }
 
     /* Operation (Lower 16-bits + general Operation) + Direction. No Mode */
@@ -635,11 +752,6 @@ static int_fast16_t ECDSALPF3HSM_createKeyAsset(ECDSA_Handle handle)
         }
     }
 
-    if (hsmRetval == HSMLPF3_STATUS_ERROR)
-    {
-        HSMLPF3_releaseLock();
-    }
-
     return status;
 }
 
@@ -663,16 +775,13 @@ static inline void ECDSALPF3HSM_LoadKeyAssetPostProcessing(uintptr_t arg0)
     }
 
     object->hsmStatus = status;
-
-    HSMLPF3_releaseLock();
 }
 
-static int_fast16_t ECDSALPF3HSM_LoadKeyAsset(ECDSA_Handle handle)
+static int_fast16_t ECDSALPF3HSM_LoadKeyAsset(ECDSA_Handle handle, uint8_t *key, bool isFromKeyStore)
 {
     int_fast16_t status         = ECDSA_STATUS_ERROR;
     int_fast16_t hsmRetval      = HSMLPF3_STATUS_ERROR;
     ECDSALPF3HSM_Object *object = handle->object;
-    uint8_t *key_p              = object->key->u.plaintext.keyMaterial;
     uint32_t componentLength    = 0;
 
     if (object->operationType == ECDSA_OPERATION_TYPE_SIGN)
@@ -683,41 +792,46 @@ static int_fast16_t ECDSALPF3HSM_LoadKeyAsset(ECDSA_Handle handle)
     else
     {
         /* For verify operations, public keys consist of two components (x and y) */
-        componentLength = 2 * HSM_ASYM_DATA_SIZE_VWB(object->curveLength);
+        componentLength = HSM_ASYM_ECC_PUB_KEY_VCOUNT * HSM_ASYM_DATA_SIZE_VWB(object->curveLength);
     }
 
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
+    if (!isFromKeyStore)
     {
-        return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
-    }
+        /* Initialize a buffer that will hold the single- or multi-component vector for the operation's key */
+        uint8_t componentVector[ECDSALPF3HSM_COMPONENT_VECTOR_LENGTH];
+        memset(&componentVector[0], 0, componentLength);
 
-    /* Initialize a buffer that will hold the single- or multi-component vector for the operation's key */
-    uint8_t componentVector[ECDSA_COMPONENT_VECTOR_LENGTH];
-    memset(&componentVector[0], 0, componentLength);
+        if (object->operationType == ECDSA_OPERATION_TYPE_SIGN)
+        {
+            /* In the case of a sign operation, there is one sub-vector component that needs to
+             *     modified to comply with HSM IP format requirements
+             * Modifications include:
+             * - Properly populating the first 32-bit word as the vector header that describes the key
+             * - Convert the key's format from OS to little endian.
+             */
+            HSMLPF3_asymDsaPriKeyToHW(key, object->curveLength, object->domainId, &componentVector[0]);
+        }
+        else
+        {
+            /* In the case of a verify operation, there are two sub-vector components that need to
+             *     modified to comply with HSM IP format requirements
+             * Modifications include:
+             * - Properly populating the first 32-bit word as the vector header that describes the key
+             * - Convert the key's format from OS to little endian.
+             */
+            HSMLPF3_asymDsaPubKeyToHW(key + 1, object->curveLength, object->domainId, &componentVector[0]);
+        }
 
-    if (object->operationType == ECDSA_OPERATION_TYPE_SIGN)
-    {
-        /* In the case of a sign operation, there is one sub-vector component that needs to
-         *     modified to comply with HSM IP format requirements
-         * Modifications incldue:
-         * - Properly populating the first 32-bit word as the vector header that describes the key
-         * - Convert the key's format from OS to little endian.
-         */
-        HSMLPF3_asymDsaPriKeyToHW(key_p, object->curveLength, object->domainId, &componentVector[0]);
+        /* Populates the HSMLPF3 commandToken as a load asset token */
+        HSMLPF3_constructLoadPlaintextAssetToken(&componentVector[0], componentLength, object->keyAssetID);
     }
     else
     {
-        /* In the case of a verify operation, there are two sub-vector components that need to
-         *     modified to comply with HSM IP format requirements
-         * Modifications incldue:
-         * - Properly populating the first 32-bit word as the vector header that describes the key
-         * - Convert the key's format from OS to little endian.
+        /* Populates the HSMLPF3 commandToken as a load asset token. The key is already formatted for the HSM
+         * if we retrieved it from KeyStore.
          */
-        HSMLPF3_asymDsaPubKeyToHW(key_p + 1, object->curveLength, object->domainId, &componentVector[0]);
+        HSMLPF3_constructLoadPlaintextAssetToken(key, componentLength, object->keyAssetID);
     }
-
-    /* Populates the HSMLPF3 commandToken as a load asset token */
-    (void)HSMLPF3_constructLoadPlaintextAssetToken(&componentVector[0], componentLength, object->keyAssetID);
 
     /* Submit token to the HSM IP engine */
     hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,
@@ -736,11 +850,6 @@ static int_fast16_t ECDSALPF3HSM_LoadKeyAsset(ECDSA_Handle handle)
         {
             status = object->hsmStatus;
         }
-    }
-
-    if (hsmRetval == HSMLPF3_STATUS_ERROR)
-    {
-        HSMLPF3_releaseLock();
     }
 
     return status;
@@ -780,8 +889,6 @@ static inline void ECDSALPF3HSM_createECurveAssetPostProcessing(uintptr_t arg0)
     }
 
     object->hsmStatus = status;
-
-    HSMLPF3_releaseLock();
 }
 
 static int_fast16_t ECDSALPF3HSM_createECurveAsset(ECDSA_Handle handle)
@@ -790,11 +897,6 @@ static int_fast16_t ECDSALPF3HSM_createECurveAsset(ECDSA_Handle handle)
     int_fast16_t hsmRetval      = HSMLPF3_STATUS_ERROR;
     ECDSALPF3HSM_Object *object = handle->object;
     uint64_t assetPolicy        = EIP130_ASSET_POLICY_ASYM_KEYPARAMS;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
-    }
 
     /* Populates the HSMLPF3 commandToken as a create asset token */
     HSMLPF3_constructCreateAssetToken(assetPolicy, object->curveParamSize);
@@ -815,11 +917,6 @@ static int_fast16_t ECDSALPF3HSM_createECurveAsset(ECDSA_Handle handle)
         {
             status = object->hsmStatus;
         }
-    }
-
-    if (hsmRetval == HSMLPF3_STATUS_ERROR)
-    {
-        HSMLPF3_releaseLock();
     }
 
     return status;
@@ -845,8 +942,6 @@ static inline void ECDSALPF3HSM_LoadECurvePostProcessing(uintptr_t arg0)
     }
 
     object->hsmStatus = status;
-
-    HSMLPF3_releaseLock();
 }
 
 /*
@@ -857,11 +952,6 @@ static int_fast16_t ECDSALPF3HSM_LoadECurve(ECDSA_Handle handle)
     int_fast16_t status         = ECDSA_STATUS_ERROR;
     int_fast16_t hsmRetval      = HSMLPF3_STATUS_ERROR;
     ECDSALPF3HSM_Object *object = handle->object;
-
-    if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-    {
-        return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
-    }
 
     /* Populates the HSMLPF3 commandToken as a load asset token */
     (void)HSMLPF3_constructLoadPlaintextAssetToken(object->curveParam, object->curveParamSize, object->paramAssetID);
@@ -885,11 +975,6 @@ static int_fast16_t ECDSALPF3HSM_LoadECurve(ECDSA_Handle handle)
         }
     }
 
-    if (hsmRetval == HSMLPF3_STATUS_ERROR)
-    {
-        HSMLPF3_releaseLock();
-    }
-
     return status;
 }
 
@@ -901,12 +986,37 @@ static int_fast16_t ECDSALPF3HSM_freeAllAssets(ECDSA_Handle handle)
     int_fast16_t status         = ECDSA_STATUS_SUCCESS;
     ECDSALPF3HSM_Object *object = handle->object;
 
-    if (ECDSALPF3HSM_freeAssetID(handle, object->keyAssetID) != ECDSA_STATUS_SUCCESS)
+    if (object->keyAssetID != 0)
     {
-        status = ECDSA_STATUS_ERROR;
+        /* If the object has a stored keyAssetID, then driverCreatedKeyAsset MUST
+         * be set. It can only be false if KeyStore is enabled. If it is false,
+         * it means that we retrieved an asset directly from KeyStore, so the
+         * driver should not free the asset. Instead, the driver should direct
+         * KeyStore to free the asset (which will perform the necessary persistence
+         * check and only free the asset if it should be freed).
+         */
+        if (object->driverCreatedKeyAsset == true)
+        {
+            status = ECDSALPF3HSM_freeAssetID(handle, object->keyAssetID);
+        }
+#if (ENABLE_KEY_STORAGE == 1)
+        else
+        {
+            KeyStore_PSA_KeyFileId keyID;
+
+            GET_KEY_ID(keyID, object->key->u.keyStore.keyID);
+
+            status = KeyStore_PSA_assetPostProcessing(keyID);
+        }
+
+        if (status == ECDSA_STATUS_SUCCESS)
+        {
+            object->keyAssetID = 0;
+        }
+#endif
     }
 
-    if (ECDSALPF3HSM_freeAssetID(handle, object->paramAssetID) != ECDSA_STATUS_SUCCESS)
+    if ((object->paramAssetID != 0) && (ECDSALPF3HSM_freeAssetID(handle, object->paramAssetID) != ECDSA_STATUS_SUCCESS))
     {
         status = ECDSA_STATUS_ERROR;
     }
@@ -930,16 +1040,10 @@ static inline void ECDSALPF3HSM_freeAssetPostProcessing(uintptr_t arg0)
      */
     if ((tokenResult & HSMLPF3_RETVAL_MASK) == EIP130TOKEN_RESULT_SUCCESS)
     {
-        object->keyAssetID = HSMLPF3_getResultAssetID();
-        status             = ECDSA_STATUS_SUCCESS;
+        status = ECDSA_STATUS_SUCCESS;
     }
 
     object->hsmStatus = status;
-
-    if ((HSMLPF3_ReturnBehavior)object->returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        HSMLPF3_releaseLock();
-    }
 }
 
 /*
@@ -950,14 +1054,6 @@ static int_fast16_t ECDSALPF3HSM_freeAssetID(ECDSA_Handle handle, uint32_t asset
     int_fast16_t status         = ECDSA_STATUS_ERROR;
     ECDSALPF3HSM_Object *object = handle->object;
     int_fast16_t hsmRetval      = HSMLPF3_STATUS_ERROR;
-
-    if ((HSMLPF3_ReturnBehavior)object->returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)handle))
-        {
-            return ECDSA_STATUS_RESOURCE_UNAVAILABLE;
-        }
-    }
 
     /* Populates the HSMLPF3 commandToken as a delete asset token */
     (void)HSMLPF3_constructDeleteAssetToken(assetID);
@@ -978,12 +1074,6 @@ static int_fast16_t ECDSALPF3HSM_freeAssetID(ECDSA_Handle handle, uint32_t asset
         {
             status = object->hsmStatus;
         }
-    }
-
-    if (hsmRetval == HSMLPF3_STATUS_ERROR &&
-        (HSMLPF3_ReturnBehavior)object->returnBehavior == HSMLPF3_RETURN_BEHAVIOR_POLLING)
-    {
-        HSMLPF3_releaseLock();
     }
 
     return status;

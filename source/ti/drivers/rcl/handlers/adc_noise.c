@@ -99,6 +99,8 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
 
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
+        /* Make sure SWTCXO does not adjust clock while radio is running */
+        hal_power_set_swtcxo_update_constraint();
 
         /* Schedule new command start-time to wait for refsys */
         startTimeStatus = RCL_Scheduler_setStartStopTimeEarliestStart(cmd, earliestStartTime);
@@ -108,6 +110,8 @@ RCL_Events RCL_Handler_ADC_Noise_getNoise(RCL_Command *cmd, LRF_Events lrfEvents
             cmd->status = startTimeStatus;
             rclEvents.lastCmdDone = 1;
             LRF_disableSynthRefsys();
+            /* Allow SWTCXO again */
+            hal_power_release_swtcxo_update_constraint();
         }
         else
         {
@@ -313,4 +317,6 @@ static void RCL_Handler_Adc_Noise_powerDown(void)
 
     /* Disable refsys */
     LRF_disableSynthRefsys();
+    /* Allow SWTCXO again */
+    hal_power_release_swtcxo_update_constraint();
 }

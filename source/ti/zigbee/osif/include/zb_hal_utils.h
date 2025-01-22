@@ -57,6 +57,10 @@ extern void zb_ti_f3_main(void);
 extern void zb_ti_f3_platform_init(bool gpd);
 
 extern void zb_memcpy( void *dst, const void *src, unsigned int len );
+extern zb_int8_t zb_memcmp(const void *src1, const void *src2, unsigned int len);
+extern void zb_memset(void *str, unsigned int c, unsigned int len);
+extern void zb_memmove(void *dst, const void *src, size_t len);
+
 
 #if defined(ZB_MULTI_TEST) || defined(ZB_MAC_TESTING_MODE)
 #define MAIN() zb_bool_t zb_ti_f3_main(void)
@@ -87,9 +91,9 @@ extern void zb_memcpy( void *dst, const void *src, unsigned int len );
 
 
 #define ZB_MEMCPY   (void)zb_memcpy
-#define ZB_MEMMOVE  (void)memmove
-#define ZB_MEMSET   (void)memset
-#define ZB_MEMCMP   memcmp
+#define ZB_MEMMOVE  (void)zb_memmove
+#define ZB_MEMSET   (void)zb_memset
+#define ZB_MEMCMP   zb_memcmp
 #define ZB_BZERO(s,l) ZB_MEMSET((char*)(s), 0, (l))
 #define ZB_BZERO2(s) ZB_BZERO(s, 2)
 #define ZB_CONST_CAT(x, y) x##y
@@ -131,8 +135,11 @@ extern zb_uint32_t zbs_ncp_lnk_ccfg_high_base;
 typedef struct ti_zigbee_config_t
 {
     zb_uint8_t aesecbIndex;
+    zb_uint8_t aesccmIndex;
     zb_uint8_t rngIndex;
     zb_uint8_t nvsIndex;
+    zb_uint8_t sha2Index;
+    zb_uint8_t ecdhIndex;
 } ti_zigbee_config;
 
 extern const ti_zigbee_config zigbeeConfig;

@@ -75,6 +75,10 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -102,13 +106,14 @@ typedef struct
     const uint8_t *iv;
     uint8_t *mac;
     uint32_t counter[AES_BLOCK_SIZE_WORDS];
-    uint32_t intermediateTag[AES_BLOCK_SIZE_WORDS];
+    volatile uint32_t intermediateTag[AES_BLOCK_SIZE_WORDS];
     uint32_t hashKey[AES_BLOCK_SIZE_WORDS];
     uint32_t tagOTP[AES_BLOCK_SIZE_WORDS];
     AESGCM_CallbackFxn callbackFxn;
     AESGCM_OperationUnion *operation;
     size_t inputLength;
     size_t aadLength;
+    uint8_t bufferedAADLength;
     size_t totalAADLength;
     size_t totalDataLength;
     volatile size_t totalDataLengthRemaining;
@@ -116,15 +121,20 @@ typedef struct
     AESGCM_OperationType operationType;
     uint8_t macLength;
     uint8_t ivLength;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    uint8_t inputFinalBlock[AES_BLOCK_SIZE];
+    uint8_t aadFinalBlock[AES_BLOCK_SIZE];
+    uint8_t outputFinalBlock[AES_BLOCK_SIZE] __attribute__((aligned(4)));
     /*!
-     * @brief The staus of the HSM Boot up process
+     * @brief The status of the HSM Boot up process
      * if HSMLPF3_STATUS_SUCCESS, the HSM booted properly.
      * if HSMLPF3_STATUS_ERROR, the HSM did not boot properly.
      */
     int_fast16_t hsmStatus;
+    uint32_t keyAssetID;
     uint32_t tempAssetID;
-    /* To indicate whether a segmented operation is in progress
-     */
+    KeyStore_PSA_KeyLocation keyLocation;
+    /* To indicate whether a segmented operation is in progress*/
     bool segmentedOperationInProgress;
 } AESGCMLPF3HSM_Object;
 

@@ -1,14 +1,14 @@
 [
     {
-        "metadataVersion": "3.0.0",
+        "metadataVersion": "3.1.0",
         "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
         "name": "SimpleLink Low Power F3 SDK",
-        "version": "8.20.00.119",
+        "version": "8.40.00.61",
         "type": "software",
         "devices": [
             "CC23x0"
         ],
-        "image": "None",
+        "image": "",
         "description": "Welcome to the Low Power F3 SDK",
         "dependencies": [
             {
@@ -18,17 +18,12 @@
             },
             {
                 "packageId": "sysconfig",
-                "version": "1.20.0",
-                "require": "optional"
+                "version": "1.22.0",
+                "require": "mandatory"
             },
             {
                 "packageId": "ti_cgt_tiarmclang",
                 "version": "3.2.2",
-                "require": "optional"
-            },
-            {
-                "packageId": "arm.gnu",
-                "version": "9.2",
                 "require": "optional"
             }
         ]

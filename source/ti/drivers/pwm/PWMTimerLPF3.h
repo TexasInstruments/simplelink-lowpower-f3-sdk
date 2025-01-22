@@ -172,8 +172,8 @@ extern const PWM_FxnTable PWMTimerLPF3_fxnTable;
  */
 typedef struct PWMTimerLPF3_HwAttrs
 {
-    uint8_t lgpTimerInstance;  /*!< LGPTimer unit index (0, 1, 2..) */
-    uint8_t preScalerDivision; /*!< LGPTimer prescaler divider */
+    uint8_t lgpTimerInstance;   /*!< LGPTimer unit index (0, 1, 2..) */
+    uint16_t preScalerDivision; /*!< LGPTimer prescaler divider */
 } PWMTimerLPF3_HwAttrs;
 
 /*!

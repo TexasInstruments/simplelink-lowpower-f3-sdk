@@ -37,18 +37,17 @@ HEAPSIZE = 8196; /* Size of heap buffer used by HeapMem */
 
 MEMORY
 {
-    FLASH (RX) : ORIGIN = ti_utils_build_GenMap_FLASH0_BASE, LENGTH = ti_utils_build_GenMap_FLASH0_SIZE
+    /* If device has HSM FW the last part of Flash is reserved for it */
+    FLASH (RX) : ORIGIN = ti_utils_build_GenMap_FLASH0_BASE, LENGTH = DEFINED(ti_utils_build_GenMap_HSM_FW_SIZE) ? ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE : ti_utils_build_GenMap_FLASH0_SIZE
     /*
      * Customer Configuration Area and Bootloader Backdoor configuration in
-     * flash, up to 512 bytes
+     * flash.
      */
     CCFG (R)   : ORIGIN = ti_utils_build_GenMap_CCFG_BASE, LENGTH = ti_utils_build_GenMap_CCFG_SIZE
     SRAM (RWX) : ORIGIN = ti_utils_build_GenMap_RAM0_BASE, LENGTH = ti_utils_build_GenMap_RAM0_SIZE
 
     /* Security Configuration Area (SCFG) - if device supports it */
     SCFG (R)    : ORIGIN = DEFINED(ti_utils_build_GenMap_SCFG_BASE) ? ti_utils_build_GenMap_SCFG_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_SCFG_SIZE) ? ti_utils_build_GenMap_SCFG_SIZE : 0x0
-    /* HSM OTP Area (HSMOTP) - if device supports it */
-    HSMOTP (R) : ORIGIN = 0x4E020800, LENGTH = 0x800
 
     /* S2RRAM - if device supports it.  Intended for the S2R radio module, but
      * it can also be used by the application with some limitations. Please
@@ -218,11 +217,6 @@ SECTIONS {
     {
         KEEP(*(.scfg));
     } > SCFG
-
-    .hsmotp :
-    {
-        KEEP(*(.hsmotp));
-    } > HSMOTP
 
     .bss : {
         __bss_start__ = .;

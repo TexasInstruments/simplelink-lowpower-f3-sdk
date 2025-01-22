@@ -927,6 +927,18 @@ void llCsDbGetProcedureEnableData(uint16 connId, uint8 configId,
                                   csProcedureEnable_t* enData);
 
 /*******************************************************************************
+ * @fn          llCsDbGetSubeventsPerEvent
+ *
+ * @brief       Get the number of subevents per event in a CS procedure
+ *
+ * @param       connId - connection Id
+ * @param       configId - configuration Id
+ *
+ * @return      Number of subevents per event
+ */
+uint8 llCsDbGetSubeventsPerEvent(uint16 connId, uint8 configId);
+
+/*******************************************************************************
  * @fn          llCsDbCompareProcedureData
  *
  * @brief       Compare procedure data saved in the csdb, to what is provided
@@ -1044,6 +1056,29 @@ uint8 llCsDbGetNextProcedureFlag(uint16 connId, uint8 configId);
  * @return      None
  */
 void llCsDbSetNextProcedureFlag(uint16 connId, uint8 next);
+
+/*******************************************************************************
+ * @fn          llCsDbGetNextSubeventFlag
+ *
+ * @brief       Get the next subevent flag for a given connection.
+ *
+ * @param       connId - connection Id
+ *
+ * @return      Next subevent flag
+ */
+csNextSubevent_e llCsDbGetNextSubeventFlag(uint16 connId);
+
+/*******************************************************************************
+ * @fn          llCsDbSetNextSubeventFlag
+ *
+ * @brief       Set the next subevent flag for a given connection.
+ *
+ * @param       connId - connection Id
+ * @param       next - next subevent flag
+ *
+ * @return      None
+ */
+void llCsDbSetNextSubeventFlag(uint16 connId, csNextSubevent_e next);
 
 /*******************************************************************************
  * @fn          llCsDbUpdateChannelMap
@@ -1464,25 +1499,6 @@ uint8 llCsDbGetSubeventInfo(uint16 connId, csSubeventInfo_e type);
 void llCsDbSetSubeventCount(uint16 connId, csSubeventInfo_e type, uint8 count);
 
 /*******************************************************************************
- * @fn          llCsDbResetSubeventInfo
- *
- * @brief       Reset Subevent Info.
- *
- * @design      BLE_LOKI-506
- *
- * input parameters
- *
- * @param       connId - connection Id
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None.
- */
-void llCsDbResetSubeventInfo(uint16 connId);
-
-/*******************************************************************************
  * @fn          llCsDbIncrementSubeventInfoCounter
  *
  * @brief       Increment a subeventInfo counter by incVal
@@ -1738,8 +1754,7 @@ uint8 llCsDbRandomBitsAvailable(uint8 transactionId, uint8 numBitsRequired);
  *
  * @return      None
  */
-void llCsDbGetRandomBitsFromCache(uint8 transactionId, uint8 numBitsRequired,
-                                  uint8* pRandomBits);
+void llCsDbGetRandomBitsFromCache(uint8 transactionId, uint8 numBitsRequired, uint8* pRandomBits);
 
 /*******************************************************************************
  * @fn          llCsDbGetChannelIdxArray

@@ -80,10 +80,10 @@ extern uint8_t zb_mac_default_tx_power;
 #endif
 #endif /* ZB_HAVE_SERIAL */
 
-#define ZB_HW_ZB_AES128
-
+#if defined(ZB_ZGPD_ROLE)
 /* number of Flash pages reserved for MAC sequence storage */
 #define ZB_MSS_PAGE_COUNT  40U
+#endif //ZB_ZGPD_ROLE
 
 /*
  * Do not drop a packet if it is received by the radio and pushed onto the stack.
@@ -93,6 +93,10 @@ extern uint8_t zb_mac_default_tx_power;
 /* May use HW AES */
 #define ZB_HW_ZB_AES128
 #define ZB_HW_ZB_AES128_DEC
+#define ZB_HW_SHA_256
+#define ZB_HW_ECDH_P256_PUBLIC_KEY
+#define ZB_HW_ECDH_P256_SHARED_SECRET
+#define ZB_HW_HMAC_SHA_256
 #define ZB_MAC_RADIO_CANT_WAKEUP_MCU
 
 #if defined ZB_USE_SLEEP && defined NCP_MODE
@@ -145,5 +149,20 @@ extern uint8_t zb_mac_default_tx_power;
 #if defined ZB_MAC_STICKY_PENDING_BIT
 #error "Sticky Pending Bit is not supported longer! Use ZB_MAC_SOFTWARE_PB_MATCHING or ZB_MAC_HARDWARE_PB_MATCHING or ZB_MAC_SWITCHABLE_PB_MATCHING"
 #endif /* ZB_MAC_STICKY_PENDING_BIT */
+
+
+#define ZB_LITTLE_ENDIAN
+#define ZB_NEED_ALIGN
+#define ZB_NO_SYSTEST_SUPPORT
+#define ZB_USE_NVRAM
+#define ZB_SOFT_SECURITY
+
+#define ZB_ENABLE_HA
+#define ZB_BDB_MODE
+/* #define ZB_DISTRIBUTED_SECURITY_ON */
+
+/* our MAC */
+#define ZB_MAC_CONFIGURABLE_TX_POWER
+#define ZB_AUTO_ACK_TX
 
 #endif /* ZB_PLATFORM_CONFIG_H */

@@ -48,13 +48,16 @@ function getLibs(mod)
 {
     /* Get device information from GenLibs */
     let GenLibs = system.getScript("/ti/utils/build/GenLibs");
-
     let libGroup = {
         name: "/third_party/hsmddk",
         deps: [],
-        libs: [GenLibs.libPath("third_party/hsmddk", "hsmddk.a")],
+        libs: [],
         allowDuplicates: true
     };
+
+    if (!system.modules["/ti/utils/TrustZone"]) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    }
 
     return (libGroup);
 }
@@ -72,9 +75,7 @@ let devSpecific = {
         /* contribute libraries to linker command file */
         "/ti/utils/build/GenLibs.cmd.xdt":
                 {modName: "/ti/drivers/ECDH", getLibs: getLibs}
-    },
-
-    modules: Common.autoForceModules(["Board"])
+    }
 };
 
 /*

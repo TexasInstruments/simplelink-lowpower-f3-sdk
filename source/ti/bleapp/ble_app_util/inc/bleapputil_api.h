@@ -79,6 +79,9 @@ extern "C"
 #define BLEAPPUTIL_ADDR_STR_SIZE     15
 /// @endcond // NODOC
 
+#define BLEAppUtil_malloc   ICall_malloc
+#define BLEAppUtil_free     ICall_free
+#define BLEAppUtil_freeMsg  ICall_freeMsg
 /*********************************************************************
  * TYPEDEFS
  */
@@ -167,7 +170,8 @@ typedef enum BLEAppUtil_eventHandlerType_e
     BLEAPPUTIL_HCI_GAP_TYPE,            //!< HCI GAP type
     BLEAPPUTIL_HCI_SMP_TYPE,            //!< HCI SMP type
     BLEAPPUTIL_HCI_SMP_META_TYPE,       //!< HCI SMP Meta type
-    BLEAPPUTIL_HCI_CTRL_TO_HOST_TYPE    //!< HCI Controller To Host type
+    BLEAPPUTIL_HCI_CTRL_TO_HOST_TYPE,   //!< HCI Controller To Host type
+    BLEAPPUTIL_HANDOVER_TYPE            //!< Handover type
 } BLEAppUtil_eventHandlerType_e;
 
 /// GAP Conn event mask
@@ -319,6 +323,13 @@ typedef enum BLEAppUtil_HciEventMaskFlags_e
     BLEAPPUTIL_HCI_ACL_DATA_PACKET                      = (uint32_t)BV(9)  //!< ACL Data Packet
 } BLEAppUtil_HciEventMaskFlags_e;
 
+/// Handover event mask
+typedef enum BLEAppUtil_HandoverEventMaskFlags_e
+{
+    BLEAPPUTIL_HANDOVER_START_SERVING_EVENT_CODE        = (uint32_t)BV(0), //!< Start serving node event code
+    BLEAPPUTIL_HANDOVER_START_CANDIDATE_EVENT_CODE      = (uint32_t)BV(1), //!< Start candidate node event code
+} BLEAppUtil_HandoverEventMaskFlags_e;
+
 /// Profile role mask
 typedef enum BLEAppUtil_Profile_Roles_e
 {
@@ -327,6 +338,32 @@ typedef enum BLEAppUtil_Profile_Roles_e
     BLEAPPUTIL_PERIPHERAL_ROLE  = GAP_PROFILE_PERIPHERAL,   //!< @ref GAP_PROFILE_PERIPHERAL
     BLEAPPUTIL_CENTRAL_ROLE     = GAP_PROFILE_CENTRAL       //!< @ref GAP_PROFILE_CENTRAL
 } BLEAppUtil_Profile_Roles_e;
+
+
+typedef enum
+{
+  APP_SPECIFIER_CENTRAL       = 0x00,
+  APP_SPECIFIER_PERIPHERAL    = 0x01,
+  APP_SPECIFIER_CONNECTION    = 0x02,
+  APP_SPECIFIER_PAIRING       = 0x03,
+  APP_SPECIFIER_CHO           = 0x04,
+  APP_SPECIFIER_CS            = 0x05,
+  APP_SPECIFIER_CM            = 0x06,
+  APP_SPECIFIER_COMMON        = 0x07,
+  APP_SPECIFIER_L2CAPCOC      = 0x08,
+} BLEAppUtil_AppSpecifier_e;
+
+/// @brief Enumeration for External Application Control Capabilities
+typedef enum
+{
+  APP_CAP_COMMON               = 0x00000000,
+  APP_CAP_CENTRAL              = 0x00000400,
+  APP_CAP_PERIPHERAL           = 0x00000800,
+  APP_CAP_HANDOVER             = 0x00001000,
+  APP_CAP_CONNECTION           = 0x00002000,
+  APP_CAP_PAIRING              = 0x00004000,
+  APP_CAP_L2CAPCOC             = 0x00008000,
+} BLEAppUtil_AppCapabilities_e;
 
 /** @} End BLEAppUtil_Enumerators_Typedefs */
 
@@ -418,7 +455,6 @@ typedef struct
 typedef struct
 {
     GapAdv_enableOptions_t  enableOptions;  //!< whether to advertise for the max possible time, for a user-specified duration, or for a user-specified number of advertising events
-
     /**
      * If enableOptions is set to @ref GAP_ADV_ENABLE_OPTIONS_USE_DURATION, this is the time (in 10 ms ticks) to advertise before stopping where the range is 10 ms - 655,540 ms
      * If enableOptions is set to @ref GAP_ADV_ENABLE_OPTIONS_USE_MAX_EVENTS, this is the maximum number of advertisements to send before stopping, where the range is 1-256
@@ -473,7 +509,7 @@ typedef struct
      * @ref BLEAPPUTIL_SCAN_DISABLED.
      */
     uint8_t  maxNumReport;
-}BLEAppUtil_ScanStart_t;
+} BLEAppUtil_ScanStart_t;
 
 /**
  * @brief BLEAppUtil Conn Params Structure.
@@ -865,6 +901,14 @@ bStatus_t BLEAppUtil_cancelConnect(void);
 bStatus_t BLEAppUtil_disconnect(uint16 connHandle);
 
 /**
+ * @brief   Returns the device address mode.
+ *
+ *
+ * @return  @ref GAP_Addr_Modes_t - device address mode
+ */
+GAP_Addr_Modes_t BLEAppUtil_getDevAddrMode(void);
+
+/**
  * @brief   Set Phy Preference on the current connection. Apply the same value
  *          for RX and TX. For more information, see the LE 2M PHY section in the User's Guide:
  *          http://software-dl.ti.com/lprf/ble5stack-latest/
@@ -949,6 +993,28 @@ bStatus_t BLEAppUtil_paramUpdateRsp(gapUpdateLinkParamReqEvent_t *pReq, uint8 ac
  * @return  BD address as a string
  */
 char *BLEAppUtil_convertBdAddr2Str(uint8_t *pAddr);
+
+/*********************************************************************
+ * @fn      BLEAppUtil_registerSNCB
+ *
+ * @brief   Register the serving node callback
+ *
+ * @param   None
+ *
+ * @return  SUCCESS, FAILURE
+ */
+bStatus_t BLEAppUtil_registerSNCB(void);
+
+/*********************************************************************
+ * @fn      BLEAppUtil_registerCNCB
+ *
+ * @brief   Register the serving node callback
+ *
+ * @param   None
+ *
+ * @return  SUCCESS, FAILURE
+ */
+bStatus_t BLEAppUtil_registerCNCB(void);
 
 /** @} End BLEAppUtil_Functions */
 

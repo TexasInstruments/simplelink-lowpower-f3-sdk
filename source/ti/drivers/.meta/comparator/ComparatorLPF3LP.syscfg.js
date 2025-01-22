@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,17 +57,17 @@ let devSpecific = {
             description: "Specifies Comparator's positive terminal input source.",
             options: [
                 { name: "External Pin" },
-                { name: "Internal reference VDDA" }
+                { name: "Internal reference VDDS", legacyNames: ["Internal reference VDDA"] }
             ]
         },
         {
             name: "negativeInputSource",
             displayName: "Negative Input Source",
-            default: "Internal reference VDDA",
+            default: "Internal reference VDDS",
             description: "Specifies Comparator's negative terminal input source.",
             options: [
                 { name: "External Pin" },
-                { name: "Internal reference VDDA" },
+                { name: "Internal reference VDDS", legacyNames: ["Internal reference VDDA"] },
                 { name: "Internal reference VDDD" }
             ]
         },
@@ -135,7 +135,7 @@ function _getPinResources(inst)
     let pin;
     /* Default to this, otherwise will be overwritten */
     let positivePin = "External Pin";
-    let negativePin = "Internal reference VDDA";
+    let negativePin = "Internal reference VDDS";
 
     if(inst.comparator) {
         if(inst.comparator.positivePin) {
@@ -216,7 +216,7 @@ function moduleInstances(inst)
     let pinInstances = new Array();
     let shortName = inst.$name.replace("CONFIG_", "");
 
-    if(inst.positiveInputSource !== "Internal reference VDDA") {
+    if(inst.positiveInputSource !== "Internal reference VDDS") {
         pinInstances.push(
             {
                 name: "positivePinInstance",
@@ -236,7 +236,7 @@ function moduleInstances(inst)
             }
         );
     }
-    if(inst.negativeInputSource !== "Internal reference VDDA" &&
+    if(inst.negativeInputSource !== "Internal reference VDDS" &&
        inst.negativeInputSource !== "Internal reference VDDD") {
         pinInstances.push(
             {

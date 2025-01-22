@@ -72,10 +72,20 @@
  *  will be found at/after boot, meaning it will take longer before HFXT is
  *  ready after boot, but when it is ready the amplitude will already be in the
  *  optimal range. This process is done asynchronously, so the application can
- *  do other stuff while waiting for HFXT to be ready.
+ *  do other tasks while waiting for HFXT to be ready.
  *
  *  Enabling initial HFXT amplitude compensation will result in more flash usage
  *  and longer time from boot to the first RF operation.
+ *
+ *  @anchor ti_drivers_PowerCC23XX_HFXT_Temperature_Compensation
+ *  ### HFXT Temperature Compensation (Software TCXO) ###
+ *  HFXT frequency is known to vary with temperature,
+ *  landing outside acceptable operational range. By enabling compensation,
+ *  the device will correct for this variation above the selected temperature.
+ *  The compensation is disabled by default on CC23XX devices.
+ *  The ppm offset used to compensate the HFXT can be approximated by a
+ *  third order polynomial function of temperature in Celsius,
+ *  see #PowerLPF3_initHFXTCompensation().
  *
  *
  *  ============================================================================
@@ -215,8 +225,11 @@ typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
 /*! Constraint: Flash memory needs to enabled during IDLE */
 #define PowerLPF3_NEED_FLASH_IN_IDLE 3
 
+/*! Constraint: Disallow software TCXO during RF operations */
+#define PowerLPF3_DISALLOW_SWTCXO 4
+
 /* \cond */
-#define PowerCC23X0_NUMCONSTRAINTS 4 /* Number of constraints supported */
+#define PowerCC23X0_NUMCONSTRAINTS 5 /* Number of constraints supported */
 /* \endcond */
 
 /*
@@ -526,6 +539,16 @@ void PowerLPF3_enableHFXTCompensation(int16_t tempThreshold, int16_t tempDelta);
  * @pre PowerLPF3_enableHFXTCompensation()
  */
 void PowerLPF3_disableHFXTCompensation(void);
+
+/*!
+ * @brief Force HFXT temperature compensation update
+ *
+ * Should be called after releasing the #PowerLPF3_DISALLOW_SWTCXO constraint
+ * to ensure the correct HFXT frequency.
+ *
+ * @pre PowerLPF3_enableHFXTCompensation()
+ */
+void PowerLPF3_forceHFXTCompensationUpdate(void);
 
 /*!
  * @brief Start initial compensation of the HFXT amplitude

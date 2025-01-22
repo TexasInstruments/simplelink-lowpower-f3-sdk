@@ -158,19 +158,11 @@ extern "C"
 #define NUM_RX_DATA_ENTRIES             4
 
 #ifndef MAX_NUM_AL_ENTRIES
-#ifdef USE_DFL // (Radio core using dynamic filter list)
-#define MAX_NUM_AL_ENTRIES              GAP_BONDINGS_MAX  // at 8 bytes per AL entry
-#else // !(Radio core using dynamic filter list)
-#define MAX_NUM_AL_ENTRIES              16  // at 8 bytes per AL entry
-#endif // (Radio core using dynamic filter list)
+#define MAX_NUM_AL_ENTRIES              5  // at 8 bytes per AL entry
 #endif // (MAX_NUM_AL_ENTRIES undefined)
 
 #ifndef MAX_NUM_RL_ENTRIES
-#ifdef USE_DFL // (Radio core using dynamic filter list)
-#define MAX_NUM_RL_ENTRIES              GAP_BONDINGS_MAX  // at 60 bytes per RL entry
-#else // !(Radio core using dynamic filter list)
 #define MAX_NUM_RL_ENTRIES              10  // at 60 bytes per RL entry
-#endif // (Radio core using dynamic filter list)
 #endif // (MAX_NUM_RL_ENTRIES undefined)
 
 // Number of CTE Sampling Buffers
@@ -300,9 +292,9 @@ extern uint8 maxNumTxDataBufs;
 extern uint8 maxNumCteDataBufs;
 extern uint8 maxNumConns;
 extern uint16 maximumPduSize;
-extern uint8 rfFeModeBias;
 extern uint8 alSize;
 extern uint8 rlSize;
+extern uint8 extALSize;
 extern uint32 extStackSettings;
 
 extern uint16  llUserConfig_maxPduSize;

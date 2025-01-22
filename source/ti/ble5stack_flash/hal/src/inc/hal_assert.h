@@ -197,7 +197,7 @@
 #define HAL_ASSERT_STATEMENT(statement)      // st( statement )
 #define HAL_ASSERT_DECLARATION(declaration)  // declaration
 #else // default handler LEGACY_HAL_ASSERT
-#define HAL_ASSERT(expr)                     st( if (!(expr)) halAssertHandler(); )
+#define HAL_ASSERT(expr)                     st( if (!(expr)) { halAssertHandler(); } )
 #define HAL_ASSERT_FORCED()                  halAssertHandler();
 #define HAL_ASSERT_STATEMENT(statement)      st( statement )
 #define HAL_ASSERT_DECLARATION(declaration)  declaration

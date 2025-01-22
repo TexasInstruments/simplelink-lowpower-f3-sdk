@@ -218,9 +218,9 @@
     "ieee_15_4": {},
     "prop": {
       "swConfig": "LRF_swConfig",
-      "txPowerTable": "LRF_txPowerTable",
       "config": "LRF_config",
-      "cfg_segment_list": "LRF_regConfigList"
+      "cfg_segment_list": "LRF_regConfigList",
+      "txPowerTable": "LRF_txPowerTable"
     }
   }
 }

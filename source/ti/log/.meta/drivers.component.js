@@ -51,6 +51,11 @@ if(!(deviceId.match(/CC23.0/) || deviceId.match(/CC35.0/))) {
 
     logSinks.push("/ti/log/LogSinkITM");
 }
+/* Include LogSinks conditionally on the board */
+if (deviceId.match(/CC23.0/) || deviceId.match(/CC27/))
+{
+    logSinks.push("/ti/log/LogSinkTraceLPF3");
+}
 
 /* Include LogSinkUART for all devices*/
 logSinks.push("/ti/log/LogSinkUART");

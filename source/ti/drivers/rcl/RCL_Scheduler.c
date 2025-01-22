@@ -303,21 +303,25 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
 {
     uintptr_t key;
     uint32_t currentTime;
-    uint32_t actualStartTime = startTime;
+    uint32_t actualStartTime;
+    uint32_t programmedStartTime = startTime;
 
     key = HwiP_disable();
 
     if (startType == SchedulerNoStart)
     {
-        actualStartTime = hal_get_current_time();
+        programmedStartTime = hal_get_current_time();
+        actualStartTime = programmedStartTime;
     }
     else if (startType == SchedulerStartNow)
     {
         /* Find start time to trig now; add a delay to allow trigger to be in the future */
-        actualStartTime = hal_get_current_time() + RCL_SCHEDULER_TRIG_NOW_DELAY;
+        programmedStartTime = hal_get_current_time() + RCL_SCHEDULER_TRIG_NOW_DELAY;
+        actualStartTime = programmedStartTime;
     }
     else
     {
+        actualStartTime = programmedStartTime;
         /* Check if there is enough time for start */
         currentTime = hal_get_current_time();
         if (!RCL_Scheduler_isLater(currentTime + RCL_SCHEDULER_TRIG_NOW_DELAY, startTime))
@@ -349,7 +353,7 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
         int32_t relGracefulStopTime = timing->relGracefulStopTime;
         if (relHardStopTime != 0)
         {
-            rclSchedulerState.hardStopInfo.cmdStopTime = startTime + relHardStopTime;
+            rclSchedulerState.hardStopInfo.cmdStopTime = programmedStartTime + relHardStopTime;
             rclSchedulerState.hardStopInfo.cmdStopEnabled = true;
         }
 
@@ -365,7 +369,7 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
         }
         if (relGracefulStopTime > 0)
         {
-            rclSchedulerState.gracefulStopInfo.cmdStopTime = actualStartTime + relGracefulStopTime;
+            rclSchedulerState.gracefulStopInfo.cmdStopTime = programmedStartTime + relGracefulStopTime;
             rclSchedulerState.gracefulStopInfo.cmdStopEnabled = true;
         }
 

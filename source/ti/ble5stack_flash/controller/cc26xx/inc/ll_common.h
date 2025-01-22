@@ -262,6 +262,7 @@ extern "C"
 #define LL_EVT_ADDRESS_RESOLUTION_TIMEOUT              0x1000
 #define LL_EVT_INIT_DONE                               0x2000
 #define LL_EVT_OUT_OF_MEMORY                           0x4000
+#define LL_EVT_CONN_RX_AVAIL                           0x8000
 #define SYS_RESERVED                                   SYS_EVENT_MSG
 
 // Hardware Failure Status
@@ -366,10 +367,10 @@ extern "C"
 #define LL_CS_SEC_RSP_PL_LEN                           21
 #define LL_CS_SEC_REQ_PL_LEN                           21
 
-// set to one byte larger than the largest control packet length
+// Set to one byte larger than the largest control packet length
 #define LL_INVALID_CTRL_LEN                            74
 
-// miscellaneous fields, in bytes
+// Miscellaneous fields, in bytes
 #define LL_CONNECT_IND_LL_DATA_LEN                     22
 #define LL_CONNECT_IND_PKT_LEN                         34
 #define LL_NUM_BYTES_FOR_CHAN_MAP                      5   //(LL_MAX_NUM_ADV_CHAN+LL_MAX_NUM_DATA_CHAN)/sizeof(uint8)
@@ -384,20 +385,23 @@ extern "C"
 //       0x02: CtrlType=2 (TERMINATE_IND)
 #define LL_TERM_IND_PKT_HDR                            ((1 << LL_DATA_PDU_HDR_MD_BIT) | LL_DATA_PDU_HDR_LLID_CONTROL_PKT)
 
-// max number of sequential NACKS before closing a connection event
+// Max number of sequential NACKS before closing a connection event
 #define LL_MAX_NUM_RX_NACKS_ALLOWED                    4
 
-// control procedure timeout in coarse timer ticks
+// Max number of retries to init the RNG before we fail
+#define LL_MAX_INIT_RNG_RETRIES                        10U
+
+// Control procedure timeout in coarse timer ticks
 #define LL_MAX_CTRL_PROC_TIMEOUT                       64000 // 40s
 
-// authenticated payload timeout
+// Authenticated payload timeout
 #define LL_APTO_DEFAULT_VALUE                          30000 // 30s in ms
 
-// connection related timing
+// Connection related timing
 #define LL_CONNECTION_T_IFS                            150   // in us
 #define LL_CONNECTION_SLOT_TIME                        625   // in us
 
-// max future number of events for an update to parameters or data channel
+// Max future number of events for an update to parameters or data channel
 #define LL_MAX_UPDATE_COUNT_RANGE                      32767
 
 // Connection Setup
@@ -635,7 +639,7 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_POST_RADIO_SET_TX_POWER_MINUS_6_DBM         0x0008
 #define LL_POST_RADIO_SET_TX_POWER_0_DBM               0x0010
 #define LL_POST_RADIO_SET_TX_POWER_4_DBM               0x0020
-#define LL_POST_RADIO_GET_TRNG                         0x0040
+#define LL_POST_RADIO_GET_TRNG                         0x0040 // UNUSED
 #define LL_POST_RADIO_CACHE_RANDOM_NUM                 0x0080
 #define LL_POST_RADIO_EXTEND_RF_RANGE                  0x0100
 
@@ -993,9 +997,9 @@ extern char *llCtrl_BleLogStrings[];
 #endif // CC13X2P
 
 // Connection Event Statuses
-#define LL_CONN_EVT_STAT_SUCCESS                       0
-#define LL_CONN_EVT_STAT_CRC_ERROR                     1
-#define LL_CONN_EVT_STAT_MISSED                        2
+#define LL_CONN_EVT_STAT_SUCCESS                       0U
+#define LL_CONN_EVT_STAT_CRC_ERROR                     1U
+#define LL_CONN_EVT_STAT_MISSED                        2U
 
 // RF FW write param command type
 #define RFC_FWPAR_ADDRESS_TYPE_BYTE                    (0x03)
@@ -1538,7 +1542,7 @@ struct llConn_t
   uint8             pendingPhyUpdate;                   // flag to indicate a PHY update is pending
   uint16            phyUpdateEvent;                     // instant event for PHY update
   phyInfo_t         phyInfo;                            // PHY info for update
-  uint8             phyUpdatedNoChange;                 // indicates that there was a phy update without phy change (Timesync Procedure 1)
+  uint8             phyUpdateSentOrReceivedInd ;        // indicates that there was a phy update sent or recieved
 
   chSelAlgo_t       pChSelAlgo;                         // function for data channel algorithm
 
@@ -1555,7 +1559,8 @@ struct llConn_t
   uint8             numLSTORetries:3;                   // connection number of retries in LSTO state
   uint8             paramUpdateNotifyHost:1;            // indicates that there was a param update with param change in connInterval, connTimeout or peripheralLatency
   uint8             procInitiator:1;                    // indicates that this device has sent the req (initaite the procedure)
-  uint8             reserved:2;                         // reserved
+  uint8             estWithHandover:1;                  // TRUE indicated this connection formed using a connection handover procedure, else FALSE
+  uint8             handoverInProg:1;                   // TRUE indicates handover is in progress
   uint8             ownAddrType;                        // Own device address type - used for dual advertise sets with different types.
 };
 
@@ -1884,7 +1889,6 @@ extern RFBLEDPL_TX_POWER_TYPE   curTxPowerVal;        // current Tx Power Table 
 extern RFBLEDPL_TX_POWER_TYPE   maxTxPwrForDTM;       // max power override for DTM
 extern rfPathComp_t *pRfPathComp;                     // RF Tx Path Compensation data
 extern uint16        taskEndStatus;                   // radio task end status
-extern uint16        postRfOperations;                // flags for post-RF operations
 extern int8          rssiCorrection;                  // RSSI correction
 extern uint8         onePktPerEvt;                    // one packet per event enable flag
 extern uint8         fastTxRespTime;                  // fast TX response time enable flag
@@ -2003,7 +2007,6 @@ extern void                 llResetRadio( void );
 extern uint8                llHaltRadio( uint32 );
 extern void                 llRfStartFS( uint8, uint16 );
 extern void                 llSetFreqTune( uint8 );
-extern void                 llProcessPostRfOps( void );
 extern void                 llSetTxPower( RFBLEDPL_TX_POWER_TYPE );
 extern void                 llSetTxPwrLegacy( uint8 );
 extern int8                 llGetTxPower( void );
@@ -2097,6 +2100,7 @@ extern void                 llGetAdvChanPDU( uint8 *, uint8 *, uint8 *, uint8 *,
 extern uint32               llGenerateValidAccessAddr( void );
 extern uint8                llValidAccessAddr( uint32 );
 extern uint8                llGtSixConsecZerosOrOnes( uint32 );
+extern uint8                llLSBPreamSimilar (uint32);
 extern uint8                llEqSynchWord( uint32 );
 extern uint8                llOneBitSynchWordDiffer( uint32 );
 extern uint8                llEqualBytes( uint32 );
@@ -2194,6 +2198,9 @@ extern void                 llConvertAePhyToBlePhy(uint8 llPhy, uint8 *blePhy);
 extern uint8                llSetPhy(llConnState_t *connPtr, uint8 rxPhy);
 extern void                 llSetRangeDelay(llConnState_t *connPtr);
 
+extern uint16               llPhyToPhyFeatures(uint8 primPhy, uint8 secPhy);
+extern uint16               llAuxPhyFeatures(uint8 secPhy);
+
 extern uint8                RfBleDpl_setConnPhy(uint8 connId, uint8 phy, uint8 phyOpts);
 extern uint8                RfBleDpl_setAdvPhy(void *pRfCmd, uint8 primPhy, uint8 secPhy);
 extern void                 RfBleDpl_setRangeDelay(uint8 connId, uint8 rangeDelay);
@@ -2231,6 +2238,12 @@ uint8 llQueryTxQueue(uint32 addr);
 
 // Connection Ind
 extern uint8 llValidateConnectIndPkt( uint8 * );
+
+// Check if there is a control procedure with instant active for a specific connection
+extern uint8 llCheckConnInstant(llConnState_t *connPtr);
+
+// Removes the handover connection from activeConns list
+extern void llRemoveHandoverConn(uint8 *activeConnsArray, uint8 numActiveConns);
 
 #ifdef __cplusplus
 }

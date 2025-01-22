@@ -156,6 +156,10 @@
     "ieee": [
       {
         "file8": "ieee_802_15_4_oqpsk_250k_cc23xx.json",
+        "phy_files": {
+          "cc23xx": "ieee_802_15_4_oqpsk_250k_cc23xx.phy",
+          "cc27xx": "ieee_802_15_4_oqpsk_250k_cc27xx.phy"
+        },
         "name": "ieee_802_15_4",
         "label": "250 kbps, O-QPSK",
         "protocol": "IEEE 802.15.4",
@@ -163,6 +167,10 @@
       },
       {
         "file8": "ieee_802_15_4_oqpsk_250k_generic_cc23xx.json",
+        "phy_files": {
+          "cc23xx": "ieee_802_15_4_oqpsk_250k_cc23xx.phy",
+          "cc27xx": "ieee_802_15_4_oqpsk_250k_cc27xx.phy"
+        },
         "name": "ieee_802_15_4_gen",
         "label": "Generic 250 kbps, O-QPSK",
         "protocol": "IEEE 802.15.4",

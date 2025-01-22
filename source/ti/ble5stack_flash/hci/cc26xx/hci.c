@@ -105,18 +105,17 @@
  */
 
 // HCI Version and Revision
-#if defined ( CC23X0 ) || defined( CC13X4 ) || defined ( CC33xx )
-  #define HCI_VERSION                                0x0C    // BT Core Specification V5.3
-#else
-  #define HCI_VERSION                                0x0A    // BT Core Specification V5.1
-#endif
+#define HCI_VERSION                                  0x0D    // BT Core Specification V5.4
 
 // Major Version (8 bits) . Minor Version (4 bits) . SubMinor Version (4 bits)
-#if defined( CC23X0 )
-  #define HCI_REVISION                               0x0332  // HCI Version BLE5 3.3.2
-#else
-  #define HCI_REVISION                               0x0228  // HCI Version BLE5 2.2.8
-#endif
+#define HCI_REVISION                                 0x0334  // HCI Version BLE5 3.3.4
+
+// SDK Version Associated with HCI Version
+// Major Version (8 bits) . Minor Version (4 bits). SubMinor Version (4 bits)
+// The direct conversion is as follows:
+// SDK Major Version = HCI Minor Version + 5
+// SDK SubMinor Version = HCI SubMinor Version
+#define HCI_SDK_REVISION_NUM                         0x0840  // SDK Version 8.40.00
 
 // Internal Only Status Values
 #define HCI_STATUS_WARNING_FLAG_UNCHANGED            LL_STATUS_WARNING_FLAG_UNCHANGED
@@ -944,13 +943,13 @@
   #define BYTE_37_EXT_ADV                            (SUP_CMD_NONE)
 #endif  //defined(USE_AE)
 
-#if defined(USE_PRD_ADV) && defined(USE_AE)
+#if defined(USE_PERIODIC_ADV) && defined(USE_AE)
   #define BYTE_37_PRD_ADV                            (SUP_CMD_LE_SET_PRD_ADV_PARAMETERS  | \
                                                       SUP_CMD_LE_SET_PRD_ADV_DATA        | \
                                                       SUP_CMD_LE_SET_PRD_ADV_ENABLE)
-#else  //!defined(USE_PRD_ADV) && defined(USE_AE)
+#else  //!defined(USE_PERIODIC_ADV) && defined(USE_AE)
   #define BYTE_37_PRD_ADV                       (SUP_CMD_NONE)
-#endif  //defined(USE_PRD_ADV) && defined(USE_AE)
+#endif  //defined(USE_PERIODIC_ADV) && defined(USE_AE)
 
 #define SUPPORTED_COMMAND_BYTE_37                    (BYTE_37_COMMON     |                                        \
                                                       BYTE_37_EXT_ADV    |                                        \
@@ -961,7 +960,7 @@
 
 #define BYTE_38_COMMON                               (SUP_CMD_LE_RD_TRANSMIT_POWER)
 
-#if defined(USE_PRD_ADV) && defined(USE_AE)
+#if defined(USE_PERIODIC_SCAN) && defined(USE_AE)
   #define BYTE_38_PRD_ADV                            (SUP_CMD_LE_PRD_ADV_CREATE_SYNC                    | \
                                                       SUP_CMD_LE_PRD_ADV_CREATE_SYNC_CANCEL             | \
                                                       SUP_CMD_LE_PRD_ADV_TERMINATE_SYNC                 | \
@@ -969,9 +968,9 @@
                                                       SUP_CMD_LE_RM_DEVICE_FROM_PRD_ADVERTISER_LIST     | \
                                                       SUP_CMD_LE_CLEAR_PRD_ADVERTISER_LIST              | \
                                                       SUP_CMD_LE_RD_PRD_ADVERTISER_LIST_SIZE)
-#else  //!defined(USE_PRD_ADV) && defined(USE_AE)
+#else  //!defined(USE_PERIODIC_SCAN) && defined(USE_AE)
   #define BYTE_38_PRD_ADV                       (SUP_CMD_NONE)
-#endif  //defined(USE_PRD_ADV) && defined(USE_AE)
+#endif  //defined(USE_PERIODIC_SCAN) && defined(USE_AE)
 
 #define SUPPORTED_COMMAND_BYTE_38                    (BYTE_38_COMMON     |                                 \
                                                       BYTE_38_PRD_ADV)
@@ -985,26 +984,32 @@
                                                       SUP_CMD_LE_RECEIVER_TEST_V3                         | \
                                                       SUP_CMD_LE_TRANSMITTER_TEST_V3)
 
-#if defined(RTLS_CTE) && defined(USE_AE) && defined(USE_PRD_ADV)
-  #define BYTE_39_RTLS_CTE                           (SUP_CMD_LE_SET_CONNLESS_CTE_TX_PARAMS  | \
-                                                      SUP_CMD_LE_SET_CONNLESS_CTE_TX_ENABLE  | \
-                                                      SUP_CMD_LE_SET_CONNLESS_IQ_SAMPLING_ENABLE)
-#else  //!define(RTLS_CTE) && define(USE_AE) && define(USE_PRD_ADV)
-  #define BYTE_39_RTLS_CTE                           (SUP_CMD_NONE)
-#endif  //!define(RTLS_CTE) && define(USE_AE) && define(USE_PRD_ADV)
+#if defined(RTLS_CTE) && defined(USE_AE) && defined(USE_PERIODIC_ADV)
+  #define BYTE_39_RTLS_CTE_TX                           (SUP_CMD_LE_SET_CONNLESS_CTE_TX_PARAMS  | \
+                                                         SUP_CMD_LE_SET_CONNLESS_CTE_TX_ENABLE  |
+#else  //!define(RTLS_CTE) && define(USE_AE) && define(USE_PERIODIC_ADV)
+  #define BYTE_39_RTLS_CTE_TX                          (SUP_CMD_NONE)
+#endif  //!define(RTLS_CTE) && define(USE_AE) && define(USE_PERIODIC_ADV)
 
-#define SUPPORTED_COMMAND_BYTE_39                    (BYTE_39_COMMON      |                                        \
-                                                      BYTE_39_RTLS_CTE)
+#if defined(RTLS_CTE) && defined(USE_AE) && defined(USE_PERIODIC_SCAN)
+  #define BYTE_39_RTLS_CTE_RX                          (SUP_CMD_LE_SET_CONNLESS_IQ_SAMPLING_ENABLE)
+#else  //!define(RTLS_CTE) && define(USE_AE) && define(USE_PERIODIC_SCAN)
+  #define BYTE_39_RTLS_CTE_RX                          (SUP_CMD_NONE)
+#endif  //!define(RTLS_CTE) && define(USE_AE) && define(USE_PERIODIC_SCAN)
+
+#define SUPPORTED_COMMAND_BYTE_39                    (BYTE_39_COMMON      | \
+                                                      BYTE_39_RTLS_CTE_TX | \
+                                                      BYTE_39_RTLS_CTE_RX)
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_40 //
 ///////////////////////////////
 
-#if defined(USE_PRD_ADV) && defined(USE_AE)
+#if defined(USE_PERIODIC_SCAN) && defined(USE_AE)
   #define BYTE_40_PRD_ADV                       (SUP_CMD_LE_SET_PRD_ADV_RECEIVE_ENABLE)
-#else  //!defined(USE_PRD_ADV) && defined(USE_AE)
+#else  //!defined(USE_PERIODIC_SCAN) && defined(USE_AE)
   #define BYTE_40_PRD_ADV                       (SUP_CMD_NONE)
-#endif  //defined(USE_PRD_ADV) && defined(USE_AE)
+#endif  //defined(USE_PERIODIC_SCAN) && defined(USE_AE)
 
 #if defined(RTLS_CTE)
   #define BYTE_40_RTLS_CTE                           (SUP_CMD_LE_SET_CONN_CTE_RECEIVE_PARAMS    | \
@@ -1244,9 +1249,9 @@ supportedCmdsTable_t supportedCmdsTable[SUPPORTED_COMMAND_LEN+1] =
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-uint8  hciPTMenabled;
-uint8  ctrlToHostEnable;
-uint16 numHostBufs;
+uint8  hciPTMenabled  = FALSE;
+uint8  ctrlToHostEnable = FALSE;
+uint16 numHostBufs = 0;
 
 /*******************************************************************************
  * HCI API
@@ -1364,15 +1369,15 @@ hciStatus_t HCI_SendDataPkt( uint16  connHandle,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_DisconnectCmd( uint16 connHandle,
-                               uint8  reason )
-
+hciStatus_t HCI_DisconnectCmd( uint16 connHandle, uint8 reason )
 {
+  hciStatus_t status = HCI_SUCCESS;
 
-  MAP_HCI_CommandStatusEvent( MAP_LL_Disconnect(connHandle, reason),
-                              HCI_DISCONNECT );
+  status = MAP_LL_Disconnect( connHandle, reason );
 
-  return( HCI_SUCCESS );
+  MAP_HCI_CommandStatusEvent( status, HCI_DISCONNECT );
+
+  return (status);
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -1386,7 +1391,7 @@ hciStatus_t HCI_DisconnectCmd( uint16 connHandle,
  */
 hciStatus_t HCI_ReadRemoteVersionInfoCmd( uint16 connHandle )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   MAP_HCI_CommandStatusEvent( HCI_SUCCESS, HCI_READ_REMOTE_VERSION_INFO );
 
@@ -1401,7 +1406,7 @@ hciStatus_t HCI_ReadRemoteVersionInfoCmd( uint16 connHandle )
                                   &status );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -1420,15 +1425,7 @@ hciStatus_t HCI_SetEventMaskCmd( uint8 *pMask )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  if( MAP_HCI_SetEventMaskPage1(pMask) ==  HCI_SUCCESS )
-  {
-    status = HCI_SUCCESS;
-  }
-  else // bad parameters
-  {
-    status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
-  }
-
+  status = MAP_HCI_SetEventMaskPage1( pMask );
   MAP_HCI_CommandCompleteEvent( HCI_SET_EVENT_MASK, sizeof(status), &status );
 
   return( status );
@@ -1446,14 +1443,7 @@ hciStatus_t HCI_SetEventMaskPage2Cmd( uint8 *pMask )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  if( MAP_HCI_SetEventMaskPage2(pMask) ==  HCI_SUCCESS )
-  {
-    status = HCI_SUCCESS;
-  }
-  else // bad parameters
-  {
-    status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
-  }
+  status = MAP_HCI_SetEventMaskPage2( pMask );
 
   MAP_HCI_CommandCompleteEvent( HCI_SET_EVENT_MASK_PAGE_2, sizeof(status), &status );
 
@@ -1469,7 +1459,7 @@ hciStatus_t HCI_SetEventMaskPage2Cmd( uint8 *pMask )
  */
 hciStatus_t HCI_ResetCmd( void )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   // reset the Link Layer
   status = MAP_LL_Reset();
@@ -1484,7 +1474,7 @@ hciStatus_t HCI_ResetCmd( void )
   // complete the command
   MAP_HCI_CommandCompleteEvent( HCI_RESET, sizeof(status), &status);
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -1498,16 +1488,17 @@ hciStatus_t HCI_ResetCmd( void )
 hciStatus_t HCI_ReadTransmitPowerLevelCmd( uint16 connHandle,
                                            uint8  txPwrType )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
   // 3: Transmit Power Level
   uint8 rtnParam[4];
 
-  rtnParam[0] = MAP_LL_ReadTxPowerLevel( connHandle,
-                                         txPwrType,
-                                         (int8 *)&(rtnParam[3]) );
-
+  status = MAP_LL_ReadTxPowerLevel( connHandle,
+                                    txPwrType,
+                                    (int8 *)&(rtnParam[3]) );
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle );
   rtnParam[2] = HI_UINT16( connHandle );
@@ -1516,7 +1507,7 @@ hciStatus_t HCI_ReadTransmitPowerLevelCmd( uint16 connHandle,
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -1565,7 +1556,7 @@ hciStatus_t HCI_SetControllerToHostFlowCtrlCmd( uint8 flowControlEnable )
                                 sizeof(status),
                                 &status);
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -1629,6 +1620,8 @@ hciStatus_t HCI_HostNumCompletedPktCmd( uint8   numHandles,
                                         uint16 *connHandles,
                                         uint16 *numCompletedPkts )
 {
+  hciStatus_t status = HCI_SUCCESS;
+
   // check parameters
   if ( (numHandles != 0) && (connHandles != NULL) &&
        ((numCompletedPkts != NULL) && (*numCompletedPkts != 0)) )
@@ -1657,9 +1650,10 @@ hciStatus_t HCI_HostNumCompletedPktCmd( uint8   numHandles,
 
     // Note: The specification indicates that no event is normally returned.
   }
+#ifndef CONTROLLER_ONLY
   else // bad parameters
   {
-    hciStatus_t status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
+    status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
 
     // Note: The specification indicates that no event is normally returned,
     //       except if there are invalid parameters.
@@ -1667,8 +1661,8 @@ hciStatus_t HCI_HostNumCompletedPktCmd( uint8   numHandles,
                                   sizeof(status),
                                   &status);
   }
-
-  return( HCI_SUCCESS );
+#endif // CONTROLLER_ONLY
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -1684,6 +1678,7 @@ hciStatus_t HCI_HostNumCompletedPktCmd( uint8   numHandles,
  */
 hciStatus_t HCI_ReadLocalVersionInfoCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: HCI Version Number
   // 2: HCI Revision Number LSB
@@ -1698,11 +1693,11 @@ hciStatus_t HCI_ReadLocalVersionInfoCmd( void )
   uint16 comID;
   uint16 subverNum;
 
+  status = MAP_LL_ReadLocalVersionInfo( &version,
+                                        &comID,
+                                        &subverNum );
   // status
-  rtnParam[0] = MAP_LL_ReadLocalVersionInfo( &version,
-                                             &comID,
-                                             &subverNum );
-
+  rtnParam[0] =  status;
   // HCI version and revision
   rtnParam[1] = HCI_VERSION;
   rtnParam[2] = LO_UINT16( HCI_REVISION );
@@ -1719,7 +1714,7 @@ hciStatus_t HCI_ReadLocalVersionInfoCmd( void )
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -1769,16 +1764,19 @@ hciStatus_t HCI_ReadLocalSupportedFeaturesCmd( void )
  */
 hciStatus_t HCI_ReadBDADDRCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0:    Status
   // 1..6: BDADDR
   uint8 rtnParam[7];
 
   // status
-  rtnParam[0] = MAP_LL_ReadBDADDR( &(rtnParam[1]) );
+  status = MAP_LL_ReadBDADDR( &(rtnParam[1]) );
+
+  rtnParam[0] = status;
 
   MAP_HCI_CommandCompleteEvent( HCI_READ_BDADDR, sizeof(rtnParam), rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*
@@ -1792,6 +1790,7 @@ hciStatus_t HCI_ReadBDADDRCmd( void )
  */
 hciStatus_t HCI_ReadRssiCmd( uint16 connHandle )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
@@ -1799,16 +1798,17 @@ hciStatus_t HCI_ReadRssiCmd( uint16 connHandle )
   uint8 rtnParam[4];
 
   // status
-  rtnParam[0] = MAP_LL_ReadRssi( connHandle,
-                                 (int8 *)&(rtnParam[3]) );
+  status = MAP_LL_ReadRssi( connHandle, (int8*) &(rtnParam[3]) );
 
+  // status
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle);
   rtnParam[2] = HI_UINT16( connHandle );
 
   MAP_HCI_CommandCompleteEvent( HCI_READ_RSSI, sizeof(rtnParam), rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -1829,14 +1829,7 @@ hciStatus_t HCI_LE_SetEventMaskCmd( uint8 *pEventMask )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  if ( MAP_HCI_SetEventMaskLe(pEventMask) ==  HCI_SUCCESS)
-  {
-    status = HCI_SUCCESS;
-  }
-  else // bad parameters
-  {
-    status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
-  }
+  status = MAP_HCI_SetEventMaskLe(pEventMask);
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_EVENT_MASK,
                                 sizeof(status),
@@ -2058,22 +2051,12 @@ hciStatus_t HCI_LE_ReadAdvChanTxPowerCmd( void )
   uint8 rtnParam[2];
 
   // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_READ_ADV_CHANNEL_TX_POWER))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-    rtnParam[1] = 0;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LL_ReadAdvChanTxPower( (int8*)&(rtnParam[1]) );
-  }
+  rtnParam[0] = MAP_LL_ReadAdvChanTxPower( (int8*) & ( rtnParam[1] ) );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_READ_ADV_CHANNEL_TX_POWER,
-                                sizeof(rtnParam),
+  MAP_HCI_CommandCompleteEvent( HCI_LE_READ_ADV_CHANNEL_TX_POWER, sizeof ( rtnParam ),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return ( rtnParam[0] );
 }
 #endif // ADV_NCONN_CFG | ADV_CONN_CFG
 
@@ -2140,7 +2123,7 @@ hciStatus_t HCI_LE_CreateConnCmd( uint16  scanInterval,
  */
 hciStatus_t HCI_LE_CreateConnCancelCmd( void )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_CreateConnCancel();
 
@@ -2148,7 +2131,7 @@ hciStatus_t HCI_LE_CreateConnCancelCmd( void )
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // INIT_CFG
 
@@ -2250,7 +2233,7 @@ hciStatus_t HCI_LE_ConnUpdateCmd( uint16 connHandle,
                                   uint16 minLen,
                                   uint16 maxLen )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
 #if defined(CC26XX) || (!defined(CC26XX) && (CTRL_CONFIG & INIT_CFG)) ||       \
     defined(CC13XX) || (!defined(CC13XX) && (CTRL_CONFIG & INIT_CFG)) ||       \
@@ -2269,7 +2252,7 @@ hciStatus_t HCI_LE_ConnUpdateCmd( uint16 connHandle,
 
   MAP_HCI_CommandStatusEvent( status, HCI_LE_CONNECTION_UPDATE );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -2295,7 +2278,7 @@ hciStatus_t HCI_LE_SetHostChanClassificationCmd( uint8 *chanMap )
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // INIT_CFG
 
@@ -2306,6 +2289,7 @@ hciStatus_t HCI_LE_SetHostChanClassificationCmd( uint8 *chanMap )
  */
 hciStatus_t HCI_EXT_SetHostDefChanClassificationCmd( uint8 *chanMap )
 {
+  hciStatus_t status = LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
@@ -2313,17 +2297,18 @@ hciStatus_t HCI_EXT_SetHostDefChanClassificationCmd( uint8 *chanMap )
 
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_HOST_DEF_CHANNEL_CLASSIFICATION_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_HOST_DEF_CHANNEL_CLASSIFICATION_EVENT );
-  rtnParam[2] = LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
-  rtnParam[2] = LL_SetDefChanMap( chanMap );
+  status = LL_SetDefChanMap( chanMap );
 #endif
+
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_HOST_DEFAULT_CHANNEL_CLASSIFICATION,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -2333,6 +2318,7 @@ hciStatus_t HCI_EXT_SetHostDefChanClassificationCmd( uint8 *chanMap )
  */
 hciStatus_t HCI_EXT_SetHostConnChanClassificationCmd( uint8 *chanMap , uint16 connID )
 {
+  hciStatus_t status = LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
@@ -2340,17 +2326,18 @@ hciStatus_t HCI_EXT_SetHostConnChanClassificationCmd( uint8 *chanMap , uint16 co
 
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_HOST_CONN_CHANNEL_CLASSIFICATION_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_HOST_CONN_CHANNEL_CLASSIFICATION_EVENT );
-  rtnParam[2] = LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED;
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
-  rtnParam[2] = MAP_LL_ChanMapUpdate( chanMap,  connID);
+  status = MAP_LL_ChanMapUpdate( chanMap,  connID);
 #endif
+
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_HOST_CONNECTION_CHANNEL_CLASSIFICATION,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
@@ -2428,12 +2415,13 @@ hciStatus_t HCI_LE_ReadRemoteUsedFeaturesCmd( uint16 connHandle )
 hciStatus_t HCI_LE_EncryptCmd( uint8 *key,
                                uint8 *plainText )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0:     Status
   // 1..16: Ciphertext Data
   uint8 rtnParam[KEYLEN + 1] = {0};
 
   // for alignment purposes, we set another buffer to store the ciphertext data, which will be copied to rtnParam buffer later
-  uint8 CipherTextData[KEYLEN] = {0};
+  uint8 CipherTextData[KEYLEN] ALIGNED = {0};
 
   // reverse byte order of key to MSO..LSO, as required by FIPS.
   MAP_HCI_ReverseBytes( &key[0], KEYLEN );
@@ -2441,10 +2429,9 @@ hciStatus_t HCI_LE_EncryptCmd( uint8 *key,
   // reverse byte order of plaintext to MSO..LSO, as required by FIPS.
   MAP_HCI_ReverseBytes( &plainText[0], KEYLEN );
 
-  rtnParam[0] = MAP_LL_Encrypt(  key,
-                                 plainText,
-                                 CipherTextData );
+  status = (hciStatus_t) MAP_LL_Encrypt( key, plainText, CipherTextData );
 
+  rtnParam[0] = status;
   // check for success
   if ( rtnParam[0] == LL_STATUS_SUCCESS )
   {
@@ -2461,7 +2448,7 @@ hciStatus_t HCI_LE_EncryptCmd( uint8 *key,
     MAP_HCI_CommandCompleteEvent( HCI_LE_ENCRYPT, sizeof(uint8), rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -2511,7 +2498,7 @@ hciStatus_t HCI_LE_StartEncyptCmd( uint16  connHandle,
                                    uint8  *encDiv,
                                    uint8  *ltk )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_StartEncrypt( connHandle,
                                 random,
@@ -2520,7 +2507,7 @@ hciStatus_t HCI_LE_StartEncyptCmd( uint16  connHandle,
 
   MAP_HCI_CommandStatusEvent( status, HCI_LE_START_ENCRYPTION );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -2609,6 +2596,7 @@ hciStatus_t HCI_LE_ReadSupportedStatesCmd( void )
 hciStatus_t HCI_ReadAuthPayloadTimeoutCmd( uint16  connHandle,
                                            uint16 *apto )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
@@ -2617,9 +2605,10 @@ hciStatus_t HCI_ReadAuthPayloadTimeoutCmd( uint16  connHandle,
   uint8 rtnParam[5];
   uint16 aptoVal;
 
-  rtnParam[0] = MAP_LL_ReadAuthPayloadTimeout( connHandle,
-                                               &aptoVal );
+  status = MAP_LL_ReadAuthPayloadTimeout( connHandle,
+                                          &aptoVal );
 
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle );
   rtnParam[2] = HI_UINT16( connHandle );
@@ -2632,7 +2621,7 @@ hciStatus_t HCI_ReadAuthPayloadTimeoutCmd( uint16  connHandle,
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -2647,14 +2636,16 @@ hciStatus_t HCI_ReadAuthPayloadTimeoutCmd( uint16  connHandle,
 hciStatus_t HCI_WriteAuthPayloadTimeoutCmd( uint16 connHandle,
                                             uint16 aptoValue )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
   uint8 rtnParam[3];
 
-  rtnParam[0] = MAP_LL_WriteAuthPayloadTimeout( connHandle,
-                                                aptoValue );
+  status = MAP_LL_WriteAuthPayloadTimeout( connHandle,
+                                           aptoValue );
 
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle );
   rtnParam[2] = HI_UINT16( connHandle );
@@ -2663,7 +2654,7 @@ hciStatus_t HCI_WriteAuthPayloadTimeoutCmd( uint16 connHandle,
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -2722,13 +2713,15 @@ hciStatus_t HCI_LE_RemoteConnParamReqReplyCmd( uint16 connHandle,
 hciStatus_t HCI_LE_RemoteConnParamReqNegReplyCmd( uint16 connHandle,
                                                   uint8  reason )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
   uint8 rtnParam[3];
 
-  rtnParam[0] = MAP_LL_RemoteConnParamReqNegReply( connHandle,
-                                                   reason );
+  status = (hciStatus_t) MAP_LL_RemoteConnParamReqNegReply( connHandle,
+                                                            reason );
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle );
   rtnParam[2] = HI_UINT16( connHandle );
@@ -2737,7 +2730,7 @@ hciStatus_t HCI_LE_RemoteConnParamReqNegReplyCmd( uint16 connHandle,
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -2755,15 +2748,15 @@ hciStatus_t HCI_LE_SetDataLenCmd( uint16 connHandle,
                                   uint16 txOctets,
                                   uint16 txTime)
 {
+  uint8 status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
   uint8 rtnParam[3];
 
-  rtnParam[0] = MAP_LL_SetDataLen( connHandle,
-                                   txOctets,
-                                   txTime );
+  status = (hciStatus_t) MAP_LL_SetDataLen( connHandle, txOctets, txTime );
 
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle );
   rtnParam[2] = HI_UINT16( connHandle );
@@ -2772,7 +2765,7 @@ hciStatus_t HCI_LE_SetDataLenCmd( uint16 connHandle,
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -2825,16 +2818,14 @@ hciStatus_t HCI_LE_WriteSuggestedDefaultDataLenCmd( uint16 txOctets,
                                                     uint16 txTime )
 {
   // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_WriteDefaultDataLen( txOctets,
-                                            txTime );
+  status = MAP_LL_WriteDefaultDataLen( txOctets, txTime );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(status), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -2898,26 +2889,21 @@ hciStatus_t HCI_LE_ReadMaxDataLenCmd( void )
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_AddDeviceToResolvingListCmd( uint8  peerIdAddrType,
+hciStatus_t HCI_LE_AddDeviceToResolvingListCmd( uint8 peerIdAddrType,
                                                 uint8 *peerIdAddr,
                                                 uint8 *peerIRK,
                                                 uint8 *localIRK )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_AddDeviceToResolvingList( peerIdAddrType,
-                                                 peerIdAddr,
-                                                 peerIRK,
-                                                 localIRK );
+  status = MAP_LL_AddDeviceToResolvingList( peerIdAddrType, peerIdAddr, peerIRK,
+                                            localIRK );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_ADD_DEVICE_TO_RESOLVING_LIST,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(status), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 /*******************************************************************************
  * This LE API is used to remove one device fromthe list of address
@@ -2926,22 +2912,18 @@ hciStatus_t HCI_LE_AddDeviceToResolvingListCmd( uint8  peerIdAddrType,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_RemoveDeviceFromResolvingListCmd( uint8  peerIdAddrType,
+hciStatus_t HCI_LE_RemoveDeviceFromResolvingListCmd( uint8 peerIdAddrType,
                                                      uint8 *peerIdAddr )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_RemoveDeviceFromResolvingList( peerIdAddrType,
-                                                      peerIdAddr );
+  status = MAP_LL_RemoveDeviceFromResolvingList( peerIdAddrType, peerIdAddr );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_REMOVE_DEVICE_FROM_RESOLVING_LIST,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(status), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 /*******************************************************************************
  * This LE API is used to remove all devices from the list of address
@@ -2952,18 +2934,15 @@ hciStatus_t HCI_LE_RemoveDeviceFromResolvingListCmd( uint8  peerIdAddrType,
  */
 hciStatus_t HCI_LE_ClearResolvingListCmd( void )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_ClearResolvingList();
+  status = MAP_LL_ClearResolvingList( );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_CLEAR_RESOLVING_LIST,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_CLEAR_RESOLVING_LIST, sizeof(status),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 /*******************************************************************************
  * This LE API is used to read the total number of address translation
@@ -2973,19 +2952,19 @@ hciStatus_t HCI_LE_ClearResolvingListCmd( void )
  */
 hciStatus_t HCI_LE_ReadResolvingListSizeCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Resolving List Size
   uint8 rtnParam[2];
 
-  rtnParam[0] = MAP_LL_ReadResolvingListSize( &rtnParam[1] );
+  status = MAP_LL_ReadResolvingListSize( &rtnParam[1] );
+  rtnParam[0] = status;
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_READ_RESOLVING_LIST_SIZE,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(rtnParam), rtnParam );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 /*******************************************************************************
  * This LE API is used to get the current peer Resolvable Private Address
@@ -2997,24 +2976,23 @@ hciStatus_t HCI_LE_ReadResolvingListSizeCmd( void )
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_ReadPeerResolvableAddressCmd( uint8  peerIdAddrType,
+hciStatus_t HCI_LE_ReadPeerResolvableAddressCmd( uint8 peerIdAddrType,
                                                  uint8 *peerIdAddr )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0:    Status
   // 1..6: Peer Resolvable Address
   uint8 rtnParam[7];
 
-  rtnParam[0] = MAP_LL_ReadPeerResolvableAddress(  peerIdAddrType,
-                                                   peerIdAddr,
-                                                  &rtnParam[1] );
+  status = MAP_LL_ReadPeerResolvableAddress( peerIdAddrType, peerIdAddr,
+                                             &rtnParam[1] );
+  rtnParam[0] = status;
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_READ_PEER_RESOLVABLE_ADDRESS,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(rtnParam), rtnParam );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 /*******************************************************************************
  * This LE API is used to get the current local Resolvable Private Address
@@ -3026,24 +3004,23 @@ hciStatus_t HCI_LE_ReadPeerResolvableAddressCmd( uint8  peerIdAddrType,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_ReadLocalResolvableAddressCmd( uint8  localIdAddrType,
+hciStatus_t HCI_LE_ReadLocalResolvableAddressCmd( uint8 localIdAddrType,
                                                   uint8 *localIdAddr )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0:    Status
   // 1..6: Local Resolvable Address
   uint8 rtnParam[7];
 
-  rtnParam[0] = MAP_LL_ReadLocalResolvableAddress(  localIdAddrType,
-                                                    localIdAddr,
-                                                   &rtnParam[1] );
+  status = MAP_LL_ReadLocalResolvableAddress( localIdAddrType, localIdAddr,
+                                              &rtnParam[1] );
+  rtnParam[0] = status;
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_READ_LOCAL_RESOLVABLE_ADDRESS,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(rtnParam), rtnParam );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 /*******************************************************************************
  * This LE API is used to enable resolution of Resolvable Private Addresses
@@ -3055,16 +3032,14 @@ hciStatus_t HCI_LE_ReadLocalResolvableAddressCmd( uint8  localIdAddrType,
  */
 hciStatus_t HCI_LE_SetAddressResolutionEnableCmd( uint8 addrResolutionEnable )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_SetAddressResolutionEnable( addrResolutionEnable );
+  status = MAP_LL_SetAddressResolutionEnable( addrResolutionEnable );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_ADDRESS_RESOLUTION_ENABLE,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(status), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 
@@ -3078,16 +3053,14 @@ hciStatus_t HCI_LE_SetAddressResolutionEnableCmd( uint8 addrResolutionEnable )
  */
 hciStatus_t HCI_LE_SetResolvablePrivateAddressTimeoutCmd( uint16 rpaTimeout )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_SetResolvablePrivateAddressTimeout( rpaTimeout );
+  status = MAP_LL_SetResolvablePrivateAddressTimeout( rpaTimeout );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(status), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 
@@ -3099,24 +3072,18 @@ hciStatus_t HCI_LE_SetResolvablePrivateAddressTimeoutCmd( uint16 rpaTimeout )
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetPrivacyModeCmd( uint8  peerIdAddrType,
-                                      uint8 *peerIdAddr,
-                                      uint8  privacyMode )
+hciStatus_t HCI_LE_SetPrivacyModeCmd( uint8 peerIdAddrType, uint8 *peerIdAddr,
+                                      uint8 privacyMode )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LL_SetPrivacyMode( peerIdAddrType,
-                                       peerIdAddr,
-                                       privacyMode );
+  status = MAP_LL_SetPrivacyMode( peerIdAddrType, peerIdAddr, privacyMode );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PRIVACY_MODE,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PRIVACY_MODE, sizeof(status),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
-
 
 // V4.2 - Secure Connections
 
@@ -3300,9 +3267,8 @@ hciStatus_t HCI_LE_GenerateDHKeyV2Cmd( uint8 *publicKey, uint8 keyType )
     return (HCI_ERROR_CODE_MEM_CAP_EXCEEDED);
   }
 #else
-  MAP_LL_GenerateDHKeyCmd( publicKey );
+  return( MAP_LL_GenerateDHKeyCmd( publicKey ) );
 
-  return( HCI_SUCCESS );
 #endif
 }
 
@@ -3328,6 +3294,7 @@ hciStatus_t HCI_LE_GenerateDHKeyV2Cmd( uint8 *publicKey, uint8 keyType )
  */
 hciStatus_t HCI_LE_ReadPhyCmd( uint16 connHandle )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Connection Handle LSB
   // 2: Connection Handle MSB
@@ -3335,10 +3302,11 @@ hciStatus_t HCI_LE_ReadPhyCmd( uint16 connHandle )
   // 4: Rx PHY
   uint8 rtnParam[5];
 
-  rtnParam[0] = MAP_LL_ReadPhy( connHandle,
-                                &rtnParam[3],
-                                &rtnParam[4] );
+  status = MAP_LL_ReadPhy( connHandle,
+                           &rtnParam[3],
+                           &rtnParam[4] );
 
+  rtnParam[0] = status;
   // connection handle
   rtnParam[1] = LO_UINT16( connHandle );
   rtnParam[2] = HI_UINT16( connHandle );
@@ -3347,7 +3315,7 @@ hciStatus_t HCI_LE_ReadPhyCmd( uint16 connHandle )
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -3363,7 +3331,7 @@ hciStatus_t HCI_LE_SetDefaultPhyCmd( uint8 allPhys,
                                      uint8 txPhy,
                                      uint8 rxPhy )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_SetDefaultPhy( allPhys,
                                  txPhy,
@@ -3373,7 +3341,7 @@ hciStatus_t HCI_LE_SetDefaultPhyCmd( uint8 allPhys,
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -3391,7 +3359,7 @@ hciStatus_t HCI_LE_SetPhyCmd( uint16 connHandle,
                               uint8  rxPhy,
                               uint16 phyOpts )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_SetPhy( connHandle,
                           allPhys,
@@ -3401,7 +3369,7 @@ hciStatus_t HCI_LE_SetPhyCmd( uint16 connHandle,
 
   MAP_HCI_CommandStatusEvent( status,
                               HCI_LE_SET_PHY );
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -3443,7 +3411,7 @@ hciStatus_t HCI_LE_TransmitterTestCmd( uint8 txChan,
  */
 hciStatus_t HCI_LE_ReceiverTestCmd( uint8 rxChan )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
 #if defined( CC26XX ) || defined( CC13XX ) || defined( CC23X0 )
   status = MAP_LL_DirectTestRxTest( rxChan,
@@ -3456,7 +3424,7 @@ hciStatus_t HCI_LE_ReceiverTestCmd( uint8 rxChan )
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -3469,7 +3437,7 @@ hciStatus_t HCI_LE_EnhancedRxTestCmd( uint8 rxChan,
                                       uint8 rxPhy,
                                       uint8 modIndex )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_EnhancedRxTest( rxChan,
                                   rxPhy,
@@ -3479,7 +3447,7 @@ hciStatus_t HCI_LE_EnhancedRxTestCmd( uint8 rxChan,
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -3494,7 +3462,7 @@ hciStatus_t HCI_LE_EnhancedTxTestCmd( uint8 txChan,
                                       uint8 payloadType,
                                       uint8 txPhy )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_EnhancedTxTest( txChan,
                                   payloadLen,
@@ -3505,7 +3473,7 @@ hciStatus_t HCI_LE_EnhancedTxTestCmd( uint8 txChan,
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -3600,7 +3568,7 @@ hciStatus_t HCI_LE_TestEndCmd( void )
                                   rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -3610,17 +3578,21 @@ hciStatus_t HCI_LE_TestEndCmd( void )
  */
 hciStatus_t HCI_LE_ReadTxPowerCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: Minimum Tx Power
   // 2: Maximum Tx Power
   uint8 rtnParam[3];
-  rtnParam[0] = MAP_LE_ReadTxPowerCmd( (int8 *)&rtnParam[1],
+  status = MAP_LE_ReadTxPowerCmd( (int8 *)&rtnParam[1],
                                        (int8 *)&rtnParam[2] );
+
+  rtnParam[0] = status;
+
   MAP_HCI_CommandCompleteEvent( HCI_LE_READ_TX_POWER,
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -3631,6 +3603,7 @@ hciStatus_t HCI_LE_ReadTxPowerCmd( void )
  */
 hciStatus_t HCI_LE_ReadRfPathCompCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: RF Tx Path Compensation LSB
   // 2: RF Tx Path Compensation MSB
@@ -3641,9 +3614,10 @@ hciStatus_t HCI_LE_ReadRfPathCompCmd( void )
   int16 temp_rtnParam3;
 
   // Use tempValue to make sure the passed pointer is aligned
-  rtnParam[0] = MAP_LE_ReadRfPathCompCmd(  &temp_rtnParam1,
-                                           &temp_rtnParam3 );
+  status = MAP_LE_ReadRfPathCompCmd(  &temp_rtnParam1,
+                                      &temp_rtnParam3 );
 
+  rtnParam[0] = status;
   // Save the value
   rtnParam[1] = LO_UINT16(temp_rtnParam1);
   rtnParam[2] = HI_UINT16(temp_rtnParam1);
@@ -3655,7 +3629,7 @@ hciStatus_t HCI_LE_ReadRfPathCompCmd( void )
                                 sizeof(rtnParam),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -3669,16 +3643,16 @@ hciStatus_t HCI_LE_ReadRfPathCompCmd( void )
 hciStatus_t HCI_LE_WriteRfPathCompCmd( int16 txPathParam,
                                        int16 rxPathParam )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  rtnParam[0] = MAP_LE_WriteRfPathCompCmd( txPathParam,
-                                           rxPathParam );
+  status = MAP_LE_WriteRfPathCompCmd( txPathParam,
+                                      rxPathParam );
+
   MAP_HCI_CommandCompleteEvent( HCI_LE_WRITE_RF_PATH_COMPENSATION,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof(status),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 #if defined(CTRL_CONFIG) && ((CTRL_CONFIG & ADV_CONN_CFG) || (CTRL_CONFIG & INIT_CFG))
@@ -3853,28 +3827,15 @@ hciStatus_t HCI_LE_SetPeriodicAdvParamsCmd( uint8 advHandle,
                                             uint16 periodicAdvIntervalMax,
                                             uint16 periodicAdvProp )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_SET_PERIODIC_ADV_PARAMETERS))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_SetPeriodicAdvParams(advHandle,
-                                              periodicAdvIntervalMin,
-                                              periodicAdvIntervalMax,
-                                              periodicAdvProp);
-  }
+  status = MAP_LE_SetPeriodicAdvParams( advHandle, periodicAdvIntervalMin,
+                                        periodicAdvIntervalMax, periodicAdvProp );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_PARAMETERS,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_PARAMETERS, sizeof(status),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -3882,33 +3843,17 @@ hciStatus_t HCI_LE_SetPeriodicAdvParamsCmd( uint8 advHandle,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetPeriodicAdvDataCmd( uint8 advHandle,
-                                          uint8 operation,
-                                          uint8 dataLength,
-                                          uint8 *data )
+hciStatus_t HCI_LE_SetPeriodicAdvDataCmd( uint8 advHandle, uint8 operation,
+                                          uint8 dataLength, uint8 *data )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_SET_PERIODIC_ADV_DATA))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_SetPeriodicAdvData(advHandle,
-                                            operation,
-                                            dataLength,
-                                            data);
-  }
+  status = MAP_LE_SetPeriodicAdvData( advHandle, operation, dataLength, data );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_DATA,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_DATA, sizeof ( status ),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -3917,29 +3862,16 @@ hciStatus_t HCI_LE_SetPeriodicAdvDataCmd( uint8 advHandle,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetPeriodicAdvEnableCmd( uint8 enable,
-                                            uint8 advHandle )
+hciStatus_t HCI_LE_SetPeriodicAdvEnableCmd( uint8 enable, uint8 advHandle )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_SET_PERIODIC_ADV_ENABLE))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_SetPeriodicAdvEnable(enable,
-                                              advHandle);
-  }
+  status = MAP_LE_SetPeriodicAdvEnable( enable, advHandle );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_ENABLE,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_ENABLE, sizeof ( status ),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4011,36 +3943,19 @@ hciStatus_t HCI_LE_SetConnectionlessCteTransmitEnableCmd( uint8 advHandle,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_PeriodicAdvCreateSyncCmd( uint8  options,
-                                             uint8  advSID,
-                                             uint8  advAddrType,
-                                             uint8  *advAddress,
-                                             uint16 skip,
-                                             uint16 syncTimeout,
-                                             uint8  syncCteType )
+hciStatus_t HCI_LE_PeriodicAdvCreateSyncCmd( uint8 options, uint8 advSID,
+                                             uint8 advAddrType, uint8 *advAddress,
+                                             uint16 skip, uint16 syncTimeout,
+                                             uint8 syncCteType )
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_PERIODIC_ADV_CREATE_SYNC))
-  {
-    status = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    status = MAP_LE_PeriodicAdvCreateSync( options,
-                                           advSID,
-                                           advAddrType,
-                                           advAddress,
-                                           skip,
-                                           syncTimeout,
-                                           syncCteType );
-  }
+  status = MAP_LE_PeriodicAdvCreateSync( options, advSID, advAddrType, advAddress, skip,
+                                         syncTimeout, syncCteType );
 
   MAP_HCI_CommandStatusEvent( status, HCI_LE_PERIODIC_ADV_CREATE_SYNC );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4051,25 +3966,14 @@ hciStatus_t HCI_LE_PeriodicAdvCreateSyncCmd( uint8  options,
  */
 hciStatus_t HCI_LE_PeriodicAdvCreateSyncCancelCmd( void )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_PeriodicAdvCreateSyncCancel();
-  }
+  status = MAP_LE_PeriodicAdvCreateSyncCancel();
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL, sizeof ( status ),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4080,25 +3984,14 @@ hciStatus_t HCI_LE_PeriodicAdvCreateSyncCancelCmd( void )
  */
 hciStatus_t HCI_LE_PeriodicAdvTerminateSyncCmd( uint16 syncHandle )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_PERIODIC_ADV_TERMINATE_SYNC))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_PeriodicAdvTerminateSync(syncHandle);
-  }
+  status = MAP_LE_PeriodicAdvTerminateSync( syncHandle );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_PERIODIC_ADV_TERMINATE_SYNC,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_PERIODIC_ADV_TERMINATE_SYNC, sizeof ( status ),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4107,31 +4000,17 @@ hciStatus_t HCI_LE_PeriodicAdvTerminateSyncCmd( uint16 syncHandle )
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_AddDeviceToPeriodicAdvListCmd( uint8 advAddrType,
-                                                  uint8 *advAddress,
+hciStatus_t HCI_LE_AddDeviceToPeriodicAdvListCmd( uint8 advAddrType, uint8 *advAddress,
                                                   uint8 advSID )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_ADD_DEVICE_TO_PERIODIC_ADV_LIST))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_AddDeviceToPeriodicAdvList(advAddrType,
-                                                    advAddress,
-                                                    advSID);
-  }
+  status = MAP_LE_AddDeviceToPeriodicAdvList( advAddrType, advAddress, advSID );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_ADD_DEVICE_TO_PERIODIC_ADV_LIST,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_ADD_DEVICE_TO_PERIODIC_ADV_LIST, sizeof ( status ),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4141,30 +4020,16 @@ hciStatus_t HCI_LE_AddDeviceToPeriodicAdvListCmd( uint8 advAddrType,
  * Public function defined in hci.h.
  */
 hciStatus_t HCI_LE_RemoveDeviceFromPeriodicAdvListCmd( uint8 advAddrType,
-                                                       uint8 *advAddress,
-                                                       uint8 advSID )
+                                                       uint8 *advAddress, uint8 advSID )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_REMOVE_DEVICE_FROM_PERIODIC_ADV_LIST))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_RemoveDeviceFromPeriodicAdvList(advAddrType,
-                                                         advAddress,
-                                                         advSID);
-  }
+  status = MAP_LE_RemoveDeviceFromPeriodicAdvList( advAddrType, advAddress, advSID );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_REMOVE_DEVICE_FROM_PERIODIC_ADV_LIST,
-                                sizeof(rtnParam),
-                                rtnParam );
+                                sizeof ( status ), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4175,25 +4040,14 @@ hciStatus_t HCI_LE_RemoveDeviceFromPeriodicAdvListCmd( uint8 advAddrType,
  */
 hciStatus_t HCI_LE_ClearPeriodicAdvListCmd( void )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_CLEAR_PERIODIC_ADV_LIST))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-  rtnParam[0] = MAP_LE_ClearPeriodicAdvList();
-  }
+  status = MAP_LE_ClearPeriodicAdvList( );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_CLEAR_PERIODIC_ADV_LIST,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_CLEAR_PERIODIC_ADV_LIST, sizeof ( status ),
+                                &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4204,26 +4058,19 @@ hciStatus_t HCI_LE_ClearPeriodicAdvListCmd( void )
  */
 hciStatus_t HCI_LE_ReadPeriodicAdvListSizeCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Status
   // 1: List Size
   uint8 rtnParam[2];
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_READ_PERIODIC_ADV_LIST_SIZE))
-  {
-    rtnParam[0] = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LE_ReadPeriodicAdvListSize( &rtnParam[1] );
-  }
+  status = MAP_LE_ReadPeriodicAdvListSize( &rtnParam[1] );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_READ_PERIODIC_ADV_LIST_SIZE,
-                                sizeof(rtnParam),
+  rtnParam[0] = status;
+
+  MAP_HCI_CommandCompleteEvent( HCI_LE_READ_PERIODIC_ADV_LIST_SIZE, sizeof ( rtnParam ),
                                 rtnParam );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4232,20 +4079,16 @@ hciStatus_t HCI_LE_ReadPeriodicAdvListSizeCmd( void )
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetPeriodicAdvReceiveEnableCmd( uint16 syncHandle,
-                                                   uint8  enable )
+hciStatus_t HCI_LE_SetPeriodicAdvReceiveEnableCmd( uint16 syncHandle, uint8 enable )
 {
-  // 0: Status
-  uint8 rtnParam[1];
-  // status
-  rtnParam[0] = MAP_LE_SetPeriodicAdvReceiveEnable(syncHandle,
-                                               enable);
+  hciStatus_t status = HCI_SUCCESS;
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_RECEIVE_ENABLE,
-                                sizeof(rtnParam),
-                                rtnParam );
+  status = MAP_LE_SetPeriodicAdvReceiveEnable( syncHandle, enable );
 
-  return( HCI_SUCCESS );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_RECEIVE_ENABLE, sizeof ( status ),
+                                &status );
+
+  return ( status );
 }
 
 /*******************************************************************************
@@ -4295,29 +4138,15 @@ hciStatus_t HCI_LE_SetConnectionlessIqSamplingEnableCmd( uint16 syncHandle,
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetHostFeature( uint8 bitNumber,
-                                   uint8 bitValue )
+hciStatus_t HCI_LE_SetHostFeature( uint8 bitNumber, uint8 bitValue )
 {
-  // 0: Status
-  uint8 rtnParam[1];
+  hciStatus_t status = HCI_SUCCESS;
 
-  // status
-  // Check if a legacy/extended command mixing is allowed
-  if(MAP_checkLegacyHCICmdStatus(HCI_LE_READ_PERIODIC_ADV_LIST_SIZE))
-  {
-    rtnParam[0] = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-  }
-  else
-  {
-    rtnParam[0] = MAP_LL_SetHostFeature( bitNumber,
-                                         bitValue );
-  }
+  status = MAP_LL_SetHostFeature( bitNumber, bitValue );
 
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_HOST_FEATURE,
-                                sizeof(rtnParam),
-                                rtnParam );
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_HOST_FEATURE, sizeof ( status ), &status );
 
-  return( HCI_SUCCESS );
+  return ( status );
 }
 
 /*
@@ -4335,15 +4164,18 @@ hciStatus_t HCI_LE_SetHostFeature( uint8 bitNumber,
  */
 hciStatus_t HCI_EXT_SetRxGainCmd( uint8 rxGain )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
   uint8 cmdComplete = TRUE;
 
+  status = MAP_LL_EXT_SetRxGain( rxGain, &cmdComplete );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_RX_GAIN_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_RX_GAIN_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetRxGain( rxGain, &cmdComplete );
+  rtnParam[2] = status;
 
   // check if the command was performed, or if it was delayed
   // Note: If delayed, a callback will be generated by the LL.
@@ -4354,7 +4186,7 @@ hciStatus_t HCI_EXT_SetRxGainCmd( uint8 rxGain )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -4367,15 +4199,19 @@ hciStatus_t HCI_EXT_SetRxGainCmd( uint8 rxGain )
  */
 hciStatus_t HCI_EXT_SetTxPowerDbmCmd( int8 txPower, uint8 fraction )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
   uint8 cmdComplete = TRUE;
 
+  status = MAP_LL_EXT_SetTxPowerDbm( txPower, fraction, &cmdComplete );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_TX_POWER_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_TX_POWER_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetTxPowerDbm( txPower, fraction, &cmdComplete );
+  rtnParam[2] = status;
+
 
   // check if the command was performed, or if it was delayed
   // Note: If delayed, a callback will be generated by the LL.
@@ -4386,7 +4222,7 @@ hciStatus_t HCI_EXT_SetTxPowerDbmCmd( int8 txPower, uint8 fraction )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
@@ -4503,6 +4339,7 @@ hciStatus_t HCI_EXT_DeclareNvUsageCmd( uint8 mode )
 hciStatus_t HCI_EXT_DecryptCmd( uint8 *key,
                                 uint8 *encText )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
@@ -4510,21 +4347,23 @@ hciStatus_t HCI_EXT_DecryptCmd( uint8 *key,
   uint8 rtnParam[KEYLEN + 3] = {0};
 
   // for alignment purposes, we set another buffer to store the plaintext data, which will be copied to rtnParam buffer later
-  uint8 PlainTextData[KEYLEN] = {0};
-
-  rtnParam[0] = LO_UINT16( HCI_EXT_DECRYPT_EVENT );
-  rtnParam[1] = HI_UINT16( HCI_EXT_DECRYPT_EVENT );
+  uint8 PlainTextData[KEYLEN] ALIGNED = {0};
 
   // reverse byte order of key to MSO..LSO, as required by FIPS.
   MAP_HCI_ReverseBytes( &key[0], KEYLEN );
 
   // reverse byte order of ciphertext to MSO..LSO, as required by FIPS.
   MAP_HCI_ReverseBytes( &encText[0], KEYLEN );
-  rtnParam[2] = MAP_LL_EXT_Decrypt(  key,
-                                     encText,
-                                     PlainTextData );
+  status = MAP_LL_EXT_Decrypt( key,
+                               encText,
+                               PlainTextData );
+
+  rtnParam[0] = LO_UINT16( HCI_EXT_DECRYPT_EVENT );
+  rtnParam[1] = HI_UINT16( HCI_EXT_DECRYPT_EVENT );
+  rtnParam[2] = status;
+
   // check if okay
-  if ( rtnParam[2] == LL_STATUS_SUCCESS )
+  if ( status == LL_STATUS_SUCCESS )
   {
     // reverse byte order of plaintext to LSO..MSO for transport layer
     MAP_HCI_ReverseBytes( PlainTextData, KEYLEN );
@@ -4545,7 +4384,7 @@ hciStatus_t HCI_EXT_DecryptCmd( uint8 *key,
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4556,20 +4395,23 @@ hciStatus_t HCI_EXT_DecryptCmd( uint8 *key,
  */
 hciStatus_t HCI_EXT_SetLocalSupportedFeaturesCmd( uint8 *localFeatures )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetLocalSupportedFeatures( localFeatures );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_LOCAL_SUPPORTED_FEATURES_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_LOCAL_SUPPORTED_FEATURES_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetLocalSupportedFeatures( localFeatures );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_LOCAL_SUPPORTED_FEATURES,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4582,20 +4424,23 @@ hciStatus_t HCI_EXT_SetLocalSupportedFeaturesCmd( uint8 *localFeatures )
  */
 hciStatus_t HCI_EXT_SetFastTxResponseTimeCmd( uint8 control )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetFastTxResponseTime( control );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_FAST_TX_RESP_TIME_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_FAST_TX_RESP_TIME_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetFastTxResponseTime( control );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_FAST_TX_RESP_TIME,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG
 
@@ -4609,20 +4454,23 @@ hciStatus_t HCI_EXT_SetFastTxResponseTimeCmd( uint8 control )
  */
 hciStatus_t HCI_EXT_SetPeripheralLatencyOverrideCmd( uint8 control )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetPeripheralLatencyOverride( control );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_OVERRIDE_PL_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_OVERRIDE_PL_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetPeripheralLatencyOverride( control );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_OVERRIDE_PL,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG
 
@@ -4643,19 +4491,23 @@ hciStatus_t HCI_EXT_SetPeripheralLatencyOverrideCmd( uint8 control )
 hciStatus_t HCI_EXT_ModemTestTxCmd( uint8 cwMode,
                                     uint8 txChan )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_ModemTestTx( cwMode, txChan );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_MODEM_TEST_TX_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_MODEM_TEST_TX_EVENT );
-  rtnParam[2] = MAP_LL_EXT_ModemTestTx( cwMode, txChan );
+  rtnParam[2] = status;
+
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_MODEM_TEST_TX,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4710,20 +4562,23 @@ hciStatus_t HCI_EXT_ModemHopTestTxCmd( void )
  */
 hciStatus_t HCI_EXT_ModemTestRxCmd( uint8 rxChan )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_ModemTestRx( rxChan );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_MODEM_TEST_RX_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_MODEM_TEST_RX_EVENT );
-  rtnParam[2] = MAP_LL_EXT_ModemTestRx( rxChan );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_MODEM_TEST_RX,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4744,24 +4599,24 @@ hciStatus_t HCI_EXT_EnhancedModemTestTxCmd( uint8 cwMode,
                                             uint8 rfPhy,
                                             uint8 rfChan )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  // continuous transmitter modem test is currently not supported for CC23X0 and CC33xx
+  status = MAP_LL_EXT_EnhancedModemTestTx( cwMode, rfPhy, rfChan );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_ENHANCED_MODEM_TEST_TX_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_ENHANCED_MODEM_TEST_TX_EVENT );
-
-  // continuous transmitter modem test is currently not supported for CC23X0 and CC33xx
-  rtnParam[2] = MAP_LL_EXT_EnhancedModemTestTx( cwMode,
-                                                rfPhy,
-                                                rfChan );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_ENHANCED_MODEM_TEST_TX,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4817,21 +4672,23 @@ hciStatus_t HCI_EXT_EnhancedModemHopTestTxCmd( uint8 payloadLen,
 hciStatus_t HCI_EXT_EnhancedModemTestRxCmd( uint8 rfPhy,
                                             uint8 rfChan )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_EnhancedModemTestRx( rfPhy, rfChan );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_ENHANCED_MODEM_TEST_RX_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_ENHANCED_MODEM_TEST_RX_EVENT );
-  rtnParam[2] = MAP_LL_EXT_EnhancedModemTestRx( rfPhy,
-                                                rfChan );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_ENHANCED_MODEM_TEST_RX,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4843,19 +4700,23 @@ hciStatus_t HCI_EXT_EnhancedModemTestRxCmd( uint8 rfPhy,
  */
 hciStatus_t HCI_EXT_EndModemTestCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_EndModemTest();
+
   rtnParam[0] = LO_UINT16( HCI_EXT_END_MODEM_TEST_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_END_MODEM_TEST_EVENT );
-  rtnParam[2] = MAP_LL_EXT_EndModemTest();
+  rtnParam[2] = status;
+
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_END_MODEM_TEST,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -4867,14 +4728,17 @@ hciStatus_t HCI_EXT_EndModemTestCmd( void )
  */
 hciStatus_t HCI_EXT_SetBDADDRCmd( uint8 *bdAddr )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetBDADDR( bdAddr );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_BDADDR_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_BDADDR_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetBDADDR( bdAddr );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_BDADDR,
                                              sizeof(rtnParam),
@@ -4887,7 +4751,7 @@ hciStatus_t HCI_EXT_SetBDADDRCmd( uint8 *bdAddr )
                           HCI_BDADDR_UPDATED_EVENT );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -4947,6 +4811,11 @@ hciStatus_t HCI_EXT_SetAdvSetRandAddrCmd( uint8 advHandle, uint8 *randAddr)
 hciStatus_t HCI_EXT_SetVirtualAdvAddrCmd( uint8 advHandle,
                                           uint8 *bdAddr )
 {
+  hciStatus_t status = HCI_SUCCESS;
+
+  status = MAP_LL_EXT_SetVirtualAdvAddr( advHandle, bdAddr );
+
+#ifndef HOST_CONFIG
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
@@ -4954,16 +4823,13 @@ hciStatus_t HCI_EXT_SetVirtualAdvAddrCmd( uint8 advHandle,
 
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_VIRTUAL_ADV_ADDRESS_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_VIRTUAL_ADV_ADDRESS_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetVirtualAdvAddr( advHandle,
-                                                bdAddr );
-#ifndef HOST_CONFIG
+  rtnParam[2] = status;
+
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_LE_SET_EXT_VIRTUAL_ADV_ADDRESS,
                                              sizeof(rtnParam),
                                              rtnParam );
-  return( HCI_SUCCESS );
-#else // used from host-test / app.
-  return (rtnParam[2]);
 #endif
+  return( status );
 }
 #endif
 
@@ -4985,20 +4851,23 @@ hciStatus_t HCI_EXT_SetVirtualAdvAddrCmd( uint8 advHandle,
  */
 hciStatus_t HCI_EXT_SetSCACmd( uint16 scaInPPM )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetSCA( scaInPPM );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_SCA_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_SCA_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetSCA( scaInPPM );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_SCA,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -5010,13 +4879,17 @@ hciStatus_t HCI_EXT_SetSCACmd( uint16 scaInPPM )
  */
 hciStatus_t HCI_EXT_EnablePTMCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // stop everything before entering PTM
-  MAP_HCI_ResetCmd();
+  status = MAP_HCI_ResetCmd();
 
-  // set global for runtime check
-  hciPTMenabled = TRUE;
+  if(status == HCI_SUCCESS)
+  {
+    // set global for runtime check
+    hciPTMenabled = TRUE;
+  }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5027,20 +4900,23 @@ hciStatus_t HCI_EXT_EnablePTMCmd( void )
  */
 hciStatus_t HCI_EXT_SetFreqTuneCmd( uint8 step )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetFreqTune( step );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_FREQ_TUNE_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_FREQ_TUNE_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetFreqTune( step );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_FREQ_TUNE,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5051,20 +4927,23 @@ hciStatus_t HCI_EXT_SetFreqTuneCmd( uint8 step )
  */
 hciStatus_t HCI_EXT_SaveFreqTuneCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SaveFreqTune();
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SAVE_FREQ_TUNE_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SAVE_FREQ_TUNE_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SaveFreqTune();
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SAVE_FREQ_TUNE,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5075,20 +4954,23 @@ hciStatus_t HCI_EXT_SaveFreqTuneCmd( void )
 hciStatus_t HCI_EXT_SetMaxDtmTxPowerDbmCmd( int8   txPowerDbm,
                                             uint8  fraction )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetMaxDtmTxPowerDbm( txPowerDbm, fraction );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_MAX_DTM_TX_POWER_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_MAX_DTM_TX_POWER_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetMaxDtmTxPowerDbm( txPowerDbm, fraction );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_MAX_DTM_TX_POWER_DBM,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5108,20 +4990,23 @@ hciStatus_t HCI_EXT_SetMaxDtmTxPowerDbmCmd( int8   txPowerDbm,
  */
 hciStatus_t HCI_EXT_MapPmIoPortCmd( uint8 ioPort, uint8 ioPin )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_MapPmIoPort( ioPort, ioPin );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_MAP_PM_IO_PORT_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_MAP_PM_IO_PORT_EVENT );
-  rtnParam[2] = MAP_LL_EXT_MapPmIoPort( ioPort, ioPin );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_MAP_PM_IO_PORT,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5134,20 +5019,23 @@ hciStatus_t HCI_EXT_MapPmIoPortCmd( uint8 ioPort, uint8 ioPin )
  */
 hciStatus_t HCI_EXT_DisconnectImmedCmd( uint16 connHandle )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_DisconnectImmed( connHandle );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_DISCONNECT_IMMED_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_DISCONNECT_IMMED_EVENT );
-  rtnParam[2] = MAP_LL_EXT_DisconnectImmed( connHandle );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_DISCONNECT_IMMED,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -5161,15 +5049,18 @@ hciStatus_t HCI_EXT_DisconnectImmedCmd( uint16 connHandle )
  */
 hciStatus_t HCI_EXT_PacketErrorRateCmd( uint16 connHandle, uint8 command )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   // 3: Command
   uint8 rtnParam[4];
 
+  status = MAP_LL_EXT_PacketErrorRate( connHandle, command );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_PER_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_PER_EVENT );
-  rtnParam[2] = MAP_LL_EXT_PacketErrorRate( connHandle, command );
+  rtnParam[2] = status;
   rtnParam[3] = command;
 
   // check if it is okay to complete this event now or later
@@ -5222,15 +5113,18 @@ hciStatus_t HCI_EXT_PERbyChanCmd( uint16 connHandle, perByChan_t *perByChan )
  */
 hciStatus_t HCI_EXT_ExtendRfRangeCmd( void )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
   uint8 cmdComplete = TRUE;
 
+  status = MAP_LL_EXT_ExtendRfRange( &cmdComplete );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_EXTEND_RF_RANGE_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_EXTEND_RF_RANGE_EVENT );
-  rtnParam[2] = MAP_LL_EXT_ExtendRfRange( &cmdComplete );
+  rtnParam[2] = status;
 
   // check if the command was performed, or if it was delayed
   // Note: If delayed, a callback will be generated by the LL.
@@ -5241,7 +5135,7 @@ hciStatus_t HCI_EXT_ExtendRfRangeCmd( void )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5252,20 +5146,23 @@ hciStatus_t HCI_EXT_ExtendRfRangeCmd( void )
  */
 hciStatus_t HCI_EXT_HaltDuringRfCmd( uint8 mode )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_HaltDuringRf( mode );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_HALT_DURING_RF_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_HALT_DURING_RF_EVENT );
-  rtnParam[2] = MAP_LL_EXT_HaltDuringRf( mode );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_HALT_DURING_RF,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5277,6 +5174,7 @@ hciStatus_t HCI_EXT_HaltDuringRfCmd( uint8 mode )
  */
 hciStatus_t HCI_EXT_BuildRevisionCmd( uint8 mode, uint16 userRevNum )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // check input parameter that doesn't require vendor specific event
   if ( mode == HCI_EXT_SET_USER_REVISION )
   {
@@ -5294,9 +5192,11 @@ hciStatus_t HCI_EXT_BuildRevisionCmd( uint8 mode, uint16 userRevNum )
     // 3..6: Build Revision (combined user+system)
     uint8 rtnParam[7];
 
+    status = MAP_LL_EXT_BuildRevision( mode, userRevNum, &rtnParam[3] );
+
     rtnParam[0] = LO_UINT16( HCI_EXT_BUILD_REVISION_EVENT );
     rtnParam[1] = HI_UINT16( HCI_EXT_BUILD_REVISION_EVENT );
-    rtnParam[2] = MAP_LL_EXT_BuildRevision( mode, userRevNum, &rtnParam[3] );
+    rtnParam[2] = status;
 
     // check for error
     if ( rtnParam[2] != LL_STATUS_SUCCESS )
@@ -5311,7 +5211,7 @@ hciStatus_t HCI_EXT_BuildRevisionCmd( uint8 mode, uint16 userRevNum )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5346,6 +5246,7 @@ hciStatus_t HCI_EXT_DelaySleepCmd( uint16 delay )
  */
 hciStatus_t HCI_EXT_ResetSystemCmd( uint8 mode )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
@@ -5357,21 +5258,23 @@ hciStatus_t HCI_EXT_ResetSystemCmd( uint8 mode )
 #if defined( CC26XX ) || defined( CC13XX ) || defined( CC23X0 ) || defined(CC33xx)
   if (mode == HCI_EXT_RESET_SYSTEM_HARD)
   {
-    rtnParam[2] = MAP_LL_EXT_ResetSystem( mode );
+    status = MAP_LL_EXT_ResetSystem( mode );
   }
   else // HCI_EXT_RESET_SYSTEM_SOFT not working
   {
-    rtnParam[2] = HCI_ERROR_CODE_UNSUPPORTED_FEATURE_PARAM_VALUE;
+    status = HCI_ERROR_CODE_UNSUPPORTED_FEATURE_PARAM_VALUE;
   }
 #else // !CC26XX
-  rtnParam[2] = MAP_LL_EXT_ResetSystem( mode );
+  status = MAP_LL_EXT_ResetSystem( mode );
 #endif // CC26XX/CC13XX
+
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_RESET_SYSTEM,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 
@@ -5383,20 +5286,23 @@ hciStatus_t HCI_EXT_ResetSystemCmd( uint8 mode )
  */
 hciStatus_t HCI_EXT_OverlappedProcessingCmd( uint8 mode )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_OverlappedProcessing( mode );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_OVERLAPPED_PROCESSING_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_OVERLAPPED_PROCESSING_EVENT );
-  rtnParam[2] = MAP_LL_EXT_OverlappedProcessing( mode );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_OVERLAPPED_PROCESSING,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -5414,20 +5320,23 @@ hciStatus_t HCI_EXT_OverlappedProcessingCmd( uint8 mode )
 hciStatus_t HCI_EXT_NumComplPktsLimitCmd( uint8 limit,
                                           uint8 flushOnEvt )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_NumComplPktsLimit( limit, flushOnEvt );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_NUM_COMPLETED_PKTS_LIMIT_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_NUM_COMPLETED_PKTS_LIMIT_EVENT );
-  rtnParam[2] = MAP_LL_EXT_NumComplPktsLimit( limit, flushOnEvt );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_NUM_COMPLETED_PKTS_LIMIT,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // ADV_CONN_CFG | INIT_CFG
 
@@ -5553,24 +5462,24 @@ hciStatus_t HCI_EXT_SetMaxDataLenCmd( uint16 txOctets,
                                       uint16 rxOctets,
                                       uint16 rxTime )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0:  Event Opcode (LSB)
   // 1:  Event Opcode (MSB)
   // 2:  Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetMaxDataLen( txOctets, txTime, rxOctets, rxTime );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_MAX_DATA_LENGTH_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_MAX_DATA_LENGTH_EVENT );
 
-  rtnParam[2] = MAP_LL_EXT_SetMaxDataLen( txOctets,
-                                          txTime,
-                                          rxOctets,
-                                          rxTime );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_MAX_DATA_LENGTH,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // (ADV_CONN_CFG | INIT_CFG)
 
@@ -5584,19 +5493,22 @@ hciStatus_t HCI_EXT_SetMaxDataLenCmd( uint16 txOctets,
  */
 hciStatus_t HCI_EXT_SetDtmTxPktCntCmd( uint16 txPktCnt )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetDtmTxPktCnt( txPktCnt );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_DTM_TX_PKT_CNT_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_DTM_TX_PKT_CNT_EVENT );
-  rtnParam[2] = MAP_LL_EXT_SetDtmTxPktCnt( txPktCnt );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_DTM_TX_PKT_CNT,
                                              sizeof(rtnParam),
                                              rtnParam );
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5633,22 +5545,23 @@ hciStatus_t HCI_EXT_ReadRandAddrCmd( void )
 hciStatus_t HCI_EXT_SetPinOutputCmd( uint8 dio,
                                      uint8 value )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = LL_EXT_SetPinOutput( dio, value );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_PIN_OUTPUT_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_PIN_OUTPUT_EVENT );
-
-  // status
-  rtnParam[2] = LL_EXT_SetPinOutput( dio, value );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_PIN_OUTPUT,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5666,27 +5579,25 @@ hciStatus_t HCI_EXT_SetLocationingAccuracyCmd( uint16 handle,
                                                uint8  sampleSize2M,
                                                uint8  sampleCtrl)
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  status = MAP_LL_EXT_SetLocationingAccuracy( handle, sampleRate1M, sampleSize1M,
+                                                   sampleRate2M, sampleSize2M,
+                                                   sampleCtrl );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_LOCATIONING_ACCURACY_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_LOCATIONING_ACCURACY_EVENT );
-
-  // status
-  rtnParam[2] = MAP_LL_EXT_SetLocationingAccuracy( handle,
-                                                   sampleRate1M,
-                                                   sampleSize1M,
-                                                   sampleRate2M,
-                                                   sampleSize2M,
-                                                   sampleCtrl);
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_LOCATIONING_ACCURACY,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5699,6 +5610,7 @@ hciStatus_t HCI_EXT_GetActiveConnInfoCmd( uint8 connId, hciActiveConnInfo_t *act
 {
   uint8  size;
   uint8 *defaultConnInfo;
+  hciStatus_t status = HCI_SUCCESS;
 
   if(activeConnInfo == NULL)
   {
@@ -5710,11 +5622,12 @@ hciStatus_t HCI_EXT_GetActiveConnInfoCmd( uint8 connId, hciActiveConnInfo_t *act
     // check if we have the memory
     if ( defaultConnInfo != NULL )
     {
+      // Note: Currently, this function always returns SUCCESS.
+      status = MAP_LL_EXT_GetActiveConnInfo( connId,&defaultConnInfo[3] );
+
       defaultConnInfo[0] = LO_UINT16( HCI_EXT_GET_ACTIVE_CONNECTION_INFO_EVENT );
       defaultConnInfo[1] = HI_UINT16( HCI_EXT_GET_ACTIVE_CONNECTION_INFO_EVENT );
-
-      // Note: Currently, this function always returns SUCCESS.
-      defaultConnInfo[2] = MAP_LL_EXT_GetActiveConnInfo( connId,&defaultConnInfo[3] );
+      defaultConnInfo[2] = status;
 
       HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_ACTIVE_CONNECTION_INFO,
                                              size,
@@ -5729,9 +5642,11 @@ hciStatus_t HCI_EXT_GetActiveConnInfoCmd( uint8 connId, hciActiveConnInfo_t *act
       // 2:  Status
       uint8 rtnParam[3];
 
+      status = HCI_ERROR_CODE_MEM_CAP_EXCEEDED;
+
       rtnParam[0] = LO_UINT16( HCI_EXT_GET_ACTIVE_CONNECTION_INFO_EVENT );
       rtnParam[1] = HI_UINT16( HCI_EXT_GET_ACTIVE_CONNECTION_INFO_EVENT );
-      rtnParam[2] = HCI_ERROR_CODE_MEM_CAP_EXCEEDED;
+      rtnParam[2] = status;
 
       HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_ACTIVE_CONNECTION_INFO,
                                              sizeof(rtnParam),
@@ -5746,17 +5661,17 @@ hciStatus_t HCI_EXT_GetActiveConnInfoCmd( uint8 connId, hciActiveConnInfo_t *act
     uint8 rtnParam[3];
 
     // pointer provided by user
-    rtnParam[2] = MAP_LL_EXT_GetActiveConnInfo( connId, (uint8 *)activeConnInfo );
+    status = MAP_LL_EXT_GetActiveConnInfo( connId, (uint8 *)activeConnInfo );
 
     rtnParam[0] = LO_UINT16( HCI_EXT_GET_ACTIVE_CONNECTION_INFO_EVENT );
     rtnParam[1] = HI_UINT16( HCI_EXT_GET_ACTIVE_CONNECTION_INFO_EVENT );
-
+    rtnParam[2] = status;
     HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_ACTIVE_CONNECTION_INFO,
                                            sizeof(rtnParam),
                                            rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & SCAN_CFG)
@@ -5789,7 +5704,7 @@ hciStatus_t HCI_EXT_SetQOSParameters( uint8  taskType,
                                       uint32 paramVal,
                                       uint16 taskHandle)
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_EXT_SetQOSParameters( taskType,
                                         paramType,
@@ -5800,7 +5715,7 @@ hciStatus_t HCI_EXT_SetQOSParameters( uint8  taskType,
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5812,7 +5727,7 @@ hciStatus_t HCI_EXT_SetQOSDefaultParameters(uint32 paramDefaultVal,
                                             uint8  paramType,
                                             uint8  taskType)
 {
-  hciStatus_t status;
+  hciStatus_t status = HCI_SUCCESS;
 
   status = MAP_LL_EXT_SetQOSDefaultParameters( paramDefaultVal,
                                                paramType,
@@ -5822,7 +5737,7 @@ hciStatus_t HCI_EXT_SetQOSDefaultParameters(uint32 paramDefaultVal,
                                 sizeof(status),
                                 &status );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5860,15 +5775,18 @@ hciStatus_t HCI_EXT_CoexEnableCmd( uint8 enable )
  */
 hciStatus_t HCI_EXT_GetRxStatisticsCmd( uint16 connHandle, uint8 command )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   // 3: Command
   uint8 rtnParam[4];
 
+  status = MAP_LL_EXT_GetRxStats( connHandle, command );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_GET_RX_STATS_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_GET_RX_STATS_EVENT );
-  rtnParam[2] = MAP_LL_EXT_GetRxStats( connHandle, command );
+  rtnParam[2] = status;
   rtnParam[3] = command;
 
   // check if it is okay to complete this event now or later
@@ -5879,7 +5797,7 @@ hciStatus_t HCI_EXT_GetRxStatisticsCmd( uint16 connHandle, uint8 command )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5890,15 +5808,18 @@ hciStatus_t HCI_EXT_GetRxStatisticsCmd( uint16 connHandle, uint8 command )
  */
 hciStatus_t HCI_EXT_GetTxStatisticsCmd( uint16 connHandle, uint8 command )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   // 3: Command
   uint8 rtnParam[4];
 
+  status = MAP_LL_EXT_GetTxStats( connHandle, command );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_GET_TX_STATS_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_GET_TX_STATS_EVENT );
-  rtnParam[2] = MAP_LL_EXT_GetTxStats( connHandle, command );
+  rtnParam[2] = status;
   rtnParam[3] = command;
 
   // check if it is okay to complete this event now or later
@@ -5909,7 +5830,7 @@ hciStatus_t HCI_EXT_GetTxStatisticsCmd( uint16 connHandle, uint8 command )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 /*******************************************************************************
@@ -5920,15 +5841,18 @@ hciStatus_t HCI_EXT_GetTxStatisticsCmd( uint16 connHandle, uint8 command )
  */
 hciStatus_t HCI_EXT_GetCoexStatisticsCmd( uint8 command )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   // 3: Command
   uint8 rtnParam[4];
 
+  status = MAP_LL_EXT_GetCoexStats( command );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_GET_COEX_STATS_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_GET_COEX_STATS_EVENT );
-  rtnParam[2] = MAP_LL_EXT_GetCoexStats( command );
+  rtnParam[2] = status;
   rtnParam[3] = command;
 
   // check if it is okay to complete this event now or later
@@ -5939,7 +5863,7 @@ hciStatus_t HCI_EXT_GetCoexStatisticsCmd( uint8 command )
                                                rtnParam );
   }
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 
 #ifdef LL_TEST_MODE
@@ -5950,22 +5874,24 @@ hciStatus_t HCI_EXT_GetCoexStatisticsCmd( uint8 command )
  */
 hciStatus_t HCI_EXT_LLTestModeCmd( uint8 testCase )
 {
+  hciStatus_t status = HCI_SUCCESS;
   // 0: Event Opcode (LSB)
   // 1: Event Opcode (MSB)
   // 2: Status
   uint8 rtnParam[3];
 
+  // Note: This function will never reside in ROM, so no MAP_ required.
+  status = LL_EXT_LLTestMode( testCase );
+
   rtnParam[0] = LO_UINT16( HCI_EXT_LL_TEST_MODE_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_LL_TEST_MODE_EVENT );
-
-  // Note: This function will never reside in ROM, so no MAP_ required.
-  rtnParam[2] = LL_EXT_LLTestMode( testCase );
+  rtnParam[2] = status;
 
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_LL_TEST_MODE,
                                              sizeof(rtnParam),
                                              rtnParam );
 
-  return( HCI_SUCCESS );
+  return( status );
 }
 #endif // LL_TEST_MODE
 
@@ -6413,36 +6339,6 @@ hciStatus_t HCI_LE_CS_SetDefaultSettings( uint16 connHandle,
   MAP_HCI_CommandCompleteEvent( HCI_LE_CS_SET_DEFAULT_SETTINGS,
                                 sizeof(rtnParam),
                                 rtnParam );
-
-  return( HCI_SUCCESS );
-}
-
-/*******************************************************************************
- * This BT API is used by a Host to read the per-channel Mode 0 Frequency
- * Actuation Error table of the local Controller.
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_CS_ReadLocalFAETable( void )
-{
-  int8  rtnParam[73];
-  int8  localFaeTbl[CS_FAE_TBL_LEN];
-
-  rtnParam[0] = MAP_LL_CS_ReadLocalFAETable((csFaeTbl_t*)&localFaeTbl);
-
-  if (rtnParam[0] == LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED)
-  {
-    MAP_osal_memset(&localFaeTbl, 0, CS_FAE_TBL_LEN);
-  }
-
-  for (uint8 i = 1; i <= CS_FAE_TBL_LEN; i++)
-  {
-    rtnParam[i] = localFaeTbl[i-1];
-  }
-
-  MAP_HCI_CommandCompleteEvent( HCI_LE_CS_READ_LOCAL_FAE_TABLE,
-                                sizeof(rtnParam),
-                                (uint8*)rtnParam );
 
   return( HCI_SUCCESS );
 }

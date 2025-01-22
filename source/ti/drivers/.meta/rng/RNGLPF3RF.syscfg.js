@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -144,6 +144,57 @@ let devSpecific = {
                               ]
             },
             {
+                name: "HealthChecks",
+                displayName: "RNG Health Check Tests",
+                collapsed: false,
+                config: [
+                    {
+                        name: "RepetitionCountTest",
+                        displayName: "Repetition Count Test",
+                        description: "Conduct Repetition Count Test on noise data.",
+                        default: true,
+                        onChange: (inst, ui) => ui.RCTThreshold.hidden = !inst.RepetitionCountTest
+                    },
+                    {
+                        name        : "RCTThreshold",
+                        displayName : "Repetition Count Test Threshold",
+                        longDescription : 'Set a threshold value for the maximum number of times the same code '
+                                    + 'is repeated. This test compares 3 codes at a time which has two impacts. '
+                                    + 'First, the threshold value must be a multiple of 3.'
+                                    + 'Second, up to 2 repeated codes may go undetected.'
+                                    + 'For example, if the threshold is 24, the test may not indicate a failure until 26 repeated codes have occurred.'
+                                    + 'See NIST SP 800-90B section 4.4.1 for information about adjusting this value.',
+                        default     : 24,
+                        hidden      : false
+                    },
+                    {
+                        name: "AdaptiveProportionTest",
+                        displayName: "Adaptive Proportion Test",
+                        description: "Conduct Adaptive Proportion Test on noise data.",
+                        default: true,
+                        onChange: (inst, ui) => ui.APTThreshold.hidden = !inst.AdaptiveProportionTest
+                    },
+                    {
+                        name        : "APTThreshold",
+                        displayName : "Adaptive Proportion Test Threshold",
+                        longDescription : 'Set a threshold value for the expected entropy per value.'
+                                    + 'See NIST SP 800-90B section 4.4.2 for information about adjusting this value.',
+                        default     : 461,
+                        hidden      : false
+                    },
+                    {
+                        name        : "APTBimodalThreshold",
+                        displayName : "APT Bimodal Threshold",
+                        longDescription : 'Set a threshold value for the expected entropy between two code values.'
+                                    + 'This is an additional test which is not specified by NSIT SP 800-90B.'
+                                    + 'TI recommends setting this value to 80% of the Adaptive Proportion Test Threshold above.',
+                        default     : 369,
+                        hidden      : true
+                    }
+                ]
+            },
+            
+            {
                 name: "HW_ATTR_GROUP",
                 displayName: "AESCTRDRBG HW Attributes",
                 collapsed: false,
@@ -151,8 +202,7 @@ let devSpecific = {
                     intPriority
                 ]
             }
-        ],
-        modules: Common.autoForceModules(["DMA"])
+        ]
     },
 
     config: [],
@@ -195,7 +245,7 @@ function validate_rng_settings(inst, validation) {
                  "Maximum allowed word length is " + maxRawNoiseLenWords);
     }
 
-    /* Valdiate Key with default value */
+    /* Validate Key with default value */
     if ((RNG.$static.noiseConditioningKeyW0 == 0x111de874) &&
         (RNG.$static.noiseConditioningKeyW1 == 0x6cecb00e) &&
         (RNG.$static.noiseConditioningKeyW2 == 0x7fb76dc5) &&
@@ -206,6 +256,20 @@ function validate_rng_settings(inst, validation) {
                    'This the default noise conditioning key provided by TI, '+
                    'which is acceptable per NIST SP 800-90B. However, TI recommends ' +
                    'you change this default value to a custom random value for your product');
+    }
+
+    /* Validate that the health check threshold values are greater than 1 */
+    if ((RNG.$static.RCTThreshold <= 1) || (RNG.$static.RCTThreshold >= RNG.$static.rawNoiseLenWords * 3) || (RNG.$static.RCTThreshold % 3 != 0)) {
+        logError(validation, RNG.$static, "RCTThreshold",
+                 "Value must be greater than 1, less than 3 times the Input Size, and a multiple of 3");
+    }
+    if ((RNG.$static.APTThreshold <= 400) || (RNG.$static.APTThreshold >= 517))  {
+        logError(validation, RNG.$static, "APTThreshold",
+                 "Value must be greater than 400 and less than 517");
+    }
+    if ((RNG.$static.APTBimodalThreshold <= 1) || (RNG.$static.APTBimodalThreshold >= 517)) {
+        logError(validation, RNG.$static, "APTBimodalThreshold",
+                 "Value must be greater than 1 and less than 517");
     }
 }
 

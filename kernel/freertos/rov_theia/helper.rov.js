@@ -290,7 +290,11 @@ class Helper {
         return [enabled, active, pending];
     }
     async lookupFuncName(address) {
-        return this.lookupSymbols(address);
+        /*
+         * For the benefit of ARM (which is assumed here!), mask out the LSBit
+         * for this code-based lookup.
+         */
+        return this.lookupSymbols(address & 0xfffffffe);
     }
     async lookupDataSymbol(address) {
         const task = this.Program.getTask();

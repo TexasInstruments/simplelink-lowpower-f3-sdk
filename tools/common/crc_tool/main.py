@@ -1,5 +1,5 @@
 """
-CRC Tool
+TI SimpleLink CRC Tool
 
 Tool to insert CRCs into ELF files or generate binary for programming
 ccfg user region
@@ -61,6 +61,7 @@ from importlib.metadata import version
 # Not used in this file, but needed to make pyinstaller import this
 # There likely exists some better way of telling pyinstaller to do this,
 # but I could not get the most obvious candidate of --hidden-import to work
+# pylint: disable-next=unused-import
 import lief
 
 from crc_tool.input_file_handlers.elf_handler import ElfHandler
@@ -72,10 +73,11 @@ arg_parser = argparse.ArgumentParser(
     description="Insert CRC into ELF file, or generate binary file for programming user record",
 )
 
-arg_parser.add_argument("--version", action="version", version=version("crc-tool"))
+arg_parser.add_argument("--version", action="version", version=version("ti-simplelink-crc-tool"))
 
 subparsers = arg_parser.add_subparsers(
-    help="One of two use cases: patch-image for modifying an ELF file, generate-user-record to generate user record binary file",
+    help="One of two use cases: patch-image for modifying an ELF file, "
+        + "generate-user-record to generate user record binary file",
     dest="use_case",
     required=True,
 )

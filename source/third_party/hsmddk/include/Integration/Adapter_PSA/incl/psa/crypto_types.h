@@ -63,6 +63,8 @@
 #define PSA_CRYPTO_TYPES_H
 
 #include <stdint.h>
+#include <third_party/hsmddk/include/Config/cs_mbedtls.h>
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/private_access.h>
 
 /** \defgroup error Error codes
  * @{
@@ -242,7 +244,6 @@ typedef uint32_t psa_key_location_t;
  * - Key identifiers outside these ranges are reserved for future use.
  */
 typedef uint32_t psa_key_id_t;
-#define PSA_KEY_ID_INIT 0U
 
 /**@}*/
 
@@ -360,7 +361,49 @@ typedef uint32_t psa_key_usage_t;
  *
  * Once a key has been created, it is impossible to change its attributes.
  */
-typedef struct psa_client_key_attributes_s psa_key_attributes_t;
+typedef struct psa_key_attributes_s psa_key_attributes_t;
+
+/** Encoding of key identifiers as seen inside the PSA Crypto implementation.
+ *
+ * When PSA Crypto is built as a library inside an application, this type
+ * is identical to #psa_key_id_t. When PSA Crypto is built as a service
+ * that can store keys on behalf of multiple clients, this type
+ * encodes the #psa_key_id_t value seen by each client application as
+ * well as extra information that identifies the client that owns
+ * the key.
+ *
+ * \note Values of this type are encoded in the persistent key store.
+ *       Any changes to existing values will require bumping the storage
+ *       format version and providing a translation when reading the old
+ *       format.
+ */
+
+#if !defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
+typedef psa_key_id_t mbedtls_svc_key_id_t;
+
+#else /* MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER */
+/* Building for the PSA Crypto service on a PSA platform, a key owner is a PSA
+ * partition identifier.
+ *
+ * The function psa_its_identifier_of_slot() in psa_crypto_storage.c that
+ * translates a key identifier to a key storage file name assumes that
+ * mbedtls_key_owner_id_t is a 32-bit integer. This function thus needs
+ * reworking if mbedtls_key_owner_id_t is not defined as a 32-bit integer
+ * here anymore.
+ */
+typedef int32_t mbedtls_key_owner_id_t;
+
+/* Implementation-specific: The Mbed TLS library can be built as
+ * part of a multi-client service that exposes the PSA Cryptography API in each
+ * client and encodes the client identity in the key identifier argument of
+ * functions such as psa_open_key().
+ */
+typedef struct {
+    psa_key_id_t MBEDTLS_PRIVATE(key_id);
+    mbedtls_key_owner_id_t MBEDTLS_PRIVATE(owner);
+} mbedtls_svc_key_id_t;
+
+#endif /* MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER */
 
 /**@}*/
 

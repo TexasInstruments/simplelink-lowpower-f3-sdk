@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,29 @@
  */
     let kernel = system.modules["/freertos/FreeRTOS"].$static;
     let hookModule = system.modules["/freertos/idleHooks"];
+    let exceptionModule = system.modules["/freertos/exception"].$static;
+
+    function getHandlerFxnName(handlerName) {
+        /* If a handler is hidden, it is not supported on this architecture. Use the
+        * configured default handler instead.
+        */
+        if (exceptionModule.$uiState[handlerName].hidden === true) {
+            if (exceptionModule.defaultHandler === "Custom") {
+                return exceptionModule.defaultHandlerCustomFxn;
+            }
+            else {
+                return exceptionModule.defaultHandler;
+            }
+        }
+        else {
+            if (exceptionModule[handlerName] === "Custom") {
+                return exceptionModule[handlerName + "CustomFxn"];
+            }
+            else {
+                return exceptionModule[handlerName];
+            }
+        }
+    }
 %%}
 /*
  *  ======== ti_freertos_config.c ========
@@ -134,4 +157,103 @@ void vApplicationIdleHook(void)
 %         }
 %     }
 }
+% }
+
+% if (exceptionModule) {
+#include <exception/Exception.h>
+
+/* FreeRTOS handlers */
+extern void `getHandlerFxnName("svCallHandler")`(void);
+extern void `getHandlerFxnName("pendSvHandler")`(void);
+extern void `getHandlerFxnName("sysTickHandler")`(void);
+
+/* Custom handler functions */
+% /* Disable eslint for _ variable since SysConfig already imports lodash */
+% /* jslint nomen:true */
+% /* globals _ */
+% _.keys(exceptionModule).filter((key) => exceptionModule[key] === "Custom").forEach((key) => {
+void `exceptionModule[key + "CustomFxn"]`(void);
+% });
+
+% if (system.compiler === "iar") {
+/* The entry point for the application startup code */
+extern void __iar_program_start(void);
+
+/* Linker variable that marks the top of the stack */
+extern const void *STACK_TOP;
+
+/* Place something in the CSTACK segment to get the stack check feature
+ * to work as expected
+ */
+__root static void *dummy_stack @ ".stack";
+
+/* Initial vector table definition */
+__root void (*const __vector_table[])(void) @ ".resetVecs" = {
+    /* The initial stack pointer */
+    (void (*)(void)) & STACK_TOP,
+    /* The reset handler */
+    __iar_program_start,
+% }
+% else if (system.compiler === "ticlang") {
+/* The entry point for the application startup code */
+extern void resetISR(void);
+
+/* Linker variables that marks the top and bottom of the stack */
+extern unsigned long __STACK_END;
+
+/* Initial vector table definition */
+__attribute__((section(".resetVecs"), retain)) void (*const resetVectors[])(void) = {
+    /* The initial stack pointer */
+    (void (*)(void))((unsigned long)&__STACK_END),
+    /* The reset handler */
+    resetISR,
+% }
+% else if (system.compiler === "gcc") {
+/* The entry point for the application startup code */
+extern void resetISR(void);
+
+/* Linker variables that marks the top and bottom of the stack */
+extern void *__stack;
+extern unsigned long _stack_end;
+
+/* Initial vector table definition */
+__attribute__((section(".resetVecs"), used)) void (*const resetVectors[])(void) = {
+    /* The initial stack pointer */
+    (void (*)(void))((uint32_t)&_stack_end),
+    /* The reset handler */
+    resetISR,
+% }
+    /* The NMI handler */
+    `getHandlerFxnName("nmiHandler")`,
+    /* The hard fault handler */
+    `getHandlerFxnName("hardFaultHandler")`,
+    /* The MPU fault handler */
+    `getHandlerFxnName("mpuFaultHandler")`,
+    /* The bus fault handler */
+    `getHandlerFxnName("busFaultHandler")`,
+    /* The usage fault handler */
+    `getHandlerFxnName("usageFaultHandler")`,
+    /* The secure fault handler */
+    `getHandlerFxnName("secureFaultHandler")`,
+    /* Reserved */
+    `getHandlerFxnName("defaultHandler")`,
+    /* Reserved */
+    `getHandlerFxnName("defaultHandler")`,
+    /* Reserved */
+    `getHandlerFxnName("defaultHandler")`,
+    /* SVCall handler */
+    `getHandlerFxnName("svCallHandler")`,
+    /* Debug monitor handler */
+    `getHandlerFxnName("debugMonitorHandler")`,
+    /* Reserved */
+    `getHandlerFxnName("defaultHandler")`,
+    /* The PendSV handler */
+    `getHandlerFxnName("pendSvHandler")`,
+    /* The SysTick handler */
+    `getHandlerFxnName("sysTickHandler")`,
+% for (let i = 0; i < (kernel.interruptCount - 16); i++) {
+    /* Peripheral interrupt */
+    `getHandlerFxnName("defaultHandler")`,
+% }
+};
 % }

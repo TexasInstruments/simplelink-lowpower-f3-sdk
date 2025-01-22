@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022 Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2022-2024 Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,12 +43,29 @@
     let countDef = Comparator.defaultInstanceName + "COUNT";
     let driver = 'ComparatorLPF3LP';  // In case name changes
 
-    /* Hardcoded mapping between DIOs and comparator pins naming */
-    let map = {
-        "DIO21_A10" : "A1",
-        "DIO23_A8"  : "A2",
-        "DIO24_A7"  : "A3"
-    };
+    let devId = system.deviceData.deviceId;
+
+    /* Hardcoded mapping between DIOs and comparator pins naming, see
+     * the device-specific technical reference manual.
+     */
+    let map = {};
+    if (devId.match(/CC27/))
+    {
+        map["DIO19_A6"] = "A1";
+        map["DIO20_A5"] = "A2";
+        map["DIO21_A4"] = "A3";
+    }
+    else if (devId.match(/CC23/))
+    {
+        /* CC23X0 */
+        map["DIO21_A10"] = "A1";
+        map["DIO23_A8"]  = "A2";
+        map["DIO24_A7"]  = "A3";
+    }
+    else
+    {
+        throw new Error("DIO to comparator pin mapping unknown for device ID '" + devId + "'");
+    }
 %%}
 
 /*

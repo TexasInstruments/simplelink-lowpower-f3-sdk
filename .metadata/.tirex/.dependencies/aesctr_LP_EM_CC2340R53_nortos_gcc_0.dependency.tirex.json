@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../aesctr.c -> aesctr.c",
+            "+../README.md -> README.md",
+            "+../README.html -> README.html",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../aesctr.syscfg -> aesctr.syscfg",
+            "+../../../../../../source/ti/boards/LP_EM_CC2340R53/Board.html -> Board.html",
+            "+lpf3_cc23xx_nortos.lds -> lpf3_cc23xx_nortos.lds"
+        ]
+    }
+]

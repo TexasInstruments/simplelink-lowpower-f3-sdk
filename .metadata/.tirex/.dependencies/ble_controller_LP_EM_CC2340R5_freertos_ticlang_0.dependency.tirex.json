@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../Application/app_main.c -> Application/app_main.c",
+            "+../../Application/app_main.h -> Application/app_main.h",
+            "+../../Tools/build_config.opt -> Tools/build_config.opt",
+            "+../../Tools/Defines/ble_controller.opt -> Tools/Defines/ble_controller.opt",
+            "+../../Startup/main_freertos.c -> main_freertos.c",
+            "+../../NPI/Queue_freertos.c -> NPI/Queue_freertos.c",
+            "+../../NPI/Queue_freertos.h -> NPI/Queue_freertos.h",
+            "+../ble_controller.syscfg -> ble_controller.syscfg",
+            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+        ]
+    }
+]

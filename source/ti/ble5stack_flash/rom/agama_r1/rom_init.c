@@ -84,17 +84,23 @@
 #include <health_toolkit/inc/debugInfo_internal.h>
 #endif // BLE_HEALTH
 
+#include "ll_ae.h"
 #ifndef CONTROLLER_ONLY
 #include "gap_advertiser_internal.h"
 #include "gap_scanner_internal.h"
 #include "gap_internal.h"
 #include "sm.h"
-#include "ll_ae.h"
 #include "l2cap_internal.h"
+#include "l2cap_handover.h"
 #include "gap_initiator.h"
 #include "gap_initiator_internal.h"
 #include "sm_internal.h"
 #endif //CONTROLLER_ONLY
+
+#ifdef CONNECTION_HANDOVER
+#include "ll_handover_cn.h"
+#include "ll_handover_sn.h"
+#endif
 
 #ifdef CHANNEL_SOUNDING
 #include "cs/ll_cs_mgr.h"
@@ -503,13 +509,11 @@ typedef void (*RT_Init_fp)(void);
  */
 // Use dynamic filter list when the device role is advertiser only and number of bond is greater than 5.
 #ifndef USE_DFL
-#if defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R5)
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG)) && !(CTRL_CONFIG & (SCAN_CFG | INIT_CFG)) // (If the device role is advertiser only)
 #if defined(GAP_BOND_MGR) && (GAP_BONDINGS_MAX > 5) // If number of bondings greater than 5
   #define USE_DFL
 #endif // (advertiser only)
 #endif // (number of bondings greater than 5)
-#endif // (supported devices)
 #endif // !USE_DFL
 
 
@@ -615,9 +619,10 @@ extern uint8 llRxIgnoreEventHandleStateInit( void );
 extern uint8 llRxEntryDoneEventHandleStateInit( void );
 extern uint8 llAbortEventHandleStatePeripheral( uint8 preempted );
 extern uint8 llLastCmdDoneEventHandleStatePeripheral( void );
+extern uint8 llRfProcessConnRxEntryAvail( void );
 extern uint8 llAbortEventHandleStateCentral( uint8 preempted );
 extern uint8 llLastCmdDoneEventHandleStateCentral( void );
-extern uint8 llRxEntryDoneEventHandleStateConnection( uint8 crcError );
+extern uint8 llRxEntryDoneEventHandleStateConnection( void );
 extern uint8 llLastCmdDoneEventHandleStateTest( void );
 extern uint8 llRxEntryDoneEventHandleStateTest( void );
 extern void LL_rclAdvRxEntryDone( void );
@@ -640,6 +645,8 @@ extern llStatus_t llPostProcessExtendedAdv( advSet_t *pAdvSet );
 extern uint8 llTxDoneEventHandleStateExtAdv( advSet_t *pAdvSet );
 extern void llSetupExtendedAdvData( advSet_t *pAdvSet );
 extern uint8 llSetExtendedAdvReport(aeExtAdvRptEvt_t *extAdvRpt, uint8 *pPkt, uint16 evtType,uint8 extHdrFlgs, uint8 pHdr,uint8 *pData, uint8 dataLen, uint8 **pSyncInfo,uint8 currPhy, uint8 *pChannelIndex);
+
+extern void llInitCompleteNotify(int status);
 
 /*******************************************************************************
  * INIT_CFG and SCAN_CFG hooks
@@ -697,6 +704,14 @@ uint8 MAP_llLastCmdDoneEventHandleStateAdv( void )
 #endif
 }
 
+uint8 MAP_llLSBPreamSimilar(uint32 AccessAddress)
+{
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+    return llLSBPreamSimilar(AccessAddress);
+#else
+    return FALSE;
+#endif
+}
 uint8 MAP_llTxDoneEventHandleStateAdv( void )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_NCONN_CFG | ADV_CONN_CFG))
@@ -822,6 +837,15 @@ uint8 MAP_llLastCmdDoneEventHandleStatePeripheral( void )
 #endif
 }
 
+uint8 MAP_llRfProcessConnRxEntryAvail( void )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
+  return llRfProcessConnRxEntryAvail();
+#else
+  return 0;
+#endif
+}
+
 uint8 MAP_llAbortEventHandleStateCentral( uint8 preempted )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
@@ -840,10 +864,10 @@ uint8 MAP_llLastCmdDoneEventHandleStateCentral( void )
 #endif
 }
 
-uint8 MAP_llRxEntryDoneEventHandleStateConnection( uint8 crcError )
+uint8 MAP_llRxEntryDoneEventHandleStateConnection( void )
 {
 #if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
-  return llRxEntryDoneEventHandleStateConnection(crcError);
+  return llRxEntryDoneEventHandleStateConnection();
 #else
   return 0;
 #endif
@@ -1063,7 +1087,7 @@ uint8 MAP_llCompareSecondaryPrimaryTasksQoSParam( uint8 qosParamType,
                                                   void *secTask,
                                                   void *primConnPtr )
 {
-#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG | SCAN_CFG))
   return llCompareSecondaryPrimaryTasksQoSParam(qosParamType,secTask,primConnPtr);
 #else
   return 0;
@@ -1074,7 +1098,7 @@ uint8 MAP_llCheckIsSecTaskCollideWithPrimTaskInLsto( void *secTask,
                                                      uint32 timeGap,
                                                      uint16 selectedConnId )
 {
-#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG | SCAN_CFG))
   return llCheckIsSecTaskCollideWithPrimTaskInLsto(secTask,timeGap,selectedConnId);
 #else
   return 0;
@@ -1474,6 +1498,11 @@ void MAP_llInitFeatureSet( void )
   llRemoveFromFeatureSet(2, LL_FEATURE_CONNECTIONLESS_CTE_TRANSMITTER);
   llRemoveFromFeatureSet(2, LL_FEATURE_CONNECTIONLESS_CTE_RECEIVER);
 #endif // RTLS_CTE
+
+#ifdef CONNECTION_HANDOVER
+  // Disable ping to avoid control procedures
+  llRemoveFromFeatureSet(0, LL_FEATURE_PING);
+#endif
 }
 
 #ifndef CC23X0
@@ -2203,10 +2232,10 @@ uint8  MAP_l2capSendNextSegment(void)
   return ( FALSE );
 #endif
 }
-uint8  MAP_l2capReassembleSegment(uint16 connHandle, void *pPkt )
+uint8  MAP_l2capReassembleSegment(void *pPkt )
 {
 #if defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
-  return l2capReassembleSegment( connHandle, pPkt );
+  return l2capReassembleSegment( pPkt );
 #else
   return ( TRUE );
 #endif
@@ -2251,10 +2280,10 @@ uint8  MAP_l2capParseDisconnectRsp( void *pCmd, uint8 *pData, uint16 len )
   return ( FAILURE );
 #endif
 }
-uint8  MAP_L2CAP_DisconnectReq( uint16 CID )
+uint8  MAP_L2CAP_DisconnectReq( uint16 connHandle, uint16 CID )
 {
 #if defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
-  return L2CAP_DisconnectReq( CID );
+  return L2CAP_DisconnectReq( connHandle, CID );
 #else
   return ( INVALIDPARAMETER );
 #endif
@@ -2273,10 +2302,10 @@ void   MAP_l2capProcessConnectReq( uint16 connHandle, uint8 id, void *pConnReq )
   l2capProcessConnectReq( connHandle, id, pConnReq );
 #endif
 }
-void   MAP_l2capGetCoChannelInfo( void *pCoC, void *pInfo )
+void   MAP_l2capGetCoChannelInfo( void *pChannel, void *pInfo )
 {
 #if defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
-  l2capGetCoChannelInfo( pCoC, pInfo );
+  l2capGetCoChannelInfo( pChannel, pInfo );
 #endif
 }
 void   MAP_l2capNotifyChannelEstEvt( void *pChannel, uint8 status, uint16 result )
@@ -2299,10 +2328,10 @@ void   MAP_l2capNotifyChannelTermEvt( void *pChannel, uint8 status, uint16 reaso
   l2capNotifyChannelTermEvt( pChannel, status, reason );
 #endif
 }
-void  *MAP_l2capFindLocalCID( uint16 CID )
+void  *MAP_l2capFindLocalCID( uint16 connHandle, uint16 CID )
 {
 #if defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
-  return l2capFindLocalCID( CID );
+  return l2capFindLocalCID( connHandle, CID );
 #else
   return ( NULL );
 #endif
@@ -2886,6 +2915,223 @@ uint8 MAP_llCsGetToneExtention(void)
 #endif
 }
 
+/*******************************************************************************
+* Connection Handover
+*/
+uint8 MAP_llHandoverTriggerDataTransfer( void )
+{
+#ifdef CONNECTION_HANDOVER
+  return llHandoverTriggerDataTransfer();
+#else
+  return FAILURE;
+#endif
+}
+
+void MAP_llRemoveHandoverConn(uint8 *activeConnsArray, uint8 numActiveConns)
+{
+#ifdef CONNECTION_HANDOVER
+  llRemoveHandoverConn(activeConnsArray, numActiveConns);
+#endif
+}
+
+uint16_t MAP_llReturnNonHandoverConn( void )
+{
+#ifdef CONNECTION_HANDOVER
+  return llReturnNonHandoverConn();
+#else
+  return LL_CONNHANDLE_INVALID;
+#endif
+}
+
+void MAP_llHandoverCheckTermConnAndTerm( void )
+{
+#ifdef CONNECTION_HANDOVER
+  llHandoverCheckTermConnAndTerm();
+#endif
+}
+
+uint8 MAP_llHandoverNotifyConnStatus(uint16_t connHandle, uint32_t handoverStatus)
+{
+#ifdef CONNECTION_HANDOVER
+  return llHandoverNotifyConnStatus(connHandle, handoverStatus);
+#else
+  return USUCCESS;
+#endif
+}
+
+uint8 MAP_llIsHandoverInProgress( llConnState_t *connPtr )
+{
+#ifdef CONNECTION_HANDOVER
+  return llIsHandoverInProgress(connPtr);
+#else
+  return UFALSE;
+#endif
+}
+
+void MAP_L2CAP_HandoverInitSN( void )
+{
+#if defined (CONNECTION_HANDOVER) && defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
+  L2CAP_HandoverInitSN();
+#endif
+}
+
+uint8 MAP_L2CAP_Handover_StartCN(uint8_t *pHandoverData, uint32_t dataSize )
+{
+#if defined (CONNECTION_HANDOVER) && defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
+  return L2CAP_Handover_StartCN(pHandoverData, dataSize);
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_L2CAP_Handover_GetSNDataSize( uint16_t connHandle )
+{
+#if defined (CONNECTION_HANDOVER) && defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
+  return L2CAP_Handover_GetSNDataSize(connHandle);
+#else
+  return 0;
+#endif
+}
+
+void MAP_L2CAP_HandoverApplyDataCN(uint16_t connHandle)
+{
+#if defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
+  L2CAP_HandoverApplyDataCN(connHandle);
+#endif
+}
+
+void *MAP_l2capHandoverGetPsm(void *pHandoverPsmData)
+{
+#if defined (BLE_V41_FEATURES) && (BLE_V41_FEATURES & L2CAP_COC_CFG)
+  return (void *)l2capHandoverGetPsm((l2capHandoverPsmData_t *)pHandoverPsmData);
+#else
+  return NULL;
+#endif
+}
+
+/*******************************************************************************
+* HCI CMD parser functions
+*/
+
+extern hciStatus_t hciCmdParserLegacy( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserConnection( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserAdvertiser( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserInitiator( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserPeripheral( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserPeriodicAdv( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserPeriodicScan( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserChannelSounding( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserHost( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserVendorSpecificConnection( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserVendorSpecificInitiator( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserVendorSpecificPeripheral( uint8 *pData, uint16 cmdOpCode );
+extern hciStatus_t hciCmdParserVendorSpecificBroadcaster( uint8 *pData, uint16 cmdOpCode );
+
+uint8 MAP_hciCmdParserLegacy( uint8 *pData, uint16 cmdOpCode )
+{
+#ifdef LEGACY_CMD
+  return hciCmdParserLegacy( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserConnection( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
+  return hciCmdParserConnection( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserAdvertiser( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && ((CTRL_CONFIG & ADV_NCONN_CFG) || (CTRL_CONFIG & ADV_CONN_CFG))
+  return hciCmdParserAdvertiser( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserInitiator( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
+  return hciCmdParserInitiator( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserPeripheral( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_CONN_CFG)
+  return hciCmdParserPeripheral( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserPeriodicAdv( uint8 *pData, uint16 cmdOpCode )
+{
+#ifdef USE_PERIODIC_ADV
+  return hciCmdParserPeriodicAdv( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserPeriodicScan( uint8 *pData, uint16 cmdOpCode )
+{
+#ifdef USE_PERIODIC_SCAN
+  return hciCmdParserPeriodicScan( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserChannelSounding( uint8 *pData, uint16 cmdOpCode )
+{
+#ifdef CHANNEL_SOUNDING
+  return hciCmdParserChannelSounding( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserHost( uint8 *pData, uint16 cmdOpCode )
+{
+#ifdef HOST_CONFIG
+  return hciCmdParserHost( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserVendorSpecificConnection( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & (ADV_CONN_CFG | INIT_CFG))
+  return hciCmdParserVendorSpecificConnection( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserVendorSpecificInitiator( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & INIT_CFG)
+  return hciCmdParserVendorSpecificInitiator( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserVendorSpecificPeripheral( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_CONN_CFG)
+  return hciCmdParserVendorSpecificPeripheral( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+uint8 MAP_hciCmdParserVendorSpecificBroadcaster( uint8 *pData, uint16 cmdOpCode )
+{
+#if defined(CTRL_CONFIG) && (CTRL_CONFIG & ADV_NCONN_CFG)
+  return hciCmdParserVendorSpecificBroadcaster( pData, cmdOpCode );
+#else
+  return FAILURE;
+#endif
+}
+
+// SID filtering
 uint8 MAP_llUpdateSIDFilterScanRsp(uint8 sendReport,uint8 advSid,uint8 advScanState)
 {
 #ifdef SID_FILTERING
@@ -2913,6 +3159,34 @@ uint32 MAP_llReturnCurrentPeriodicStartTime(void)
 #endif
 }
 
+uint32 MAP_llExtAdvTxTime(void * pAdvSet, uint8 primPhy, uint8 secPhy)
+{
+#ifdef USE_AE
+  return llExtAdvTxTime(pAdvSet, primPhy, secPhy);
+#else
+  return 0;
+#endif
+}
+
+uint32 MAP_llEstimateAuxOtaTime(void * pAdvSet, uint8 secPhy)
+{
+#ifdef USE_AE
+  return llEstimateAuxOtaTime(pAdvSet, secPhy);
+#else
+  return 0;
+#endif
+}
+
 
 /*******************************************************************************
  */
+
+/*******************************************************************************
+* Synchronous LL Init
+*/
+void MAP_llInitCompleteNotify(int status)
+{
+#ifdef BLE_LL_INIT_SYNC
+  llInitCompleteNotify(status);
+#endif // BLE_LL_INIT_SYNC
+}

@@ -56,6 +56,24 @@ HSMSAL_Init(void)
 }
 
 /*----------------------------------------------------------------------------
+ * HSMSAL_setCryptoOfficerID
+ */
+void
+HSMSAL_setCryptoOfficerID(uint32_t crypto_officer_id)
+{
+    vex_IdentityCryptoOfficer(crypto_officer_id);
+}
+
+/*----------------------------------------------------------------------------
+ * HSMSAL_getCryptoOfficerID
+ */
+uint32_t
+HSMSAL_getCryptoOfficerID()
+{
+    return vex_IdentityGet();
+}
+
+/*----------------------------------------------------------------------------
  * HSMSAL_ConvertVexCodeToSAL
  *      Converts VexStatus_t return code type to HSMSALStatus_t code type
  */
@@ -94,7 +112,9 @@ HSMSAL_ScanAndReadMailbox(Eip130Token_Result_t * const ResultToken_p, const uint
 
         if (sourcesEnabled & (1 << mailboxIRQOffset))
         {
-            (void)HSMSAL_ClearEIP201Interrupt(mailboxIRQOffset);
+            /* Clear and disable the mailbox-specific interrupt */
+            HSMSAL_ClearAndDisableEIP201Interrupt(mailboxIRQOffset);
+
             /* Read the Mailbox's out buffer into the result token */
             (void)EIP130_MailboxReadToken(Device, MailboxNumber, ResultToken_p);
 
@@ -131,11 +151,11 @@ HSMSAL_GetMailBoxNumber()
 HSMSALStatus_t
 HSMSAL_WaitForResultPolling(Eip130Token_Result_t * const ResultToken_p)
 {
-    HSMSALStatus_t funcres = HSMSAL_INTERNAL_ERROR;
-    uint8_t MailboxNumber =  HSMSAL_GetMailBoxNumber();
-    int32_t LoopsLeft = HSMSAL_POLLING_LOOPS;
+    HSMSALStatus_t funcres = HSMSAL_RESPONSE_TIMEOUT;
+    uint8_t MailboxNumber  = HSMSAL_GetMailBoxNumber();
+    int32_t LoopsLeft      = HSMSAL_POLLING_LOOPS;
 
-    // Poll for output token available without sleep
+    /* Poll for output token available without sleep */
     while (LoopsLeft > 0)
     {
         if(HSMSAL_ScanAndReadMailbox(ResultToken_p, MailboxNumber) == HSMSAL_SUCCESS)
@@ -145,9 +165,9 @@ HSMSAL_WaitForResultPolling(Eip130Token_Result_t * const ResultToken_p)
         LoopsLeft--;
     }
 
-    if (LoopsLeft <= 0)
+    if (LoopsLeft > 0)
     {
-        funcres = HSMSAL_RESPONSE_TIMEOUT;
+        funcres = HSMSAL_SUCCESS;
     }
 
     return funcres;
@@ -171,4 +191,25 @@ HSMSALStatus_t
 HSMSAL_ClearEIP201Interrupt(const int32_t nIRQ)
 {
     return HSMSAL_ConvertVexCodeToSAL(Adapter_Interrupt_Clear(nIRQ, 0U));
+}
+
+/*----------------------------------------------------------------------------
+ * HSMSAL_ClearAndDisableEIP201Interrupt
+ *     This function handles clearing and disabling specific IRQ raised by the EIP201 engine
+ */
+HSMSALStatus_t
+HSMSAL_ClearAndDisableEIP201Interrupt(const int32_t nIRQ)
+{
+    HSMSALStatus_t funcres = HSMSAL_INTERNAL_ERROR;
+
+    /* First, try to clear the interrupt */
+    funcres = HSMSAL_ConvertVexCodeToSAL(Adapter_Interrupt_Clear(nIRQ, 0U));
+
+    if (funcres == HSMSAL_SUCCESS)
+    {
+        /* Second, try to disable the interrupt */
+        funcres = HSMSAL_ConvertVexCodeToSAL(Adapter_Interrupt_Disable(nIRQ, 0U));
+    }
+
+    return funcres;
 }

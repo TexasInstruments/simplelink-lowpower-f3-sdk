@@ -430,13 +430,11 @@ const boardConfig_t boardConfig =
 {
 #ifndef CC23X0
 #ifndef CC33xx
-  .rfFeModeBias  = RF_FE_MODE_AND_BIAS,
   .rfRegTbl      = (regOverride_t*)pOverrides_bleCommon,
   .rfRegTbl1M    = (regOverride_t*)pOverrides_ble1Mbps,
   .rfRegTbl2M    = (regOverride_t*)pOverrides_ble2Mbps,
   .rfRegTblCoded = (regOverride_t*)pOverrides_bleCoded,
 #else
-  .rfFeModeBias  = 0,
   .rfRegTbl      = NULL,
   .rfRegTbl1M    = NULL,
   .rfRegTbl2M    = NULL,
@@ -478,9 +476,7 @@ const boardConfig_t boardConfig =
 #else
   .coexUseCaseConfigPtr = NULL,
 #endif // USE_COEX
-#else // !CC23X0
-    .rfFeModeBias  = 0,
-#endif
+#endif // !CC23X0
 };
 
 #else /* !(ICALL_JT) */

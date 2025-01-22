@@ -53,7 +53,7 @@
  *  counter sampling. The ITM provides memory mapped registers for low-intrusion
  *  software profiling. The TPIU provides an external interface for the ITM and
  *  DWT. Further details can be found in the
- *  [ARMv7-M Architecture Reference Manual](https://static.docs.arm.com/ddi0403/e/DDI0403E_d_armv7m_arm.pdf)
+ *  [ARMv7-M Architecture Reference Manual](https://developer.arm.com/documentation/ddi0403/latest)
  *
  *  <h3> Limitations and Constraints </h3>
  *  The driver is is designed with the following constraints in mind:
@@ -111,7 +111,7 @@
  *  Data written to the software stimulus ports is serialized by the TPIU
  *  and wrapped in the SWIT packet format. This packet format is standardized
  *  by ARM and described in [ARMv7-M Architecture Reference
- Manual](https://static.docs.arm.com/ddi0403/e/DDI0403E_d_armv7m_arm.pdf)
+ Manual](https://developer.arm.com/documentation/ddi0403/latest)
  *
  *  There are three tiers of access to the stimulus ports. In the table below,
  *  polled access means that the API/macro will poll the port's busy flag

@@ -34,7 +34,7 @@
  *  ======== LP_EM_CC2340R22.syscfg.json ========
  *
  */
-{
+ {
     "name": "LP_EM_CC2340R22",
     "displayName": "CC2340R22 on LP_EM_CC2340R5",
     "device": "CC2340R22RKP",
@@ -390,6 +390,14 @@
             "connections": {
                 "RXD": "18",
                 "TXD": "15"
+            }
+        },
+        "HFXT" : {
+            "definition": "/ti/boards/components/crystal_tz3908aaa043.json",
+            "settings": {
+                "overrideCapArray": false,
+                "hfxtCapArrayQ1" : 0,
+                "hfxtCapArrayQ2" : 0
             }
         }
     }

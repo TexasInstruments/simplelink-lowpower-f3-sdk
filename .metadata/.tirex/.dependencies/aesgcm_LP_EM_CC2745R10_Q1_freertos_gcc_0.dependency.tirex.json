@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../../aesgcm.c -> aesgcm.c",
+            "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../aesgcm.syscfg -> aesgcm.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_cc27xx_freertos.lds -> lpf3_cc27xx_freertos.lds"
+        ]
+    }
+]

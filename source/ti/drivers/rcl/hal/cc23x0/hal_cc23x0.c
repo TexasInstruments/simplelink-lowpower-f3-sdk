@@ -45,6 +45,7 @@
 #include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_clkctl.h)
 #include DeviceFamily_constructPath(inc/hw_ckmd.h)
+#include DeviceFamily_constructPath(inc/hw_sys0.h)
 
 #include DeviceFamily_constructPath(inc/hw_lrfdmdm.h)
 #include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
@@ -58,11 +59,15 @@
 #ifndef SOCFPGA
 /* FPGA doesn't support Standby */
 static int hal_power_post_notify_fxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg);
-Power_NotifyObj powerAwakeStandbyObj;
-Power_NotifyObj powerEnterStandbyObj;
-
-static void (*rclPowerNotify)(RCL_PowerEvent) = NULL;
+static void hal_temperature_post_notify_fxn(int16_t currentTemperature,
+                                            int16_t thresholdTemperature,
+                                            uintptr_t clientArg,
+                                            Temperature_NotifyObj *notifyObject);
+static Power_NotifyObj powerAwakeStandbyObj;
+static Power_NotifyObj powerEnterStandbyObj;
 #endif
+static Temperature_NotifyObj temperatureChangeNotifyObj = {0};
+
 static void hal_cancel_lrfd_systim0(void);
 
 #define RCL_DEFAULT_HFTRACKCTL_RATIO    CKMD_HFTRACKCTL_RATIO_REF48M
@@ -390,11 +395,31 @@ void hal_clear_rcl_clock_enable(uint16_t mask)
     HwiP_restore(key);
 }
 
+uint8_t hal_set_dcdc_ipeak_setting(uint8_t setting)
+{
+    /* Read previous value so that it can be restored later */
+    uint8_t previousIpeakSetting = (HWREG(SYS0_BASE + SYS0_O_TMUTE4) & SYS0_TMUTE4_IPEAK_M) >> SYS0_TMUTE4_IPEAK_S;
+    /* Run in protected region to ensure no interrupt comes in between the writes */
+    uintptr_t key = HwiP_disable();
+    /*
+    * Unlock mutable registers to allow writing back tmute4. Register-write must follow within 32 clk-cycles,
+    * after which the mutable registers will be automatically locked.
+    */
+    HWREG(SYS0_BASE + SYS0_O_MUNLOCK) = SYS0_MUNLOCK_KEY_UNLOCK;
+    /* Set IPEAK value */
+    HWREG(SYS0_BASE + SYS0_O_TMUTE4) = (HWREG(SYS0_BASE + SYS0_O_TMUTE4) & ~SYS0_TMUTE4_IPEAK_M) | ((setting << SYS0_TMUTE4_IPEAK_S) & SYS0_TMUTE4_IPEAK_M);
+    /* Lock the mutable registers by writing something other than the key */
+    HWREG(SYS0_BASE + SYS0_O_MUNLOCK) = SYS0_MUNLOCK_KEY_LOCK;
+    HwiP_restore(key);
+    return previousIpeakSetting;
+}
+
 #ifndef SOCFPGA
 static int hal_power_post_notify_fxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
 {
     (void) eventArg;
-    (void) clientArg;
+
+    void (*rclPowerNotify)(RCL_PowerEvent) = (void (*)(RCL_PowerEvent)) clientArg;
 
     if (rclPowerNotify != NULL)
     {
@@ -411,32 +436,52 @@ static int hal_power_post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 }
 #endif
 
-void hal_power_set_constraint(void)
+void hal_power_set_standby_constraint(void)
 {
-#ifndef SOCFPGA
-    /* FPGA doesn't support standby */
+    /* Note: The power driver requires that setting and releasing constraints come in pairs */
+#ifndef SOCFPGA /* FPGA doesn't support standby */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-    Log_printf(LogModule_RCL, Log_INFO, "hal_power_set_constraint: Power constraints set");
+    Log_printf(LogModule_RCL, Log_INFO, "hal_power_set_standby_constraint: Power constraints set");
 #endif
 }
 
-void hal_power_release_constraint(void)
+void hal_power_release_standby_constraint(void)
 {
-#ifndef SOCFPGA
-    /* FPGA doesn't support standby */
+    /* Note: The power driver requires that setting and releasing constraints come in pairs */
+
+#ifndef SOCFPGA /* FPGA doesn't support standby */
     Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
-    Log_printf(LogModule_RCL, Log_INFO, "hal_power_release_constraint: Power constraints released");
+    Log_printf(LogModule_RCL, Log_INFO, "hal_power_release_standby_constraint: Power constraints released");
 #endif
 }
 
-void hal_power_open(void (*f)(RCL_PowerEvent))
+void hal_power_set_swtcxo_update_constraint(void)
+{
+    /* Note: The power driver requires that setting and releasing constraints come in pairs */
+#ifndef SOCFPGA /* FPGA doesn't support standby */
+    Power_setConstraint(PowerLPF3_DISALLOW_SWTCXO);
+#endif
+}
+
+void hal_power_release_swtcxo_update_constraint(void)
+{
+    /* Note: The power driver requires that setting and releasing constraints come in pairs */
+#ifndef SOCFPGA /* FPGA doesn't support standby */
+    Power_releaseConstraint(PowerLPF3_DISALLOW_SWTCXO);
+    /* If all constraints are now released, perform any update that may have happened while SWTCXO was disallowed */
+    if (Power_getConstraintCount(PowerLPF3_DISALLOW_SWTCXO) == 0)
+    {
+        PowerLPF3_forceHFXTCompensationUpdate();
+    }
+#endif
+}
+
+void hal_power_open(void (*rclPowerNotifyFunction)(RCL_PowerEvent))
 {
 #ifndef SOCFPGA
-    rclPowerNotify = f;
-
    /* Register power notification functions */
-    Power_registerNotify(&powerEnterStandbyObj, PowerLPF3_ENTERING_STANDBY, hal_power_post_notify_fxn, (uintptr_t)NULL);
-    Power_registerNotify(&powerAwakeStandbyObj, PowerLPF3_AWAKE_STANDBY, hal_power_post_notify_fxn, (uintptr_t)NULL);
+    Power_registerNotify(&powerEnterStandbyObj, PowerLPF3_ENTERING_STANDBY, hal_power_post_notify_fxn, (uintptr_t)rclPowerNotifyFunction);
+    Power_registerNotify(&powerAwakeStandbyObj, PowerLPF3_AWAKE_STANDBY, hal_power_post_notify_fxn, (uintptr_t)rclPowerNotifyFunction);
 #endif
 }
 
@@ -472,4 +517,36 @@ uint32_t hal_get_hfxt_ratio_default(void)
 #else
     return RCL_DEFAULT_HFTRACKCTL_RATIO;
 #endif
+}
+
+static void hal_temperature_post_notify_fxn(int16_t currentTemperature,
+                                            int16_t thresholdTemperature,
+                                            uintptr_t clientArg,
+                                            Temperature_NotifyObj *notifyObject)
+{
+    (void) thresholdTemperature;
+    (void) notifyObject;
+    void (*rclTemperatureNotify)(int16_t) = (void (*)(int16_t)) clientArg;
+
+    if (rclTemperatureNotify != NULL)
+    {
+        rclTemperatureNotify(currentTemperature);
+    }
+}
+
+void hal_set_temperature_notification(int16_t currentTemperature, uint16_t temperatureRange, void (*rclTemperatureNotify)(int16_t))
+{
+    /* Register the notification again with updated thresholds. Notification thresholds must be crossed to
+     * trigger, so the upper and lower limits are decreased by 1 to maintain a range of +/- delta.
+     */
+    Temperature_registerNotifyRange(&temperatureChangeNotifyObj,
+                                    currentTemperature + temperatureRange - 1,
+                                    currentTemperature - temperatureRange + 1,
+                                    hal_temperature_post_notify_fxn,
+                                    (uintptr_t) rclTemperatureNotify);
+}
+
+void hal_stop_temperature_notification(void)
+{
+    Temperature_unregisterNotify(&temperatureChangeNotifyObj);
 }

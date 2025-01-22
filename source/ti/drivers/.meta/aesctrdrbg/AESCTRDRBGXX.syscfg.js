@@ -61,9 +61,13 @@ function getLibs(mod)
     let libGroup = {
         name: "/third_party/hsmddk",
         deps: [],
-        libs: [GenLibs.libPath("third_party/hsmddk", "hsmddk.a")],
+        libs: [],
         allowDuplicates: true
     };
+
+    if (!system.modules["/ti/utils/TrustZone"]) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    }
 
     return (libGroup);
 }
@@ -86,7 +90,7 @@ let devSpecific = {
     modules: (inst) => {
         if (deviceId.match(/CC23|CC27/))
         {
-            /* LAES uses DMA */
+            /* LAES driver requires DMA module */
             return Common.autoForceModules(["Board", "Power", "DMA"])();
         }
         else

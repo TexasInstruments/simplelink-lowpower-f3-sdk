@@ -37,22 +37,13 @@
 
 const Common = system.getScript("/ti/drivers/Common.js");
 
+
 const MAX_PBLDRVTOR = 0xFFFFFFEF;
 const MAX_SERIALIOCFGINDEX = 0x07;
-const MAX_SACITIMEOUTEXP = 0x07;
 const MAX_PIN_TRIGGER_DIO = 0x3F;
 const MAX_CAP_ARRAY = 0x3F;
 const MAX_TEMP_THRESHOLD = 125;
-const MIN_TEMP_THRESHOLD = -41;
-
-/* Default HFXT parameters for LP_EM_CC2340R5 launchpad */
-const hfxtDefaultParams = {
-    "P0": 14.56160,
-    "P1": -0.43677,
-    "P2": -0.00853,
-    "P3": 0.00010,
-    "shift": 22
-};
+const MIN_TEMP_THRESHOLD = -50;
 
 const moduleDesc = `
 The CCFG area is a dedicated flash memory sector and must contain a
@@ -60,6 +51,38 @@ Customer Configuration section (CCFG) that is used by boot ROM and TI provided
 drivers to configure the device. It starts at 0x4E020000 and has a size of 0x800
 bytes This configuration is done by simply letting SysConfig generate the file
 ti_devices_config.c and including it in the project.`;
+
+
+let board = system.deviceData.board;
+let defaultOverrideHfxtCapArray = false;
+let hfxtDefaultParams = {
+    "P0": 14.56160,
+    "P1": -0.43677,
+    "P2": -0.00853,
+    "P3": 0.00010,
+    "shift": 22,
+    "hfxtCapArrayQ1" : 0,
+    "hfxtCapArrayQ2" : 0
+};
+
+if(board !== undefined) {
+    let crystal = board.components.HFXT;
+    if(crystal !== undefined)
+    {
+        if (crystal.settings.overrideCapArray !== undefined)
+        {
+            defaultOverrideHfxtCapArray = crystal.settings.overrideCapArray;
+        }
+        hfxtDefaultParams = crystal.settings;
+    }
+}
+
+let defaultpAppVtorStr = "resetVectors";
+
+if (system.compiler == "iar")
+{
+    defaultpAppVtorStr = "__vector_table";
+}
 
 let devSpecific = {
     hfxtDefaultParams: hfxtDefaultParams,
@@ -71,13 +94,14 @@ let devSpecific = {
     moduleStatic: {
         modules: modules,
         validate: validate,
+        migrateLegacyConfiguration: migrateLegacyConfiguration,
         config: [
             {
                 name: "srcClkLF",
                 displayName: "Low Frequency Clock Source",
                 description: "Low frequency clock source",
                 longDescription: `When choosing the external clock, supply
-a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the appropriate pin.`,
+a 31.25 kHz square wave, with a peak voltage of VDDS and an offset of VDDS/2 to the appropriate pin.`,
                 readOnly: false,
                 hidden: false,
                 options: [
@@ -91,7 +115,7 @@ a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the 
                 name: "overrideHfxtCapArray",
                 displayName: "Override HFXT Cap Array Trims",
                 description: "Enables setting the HFXT cap-array ramp and target values",
-                default: false,
+                default: defaultOverrideHfxtCapArray,
                 readOnly: false,
                 hidden: false,
                 onChange: (inst, ui) => {
@@ -113,9 +137,9 @@ a 31.25 kHz square wave, with a peak voltage of 3V and an offset of 1.5V to the 
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: 0x00,
+                default: hfxtDefaultParams.hfxtCapArrayQ1,
                 readOnly: false,
-                hidden: true
+                hidden: !defaultOverrideHfxtCapArray
             },
             {
                 name: "hfxtCapArrayQ2",
@@ -125,9 +149,9 @@ Q1 and Q2 should not differ by more than one step.`,
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: 0x00,
+                default: hfxtDefaultParams.hfxtCapArrayQ1,
                 readOnly: false,
-                hidden: true
+                hidden: !defaultOverrideHfxtCapArray
             },
             {
                 name: "voltageRegulator",
@@ -172,9 +196,8 @@ stability over temperature.`,
                         name: "enableHFXTComp",
                         displayName: "RF Temperature Compensation",
                         description: "Compensate HFXT frequency for temperature during radio transmissions.",
-                        longDescription: `Compensate HFXT frequency for temperature during radio transmissions.
-This improves the accuracy of the CLKSVT and CLKREF over temperature. This should only be enabled if the selected HFXT
-source is not accurate enough for the selected RF protocol.`,
+                        longDescription: `This feature improves the accuracy of the CLKSVT and CLKREF over temperature.
+This should only be enabled if the selected HFXT source is not accurate enough for the selected RF protocol.`,
                         default: false,
                         onChange: onChangeHFXT
                     },
@@ -184,9 +207,10 @@ source is not accurate enough for the selected RF protocol.`,
                         description: `Perform compensation only above this temperature`,
                         longDescription: `HFXT will only be automatically compensated when the measured device
 temperature exceeds this threshold (in degrees Celsius). This can help to reduce power consumption if temperature
-compensation is not required below a certain temperature. If set to -41, then compensation will be enabled across the
-entire operating temperature range of [-40, +125].`,
-                        default: -41,
+compensation is not required below a certain temperature. The device is only required to compensate in the range of [-40, +125],
+but this threshold can be set as low as -50. This can be done to ensure compensation will trigger correctly at low temperatures, close to -40.`,
+                        default: -50,
+                        range: [MIN_TEMP_THRESHOLD, MAX_TEMP_THRESHOLD],
                         hidden: true
                     },
                     {
@@ -207,7 +231,7 @@ performed, and the temperature setpoint updated accordingly.`,
                         longDescription: `If the ppm offset of the HFXT can be approximated by a third order polynomial
 function of temperature (degrees Celsius), ppm(T) = P3*T^3 + P2*T^2 + P1*T + P0, where the coefficients
 P3, P2, P1, and P0 are known, they can be supplied below. The default coefficients represent the characteristics of the
-48 MHz crystal (part number TZ3908AAAO43) mounted on the LP_EM_CC2340R5 LaunchPad.`,
+48 MHz crystal mounted on the LaunchPad.`,
                         default: false,
                         hidden: true,
                         onChange: onChangeHFXT
@@ -243,11 +267,28 @@ P3, P2, P1, and P0 are known, they can be supplied below. The default coefficien
                 ]
             },
             {
-                displayName: "Bootloader Configuration",
+                displayName: "Boot Configuration",
                 config: [
                     {
+                        name: "pAppVtor",
+                        description: "Application vector table address",
+                        default: 0x00000000,
+                        deprecated: true
+                    },
+                    {
+                        name: "pAppVtorStr",
+                        displayName: "Application Vector Table",
+                        description: "App vector table symbol or address",
+                        longDescription: `Pointer to application vector table. Used by bootloader upon exit
+or invoked directly by boot sequence if neither user bootloader nor default bootloader is allowed.
+This can either be a the C symbol name of the vector table, for example resetVectors, or an integer specifying the
+address of the vector table, for example 2048 or 0x800.
+0xFFFFFFFF: No user application vector table`,
+                        default: defaultpAppVtorStr
+                    },
+                    {
                         name: "bldrSetting",
-                        displayName: "Bootloader Configration",
+                        displayName: "Bootloader Configuration",
                         longDescription: `This configurable chooses whether to use default bootloader,
 default bootloader with customer settings, or user-specific bootloader`,
                         default: "Default FCFG bootloader",
@@ -263,23 +304,19 @@ default bootloader with customer settings, or user-specific bootloader`,
                     },
                     {
                         name: "pBldrVtor",
-                        displayName: "Bootloader Vector Table",
                         description: "Bootloader vector table address",
-                        longDescription: `This configurable sets the address of the user-specific bootloader`,
-                        hidden: true,
-                        displayFormat: { radix: "hex", bitSize: 32 },
+                        deprecated: true,
                         default: 0x00000000
                     },
                     {
-                        name: "pAppVtor",
-                        displayName: "Application Vector Table",
-                        description: "Application vector table address",
-                        longDescription: `Pointer to application vector table. Used by bootloader upon exit
-or invoked directly by boot sequence if neither user bootloader nor default bootloader is allowed.
-0xFFFFFFFF: No user application vector table`,
+                        name: "pBldrVtorStr",
+                        displayName: "Bootloader Vector Table",
+                        description: "Bldr vector table address or symbol",
+                        longDescription: `This configurable sets the address of the user-specific bootloader.
+This can either be a the C symbol name of the vector table, or an integer specifying the address of the vector table,
+for example 2048 or 0x800.`,
                         hidden: true,
-                        displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0x00000000
+                        default: "0x00000000"
                     },
                     {
                         name: "bldrEnabled",
@@ -336,6 +373,7 @@ to be triggered during boot. Only valid if pin triggering is enabled.`,
                 config: [
                     {
                         name: "hwOpts0",
+                        deprecated: true,
                         displayName: "Hardware Options 1",
                         description: "Hardware Options 1",
                         longDescription: `Value written to both the PMCTL:HWOPT0 and CLKCTL:HWOPT0 registers by ROM code
@@ -345,6 +383,7 @@ on PRODDEV at execution transfer from boot code/bootloader to application image`
                     },
                     {
                         name: "hwOpts1",
+                        deprecated: true,
                         displayName: "Hardware Options 2",
                         description: "Hardware Options 2",
                         longDescription: `Value written to both the PMCTL:HWOPT1 and CLKCTL:HWOPT1 registers by ROM code
@@ -361,8 +400,8 @@ on PRODDEV at execution transfer from boot code/bootloader to application image`
                         name: "allowDebugPort",
                         displayName: "Allow SWD Debug Port",
                         description: "Allow access to SWD Debug Port",
-                        longDescription: `If not allowed, it will not be possible to access any part of the debug
-system, meaning that it will not be possible to program or erase the chip. Not applicable for CC2340R5 rev A`,
+                        longDescription: `If not allowed, the SWD port will be disabled when the device boots into the
+application in flash. Not applicable for CC2340R5 rev A`,
                         default: true
                     },
                     {
@@ -393,6 +432,7 @@ system, meaning that it will not be possible to program or erase the chip. Not a
                     },
                     {
                         name: "allowToolsClientMode",
+                        deprecated: true,
                         displayName: "Allow Tools Client Mode",
                         description: "Allow RAM-only tools client mode to be enabled by SACI.",
                         default: true
@@ -402,7 +442,8 @@ system, meaning that it will not be possible to program or erase the chip. Not a
                         displayName: "Allow Fake Standby",
                         longDescription: `Allow fake standby. Controls setting of the
 DBGSS:SPECIAL_AUTH_CLR.FAKESTBYEN_CLR register bit field done by ROM code.`,
-                        default: true
+                        default: true,
+                        deprecated: true
                     },
                     {
                         name: "allowReturnToFactory",
@@ -417,17 +458,16 @@ DBGSS:SPECIAL_AUTH_CLR.FAKESTBYEN_CLR register bit field done by ROM code.`,
                 config: [
                     {
                         name: "saciTimeoutOverride",
+                        deprecated: true,
                         displayName: "SACI Timeout Override",
                         description: "Override FCFG SACI timeout value",
                         longDescription: `This configurable chooses whether to use the FCFG SACI timeout value,
 or override it with the Customer Configured SACI timeout value defined below.`,
-                        default: true,
-                        onChange: (inst, ui) => {
-                            ui["saciTimeoutExp"].hidden = !(inst.saciTimeoutOverride);
-                        }
+                        default: false
                     },
                     {
                         name: "saciTimeoutExp",
+                        deprecated: true,
                         displayName: "SACI Timeout Override Value",
                         longDescription: `This configurable sets the SACI timeout, if override is enabled.
 0: Infinite
@@ -553,13 +593,14 @@ Also used to pad out CCFG to correct size.`,
                         description: "Enable user record area in CCFG",
                         longDescription: `User record can contain any data, it has no dependencies in ROM boot code. This area is also
 programmable through separate SACI command. User record size is fixed at 124 bytes, plus an additional 4 bytes to hold a CRC32 checksum.
-The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area`,
+The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area.
+The CRC32 checksum for the User Record will automatically be calculated and inserted regardless of whether the User Record is enabled or not`,
                         default: false,
                         onChange: (inst, ui) => {
                             let setHidden = !(inst.enableUserRecord);
                             ui["userRecordMacro"].hidden = setHidden;
                             ui["userRecordFile"].hidden = setHidden;
-                            ui["userRecordCRC"].hidden = setHidden;
+                            /* Also apply this to userRecordCRC once it's no longer unconditionally applied */
                         }
                     },
                     {
@@ -583,7 +624,7 @@ The User Record Macro must be defined in the User Record File to be a list of va
                         longDescription: `Enable generation of user record begin/end symbols in the ELF executable.
 These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optional user record's CRC.`,
                         hidden: true,
-                        default: false
+                        default: true
                     }
                 ]
             },
@@ -632,6 +673,22 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
 };
 
 /*!
+ * ======== migrateLegacyConfiguration ========
+ *  Migrate deprecated configurations to the current configurations
+ */
+function migrateLegacyConfiguration(inst)
+{
+    if (inst.pAppVtor != undefined)
+    {
+        inst.pAppVtorStr = "0x" + inst.pAppVtor.toString(16).toUpperCase();
+    }
+    if (inst.pBldrVtor != undefined)
+    {
+        inst.pBldrVtorStr = "0x" + inst.pBldrVtor.toString(16).toUpperCase();
+    }
+}
+
+/*!
  * ======== getLinkerSyms ========
  *  Used by GenMaps to define linker symbols, for example CRC checksum symbols
  */
@@ -649,7 +706,7 @@ function getLinkerSyms(inst) {
         { name: "CRC_CCFG_DEBUG_end", value: 0x4E0207FB }
     ];
 
-    if (inst.$static.enableUserRecord && inst.$static.userRecordCRC) {
+    if (inst.$static.userRecordCRC) {
         linkerSyms.push(
             { name: "CRC_CCFG_USER_RECORD_begin", value: 0x4E020750 },
             { name: "CRC_CCFG_USER_RECORD_end", value: 0x4E0207CB },
@@ -668,9 +725,9 @@ function getLinkerSyms(inst) {
  *  @param ui   -   GUI state
  */
 function updateBldrVisibility(inst, ui) {
-    let setHidden = inst.bldrSetting == "Any bootloader forbidden" || inst.bldrSetting == "Default FCFG bootloader";
-    ui["pBldrVtor"].hidden = setHidden;
-    ui["pAppVtor"].hidden = setHidden;
+    ui["pBldrVtorStr"].hidden = (inst.bldrSetting != "User-specific bootloader");
+
+    let setHidden = (inst.bldrSetting == "Any bootloader forbidden") || (inst.bldrSetting == "Default FCFG bootloader");
     ui["bldrEnabled"].hidden = setHidden;
 
     setHidden = setHidden || !(inst.bldrEnabled);
@@ -725,9 +782,14 @@ function validate(inst, validation) {
             "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
     }
 
-    if (inst.pBldrVtor > MAX_PBLDRVTOR) {
-        Common.logError(validation, inst, "pBldrVtor",
-            "Must be less than 0x" + (MAX_PBLDRVTOR + 1).toString(16));
+    if (Common.isCName(inst.pBldrVtorStr) == false)
+    {
+        let pBldrVtorInt = parseInt(inst.pBldrVtorStr);
+        if (isNaN(pBldrVtorInt) || pBldrVtorInt > MAX_PBLDRVTOR || pBldrVtorInt < 0)
+        {
+            Common.logError(validation, inst, "pAppVtorStr",
+            "Must be either a C symbol or an unsigned integer less than 0x" + (MAX_PBLDRVTOR + 1).toString(16).toUpperCase());
+        }
     }
 
     if (inst.serialIoCfgIndex > MAX_SERIALIOCFGINDEX) {
@@ -740,11 +802,6 @@ function validate(inst, validation) {
             "Must be less than 0x" + (MAX_PIN_TRIGGER_DIO + 1).toString(16));
     }
 
-    if (inst.saciTimeoutExp > MAX_SACITIMEOUTEXP) {
-        Common.logError(validation, inst, "saciTimeoutExp",
-            "Must be less than 0x" + (MAX_SACITIMEOUTEXP + 1).toString(16));
-    }
-
     if (!(inst.debugPwdHash.match(/^[a-fA-F0-9]{0,64}$/))) {
         Common.logError(validation, inst, "debugPwdHash",
             "Must be valid hex-formatted SHA256 hash");
@@ -755,19 +812,14 @@ function validate(inst, validation) {
             "Must be 64-bit hex-formatted value");
     }
 
-    if (inst.hwOpts0 > 0xFFFFFFFF) {
-        Common.logError(validation, inst, "hwOpts0",
-            "Must be 32-bit value");
-    }
-
-    if (inst.hwOpts1 > 0xFFFFFFFF) {
-        Common.logError(validation, inst, "hwOpts1",
-            "Must be 32-bit value");
-    }
-
-    if (inst.pAppVtor > 0xFFFFFFFF) {
-        Common.logError(validation, inst, "pAppVtor",
-            "Must be 32-bit value");
+    if (Common.isCName(inst.pAppVtorStr) == false)
+    {
+        let pAppVtorInt = parseInt(inst.pAppVtorStr);
+        if (isNaN(pAppVtorInt) || pAppVtorInt > 0xFFFFFFFF || pAppVtorInt < 0)
+        {
+            Common.logError(validation, inst, "pAppVtorStr",
+            "Must be either a C symbol or a 32-bit value");
+        }
     }
 
     if (inst.writeEraseProt_mainSectors0_31 > 0xFFFFFFFF) {
@@ -788,12 +840,6 @@ function validate(inst, validation) {
     if (inst.chipEraseRetain_mainSectors32_255 > 0xFFFFFFFF) {
         Common.logError(validation, inst, "chipEraseRetain_mainSectors32_255",
             "Must be 32-bit value");
-    }
-
-    if (inst.HFXTCompTempThreshold < MIN_TEMP_THRESHOLD || inst.HFXTCompTempThreshold > MAX_TEMP_THRESHOLD) {
-        Common.logError(validation, inst, "HFXTCompTempThreshold",
-            "Must be an integer in the range [" + MIN_TEMP_THRESHOLD.toString(10) + ", " +
-            MAX_TEMP_THRESHOLD.toString(10) + "]");
     }
 
     if (inst.HFXTCompTempDelta < 1) {
@@ -882,7 +928,7 @@ function extend(base) {
     /* moduleInstances should be retained from base, but we are
      * also adding our own modules. This is needed so the shown module
      * instances update dynamically.
-    */
+     */
     result.moduleStatic.moduleInstances =
         function (inst) {
             return moduleInstances(inst, base);

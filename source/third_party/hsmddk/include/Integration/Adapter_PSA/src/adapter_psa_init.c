@@ -46,17 +46,24 @@
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/c_adapter_psa.h>              // configuration
 #include <third_party/hsmddk/include/Kit/DriverFramework/Basic_Defs_API/incl/basic_defs.h>
 #include <third_party/hsmddk/include/Kit/Log/incl/log.h>
-#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>                 // the API to implement
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/platform.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_preprovisioned_keys.h>
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>
+#include <third_party/hsmddk/include/Config/cs_mbedtls.h>
 
+static bool KeyMgmt_isInitialized = false;
 
+extern uint8_t volatileAllocBuffer[];
+extern size_t volatileAllocBufferSizeBytes;
 /*----------------------------------------------------------------------------
  * psa_crypto_init
  */
 psa_status_t
 psa_crypto_init(void)
 {
-    psa_status_t funcres;
+    /* Subsequent calls to this API are guaranteed to succeed - thus the default condition of success */
+    psa_status_t funcres = PSA_SUCCESS;
     uint32_t Identity = 0U;
     uint16_t OtpErrorLocation = 0U;
     uint8_t OtpErrorCode = 0U;
@@ -66,33 +73,48 @@ psa_crypto_init(void)
     uint8_t HostID = 0U;
     uint8_t NonSecure = 0U;
 
-    /* Check if HW is available and accessable */
-    funcres = psaInt_SystemGetState(&OtpErrorCode, &OtpErrorLocation,
-                                    &Mode, &SelfTestError, &CryptoOfficer,
-                                    &HostID, &NonSecure, &Identity);
-    if (PSA_SUCCESS == funcres)
+    if (!KeyMgmt_isInitialized)
     {
-        switch (Mode)
+        /* Check if HW is available and accessable */
+        funcres = psaInt_SystemGetState(&OtpErrorCode, &OtpErrorLocation,
+                                        &Mode, &SelfTestError, &CryptoOfficer,
+                                        &HostID, &NonSecure, &Identity);
+        if (PSA_SUCCESS == funcres)
         {
-        case 0:                         /* Active Mode */
-        case 15:                        /* Active Mode - Login successful */
-            break;
-        case 3:                         /* Fatal Error - Login Failed */
-        case 4:                         /* Fatal Error - Self-test */
-        case 5:                         /* Fatal Error - DMA */
-        case 6:                         /* Fatal Error - NRBG or DRBG */
-        case 7:                         /* Fatal Error - Key generation */
-        default:                        /* Unexpected value */
-#ifdef PSA_LOG_LOWLEVEL_ERROR
-            LOG_WARN("Abort - %s()=%d\n", __func__, funcres);
-#endif
-            funcres = PSA_ERROR_CORRUPTION_DETECTED;
-            break;
+            switch (Mode)
+            {
+            case 0:                         /* Active Mode */
+            case 15:                        /* Active Mode - Login successful */
+                break;
+            case 3:                         /* Fatal Error - Login Failed */
+            case 4:                         /* Fatal Error - Self-test */
+            case 5:                         /* Fatal Error - DMA */
+            case 6:                         /* Fatal Error - NRBG or DRBG */
+            case 7:                         /* Fatal Error - Key generation */
+            default:                        /* Unexpected value */
+    #ifdef PSA_LOG_LOWLEVEL_ERROR
+                LOG_WARN("Abort - %s()=%d\n", __func__, funcres);
+    #endif
+                funcres = PSA_ERROR_CORRUPTION_DETECTED;
+                break;
+            }
         }
-    }
-    else
-    {
-        /* MISRA - Intentially empty */
+        else
+        {
+            /* MISRA - Intentially empty */
+        }
+
+        if (PSA_SUCCESS == funcres)
+        {
+            funcres = KeyMgmt_initPreProvisionedKeys();
+        }
+
+        if (PSA_SUCCESS == funcres)
+        {
+            mbedtls_memory_buffer_alloc_init(volatileAllocBuffer, volatileAllocBufferSizeBytes);
+
+            KeyMgmt_isInitialized = true;
+        }
     }
 
     return funcres;

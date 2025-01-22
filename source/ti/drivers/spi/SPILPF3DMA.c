@@ -470,12 +470,8 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                      * start the following transaction if necessary.
                      */
                     configNextTransfer(object, hwAttrs);
-
-                    if (object->manualStart && UDMALPF3_channelDone(hwAttrs->txChannelBitMask))
-                    {
-                        /* Ping pong flow was broken, restart */
-                        UDMALPF3_channelEnable(hwAttrs->txChannelBitMask);
-                    }
+                    enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+                    UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                 }
                 else
                 {
@@ -533,12 +529,8 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                     {
                         /* Reconfigure channel for following transaction */
                         configNextTransfer(object, hwAttrs);
-
-                        if (object->manualStart && UDMALPF3_channelDone(hwAttrs->txChannelBitMask))
-                        {
-                            /* Ping pong flow was broken, restart */
-                            UDMALPF3_channelEnable(hwAttrs->txChannelBitMask);
-                        }
+                        enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+                        UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                     }
                     else
                     {
@@ -1294,7 +1286,7 @@ static bool initHw(SPI_Handle handle)
     /* Get requested format */
     format = frameFormat[object->format];
 
-    if (hwAttrs->csnPin && ((format & SPI_CTL0_FRF_M) == SPI_CTL0_FRF_MOTOROLA_3WIRE))
+    if ((hwAttrs->csnPin != GPIO_INVALID_INDEX) && ((format & SPI_CTL0_FRF_M) == SPI_CTL0_FRF_MOTOROLA_3WIRE))
     {
         /*
          * A CS pin was specified, upgrade the 3WIRE to a 4WIRE mode

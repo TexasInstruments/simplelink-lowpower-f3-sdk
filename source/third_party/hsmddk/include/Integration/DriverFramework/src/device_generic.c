@@ -77,7 +77,7 @@
 /*----------------------------------------------------------------------------
  * Local variables
  */
-
+static Device_Admin_t HWPALLib_Devices[HWPAL_DEVICE_COUNT];
 
 /*-----------------------------------------------------------------------------
  * DeviceLib_Device_Exists
@@ -162,7 +162,7 @@ Device_Initialize(
                 else
                 {
                     // Allocate memory for device administration data
-                    DevAdmin_pp[res] = Device_Internal_Alloc(sizeof(Device_Admin_t));
+                    DevAdmin_pp[res] = &HWPALLib_Devices[res];
                     if (DevAdmin_pp[res] == NULL)
                     {
                         LOG_CRIT("%s: failed to allocate device (index %d, name %s)\n",
@@ -172,31 +172,18 @@ Device_Initialize(
                     }
                     else
                     {
-                        // Allocate and copy device name
-                        DevAdmin_pp[res]->DevName =
-                                Device_Internal_Alloc((uint32_t)strlen(DevStatAdmin_p[res].DevName)+1U);
-                        if (DevAdmin_pp[res]->DevName == NULL)
-                        {
-                            LOG_CRIT("%s: failed to allocate device (index %d) name %s\n",
-                                     __func__, res, DevStatAdmin_p[res].DevName);
-                            funcres = -1;
-                            break;
-                        }
-                        else
-                        {
-                            (void)strcpy(DevAdmin_pp[res]->DevName, DevStatAdmin_p[res].DevName);
+                        (void)strcpy(DevAdmin_pp[res]->DevName, DevStatAdmin_p[res].DevName);
 
-                            // Copy the rest of device data
-                            DevAdmin_pp[res]->DeviceNr = DevStatAdmin_p[res].DeviceNr;
-                            DevAdmin_pp[res]->FirstOfs = DevStatAdmin_p[res].FirstOfs;
-                            DevAdmin_pp[res]->LastOfs  = DevStatAdmin_p[res].LastOfs;
-                            DevAdmin_pp[res]->Flags    = DevStatAdmin_p[res].Flags;
+                        // Copy the rest of device data
+                        DevAdmin_pp[res]->DeviceNr = DevStatAdmin_p[res].DeviceNr;
+                        DevAdmin_pp[res]->FirstOfs = DevStatAdmin_p[res].FirstOfs;
+                        DevAdmin_pp[res]->LastOfs  = DevStatAdmin_p[res].LastOfs;
+                        DevAdmin_pp[res]->Flags    = DevStatAdmin_p[res].Flags;
 
 #ifdef HWPAL_DEVICE_MAGIC
-                            DevAdmin_pp[res]->Magic    = HWPAL_DEVICE_MAGIC;
+                        DevAdmin_pp[res]->Magic    = HWPAL_DEVICE_MAGIC;
 #endif
-                            DevAdmin_pp[res]->DeviceId = res;
-                        }
+                        DevAdmin_pp[res]->DeviceId = res;
                     }
                 }
             }
@@ -217,13 +204,10 @@ Device_Initialize(
 
             if (funcres != 0)
             {
-                // Free all allocated memory
                 for (res = 0; res < DevStatCount; res++)
                 {
                     if (DevAdmin_pp[res] != NULL)
                     {
-                        Device_Internal_Free(DevAdmin_pp[res]->DevName);
-                        Device_Internal_Free(DevAdmin_pp[res]);
                         DevAdmin_pp[res] = NULL;
                     }
                 }
@@ -250,20 +234,7 @@ Device_UnInitialize(void)
 
     if (DevGlobalAdmin_p->fInitialized)
     {
-        uint32_t i;
-
         Device_Internal_UnInitialize();
-
-        // Free all allocated memory
-        for (i = 0; i < DevCount; i++)
-        {
-            if (DevAdmin_pp[i] != NULL)
-            {
-                Device_Internal_Free(DevAdmin_pp[i]->DevName);
-                Device_Internal_Free(DevAdmin_pp[i]);
-                DevAdmin_pp[i] = NULL;
-            }
-        }
 
         DevGlobalAdmin_p->fInitialized = false;
     }
@@ -385,6 +356,7 @@ Device_GetProperties(
 }
 
 
+#if HWPAL_DEVICE_ALLOW_ADD_DEVICE
 /*----------------------------------------------------------------------------
  * Device_Add
  */
@@ -448,34 +420,20 @@ Device_Add(
                         }
                         else
                         {
-                            // Allocate and copy device name
-                            DevAdmin_pp[Index]->DevName =
-                                            Device_Internal_Alloc((uint32_t)strlen(Props_p->Name_p) + 1U);
-                            if (DevAdmin_pp[Index]->DevName == NULL)
-                            {
-                                LOG_CRIT("%s: failed to allocate device (index %d) name %s\n",
-                                         __func__, Index, Props_p->Name_p);
-                                Device_Internal_Free(DevAdmin_pp[Index]);
-                                DevAdmin_pp[Index] = NULL;
-                                funcres = -1;
-                            }
-                            else
-                            {
-                                (void)strcpy(DevAdmin_pp[Index]->DevName, Props_p->Name_p);
+                            (void)strcpy(DevAdmin_pp[Index]->DevName, Props_p->Name_p);
 
-                                // Copy the rest
-                                DevAdmin_pp[Index]->FirstOfs  = Props_p->StartByteOffset;
-                                DevAdmin_pp[Index]->LastOfs   = Props_p->LastByteOffset;
-                                DevAdmin_pp[Index]->Flags     = (uint32_t)Props_p->Flags;
+                            // Copy the rest
+                            DevAdmin_pp[Index]->FirstOfs  = Props_p->StartByteOffset;
+                            DevAdmin_pp[Index]->LastOfs   = Props_p->LastByteOffset;
+                            DevAdmin_pp[Index]->Flags     = (uint32_t)Props_p->Flags;
 
-                                // Set default values
-                                DevAdmin_pp[Index]->DeviceNr  = 0;
+                            // Set default values
+                            DevAdmin_pp[Index]->DeviceNr  = 0;
 #ifdef HWPAL_DEVICE_MAGIC
-                                DevAdmin_pp[Index]->Magic     = HWPAL_DEVICE_MAGIC;
+                            DevAdmin_pp[Index]->Magic     = HWPAL_DEVICE_MAGIC;
 #endif
 
-                                DevAdmin_pp[Index]->DeviceId  = Index;
-                            }
+                            DevAdmin_pp[Index]->DeviceId  = Index;
                         }
                     }
                 }
@@ -526,9 +484,6 @@ Device_Remove(
             }
             else
             {
-                // Free device memory
-                Device_Internal_Free(DevAdmin_pp[Index]->DevName);
-                Device_Internal_Free(DevAdmin_pp[Index]);
                 DevAdmin_pp[Index] = NULL;
             }
 #ifdef HWPAL_STRICT_ARGS_CHECK
@@ -538,6 +493,7 @@ Device_Remove(
 
     return funcres;
 }
+#endif
 
 
 /*-----------------------------------------------------------------------------

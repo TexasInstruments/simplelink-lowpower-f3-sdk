@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,6 @@
     "name"        : "CC3200AUDBOOST",
     "displayName" : "CC3200 Audio BoosterPack",
     "description" : "SimpleLink Wi-Fi CC3200 Audio BoosterPack",
-    "longDescription": "The [__CC3200AUDBOOST__](http://www.ti.com/tool/CC3200AUDBOOST) contains a Class-D power amplifier to drive the speakers and an ultra-low power audio codec, [__TLV320AIC3254__](http://www.ti.com/product/TLV320AIC3254), which supports programmable audio processing. Speakers, headsets, and microphones are sold separately.",
     "headerType"  : "BoosterPack 40 pin",
     "components"  : {
         "CC3200AUDBOOST_I2S" : {

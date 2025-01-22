@@ -149,11 +149,7 @@
  */
 
 #define BLE_RESOLVING_LIST_SIZE      (rlSize) // Resolving List Size For Peer + Local IRK/RP/IdAddr
-#ifdef USE_DFL
-#define EXT_ACCEPT_LIST_SIZE         0
-#else
-#define EXT_ACCEPT_LIST_SIZE         (2 * BLE_RESOLVING_LIST_SIZE)
-#endif
+#define EXT_ACCEPT_LIST_SIZE         (extALSize)
 #define LOCAL_RL_INDEX               0
 #define EMPTY_RESOLVE_LIST_ENTRY     0xFF
 #define INVALID_RESOLVE_LIST_INDEX   0xFFU

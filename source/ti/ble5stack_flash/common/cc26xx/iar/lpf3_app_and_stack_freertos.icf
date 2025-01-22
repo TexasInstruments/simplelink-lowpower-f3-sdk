@@ -78,7 +78,17 @@ include "ti_utils_build_linker.cmd.genmap";
 // Memory Sizes
 ////////////////////////////////////////////////////////////////////////////////
 define symbol FLASH_BASE          = ti_utils_build_GenMap_FLASH0_BASE;
-define symbol FLASH_SIZE          = ti_utils_build_GenMap_FLASH0_SIZE;
+if(isdefinedsymbol(SECURE_BOOT))
+{
+  // Setting an hardcoded flash size is a workaround since the flash size
+  // generated in ti_utils_build_linker.cmd.genmap when using Secure Boot
+  // is the image size and not the total flash size required in this file.
+  define symbol FLASH_SIZE          = 0xE8000;
+}
+else
+{
+  define symbol FLASH_SIZE          = ti_utils_build_GenMap_FLASH0_SIZE;
+}
 define symbol RAM_BASE            = ti_utils_build_GenMap_RAM0_BASE;
 define symbol RAM_SIZE            = ti_utils_build_GenMap_RAM0_SIZE;
 
@@ -105,16 +115,32 @@ define symbol NVS_BASE            = (FLASH_SIZE - NVS_SIZE);
 
 if (isdefinedsymbol(OAD_APP_OFFCHIP) || isdefinedsymbol(OAD_APP_ONCHIP) || isdefinedsymbol(OAD_PERSISTENT) || isdefinedsymbol(OAD_DUAL_IMAGE))
 {
-  define symbol MCU_HDR_SIZE  =  0x100;
-  define symbol MCUBOOT_BASE  =  FLASH_BASE;
-  define symbol MCUBOOT_SIZE  =  0x6000;
-  define symbol APP_HDR_BASE  =  APP_HDR_ADDR;
-  define symbol APP_BASE      = (APP_HDR_BASE + MCU_HDR_SIZE);
+  if(isdefinedsymbol(SECURE_BOOT))
+  {
+    define symbol MCU_HDR_SIZE  =  0x80;
+    define symbol APP_HDR_BASE  =  APP_HDR_ADDR;
+    define symbol APP_BASE      = (APP_HDR_BASE + MCU_HDR_SIZE);
+  }
+  else
+  {
+    define symbol MCU_HDR_SIZE  =  0x100;
+    define symbol MCUBOOT_BASE  =  FLASH_BASE;
+    define symbol MCUBOOT_SIZE  =  0x6000;
+    define symbol APP_HDR_BASE  =  APP_HDR_ADDR;
+    define symbol APP_BASE      = (APP_HDR_BASE + MCU_HDR_SIZE);
+  }
 }
 
 if (isdefinedsymbol(OAD_APP_ONCHIP) || isdefinedsymbol(OAD_PERSISTENT))
 {
-  define symbol PERSISTENT_HDR_BASE  = 0x6000;
+  if(isdefinedsymbol(SECURE_BOOT))
+  {
+    define symbol PERSISTENT_HDR_BASE  = 0x00;
+  }
+  else
+  {
+    define symbol PERSISTENT_HDR_BASE  = 0x6000;
+  }
   define symbol PERSISTENT_BASE      = (PERSISTENT_HDR_BASE + MCU_HDR_SIZE);
   define symbol PERSISTENT_SIZE     = (APP_HDR_BASE - PERSISTENT_BASE);
   define symbol APP_SIZE             = (FLASH_SIZE - APP_BASE - NVS_SIZE);
@@ -127,7 +153,14 @@ if (isdefinedsymbol(OAD_APP_OFFCHIP))
 
 if (isdefinedsymbol(OAD_DUAL_IMAGE))
 {
-  define symbol APP_SIZE      =  ((FLASH_SIZE - NVS_SIZE - MCUBOOT_SIZE)/2 - MCU_HDR_SIZE);
+  if(isdefinedsymbol(SECURE_BOOT))
+  {
+    define symbol APP_SIZE      =  ((FLASH_SIZE - NVS_SIZE)/2 - MCU_HDR_SIZE);
+  }
+  else
+  {
+    define symbol APP_SIZE      =  ((FLASH_SIZE - NVS_SIZE - MCUBOOT_SIZE)/2 - MCU_HDR_SIZE);
+  }
 }
 
 
@@ -202,7 +235,10 @@ if (isdefinedsymbol(ti_utils_build_GenMap_HSMOTP_BASE)) {
 /* Define a region for the flash                                        */
 if (isdefinedsymbol(OAD_APP_OFFCHIP) || isdefinedsymbol(OAD_APP_ONCHIP) || isdefinedsymbol(OAD_PERSISTENT) || isdefinedsymbol(OAD_DUAL_IMAGE))
 {
-  define region MCUBOOT_SLOT         = mem:[from MCUBOOT_BASE to (MCUBOOT_BASE + MCUBOOT_SIZE)];
+  if(!isdefinedsymbol(SECURE_BOOT))
+  {
+    define region MCUBOOT_SLOT         = mem:[from MCUBOOT_BASE to (MCUBOOT_BASE + MCUBOOT_SIZE)];
+  }
   define region APP_HDR_SLOT         = mem:[from APP_HDR_BASE to APP_BASE];
   define region APP_SLOT             = mem:[from APP_BASE to NVS_BASE];
 
@@ -221,7 +257,7 @@ define region FLASH_LAST_PAGE        = mem:[from(FLASH_END) - PAGE_SIZE to FLASH
 define region FLASH_ALL              = mem:[from FLASH_START to FLASH_END] | FLASH_LAST_PAGE;
 
 /* Define a region for the CCFG                                         */
-if (!(isdefinedsymbol(OAD_APP_OFFCHIP) || isdefinedsymbol(OAD_APP_ONCHIP) || isdefinedsymbol(OAD_PERSISTENT) || isdefinedsymbol(OAD_DUAL_IMAGE)))
+if (isdefinedsymbol(SECURE_BOOT) || !(isdefinedsymbol(OAD_APP_OFFCHIP) || isdefinedsymbol(OAD_APP_ONCHIP) || isdefinedsymbol(OAD_PERSISTENT) || isdefinedsymbol(OAD_DUAL_IMAGE)))
 {
   define symbol CCFG_START          = CCFG_BASE;
   define symbol CCFG_END            = CCFG_BASE + CCFG_SIZE - 1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,6 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/setup.h)
-#include DeviceFamily_constructPath(driverlib/interrupt.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(cmsis/cc23x0r5.h)
 #include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
 
@@ -44,14 +42,6 @@
 
 // Forward declaration of the default fault and interrupt handlers.
 void resetISR(void);
-static void nmiISR(void);
-static void faultISR(void);
-static void intDefaultHandler(void);
-
-// FreeRTOS handlers
-extern void vPortSVCHandler(void);
-extern void xPortPendSVHandler(void);
-extern void xPortSysTickHandler(void);
 
 // The reset handler called when processor is started
 extern void _c_int00(void);
@@ -65,48 +55,10 @@ extern unsigned long _stack_end;
 
 //*****************************************************************************
 //
-// The vector table in Flash. Note that the proper constructs must be placed
-// on this to ensure that it ends up at physical address 0x0000.0000 or at the
-// start of the program if located at a start address other than 0.
+// Reset vectors defined and populated in SysConfig.
 //
 //*****************************************************************************
-__attribute__((section(".resetVecs"), used)) static void (*const resetVectors[])(void) = {
-    (void (*)(void))((uint32_t)&_stack_end),
-    resetISR,            //  1 The reset handler
-    nmiISR,              //  2 The NMI handler
-    faultISR,            //  3 The hard fault handler
-    intDefaultHandler,   //  4 Reserved
-    intDefaultHandler,   //  5 Reserved
-    intDefaultHandler,   //  6 The usage fault handler
-    intDefaultHandler,   //  7 Reserved
-    intDefaultHandler,   //  8 Reserved
-    intDefaultHandler,   //  9 Reserved
-    intDefaultHandler,   // 10 Reserved
-    vPortSVCHandler,     // 11 SVCall handler
-    intDefaultHandler,   // 12 Debug monitor handler
-    intDefaultHandler,   // 13 Reserved
-    xPortPendSVHandler,  // 14 The PendSV handler
-    xPortSysTickHandler, // 15 The SysTick handler
-    intDefaultHandler,   // 16 CPUIRQ0
-    intDefaultHandler,   // 17 CPUIRQ1
-    intDefaultHandler,   // 18 CPUIRQ2
-    intDefaultHandler,   // 19 CPUIRQ3
-    intDefaultHandler,   // 20 CPUIRQ4
-    intDefaultHandler,   // 21 GPIO event interrupt
-    intDefaultHandler,   // 22 LRF interrupt 0
-    intDefaultHandler,   // 23 LRF interrupt 1
-    intDefaultHandler,   // 24 uDMA done events
-    intDefaultHandler,   // 25 AES interrupt
-    intDefaultHandler,   // 26 SPI0 combined interrupt
-    intDefaultHandler,   // 27 UART0 combined interrupt
-    intDefaultHandler,   // 28 I2C0 combined interrupt
-    intDefaultHandler,   // 29 LGPT0 interrupt
-    intDefaultHandler,   // 30 LGPT1 interrupt
-    intDefaultHandler,   // 31 ADC interrupt
-    intDefaultHandler,   // 32 CPUIRQ16
-    intDefaultHandler,   // 33 LGPT2 interrupt
-    intDefaultHandler,   // 34 LGPT3 interrupt
-};
+extern void (*const resetVectors[])(void);
 
 //*****************************************************************************
 //
@@ -227,45 +179,6 @@ void __attribute__((naked)) resetISR(void)
                          " ldr r0, [r0]\n"
                          " mov sp, r0\n"
                          " bl localProgramStart");
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives an NMI.  This
-// simply enters an infinite loop, preserving the system state for examination
-// by a debugger.
-//
-//*****************************************************************************
-static void nmiISR(void)
-{
-    /* Enter an infinite loop. */
-    while (1) {}
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives a fault
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
-static void faultISR(void)
-{
-    /* Enter an infinite loop. */
-    while (1) {}
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives an unexpected
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
-static void intDefaultHandler(void)
-{
-    /* Enter an infinite loop. */
-    while (1) {}
 }
 
 //*****************************************************************************

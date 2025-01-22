@@ -1,5 +1,5 @@
 """
-CRC Tool
+TI SimpleLink CRC tool.
 
 Tool to insert CRCs into ELF files or generate binary for programming
 ccfg user region

@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,30 @@
 #include <ti/drivers/rng/RNGLPF3RF.h>
 
 #define `countDef` `instances.length`
+
+% if (RNG.$static.RepetitionCountTest === true) 
+% {
+const bool RNGLPF3RF_rctEnabled = true;
+const int RNGLPF3RF_rctThreshold = `RNG.$static.RCTThreshold` / 3;
+% }
+% else
+% {
+const bool RNGLPF3RF_rctEnabled = false;
+const int RNGLPF3RF_rctThreshold = 0;
+% }
+
+% if (RNG.$static.AdaptiveProportionTest === true) 
+% {
+const bool RNGLPF3RF_aptEnabled = true;
+const int RNGLPF3RF_aptThreshold = `RNG.$static.APTThreshold`;
+const int RNGLPF3RF_aptBimodalThreshold = `RNG.$static.APTBimodalThreshold`;
+% }
+% else
+% {
+const bool RNGLPF3RF_aptEnabled = false;
+const int RNGLPF3RF_aptThreshold = 0;
+const int RNGLPF3RF_aptBimodalThreshold = 0;
+% }
 
 const size_t RNG_poolByteSize = RNG_POOL_BYTE_SIZE;
 #if defined(__IAR_SYSTEMS_ICC__)

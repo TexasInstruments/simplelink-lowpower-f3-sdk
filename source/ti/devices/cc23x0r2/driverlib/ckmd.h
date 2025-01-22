@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the CKMD module.
  *
- *  Copyright (c) 2023 Texas Instruments Incorporated
+ *  Copyright (c) 2023-2024 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -572,7 +572,7 @@ __STATIC_INLINE uint_least16_t CKMDGetLfoscRtnPpm(void)
     uint8_t ppmRtn = 20;
     if (fcfg->appTrims.revision >= 0x5)
     {
-        ppmRtn = fcfg->appTrims.cc23x0r2.lfOscParams.ppmRtn;
+        ppmRtn = fcfg->appTrims.cc23x0r2.misc0.lfoscPpmRtn;
     }
 
     // The ppmTempMid field uses units of 30ppm, convert to ppm
@@ -599,7 +599,7 @@ __STATIC_INLINE uint_least16_t CKMDGetLfoscMidTempCoefficientPpmPerC(void)
     uint8_t ppmTempMid = 20;
     if (fcfg->appTrims.revision >= 0x5)
     {
-        ppmTempMid = fcfg->appTrims.cc23x0r2.lfOscParams.ppmTempMid;
+        ppmTempMid = fcfg->appTrims.cc23x0r2.misc0.lfoscPpmTempMid;
     }
 
     // The ppmTempMid field uses units of 13ppm/C, convert to ppm/C
@@ -627,7 +627,7 @@ __STATIC_INLINE uint_least16_t CKMDGetLfoscExtTempCoefficientPpmPerC(void)
     uint8_t ppmTempExt = 20;
     if (fcfg->appTrims.revision >= 0x5)
     {
-        ppmTempExt = fcfg->appTrims.cc23x0r2.lfOscParams.ppmTempExt;
+        ppmTempExt = fcfg->appTrims.cc23x0r2.misc0.lfoscPpmTempExt;
     }
 
     // The ppmTempExt field uses units of 35ppm/C, convert to ppm/C

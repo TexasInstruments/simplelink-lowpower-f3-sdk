@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -197,7 +197,7 @@ function moduleInstances(inst)
 {
     let shortName = inst.$name.replace("CONFIG_", "");
 
-    let gpio = [{
+    let gpio = {
         name: "gpioPin",
         displayName: "GPIO",
         description: "Default configuration",
@@ -212,9 +212,21 @@ function moduleInstances(inst)
             /* Sets default but user can reconfigure */
             $name: "CONFIG_GPIO_" + shortName + "_INPUT"
         }
-    }];
+    };
 
-    return(gpio);
+    if (inst.pull === "Internal")
+    {
+        if (inst.polarity === "Active High")
+        {
+            gpio.args.pull = "Pull Down";
+        }
+        else if (inst.polarity === "Active Low")
+        {
+            gpio.args.pull = "Pull Up";
+        }
+    }
+
+    return([gpio]);
 }
 
 /*
@@ -259,14 +271,14 @@ let base = {
     description: "Button Driver",
     longDescription: `
 The [__Button driver__][1] provides a simple interface to control Buttons.
+
 * [Usage Synopsis][2]
 * [Examples][3]
 * [Configuration][4]
+
 [1]: /drivers/doxygen/html/_button_8h.html#details "C API reference"
-[2]:
-/drivers/doxygen/html/_button_8h.html#ti_drivers_Button_Synopsis "Synopsis"
-[3]: /drivers/doxygen/html/_button_8h.html#ti_drivers_Button_Examples
-"C usage examples"
+[2]: /drivers/doxygen/html/_button_8h.html#ti_drivers_Button_Synopsis "Synopsis"
+[3]: /drivers/doxygen/html/_button_8h.html#ti_drivers_Button_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#Button_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName: "CONFIG_BUTTON_",

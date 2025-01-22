@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,15 +87,20 @@ const ADC_FxnTable ADCLPF3_fxnTable = {ADCLPF3_close,
 
 /*
  * =============================================================================
- * Private Global Variables
+ * Global Variables
  * =============================================================================
  */
 
-/* Keep track of the adc handle instance to create and delete adcSemaphore */
-static uint16_t adcInstance = 0;
+/* Keep track of the number of ADC (and ADCBuf) instances using the external
+ * ADC Reference.
+ */
+uint8_t ADCLPF3_adcExternalReferenceUsageCount = 0;
+
+/* Keep track of the adc handle instance to create and delete ADCLPF3_adcSemaphore */
+uint8_t ADCLPF3_adcInstanceCount = 0;
 
 /* Semaphore to arbitrate access to the single ADC peripheral between multiple handles */
-static SemaphoreP_Struct adcSemaphore;
+SemaphoreP_Struct ADCLPF3_adcSemaphore;
 
 /*
  * =============================================================================
@@ -127,6 +132,12 @@ ADC_Handle ADCLPF3_open(ADC_Handle handle, ADC_Params *params)
 
     DebugP_assert(handle);
 
+    if (params->isProtected == false)
+    {
+        /* For this implementation, protection must always be enabled */
+        return NULL;
+    }
+
     /* Get object and hwAttrs */
     object  = handle->object;
     hwAttrs = handle->hwAttrs;
@@ -136,34 +147,39 @@ ADC_Handle ADCLPF3_open(ADC_Handle handle, ADC_Params *params)
 
     if (object->isOpen)
     {
-        DebugP_log0("ADC: Error! Already in use.");
         HwiP_restore(key);
         return NULL;
     }
     object->isOpen = true;
 
-    /* Remember thread safety protection setting */
-    object->isProtected = params->isProtected;
-
-    /* If this is the first handle requested, set up the semaphore as well */
-    if (adcInstance == 0)
+    /* If this is the first handle requested, set up the semaphore */
+    if (ADCLPF3_adcInstanceCount == 0)
     {
         /* Setup semaphore */
-        SemaphoreP_constructBinary(&adcSemaphore, 1);
+        SemaphoreP_constructBinary(&ADCLPF3_adcSemaphore, 1);
     }
-    adcInstance++;
+    ADCLPF3_adcInstanceCount++;
 
     /* Register power dependency - i.e. power up and enable clock for ADC */
     Power_setDependency(PowerLPF3_PERIPH_ADC0);
 
+    if (hwAttrs->refSource == ADCLPF3_EXTERNAL_REFERENCE)
+    {
+        /* Configure external reference pins, if no other open instance has
+         * already done it.
+         */
+        if (ADCLPF3_adcExternalReferenceUsageCount == 0)
+        {
+            GPIO_setConfigAndMux(hwAttrs->adcRefPosDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
+            GPIO_setConfigAndMux(hwAttrs->adcRefNegDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
+        }
+        ADCLPF3_adcExternalReferenceUsageCount++;
+    }
+
     HwiP_restore(key);
 
-    /* Set pins to analog function. If pin is unused, value is set to GPIO_INVALID_INDEX */
+    /* Set input pin to analog function. If pin is unused, value is set to GPIO_INVALID_INDEX */
     GPIO_setConfigAndMux(hwAttrs->adcInputDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
-    GPIO_setConfigAndMux(hwAttrs->adcRefPosDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
-    GPIO_setConfigAndMux(hwAttrs->adcRefNegDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
-
-    DebugP_log0("ADC: Object opened");
 
     return handle;
 }
@@ -174,24 +190,42 @@ ADC_Handle ADCLPF3_open(ADC_Handle handle, ADC_Params *params)
 void ADCLPF3_close(ADC_Handle handle)
 {
     ADCLPF3_Object *object;
+    ADCLPF3_HWAttrs const *hwAttrs;
 
     DebugP_assert(handle);
 
-    object = handle->object;
+    /* Get object and hwAttrs */
+    object  = handle->object;
+    hwAttrs = handle->hwAttrs;
 
     uint32_t key = HwiP_disable();
 
     if (object->isOpen)
     {
-        adcInstance--;
-        if (adcInstance == 0)
+        ADCLPF3_adcInstanceCount--;
+        if (ADCLPF3_adcInstanceCount == 0)
         {
-            SemaphoreP_destruct(&adcSemaphore);
+            SemaphoreP_destruct(&ADCLPF3_adcSemaphore);
+        }
+
+        GPIO_resetConfig(hwAttrs->adcInputDIO);
+
+        if (hwAttrs->refSource == ADCLPF3_EXTERNAL_REFERENCE)
+        {
+            ADCLPF3_adcExternalReferenceUsageCount--;
+
+            /* Reset external reference pins, if no other open instance is using
+             * external reference.
+             */
+            if (ADCLPF3_adcExternalReferenceUsageCount == 0)
+            {
+                GPIO_resetConfig(hwAttrs->adcRefPosDIO);
+                GPIO_resetConfig(hwAttrs->adcRefNegDIO);
+            }
         }
 
         /* Remove power dependency */
         Power_releaseDependency(PowerLPF3_PERIPH_ADC0);
-        DebugP_log0("ADC: Object closed");
     }
 
     object->isOpen = false;
@@ -213,33 +247,38 @@ int_fast16_t ADCLPF3_control(ADC_Handle handle, uint_fast16_t cmd, void *arg)
 int_fast16_t ADCLPF3_convert(ADC_Handle handle, uint16_t *value)
 {
     ADCLPF3_HWAttrs const *hwAttrs;
-    ADCLPF3_Object *object;
     int_fast16_t conversionResult = ADC_STATUS_SUCCESS;
     uint32_t conversionValue;
     uint32_t interruptStatus;
+    uint32_t semaphorePendTimeout = HwiP_inISR() ? SemaphoreP_NO_WAIT : SemaphoreP_WAIT_FOREVER;
 
     DebugP_assert(handle);
 
     /* Get handle */
     hwAttrs = handle->hwAttrs;
 
-    /* Get the object */
-    object = handle->object;
-
-    if (object->isProtected)
+    /* Acquire the lock for this particular ADC handle */
+    if (SemaphoreP_pend(&ADCLPF3_adcSemaphore, semaphorePendTimeout) != SemaphoreP_OK)
     {
-        /* Acquire the lock for this particular ADC handle */
-        SemaphoreP_pend(&adcSemaphore, SemaphoreP_WAIT_FOREVER);
+        return ADC_STATUS_ERROR;
     }
 
     /* Set constraints to guarantee operation */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
-    /* Specify range of ctrl-registers for conversion. Use ctrl-register 0 */
+    /* Make sure conversion is disabled to allow configuration changes */
+    ADCDisableConversion();
+
+    /* Specify range of ctrl registers for conversion. Use ctrl register 0 */
     ADCSetMemctlRange(0, 0);
 
     /* Set clock-divider and sampling duration */
     ADCSetSampleDuration(hwAttrs->adcClkkDivider, hwAttrs->samplingDuration);
+
+    /* Set sampling mode to auto, meaning the sample duration is determined by
+     * sample duration configured above.
+     */
+    ADCSetSamplingMode(ADC_SAMPLE_MODE_AUTO);
 
     /* Set resolution */
     ADCSetResolution(hwAttrs->resolutionBits);
@@ -250,14 +289,26 @@ int_fast16_t ADCLPF3_convert(ADC_Handle handle, uint16_t *value)
     /* Pass correct offset-value to ADC peripheral, depending on reference source */
     ADCSetAdjustmentOffset(hwAttrs->refSource);
 
-    /* Trigger a conversion */
-    ADCManualTrigger();
+    /* Configure ADC to only do one conversion */
+    ADCSetSequence(ADC_SEQUENCE_SINGLE);
 
-    /* There is a delay of 9 cycles between writing the SC_START bit, and
-     * the BUSY-bit going high. If we start polling too early, we will miss it.
-     * delay 3 loops, where each loop is minimum 3 cycles.
+    /* Use software trigger source */
+    ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
+
+    /* Enable conversion. ADC will wait for trigger. */
+    ADCEnableConversion();
+
+    /* Start conversion. No need to call ADCStopConversion() since that is only
+     * needed in manual sampling mode.
      */
-    CPUDelay(3);
+    ADCStartConversion();
+
+    /* There is a delay of 9 cycles on CC23X0 and 18 cycles on CC27XX between
+     * writing the SC_START bit, and the BUSY-bit going high. If we start
+     * polling too early, we will miss it. Delay 6 loops, where each loop is
+     * minimum 3 cycles.
+     */
+    CPUDelay(6);
 
     /* Read out conversion (blocking while ADC is busy) */
     conversionValue = ADCReadResult(0);
@@ -276,11 +327,8 @@ int_fast16_t ADCLPF3_convert(ADC_Handle handle, uint16_t *value)
     /* Allow entering standby again after ADC conversion complete */
     Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 
-    if (object->isProtected)
-    {
-        /* Release the lock for this particular ADC handle */
-        SemaphoreP_post(&adcSemaphore);
-    }
+    /* Release the lock for this particular ADC handle */
+    SemaphoreP_post(&ADCLPF3_adcSemaphore);
 
     /* If we want to return the trimmed value, calculate it here. */
     if (hwAttrs->returnAdjustedVal)
@@ -304,17 +352,35 @@ int_fast16_t ADCLPF3_convertChain(ADC_Handle *handleList, uint16_t *dataBuffer, 
     int_fast16_t conversionResult = ADC_STATUS_SUCCESS;
     uint32_t conversionValue;
     uint32_t interruptStatus;
+    uint32_t semaphorePendTimeout = HwiP_inISR() ? SemaphoreP_NO_WAIT : SemaphoreP_WAIT_FOREVER;
 
     /* Acquire the lock used arbitrate access to the ADC peripheral
      * between multiple handles.
      */
-    SemaphoreP_pend(&adcSemaphore, SemaphoreP_WAIT_FOREVER);
+    if (SemaphoreP_pend(&ADCLPF3_adcSemaphore, semaphorePendTimeout) != SemaphoreP_OK)
+    {
+        return ADC_STATUS_ERROR;
+    }
 
     /* Set constraints to guarantee operation */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
-    /* Specify range of ctrl-registers for conversion */
+    /* Make sure conversion is disabled to allow configuration changes */
+    ADCDisableConversion();
+
+    /* Specify range of ctrl registers for conversion. Use ctrl register 0 */
     ADCSetMemctlRange(0, 0);
+
+    /* Set sampling mode to auto, meaning the sample duration is determined by
+     * sample duration configured above.
+     */
+    ADCSetSamplingMode(ADC_SAMPLE_MODE_AUTO);
+
+    /* Configure ADC to only do one conversion */
+    ADCSetSequence(ADC_SEQUENCE_SINGLE);
+
+    /* Use software trigger source */
+    ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
 
     for (uint32_t i = 0; i < channelCount; i++)
     {
@@ -332,17 +398,25 @@ int_fast16_t ADCLPF3_convertChain(ADC_Handle *handleList, uint16_t *dataBuffer, 
         /* Set reference source */
         ADCSetInput(hwAttrs->refSource, hwAttrs->internalChannel, 0);
 
-        /* Pass correct offset-value to ADC peripheral, depending on reference source */
+        /* Pass correct offset-value to ADC peripheral, depending on reference
+         * source
+         */
         ADCSetAdjustmentOffset(hwAttrs->refSource);
 
-        /* Trigger a conversion */
-        ADCManualTrigger();
+        /* Enable conversion. ADC will wait for trigger. */
+        ADCEnableConversion();
 
-        /* There is a delay of 9 cycles between writing the SC_START bit, and
-         * the BUSY-bit going high. If we start polling too early, we will miss it.
-         * delay 3 loops, where each loop is minimum 3 cycles.
+        /* Start conversion. No need to call ADCStopConversion() since that is
+         * only needed in manual sampling mode.
          */
-        CPUDelay(3);
+        ADCStartConversion();
+
+        /* There is a delay of 9 cycles on CC23X0 and 18 cycles on CC27XX between
+         * writing the SC_START bit, and the BUSY-bit going high. If we start
+         * polling too early, we will miss it. Delay 6 loops, where each loop is
+         * minimum 3 cycles.
+         */
+        CPUDelay(6);
 
         /* Read out conversion (blocking while ADC is busy) */
         conversionValue = ADCReadResult(0);
@@ -374,7 +448,7 @@ int_fast16_t ADCLPF3_convertChain(ADC_Handle *handleList, uint16_t *dataBuffer, 
     /* Release the lock used arbitrate access to the single ADC peripheral
      * between multiple handles.
      */
-    SemaphoreP_post(&adcSemaphore);
+    SemaphoreP_post(&ADCLPF3_adcSemaphore);
 
     /* Return the status-code of the conversion */
     return conversionResult;

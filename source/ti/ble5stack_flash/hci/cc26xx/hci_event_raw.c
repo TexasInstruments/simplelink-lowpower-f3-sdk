@@ -76,16 +76,20 @@
  */
 #include <string.h>
 #include "bcomdef.h"
+#include "hci_api.h"
 #include "hci_event.h"
 #include "hci_ext.h"
 #include "hci_event_internal.h"
 #include "ble.h"
+#include "icall_hci_tl.h"
 
 #include "rom_jt.h"
 
 #include "cs/ll_cs_mgr.h"
 #include "cs/ll_cs_db.h"
 #include "cs/ll_cs_common.h"
+
+#include <ti/drivers/utils/Math.h>
 
 /*******************************************************************************
  * MACROS
@@ -125,7 +129,7 @@ uint8* hciAllocAndPrepHciEvtPkt( uint8 **pData, uint8 hciEvtType,
 uint8* hciAllocAndPrepHciLeEvtPkt( uint8 **pData, uint8 hciLeEvtType,
                                    uint8 hciPktLen );
 
-uint16 hciGetPacketLen( hciPacket_t *pEvt );
+uint16 HCI_getPacketLen( hciPacket_t *pEvt );
 
 void hciCreateEventExtAdvSetTerminated( aeAdvSetTerm_t *pEvtData );
 void hciCreateEventExtScanReqReceived( aeScanReqReceived_t *extAdvRpt );
@@ -137,6 +141,17 @@ void hciCreateEventExtScan( uint8 event );
 
 uint8 hciCheckEventMask( uint8 eventBit, uint8 eventMaskTableIndex );
 uint8 hciSetEventMask( uint8 *pEventMask, uint8 eventMaskTableIndex );
+
+/*******************************************************************************
+ * LOCAL VARIABLES
+ */
+static const hciControllerToHostCallbacks_t *pHciC2HCbs = NULL;
+
+/*******************************************************************************
+ * EXTERNAL FUNCTIONS
+ */
+extern void osal_bm_free( void *payload_ptr );
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
@@ -152,23 +167,94 @@ uint8 *hciEvtMask[HCI_EVENT_MASK_NUM_OF_TABLES] =
  hciEvtMaskPage2,
 };
 
-hci_c2h_cbs_t hci2HostCBs =
+/*********************************************************************
+ * @fn      HCI_ControllerToHostSendCallbackEvent
+ *
+ * @brief   Send event to the host via proprietary callback.
+ *          The callback will be executed in the caller context
+ *          (No context switch will be done here)
+ *
+ * @param   pData          - a pointer to the data to parse.
+ *          callbackFctPtr - function pointer that will parse the message.
+ *
+ * @return  status:
+ *            true: always return TRUE
+ */
+static uint8_t HCI_ControllerToHostSendCallbackEvent(void *pData, void* callbackFctPtr)
 {
-  .send = NULL,
-};
+  ((void (*)(void*))(callbackFctPtr))(pData);
+
+  return TRUE;
+}
 
 /*******************************************************************************
- * API FUNCTIONS
+ * @fn          HCI_CommandStatusCb
+ *
+ * @brief       This function is a wrapper to a callback provided by the Host.
+ *              It was created to align the typecasts of the HCI_TL_CommandStatusCB_t
+ *              and the pHciC2HCbs->send (the return type is different).
+ *
+ * input parameters
+ *
+ * @param       pBuf - Pointer to an HCI packet.
+ * @param       len  - Length of the HCI packet.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      void
  */
+static void HCI_CommandStatusCb(uint8_t *pBuf, uint16_t len)
+{
+  if (( NULL != pHciC2HCbs ) && ( NULL != pHciC2HCbs->send ))
+  {
+    (void) pHciC2HCbs->send(pBuf, len);
+  }
+}
+
+/********************************************************************************
+ * @fn            BLE_ServicesParamsInit
+ *
+ * @brief         The `BLE_ServicesParamsInit` function provides a default
+ *                configuration for the bleServicesParams_t structure
+ *
+ * input parameters
+ *
+ * @param         pController2HostCallbacks - pointer to Controller-to-Host
+ *                callbacks interface
+ *
+ * output parameters
+ *
+ * @return        SUCCESS - in case pServiceParams initialization succeed
+ *                FAILURE in case of
+ *                   - Compatibility/versions mismatch (the check is done based
+ *                     on size of the hciControllerToHostCallbacks_t).
+ *                   - Parameters validation
+ *
+ * */
+uint32 HCI_ControllerToHostCallbacksInit(hciControllerToHostCallbacks_t *pController2HostCallbacks)
+{
+  uint32 status = FAILURE;
+
+  if ( NULL != pController2HostCallbacks )
+  {
+    (void) memset(pController2HostCallbacks, 0, sizeof(hciControllerToHostCallbacks_t));
+
+    status = SUCCESS;
+  }
+
+  return status;
+}
 
 /*******************************************************************************
  * @fn          HCI_ControllerToHostRegisterCb
  *
- * @brief       This function register callback function to HCI events
+ * @brief       This function registers Host callbacks for HCI module
  *
  * input parameters
  *
- * @param       hci_c2h_cb_t cb - callback function.
+ * @param       hciControllerToHostCallbacks_t cbs - pointer to the callbacks structure.
  *
  * output parameters
  *
@@ -176,14 +262,17 @@ hci_c2h_cbs_t hci2HostCBs =
  *
  * @return      SUCCESS / FAILURE.
  */
-uint8 HCI_ControllerToHostRegisterCb( hci_c2h_cbs_t cbs )
+uint32 HCI_ControllerToHostRegisterCb( const hciControllerToHostCallbacks_t *pCbs )
 {
-  uint8 status = FAILURE;
+  uint32 status = FAILURE;
 
-  if ( cbs.send != NULL )
+  if ( NULL != pCbs )
   {
-    hci2HostCBs.send = cbs.send;
-    status = SUCCESS;
+    pHciC2HCbs      = pCbs;
+
+    HCI_TL_Init(NULL, HCI_CommandStatusCb, HCI_ControllerToHostSendCallbackEvent, 0);
+
+    status           = SUCCESS;
   }
 
   return status;
@@ -211,13 +300,19 @@ void HCI_SendEventToHost( uint8 *pEvt )
 {
   if ( pEvt != NULL )
   {
-    if ( hci2HostCBs.send != NULL )
+    if (( NULL != pHciC2HCbs ) && ( NULL != pHciC2HCbs->send ))
     {
-      uint16 pktLen = hciGetPacketLen( (hciPacket_t *)pEvt );
+        hciPacket_t *pMsg = (hciPacket_t *)( pEvt );
+        uint16 pktLen = HCI_getPacketLen( pMsg );
 
-      hci2HostCBs.send( ((hciPacket_t *)(pEvt))->pData, pktLen );
+        (void) pHciC2HCbs->send( pMsg->pData, pktLen );
 
-      osal_msg_deallocate( pEvt );
+        if( pMsg->pData[0] == (uint8) HCI_ACL_DATA_PACKET )
+        {
+          MAP_osal_bm_free( pMsg->pData );
+          pMsg->pData = NULL;
+        }
+        MAP_osal_msg_deallocate( pEvt );
     }
     else
     {
@@ -2530,7 +2625,7 @@ void HCI_PeriodicAdvReportEvent( uint16 syncHandle, int8 txPower, int8 rssi,
     do
     {
       // Data length
-      dataLength = MIN( dataLen, HCI_PERIODIC_ADV_REPORT_MAX_DATA );
+      dataLength = Math_MIN( dataLen, HCI_PERIODIC_ADV_REPORT_MAX_DATA );
       dataLen -= dataLength;
       eventLength = HCI_PERIODIC_ADV_REPORT_EVENT_LEN + dataLength;
 
@@ -3819,9 +3914,8 @@ uint8* hciAllocAndPrepExtHciEvtPkt( uint8 **pData, uint16 hciPktLen )
     /*******************/
     /*** OUT OF HEAP ***/
     /*******************/
-    // For indication to the host use
-    // "MAP_HCI_HardwareErrorEvent( HCI_ERROR_CODE_MEM_CAP_EXCEEDED );"
-    // or ASSERT
+    // Send indication to the host
+    MAP_HCI_HardwareErrorEvent( HCI_ERROR_CODE_MEM_CAP_EXCEEDED );
   }
 
   // else pEvt == NUll
@@ -3881,9 +3975,11 @@ uint8* hciAllocAndPrepHciEvtPkt( uint8 **pData, uint8 hciEvtType,
     /*******************/
     /*** OUT OF HEAP ***/
     /*******************/
-    // For indication to the host use
-    // "MAP_HCI_HardwareErrorEvent( HCI_ERROR_CODE_MEM_CAP_EXCEEDED );"
-    // or ASSERT
+    // Send indication to the host
+    if (hciEvtType != HCI_BLE_HARDWARE_ERROR_EVENT_CODE)
+    {
+      MAP_HCI_HardwareErrorEvent( HCI_ERROR_CODE_MEM_CAP_EXCEEDED );
+    }
   }
 
   // else pEvt == NUll
@@ -3927,7 +4023,7 @@ uint8* hciAllocAndPrepHciLeEvtPkt( uint8 **pData, uint8 hciLeEvtType,
 }
 
 /*******************************************************************************
- * @fn          hciGetPacketLen
+ * @fn          HCI_getPacketLen
  *
  * @brief       This function calculates and returns the length of the
  *              input HCI packet.
@@ -3943,7 +4039,7 @@ uint8* hciAllocAndPrepHciLeEvtPkt( uint8 **pData, uint8 hciLeEvtType,
  *
  * @return      pktLen - length of input packet or zero for invalid input.
  */
-uint16 hciGetPacketLen( hciPacket_t *pEvt )
+uint16 HCI_getPacketLen( hciPacket_t *pEvt )
 {
   uint16 pktLen = 0;
 
@@ -3956,6 +4052,16 @@ uint16 hciGetPacketLen( hciPacket_t *pEvt )
         pktLen = HCI_EVENT_MIN_LENGTH + pEvt->pData[2];
         break;
       }
+      case HCI_CMD_PACKET:
+      {
+        pktLen = HCI_CMD_MIN_LENGTH + pEvt->pData[3];
+        break;
+      }
+      case HCI_EXTENDED_CMD_PACKET:
+      {
+        pktLen = HCI_EXT_CMD_MIN_LENGTH + BUILD_UINT16( pEvt->pData[3], pEvt->pData[4] );
+        break;
+      }
       case HCI_EXTENDED_EVENT_PACKET:
       {
         pktLen = HCI_EVENT_MIN_LENGTH + BUILD_UINT16( pEvt->pData[1], pEvt->pData[2] );
@@ -3964,6 +4070,11 @@ uint16 hciGetPacketLen( hciPacket_t *pEvt )
       case HCI_ACL_DATA_PACKET:
       {
         pktLen = HCI_DATA_MIN_LENGTH + BUILD_UINT16( pEvt->pData[3], pEvt->pData[4] );
+        break;
+      }
+      default:
+      {
+        pktLen = 0;
         break;
       }
     }
@@ -4382,7 +4493,7 @@ uint8 hciCheckEventMask( uint8 eventBit, uint8 eventMaskTableIndex )
  */
 uint8 hciSetEventMask( uint8 *pEventMask, uint8 eventMaskTableIndex )
 {
-  uint8 status = FAILURE;
+  uint8 status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
 
   if ( pEventMask != NULL )
   {

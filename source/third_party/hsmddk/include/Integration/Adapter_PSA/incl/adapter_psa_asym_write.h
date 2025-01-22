@@ -45,7 +45,7 @@
 #ifndef INCLUDE_GUARD_ADAPTER_PSA_ASYM_WRITE_H
 #define INCLUDE_GUARD_ADAPTER_PSA_ASYM_WRITE_H
 
-#include <third_party/hsmddk/include/Config/cs_adapter_psa.h>         // PSA_MAX_KEY_BUFF_ENTRIES
+#include <third_party/hsmddk/include/Config/cs_adapter_psa.h>         // MBEDTLS_MAX_KEY_BUFF_ENTRIES
 
 #include <third_party/hsmddk/include/Kit/DriverFramework/Basic_Defs_API/incl/basic_defs.h>             // uint8_t, uint16_t, uint32_t, uint64_t
 #include <third_party/hsmddk/include/Kit/DriverFramework/CLib_Abstraction_API/incl/clib.h>                   // size_t

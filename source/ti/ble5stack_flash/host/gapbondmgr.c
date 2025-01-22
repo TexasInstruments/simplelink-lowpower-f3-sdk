@@ -3165,7 +3165,7 @@ void GAPBondMgr_Init(uint8_t task_id, uint8_t cfg_gapBond_maxBonds, uint8_t cfg_
  *
  * Internal function defined in gapbondmgr.h.
  */
-uint16_t GAPBondMgr_ProcessEvent(uint8_t task_id, uint16_t events)
+uint32 GAPBondMgr_ProcessEvent(uint8_t task_id, uint32 events)
 {
   VOID task_id; // OSAL required parameter that isn't used in this function
 
@@ -3524,7 +3524,7 @@ bStatus_t GAPBondMgr_SCGetLocalOOBParameters(gapBondOOBData_t *localOobData)
 
   MAP_osal_memcpy(gapBond_localOobData.confirm, localOobData->confirm, KEYLEN);
 
-  /* Mark that the Locak OOB information is available */
+  /* Mark that the local OOB information is available */
   localOobAvailable = TRUE;
 
   return SUCCESS;

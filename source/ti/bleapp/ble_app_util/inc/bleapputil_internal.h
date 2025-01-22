@@ -65,9 +65,6 @@ extern "C"
 /*********************************************************************
  * MACROS
  */
-#define BLEAppUtil_malloc   ICall_malloc
-#define BLEAppUtil_free     ICall_free
-#define BLEAppUtil_freeMsg  ICall_freeMsg
 
 /*********************************************************************
  * TYPEDEFS
@@ -80,7 +77,9 @@ typedef enum BLEAppBLEAppUtil_Evt_e
     BLEAPPUTIL_EVT_SCAN_CB_EVENT,             // Scan Callback events
     BLEAPPUTIL_EVT_PAIRING_STATE_CB,          // Pairing states event from GapBond manager callback
     BLEAPPUTIL_EVT_PASSCODE_NEEDED_CB,        // Passcode confirm from GapBond manager callback
-    BLEAPPUTIL_EVT_CONN_EVENT_CB,             // connection event callback
+    BLEAPPUTIL_EVT_CONN_EVENT_CB,             // Connection event callback
+    BLEAPPUTIL_EVT_HANDOVER_SN_EVENT_CB,      // Handover Serving node callback
+    BLEAPPUTIL_EVT_HANDOVER_CN_EVENT_CB,      // Handover Candidate node callback
     BLEAPPUTIL_EVT_CALL_IN_BLEAPPUTIL_CONTEXT // switch context and call callback
 } BLEAppBLEAppUtil_Evt_e;
 
@@ -133,6 +132,11 @@ typedef struct
     Gap_ConnEventRpt_t *connEventReport;
 } BLEAppUtil_connEventNoti_t;
 
+typedef struct
+{
+    uint32_t event;
+    uint32_t status;
+} BLEAppUtil_handoverEvent_t;
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -165,6 +169,7 @@ void BLEAppUtil_processPairStateMsg(bleStack_msgHdt_t *pMsgData);
 void BLEAppUtil_processConnEventMsg(BLEAppUtil_connEventNoti_t *pMsg);
 void BLEAppUtil_processScanEventMsg(bleStack_msgHdt_t *pMsg);
 void BLEAppUtil_processAdvEventMsg(bleStack_msgHdt_t *pMsg);
+void BLEAppUtil_processHandoverEventMsg(uint32_t event, BLEAppUtil_msgHdr_t *pMsgData);
 
 /*********************************************************************
  * Stack callbacks
@@ -177,6 +182,8 @@ void BLEAppUtil_pairStateCB(uint16_t connHandle, uint8_t state, uint8_t status);
 void BLEAppUtil_connEventCB(Gap_ConnEventRpt_t *pReport);
 void BLEAppUtil_scanCB(uint32_t event, GapScan_data_t *pBuf, uint32_t *arg);
 void BLEAppUtil_advCB(uint32_t event, GapAdv_data_t *pBuf, uint32_t *arg);
+void BLEAppUtil_HandoverSNCB(uint16_t connHandle, uint32_t status);
+void BLEAppUtil_HandoverCNCB(uint16_t connHandle, uint32_t status);
 
 /*********************************************************************
  * General Functions

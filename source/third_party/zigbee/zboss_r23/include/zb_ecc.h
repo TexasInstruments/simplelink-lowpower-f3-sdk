@@ -297,6 +297,7 @@ zb_ret_t zb_aes_mmo_128(const zb_uint8_t *input, const zb_size_t input_len, zb_u
 zb_ret_t zb_hmac_aes_mmo_128(const zb_uint8_t *key, const zb_size_t key_len,
                          const zb_uint8_t *input, const zb_size_t input_len, zb_uint8_t *output);
 
+#ifndef ZB_HW_SHA_256
 /**
  * SHA-256 hash function
  *
@@ -304,7 +305,8 @@ zb_ret_t zb_hmac_aes_mmo_128(const zb_uint8_t *key, const zb_size_t key_len,
  * @param input_len - The length of input data in bytes
  * @param output    - The SHA-256 checksum result. This must be a buffer of length \c 32 bytes.
  */
-void zb_sha_256(const zb_uint8_t *input, const zb_size_t input_len, zb_uint8_t output[32]);
+void zb_sw_sha_256(const zb_uint8_t *input, const zb_size_t input_len, zb_uint8_t output[32]);
+#endif
 
 #ifndef ZB_HW_HMAC_SHA_256
 /**

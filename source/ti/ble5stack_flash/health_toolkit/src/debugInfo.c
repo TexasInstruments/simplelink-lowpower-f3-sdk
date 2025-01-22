@@ -55,6 +55,7 @@ Target Device: cc23xx
 #include "osal.h"
 #include "map_direct.h"
 #include "hal_mcu.h"
+#include <ti/drivers/utils/Math.h>
 
 /*********************************************************************
  * MACROS
@@ -501,7 +502,7 @@ uint16_t DbgInf_getSchedData( uint8_t *pBuf, uint16_t len )
     HAL_ENTER_CRITICAL_SECTION(cs);
 
     // Copy scheduler domain data
-    dataLen = (uint16_t)MIN( len, DBGINF_SCHED_TOTAL_SIZE );
+    dataLen = (uint16_t)Math_MIN( len, DBGINF_SCHED_TOTAL_SIZE );
     (void)MAP_osal_memcpy( pBuf, (uint8_t *)&DbgInf_schedInfo, dataLen );
 
     HAL_EXIT_CRITICAL_SECTION(cs);
@@ -657,7 +658,7 @@ uint16_t DbgInf_getConnData( uint8_t *pBuf, uint16_t len )
     HAL_ENTER_CRITICAL_SECTION(cs);
 
     // Copy connection domain data
-    dataLen = (uint16_t)MIN( len, DBGINF_CONN_TOTAL_SIZE );
+    dataLen = (uint16_t)Math_MIN( len, DBGINF_CONN_TOTAL_SIZE );
     (void)MAP_osal_memcpy( pBuf, (uint8_t *)&DbgInf_connInfo, dataLen );
 
     HAL_EXIT_CRITICAL_SECTION(cs);
@@ -732,7 +733,7 @@ uint8_t DbgInf_addConnEst( uint16_t connId, uint8_t connRole, uint8_t encEnabled
       DbgInf_connInfo.numActiveConns++;
 
       // Update maxActiveConns
-      DbgInf_connInfo.maxActiveConns = MAX(DbgInf_connInfo.numActiveConns, DbgInf_connInfo.maxActiveConns);
+      DbgInf_connInfo.maxActiveConns = Math_MAX(DbgInf_connInfo.numActiveConns, DbgInf_connInfo.maxActiveConns);
     }
 
     HAL_EXIT_CRITICAL_SECTION(cs);
@@ -997,7 +998,7 @@ uint16_t DbgInf_getErrorData( uint8_t *pBuf, uint16_t len )
     HAL_ENTER_CRITICAL_SECTION(cs);
 
     // Copy error domain data
-    dataLen = (uint16_t)MIN( len, DBGINF_ERROR_TOTAL_SIZE);
+    dataLen = (uint16_t)Math_MIN( len, DBGINF_ERROR_TOTAL_SIZE);
     (void)MAP_osal_memcpy( pBuf, (uint8_t *)&DbgInf_errorInfo, dataLen );
 
     HAL_EXIT_CRITICAL_SECTION(cs);

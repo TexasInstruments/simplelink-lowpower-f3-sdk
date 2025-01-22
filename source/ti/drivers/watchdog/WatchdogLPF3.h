@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,14 +89,13 @@
  *  Once started, the Watchdog will keep running in Active, Idle and Standby mode.
  *
  * # Supported Functions #
- *  | Generic API Function          | API Function                      | Description |
- *  |------------------------------ |----------------------------------
- * |--------------------------------------------------- | | #Watchdog_init()              | WatchdogLPF3_init() |
- * Initialize Watchdog driver                         | | #Watchdog_open()              | WatchdogLPF3_open() |
- * Initialize Watchdog HW and set system dependencies | | #Watchdog_clear()             | WatchdogLPF3_clear() |
- * Reload Watchdog counter                            | | #Watchdog_setReload()         | WatchdogLPF3_setReload() |
- * Update Watchdog timer reload value in clock ticks  | | #Watchdog_convertMsToTicks()  |
- * WatchdogLPF3_convertMsToTicks() | Converts milliseconds to clock ticks               |
+ *  | Generic API Function         | API Function                    | Description                               |
+ *  |------------------------------|---------------------------------|-------------------------------------------|
+ *  | #Watchdog_init()             | WatchdogLPF3_init()             | Initialize Watchdog driver                |
+ *  | #Watchdog_open()             | WatchdogLPF3_open()             | Initialize HW and set system dependencies |
+ *  | #Watchdog_clear()            | WatchdogLPF3_clear()            | Reload Watchdog counter                   |
+ *  | #Watchdog_setReload()        | WatchdogLPF3_setReload()        | Update timer reload value in clock ticks  |
+ *  | #Watchdog_convertMsToTicks() | WatchdogLPF3_convertMsToTicks() | Converts milliseconds to clock ticks      |
  *
  *  @note All calls should go through the generic API. Please refer to @ref Watchdog.h for a
  *  complete description of the generic APIs.

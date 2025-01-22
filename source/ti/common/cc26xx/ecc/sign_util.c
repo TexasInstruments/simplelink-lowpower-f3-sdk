@@ -64,6 +64,7 @@
  * GLOBAL VARIABLES
  ********************************************************************/
 uint8_t finalHash[ECDSA_KEY_LEN] = {0};
+bool periphRequired_g = true;
 
 /********************************************************************
  * EXTERN VARIABLES

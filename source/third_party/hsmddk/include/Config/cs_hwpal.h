@@ -51,8 +51,14 @@
 #include <third_party/hsmddk/include/Config/cs_driver.h>
 #include <third_party/hsmddk/include/Config/cs_adapter.h>
 
+#include <DeviceFamily.h>
+
 // Host hardware platform specific extensions
-#include <third_party/hsmddk/include/Config/cc27xx/cs_hwpal_ext.h>
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <third_party/hsmddk/include/Config/cc35xx/cs_hwpal_ext.h>
+#else
+    #include <third_party/hsmddk/include/Config/cc27xx/cs_hwpal_ext.h>
+#endif
 
 // Engine specific extensions
 #include <third_party/hsmddk/include/Config/cs_hwpal_ext2.h>
@@ -74,6 +80,9 @@
 #define HWPAL_MAX_DEVICE_NAME_LENGTH 64
 
 #define HWPAL_DEVICE_MAGIC   54333U
+
+/* Adding a device feature. */
+#define HWPAL_DEVICE_ALLOW_ADD_DEVICE 0
 
 #ifdef DRIVER_NAME
 #define HWPAL_DRIVER_NAME DRIVER_NAME

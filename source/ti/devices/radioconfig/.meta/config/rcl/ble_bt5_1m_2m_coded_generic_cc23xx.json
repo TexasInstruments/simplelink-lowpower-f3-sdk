@@ -1,0 +1,2579 @@
+{
+  "phy_def": {
+    "release": "external",
+    "device": [
+      {
+        "name": "CC2340R5"
+      },
+      {
+        "name": "CC2340R5Q1"
+      },
+      {
+        "name": "CC2340R2"
+      },
+      {
+        "name": "CC2340R53"
+      },
+      {
+        "name": "CC2340R22"
+      }
+    ],
+    "variant": {
+      "min_freq": "2400",
+      "max_freq": "2480",
+      "protocol": "Bluetooth 5, LE",
+      "abbreviation": "ble",
+      "default_clone_name": "Custom BLE"
+    },
+    "feature_group": [
+      {
+        "base_id": "0",
+        "name": "sub_phy",
+        "label": "Sub-PHY",
+        "feature": [
+          {
+            "name": "1_mbps",
+            "label": "1 Mbps",
+            "bitmask": 0
+          },
+          {
+            "name": "2_mbps",
+            "label": "2 Mbps",
+            "bitmask": 1
+          },
+          {
+            "name": "coded",
+            "label": "Coded",
+            "bitmask": 2
+          }
+        ]
+      },
+      {
+        "base_id": "2",
+        "name": "coded_tx_rate",
+        "label": "Coded TX rate",
+        "feature": [
+          {
+            "name": "s8",
+            "label": "S8 (8 symbols per bit = 125 kbps)",
+            "bitmask": 0
+          },
+          {
+            "name": "s2",
+            "label": "S2 (2 symbols per bit = 500 kbps)",
+            "bitmask": 4
+          }
+        ]
+      }
+    ],
+    "phy_properties": {
+      "category": "Run-time properties",
+      "type": "run_time",
+      "property": [
+        {
+          "name": "subPhy",
+          "label": "Sub-PHY",
+          "type": "feature:sub_phy",
+          "value": "1_mbps",
+          "desc_id": "bleSubPhy"
+        },
+        {
+          "name": "codedTxRate",
+          "label": "Coded rate in TX",
+          "type": "feature:coded_tx_rate",
+          "value": "s8",
+          "desc_id": "bleCodedTxRate",
+          "script": {
+            "role": "activate",
+            "#text": "getFeatureSelector(\"subPhy\") == 0x2"
+          }
+        },
+        {
+          "name": "bleChannel",
+          "label": "Channel",
+          "type": "dec",
+          "step": "1",
+          "min": "0",
+          "max": "39",
+          "value": "17",
+          "enum": [
+            {
+              "value": "0",
+              "label": "0 (2404 MHz)"
+            },
+            {
+              "value": "1",
+              "label": "1 (2406 MHz)"
+            },
+            {
+              "value": "2",
+              "label": "2 (2408 MHz)"
+            },
+            {
+              "value": "3",
+              "label": "3 (2410 MHz)"
+            },
+            {
+              "value": "4",
+              "label": "4 (2412 MHz)"
+            },
+            {
+              "value": "5",
+              "label": "5 (2414 MHz)"
+            },
+            {
+              "value": "6",
+              "label": "6 (2416 MHz)"
+            },
+            {
+              "value": "7",
+              "label": "7 (2418 MHz)"
+            },
+            {
+              "value": "8",
+              "label": "8 (2420 MHz)"
+            },
+            {
+              "value": "9",
+              "label": "9 (2422 MHz)"
+            },
+            {
+              "value": "10",
+              "label": "10 (2424 MHz)"
+            },
+            {
+              "value": "11",
+              "label": "11 (2428 MHz)"
+            },
+            {
+              "value": "12",
+              "label": "12 (2430 MHz)"
+            },
+            {
+              "value": "13",
+              "label": "13 (2432 MHz)"
+            },
+            {
+              "value": "14",
+              "label": "14 (2434 MHz)"
+            },
+            {
+              "value": "15",
+              "label": "15 (2436 MHz)"
+            },
+            {
+              "value": "16",
+              "label": "16 (2438 MHz)"
+            },
+            {
+              "value": "17",
+              "label": "17 (2440 MHz)"
+            },
+            {
+              "value": "18",
+              "label": "18 (2442 MHz)"
+            },
+            {
+              "value": "19",
+              "label": "19 (2444 MHz)"
+            },
+            {
+              "value": "20",
+              "label": "20 (2446 MHz)"
+            },
+            {
+              "value": "21",
+              "label": "21 (2448 MHz)"
+            },
+            {
+              "value": "22",
+              "label": "22 (2450 MHz)"
+            },
+            {
+              "value": "23",
+              "label": "23 (2452 MHz)"
+            },
+            {
+              "value": "24",
+              "label": "24 (2454 MHz)"
+            },
+            {
+              "value": "25",
+              "label": "25 (2456 MHz)"
+            },
+            {
+              "value": "26",
+              "label": "26 (2458 MHz)"
+            },
+            {
+              "value": "27",
+              "label": "27 (2460 MHz)"
+            },
+            {
+              "value": "28",
+              "label": "28 (2462 MHz)"
+            },
+            {
+              "value": "29",
+              "label": "29 (2464 MHz)"
+            },
+            {
+              "value": "30",
+              "label": "30 (2466 MHz)"
+            },
+            {
+              "value": "31",
+              "label": "31 (2468 MHz)"
+            },
+            {
+              "value": "32",
+              "label": "32 (2470 MHz)"
+            },
+            {
+              "value": "33",
+              "label": "33 (2472 MHz)"
+            },
+            {
+              "value": "34",
+              "label": "34 (2474 MHz)"
+            },
+            {
+              "value": "35",
+              "label": "35 (2476 MHz)"
+            },
+            {
+              "value": "36",
+              "label": "36 (2478 MHz)"
+            },
+            {
+              "value": "37",
+              "label": "37 (2402 MHz, advertising)"
+            },
+            {
+              "value": "38",
+              "label": "38 (2426 MHz, advertising)"
+            },
+            {
+              "value": "39",
+              "label": "39 (2480 MHz, advertising)"
+            },
+            {
+              "value": "40",
+              "label": "Specify custom frequency"
+            }
+          ]
+        },
+        {
+          "name": "frequency",
+          "label": "Custom frequency",
+          "type": "dec",
+          "unit": "MHz",
+          "step": "1",
+          "min": "2400",
+          "max": "2480",
+          "value": "2440",
+          "desc_id": "bleFrequency",
+          "decimals": "4",
+          "script": {
+            "role": "activate",
+            "#text": "getPhyProperty(\"bleChannel\") == 40"
+          }
+        },
+        {
+          "name": "txPower",
+          "label": "TX output power",
+          "type": "tx_power",
+          "value": "5"
+        }
+      ]
+    },
+    "rcl_test_mode": [
+      {
+        "mode": "packet_tx",
+        "label": "Packet TX",
+        "rcl_command": {
+          "name": "CMD_GENERIC_TX",
+          "usage_filter": "generic",
+          "rcl_command_field": [
+            {
+              "name": "common.phyFeatures",
+              "script": {
+                "role": "update",
+                "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")"
+              }
+            },
+            {
+              "name": "rfFrequency",
+              "script": {
+                "role": "update",
+                "call": "updCfRfFrequency()",
+                "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js"
+              }
+            },
+            {
+              "name": "syncWord",
+              "value": "0x8E89BED6"
+            },
+            {
+              "name": "txPower.fraction",
+              "script": {
+                "role": "update",
+                "#text": "Math.ceil(getTxPowerValue() * 2) & 1"
+              }
+            },
+            {
+              "name": "txPower.dBm",
+              "script": {
+                "role": "update",
+                "#text": "Math.ceil(getTxPowerValue() * 2) >> 1"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "mode": "packet_rx",
+        "label": "Packet RX",
+        "rcl_command": {
+          "name": "CMD_GENERIC_RX",
+          "usage_filter": "generic",
+          "rcl_command_field": [
+            {
+              "name": "common.phyFeatures",
+              "script": {
+                "role": "update",
+                "#text": "getFeatureSelector(\"subPhy\") | getFeatureSelector(\"codedTxRate\")"
+              }
+            },
+            {
+              "name": "rfFrequency",
+              "script": {
+                "role": "update",
+                "call": "updCfRfFrequency()",
+                "#text": "./conv_ble_channel_to_freq.js,./get_pp_frequency__ble.js,./upd_cf_rf_frequency.js"
+              }
+            },
+            {
+              "name": "syncWordA",
+              "value": "0x8E89BED6"
+            },
+            {
+              "name": "maxPktLen",
+              "value": "255"
+            }
+          ]
+        }
+      }
+    ],
+    "rcl_registers": [
+      {
+        "feature_group": "sub_phy",
+        "usage_filter": "generic",
+        "rcl_register_field_settings": [
+          {
+            "feature_filter": "common",
+            "data": [
+              {
+                "reg": {
+                  "LRFDPBE.MDMCMDPAR0.VAL": {
+                    "value": "55"
+                  },
+                  "LRFDPBE.MDMCMDPAR1.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.MDMCMDPAR2.VAL": {
+                    "value": "43690"
+                  },
+                  "LRFDPBE.POLY0L.VALLSB": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.POLY0H.VALMSB": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.POLY1L.VALLSB": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.POLY1H.VALMSB": {
+                    "value": "4129"
+                  },
+                  "LRFDPBE.PHACFG.MODE1": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.PHACFG.MODE0": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.TXACOM": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG0.TXADEAL": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXACOM": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXADEAL": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG1.TXSTRT": {
+                    "value": "196"
+                  },
+                  "LRFDPBE.FCFG2.TXSIZE": {
+                    "value": "134"
+                  },
+                  "LRFDPBE.FCFG3.RXSTRT": {
+                    "value": "128"
+                  },
+                  "LRFDPBE.FCFG4.RXSIZE": {
+                    "value": "67"
+                  },
+                  "LRFDPBE.TXFWBTHRS.BYTES": {
+                    "value": "2"
+                  },
+                  "LRFDPBE.RXFRBTHRS.BYTES": {
+                    "value": "4"
+                  },
+                  "LRFDPBE.TIMCTL.SRC0": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE0": {
+                    "value": "11"
+                  },
+                  "PBE_GENERIC_RAM.PHY.RFESEL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PHY.MCESEL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.SYNTHCALTIMEOUT.VAL": {
+                    "value": "180"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.WHITEORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.BITORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.HDRORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCHDR": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCSW": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.NUMHDRBITS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.NUMCRCBITS.VAL": {
+                    "value": "16"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDTIMESTAMP": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDRSSI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDFREQEST": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDLQI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDSTATUS": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDCRC": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHEMPTY": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHIGN": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHCRC": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.LENOPTPAD": {
+                    "value": "3"
+                  },
+                  "PBE_GENERIC_RAM.EXTRABYTES.VAL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.WHITEINIT.VAL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITL.VALLSB": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITH.VALMSB": {
+                    "value": "65535"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.NUMLENBITS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.LENPOS": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.LENOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.LNA.TRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.LNA.IB": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.LNA.BIAS": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.IFAMPRFLDO.TRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFAMPRFLDO.AAFCAP": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFAMPRFLDO.IFAMPIB": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.PA0.TRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADC0.DITHERTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADC0.DITHEREN": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADC0.INT2ADJ": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADC0.AAFCAP": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADC1.NRZ": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADC1.TRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCLF.FF3": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCLF.FF2": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCLF.FF1": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCLF.INT3": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCQUANT.QUANTTHR": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCALDO.TRIMOUT": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.IFADCDLDO.TRIMOUT": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.ATSTREFH.BIAS": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.ATSTREFH.IREFTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DCO.TAILRESTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DCO.CRSCAPCM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.PDET": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.NMIREFTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.PMIREFTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.TXBBOOST": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.S1GFRC": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.BUFGAIN": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.BIAS": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIV.OUT": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.DIV.RATIO": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.SPARE15": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.VOUTTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.ITST": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.TMUX": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.SPARE3": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.MODE": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.BYPASS": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DIVLDO.CTL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.TDCLDO.VOUTTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DCOLDO0.FIRSTTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DCOLDO0.SECONDTRIM": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DCOLDO1.REFSRC": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.DCOLDO1.DIVATST": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.PRE1.HSDDC": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.PRE2.MIDCALDIVLSB": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.PRE2.CRSCALDIV": {
+                    "value": "24"
+                  },
+                  "LRFDRFE.PRE2.FSMDIV": {
+                    "value": "5"
+                  },
+                  "LRFDRFE.PRE3.FINECALDIV": {
+                    "value": "48"
+                  },
+                  "LRFDRFE.PRE3.MIDCALDIVMSB": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.CAL0.TDCAVG": {
+                    "value": "2"
+                  },
+                  "LRFDRFE.MISC0.PHCPT": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MISC0.TDCCALCORR": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.MISC0.TDCMSBCORR": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.MISC0.DLYCANCRS": {
+                    "value": "2"
+                  },
+                  "LRFDRFE.PHEDISC.CNT": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.PHEDISC.THR": {
+                    "value": "7"
+                  },
+                  "LRFDRFE.PLLMON0.PHELOLCNT": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.PLLMON0.PHELOLTHR": {
+                    "value": "31"
+                  },
+                  "LRFDRFE.PLLMON0.FCTHR": {
+                    "value": "127"
+                  },
+                  "LRFDRFE.PLLMON1.PHELOCKCNT": {
+                    "value": "4"
+                  },
+                  "LRFDRFE.PLLMON1.PHELOCKTHR": {
+                    "value": "127"
+                  },
+                  "RFE_COMMON_RAM.TDCCAL0.STOP": {
+                    "value": "3"
+                  },
+                  "RFE_COMMON_RAM.TDCCAL1.SUB": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.TDCCAL2.AVG": {
+                    "value": "16"
+                  },
+                  "RFE_COMMON_RAM.DIVI.NMIREFTRIM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.PMIREFTRIM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.BIAS": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.BUFGAIN": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.OUT": {
+                    "value": "1"
+                  },
+                  "RFE_COMMON_RAM.DIVI.PDET": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.RATIO": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.S1GFRC": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVI.TXBOOST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVF.NMIREFTRIM": {
+                    "value": "4"
+                  },
+                  "RFE_COMMON_RAM.DIVF.PMIREFTRIM": {
+                    "value": "4"
+                  },
+                  "RFE_COMMON_RAM.DIVF.BIAS": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVF.BUFGAIN": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVF.OUT": {
+                    "value": "1"
+                  },
+                  "RFE_COMMON_RAM.DIVF.PDET": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVF.RATIO": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVF.S1GFRC": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVF.TXBOOST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.BYPASS": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.CTL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.ITEST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.MODE": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.ITST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.TMUX": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOI.VOUTTRIM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.BYPASS": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.CTL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.ITEST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.MODE": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.ITST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.TMUX": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOF.VOUTTRIM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.DIVLDOIOFF.VAL": {
+                    "value": "20"
+                  },
+                  "RFE_COMMON_RAM.LDOSETTLE.VAL": {
+                    "value": "71"
+                  },
+                  "RFE_COMMON_RAM.CHRGSETTLE.VAL": {
+                    "value": "46"
+                  },
+                  "RFE_COMMON_RAM.DCOSETTLE.VAL": {
+                    "value": "5"
+                  },
+                  "RFE_COMMON_RAM.IFAMPRFLDODEFAULT.TRIM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.IFAMPRFLDOTX.TRIM": {
+                    "value": "127"
+                  },
+                  "RFE_COMMON_RAM.RTRIMMIN.VAL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.RTRIMOFF.VAL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.CHRGFILT": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.VREFBP": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.TXWAITMOD": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.PHEDISC": {
+                    "value": "1"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.RTRIMTST": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.IIR": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.REFDTHR": {
+                    "value": "1"
+                  },
+                  "RFE_COMMON_RAM.SYNTHCTL.FCDEM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.TDCPLL.STOP": {
+                    "value": "4"
+                  },
+                  "LRFDRFE.CAL1.FCTOP": {
+                    "value": "127"
+                  },
+                  "LRFDRFE.CAL0.FCSTART": {
+                    "value": "64"
+                  },
+                  "LRFDRFE.CAL1.FCBOT": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.PRE0.PLLDIV0": {
+                    "value": "6"
+                  },
+                  "LRFDRFE.PRE0.PLLDIV1": {
+                    "value": "7"
+                  },
+                  "RFE_COMMON_RAM.K1MSB.VAL": {
+                    "value": "266"
+                  },
+                  "RFE_COMMON_RAM.K1LSB.VAL": {
+                    "value": "22171"
+                  },
+                  "RFE_COMMON_RAM.K2BL.VAL": {
+                    "value": "301"
+                  },
+                  "RFE_COMMON_RAM.K2BL.HPM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.K2AL.VAL": {
+                    "value": "52"
+                  },
+                  "RFE_COMMON_RAM.K2AL.HPM": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.K3BL.VAL": {
+                    "value": "4908"
+                  },
+                  "RFE_COMMON_RAM.K3AL.VAL": {
+                    "value": "1963"
+                  },
+                  "RFE_COMMON_RAM.K5.VAL": {
+                    "value": "37231"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "feature_filter": "1_mbps",
+            "data": [
+              {
+                "reg": {
+                  "LRFDPBE.MDMCMDPAR0.VAL": {
+                    "value": "32775"
+                  },
+                  "LRFDPBE.MDMCMDPAR2.VAL": {
+                    "value": "43690"
+                  },
+                  "LRFDPBE.POLY0L.VALLSB": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.POLY0H.VALMSB": {
+                    "value": "8704"
+                  },
+                  "LRFDPBE.POLY1L.VALLSB": {
+                    "value": "23296"
+                  },
+                  "LRFDPBE.POLY1H.VALMSB": {
+                    "value": "6"
+                  },
+                  "LRFDPBE.FCFG0.TXACOM": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG0.TXADEAL": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXACOM": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXADEAL": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG1.TXSTRT": {
+                    "value": "196"
+                  },
+                  "LRFDPBE.FCFG2.TXSIZE": {
+                    "value": "134"
+                  },
+                  "LRFDPBE.FCFG3.RXSTRT": {
+                    "value": "128"
+                  },
+                  "LRFDPBE.FCFG4.RXSIZE": {
+                    "value": "68"
+                  },
+                  "LRFDPBE.TXFWBTHRS.BYTES": {
+                    "value": "2"
+                  },
+                  "LRFDPBE.RXFRBTHRS.BYTES": {
+                    "value": "4"
+                  },
+                  "LRFDPBE.TIMCTL.SRC0": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE0": {
+                    "value": "11"
+                  },
+                  "LRFDPBE.TIMCTL.SRC1": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE1": {
+                    "value": "11"
+                  },
+                  "PBE_GENERIC_RAM.PHY.RFESEL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PHY.MCESEL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.SYNTHCALTIMEOUT.VAL": {
+                    "value": "180"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.WHITEORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.BITORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.HDRORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCHDR": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCSW": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.NUMHDRBITS": {
+                    "value": "16"
+                  },
+                  "PBE_GENERIC_RAM.NUMCRCBITS.VAL": {
+                    "value": "24"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDTIMESTAMP": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDRSSI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDFREQEST": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDLQI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDSTATUS": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDCRC": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHEMPTY": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHIGN": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHCRC": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.LENOPTPAD": {
+                    "value": "3"
+                  },
+                  "PBE_GENERIC_RAM.EXTRABYTES.VAL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.WHITEINIT.VAL": {
+                    "value": "101"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITL.VALLSB": {
+                    "value": "21760"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITH.VALMSB": {
+                    "value": "21845"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.NUMLENBITS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.LENPOS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.ADCDIGCONF.QBRANCHEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.ADCDIGCONF.IBRANCHEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.MODSYMMAP0.SYM0": {
+                    "value": "15"
+                  },
+                  "LRFDMDM.MODSYMMAP0.SYM1": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.BAUD.RATEWORD": {
+                    "value": "16384"
+                  },
+                  "LRFDMDM.BAUDPRE.ALIGNVALUE": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.BAUDPRE.PRESCALER": {
+                    "value": "12"
+                  },
+                  "LRFDMDM.MODMAIN.FECSELECT": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.MODMAIN.MODLEVELS": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1NUMSTAGES": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1FILTMODE": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1DVGA": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE2DECRATIO": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE2DVGA": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMIQMC0.PHASEFACTOR": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMIQMC0.GAINFACTOR": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC1.CHFIBW": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMESTONLY": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMTEAPERIOD": {
+                    "value": "3"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMTEAGAIN": {
+                    "value": "7"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMBYPASS": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFLINPREDEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFDESPECK": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFIQCONJEN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFLIMITRANGE": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.MAFCGAIN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSBU.DSBUAVGLENGTH": {
+                    "value": "128"
+                  },
+                  "LRFDMDM.DEMDSBU.DSBUDELAY": {
+                    "value": "135"
+                  },
+                  "LRFDMDM.DEMCODC0.ESTSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMCODC0.COMPSEL": {
+                    "value": "3"
+                  },
+                  "LRFDMDM.DEMCODC0.IIRUSEINITIAL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMCODC0.IIRGAIN": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMCODC0.IIREN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFIDC0.COMPSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT1PASSTHROUGH": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT1SRCSEL": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFEXB0.B3SRCSEL": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFEXB0.B2SRCSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFEXB0.B1SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.B2SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.B1SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUTSRCSEL1": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUTSRCSEL2": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUT2PASSTHROUGH": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.FINEFOESEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.FOCFFSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIRUSEINITIAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIRGAIN": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIREN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMAFI0.C1C7": {
+                    "value": "4"
+                  },
+                  "LRFDMDM.DEMMAFI0.C0C8": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMAFI1.C3C5": {
+                    "value": "123"
+                  },
+                  "LRFDMDM.DEMMAFI1.C2C6": {
+                    "value": "32"
+                  },
+                  "LRFDMDM.DEMMAFI2.C4": {
+                    "value": "193"
+                  },
+                  "LRFDMDM.DEMC1BE0.MASKB": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.MASKA": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.CASCCONF": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.COPYCONF": {
+                    "value": "15"
+                  },
+                  "LRFDMDM.DEMC1BE1.THRESHOLDB": {
+                    "value": "127"
+                  },
+                  "LRFDMDM.DEMC1BE1.THRESHOLDA": {
+                    "value": "39"
+                  },
+                  "LRFDMDM.DEMC1BE2.PEAKCONF": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMC1BE2.THRESHOLDC": {
+                    "value": "127"
+                  },
+                  "LRFDMDM.DEMSWQU0.AUTOMAFC": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMSWQU0.REFLEN": {
+                    "value": "31"
+                  },
+                  "LRFDMDM.SPARE0.VAL": {
+                    "value": "2584"
+                  },
+                  "LRFDMDM.SYSTIMEVTMUX0.SEL0": {
+                    "value": "21"
+                  },
+                  "LRFDMDM.SYSTIMEVTMUX0.SEL1": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.SPARE2.VAL": {
+                    "value": "41542"
+                  },
+                  "LRFDRFE.SPARE3.VAL": {
+                    "value": "8000"
+                  },
+                  "LRFDRFE.SPARE4.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.RSSIOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MOD0.SCHEME": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.MOD0.SYMSHP": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MOD0.INTPFACT": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.MAGNTHRCFG.SEL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.PHYRSSIOFFSET.VAL": {
+                    "value": "80"
+                  },
+                  "RFE_COMMON_RAM.SPARE0SHADOW.VAL": {
+                    "value": "30200"
+                  },
+                  "RFE_COMMON_RAM.SPARE1SHADOW.VAL": {
+                    "value": "69"
+                  },
+                  "RFE_COMMON_RAM.AGCINFO.MODE": {
+                    "value": "0"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "feature_filter": "2_mbps",
+            "data": [
+              {
+                "reg": {
+                  "LRFDPBE.MDMCMDPAR0.VAL": {
+                    "value": "32783"
+                  },
+                  "LRFDPBE.MDMCMDPAR2.VAL": {
+                    "value": "43690"
+                  },
+                  "LRFDPBE.POLY0L.VALLSB": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.POLY0H.VALMSB": {
+                    "value": "8704"
+                  },
+                  "LRFDPBE.POLY1L.VALLSB": {
+                    "value": "23296"
+                  },
+                  "LRFDPBE.POLY1H.VALMSB": {
+                    "value": "6"
+                  },
+                  "LRFDPBE.FCFG0.TXACOM": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG0.TXADEAL": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXACOM": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXADEAL": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG1.TXSTRT": {
+                    "value": "196"
+                  },
+                  "LRFDPBE.FCFG2.TXSIZE": {
+                    "value": "134"
+                  },
+                  "LRFDPBE.FCFG3.RXSTRT": {
+                    "value": "128"
+                  },
+                  "LRFDPBE.FCFG4.RXSIZE": {
+                    "value": "68"
+                  },
+                  "LRFDPBE.TXFWBTHRS.BYTES": {
+                    "value": "2"
+                  },
+                  "LRFDPBE.RXFRBTHRS.BYTES": {
+                    "value": "4"
+                  },
+                  "LRFDPBE.TIMCTL.SRC0": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE0": {
+                    "value": "11"
+                  },
+                  "LRFDPBE.TIMCTL.SRC1": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE1": {
+                    "value": "11"
+                  },
+                  "PBE_GENERIC_RAM.PHY.RFESEL": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.PHY.MCESEL": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.SYNTHCALTIMEOUT.VAL": {
+                    "value": "180"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.WHITEORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.BITORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.HDRORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCHDR": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCSW": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.NUMHDRBITS": {
+                    "value": "16"
+                  },
+                  "PBE_GENERIC_RAM.NUMCRCBITS.VAL": {
+                    "value": "24"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDTIMESTAMP": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDRSSI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDFREQEST": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDLQI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDSTATUS": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDCRC": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHEMPTY": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHIGN": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHCRC": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.LENOPTPAD": {
+                    "value": "3"
+                  },
+                  "PBE_GENERIC_RAM.EXTRABYTES.VAL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.WHITEINIT.VAL": {
+                    "value": "101"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITL.VALLSB": {
+                    "value": "21760"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITH.VALMSB": {
+                    "value": "21845"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.NUMLENBITS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.LENPOS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.ADCDIGCONF.QBRANCHEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.ADCDIGCONF.IBRANCHEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.MODSYMMAP0.SYM0": {
+                    "value": "15"
+                  },
+                  "LRFDMDM.MODSYMMAP0.SYM1": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.BAUD.RATEWORD": {
+                    "value": "32768"
+                  },
+                  "LRFDMDM.BAUDPRE.ALIGNVALUE": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.BAUDPRE.PRESCALER": {
+                    "value": "12"
+                  },
+                  "LRFDMDM.MODMAIN.FECSELECT": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.MODMAIN.MODLEVELS": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1NUMSTAGES": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1FILTMODE": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE2DECRATIO": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMIQMC0.PHASEFACTOR": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMIQMC0.GAINFACTOR": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC1.CHFIBW": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMESTONLY": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMTEAPERIOD": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMTEAGAIN": {
+                    "value": "7"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMBYPASS": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFLINPREDEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFDESPECK": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFIQCONJEN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFLIMITRANGE": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.MAFCGAIN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSBU.DSBUAVGLENGTH": {
+                    "value": "128"
+                  },
+                  "LRFDMDM.DEMDSBU.DSBUDELAY": {
+                    "value": "135"
+                  },
+                  "LRFDMDM.DEMCODC0.ESTSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMCODC0.COMPSEL": {
+                    "value": "3"
+                  },
+                  "LRFDMDM.DEMCODC0.IIRUSEINITIAL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMCODC0.IIRGAIN": {
+                    "value": "3"
+                  },
+                  "LRFDMDM.DEMCODC0.IIREN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFIDC0.COMPSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT1PASSTHROUGH": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT1SRCSEL": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFEXB0.B3SRCSEL": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFEXB0.B2SRCSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFEXB0.B1SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.B2SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.B1SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUTSRCSEL1": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUTSRCSEL2": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.FINEFOESEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.FOCFFSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIRUSEINITIAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIRGAIN": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIREN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMAFI0.C1C7": {
+                    "value": "4"
+                  },
+                  "LRFDMDM.DEMMAFI0.C0C8": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMAFI1.C3C5": {
+                    "value": "123"
+                  },
+                  "LRFDMDM.DEMMAFI1.C2C6": {
+                    "value": "32"
+                  },
+                  "LRFDMDM.DEMMAFI2.C4": {
+                    "value": "193"
+                  },
+                  "LRFDMDM.DEMC1BE0.MASKB": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.MASKA": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.CASCCONF": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.COPYCONF": {
+                    "value": "15"
+                  },
+                  "LRFDMDM.DEMC1BE1.THRESHOLDB": {
+                    "value": "127"
+                  },
+                  "LRFDMDM.DEMC1BE1.THRESHOLDA": {
+                    "value": "39"
+                  },
+                  "LRFDMDM.DEMC1BE2.PEAKCONF": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMC1BE2.THRESHOLDC": {
+                    "value": "127"
+                  },
+                  "LRFDMDM.DEMSWQU0.AUTOMAFC": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMSWQU0.REFLEN": {
+                    "value": "31"
+                  },
+                  "LRFDMDM.SPARE0.VAL": {
+                    "value": "2604"
+                  },
+                  "LRFDMDM.SYSTIMEVTMUX0.SEL0": {
+                    "value": "21"
+                  },
+                  "LRFDMDM.SYSTIMEVTMUX0.SEL1": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.SPARE2.VAL": {
+                    "value": "41815"
+                  },
+                  "LRFDRFE.SPARE3.VAL": {
+                    "value": "8000"
+                  },
+                  "LRFDRFE.SPARE4.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.RSSIOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MOD0.SCHEME": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.MOD0.SYMSHP": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MOD0.INTPFACT": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.MAGNTHRCFG.SEL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.PHYRSSIOFFSET.VAL": {
+                    "value": "76"
+                  },
+                  "RFE_COMMON_RAM.SPARE0SHADOW.VAL": {
+                    "value": "22010"
+                  },
+                  "RFE_COMMON_RAM.SPARE1SHADOW.VAL": {
+                    "value": "69"
+                  },
+                  "RFE_COMMON_RAM.AGCINFO.MODE": {
+                    "value": "0"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "feature_filter": "coded",
+            "data": [
+              {
+                "reg": {
+                  "LRFDPBE.MDMCMDPAR0.VAL": {
+                    "value": "151"
+                  },
+                  "LRFDPBE.MDMCMDPAR2.VAL": {
+                    "value": "15420"
+                  },
+                  "LRFDPBE.POLY0L.VALLSB": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.POLY0H.VALMSB": {
+                    "value": "8704"
+                  },
+                  "LRFDPBE.POLY1L.VALLSB": {
+                    "value": "23296"
+                  },
+                  "LRFDPBE.POLY1H.VALMSB": {
+                    "value": "6"
+                  },
+                  "LRFDPBE.FCFG0.TXACOM": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG0.TXADEAL": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXACOM": {
+                    "value": "0"
+                  },
+                  "LRFDPBE.FCFG0.RXADEAL": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.FCFG1.TXSTRT": {
+                    "value": "196"
+                  },
+                  "LRFDPBE.FCFG2.TXSIZE": {
+                    "value": "134"
+                  },
+                  "LRFDPBE.FCFG3.RXSTRT": {
+                    "value": "128"
+                  },
+                  "LRFDPBE.FCFG4.RXSIZE": {
+                    "value": "68"
+                  },
+                  "LRFDPBE.TXFWBTHRS.BYTES": {
+                    "value": "2"
+                  },
+                  "LRFDPBE.RXFRBTHRS.BYTES": {
+                    "value": "4"
+                  },
+                  "LRFDPBE.TIMCTL.SRC0": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE0": {
+                    "value": "11"
+                  },
+                  "LRFDPBE.TIMCTL.SRC1": {
+                    "value": "1"
+                  },
+                  "LRFDPBE.TIMPRE.PRE1": {
+                    "value": "11"
+                  },
+                  "PBE_GENERIC_RAM.PHY.RFESEL": {
+                    "value": "3"
+                  },
+                  "PBE_GENERIC_RAM.PHY.MCESEL": {
+                    "value": "3"
+                  },
+                  "PBE_GENERIC_RAM.SYNTHCALTIMEOUT.VAL": {
+                    "value": "180"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.WHITEORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.BITORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.HDRORDER": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCHDR": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.CRCINCSW": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.PKTCFG.NUMHDRBITS": {
+                    "value": "16"
+                  },
+                  "PBE_GENERIC_RAM.NUMCRCBITS.VAL": {
+                    "value": "24"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDTIMESTAMP": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDRSSI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDFREQEST": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDLQI": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDSTATUS": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.APPENDCRC": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHEMPTY": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHIGN": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.AUTOFLUSHCRC": {
+                    "value": "1"
+                  },
+                  "PBE_GENERIC_RAM.FIFOCFG.LENOPTPAD": {
+                    "value": "3"
+                  },
+                  "PBE_GENERIC_RAM.EXTRABYTES.VAL": {
+                    "value": "0"
+                  },
+                  "PBE_GENERIC_RAM.WHITEINIT.VAL": {
+                    "value": "101"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITL.VALLSB": {
+                    "value": "21760"
+                  },
+                  "PBE_GENERIC_RAM.CRCINITH.VALMSB": {
+                    "value": "21845"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.NUMLENBITS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENCFG.LENPOS": {
+                    "value": "8"
+                  },
+                  "PBE_GENERIC_RAM.LENOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.ADCDIGCONF.QBRANCHEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.ADCDIGCONF.IBRANCHEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.MODSYMMAP0.SYM0": {
+                    "value": "15"
+                  },
+                  "LRFDMDM.MODSYMMAP0.SYM1": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.BAUDPRE.PRESCALER": {
+                    "value": "12"
+                  },
+                  "LRFDMDM.BAUDPRE.ALIGNVALUE": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.BAUD.RATEWORD": {
+                    "value": "16384"
+                  },
+                  "LRFDMDM.BAUDPRE.EXTRATEWORD": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.MODMAIN.FECSELECT": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.MODMAIN.MODLEVELS": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1NUMSTAGES": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1FILTMODE": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE1DVGA": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE2DECRATIO": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMMISC3.BDE2DVGA": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC1.CHFIBW": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMIQMC0.PHASEFACTOR": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMIQMC0.GAINFACTOR": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC3.LQIPERIOD": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMTEAPERIOD": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMTEAGAIN": {
+                    "value": "7"
+                  },
+                  "LRFDMDM.DEMMISC2.STIMBYPASS": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFLINPREDEN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFDESPECK": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFIQCONJEN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.PDIFLIMITRANGE": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMMISC3.PDIFDECIM": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMISC2.MAFCGAIN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMDSBU.DSBUAVGLENGTH": {
+                    "value": "128"
+                  },
+                  "LRFDMDM.DEMDSBU.DSBUDELAY": {
+                    "value": "141"
+                  },
+                  "LRFDMDM.DEMCODC0.ESTSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMCODC0.COMPSEL": {
+                    "value": "3"
+                  },
+                  "LRFDMDM.DEMCODC0.IIRUSEINITIAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMCODC0.IIRGAIN": {
+                    "value": "7"
+                  },
+                  "LRFDMDM.DEMCODC0.IIREN": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFIDC0.COMPSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT2PASSTHROUGH": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT2SRCSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT1PASSTHROUGH": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFEXB0.OUT1SRCSEL": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFEXB0.B3SRCSEL": {
+                    "value": "2"
+                  },
+                  "LRFDMDM.DEMFEXB0.B2SRCSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMFEXB0.B1SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.B1SRCSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDSXB0.B2SRCSEL": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUTSRCSEL1": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMDSXB0.OUTSRCSEL2": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.FINEFOESEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.FOCFFSEL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIRUSEINITIAL": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIRGAIN": {
+                    "value": "6"
+                  },
+                  "LRFDMDM.DEMFIFE0.IIREN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMAFI0.C0C8": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMAFI0.C1C7": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMMAFI1.C2C6": {
+                    "value": "20"
+                  },
+                  "LRFDMDM.DEMMAFI1.C3C5": {
+                    "value": "60"
+                  },
+                  "LRFDMDM.DEMMAFI2.C4": {
+                    "value": "120"
+                  },
+                  "LRFDMDM.DEMC1BE0.MASKB": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.MASKA": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMC1BE0.CASCCONF": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMC1BE0.COPYCONF": {
+                    "value": "15"
+                  },
+                  "LRFDMDM.DEMC1BE1.THRESHOLDB": {
+                    "value": "127"
+                  },
+                  "LRFDMDM.DEMC1BE1.THRESHOLDA": {
+                    "value": "127"
+                  },
+                  "LRFDMDM.DEMC1BE2.PEAKCONF": {
+                    "value": "1"
+                  },
+                  "LRFDMDM.DEMC1BE2.THRESHOLDC": {
+                    "value": "76"
+                  },
+                  "LRFDMDM.SPARE0.VAL": {
+                    "value": "2584"
+                  },
+                  "LRFDRFE.RSSIOFFSET.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.SPARE0.VAL": {
+                    "value": "13554"
+                  },
+                  "LRFDRFE.SPARE2.VAL": {
+                    "value": "19"
+                  },
+                  "LRFDRFE.SPARE3.VAL": {
+                    "value": "176"
+                  },
+                  "LRFDRFE.SPARE4.VAL": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MOD0.SCHEME": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.MOD0.SYMSHP": {
+                    "value": "0"
+                  },
+                  "LRFDRFE.MOD0.INTPFACT": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.MAGNCTL1.PER": {
+                    "value": "7"
+                  },
+                  "LRFDRFE.MAGNCTL1.SCL": {
+                    "value": "3"
+                  },
+                  "LRFDRFE.MAGNCTL1.PERMODE": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.MAGNTHRCFG.SEL": {
+                    "value": "0"
+                  },
+                  "RFE_COMMON_RAM.PHYRSSIOFFSET.VAL": {
+                    "value": "76"
+                  },
+                  "RFE_COMMON_RAM.SPARE1SHADOW.VAL": {
+                    "value": "28"
+                  },
+                  "RFE_COMMON_RAM.AGCINFO.MODE": {
+                    "value": "1"
+                  },
+                  "LRFDRFE.LNA.IB": {
+                    "value": "3"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "rcl_register_field": {
+          "name": "PBE_GENERIC_RAM.WHITEINIT.VAL",
+          "script": {
+            "role": "update",
+            "#text": "0x40 | getPhyProperty(\"bleChannel\")"
+          }
+        },
+        "rcl_struct": [
+          {
+            "name": "LRF_SwParam",
+            "instance": "LRF_swParam",
+            "feature_filter": "1_mbps,coded",
+            "rcl_struct_field": [
+              {
+                "name": "swConfig",
+                "value": "LRF_swConfig1Mbps"
+              },
+              {
+                "name": "txPowerTable",
+                "value": "LRF_txPowerTable"
+              },
+              {
+                "name": "trimDef",
+                "value": "rf_trim_data"
+              }
+            ]
+          },
+          {
+            "name": "LRF_SwParam",
+            "instance": "LRF_swParam",
+            "feature_filter": "2_mbps",
+            "rcl_struct_field": [
+              {
+                "name": "swConfig",
+                "value": "LRF_swConfig2Mbps"
+              },
+              {
+                "name": "txPowerTable",
+                "value": "LRF_txPowerTable"
+              },
+              {
+                "name": "trimDef",
+                "value": "rf_trim_data"
+              }
+            ]
+          }
+        ],
+        "id": "sub_phyRegConfig"
+      },
+      {
+        "feature_group": "coded_tx_rate",
+        "rcl_register_field_settings": [
+          {
+            "feature_filter": "s8",
+            "data": [
+              {
+                "reg": {
+                  "LRFDMDM.SPARE1.VAL": {
+                    "value": "0"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "feature_filter": "s2",
+            "data": [
+              {
+                "reg": {
+                  "LRFDMDM.SPARE1.VAL": {
+                    "value": "1"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "id": "coded_tx_rateRegConfig"
+      }
+    ],
+    "variable": [
+      {
+        "name": "frequency",
+        "unit": "MHz",
+        "decimals": "0"
+      },
+      {
+        "name": "tx_power",
+        "unit": "dBm"
+      }
+    ],
+    "rcl_lrf_fw_image": [
+      {
+        "role": "pbe_image",
+        "variable": "LRF_PBE_binary_generic",
+        "header": "rf_patches/lrf_pbe_binary_generic.h",
+        "data": "lrf_pbe_binary_generic_cc23x0r5.c",
+        "offset": "4",
+        "addr": "0x40090000",
+        "usage_filter": "generic",
+        "code": [
+          "0x000002E8, 0x70006012, 0x00000000, 0x6363634E, 0x637F6393, 0x6397638F, 0x603D6387, 0x000060E5,",
+          "0x07070019, 0x00000000, 0x67C47282, 0xB070B822, 0x72827100, 0x8A1D80C7, 0x22208CF0, 0x26EB401E,",
+          "0xC150B090, 0x4F931C07, 0x78F2C071, 0x94819491, 0x94A29571, 0x318080C0, 0x1E003980, 0x1E104332,",
+          "0x1E20403F, 0xC101403F, 0x4B931810, 0x11011630, 0x6C011401, 0x611963C0, 0x6050604C, 0x12026306,",
+          "0x63A0639F, 0x93908910, 0xC041B370, 0xC01C9191, 0xA370673F, 0x1E0081C0, 0x7000438F, 0xB0796738,",
+          "0x603D6440, 0x6453B079, 0xC051603D, 0xC07C9191, 0x673FB097, 0x1E0081C0, 0x22004055, 0x70004397,",
+          "0x72517250, 0x8921C034, 0x406722B1, 0x95B4C074, 0x92C4C014, 0x446B2271, 0x89617000, 0x89819501,",
+          "0x89919521, 0x89219531, 0x44752261, 0x85B57000, 0x95B1C0F1, 0x92C1C011, 0x4482228B, 0x95A18201,",
+          "0x821164E1, 0x608795A1, 0x95A18221, 0x823164E1, 0x64E195A1, 0x892195B5, 0x448E22B1, 0x92C1C031,",
+          "0x89227000, 0x22822A92, 0x2692409A, 0x8922609A, 0x22A22A92, 0x2692409A, 0x221184B1, 0x8479409A,",
+          "0x44A922B2, 0x64E19569, 0x44A62292, 0x70008599, 0x398985D9, 0x95897000, 0x229264E1, 0x859944B2,",
+          "0x398185D1, 0x700095C1, 0x398985D9, 0x95A18591, 0x89227000, 0x22822A92, 0x269240BC, 0x10818495,",
+          "0x94911A11, 0x84B19571, 0x40C12211, 0x95698479, 0x229264E1, 0x859944CB, 0x85D960D0, 0xC0813989,",
+          "0x38191881, 0x95759495, 0x89217000, 0x44DB2291, 0x64E19569, 0x94698599, 0x95897000, 0x85D964E1,",
+          "0x94693989, 0x84D17000, 0x44E11E01, 0xA0F07000, 0x673FC08C, 0x673FC07C, 0x8BE0B022, 0x9BE01610,",
+          "0x228D1267, 0x125744F5, 0x44F5227D, 0x67B260F6, 0x22A08050, 0x224B477F, 0xC3D6477F, 0x410022FB,",
+          "0x443D22CD, 0x8A01D072, 0x427E223D, 0x89F1FC22, 0x2ACB627E, 0x12922A6B, 0x80E067AC, 0x450B2210,",
+          "0xB022B023, 0x9190C010, 0xB07AA370, 0x1E008120, 0x89DE4114, 0x267B6125, 0x263B89CE, 0x411F22EB,",
+          "0x673826FB, 0xB079B07A, 0x4525225D, 0x66A66440, 0x412C1E0E, 0xB370939E, 0xB071B091, 0xB098C03C,",
+          "0xA370673F, 0xA071B091, 0x2ABBA07A, 0xC7F181D0, 0x41411C10, 0x2A8B9D90, 0x80E0AD44, 0x41402220,",
+          "0xBD44268B, 0x8920645E, 0x0410C3F1, 0x0408C078, 0x1A10C003, 0x39304972, 0x16131003, 0x8922CD5E,",
+          "0x455E2282, 0xC0CCB09C, 0x1E00673F, 0x1E084559, 0x64B74159, 0x648F615A, 0x161E6EE9, 0x61706950,",
+          "0x1E08140E, 0xB09C4169, 0x673FC0CC, 0x6EE964B7, 0x1A101A1E, 0xB09C4970, 0x673FC0CC, 0x6EE9648F,",
+          "0x69691A1E, 0xC1F8B82B, 0x22728922, 0x646B4576, 0x100789A0, 0x04873957, 0x457F1E07, 0x8A2E26BB,",
+          "0x048061A3, 0x06361006, 0x39321002, 0x142ECD5E, 0x12056DE4, 0x14611071, 0x498E1E91, 0x6DE5161E,",
+          "0x318E105E, 0x2A0B004E, 0x2A1B2A2B, 0x04C4127C, 0x1E06004B, 0x386E419A, 0x120212E0, 0x1C011071,",
+          "0x240245A1, 0x699D1A11, 0x89B0042E, 0x4907140E, 0x1CE08A20, 0x10E14907, 0x1A108930, 0x16103930,",
+          "0x14311401, 0x92513131, 0x895010E9, 0x89401409, 0x06703940, 0x16191409, 0x41BD22AB, 0x97B91439,",
+          "0x69BE9770, 0x1030CD51, 0x41CB1E00, 0x41CB22AB, 0x6D121A10, 0x16119772, 0x81D069C7, 0x1C10C7F1,",
+          "0x9D9041D0, 0x12328CF4, 0x06743824, 0x9DA71207, 0x9DC79DB7, 0xCDA79DD7, 0x2A5B66BE, 0x22CB1257,",
+          "0x8CF04628, 0x38101231, 0x1E000670, 0x8DA54200, 0x31848DB4, 0x8DC50054, 0x318E8DDE, 0x121000E5,",
+          "0x228BCCB1, 0xCC7145F2, 0x1CE46D1E, 0x161145FA, 0x1CE56D1E, 0x61FF45FB, 0x16111611, 0x120169F2,",
+          "0x9C6166FF, 0x22FB8A1D, 0x8D5C4223, 0x31818D61, 0x10B4001C, 0x04141261, 0xCD33228B, 0x4610CD2E,",
+          "0xCD0ECD13, 0x22006D30, 0x0410421C, 0x461C1C04, 0x1CC06DE0, 0x66FF461C, 0x62232ACB, 0x2A206D30,",
+          "0x26002A10, 0x6E300040, 0x12676EEC, 0x9C208140, 0x9C108130, 0x422C22B8, 0x97708D40, 0x423022C8,",
+          "0x97708140, 0x423422D8, 0x97708130, 0x423822E8, 0x97708D90, 0x424222F8, 0x97708640, 0x97703980,",
+          "0x97708650, 0x97703980, 0x063186A1, 0x12304249, 0x97711810, 0x1E826A47, 0x86904651, 0x42512220,",
+          "0x1292CBC6, 0x6D60265B, 0x6E601610, 0x67B267AC, 0xCB521061, 0xC0001821, 0x90402410, 0x225BB09D,",
+          "0xC08C478B, 0xC010673F, 0x80509190, 0x477F22A0, 0x477F224B, 0x229BD076, 0x603D426C, 0x427222CB,",
+          "0x403D22BD, 0x450722FB, 0x4278226B, 0x467822FB, 0x443D22CD, 0x89F1FC22, 0x427E223D, 0x8A01D072,",
+          "0x222D2A3B, 0x221D443D, 0x939142A5, 0x228BB370, 0x4689CD33, 0x6D30CD13, 0x06303930, 0x42981E10,",
+          "0x429B1E30, 0x42941E20, 0x629B1062, 0x469B220B, 0x629B1062, 0x429B220B, 0xC3D01062, 0x403D1C02,",
+          "0x673FC01C, 0xFC20A370, 0x43C21C02, 0x6C026107, 0xB0937225, 0x9D90C7F0, 0x8900C031, 0x31400670,",
+          "0x91110001, 0x8900C031, 0x31403930, 0x81C00001, 0x42B51E00, 0x2AAB9191, 0x42BD22DD, 0x700026AB,",
+          "0x1A1E8922, 0xB09C4ACD, 0x673FC0CC, 0x9779649A, 0x42CB1E04, 0x6E791A14, 0xB09C1617, 0x81D062BF,",
+          "0x1C10C7F1, 0x9D9042D2, 0x39308930, 0x894842EB, 0xCD531A10, 0x673FC0CC, 0xB09C6495, 0x42DF22A8,",
+          "0x6E399779, 0x6AD81613, 0xCBD61282, 0x852064E1, 0x1E008531, 0x1E0146F5, 0xB82846F5, 0x9C008D90,",
+          "0x266B72D4, 0x9C418641, 0x9C518651, 0xBD427000, 0xC800B829, 0xCB9667B8, 0x42FD2278, 0x26CB1292,",
+          "0x26CB7000, 0xCBA6BD43, 0x43052288, 0x70001292, 0x22008A60, 0xC09C470B, 0x8A70673F, 0x39801001,",
+          "0x39813181, 0x91919110, 0xB097B098, 0x39808A60, 0x432A2210, 0x93918A81, 0xB071B091, 0xB370A370,",
+          "0x673FC01C, 0x22808A60, 0x81204330, 0x43312200, 0x220081C0, 0x63304331, 0x432A2200, 0x673FC08C,",
+          "0x673FC07C, 0x6397603D, 0x98227280, 0xB0411220, 0x603D9030, 0x473E226D, 0xC09CB07A, 0xA07A673F,",
+          "0x80717000, 0x907124C1, 0x805F7100, 0x907128C1, 0x4757220F, 0x434E20CF, 0x24C11201, 0x70009091,",
+          "0x4763229F, 0x4769221F, 0x477F22AF, 0x477F224B, 0x264B6397, 0x1E1280C2, 0x1E224363, 0xB0904793,",
+          "0x477F22A1, 0x907124C1, 0xB0996342, 0xB090A079, 0xCFC2A070, 0xB82A639B, 0x16108BF0, 0x80E09BF0,",
+          "0x476D2210, 0xC011B023, 0x12579191, 0xA37067B2, 0xA071B091, 0x477B223B, 0xC0126383, 0x67B8C810,",
+          "0xC072639F, 0x67B8C820, 0xC022639F, 0x67B8C830, 0xCFA2639F, 0x67B8C840, 0xCF92639B, 0x67B8C850,",
+          "0xCFB2639B, 0x67B8C860, 0xCFE2639B, 0x67B8C870, 0xCFF2639B, 0x67B8C880, 0x67A3639B, 0xB04FB821,",
+          "0x67A36015, 0xB040B820, 0x227B6015, 0x224D43A9, 0xC05047A9, 0x67C69190, 0x70009832, 0x6E028840,",
+          "0x1C01C681, 0x700047AC, 0x6E078840, 0x1C01C681, 0x700047B2, 0x84109420, 0x47B92200, 0x7000B400,",
+          "0x6002B010, 0x6003B010, 0x600DB010, 0x9190C010, 0xB022B023, 0xA370C00B, 0x720FA378, 0x72077217,",
+          "0x81207208, 0x43CF1E00, 0x1E0081C0, 0x730943D2, 0x7000730A, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00006012, 0x60C06012, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x60CA0000,",
+          "0x07070019, 0x00000000, 0x65A1C890, 0x84D161A7, 0x44151E01, 0x89217000, 0x442922B1, 0x44232291,",
+          "0x64159569, 0x94698599, 0x95897000, 0x85D96415, 0x94693989, 0x22917000, 0x95894431, 0x641595A9,",
+          "0x94698599, 0x95697000, 0x641595C9, 0x398985D9, 0x70009469, 0x2A918921, 0x401A2281, 0x601A2691,",
+          "0x2A918921, 0x401A22A1, 0x601A2691, 0x10828575, 0x95721A12, 0x22818921, 0x9569444F, 0x85996415,",
+          "0x95896056, 0x85D96415, 0xC0813989, 0x38191881, 0x84859575, 0x94699482, 0x220184B1, 0x9485405A,",
+          "0x72507000, 0xC0547251, 0x22B18921, 0xC0744068, 0xC01495B4, 0x227192C4, 0x7000446C, 0x95018961,",
+          "0x95218981, 0x95318991, 0x22618921, 0x70004476, 0xC0F185B5, 0xC01195B1, 0x824192C1, 0x448522D1,",
+          "0x95A18201, 0x82116415, 0x641595A1, 0x8221608B, 0x641595A1, 0x95A18231, 0x95B56415, 0x22B18921,",
+          "0xC0514491, 0x700092C1, 0x93908910, 0xC041B370, 0xC01C9191, 0xA37064A5, 0x1E0081C0, 0x700041B1,",
+          "0x44A4226D, 0xC09CB07A, 0xA07A64A5, 0x80717000, 0x907124C1, 0x805F7100, 0x907128C1, 0x44B4220F,",
+          "0x41A920CF, 0x24C11201, 0x70009091, 0x80C2264B, 0x41AB1E12, 0x45AD1E22, 0x22A1B090, 0x24C145AF,",
+          "0x60A89071, 0x120A267B, 0x40C522EB, 0x649E269B, 0x225DB079, 0x649244CA, 0x22FBA24D, 0x228B40D0,",
+          "0xB24D40D0, 0x8900C021, 0x31400670, 0x91110001, 0x8900C021, 0x31403930, 0x91910001, 0x939078E0,",
+          "0x22FBB370, 0x60F540E2, 0x26DB26CB, 0x44F5229D, 0x22AD2ADB, 0x2ACB44F5, 0x878087CE, 0x1E00180E,",
+          "0x1A1040F4, 0x4DB31E50, 0x68F28781, 0x645F1A1E, 0x64A5C03C, 0x64A5C01C, 0xB0F0A370, 0xB098B097,",
+          "0x22FBB82B, 0x10B34124, 0x2A030673, 0x12328CF9, 0x06793829, 0x120E1090, 0x00393139, 0x8921C038,",
+          "0x45142281, 0x12096438, 0x61196444, 0x12091093, 0x10396444, 0x1A106438, 0xCDA34920, 0x16136D39,",
+          "0x691C6419, 0xC0FCB09F, 0x616264A5, 0x457122DB, 0xC3F18920, 0x415D0410, 0x0408C078, 0x39301A10,",
+          "0xCD571003, 0x1A1E8789, 0x16176E79, 0x10306930, 0x22818921, 0xCD574549, 0x16176D79, 0x64A5C0FC,",
+          "0x45B522DF, 0x45461E00, 0x41461E08, 0x615D6444, 0x693A6438, 0x1A17615D, 0x41551E08, 0x1A176D79,",
+          "0x64A5C0FC, 0x45B522DF, 0x1A106444, 0x6D79495D, 0xC0FC1A17, 0x22DF64A5, 0x643845B5, 0x8D576955,",
+          "0x2207260B, 0x2A0B4562, 0x22728922, 0x646C4566, 0x456A22CB, 0x497B1A1E, 0x64A5C0FC, 0x45B522DF,",
+          "0x64198789, 0x8A396166, 0x64A5C0FC, 0x8A396419, 0xC0FC3989, 0x641964A5, 0x89216171, 0x458722A1,",
+          "0x85588547, 0x39879D57, 0x9D789D67, 0x9D883988, 0x8527618F, 0x9D878538, 0x9D773987, 0x39889D68,",
+          "0x89309D58, 0x1E003930, 0xCD524199, 0x6D291A10, 0x1612643E, 0x86F16995, 0x41A00631, 0x18101230,",
+          "0x699E8781, 0x942061B9, 0x22008410, 0xB40045A2, 0xA0107000, 0xA0106001, 0xA0106004, 0xA0106005,",
+          "0xA0106006, 0xA0106007, 0xA0106008, 0xA0106009, 0xA010600A, 0xA010600B, 0xC010600C, 0xB0239190,",
+          "0xC00BB022, 0xA378A370, 0x7217720F, 0x72087207, 0x1E008120, 0x81C041C6, 0x41C91E00, 0x730A7309,",
+          "0x00007000"
+        ]
+      },
+      {
+        "role": "mce_image",
+        "variable": "LRF_MCE_binary_ble5",
+        "header": "rf_patches/lrf_mce_binary_ble5.h",
+        "data": "lrf_mce_binary_ble5_cc23x0r5.c",
+        "offset": "4",
+        "addr": "0x40094000",
+        "code": [
+          "0x000001FD, 0x7226604C, 0x7379722A, 0x72047279, 0x67D17205, 0xB025C030, 0xFFC09000, 0xB0049020,",
+          "0x73077306, 0x7000A004, 0x7312720E, 0x7313720F, 0x73147210, 0xA4D5A3AE, 0x15EE7000, 0x0FFF01FF,",
+          "0x13F517FF, 0x0F000240, 0x0F0F0F0F, 0x000F0F00, 0x0F0F0F0F, 0x807A000F, 0x807E807A, 0x0FF00F30,",
+          "0x00030000, 0x00100013, 0x00220021, 0x00310032, 0x00400043, 0x00530050, 0x00610062, 0x00720071,",
+          "0x00510050, 0x004F004E, 0x00C300CC, 0x0033003C, 0x00010000, 0x00030002, 0x00000001, 0x6412721B,",
+          "0xB1B26401, 0x7100B0E0, 0x721BA0E0, 0x8172B120, 0x39421020, 0x06F03122, 0x16300020, 0x14011101,",
+          "0x606F6C01, 0x6093607A, 0x606F60E9, 0x6093607A, 0x606F612F, 0x61E1607A, 0x606F625C, 0x61E1607A,",
+          "0x6072625C, 0x60731222, 0x64121212, 0x81B16401, 0x91B20012, 0x6050B080, 0x6F136092, 0x16116E23,",
+          "0x687B1612, 0x7A0394DB, 0x81809493, 0x44721E00, 0x9300C030, 0x9320C1F0, 0x1820C522, 0x12034091,",
+          "0x16126E23, 0xB52C688E, 0x72796072, 0xC200B021, 0xB2A09200, 0x9210C100, 0xB130B12E, 0xB121B123,",
+          "0x7100B0EE, 0xA0EEB12E, 0x89898977, 0x22D18181, 0x899740A9, 0xC0F389A9, 0xB02267D6, 0x7231B002,",
+          "0x818181A0, 0x40B622F1, 0x40B62207, 0x081013F1, 0xB5209530, 0xB003B023, 0xB0F0B130, 0xB1307100,",
+          "0x31808180, 0x93103980, 0xB1307100, 0x95379313, 0x67F4C030, 0xB1307100, 0x71009539, 0xA0F0B130,",
+          "0xB523A520, 0x7100B0E3, 0xB123A0E3, 0x9790C030, 0x97B0C060, 0xB0E1B121, 0xB1217100, 0x7279A0E1,",
+          "0xA00367D1, 0x7306A002, 0x73797307, 0x72267279, 0x9020C7C0, 0x65666072, 0x65C465BD, 0xB136B0F6,",
+          "0x67F4C040, 0x80B07100, 0x40F72260, 0x67F4C050, 0xC06060ED, 0xB89067F4, 0x88C588B4, 0x9874E070,",
+          "0x67F49885, 0xA0F6B136, 0x737BA790, 0x7210B790, 0x720F7314, 0x00007313, 0xB0990000, 0xA280B261,",
+          "0x891FA282, 0x4113221F, 0xB2A0B282, 0x3D8F316F, 0xB8A791CF, 0x92C088D0, 0xC3016781, 0x22F36791,",
+          "0x67A04520, 0xA0E095EF, 0x97B3C0B3, 0x72269127, 0xB3AE7100, 0xA4D5B087, 0x6788C243, 0x44E92200,",
+          "0x65666072, 0x65BE79D0, 0xC5F0A3E6, 0xB3E66934, 0xB0E565C4, 0x7100B125, 0x225080A0, 0xA79045D2,",
+          "0xB790737B, 0x73147210, 0x7313720F, 0xB099B083, 0xA280B261, 0x8910A282, 0x414D2210, 0xB2A0B282,",
+          "0x3D803160, 0xB8A791C0, 0x92C088D0, 0x6781A0E5, 0xC261B263, 0x22F36791, 0x67A0455C, 0xB3AEA0E0,",
+          "0x7226B087, 0xC2A3A4D5, 0x22006788, 0x6072452F, 0xA214B021, 0x84D3B215, 0x0443C1F4, 0x12021613,",
+          "0x22531204, 0x89704179, 0x880297F0, 0x89901A82, 0x880497F0, 0x89801A84, 0x880097F0, 0x14021A80,",
+          "0x97F089A0, 0x1A808800, 0x83A01404, 0x419122C0, 0x39101020, 0x10401402, 0x14043910, 0x45982253,",
+          "0x31143112, 0x22536198, 0x31124596, 0x61983114, 0x31243122, 0x39823182, 0x00423184, 0x897095F2,",
+          "0x898094E0, 0x899094F0, 0x89A09500, 0x725D9510, 0x22308270, 0xB0E545AE, 0xB1257100, 0x61A6A0E5,",
+          "0x9200C100, 0x979079B0, 0x120A13E7, 0x26CA26AA, 0xB024B022, 0xB002B025, 0xB005B004, 0x79C07000,",
+          "0x90409060, 0x907079E0, 0x70009050, 0xB021B07A, 0xB4D5B098, 0xA0E0A0E1, 0xB0F5B135, 0x69CDC400,",
+          "0xC080B260, 0x700067F4, 0x88B3B890, 0x825088C4, 0x41E03980, 0x31331630, 0x31343C03, 0x95833C04,",
+          "0xB0619594, 0xB0216138, 0x9200C200, 0xC100B2A0, 0x73129210, 0xC0007313, 0x72799210, 0x89778180,",
+          "0x22D08989, 0x899741F3, 0x318089A9, 0x93103980, 0x953081A0, 0xC42DC2EC, 0xC008C07E, 0xB0EEB12E,",
+          "0xB12E7100, 0x67D6A0EE, 0xB0F1B524, 0xB022B002, 0xB023B003, 0x7100B131, 0xA524A0F1, 0xB123B520,",
+          "0xB130B0E3, 0x1074B0F0, 0x104FC0F0, 0x3914664D, 0x10946A13, 0x104FC0F0, 0x3914664D, 0x84A46A19,",
+          "0x104FC040, 0x3914664D, 0x84A46A1F, 0x46312204, 0x664D81EF, 0x22108230, 0x6226422C, 0xC00FC030,",
+          "0x6A2D664D, 0xC46D623E, 0x81EFC01E, 0x8230664D, 0x42392210, 0xC0306231, 0x664DC00F, 0x623E6A3A,",
+          "0xC030A0F1, 0xC0409790, 0xB12197B0, 0x7100B0E1, 0xA0E1B121, 0xA0037279, 0x7226A002, 0x061F6072,",
+          "0x148F313F, 0x6FF214CF, 0x39481028, 0x14D20632, 0x71006F23, 0x931EB130, 0x70009533, 0x93E07AC0,",
+          "0x22308270, 0xB0E54667, 0xB1257100, 0xB021A0E5, 0xB005625E, 0xB004B025, 0xB002B024, 0x79C0B022,",
+          "0x90609040, 0xC42DC2EC, 0x67A8C008, 0x92001200, 0x905079F0, 0x7A909070, 0xB13493D0, 0x7100B0F4,",
+          "0xB081A0F4, 0x9420C0D0, 0xB07BB05B, 0xB07DB05D, 0x96207CA0, 0xC008B260, 0xC2ECC21D, 0xC0308971,",
+          "0x39116692, 0x62A46A8E, 0x061F101F, 0x148F313F, 0x6FF214CF, 0x39481028, 0x31120632, 0x6F2314D2,",
+          "0x16129663, 0x96736F23, 0x7000B630, 0xC106C0F5, 0xC0C9C018, 0x7A17C20D, 0x7AD07A2F, 0xB14693E0,",
+          "0x7100B106, 0xB146B082, 0xB134A106, 0x7100B0F4, 0xB051B134, 0xC0F0B071, 0xA0549420, 0x7100B261,",
+          "0x7100B134, 0x672DB134, 0x4AC71C98, 0x39208650, 0x1CD891D0, 0x161842CB, 0x967F46C1, 0x12089667,",
+          "0x1EB8B630, 0x865042D6, 0x91D03920, 0x62CE1618, 0xC0F08212, 0x71009210, 0x81E0B134, 0x1C018971,",
+          "0x81E04723, 0x1C018981, 0xC2024723, 0xB0839212, 0xB2A0B099, 0x31608910, 0x91C03D80, 0x88D0B8A7,",
+          "0x865092C0, 0x430E2220, 0x7100B280, 0x67677AB0, 0xB1347100, 0xB1347100, 0x96638823, 0x96738833,",
+          "0x1C98B630, 0x86504B04, 0x91D03920, 0x81911618, 0x42F61E01, 0x1C811621, 0x67744EF6, 0x63217226,",
+          "0x7100A280, 0x67677AA0, 0x1C98672D, 0x86504B18, 0x91D03920, 0x81911618, 0x43121E01, 0x1C811631,",
+          "0x67744F12, 0xA0F47226, 0x92126072, 0xC0907226, 0x730767F4, 0x7312B021, 0x73147313, 0x71006276,",
+          "0x7100B134, 0x8823B134, 0x10353983, 0x31848834, 0x10463984, 0xB1347100, 0xB1347100, 0x31808820,",
+          "0x14043980, 0x39808820, 0x88301406, 0x39803180, 0x88301403, 0x14053980, 0xB1347100, 0xB1347100,",
+          "0x39808820, 0x14041403, 0x31808830, 0x14053980, 0x39331406, 0x39353934, 0x31853936, 0x31861453,",
+          "0x96631464, 0xB6309674, 0xB1347100, 0xB1347100, 0xB1347000, 0xC008B07D, 0x710093D0, 0xB081B134,",
+          "0xC0F97100, 0x7100B134, 0x7000B134, 0x967FB263, 0x12089667, 0x1618B630, 0x43801C98, 0x39208650,",
+          "0x637891D0, 0x80A07000, 0x44532200, 0x1E038193, 0x70004381, 0x912797B3, 0x80A07100, 0x44532200,",
+          "0x6401A3AE, 0x87DB7000, 0x18B087C0, 0x84B83123, 0x18031883, 0x97B31813, 0xB121A790, 0xB0E0B790,",
+          "0x7000B0E1, 0x43A61E08, 0xB6147100, 0x97B8B121, 0x70007100, 0xC00DC2EC, 0xC070C008, 0xC3EB897E,",
+          "0x061F10EF, 0x148F313F, 0x6FF214CF, 0x39481028, 0x1E020632, 0xCCCA47BB, 0x1E1263C4, 0xCC3A47BF,",
+          "0x1E2263C4, 0xC3CA47C3, 0xC33A63C4, 0x43C82200, 0x63CD10A6, 0x318A6FB7, 0x6E7A006A, 0x391E161B,",
+          "0xB0746BAE, 0x85207000, 0x0410C021, 0x70009520, 0xB0E1B260, 0x39818491, 0x10103141, 0x14103111,",
+          "0x97B043E3, 0xB790B121, 0xB2617100, 0xB1217279, 0x31818491, 0x10103971, 0x14103111, 0x97B043F2,",
+          "0x7100B790, 0xB1217279, 0x7000A0E1, 0x88509860, 0x47F92200, 0x7000B840"
+        ]
+      },
+      {
+        "role": "rfe_image",
+        "variable": "LRF_RFE_binary_ble5",
+        "header": "rf_patches/lrf_rfe_binary_ble5.h",
+        "data": "lrf_rfe_binary_ble5_cc23x0r5.c",
+        "offset": "4",
+        "addr": "0x40096000",
+        "code": [
+          "0x00000360, 0x00006011, 0x0E700E00, 0x0FF00EF0, 0x0FF30FF1, 0x0FFF0FF7, 0x0BFF0DFF, 0x07FF09FF,",
+          "0x03FF05FF, 0x721501FF, 0xB1526647, 0x7100B060, 0x81217215, 0xA060B080, 0x06F11012, 0xEFF03942,",
+          "0x980297F1, 0x16316662, 0x14101100, 0x602D6C00, 0x602E602D, 0x60426037, 0x602D6048, 0x6254602D,",
+          "0x1E00644C, 0x644F4436, 0x62546452, 0x62546455, 0x1E22625E, 0x64554C3F, 0x64586464, 0x65526254,",
+          "0x64556254, 0x603B6552, 0x645E645B, 0x22008040, 0x62544448, 0x6250644A, 0x70006461, 0x6023B010,",
+          "0xB0107000, 0x70006026, 0x6029B010, 0xB0107000, 0x7000602C, 0x602FB010, 0xB0107000, 0x70006032,",
+          "0x6035B010, 0xB0107000, 0x70006038, 0xB1837216, 0x9870C7F0, 0xA0646533, 0x22008190, 0x80404471,",
+          "0x45232200, 0xB0646069, 0x8229B084, 0x8131B060, 0x44FB2241, 0x06F28262, 0x311F102F, 0x8266142F,",
+          "0x1420C010, 0x826A6F0D, 0x06FA398A, 0x31808270, 0xC00B3980, 0x921B180B, 0x18AC10BC, 0x14398893,",
+          "0x8260149B, 0x100106F0, 0x14103110, 0x14108221, 0x8280140C, 0x06F03940, 0xC0111002, 0xC0103001,",
+          "0x18021801, 0x00213182, 0x925126C1, 0x6662CFE0, 0x39808280, 0x100206F0, 0x3001C011, 0x1801C010,",
+          "0x31821802, 0x26C10021, 0x82879241, 0x39873947, 0xB002B003, 0xB022B023, 0xA063A062, 0x22018041,",
+          "0x22314523, 0x886040BC, 0x87559740, 0x4CE01CB5, 0xB08EB200, 0x7100B06E, 0x45232201, 0x22E18041,",
+          "0x819044D3, 0x44F92210, 0x87556064, 0xA06EA200, 0x97448864, 0x18458754, 0x4CE01C75, 0x22108190,",
+          "0x60F940C6, 0x8180984D, 0x44F02200, 0x40F022C6, 0x39818261, 0x31813951, 0x31808160, 0x00013980,",
+          "0xB1809161, 0x8229989F, 0x819014F9, 0x40642200, 0x44F92210, 0xCFD06137, 0xA2006662, 0xA063A06E,",
+          "0x8280B083, 0x100206F0, 0x3001C011, 0x1801C010, 0x31821802, 0x26C10021, 0xB0239251, 0xB083B003,",
+          "0xB084B063, 0x7100B064, 0x22018041, 0xB0834523, 0x8190B084, 0x40642210, 0x45112240, 0x97418861,",
+          "0x18918751, 0xB1E19871, 0xA1836111, 0xA200A180, 0xA063A003, 0x9870C7F0, 0xA1807000, 0x82296533,",
+          "0x14598895, 0x6931D400, 0x826260C6, 0x06F23942, 0x8290623E, 0x22018041, 0x88644523, 0x87559744,",
+          "0x98751895, 0x22118191, 0x693844F9, 0x22018041, 0x88644523, 0x87559744, 0x492B1CC5, 0x98751895,",
+          "0x22108190, 0x60F94144, 0x72167218, 0x39428262, 0x663E06F2, 0xA064B183, 0x22008190, 0x80404561,",
+          "0x46332200, 0xA1836159, 0x827DA040, 0xC0F18260, 0x10090410, 0x394A826A, 0x8260041A, 0x04103980,",
+          "0x10AB100E, 0x10C210BC, 0xCFC0663E, 0xB0236662, 0x65F8B003, 0xB060B063, 0xB084B064, 0x65D8B023,",
+          "0x710065E1, 0x22018041, 0x81904633, 0x458D2210, 0x2231B084, 0xB083417F, 0x65B165FE, 0xB084617F,",
+          "0x318F887F, 0xDFB03D8F, 0x666297FF, 0x80417100, 0x46332201, 0x8190B084, 0x41A62210, 0x8261B083,",
+          "0x45A122C1, 0x826165FE, 0x459422D1, 0x619465B1, 0x88828871, 0x3D813181, 0x3D823182, 0x97F1EFA0,",
+          "0x66629802, 0x88606152, 0x87539740, 0x4DBE18D3, 0x16130BF3, 0x49D71CE3, 0x87639743, 0x61C3143B,",
+          "0x49D71CE3, 0x87639743, 0x1CAB183B, 0x1C9B4DD3, 0x1CBC49D5, 0x10B241D7, 0x22D08260, 0x819041D0,",
+          "0x45D72210, 0x65D8663E, 0x10AB61D7, 0x109B61C7, 0x700061C7, 0xC0F18280, 0xB0830410, 0x69DB7100,",
+          "0xB18010BC, 0x88627000, 0x87529742, 0x18128891, 0x18128221, 0x31818291, 0x1C123D81, 0xB18249EF,",
+          "0xC7F1B1E2, 0x4DF31421, 0x9872C812, 0xB1E19882, 0x7000B181, 0xC0061208, 0x9870C7F0, 0x70009880,",
+          "0x88608891, 0x87509740, 0x82211810, 0x14061810, 0x82928181, 0x3D823182, 0x4A121C20, 0x2221B182,",
+          "0xB1E24616, 0x6662CF90, 0x42162221, 0xB1E2A182, 0x39418281, 0x0401C0F0, 0x42241E01, 0xC0101618,",
+          "0x1C083010, 0x10604632, 0x10063C10, 0x1461C7F1, 0xC8164E28, 0x88819876, 0x3D813181, 0x4A2F1C16,",
+          "0xB1E19886, 0x1208C006, 0xA1837000, 0x88728891, 0x3D823182, 0x97F1EF80, 0x66629802, 0x7000A003,",
+          "0x1420C010, 0x98436F03, 0x31121020, 0x98921402, 0x73087000, 0x72067309, 0x72187207, 0xC7F0721C,",
+          "0x70009870, 0xB1506647, 0x625CB1E0, 0xB1506647, 0x8120B1E0, 0x44141E50, 0x644AB080, 0x6014B153,",
+          "0xB1516647, 0x6014B1E0, 0x87D097E0, 0x46672200, 0x7000B7C0, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x6011A010, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,",
+          "0x00000000, 0x00000000, 0x64860000, 0x604EA010, 0xA01064F5, 0x64E16051, 0x6054A010, 0xA010646C,",
+          "0x646E6057, 0x605AA010, 0xA010650A, 0x6538605D, 0x6060A010, 0xA010664D, 0x78E86063, 0x1E089518,",
+          "0xB6814042, 0xA682B682, 0xB2D8A327, 0xB2C07000, 0xB2D0B811, 0xB350B360, 0x684BC470, 0xB83DB83F,",
+          "0xB839B83E, 0xB832B833, 0xB319A822, 0xC660B318, 0xB3266856, 0xB327B325, 0x224D782D, 0xB685405E,",
+          "0xC0F0B343, 0xA3436860, 0x6863C130, 0xB824A823, 0x22607820, 0xB39F446A, 0x7000666F, 0x6045643B,",
+          "0xB823A824, 0xB822A39F, 0xA318A319, 0xA325A327, 0xA839A326, 0xA83DA83F, 0xA833A83E, 0xA2C0A832,",
+          "0xA2D0A811, 0xA360A2D8, 0x668BA350, 0x700066A7, 0x951178F1, 0xB682B681, 0x82B3A681, 0x409022F3,",
+          "0x60922AF3, 0x64EF79A2, 0xC1F182E0, 0x00300410, 0xB2D892E0, 0x6899C470, 0xB810B2F0, 0x22507820,",
+          "0x64A344A0, 0xC00064B8, 0xB0607000, 0x7100B064, 0x22408040, 0x220044B2, 0xB08040A3, 0x1E118121,",
+          "0x1E5140B1, 0x700044A3, 0xB084A064, 0x22008190, 0x700040A3, 0x1E118121, 0x1E5140E0, 0xB83F40E0,",
+          "0xB834B83E, 0xB2F1B835, 0x68C3C2F0, 0x22607820, 0xB39F44C8, 0x22507820, 0xB06044D9, 0x7100B064,",
+          "0xB084A064, 0x22108190, 0x812144D9, 0x40E01E11, 0x40E01E51, 0x782D60CC, 0x40DD224D, 0xC170B685,",
+          "0x666A68DE, 0xA2F17000, 0x668BA39F, 0x68E5C2F0, 0xA810A2F0, 0xA83FA2D8, 0xA834A83E, 0x66A7A835,",
+          "0xDFF179B2, 0x041082D0, 0x92D00020, 0x81217000, 0x41051E11, 0x41051E51, 0xB064B060, 0x80407100,",
+          "0x41062240, 0xB084A064, 0x22018191, 0x700044FA, 0x40FA2200, 0x60F5B080, 0x96B086A0, 0x31803980,",
+          "0x3141C081, 0x26010001, 0xC80096A1, 0x04018661, 0xA2A09661, 0x22F08680, 0x7000411C, 0x8681C400,",
+          "0x96810401, 0x93C07940, 0x93B07920, 0xB3E0B3F6, 0xB3D0B3C0, 0x69297970, 0x692B7980, 0xA821A820,",
+          "0xB830B68F, 0x69317990, 0x93B07930, 0x26007950, 0x700093C0, 0x844A813E, 0xCF0910AC, 0x089E049E,",
+          "0x944A00EA, 0x4545227A, 0x260086B0, 0xB83C96A0, 0xB680B838, 0xC8008661, 0x78300401, 0x26010001,",
+          "0xB0679661, 0xB079B087, 0xB060B099, 0x7850728C, 0xC02098D0, 0xA6A06958, 0x41EB225E, 0x3180C400,",
+          "0xB6A396B0, 0x8130C0FF, 0x41652280, 0x71007000, 0x22708040, 0xB08742BB, 0x87208712, 0x100A3940,",
+          "0x040F8720, 0x1A8D10AD, 0x00FD314D, 0x02BD314D, 0xC00D96AD, 0x96BD318D, 0xA447A660, 0xB660A446,",
+          "0xC3C01025, 0x10AD1405, 0x314D168D, 0x314D00FD, 0xC7F802BD, 0x10233188, 0x18037840, 0x728F98E3,",
+          "0x80407100, 0x42BB2270, 0x8713B087, 0x96B896AD, 0xB660A660, 0xC3C01036, 0xC0091406, 0x18681028,",
+          "0x260949A0, 0x18581038, 0x261949A4, 0x10ADC3C8, 0x00FD314D, 0x023D314D, 0x94608900, 0x7850728C,",
+          "0x710098D0, 0x22708040, 0xB08742BB, 0x871496AD, 0x14871047, 0xA445A660, 0x1048B662, 0x49BF1858,",
+          "0x10482619, 0x49C31868, 0x10382609, 0x49C71878, 0x16392629, 0x14901100, 0x61D36C00, 0x61D561D3,",
+          "0x61D361D9, 0x61DC62B6, 0xB66062B6, 0x103961EC, 0x39191449, 0x104961DF, 0x61DF1669, 0x1A691039,",
+          "0x784061DF, 0x98E91809, 0x1000728F, 0xB6601000, 0x69E7C0C0, 0x94608900, 0xB66261EC, 0x224E79E1,",
+          "0x78704200, 0x788098C0, 0x710098D0, 0x22708040, 0xB08742BB, 0x98E086F0, 0x98F08700, 0x1E0088B0,",
+          "0x890145FC, 0x78927296, 0x94A4665D, 0x665F78B2, 0x872094B4, 0x96A03140, 0x26F0C410, 0x04028682,",
+          "0x96822642, 0x8662C810, 0x78600402, 0x26320002, 0x78D29662, 0x22F4665F, 0x31144621, 0x421F22F3,",
+          "0x94742604, 0x73476222, 0x665D78A2, 0x22F678A6, 0x26C44228, 0x6666C1C5, 0x665F78C2, 0x6666C1D5,",
+          "0x1014C1E5, 0xA0676666, 0x7100944C, 0x223D782D, 0x227D463A, 0xA3F6463A, 0xA663A079, 0x22908050,",
+          "0xB2A042BB, 0x61657000, 0xB661A2A0, 0x06F286D2, 0x46441EB2, 0xA6617000, 0x79E17000, 0xA6606200,",
+          "0x782DA2A0, 0x465C223D, 0xB820B821, 0xA6807283, 0xA39FA68F, 0xA3E0A3F6, 0xA3D0A3C0, 0x31127000,",
+          "0x98E13912, 0xC06098F2, 0x89236A62, 0x70008934, 0x26A526C5, 0x70006E54, 0x782DC006, 0x426F220D,",
+          "0x84A42606, 0x79C084B3, 0x94A079D1, 0x782D94B1, 0x427A221D, 0x627BB665, 0x222DB664, 0xB683427E,",
+          "0x42812206, 0xC1C5B687, 0x26A526C5, 0x10346E54, 0x26C5C1D5, 0x6E5426A5, 0xA6857000, 0xA687A683,",
+          "0xC7018660, 0x1E000410, 0x84A442A6, 0x79C084B3, 0x94A079D1, 0x866094B1, 0x2A402A50, 0xC1C59660,",
+          "0x26A526C5, 0x10346E54, 0x26C5C1D5, 0x6E5426A5, 0xB6817000, 0x7251A682, 0xA682B682, 0xB07CA687,",
+          "0x8051B09C, 0x42AF22C1, 0xA05CA07C, 0x7000A681, 0x22008040, 0x710046BB, 0xA6A062B6, 0xA6A3A6A1,",
+          "0x00007000"
+        ]
+      }
+    ],
+    "header_file": [
+      {
+        "type": "common",
+        "name": "ti/drivers/rcl/LRF.h"
+      },
+      {
+        "type": "common",
+        "name": "ti/drivers/rcl/commands/generic.h",
+        "usage_filter": "generic"
+      },
+      {
+        "type": "device_family",
+        "name": "inc/hw_fcfg.h"
+      }
+    ],
+    "rcl_structs": {
+      "LRF_shapeBaseGfsk067": {
+        "attr": {
+          "info": null,
+          "type": "LRF_TxShape"
+        },
+        "scale": "64994",
+        "numCoeff": {
+          "name": "numCoeff",
+          "script": {
+            "role": "update",
+            "#text": "getRclStructFieldArraySize(\"LRF_shapeBaseGfsk067.coeff\")"
+          }
+        },
+        "coeff": "1,2,5,10,20,34,55,82,113,145,176,203,224,238,248,253,255"
+      },
+      "LRF_shapeBaseGfsk05": {
+        "attr": {
+          "info": null,
+          "type": "LRF_TxShape"
+        },
+        "scale": "61827",
+        "numCoeff": {
+          "name": "numCoeff",
+          "script": {
+            "role": "update",
+            "#text": "getRclStructFieldArraySize(\"LRF_shapeBaseGfsk05.coeff\")"
+          }
+        },
+        "coeff": "1,2,3,6,10,17,26,39,55,75,98,123,148,173,196,216,231,243,251,255"
+      },
+      "LRF_swConfig1Mbps": {
+        "attr": {
+          "info": null,
+          "type": "LRF_SwConfig"
+        },
+        "rxIntFrequency": "1000000",
+        "rxFrequencyOffset": "0",
+        "txFrequencyOffset": "1000000",
+        "modFrequencyDeviation": "250000",
+        "txShape": "LRF_shapeBaseGfsk067",
+        "bwIndex": "0",
+        "bwIndexDither": "1"
+      },
+      "LRF_swConfig2Mbps": {
+        "attr": {
+          "info": null,
+          "type": "LRF_SwConfig"
+        },
+        "rxIntFrequency": "850000",
+        "rxFrequencyOffset": "0",
+        "txFrequencyOffset": "850000",
+        "modFrequencyDeviation": "500000",
+        "txShape": "LRF_shapeBaseGfsk05",
+        "bwIndex": "1",
+        "bwIndexDither": "1"
+      },
+      "LRF_txPowerTable": {
+        "attr": {
+          "info": "pa_table",
+          "type": "LRF_TxPowerTable"
+        },
+        "numEntries": {
+          "name": "numEntries",
+          "script": {
+            "role": "update",
+            "#text": "getRclStructFieldArraySize(\"LRF_txPowerTable.powerTable\")"
+          }
+        },
+        "powerTable": "pa_table"
+      },
+      "LRF_config": {
+        "attr": {
+          "info": null,
+          "type": "LRF_Config"
+        },
+        "rfeImage": "rfe_image",
+        "pbeImage": "pbe_image",
+        "mceImage": "mce_image",
+        "regConfigList": "cfg_segment_list"
+      }
+    }
+  }
+}

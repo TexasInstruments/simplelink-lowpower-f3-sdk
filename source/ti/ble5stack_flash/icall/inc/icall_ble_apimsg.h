@@ -61,6 +61,9 @@ extern "C" {
 #include "osal_snv.h"
 #include "ll_common.h"
 #include "ll_ae.h"
+#include "ll_handover.h"
+#include "ll_handover_cn.h"
+#include "ll_handover_sn.h"
 #ifndef CONTROLLER_ONLY
 #include "gapgattserver.h"
 #include "linkdb.h"
@@ -77,6 +80,7 @@ extern "C" {
 #include "gatt_uuid.h"
 #include "gatt_profile_uuid.h"
 #include "gattservapp.h"
+#include "handover.h"
 #endif // !CONTROLLER_ONLY
 #if !defined(CC23X0) && !defined(CC33xx)
 #include "rtls_srv_api.h"
@@ -116,7 +120,7 @@ typedef struct _ICall_Hdr_
 typedef struct _ICall_Stack_Event_
 {
   uint16_t signature;  //!< signature (0xffff)
-  uint16_t event_flag; //!< event bit(s)
+  uint32 event_flag; //!< event bit(s)
 } ICall_Stack_Event;
 
 /**
@@ -717,16 +721,16 @@ typedef struct _ICall_L2capPsmInfo_
 
 /**
  * ICall message containing HciExtCmd hdr, local PSM, number of channels and
- * pointer to structure to copy CIDs into
+ * pointer to structure to copy CIDs with their connection handle into
  *
  * @see L2CAP_PsmChannels
  */
 typedef struct _ICall_L2capPsmChannels_
 {
-  ICall_HciExtCmd hdr; //!< hdr event field must be set as ICALL_CMD_EVENT
-  uint16_t psm;        //!< PSM Id
-  uint8_t numCIDs;     //!< number of CIDs can be copied
-  uint16_t *pCIDs;     //!< structure to copy CIDs into
+  ICall_HciExtCmd hdr;             //!< hdr event field must be set as ICALL_CMD_EVENT
+  uint16_t psm;                    //!< PSM Id
+  uint8_t numCIDs;                 //!< number of CIDs can be copied
+  l2capLocalChannelInfo_t *pCIDs;  //!< structure to copy CIDs into
 } ICall_L2capPsmChannels;
 
 /**

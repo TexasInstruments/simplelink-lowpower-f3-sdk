@@ -65,6 +65,10 @@
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+#endif
+
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
 
@@ -104,6 +108,8 @@ typedef struct
      * if HSMLPF3_STATUS_ERROR, the HSM did not boot properly.
      */
     int_fast16_t hsmStatus;
+    uint32_t keyAssetID;
+    KeyStore_PSA_KeyLocation keyLocation;
     /* To indicate whether a segmented operation is in progress
      */
     bool segmentedOperationInProgress;

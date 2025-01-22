@@ -59,9 +59,13 @@ function getLibs(mod)
     let libGroup = {
         name: "/third_party/hsmddk",
         deps: [],
-        libs: [GenLibs.libPath("third_party/hsmddk", "hsmddk.a")],
+        libs: [],
         allowDuplicates: true
     };
+
+    if (!system.modules["/ti/utils/TrustZone"]) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    }
 
     return (libGroup);
 }

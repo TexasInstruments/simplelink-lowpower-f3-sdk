@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+../cc27xxx10_hsm_fw_v3.0.0.bin -> cc27xxx10_hsm_fw_v3.0.0.bin",
+            "+../cc27xxx10_hsm_fw_v3.0.0.h -> cc27xxx10_hsm_fw_v3.0.0.h",
+            "+../hsmFwUpdate.c -> hsmFwUpdate.c",
+            "+../hsmFwUpdate.syscfg -> hsmFwUpdate.syscfg",
+            "+lpf3_nortos.icf -> lpf3_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../README.html -> README.html",
+            "+../README.md -> README.md"
+        ]
+    }
+]

@@ -49,9 +49,16 @@
 extern zb_uint8_t gc_zb_mac_short_match_list_size;
 #define ZB_MAC_SHORT_MATCH_LIST_SIZE gc_zb_mac_short_match_list_size
 
+
+#if ZB_CONFIG_OVERALL_NETWORK_SIZE > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN
+#define ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE ((offsetof(RCL_CmdIeee_SourceMatchingTableShort, shortEntry) / sizeof(uint32_t)) + RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN)
+#else
 #define ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE ((offsetof(RCL_CmdIeee_SourceMatchingTableShort, shortEntry) / sizeof(uint32_t)) + ZB_CONFIG_OVERALL_NETWORK_SIZE)
+#endif // ZB_CONFIG_OVERALL_NETWORK_SIZE > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN
 
 uint32_t gc_srcMatchTableBuffer[ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE] = { 0 };
 zb_uint8_t gc_zb_mac_short_match_list_size = ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE;
+
+uint8_t gc_neighborToSrcMatchTable[ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE];
 
 #endif /* ZB_SRC_MATCHING_H */

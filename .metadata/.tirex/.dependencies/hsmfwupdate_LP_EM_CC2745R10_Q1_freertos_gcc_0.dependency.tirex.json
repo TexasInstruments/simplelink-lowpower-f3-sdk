@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../hsmFwUpdate.c -> hsmFwUpdate.c",
+            "+../../cc27xxx10_hsm_fw_v3.0.0.h -> cc27xxx10_hsm_fw_v3.0.0.h",
+            "+../../cc27xxx10_hsm_fw_v3.0.0.bin -> cc27xxx10_hsm_fw_v3.0.0.bin",
+            "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../hsmFwUpdate.syscfg -> hsmFwUpdate.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+lpf3_cc27xx_freertos.lds -> lpf3_cc27xx_freertos.lds"
+        ]
+    }
+]

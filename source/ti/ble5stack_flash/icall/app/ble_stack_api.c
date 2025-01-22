@@ -54,6 +54,7 @@ Target Device: cc23xx
 #ifndef NO_TI_BLE_CONFIG
 #include "ti_ble_config.h"
 #endif
+#include "handover.h"
 #include <gapbondmgr.h>
 
 /*********************************************************************

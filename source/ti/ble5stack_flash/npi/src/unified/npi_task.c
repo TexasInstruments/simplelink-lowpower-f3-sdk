@@ -64,7 +64,7 @@
 // defines
 // ****************************************************************************
 
-#ifdef ICALL_EVENTS
+#if defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
 #define NPITASK_ICALL_EVENT                 ICALL_MSG_EVENT_ID // Event_Id_31
 
 //! \brief ASYNC Message Received Event (no framing bytes)
@@ -92,7 +92,7 @@
                                              NPITASK_TX_DONE_EVENT | \
                                              NPITASK_REM_RDY_EVENT | \
                                              NPITASK_ASSERT_MSG_EVENT)
-#else //!ICALL_EVENTS
+#else //!defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
 //! \brief ASYNC Message Received Event (no framing bytes)
 #define NPITASK_FRAME_RX_EVENT              0x0008
 
@@ -110,7 +110,7 @@
 
 //! \brief NPI assert message
 #define NPITASK_ASSERT_MSG_EVENT            0x0100
-#endif //ICALL_EVENTS
+#endif //defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
 //! \brief Task priority for NPI RTOS task
 #define NPITASK_PRIORITY                    2
 
@@ -178,14 +178,14 @@ static int8_t syncTransactionInProgress = 0;
 //!
 static uint8_t *lastQueuedTxMsg;
 
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
 //! \brief Task pending events
 static uint16_t NPITask_events = 0;
 
 //! \brief Event flags for capturing Task-related events from ISR context
 static uint16_t tlDoneISRFlag = 0;
 static uint16_t remRdyISRFlag = 0;
-#endif //!ICALL_EVENTS
+#endif //!defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
 
 //! \brief Routing table for translating incoming Host messages to the proper
 //!        subsystem callback based on SSID of the message
@@ -283,12 +283,22 @@ static void NPITask_DeserializeFrame(_npiFrame_t *pMsg);
 void *NPITask_Fxn(void *arg)
 {
   _npiFrame_t temp;
+#if defined(ICALL_EVENTS) && defined(APP_EXTERNAL_CONTROL)
+  ICall_ServiceEnum stackid;
+  ICall_EntityID dest;
+  uint8_t *pMsg;
+
+  /* Register the calling context in the icall */
+  ICall_SyncHandle syncEvent_dummy;
+  ICall_EntityID icall_entity_dummy;
+  ICall_registerApp(&icall_entity_dummy, &syncEvent_dummy);
+#endif // defined(ICALL_EVENTS) && defined(APP_EXTERNAL_CONTROL)
 
   /* Forever loop */
   for (;;)
   {
       sem_wait(pNpiSem);
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
       _npiCSKey_t key;
       // Capture the ISR events flags now within a critical section.
       // We do this to avoid possible race conditions where the ISR is
@@ -301,7 +311,7 @@ void *NPITask_Fxn(void *arg)
       tlDoneISRFlag = 0;
       remRdyISRFlag = 0;
       NPIUtil_ExitCS(key);
-#endif //ICALL_EVENTS
+#endif //defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
 
       // First check and Send NPI assert message
       if (NPITask_events & NPITASK_ASSERT_MSG_EVENT)
@@ -312,12 +322,12 @@ void *NPITask_Fxn(void *arg)
       // Remote RDY event
       if (NPITask_events & NPITASK_REM_RDY_EVENT)
       {
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         key = NPIUtil_EnterCS();
         NPITask_events &= ~NPITASK_REM_RDY_EVENT;
         NPIUtil_ExitCS(key);
 
-#endif //ICALL_EVENTS
+#endif //defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
 #if (NPI_FLOW_CTRL == 1)
         NPITL_handleRemRdyEvent();
 #endif // NPI_FLOW_CTRL = 1
@@ -328,12 +338,12 @@ void *NPITask_Fxn(void *arg)
         //Deallocate most recent message being transmitted.
         NPIUtil_free(lastQueuedTxMsg);
         lastQueuedTxMsg = NULL;
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         key = NPIUtil_EnterCS();
         NPITask_events &= ~NPITASK_TX_DONE_EVENT;
         NPIUtil_ExitCS(key);
 
-#endif //ICALL_EVENTS
+#endif //defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
       }
       // Frame is ready to send to the Host
       if (NPITask_events & NPITASK_TX_READY_EVENT)
@@ -371,12 +381,12 @@ void *NPITask_Fxn(void *arg)
         // the TX event will get set again when NPI is done sending (or
         // no longer busy) or after the blocking synchronous message
         // has been sent
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         key = NPIUtil_EnterCS();
         NPITask_events &= ~NPITASK_TX_READY_EVENT;
         NPIUtil_ExitCS(key);
 
-#endif //ICALL_EVENTS
+#endif //defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
       }
 #ifdef USE_ICALL
       // ICall Message Event
@@ -398,12 +408,12 @@ void *NPITask_Fxn(void *arg)
       {
         // Process Queue and clear event flag
         NPITask_processSyncRXQ();
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         key = NPIUtil_EnterCS();
         NPITask_events &= ~NPITASK_SYNC_FRAME_RX_EVENT;
         NPIUtil_ExitCS(key);
 
-#endif //ICALL_EVENTS
+#endif //defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
         if (mq_peek(npiSyncRxQueue, (char *)&temp, sizeof(_npiFrame_t), 0) == 0)
         {
           // Queue is not empty so reset flag to process remaining
@@ -422,20 +432,20 @@ void *NPITask_Fxn(void *arg)
       {
         // Process the ASYNC message and clear event flag
         NPITask_processRXQ();
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         key = NPIUtil_EnterCS();
         NPITask_events &= ~NPITASK_FRAME_RX_EVENT;
         NPIUtil_ExitCS(key);
-#endif
+#endif // !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         if (mq_peek(npiRxQueue, (char *)&temp, sizeof(_npiFrame_t), 0) == 0)
         {
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
           key = NPIUtil_EnterCS();
           // Q is not empty reset flag and process next message
           NPITask_events |= NPITASK_FRAME_RX_EVENT;
           sem_post(pNpiSem);
           NPIUtil_ExitCS(key);
-#endif
+#endif //!defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
         }
       }
     }
@@ -509,9 +519,9 @@ uint8_t NPITask_open(NPI_Params *params)
     }
 
     // Initialize globals
-#ifndef ICALL_EVENTS
+#if !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
     NPITask_events = 0;
-#endif //ICALL_EVENTS
+#endif // !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
     lastQueuedTxMsg = NULL;
 
     // create Semaphore instance
@@ -1107,7 +1117,7 @@ void NPITask_chgAssertHdr(uint8_t npi_cmd0, uint8_t npi_cmd1)
 // -----------------------------------------------------------------------------
 //! \brief   Trigger a final NPI message for certain assert events.
 // -----------------------------------------------------------------------------
-#ifdef ICALL_EVENTS
+#if defined(ICALL_EVENTS) && !defined(APP_EXTERNAL_CONTROL)
 void NPIData_postAssertNpiMsgEvent(uint8_t assertType)
 {
   npiTask_assertType = assertType;
@@ -1118,7 +1128,7 @@ void NPIData_postAssertNpiMsgEvent(uint8_t assertType)
   }
   Event_post(syncEvent, NPITASK_ASSERT_MSG_EVENT);
 }
-#else //!ICALL_EVENTS
+#else // !defined(ICALL_EVENTS) || defined(APP_EXTERNAL_CONTROL)
 void NPIData_postAssertNpiMsgEvent(uint8_t assertType)
 {
   npiTask_assertType = assertType;

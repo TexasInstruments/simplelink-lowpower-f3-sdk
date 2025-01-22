@@ -85,7 +85,7 @@ extern "C"
  *
  * @return      None.
  */
-extern void jumpToPrgEntry(uint32_t *vectorTable);
+extern __attribute__((naked)) void jumpToPrgEntry(uint32_t *vectorTable);
 
 /*******************************************************************************
  * @fn          imgIDCheck

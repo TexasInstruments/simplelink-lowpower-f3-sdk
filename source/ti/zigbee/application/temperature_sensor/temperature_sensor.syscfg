@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2020-2021, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ *  temperature_sensor.syscfg
+ */
+
+/* ======== Kernel Configuration ======== */
+system.getScript("kernel_config_release.syscfg.js");
+
+/* ======== GPIO ======== */
+const GPIO = scripting.addModule("/ti/drivers/GPIO");  // Add a GPIO module for use by buttons
+
+/* ======== LED ======== */
+const LED = scripting.addModule("/ti/drivers/GPIO");
+const LED_G = LED.addInstance();
+
+/* if a green LED component exists, assign it to the LED_G instance */
+if (system.deviceData.board && system.deviceData.board.components.LED_GREEN) {
+    LED_G.$hardware = system.deviceData.board.components.LED_GREEN;
+}
+else
+{
+    LED_G.mode = "Output";   // Set the LED pin to output
+}
+
+LED_G.$name = "CONFIG_GPIO_GLED"; // Descriptive name for the LED_G GPIO
+
+const LED_R = LED.addInstance();
+
+/* if a red LED component exists, assign it to the LED_R instance */
+if (system.deviceData.board && system.deviceData.board.components.LED_RED) {
+    LED_R.$hardware = system.deviceData.board.components.LED_RED;
+}
+else
+{
+    LED_R.mode = "Output";   // Set the LED pin to output
+}
+
+LED_R.$name = "CONFIG_GPIO_RLED";
+
+/* ======== Left Button ======== */
+const BUTTON_L = GPIO.addInstance();                      // Add an a GPIO module instance for BUTTON_L
+
+/* if a BUTTON0 component exists, assign it to the BUTTON_L instance */
+if (system.deviceData.board && system.deviceData.board.components.BUTTON0) {
+    BUTTON_L.$hardware = system.deviceData.board.components.BUTTON0;
+}
+
+BUTTON_L.mode = "Input";                              // Change the GPIO to Input mode
+BUTTON_L.$name = "CONFIG_GPIO_BTN1";                  // Descriptive name for the BUTTON_L GPIO
+BUTTON_L.pull = "Pull Up";                            // Use Pull up resistor
+BUTTON_L.interruptTrigger = "Falling Edge";           // GPIO Interrupt Trigger
+
+/* ======== Right Button ======== */
+const BUTTON_R = GPIO.addInstance();                      // Add an a GPIO module instance for BUTTON_R
+
+/* if a BUTTON0 component exists, assign it to the BUTTON_R instance */
+if (system.deviceData.board && system.deviceData.board.components.BUTTON1) {
+    BUTTON_R.$hardware = system.deviceData.board.components.BUTTON1;
+}
+
+BUTTON_R.mode = "Input";                              // Change the GPIO to Input mode
+BUTTON_R.$name = "CONFIG_GPIO_BTN2";                  // Descriptive name for the BUTTON_R GPIO
+BUTTON_R.pull = "Pull Up";                            // Use Pull up resistor
+BUTTON_R.interruptTrigger = "Falling Edge";           // GPIO Interrupt Trigger
+
+/* ======== Device ======== */
+var device = scripting.addModule("ti/devices/CCFG");
+const ccfgSettings = system.getScript("/ti/common/lprf_ccfg_settings.js").ccfgSettings;
+for(var setting in ccfgSettings)
+{
+    device[setting] = ccfgSettings[setting];
+}
+
+/* ======== Zigbee ======== */
+
+var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
+zigbee.deviceType                    = ["zed"];
+zigbee.primaryChannels            = [11,15,20,25];
+zigbee.deviceTypeReadOnly            = false;
+
+// Suppress warning on RNG module
+const RNG = scripting.addModule("/ti/drivers/RNG", {}, false);
+scripting.suppress("This the default noise conditioning key provided by TI, which is acceptable per NIST SP 800-90B\\. However, TI recommends you change this default value to a custom random value for your product", RNG, "noiseConditioningKeyW3");
+RNG.rngPoolSize = 512;
+
+if(system.getRTOS() === "freertos")
+{
+    /* ======== FreeRTOS ======== */
+    const FreeRTOS = scripting.addModule("/freertos/FreeRTOS");
+    FreeRTOS.heapSize = 0x00001BBC;
+    FreeRTOS.idleStackSize = 256;
+    FreeRTOS.timerStackSize = 256;
+}
+
+/* ======== RF Design ======== */
+var rfDesign = scripting.addModule("ti/devices/radioconfig/rfdesign");
+const rfDesignSettings = system.getScript("/ti/common/lprf_rf_design_settings.js").rfDesignSettings;
+for(var setting in rfDesignSettings)
+{
+    rfDesign[setting] = rfDesignSettings[setting];
+}

@@ -1,0 +1,35 @@
+[
+    {
+        "files": [
+            "+../../Application/app_main.c -> app_main.c",
+            "+../../Application/app_main.h -> app_main.h",
+            "+../../../../../../../source/ti/ble5stack_flash/icall/inc/icall_addrs.h -> icall_addrs.h",
+            "+../../../../../../../source/ti/ble5stack_flash/icall/src/icall_POSIX.c -> icall_POSIX.c",
+            "+../../../../../../../source/ti/ble5stack_flash/icall/app/ble_user_config.c -> ble_user_config.c",
+            "+../../../../../../../source/ti/ble5stack_flash/icall/inc/ble_user_config.h -> ble_user_config.h",
+            "+../../../../../../../source/ti/ble5stack_flash/icall/stack/ble_user_config_stack.c -> ble_user_config_stack.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_ble.h -> npi_ble.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_frame.h -> npi_frame.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/npi_frame_hci.c -> npi_frame_hci.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/npi_rxbuf.c -> npi_rxbuf.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_rxbuf.h -> npi_rxbuf.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/npi_task.c -> npi_task.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_task.h -> npi_task.h",
+            "+../../NPI/Queue_freertos.c -> Queue_freertos.c",
+            "+../../NPI/Queue_freertos.h -> Queue_freertos.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_config.h -> npi_config.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/npi_tl.c -> npi_tl.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_tl.h -> npi_tl.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/npi_tl_spi.c -> npi_tl_spi.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_tl_spi.h -> npi_tl_spi.h",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/npi_tl_uart.c -> npi_tl_uart.c",
+            "+../../../../../../../source/ti/ble5stack_flash/npi/src/inc/npi_tl_uart.h -> npi_tl_uart.h",
+            "+../../../../../../../source/ti/ble5stack_flash/rom/agama_r1/rom_init.c -> rom_init.c",
+            "+../../Tools/build_config.opt -> build_config.opt",
+            "+../../Tools/Defines/ble_controller.opt -> ble_controller.opt",
+            "+../ble_controller.syscfg -> ble_controller.syscfg",
+            "+lpf3_app_and_stack_freertos.icf -> lpf3_app_and_stack_freertos.icf",
+            "+../../Startup/main_freertos.c -> main_freertos.c"
+        ]
+    }
+]

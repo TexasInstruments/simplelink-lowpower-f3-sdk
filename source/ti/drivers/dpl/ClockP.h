@@ -221,6 +221,15 @@ extern uint32_t ClockP_getSystemTickPeriod(void);
 extern uint32_t ClockP_getSystemTicks(void);
 
 /*!
+ *  @brief  Get the current tick value in number of system ticks.
+ *
+ *  The value returned will wrap back to zero after it reaches the max
+ *  value that can be stored in 64 bits.
+ *
+ *  @return Time in system clock ticks
+ */
+extern uint64_t ClockP_getSystemTicks64(void);
+/*!
  *  @brief  Get number of ClockP tick periods expected to expire between
  *          now and the next interrupt from the timer peripheral
  *

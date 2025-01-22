@@ -332,8 +332,17 @@ void *osal_mem_alloc( uint16 size )
   osalMemHdr_t *hdr;
   halIntState_t intState;
   uint8 coal = 0;
+  uint16 allocSize;
 
+  allocSize = size;
   size += OSALMEM_HDRSZ;
+
+  // If 'size' is very large and it will overflow, the result will be
+  // smaller than 'allocSize'. In this case, don't try to allocate.
+  if ( size < allocSize )
+  {
+    return (NULL);
+  }
 
   // Calculate required bytes to add to 'size' to align to halDataAlign_t.
   if ( sizeof( halDataAlign_t ) == 2 )

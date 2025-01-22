@@ -1720,7 +1720,7 @@ extern void GATT_Init( uint8 taskId );
  *
  * @return  events not processed
  */
-extern uint16 GATT_ProcessEvent( uint8 taskId, uint16 events );
+extern uint32 GATT_ProcessEvent( uint8 taskId, uint32 events );
 
 /// @endcond // NODOC
 

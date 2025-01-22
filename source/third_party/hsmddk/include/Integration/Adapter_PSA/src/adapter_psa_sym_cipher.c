@@ -5,6 +5,38 @@
  * This file implements the symmetric crypto cipher services.
  */
 
+/*
+ * Copyright (c) 2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                                                            */
 /*   Module        : DDK-130_bsd                                              */
@@ -55,6 +87,7 @@
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_internal.h>
+#include <third_party/hsmddk/include/Config/cs_mbedtls.h>
 
 
 /*----------------------------------------------------------------------------
@@ -96,7 +129,7 @@ get_cipher_mode(uint32_t alg)
  * psa_cipher_encrypt
  */
 psa_status_t
-psa_cipher_encrypt(psa_key_id_t key,
+psa_cipher_encrypt(mbedtls_svc_key_id_t key,
                    psa_algorithm_t alg,
                    const uint8_t * input,
                    size_t input_length,
@@ -120,7 +153,7 @@ psa_cipher_encrypt(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_ENCRYPT != (pKey->attributes.usage & PSA_KEY_USAGE_ENCRYPT))
+    else if (PSA_KEY_USAGE_ENCRYPT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_ENCRYPT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -136,7 +169,7 @@ psa_cipher_encrypt(psa_key_id_t key,
     else
     {
         (void)memset(&t_cmd, 0, sizeof(t_cmd));
-        KeyType = pKey->attributes.type;
+        KeyType = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
         block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(KeyType);
         IVSize = PSA_CIPHER_IV_LENGTH(KeyType, alg);
         AssetPolicy = EIP130_ASSET_POLICY_SYM_TEMP |
@@ -307,11 +340,11 @@ psa_cipher_encrypt(psa_key_id_t key,
         /* Format service request */
 #ifdef PSA_USE_TOKEN_KEY
         /* Make sure the key is available for the operation */
-        funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, t_cmd.Key,
+        funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, 0, 0, t_cmd.Key,
                                         sizeof(t_cmd.Key), &t_cmd.KeySize);
         if (PSA_ERROR_NOT_PERMITTED == funcres)
         {
-            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                             NULL, 0, NULL);
             t_cmd.KeySize = (uint32_t)pKey->key_size;
         }
@@ -321,7 +354,7 @@ psa_cipher_encrypt(psa_key_id_t key,
         }
 #else
         /* Make sure the key is available in the Asset Store */
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                         NULL, 0, NULL);
         t_cmd.KeySize = (uint32_t)pKey->key_size;
 #endif
@@ -370,7 +403,7 @@ psa_cipher_encrypt(psa_key_id_t key,
                 /* MISRA - Intentially empty */
             }
 
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {
@@ -399,7 +432,7 @@ psa_cipher_encrypt(psa_key_id_t key,
  * psa_cipher_decrypt
  */
 psa_status_t
-psa_cipher_decrypt(psa_key_id_t key,
+psa_cipher_decrypt(mbedtls_svc_key_id_t key,
                    psa_algorithm_t alg,
                    const uint8_t * input,
                    size_t input_length,
@@ -422,7 +455,7 @@ psa_cipher_decrypt(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_DECRYPT != (pKey->attributes.usage & PSA_KEY_USAGE_DECRYPT))
+    else if (PSA_KEY_USAGE_DECRYPT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_DECRYPT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -438,7 +471,7 @@ psa_cipher_decrypt(psa_key_id_t key,
     else
     {
         (void)memset(&t_cmd, 0, sizeof(t_cmd));
-        KeyType = pKey->attributes.type;
+        KeyType = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
         block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(KeyType);
         IVSize = PSA_CIPHER_IV_LENGTH(KeyType, alg);
         AssetPolicy = EIP130_ASSET_POLICY_SYM_TEMP |
@@ -602,11 +635,11 @@ psa_cipher_decrypt(psa_key_id_t key,
         /* Format service request */
 #ifdef PSA_USE_TOKEN_KEY
         /* Make sure the key is available for the operation */
-        funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, t_cmd.Key,
+        funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, 0, 0, t_cmd.Key, 
                                         sizeof(t_cmd.Key), &t_cmd.KeySize);
         if (PSA_ERROR_NOT_PERMITTED == funcres)
         {
-            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                             NULL, 0, NULL);
             t_cmd.KeySize = (uint32_t)pKey->key_size;
         }
@@ -616,7 +649,7 @@ psa_cipher_decrypt(psa_key_id_t key,
         }
 #else
         /* Make sure the key is available in the Asset Store */
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                         NULL, 0, NULL);
         t_cmd.KeySize = (uint32_t)pKey->key_size;
 #endif
@@ -664,7 +697,7 @@ psa_cipher_decrypt(psa_key_id_t key,
                 /* MISRA - Intentially empty */
             }
 
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {
@@ -694,7 +727,7 @@ psa_cipher_decrypt(psa_key_id_t key,
  */
 psa_status_t
 psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
-                         psa_key_id_t key,
+                         mbedtls_svc_key_id_t key,
                          psa_algorithm_t alg)
 {
     psa_status_t funcres = PSA_SUCCESS;
@@ -706,7 +739,7 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_ENCRYPT != (pKey->attributes.usage & PSA_KEY_USAGE_ENCRYPT))
+    else if (PSA_KEY_USAGE_ENCRYPT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_ENCRYPT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -721,11 +754,11 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
     }
     else
     {
-        operation->block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(pKey->attributes.type);
+        operation->block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type));
         operation->key = key;
         operation->fEncrypt = 255U;
         operation->Mode = alg;
-        operation->IVSize = PSA_CIPHER_IV_LENGTH(pKey->attributes.type, alg);
+        operation->IVSize = PSA_CIPHER_IV_LENGTH(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type), alg);
         AssetPolicy = EIP130_ASSET_POLICY_SYM_TEMP |
                       EIP130_ASSET_POLICY_SCUICIPHERBULK |
                       EIP130_ASSET_POLICY_SCDIRENCGEN;
@@ -741,13 +774,13 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
         {
         case PSA_ALG_CTR:
             AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCTR32;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_AES;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_ARIA;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
@@ -760,18 +793,18 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
             break;
         case PSA_ALG_ECB_NO_PADDING:
             AssetPolicy = (PsaPolicyMask_t)0U;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_AES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_ARIA;
             }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-            else if (PSA_KEY_TYPE_DES == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_DES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_3DES;
             }
@@ -783,20 +816,20 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
             break;
         case PSA_ALG_CBC_NO_PADDING:
             AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCBC;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_AES;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_ARIA;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
             }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-            else if (PSA_KEY_TYPE_DES == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_DES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_3DES;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACTDES;
@@ -837,7 +870,11 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
     {
         if (NULL != operation)
         {
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+            operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
             operation->key = PSA_KEY_ID_NULL;
+#endif
         }
         else
         {
@@ -854,7 +891,7 @@ psa_cipher_encrypt_setup(psa_cipher_operation_t * operation,
  */
 psa_status_t
 psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
-                         psa_key_id_t key,
+                         mbedtls_svc_key_id_t key,
                          psa_algorithm_t alg)
 {
     psa_status_t funcres = PSA_SUCCESS;
@@ -866,7 +903,7 @@ psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_DECRYPT != (pKey->attributes.usage & PSA_KEY_USAGE_DECRYPT))
+    else if (PSA_KEY_USAGE_DECRYPT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_DECRYPT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -881,11 +918,11 @@ psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
     }
     else
     {
-        operation->block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(pKey->attributes.type);
+        operation->block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type));
         operation->key = key;
         operation->fEncrypt = 0U;
         operation->Mode = alg;
-        operation->IVSize = PSA_CIPHER_IV_LENGTH(pKey->attributes.type, alg);
+        operation->IVSize = PSA_CIPHER_IV_LENGTH(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type), alg);
         AssetPolicy = EIP130_ASSET_POLICY_SYM_TEMP |
                       EIP130_ASSET_POLICY_SCUICIPHERBULK |
                       EIP130_ASSET_POLICY_SCDIRDECVRFY;
@@ -901,13 +938,13 @@ psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
         {
         case PSA_ALG_CTR:
             AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCTR32;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_AES;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_ARIA;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
@@ -920,18 +957,18 @@ psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
             break;
         case PSA_ALG_ECB_NO_PADDING:
             AssetPolicy = (PsaPolicyMask_t)0U;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_AES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_ARIA;
             }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-            else if (PSA_KEY_TYPE_DES == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_DES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_3DES;
             }
@@ -943,20 +980,20 @@ psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
             break;
         case PSA_ALG_CBC_NO_PADDING:
             AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCBC;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_AES;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_ARIA;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
             }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-            else if (PSA_KEY_TYPE_DES == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_DES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 operation->alg = VEXTOKEN_ALGO_CIPHER_3DES;
                 AssetPolicy |= EIP130_ASSET_POLICY_SCACTDES;
@@ -997,7 +1034,11 @@ psa_cipher_decrypt_setup(psa_cipher_operation_t * operation,
     {
         if (NULL != operation)
         {
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+            operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
             operation->key = PSA_KEY_ID_NULL;
+#endif
         }
         else
         {
@@ -1136,7 +1177,7 @@ psa_cipher_update(psa_cipher_operation_t * operation,
     {
         funcres = PSA_ERROR_INVALID_HANDLE;
     }
-    else if (output_size < PSA_CIPHER_UPDATE_OUTPUT_SIZE(pKey->attributes.type, operation->Mode, input_length))
+    else if (output_size < PSA_CIPHER_UPDATE_OUTPUT_SIZE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type), operation->Mode, input_length))
     {
         funcres = PSA_ERROR_BUFFER_TOO_SMALL;
     }
@@ -1182,18 +1223,18 @@ psa_cipher_update(psa_cipher_operation_t * operation,
             t_cmd.Mode = get_cipher_mode(operation->Mode);
             t_cmd.OpCode  = (uint32_t)VEXTOKEN_OPCODE_ENCRYPTION;
             t_cmd.SubCode = (uint32_t)VEXTOKEN_SUBCODE_ENCRYPT;
-            if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+            if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 t_cmd.Algorithm = (uint32_t)VEXTOKEN_ALGO_CIPHER_AES;
             }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 t_cmd.Algorithm = (uint32_t)VEXTOKEN_ALGO_CIPHER_ARIA;
             }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-            else if (PSA_KEY_TYPE_DES == pKey->attributes.type)
+            else if (PSA_KEY_TYPE_DES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 t_cmd.Algorithm = (uint32_t)VEXTOKEN_ALGO_CIPHER_3DES;
             }
@@ -1206,11 +1247,11 @@ psa_cipher_update(psa_cipher_operation_t * operation,
             {
 #ifdef PSA_USE_TOKEN_KEY
                 /* Make sure the key is available for the operation */
-                funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, t_cmd.Key,
+                funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, 0, 0, t_cmd.Key,
                                                 sizeof(t_cmd.Key), &t_cmd.KeySize);
                 if (PSA_ERROR_NOT_PERMITTED == funcres)
                 {
-                    funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+                    funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                                     NULL, 0, NULL);
                     t_cmd.KeySize = (uint32_t)pKey->key_size;
                 }
@@ -1220,7 +1261,7 @@ psa_cipher_update(psa_cipher_operation_t * operation,
                 }
 #else
                 /* Make sure the key is available in the Asset Store */
-                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                                 NULL, 0, NULL);
                 t_cmd.KeySize = (uint32_t)pKey->key_size;
 #endif
@@ -1343,7 +1384,7 @@ psa_cipher_update(psa_cipher_operation_t * operation,
                     /* MISRA - Intentially empty */
                 }
 
-                psaInt_KeyMgmtReleaseKey(pKey);
+                (void)psaInt_KeyMgmtReleaseKey(pKey);
             }
             else
             {
@@ -1390,18 +1431,18 @@ psa_cipher_finish(psa_cipher_operation_t * operation,
         t_cmd.Mode = get_cipher_mode(operation->Mode);
         t_cmd.OpCode  = (uint32_t)VEXTOKEN_OPCODE_ENCRYPTION;
         t_cmd.SubCode = (uint32_t)VEXTOKEN_SUBCODE_ENCRYPT;
-        if (PSA_KEY_TYPE_AES == pKey->attributes.type)
+        if (PSA_KEY_TYPE_AES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
         {
             t_cmd.Algorithm = (uint32_t)VEXTOKEN_ALGO_CIPHER_AES;
         }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-        else if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+        else if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
         {
             t_cmd.Algorithm = (uint32_t)VEXTOKEN_ALGO_CIPHER_ARIA;
         }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-        else if (PSA_KEY_TYPE_DES == pKey->attributes.type)
+        else if (PSA_KEY_TYPE_DES == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
         {
             t_cmd.Algorithm = (uint32_t)VEXTOKEN_ALGO_CIPHER_3DES;
         }
@@ -1428,7 +1469,7 @@ psa_cipher_finish(psa_cipher_operation_t * operation,
             {
                 /* MISRA - Intentially empty */
             }
-            if (output_size < PSA_BLOCK_CIPHER_BLOCK_LENGTH(pKey->attributes.type))
+            if (output_size < PSA_BLOCK_CIPHER_BLOCK_LENGTH(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 funcres = PSA_ERROR_BUFFER_TOO_SMALL;
             }
@@ -1440,11 +1481,11 @@ psa_cipher_finish(psa_cipher_operation_t * operation,
             {
 #ifdef PSA_USE_TOKEN_KEY
                 /* Make sure the key is available for the operation */
-                funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, t_cmd.Key,
+                funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, 0, 0, t_cmd.Key,
                                                 sizeof(t_cmd.Key), &t_cmd.KeySize);
                 if (PSA_ERROR_NOT_PERMITTED == funcres)
                 {
-                    funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+                    funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                                     NULL, 0, NULL);
                     t_cmd.KeySize = (uint32_t)pKey->key_size;
                 }
@@ -1454,7 +1495,7 @@ psa_cipher_finish(psa_cipher_operation_t * operation,
                 }
 #else
                 /* Make sure the key is available in the Asset Store */
-                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId,
+                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0,
                                                 NULL, 0, NULL);
                 t_cmd.KeySize = (uint32_t)pKey->key_size;
 #endif
@@ -1484,7 +1525,11 @@ psa_cipher_finish(psa_cipher_operation_t * operation,
                         else
                         {
                             (void)psaInt_KeyMgmtClrKeyInUse(operation->key);
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                            operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
                             operation->key = PSA_KEY_ID_NULL;
+#endif
                             *output_length = operation->leftover_nbytes;
                             if (operation->TempAssetId != PSA_ASSETID_INVALID)
                             {
@@ -1502,7 +1547,7 @@ psa_cipher_finish(psa_cipher_operation_t * operation,
                         /* MISRA - Intentially empty */
                     }
 
-                    psaInt_KeyMgmtReleaseKey(pKey);
+                    (void)psaInt_KeyMgmtReleaseKey(pKey);
                 }
                 else
                 {

@@ -1,5 +1,5 @@
 """
-CRC Tool
+TI SimpleLink CRC tool
 
 Tool to insert CRCs into ELF files or generate binary for programming
 ccfg user region
@@ -39,7 +39,6 @@ Copyright (C) 2024 Texas Instruments Incorporated
 from io import TextIOWrapper
 from typing import Dict, Tuple
 import logging
-import copy
 
 import lief
 from lief import Binary
@@ -98,17 +97,28 @@ class ElfHandler:
         removes "_end" and "_begin" in symbol names, and returns map of
         this stem -> begin value, end value
 
-        for each _end variable name there must be
-        a matching name with _begin
-        for example:
-            if __ccfg_boot_cfg_crc32_begin is in the dictionary
-            the dictionary must also contain __ccfg_boot_cfg_crc32_end
+        Any symbols not matching the format {symbol_prefix}*[_begin|_end] are
+        ignored.
+
+        If a symbol matching {symbol_prefix}*_begin is found, but no
+        corresponding symbol matching  {symbol_prefix}*_end is found,
+        the symbol is ignored.
+
+        The same goes for symbols with the suffix _end, but no matching
+        symbol with the suffix _begin.
 
         Parameters:
             symbol_prefix: prefix for symbols in ELF file
 
         Returns:
             symbol name without suffix -> [_begin address, _end address]
+
+        Raises:
+            ValueError: If two or more regions would overwrite each other's CRC.
+                For example, an error would be raised given two CRC regions
+                from 0 to 4 and from 0 to 6. These would write their 4 byte CRC
+                values to 5-8 and 7-10 respectively. The regions written to
+                overlap, and an error would therefore be raised.
         """
         symbol_pair_map = self.__join_begin_end_symbol_pairs(
             self.__get_symbols_with_prefix(symbol_prefix)
@@ -120,7 +130,7 @@ class ElfHandler:
                     f"Beginning comes before end for symbol: {key} = (0x{section[0]:x}, 0x{section[1]:x})",
                 )
         # check that they do not want to write CRCs to the same memory address
-        overlapping_crc_keys = util.get_keys_with_overlapping_crc_write_regions(
+        overlapping_crc_keys = util.get_keys_with_overlapping_write_regions(
             symbol_pair_map
         )
         if len(overlapping_crc_keys) != 0:
@@ -139,11 +149,14 @@ class ElfHandler:
 
         Parameters:
             symbol_pair_map:
-                mapping of identifier -> (begin, end)
+                mapping of identifier -> (crc region begin address, crc region end address)
         Returns:
             True if any CRCs were added, false if not
         """
-        logging.debug("Inserting CRCs from map: %s", symbol_pair_map)
+        logging.debug(
+            "Inserting CRCs from map: %s",
+            util.get_symbol_pair_map_string(symbol_pair_map),
+        )
         crc_was_inserted = False
         # Get list of tuples in format [(key1, (section_begin, section_end)), (key2, (section2_begin, section2_end))]
         # Need to insert in ascending order in order to ensure we do not write
@@ -152,7 +165,7 @@ class ElfHandler:
             symbol_pair_map.items(), key=lambda key_value: key_value[1][1]
         ):
             logging.info(
-                "Inserting CRC section for variable pair with stem: %s = (0x%x, 0x%x)",
+                "Inserting CRC section for variable pair with stem: %s = (0x%08x, 0x%08x)",
                 key,
                 section[0],
                 section[1],
@@ -164,18 +177,24 @@ class ElfHandler:
     def __join_begin_end_symbol_pairs(
         self, symbol_value_map: Dict[str, int]
     ) -> Dict[str, Tuple[int, int]]:
-        """Remove _end and _begin suffix, and join values to single tuple.
+        """Remove _end and _begin suffix from dict, and join values to single tuple.
+
+        Ignores any symbols not matching the format "*[_begin|_end]"
 
         Parameters:
-            symbol_value_map: Map of symbol name -> value
+            symbol_value_map: Dict of { symbol name -> value }, parsed from ELF file.
 
         Returns:
-            Symbol without suffix ->
-                (value of symbol with _begin suffix,
-                 value of symbol with _end suffix)
+            Dict of {
+                Symbol without suffix ->
+                    (value of symbol with _begin suffix, value of symbol with _end suffix)
+            }
         """
         res = {}
-        logging.debug("Joining value pairs of dictionary: %s", symbol_value_map)
+        logging.debug(
+            "Joining value pairs of dictionary: %s",
+            util.get_symbol_value_map_string(symbol_value_map),
+        )
         for key in symbol_value_map.keys():
             if key.endswith(SECTION_BEGIN_SUFFIX):
                 begin_key = key

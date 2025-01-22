@@ -65,6 +65,10 @@
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -84,12 +88,9 @@ extern "C" {
  *  Trigger points for auto ECB as WRBUF3S (encryption starts by writing BUF3)
  *  BUSHALT enabled
  */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    #define AESEBCLPF3_SINGLE_BLOCK_AUTOCFG \
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #define AESECBLPF3_SINGLE_BLOCK_AUTOCFG \
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    #define AESEBCLPF3_SINGLE_BLOCK_AUTOCFG \
-        ((uint32_t)AES_AUTOCFG_ECBSRC_BUF | (uint32_t)AES_AUTOCFG_TRGECB_WRBUF3S | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
 #else
     #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
 #endif
@@ -127,6 +128,8 @@ typedef struct
      * if HSMLPF3_STATUS_ERROR, the HSM did not boot properly.
      */
     int_fast16_t hsmStatus;
+    uint32_t keyAssetID;
+    KeyStore_PSA_KeyLocation keyLocation;
     /* To indicate whether a segmented operation is in progress
      */
     bool segmentedOperationInProgress;

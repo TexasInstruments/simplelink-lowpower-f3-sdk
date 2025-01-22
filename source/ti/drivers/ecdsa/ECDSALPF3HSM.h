@@ -64,15 +64,28 @@
 
 #include <ti/drivers/ECDSA.h>
 
-#include <third_party/ecc/include/lowlevelapi.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Defines */
 /* The largest signature will be for NIST521 which will produce 72B per component (S and R) */
-#define ECDSA_COMPONENT_VECTOR_LENGTH 144
+#define ECDSALPF3HSM_COMPONENT_VECTOR_LENGTH 144
+
+/*!
+ *  @brief  The curve provided is not supported
+ */
+#define ECDSALPF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED (ECDSA_STATUS_RESERVED - 0)
+
+/*!
+ *  @brief  The key encoding is not HSM masked to signify an HSM operation
+ */
+#define ECDSALPF3HSM_STATUS_INVALID_KEY_ENCODING (ECDSA_STATUS_RESERVED - 1)
+
+/*!
+ *  @brief  An error ocurred on the HW level
+ */
+#define ECDSALPF3HSM_STATUS_HARDWARE_ERROR (ECDSA_STATUS_RESERVED - 2)
 
 /*!
  *  @brief      ECDSALPF3HSM Hardware Attributes
@@ -102,9 +115,14 @@ typedef enum
 typedef struct
 {
     CryptoKey *key;
-    bool isOpen;
-    ECDSA_ReturnBehavior returnBehavior; /* Callback mode is not supported */
+    uint32_t keyAssetID;
+    uint32_t paramAssetID;
+    uint32_t curveParamSize;
+    uint8_t signature[ECDSALPF3HSM_COMPONENT_VECTOR_LENGTH] __attribute__((aligned(4)));
     int_fast16_t returnStatus;
+    int_fast16_t hsmStatus;
+    ECDSA_ReturnBehavior returnBehavior;
+    uint32_t accessTimeout;
     ECDSA_CurveType curveType;
     ECDSA_DomainID domainId;
     ECDSA_CurveLength curveLength;
@@ -112,13 +130,10 @@ typedef struct
     ECDSA_OperationType operationType;
     ECDSA_Operation *operation;
     ECDSA_CallbackFxn callbackFxn;
-    int_fast16_t hsmStatus;
-    uint32_t keyAssetID;
-    uint32_t paramAssetID;
     const uint8_t *curveParam;
-    uint32_t curveParamSize;
     uint8_t *input;
-    uint8_t signature[ECDSA_COMPONENT_VECTOR_LENGTH];
+    bool driverCreatedKeyAsset;
+    bool isOpen;
 } ECDSALPF3HSM_Object;
 
 #ifdef __cplusplus

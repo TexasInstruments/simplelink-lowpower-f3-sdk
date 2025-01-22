@@ -49,7 +49,7 @@ assembly files into a library. Do not use this for normal compilation. */
 #ifdef __NVIC_PRIO_BITS
     #define configPRIO_BITS __NVIC_PRIO_BITS
 #else
-    #define configPRIO_BITS 3 /* 8 priority levels */
+    #define configPRIO_BITS 4 /* 16 priority levels */
 #endif
 
 /*
@@ -64,7 +64,7 @@ assembly files into a library. Do not use this for normal compilation. */
  * !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
  * See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html.
  *
- * Priority 1 (shifted 5 since only the top 3 bits are implemented).
+ * Priority 1 (shifted 4 since only the top 4 bits are implemented).
  * Priority 1 is the second highest priority.
  * Priority 0 is the highest priority.
  */

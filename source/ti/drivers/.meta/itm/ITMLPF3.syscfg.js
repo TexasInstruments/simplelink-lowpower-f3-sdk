@@ -128,8 +128,8 @@ function pinmuxRequirements(inst) {
  *  @param $super    - needed to call the generic module's functions
  */
 function validate(inst, validation, $super) {
-    if ($super.validate) {
-        $super.validate(inst, validation);
+    if ($super.moduleStatic.validate) {
+        $super.moduleStatic.validate(inst, validation);
     }
 }
 
@@ -138,7 +138,7 @@ function validate(inst, validation, $super) {
  */
 function extend(base) {
     /* override base validate */
-    devSpecific.validate = function (inst, validation) {
+    devSpecific.moduleStatic.validate = function (inst, validation) {
         return validate(inst, validation, base);
     };
 

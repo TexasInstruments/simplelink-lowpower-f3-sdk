@@ -52,6 +52,9 @@
 
 #ifdef FREERTOS
 #include <FreeRTOS.h>
+
+#else // Zephyr
+#include <zephyr/kernel.h>
 #endif
 
 #include <ti/drivers/dpl/HwiP.h>
@@ -769,6 +772,11 @@ void ICall_createRemoteTasks(void)
 #endif
 }
 
+bool BLE_isInvokeRequired(void)
+{
+  return (TaskP_getCurrentTask() != RemoteTask);
+}
+
 /**
  * @internal Queues a message to a message queue.
  * @param q_ptr    message queue
@@ -1010,8 +1018,18 @@ void *ICall_allocMsg(size_t size)
 {
   void * msg = NULL;
   ICall_MsgHdr *hdr = NULL;
+  size_t allocSize;
 
-  hdr = (ICall_MsgHdr *) ICall_heapMalloc(sizeof(ICall_MsgHdr) + size);
+  allocSize = sizeof(ICall_MsgHdr) + size;
+
+  // If 'size' is very large and 'allocSize' overflows, the result will be
+  // smaller than size. In this case, don't try to allocate.
+  if ( allocSize < size )
+  {
+    return (NULL);
+  }
+
+  hdr = (ICall_MsgHdr *) ICall_heapMalloc(allocSize);
 
   if (!hdr)
   {
@@ -1186,7 +1204,7 @@ ICall_Errno ICall_wait(uint_fast32_t milliseconds)
     ICall_TaskEntry *taskentry = ICall_searchTask(taskhandle);
     uint32_t timeout;
 
-    int16_t retVal = 0;
+    uint32_t retVal = 0;
 
     if (!taskentry)
     {
@@ -1210,8 +1228,8 @@ ICall_Errno ICall_wait(uint_fast32_t milliseconds)
             return (errno);
         }
     }
-    EventP_pend(taskentry->syncHandle, ICALL_POSIX_MSG_EVENT_ID, 0, timeout);
-    if(retVal != (-1))
+    retVal = EventP_pend(taskentry->syncHandle, ICALL_POSIX_MSG_EVENT_ID, 0, timeout);
+    if(retVal != (0))
     {
         return (ICALL_ERRNO_SUCCESS);
     }
@@ -1337,7 +1355,6 @@ void ICall_heapFree(void *msg)
  */
 void ICall_heapGetStats(ICall_heapStats_t *pStats)
 {
-#ifdef FREERTOS
   struct xHeapStats pHeapStats;
 
   ICall_CSState key;
@@ -1348,14 +1365,57 @@ void ICall_heapGetStats(ICall_heapStats_t *pStats)
   pStats->totalFreeSize = pHeapStats.xAvailableHeapSpaceInBytes;
   pStats->totalSize = configTOTAL_HEAP_SIZE;
   pStats->largestFreeSize = pHeapStats.xSizeOfLargestFreeBlockInBytes;
-#else // ZEPHYR
-#define configTOTAL_HEAP_SIZE ((size_t)(0x2000))
-  pStats->totalFreeSize = configTOTAL_HEAP_SIZE;
-  pStats->totalSize = configTOTAL_HEAP_SIZE;
-  pStats->largestFreeSize = configTOTAL_HEAP_SIZE;
-#endif //FREERTOS
+}
+#elif defined(CONFIG_ZEPHYR)
+// ZEPHYR
+
+K_HEAP_DEFINE(ll_heap, CONFIG_BT_LL_HEAP_SIZE);
+/**
+ * Allocates a memory block.
+ * @param size   size of the block in bytes.
+ * @return address of the allocated memory block or NULL
+ *         if allocation fails.
+ */
+void *ICall_heapMalloc(uint32_t size)
+{
+  void* ret = NULL;
+
+  ret = k_heap_alloc(&ll_heap, size, K_NO_WAIT);
+
+  return ret;
 }
 
+/**
+ * Frees an allocated memory block.
+ * @param msg  pointer to a memory block to free.
+ */
+void ICall_heapFree(void *msg)
+{
+  if(msg != NULL)
+  {
+    k_heap_free(&ll_heap, msg);
+  }
+}
+
+/**
+ * Get Statistic on Heap.
+ * @param stats  pointer to a heapStats_t structure.
+ */
+void ICall_heapGetStats(ICall_heapStats_t *pStats)
+{
+//  sys_memory_stats stats;
+//
+//
+//  int sys_heap_runtime_stats_get(struct sys_heap *heap,
+//                  struct sys_memory_stats *stats);
+
+  pStats->totalFreeSize   = CONFIG_BT_LL_HEAP_SIZE;
+  pStats->totalSize       = CONFIG_BT_LL_HEAP_SIZE;
+  pStats->largestFreeSize = CONFIG_BT_LL_HEAP_SIZE;
+}
+
+#else
+#error "Unknown OS. Only Zephyr and FreeRTOS supported."
 #endif // FREERTOS
 /**
  * Allocates a memory block.
@@ -2472,16 +2532,22 @@ ICall_threadServes(ICall_ServiceEnum service)
 uint_fast8_t
 ICall_getLocalMsgEntityId(ICall_ServiceEnum service, ICall_EntityID entity)
 {
-  ICall_GetLocalMsgEntityIdArgs args;
-  ICall_Errno errno;
-  args.hdr.service = service;
-  args.hdr.func = ICALL_MSG_FUNC_GET_LOCAL_MSG_ENTITY_ID;
-  args.entity = entity;
-  errno = ICall_dispatcher(&args.hdr);
-  if (errno == ICALL_ERRNO_SUCCESS)
+  // Getting the entity ID only if must invoke
+  if (BLE_isInvokeRequired())
   {
-    return (args.localId);
+    ICall_GetLocalMsgEntityIdArgs args;
+    ICall_Errno errno;
+    args.hdr.service = service;
+    args.hdr.func = ICALL_MSG_FUNC_GET_LOCAL_MSG_ENTITY_ID;
+    args.entity = entity;
+    errno = ICall_dispatcher(&args.hdr);
+    if (errno == ICALL_ERRNO_SUCCESS)
+    {
+      return (args.localId);
+    }
   }
+
+  // Otherwise, not in application context and invalid ID is returned
   return (0xFF);
 }
 
@@ -2499,29 +2565,25 @@ static bool matchLiteCS(ICall_ServiceEnum src,
   ICall_LiteCmdStatus *pMsg = (ICall_LiteCmdStatus *)msg;
   return (pMsg->cmdId == ICALL_LITE_DIRECT_API_DONE_CMD_ID);
 }
+
  /*******************************************************************************
- * @fn          icall_directAPI
+ * @fn          icall_directAPIva
  * see headers for details.
  */
-uint32_t icall_directAPI( uint8_t service , icall_lite_id_t id, ... )
+uint32_t icall_directAPIva(icall_lite_id_t id, va_list argp)
 {
-  va_list argp;
   uint32_t res;
   icallLiteMsg_t liteMsg;
 
-  // The following will push all parameter in the runtime stack.
-  // This need to be call before any other local declaration of variable....
-  va_start(argp, id);
-
   // Todo - add string for every icall API function, instead of printing function address
   BLE_LOG_INT_INT(0, BLE_LOG_MODULE_APP, "APP : icall_directAPI to BLE func=0x%x, status=%d\n", id, 0);
-  // Create the message that will be send to the requested service..
+  // Create the message that will be send to the BLE service.
   liteMsg.hdr.len = sizeof(icallLiteMsg_t);
   liteMsg.hdr.next = NULL;
   liteMsg.hdr.dest_id = ICALL_UNDEF_DEST_ID;
   liteMsg.msg.directAPI  = id;
   liteMsg.msg.pointerStack = (uint32_t *)(*((uint32_t *)(&argp)));
-  ICall_sendServiceMsg(ICall_getEntityId(), service,
+  ICall_sendServiceMsg(ICall_getEntityId(), ICALL_SERVICE_CLASS_BLE,
                        ICALL_MSG_FORMAT_DIRECT_API_ID, &(liteMsg.msg));
 
   // Since stack needs to always have a higher priority than the thread calling
@@ -2567,9 +2629,47 @@ uint32_t icall_directAPI( uint8_t service , icall_lite_id_t id, ... )
   // first parameter.
   res = liteMsg.msg.pointerStack[0];
 
+  return (res);
+}
+
+/*
+ * Legacy icall_directAPI() that takes a var args "...".  This provides the
+ * legacy API as users migrate to the new API.  Eventually, if we eliminate all
+ * users of this legacy API (likely by moving to BLE_invokeIfRequired()), we
+ * could remove this API completely.
+ */
+uint32_t icall_directAPI(icall_lite_id_t id, ...) {
+  va_list argp;
+  uint32_t res;
+
+  va_start(argp, id);
+
+  res = icall_directAPIva(id, argp);
+
   va_end(argp);
 
   return (res);
+}
+
+bool BLE_invokeIfRequired(const void *pFxn, uint32_t* result, ...)
+{
+  bool didInvoke;
+
+  if (BLE_isInvokeRequired())
+  {
+    va_list argp;
+
+    va_start(argp, result);
+
+    *result = icall_directAPIva((uint32_t)pFxn, argp);
+
+    va_end(argp);
+    didInvoke = true;
+  }
+  else{
+    didInvoke = false;
+  }
+  return (didInvoke);
 }
 
  /*******************************************************************************

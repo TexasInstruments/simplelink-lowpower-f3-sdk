@@ -44,12 +44,15 @@ const zigbee = system.modules['/ti/zigbee/zigbee'].$static;
  * CONFIGURATION
  */
 
-% if (zigbee.deviceType === "gpd") {
+% if (zigbee.deviceType.includes("gpd")) {
 uint8_t zb_mac_default_tx_power = `zigbee.gpdRf.txPower`;
 % }
 
 const ti_zigbee_config zigbeeConfig = {
     .aesecbIndex = `zigbee.aesecb.$name`,
+    .aesccmIndex = `zigbee.aesccm.$name`,
     .rngIndex    = `zigbee.rng.$name`,
     .nvsIndex    = `zigbee.nvs.$name`,
+    .sha2Index    = `zigbee.sha2.$name`,
+    .ecdhIndex    = `zigbee.ecdh.$name`,
 };

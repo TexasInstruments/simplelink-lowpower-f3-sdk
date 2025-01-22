@@ -69,6 +69,14 @@ function create(phyGroup) {
         }
     }
 
+    function convIeee802154ChannelToFreq(channel) {
+        if ((channel >= 11) && (channel <= 26)) {
+            return 2405 + (5 * (channel - 11));
+        } else {
+            return NaN;
+        }
+    }
+
     function convPaTableSettingToBinary(txPower, value, isHighPa) {
         var tempCoeff = (value >> 16) & 0xFF;
         var settingData = [];
@@ -95,6 +103,10 @@ function create(phyGroup) {
         return convBleChannelToFreq(getPhyProperty("bleChannel"), getPhyProperty("frequency"));
     }
 
+    function getPpFrequency154() {
+        return convIeee802154ChannelToFreq(getPhyProperty("ieee802154Channel"));
+    }
+
     function packetTxGenView() {
         var sections = [];
 
@@ -112,8 +124,9 @@ function create(phyGroup) {
         var packetData = [getDataArray()];
         sections[n++] = "PDU header;" + byteString(packetData.slice(0, 0 + 2));
 
-        // Add advertising address
-        sections[n++] = "Advertising address;" + byteString(packetData.slice(2, 2 + 2)) + ";" + byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
+        // Add extended header
+        sections[n++] = "Extended header;" + byteString(packetData.slice(2, 2 + 1)) + ";" + byteString(packetData.slice(3, 3 + 1)) + ";" +
+                        byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
 
         // Add payload
         if (getTestProperty("seqNumberEnable") == 0) {
@@ -124,6 +137,46 @@ function create(phyGroup) {
 
         // Add CRC
         sections[n++] = genCrcSection(getRclRegisterField("PBE_GENERIC_RAM.NUMCRCBITS.VAL,sub_phy:1_mbps,test"));
+
+        return sections;
+    }
+
+    function packetTxGenView() {
+        var sections = [];
+
+        // Add header
+        var n = 0;
+        sections[n++] = "Transmitted packet (SmartRF Studio 7 compatible)";
+
+        // Add preamble
+        sections[n++] = "Preamble;00 00 00 00";
+
+        // Add start of frame delimiter (SDF)
+        sections[n++] = "SFD;" + byteString([getPhyProperty("sfd")]);
+
+        // Add length
+        var packetLengthSize = 1;
+        var packetData = [getDataArray()];
+        sections[n++] = "Length;" + byteString(packetData.slice(0, 0 + packetLengthSize));
+
+        // Constrain displayed payload to 100 bytes
+        var payloadSuffix = "";
+        var maxPayloadLength = 100;
+        var payloadLength = packetData.length - packetLengthSize;
+        if (payloadLength > maxPayloadLength) {
+            payloadSuffix = " + " + (payloadLength - maxPayloadLength) + " byte(s)"
+            payloadLength = maxPayloadLength;
+        }
+
+        // Add payload
+        if (getTestProperty("seqNumberEnable") == 0) {
+            sections[n++] = "Payload;%" + byteString(packetData.slice(packetLengthSize, packetLengthSize + payloadLength)) + payloadSuffix;
+        } else {
+            sections[n++] = "Payload;Seq.;%" + byteString(packetData.slice(packetLengthSize + 2, packetLengthSize + payloadLength)) + payloadSuffix;
+        }
+
+        // Add CRC
+        sections[n++] = genCrcSection(getRclRegisterField("PBE_GENERIC_RAM.NUMCRCBITS.VAL,test"));
 
         return sections;
     }
@@ -215,9 +268,12 @@ function create(phyGroup) {
         setContext: setContext,
         getPpFrequency: getPpFrequency,
         convBleChannelToFreq: convBleChannelToFreq,
+        convIeee802154ChannelToFreq: convIeee802154ChannelToFreq,
         convPaTableSettingToBinary: convPaTableSettingToBinary,
         convPaTableSettingToString: convPaTableSettingToString,
         getPpFrequencyBle: getPpFrequencyBle,
+        getPpFrequency154: getPpFrequency154,
+        packetTxGenView: packetTxGenView,
         packetTxGenView: packetTxGenView,
         packetTxGenView: packetTxGenView,
         genCrcSection: genCrcSection,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,6 @@ void resetISR(void);
 static void nmiISR(void);
 static void faultISR(void);
 static void defaultHandler(void);
-static void busFaultHandler(void);
 
 //*****************************************************************************
 //
@@ -87,7 +86,7 @@ extern unsigned long _stack_end;
 // ensure that it ends up at physical address 0x0000.0000.
 //
 //*****************************************************************************
-__attribute__((section(".resetVecs"), used)) static void (*const resetVectors[16])(void) = {
+__attribute__((section(".resetVecs"), used)) void (*const resetVectors[16])(void) = {
     (void (*)(void))((uint32_t)&_stack_end),
     // The initial stack pointer
     resetISR,       // The reset handler

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,8 @@
 
 "use strict";
 
-/* get Common /ti/drivers utility functions */
+/* Get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
-let logError = Common.logError;
 
 /*
  *  ======== devSpecific ========
@@ -48,35 +47,15 @@ let logError = Common.logError;
 let devSpecific = {
     config: [
         {
-            name: "referenceSource",
-            displayName: "Reference Source",
-            default: "VDDS",
-            description: "Specifies the ADC's reference source.",
-            options: [
-                { name: "VDDS" },
-                { name: "Internal 1.4V" },
-                { name: "Internal 2.5V" },
-                { name: "External reference" }
-            ],
-            onChange: onReferenceSourceChange
-        },
-        {
-            name: "referenceVoltage",
-            displayName: "Reference Voltage",
-            description: "Specifies the ADC's reference voltage in microvolts.",
-            default: 3300000,
-            readOnly: false
-        },
-        {
             name: "resolution",
             displayName: "Resolution",
             description: "Specifies the ADC's resolution",
-            default: "12 Bits",
+            default: "ADCLPF3_RESOLUTION_12_BIT",
             hidden: false,
             options: [
-                { name: "12 Bits" },
-                { name: "10 Bits" },
-                { name: "8 Bits" }
+                { displayName: "8 Bits", name: "ADCLPF3_RESOLUTION_8_BIT", legacyNames: ["8 Bits"] },
+                { displayName: "10 Bits", name: "ADCLPF3_RESOLUTION_10_BIT", legacyNames: ["10 Bits"]},
+                { displayName: "12 Bits", name: "ADCLPF3_RESOLUTION_12_BIT", legacyNames: ["12 Bits"]}
             ]
         },
         {
@@ -84,16 +63,16 @@ let devSpecific = {
             displayName: "ADC Clock Divider",
             description: "Specifies the divider value from system clock to ADC clock. This option, along with the " +
                 "ADC sample duration (in adc clock-cycles) must ensure a minimum sampling time of 250 ns.",
-            default: "8",
+            default: "ADCLPF3_CLKDIV_8",
             options: [
-                { name: "1" },
-                { name: "2" },
-                { name: "4" },
-                { name: "8" },
-                { name: "16" },
-                { name: "24" },
-                { name: "32" },
-                { name: "48" }
+                { displayName: "1", name: "ADCLPF3_CLKDIV_1", legacyNames: ["1"] },
+                { displayName: "2", name: "ADCLPF3_CLKDIV_2", legacyNames: ["2"] },
+                { displayName: "4", name: "ADCLPF3_CLKDIV_4", legacyNames: ["4"] },
+                { displayName: "8", name: "ADCLPF3_CLKDIV_8", legacyNames: ["8"] },
+                { displayName: "16", name: "ADCLPF3_CLKDIV_16", legacyNames: ["16"] },
+                { displayName: "24", name: "ADCLPF3_CLKDIV_24", legacyNames: ["24"] },
+                { displayName: "32", name: "ADCLPF3_CLKDIV_32", legacyNames: ["32"] },
+                { displayName: "48", name: "ADCLPF3_CLKDIV_48", legacyNames: ["48"] }
             ]
         },
         {
@@ -101,17 +80,46 @@ let devSpecific = {
             displayName: "ADC Sample Duration (ADC Clk Cycles)",
             description: "Specifies the ADC sample duration in ADC clock cycles. A value of 0 will count as 1 cycle. " +
                 "This option, along with the ADC clock divider must ensure a minimum sampling time of 250 ns.",
-            default: 16
+            default: 16,
+            range: [0, 1023]
         },
         {
             name: "adjustSampleValue",
             displayName: "Adjust Sample Value",
-            longDescription: "Specifies if the returned raw sample value is adjusted or not. If not, the returned value " +
-                "might differ noticably between different devices. Any sample that is converted to micro-volts " +
-                " through the driver API is automatically adjusted, regardless of this setting.",
+            description: "Specifies if the returned raw sample value is adjusted for gain.",
+            longDescription: `
+Specifies if the returned raw sample value is adjusted or not. If not, the
+returned value might differ noticeably between different devices. The gain is
+adjusted to reach the performance numbers specified in the datasheet. Any sample
+that is converted to micro-volts through the driver API is automatically
+adjusted, regardless of this setting.
+`,
             default: false
         },
+        /* Deprecated configs */
         {
+            deprecated: true,
+            name: "referenceSource",
+            displayName: "Reference Source",
+            default: "ADCLPF3_VDDS_REFERENCE",
+            description: "Specifies the ADC's reference source.",
+            options: [
+                { displayName: "VDDS", name: "ADCLPF3_VDDS_REFERENCE", legacyNames: ["VDDS"] },
+                { displayName: "Internal 1.4V", name: "ADCLPF3_FIXED_REFERENCE_1V4", legacyNames: ["Internal 1.4V"] },
+                { displayName: "Internal 2.5V", name: "ADCLPF3_FIXED_REFERENCE_2V5", legacyNames: ["Internal 2.5V"] },
+                { displayName: "External reference", name: "ADCLPF3_EXTERNAL_REFERENCE", legacyNames: ["External reference"] }
+            ]
+        },
+        {
+            deprecated: true,
+            name: "referenceVoltage",
+            displayName: "Reference Voltage",
+            description: "Specifies the ADC's reference voltage in microvolts.",
+            default: 3300000,
+            readOnly: false
+        },
+        {
+            deprecated: true,
             name: "internalSignal",
             displayName: "Internal Signal",
             description: "Specifies internal signal(s) to use as a"
@@ -128,234 +136,57 @@ let devSpecific = {
         }
     ],
 
-    /* override generic requirements with device-specific reqs (if any) */
-    pinmuxRequirements: pinmuxRequirements,
+    migrateLegacyConfiguration: migrateLegacyConfiguration,
 
     modules: Common.autoForceModules(["Board", "Power"]),
 
-    /* GPIO instances */
     moduleInstances: moduleInstances,
 
     templates: {
         boardc: "/ti/drivers/adc/ADCLPF3.Board.c.xdt",
         boardh: "/ti/drivers/adc/ADC.Board.h.xdt"
-    },
-
-    _getPinResources: _getPinResources,
-
-    _pinToADCChannel: _pinToADCChannel
+    }
 };
 
-
 /*
- *  ======== _pinToADCChannel ========
+ * ======== migrateLegacyConfiguration ========
  */
-function _pinToADCChannel(devicePin)
+function migrateLegacyConfiguration(inst)
 {
-    /* Input is a pin with a peripheralPinName of the format "ADC2" etc
-     */
-    let peripheralPinName = devicePin.peripheralPinName.substring(3);
-    return parseInt(peripheralPinName, 10);
-}
-
-
-/*
- *  ======== _getPinResources ========
- */
-function _getPinResources(inst)
-{
-    let pin;
-
-    if (inst.internalSignal === "None") {
-        let devicePinName = inst.adc.adcPin.$solution.devicePinName;
-        pin = "DIO" + devicePinName.substring(4);
+    inst.adcChannel.internalSignal = inst.internalSignal;
+    inst.adcChannel.referenceSource = inst.referenceSource;
+    if(inst.adcChannel.referenceSource === "ADCLPF3_VDDS_REFERENCE")
+    {
+        inst.adcChannel.vddsVoltage = inst.referenceVoltage;
     }
-    else {
-        pin = inst.internalSignal;
+    else if (inst.adcChannel.referenceSource === "ADCLPF3_EXTERNAL_REFERENCE")
+    {
+        inst.adcChannel.externalReference.referenceVoltage = inst.referenceVoltage;
     }
-
-    return (pin);
-}
-
-
-/*
- *  ======== pinmuxRequirements ========
- *  Returns peripheral pin requirements of the specified instance
- */
-function pinmuxRequirements(inst)
-{
-
-    if (inst.internalSignal != "None" && inst.referenceSource != "External reference") {
-        return ([]);
-    }
-
-    let adc = {
-        name: "adc",
-        hidden: true,
-        displayName: "ADC Peripheral",
-        interfaceName: "ADC",
-        canShareWith: "ADC",
-        resources: [
-
-        ],
-        signalTypes: {
-            adcPin: ["AIN"],
-            refPinPos: ["AIN"],
-            refPinNeg: ["AIN"]
-        }
-    };
-
-    let adcPinResources = [
-        {
-            name: "adcPin",
-            canShareWith: "ADC",
-            hidden: false,
-            displayName: "ADC Pin",
-            interfaceNames: [
-                "PIN0", "PIN1", "PIN2", "PIN3",
-                "PIN4", "PIN5", "PIN6", "PIN7",
-                "PIN8", "PIN9", "PIN10", "PIN11"
-            ]
-        }
-    ];
-
-    let referenceResources = [
-        {
-            name: "refPinPos",
-            canShareWith: "ADC",
-            hidden: false,
-            displayName: "ADC Reference Pin, Positive",
-            interfaceNames: [
-                "REF_P"
-            ]
-        },
-        {
-            name: "refPinNeg",
-            canShareWith: "ADC",
-            hidden: false,
-            displayName: "ADC Reference Pin, Negative",
-            interfaceNames: [
-                "REF_N"
-            ]
-        }
-    ];
-
-    if (inst.internalSignal == "None") {
-        adc.resources = adc.resources.concat(adcPinResources);
-    }
-
-    if (inst.referenceSource == "External reference") {
-        adc.resources = adc.resources.concat(referenceResources);
-    }
-
-    return ([adc]);
 }
 
 /*
  *  ======== moduleInstances ========
- *  returns GPIO instances
  */
 function moduleInstances(inst)
 {
     /* This avoids constructions like CONFIG_GPIO_CONFIG_ADC_0_AIN */
     let shortName = inst.$name.replace("CONFIG_", "");
-    let gpioInstances = new Array();
+    let instances = new Array();
 
-    if (inst.internalSignal == "None") {
-        gpioInstances.push(
-            {
-                name: "adcPinInstance",
-                displayName: "ADC input pin configuration while not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                requiredArgs: {
-                    parentInterfaceName: "adc",
-                    parentSignalName: "adcPin",
-                    parentSignalDisplayName: "ADC Pin"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_AIN",
-                    mode: "Input"
-                }
+    instances.push(
+        {
+            name: "adcChannel",
+            displayName: "ADC Channel",
+            moduleName: "/ti/drivers/adc/ADCLPF3Channel",
+            collapsed: false,
+            args: {
+                $name: "CONFIG_" + shortName + "_CHANNEL"
             }
-        );
-    }
+        }
+    );
 
-    if (inst.referenceSource == "External reference") {
-        gpioInstances.push(
-            {
-                name: "adcRefPInstance",
-                displayName: "ADC positive reference pin configuration while not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                hidden: true,
-                requiredArgs: {
-                    parentInterfaceName: "adc",
-                    parentSignalName: "refPinPos",
-                    parentSignalDisplayName: "ADC Reference Pin, Positive"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_REF_P",
-                    mode: "Input"
-                }
-            }
-        );
-        gpioInstances.push(
-            {
-                name: "adcRefNInstance",
-                displayName: "ADC negative reference pin configuration while not in use",
-                moduleName: "/ti/drivers/GPIO",
-                collapsed: true,
-                hidden: true,
-                requiredArgs: {
-                    parentInterfaceName: "adc",
-                    parentSignalName: "refPinNeg",
-                    parentSignalDisplayName: "ADC Reference Pin, Negative"
-                },
-                args: {
-                    $name: "CONFIG_GPIO_" + shortName + "_REF_N",
-                    mode: "Input"
-                }
-            }
-        );
-    }
-
-    return (gpioInstances);
-}
-
-/*
- * ======== onReferenceSourceChange ========
- */
-function onReferenceSourceChange(inst, ui)
-{
-    ui.referenceVoltage.readOnly = true;
-
-    if (inst.referenceSource == "VDDS" || inst.referenceSource == "External reference") {
-        ui.referenceVoltage.readOnly = false;
-    }
-}
-
-/*
- *  ======== validate ========
- *  Validate this instance's configuration
- *
- *  param inst       - ADC instance to be validated
- *  param validation - object to hold detected validation issues
- *
- *  @param $super    - needed to call the generic module's functions
- */
-function validate(inst, validation, $super)
-{
-    let message;
-
-    if ($super.validate) {
-        $super.validate(inst, validation);
-    }
-
-    if (inst.adcSampleTime < 0 || inst.adcSampleTime > 1023) {
-        message = 'ADC Sample Duration must be between 0 and 1023';
-        logError(validation, inst, "adcSampleTime", message);
-    }
+    return instances;
 }
 
 /*
@@ -371,18 +202,13 @@ function extend(base)
     base = Common.addImplementationConfig(base, "ADC", null,
         [{ name: "ADCLPF3" }], null);
 
-    /* override base validate */
-    devSpecific.validate = function (inst, validation) {
-        return validate(inst, validation, base);
-    };
-
     /* merge and overwrite base module attributes */
     let result = Object.assign({}, base, devSpecific);
 
     /* concatenate device-specific configs */
     result.config = base.config.concat(devSpecific.config);
 
-    return (result);
+    return result;
 }
 
 /*

@@ -46,7 +46,13 @@
 /*----------------------------------------------------------------
  * get configuration settings from product config file
  */
-#include <third_party/hsmddk/include/Config/cc27xx/cs_hwpal_mb.h>
+#include <DeviceFamily.h>
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <third_party/hsmddk/include/Config/cc35xx/cs_hwpal_mb.h>
+#else
+    #include <third_party/hsmddk/include/Config/cc27xx/cs_hwpal_mb.h>
+#endif
 
 
 // DMA memory not used for D-cache

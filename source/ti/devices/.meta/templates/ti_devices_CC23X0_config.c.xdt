@@ -58,6 +58,13 @@
 % if(inst.enableUserRecord){
 #include "`inst.userRecordFile`"    //user record
 % }
+%
+% if(Common.isCName(inst.pAppVtorStr)) {
+extern void (*const `inst.pAppVtorStr`[])(void);
+% }
+% if(Common.isCName(inst.pBldrVtorStr)) {
+extern void (*const `inst.pBldrVtorStr`[])(void);
+% }
 
 #if defined(__IAR_SYSTEMS_ICC__)
 __root const ccfg_t ccfg @ ".ccfg" =
@@ -75,7 +82,11 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .bootCfg.pBldrVtor = CCFG_BC_PBLDR_USE_FCFG,
 % }
 % else if(inst.bldrSetting == "User-specific bootloader"){
-    .bootCfg.pBldrVtor = (void*)0x`inst.pBldrVtor.toString(16)`,
+%   if(Common.isCName(inst.pBldrVtorStr)) {
+    .bootCfg.pBldrVtor = (void*)&`inst.pBldrVtorStr`,
+%   } else {
+    .bootCfg.pBldrVtor = (void*)`inst.pBldrVtorStr`,
+%   }
 % }
 % else if(inst.bldrSetting == "Any bootloader forbidden"){
     .bootCfg.pBldrVtor = XCFG_BC_PBLDR_FORBID,
@@ -101,7 +112,11 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 % } else {
     .bootCfg.bldrParam.serialRomBldrParamStruct.pinTriggerLevel = XCFG_BC_PINTRIG_LEVEL_LO,
 % }
-    .bootCfg.pAppVtor = (void*)0x`inst.pAppVtor.toString(16)`,
+% if(Common.isCName(inst.pAppVtorStr)) {
+    .bootCfg.pAppVtor = (void*)&`inst.pAppVtorStr`,
+% } else {
+    .bootCfg.pAppVtor = (void*)`inst.pAppVtorStr`,
+% }
 
     /* Set to 0. This checksum must be calculated and updated prior to
      * programming the application to the device (this is normally handled as a
@@ -109,7 +124,7 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
      */
     .bootCfg.crc32 = 0x00000000,
 
-    .hwOpts = {0x`inst.hwOpts0.toString(16)`, 0x`inst.hwOpts1.toString(16)`},
+    .hwOpts = {0xFFFFFFFF, 0xFFFFFFFF},
 
 % if(inst.allowDebugPort){
     .permissions.allowDebugPort = CCFG_PERMISSION_ALLOW,
@@ -136,28 +151,15 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
 % } else {
     .permissions.allowChipErase = CCFG_PERMISSION_FORBID,
 % }
-% if(inst.allowToolsClientMode){
     .permissions.allowToolsClientMode = CCFG_PERMISSION_ALLOW,
-% } else {
-    .permissions.allowToolsClientMode = CCFG_PERMISSION_FORBID,
-% }
-% if(inst.allowFakeStby){
     .permissions.allowFakeStby = CCFG_PERMISSION_ALLOW,
-% } else {
-    .permissions.allowFakeStby = CCFG_PERMISSION_FORBID,
-% }
 % if(inst.allowReturnToFactory){
     .permissions.allowReturnToFactory = CCFG_PERMISSION_ALLOW,
 % } else {
     .permissions.allowReturnToFactory = CCFG_PERMISSION_FORBID,
 % }
 
-% if(inst.saciTimeoutOverride){
-    .misc.saciTimeoutOverride = 1U,
-% } else {
     .misc.saciTimeoutOverride = 0U,
-% }
-    .misc.saciTimeoutExp = `inst.saciTimeoutExp`,
 
     .flashProt.writeEraseProt.mainSectors0_31 = 0x`inst.writeEraseProt_mainSectors0_31.toString(16)`,
     .flashProt.writeEraseProt.mainSectors32_255 = 0x`inst.writeEraseProt_mainSectors32_255.toString(16)`,

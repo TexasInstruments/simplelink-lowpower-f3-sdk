@@ -1,0 +1,72 @@
+%   var module = system.modules['/ti/devices/CCFG'];
+%   var inst = module.$static;
+%   var flash_size=0, flash_base=0, imgTypeCode=0, imgType, sbEnabled="False", privKey;
+%   var prim0Start, prim0Len, sec0Start, sec0Len;
+%   if (inst.authMethod != "No Authentication") {
+%        sbEnabled = "True";
+%        imgTypeCode=0xabb0c380;
+%        /* Get active imgType, and Primary/Secondary slots */
+%        if (!(system.modules["/ti/utils/TrustZone"])) {
+%            if (inst.mode == "Overwrite") {
+%                imgType = inst.imgTypeSingleOvrWrt;
+%            } else {
+%                imgType = inst.imgTypeSingleXIP;
+%            }
+%
+%            prim0Start = inst.prim0StartSingle;
+%            prim0Len = inst.prim0LenSingle;
+%            sec0Start = inst.sec0StartSingle;
+%            sec0Len = inst.sec0LenSingle;
+%
+%        } else {
+%            imgType = inst.imgTypeDual;
+%
+%            prim0Start = inst.prim0StartSecure;
+%            prim0Len = inst.prim0LenSecure;
+%            sec0Start = inst.sec0StartSecure;
+%            sec0Len = inst.sec0LenSecure;
+%
+%        }
+%
+%        if (inst.mode == "Overwrite") {
+%            if (system.modules["/ti/utils/TrustZone"]) {
+%                if (imgType == "APP 1") {
+%                    imgTypeCode = 0xabb11193;
+%                    flash_base = inst.prim1Start + inst.hdrSize;
+%                    flash_size = inst.prim1Len;
+%                } else {
+%                    flash_base = prim0Start + inst.hdrSize;
+%                    flash_size = prim0Len;
+%                }
+%            } else {
+%                flash_base = prim0Start + inst.hdrSize;
+%                flash_size = prim0Len;
+%            }
+%        } else { /* XIP */
+%            if (imgType == "APP for Primary") {
+%                flash_base = prim0Start + inst.hdrSize;
+%                flash_size = prim0Len;
+%            } else {
+%                flash_base = sec0Start + inst.hdrSize;
+%                flash_size = sec0Len;
+%            }
+%        }
+%
+%        if (imgType == "SSB") {
+%            imgTypeCode = 0x53c0b001;
+%            flash_base = inst.ssbStart + inst.hdrSize;
+%            flash_size = inst.ssbLen;
+%        }
+%
+%        privKey = inst.privKey.replace(/\\/g, "/");
+%   }
+ {
+    "sbEnabled" : "`sbEnabled`",
+    "hdrSize" : "0x`inst.hdrSize.toString(16)`",
+    "slotSize" : "0x`flash_size.toString(16)`",
+    "version" : "`inst.version`",
+    "imgType" : "0x`imgTypeCode.toString(16)`",
+    "secCnt" : `inst.secCnt`,
+    "romFixed" : "0x`flash_base.toString(16)`",
+    "key": "`privKey`"
+ }

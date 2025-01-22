@@ -117,6 +117,12 @@
  *       dealing with payload data (plaintext or ciphertext). AESGCM_SegmentedFinalizeOperation
  *       must be initialized and set when finalizing the segmented operation.
  *
+ *  ## Device-Specific Requirements #
+ *
+ *  For CC27XX devices, GCM operations leveraging the HSM engine
+ *  (key encoding suffixed with _HSM) have the following requirements:
+ *      - Output buffer address must be 32-bit aligned.
+ *
  * #### Starting a GCM operation #
  *
  * The AESGCM_oneStepEncrypt() and AESGCM_oneStepDecrypt() functions perform a GCM operation in a single call.
@@ -223,7 +229,7 @@
  *
  * @endcode
  *
- * <h4> The following code snippet is for CC27XX devices only and leverages the HSM which is a seperate Hardware
+ * <h4> The following code snippet is for CC27XX devices only and leverages the HSM which is a separate Hardware
  * Accelerator </h4>
  *
  * ##### Single call GCM encryption + authentication with plaintext CryptoKey in blocking return mode
@@ -788,6 +794,8 @@ typedef struct
                                  *   is copied to.
                                  *   - Decryption: The plaintext derived from the decrypted and verified
                                  *   ciphertext is copied here.
+                                 *
+                                 *   For CC27XX devices, the output buffer needs to be 32-bit aligned.
                                  */
     uint8_t *iv;                /*!< A buffer containing an IV. IVs must be unique to
                                  *   each GCM operation and may not be reused. If
@@ -803,6 +811,9 @@ typedef struct
                                  */
     size_t aadLength;           /*!< Length of the total \c aad in bytes. Either \c aadLength or
                                  *   \c inputLength must be non-zero.
+                                 *
+                                 *   For CC27XX devices with _HSM-suffixed key encoding,
+                                 *   the aadLength must be block-size aligned.
                                  */
     size_t inputLength;         /*!< Length of the input/output data in bytes. Either \c aadLength or
                                  *   \c inputLength must be non-zero. Unlike this field in
@@ -836,6 +847,9 @@ typedef struct
                        *   of the AES block size (16 bytes) unless the last chunk of
                        *   AAD is being passed in. In that case, this value doesn't
                        *   need to be an AES block-sized multiple.
+                       *
+                       *   For CC27XX devices with _HSM-suffixed key encoding,
+                       *   the aadLength must be block-size aligned.
                        */
 } AESGCM_SegmentedAADOperation;
 
@@ -856,6 +870,8 @@ typedef struct
                          *   is copied to.
                          *   - Decryption: The plaintext derived from the decrypted and verified
                          *   ciphertext is copied here.
+                         *
+                         *   For CC27XX devices, the output buffer needs to be 32-bit aligned.
                          */
     size_t inputLength; /*!< Length of the input/output data in bytes. Must be non-zero, multiple
                          *   of the AES block size (16 bytes) unless the last chunk of
@@ -881,6 +897,8 @@ typedef struct
                          *   is copied to.
                          *   - Decryption: The plaintext derived from the decrypted and verified
                          *   ciphertext is copied here.
+                         *
+                         *   For CC27XX devices, the output buffer needs to be 32-bit aligned.
                          */
     uint8_t *mac;       /*!<
                          *   - Encryption: The buffer where the message authentication

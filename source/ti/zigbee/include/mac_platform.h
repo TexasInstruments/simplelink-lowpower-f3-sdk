@@ -291,10 +291,15 @@ extern zb_int8_t mac_ti23xx_get_sync_rssi(void);
 #define ZB_KERNEL_POST
 #define ZB_KERNEL_PRE  __attribute__ ((weak))
 
+#if ZB_CONFIG_OVERALL_NETWORK_SIZE > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN
+#define ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE ((offsetof(RCL_CmdIeee_SourceMatchingTableShort, shortEntry) / sizeof(uint32_t)) + RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN)
+#else
 #define ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE ((offsetof(RCL_CmdIeee_SourceMatchingTableShort, shortEntry) / sizeof(uint32_t)) + ZB_CONFIG_OVERALL_NETWORK_SIZE)
+#endif // ZB_CONFIG_OVERALL_NETWORK_SIZE > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN
 
 ZB_KERNEL_PRE uint32_t gc_srcMatchTableBuffer[ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE] ZB_KERNEL_POST = { 0 };
 ZB_KERNEL_PRE zb_uint8_t gc_zb_mac_short_match_list_size ZB_KERNEL_POST = ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE;
+ZB_KERNEL_PRE uint8_t gc_neighborToSrcMatchTable[ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE] ZB_KERNEL_POST;
 
 #endif  /* ZB_CONFIG_DEFAULT_KERNEL_DEFINITION */
 

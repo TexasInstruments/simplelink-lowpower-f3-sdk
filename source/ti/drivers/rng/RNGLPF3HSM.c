@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,15 +30,14 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
- * RNG driver is non-functional on CC27CC devices, as it uses a constant seed.
- */
-
 #include <ti/drivers/RNG.h>
 #include <ti/drivers/rng/RNGLPF3HSM.h>
-#include <ti/drivers/AESCTRDRBG.h>
-#include <ti/drivers/aesctrdrbg/AESCTRDRBGXX.h>
+#include <ti/drivers/TRNG.h>
+#include <ti/drivers/trng/TRNGLPF3HSM.h>
+#include <ti/drivers/RNG.h>
 #include <ti/drivers/cryptoutils/utils/CryptoUtils.h>
+#include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+#include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/devices/DeviceFamily.h>
@@ -67,25 +66,13 @@ struct RNGLPF3HSM_OperationParameters_
     const uint8_t *upperLimit;
 };
 
-typedef struct
-{
-    /* No data in the structure should be read or written without first taking this semaphore. */
-    SemaphoreP_Struct accessSemaphore;
-    size_t poolLevel;
-    AESCTRDRBG_Config drbgConfig;
-    AESCTRDRBGXX_Object drbgObject;
-    AESCTRDRBGXX_HWAttrs drbgHWattrs;
-} RNGLPF3HSM_Instance;
-
-RNGLPF3HSM_Instance RNGLPF3HSM_instanceData;
-
 static bool RNGLPF3HSM_isInitialized = false;
 
 /*** Prototypes ***/
-static int_fast16_t RNGLPF3HSM_translateDRBGStatus(int_fast16_t drbgStatus);
-static int_fast16_t RNGLPF3HSM_generateEntropy(AESCTRDRBG_Handle drbgHandle, uint8_t *byteDest, size_t byteSize);
-static int_fast16_t RNGLPF3HSM_fillPoolIfLessThan(size_t bytes);
-static int_fast16_t RNGLPF3HSM_getEntropyFromPool(void *dest, size_t byteSize, size_t *bytesRemaining);
+static int_fast16_t RNGLPF3HSM_generateEntropyInternal(RNG_Handle handle,
+                                                       uintptr_t outputBuffer,
+                                                       size_t bytesToGenerate);
+static int_fast16_t RNGLPF3HSM_generateEntropy(RNG_Handle handle, void *randomBytes, size_t randomBytesSize);
 static bool RNGLPF3HSM_checkRange(RNGLPF3HSM_OperationParameters *opParams);
 static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
                                                   void *randomNumber,
@@ -94,128 +81,206 @@ static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
                                                   RNGLPF3HSM_validator validator,
                                                   const void *lowerLimit,
                                                   const void *upperLimit);
-static int_fast16_t RNGLPF3HSM_createDRBGInstance(void);
 
-static int_fast16_t RNGLPF3HSM_translateDRBGStatus(int_fast16_t drbgStatus)
+/*
+ *  ======== RNG_Params_init ========
+ */
+void RNG_Params_init(RNG_Params *params)
 {
-    int_fast16_t returnValue;
-
-    switch (drbgStatus)
-    {
-        case AESCTRDRBG_STATUS_SUCCESS:
-            returnValue = RNG_STATUS_SUCCESS;
-            break;
-        case AESCTRDRBG_STATUS_ERROR:
-            returnValue = RNG_STATUS_ERROR;
-            break;
-        case AESCTRDRBG_STATUS_RESOURCE_UNAVAILABLE:
-            returnValue = RNG_STATUS_RESOURCE_UNAVAILABLE;
-            break;
-        case AESCTRDRBG_STATUS_RESEED_REQUIRED:
-            /* Map to RNG_ENTROPY_EXHAUSTED, reboot required for recovery. */
-            returnValue = RNG_ENTROPY_EXHAUSTED;
-            break;
-        case AESCTRDRBG_STATUS_UNINSTANTIATED:
-            /* Map to RNG_ENTROPY_EXHAUSTED, reboot required for recovery. */
-            returnValue = RNG_ENTROPY_EXHAUSTED;
-            break;
-        default:
-            returnValue = RNG_STATUS_ERROR;
-            break;
-    }
-
-    return returnValue;
-}
-
-int_fast16_t RNGLPF3HSM_generateEntropy(AESCTRDRBG_Handle drbgHandle, uint8_t *byteDest, size_t byteSize)
-{
-    int_fast16_t returnValue;
-    int_fast16_t drbgResult;
-
-    drbgResult = AESCTRDRBG_getRandomBytes(drbgHandle, byteDest, byteSize);
-
-    returnValue = RNGLPF3HSM_translateDRBGStatus(drbgResult);
-
-    return returnValue;
-}
-
-static int_fast16_t RNGLPF3HSM_fillPoolIfLessThan(size_t bytes)
-{
-    int_fast16_t returnValue = RNG_STATUS_SUCCESS;
-    size_t bytesNeeded;
-
-    if (RNGLPF3HSM_instanceData.poolLevel < bytes)
-    {
-        /*
-         * Adjust poolLevel to ensure word alignment as underlying AES
-         * driver may only support output to word aligned addresses.
-         */
-        RNGLPF3HSM_instanceData.poolLevel = (RNGLPF3HSM_instanceData.poolLevel >> 2u) << 2u;
-
-        bytesNeeded = RNG_poolByteSize - RNGLPF3HSM_instanceData.poolLevel;
-
-        returnValue = RNGLPF3HSM_generateEntropy((AESCTRDRBG_Handle)&RNGLPF3HSM_instanceData.drbgConfig,
-                                                 &RNG_instancePool[RNGLPF3HSM_instanceData.poolLevel],
-                                                 bytesNeeded);
-
-        if (returnValue == RNG_STATUS_SUCCESS)
-        {
-            RNGLPF3HSM_instanceData.poolLevel = RNG_poolByteSize;
-        }
-    }
-
-    return returnValue;
+    *params                = RNG_defaultParams;
+    params->returnBehavior = RNGLPF3HSM_returnBehavior;
 }
 
 /*
- * Precondition: RNGLPF3HSM_instanceData.accessSemaphore has been taken.
- *
- * Updates bytesRemaining to fulfill the total request (rounded up from number of bits remaining.)
- * These will have to be generated since these additional bytes could not be copied from the pool.
- *
- * Postcondition: If dest is not word aligned, then bytesRemaining  will either be 0 or dest[byteSize-bytesRemaining]
- *                will be word aligned.
+ *  ======== RNG_init ========
  */
-static int_fast16_t RNGLPF3HSM_getEntropyFromPool(void *dest, size_t byteSize, size_t *bytesRemaining)
+int_fast16_t RNG_init(void)
 {
-
-    uint8_t *byteDest        = (uint8_t *)dest;
-    size_t bytesToCopy       = byteSize;
-    int_fast16_t returnValue = RNG_STATUS_SUCCESS;
-
-    if (RNGLPF3HSM_instanceData.poolLevel < byteSize && ((uintptr_t)dest & 0x3u) != 0u &&
-        RNGLPF3HSM_instanceData.poolLevel < (4 - ((uintptr_t)dest & 0x3u)))
+    if (RNGLPF3HSM_isInitialized == false)
     {
-        /* Fill pool so there will be enough entropy to get to an aligned address within dest[]. */
-        returnValue = RNGLPF3HSM_fillPoolIfLessThan(RNG_poolByteSize);
+        HSMLPF3_constructRTOSObjects();
+
+        RNGLPF3HSM_isInitialized = true;
     }
 
-    if (RNGLPF3HSM_instanceData.poolLevel < byteSize)
-    {
-        /*
-         * Cap number of bytes taken from pool to ensure next byte of entropy to generate into dest
-         * is at a word-aligned address.
-         */
-        bytesToCopy = (4 - ((uintptr_t)dest & 0x3u));
-        bytesToCopy = bytesToCopy + (((RNGLPF3HSM_instanceData.poolLevel - bytesToCopy) >> 2u) << 2u);
-    }
-
-    /* Get entropy from pool */
-    if ((bytesToCopy > 0u) && (RNGLPF3HSM_instanceData.poolLevel > 0u))
-    {
-        (void)memcpy(byteDest, &RNG_instancePool[RNGLPF3HSM_instanceData.poolLevel - bytesToCopy], bytesToCopy);
-        CryptoUtils_memset(&RNG_instancePool[RNGLPF3HSM_instanceData.poolLevel - bytesToCopy],
-                           RNG_poolByteSize,
-                           0,
-                           bytesToCopy);
-        RNGLPF3HSM_instanceData.poolLevel -= bytesToCopy;
-    }
-
-    *bytesRemaining = byteSize - bytesToCopy;
-
-    return returnValue;
+    return RNG_STATUS_SUCCESS;
 }
 
+/*
+ *  ======== RNG_construct ========
+ */
+RNG_Handle RNG_construct(const RNG_Config *config, const RNG_Params *params)
+{
+    RNG_Handle handle;
+    RNGLPF3HSM_Object *object;
+    uintptr_t key;
+
+    handle = (RNG_Handle)config;
+    object = handle->object;
+
+    key = HwiP_disable();
+
+    if (object->isOpen)
+    {
+        HwiP_restore(key);
+        handle = NULL;
+    }
+
+    if (handle != NULL)
+    {
+        object->isOpen = true;
+
+        HwiP_restore(key);
+
+        /* Initialize and boot HSM and related FW architectures */
+        if (HSMLPF3_init() != HSMLPF3_STATUS_SUCCESS)
+        {
+            return NULL;
+        }
+
+        /* If params are NULL, use defaults */
+        if (params == NULL)
+        {
+            object->timeout = RNG_defaultParams.timeout;
+        }
+        else
+        {
+            object->timeout = params->timeout;
+            /*
+             * Callback return behavior is not supported.
+             */
+            if (params->returnBehavior == RNG_RETURN_BEHAVIOR_CALLBACK)
+            {
+                handle = NULL;
+            }
+        }
+    }
+
+    return handle;
+}
+
+void RNG_close(RNG_Handle handle)
+{
+    RNGLPF3HSM_Object *object;
+
+    if (handle != NULL)
+    {
+        object         = (RNGLPF3HSM_Object *)handle->object;
+        object->isOpen = false;
+    }
+}
+
+/*
+ *  ======== RNGLPF3HSM_generateEntropyInternal ========
+ */
+static int_fast16_t RNGLPF3HSM_generateEntropyInternal(RNG_Handle handle,
+                                                       uintptr_t outputBuffer,
+                                                       size_t bytesToGenerate)
+{
+    int_fast16_t status    = RNG_STATUS_ERROR;
+    int_fast16_t hsmRetval = HSMLPF3_STATUS_ERROR;
+    int32_t tokenResult    = 0U;
+
+    /* Populates the HSMLPF3 commandToken as a RNG get DRBG random number operation */
+    HSMLPF3_constructRNGGetRandomNumberPhysicalToken(outputBuffer, bytesToGenerate);
+
+    /* Submit token to the HSM IP engine */
+    hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)RNGLPF3HSM_returnBehavior, NULL, (uintptr_t)handle);
+
+    if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+    {
+        /* Handles post command token submission mechanism.
+         * Waits for a result token from the HSM IP in polling and blocking modes (and calls the drivers post-processing
+         * fxn) and returns immediately when in callback mode.
+         */
+        hsmRetval = HSMLPF3_waitForResult();
+
+        if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
+        {
+            tokenResult = HSMLPF3_getResultCode();
+
+            if ((tokenResult & HSMLPF3_RETVAL_MASK) == EIP130TOKEN_RESULT_SUCCESS)
+            {
+                status = RNG_STATUS_SUCCESS;
+            }
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== RNGLPF3HSM_generateEntropy ========
+ */
+static int_fast16_t RNGLPF3HSM_generateEntropy(RNG_Handle handle, void *randomBytes, size_t randomBytesSize)
+{
+    RNGLPF3HSM_Object *object                   = handle->object;
+    int_fast16_t status                         = RNG_STATUS_ERROR;
+    uintptr_t outputBuffer                      = 0U;
+    uint8_t finalBlock[HSM_DRBG_RNG_BLOCK_SIZE] = {0};
+    size_t bytesToGenerate                      = 0U;
+
+    if (randomBytesSize > HSM_RAW_RNG_MAX_LENGTH)
+    {
+        /* Return error. */
+        return RNG_STATUS_INVALID_INPUTS;
+    }
+
+    if (!HSMLPF3_acquireLock(object->timeout, (uintptr_t)handle))
+    {
+        return RNG_STATUS_RESOURCE_UNAVAILABLE;
+    }
+
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+
+    if (randomBytesSize < HSM_DRBG_RNG_BLOCK_SIZE)
+    {
+        outputBuffer    = (uintptr_t)finalBlock;
+        bytesToGenerate = HSM_DRBG_RNG_BLOCK_SIZE;
+    }
+    else if (HSM_IS_SIZE_MULTIPLE_OF_WORD(randomBytesSize))
+    {
+        outputBuffer    = (uintptr_t)randomBytes;
+        bytesToGenerate = randomBytesSize;
+    }
+    else
+    {
+        outputBuffer    = (uintptr_t)randomBytes;
+        bytesToGenerate = randomBytesSize & ~(HSM_DRBG_RNG_BLOCK_SIZE - 1);
+    }
+
+    status = RNGLPF3HSM_generateEntropyInternal(handle, outputBuffer, bytesToGenerate);
+
+    if (status == RNG_STATUS_SUCCESS)
+    {
+        if (randomBytesSize < HSM_DRBG_RNG_BLOCK_SIZE)
+        {
+            (void)memcpy(randomBytes, &finalBlock[0], randomBytesSize);
+        }
+        else if (!HSM_IS_SIZE_MULTIPLE_OF_WORD(randomBytesSize))
+        {
+            uint8_t offset  = bytesToGenerate;
+            bytesToGenerate = randomBytesSize - bytesToGenerate;
+
+            status = RNGLPF3HSM_generateEntropyInternal(handle, (uintptr_t)finalBlock, bytesToGenerate);
+
+            if (status == RNG_STATUS_SUCCESS)
+            {
+                (void)memcpy((uint8_t *)randomBytes + offset, finalBlock, bytesToGenerate);
+            }
+        }
+    }
+
+    HSMLPF3_releaseLock();
+
+    Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+
+    return status;
+}
+
+/*
+ *  ======== RNGLPF3HSM_checkRange ========
+ */
 static bool RNGLPF3HSM_checkRange(RNGLPF3HSM_OperationParameters *opParams)
 {
     return CryptoUtils_isNumberInRange(opParams->output,
@@ -225,6 +290,9 @@ static bool RNGLPF3HSM_checkRange(RNGLPF3HSM_OperationParameters *opParams)
                                        opParams->upperLimit);
 }
 
+/*
+ *  ======== RNGLPF3HSM_getValidatedNumber ========
+ */
 static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
                                                   void *randomNumber,
                                                   size_t randomNumberBitLength,
@@ -234,8 +302,6 @@ static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
                                                   const void *upperLimit)
 {
     int_fast16_t returnValue = RNG_STATUS_SUCCESS;
-    RNGLPF3HSM_Object *object;
-    size_t bytesToGenerate = 0;
     size_t byteSize;
     uint8_t *byteDestination;
     uint8_t bitMask;
@@ -246,15 +312,9 @@ static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
     {
         returnValue = RNG_STATUS_INVALID_INPUTS;
     }
-
-    if (returnValue == RNG_STATUS_SUCCESS)
+    else if (randomNumberBitLength == 0U)
     {
-        object = (RNGLPF3HSM_Object *)handle->object;
-
-        if (SemaphoreP_pend(&RNGLPF3HSM_instanceData.accessSemaphore, object->timeout) != SemaphoreP_OK)
-        {
-            returnValue = RNG_STATUS_RESOURCE_UNAVAILABLE;
-        }
+        return returnValue;
     }
 
     if (returnValue == RNG_STATUS_SUCCESS)
@@ -268,17 +328,9 @@ static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
         bitMask         = (2u << (((randomNumberBitLength + 7u) % 8u))) - 1u;
     }
 
-    while ((returnValue == RNG_STATUS_SUCCESS) && !isValid)
+    while ((returnValue == RNG_STATUS_SUCCESS) && (!isValid))
     {
-
-        returnValue = RNGLPF3HSM_getEntropyFromPool(byteDestination, byteSize, &bytesToGenerate);
-
-        if (returnValue == RNG_STATUS_SUCCESS && bytesToGenerate > 0u)
-        {
-            returnValue = RNGLPF3HSM_generateEntropy((AESCTRDRBG_Handle)&RNGLPF3HSM_instanceData.drbgConfig,
-                                                     &byteDestination[byteSize - bytesToGenerate],
-                                                     bytesToGenerate);
-        }
+        returnValue = RNGLPF3HSM_generateEntropy(handle, byteDestination, byteSize);
 
         /* Mask off extra bits in MSB */
         if (endianess == CryptoUtils_ENDIANESS_BIG)
@@ -306,151 +358,12 @@ static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
         }
     }
 
-    SemaphoreP_post(&RNGLPF3HSM_instanceData.accessSemaphore);
-
     return returnValue;
 }
 
-static int_fast16_t RNGLPF3HSM_createDRBGInstance(void)
-{
-    int_fast16_t returnValue = RNG_STATUS_ERROR;
-    AESCTRDRBG_Handle drbgHandle;
-    AESCTRDRBG_Params drbgParams;
-
-    AESCTRDRBG_init();
-
-    /* Copy RNG interrupt priority (set in syscfg) to AES CTR interrupt priority */
-    RNGLPF3HSM_instanceData.drbgHWattrs.aesctrHWAttrs.intPriority = RNGLPF3HSM_hwAttrs.intPriority;
-
-    RNGLPF3HSM_instanceData.drbgConfig.object  = &RNGLPF3HSM_instanceData.drbgObject;
-    RNGLPF3HSM_instanceData.drbgConfig.hwAttrs = &RNGLPF3HSM_instanceData.drbgHWattrs;
-    RNGLPF3HSM_instanceData.drbgObject.isOpen  = false;
-
-    AESCTRDRBG_Params_init(&drbgParams);
-    /* Ensure seed length will be 32 bytes long. (Seed length = key length + AES block length.) */
-    drbgParams.keyLength      = AESCTRDRBG_AES_KEY_LENGTH_128;
-    drbgParams.returnBehavior = (AESCTRDRBG_ReturnBehavior)RNGLPF3HSM_returnBehavior;
-
-    drbgHandle = AESCTRDRBG_construct((AESCTRDRBG_Handle)&RNGLPF3HSM_instanceData.drbgConfig, &drbgParams);
-
-    if (drbgHandle != NULL)
-    {
-        returnValue = RNG_STATUS_SUCCESS;
-    }
-
-    return returnValue;
-}
-
-void RNG_Params_init(RNG_Params *params)
-{
-    *params                = RNG_defaultParams;
-    params->returnBehavior = RNGLPF3HSM_returnBehavior;
-}
-
-int_fast16_t RNG_init(void)
-{
-    int_fast16_t returnValue = RNG_STATUS_SUCCESS;
-    int_fast16_t drbgResult;
-    /* Use zeros as dummy seed value */
-    uint32_t seed[8] = {0};
-
-    if (RNGLPF3HSM_isInitialized == false)
-    {
-        if (returnValue == RNG_STATUS_SUCCESS)
-        {
-            RNGLPF3HSM_instanceData.poolLevel = 0;
-
-            if (SemaphoreP_constructBinary(&RNGLPF3HSM_instanceData.accessSemaphore, 1) == NULL)
-            {
-                returnValue = RNG_STATUS_ERROR;
-            }
-        }
-
-        if (returnValue == RNG_STATUS_SUCCESS)
-        {
-
-            returnValue = RNGLPF3HSM_createDRBGInstance();
-
-            if (returnValue == RNG_STATUS_SUCCESS)
-            {
-                drbgResult  = AESCTRDRBG_reseed((AESCTRDRBG_Handle)&RNGLPF3HSM_instanceData.drbgConfig, seed, NULL, 0);
-                returnValue = RNGLPF3HSM_translateDRBGStatus(drbgResult);
-                CryptoUtils_memset(seed, sizeof(seed), 0, sizeof(seed));
-            }
-        }
-
-        if (returnValue == RNG_STATUS_SUCCESS)
-        {
-            RNGLPF3HSM_isInitialized = true;
-        }
-    }
-
-    return returnValue;
-}
-
-RNG_Handle RNG_construct(const RNG_Config *config, const RNG_Params *params)
-{
-    RNG_Handle handle;
-    RNGLPF3HSM_Object *object;
-    uintptr_t key;
-
-    handle = (RNG_Handle)config;
-    object = handle->object;
-
-    key = HwiP_disable();
-
-    if (object->isOpen)
-    {
-        HwiP_restore(key);
-        handle = NULL;
-    }
-
-    if (handle != NULL)
-    {
-        object->isOpen = true;
-
-        HwiP_restore(key);
-
-        /* If params are NULL, use defaults */
-        if (params == NULL)
-        {
-            object->timeout = RNG_defaultParams.timeout;
-        }
-        else
-        {
-            /*
-             * Return behavior is set statically for all instances and on open the requesting setting must
-             * match the static setting.
-             */
-            if (params->returnBehavior != RNGLPF3HSM_returnBehavior)
-            {
-                handle = NULL;
-            }
-
-            /*
-             * Callback return behavior is not supported.
-             */
-            if (params->returnBehavior == RNG_RETURN_BEHAVIOR_CALLBACK)
-            {
-                handle = NULL;
-            }
-        }
-    }
-
-    return handle;
-}
-
-void RNG_close(RNG_Handle handle)
-{
-    RNGLPF3HSM_Object *object;
-
-    if (handle != NULL)
-    {
-        object         = (RNGLPF3HSM_Object *)handle->object;
-        object->isOpen = false;
-    }
-}
-
+/*
+ *  ======== RNG_getRandomBits ========
+ */
 int_fast16_t RNG_getRandomBits(RNG_Handle handle, void *randomBits, size_t randomBitsLength)
 {
 
@@ -463,6 +376,9 @@ int_fast16_t RNG_getRandomBits(RNG_Handle handle, void *randomBits, size_t rando
                                          NULL);
 }
 
+/*
+ *  ======== RNG_getLERandomNumberInRange ========
+ */
 int_fast16_t RNG_getLERandomNumberInRange(RNG_Handle handle,
                                           const void *lowerLimit,
                                           const void *upperLimit,
@@ -479,6 +395,9 @@ int_fast16_t RNG_getLERandomNumberInRange(RNG_Handle handle,
                                          upperLimit);
 }
 
+/*
+ *  ======== RNG_getBERandomNumberInRange ========
+ */
 int_fast16_t RNG_getBERandomNumberInRange(RNG_Handle handle,
                                           const void *lowerLimit,
                                           const void *upperLimit,
@@ -495,20 +414,22 @@ int_fast16_t RNG_getBERandomNumberInRange(RNG_Handle handle,
                                          upperLimit);
 }
 
+/*
+ *  ======== RNG_generateKey ========
+ */
 int_fast16_t RNG_generateKey(RNG_Handle handle, CryptoKey *key)
 {
     int_fast16_t returnValue = RNG_STATUS_SUCCESS;
     uint8_t *randomBits;
     size_t randomBitsLength;
 
-    if (key->encoding != CryptoKey_BLANK_PLAINTEXT)
+    if ((key == NULL) || (key->u.plaintext.keyLength > (RNG_MAX_BIT_LENGTH >> 3u)))
     {
-        returnValue = RNG_STATUS_INVALID_INPUTS;
+        return RNG_STATUS_INVALID_INPUTS;
     }
-
-    if (key->u.plaintext.keyLength > (RNG_MAX_BIT_LENGTH >> 3u))
+    else if ((key->encoding != CryptoKey_BLANK_PLAINTEXT) && (key->encoding != CryptoKey_BLANK_PLAINTEXT_HSM))
     {
-        returnValue = RNG_STATUS_INVALID_INPUTS;
+        returnValue = RNG_STATUS_INVALID_KEY_ENCODING;
     }
 
     if (returnValue == RNG_STATUS_SUCCESS)
@@ -528,6 +449,9 @@ int_fast16_t RNG_generateKey(RNG_Handle handle, CryptoKey *key)
     return returnValue;
 }
 
+/*
+ *  ======== RNG_generateLEKeyInRange ========
+ */
 int_fast16_t RNG_generateLEKeyInRange(RNG_Handle handle,
                                       const void *lowerLimit,
                                       const void *upperLimit,
@@ -537,9 +461,13 @@ int_fast16_t RNG_generateLEKeyInRange(RNG_Handle handle,
     int_fast16_t returnValue;
     uint8_t *randomBits;
 
-    if (key->encoding != CryptoKey_BLANK_PLAINTEXT)
+    if (key == NULL)
     {
-        returnValue = RNG_STATUS_INVALID_INPUTS;
+        return RNG_STATUS_INVALID_INPUTS;
+    }
+    else if ((key->encoding != CryptoKey_BLANK_PLAINTEXT) && (key->encoding != CryptoKey_BLANK_PLAINTEXT_HSM))
+    {
+        returnValue = RNG_STATUS_INVALID_KEY_ENCODING;
     }
     else
     {
@@ -558,6 +486,9 @@ int_fast16_t RNG_generateLEKeyInRange(RNG_Handle handle,
     return returnValue;
 }
 
+/*
+ *  ======== RNG_generateBEKeyInRange ========
+ */
 int_fast16_t RNG_generateBEKeyInRange(RNG_Handle handle,
                                       const void *lowerLimit,
                                       const void *upperLimit,
@@ -566,10 +497,13 @@ int_fast16_t RNG_generateBEKeyInRange(RNG_Handle handle,
 {
     int_fast16_t returnValue;
     uint8_t *randomBits;
-
-    if (key->encoding != CryptoKey_BLANK_PLAINTEXT)
+    if (key == NULL)
     {
-        returnValue = RNG_STATUS_INVALID_INPUTS;
+        return RNG_STATUS_INVALID_INPUTS;
+    }
+    else if ((key->encoding != CryptoKey_BLANK_PLAINTEXT) && (key->encoding != CryptoKey_BLANK_PLAINTEXT_HSM))
+    {
+        returnValue = RNG_STATUS_INVALID_KEY_ENCODING;
     }
     else
     {
@@ -587,26 +521,18 @@ int_fast16_t RNG_generateBEKeyInRange(RNG_Handle handle,
     return returnValue;
 }
 
+/*
+ *  ======== RNG_fillPoolIfLessThan ========
+ */
 int_fast16_t RNG_fillPoolIfLessThan(size_t bytes)
 {
-    int_fast16_t returnValue = RNG_STATUS_SUCCESS;
-
-    if (SemaphoreP_pend(&RNGLPF3HSM_instanceData.accessSemaphore, SemaphoreP_WAIT_FOREVER) != SemaphoreP_OK)
-    {
-        returnValue = RNG_STATUS_RESOURCE_UNAVAILABLE;
-    }
-    else
-    {
-        returnValue = RNGLPF3HSM_fillPoolIfLessThan(bytes);
-
-        SemaphoreP_post(&RNGLPF3HSM_instanceData.accessSemaphore);
-    }
-
-    return returnValue;
+    return RNG_STATUS_ERROR;
 }
 
+/*
+ *  ======== RNG_cancelOperation ========
+ */
 int_fast16_t RNG_cancelOperation(RNG_Handle handle)
 {
-    /* Cancel not supported in this implementation since AESCTRDRBG driver does not support cancellation. */
     return RNG_STATUS_ERROR;
 }

@@ -64,15 +64,8 @@ extern "C"
 // configuration
 // ****************************************************************************
 
-#ifndef NPI_FLOW_CTRL
-#  ifdef POWER_SAVING
-#    define NPI_FLOW_CTRL       1
-#  else
 #    define NPI_FLOW_CTRL       0
-#  endif
-#elif !(NPI_FLOW_CTRL == 0) && !(NPI_FLOW_CTRL == 1)
-#  error "NPI ERROR: NPI_FLOW_CTRL can only be assigned 0 (disabled) or 1 (enabled)"
-#endif
+
 
 // ****************************************************************************
 // defines
@@ -121,6 +114,7 @@ extern "C"
 #define RPC_SYS_CM_CMD                          23
 #define RPC_SYS_UNDEF2                          24
 #define RPC_SYS_RTLS_CTRL                       25
+#define RPC_SYS_EXTCTRL                         25 // <! EXTCTRL system built on top of RPC_SYS_RTLS_CTRL
 #define RPC_SYS_UNDEF4                          26
 #define RPC_SYS_UNDEF5                          27
 #define RPC_SYS_UNDEF6                          28

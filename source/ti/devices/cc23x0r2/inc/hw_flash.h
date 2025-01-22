@@ -351,8 +351,6 @@
 //                          only.
 // MODECHANGE               Mode Change - Perform a mode change only, no other
 //                          operation.
-// READVERIFY               Read Verify - Perform a standalone read verify
-//                          operation.
 // ERASE                    Erase
 // PROGRAM                  Program
 // NOOP                     No Operation
@@ -362,7 +360,6 @@
 #define FLASH_CMDTYPE_COMMAND_BLANKVERIFY                           0x00000006U
 #define FLASH_CMDTYPE_COMMAND_CLEARSTATUS                           0x00000005U
 #define FLASH_CMDTYPE_COMMAND_MODECHANGE                            0x00000004U
-#define FLASH_CMDTYPE_COMMAND_READVERIFY                            0x00000003U
 #define FLASH_CMDTYPE_COMMAND_ERASE                                 0x00000002U
 #define FLASH_CMDTYPE_COMMAND_PROGRAM                               0x00000001U
 #define FLASH_CMDTYPE_COMMAND_NOOP                                  0x00000000U
@@ -713,7 +710,7 @@
 //*****************************************************************************
 // Field:   [3:0] WAITSTATE
 //
-// Wait State setting for program verify, erase verify and read verify
+// Wait State setting for verify reads
 // ENUMs:
 // MAXIMUM                  Maximum value
 // MINIMUM                  Minimum value

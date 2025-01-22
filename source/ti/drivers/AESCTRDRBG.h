@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022, Texas Instruments Incorporated
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -280,6 +280,8 @@
 #include <ti/drivers/AESCTR.h>
 #include <ti/drivers/AESCommon.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
+
+#include <ti/devices/DeviceFamily.h>
 
 #ifdef __cplusplus
 extern "C" {

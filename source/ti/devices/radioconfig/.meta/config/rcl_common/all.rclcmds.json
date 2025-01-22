@@ -1076,7 +1076,7 @@
           {
             "name": "mode.role",
             "type": "uint16_t",
-            "size": "1",
+            "size": "2",
             "desc": "Role of the device",
             "enum": [
               {
@@ -1094,18 +1094,23 @@
           {
             "name": "mode.phy",
             "type": "uint16_t",
-            "size": "1",
+            "size": "2",
             "desc": "PHY used for packet exchange",
             "enum": [
               {
                 "symbol": "RCL_CmdBleCs_Phy_1M",
                 "value": "0",
-                "label": "1 Mbit"
+                "label": "1 Mbit BT=0.5"
               },
               {
                 "symbol": "RCL_CmdBleCs_Phy_2M",
                 "value": "1",
-                "label": "2 Mbit"
+                "label": "2 Mbit BT=0.5"
+              },
+              {
+                "symbol": "RCL_CmdBleCs_Phy_2M2BT",
+                "value": "2",
+                "label": "2 Mbit BT=2.0"
               }
             ]
           },
@@ -1123,7 +1128,7 @@
               {
                 "symbol": "1",
                 "value": "1",
-                "label": "Infinite"
+                "label": "Enable"
               }
             ]
           },
@@ -1164,10 +1169,10 @@
             ]
           },
           {
-            "name": "mode.reserved",
+            "name": "mode.reportFormat",
             "type": "uint16_t",
-            "size": "3",
-            "desc": "Reserved for future use"
+            "size": "1",
+            "desc": "Select a vendor specific report format instead of the default HCI LE CS Subevent Result"
           },
           {
             "name": "mode.nSteps",

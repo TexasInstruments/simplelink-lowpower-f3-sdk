@@ -65,7 +65,7 @@
 #define PSA_ASYM_DATA_VHEADER       (4U)
 
 /*----------------------------------------------------------------------------
- * PSA_ASYM_DATA_SIZE_VWB
+ * PSA_ASYM_DATA_SIZE_B2WB
  *
  * Converts a size in bits to a size in bytes aligned on a word boundary.
  */
@@ -75,7 +75,16 @@ PSA_ASYM_DATA_SIZE_B2WB(const size_t x)
     return (uint32_t)(4U * ((x + 31U) / 32U));
 }
 
-
+/*----------------------------------------------------------------------------
+ * PSA_ASYM_DATA_SIZE_WB
+ *
+ * Converts a size in bits to a size in words aligned on a word boundary.
+ */
+static inline uint32_t
+PSA_ASYM_DATA_SIZE_WB(const size_t x)
+{
+    return (uint32_t)((x + 31U) / 32U);
+}
 /*----------------------------------------------------------------------------
  * PSA_ASYM_DATA_SIZE_VWB
  *

@@ -43,12 +43,11 @@
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_pmctl.h)
+#include DeviceFamily_constructPath(inc/hw_ckmd.h)
 
-/* The amount of time in us to measure the LFOSC during a measurement
- * TODO: Determine the correct value to use
- */
+/* The amount of time in us to measure the LFOSC during a measurement */
 #ifndef LFOSC_CALIBRATION_DURATION_US
-    #define LFOSC_CALIBRATION_DURATION_US (1000)
+    #define LFOSC_CALIBRATION_DURATION_US (1500)
 #endif
 
 /* The baseline ppm value used in the model to to calculate the calibration
@@ -59,10 +58,10 @@
     #define LFOSC_BASELINE_PPM (200)
 #endif
 
-/* Nominal LFOSC frequency in Hz*/
-#define LFOSC_NOMINAL_FREQUENCY      (32768)
 /* The maximum uncompensated LFOSC error in ppm */
 #define LFOSC_MAX_ABSOLUTE_PPM_ERROR (30000)
+/* The jitter caused by SYSTIMER in us */
+#define SYSTIMER_JITTER_USEC         (1)
 
 static uint32_t PowerCC27XX_convertUsToLfPeriods(uint32_t us);
 static void PowerCC27XX_setLfoscCompensationConfiguration(const PowerLPF3_LfoscCompensationProfile *profile,
@@ -93,12 +92,23 @@ static struct
 
 /*
  *  ======== PowerCC27XX_convertUsToLfPeriods ========
- * Convert microseconds (us) to number of LF periods. (Rounded up)
+ * Convert microseconds (us) to number of LF periods.
  */
 static uint32_t PowerCC27XX_convertUsToLfPeriods(uint32_t us)
 {
-    /* Units: us * (LF period)/s / (us/s) = LF period */
-    return ((uint64_t)us * LFOSC_NOMINAL_FREQUENCY + (1000000 - 1)) / 1000000;
+    /* The nominal LF oscillator frequency is 32768 Hz. To convert a duration in
+     * microseconds to LF periods, the formula is:
+     *
+     * LF periods = (us * 32768) / 1000000
+     *
+     * Units: us * (LF period/s) / (us/s) = LF periods
+     *
+     * To ensure no overflow during the multiplication, us would need to be cast
+     * to uint64_t. However, to avoid the complexity of 64-bit division, the
+     * fraction (32768 / 1000000) is approximated as (2 / 61). This
+     * approximation has an accuracy of ~0.06%.
+     */
+    return (2 * us) / 61;
 }
 
 /*
@@ -175,6 +185,9 @@ static void PowerCC27XX_setLfoscCompensationConfiguration(const PowerLPF3_LfoscC
     uint64_t tempPpmPerSystemWakeup;           /* Worst case ppm per wakeup period caused by temperature changes */
     uint16_t ppmPerRtn;                        /* Worst case ppm for one RTN event */
     uint16_t baselinePpm;                      /* The baseline ppm used in the model below */
+    uint32_t ppmPerLfoscJitter;                /* Additional required ppm due to lfosc jitter */
+    uint16_t lfsocMaxWakeupJitterUsec;         /* The maximum LFSOC jitter per wakeup in us */
+    uint32_t ppmRequirement;                   /* The required ppm */
     uint32_t n;                                /* Number of calibrations per system wakeup */
     uint32_t calibrationIntervalUs;            /* The calculated calibration interval in us */
     uint32_t calibrationInterval256LfPeriods;  /* The calculated calibration interval in 256 LF periods */
@@ -214,7 +227,9 @@ static void PowerCC27XX_setLfoscCompensationConfiguration(const PowerLPF3_LfoscC
      *
      * For the final result to fit in uint32_t, the following inequality must be satisfied:
      * 0x100000000 > ppmPerC * profile->temperatureGradientMilliCelciusPerSec * profile->systemWakeupIntervalUsec / (2 *
-     * 1000000000) 0x100000000 * (2 * 1000000000) > ppmPerC * profile->temperatureGradientMilliCelciusPerSec *
+     * 1000000000)
+     *
+     * 0x100000000 * (2 * 1000000000) > ppmPerC * profile->temperatureGradientMilliCelciusPerSec *
      * profile->systemWakeupIntervalUsec
      *
      * If assuming profile->systemWakeupIntervalUsec and
@@ -228,6 +243,25 @@ static void PowerCC27XX_setLfoscCompensationConfiguration(const PowerLPF3_LfoscC
      */
     tempPpmPerSystemWakeup = (uint64_t)ppmPerC * profile->temperatureGradientMilliCelsiusPerSec *
                              profile->systemWakeupIntervalUsec / (2 * 1000000000);
+
+    /* Calculate ppm contribution to required ppm due to LFOSC jitter (rounded
+     * down).
+     * Make sure that lfsocMaxWakeupJitterUsec is non negative.
+     * Units for the statement lfsocMaxWakeupJitterUsec / profile->systemWakeupIntervalUsec:
+     * (us/system wakeup) / (us/(system wakeup)) = unitless
+     * To convert this unit to ppm the result is multiplied by 10^6.
+     *
+     * The allowed jitter should always be lower than the wakeup interval, hence
+     * the division lfsocMaxWakeupJitterUsec / profile->systemWakeupIntervalUsec
+     * will fit in uint32_t.
+     */
+    lfsocMaxWakeupJitterUsec = (profile->maxAllowedJitterUsec < SYSTIMER_JITTER_USEC)
+                                   ? 0
+                                   : profile->maxAllowedJitterUsec - SYSTIMER_JITTER_USEC;
+    ppmPerLfoscJitter        = ((uint32_t)lfsocMaxWakeupJitterUsec * 1000000) / (profile->systemWakeupIntervalUsec);
+
+    /* Relax ppm requirement based on the maximum allowed jitter */
+    ppmRequirement = profile->ppmRequirement + ppmPerLfoscJitter;
 
     /* The interval between two calibration wakeups is:
      * T_wakeup(n) = T_system/n
@@ -255,8 +289,7 @@ static void PowerCC27XX_setLfoscCompensationConfiguration(const PowerLPF3_LfoscC
      * This ceil function is implemented using integer arithmetic:
      * n = (tempPpmPerSystemWakeup + ppmPerRtn + (ppmRequirement - baselinePpm) - 1)/(ppmRequirement - baselinePpm)
      */
-    n = (tempPpmPerSystemWakeup + ppmPerRtn + (profile->ppmRequirement - baselinePpm) - 1) /
-        (profile->ppmRequirement - baselinePpm);
+    n = (tempPpmPerSystemWakeup + ppmPerRtn + (ppmRequirement - baselinePpm) - 1) / (ppmRequirement - baselinePpm);
 
     /* Calculate calibration interval. Round up and add worst case LFOSC
      * inaccuracy to ensure the system does not wake up to perform an extra

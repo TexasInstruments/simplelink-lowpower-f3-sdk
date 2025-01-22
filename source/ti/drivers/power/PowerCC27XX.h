@@ -72,11 +72,20 @@
  *  will be found at/after boot, meaning it will take longer before HFXT is
  *  ready after boot, but when it is ready the amplitude will already be in the
  *  optimal range. This process is done asynchronously, so the application can
- *  do other stuff while waiting for HFXT to be ready.
+ *  do other tasks while waiting for HFXT to be ready.
  *
  *  Enabling initial HFXT amplitude compensation will result in more flash usage
  *  and longer time from boot to the first RF operation.
  *
+ *  @anchor ti_drivers_PowerCC27XX_HFXT_Temperature_Compensation
+ *  ### HFXT Temperature Compensation (Software TCXO) ###
+ *  HFXT frequency is known to vary with temperature,
+ *  landing outside acceptable operational range. By enabling compensation,
+ *  the device will correct for this variation above the selected temperature.
+ *  The compensation is enabled by default on CC27X0 devices.
+ *  The ppm offset used to compensate the HFXT can be approximated by a
+ *  third order polynomial function of temperature in Celsius,
+ *  see #PowerLPF3_initHFXTCompensation().
  *
  *  ============================================================================
  */
@@ -104,10 +113,13 @@ extern "C" {
 #define PowerCC27XX_RESUMETIMESTANDBY 400
 
 /*! The total latency to reserve for entry to and exit from STANDBY (usec). */
-#define PowerCC27XX_TOTALTIMESTANDBY 1000
+#define PowerCC27XX_TOTALTIMESTANDBY 500
 
 /*! The initial delay when waking from STANDBY (usec). */
-#define PowerCC27XX_WAKEDELAYSTANDBY 500
+#define PowerCC27XX_WAKEDELAYSTANDBY 150
+
+/* Default lower threshold for when HFXT compensation is enabled */
+#define PowerCC27XX_HFXT_THRESHOLD_TEMP_DEFAULT (-40)
 
 /* \cond */
 /* The control of the peripherals are split between multiple groups.
@@ -175,8 +187,8 @@ typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
 /*! Resource ID: Hardware Security Module */
 #define PowerLPF3_PERIPH_HSM (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_HSM_S)
 
-/*! Resource ID: Vector Computational Engine */
-#define PowerLPF3_PERIPH_VCE (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_VCE_S)
+/*! Resource ID: Algorithm Processing Unit */
+#define PowerLPF3_PERIPH_APU (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_VCE_S)
 
 /*! Resource ID: MCAN */
 #define PowerLPF3_PERIPH_MCAN (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_MCAN_S)
@@ -224,8 +236,11 @@ typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
 /*! Constraint: Flash memory needs to enabled during IDLE */
 #define PowerLPF3_NEED_FLASH_IN_IDLE 3
 
+/*! Constraint: Disallow software TCXO during RF operations */
+#define PowerLPF3_DISALLOW_SWTCXO 4
+
 /* \cond */
-#define PowerCC27XX_NUMCONSTRAINTS 4 /* Number of constraints supported */
+#define PowerCC27XX_NUMCONSTRAINTS 5 /* Number of constraints supported */
 /* \endcond */
 
 /*
@@ -397,6 +412,9 @@ typedef struct
     /*! @brief The PPM requirements */
     PowerLPF3_LfoscCompensationPpmRequirement ppmRequirement;
 
+    /*! @brief The maximum additional jitter allowed per wakeup beyond the ppm requirement in us */
+    uint16_t maxAllowedJitterUsec;
+
     /*! @brief The absolute value of the worst case expected temperature
      *  gradient in mC/s.
      */
@@ -527,6 +545,71 @@ void PowerLPF3_selectLFXT(void);
  * @sa PowerLPF3_selectLFXT()
  */
 void PowerLPF3_selectEXTLF(void);
+
+/*!
+ * @brief Initialise HFXT temperature compensation coefficients
+ *
+ * Initialise the parameters used for HFXT temperature coefficients. They approximate
+ * the ppm offset of the HFXT frequency with the following polynomial as a function of
+ * temperature (degC), where P_3 = P3 / 2^shift, P_2 = P2 / 2^shift, etc..
+ * ppm(T) = P_3*T^3 + P_2*T^2 + P_1*T + P_0
+ *
+ * @param[in] P0    0th-order coefficient, multiplied by 2^shift
+ * @param[in] P1    1st-order coefficient, multiplied by 2^shift
+ * @param[in] P2    2nd-order coefficient, multiplied by 2^shift
+ * @param[in] P3    3rd-order coefficient, multiplied by 2^shift
+ * @param[in] shift Shift-value for scaling fixed-point coefficients
+ * @param[in] fcfgInsertion Boolean used to indicate presence of HFXT FCFG data.
+ *
+ * @pre Power_init()
+ */
+void PowerLPF3_initHFXTCompensation(int32_t P0, int32_t P1, int32_t P2, int32_t P3, uint8_t shift, bool fcfgInsertion);
+
+/*!
+ * @brief Enable HFXT temperature compensation
+ *
+ * Enable automatic compensation for temperature-based frequency-drift of HFXT
+ *
+ * This function should only be called once, but can be invoked again if
+ * PowerLPF3_enableHFXTCompensation has been called
+ *
+ * @param[in] tempThreshold Threshold above which temperature compensation will
+ * be performed. This can be useful to save power consumption if HFXT
+ * performance is acceptable at low temperatures, and only required at
+ * high temperatures. If the threshold is set to for example 80 degrees, then
+ * the first compensation will occur once the temperature reaches 81 degrees.
+ * Units in degrees Celsius.
+ * @param[in] tempDelta Delta describing how much the temperature can drift
+ * before compensation is applied. If compensation is performed at 81 degrees,
+ * and the delta is set to 5, then a re-compensation is performed at either
+ * 76 degrees or 86 degrees, depending on which temperature state occurs first.
+ * Units in degrees Celsius.
+ *
+ * @pre PowerLPF3_initHFXTCompensation()
+ */
+void PowerLPF3_enableHFXTCompensation(int16_t tempThreshold, int16_t tempDelta);
+
+/*!
+ * @brief Disable HFXT temperature compensation
+ *
+ * Disable automatic compensation for temperature-based frequency-drift of HFXT
+ *
+ * @note Calling this function will also undo any previous temperature compensation that has been
+ * performed in the past, and HFXT will become uncompensated
+ *
+ * @pre PowerLPF3_enableHFXTCompensation()
+ */
+void PowerLPF3_disableHFXTCompensation(void);
+
+/*!
+ * @brief Force HFXT temperature compensation update
+ *
+ * Should be called after releasing the #PowerLPF3_DISALLOW_SWTCXO constraint
+ * to ensure the correct HFXT frequency.
+ *
+ * @pre PowerLPF3_enableHFXTCompensation()
+ */
+void PowerLPF3_forceHFXTCompensationUpdate(void);
 
 /*!
  *  @brief  Start the AFOSC

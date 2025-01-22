@@ -1,0 +1,21 @@
+[
+    {
+        "files": [
+            "+../../Application/micro_cm_app.c -> Application/micro_cm_app.c",
+            "+../../Application/micro_cm_app.h -> Application/micro_cm_app.h",
+            "+../../Application/micro_ble_cm.c -> Application/micro_ble_cm.c",
+            "+../../Application/micro_ble_cm.h -> Application/micro_ble_cm.h",
+            "+../../Tools/Defines/connection_monitor_app.opt -> Tools/Defines/connection_monitor_app.opt",
+            "+../../Tools/Defines/build_config.opt -> Tools/Defines/build_config.opt",
+            "+../../RTLSCtrl/rtls_ble.h -> RTLSCtrl/rtls_ble.h",
+            "+../../RTLSCtrl/rtls_ctrl.c -> RTLSCtrl/rtls_ctrl.c",
+            "+../../RTLSCtrl/rtls_ctrl.h -> RTLSCtrl/rtls_ctrl.h",
+            "+../../RTLSCtrl/rtls_ctrl_api.h -> RTLSCtrl/rtls_ctrl_api.h",
+            "+../../RTLSCtrl/rtls_host.h -> RTLSCtrl/rtls_host.h",
+            "+../../RTLSCtrl/rtls_host_npi.c -> RTLSCtrl/rtls_host_npi.c",
+            "+../../Startup/main_freertos.c -> main_freertos.c",
+            "+../micro_cm_app.syscfg -> micro_cm_app.syscfg",
+            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+        ]
+    }
+]

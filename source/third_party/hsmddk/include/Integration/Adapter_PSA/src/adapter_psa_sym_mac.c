@@ -5,6 +5,38 @@
  * This file implements the symmetric crypto mac services.
  */
 
+/*
+ * Copyright (c) 2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                                                            */
 /*   Module        : DDK-130_bsd                                              */
@@ -55,7 +87,7 @@
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_internal.h>
-
+#include <third_party/hsmddk/include/Config/cs_mbedtls.h>
 
 /*----------------------------------------------------------------------------
  * Definitions and macros
@@ -327,7 +359,7 @@ get_mac_algorithm(uint32_t alg,
         {
         case PSA_ALG_CMAC:
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 Algorithm = VEXTOKEN_ALGO_MAC_ARIA_CMAC;
             }
@@ -339,7 +371,7 @@ get_mac_algorithm(uint32_t alg,
             break;
         case PSA_ALG_CBC_MAC:
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+            if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
                 Algorithm = VEXTOKEN_ALGO_MAC_ARIA_CBC_MAC;
             }
@@ -367,7 +399,7 @@ get_mac_algorithm(uint32_t alg,
  * psa_mac_compute
  */
 psa_status_t
-psa_mac_compute(psa_key_id_t key,
+psa_mac_compute(mbedtls_svc_key_id_t key,
                 psa_algorithm_t alg,
                 const uint8_t * input,
                 size_t input_length,
@@ -385,7 +417,7 @@ psa_mac_compute(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_SIGN_MESSAGE != (pKey->attributes.usage & PSA_KEY_USAGE_SIGN_MESSAGE))
+    else if (PSA_KEY_USAGE_SIGN_MESSAGE != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_SIGN_MESSAGE))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -499,7 +531,7 @@ psa_mac_compute(psa_key_id_t key,
             {
             case PSA_ALG_CMAC:
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-                if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+                if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
                 {
                     t_cmd.Algorithm = VEXTOKEN_ALGO_MAC_ARIA_CMAC;
                 }
@@ -512,7 +544,7 @@ psa_mac_compute(psa_key_id_t key,
                 break;
             case PSA_ALG_CBC_MAC:
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-                if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+                if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
                 {
                     t_cmd.Algorithm = VEXTOKEN_ALGO_MAC_ARIA_CBC_MAC;
                 }
@@ -541,7 +573,7 @@ psa_mac_compute(psa_key_id_t key,
             else
             {
                 /* Make sure the key is available in the Asset Store */
-                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
                 if (PSA_SUCCESS == funcres)
                 {
                     /* Format service request (key AssetId is already filled in) */
@@ -580,7 +612,7 @@ psa_mac_compute(psa_key_id_t key,
                         /* MISRA - Intentially empty */
                     }
 
-                    psaInt_KeyMgmtReleaseKey(pKey);
+                    (void)psaInt_KeyMgmtReleaseKey(pKey);
                 }
                 else
                 {
@@ -603,7 +635,7 @@ psa_mac_compute(psa_key_id_t key,
  * psa_mac_verify
  */
 psa_status_t
-psa_mac_verify(psa_key_id_t key,
+psa_mac_verify(mbedtls_svc_key_id_t key,
                psa_algorithm_t alg,
                const uint8_t * input,
                size_t input_length,
@@ -621,7 +653,7 @@ psa_mac_verify(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_VERIFY_MESSAGE != (pKey->attributes.usage & PSA_KEY_USAGE_VERIFY_MESSAGE))
+    else if (PSA_KEY_USAGE_VERIFY_MESSAGE != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_VERIFY_MESSAGE))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -734,7 +766,7 @@ psa_mac_verify(psa_key_id_t key,
             {
             case PSA_ALG_CMAC:
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-                if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+                if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
                 {
                     t_cmd.Algorithm = VEXTOKEN_ALGO_MAC_ARIA_CMAC;
                 }
@@ -747,7 +779,7 @@ psa_mac_verify(psa_key_id_t key,
                 break;
             case PSA_ALG_CBC_MAC:
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-                if (PSA_KEY_TYPE_ARIA == pKey->attributes.type)
+                if (PSA_KEY_TYPE_ARIA == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
                 {
                     t_cmd.Algorithm = VEXTOKEN_ALGO_MAC_ARIA_CBC_MAC;
                 }
@@ -777,7 +809,7 @@ psa_mac_verify(psa_key_id_t key,
             else
             {
                 /* Make sure the key is available in the Asset Store */
-                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+                funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
                 if (PSA_SUCCESS == funcres)
                 {
                     /* Format service request (key AssetId is already filled in) */
@@ -817,7 +849,7 @@ psa_mac_verify(psa_key_id_t key,
                         /* MISRA - Intentially empty */
                     }
 
-                    psaInt_KeyMgmtReleaseKey(pKey);
+                    (void)psaInt_KeyMgmtReleaseKey(pKey);
                 }
                 else
                 {
@@ -836,7 +868,7 @@ psa_mac_verify(psa_key_id_t key,
  */
 psa_status_t
 psa_mac_sign_setup(psa_mac_operation_t * operation,
-                   psa_key_id_t key,
+                   mbedtls_svc_key_id_t key,
                    psa_algorithm_t alg)
 {
     psa_status_t funcres = PSA_SUCCESS;
@@ -847,7 +879,7 @@ psa_mac_sign_setup(psa_mac_operation_t * operation,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_SIGN_MESSAGE != (pKey->attributes.usage & PSA_KEY_USAGE_SIGN_MESSAGE))
+    else if (PSA_KEY_USAGE_SIGN_MESSAGE != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_SIGN_MESSAGE))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -917,7 +949,11 @@ psa_mac_sign_setup(psa_mac_operation_t * operation,
             else
             {
                 operation->TempAssetId = PSA_ASSETID_INVALID;
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
                 operation->key = PSA_KEY_ID_NULL;
+#endif
             }
         }
     }
@@ -925,7 +961,11 @@ psa_mac_sign_setup(psa_mac_operation_t * operation,
     {
         if (NULL != operation)
         {
-            operation->key = PSA_KEY_ID_NULL;
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
+                operation->key = PSA_KEY_ID_NULL;
+#endif
         }
         else
         {
@@ -942,7 +982,7 @@ psa_mac_sign_setup(psa_mac_operation_t * operation,
  */
 psa_status_t
 psa_mac_verify_setup(psa_mac_operation_t * operation,
-                     psa_key_id_t key,
+                     mbedtls_svc_key_id_t key,
                      psa_algorithm_t alg)
 {
     psa_status_t funcres = PSA_SUCCESS;
@@ -953,7 +993,7 @@ psa_mac_verify_setup(psa_mac_operation_t * operation,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_VERIFY_MESSAGE != (pKey->attributes.usage & PSA_KEY_USAGE_VERIFY_MESSAGE))
+    else if (PSA_KEY_USAGE_VERIFY_MESSAGE != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_VERIFY_MESSAGE))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -1023,7 +1063,11 @@ psa_mac_verify_setup(psa_mac_operation_t * operation,
             else
             {
                 operation->TempAssetId = PSA_ASSETID_INVALID;
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
                 operation->key = PSA_KEY_ID_NULL;
+#endif
             }
         }
     }
@@ -1031,7 +1075,11 @@ psa_mac_verify_setup(psa_mac_operation_t * operation,
     {
         if (NULL != operation)
         {
-            operation->key = PSA_KEY_ID_NULL;
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
+                operation->key = PSA_KEY_ID_NULL;
+#endif
         }
         else
         {
@@ -1103,7 +1151,7 @@ psa_mac_update(psa_mac_operation_t * operation,
             uint32_t size;
 
             /* Make sure the key is available in the Asset Store */
-            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
             if (PSA_SUCCESS == funcres)
             {
                 /* Format service request (key AssetId is already filled in) */
@@ -1233,7 +1281,7 @@ psa_mac_update(psa_mac_operation_t * operation,
                     /* MISRA - Intentially empty */
                 }
 
-                psaInt_KeyMgmtReleaseKey(pKey);
+                (void)psaInt_KeyMgmtReleaseKey(pKey);
             }
             else
             {
@@ -1313,7 +1361,7 @@ psa_mac_sign_finish(psa_mac_operation_t * operation,
             }
 
             /* Make sure the key is available in the Asset Store */
-            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
             if (PSA_SUCCESS == funcres)
             {
                 /* Format service request (key AssetId is already filled in) */
@@ -1357,7 +1405,11 @@ psa_mac_sign_finish(psa_mac_operation_t * operation,
                         (void)memcpy(mac, t_res.Mac, MacNBytes);
                         *mac_length = MacNBytes;
                         (void)psaInt_KeyMgmtClrKeyInUse(operation->key);
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                        operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
                         operation->key = PSA_KEY_ID_NULL;
+#endif
                         if (operation->TempAssetId != PSA_ASSETID_INVALID)
                         {
                             (void)psaInt_AssetFree(operation->TempAssetId);
@@ -1370,7 +1422,7 @@ psa_mac_sign_finish(psa_mac_operation_t * operation,
                     /* MISRA - Intentially empty */
                 }
 
-                psaInt_KeyMgmtReleaseKey(pKey);
+                (void)psaInt_KeyMgmtReleaseKey(pKey);
             }
             else
             {
@@ -1448,7 +1500,7 @@ psa_mac_verify_finish(psa_mac_operation_t * operation,
             }
 
             /* Make sure the key is available in the Asset Store */
-            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, NULL, 0, NULL);
+            funcres = psaInt_KeyMgmtLoadKey(pKey, &t_cmd.KeyAssetId, 0, 0, NULL, 0, NULL);
             if (PSA_SUCCESS == funcres)
             {
                 /* Format service request (key AssetId is already filled in) */
@@ -1491,7 +1543,11 @@ psa_mac_verify_finish(psa_mac_operation_t * operation,
                     else
                     {
                         (void)psaInt_KeyMgmtClrKeyInUse(operation->key);
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                        operation->key = MBEDTLS_SVC_KEY_ID_NULL;
+#else
                         operation->key = PSA_KEY_ID_NULL;
+#endif
                         if (operation->TempAssetId != PSA_ASSETID_INVALID)
                         {
                             (void)psaInt_AssetFree(operation->TempAssetId);
@@ -1508,7 +1564,7 @@ psa_mac_verify_finish(psa_mac_operation_t * operation,
                     /* MISRA - Intentially empty */
                 }
 
-                psaInt_KeyMgmtReleaseKey(pKey);
+                (void)psaInt_KeyMgmtReleaseKey(pKey);
             }
             else
             {

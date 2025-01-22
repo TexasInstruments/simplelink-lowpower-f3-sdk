@@ -43,7 +43,7 @@ that a BLE device exposes to remote devices. The name is a character string \
 held in the Device Name characteristic.\n
 For more information, refer to the [BLE User's Guide](ble5stack/ble_user_\
 guide/html/ble-stack-5.x/gatt.html#gatt-services-and-profile).\n
-__Range__: Max Length of Device Name Attribute is 21`
+__Range__: Max Length of Device Name Attribute is 31`
 
 // Long description for the addressMode configuration parameter
 const addressModeLongDescription = `Devices are identified using a device \

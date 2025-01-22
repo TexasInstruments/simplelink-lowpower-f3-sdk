@@ -178,7 +178,7 @@ void HalDriverInit (void)
  *
  * @return  None
  **************************************************************************************************/
-uint16 Hal_ProcessEvent( uint8 task_id, uint16 events )
+uint32 Hal_ProcessEvent( uint8 task_id, uint32 events )
 {
   uint8 *msgPtr;
 

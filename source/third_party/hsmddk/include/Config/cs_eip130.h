@@ -53,6 +53,10 @@
 //#define EIP130_STRICT_ARGS
 #endif
 
+/** Use this define to enable CRC24_OK check. A bit in the module status register
+ */
+// #define EIP130_PERFORM_CRC24_OK_CHECK
+
 /** Next defines are Hardware / Firmware specific
  *  Note that the setting of these defines depend on the used hardware/firmware
  *  configuration.

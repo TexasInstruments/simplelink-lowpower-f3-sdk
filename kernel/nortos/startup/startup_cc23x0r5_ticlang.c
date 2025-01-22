@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ extern unsigned long __STACK_END;
 //! the program if located at a start address other than 0.
 //
 //*****************************************************************************
-__attribute__((section(".resetVecs"), retain)) static void (*const resetVectors[])(void) = {
+__attribute__((section(".resetVecs"), retain)) void (*const resetVectors[])(void) = {
     (void (*)(void))((unsigned long)&__STACK_END),
     resetISR,          //  1 The reset handler
     nmiISR,            //  2 The NMI handler

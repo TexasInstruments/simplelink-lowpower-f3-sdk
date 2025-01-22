@@ -87,7 +87,7 @@ static void adcNoiseCallback(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events 
     Power_releaseDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Release power constraint to allow standby */
-    hal_power_release_constraint();
+    hal_power_release_standby_constraint();
 }
 
 /******************************************************************************
@@ -107,7 +107,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
     Power_setDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Prevent the system from going to standby because BUFRAM doesn't have retention */
-    hal_power_set_constraint();
+    hal_power_set_standby_constraint();
 
     RCL_init();
 
@@ -136,7 +136,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
     Power_releaseDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Release power constraint to allow standby */
-    hal_power_release_constraint();
+    hal_power_release_standby_constraint();
 
     return RCL_STATUS_TO_WRAPPER_STATUS(status);
 }
@@ -155,7 +155,7 @@ int_fast16_t RCL_AdcNoise_get_samples_callback(uint32_t* buffer, uint32_t numWor
     Power_setDependency(PowerLPF3_PERIPH_LRFD_BUFRAM);
 
     /* Prevent the system from going to standby because BUFRAM doesn't have retention */
-    hal_power_set_constraint();
+    hal_power_set_standby_constraint();
 
     RCL_init();
 

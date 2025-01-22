@@ -38,7 +38,7 @@
 <p>The <a href="https://www.ti.com/tool/LP-EM-CC2340R5"><strong>SimpleLink™ CC2340R5 LaunchPad™</strong></a> contains a <a href="https://www.ti.com/product/CC2340R5"><strong>CC2340R52E0RKPR</strong></a> device.</p>
 <h2 id="jumper-settings">Jumper Settings</h2>
 <ul>
-<li>Close the <strong><code>LEDs</code></strong> jumper to enable the on-board LEDs.</li>
+<li>Close the <strong><code>LEDs</code></strong> jumpers to enable the on-board LEDs.</li>
 </ul>
 <h2 id="sysconfig-board-file">SysConfig Board File</h2>
 <p>The <a href="../.meta/LP_EM_CC2340R5.syscfg.json">LP_EM_CC2340R5.syscfg.json</a> is a handcrafted file used by SysConfig. It describes the physical pin-out and components on the LaunchPad.</p>
@@ -67,6 +67,36 @@
 <ul>
 <li>No modifications are needed.</li>
 </ul>
+<h3 id="bp-em-cs-boosterpackbp-em-cs"><a href="https://www.ti.com/tool/BP-EM-CS"><strong>BP-EM-CS BoosterPack</strong></a></h3>
+<p>When using a CC23X0 board, connect the P3 and P4 jumpers, and disconnect the P1 and P2 jumpers on the BoosterPack. Add only the VC pins labelled CC23X0 in SysConfig and make sure they are configured as output.</p>
+<p>The VC pins are used to select the antenna on the BoosterPack:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>RF1 (J2)</th>
+<th>RF2 (A1)</th>
+<th>RF3 (A2)</th>
+<th>RF4 (J3)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>VC1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>VC2</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
 <!-- Close div from before_body_template.html -->
 </div>
 <footer id="tiFooter">

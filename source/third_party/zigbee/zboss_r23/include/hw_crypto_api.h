@@ -67,7 +67,7 @@ zb_ret_t zb_hw_ecdh_p256_shared_secret(zb_uint8_t s[32],
 #define ZB_ECDH_P256_SHARED_SECRET zb_sw_ecdh_p256_shared_secret
 #endif
 
-#if defined(ZB_HW_HMAC_SHA_256) && defined(ZB_DIRECT_ENABLED)
+#if defined(ZB_HW_HMAC_SHA_256) //&& defined(ZB_DIRECT_ENABLED)
 zb_ret_t zb_hw_hmac_sha_256(const zb_uint8_t *key, const zb_size_t key_len,
                          const zb_uint8_t *input, const zb_size_t input_len, zb_uint8_t *output);
 
@@ -75,6 +75,15 @@ zb_ret_t zb_hw_hmac_sha_256(const zb_uint8_t *key, const zb_size_t key_len,
 #else
 #define ZB_HMAC_SHA_256 zb_sw_hmac_sha_256
 #endif /* ZB_HW_HMAC_SHA_256 && ZB_DIRECT_ENABLED */
+
+#if defined(ZB_HW_SHA_256)
+void zb_hw_sha_256(const zb_uint8_t *input, const zb_size_t input_len, zb_uint8_t output[32]);
+
+#define ZB_SHA_256 zb_hw_sha_256
+#else
+#define ZB_SHA_256 zb_sw_sha_256
+#endif /* ZB_HW_SHA_256 */
+
 
 #ifdef ZB_HW_CCM_ENCRYPT_N_AUTH_RAW
 zb_ret_t zb_hw_ccm_encrypt_n_auth_raw(zb_uint8_t *key,

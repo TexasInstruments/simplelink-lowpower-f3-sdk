@@ -45,7 +45,11 @@
 
 "use strict";
 
-const driverlib = system.getScript("/ti/devices/.meta/DriverLib.syscfg.js");
+// Get PM Settings script
+const pmScript = system.getScript("/ti/zigbee/pm/zigbee_pm.syscfg.js");
+const rfScript = system.getScript("/ti/zigbee/rf/zigbee_rf.syscfg.js");
+const networkScript = system.getScript("/ti/zigbee/network/zigbee_network.syscfg.js");
+const subsections = [pmScript, rfScript, networkScript];
 
 const modulelongDescription = `TI implementation of the ZigBee network stack, \
 building the ZigBee 3.0 Specification on top of the IEEE 802.15.4 Specification.`
@@ -55,19 +59,27 @@ const deviceTypeLongDescription = `The logical device type for the ZigBee node.`
 /* Static module definition for zigbee module */
 const moduleStatic = {
     config: [
+        {
+            name: "loggingEnabled",
+            displayName: "Enable Logging",
+            hidden : false,
+            description: `This setting will enable logging for the Zigbee Stack`,
+            default: false
+        },
         /* Device Type Configurable */
         {
             name: "deviceType",
-            displayName: "Device Type",
+            displayName: "Enabled Device Types",
             description: "The logical device type for the ZigBee node.",
             longDescription: deviceTypeLongDescription,
-            default: "zc",
+            default: ["zc"],
+            minSelections: 1,
+            onChange: onDeviceTypeChange,
             options: [
                 {name: "zc", displayName: "ZigBee Coordinator"},
                 {name: "zr", displayName: "ZigBee Router"},
                 {name: "zed", displayName: "ZigBee End Device"},
                 {name: "gpd", displayName: "Green Power Device"},
-                //{name: "znp", displayName: "ZigBee Network Processor"}
             ]
         },
         {
@@ -82,16 +94,47 @@ const moduleStatic = {
             hidden: true,
         },
         {
-            name: "loggingEnabled",
-            displayName: "Enable Logging",
-            hidden : false,
-            description: `This setting will enable logging for the Zigbee Stack`,
+            name: "zgpDirectEnabled",
+            displayName: "Enable Green Power Direct Support",
+            hidden : true,
+            description: `Ability to receive any Green Power frame in both direct mode and in tunneled mode`,
             default: false
         },
+        pmScript.config,
+        rfScript.config,
+        networkScript.config,
     ],
     moduleInstances: moduleInstances,
-    modules: modules
+    modules: modules,
+    validate: validate
 };
+
+/* Validation function for the network submodule */
+function validate(inst, validation)
+{
+    pmScript.validate(inst, validation);
+    networkScript.validate(inst, validation);
+
+    if(inst.deviceType.includes("zc"))
+    {
+        if(inst.deviceType.includes("zed"))
+        {
+            validation.logError(
+                "ZC and ZED roles cannot be enabled simultaneously",
+                inst, "deviceType"
+            );
+        }
+    }
+
+    if(inst.deviceType.includes("gpd") && inst.deviceType.length > 1)
+    {
+        validation.logError(
+            "GPD role cannot be enabled with any other roles",
+            inst, "deviceType"
+        );
+    }
+}
+
 
 
 /* Submodule instance definitions */
@@ -99,12 +142,12 @@ function moduleInstances(inst)
 {
     const submodules = [];
 
-    if(inst.deviceType === "gpd")
+    if(inst.deviceType.includes("gpd"))
     {
         submodules.push({
             name: "gpdRf",
             displayName: "Radio",
-            description: "Configure default radio channel",
+            description: "Configure Green Power default radio channels",
             moduleName: "/ti/zigbee/gpd/zigbee_gpd_rf",
             collapsed: true
         });
@@ -128,35 +171,6 @@ function moduleInstances(inst)
             description: "Configure Green Power advanced settings",
             moduleName: "/ti/zigbee/gpd/zigbee_gpd_advanced",
             collapsed: true
-        });
-    }
-    else
-    {
-        submodules.push({
-            name: "pm",
-            displayName: "Power Management",
-            description: "Configure radio power settings",
-            moduleName: "/ti/zigbee/pm/zigbee_pm",
-            collapsed: true,
-            args: {deviceType: inst.deviceType}
-        });
-
-        submodules.push({
-            name: "rf",
-            displayName: "Radio",
-            description: "Configure default radio channel",
-            moduleName: "/ti/zigbee/rf/zigbee_rf",
-            collapsed: true
-        });
-
-        submodules.push({
-            name: "network",
-            displayName: "Network",
-            description: "Configure network identification and security "
-                         + "settings",
-            moduleName: "/ti/zigbee/network/zigbee_network",
-            collapsed: true,
-            args: {deviceType: inst.deviceType}
         });
     }
 
@@ -206,6 +220,7 @@ function moduleInstances(inst)
         hidden: true,
         args: {
             $name: "zb_ieee_15_4_phy",
+            phyType: "ieee_802_15_4",
             codeExportConfig: {
                 $name: "zb_ieee_15_4_phy_code_export"
             }
@@ -220,6 +235,7 @@ function moduleInstances(inst)
         hidden: true,
         args: {
             $name: "zb_ble_adc_noise",
+            phyType: "adc_noise",
             codeExportConfig: {
                 $name: "zb_ble_adc_noise_code_export",
                 symGenMethod: "Custom",
@@ -239,6 +255,36 @@ function moduleInstances(inst)
     });
 
     submodules.push({
+        name: "aesccm",
+        displayName: "AESCCM",
+        moduleName: "/ti/drivers/AESCCM",
+        collapsed: true,
+        args: {
+            $name: "CONFIG_AESCCM_ZB"
+        }
+    });
+
+    submodules.push({
+        name: "sha2",
+        displayName: "SHA2",
+        moduleName: "/ti/drivers/SHA2",
+        collapsed: true,
+        args: {
+            $name: "CONFIG_SHA2_ZB"
+        }
+    });
+
+    submodules.push({
+        name: "ecdh",
+        displayName: "ECDH",
+        moduleName: "/ti/drivers/ECDH",
+        collapsed: true,
+        args: {
+            $name: "CONFIG_ECDH_ZB"
+        }
+    });
+
+    submodules.push({
         name: "rng",
         displayName: "RNG",
         moduleName: "/ti/drivers/RNG",
@@ -248,15 +294,19 @@ function moduleInstances(inst)
         }
     });
 
-    const linkerDefs = driverlib.templates["/ti/utils/build/GenMap.cmd.xdt"].getLinkerDefs();
-    const flashSize = linkerDefs.find(function (element) {
-        return element.name == "FLASH0_SIZE";
-    }).value;
-    const flashBase = linkerDefs.find(function (element) {
-        return element.name == "FLASH0_BASE";
-    }).value;
+    let dev2FlashSize = {
+        "CC2340R22RKP": 0x00040000,
+        "CC2340R2RGE": 0x00040000,
+        "CC2340R5RKP": 0x00080000,
+        "CC2340R53RKP": 0x00080000,
+        "CC2745R7RHAQ1": 0x000C0000,
+        "CC2755R105RHA": 0x00100000,
+    };
 
-    if (inst.deviceType === "gpd")
+    const flashSize = dev2FlashSize[system.deviceData.deviceId] != undefined ? dev2FlashSize[system.deviceData.deviceId] : 0x00040000;
+    const flashBase = 0x00000000;
+
+    if (inst.deviceType.includes("gpd"))
     {
         submodules.push({
             name: "nvs",
@@ -275,6 +325,8 @@ function moduleInstances(inst)
     }
     else
     {
+        let flashLength = (inst.deviceType.includes("zr")) ? 0x2000 : 0x1000;
+
         submodules.push({
             name: "nvs",
             displayName: "NVS",
@@ -284,8 +336,8 @@ function moduleInstances(inst)
                 $name: "CONFIG_NVSINTERNAL_ZB",
                 internalFlash: {
                     $name: "zb_nvs",
-                    regionBase: flashBase + flashSize - 0x8000,
-                    regionSize: 0x8000
+                    regionBase: flashBase + flashSize - flashLength,
+                    regionSize: flashLength
                 }
             }
         });
@@ -331,6 +383,29 @@ function onDeviceTypeReadOnlyChange(inst, ui)
     }
 }
 
+/* Makes the device type read only when deviceTypeReadOnly is true */
+function onDeviceTypeChange(inst, ui)
+{
+    if(inst.deviceType.includes("zr") || inst.deviceType.includes("zc") || inst.deviceType.includes("zed"))
+    {
+        ui.zgpDirectEnabled.hidden = false;
+    }
+    else
+    {
+        inst.zgpDirectEnabled = false;
+        ui.zgpDirectEnabled.hidden = true;
+    }
+
+    let subsection = null;
+    for(subsection of subsections)
+    {
+        if(subsection["onDeviceTypeChange"] !== undefined)
+        {
+            subsection.onDeviceTypeChange(inst, ui);
+        }
+    }
+}
+
 /*
  * ======== getLibs ========
  * Contribute libraries to linker command file
@@ -348,25 +423,55 @@ function getLibs(inst)
 
     if(inst.$static.genLibs)
     {
-        let lib_name = ""
-        switch(inst.$static.deviceType)
+        let lib_names = [];
+        let log_suffix = "";
+        if(inst.$static.loggingEnabled)
         {
-            case "zc":
-            case "zr":
-                lib_name = "zb_coordinator_router_roles_gp_combo";
-                break;
-            case "zed":
-                lib_name = "zb_ed_role";
-                break;
-            case "gpd":
-                lib_name = "zb_gpd_role";
-                break;
-            default:
-                lib_name = inst.$static.deviceType;
-                break;
+            log_suffix = "_log";
         }
 
-        libs.push(`third_party/zigbee/libraries/${lib_name}/lib/${toolchain}/m0p/${lib_name}.a`);
+        if(inst.$static.deviceType.includes("zc"))
+        {
+            if(inst.$static.zgpDirectEnabled)
+            {
+                lib_names.push("zb_coordinator_router_roles_gp_combo");
+            }
+            else
+            {
+                lib_names.push("zb_coordinator_router_roles");
+            }
+            lib_names.push("zb_cluster_zc_zr", "zb_zdo_zc_zr", "zb_ti_platform_zc_zr" + log_suffix);
+        }
+        else if(inst.$static.deviceType.includes("zr"))
+        {
+            if(inst.$static.zgpDirectEnabled)
+            {
+                lib_names.push("zb_router_role_gp_combo");
+            }
+            else
+            {
+                lib_names.push("zb_router_role");
+            }
+            lib_names.push("zb_cluster_zr", "zb_zdo_zr", "zb_ti_platform_zc_zr" + log_suffix);
+        }
+        else if(inst.$static.deviceType.includes("zed"))
+        {
+            if(inst.$static.zgpDirectEnabled)
+            {
+                lib_names.push("zb_ed_role_target_plus");
+            }
+            else
+            {
+                lib_names.push("zb_ed_role");
+            }
+            lib_names.push("zb_cluster_ed", "zb_zdo_ed", "zb_ti_platform_zed" + log_suffix);
+        }
+        else
+        {
+            lib_names.push("zb_gpd_role");
+        }
+
+        lib_names.forEach((lib_name) => libs.push(`third_party/zigbee/libraries/${lib_name}/lib/${toolchain}/m0p/${lib_name}.a`));
     }
 
 
@@ -386,23 +491,33 @@ function getLibs(inst)
 function getOpts(inst) {
     let result = []
 
-    switch(inst.$static.deviceType)
+    if(inst.$static.deviceType.includes("zc"))
     {
-        case "zc":
-            result.push("-DZB_COORDINATOR_ROLE", "-DZB_ROUTER_ROLE");
-            break;
-        case "zr":
-            result.push("-DZB_ROUTER_ROLE");
-            break;
-        case "zed":
-            result.push("-DZB_ED_ROLE");
-            break;
-        case "gpd":
-            result.push("-DZB_ZGPD_ROLE");
-            break;
-        default:
-            result.push("-DZB_COORDINATOR_ROLE");
-            break;
+        result.push("-DZB_COORDINATOR_ROLE", "-DZB_ROUTER_ROLE");
+        if(inst.$static.zgpDirectEnabled)
+        {
+            result.push("-DZB_ENABLE_ZGP_COMBO");
+        }
+    }
+    else if(inst.$static.deviceType.includes("zr"))
+    {
+        result.push("-DZB_ROUTER_ROLE");
+        if(inst.$static.zgpDirectEnabled)
+        {
+            result.push("-DZB_ENABLE_ZGP_COMBO");
+        }
+    }
+    else if(inst.$static.deviceType.includes("zed"))
+    {
+        result.push("-DZB_ED_ROLE");
+        if(inst.$static.zgpDirectEnabled)
+        {
+            result.push("-DZB_ENABLE_ZGP_TARGET_PLUS");
+        }
+    }
+    else
+    {
+        result.push("-DZB_ZGPD_ROLE");
     }
 
     return result;

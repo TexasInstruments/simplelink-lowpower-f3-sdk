@@ -62,9 +62,11 @@ typedef enum
 typedef enum
 {
     RCL_IEEE_AckOk,             /*!< ACK was entered successfully */
-    RCL_IEEE_AckNotExpected,    /*!< Ack was not expected */
-    RCL_IEEE_AckTooLate,        /*!< Ack was provided too late */
+    RCL_IEEE_AckPartial,        /*!< Part of ACK entered successfully; more data expected */
+    RCL_IEEE_AckNotExpected,    /*!< Ack was not expected or payload was provided too late */
+    RCL_IEEE_AckAborted,        /*!< Ack transmission was aborted because of request or error */
     RCL_IEEE_AckError,          /*!< Data entry or pointer was not correct */
+    RCL_IEEE_AckNotProcessed,   /*!< Ack processing not finished as expected */
 } RCL_IEEE_AckEntryResult;
 
 
@@ -101,19 +103,57 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeee_PanIdA
  */
 RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_PanConfig *newPanConfig, uint32_t panNumber);
 
+
 /**
- *  @brief  Provide ACK frame to be transmitted in response to received packet
+ *  @brief  Provide ACK data to be transmitted in response to received packet
  *
- *  Provide an ACK frame, which will be transmitted if the frame was received successfully
+ *  Provide an ACK frame or the parts of it, which will be transmitted if the frame was received successfully
  *
  *  @param  cmd                 Existing IEEE command for which to enter ACK
- *  @param  ackEntry            ACK to be transmitted over the air
+ *  @param  ackData             Pointer to data that will be appended; first part should be of type %RCL_Buffer_DataEntry
+*   @param  numWords            Number of 32-bit words provided at this point; 0 if entry is complete
  *
  * @return                      Result telling if update was successful
- * @note                        Not supported in this version
+ * @note                        All pieces of data must be provided in portions of 32-bit words
  *
  */
-RCL_IEEE_AckEntryResult RCL_IEEE_enterAck(RCL_CmdIeeeRxTx *cmd, RCL_Buffer_DataEntry *ackEntry);
+RCL_IEEE_AckEntryResult RCL_IEEE_enterAck(RCL_CmdIeeeRxTx *cmd, uint32_t *ackData, uint8_t numWords);
+
+/**
+ *  @brief  Cancel transmission of ACK in response to received packet
+ *
+ *  Cancel transmission of an ACK by not starting it or aborting transmission
+ *
+ *  @param  cmd                 Existing IEEE command for which to enter ACK
+ *
+ * @return                      Result telling if update was successful
+ *
+ */
+RCL_IEEE_AckEntryResult RCL_IEEE_cancelAck(RCL_CmdIeeeRxTx *cmd);
+
+/**
+ *  @brief  Give pointer where a partially received frame can be read
+ *
+ *  @param[in]   cmd            Existing IEEE command receiving the frame
+ *  @param[out]  numBytesAvail  Number of bytes available to read
+ *
+ * @return                      Pointer to read from; NULL if no data is available
+ * @note                        The data is only guaranteed valid until the frame reception is finished
+ *
+ */
+RCL_Buffer_DataEntry *RCL_IEEE_getPartialFrame(RCL_CmdIeeeRxTx *cmd, uint8_t *numBytesAvail);
+
+/**
+ *  @brief  Read partially received frame into buffer
+ *
+ *  @param    cmd            Existing IEEE command receiving the frame
+ *  @param    dataEntry      Entry for storing data
+ *  @param    entrySize      Number of bytes available in entry, including header fields
+ *
+ * @return                   Number of bytes read into entry, including header fields
+ *
+ */
+size_t RCL_IEEE_readPartialFrame(RCL_CmdIeeeRxTx *cmd, RCL_Buffer_DataEntry *dataEntry, size_t entrySize);
 
 /**
  *  @brief  Update tx action

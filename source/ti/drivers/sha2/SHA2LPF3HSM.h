@@ -40,6 +40,7 @@
 #include <stdbool.h>
 
 #include <ti/drivers/SHA2.h>
+#include <ti/devices/DeviceFamily.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,7 +77,7 @@ typedef struct
     CryptoKey *key;
     uint32_t tempAssetID;
     uint32_t keyAssetID;
-    uint32_t digest[SHA2LPF3HSM_MAX_DIGEST_LENGTH_BYTES / sizeof(uint32_t)];
+    uint8_t digest[SHA2LPF3HSM_MAX_DIGEST_LENGTH_BYTES];
     uint8_t buffer[SHA2LPF3HSM_MAX_BLOCK_SIZE_BYTES];
     uint32_t accessTimeout;
     uint32_t bytesProcessed;
@@ -88,13 +89,15 @@ typedef struct
     uint8_t *input;
     uint8_t *output;
     size_t inputLength;
-    size_t outputLength;
     size_t digestLength;
     uint16_t bytesInBuffer;
     uint8_t algorithm;
     uint8_t mode;
     bool isOpen;
     volatile bool operationInProgress;
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    bool driverCreatedKeyAsset;
+#endif
 } SHA2LPF3HSM_Object;
 
 /*! \endcond */

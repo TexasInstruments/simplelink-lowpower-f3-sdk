@@ -50,6 +50,8 @@
  *
  */
 
+/*! @cond NODOC */
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -58,6 +60,9 @@
 
 #include <ti/drivers/ECDSA.h>
 #include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
+
+#include <ti/drivers/ECDH.h>
+#include <ti/drivers/ecdh/ECDHLPF3HSM.h>
 
 #include <ti/drivers/AESGCM.h>
 #include <ti/drivers/aesgcm/AESGCMLPF3HSM.h>
@@ -76,6 +81,9 @@
 
 #include <ti/drivers/AESCCM.h>
 #include <ti/drivers/aesccm/AESCCMLPF3.h>
+
+#include <ti/drivers/TRNG.h>
+#include <ti/drivers/trng/TRNGLPF3HSM.h>
 
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
@@ -105,6 +113,51 @@
  *  token in sufficient time.
  */
 #define HSMLPF3_STATUS_TIMEOUT ((int_fast16_t)-2)
+
+/*!
+ *  @brief   HSM is in Sleep Mode
+ *
+ *  Functions return #HSMLPF3_STATUS_TIMEOUT if the #HSMLPF3_ReturnBehavior is
+ *  set to #HSMLPF3_RETURN_BEHAVIOR_POLLING and the HSM does not provide an output
+ *  token in sufficient time.
+ */
+#define HSMLPF3_STATUS_IN_SLEEP_MODE ((int_fast16_t)-3)
+
+/*!
+ *  @brief  Acquiring a semaphore failed
+ *
+ *  Functions return #HSMLPF3_STATUS_RESOURCE_UNAVAILABLE if acquiring a
+ *  semaphore failed.
+ */
+#define HSMLPF3_STATUS_RESOURCE_UNAVAILABLE ((int_fast16_t)-4)
+
+/* The following defines are the default RNG configuration parameters */
+
+/* Default TRNG parameters */
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_AUTOSEED           0xFF
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_SAMPLE_CYCLE       0x4BBE
+#define HSMLPF3_RNG_CONFG_TRNG_MAX_SAMPLE_CYCLE           0x00
+#define HSMLPF3_RNG_CONFG_DEFAULT_NOISEBLOCKS             0x01
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_SCALE              0x01
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_SAMPLEDIV          0x00
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_REPCNTCUTOFF       0x09
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_ADAPTPROP64CUTOFF  0x15
+#define HSMLPF3_RNG_CONFG_TRNG_DEFAULT_ADAPTPROP512CUTOFF 0x47
+
+/* Default CRNG parameters */
+#define HSMLPF3_RNG_CONFG_CRNG_DEFAULT_AUTOSEED 0x1
+#define HSMLPF3_RNG_CONFG_CRNG_DEFAULT_MIXCYCLE 0x2
+
+#define HSMLPF3_RETVAL_MASK MASK_8_BITS
+
+/*!
+ *  @brief  Enum for the NRBG engine type
+ */
+typedef enum
+{
+    HSMLPF3_MODE_CRNG = 1,
+    HSMLPF3_MODE_TRNG = 2,
+} HSMLPF3_NRBGMode;
 
 /*!
  * @brief   The way in which #HSMLPF3_waitForResult() function calls return after performing an
@@ -169,11 +222,6 @@ typedef struct
     uintptr_t driverHandle;
 } HSMLPF3_Operation;
 
-#define AES_MODE_ENCRYPT 1U
-#define AES_MODE_DECRYPT 0U
-
-#define HSMLPF3_RETVAL_MASK MASK_8_BITS
-
 /*!
  *  @brief  Initializes the HWI and semaphores for HSMLPF3.
  *
@@ -201,8 +249,9 @@ void HSMLPF3_disableClock(void);
  *  This function submits a sleep token to the HSM, and waits for a
  *  successful token result.
  *
- *  Calling this function when the HSM is already asleep will still
- *  submit a sleep token.
+ *  Calling this function when the HSM is in sleep mode will
+ *  return a HSMLPF3_STATUS_IN_SLEEP_MODE status code indicating
+ *  that the HSM is already asleep.
  *
  *  @pre    #HSMLPF3_init() has to be called first.
  *
@@ -210,6 +259,21 @@ void HSMLPF3_disableClock(void);
  *  @retval #HSMLPF3_STATUS_ERROR                 Error. Error output token, or HSM in bad state.
  */
 int_fast16_t HSMLPF3_sleep(void);
+
+/*!
+ *  @brief  Revives the HSM from sleep mode.
+ *
+ *  This function submits a resume token to the HSM, and waits for a
+ *  successful token result.
+ *
+ *  Calling this function when the HSM is not in sleep mode will do nothing.
+ *
+ *  @pre    #HSMLPF3_sleep() has to be called first.
+ *
+ *  @retval #HSMLPF3_STATUS_SUCCESS               HSM woke up from sleep successfully.
+ *  @retval #HSMLPF3_STATUS_ERROR                 Error. Error output token, or HSM in bad state.
+ */
+int_fast16_t HSMLPF3_wakeUp(void);
 
 /*!
  *  @brief  Initializes the HSM and HSMLPF3 driver for token submissions.
@@ -227,6 +291,17 @@ int_fast16_t HSMLPF3_sleep(void);
  *  @retval #HSMLPF3_STATUS_ERROR                 Error. Failed boot or mailbox initiailization.
  */
 int_fast16_t HSMLPF3_init(void);
+
+/*!
+ *  @brief  Provisions the HUK to the HSM
+ *
+ *  @pre    #HSMLPF3_init() to initialize and boot up the HSM.
+ *
+ *  @retval #HSMLPF3_STATUS_SUCCESS                       Provisioning the HUK into the HSM was successful
+ *  @retval #HSMLPF3_STATUS_ERROR                         Provisioning the HUK failed
+ *  @retval #HSMLPF3_STATUS_RESOURCE_UNAVAILABLE          Error when acquiring a semaphore
+ */
+int_fast16_t HSMLPF3_provisionHUK(void);
 
 /*!
  *  @brief  Acquires the HSMLPF3_accessSemaphore.
@@ -260,10 +335,9 @@ void HSMLPF3_releaseLock(void);
 /*!
  *  @brief  Submits a token to the HSM mailbox.
  *
- *  This function will convert the provided logical token
- *  into a physical token for the HSM to process. It will also
- *  save the operation metadata to the HSMLPF3 driver, for use
- *  in #HSMLPF3_waitForResult().
+ *  This function will submit the operation.commandToken to the HSM mailbox
+ *  and kick-off the HSM operation. It will also save the operation metadata
+ *  to the HSMLPF3 driver, for use in #HSMLPF3_waitForResult().
  *
  *  @param  [in] retBehavior    Driver's return behavior for use in
  *                              #HSMLPF3_waitForResult().
@@ -320,6 +394,21 @@ int_fast16_t HSMLPF3_cancelOperation(void);
  */
 bool HSMLPF3_isOperationInProgress(void);
 
+/*!
+ *  @brief returns the value of HSMLPF3_operationInProgress
+ *
+ *  @retval HSMLPF3_NRBGMode            The current NRBG state
+ */
+HSMLPF3_NRBGMode HSMLPF3_getCurrentNRBGMode(void);
+
+/*!
+ *  @brief switch NRBG Mode CRNG -> TRNG or vice-versa
+ *
+ *  @pre Call TRNGLPF3HSM_switchNrbgMode() API with the newNrbgMode
+ *
+ */
+void HSMLPF3_updateInternalNRBGMode();
+
 /*
  *  ================ APIs to handle result token data ================
  */
@@ -351,14 +440,15 @@ uint32_t HSMLPF3_getResultAssetID(void);
  *
  *  @param  [in] digestLength User's digest length
  */
-void HSMLPF3_getResultDigest(uint32_t *digest, size_t digestLength);
+void HSMLPF3_getResultDigest(uint8_t *digest, size_t digestLength);
 
 /*!
  *  @brief  Fetches the AES tag
  *
- *  @param  [in] object             Pointer to copy tag to
+ *  @param  [in] mac                Pointer to copy tag to
+ *  @param  [in] macLength          Length of mac to get
  */
-void HSMLPF3_getAESEncryptTag(uint8_t *mac);
+void HSMLPF3_getAESEncryptTag(void *mac, size_t macLength);
 
 /*!
  *  @brief  Fetches the AES IV
@@ -374,6 +464,15 @@ void HSMLPF3_getAESIV(uint8_t *iv);
  *  @param  [in] macLength          Length of the mac
  */
 void HSMLPF3_getAESCMACSignMac(uint8_t *mac, uint8_t macLength);
+
+/*!
+ *  @brief  Fetches the content of a public data asset
+ *
+ *  @param  [in] assetId            Asset Identification Number
+ *  @param  [in] data               Location to copy the data to
+ *  @param  [in] dataLength         Data length
+ */
+void HSMLPF3_getPublicDataRead(uint32_t assetId, const uint8_t *data, uint8_t dataLength);
 
 /*
  *  ================ APIs to construct key/asset management-related command tokens ================
@@ -424,6 +523,27 @@ void HSMLPF3_constructDeleteAssetToken(uint32_t assetId);
 void HSMLPF3_constructSHA2PhysicalToken(SHA2LPF3HSM_Object *object);
 
 /*!
+ *  @brief  Constructs a ECDH gen pub key command token
+ *
+ *  @param  [in] object             ECDHLPF3HSM_Object object
+ */
+void HSMLPF3_constructECDHGenPubPhysicalToken(ECDHLPF3HSM_Object *object);
+
+/*!
+ *  @brief  Constructs a ECDH gen shared secret command token
+ *
+ *  @param  [in] object             ECDHLPF3HSM_Object object
+ */
+void HSMLPF3_constructECDHGenShrdSecPhysicalToken(ECDHLPF3HSM_Object *object);
+
+/*!
+ *  @brief  Constructs a ECDH ECC key check command token
+ *
+ *  @param  [in] object             ECDHLPF3HSM_Object object
+ */
+void HSMLPF3_constructECDHVerifyKeysPhysicalToken(ECDHLPF3HSM_Object *object);
+
+/*!
  *  @brief  Constructs a ECDSA sign/verify command token
  *
  *  @param  [in] object             ECDSALPF3HSM object
@@ -460,78 +580,83 @@ void HSMLPF3_constructECDHPKAOperationPhysicalToken(uint8_t operation,
                                                     uint32_t inputLength);
 
 /*!
- *  @brief  Constructs an AES-GCM one-step/segmented command token
+ *  @brief  Constructs an AES-GCM Token
  *
- *  @param  [in] object             The AESGCMLPF3HSM object that contains necessary data
+ *  @param  [in] object             The AESGCMLPF3HSM object that contains necessary data.
+ *  @param  [in] saveIV             Should the IV be saved to temporary state asset.
+ *  @param  [in] loadIV             Should the IV be loaded from a temporary state asset.
  */
-void HSMLPF3_constructAESGCMOneStepPhysicalToken(AESGCMLPF3HSM_Object *object);
+void HSMLPF3_constructGCMToken(const AESGCMLPF3HSM_Object *object, bool saveIV, bool loadIV);
 
 /*!
- *  @brief  Populate the command token to reflect an AES-GCM segmented AAD operation
+ *  @brief  Constructs an AES-CCM Token
  *
- *  @param  [in] object             The AESGCMLPF3HSM object that contains necessary data
+ *  @param  [in] object             The AESCCMLPF3 object that contains necessary data.
+ *  @param  [in] saveIV             Should the IV be saved to temporary state asset.
+ *  @param  [in] loadIV             Should the IV be loaded from a temporary state asset.
  */
-void HSMLPF3_constructAESGCMSegmentedAADPhysicalToken(AESGCMLPF3HSM_Object *object);
-
-/*!
- *  @brief  Populate the command token to reflect an AES-GCM segmented or final data operation
- *
- *  @param  [in] object             The AESGCMLPF3HSM object that contains necessary data
- */
-void HSMLPF3_constructAESGCMSegmentedDataPhysicalToken(AESGCMLPF3HSM_Object *object);
-
-/*!
- *  @brief  Constructs an AES-CCM one-step/segmented command token
- *
- *  @param  [in] object             The AESCCMLPF3HSM object that contains necessary data
- */
-void HSMLPF3_constructAESCCMOneStepPhysicalToken(const AESCCMLPF3_Object *object);
-
-/*!
- *  @brief  Populate the command token to reflect an AES-CCM segmented AAD operation
- *
- *  @param  [in] object             The AESCCMLPF3HSM object that contains necessary data
- */
-void HSMLPF3_constructAESCCMSegmentedAADPhysicalToken(const AESCCMLPF3_Object *object);
-
-/*!
- *  @brief  Populate the command token to reflect an AES-CCM segmented or final data operation
- *
- *  @param  [in] object             The AESCCMLPF3HSM object that contains necessary data
- */
-void HSMLPF3_constructAESCCMSegmentedDataPhysicalToken(const AESCCMLPF3_Object *object);
+void HSMLPF3_constructCCMToken(const AESCCMLPF3_Object *object, bool saveIV, bool loadIV);
 
 /*!
  *  @brief  Constructs an AES-ECB one-step command token
  *
  *  @param  [in] object             The AESECBLPF3 object that contains necessary data
+ *  @param  [in] key                Pointer to key material if it has been retrieved in plaintext
  */
-void HSMLPF3_constructAESECBOneStepPhysicalToken(AESECBLPF3_Object *object);
+void HSMLPF3_constructAESECBOneStepPhysicalToken(AESECBLPF3_Object *object, uint8_t *key);
 
 /*!
  *  @brief  Constructs an AES-CTR one-step command token
  *
  *  @param  [in] object             The AESCTRLPF3 object that contains necessary data
+ *  @param  [in] key                Pointer to key material if it has been retrieved in plaintext
  */
-void HSMLPF3_constructAESCTROneStepPhysicalToken(AESCTRLPF3_Object *object);
+void HSMLPF3_constructAESCTROneStepPhysicalToken(AESCTRLPF3_Object *object, uint8_t *key);
 
 /*
  *  @brief  Constructs an AES-CBC one-step command token
  *
  *  @param  [in] object             The AESCBCLPF3 object that contains necessary data
+ *  @param  [in] key                Pointer to key material if it has been retrieved in plaintext
  */
-void HSMLPF3_constructAESCBCOneStepPhysicalToken(AESCBCLPF3_Object *object);
+void HSMLPF3_constructAESCBCOneStepPhysicalToken(AESCBCLPF3_Object *object, uint8_t *key);
 
 /*!
- *  @brief  Constructs an AES-CMAC one-step command token
+ *  @brief  Constructs an AES-CMAC Token
  *
  *  @param  [in] object             The AESCMACLPF3 object that contains necessary data
+ *  @param  [in] isFirst            Is the operation a new to continue or new to final.
+ *  @param  [in] isFinal            Is the operation continue to final or new to final.
  */
-void HSMLPF3_constructAESCMACOneStepPhysicalToken(AESCMACLPF3_Object *object);
+void HSMLPF3_constructCMACToken(AESCMACLPF3_Object *object, bool isFirst, bool isFinal);
 
 /*!
- *  @brief  Constructs an AES-CMAC update command token
+ *  @brief  Constructs an RNG configure token for CRNG/TRNG operations command token
  *
- *  @param  [in] object             The AESCMACLPF3 object that contains necessary data
+ *  @param  [in] object             The TRNGLPF3HSM_Object object that contains necessary data
  */
-void HSMLPF3_constructAESCMACUpdatePhysicalToken(AESCMACLPF3_Object *object, bool isInitWithDefault);
+void HSMLPF3_constructRNGSwitchNRBGWithDefaultsPhysicalToken(HSMLPF3_NRBGMode HSMLPF3_nrbgMode);
+
+/*!
+ *  @brief  Constructs an RNG configure token tailored to reseed the DRBG engine command token
+ *
+ */
+void HSMLPF3_constructRNGReseedDRBGPhysicalToken(void);
+
+/*!
+ *  @brief  Constructs an RNG get random number command token
+ *
+ *  @param  [in] entropyBuffer      The buffer to deposit the entropy into.
+ *  @param  [in] entropyRequested   The size of the entropy requested.
+ */
+void HSMLPF3_constructRNGGetRandomNumberPhysicalToken(uintptr_t entropyBuffer, size_t entropyRequested);
+
+/*!
+ *  @brief  Constructs an RNG get raw random number command token
+ *
+ *  @param  [in] entropyBuffer      The buffer to deposit the entropy into.
+ *  @param  [in] entropyRequested   The size of the entropy requested.
+ */
+void HSMLPF3_constructRNGGetRawRandomNumberPhysicalToken(uintptr_t entropyBuffer, size_t entropyRequested);
+
+/*! @endcond */

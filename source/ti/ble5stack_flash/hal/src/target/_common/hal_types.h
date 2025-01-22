@@ -155,18 +155,13 @@ typedef uint32          halDataAlign_t;
 #define PACKED_ALIGNED_TYPEDEF_STRUCT       typedef struct PACKED_ALIGNED
 
 #elif defined (__GNUC__)
-#if defined (__clang__)
 #define ALIGNED                             __attribute__((aligned(4)))
-#else
-#define ALIGNED
-#endif
 #ifdef CC33xx
 #define PACKED                              __attribute__((aligned(1)))  __attribute__((packed))
 #else
 #define PACKED                              __attribute__((__packed__))
 #endif
 #define PACKED_STRUCT                       struct PACKED
-#define PACKED_TYPEDEF_STRUCT               typedef struct PACKED
 #define PACKED_TYPEDEF_STRUCT               typedef struct PACKED
 #define PACKED_TYPEDEF_CONST_STRUCT         typedef const struct PACKED
 #define PACKED_TYPEDEF_UNION                typedef union PACKED

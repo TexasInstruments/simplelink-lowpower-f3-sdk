@@ -152,6 +152,9 @@ typedef union
 /*! Temperature notification to compensate the HFXT */
 static Temperature_NotifyObj PowerCC23X0_hfxtCompNotifyObj = {0};
 
+/* Initialize value to the CKMD:HFTRACKCTL.RATIO field reset value */
+static uint32_t hfxtCompRatio = CKMD_HFTRACKCTL_RATIO_REF48M;
+
 /*! Temperature compensation coefficients for HFXT */
 static struct
 {
@@ -344,8 +347,8 @@ int_fast16_t Power_init()
      */
     HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) |= CKMD_HFTRACKCTL_EN_M | CKMD_HFTRACKCTL_REFCLK_HFXT;
 
-    /* Enable GPIO and RTC standby wakeup sources */
-    HWREG(EVTULL_BASE + EVTULL_O_WKUPMASK) = EVTULL_WKUPMASK_AON_IOC_COMB_M | EVTULL_WKUPMASK_AON_RTC_COMB_M;
+    /* Enable RTC as a standby wakeup source */
+    HWREG(EVTULL_BASE + EVTULL_O_WKUPMASK) = EVTULL_WKUPMASK_AON_RTC_COMB_M;
 
     return Power_SOK;
 }
@@ -986,6 +989,17 @@ static void PowerCC23X0_oscillatorISR(uintptr_t arg)
 
     if (maskedStatus & CKMD_MIS_AMPSETTLED_M)
     {
+        /* It has been observed a brief period of ~15us occurring ~130us after
+         * starting HFXT where FLTSETTLED pulses high. If the idle loop attempts
+         * to enter standby while FLTSETTLED pulses high, it may enter standby
+         * before the filter is truly settled. To prevent this, we need to wait
+         * for HFXTGOOD and LFTICK to be set before entering standby. This is
+         * achieved by clearing LFTICK once AMPSETTLED is set (which occurs
+         * after HFXTGOOD is set), and then waiting for LFTICK to be set again
+         * before entering standby.
+         */
+        HWREG(CKMD_BASE + CKMD_O_ICLR) = (CKMD_ICLR_LFTICK);
+
         /* Stop AMPSETTLED timeout clock and change callback function of clock
          * object (NULL: not used)
          */
@@ -1347,12 +1361,18 @@ static uint32_t PowerCC23X0_temperatureToRatio(int16_t temperature)
  */
 static void PowerCC23X0_updateHFXTRatio(uint32_t ratio)
 {
-    /* Update HFTRACKCTL atomically */
-    uintptr_t key = HwiP_disable();
-    uint32_t temp = HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) & ~CKMD_HFTRACKCTL_RATIO_M;
-    temp |= ratio & CKMD_HFTRACKCTL_RATIO_M;
-    HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) = temp;
-    HwiP_restore(key);
+    /* Store ratio so a later forced update has the right value */
+    hfxtCompRatio = ratio;
+    /* Check if updates are disabled */
+    if ((Power_getConstraintMask() & (1 << PowerLPF3_DISALLOW_SWTCXO)) == 0)
+    {
+        /* Update HFTRACKCTL atomically */
+        uintptr_t key = HwiP_disable();
+        uint32_t temp = HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) & ~CKMD_HFTRACKCTL_RATIO_M;
+        temp |= ratio & CKMD_HFTRACKCTL_RATIO_M;
+        HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) = temp;
+        HwiP_restore(key);
+    }
 }
 
 /*
@@ -1519,6 +1539,14 @@ void PowerLPF3_disableHFXTCompensation(void)
     Log_printf(LogModule_Power,
                Log_INFO,
                "PowerLPF3_disableHFXTCompensation: Compensation disabled");
+}
+
+/*
+ *  ======== PowerLPF3_disableHFXTCompensation ========
+ */
+void PowerLPF3_forceHFXTCompensationUpdate(void)
+{
+    PowerCC23X0_updateHFXTRatio(hfxtCompRatio);
 }
 
 /*

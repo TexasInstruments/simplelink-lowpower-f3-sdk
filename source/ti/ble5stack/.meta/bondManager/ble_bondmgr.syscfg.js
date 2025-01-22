@@ -83,6 +83,13 @@ const config = {
             ]
         },
         {
+            name: "enableFiftyBondsMR",
+            displayName: "Enable 50 bonds for multirole devices",
+            longDescription: Docs.enableFiftyBondsMRLongDescription,
+            default: false,
+            onChange: onenableFiftyBondsMRChange
+        },
+        {
             name: "bondMITMProtection",
             displayName: "MITM Protection",
             longDescription: Docs.bondMITMProtectionLongDescription,
@@ -273,12 +280,20 @@ function validate(inst, validation)
                 validation.logWarning("When using privacy the maxBonds should not be greater than 5",
                                        inst, "maxBonds");
             }
-            if ( (inst.maxBonds < 0) || (inst.maxBonds > 15) )
+            if ( (inst.maxBonds < 0) || ( (inst.maxBonds > 15) && (inst.enableFiftyBondsMR == false) ) )
             {
                 validation.logError("Maximum number of bonds allowed is 15",
                                      inst, "maxBonds");
             }
         }
+    }
+
+    if(inst.enableFiftyBondsMR == true)
+    {
+        validation.logWarning("The scanner and initiator don't support both privacy and 50 bonds, "
+                             +"therefore the accept list filter can't be used for scanner and initiator. "
+                             +"The advertiser does support both privacy and 50 bonds. ",
+                              inst, "maxBonds");
     }
 
     if(inst.maxCharCfg < 0 || inst.maxCharCfg > 4)
@@ -302,6 +317,14 @@ function validate(inst, validation)
         validation.logWarning("The specification recommends that this value be set to no higher "
                               + "than 10 to avoid an attacker from learning too much about a "
                               + "private key before it is regenerated", inst, "ECCKeyRegenPolicy");
+    }
+}
+
+function onenableFiftyBondsMRChange(inst, ui)
+{
+    if(inst.enableFiftyBondsMR == true)
+    {
+        inst.maxBonds = 50;
     }
 }
 

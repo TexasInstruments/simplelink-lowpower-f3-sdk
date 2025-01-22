@@ -5,6 +5,38 @@
  * This file implements the Asymmetric crypto signature services.
  */
 
+/*
+ * Copyright (c) 2024, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /* -------------------------------------------------------------------------- */
 /*                                                                            */
 /*   Module        : DDK-130_bsd                                              */
@@ -354,14 +386,14 @@ local_AsymDoEddsa(psa_key_context_t *pKey,
     uint32_t SigDataSize = 0U;
 
     if (PSA_ECC_FAMILY_TWISTED_EDWARDS !=
-        PSA_KEY_TYPE_ECC_GET_FAMILY(pKey->attributes.type))
+        PSA_KEY_TYPE_ECC_GET_FAMILY(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
     {
         funcres = PSA_ERROR_INVALID_ARGUMENT;
     }
     else
     {
         funcres = psaInt_AsymEccInstallCurve(EIP130DOMAIN_ECC_FAMILY_TWISTED_EDWARDS,
-                                             pKey->attributes.bits,
+                                             pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                              &DomainAssetId);
         if (PSA_SUCCESS == funcres)
         {
@@ -397,7 +429,7 @@ local_AsymDoEddsa(psa_key_context_t *pKey,
                     funcres = local_AsymEddsaGenPublicKey(pKey->key_assetId,
                                                           DomainAssetId,
                                                           PubKeyAssetId,
-                                                          pKey->attributes.bits);
+                                                          pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits));
                 }
                 else
                 {
@@ -817,12 +849,12 @@ local_AsymDoSignVerify(psa_algorithm_t alg,
         uint8_t CurveFamily = EIP130DOMAIN_ECC_FAMILY_NONE;
 
         if (PSA_ECC_FAMILY_SECP_R1 ==
-            PSA_KEY_TYPE_ECC_GET_FAMILY(pKey->attributes.type))
+            PSA_KEY_TYPE_ECC_GET_FAMILY(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
             CurveFamily = EIP130DOMAIN_ECC_FAMILY_NIST_P;
         }
         else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 ==
-                 PSA_KEY_TYPE_ECC_GET_FAMILY(pKey->attributes.type))
+                 PSA_KEY_TYPE_ECC_GET_FAMILY(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
             CurveFamily = EIP130DOMAIN_ECC_FAMILY_BRAINPOOL_R1;
         }
@@ -833,7 +865,7 @@ local_AsymDoSignVerify(psa_algorithm_t alg,
         if (EIP130DOMAIN_ECC_FAMILY_NONE != CurveFamily)
         {
             funcres = psaInt_AsymEccInstallCurve(CurveFamily,
-                                                 pKey->attributes.bits,
+                                                 pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                                  &DomainAssetId);
             if (0U == fverify)
             {
@@ -1092,7 +1124,7 @@ local_AsymDoSignVerify(psa_algorithm_t alg,
  * Do hash and sign operation
  */
 psa_status_t
-psa_sign_message(psa_key_id_t key,
+psa_sign_message(mbedtls_svc_key_id_t key,
                  psa_algorithm_t alg,
                  const uint8_t * input,
                  size_t input_length,
@@ -1109,11 +1141,11 @@ psa_sign_message(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_SIGN_MESSAGE != (pKey->attributes.usage & PSA_KEY_USAGE_SIGN_MESSAGE))
+    else if (PSA_KEY_USAGE_SIGN_MESSAGE != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_SIGN_MESSAGE))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
-    else if (signature_size < PSA_SIGN_OUTPUT_SIZE(pKey->attributes.type,
+    else if (signature_size < PSA_SIGN_OUTPUT_SIZE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type),
                                                    pKey->modulus_size, alg))
     {
         funcres = PSA_ERROR_BUFFER_TOO_SMALL;
@@ -1128,7 +1160,7 @@ psa_sign_message(psa_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, NULL, 0, NULL);
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, 0, 0, NULL, 0, NULL);
         if (PSA_SUCCESS == funcres)
         {
             if (PSA_ALG_PURE_EDDSA == alg)
@@ -1144,7 +1176,7 @@ psa_sign_message(psa_key_id_t key,
                                                  0U, 0U);
             }
 
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {
@@ -1162,7 +1194,7 @@ psa_sign_message(psa_key_id_t key,
  * Do hash and verify operation.
  */
 psa_status_t
-psa_verify_message(psa_key_id_t key,
+psa_verify_message(mbedtls_svc_key_id_t key,
                    psa_algorithm_t alg,
                    const uint8_t * input,
                    size_t input_length,
@@ -1178,7 +1210,7 @@ psa_verify_message(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_VERIFY_MESSAGE != (pKey->attributes.usage & PSA_KEY_USAGE_VERIFY_MESSAGE))
+    else if (PSA_KEY_USAGE_VERIFY_MESSAGE != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_VERIFY_MESSAGE))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -1192,7 +1224,7 @@ psa_verify_message(psa_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, NULL, 0, NULL);
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, 0, 0, NULL, 0, NULL);
         if (PSA_SUCCESS == funcres)
         {
             uint8_t * sign = psaInt_discard_const(signature);
@@ -1208,7 +1240,7 @@ psa_verify_message(psa_key_id_t key,
                                                  sign, NULL, 255U, 0U);
             }
 
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {
@@ -1226,7 +1258,7 @@ psa_verify_message(psa_key_id_t key,
  * do sign operation with explicit digest.
  */
 psa_status_t
-psa_sign_hash(psa_key_id_t key,
+psa_sign_hash(mbedtls_svc_key_id_t key,
               psa_algorithm_t alg,
               const uint8_t * hash,
               size_t hash_length,
@@ -1243,11 +1275,11 @@ psa_sign_hash(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_SIGN_HASH != (pKey->attributes.usage & PSA_KEY_USAGE_SIGN_HASH))
+    else if (PSA_KEY_USAGE_SIGN_HASH != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_SIGN_HASH))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
-    else if (signature_size < PSA_SIGN_OUTPUT_SIZE(pKey->attributes.type,
+    else if (signature_size < PSA_SIGN_OUTPUT_SIZE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type),
                                                    pKey->modulus_size,
                                                    alg))
     {
@@ -1274,14 +1306,14 @@ psa_sign_hash(psa_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, NULL, 0, NULL);
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, 0, 0, NULL, 0, NULL);
         if (PSA_SUCCESS == funcres)
         {
             funcres = local_AsymDoSignVerify(alg, pKey, hash, hash_length,
                                              signature, signature_length,
                                              0U, 255U);
 
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {
@@ -1299,7 +1331,7 @@ psa_sign_hash(psa_key_id_t key,
  * do verify operation with explicit digest.
  */
 psa_status_t
-psa_verify_hash(psa_key_id_t key,
+psa_verify_hash(mbedtls_svc_key_id_t key,
                 psa_algorithm_t alg,
                 const uint8_t * hash,
                 size_t hash_length,
@@ -1315,7 +1347,7 @@ psa_verify_hash(psa_key_id_t key,
     {
         /* Key not found */
     }
-    else if (PSA_KEY_USAGE_VERIFY_HASH != (pKey->attributes.usage & PSA_KEY_USAGE_VERIFY_HASH))
+    else if (PSA_KEY_USAGE_VERIFY_HASH != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_VERIFY_HASH))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
     }
@@ -1340,14 +1372,14 @@ psa_verify_hash(psa_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, NULL, 0, NULL);
+        funcres = psaInt_KeyMgmtLoadKey(pKey, &KeyAssetId, 0, 0, NULL, 0, NULL);
         if (PSA_SUCCESS == funcres)
         {
             uint8_t * sign = psaInt_discard_const(signature);
             funcres = local_AsymDoSignVerify(alg, pKey, hash, hash_length,
                                              sign, NULL, 255U, 255U);
 
-            psaInt_KeyMgmtReleaseKey(pKey);
+            (void)psaInt_KeyMgmtReleaseKey(pKey);
         }
         else
         {

@@ -53,17 +53,23 @@
 #include "zb_led_button.h"
 #include "zboss_api_error.h"
 
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_fcfg.h)
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+
+/* for button handling */
+#include <ti/drivers/GPIO.h>
+#include "ti_drivers_config.h"
+
 #ifdef ZB_CONFIGURABLE_MEM
 #include "zb_mem_config_lprf3.h"
 #endif
 
 /****** Application variables declarations ******/
-zb_ieee_addr_t g_zed_addr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
-zb_ieee_addr_t g_zr_addr = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00};
-zb_ieee_addr_t g_zc_addr = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
 zb_uint16_t g_dst_addr;
 zb_uint8_t g_addr_mode;
 zb_uint8_t g_endpoint;
+zb_bool_t perform_factory_reset = ZB_FALSE;
 
 /****** Application function declarations ******/
 /* Handler for specific ZCL commands */
@@ -143,9 +149,20 @@ MAIN()
 
   /* Global ZBOSS initialization */
   ZB_INIT("on_off_light");
+
+  #ifdef ZB_LONG_ADDR
+  // use the address that the customer set in the pre-defined symbols tab
+  zb_ieee_addr_t g_long_addr = ZB_LONG_ADDR;
+  zb_set_long_address(g_long_addr);
+  #else
+  /* Set the device's long address to the IEEE address pulling from the FCFG of the device */
+  zb_ieee_addr_t ieee_mac_addr;
+  ZB_MEMCPY(ieee_mac_addr, fcfg->deviceInfo.macAddr, 8);
+  zb_set_long_address(ieee_mac_addr);
+  #endif // ZB_LONG_ADDR
+
 #ifdef ZB_COORDINATOR_ROLE
   /* Set up defaults for the commissioning */
-  zb_set_long_address(g_zc_addr);
   zb_set_network_coordinator_role(DEFAULT_CHANLIST);
 #ifdef DEFAULT_NWK_KEY
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
@@ -154,14 +171,10 @@ MAIN()
   zb_set_max_children(MAX_CHILDREN);
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
-
-  zb_set_long_address(g_zr_addr);
   zb_set_network_router_role(DEFAULT_CHANLIST);
   zb_set_max_children(MAX_CHILDREN);
 
 #elif defined ZB_ED_ROLE
-  /* Set up defaults for the commissioning */
-  zb_set_long_address(g_zed_addr);
   zb_set_network_ed_role(DEFAULT_CHANLIST);
 
   /* Set end-device configuration parameters */
@@ -169,9 +182,11 @@ MAIN()
   zb_set_rx_on_when_idle(ED_RX_ALWAYS_ON);
 #if ( ED_RX_ALWAYS_ON == ZB_FALSE )
   zb_set_keepalive_timeout(ZB_MILLISECONDS_TO_BEACON_INTERVAL(ED_POLL_RATE));
+#ifdef DISABLE_TURBO_POLL
   // Disable turbo poll feature
   zb_zdo_pim_permit_turbo_poll(ZB_FALSE);
   zb_zdo_pim_set_long_poll_interval(ED_POLL_RATE);
+#endif // DISABLE_TURBO_POLL
 #endif //ED_RX_ALWAYS_ON
 #endif //ZB_ED_ROLE
 
@@ -203,6 +218,16 @@ MAIN()
   }
   else
   {
+    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_PU);
+    GPIO_setConfig(CONFIG_GPIO_BTN2, GPIO_CFG_IN_PU);
+    // if either button 1 or button 2 gets pressed
+    zb_bool_t sideButtonPressed = ((GPIO_read((zb_uint8_t)CONFIG_GPIO_BTN1) == 0U) || (GPIO_read((zb_uint8_t)CONFIG_GPIO_BTN2) == 0U));
+    // then perform a factory reset
+    if (sideButtonPressed)
+    {
+      perform_factory_reset = ZB_TRUE;
+      Log_printf(LogModule_Zigbee_App, Log_INFO, "performing factory reset");
+    }
     /* Call the main loop */
     zboss_main_loop();
   }
@@ -386,7 +411,12 @@ void zboss_signal_handler(zb_uint8_t param)
         device_type = zb_get_device_type();
         ZVUNUSED(device_type);
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Device (%d) STARTED OK", device_type);
-
+        if (perform_factory_reset)
+        {
+          Log_printf(LogModule_Zigbee_App, Log_INFO, "Performing a factory reset.");
+          zb_bdb_reset_via_local_action(0);
+          perform_factory_reset = ZB_FALSE;
+        }
         bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
         break;
       }
