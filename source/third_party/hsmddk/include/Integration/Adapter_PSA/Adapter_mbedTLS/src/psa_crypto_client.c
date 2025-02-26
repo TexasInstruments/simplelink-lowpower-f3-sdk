@@ -29,7 +29,7 @@ psa_status_t psa_set_key_domain_parameters(psa_key_attributes_t *attributes,
 
     if (data_length != 0)
     {
-        copy = mbedtls_calloc(1, data_length);
+        copy = psaInt_mbedtls_calloc(1, data_length);
         if (copy == NULL)
         {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -41,7 +41,7 @@ psa_status_t psa_set_key_domain_parameters(psa_key_attributes_t *attributes,
 
     if (attributes->MBEDTLS_PRIVATE(domain_parameters) != NULL)
     {
-        mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+        psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
         attributes->MBEDTLS_PRIVATE(domain_parameters) = NULL;
         attributes->MBEDTLS_PRIVATE(domain_parameters_size) = 0;
     }

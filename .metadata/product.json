@@ -1,7 +1,7 @@
 {
     "name": "simplelink_lowpower_f3_sdk",
     "displayName": "SimpleLink Low Power F3 SDK",
-    "version": "8.40.00.61",
+    "version": "8.42.00.03_ea",
     "documentationPath": "../docs",
     "includePaths": [
         "../source",
@@ -14,6 +14,7 @@
         "/ti/common/migration.component.js",
         "/ti/devices/devices.component.js",
         "/ti/devices/radioconfig/radioconfig.component.js",
+        "/ti/dmm/dmm.component.js",
         "/ti/drivers/drivers.component.js",
         "/ti/drivers/rcl.component.js",
         "/ti/log/drivers.component.js",

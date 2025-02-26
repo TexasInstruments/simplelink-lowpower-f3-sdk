@@ -1,8 +1,9 @@
 # SimpleLink™ Low Power F3 SDK
 
-This repository redistributes TI's [SimpleLink Low Power F3 Software Development
+-- Not suitable for production/release --
+This Early Access (EA) repository redistributes TI's [SimpleLink Low Power F3 Software Development
 Kit](https://www.ti.com/tool/download/SIMPLELINK-LOWPOWER-F3-SDK) (LPF3 SDK), a
-comprehensive software package for developing 2.4 GHz applications. The LPF3 SDK
+comprehensive software package for developing Matter applications. The LPF3 SDK
 is one of many within the [SimpleLink Low Power
 ecosystem](https://www.ti.com/tool/SIMPLELINK-LOWPOWER-SDK).
 
@@ -19,7 +20,7 @@ users by packaging essential software components, such as:
 
 ## What's New
 
-This is version 8.40.00.61 of the LPF3 SDK. This release includes:
+This is version 8.42.00.03 EA of the LPF3 SDK. This release includes:
 
 * CC27xx family of devices are now supported.
   * For more information regarding the new device, please visit [the product
@@ -32,7 +33,8 @@ This is version 8.40.00.61 of the LPF3 SDK. This release includes:
 * Early access to Zigbee Stack; Fully qualified on CC2340Rx only.
 
 More details, including supported devices, IDEs, and toolchains are provided in
-the [LPF3 8.40.00.61 SDK release notes][sdk release notes].
+the [LPF3 8.40.00.61 SDK release notes][sdk release notes] (notably not updated
+for the minor changes in this 8.42.00.03 EA).
 
 ## About this Repository
 

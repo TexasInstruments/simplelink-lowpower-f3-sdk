@@ -111,7 +111,7 @@ psa_crypto_init(void)
 
         if (PSA_SUCCESS == funcres)
         {
-            mbedtls_memory_buffer_alloc_init(volatileAllocBuffer, volatileAllocBufferSizeBytes);
+            psaInt_mbedtls_memory_buffer_alloc_init(volatileAllocBuffer, volatileAllocBufferSizeBytes);
 
             KeyMgmt_isInitialized = true;
         }

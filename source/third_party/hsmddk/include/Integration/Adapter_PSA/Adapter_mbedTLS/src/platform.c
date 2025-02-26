@@ -315,17 +315,17 @@ static void buffer_alloc_free(void *ptr)
     }
 }
 
-void *mbedtls_calloc(size_t nmemb, size_t size)
+void *psaInt_mbedtls_calloc(size_t nmemb, size_t size)
 {
     return buffer_alloc_calloc(nmemb, size);
 }
 
-void mbedtls_free(void *ptr)
+void psaInt_mbedtls_free(void *ptr)
 {
     buffer_alloc_free(ptr);
 }
 
-void mbedtls_memory_buffer_alloc_init(unsigned char *buf, size_t len)
+void psaInt_mbedtls_memory_buffer_alloc_init(unsigned char *buf, size_t len)
 {
     /* Sets heap.verify to 0, so no verification of header/metadata chains occurs */
     memset(&heap, 0, sizeof(buffer_alloc_ctx));
@@ -352,7 +352,7 @@ void mbedtls_memory_buffer_alloc_init(unsigned char *buf, size_t len)
     heap.first_free = heap.first;
 }
 
-void mbedtls_memory_buffer_alloc_free(void)
+void psaInt_mbedtls_memory_buffer_alloc_free(void)
 {
     memset(&heap, 0, sizeof(buffer_alloc_ctx));
 }

@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_40_00_61.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_42_00_03_ea.html",
         "devices": [
             "CC2340R5"
         ],
@@ -16,9 +16,6 @@
             [
                 "Documents"
             ]
-        ],
-        "subCategories": [
-            "Product Documentation"
         ],
         "resourceClass": [
             "document"
@@ -42,9 +39,6 @@
                 "Documents"
             ]
         ],
-        "subCategories": [
-            "Product Documentation"
-        ],
         "resourceClass": [
             "document"
         ]
@@ -67,9 +61,6 @@
                 "Documents"
             ]
         ],
-        "subCategories": [
-            "Developer Guide"
-        ],
         "resourceClass": [
             "document"
         ]
@@ -91,9 +82,6 @@
             [
                 "Documents"
             ]
-        ],
-        "subCategories": [
-            "Developer Guide"
         ],
         "resourceClass": [
             "document"
@@ -118,8 +106,7 @@
             ]
         ],
         "subCategories": [
-            "BLE5-Stack",
-            "Developer Guide"
+            "BLE5-Stack"
         ],
         "resourceClass": [
             "document"
@@ -144,8 +131,7 @@
             ]
         ],
         "subCategories": [
-            "BLE5-Stack",
-            "Developer Guide"
+            "BLE5-Stack"
         ],
         "resourceClass": [
             "document"
@@ -170,8 +156,7 @@
             ]
         ],
         "subCategories": [
-            "BLE5-Stack",
-            "Developer Guide"
+            "BLE5-Stack"
         ],
         "resourceClass": [
             "document"
@@ -196,8 +181,7 @@
             ]
         ],
         "subCategories": [
-            "BLE5-Stack",
-            "Developer Guide"
+            "BLE5-Stack"
         ],
         "resourceClass": [
             "document"
@@ -222,8 +206,7 @@
             ]
         ],
         "subCategories": [
-            "Proprietary RF",
-            "Developer Guide"
+            "Proprietary RF"
         ],
         "resourceClass": [
             "document"
@@ -248,8 +231,7 @@
             ]
         ],
         "subCategories": [
-            "Proprietary RF",
-            "Developer Guide"
+            "Proprietary RF"
         ],
         "resourceClass": [
             "document"
@@ -274,8 +256,7 @@
             ]
         ],
         "subCategories": [
-            "Proprietary RF",
-            "Developer Guide"
+            "Proprietary RF"
         ],
         "resourceClass": [
             "document"
@@ -300,8 +281,7 @@
             ]
         ],
         "subCategories": [
-            "Proprietary RF",
-            "Developer Guide"
+            "Proprietary RF"
         ],
         "resourceClass": [
             "document"
@@ -327,8 +307,7 @@
             ]
         ],
         "subCategories": [
-            "Proprietary RF",
-            "Developer Guide"
+            "Proprietary RF"
         ],
         "resourceClass": [
             "document"
@@ -353,8 +332,7 @@
             ]
         ],
         "subCategories": [
-            "Zigbee",
-            "Developer Guide"
+            "Zigbee"
         ],
         "resourceClass": [
             "document"
@@ -379,8 +357,7 @@
             ]
         ],
         "subCategories": [
-            "Zigbee",
-            "Developer Guide"
+            "Zigbee"
         ],
         "resourceClass": [
             "document"
@@ -405,8 +382,7 @@
             ]
         ],
         "subCategories": [
-            "Zigbee",
-            "Developer Guide"
+            "Zigbee"
         ],
         "resourceClass": [
             "document"
@@ -431,8 +407,7 @@
             ]
         ],
         "subCategories": [
-            "Zigbee",
-            "Developer Guide"
+            "Zigbee"
         ],
         "resourceClass": [
             "document"
@@ -529,7 +504,7 @@
     {
         "name": "CoreSDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_8_40_00_09.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_8_42_00_00_ea.html",
         "devices": [
             "CC2340R5"
         ],

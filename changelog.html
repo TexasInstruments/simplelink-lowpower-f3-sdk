@@ -245,20 +245,12 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">RCL-714</td>
-<td align="left"><span>IEEE 802.15.4: Add support for energy detection scan</span></td>
-</tr>
-<tr class="even">
 <td align="center">RCL-779</td>
 <td align="left"><span>Implement DCOLDO temperature compensation</span></td>
 </tr>
-<tr class="odd">
-<td align="center">RCL-791</td>
-<td align="left"><span>CC27XX: Support for the IEEE 802.15.4 radio handler</span></td>
-</tr>
 <tr class="even">
-<td align="center">RCL-249</td>
-<td align="left"><span>IEEE 802.15.4: Support for automatic user-fed Enhanced ACK frames</span></td>
+<td align="center">RCL-714</td>
+<td align="left"><span>IEEE 802.15.4: Add support for energy detection scan</span></td>
 </tr>
 <tr class="odd">
 <td align="center">RCL-132</td>
@@ -267,6 +259,14 @@
 <tr class="even">
 <td align="center">RCL-809</td>
 <td align="left"><span>Lock temperature compensation of the HFXT during RF operation</span></td>
+</tr>
+<tr class="odd">
+<td align="center">RCL-791</td>
+<td align="left"><span>CC27XX: Support for the IEEE 802.15.4 radio handler</span></td>
+</tr>
+<tr class="even">
+<td align="center">RCL-249</td>
+<td align="left"><span>IEEE 802.15.4: Support for automatic user-fed Enhanced ACK frames</span></td>
 </tr>
 <tr class="odd">
 <td align="center">RCL-749</td>
@@ -566,8 +566,32 @@
 <td align="left"><span>JSON library unstable for gcc 12.3</span></td>
 </tr>
 <tr class="even">
-<td align="center">TIDRIVERS-6580</td>
-<td align="left"><span>HFXT may not start when there is a large equivalent resistance (&gt; 80 Ohms) in series with the crystal resulting in missed events for SW that requires precise time (e.g. radio).</span></td>
+<td align="center">TIDRIVERS-5149</td>
+<td align="left"><span>CC32 I2C driver should ensure transferCallback != NULL before enabling HWI</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-4844</td>
+<td align="left"><span>Implement restrictions in errata note IOC_01 in SysConfig</span></td>
+</tr>
+<tr class="even">
+<td align="center">TIDRIVERS-4232</td>
+<td align="left"><span>[I2SCC32XX] Skipping samples in MONO DMA mode</span></td>
+</tr>
+<tr class="odd">
+<td align="center">TIDRIVERS-4187</td>
+<td align="left"><span>CC32XX SD Driver does not properly initialize after LPDS</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-9789">TIDRIVERS-4127</a></td>
+<td align="left"><span>ADCBuf causes jitter when switching clock sources</span></td>
+</tr>
+<tr class="odd">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-9256">TIDRIVERS-3636</a></td>
+<td align="left"><span>I2C_transfer() occasionally fails when called from an interrupt context</span></td>
+</tr>
+<tr class="even">
+<td align="center"><a href="https://sir.ext.ti.com/jira/browse/EXT_EP-9278">TIDRIVERS-3635</a></td>
+<td align="left"><span>UART_read returns 0 in portable after a power-cycle on CC13x0 and CC26x0 devices</span></td>
 </tr>
 </tbody>
 </table>
@@ -597,7 +621,7 @@
   with 100,000+ analog ICs and embedded processors, along with software, tools
   and the industry‘s largest sales/support staff.</p>
   <p>
-    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2024</a>, Texas Instruments Incorporated. All rights reserved. <br>
+    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2025</a>, Texas Instruments Incorporated. All rights reserved. <br>
     <a href="https://www.ti.com/corp/docs/legal/trademark/trademrk.htm">Trademarks</a> | <a href="https://www.ti.com/corp/docs/legal/privacy.shtml">Privacy policy</a> | <a href="https://www.ti.com/corp/docs/legal/termsofuse.shtml">Terms of use</a> | <a href="https://www.ti.com/lsds/ti/legal/termsofsale.page">Terms of sale</a>
   </p>
 </footer>

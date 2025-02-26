@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -677,7 +677,14 @@ int_fast16_t KeyStore_PSA_getKeyAttributes(KeyStore_PSA_KeyFileId key, KeyStore_
  */
 void KeyStore_PSA_resetKeyAttributes(KeyStore_PSA_KeyAttributes *attributes)
 {
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+#else
+    #error "Unsupported DeviceFamily_Parent for CryptoKeyKeyStore_PSA_helpers"
+#endif
+
     memset(attributes, 0, sizeof(*attributes));
 }
 

@@ -3174,13 +3174,13 @@ local_GetFreeKeyEntry(uint32_t * index, psa_key_persistence_t persistence)
         if (NULL != gl_PSA_Key[persistentOverwriteIndex].key)
         {
             /* Remove the volatile entry */
-            mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key);
+            psaInt_mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key);
         }
 
         if (NULL != gl_PSA_Key[persistentOverwriteIndex].key2)
         {
             /* Remove the volatile entry */
-            mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key2);
+            psaInt_mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key2);
         }
 
         /* Make sure that the key entry is cleared */
@@ -3263,7 +3263,7 @@ local_RemoveKey(psa_key_context_t * pKey)
         if (NULL != pKey->key)
         {
             /* Remove the volatile entry */
-            mbedtls_free(pKey->key);
+            psaInt_mbedtls_free(pKey->key);
         }
         else
         {
@@ -3273,7 +3273,7 @@ local_RemoveKey(psa_key_context_t * pKey)
         if (NULL != pKey->key2)
         {
             /* Remove the volatile entry */
-            mbedtls_free(pKey->key2);
+            psaInt_mbedtls_free(pKey->key2);
         }
         else
         {
@@ -4940,7 +4940,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
                 {
                     if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                     {
-                        pKey->key = mbedtls_calloc(1, DataToSaveSize);
+                        pKey->key = psaInt_mbedtls_calloc(1, DataToSaveSize);
                         if (NULL == pKey->key)
                         {
                             funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -4992,7 +4992,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
                     DataSize = PSA_KEYBLOB_SIZE(DataToSaveSize);
                     if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                     {
-                        pKey->key = mbedtls_calloc(1, DataSize);
+                        pKey->key = psaInt_mbedtls_calloc(1, DataSize);
                         if (NULL == pKey->key)
                         {
                             funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5008,7 +5008,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
 
                         if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                         {
-                            pKey->key2 = mbedtls_calloc(1, DataSize);
+                            pKey->key2 = psaInt_mbedtls_calloc(1, DataSize);
 
                             if (NULL == pKey->key2)
                             {
@@ -5438,7 +5438,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                         {
                             keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
                             /* Store in volatile storage */
-                            pKey->key = mbedtls_calloc(1, KeySize);
+                            pKey->key = psaInt_mbedtls_calloc(1, KeySize);
                             if (NULL == pKey->key)
                             {
                                 funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5739,7 +5739,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                             {
                                 keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
                                 /* Store in volatile storage */
-                                pKey->key = mbedtls_calloc(1, KeyBlobSize);
+                                pKey->key = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                 if (NULL == pKey->key)
                                 {
                                     funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5752,7 +5752,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
 
                                 if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                                 {
-                                    pKey->key2 = mbedtls_calloc(1, KeyBlobSize);
+                                    pKey->key2 = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                     if (NULL == pKey->key2)
                                     {
                                         funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5944,7 +5944,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
                     if (NULL != pKey->key)
                     {
                         /* Remove the volatile entry */
-                        mbedtls_free(pKey->key);
+                        psaInt_mbedtls_free(pKey->key);
 
                         funcres = PSA_SUCCESS;
                     }
@@ -5962,7 +5962,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
                     if (NULL != pKey->key2)
                     {
                         /* Remove the volatile entry */
-                        mbedtls_free(pKey->key2);
+                        psaInt_mbedtls_free(pKey->key2);
 
                         funcres = PSA_SUCCESS;
                     }
@@ -6038,7 +6038,7 @@ psa_get_key_attributes(mbedtls_svc_key_id_t key,
 void
 psa_reset_key_attributes(psa_key_attributes_t * attributes)
 {
-    mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+    psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
     memset(attributes, 0, sizeof(*attributes));
 }
 
@@ -6286,7 +6286,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                         if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence_trgt)
                         {
                             /* Store in volatile storage */
-                            pTrgtKeyEntry->key = mbedtls_calloc(1, CopyKeySize);
+                            pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, CopyKeySize);
                             if (NULL == pTrgtKeyEntry->key)
                             {
                                 funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6320,7 +6320,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                             if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src)
                             {
                                 /* Source key is already in wrapped format */
-                                pTrgtKeyEntry->key = mbedtls_calloc(1, CopyKeySize);
+                                pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, CopyKeySize);
                                 if (NULL == pTrgtKeyEntry->key)
                                 {
                                     funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6333,7 +6333,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
 
                                 if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                                 {
-                                    pTrgtKeyEntry->key2 = mbedtls_calloc(1, CopyKeySize);
+                                    pTrgtKeyEntry->key2 = psaInt_mbedtls_calloc(1, CopyKeySize);
                                     if (NULL == pTrgtKeyEntry->key2)
                                     {
                                         funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6351,7 +6351,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                                  * be converted to wrapped format */
                                 size_t KeyBlobSize = PSA_KEYBLOB_SIZE(CopyKeySize);
 
-                                pTrgtKeyEntry->key = mbedtls_calloc(1, KeyBlobSize);
+                                pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                 if (NULL == pTrgtKeyEntry->key)
                                 {
                                     funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6367,7 +6367,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
 
                                 if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                                 {
-                                    pTrgtKeyEntry->key2 = mbedtls_calloc(1, KeyBlobSize);
+                                    pTrgtKeyEntry->key2 = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                     if (NULL == pTrgtKeyEntry->key2)
                                     {
                                         funcres = PSA_ERROR_INSUFFICIENT_MEMORY;

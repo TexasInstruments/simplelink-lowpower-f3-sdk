@@ -31,17 +31,17 @@
 #define MBEDTLS_MEMORY_VERIFY_ALWAYS       (MBEDTLS_MEMORY_VERIFY_ALLOC | \
                                             MBEDTLS_MEMORY_VERIFY_FREE)
 
-extern void *mbedtls_calloc(size_t n, size_t size);
+void *psaInt_mbedtls_calloc(size_t n, size_t size);
 
-extern void mbedtls_free(void *ptr);
+void psaInt_mbedtls_free(void *ptr);
 
 /**
  * @brief   Initialize use of stack-based memory allocator.
  *          The stack-based allocator does memory management inside the
  *          presented buffer and does not call calloc() and free().
- *          It sets the global mbedtls_calloc() and mbedtls_free() pointers
+ *          It sets the global psaInt_mbedtls_calloc() and psaInt_mbedtls_free() pointers
  *          to its own functions.
- *          (Provided mbedtls_calloc() and mbedtls_free() are thread-safe if
+ *          (Provided psaInt_mbedtls_calloc() and psaInt_mbedtls_free() are thread-safe if
  *           MBEDTLS_THREADING_C is defined)
  *
  * @note    This code is not optimized and provides a straight-forward
@@ -50,12 +50,12 @@ extern void mbedtls_free(void *ptr);
  * @param buf   buffer to use as heap
  * @param len   size of the buffer
  */
-void mbedtls_memory_buffer_alloc_init(unsigned char *buf, size_t len);
+void psaInt_mbedtls_memory_buffer_alloc_init(unsigned char *buf, size_t len);
 
 /**
  * @brief   Clears all memory allocator metadata (first node, pointer to buffer, etc).
- *          Allows use of a new buffer if mbedtls_memory_buffer_alloc_init()
+ *          Allows use of a new buffer if psaInt_mbedtls_memory_buffer_alloc_init()
  *          is subsequently called. The provided buffer is not modified in this
  *          function.
  */
-void mbedtls_memory_buffer_alloc_free(void);
+void psaInt_mbedtls_memory_buffer_alloc_free(void);
