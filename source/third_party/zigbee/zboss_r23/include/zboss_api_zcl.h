@@ -1891,6 +1891,7 @@ typedef struct zb_zcl_device_callback_param_s
 {
   /** Type of device callback (see @ref zb_zcl_device_callback_id_e) */
   zb_zcl_device_callback_id_t device_cb_id;
+  /** Destination endpoint */
   zb_uint8_t endpoint;
   zb_zcl_attr_access_t attr_type;
   /** Return status (see zb_ret_t) */
@@ -1973,13 +1974,20 @@ typedef struct zb_zcl_device_callback_param_s
   ((ZB_ZCL_DEVICE_CMD_PARAM(_param))->cb_param.gnr.out = _pvalue)
 
 /** Init all fields of device callback params. */
-#define ZB_ZCL_DEVICE_CMD_PARAM_INIT_WITH(_param, _cb_id, _status, _cmd_info, _in, _out) \
-  (ZB_BZERO(ZB_ZCL_DEVICE_CMD_PARAM(_param), sizeof(*ZB_ZCL_DEVICE_CMD_PARAM(_param))), \
-   (ZB_ZCL_DEVICE_CMD_PARAM_CB_ID(_param) = _cb_id, \
-    (ZB_ZCL_DEVICE_CMD_PARAM_STATUS(_param) = _status, \
-     (ZB_ZCL_DEVICE_CMD_PARAM_CMD_INFO(_param) = _cmd_info, \
-      (ZB_ZCL_DEVICE_CMD_PARAM_IN_SET(_param, _in), \
-       (ZB_ZCL_DEVICE_CMD_PARAM_OUT_SET(_param, _out)))))))
+#define ZB_ZCL_DEVICE_CMD_PARAM_INIT_WITH(_param, _cb_id, _status, _cmd_info, _in, _out)   \
+{                                                                                          \
+  ZB_BZERO(ZB_ZCL_DEVICE_CMD_PARAM(_param), sizeof(*ZB_ZCL_DEVICE_CMD_PARAM(_param)));     \
+  ZB_ZCL_DEVICE_CMD_PARAM_CB_ID(_param) = _cb_id;                                          \
+  ZB_ZCL_DEVICE_CMD_PARAM_STATUS(_param) = _status;                                        \
+  ZB_ZCL_DEVICE_CMD_PARAM_CMD_INFO(_param) = _cmd_info;                                    \
+  ZB_ZCL_DEVICE_CMD_PARAM_IN_SET(_param, _in);                                             \
+  ZB_ZCL_DEVICE_CMD_PARAM_OUT_SET(_param, _out);                                           \
+  if (_cmd_info != NULL)                                                                   \
+  {                                                                                        \
+    ZB_ZCL_DEVICE_CMD_PARAM_DEST_ENDPOINT(_param) =                                        \
+        ZB_ZCL_PARSED_HDR_SHORT_DATA((const zb_zcl_parsed_hdr_t*)_cmd_info).dst_endpoint;  \
+  }                                                                                        \
+}
 /** @endcond */ /* internals_doc */
 
 /** Get INPUT device callback parameter from buffer reference.
@@ -2011,6 +2019,12 @@ typedef struct zb_zcl_device_callback_param_s
  */
 #define ZB_ZCL_DEVICE_CMD_PARAM_CB_ID(_param) \
   ((ZB_ZCL_DEVICE_CMD_PARAM(_param))->device_cb_id)
+
+/** Get access to @ref zb_zcl_device_callback_param_t::endpoint of device callback parameters.
+ * @param _param - Reference to buffer.
+ */
+#define ZB_ZCL_DEVICE_CMD_PARAM_DEST_ENDPOINT(_param) \
+  ((ZB_ZCL_DEVICE_CMD_PARAM(_param))->endpoint)
 
 /** Get access to @ref zb_zcl_device_callback_param_t::status of device callback parameters.
  * @param _param - Reference to buffer.

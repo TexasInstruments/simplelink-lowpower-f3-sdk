@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024, Texas Instruments Incorporated
+ Copyright (c) 2024-2025, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -98,6 +98,13 @@ const moduleStatic = {
             displayName: "Enable Green Power Direct Support",
             hidden : true,
             description: `Ability to receive any Green Power frame in both direct mode and in tunneled mode`,
+            default: false
+        },
+        {
+            name: "preInstalledNwkEnabled",
+            displayName: "Enable use of APIs to Join a Pre-Installed Network",
+            hidden : true,
+            description: `Allow factory new devices join using pre-installed network parameters using the APIs in zb_bdb_preinst_nwk.h`,
             default: false
         },
         pmScript.config,
@@ -389,11 +396,15 @@ function onDeviceTypeChange(inst, ui)
     if(inst.deviceType.includes("zr") || inst.deviceType.includes("zc") || inst.deviceType.includes("zed"))
     {
         ui.zgpDirectEnabled.hidden = false;
+        ui.preInstalledNwkEnabled.hidden = false;
     }
     else
     {
         inst.zgpDirectEnabled = false;
         ui.zgpDirectEnabled.hidden = true;
+
+        inst.preInstalledNwkEnabled = false;
+        ui.preInstalledNwkEnabled.hidden = true;
     }
 
     let subsection = null;
@@ -430,41 +441,47 @@ function getLibs(inst)
             log_suffix = "_log";
         }
 
+        let pre_installed_nwk_suffix = "";
+        if(inst.$static.preInstalledNwkEnabled)
+        {
+            pre_installed_nwk_suffix = "_preinst_nwk"
+        }
+
         if(inst.$static.deviceType.includes("zc"))
         {
             if(inst.$static.zgpDirectEnabled)
             {
-                lib_names.push("zb_coordinator_router_roles_gp_combo");
+                lib_names.push("zb_coordinator_router_roles_gp_combo" + pre_installed_nwk_suffix);
             }
             else
             {
-                lib_names.push("zb_coordinator_router_roles");
+                lib_names.push("zb_coordinator_router_roles"  + pre_installed_nwk_suffix);
             }
-            lib_names.push("zb_cluster_zc_zr", "zb_zdo_zc_zr", "zb_ti_platform_zc_zr" + log_suffix);
+            lib_names.push("zb_cluster_zc_zr", "zb_zdo_zc_zr" + pre_installed_nwk_suffix, "zb_ti_platform_zc_zr" + log_suffix);
         }
         else if(inst.$static.deviceType.includes("zr"))
         {
             if(inst.$static.zgpDirectEnabled)
             {
-                lib_names.push("zb_router_role_gp_combo");
+                lib_names.push("zb_router_role_gp_combo"  + pre_installed_nwk_suffix);
             }
             else
             {
-                lib_names.push("zb_router_role");
+                lib_names.push("zb_router_role"  + pre_installed_nwk_suffix);
             }
-            lib_names.push("zb_cluster_zr", "zb_zdo_zr", "zb_ti_platform_zc_zr" + log_suffix);
+            lib_names.push("zb_cluster_zr", "zb_zdo_zr"  + pre_installed_nwk_suffix, "zb_ti_platform_zc_zr" + log_suffix);
         }
         else if(inst.$static.deviceType.includes("zed"))
         {
             if(inst.$static.zgpDirectEnabled)
             {
-                lib_names.push("zb_ed_role_target_plus");
+                lib_names.push("zb_ed_role_target_plus" + pre_installed_nwk_suffix);
             }
             else
             {
-                lib_names.push("zb_ed_role");
+                lib_names.push("zb_ed_role" + pre_installed_nwk_suffix);
             }
-            lib_names.push("zb_cluster_ed", "zb_zdo_ed", "zb_ti_platform_zed" + log_suffix);
+            lib_names.push("zb_cluster_ed", "zb_zdo_ed"  + pre_installed_nwk_suffix, "zb_ti_platform_zed" + log_suffix);
         }
         else
         {
@@ -493,7 +510,7 @@ function getOpts(inst) {
 
     if(inst.$static.deviceType.includes("zc"))
     {
-        result.push("-DZB_COORDINATOR_ROLE", "-DZB_ROUTER_ROLE");
+        result.push("-DZB_COORDINATOR_ROLE", "-DZB_ROUTER_ROLE", "-DZB_CONFIG_ROLE_ZC");
         if(inst.$static.zgpDirectEnabled)
         {
             result.push("-DZB_ENABLE_ZGP_COMBO");
@@ -501,7 +518,7 @@ function getOpts(inst) {
     }
     else if(inst.$static.deviceType.includes("zr"))
     {
-        result.push("-DZB_ROUTER_ROLE");
+        result.push("-DZB_ROUTER_ROLE", "-DZB_CONFIG_ROLE_ZC");
         if(inst.$static.zgpDirectEnabled)
         {
             result.push("-DZB_ENABLE_ZGP_COMBO");
@@ -509,7 +526,7 @@ function getOpts(inst) {
     }
     else if(inst.$static.deviceType.includes("zed"))
     {
-        result.push("-DZB_ED_ROLE");
+        result.push("-DZB_ED_ROLE", "-DZB_CONFIG_ROLE_ZED");
         if(inst.$static.zgpDirectEnabled)
         {
             result.push("-DZB_ENABLE_ZGP_TARGET_PLUS");
@@ -518,6 +535,11 @@ function getOpts(inst) {
     else
     {
         result.push("-DZB_ZGPD_ROLE");
+    }
+
+    if(inst.$static.preInstalledNwkEnabled)
+    {
+        result.push("-DZB_BDB_PREINST_NWK_JOINING");
     }
 
     return result;

@@ -642,6 +642,22 @@ void zb_fcf_set_dst_addressing_mode(zb_uint8_t *p_fcf, zb_uint8_t addr_mode);
 #define ZB_MAC_SET_RSSI(packet, v) (*((zb_int8_t*)zb_buf_end(packet) - ZB_MAC_EXTRA_DATA_SIZE + 1U) = (v))
 #endif
 
+#ifndef ZB_MAC_GET_CCA_RSSI_THRESHOLD
+/**
+   Get CCA RSSI threshold value
+   @param rssi - pointer to buffer
+*/
+#define ZB_MAC_GET_CCA_RSSI_THRESHOLD(rssi)
+#endif
+
+#ifndef ZB_MAC_SET_CCA_RSSI_THRESHOLD
+/**
+   Set CCA RSSI threshold  value
+   @param rssi - RSSI value
+*/
+#define ZB_MAC_SET_CCA_RSSI_THRESHOLD(rssi)
+#endif
+
 /**
    Remove MAC header and trailer from the packet.
 
@@ -1244,9 +1260,7 @@ typedef ZB_PACKED_PRE struct zb_mac_pan_descriptor_s    // 7.1.5.1.1 table-41
   zb_uint8_t            link_quality;
   /* Zigbee does not use security and uses beaconless mode, so skip other Pan descriptor
      fields - for timestamp and security  */
-#if defined ZB_MAC_TESTING_MODE || defined DOXYGEN
-  zb_time_t             timestamp; /* Optional Timestamp field */
-#endif
+  zb_time_t             timestamp; /* Optional Timestamp field. For testing purposes */
   zb_uint16_t           enh_beacon_nwk_addr; /* the field is required for enhanced beacons handling */
 } ZB_PACKED_STRUCT
 zb_pan_descriptor_t;
@@ -1631,7 +1645,7 @@ union zb_addr_time_u
 /*
   The union for short or long address where addr_short is at the tail.
 
-  The meaning is: let's optimize macsplit traffic by as much leading zeroes as possible.
+  The meaning is: let's optimize MAC-Split traffic by as much leading zeroes as possible.
  */
 union zb_addr_aligned_u
 {
@@ -1671,7 +1685,6 @@ typedef ZB_PACKED_PRE struct zb_mcps_data_req_params_s
   zb_uint8_t      key_index;        /**< */
 #endif
   zb_uint8_t iface_id;
-#if defined ZB_MAC_TESTING_MODE || defined DOXYGEN
   ZB_PACKED_PRE struct
   {
     zb_bitfield_t invalid_fcs: 1;                 /**< Invalid FCS for TP/154/MAC/FRAME-VALIDATION-01 */
@@ -1681,7 +1694,6 @@ typedef ZB_PACKED_PRE struct zb_mcps_data_req_params_s
                                                    * tx window (for TP/154/MAC/DATA-04) */
     zb_bitfield_t reserved: 4;                    /**< Reserved bits */
   } ZB_PACKED_STRUCT cert_hacks;
-#endif /* ZB_MAC_TESTING_MODE || DOXYGEN */
 } ZB_PACKED_STRUCT
 zb_mcps_data_req_params_t;
 
@@ -1717,9 +1729,7 @@ typedef ZB_PACKED_PRE struct zb_mcps_data_confirm_params_s
 
   zb_uint8_t nwk_retry_cnt;
   zb_uint8_t msdu_handle;   /**< MSDU handle value. */
-#if defined ZB_MAC_TESTING_MODE || defined DOXYGEN
-  zb_time_t timestamp;      /**< Timestamp of TX done */
-#endif
+  zb_time_t timestamp;      /**< Timestamp of TX done. For testing purposes */
   zb_uint8_t iface_id;
 } ZB_PACKED_STRUCT zb_mcps_data_confirm_params_t;
 
@@ -1847,7 +1857,7 @@ typedef ZB_PACKED_PRE struct zb_mlme_set_confirm_s
 #if defined ZB_JOINING_LIST_SUPPORT
 /* @brief Custom structure for MLME-GET.req when fetching ZB_PIB_ATTRIBUTE_JOINING_IEEE_LIST
  * Must be located after zb_mlme_get_request_t.
- * At 08/16/17 passing buffer params to MLME-GET.req will cause problems with mac split
+ * At 08/16/17 passing buffer params to MLME-GET.req will cause problems with MAC-Split
  */
 typedef ZB_PACKED_PRE struct zb_mlme_get_ieee_joining_list_req_s
 {
@@ -1978,7 +1988,6 @@ typedef ZB_PACKED_PRE struct zb_mlme_reset_request_s
                                            their values prior to the generation of the
                                            MLME-RESET.request primitive.  */
   zb_uint8_t iface_id;
-#if defined ZB_MAC_TESTING_MODE || defined DOXYGEN
   ZB_PACKED_PRE struct
   {
     zb_bitfield_t allow_empty_beacon_payload:1;   /**< Allow sending/receiving empty Beacon payload */
@@ -1988,7 +1997,6 @@ typedef ZB_PACKED_PRE struct zb_mlme_reset_request_s
     zb_bitfield_t keep_pkt_in_pending_queue:1;    /**< Don't send packet from pending queue even if got data_req */
     zb_bitfield_t reserved: 3;                    /**< Reserved bits */
   } ZB_PACKED_STRUCT cert_hacks;
-#endif /* ZB_MAC_TESTING_MODE || DOXYGEN */
 } ZB_PACKED_STRUCT
 zb_mlme_reset_request_t;
 
@@ -2496,6 +2504,9 @@ typedef ZB_PACKED_PRE struct zb_coord_realignment_cmd_s
   zb_uint16_t coord_short_addr; /**< Coordinator Short Address */
   zb_uint8_t logical_channel;    /**< Logical Channel */
   zb_uint16_t short_addr;   /**< Short Address */
+  /* Dependency on Frame version.
+   * If present only on one side of MAC-Split, it will cause trouble.
+   * By default, disabled. */
 #if (MAC_FRAME_VERSION > MAC_FRAME_IEEE_802_15_4_2003)
   zb_uint8_t  channel_page; /**< Channel page, may be omitted */
 #endif
@@ -2999,7 +3010,7 @@ void zb_mcps_purge_indirect_queue_confirm(zb_uint8_t param);
 
 #ifdef ZB_MACSPLIT_HOST
 /**
-   Reset macsplit device
+   Reset MAC-Split device
 */
 void zb_mlme_dev_reset(zb_uint8_t param);
 #endif /* ZB_MACSPLIT_HOST */

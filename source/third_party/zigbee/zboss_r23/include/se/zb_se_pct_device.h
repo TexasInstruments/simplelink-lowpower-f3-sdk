@@ -63,11 +63,11 @@
  *
  *  @par Example
  *  @n Declare clusters
- *  @snippet application/samples/se/thermostat/se_pct_zed.c DECLARE_CLUSTERS
+ *  @snippet samples/se/thermostat/se_pct_zed.c DECLARE_CLUSTERS
  *  @n Register device context
- *  @snippet application/samples/se/thermostat/se_pct_zed.c REGISTER_DEVICE_CTX
+ *  @snippet samples/se/thermostat/se_pct_zed.c REGISTER_DEVICE_CTX
  *  @n Signal handler example
- *  @snippet application/samples/se/thermostat/se_pct_zed.c SIGNAL_HANDLER
+ *  @snippet samples/se/thermostat/se_pct_zed.c SIGNAL_HANDLER
  *  @{
  */
 

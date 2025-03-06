@@ -30,9 +30,6 @@
    @cond skip_this
    @{
 */
-#define ZB_CONFIG_ROLE_ZC
-/*#define ZB_CONFIG_ROLE_ZR*/
-/*#define ZB_CONFIG_ROLE_ZED*/
 
 /*#define ZB_CONFIG_OVERALL_NETWORK_SIZE 128*/
 /*#define ZB_CONFIG_OVERALL_NETWORK_SIZE 32*/

@@ -56,7 +56,7 @@ typedef enum zb_ota_protocol_error_type_e
 /* Struct used for error indication */
 typedef struct zb_ota_protocol_error_s
 {
-  zb_bool_t is_host; /* whether it is host or macsplit device error */
+  zb_bool_t is_host; /* whether it is host or MAC-Split device error */
   zb_ota_protocol_error_type_t error_type;
 } zb_ota_protocol_error_t;
 

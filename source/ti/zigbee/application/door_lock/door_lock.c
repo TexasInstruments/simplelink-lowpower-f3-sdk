@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024, Texas Instruments Incorporated
+ Copyright (c) 2024-2025, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@
 /* for button handling */
 #include <ti/drivers/GPIO.h>
 #include "ti_drivers_config.h"
+#include <ti/drivers/dpl/ClockP.h>
 
 #ifdef ZB_CONFIGURABLE_MEM
 #include "zb_mem_config_lprf3.h"
@@ -134,7 +135,6 @@ static zb_bool_t error_ind_handler(zb_uint8_t severity,
                                    zb_ret_t error_code,
                                    void *additional_info);
 
-
 MAIN()
 {
   ARGV_UNUSED;
@@ -191,7 +191,7 @@ MAIN()
 #endif //ED_RX_ALWAYS_ON
 #endif //ZB_ED_ROLE
 
-  zb_set_nvram_erase_at_start(ZB_FALSE);
+  zb_set_nvram_erase_at_start(ZB_TRUE);
 
 #ifdef ZB_ENABLE_PTA
   zb_enable_pta(0);
@@ -225,7 +225,14 @@ MAIN()
       perform_factory_reset = ZB_TRUE;
       Log_printf(LogModule_Zigbee_App, Log_INFO, "performing factory reset");
     }
-    zboss_main_loop();
+    while (1)
+    {
+      zboss_main_loop_iteration();
+#ifdef SILK_UART_LOGGING
+      // Idle task needs time to execute to flush logs
+      ClockP_usleep(500);
+#endif //SILK_UART_LOGGING
+    }
   }
 
   /* Deinitialize trace */
@@ -425,6 +432,7 @@ void zboss_signal_handler(zb_uint8_t param)
   else
   {
     Log_printf(LogModule_Zigbee_App, Log_INFO, "Device started FAILED status %d sig %d", ZB_GET_APP_SIGNAL_STATUS(param), sig);
+    bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
   }
 
   /* Free the buffer if it is not used */

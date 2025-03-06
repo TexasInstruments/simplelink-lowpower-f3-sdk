@@ -113,7 +113,7 @@ typedef struct zp_zdo_handle_s
   zb_uint8_t permit_joining_param;          /*!< if !0, nlme-permit_joining will
                                              * be executed */
   zb_uint8_t permit_duration;               /*!< data for permit_joining */
-  zb_uint8_t dev_annce_param;               /*!< if !0, this is buffer id - device annonce
+  zb_uint8_t dev_annce_param;               /*!< if !0, this is buffer id - device announce
                                              * is sent */
   zb_uint8_t key_sw;                        /*!< if !0, key switch is sent and must switch
                                              * the key after this buffer sent  */
@@ -127,7 +127,7 @@ typedef struct zp_zdo_handle_s
   zb_zdo_rejoin_ctx_t rejoin_ctx;
 #ifdef ZB_MACSPLIT_HOST
   zb_bool_t start_no_autostart;              /*!< if ZB_TRUE, device started with start_no_autostart
-                                              * Used only for macsplit host*/
+                                              * Used only for MAC-Split host*/
 #endif
  } zp_zdo_handle_t;
 
@@ -300,10 +300,10 @@ typedef struct zb_zdo_globals_s
 {
   zp_zdo_handle_t handle;                           /*!< */
   zb_uint8_t      tsn;                              /*!< */
-  zb_zdo_tsn_policy_t tsn_policy;                   /*!< see zb_zdo_tsn_policy_e */
 #ifdef ZBOSS_ZDO_APP_TSN_ENABLE
+  zb_zdo_tsn_policy_t tsn_policy;                   /*!< see zb_zdo_tsn_policy_e */
   zb_callback_t       tsn_lock_cb;                  /*!< callback to be called to sync app tsn allocate  */
-  zdo_app_tsn_entry_t app_tsn_table[ZBOSS_ZDO_APP_TSN_TABLE_SIZE];
+  zb_zdo_app_tsn_entry_t app_tsn_table[ZBOSS_ZDO_APP_TSN_TABLE_SIZE];
 #endif
   zb_device_handler_t   af_data_cb;                 /*!< Callback of zb_apsde_data_indication
                                                      * function */
@@ -517,7 +517,12 @@ typedef struct zb_zdo_globals_s
 #endif
 
 #define ZB_ZDO_JOINER_KEY_NEGOTIATION_CTX() (*(ZG->zdo.key_negotiation_ctx))
+
+#ifndef NCP_MODE_HOST
 #define ZB_SET_JOINED_STATUS(v) ZB_TCPOL().node_is_on_a_network = (v)
+#else
+#define ZB_SET_JOINED_STATUS(v)
+#endif /* !NCP_MODE_HOST */
 
 /* Converts a buffer with data into a packed signal with the data */
 void zb_app_signal_pack_with_data(zb_uint8_t param, zb_uint32_t signal_code, zb_int16_t status);

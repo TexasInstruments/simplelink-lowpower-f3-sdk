@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024, Texas Instruments Incorporated
+ Copyright (c) 2024-2025, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,8 @@
 #define ZB_SECURITY_INSTALLCODES
 #define APS_FRAGMENTATION
 #define ZB_ALL_DEVICE_SUPPORT
+
+#define ZB_CONFIGURABLE_RETRIES
 
 #ifdef ZB_CONFIG_DEFAULT_KERNEL_DEFINITION
 

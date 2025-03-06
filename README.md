@@ -19,20 +19,14 @@ users by packaging essential software components, such as:
 
 ## What's New
 
-This is version 8.40.00.61 of the LPF3 SDK. This release includes:
+This is version 8.40.02.01 of the LPF3 SDK. This release includes:
 
-* CC27xx family of devices are now supported.
-  * For more information regarding the new device, please visit [the product
-    page](https://www.ti.com/product/CC2745R10-Q1)
-  * The CC2745R10-Q1 is suitable to evaluate other device variants in the CC27xx
-    family of devices.
-  * Bluetooth LE 5.4 qualified stack for the CC27xx devices.
-* Controller-Only examples have been added for the CC23xx and CC27xx family of
-  devices.
-* Early access to Zigbee Stack; Fully qualified on CC2340Rx only.
+* Certified Zigbee Stack.
+* Zigbee OTA support.
+* Minor bug fixes in SCCM.
 
 More details, including supported devices, IDEs, and toolchains are provided in
-the [LPF3 8.40.00.61 SDK release notes][sdk release notes].
+the [LPF3 8.40.02.01 SDK release notes][sdk release notes].
 
 ## About this Repository
 
@@ -117,8 +111,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__AIdWRFXHGgGjzzdkh3KP0A__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.00.61
-[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AE7zcXV6PmNpJMBljRPgJA__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.00.61
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.02.01
+[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.02.01
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

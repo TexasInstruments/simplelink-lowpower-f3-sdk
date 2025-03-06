@@ -96,7 +96,7 @@
  * Assertions
  */
 
-//#define MCUBOOT_HAVE_ASSERT_H
+#define MCUBOOT_HAVE_ASSERT_H
 
 /*
  * Always check the signature of the image in the primary slot before booting,

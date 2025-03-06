@@ -19,7 +19,7 @@
  * with the terms contained in a written agreement between you and
  * DSR.
  */
-/*  PURPOSE: MAC split internals
+/*  PURPOSE: MAC-Split internals
 */
 
 #ifndef ZB_MACSPLIT_INTERNAL_H
@@ -31,19 +31,19 @@
 #include "mac_internal.h"
 #endif /* ZB_MACSPLIT_HOST && ZB_MAC_API_TRACE_PRIMITIVES */
 
-/* Macsplit protocol version that provides an ability for developer to track changes */
+/* MAC-Split protocol version that provides an ability for developer to track changes */
 /* is changed only when the back compatibility is broken */
 #define ZB_MACSPLIT_API_VERSION_MAJOR 1u
 /* is changed every time when the protocol is extended with some new API calls */
 #define ZB_MACSPLIT_API_VERSION_MINOR 1u
 
 /**
- * Type for call types, see MACSPLIT TRANSPORT PROTOCOL section for possible call types
+ * Type for call types, see MAC-Split TRANSPORT PROTOCOL section for possible call types
  */
 typedef zb_uint16_t zb_transport_call_type_t;
 
 #define ZB_TRANSPORT_CALL_TYPE_NO_TYPE   0xBBU
-/* 0xFFU may be interpreted as ZB_MAC_TRANSPORT_TYPE_OTA_PROTOCOL. See hacks in macsplit transport logic */
+/* 0xFFU may be interpreted as ZB_MAC_TRANSPORT_TYPE_OTA_PROTOCOL. See hacks in MAC-Split transport logic */
 #define ZB_TRANSPORT_CALL_TYPE_OTA       0xFFU
 
 
@@ -199,7 +199,7 @@ void zb_get_tx_power_async_macsplit(zb_bufid_t param);
 #endif /* #ifdef ZB_MAC_CONFIGURABLE_TX_POWER */
 
 #if defined(ZB_MAC_INTERFACE_SINGLE) && defined(ZB_MACSPLIT_HOST)
-/* Redefine MAC API function in the case if MAC Split is
+/* Redefine MAC API function in the case if MAC-Split is
    the only interface (needed for MAC certification tests).
  */
 #define zb_mcps_data_request                  zb_mcps_data_request_macsplit

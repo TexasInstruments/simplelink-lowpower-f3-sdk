@@ -1328,5 +1328,537 @@
             "FreeRTOS",
             "TI Clang Compiler"
         ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_offchip",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_offchip",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_offchip",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_offchip",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_offchip",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_offchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_offchip",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_offchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_onchip",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_onchip",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_onchip",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_onchip",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_onchip",
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R53_freertos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_onchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_onchip",
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R5_freertos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_onchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
     }
 ]

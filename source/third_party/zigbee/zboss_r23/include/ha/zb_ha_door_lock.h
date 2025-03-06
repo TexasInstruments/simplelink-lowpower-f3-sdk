@@ -48,16 +48,16 @@
 
     - Declaring clusters:
 
-        @snippet HA_samples/common/zcl_basic_attr_list.h BASIC_CLUSTER_COMMON
-        @snippet HA_samples/door_lock/sample_zc.c COMMON_DECLARATION
+        @snippet HA/common/zcl_basic_attr_list.h BASIC_CLUSTER_COMMON
+        @snippet HA/door_lock/sample_zc.c COMMON_DECLARATION
 
     - Registering device list:
 
-        @snippet HA_samples/door_lock/sample_zc.c REGISTER
+        @snippet HA/door_lock/sample_zc.c REGISTER
 
     - Example of command handler:
 
-        @snippet HA_samples/door_lock/sample_zc.c ZCL_COMMAND_HANDLER
+        @snippet HA/door_lock/sample_zc.c ZCL_COMMAND_HANDLER
 
     @par
 */

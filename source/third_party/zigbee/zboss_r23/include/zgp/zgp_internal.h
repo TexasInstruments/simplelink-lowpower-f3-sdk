@@ -656,7 +656,7 @@ typedef struct zb_zgps_dev_comm_data_s
   zb_uint8_t     oper_channel;  /**< ZGP physical operational channel */
   zb_uint8_t     temp_master_tx_chnl;  /**< Temp channel during commissioning */
 #ifdef ZB_ENABLE_ZGP_DIRECT
-  /* check if we are working on temp channel 
+  /* check if we are working on temp channel
    * Indicates that we have physically switched from the operational channel */
   zb_bool_t      is_work_on_temp_channel;
 #endif  /* ZB_ENABLE_ZGP_DIRECT */
@@ -1203,28 +1203,6 @@ typedef enum zgp_gps_functionality_e {
   ZGP_GPS_TRANSLATION_TABLE                        = (1 << 18),
   ZGP_GPS_GPD_IEEE_ADDRESS                         = (1 << 19)
 } zgp_gps_functionality_t;
-
-enum zgp_gp_attr_e {
-  ZB_ZCL_ATTR_GPS_MAX_SINK_TABLE_ENTRIES_ID     = 0x0000,
-  ZB_ZCL_ATTR_GPS_SINK_TABLE_ID                 = 0x0001,
-  ZB_ZCL_ATTR_GPS_COMMUNICATION_MODE_ID         = 0x0002,
-  ZB_ZCL_ATTR_GPS_COMMISSIONING_EXIT_MODE_ID    = 0x0003,
-  ZB_ZCL_ATTR_GPS_COMMISSIONING_WINDOW_ID       = 0x0004,
-  ZB_ZCL_ATTR_GPS_SECURITY_LEVEL_ID             = 0x0005,
-  ZB_ZCL_ATTR_GPS_FUNCTIONALITY_ID              = 0x0006,
-  ZB_ZCL_ATTR_GPS_ACTIVE_FUNCTIONALITY_ID       = 0x0007,
-  ZB_ZCL_ATTR_GPP_MAX_PROXY_TABLE_ENTRIES_ID    = 0x0010,
-  ZB_ZCL_ATTR_GPP_PROXY_TABLE_ID                = 0x0011,
-  ZB_ZCL_ATTR_GPP_NOTIFICATION_RETRY_NUMBER_ID  = 0x0012,
-  ZB_ZCL_ATTR_GPP_NOTIFICATION_RETRY_TIMER_ID   = 0x0013,
-  ZB_ZCL_ATTR_GPP_MAX_SEARCH_COUNTER_ID         = 0x0014,
-  ZB_ZCL_ATTR_GPP_BLOCKED_GPDID_ID              = 0x0015,
-  ZB_ZCL_ATTR_GPP_FUNCTIONALITY_ID              = 0x0016,
-  ZB_ZCL_ATTR_GPP_ACTIVE_FUNCTIONALITY_ID       = 0x0017,
-  ZB_ZCL_ATTR_GP_SHARED_SECURITY_KEY_TYPE_ID    = 0x0020,
-  ZB_ZCL_ATTR_GP_SHARED_SECURITY_KEY_ID         = 0x0021,
-  ZB_ZCL_ATTR_GP_LINK_KEY_ID                    = 0x0022
-};
 
 #define ZB_ZCL_GREEN_POWER_CLUSTER_REVISION_DEFAULT ((zb_uint16_t)0x0002u)
 
@@ -1904,75 +1882,6 @@ zb_uint8_t zb_zgp_cluster_encode_lqi(zb_uint8_t lqi);
 zb_uint8_t zb_zgp_cluster_encode_link_quality(zb_int8_t rssi, zb_uint8_t lqi);
 #endif  /* ZB_ENABLE_ZGP_DIRECT */
 
-/********************************************************************/
-/***************** ZGP ZCL helpers definitions **********************/
-/********************************************************************/
-
-/**
- * @brief Perform send general zcl read attributes command for ZGP cluster
- *
- * @param buf_ref        [in]  Buffer reference
- * @param dst_addr       [in]  Destination address
- * @param dst_addr_mode  [in]  Destination address mode
- * @param attr_ids       [in]  Attribute IDs list
- * @param attr_cnt       [in]  Attribute IDs list size
- * @param def_resp       [in]  Enable ZCL default response if TRUE
- * @param cb             [in]  Call callback if needed after sending request
- *
- */
-void zgp_cluster_read_attrs(zb_uint8_t     buf_ref,
-                                 zb_uint16_t    dst_addr,
-                                 zb_uint8_t     dst_addr_mode,
-                                 zb_uint16_t   *attr_ids,
-                                 zb_uint8_t     attr_cnt,
-                                 zb_uint8_t     dir,
-                                 zb_uint8_t     def_resp,
-                                 zb_callback_t  cb);
-
-/**
- * @brief Perform send general zcl read attribute command for ZGP cluster
- *
- * @param buf_ref        [in]  Buffer reference
- * @param dst_addr       [in]  Destination address
- * @param dst_addr_mode  [in]  Destination address mode
- * @param attr_id        [in]  Attribute ID
- * @param def_resp       [in]  Enable ZCL default response if TRUE
- * @param cb             [in]  Call callback if needed after sending request
- *
- */
-void zgp_cluster_read_attr(zb_uint8_t     buf_ref,
-                                zb_uint16_t    dst_addr,
-                                zb_uint8_t     dst_addr_mode,
-                                zb_uint16_t    attr_id,
-                                zb_uint8_t     dir,
-                                zb_uint8_t     def_resp,
-                                zb_callback_t  cb);
-
-/**
- * @brief Perform send general zcl write attribute command for ZGP cluster
- *
- * @param buf_ref        [in]  Buffer reference
- * @param dst_addr       [in]  Destination address
- * @param dst_addr_mode  [in]  Destination address mode
- * @param attr_id        [in]  Attribute ID
- * @param attr_type      [in]  Attribute type
- * @param attr_val       [in]  Pointer to attribute value
- * @param def_resp       [in]  Enable ZCL default response if TRUE
- * @param cb             [in]  Call callback if needed after sending request
- *
- */
-void zgp_cluster_write_attr(zb_uint8_t     buf_ref,
-                                 zb_uint16_t    dst_addr,
-                                 zb_uint8_t     dst_addr_mode,
-                                 zb_uint16_t    attr_id,
-                                 zb_uint8_t     attr_type,
-                                 zb_uint8_t    *attr_val,
-                                 zb_uint8_t     dir,
-                                 zb_uint8_t     def_resp,
-                                 zb_callback_t  cb);
-
-// ******************************************************************
-
 #ifdef ZB_ENABLE_ZGP_DIRECT
 /**
  * @brief ZGP message status
@@ -2191,18 +2100,6 @@ typedef ZB_PACKED_PRE struct zb_zgp_gp_response_s
   zb_uint8_t     payload[MAX_ZGP_CLUSTER_GPDF_PAYLOAD_SIZE+1];
 }
 ZB_PACKED_STRUCT zb_zgp_gp_response_t;
-
-enum zb_zgp_pairing_conf_actions_e
-{
-  ZGP_PAIRING_CONF_NO_ACTION        = 0,
-  ZGP_PAIRING_CONF_EXTEND           = 1,
-  ZGP_PAIRING_CONF_REPLACE          = 2,
-  ZGP_PAIRING_CONF_REMOVE_PAIRING   = 3,
-  ZGP_PAIRING_CONF_REMOVE_GPD       = 4,
-  ZGP_PAIRING_CONF_APP_DESCRIPTION  = 5,
-  ZGP_PAIRING_CONF_REMOVE_RESERVED6 = 6,
-  ZGP_PAIRING_CONF_REMOVE_RESERVED7 = 7
-};
 
 enum zb_zgp_pairing_conf_actions_send_pairing_e
 {

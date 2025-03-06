@@ -69,6 +69,23 @@ enum zb_zgp_endpoint_e
 };
 
 /**
+ * @brief ZGPD GP Pairing Configuration action sub-field of the Actions field enum
+ *
+ * Table 34 – Values of the Action sub-field of the Actions field
+ */
+enum zb_zgp_pairing_conf_actions_e
+{
+  ZGP_PAIRING_CONF_NO_ACTION        = 0,
+  ZGP_PAIRING_CONF_EXTEND           = 1,
+  ZGP_PAIRING_CONF_REPLACE          = 2,
+  ZGP_PAIRING_CONF_REMOVE_PAIRING   = 3,
+  ZGP_PAIRING_CONF_REMOVE_GPD       = 4,
+  ZGP_PAIRING_CONF_APP_DESCRIPTION  = 5,
+  ZGP_PAIRING_CONF_REMOVE_RESERVED6 = 6,
+  ZGP_PAIRING_CONF_REMOVE_RESERVED7 = 7
+};
+
+/**
  * @brief ZGPD identification info (ZGPD ID)
  *
  * ZGPD is identified by SrcId if ApplicationID is @ref ZB_ZGP_APP_ID_0000.
@@ -446,7 +463,7 @@ zb_zgps_match_info_t;
   Using of Mapping Table.
 
   Mapping table functionality is ZBOSS custom implementation of Translation table, described in specification.
-  Currently ZBOSS handles GPD commands mapping, which MAY be placed in mapping table, provided by application.  
+  Currently ZBOSS handles GPD commands mapping, which MAY be placed in mapping table, provided by application.
 
   Mapping Table is a specific mapping rules declared in the application.
   The specific mapping supersedes the generic one.
@@ -783,8 +800,8 @@ typedef struct zb_zgp_cluster_list_s
 {
   zb_uint8_t server_cl_num;                                       /**< Number of server ClusterIDs */
   zb_uint8_t client_cl_num;                                       /**< Number of client ClusterIDs */
-  zb_uint16_t server_clusters[ZB_ZGP_MAX_PAIRED_CONF_CLUSTERS];   /**< ClusterID List Server */
-  zb_uint16_t client_clusters[ZB_ZGP_MAX_PAIRED_CONF_CLUSTERS];   /**< ClusterID List Client */
+  zb_uint16_t server_clusters[ZB_ZGP_MAX_PAIRED_SRV_CONF_CLUSTERS];   /**< ClusterID List Server */
+  zb_uint16_t client_clusters[ZB_ZGP_MAX_PAIRED_CLI_CONF_CLUSTERS];   /**< ClusterID List Client */
 }
 zb_zgp_cluster_list_t;
 
@@ -843,7 +860,7 @@ typedef struct zgp_approve_comm_params_s
   zb_uint8_t              pairing_endpoint; /**< Device endpoint, on which commissioning is currently active */
   zb_zgp_gpd_cmds_list_t  gpd_cmds_list;    /**< ZGPD Command list */
   zb_zgp_cluster_list_t   cluster_list;     /**< ZGPD Cluster list */
-  zb_uint8_t              num_of_reports;   /**< total number of different report descriptors that GPD sent 
+  zb_uint8_t              num_of_reports;   /**< total number of different report descriptors that GPD sent
                                                  during the commissioning process */
   zgp_raw_report_desc_t   reports[ZB_ZGP_APP_DESCR_REPORTS_NUM];  /**< array of reports*/
   zb_bool_t               pairing_configuration;  /**< It is ZB_TRUE in case this approve signal was triggered by GP Pairing Configuration command */
@@ -1492,6 +1509,63 @@ zb_gpdf_attr_report_fld_t;
 }
 
 /**
+ * @brief Attribute field of attribute read response command
+ * @see ZGP spec, A.4.2.6.2
+ */
+typedef struct zb_gpdf_attr_read_resp_fld_s
+{
+  zb_uint16_t attr_id;   /**< Attribute ID specific to cluster */
+  zb_uint8_t status;     /**< Attribute status */
+  zb_uint8_t attr_type;  /**< Attribute type (see @ref zcl_attr_type) */
+  void* data_p;     /**< Attribute data */
+}
+zb_gpdf_attr_read_resp_fld_t;
+
+/**
+ * @brief Start constructing ZGPD attribute read response command
+ *
+ * @param buf        [in]  Buffer for GPDF command
+ * @param cluster_id [in]  Cluster ID of attributes
+ * @param ptr        [out] Pointer to the current tail of GPDF
+ */
+#define ZB_ZGPD_ATTR_READ_RESP_CMD_INIT(buf, cluster_id, ptr) \
+{ \
+  ptr = ZB_START_GPDF_PACKET(buf); \
+  ZB_GPDF_PUT_UINT8(ptr, ZB_GPDF_CMD_READ_ATTR_RESP); \
+  ZB_GPDF_PUT_UINT16(ptr, &cluster_id); \
+}
+
+/**
+ * @brief Put attribute field into attribute read response command
+ *
+ * Macro should be called only after attribute read response command is
+ * initialized with @ref ZB_ZGPD_ATTR_READ_RESP_CMD_INIT
+ * @param ptr   [in,out]  Pointer to the tail of attribute read response command
+ * @param attr  [in]      Attribute read response field (see @zb_gpdf_attr_read_resp_fld_t)
+ */
+#define ZB_ZGPD_ATTR_READ_RESP_CMD_NEXT(ptr, attr) \
+{ \
+  ZB_GPDF_PUT_UINT16(ptr, &attr.attr_id); \
+  ZB_GPDF_PUT_UINT8(ptr, attr.status); \
+  if (attr.status == 0) \
+  { \
+    ZB_GPDF_PUT_UINT8(ptr, attr.attr_type); \
+    ptr = zb_zcl_put_value_to_packet(ptr, attr.attr_type, (zb_uint8_t *)attr.data_p); \
+  } \
+}
+
+/**
+ * @brief Finish constructing ZGPD attribute read response command
+ *
+ * @param buf        [in] Buffer for GPDF command
+ * @param ptr        [in] Pointer to the tail of GPDF
+ */
+#define ZB_ZGPD_ATTR_READ_RESP_CMD_FINISH(buf, ptr) \
+{ \
+  ZB_FINISH_GPDF_PACKET(buf, ptr);      \
+}
+
+/**
  * @brief Value of multi-record bit of options field
  *        in ZGPD Request attributes or Write attributes command
  *        (ZGP spec, rev. 26 A.4.2.6.1)
@@ -1505,6 +1579,14 @@ zb_gpdf_attr_report_fld_t;
  *        (ZGP spec, rev. 26 A.4.2.6.1)
  */
 #define ZB_GPDF_WRITE_ATTR_IS_MULTI_RECORD \
+  ZB_GPDF_REQUEST_ATTR_IS_MULTI_RECORD
+
+/**
+ * @brief Value of multi-record bit of options field
+ *        in ZGPD Read response attributes command
+ *        (ZGP spec, rev. 26 A.4.2.6.1)
+ */
+#define ZB_GPDF_READ_RESP_ATTR_IS_MULTI_RECORD \
   ZB_GPDF_REQUEST_ATTR_IS_MULTI_RECORD
 
 /**
@@ -1524,6 +1606,14 @@ zb_gpdf_attr_report_fld_t;
   ZB_GPDF_REQUEST_ATTR_MANUF_FIELD_PRESENT
 
 /**
+ * @brief Value of "manufacturer field present" bit of options field
+ *        in ZGPD Read response attributes command
+ *        (ZGP spec, rev. 26 A.4.2.6.1)
+ */
+#define ZB_GPDF_READ_RESP_ATTR_MANUF_FIELD_PRESENT \
+  ZB_GPDF_REQUEST_ATTR_MANUF_FIELD_PRESENT
+
+/**
  * @brief Construct value of options field
  *        in ZGPD Request attributes or Write attributes command
  *        (ZGP spec, rev. 26 A.4.2.6.1)
@@ -1540,19 +1630,37 @@ zb_gpdf_attr_report_fld_t;
   ZB_GPDF_REQUEST_ATTR_OPTIONS_FLD
 
 /**
+ * @brief Construct value of options field
+ *        in ZGPD Read response attributes command
+ *        (ZGP spec, rev. 26 A.4.2.6.3)
+ */
+#define ZB_GPDF_READ_RESP_ATTR_OPTIONS_FLD \
+  ZB_GPDF_REQUEST_ATTR_OPTIONS_FLD
+
+/**
  * @brief Parse one Cluster Record request field of
  * ZGPD Request attributes command
  * @param rec         pointer to record to parse of type zb_uint8_t*
- * @param cluster_id  Cluster ID (out)
  * @param attr_count  Attribute count (out)
  * @param attrs  Pointer to attributes list (out)
  */
-#define ZB_GPDF_REQUEST_ATTR_PARSE_RECORD(rec, cluster_id, attr_count, attrs) \
+#define ZB_GPDF_REQUEST_ATTR_PARSE_RECORD(rec, attr_count, attrs) \
 { \
-  ZB_LETOH16((cluster_id), (rec)); \
-  *(attr_count) = (rec)[2]/sizeof(zb_uint16_t); \
-  *(attrs) = (zb_uint16_t *)(void *)(&(rec)[3]); \
+  *(attr_count) = (rec)[0]/sizeof(zb_uint16_t); \
+  *(attrs) = (zb_uint16_t *)(void *)(&(rec)[1]); \
 }
+
+/**
+ * @brief Attribute field of attribute write command
+ * @see ZGP spec, A.4.2.6.3
+ */
+typedef struct zb_gpdf_attr_write_fld_s
+{
+  zb_uint16_t attr_id;   /**< Attribute ID specific to cluster */
+  zb_uint8_t attr_type;  /**< Attribute type (see @ref zcl_attr_type) */
+  void* data_p;     /**< Attribute data */
+}
+zb_gpdf_attr_write_fld_t;
 
 /**
  * @brief Start constructing ZGP write attribute command
@@ -1602,16 +1710,14 @@ zb_gpdf_attr_report_fld_t;
  *
  * Macro should be called only after new cluster record is
  * initialized with @ref ZB_ZGPD_WRITE_ATTR_NEXT_CLUSTER_RECORD
- * @param ptr       [in,out]  Pointer to the tail of write attributes command
- * @param attr_id   [in]      Attribute ID
- * @param attr_type [in]      Attribute type
- * @param value     [in]      Pointer to attribute value
+ * @param ptr   [in,out]  Pointer to the tail of write attributes command
+ * @param attr  [in]      Attribute write field (see @zb_gpdf_attr_write_fld_t)
  */
-#define ZB_ZGPD_WRITE_ATTR_CMD_NEXT_ATTR(ptr, attr_id, attr_type, value) \
+#define ZB_ZGPD_WRITE_ATTR_CMD_NEXT_ATTR(ptr, attr) \
 { \
-  ZB_GPDF_PUT_UINT16(ptr, &attr_id); \
-  ZB_GPDF_PUT_UINT8(ptr, attr_type); \
-  ptr = zb_zcl_put_value_to_packet(ptr, attr_type, (zb_uint8_t *)(value)); \
+  ZB_GPDF_PUT_UINT16(ptr, &attr.attr_id); \
+  ZB_GPDF_PUT_UINT8(ptr, attr.attr_type); \
+  ptr = zb_zcl_put_value_to_packet(ptr, attr.attr_type, (zb_uint8_t *)(attr.data_p)); \
 }
 
 /**
@@ -1727,7 +1833,7 @@ void zb_zgps_send_data(zb_uint8_t param);
  * It is safe to call this function when device is already in
  * commissioning mode. In this case function does nothing.
  * 
- * @snippet light_sample/light_coordinator_combo/light_zc.c zgps_start_comm
+ * @snippet light_sample_ext/light_coordinator_combo/light_zc.c zgps_start_comm
  */
 void zb_zgps_start_commissioning(zb_time_t timeout);
 
@@ -1757,7 +1863,7 @@ void zb_zgps_start_commissioning_on_ep(zb_uint8_t ep, zb_time_t timeout);
  * status.
  * @endcond
  *
- * @snippet light_sample/light_coordinator_combo/light_zc.c zgps_stop_comm
+ * @snippet light_sample_ext/light_coordinator_combo/light_zc.c zgps_stop_comm
  */
 void zb_zgps_stop_commissioning(void);
 
@@ -1826,7 +1932,7 @@ void zb_zgps_get_diag_data(zb_zgpd_id_t *zgpd_id, zb_uint8_t *lqi, zb_int8_t *rs
    over-the-air exchange of the GPD Key
    @param involve_tc always zero for the current GPPB specification
 
-   @snippet light_sample/light_coordinator_combo/light_zc.c zgps_set_secur_level
+   @snippet light_sample_ext/light_coordinator_combo/light_zc.c zgps_set_secur_level
  */
 #define ZB_ZGP_FILL_GPS_SECURITY_LEVEL(sec_lvl, with_link_key, involve_tc)\
   (((sec_lvl) & 3U) | ((!!(with_link_key)) << 2U) | ((!!(involve_tc)) << 3U))
@@ -1839,7 +1945,7 @@ void zb_zgps_get_diag_data(zb_zgpd_id_t *zgpd_id, zb_uint8_t *lqi, zb_int8_t *rs
 
    @param level Security level to set
 
-   @snippet light_sample/light_coordinator_combo/light_zc.c zgps_set_secur_level
+   @snippet light_sample_ext/light_coordinator_combo/light_zc.c zgps_set_secur_level
   */
 void zb_zgps_set_security_level(zb_uint_t level);
 
@@ -1886,7 +1992,7 @@ void zb_zgps_set_commissioning_exit_mode(zb_uint_t cem);
 
    @param mode @ref zgp_communication_mode_t communication mode
 
-   @snippet light_sample/light_coordinator_combo/light_zc.c set_comm_mode
+   @snippet light_sample_ext/light_coordinator_combo/light_zc.c set_comm_mode
   */
 void zb_zgps_set_communication_mode(zgp_communication_mode_t mode);
 
@@ -2311,7 +2417,6 @@ void zgp_cluster_send_gp_sink_commissioning_mode(zb_uint8_t    buf_ref,
 void zgp_gp_set_shared_security_key_type(enum zb_zgp_security_key_type_e type);
 #define ZGP_GP_SET_SHARED_SECURITY_KEY_TYPE(type) zgp_gp_set_shared_security_key_type(type)
 
-#ifdef ZGP_CLUSTER_TEST
 /* Application specific zcl command handler for test purposes */
 typedef zb_uint8_t (*zgp_cluster_app_zcl_cmd_handler_t)(zb_uint8_t buf_ref);
 
@@ -2321,7 +2426,100 @@ typedef zb_uint8_t (*zgp_cluster_app_zcl_cmd_handler_t)(zb_uint8_t buf_ref);
  * @param handler [in]  Specific application zcl command handler pointer
  */
 void zgp_cluster_set_app_zcl_cmd_handler(zgp_cluster_app_zcl_cmd_handler_t handler);
-#endif  /* ZGP_CLUSTER_TEST */
 #endif  /* !ZB_ZGPD_ROLE */
+
+/********************************************************************/
+/***************** ZGP ZCL helpers definitions **********************/
+/********************************************************************/
+
+/**
+ * @brief Perform send general zcl read attributes command for ZGP cluster
+ *
+ * @param buf_ref        [in]  Buffer reference
+ * @param dst_addr       [in]  Destination address
+ * @param dst_addr_mode  [in]  Destination address mode
+ * @param attr_ids       [in]  Attribute IDs list
+ * @param attr_cnt       [in]  Attribute IDs list size
+ * @param def_resp       [in]  Enable ZCL default response if TRUE
+ * @param cb             [in]  Call callback if needed after sending request
+ *
+ */
+void zgp_cluster_read_attrs(zb_uint8_t     buf_ref,
+                                 zb_uint16_t    dst_addr,
+                                 zb_uint8_t     dst_addr_mode,
+                                 zb_uint16_t   *attr_ids,
+                                 zb_uint8_t     attr_cnt,
+                                 zb_uint8_t     dir,
+                                 zb_uint8_t     def_resp,
+                                 zb_callback_t  cb);
+
+/**
+ * @brief Perform send general zcl read attribute command for ZGP cluster
+ *
+ * @param buf_ref        [in]  Buffer reference
+ * @param dst_addr       [in]  Destination address
+ * @param dst_addr_mode  [in]  Destination address mode
+ * @param attr_id        [in]  Attribute ID
+ * @param def_resp       [in]  Enable ZCL default response if TRUE
+ * @param cb             [in]  Call callback if needed after sending request
+ *
+ */
+void zgp_cluster_read_attr(zb_uint8_t     buf_ref,
+                                zb_uint16_t    dst_addr,
+                                zb_uint8_t     dst_addr_mode,
+                                zb_uint16_t    attr_id,
+                                zb_uint8_t     dir,
+                                zb_uint8_t     def_resp,
+                                zb_callback_t  cb);
+
+/**
+ * @brief Perform send general zcl write attribute command for ZGP cluster
+ *
+ * @param buf_ref        [in]  Buffer reference
+ * @param dst_addr       [in]  Destination address
+ * @param dst_addr_mode  [in]  Destination address mode
+ * @param attr_id        [in]  Attribute ID
+ * @param attr_type      [in]  Attribute type
+ * @param attr_val       [in]  Pointer to attribute value
+ * @param def_resp       [in]  Enable ZCL default response if TRUE
+ * @param cb             [in]  Call callback if needed after sending request
+ *
+ */
+void zgp_cluster_write_attr(zb_uint8_t     buf_ref,
+                                 zb_uint16_t    dst_addr,
+                                 zb_uint8_t     dst_addr_mode,
+                                 zb_uint16_t    attr_id,
+                                 zb_uint8_t     attr_type,
+                                 zb_uint8_t    *attr_val,
+                                 zb_uint8_t     dir,
+                                 zb_uint8_t     def_resp,
+                                 zb_callback_t  cb);
+
+// ******************************************************************
+
+/**
+   Zigbee Green Power Cluster Attributes IDs
+ */
+enum zgp_gp_attr_e {
+  ZB_ZCL_ATTR_GPS_MAX_SINK_TABLE_ENTRIES_ID     = 0x0000,
+  ZB_ZCL_ATTR_GPS_SINK_TABLE_ID                 = 0x0001,
+  ZB_ZCL_ATTR_GPS_COMMUNICATION_MODE_ID         = 0x0002,
+  ZB_ZCL_ATTR_GPS_COMMISSIONING_EXIT_MODE_ID    = 0x0003,
+  ZB_ZCL_ATTR_GPS_COMMISSIONING_WINDOW_ID       = 0x0004,
+  ZB_ZCL_ATTR_GPS_SECURITY_LEVEL_ID             = 0x0005,
+  ZB_ZCL_ATTR_GPS_FUNCTIONALITY_ID              = 0x0006,
+  ZB_ZCL_ATTR_GPS_ACTIVE_FUNCTIONALITY_ID       = 0x0007,
+  ZB_ZCL_ATTR_GPP_MAX_PROXY_TABLE_ENTRIES_ID    = 0x0010,
+  ZB_ZCL_ATTR_GPP_PROXY_TABLE_ID                = 0x0011,
+  ZB_ZCL_ATTR_GPP_NOTIFICATION_RETRY_NUMBER_ID  = 0x0012,
+  ZB_ZCL_ATTR_GPP_NOTIFICATION_RETRY_TIMER_ID   = 0x0013,
+  ZB_ZCL_ATTR_GPP_MAX_SEARCH_COUNTER_ID         = 0x0014,
+  ZB_ZCL_ATTR_GPP_BLOCKED_GPDID_ID              = 0x0015,
+  ZB_ZCL_ATTR_GPP_FUNCTIONALITY_ID              = 0x0016,
+  ZB_ZCL_ATTR_GPP_ACTIVE_FUNCTIONALITY_ID       = 0x0017,
+  ZB_ZCL_ATTR_GP_SHARED_SECURITY_KEY_TYPE_ID    = 0x0020,
+  ZB_ZCL_ATTR_GP_SHARED_SECURITY_KEY_ID         = 0x0021,
+  ZB_ZCL_ATTR_GP_LINK_KEY_ID                    = 0x0022
+};
 
 #endif /* ZBOSS_API_ZGP_H */

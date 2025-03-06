@@ -19,7 +19,7 @@
  * with the terms contained in a written agreement between you and
  * DSR.
  */
-/*  PURPOSE: MAC split - Spinel/HDLC layer of MAC Split transport over Spinel/HDLC-lite
+/*  PURPOSE: MAC-Split - Spinel/HDLC layer of MAC-Split transport over Spinel/HDLC-lite
 */
 
 #ifndef ZB_HDLC_H

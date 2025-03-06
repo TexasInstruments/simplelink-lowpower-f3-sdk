@@ -230,13 +230,13 @@ void zb_debug_trace_nwk_header(const zb_uint8_t *payload_ptr, zb_uint16_t label)
 #define dump_usb_traf(buf, len) {ZVUNUSED(buf); ZVUNUSED(len);}
 #define zb_debug_trace_buffer(buf_id, label) {ZVUNUSED(buf_id); ZVUNUSED(label);}
 #define zb_debug_trace_nwk_header(payload_ptr, label) {ZVUNUSED(payload_ptr); ZVUNUSED(label);}
-#endif
+#endif /* ZB_TRACE_LEVEL && ZB_TRACE_TRAFFIC */
 
 #if (defined ZB_MAC_TESTING_MODE) && (defined ZB_TRACE_TRAFFIC)
 #define DUMP_TRAF(cmt, buf, len, total) TRACE_MSG(TRACE_MAC3, #cmt, (FMT__0)); dump_traf(buf, len)
 #else
 #define DUMP_TRAF(comment, buf, len, total)
-#endif
+#endif /* ZB_MAC_TESTING_MODE && ZB_TRACE_TRAFFIC */
 
 #ifdef DEBUG
 void dump_hex_data(zb_uint_t trace_mask, zb_uint8_t trace_level, const zb_uint8_t *buf, zb_ushort_t len);

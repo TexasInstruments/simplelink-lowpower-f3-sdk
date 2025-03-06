@@ -35,6 +35,7 @@
 #include "zboss_api.h"
 #include "zb_types.h"
 #include "zb_errors.h"
+#include "zb_diag.h"
 #include "zb_debug.h"
 #include "zb_g_context.h"
 #include "zb_trace.h"
@@ -45,6 +46,14 @@
 #include "zb_th_dummy.h"
 #endif /* ZB_TH_ENABLED */
 #include "zb_common_u.h"
+
+/**
+   This feature is not used in regular deliveries and not supported by ZOI official platforms.
+   Refer to zboss_api.h for more info.
+*/
+#ifdef ZB_EXTENDED_VERSION_INFO
+#include "zb_sdk_version.h"
+#endif
 
 #include "zb_nvram.h"
 
@@ -117,6 +126,7 @@ extern char** g_argv;
     ZB_MEMCPY(buf, ZB_TEST_NAME_STR, sizeof(ZB_TEST_NAME_STR)); \
     ZB_CHECK_LIBRARY();                \
     zb_init(buf);                      \
+    zb_diag_init();                    \
   }
 #endif /* ZB_INIT_HAS_ARGS */
 

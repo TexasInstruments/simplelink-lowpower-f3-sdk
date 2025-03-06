@@ -19,7 +19,7 @@
  * with the terms contained in a written agreement between you and
  * DSR.
  */
-/*  PURPOSE: MAC split transport for Windows
+/*  PURPOSE: MAC-Split transport for Windows
 */
 
 #ifndef MACSPLIT_TRANSPORT_WINDOWS_H

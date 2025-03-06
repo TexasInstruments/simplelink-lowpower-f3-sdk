@@ -124,6 +124,13 @@ void zb_timer_enable_stop(void);
 void zb_timer_disable_stop(void);
 
 /**
+   Sleep for required interval using zb_timer timer.
+
+   @param interval_bi - time to sleep in beacon intervals
+ */
+void zb_timer_sleep(zb_time_t interval_bi);
+
+/**
    Get current transceiver time value in usec
  */
 zb_time_t osif_transceiver_time_get(void);

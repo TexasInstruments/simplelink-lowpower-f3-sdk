@@ -46,10 +46,10 @@
  *    @par Examples:
  *
  *    Send Door Lock command:
- *    @snippet HA_samples/door_lock/sample_zed.c send_door_lock_req
+ *    @snippet HA/door_lock/sample_zed.c send_door_lock_req
  *
  *    Send Door Unlock command:
- *    @snippet HA_samples/door_lock/sample_zed.c send_door_lock_unlock_req
+ *    @snippet HA/door_lock/sample_zed.c send_door_lock_unlock_req
  *
  */
 

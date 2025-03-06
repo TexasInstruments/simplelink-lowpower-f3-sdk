@@ -96,7 +96,7 @@ ZB_NORETURN void zb_verify(zb_uint16_t file_id, zb_int_t line_number, zb_ret_t e
 
 
 /* ERROR_CATEGORY_MACSPLIT */
-/* MACSPLIT Radio Failure error indication code */
+/* MAC-Split Radio Failure error indication code */
 #define ZB_ERROR_MACSPLIT_RADIO_FAILURE 1u /* unexpected SoC reboot */
 #define ZB_ERROR_MACSPLIT_RADIO_REBOOT  ZB_ERROR_MACSPLIT_RADIO_FAILURE
 #define ZB_ERROR_MACSPLIT_RADIO_HANG    2u /* no ACK etc */

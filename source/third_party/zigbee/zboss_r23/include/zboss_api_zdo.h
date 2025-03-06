@@ -147,7 +147,7 @@ typedef zb_uint8_t zb_zdp_status_t;
  *  - When the application calls zboss_start_no_autostart() instead of zboss_start() before the
  *    zboss_main_loop(). Used when some hardware must be initialized before the Zigbee commissioning,
  *    but already has ZBOSS scheduler running. Example: sensor connected through UART.
- *  - On macsplit architecture, when the application calls zboss_start_no_autostart() and both
+ *  - On MAC-Split architecture, when the application calls zboss_start_no_autostart() and both
  *    host, SoC components completed initialization procedure.
  *    This signal is always generated after ZB_MACSPLIT_DEVICE_BOOT in such case.
                                  *
@@ -228,7 +228,7 @@ typedef zb_uint8_t zb_zdp_status_t;
                                      * Signal parameters:
                                      *  - none
                                      *
-                                     * @snippet HA_samples/on_off_switch/sample_zed.c signal_first
+                                     * @snippet HA/on_off_switch/sample_zed.c signal_first
                                      *  @endparblock */
 #define ZB_BDB_SIGNAL_DEVICE_FIRST_START 5U
 
@@ -248,7 +248,7 @@ typedef zb_uint8_t zb_zdp_status_t;
                                      * Signal parameters:
                                      *  - none
                                      *
-                                     * @snippet HA_samples/on_off_switch/sample_zed.c signal_reboot
+                                     * @snippet HA/on_off_switch/sample_zed.c signal_reboot
                                      * @endparblock */
 #define ZB_BDB_SIGNAL_DEVICE_REBOOT 6U
 
@@ -273,7 +273,7 @@ typedef zb_uint8_t zb_zdp_status_t;
                                      * Signal parameters:
                                      *  - @ref zb_bdb_signal_touchlink_nwk_started_params_t
                                      *
-                                     * @snippet lighting/dimmable_light_tl/light_controller_zed.c signal_touchlink_nwk_started
+                                     * @snippet func/dimmable_light_tl/light_controller_zed.c signal_touchlink_nwk_started
                                      *  @endparblock */
 #define ZB_BDB_SIGNAL_TOUCHLINK_NWK_STARTED 7U
 
@@ -289,7 +289,7 @@ typedef zb_uint8_t zb_zdp_status_t;
                                      * Signal parameters:
                                      *  - @ref zb_bdb_signal_touchlink_nwk_started_params_t
                                      *
-                                     * @snippet lighting/dimmable_light_tl/light_controller_zed.c signal_touchlink_nwk_joined_router
+                                     * @snippet func/dimmable_light_tl/light_controller_zed.c signal_touchlink_nwk_joined_router
                                      * @endparblock */
 #define ZB_BDB_SIGNAL_TOUCHLINK_NWK_JOINED_ROUTER 8U
 
@@ -501,7 +501,7 @@ typedef zb_uint8_t zb_zdp_status_t;
  * Signal parameters:
  *  - zb_zgp_signal_commissioning_params_s
  *
- * @snippet light_sample/light_coordinator_combo/light_zc.c signal_zgp_commissioning
+ * @snippet light_sample_ext/light_coordinator_combo/light_zc.c signal_zgp_commissioning
  * @endparblock */
 #define ZB_ZGP_SIGNAL_COMMISSIONING 21U
 /** @endcond */ /* DOXYGEN_ZGP_SECTION */
@@ -523,7 +523,7 @@ typedef zb_uint8_t zb_zdp_status_t;
  * Signal parameters:
  *  - @ref zb_zdo_signal_can_sleep_params_t
  *
- * @snippet onoff_server/on_off_switch_zed.c signal_can_sleep
+ * @snippet onoff_server/on_off_switch_zed_app_tsn.c signal_can_sleep
  *
  * @endparblock
  */
@@ -731,7 +731,7 @@ typedef zb_uint8_t zb_zdp_status_t;
 
 /** @endcond */ /* DOXYGEN_SE_SECTION */
 #ifdef ZB_MACSPLIT
-/** Notifies the application about macsplit mac device boot.
+/** Notifies the application about MAC-Split mac device boot.
  *
  * When generated:
  *  - When MAC device completed initialization procedure.
@@ -747,9 +747,9 @@ typedef zb_uint8_t zb_zdp_status_t;
  */
 #define ZB_MACSPLIT_DEVICE_BOOT              43U
 
-#define ZB_MACSPLIT_DEVICE_READY_FOR_UPGRADE 44U /*!< macsplit mac device is ready for upgrade */
+#define ZB_MACSPLIT_DEVICE_READY_FOR_UPGRADE 44U /*!< MAC-Split mac device is ready for upgrade */
 
-/** macsplit device upgrade event: device ready for upgrade or error indication */
+/** MAC-Split device upgrade event: device ready for upgrade or error indication */
 #define ZB_MACSPLIT_DEVICE_FW_UPGRADE_EVENT  45U
 
 #endif /*ZB_MACSPLIT*/
@@ -828,7 +828,7 @@ typedef zb_uint8_t zb_zdp_status_t;
 /** PAN ID conflict has been detected. Application has to decide whether to initiate its resolution
                                                  * or not.
                                                  * @par Signal parameter
-                                                 * @see zb_start_pan_id_conflict_resolution
+                                                 * @see zb_prepare_network_for_panid_change and zb_start_panid_change
                                                 */
 #define ZB_NWK_SIGNAL_PANID_CONFLICT_DETECTED 51U
 
@@ -898,7 +898,7 @@ To be used mainly for certification testing, when run-time visibility setting is
  * Signal parameters:
  *  - none
  *
- * @snippet onoff_server/on_off_switch_zed.c signal_bdb_tc_rejoin_done
+ * @snippet onoff_server/on_off_switch_zed_app_tsn.c signal_bdb_tc_rejoin_done
  * @endparblock */
 #define ZB_BDB_SIGNAL_TC_REJOIN_DONE 58U
 
@@ -1261,13 +1261,13 @@ typedef struct zb_zdo_signal_can_sleep_params_s
 } zb_zdo_signal_can_sleep_params_t;
 
 /**
-   @brief Macsplit device boot parameters.
+   @brief MAC-Split device boot parameters.
 
-   Macsplit passes this parameter to application when device is booted.
+   MAC-Split passes this parameter to application when device is booted.
   */
 typedef struct zb_zdo_signal_macsplit_dev_boot_params_s
 {
-  zb_uint32_t    dev_version; /*!< macsplit device version */
+  zb_uint32_t    dev_version; /*!< MAC-Split device version */
   zb_ieee_addr_t extended_address;          /*!< The 64-bit (IEEE) address assigned to the device. */
 } zb_zdo_signal_macsplit_dev_boot_params_t;
 
@@ -1670,7 +1670,7 @@ zb_zdo_nwk_addr_resp_ext2_t;
                   performed now (nor enough memory, resources, etc.)
 
 @b Example:
-@snippet lighting/dimmable_light_tl/light_controller_zed.c zb_zdo_nwk_addr_req_snippet
+@snippet func/dimmable_light_tl/light_controller_zed.c zb_zdo_nwk_addr_req_snippet
 
 */
 zb_uint8_t zb_zdo_nwk_addr_req(zb_uint8_t param, zb_callback_t cb);
@@ -1884,8 +1884,8 @@ zb_zdo_power_desc_resp_t;
   *                performed now (nor enough memory, resources, etc.)
   *
   * @b Example:
-  * @snippet onoff_server/on_off_switch_zed.c send_node_desc_req
-  * @snippet onoff_server/on_off_switch_zed.c node_req_cb
+  * @snippet onoff_server/on_off_switch_zed_app_tsn.c send_node_desc_req
+  * @snippet onoff_server/on_off_switch_zed_app_tsn.c node_req_cb
   *
   */
 zb_uint8_t zb_zdo_node_desc_req(zb_uint8_t param, zb_callback_t cb);
@@ -1910,8 +1910,8 @@ typedef ZB_PACKED_PRE struct zb_zdo_power_desc_req_s
   *                performed now (nor enough memory, resources, etc.)
   *
   * @b Example:
-  * @snippet onoff_server/on_off_switch_zed.c send_power_desc_req
-  * @snippet onoff_server/on_off_switch_zed.c power_desc_cb
+  * @snippet onoff_server/on_off_switch_zed_app_tsn.c send_power_desc_req
+  * @snippet onoff_server/on_off_switch_zed_app_tsn.c power_desc_cb
   *
   */
 zb_uint8_t zb_zdo_power_desc_req(zb_uint8_t param, zb_callback_t cb);
@@ -1937,8 +1937,8 @@ typedef ZB_PACKED_PRE struct zb_zdo_simple_desc_req_s
   *                performed now (nor enough memory, resources, etc.)
   *
   * @b Example:
-  * @snippet onoff_server/on_off_switch_zed.c send_simple_desc_req
-  * @snippet onoff_server/on_off_switch_zed.c simple_desc_cb
+  * @snippet onoff_server/on_off_switch_zed_app_tsn.c send_simple_desc_req
+  * @snippet onoff_server/on_off_switch_zed_app_tsn.c simple_desc_cb
   *
   */
 zb_uint8_t zb_zdo_simple_desc_req(zb_uint8_t param, zb_callback_t cb);
@@ -1976,8 +1976,8 @@ zb_zdo_ep_resp_t;
  *                performed now (nor enough memory, resources, etc.)
  *
  * @b Example:
- * @snippet onoff_server/on_off_switch_zed.c send_active_ep_req
- * @snippet onoff_server/on_off_switch_zed.c active_ep_cb
+ * @snippet onoff_server/on_off_switch_zed_app_tsn.c send_active_ep_req
+ * @snippet onoff_server/on_off_switch_zed_app_tsn.c active_ep_cb
  *
  */
 zb_uint8_t zb_zdo_active_ep_req(zb_uint8_t param, zb_callback_t cb);
@@ -2117,8 +2117,8 @@ zb_zdo_system_server_discovery_resp_t;
  *          performed now (nor enough memory, resources, etc.)
  *
  *  @b Example:
- *  @snippet onoff_server/on_off_switch_zed.c system_server_discovery_req
- *  @snippet onoff_server/on_off_switch_zed.c system_server_discovery_cb
+ *  @snippet onoff_server/on_off_switch_zed_app_tsn.c system_server_discovery_req
+ *  @snippet onoff_server/on_off_switch_zed_app_tsn.c system_server_discovery_cb
  *
  */
 zb_uint8_t zb_zdo_system_server_discovery_req(zb_uint8_t param, zb_callback_t cb);
@@ -3194,7 +3194,7 @@ zb_zdo_mgmt_permit_joining_req_param_t;
                   forces nlme-permit_joining.req call on remote device (devices),
                   but not on a local device keeping local permit joining state unchanged.
 
-   @snippet onoff_server/on_off_switch_zed.c zdo_mgmt_permit_joining_req
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c zdo_mgmt_permit_joining_req
 
  */
 zb_uint8_t zb_zdo_mgmt_permit_joining_req(zb_uint8_t param, zb_callback_t cb);
@@ -3991,7 +3991,7 @@ typedef ZB_PACKED_PRE struct zb_zcl_wwah_beacon_survey_s
 {
   /*<! The DeviceShort field contains the 16 bit short address of the beaconing device. */
   zb_uint16_t device_short;
-  /*! RSSI of the beacon, expressed in dBm. Filled by WWAH onlt */
+  /*! RSSI of the beacon, expressed in dBm. Filled by WWAH only */
   zb_int8_t rssi;
   /*<! LQA of the beacon. Filled by r23 Beacon Survey only */
   zb_uint8_t lqi;
@@ -4098,7 +4098,24 @@ ZB_PACKED_STRUCT zb_zdo_beacon_survey_resp_params_t;
 */
 
 /**
-   Switch to the legacy r22 joining by association, key update by Transport Key
+   Setup required behavior for testing legacy R22 GU as specified by 
+   Zigbee Pro Compliant Test Specification - Section 7.5.1:
+    
+     For Legacy Version= 22
+     The GU special build must be implemented which disables the following features of R23 
+     and the device behaves as an R22 device:
+       1. The device SHALL not attach nor process any TLVs
+       2. The device SHALL not support NWK commissioning Request/Response
+       3. The device SHALL not add beacon appendix to the beacon
+       4. The device shall not support APSME relay upstream/downstream commands.
+       5. Node descriptor SHALL respond with legacy payload and no TLVs the server mask may be 23.
+       6. Support Pre-configured keys and only supports TCLK. 
+       7. Disable all new ZDO servers and respond with NOT_SUPPORTED default response.
+       8. Frame Counter synchronisation should be disabled.
+       9. Buffer Test Request should be sent without a payload
+
+   Notes: If you’re unsure what the text above is, you probably do not need this call!
+          This is not a full r22 compatibility mode. 
 
    @snippet r23_new_api/r22_zr.c zboss_use_r22_behavior_snippet
  */
@@ -4124,37 +4141,6 @@ void zb_nwk_use_r22_joining(zb_bool_t value);
  * @addtogroup debug_keys
  * @{
  */
-
-/**
-   Broadcast TCLK or other APS key. For debugging purposes only.
-
-   That function broadcasts APS key stored in keypair for that long_addr. Wireshark understands that broadcast, so it can decode the traffic.
-   That function has pure debug purposes. It must be explicitly called by the application.
-   The function works in debug ZBOSS builds only.
-   The function does nothing in release ZBOSS builds.
-
-   @param long_addr - address of the remote device
-   @return RET_OK if broadcast done ok, RET_NOT_FOUND if no such keypair, RET_ERROR if that function is disabled in that ZBOSS build
-
-   @snippet r23_new_api/r23_zc.c debug_broadcast_key_snippet
- */
-zb_ret_t zb_debug_broadcast_aps_key(zb_ieee_addr_t long_addr);
-
-/**
-   Broadcast NWK key.
-
-   FOR DEBUGGING PURPOSES ONLY. It zeroes your network security. Never use it in productuion!
-
-   That function broadcasts the current NWK key. Wireshark understands that broadcast, so it can decode the traffic.
-   That function has pure debug purposes. It must be explicitly called by the application.
-
-   The function works in debug ZBOSS builds only.
-   The function does nothing in release ZBOSS builds.
-
-   @return RET_OK if broadcast done ok, RET_ERROR if that function is disabled in that ZBOSS build
-
- */
-zb_ret_t zb_debug_broadcast_nwk_key(void);
 
 /*! @} addtogroup debug_keys */
 
@@ -4222,5 +4208,91 @@ zb_bool_t zb_tc_is_interview_active_for_device(zb_uint16_t device_addr);
 #endif /* ZB_COORDINATOR_ROLE */
 
 /*! @} addtogroup r23_dev_iterview */
+
+#if defined ZB_JOIN_CLIENT
+
+/**
+   Disable silent rejoin for ZR.
+ */
+void zb_nwk_disable_silent_rejoin(zb_bool_t val);
+
+#endif /* ZB_JOIN_CLIENT */
+
+#ifdef ZBOSS_ZDO_APP_TSN_ENABLE
+/**
+ *  Allows an application to generate its own ZDO requests
+ *  with custom ZDO sequence numbers.
+ *
+ *  Note: Only use it if you're clear on why it might be necessary.
+ * 
+ * @addtogroup zdo_app_tsn_feature
+ * @{
+ */
+
+
+/**
+ *  @brief TSN Policy enum
+ */
+typedef enum zb_zdo_tsn_policy_e
+{
+  ZDO_TSN_POLICY_FULL_RANGE,       /*!< ZBOSS is allowed to manage full the range of ZDO TSN */
+  ZDO_TSN_POLICY_RANGE_128_254,    /*!< ZBOSS TSN pool is reduced to the range of ZDO TSN from 128 to 254
+                                        (it is assumed that APP is in charge to manage ZDO TSN range from 0 to 127) */
+} zb_zdo_tsn_policy_t;
+
+/**
+   @brief Set the policy to update ZDO TSN value. 
+
+   Note: Only use it if you're clear on why it might be necessary.
+
+   @param policy - tsn policy to be used. @ref zb_zdo_tsn_policy_t.
+   @param lock_cb - callback to lock and unlock app tsn table
+
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c zb_zdo_tsn_policy_set_snippet
+ */
+void zb_zdo_tsn_policy_set(zb_zdo_tsn_policy_t policy, zb_callback_t lock_cb);
+
+/**
+ *  @brief App TSN entry structure
+ */
+typedef struct zdo_app_tsn_entry_s
+{
+  zb_bufid_t buf_ref;     /*!< Buffer id */
+  zb_uint8_t app_tsn;     /*!< Transaction sequence number */
+} zb_zdo_app_tsn_entry_t;
+
+/**
+   @brief Allocate an entry of ZDO APP TSN
+   @param buf_ref - index of buffer to link allocation
+   @return pointer to the allocated entry or 
+   @return NULL if it could not be allocated
+
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c zb_zdo_app_tsn_allocate_snippet
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c app_tsn_lock_callback_snippet
+ */
+zb_zdo_app_tsn_entry_t * zb_zdo_app_tsn_allocate(zb_bufid_t buf_ref);
+
+/**
+   @brief Release an entry of ZDO APP TSN
+   @param buf_ref - index of buffer linked in allocation
+
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c zb_zdo_app_tsn_release_snippet
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c app_tsn_lock_callback_snippet
+ */
+void zb_zdo_app_tsn_release(zb_bufid_t buf_ref);
+
+/**
+   @brief Get an entry of ZDO APP TSN by buffer id
+   @param buf_ref - index of buffer
+   @return pointer to the entry associated with buffer id or 
+   @return NULL if no entry was found
+   
+   @snippet onoff_server/on_off_switch_zed_app_tsn.c zb_zdo_app_tsn_get_by_buf_ref_snippet
+ */
+zb_zdo_app_tsn_entry_t * zb_zdo_app_tsn_get_by_buf_ref(zb_bufid_t buf_ref);
+
+/*! @} addtogroup zdo_app_tsn_feature */
+
+#endif  /* ZBOSS_ZDO_APP_TSN_ENABLE */
 
 #endif /*ZB_ZBOSS_API_ZDO_H*/

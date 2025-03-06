@@ -41,7 +41,7 @@ let deviceGroup = null;
 
 const deviceGroupMcubootSettings = {
     
-   DeviceGroup_CC13X2X7_26X2X7: {
+    DeviceGroup_CC13X2X7_CC26X2X7: {
         tzEnabled:{ readOnly: true, hidden: true },
         image1:
         {
@@ -122,7 +122,7 @@ function device2DeviceGroup(deviceId)
 {
     if(deviceId.match(/CC(?:13|26).[2].[7]/))
     {
-        deviceGroup = "DeviceGroup_CC13X2X7_26X2X7";
+        deviceGroup = "DeviceGroup_CC13X2X7_CC26X2X7";
     }
     else if(deviceId.match(/CC(?:13|26).[34]/))
     {

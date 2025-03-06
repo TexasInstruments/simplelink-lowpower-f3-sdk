@@ -65,11 +65,11 @@
  *
  *  @par Example
  *  @n Declare clusters
- *  @snippet application/samples/se/metering/se_el_metering_zed.c DECLARE_CLUSTERS
+ *  @snippet samples/se/metering/se_el_metering_zed.c DECLARE_CLUSTERS
  *  @n Register device context
- *  @snippet application/samples/se/metering/se_el_metering_zed.c REGISTER_DEVICE_CTX
+ *  @snippet samples/se/metering/se_el_metering_zed.c REGISTER_DEVICE_CTX
  *  @n Signal handler example
- *  @snippet application/samples/se/metering/se_el_metering_zed.c SIGNAL_HANDLER
+ *  @snippet samples/se/metering/se_el_metering_zed.c SIGNAL_HANDLER
  *  @{
  */
 

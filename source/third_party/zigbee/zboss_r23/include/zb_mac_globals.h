@@ -222,14 +222,20 @@ typedef struct zb_mac_pib_s
 #ifdef ZB_TRANSCEIVER_SET_PTA_OPTIONS
   zb_uint8_t pta_options_len;
   zb_uint8_t pta_options[ZB_MAC_MAX_PTA_OPTIONS_LEN];
+  zb_uint8_t pta_tx_prio_escal;
+  zb_uint8_t pta_rx_prio_escal;
 #endif
 #ifdef ZB_TRANSCEIVER_SET_PTA_STATE
   zb_uint8_t pta_state;
 #endif
 #ifdef ZB_TRANSCEIVER_SET_PTA_PRIORITY
   zb_uint8_t pta_priority;
+  zb_uint8_t pta_tx_priority;
+  zb_uint8_t pta_rx_priority;
 #endif
 #ifdef ZB_MAC_COEX_CONTROL
+  /* Note: that setting is not compatibe with *PTA* group of defines and
+   * flags. It is introdcued for another (already not supported) platform. */
   zb_uint32_t coex_shutdown_duration;
 #endif
 
@@ -383,7 +389,7 @@ zb_uint8_t zb_zgpd_mac_num_gen();
 #define ZB_ACTIVE_SCAN_MAX_PAN_DESC_COUNT 2U
 #else
 #ifdef ZB_MACSPLIT
-/* It's not possible to transfer more PAN descriptors at once over MAC Split */
+/* It's not possible to transfer more PAN descriptors at once over MAC-Split */
 #define ZB_ACTIVE_SCAN_MAX_PAN_DESC_COUNT 6U
 #else
 #define ZB_ACTIVE_SCAN_MAX_PAN_DESC_COUNT 10U

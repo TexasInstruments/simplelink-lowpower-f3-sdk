@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024, Texas Instruments Incorporated
+ Copyright (c) 2024-2025, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -63,6 +63,7 @@ typedef struct zb_transceiver_ctx_s
   uint8_t tx_int; /* Transmit Interrupt status */
   uint8_t rx_int; /* Number of received packets, non-zero correlates to positive interrupt */
   uint8_t csma_cnt; /* Current count for CSMA status */
+  int8_t cca_rssi_threshold; /* RSSI limit (dBm) for energy based CCA */
   uint8_t channel_number; /* Current MAC Channel */
   int8_t cur_tx_power; /* Current Tx power */
   uint8_t txRetries; /* Number of packet retries for Green power frames or number of CSMA backoffs */
@@ -231,6 +232,8 @@ extern void mac_ti23xx_enable_rx(void);
 extern void mac_ti23xx_24_get_tx_power_ptr(zb_int8_t *tx_power_dbm);
 extern void update_rx_panconfig(zb_uint16_t pan_id);
 extern zb_int8_t mac_ti23xx_get_sync_rssi(void);
+extern void mac_ti23xx_set_cca_rssi_threshold(zb_int8_t new_rssi_threshold);
+extern void mac_ti23xx_get_cca_rssi_threshold_ptr(zb_int8_t* rssi_threshold);
 
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/LRF.h>
@@ -401,6 +404,18 @@ ZB_KERNEL_PRE uint8_t gc_neighborToSrcMatchTable[ZB_CONFIG_MAC_SHORT_MATCH_LIST_
 
 #define ZB_TRANSCEIVER_SET_PROMISCUOUS(promiscuous_mode) \
   mac_ti23xx_set_promiscuous_mode(promiscuous_mode)
+
+/**
+   Get CCA RSSI threshold value
+   @param rssi - pointer to buffer
+*/
+#define ZB_MAC_GET_CCA_RSSI_THRESHOLD(rssi) mac_ti23xx_get_cca_rssi_threshold_ptr(rssi)
+
+/**
+   Set CCA RSSI threshold  value
+   @param rssi - RSSI value
+*/
+#define ZB_MAC_SET_CCA_RSSI_THRESHOLD(rssi) mac_ti23xx_set_cca_rssi_threshold(rssi)
 
 /*******************************************************/
 

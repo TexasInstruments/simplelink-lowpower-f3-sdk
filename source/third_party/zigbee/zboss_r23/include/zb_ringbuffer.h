@@ -517,6 +517,12 @@ ZB_RING_BUFFER_DECLARE(zb_byte_array, zb_uint8_t, 1);
   )
 /* 10/04/17 CR Ustimenko end */
 
+#define ZB_BYTE_ARRAY_SEARCH_GET(_rb, _i, cap)                  \
+(                                                               \
+  ZB_BYTE_ARRAY_IS_EMPTY(_rb) ? NULL                            \
+  : (_rb)->ring_buf + ((_rb)->read_i +(_i)) % cap               \
+  )
+
 /**
  * Put value to the ring buffer.
  *

@@ -2020,7 +2020,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                   \
     result = value->upgrade_status;                                 \
   }                                                                 \
 }
@@ -2043,7 +2043,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                   \
     result = value->upgrade_status;                                 \
   }                                                                 \
 }
@@ -2062,7 +2062,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                   \
     if (user_app_data->status == RET_OK)                            \
     {                                                               \
       result = value->upgrade_status;                               \
@@ -2087,7 +2087,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                   \
     if (user_app_data->status == RET_OK)                            \
     {                                                               \
       result = value->upgrade_status;                               \
@@ -2112,7 +2112,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                  \
   }                                                                 \
 }
 
@@ -2130,7 +2130,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                   \
     if (user_app_data->status == RET_OK)                            \
     {                                                               \
       result = value->upgrade_status;                               \
@@ -2154,7 +2154,7 @@ enum zb_zcl_ota_upgrade_status_e
     user_app_data->device_cb_id = ZB_ZCL_OTA_UPGRADE_VALUE_CB_ID;   \
     user_app_data->endpoint = get_endpoint_by_cluster(ZB_ZCL_CLUSTER_ID_OTA_UPGRADE, ZB_ZCL_CLUSTER_CLIENT_ROLE); \
     user_app_data->status = RET_OK;                                 \
-    (ZCL_CTX().device_cb)(param);                                   \
+    (ZCL_CTX().device_cb)(buffer);                                   \
   }                                                                 \
 }
 

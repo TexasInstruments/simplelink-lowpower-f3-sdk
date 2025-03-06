@@ -533,7 +533,7 @@ Ideally should rework the whole zb_config.h to suit better for that new concept.
 #endif  /* ZB_MACSPLIT */
 
 
-/* MAC transport in Linux, line NSNG, uart/macsplit etc */
+/* MAC transport in Linux, line NSNG, uart/MAC-Split etc */
 #ifdef MAC_TRANSPORT_USES_SELECT
 /* Since we are waiting for event inside select() call in the same
  * thread as main loop runs, we have no radio which can wake up MCU, so
@@ -1034,6 +1034,7 @@ ZB_ED_RX_OFF_WHEN_IDLE
 */
 /* WARNING: Generally, it is not according to spec. There are some nwk and APS routines that should
  * correlate to this interval, for these we will use ZB_N_APS_ACK_WAIT_DURATION_FROM_SLEEPY. */
+#if !defined ZB_CONFIGURABLE_RETRIES
 #if !(defined ZB_ED_RX_OFF_WHEN_IDLE && defined ZB_ED_ROLE)
 #define ZB_N_APS_ACK_WAIT_DURATION(_rx_on_when_idle)  \
   ((_rx_on_when_idle) ?                                                 \
@@ -1042,6 +1043,16 @@ ZB_ED_RX_OFF_WHEN_IDLE
 #define ZB_N_APS_ACK_WAIT_DURATION(_rx_on_when_idle)  \
   (ZB_N_APS_ACK_WAIT_DURATION_FROM_SLEEPY)
 #endif
+#else
+#if !(defined ZB_ED_RX_OFF_WHEN_IDLE && defined ZB_ED_ROLE)
+#define ZB_N_APS_ACK_WAIT_DURATION(_rx_on_when_idle)  \
+  ((_rx_on_when_idle) ?                                                 \
+   ZB_AIB().aps_ack_wait_duration_non_sleepy : ZB_AIB().aps_ack_wait_duration_sleepy)
+#else
+#define ZB_N_APS_ACK_WAIT_DURATION(_rx_on_when_idle)  \
+  (ZB_AIB().aps_ack_wait_duration_sleepy)
+#endif
+#endif /* ZB_CONFIGURABLE_RETRIES */
 
 /****************************NWK layer options**************************/
 
@@ -1230,18 +1241,15 @@ exponent.
 #endif /* ZB_NWK_NEIGHBOUR_PATH_COST_RSSI_BASED */
 
 /*! Reserved space for routing on a parent when a device in ZED role.
- *
- * ZED doesn't have information about routing, so we need to reserve
- * some space in a packet during APSDE data request processing.
- * In this case our parent will be able to use at least 7 hops.
- *
- * If destination is not ZC, it is possible that packet
- * can be routed via ZC, and ZC will use source routing.
- *
- * Use that 24 bytes for either long addresses in nwk hdr with 3 hops
- * or 11 hops of source routing.
+ * 
+ * According to R22 specification 3.6.3.3 and 3.6.3.3.1:
+ * Source route info is added when a data frame is received from the NEXT HIGHER LAYER
+ * Since Source Route is only added on ZC, this case only happens when ZC is the one 
+ * creating the frame.
+ * When a ZED sends a packet that is routed through ZC, Source Route is not added
+ * to the packet, thus we do not have to reserve space for that in ZED.
 */
-#define ZB_NWK_RESERVED_SPACE_FOR_PARENT_ROUTING 24U
+#define ZB_NWK_RESERVED_SPACE_FOR_PARENT_ROUTING 0U
 /** @endcond */ /* DOXYGEN_INTERNAL_DOC */
 
 /***********************************************************************/
@@ -1282,6 +1290,7 @@ exponent.
    @internal Be sure keep it multiple of 4 to exclude alignment problems at ARM
 */
 #ifndef ZB_IO_BUF_SIZE
+
 /* Set the ZBOSS buffer size according to the set of enabled MAC features. */
 #ifdef ZB_MAC_SECURITY
 #define ZB_IO_BUF_SIZE 164U
@@ -1297,6 +1306,9 @@ exponent.
  */
 #define ZB_BUF_ALLOC_ALIGN (4U)
 
+#if (ZB_IO_BUF_SIZE % ZB_BUF_ALLOC_ALIGN) > 0U
+#error ZB_IO_BUF_SIZE must be multiple of ZB_BUF_ALLOC_ALIGN
+#endif
 
 /**
    Number of fragmented packets which ZBOSS can receive in parallel
@@ -2283,7 +2295,7 @@ exponent.
 #endif /*ZB_PRODUCTION_CONFIG*/
 /*! @} */
 
-/* Note: MAC split SoC doesn't sleep on hardware, but can sleep on Linux platform */
+/* Note: MAC-Split SoC doesn't sleep on hardware, but can sleep on Linux platform */
 #if defined USE_ZB_WATCHDOG || (defined(ZB_MACSPLIT_DEVICE) && !defined(ZB_PLATFORM_LINUX))
 #define ZB_NEVER_STOP_TIMER
 #endif
@@ -2356,5 +2368,9 @@ exponent.
 #if !defined ZB_NO_COUNT_CHILDREN && !defined ZB_COUNT_CHILDREN
 #define ZB_COUNT_CHILDREN
 #endif
+
+#if !defined(ZB_DIAG_CORE_WATCHDOG_TMO_MS)
+#define ZB_DIAG_CORE_WATCHDOG_TMO_MS 1000U
+#endif /* !ZB_DIAG_CORE_WATCHDOG_TMO_MS */
 
 #endif /* ZB_CONFIG_H */

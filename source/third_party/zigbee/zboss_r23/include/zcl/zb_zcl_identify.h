@@ -41,10 +41,10 @@
  *
  *    @par Example
  *    Identify sending:
- *    @snippet HA_samples/door_lock/sample_zed.c send_identify_req
+ *    @snippet HA/door_lock/sample_zed.c send_identify_req
  *
  *    Identify Query request sending:
- *    @snippet HA_samples/on_off_switch/sample_zed.c identify_send_identify_query_req
+ *    @snippet HA/on_off_switch/sample_zed.c identify_send_identify_query_req
  */
 
 /** @name Identify cluster attributes

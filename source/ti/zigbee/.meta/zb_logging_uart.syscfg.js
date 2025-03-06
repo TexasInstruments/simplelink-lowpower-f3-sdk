@@ -55,9 +55,11 @@ ZIGBEE.LogModuleZigbeeApp.logger   = LogSinkUART1;
 LogSinkUART1.uart.enableNonblocking = scripting.forceWrite(true);
 LogSinkUART1.uart.$hardware         = system.deviceData.board.components.XDS110UART;
 
-if(system.getRTOS() === "freertos")
-{
-    const idleHooks        = scripting.addModule("/freertos/idleHooks", {}, false);
-    const idleHooks1       = idleHooks.addInstance({}, false);
-    LogSinkUART1.idleHooks = idleHooks1;
-}
+
+ZIGBEE.LogModuleZigbeeLLMAC.enable_DEBUG = true;
+ZIGBEE.LogModuleZigbeeLLMAC.enable_INFO = true;
+ZIGBEE.LogModuleZigbeeLLMAC.enable_VERBOSE = true;
+
+ZIGBEE.LogModuleZigbeeApp.enable_DEBUG = true;
+ZIGBEE.LogModuleZigbeeApp.enable_INFO = true;
+ZIGBEE.LogModuleZigbeeApp.enable_VERBOSE = true;

@@ -271,6 +271,15 @@
      A table of lower-layer interfaces managed by the network layer.
    */
 #define ZB_NIB_ATTRIBUTE_MAC_INTERFACE_TABLE                0xAF
+
+  /**
+     The maximum number of retries allowed after a unicast transmission failure.
+    */
+#define ZB_NIB_ATTRIBUTE_MAX_UNICAST_RETRIES                0XB0
+  /**
+     The delay between network layer retries. (units in beacon intervals)
+    */
+#define ZB_NIB_ATTRIBUTE_UNICAST_RETRY_DELAY                0XB1
 /** @} */
 
 typedef zb_uint8_t zb_nib_attribute_t;
@@ -661,6 +670,10 @@ typedef struct zb_nib_s
 					   the parent and all child to retransmit a broadcast message */
   zb_uint8_t     sequence_number;        /*!< A sequence number used to identify outgoing frames */
   zb_uint8_t     max_broadcast_retries;  /*!< The maximum number of retries allowed after a broadcast transmission failure. */
+#ifdef ZB_CONFIGURABLE_RETRIES
+  zb_uint8_t     max_unicast_retries;    /*!< The maximum number of retries allowed after a unicast transmission failure. */
+  zb_time_t      unicast_retry_delay;    /*!< The delay between network layer retries. (units in beacon intervals) */
+#endif /* ZB_CONFIGURABLE_RETRIES */
   zb_ext_pan_id_t  extended_pan_id;      /*!< Extended Pan ID for the PAN for which the device is a member */
   zb_nwk_device_type_t device_type;      /*!< Current device role, @see @ref nwk_device_type */
   /**
@@ -707,6 +720,8 @@ typedef struct zb_nib_s
                                                                             capable of maintaining
                                                                             an active and alternate
                                                                             network key.  */
+  zb_uint8_t              secur_material_set_valid_bitmask; /*!< Bitmask for valid network key entries in
+                                                               secur_material_set */
   zb_uint8_t              active_key_seq_number; /*!< The sequence number of
                                                    the active network key in
                                                    nwkSecurityMaterialSet.  */
@@ -813,6 +828,9 @@ typedef struct zb_nib_s
   zb_bitfield_t r22_gu_behavior_enabled:1; /*!< if 1, this device ignores all r23 features*/
   zb_bitfield_t nwk_disable_tlvs_in_beacon:1;      /*!< TLV presence in beacons */
   zb_bitfield_t nwk_use_r22_joining:1;      /*!< Use R22 joining instead nwk_commis_req */
+#ifdef ZB_JOIN_CLIENT
+  zb_bitfield_t disable_silent_rejoin:1;      /*!< Disable silent rejoin for ZR */
+#endif /* ZB_JOIN_CLIENT */
 
   zb_tx_stat_window_t tx_stat;  /*!< TX/TX fail counters  */
   zb_uint8_t nwk_keepalive_modes;

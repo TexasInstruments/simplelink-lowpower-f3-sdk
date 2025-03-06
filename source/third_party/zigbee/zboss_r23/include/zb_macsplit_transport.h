@@ -19,7 +19,7 @@
  * with the terms contained in a written agreement between you and
  * DSR.
  */
-/*  PURPOSE: MAC split API definitions
+/*  PURPOSE: MAC-Split API definitions
 */
 
 #ifndef ZB_MACSPLIT_TRANSPORT_H
@@ -37,7 +37,7 @@
 #include "zb_hdlc.h"
 #endif /* ZB_MACSPLIT_SPINEL */
 
-/****************************** MACSPLIT TRANSPORT API ******************************/
+/****************************** MAC-SPLIT TRANSPORT API ******************************/
 
 /**
  * Type for callback which is used by upper layer for non-call packets handler establishment
@@ -45,7 +45,7 @@
 typedef void (*recv_data_cb_t)(zb_uint8_t);
 
 /**
- * Macsplit transport initializer,
+ * MAC-Split transport initializer,
  * should be called before sending any data
  *
  * @return nothing
@@ -53,14 +53,14 @@ typedef void (*recv_data_cb_t)(zb_uint8_t);
 void zb_macsplit_transport_init(void);
 
 /**
- * Macsplit transport re-initializer,
+ * MAC-Split transport re-initializer,
  *
  * @return nothing
  */
 void zb_macsplit_transport_reinit(void);
 
 /**
- * Macsplit transport de-initializer,
+ * MAC-Split transport de-initializer,
  *
  * @return nothing
  */
@@ -68,7 +68,7 @@ void zb_macsplit_transport_deinit(void);
 
 #if defined ZB_MACSPLIT_TRACE_DUMP_TO_FILE
 /**
- * Provides macsplit trace file path.
+ * Provides MAC-Split trace file path.
  *
  * Weak default implementation provided. Re-implement for custom logic.
  */
@@ -107,7 +107,7 @@ void zb_macsplit_transport_send_data(zb_bufid_t param);
  * with buffer as function parameter
  *
  * @param param - bufid of buffer to be transmitted
- * @param call_type - call type (for possible call types, see MACSPLIT TRANSPORT PROTOCOL section)
+ * @param call_type - call type (for possible call types, see MAC-SPLIT TRANSPORT PROTOCOL section)
  *
  * @return nothing
  */
@@ -168,7 +168,7 @@ typedef enum
 }
 zb_macsplit_transport_type_e;
 
-/****************************** MACSPLIT TRANSPORT CONFIG ******************************/
+/****************************** MAC-Split TRANSPORT CONFIG ******************************/
 /* ES: ZB_MACSPLIT_USE_IO_BUFFERS is disabled for a few platforms actually */
 #if !defined ZB_MACSPLIT_DISABLE_IO_BUFFERS
 #define ZB_MACSPLIT_USE_IO_BUFFERS
@@ -184,8 +184,8 @@ void zb_macsplit_transport_recv_bytes(void);
 ZB_RING_BUFFER_DECLARE(zb_macsplit_transport_buffer, zb_uint8_t, ZB_MACSPLIT_TRANSPORT_BUFFER_CAPACITY);
 #endif /* defined ZB_MACSPLIT_USE_RX_BUFFER */
 
-#ifndef ZB_CONFIGURABLE_MEM
 #define ZB_MACSPLIT_TRANSPORT_TX_QUEUE_SIZE   ZB_IOBUF_POOL_SIZE
+#ifndef ZB_CONFIGURABLE_MEM
   /* static memory configuration */
   ZB_RING_BUFFER_DECLARE(zb_macsplit_transport_tx_queue, zb_uint8_t, ZB_MACSPLIT_TRANSPORT_TX_QUEUE_SIZE);
 #endif
@@ -202,10 +202,10 @@ ZB_RING_BUFFER_DECLARE(zb_macsplit_transport_buffer, zb_uint8_t, ZB_MACSPLIT_TRA
 #endif /* defined ZB_PLATFORM_LINUX */
 
 
-/****************************** MACSPLIT TRANSPORT PROTOCOL ******************************/
+/****************************** MAC-SPLIT TRANSPORT PROTOCOL ******************************/
 
 /**
- * Description of protocol for MAC split architecture
+ * Description of protocol for MAC-Split architecture
  *
  * This protocol is used for transmitting stack calls between host and device,
  * transmitting dump and trace from device to host.
@@ -213,9 +213,9 @@ ZB_RING_BUFFER_DECLARE(zb_macsplit_transport_buffer, zb_uint8_t, ZB_MACSPLIT_TRA
  * Packet structure:
  *   header:
  *     length of the packet: 1 byte - length includes header and body, doesn't include signature
- *     type of the packet: 1 byte - dump, trace or macsplit data
- *     flags: 1 byte - is_ack, should_retransmit, packet number and call type  | in case of non-macsplit packet
- *     crc: 1 byte - crc, if MAC split data                                    | these 2 bytes are used for time field
+ *     type of the packet: 1 byte - dump, trace or MAC-Split data
+ *     flags: 1 byte - is_ack, should_retransmit, packet number and call type  | in case of non-MAC-Split packet
+ *     crc: 1 byte - crc, if MAC-Split data                                    | these 2 bytes are used for time field
  *   body:
  *     data : ZB_TRANSPORT_DATA_SIZE bytes
  *     crc: 2 bytes
@@ -288,7 +288,13 @@ ZB_RING_BUFFER_DECLARE(zb_macsplit_transport_buffer, zb_uint8_t, ZB_MACSPLIT_TRA
 /* Note: ZB_MACSPLIT_TX_WIN_SIZE = 3 was initially supposed, but now does not work due to packet length limited by 2 bits. That's enough only for windows 2,
    otherwise it's impossible to distinguish a duplicate from a hole. E.g. Host received packets #0, #1, #2, acked packets #0, #1 and #2 and now waits for packet #3.
    If packet #0 is received instead of expected one, Host can't say whether it missed packet #3 and should send a NACK #3 or it was a duplicate of previous packet. */
+#ifndef ZB_MACSPLIT_TX_WIN_SIZE
 #define ZB_MACSPLIT_TX_WIN_SIZE 2u
+#endif /* !ZB_MACSPLIT_TX_WIN_SIZE */
+
+#if ((ZB_MACSPLIT_TX_WIN_SIZE) < 1U || (ZB_MACSPLIT_TX_WIN_SIZE) > 2U)
+#error "ZB_MACSPLIT_TX_WIN_SIZE has an invalid value! Only 1 and 2 are allowed"
+#endif /* ZB_MACSPLIT_TX_WIN_SIZE < 1U || ZB_MACSPLIT_TX_WIN_SIZE > 2U */
 
 #define ZB_MACSPLIT_INVALID_PKT_NUM 0xffu
 
@@ -302,14 +308,9 @@ typedef ZB_PACKED_PRE struct zb_transport_flags_s
   zb_bitfield_t               is_ack            : 1;
   zb_bitfield_t               should_retransmit : 1;
   zb_bitfield_t               packet_number     : 2;
-#ifdef LEGACY_SGW
-  /* Note: this ifdef is more like a comment out. */
-  zb_bitfield_t               call_type         : 4; /* actual for sgw, else reserved */
-#else
   zb_bitfield_t               ack_number        : 2;
   zb_bitfield_t               first_frag        : 1;
   zb_bitfield_t               last_frag         : 1;
-#endif
 } ZB_PACKED_STRUCT
 zb_transport_flags_t;
 
@@ -505,6 +506,10 @@ typedef struct zb_macsplit_transport_context_s
   zb_hdlc_ctx_t hdlc;
 #endif
   zb_bufid_t last_data_req_buf;
+
+#ifdef ZB_MACSPLIT_ENABLE_TX_THROTTLE
+  zb_bool_t tx_throttle; /*!< true, if tx is already scheduled (for non-NACK) */
+#endif /* ZB_MACSPLIT_ENABLE_TX_THROTTLE */
 } zb_macsplit_transport_context_t;
 
 typedef ZB_PACKED_PRE struct macsplit_device_ver_s
@@ -533,7 +538,7 @@ extern zb_macsplit_transport_context_t g_macsplit;
 #elif defined ZB_WINDOWS
 #include "zb_macsplit_transport_windows.h"
 #elif defined ZB_PLATFORM_SOC
-#include "zb_macsplit_transport_soc_host.h"  //reserve for macsplit host running on SOC
+#include "zb_macsplit_transport_soc_host.h"  //reserve for MAC-Split host running on SOC
 #endif
 
 #ifdef ZB_MACSPLIT_HANDLE_DATA_BY_APP

@@ -421,7 +421,7 @@ function validate(inst, validation) {
     }
 
     // check if flash layout based on device group
-    if(deviceGroup === "DeviceGroup_CC13X2X7_26X2X7")
+    if(deviceGroup === "DeviceGroup_CC13X2X7_CC26X2X7")
     {
         // if bootloader starts less than secondary image base + secondary image size, throw error
         if(inst.secondaryBase1 + inst.secondarySize1 > inst.bootloaderBaseAddress)
@@ -670,7 +670,8 @@ function getLinkerDefs()
     let mcuboot = system.modules["/ti/common/mcuboot"];
     let flashSize = mcuboot.$static.bootloaderSize;
 
-    if(deviceGroup !== "DeviceGroup_CC13X2X7_26X2X7")
+    /* reduce mcuboot flash size if anitrollback is enabled for non CC13X2X7_CC26X2X7 */ 
+    if(deviceGroup !== "DeviceGroup_CC13X2X7_CC26X2X7" && mcuboot.$static.antiRollbackProtection)
     {
         flashSize -= mcubootSettings["alignment"]["sectorSize"];
     }
