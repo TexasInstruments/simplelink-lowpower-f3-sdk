@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -88,8 +88,8 @@ typedef enum   RCL_CMD_BLE_CS_Nadm_e                      RCL_CmdBleCs_Nadm;
 #define RCL_BLE_CS_US_TO_MCE_TIMER(x)           ((x)*48)
 #define RCL_BLE_CS_US_TO_PBE_TIMER(x)           ((x)*4)
 #define RCL_BLE_CS_MCE_TIMER_TO_US(x)           ((x)/48)
-#define RCL_BLE_CS_PBE_TIMER_TO_US(x)           ((x)/4)
-#define RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(x)    ((x)/12)
+#define RCL_BLE_CS_PBE_TIMER_TO_US(x)           ((x)/12)
+#define RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(x)    ((x)/4)
 
 /* Helper macros for constants */
 #define RCL_BLE_CS_MAX_NUM_ANT                  4
@@ -125,7 +125,7 @@ struct RCL_CMD_BLE_CS_t {
         uint16_t repeatSteps:1;                  /*!< Enable continuous repetition of step list */
         uint16_t chFilterEnable:1;               /*!< Enable filtering of restricted channels at (2402, 2403, 2425, 2426, 2427, 2479, 2480 MHz) */
         uint16_t precal:1;                       /*!< Enable usage of DC precalibration values */
-        uint16_t reportFormat:1;                 /*!< Select a vendor specific report format instead of the default HCI LE CS subevent result */
+        uint16_t reserved:1;
         uint16_t nSteps:8;                       /*!< Total number of steps within the BLE CS Sub-Event */
     } mode;
 
@@ -150,10 +150,12 @@ struct RCL_CMD_BLE_CS_t {
     struct {
         RCL_Command_TxPower txPower;              /*!< Transmit power */
         uint8_t  rxGain;                          /*!< 0: Automatic Gain Control enabled, 1...15: Index value of manual RX gain @ref RCL_CmdBleCs_RxGain */
-        int16_t  foffOverride;                    /*!< Frequency offset compensation override value in [4xFOFF = 4x (FRF/2^21)] units. */
-        uint16_t foffOverrideEnable:1;            /*!< Disables automatic frequency offset estimation and enforces the use of the provided override value */
-        uint16_t reserved:15;
     } frontend;
+
+    int16_t foffOverride;                         /*!< Frequency offset compensation override value in [4xFOFF = 4x (FRF/2^21)] units. */
+    uint8_t foffOverrideEnable:1;                 /*!< Disables automatic frequency offset estimation and enforces the use of the provided override value */
+
+    uint8_t reportFormat;                         /*!< Select a vendor specific report format instead of the default HCI LE CS subevent result */
 
     RCL_CmdBleCs_PrecalTable *precalTable;        /*!< Pointer to a table contains DC values from precalibration */
     RCL_CmdBleCs_StepResult_Internal *results;    /*!< Pointer to result list */

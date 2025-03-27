@@ -1,9 +1,9 @@
-// This code snippet was auto-generated on Thu Dec  5 15:17:27 2024 using command: 
-// perl /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/highlrfbledig/../tools/topsm/bin2csource_v2.pl --cpu mce --fwname ieee --fwdesc CC2745P10Q1 LRF firmware for mce, mode ieee /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/highlrfbledig/iar/mce/ieee/mce_ieee_ram.bin /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/highlrfbledig/iar/mce/ieee/lrf_mce_binary_ieee.c
+// This code snippet was auto-generated on Wed Feb 19 11:38:37 2025 using command: 
+// perl /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/highlrfbledig/../tools/topsm/bin2csource_v2.pl --cpu mce --fwname ieee --fwdesc CC2745P10Q1 LRF firmware for mce, mode ieee /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/highlrfbledig/iar/mce/ieee/mce_ieee_ram.bin /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/highlrfbledig/iar/mce/ieee/lrf_mce_binary_ieee.c
 
 
-// Binary source file: /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/highlrfbledig/iar/mce/ieee/mce_ieee_ram.bin
-// Binary source last modified: 05-Dec-2024 15:17
+// Binary source file: /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/highlrfbledig/iar/mce/ieee/mce_ieee_ram.bin
+// Binary source last modified: 19-Feb-2025 11:38
 
 
 #include "lrf_mce_binary_ieee.h"
@@ -26,7 +26,7 @@ const uint32_t LRF_MCE_binary_ieee[LRF_MCE_BINARY_IEEE_LENGTH] = {
     0x40E21C21, 0x94700010, 0x06F58975, 0x1207120E, 0x12F01206, 0xC1909460, 0xB0219460, 0xB109B149, 
     0x1203B098, 0x71001204, 0xA0E17279, 0xA109B149, 0x7100A464, 0x00000000, 0x1E766524, 0x89704117, 
     0x06F03940, 0x44D71C0F, 0x1C9084A0, 0x12054CD7, 0x12761202, 0xB099B083, 0xB2A0B261, 0x318085C0, 
-    0x91C03D80, 0x65AFC030, 0x9460C0C0, 0x94707C20, 0x1647611E, 0x819091DF, 0x411E1E00, 0x49231C70, 
+    0x91C03D80, 0x65AFC030, 0x9460C0C0, 0x94707C20, 0x1647611E, 0x819091DF, 0x411E1E00, 0x4D231C07, 
     0x80A07100, 0x444A2200, 0x606860FA, 0x120A1209, 0x120DC06C, 0x88E8B8A9, 0x3D883188, 0x49311C89, 
     0x4D371C8A, 0x1089613E, 0x18801200, 0x10DB100A, 0x108A613E, 0x18801200, 0x10DB1009, 0x613E168B, 
     0x1E8D161D, 0x909C4143, 0x10BF6128, 0x414B1E82, 0x16121495, 0x454B1E82, 0x1E8B92C5, 0x1A8B494E, 

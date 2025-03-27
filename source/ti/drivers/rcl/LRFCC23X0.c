@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -145,6 +145,16 @@ static uint8_t dcdcIpeakRestoreSetting;
 /* Temperature threshold (degrees C) for use by the temperature monitoring. A value of 0 disables the feature. */
 uint16_t rclTemperatureThreshold = 8;
 
+LRF_CoexConfiguration lrfCoexConfiguration =
+{
+    .T1 = RCL_SCHEDULER_SYSTIM_US(120),
+    .T2 = RCL_SCHEDULER_SYSTIM_US(20),
+    .grantPin = RFE_COMMON_RAM_GRANTPIN_CFG_DIS >> RFE_COMMON_RAM_GRANTPIN_CFG_S,
+    .invertedPriority = false,
+    .ieeeTSync = RCL_SCHEDULER_SYSTIM_US(140),
+    .ieeeCorrMask = 0x0F,
+};
+
 LRF_SetupResult LRF_setupRadio(const LRF_Config *lrfConfig, uint16_t phyFeatures, LRF_RadioState lrfState)
 {
     enum {
@@ -213,6 +223,8 @@ LRF_SetupResult LRF_setupRadio(const LRF_Config *lrfConfig, uint16_t phyFeatures
         HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSI) = LRF_RSSI_INVALID;
         /* Set PBE to writing FIFO commands to FCMD */
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
+        /* Turn off coex grant signal in RFE */
+        LRF_disableCoexGrant();
     }
 
     if (result == SetupResult_Ok)
@@ -1558,6 +1570,32 @@ LRF_TxPowerTable_Entry LRF_getRawTxPower(void)
         /* Error: Raw TX power was never set */
         return LRF_TxPowerEntry_INVALID_VALUE;
     }
+}
+
+void LRF_enableCoexGrant(void)
+{
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_GRANTPIN) =
+        (lrfCoexConfiguration.grantPin << RFE_COMMON_RAM_GRANTPIN_CFG_S);
+}
+
+void LRF_disableCoexGrant(void)
+{
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_GRANTPIN) =
+        RFE_COMMON_RAM_GRANTPIN_CFG_DIS;
+}
+
+void LRF_deassertCoexRequest(void)
+{
+    /* Set coex REQUEST and PRIORITY lines low to indicate no request */
+    /* Should only be done when PBE is finished */
+    uint32_t pbeGpo = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL);
+    pbeGpo &= ~(LRFDPBE_GPOCTRL_GPO0_M | LRFDPBE_GPOCTRL_GPO1_M);
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL) = pbeGpo;
+}
+
+const LRF_CoexConfiguration *LRF_getCoexConfiguration(void)
+{
+    return &lrfCoexConfiguration;
 }
 
 /* Avoid IB = 0 as it effectively turns the PA off */

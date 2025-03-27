@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -210,6 +210,14 @@ typedef struct LRF_TxShape_s {
     uint8_t       coeff[];
 } LRF_TxShape;
 
+typedef struct {
+    uint16_t T1;
+    uint8_t T2;
+    uint8_t grantPin;        /* Grant pin in use if coex is enabled, or "disabled" if globally disabled */
+    bool invertedPriority;   /* True if coex priority signal is inverted (0 means high priority) */
+    uint16_t ieeeTSync;
+    uint8_t ieeeCorrMask;
+} LRF_CoexConfiguration;
 
 /* Definitions for trim */
 #define LRF_TRIM_NUM_VARIANTS 2
@@ -593,6 +601,51 @@ static inline void LRF_clearRclClockEnable(uint16_t mask)
 {
     hal_clear_rcl_clock_enable(mask);
 }
+
+/**
+ * @brief Enable monitoring of coexistence grant signal in RFE
+ *
+ *  Turns on the coex grant signal for the configured IO pin (if any). The function must be called
+ *  before starting a PBE operation. The handler is responsible for disabling in order to avoid
+ *  coex operation in commands not supporting it.
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_enableCoexGrant(void);
+
+/**
+ * @brief Disable monitoring of coexistence grant signal in RFE
+ *
+ *  Turns off the coex grant signal to the RFE. Should be called by the handler at the end of a
+ *  command where LRF_enableCoexGrant was called. The function must be called after the PBE
+ *  operation ended, but can safely be called even without a previous LRF_enableCoexGrant.
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_disableCoexGrant(void);
+
+/**
+ * @brief Deassert coexistence REQUEST
+ *
+ *  Set coex REQUEST and PRIORITY lines low to indicate no request. Should only be done when PBE
+ *  is finished.
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_deassertCoexRequest(void);
+
+/**
+ * @brief Read coex settings
+ *
+ *  Return current coex settings
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+const LRF_CoexConfiguration *LRF_getCoexConfiguration(void);
 
 /**
  * @brief Enable temperature monitoring to allow handlers to update temperature compensation

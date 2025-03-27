@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -98,7 +98,6 @@ rclPinOptions: {
     },
     rfeGpo2: {
         displayName: "RFEGPO2",
-
         description: "Select RFE output line 2"
     },
     rfeGpo3: {
@@ -154,11 +153,11 @@ rclPinOptions: {
         description: "Select MCE output line 7"
     },
     pbeGpo0: {
-        displayName: "PBEGPO0",
+        displayName: "PBEGPO0 (REQUEST)",
         description: "Select PBE output line 0"
     },
     pbeGpo1: {
-        displayName: "PBEGPO1",
+        displayName: "PBEGPO1 (PRIORITY)",
         description: "Select PBE output line 1"
     },
     pbeGpo2: {
@@ -184,6 +183,10 @@ rclPinOptions: {
     pbeGpo7: {
         displayName: "PBEGPO7",
         description: "Select PBE output line 7"
+    },
+    grant: {
+        displayName: "GRANT",
+        description: "Select coexistence GRANT input"
     }
 }
 };

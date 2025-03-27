@@ -1,9 +1,9 @@
-// This code snippet was auto-generated on Thu Dec  5 15:15:41 2024 using command: 
-// perl /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/lrfbledigr2/../tools/topsm/bin2csource_v2.pl --cpu rfe --fwname common --fwdesc CC2340R2 LRF firmware for rfe, mode common /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledigr2/iar/rfe/common/rfe_common_ram.bin /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledigr2/iar/rfe/common/lrf_rfe_binary_common.c
+// This code snippet was auto-generated on Wed Feb 19 11:36:13 2025 using command: 
+// perl /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/lrfbledigr2/../tools/topsm/bin2csource_v2.pl --cpu rfe --fwname common --fwdesc CC2340R2 LRF firmware for rfe, mode common /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledigr2/iar/rfe/common/rfe_common_ram.bin /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledigr2/iar/rfe/common/lrf_rfe_binary_common.c
 
 
-// Binary source file: /home/developer/.conan/data/loki-lrf/8.40.00.09/library-lprf/ga/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledigr2/iar/rfe/common/rfe_common_ram.bin
-// Binary source last modified: 05-Dec-2024 15:15
+// Binary source file: /home/developer/.conan/data/loki-lrf/9.10.00.05/library-lprf/eng/build/0c46501566d33cb4afdce9818f8c3e61ffe04c9a/build/lrfbledigr2/iar/rfe/common/rfe_common_ram.bin
+// Binary source last modified: 19-Feb-2025 11:36
 
 
 #include "lrf_rfe_binary_common.h"

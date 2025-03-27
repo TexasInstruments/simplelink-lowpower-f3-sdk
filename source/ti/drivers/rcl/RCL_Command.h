@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -95,6 +95,7 @@ typedef enum RCL_CommandStatus_e {
     RCL_CommandStatus_RxErr,                        /*!< Command ended due to errors with the received packet (e.g, CRC errors) */
     RCL_CommandStatus_RejectedStart,                /*!< Command was rejected start due to scheduling parameters */
     RCL_CommandStatus_UnexpectedMdrRx,              /*!< Command ended because an MDR packet was received when we have MDR disabled */
+    RCL_CommandStatus_CoexNoGrant,                  /*!< Command ended because the coexistence procedure did not allow operation */
     RCL_CommandStatus_DescheduledApi = 0x31,        /*!< Command was descheduled before starting running in the radio because stop API was called */
     RCL_CommandStatus_DescheduledScheduling,        /*!< Command was descheduled before starting running in the radio due to scheduling of another command */
     RCL_CommandStatus_GracefulStopTimeout = 0x34,   /*!< Command ended because graceful stop time was reached */
@@ -200,6 +201,40 @@ struct RCL_Command_s {
     },                                                      \
 }
 #define RCL_Command_DefaultRuntime(_id, _handler) (RCL_Command) RCL_Command_Default(_id, _handler)
+
+/**
+ *  @brief Type for Coex priority
+ *
+ */
+typedef enum {
+    RCL_CoexPriority_Low = 0,                   /*!< Low priority */
+    RCL_CoexPriority_High = 1,                  /*!< High priority */
+} RCL_Command_CoexPriority;
+
+/**
+ *  @brief Type for Coex receive mode
+ *
+ */
+typedef enum {
+    RCL_CoexRxMode_AlwaysRequest = 0,           /*!< Always assert request while in RX */
+    RCL_CoexRxMode_RequestOnPacket = 1,         /*!< Request assert in RX only on indication of a packet to receive */
+} RCL_Command_CoexRxMode;
+
+/**
+ *  @brief Type for Coex control
+ *
+ *  Control which coex lines to enable, for commands supporting the feature
+ */
+typedef union {
+    struct  {
+        uint8_t grantEnable : 1;                /*!< Enable GRANT line as an input according to global configuration */
+        uint8_t requestPriorityEnable : 1;      /*!< Enable REQUEST and PRIORITY lines according to global configuration  */
+        RCL_Command_CoexPriority priority : 1;  /*!< Priority level to signal */
+        RCL_Command_CoexRxMode rxMode : 1;      /*!< RX mode for operation */
+        uint8_t reserved : 4;
+    };
+    uint8_t value;
+} RCL_Command_CoexControl;
 
 /**
  * @brief Type for TX power

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -163,7 +163,13 @@ let signalList = [
         name: "PBEGPO7",
         displayName: Docs.config.rclPinOptions.pbeGpo7.displayName,
         description: Docs.config.rclPinOptions.pbeGpo7.description
-    }]
+    },
+    {
+        name: "GRANT",
+        displayName: Docs.config.rclPinOptions.grant.displayName,
+        description: Docs.config.rclPinOptions.grant.description
+    }
+]
 
 /* This maps each use case to their signals */
 let useCaseMap = {
@@ -340,7 +346,7 @@ function onUseCaseChanged(inst, ui) {
 
 function getAvailableSignals(inst)
 {
-    return signalList.slice(1);
+    return signalList.slice(0);
 }
 
 /*
@@ -389,13 +395,17 @@ function updateConfigValue(inst, ui, config, value){
      }
  }
 
- function getBoard()
+
+ function getDeviceType()
  {
-    let board = system.deviceData.board;
-    if (board.name.match(/CC23/)){
+    let device = "";
+    if ("device" in system.deviceData){
+        device = system.deviceData.device;
+    }
+    if (device.match(/CC23/)){
         return "CC23"
     }
-    else if (board.name.match(/CC27/)){
+    else if (device.match(/CC27/)){
         return "CC27"
     }
     else{
@@ -403,6 +413,20 @@ function updateConfigValue(inst, ui, config, value){
     }
  }
 
+ /*!
+ *  ======== allowedInputPins ========
+ *  Filter out pins that do not support LRFD input
+ */
+ function allowedInputPins(devicePin, peripheralPin)
+{
+    if (getDeviceType() == "CC23"){
+        /* On CC23xx, DIO3 and DIO4 are outputs only for LRFD */
+        return (devicePin.designSignalName.match(/^(?!.*(DIO3|DIO4))/));
+    }
+    else{
+        return (devicePin.designSignalName);
+    }
+}
 
 /*!
  *  ======== pinmuxRequirements ========
@@ -420,13 +444,20 @@ function pinmuxRequirements(inst) {
 
 
     signalList.forEach(signal => {
+
         if (inst.signals.includes(signal.name))
         {
-        resources.push({
-            name:           `${signal.name.toLowerCase()}Pin`,
-            displayName:    `${signal.name} Pin`, /* GUI name */
-            interfaceNames: ["D0","D1","D2","D3","D4","D5","D6","D7"]
-        });
+            let resourceItem = {
+                name:           `${signal.name.toLowerCase()}Pin`,
+                displayName:    `${signal.name} Pin`, /* GUI name */
+                interfaceNames: ["D0","D1","D2","D3","D4","D5","D6","D7"]
+            };
+
+            if (signal.name == "GRANT")
+            {
+                resourceItem.filter = allowedInputPins;
+            }
+            resources.push(resourceItem);
         }
     });
 
@@ -465,23 +496,44 @@ function moduleInstances(inst) {
     signalList.forEach(signal => {
         if (inst.signals.includes(signal.name))
         {
-        dependencyModules.push({
-            name:           `${signal.name.toLowerCase()}PinInstance`,
-            displayName:    `${signal.name} PIN Configuration While Pin Is Not In Use`, /* GUI name */
-            moduleName: "/ti/drivers/GPIO",
-            readOnly: false,
-            collapsed: true,
-            requiredArgs: {
-                $name: `CONFIG_${signal.name}`,
-                parentInterfaceName: "lrfGpio",
-                parentSignalName: `${signal.name.toLowerCase()}Pin`,
-                parentSignalDisplayName:  `${signal.name.toLowerCase()} Pin`,
-                mode: "Output",
-                initialOutputState: "Low",
-                outputStrength: "High",
-                pull: "None"
+            if (signal.name == "GRANT")
+            {
+                dependencyModules.push({
+                    name:           `${signal.name.toLowerCase()}PinInstance`,
+                    displayName:    `${signal.name} PIN Configuration`, /* GUI name */
+                    moduleName: "/ti/drivers/GPIO",
+                    readOnly: false,
+                    collapsed: true,
+                    requiredArgs: {
+                        $name: `CONFIG_${signal.name}`,
+                        $hardware: null,
+                        parentInterfaceName: "lrfGpio",
+                        parentSignalName: `${signal.name.toLowerCase()}Pin`,
+                        parentSignalDisplayName:  `${signal.name.toLowerCase()} Pin`,
+                        mode: "Input",
+                        doNotConfig: false
+                    }
+                });
             }
-        });
+            else {
+                dependencyModules.push({
+                    name:           `${signal.name.toLowerCase()}PinInstance`,
+                    displayName:    `${signal.name} PIN Configuration`, /* GUI name */
+                    moduleName: "/ti/drivers/GPIO",
+                    readOnly: false,
+                    collapsed: true,
+                    requiredArgs: {
+                        $name: `CONFIG_${signal.name}`,
+                        $hardware: null,
+                        parentInterfaceName: "lrfGpio",
+                        parentSignalName: `${signal.name.toLowerCase()}Pin`,
+                        parentSignalDisplayName:  `${signal.name.toLowerCase()} Pin`,
+                        mode: "Output",
+                        pull: "None",
+                        doNotConfig: false
+                    }
+                });
+            }
         }
     });
 

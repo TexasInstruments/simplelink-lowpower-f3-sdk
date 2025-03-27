@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,11 @@ RCL_Events RCL_Handler_Ieee_TxTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
  */
 typedef enum
 {
-    RCL_IEEE_UpdateOk,          /*!< Update was successful */
-    RCL_IEEE_UpdateIndexError,  /*!< Index was out of range or pointer was NULL */
+    RCL_IEEE_UpdateDone,        /*!< Update was successfully done; no wait needed */
+    RCL_IEEE_UpdatePending,     /*!< Update was successfully submitted; callback will be sent when done */
+    RCL_IEEE_UpdateCmdError,    /*!< The requested update was not applicable or another update was pending */
+    RCL_IEEE_UpdateParamError,  /*!< An invalid parameter was provided */
+    RCL_IEEE_UpdateIndexError,  /*!< Index was out of range */
 } RCL_IEEE_UpdateResult;
 
 /**
@@ -69,49 +72,94 @@ typedef enum
     RCL_IEEE_AckNotProcessed,   /*!< Ack processing not finished as expected */
 } RCL_IEEE_AckEntryResult;
 
+typedef enum
+{
+    RCL_IEEE_DisableEntry,              /*!< Disable the entry */
+    RCL_IEEE_EnableEntry,               /*!< Enable the entry */
+    RCL_IEEE_FrameNotPending,           /*!< Set frame not pending */
+    RCL_IEEE_FramePending,              /*!< Set frame pending */
+    RCL_IEEE_NewAddrFrameNotPending,    /*!< Change the address of the entry, enable, and set frame not pending */
+    RCL_IEEE_NewAddrFramePending,       /*!< Change the address of the entry, enable, and set frame pending */
+} RCL_IEEE_SourceMatchingOperation;
+
+typedef struct
+{
+    uint8_t panNo;                              /*!< PAN number to update (only 0 supported in this version) */
+    uint8_t index;                              /*!< Index into source matching table to update */
+    RCL_IEEE_SourceMatchingOperation operation; /*!< Operation to perform on entry */
+} RCL_IEEE_SourceMatchingUpdate;
+
 
 /* API functions */
 /**
+ *  @brief  Update RX Action contents
+ *
+ *  Re-read the contents of the receive action of the given command. All elements will be re-read
+ *  at an appropriate time; until then, the old value is used. The rxBuffers element should only
+ *  be updated through normal RCL_Buffer functions, though. If the status indicates that the update
+ *  is pending, a cmdUpdateDone event is raised when it is done. If an error occurred during the
+ *  update, the command will end with error.
+ *
+ *  @param  cmd                 Existing IEEE command for which to re-read the RX action contents
+ *
+ *  @return                     Result telling if update was successful
+ *
+ */
+RCL_IEEE_UpdateResult RCL_IEEE_updateRxAction(RCL_CmdIeeeRxTx *cmd);
+
+/**
  *  @brief  Update short source matching table
  *
- *  Update the given source matching table filter list in a way that is safe even if a running command is using
- *  the filter table.
+ *  Update the given source matching table in a way that is safe even if a running command is using
+ *  the source matching table.
  *
- *  @param  newAddr             New address and PAN ID to apply; NULL to leave unchanged
- *  @param  framePending        Value of frame pending bit
- *  @param  table               Source matching table to update
- *  @param  index               Index into source matching table to update
+ *  @param  cmd                 Existing IEEE command for which to update the source matching table
+ *  @param  description         Description of operation to perform
+ *  @param  newPanIdAddr        If entry is changed: New PAN ID and address to set
+ *
+ * @return                      Result telling if update was successful
+ *
+ */
+RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeeeRxTx *cmd, RCL_IEEE_SourceMatchingUpdate description, RCL_CmdIeee_PanIdAddr newPanIdAddr);
+
+/**
+ *  @brief  Update extended source matching table
+ *
+ *  Update the given source matching table in a way that is safe even if a running command is using
+ *  the source matching table.
+ *
+ *  @param  cmd                 Existing IEEE command for which to update the source matching table
+ *  @param  description         Description of operation to perform
+ *  @param  newAddr             If entry is changed: Pointer to the new address to set
  *
  * @return                      Result telling if update was successful
  * @note                        Not supported in this version
  *
  */
-RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeee_PanIdAddr *newAddr, uint8_t framePending, RCL_CmdIeee_SourceMatchingTableShort *table, uint32_t index);
+RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_IEEE_SourceMatchingUpdate description, const uint64_t *newAddr);
 
 /**
- *  @brief  Update frame filtering settings extended source matching table
+ *  @brief  Update TX power
  *
- *  Update the given frame filtering settings in a way that is safe even if a running command is receiving a frame
+ *  Update the TX power used for future frames sent with TX actions or as ACKs for a running command.
+ *  The command structure will be updated with the new value if the update was successful.
  *
- *  @param  cmd                 Existing IEEE command to update
- *  @param  newPanConfig        New PAN configuration to apply
- *  @param  panNumber           Index of PAN to update
+ *  @param  cmd                 Existing IEEE command for which to update the TX power
+ *  @param  newTxPower          New TX power value
  *
  * @return                      Result telling if update was successful
- * @note                        Not supported in this version
  *
  */
-RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_PanConfig *newPanConfig, uint32_t panNumber);
-
+RCL_IEEE_UpdateResult RCL_IEEE_updateTxPower(RCL_CmdIeeeRxTx *cmd, RCL_Command_TxPower newTxPower);
 
 /**
- *  @brief  Provide ACK data to be transmitted in response to received packet
+ *  @brief  Provide ACK data to be transmitted in response to received frame
  *
  *  Provide an ACK frame or the parts of it, which will be transmitted if the frame was received successfully
  *
  *  @param  cmd                 Existing IEEE command for which to enter ACK
  *  @param  ackData             Pointer to data that will be appended; first part should be of type %RCL_Buffer_DataEntry
-*   @param  numWords            Number of 32-bit words provided at this point; 0 if entry is complete
+ *  @param  numWords            Number of 32-bit words provided at this point; 0 if entry is complete
  *
  * @return                      Result telling if update was successful
  * @note                        All pieces of data must be provided in portions of 32-bit words
@@ -120,7 +168,7 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd
 RCL_IEEE_AckEntryResult RCL_IEEE_enterAck(RCL_CmdIeeeRxTx *cmd, uint32_t *ackData, uint8_t numWords);
 
 /**
- *  @brief  Cancel transmission of ACK in response to received packet
+ *  @brief  Cancel transmission of ACK in response to received frame
  *
  *  Cancel transmission of an ACK by not starting it or aborting transmission
  *
@@ -181,44 +229,39 @@ RCL_CommandStatus RCL_IEEE_Tx_submit(RCL_CmdIeeeRxTx *cmd, RCL_CmdIeee_TxAction 
 RCL_CommandStatus RCL_IEEE_Tx_stop(RCL_CmdIeeeRxTx *cmd, RCL_StopType stopType);
 
 /**
- * @brief Wait for a submitted TX operation to complete.
+ * @brief  Get received RSSI from frame
  *
- * Uses %SemaphoreP_pend to block in the callers context.
- *
- * @pre This function must be called from a task context, with interrupts enabled.
- *
- * @param[in] cmd               IEEE command running
- *
- * @return                      Status of the TX operation
- * @note                        Not supported in this version
- *
- */
-RCL_CommandStatus RCL_IEEE_Tx_pend(RCL_CmdIeeeRxTx *cmd);
-
-/**
- * @brief  Get received RSSI from packet
- *
- * Returns the RSSI field of a received packet, or LRF_RSSI_INVALID if RSSI is not enabled
+ * Returns the RSSI field of a received frame, or LRF_RSSI_INVALID if appending RSSI is not enabled
  *
  * @param  rxEntry              Received data entry
  *
- * @return                      Reported RSSI of received packet
- * @note                        Not supported in this version
+ * @return                      Reported RSSI of received frame
  *
  */
 int8_t RCL_IEEE_getRxRssi(const RCL_Buffer_DataEntry *rxEntry);
 
 /**
- * @brief  Get received timestamp from packet
+ * @brief  Get received LQI from frame
  *
- * Returns the timestamp a received packet, adjusted to point to the start of the preamble.
- * If timestamp is not enabled, 0 is returned.
+ * Returns the LQI field of a received frame, or 0 if appending LQI is not enabled
+ *
+ * @param  rxEntry              Received data entry
+ *
+ * @return                      Reported LQI of received frame
+ *
+ */
+uint8_t RCL_IEEE_getRxLqi(const RCL_Buffer_DataEntry *rxEntry);
+
+/**
+ * @brief  Get received timestamp from frame
+ *
+ * Returns the timestamp of a received frame, adjusted to point to the start of the preamble.
+ * If appending timestamp is not enabled, 0 is returned.
  * Note that 0 is a valid value, so it cannot be used for error checking.
  *
  * @param  rxEntry              Received data entry
  *
- * @return                      Timestamp of received packet
- * @note                        Not supported in this version
+ * @return                      Timestamp of received frame
  *
  */
 uint32_t RCL_IEEE_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry);

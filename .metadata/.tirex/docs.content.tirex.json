@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_42_00_03_ea.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_42_00_04_ea.html",
         "devices": [
             "CC2340R5"
         ],
@@ -524,28 +524,6 @@
         ]
     },
     {
-        "name": "RCL Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/rcl/rcl_release_notes.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Documents"
-            ]
-        ],
-        "subCategories": [
-            "RCL"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
         "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
         "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_8_40_00.html",
@@ -562,6 +540,28 @@
         ],
         "subCategories": [
             "Proprietary RF"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "RCL Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/rcl/rcl_release_notes.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "RCL"
         ],
         "resourceClass": [
             "document"

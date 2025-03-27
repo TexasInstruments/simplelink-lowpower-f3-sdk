@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,11 +65,13 @@ function getLrfdStrings(pin, pinInstance, pinFunction) {
     let gpioSelStr2 = 'LRFDDBELL_GPOSEL' + gpioSelNumber.toString()
     let regWriteStr = 'HWREG_WRITE_LRF(LRFDDBELL_BASE + ' + gpioSelStr1 + ')'
     let regReadStr = 'HWREG_READ_LRF(LRFDDBELL_BASE + ' + gpioSelStr1 + ')'
-    let portCfgStr = 'IOC_IOC' + dioPin.toString() + '_PORTCFG_PFUNC' +  lrfMuxNumber.toString()
-    let setLrfdStr = regWriteStr + ' = ' + regReadStr + '| (' + gpioSelStr2 + '_SRC' + lrfdNumber + '_' + pinFunction + ')'
-    let setGpioStr = 'GPIO_setConfigAndMux' + '(' + dioPin + ', GPIO_CFG_NO_DIR, ' + portCfgStr + ')'
+    let portCfgStr = 'GPIO_MUX_PORTCFG_PFUNC' +  lrfMuxNumber.toString()
+    let setLrfdStr = regWriteStr + ' = ' + regReadStr + ' | (' + gpioSelStr2 + '_SRC' + lrfdNumber + '_' + pinFunction + ')'
+    let setLrfdDisStr = regWriteStr + ' = ' + regReadStr + ' | (' + gpioSelStr2 + '_SRC' + lrfdNumber + '_DIS)'
+    let setGpioStr = 'GPIO_setConfigAndMux' + '(' + dioPin + ', gpioPinConfigs[' + dioPin + '], ' + portCfgStr + ')'
     let resetGpioStr = 'GPIO_resetConfig' + '(' + dioPin + ')'
-    return [setLrfdStr, setGpioStr, resetGpioStr]
+    let grantSelectStr = 'lrfCoexConfiguration.grantPin = ' + lrfdNumber
+    return [setLrfdStr, setGpioStr, resetGpioStr, setLrfdDisStr, grantSelectStr]
  }
 
 %%}
@@ -81,6 +83,11 @@ function getLrfdStrings(pin, pinInstance, pinFunction) {
 #include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
 #include <ti/drivers/rcl/LRF.h>
+%if (rclStatic.lrfGpio[`grantPin`])
+%{
+
+extern LRF_CoexConfiguration lrfCoexConfiguration;
+%}
 
 /*
  *  ======== RCL_GPIO_enable ========
@@ -89,16 +96,21 @@ void RCL_GPIO_enable (void)
 {
 %rclGpio.signalList.forEach(signal => {
 %   let pin = rclStatic.lrfGpio[`${signal.name.toLowerCase()}Pin`]
-%        if (pin && signal.name != "RFCTRC")
-%        {
-%           let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
-%           let lrfdStringList0 = getLrfdStrings(pin, pinInstance, signal.name)
+%      if (pin && signal.name != "RFCTRC") {
+%         let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
+%         let lrfdStringList0 = getLrfdStrings(pin, pinInstance, signal.name)
 
     /* `signal.name` */
+%         if (signal.name == "GRANT") {
+    `lrfdStringList0[4]`;
+    `lrfdStringList0[3]`;
+%         }
+%         else {
     `lrfdStringList0[0]`;
+%         }
     `lrfdStringList0[1]`;
-%        }
-%    });
+%      }
+%   });
 }
 
 /*
