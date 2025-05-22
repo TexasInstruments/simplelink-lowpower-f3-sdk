@@ -20,7 +20,7 @@
             "+../../app/Profiles/app_simple_gatt.c -> app/Profiles/app_simple_gatt.c",
             "+../basic_ble_oad_dual_image.syscfg -> basic_ble_oad_dual_image.syscfg",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",
-            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+            "+cc27xx_freertos.cmd -> cc27xx_freertos.cmd"
         ]
     }
 ]

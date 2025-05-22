@@ -43,12 +43,17 @@ endforeach()
 foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
     if(${TI_PLATFORM} MATCHES "cc(13|26).4")
         set(SOURCES ${SOURCES_CC13X4_CC26X4_NS})
+        set(DRIVERLIB Driverlib::${TI_PLATFORM})
+    elseif(${TI_PLATFORM} MATCHES "cc27")
+        ti_add_package_dependency(DriverlibCC27XX)
+        set(SOURCES ${SOURCES_CC27XX_NS})
+        set(DRIVERLIB Driverlib::${TI_PLATFORM}_ns)
     else()
         continue()
     endif()
 
     ti_add_library(
-        nortos_${TI_PLATFORM}_ns SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM}
+        nortos_${TI_PLATFORM}_ns SOURCES ${SOURCES} LINK_PUBLIC ${DRIVERLIB}
                                                                 CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
         ADD_SDK_INCLUDE_PATH source
     )

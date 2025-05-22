@@ -49,8 +49,7 @@
 #define BIM_UTIL_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*********************************************************************
@@ -68,8 +67,8 @@ extern "C"
 #include "ti/common/cc26xx/oad/oad_image_header.h"
 
 /*******************************************************************************
-*  EXTERNAL VARIABLES
-*/
+ *  EXTERNAL VARIABLES
+ */
 
 /*******************************************************************************
  * CONSTANTS
@@ -128,12 +127,10 @@ extern void setLowPowerMode(void);
  */
 extern bool metadataIDCheck(imgFixedHdr_t *imgHdr);
 
-
-#ifdef BIM_ONCHIP
+    #ifdef BIM_ONCHIP
 extern bool evenBitCount(uint32_t value);
-#endif //#ifdef BIM_ONCHIP
-#endif //#ifndef BIM_ONCHIP
-
+    #endif // #ifdef BIM_ONCHIP
+#endif     // #ifndef BIM_ONCHIP
 
 #ifdef BIM_ONCHIP
 /*******************************************************************************
@@ -147,7 +144,7 @@ extern bool evenBitCount(uint32_t value);
  *         False.
  */
 extern bool evenBitCount(uint32_t value);
-#endif //#ifdef BIM_ONCHIP
+#endif // #ifdef BIM_ONCHIP
 /*******************************************************************************
 *******************************************************************************/
 #ifdef __cplusplus

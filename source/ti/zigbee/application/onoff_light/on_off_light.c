@@ -142,6 +142,14 @@ static zb_bool_t error_ind_handler(zb_uint8_t severity,
                                    zb_ret_t error_code,
                                    void *additional_info);
 
+void off_network_attention(zb_uint8_t param)
+{
+  ZVUNUSED(param);
+  Log_printf(LogModule_Zigbee_App, Log_INFO, "off_network_attention");
+  zb_osif_led_toggle(1);
+
+  ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+}
 
 MAIN()
 {
@@ -164,15 +172,21 @@ MAIN()
 #ifdef ZB_COORDINATOR_ROLE
   /* Set up defaults for the commissioning */
   zb_set_network_coordinator_role(DEFAULT_CHANLIST);
+
+  /* Set keepalive mode to mac data poll so sleepy zeds consume less power */
+  zb_set_keepalive_mode(MAC_DATA_POLL_KEEPALIVE); 
 #ifdef DEFAULT_NWK_KEY
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
   zb_secur_setup_nwk_key(nwk_key, 0);
 #endif //DEFAULT_NWK_KEY
-  zb_set_max_children(MAX_CHILDREN);
+  zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
   zb_set_network_router_role(DEFAULT_CHANLIST);
-  zb_set_max_children(MAX_CHILDREN);
+  zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+
+  /* Set keepalive mode to mac data poll so sleepy zeds consume less power */
+  zb_set_keepalive_mode(MAC_DATA_POLL_KEEPALIVE); 
 
 #elif defined ZB_ED_ROLE
   zb_set_network_ed_role(DEFAULT_CHANLIST);
@@ -205,10 +219,6 @@ MAIN()
   /* Set Device user application callback */
   ZB_ZCL_REGISTER_DEVICE_CB(test_device_interface_cb);
 
-#ifdef ZB_USE_BUTTONS
-  zb_button_register_handler(0, 0, button_press_handler);
-#endif
-
   zb_error_register_app_handler(error_ind_handler);
 
   /* Initiate the stack start without starting the commissioning */
@@ -228,6 +238,10 @@ MAIN()
       perform_factory_reset = ZB_TRUE;
       Log_printf(LogModule_Zigbee_App, Log_INFO, "performing factory reset");
     }
+
+    zb_osif_led_button_init();
+    ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+
     /* Call the main loop */
     zboss_main_loop();
   }
@@ -377,6 +391,12 @@ zb_uint8_t zcl_specific_cluster_cmd_handler(zb_uint8_t param)
   return ZB_FALSE;
 }
 
+void restart_commissioning(zb_uint8_t param)
+{
+  ZVUNUSED(param);
+  bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
+}
+
 void button_press_handler(zb_uint8_t param)
 {
   ZVUNUSED(param);
@@ -418,25 +438,52 @@ void zboss_signal_handler(zb_uint8_t param)
           perform_factory_reset = ZB_FALSE;
         }
         bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
+
+#ifdef ZB_USE_BUTTONS
+        zb_button_register_handler(0, 0, button_press_handler);
+#endif
         break;
       }
-
+      case ZB_COMMON_SIGNAL_CAN_SLEEP:
+      {
+#ifdef ZB_USE_SLEEP
+        Log_printf(LogModule_Zigbee_App, Log_INFO, "Sleeping now");
+        zb_sleep_now();
+#endif
+        break;
+      }
       case ZB_BDB_SIGNAL_STEERING:
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Successful steering, start f&b target");
         zb_bdb_finding_binding_target(ZB_OUTPUT_ENDPOINT);
+        ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+        zb_osif_led_off(1);
         break;
 
       default:
         Log_printf(LogModule_Zigbee_App, Log_WARNING, "Unknown signal %d", (zb_uint16_t)sig);
     }
   }
-  else if (sig == ZB_ZDO_SIGNAL_PRODUCTION_CONFIG_READY)
-  {
-    Log_printf(LogModule_Zigbee_App, Log_INFO, "Production config is not present or invalid");
-  }
   else
   {
-    Log_printf(LogModule_Zigbee_App, Log_INFO, "Device started FAILED status %d sig %d", ZB_GET_APP_SIGNAL_STATUS(param), sig);
+    switch(sig)
+    { 
+      case ZB_BDB_SIGNAL_DEVICE_FIRST_START:
+        Log_printf(LogModule_Zigbee_App, Log_WARNING, "Device can not find any network on start, so try to perform network steering");
+        ZB_SCHEDULE_APP_ALARM(restart_commissioning, 0, 10 * ZB_TIME_ONE_SECOND);
+        break; /* ZB_BDB_SIGNAL_DEVICE_FIRST_START */
+
+      case ZB_ZDO_SIGNAL_PRODUCTION_CONFIG_READY:
+        Log_printf(LogModule_Zigbee_App, Log_INFO, "Production config is not present or invalid");
+        break;
+
+      case ZB_BDB_SIGNAL_STEERING:
+        Log_printf(LogModule_Zigbee_App, Log_WARNING, "Steering failed, retrying again in 10 seconds");
+        ZB_SCHEDULE_APP_ALARM(restart_commissioning, 0, 10 * ZB_TIME_ONE_SECOND);
+        break; /* ZB_BDB_SIGNAL_STEERING */
+
+      default:
+        Log_printf(LogModule_Zigbee_App, Log_INFO, "Device started FAILED status %d sig %d", ZB_GET_APP_SIGNAL_STATUS(param), sig);
+    }
   }
 
   /* Free the buffer if it is not used */

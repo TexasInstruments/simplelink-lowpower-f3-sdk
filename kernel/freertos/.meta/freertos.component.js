@@ -1,4 +1,4 @@
-/* Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+/* Copyright (c) 2023-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,14 @@ let templates = [
         "alwaysRun": false
     }
 ];
+
+if (system.compiler == "iar") {
+    templates.push({
+        "name": "/freertos/ti_freertos_portable_config_asm.s.xdt",
+        "outputPath": "ti_freertos_portable_config_asm.s",
+        "alwaysRun": false
+    });
+}
 
 let finalTopModules = [];
 

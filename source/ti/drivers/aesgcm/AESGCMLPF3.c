@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -607,7 +607,7 @@ static void AESGCMLPF3_precomputeGHASHTable(uint32_t hashKey[AES_BLOCK_SIZE_WORD
  *  x = x.H, computed using the precomputed tables in object
  *  @pre AESGCMLPF3_precomputeGHASHTable
  */
-static void AESGCMLPF3_galoisMult(uint8_t *x)
+static void AESGCMLPF3_galoisMult(uint8_t x[16])
 {
     int_fast8_t i;
     uint_fast8_t lower4Bits, upper4Bits, rem;

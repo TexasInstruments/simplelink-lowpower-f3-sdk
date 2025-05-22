@@ -73,9 +73,11 @@
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+#endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
 #endif
 

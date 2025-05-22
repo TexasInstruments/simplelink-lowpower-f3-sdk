@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,9 @@ var instConfigs = [
         description: "The maximum allowed jitter per system wakeup in microseconds.",
         longDescription:
 `The jitter is added to the system's PPM requirement, relaxing the number of
-calibrations needed per system wakeup.`,
+calibrations needed per system wakeup.
+
+Unit: Microseconds.`,
         isInteger: true,
         range: [16, 16],    /* For now, allow only a Jitter of 16 us */
         default: 16
@@ -70,10 +72,12 @@ calibrations needed per system wakeup.`,
     {
         name: "temperatureGradient",
         displayName: "Temperature Gradient",
-        description: "The max absolute temperature gradient in Celsius/s where the specified PPM requirement should still be satisfied.",
+        description: "The max absolute temperature gradient in degrees Celsius per second where the specified PPM requirement should still be satisfied.",
         longDescription: `The LFOSC is sensitive to changes in temperature, and the faster the temperature changes
 the more often the system has to wake up and perform LFOSC calibrations to ensure
-that the specified PPM requirements are still met.`,
+that the specified PPM requirements are still met.
+
+Unit: Degrees Celsius per second.`,
         isInteger: false,
         range: [0, 65.5],
         default: 1.0

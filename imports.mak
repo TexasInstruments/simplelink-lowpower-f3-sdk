@@ -18,23 +18,36 @@
 # will build using each non-empty *_ARMCOMPILER cgtool.
 #
 
-SYSCONFIG_TOOL         ?= /home/username/ti/ccs1281/ccs/utils/sysconfig_1.22.0/sysconfig_cli.sh
+SYSCONFIG_TOOL         ?= /home/username/ti/ccs2010/ccs/utils/sysconfig_1.23.1/sysconfig_cli.sh
 
 CMAKE                  ?= /home/username/cmake-3.21.3/bin/cmake
 PYTHON                 ?= python3
 
-TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs1281/ccs/tools/compiler/ti-cgt-armllvm_3.2.2.LTS-0
+TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs2010/ccs/tools/compiler/ti-cgt-armllvm_4.0.2.LTS
 GCC_ARMCOMPILER        ?= /home/username/arm-none-eabi-gcc/12.3.Rel1-0
 IAR_ARMCOMPILER        ?= /home/username/iar9.60.3
 
+# Uncomment this to enable the TFM build
+# ENABLE_TFM_BUILD=1
+
 ifeq ("$(SHELL)","sh.exe")
-# for Windows/DOS shell
+    # for Windows/DOS shell
+
+    # Note that sadly Windows' del command can't handle forward slashes so the
+    # SLASH_FIXUP function is used to insulate portable makefiles from that.
+    # Typically this is only used for clean goals (where 'del' is used), and
+    # only when removing files specified with full, forward-slash-containing
+    # paths.
+    SLASH_FIXUP = $(subst /,\,$1)
+
     RM      = del
     RMDIR   = -rmdir /S /Q
     DEVNULL = NUL
     ECHOBLANKLINE = @cmd /c echo.
 else
-# for Linux-like shells
+    # for Linux-like shells
+    SLASH_FIXUP = $1
+
     RM      = rm -f
     RMDIR   = rm -rf
     DEVNULL = /dev/null

@@ -41,7 +41,7 @@
 // The following are initial defines for the MCU clock
 //
 //*****************************************************************************
-#define GET_MCU_CLOCK         48000000
+#define GET_MCU_CLOCK         96000000
 
 
 #endif // __HW_SYSCTL_H__

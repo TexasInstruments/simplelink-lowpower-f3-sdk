@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,7 @@ RCL_Events RCL_Handler_Ble5_txTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
 RCL_Events RCL_Handler_BLE5_aux_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 RCL_Events RCL_Handler_BLE5_periodicAdv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 RCL_Events RCL_Handler_BLE5_periodicScan(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
+RCL_Events RCL_Handler_BLE5_ChannelAssessment(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events rclEventsIn);
 
 /**
  *  @brief Result of filter list update API

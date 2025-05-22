@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,8 @@ extern uint32_t __data_load__;
 extern uint32_t __data_start__;
 extern uint32_t __data_end__;
 
-void localProgramStart(void)
+/* Marked as used due to being removed by LTO, but is used in resetISR() */
+__attribute__((used)) void localProgramStart(void)
 {
     uint32_t *vtor = (unsigned long *)0xE000ED08;
     uint32_t *bs;
@@ -174,11 +175,14 @@ void __attribute__((naked)) resetISR(void)
      *  For freertos/gcc specifically on this platform, the ti_freertos_config
      *  file is sufficiently large that it requires a full BL instruction
      *  rather than the limited range of the simple B instruction.
+     *
+     *  .ltorg is added to avoid literal pool errors when LTO is enabled.
      */
     __asm__ __volatile__(" ldr r0, =resetVectors\n"
                          " ldr r0, [r0]\n"
                          " mov sp, r0\n"
-                         " bl localProgramStart");
+                         " bl localProgramStart\n"
+                         " .ltorg\n");
 }
 
 //*****************************************************************************

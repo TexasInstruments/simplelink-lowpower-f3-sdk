@@ -54,6 +54,14 @@ const nwkMaxChildrenLongDescription = nwkMaxChildrenDescription
 
 **Range:** 0 - 255`;
 
+const nwkMaxEDCapacityDescription = `Number of end devices that the local device can \
+support in its association table`;
+
+const nwkMaxEDCapacityLongDescription = nwkMaxEDCapacityDescription
++ `\n\n **Default:** 10
+
+**Range:** 1 - network maximum children (nwkMaxChildren)`;
+
 const endDeviceTimeoutDescription = `Value of End Device Timeout`;
 
 const endDeviceTimeoutLongDescription = endDeviceTimeoutDescription
@@ -102,7 +110,15 @@ const config = {
             description: nwkMaxChildrenDescription,
             longDescription: nwkMaxChildrenLongDescription,
             default: 20,
-            hidden: true
+            hidden: Common.defaultDeviceTypeIsGPD || Common.defaultDeviceTypeIsRFD
+        },
+        {
+            name: "nwkMaxEDCapacity",
+            displayName: "Network Maximum End Device Capacitty",
+            description: nwkMaxEDCapacityDescription,
+            longDescription: nwkMaxEDCapacityLongDescription,
+            default: 10,
+            hidden: Common.defaultDeviceTypeIsGPD || Common.defaultDeviceTypeIsRFD
         },
         {
             name: "endDeviceTimeout",
@@ -129,10 +145,12 @@ function onDeviceTypeChange(inst, ui)
         if(inst.deviceType.includes("zc") || inst.deviceType.includes("zr"))
         {
             ui.nwkMaxChildren.hidden = false;
+            ui.nwkMaxEDCapacity.hidden = false;
         }
         else /* zed */
         {
             ui.nwkMaxChildren.hidden = true;
+            ui.nwkMaxEDCapacity.hidden = true;
         }
     }
     else
@@ -176,6 +194,9 @@ function validate(inst, validation)
     /* Validate Network Max Device List */
     Common.validateRange(inst, validation, inst.nwkMaxChildren,
         "nwkMaxChildren", "Network Maximum Device List", 1, 255);
+
+    Common.validateRange(inst, validation, inst.nwkMaxEDCapacity,
+        "nwkMaxChildren", "Network Maximum Device List", 1, inst.nwkMaxChildren-1);
 }
 
 exports = {

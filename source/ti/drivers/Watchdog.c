@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,10 +45,16 @@ extern const uint_least8_t Watchdog_count;
 
 /* Default Watchdog parameters structure */
 const Watchdog_Params Watchdog_defaultParams = {
-    NULL,                    /* callbackFxn */
-    Watchdog_RESET_ON,       /* resetMode */
-    Watchdog_DEBUG_STALL_ON, /* debugStallMode */
-    NULL                     /* custom */
+    NULL,              /* callbackFxn */
+    Watchdog_RESET_ON, /* resetMode */
+#ifdef DeviceFamily_CC35XX
+    /* Debug stalling not supported on CC35XX */
+    Watchdog_DEBUG_STALL_OFF,
+#else
+    /* debugStallMode */
+    Watchdog_DEBUG_STALL_ON,
+#endif
+    NULL /* custom */
 };
 
 static bool isInitialized = false;

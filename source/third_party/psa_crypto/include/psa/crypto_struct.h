@@ -43,7 +43,7 @@
  */
 /*
  *  Copyright The Mbed TLS Contributors
- *  Copyright 2022-2024, Texas Instruments Incorporated
+ *  Copyright 2022-2025, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -97,7 +97,8 @@
      (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
     #include <third_party/psa_crypto/crypto_helper.h>
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     /* No headers needed */
 #else
     #error "Device family not supported"
@@ -200,7 +201,8 @@ static inline psa_key_attributes_t psa_key_attributes_init(void)
     return v;
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || \
+     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 
 static inline void psa_extend_key_usage_flags(psa_key_usage_t *usage_flags)
 {
@@ -525,7 +527,7 @@ static inline size_t psa_get_key_bits(const psa_key_attributes_t *attributes)
 
 #error "Device not supported"
 
-#endif /* DeviceFamily_CC27XX */
+#endif /* DeviceFamily_CC27XX || DeviceFamily_PARENT_CC35XX*/
 
 /* ############################################################################### */
 

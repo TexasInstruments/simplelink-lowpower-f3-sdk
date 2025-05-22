@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ extern "C" {
 #endif
 
 /* Do not configure this pin. */
-#define GPIO_CFG_DO_NOT_CONFIG_INTERNAL 0x80000000
+#define GPIO_CFG_DO_NOT_CONFIG_INTERNAL (0x80000000U)
 
 /* Re-map IOC PORTCFG defines from hw_ioc.h to GPIO defines*/
 #define GPIO_MUX_PORTCFG_PFUNC7 IOC_IOC3_PORTCFG_DTB
@@ -88,7 +88,7 @@ extern "C" {
  * cannot be directly mapped to the IOCn registers. The define below is the
  * mask used by the GPIO driver to mask off the non-IOC configuration values.
  */
-#define GPIOLPF3_CFG_IOC_M 0xFFFFFFF8
+#define GPIOLPF3_CFG_IOC_M (0xFFFFFFF8U)
 
 /* Low and high value interrupts are not available on Low Power F3 devices */
 #define GPIO_CFG_INT_LOW_INTERNAL  GPIOLPF3_CFG_OPTION_NOT_SUPPORTED
@@ -117,13 +117,13 @@ extern "C" {
 #define GPIO_CFG_INT_BOTH_EDGES_INTERNAL IOC_IOC3_EDGEDET_EDGE_BOTH
 
 /* We can feed this into the low bit of IOMODE, and it can then be ORed with output/input/OD/OS */
-#define GPIO_CFG_INVERT_OFF_INTERNAL 0
+#define GPIO_CFG_INVERT_OFF_INTERNAL (0U)
 #define GPIO_CFG_INVERT_ON_INTERNAL  IOC_IOC3_IOMODE_INVERTED
 
-#define GPIO_CFG_HYSTERESIS_OFF_INTERNAL 0
+#define GPIO_CFG_HYSTERESIS_OFF_INTERNAL (0U)
 #define GPIO_CFG_HYSTERESIS_ON_INTERNAL  IOC_IOC3_HYSTEN
 
-#define GPIO_CFG_SHUTDOWN_WAKE_OFF_INTERNAL  0
+#define GPIO_CFG_SHUTDOWN_WAKE_OFF_INTERNAL  (0U)
 #define GPIO_CFG_SHUTDOWN_WAKE_HIGH_INTERNAL IOC_IOC3_WUCFGSD_WAKE_HIGH
 #define GPIO_CFG_SHUTDOWN_WAKE_LOW_INTERNAL  IOC_IOC3_WUCFGSD_WAKE_LOW
 
@@ -143,16 +143,16 @@ extern "C" {
  */
 
 /* Default output value */
-#define GPIO_CFG_OUTPUT_DEFAULT_HIGH_INTERNAL 0x1
-#define GPIO_CFG_OUTPUT_DEFAULT_LOW_INTERNAL  0
+#define GPIO_CFG_OUTPUT_DEFAULT_HIGH_INTERNAL (0x1U)
+#define GPIO_CFG_OUTPUT_DEFAULT_LOW_INTERNAL  (0U)
 
 /* Whether GPIO hardware should have the output enable bit set for this pin */
-#define GPIOLPF3_CFG_PIN_IS_INPUT_INTERNAL  0x2
-#define GPIOLPF3_CFG_PIN_IS_OUTPUT_INTERNAL 0
+#define GPIOLPF3_CFG_PIN_IS_INPUT_INTERNAL  (0x2U)
+#define GPIOLPF3_CFG_PIN_IS_OUTPUT_INTERNAL (0U)
 
 /* Interrupt enable is in the GPIO module */
-#define GPIO_CFG_INT_ENABLE_INTERNAL  0x4
-#define GPIO_CFG_INT_DISABLE_INTERNAL 0
+#define GPIO_CFG_INT_ENABLE_INTERNAL  (0x4U)
+#define GPIO_CFG_INT_DISABLE_INTERNAL (0U)
 
 #ifdef __cplusplus
 }

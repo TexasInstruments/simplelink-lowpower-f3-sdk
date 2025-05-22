@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_canfd_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -7142,7 +7142,6 @@
 // functional clock) gating request.
 //
 // Note: This bit can be reset by HW by Clock-Stop Wake-up via CAN RX Activity.
-// See spec for more details.
 // ENUMs:
 // ENABLE                   Enable MCAN-SS clock stop request
 // DISABLE                  Disable MCAN-SS clock stop request

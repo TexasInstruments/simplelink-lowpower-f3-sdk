@@ -72,9 +72,7 @@ zb_bool_t zb_osif_ota_open_storage(void)
 {
   zb_bool_t ret = ZB_TRUE;
 
-  #ifdef OTA_OFFCHIP
   ret = flash_open();
-  #endif // OTA_OFFCHIP
 
   Log_printf(LogModule_Zigbee_App, Log_INFO, "zb_osif_ota_open_storage");
 
@@ -111,9 +109,9 @@ void zb_osif_ota_erase_fw(void *dev, zb_uint_t offset, zb_uint32_t size)
   ZVUNUSED(dev);
 
   zb_uint32_t numFlashPages = size / PAGE_SIZE;
-  zb_uint8_t page;
+  zb_uint8_t page = (0 + offset) / PAGE_SIZE;
 
-  for ( page = ((zb_uint32_t) &_SECONDARY_SLOT_BASE + offset) / PAGE_SIZE; page < numFlashPages; page++ )
+  for ( ; page < numFlashPages; page++ )
   {
     if (eraseFlashPg(page) != FLASH_SUCCESS)
     {
@@ -233,14 +231,14 @@ zb_uint8_t zb_osif_ota_write(void *dev, zb_uint8_t *data, zb_uint_t off, zb_uint
       // Wite image with offset of OTA Header and Sub Element length
       if (otaHdrSubElemLen > off)
       {
-        page = (zb_uint32_t) &_SECONDARY_SLOT_BASE / PAGE_SIZE;
+        page = 0;
         offset = 0;
         data += (size - ((off + size) - otaHdrSubElemLen));
         size = (off + size) - otaHdrSubElemLen;
       }
       else
       {
-        page = ((zb_uint32_t) &_SECONDARY_SLOT_BASE + off - otaHdrSubElemLen) / PAGE_SIZE;
+        page = ((zb_uint32_t) off - otaHdrSubElemLen) / PAGE_SIZE;
         offset = (off - otaHdrSubElemLen) % PAGE_SIZE;
       }
 
@@ -277,9 +275,8 @@ void zb_osif_ota_mark_fw_updated(void)
 void zb_osif_ota_close_storage(void *dev)
 {
 
-  #ifdef OTA_OFFCHIP
   flash_close();
-  #endif // OTA_OFFCHIP
+
   Log_printf(LogModule_Zigbee_App, Log_INFO, "zb_osif_ota_close_storage");
 }
 

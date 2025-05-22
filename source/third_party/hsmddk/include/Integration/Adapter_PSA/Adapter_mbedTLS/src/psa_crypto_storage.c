@@ -17,7 +17,7 @@
  */
 
 /* TI Customizations: Altered implementation of some APIs to match key 'slot'
- * architecture used in our implementation. 
+ * architecture used in our implementation.
  */
 
 #include <string.h>
@@ -36,7 +36,7 @@
 
 typedef struct {
     uint8_t magic[PSA_KEY_STORAGE_MAGIC_HEADER_LENGTH];
-    
+
     uint8_t MBEDTLS_PRIVATE(lifetime[sizeof(psa_key_lifetime_t)]);
     uint8_t MBEDTLS_PRIVATE(type)[2];
     uint8_t MBEDTLS_PRIVATE(bits)[2];
@@ -95,8 +95,8 @@ static psa_status_t psa_crypto_storage_get_data_length(const mbedtls_svc_key_id_
  * \retval #PSA_ERROR_STORAGE_FAILURE \emptydescription
  * \retval #PSA_ERROR_DOES_NOT_EXIST \emptydescription
  */
-static psa_status_t psa_crypto_storage_load(const mbedtls_svc_key_id_t key, 
-                                            uint8_t *data, 
+static psa_status_t psa_crypto_storage_load(const mbedtls_svc_key_id_t key,
+                                            uint8_t *data,
                                             size_t data_size)
 {
     psa_status_t status;
@@ -138,13 +138,13 @@ static void psa_format_key_data_for_storage(const uint8_t *data,
 
     memcpy(storage_format->MBEDTLS_PRIVATE(bits), &attrCore.MBEDTLS_PRIVATE(bits), sizeof(psa_key_bits_t));
 
-    memcpy(storage_format->MBEDTLS_PRIVATE(policy), 
+    memcpy(storage_format->MBEDTLS_PRIVATE(policy),
            &attrCore.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage), sizeof(psa_key_usage_t));
 
-    memcpy(storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t), 
+    memcpy(storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t),
            &attrCore.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), sizeof(psa_algorithm_t));
 
-    memcpy(storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t) + sizeof(psa_algorithm_t), 
+    memcpy(storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t) + sizeof(psa_algorithm_t),
            &attrCore.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2), sizeof(psa_algorithm_t));
 
     memcpy(storage_format->assetPolicy, assetPolicy, sizeof(PsaPolicyMask_t));
@@ -182,13 +182,13 @@ static psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
         (const psa_persistent_key_storage_format *) storage_data;
     bool hasSymmetricKey = false;
 
-    if (storage_data_length < sizeof(*storage_format)) 
+    if (storage_data_length < sizeof(*storage_format))
     {
         return PSA_ERROR_DATA_INVALID;
     }
 
     status = check_magic_header(storage_data);
-    if (status != PSA_SUCCESS) 
+    if (status != PSA_SUCCESS)
     {
         return status;
     }
@@ -196,13 +196,13 @@ static psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
     memcpy(key_data_length, storage_format->data_len, sizeof(size_t));
 
     if (*key_data_length > (storage_data_length - sizeof(*storage_format)) ||
-        *key_data_length > PSA_CRYPTO_MAX_STORAGE_SIZE) 
+        *key_data_length > PSA_CRYPTO_MAX_STORAGE_SIZE)
         {
         return PSA_ERROR_DATA_INVALID;
     }
     else if ((storage_data_length) - sizeof(*storage_format) == ((*key_data_length) * 2))
     {
-        /* The common case is that the difference of storage_data_length and the 
+        /* The common case is that the difference of storage_data_length and the
          * storage_format struct size is exactly equal to the key_data_length. If
          * the difference is instead equal to two times key_data_length, then that means
          * there is a second key blob present immediately after the first. This is
@@ -219,25 +219,25 @@ static psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
         return PSA_ERROR_DATA_INVALID;
     }
 
-    if (*key_data_length == 0) 
+    if (*key_data_length == 0)
     {
         *key_data = NULL;
-    } 
-    else 
+    }
+    else
     {
-        *key_data = mbedtls_calloc(1, *key_data_length);
-        if (*key_data == NULL) 
+        *key_data = psaInt_mbedtls_calloc(1, *key_data_length);
+        if (*key_data == NULL)
         {
             return PSA_ERROR_INSUFFICIENT_MEMORY;
         }
         memcpy(*key_data, storage_format->key_data, *key_data_length);
 
-        /* storage_data_length may reflect that there are two key blobs stored 
+        /* storage_data_length may reflect that there are two key blobs stored
          * consecutively
          */
         if (hasSymmetricKey)
         {
-            *key_data2 = mbedtls_calloc(1, *key_data_length);
+            *key_data2 = psaInt_mbedtls_calloc(1, *key_data_length);
             if (*key_data2 == NULL)
             {
                 return PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -250,16 +250,16 @@ static psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
     memcpy(&attrCore->MBEDTLS_PRIVATE(type), storage_format->MBEDTLS_PRIVATE(type), sizeof(psa_key_type_t));
     memcpy(&attrCore->MBEDTLS_PRIVATE(bits), storage_format->MBEDTLS_PRIVATE(bits), sizeof(psa_key_bits_t));
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage), 
-           storage_format->MBEDTLS_PRIVATE(policy), 
+    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage),
+           storage_format->MBEDTLS_PRIVATE(policy),
            sizeof(psa_key_usage_t));
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), 
-           storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t), 
+    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
+           storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t),
            sizeof(psa_algorithm_t));
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2), 
-           storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t) + sizeof(psa_algorithm_t), 
+    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2),
+           storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t) + sizeof(psa_algorithm_t),
            sizeof(psa_algorithm_t));
 
     memcpy(assetPolicy, storage_format->assetPolicy, sizeof(PsaPolicyMask_t));
@@ -292,24 +292,24 @@ static psa_status_t psa_crypto_storage_store(const mbedtls_svc_key_id_t key,
     psa_storage_uid_t data_identifier = psa_its_identifier_of_slot(key);
     struct psa_storage_info_t data_identifier_info;
 
-    if (psa_is_key_present_in_storage(key) == 1) 
+    if (psa_is_key_present_in_storage(key) == 1)
     {
         return PSA_ERROR_ALREADY_EXISTS;
     }
 
     status = psa_its_set(data_identifier, (uint32_t) data_length, data, 0);
-    if (status != PSA_SUCCESS) 
+    if (status != PSA_SUCCESS)
     {
         return status;
     }
 
     status = psa_its_get_info(data_identifier, &data_identifier_info);
-    if (status != PSA_SUCCESS) 
+    if (status != PSA_SUCCESS)
     {
         goto exit;
     }
 
-    if (data_identifier_info.size != data_length) 
+    if (data_identifier_info.size != data_length)
     {
         status = PSA_ERROR_DATA_INVALID;
         goto exit;
@@ -398,7 +398,7 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
     /* Note: sizeof(psa_persistent_key_storage_format) is 40 bytes. Relevant for SysConfig RAM configurations. */
     storage_data_length = input_data_length + sizeof(psa_persistent_key_storage_format);
 
-    storage_data = mbedtls_calloc(1, storage_data_length);
+    storage_data = psaInt_mbedtls_calloc(1, storage_data_length);
     if (storage_data == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
     }
@@ -407,7 +407,7 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
 
     status = psa_crypto_storage_store(attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id),
                                       storage_data, storage_data_length);
-    
+
     /* After storing to persistent storage, also save the key and its attributes in
      * the cache
      */
@@ -415,7 +415,7 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
     {
         memcpy(&pEntry->attributes, attr, sizeof(psa_key_attributes_t));
 
-        pEntry->key = mbedtls_calloc(1, data_length);
+        pEntry->key = psaInt_mbedtls_calloc(1, data_length);
 
         if (NULL == pEntry->key)
         {
@@ -427,7 +427,7 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
 
             if (NULL != data2)
             {
-                pEntry->key2 = mbedtls_calloc(1, data_length);
+                pEntry->key2 = psaInt_mbedtls_calloc(1, data_length);
 
                 if (NULL == pEntry->key2)
                 {
@@ -443,7 +443,7 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
 
     memset(storage_data, 0, storage_data_length);
 
-    mbedtls_free(storage_data);
+    psaInt_mbedtls_free(storage_data);
 
     return status;
 }
@@ -461,7 +461,7 @@ psa_status_t psa_load_persistent_key_into_slot(const mbedtls_svc_key_id_t key,
     }
 
     /* Allocate the storage_format struct to read from ITS */
-    loaded_data = mbedtls_calloc(1, storage_data_length);
+    loaded_data = psaInt_mbedtls_calloc(1, storage_data_length);
 
     if (loaded_data == NULL) {
         return PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -496,7 +496,7 @@ psa_status_t psa_load_persistent_key_into_slot(const mbedtls_svc_key_id_t key,
 exit:
     memset(loaded_data, 0, storage_data_length);
 
-    mbedtls_free(loaded_data);
+    psaInt_mbedtls_free(loaded_data);
 
     return status;
 }

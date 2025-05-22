@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +52,7 @@
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_adc.h)
 #include DeviceFamily_constructPath(driverlib/adc.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 #include DeviceFamily_constructPath(driverlib/ull.h)
@@ -241,7 +242,7 @@ static void ADCBufLPF3_configDma(ADCBuf_Handle handle)
         /* Trigger the auxiliary DMA channel on the ADC_COMB event which is
          * triggered by the DMADONE signal (of the data DMA channel)
          */
-        HWREG(hwAttrs->auxDmaEvtReg) = hwAttrs->auxDmaEvtMux;
+        EVTSVTConfigureDma(hwAttrs->auxDmaSubscriberId, EVTSVT_PUB_ADC_COMB);
 
         /* Configure control table entry for auxiliary DMA channel */
         *(hwAttrs->auxDmaTableEntryPri) = reenableDmaTriggerControlTableEntryValue;
@@ -336,8 +337,8 @@ ADCBuf_Handle ADCBufLPF3_open(ADCBuf_Handle handle, const ADCBuf_Params *params)
      */
     ADCEnableInterrupt(ADC_INT_DMADONE);
 
-    /* Configure DMA event fabric to listen for the ADC event */
-    HWREG(hwAttrs->dataDmaEvtReg) = hwAttrs->dataDmaEvtMux;
+    /* Configure event fabric to map DMA channel to ADC event */
+    EVTSVTConfigureDma(hwAttrs->dataDmaSubscriberId, EVTSVT_DMA_TRIG_ADC0TRG);
 
     if (params->returnMode == ADCBuf_RETURN_MODE_BLOCKING)
     {
@@ -729,6 +730,8 @@ void ADCBufLPF3_close(ADCBuf_Handle handle)
     /* Destroy the Hwi */
     HwiP_destruct(&(object->hwi));
 
+    /* Release power dependencies */
+    Power_releaseDependency(PowerLPF3_PERIPH_ADC0);
     Power_releaseDependency(PowerLPF3_PERIPH_DMA);
 
     if (object->returnMode == ADCBuf_RETURN_MODE_BLOCKING)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,11 +74,11 @@ let devSpecific = {
         if (!deviceId.match(/CC23|CC13.1|CC26.1/))
         {
             /* Uses SHA-2 HW */
-            return Common.autoForceModules(["Board", "Power"])();
+            return Common.autoForceModules(["Board", "Power", "CryptoBoard"])();
         }
         else
         {
-            return Common.autoForceModules(["Board"])();
+            return Common.autoForceModules(["Board", "CryptoBoard"])();
         }
     }
 };

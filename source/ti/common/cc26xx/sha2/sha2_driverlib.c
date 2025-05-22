@@ -54,7 +54,7 @@
 #include DeviceFamily_constructPath(driverlib/prcm.h)
 
 #if defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || defined(DeviceFamily_CC26X3)
-#include DeviceFamily_constructPath(inc/hw_cpu_fpu.h)
+    #include DeviceFamily_constructPath(inc/hw_cpu_fpu.h)
 #endif
 
 #include "ti/common/cc26xx/sha2/sha2_driverlib.h"
@@ -63,10 +63,10 @@
  * CONSTANTS
  */
 /* Digest length in bytes of the SHA256 hash */
-#define SHA2_DIGEST_LENGTH_BYTES_256  32
+#define SHA2_DIGEST_LENGTH_BYTES_256 32
 
 /* Block size in bytes of the SHA256 hash */
-#define SHA2_BLOCK_SIZE_BYTES_256     64
+#define SHA2_BLOCK_SIZE_BYTES_256 64
 
 /* Outer and inner padding bytes used in HMAC */
 #define HMAC_OPAD_BYTE 0x5C
@@ -76,7 +76,8 @@
  * TYPEDEFS
  */
 /* SHA2 operation types */
-typedef enum {
+typedef enum
+{
     /* Single step unsupported */
     /* SHA2_OperationType_SingleStep, */
     SHA2_OperationType_MultiStep,
@@ -84,16 +85,17 @@ typedef enum {
 } SHA2_OperationType;
 
 /* SHA2 object for tracking SHA driver state */
-typedef struct {
-    bool                            isOpen;
-    volatile bool                   operationInProgress;
-    bool                            operationCanceled;
-    int_fast16_t                    returnStatus;
-    uint16_t                        bytesInBuffer;
-    uint32_t                        bytesProcessed;
-    uint8_t                         buffer[SHA2_BLOCK_SIZE_BYTES_256];
-    uint32_t                        digest[SHA2_DIGEST_LENGTH_BYTES_256 / 4];
-    uint32_t                        hmacDigest[SHA2_DIGEST_LENGTH_BYTES_256 / 4];
+typedef struct
+{
+    bool isOpen;
+    volatile bool operationInProgress;
+    bool operationCanceled;
+    int_fast16_t returnStatus;
+    uint16_t bytesInBuffer;
+    uint32_t bytesProcessed;
+    uint8_t buffer[SHA2_BLOCK_SIZE_BYTES_256];
+    uint32_t digest[SHA2_DIGEST_LENGTH_BYTES_256 / 4];
+    uint32_t hmacDigest[SHA2_DIGEST_LENGTH_BYTES_256 / 4];
 } SHA2CC26X2_Object;
 
 extern bool periphRequired_g;
@@ -122,7 +124,8 @@ static uint32_t fpccrRestore;
  *
  * @return The floor of value.
  */
-static uint32_t floorUint32(uint32_t value, uint32_t divider) {
+static uint32_t floorUint32(uint32_t value, uint32_t divider)
+{
     return (value / divider) * divider;
 }
 
@@ -131,7 +134,8 @@ static uint32_t floorUint32(uint32_t value, uint32_t divider) {
  *
  * @brief  Helper function for handling the SHA2 interrupt
  */
-static void SHA2_hwiFxn() {
+static void SHA2_hwiFxn()
+{
     uint32_t irqStatus;
 
     irqStatus = SHA2IntStatusRaw();
@@ -142,35 +146,36 @@ static void SHA2_hwiFxn() {
      */
     IntMasterDisable();
 
-    if (SHA2_object.operationCanceled) {
+    if (SHA2_object.operationCanceled)
+    {
         /*
          * If the operation has been canceled we can end here.
          * Cleanup is done by SHA2_cancelOperation()
          */
         IntMasterEnable();
         return;
-
-    } else if (irqStatus & SHA2_DMA_BUS_ERR) {
+    }
+    else if (irqStatus & SHA2_DMA_BUS_ERR)
+    {
         /*
          * In the unlikely event of an error we can stop here.
          */
         SHA2_object.returnStatus = SHA2_STATUS_ERROR;
-
-    } else if (SHA2_dataBytesRemaining == 0) {
+    }
+    else if (SHA2_dataBytesRemaining == 0)
+    {
         /*
          * Last transaction has finished. Nothing to do.
          */
-
-    } else if (SHA2_dataBytesRemaining >= SHA2_BLOCK_SIZE_BYTES_256) {
+    }
+    else if (SHA2_dataBytesRemaining >= SHA2_BLOCK_SIZE_BYTES_256)
+    {
         /*
          * Start another transaction
          */
         uint32_t transactionLength = floorUint32(SHA2_dataBytesRemaining, SHA2_BLOCK_SIZE_BYTES_256);
 
-        SHA2ComputeIntermediateHash(SHA2_data,
-                               SHA2_object.digest,
-                               SHA2_MODE_SELECT_SHA256,
-                               transactionLength);
+        SHA2ComputeIntermediateHash(SHA2_data, SHA2_object.digest, SHA2_MODE_SELECT_SHA256, transactionLength);
 
         SHA2_dataBytesRemaining -= transactionLength;
         SHA2_data += transactionLength;
@@ -178,8 +183,9 @@ static void SHA2_hwiFxn() {
 
         IntMasterEnable();
         return;
-
-    } else if (SHA2_dataBytesRemaining > 0) {
+    }
+    else if (SHA2_dataBytesRemaining > 0)
+    {
         /*
          * Copy remaining data into buffer
          */
@@ -196,9 +202,10 @@ static void SHA2_hwiFxn() {
     /*
      * Reset byte counter if a hash has been finalized
      */
-    if (SHA2_operationType != SHA2_OperationType_MultiStep) {
+    if (SHA2_operationType != SHA2_OperationType_MultiStep)
+    {
         SHA2_object.bytesProcessed = 0;
-        SHA2_object.bytesInBuffer = 0;
+        SHA2_object.bytesInBuffer  = 0;
     }
 
     IntMasterEnable();
@@ -212,8 +219,10 @@ static void SHA2_hwiFxn() {
  *
  * @return SHA2_STATUS_SUCCESS on success, SHA2_STATUS_ERROR otherwise.
  */
-static int_fast16_t SHA2_waitForResult(){
-    do {
+static int_fast16_t SHA2_waitForResult()
+{
+    do
+    {
         SHA2WaitForIRQFlags(SHA2_RESULT_RDY | SHA2_DMA_BUS_ERR);
         SHA2_hwiFxn();
     } while (SHA2_object.operationInProgress);
@@ -248,19 +257,20 @@ int_fast16_t SHA2_open()
     /* Initialize the SHA2 object */
     IntMasterDisable();
 
-    if (SHA2_object.isOpen) {
+    if (SHA2_object.isOpen)
+    {
         IntMasterEnable();
         return SHA2_STATUS_ERROR;
     }
 
-    SHA2_object.isOpen = true;
+    SHA2_object.isOpen              = true;
     SHA2_object.operationInProgress = false;
-    SHA2_object.operationCanceled = false;
+    SHA2_object.operationCanceled   = false;
 
     IntMasterEnable();
 
-    SHA2_object.bytesInBuffer   = 0;
-    SHA2_object.bytesProcessed  = 0;
+    SHA2_object.bytesInBuffer  = 0;
+    SHA2_object.bytesProcessed = 0;
 
     /* Enable the peripheral domains required for SHA2 */
     IntMasterDisable();
@@ -273,24 +283,30 @@ int_fast16_t SHA2_open()
         periphRequired_g = false;
 
         PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
-        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON);
+        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)
+        {
+            ;
+        }
     }
 
     PRCMPeripheralRunEnable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralSleepEnable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_CRYPTO);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     /* Disable FPU lazy stacking while the SHA2 instance is open. This prevents
      * the side effect from the SHA2ComputeFinalHash call of setting the CONTROL
      * special register. Lazy stacking is restored in SHA2_close().
      */
 #if defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || defined(DeviceFamily_CC26X3)
-    fpccrRestore = HWREG(CPU_FPU_BASE + CPU_FPU_O_FPCCR);
+    fpccrRestore                          = HWREG(CPU_FPU_BASE + CPU_FPU_O_FPCCR);
     HWREG(CPU_FPU_BASE + CPU_FPU_O_FPCCR) = 0;
 #else
-    fpccrRestore = HWREG(CPU_SCS_BASE + CPU_SCS_O_FPCCR);
+    fpccrRestore                          = HWREG(CPU_SCS_BASE + CPU_SCS_O_FPCCR);
     HWREG(CPU_SCS_BASE + CPU_SCS_O_FPCCR) = 0;
 #endif
 
@@ -303,7 +319,8 @@ void SHA2_close()
 {
     /* If there is still an operation ongoing, abort it now. */
     IntMasterDisable();
-    if (SHA2_object.operationInProgress) {
+    if (SHA2_object.operationInProgress)
+    {
         SHA2_cancelOperation();
     }
 
@@ -323,33 +340,41 @@ void SHA2_close()
 
     /* Only power off the peripheral domain if it was not on prior to calling
      * SHA2_open() */
-    if (!periphRequired_g) {
+    if (!periphRequired_g)
+    {
         PRCMPowerDomainOff(PRCM_DOMAIN_PERIPH);
-        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF);
+        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF)
+        {
+            ;
+        }
     }
 
     PRCMPeripheralRunDisable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralSleepDisable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralDeepSleepDisable(PRCM_PERIPH_CRYPTO);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     IntMasterEnable();
 }
 
 /* Documented in sha2_driverlib.h */
-int_fast16_t SHA2_addData(const void* data, size_t length)
+int_fast16_t SHA2_addData(const void *data, size_t length)
 {
     /* If we are in SHA2_RETURN_BEHAVIOR_POLLING, we do not want an interrupt to trigger.
      * We need to disable it before kicking off the operation.
      */
     IntDisable(INT_CRYPTO_RESULT_AVAIL_IRQ);
 
-    SHA2_object.returnStatus = SHA2_STATUS_SUCCESS;
+    SHA2_object.returnStatus      = SHA2_STATUS_SUCCESS;
     SHA2_object.operationCanceled = false;
-    SHA2_operationType = SHA2_OperationType_MultiStep;
+    SHA2_operationType            = SHA2_OperationType_MultiStep;
 
-    if ((SHA2_object.bytesInBuffer + length) >= SHA2_BLOCK_SIZE_BYTES_256) {
+    if ((SHA2_object.bytesInBuffer + length) >= SHA2_BLOCK_SIZE_BYTES_256)
+    {
         /* We have accumulated enough data to start a transaction. Now the question
          * remains whether we have to merge bytes from the data stream into the
          * buffer first. If so, we do that now, then start a transaction.
@@ -358,10 +383,11 @@ int_fast16_t SHA2_addData(const void* data, size_t length)
          * i.e. copy remaining data into the buffer.
          */
         uint32_t transactionLength;
-        const uint8_t* transactionStartAddress;
+        const uint8_t *transactionStartAddress;
 
-        if (SHA2_object.bytesInBuffer > 0) {
-            uint8_t *bufferTail = &SHA2_object.buffer[SHA2_object.bytesInBuffer];
+        if (SHA2_object.bytesInBuffer > 0)
+        {
+            uint8_t *bufferTail          = &SHA2_object.buffer[SHA2_object.bytesInBuffer];
             uint32_t bytesToCopyToBuffer = SHA2_BLOCK_SIZE_BYTES_256 - SHA2_object.bytesInBuffer;
             memcpy(bufferTail, data, bytesToCopyToBuffer);
 
@@ -373,13 +399,15 @@ int_fast16_t SHA2_addData(const void* data, size_t length)
             transactionStartAddress = SHA2_object.buffer;
             transactionLength       = SHA2_BLOCK_SIZE_BYTES_256;
 
-            SHA2_data = (const uint8_t*)data + bytesToCopyToBuffer;
+            SHA2_data               = (const uint8_t *)data + bytesToCopyToBuffer;
             SHA2_dataBytesRemaining = length - bytesToCopyToBuffer;
-        } else {
+        }
+        else
+        {
             transactionStartAddress = data;
-            transactionLength = floorUint32(length, SHA2_BLOCK_SIZE_BYTES_256);
+            transactionLength       = floorUint32(length, SHA2_BLOCK_SIZE_BYTES_256);
 
-            SHA2_data = (const uint8_t*)data + transactionLength;
+            SHA2_data               = (const uint8_t *)data + transactionLength;
             SHA2_dataBytesRemaining = length - transactionLength;
         }
 
@@ -393,12 +421,15 @@ int_fast16_t SHA2_addData(const void* data, size_t length)
          * Finally we need to decide whether this is the first hash
          * operation or a follow-up from a previous one.
          */
-        if (SHA2_object.bytesProcessed > 0) {
+        if (SHA2_object.bytesProcessed > 0)
+        {
             SHA2ComputeIntermediateHash(transactionStartAddress,
-                                   SHA2_object.digest,
-                                   SHA2_MODE_SELECT_SHA256,
-                                   transactionLength);
-        } else {
+                                        SHA2_object.digest,
+                                        SHA2_MODE_SELECT_SHA256,
+                                        transactionLength);
+        }
+        else
+        {
             SHA2ComputeInitialHash(transactionStartAddress,
                                    SHA2_object.digest,
                                    SHA2_MODE_SELECT_SHA256,
@@ -408,8 +439,9 @@ int_fast16_t SHA2_addData(const void* data, size_t length)
         SHA2_object.bytesProcessed += transactionLength;
         SHA2_object.operationInProgress = true;
         IntMasterEnable();
-
-    } else {
+    }
+    else
+    {
         /* There is no action required by the hardware. But we kick the
          * interrupt in order to follow the same code path as the other
          * operations.
@@ -441,9 +473,9 @@ int_fast16_t SHA2_finalize(void *digest)
      */
     IntDisable(INT_CRYPTO_RESULT_AVAIL_IRQ);
 
-    SHA2_object.returnStatus = SHA2_STATUS_SUCCESS;
+    SHA2_object.returnStatus      = SHA2_STATUS_SUCCESS;
     SHA2_object.operationCanceled = false;
-    SHA2_operationType = SHA2_OperationType_Finalize;
+    SHA2_operationType            = SHA2_OperationType_Finalize;
 
     /*
      * Starting the accelerator and setting the operationInProgress
@@ -452,17 +484,16 @@ int_fast16_t SHA2_finalize(void *digest)
     IntMasterDisable();
     SHA2_object.operationInProgress = true;
 
-    if (SHA2_object.bytesProcessed == 0) {
+    if (SHA2_object.bytesProcessed == 0)
+    {
         /*
          * Since no hash operation has been performed yet and no intermediate
          * digest is available, we have to perform a full hash operation
          */
-        SHA2ComputeHash(SHA2_object.buffer,
-                        digest,
-                        SHA2_object.bytesInBuffer,
-                        SHA2_MODE_SELECT_SHA256);
+        SHA2ComputeHash(SHA2_object.buffer, digest, SHA2_object.bytesInBuffer, SHA2_MODE_SELECT_SHA256);
     }
-    else if (SHA2_object.bytesInBuffer > 0) {
+    else if (SHA2_object.bytesInBuffer > 0)
+    {
         uint32_t totalLength = SHA2_object.bytesProcessed + SHA2_object.bytesInBuffer;
         uint32_t chunkLength = SHA2_object.bytesInBuffer;
 
@@ -472,8 +503,9 @@ int_fast16_t SHA2_finalize(void *digest)
                              totalLength,
                              chunkLength,
                              SHA2_MODE_SELECT_SHA256);
-
-    } else {
+    }
+    else
+    {
         /*
          * The hardware is incapable of finalizing an empty partial message,
          * but we can trick it by pretending this to be an intermediate block.
@@ -482,7 +514,7 @@ int_fast16_t SHA2_finalize(void *digest)
          * finalization block in big endian order
          */
         uint64_t lengthInBits = SHA2_object.bytesProcessed * 8;
-        uint8_t *lengthBytes  = (uint8_t*)&lengthInBits;
+        uint8_t *lengthBytes  = (uint8_t *)&lengthInBits;
 
         /*
          * Use the existing buffer as scratch pad
@@ -499,7 +531,8 @@ int_fast16_t SHA2_finalize(void *digest)
          * in big endian order. We always write only the last 8 bytes.
          */
         uint32_t i = 0;
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
+        {
             SHA2_object.buffer[SHA2_BLOCK_SIZE_BYTES_256 - 8 + i] = lengthBytes[7 - i];
             SHA2_object.buffer[SHA2_BLOCK_SIZE_BYTES_256 - 4 + i] = lengthBytes[3 - i];
         }
@@ -511,19 +544,16 @@ int_fast16_t SHA2_finalize(void *digest)
          */
         memcpy(digest, SHA2_object.digest, SHA2_DIGEST_LENGTH_BYTES_256);
 
-        SHA2ComputeIntermediateHash(SHA2_object.buffer,
-                               digest,
-                               SHA2_MODE_SELECT_SHA256,
-                               SHA2_BLOCK_SIZE_BYTES_256);
+        SHA2ComputeIntermediateHash(SHA2_object.buffer, digest, SHA2_MODE_SELECT_SHA256, SHA2_BLOCK_SIZE_BYTES_256);
     }
 
     IntMasterEnable();
     return SHA2_waitForResult();
 }
 
-
 /* Documented in sha2_driverlib.h */
-int_fast16_t SHA2_setupHmac(const uint8_t *key, size_t keyLength) {
+int_fast16_t SHA2_setupHmac(const uint8_t *key, size_t keyLength)
+{
 
     uint8_t xorBuffer[SHA2_BLOCK_SIZE_BYTES_256];
 
@@ -573,10 +603,7 @@ int_fast16_t SHA2_setupHmac(const uint8_t *key, size_t keyLength) {
      * would corrupt our previously stored intermediate results.
      * This lets us save a second intermediate result.
      */
-    SHA2ComputeInitialHash(xorBuffer,
-                           SHA2_object.hmacDigest,
-                           SHA2_MODE_SELECT_SHA256,
-                           SHA2_BLOCK_SIZE_BYTES_256);
+    SHA2ComputeInitialHash(xorBuffer, SHA2_object.hmacDigest, SHA2_MODE_SELECT_SHA256, SHA2_BLOCK_SIZE_BYTES_256);
 
     SHA2WaitForIRQFlags(SHA2_RESULT_RDY | SHA2_DMA_BUS_ERR);
 
@@ -586,11 +613,11 @@ int_fast16_t SHA2_setupHmac(const uint8_t *key, size_t keyLength) {
     IntEnable(INT_CRYPTO_RESULT_AVAIL_IRQ);
 
     return SHA2_STATUS_SUCCESS;
-
 }
 
 /* Documented in sha2_driverlib.h */
-int_fast16_t SHA2_finalizeHmac(uint8_t* data) {
+int_fast16_t SHA2_finalizeHmac(uint8_t *data)
+{
 
     uint8_t tmpDigest[SHA2_DIGEST_LENGTH_BYTES_256];
     /* If we are in SHA2_RETURN_BEHAVIOR_POLLING, we do not want an interrupt to trigger.
@@ -610,18 +637,19 @@ int_fast16_t SHA2_finalizeHmac(uint8_t* data) {
     /* Add the temporary digest computed earlier to the current digest */
     SHA2_addData(tmpDigest, SHA2_DIGEST_LENGTH_BYTES_256);
 
-    //IntPendClear(INT_CRYPTO_RESULT_AVAIL_IRQ);
-    //IntEnable(INT_CRYPTO_RESULT_AVAIL_IRQ);
+    // IntPendClear(INT_CRYPTO_RESULT_AVAIL_IRQ);
+    // IntEnable(INT_CRYPTO_RESULT_AVAIL_IRQ);
 
     return SHA2_finalize(data);
-
 }
 
 /* Documented in sha2_driverlib.h */
-int_fast16_t SHA2_cancelOperation() {
+int_fast16_t SHA2_cancelOperation()
+{
     IntMasterDisable();
 
-    if (!SHA2_object.operationInProgress) {
+    if (!SHA2_object.operationInProgress)
+    {
         IntMasterEnable();
         return SHA2_STATUS_ERROR;
     }
@@ -634,10 +662,10 @@ int_fast16_t SHA2_cancelOperation() {
      */
     IntPendClear(INT_CRYPTO_RESULT_AVAIL_IRQ);
 
-    SHA2_object.bytesInBuffer = 0;
-    SHA2_object.bytesProcessed = 0;
+    SHA2_object.bytesInBuffer     = 0;
+    SHA2_object.bytesProcessed    = 0;
     SHA2_object.operationCanceled = true;
-    SHA2_object.returnStatus = SHA2_STATUS_CANCELED;
+    SHA2_object.returnStatus      = SHA2_STATUS_CANCELED;
 
     IntMasterEnable();
     return SHA2_STATUS_SUCCESS;

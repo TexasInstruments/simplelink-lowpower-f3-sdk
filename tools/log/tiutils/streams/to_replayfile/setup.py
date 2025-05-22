@@ -1,5 +1,5 @@
 """
-Copyright (C) 2024, Texas Instruments Incorporated
+Copyright (C) 2024-2025, Texas Instruments Incorporated
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -42,5 +42,5 @@ setuptools.setup(
             "to-replayfile = tilogger_to_replayfile.main:output_factory_cli",
         ],
     },
-    install_requires=["typer==0.3.2"],
+    install_requires=["typer==0.15.1"],
 )

@@ -1,5 +1,5 @@
 """
-Copyright (C) 2020-2024, Texas Instruments Incorporated
+Copyright (C) 2020-2025, Texas Instruments Incorporated
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -43,5 +43,5 @@ setuptools.setup(
         ],
         "console_scripts": ["tilogger_itm_viewer = tilogger_itm_transport.itm_transport:itm_raw_viewer"],
     },
-    install_requires=["pyserial>=3.4", "typer==0.3.2", "colorama==0.4.4"],
+    install_requires=["pyserial>=3.5", "typer==0.15.1", "colorama==0.4.6"],
 )

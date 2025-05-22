@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_sys0_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -63,12 +63,14 @@
 // Device ID
 #define SYS0_O_DEVICEID                                             0x000003FCU
 
-// Debug Authentication. This register is used by ROM to store Debug
-// Authnetication Status
+// Debug Authentication.
 #define SYS0_O_DBGAUTH                                              0x00000410U
 
 // Part ID
 #define SYS0_O_PARTID                                               0x000007F8U
+
+// This register is programmed by boot code with device life cycle information
+#define SYS0_O_LIFECYC                                              0x000007FCU
 
 // Internal. Only to be used through TI provided API.
 #define SYS0_O_TMUTE0                                               0x00000800U
@@ -287,18 +289,6 @@
 // Register: SYS0_O_TSENSCFG
 //
 //*****************************************************************************
-// Field: [31:26] SPARE1
-//
-// Spare bits
-// ENUMs:
-// MAX                      maximum value
-// MIN                      minimum value
-#define SYS0_TSENSCFG_SPARE1_W                                               6U
-#define SYS0_TSENSCFG_SPARE1_M                                      0xFC000000U
-#define SYS0_TSENSCFG_SPARE1_S                                              26U
-#define SYS0_TSENSCFG_SPARE1_MAX                                    0xFC000000U
-#define SYS0_TSENSCFG_SPARE1_MIN                                    0x00000000U
-
 // Field:    [11] TSENS2EN
 //
 // This is the enable bit for the second temperature sensor in AUX.
@@ -310,13 +300,6 @@
 #define SYS0_TSENSCFG_TSENS2EN_S                                            11U
 #define SYS0_TSENSCFG_TSENS2EN_EN                                   0x00000800U
 #define SYS0_TSENSCFG_TSENS2EN_DIS                                  0x00000000U
-
-// Field:  [10:8] SPARE
-//
-// Spare bits
-#define SYS0_TSENSCFG_SPARE_W                                                3U
-#define SYS0_TSENSCFG_SPARE_M                                       0x00000700U
-#define SYS0_TSENSCFG_SPARE_S                                                8U
 
 // Field:   [1:0] SEL
 //
@@ -342,10 +325,15 @@
 //*****************************************************************************
 // Field:    [30] HYSPOL
 //
-// Spare bit for LPCOMP
+// Hysteresis polarity
+// ENUMs:
+// INV                      Inverted
+// NOINV                    Not inverted
 #define SYS0_LPCMPCFG_HYSPOL                                        0x40000000U
 #define SYS0_LPCMPCFG_HYSPOL_M                                      0x40000000U
 #define SYS0_LPCMPCFG_HYSPOL_S                                              30U
+#define SYS0_LPCMPCFG_HYSPOL_INV                                    0x40000000U
+#define SYS0_LPCMPCFG_HYSPOL_NOINV                                  0x00000000U
 
 // Field: [29:28] ATESTMUX
 //
@@ -574,13 +562,6 @@
 #define SYS0_VGMCFG_KEY_M                                           0xFF000000U
 #define SYS0_VGMCFG_KEY_S                                                   24U
 
-// Field: [19:16] SPARE
-//
-// Spare bits
-#define SYS0_VGMCFG_SPARE_W                                                  4U
-#define SYS0_VGMCFG_SPARE_M                                         0x000F0000U
-#define SYS0_VGMCFG_SPARE_S                                                 16U
-
 // Field:  [11:8] ATBMUXSEL
 //
 // These bits are used to generate VGM ATB mux selection control.
@@ -794,6 +775,35 @@
 
 //*****************************************************************************
 //
+// Register: SYS0_O_LIFECYC
+//
+//*****************************************************************************
+// Field:   [7:0] VAL
+//
+// Device life cycle value.
+// ENUMs:
+// LCYCLE_ILLEGAL           Illegal
+// LCYCLE_RETEST            Re-test
+// LCYCLE_PRODDEV           Production device
+// LCYCLE_ENGRDEV           Engineering device
+// LCYCLE_TESTFT            Test Final Test
+// LCYCLE_TESTPT            Test Production Test
+// LCYCLE_1STBDAY           First birthday
+// LCYCLE_POSSIBLE_1STBDAY  Possible first birthday
+#define SYS0_LIFECYC_VAL_W                                                   8U
+#define SYS0_LIFECYC_VAL_M                                          0x000000FFU
+#define SYS0_LIFECYC_VAL_S                                                   0U
+#define SYS0_LIFECYC_VAL_LCYCLE_ILLEGAL                             0x000000FFU
+#define SYS0_LIFECYC_VAL_LCYCLE_RETEST                              0x00000006U
+#define SYS0_LIFECYC_VAL_LCYCLE_PRODDEV                             0x00000005U
+#define SYS0_LIFECYC_VAL_LCYCLE_ENGRDEV                             0x00000004U
+#define SYS0_LIFECYC_VAL_LCYCLE_TESTFT                              0x00000003U
+#define SYS0_LIFECYC_VAL_LCYCLE_TESTPT                              0x00000002U
+#define SYS0_LIFECYC_VAL_LCYCLE_1STBDAY                             0x00000001U
+#define SYS0_LIFECYC_VAL_LCYCLE_POSSIBLE_1STBDAY                    0x00000000U
+
+//*****************************************************************************
+//
 // Register: SYS0_O_TMUTE0
 //
 //*****************************************************************************
@@ -960,10 +970,7 @@
 
 // Field:  [10:8] IPEAK
 //
-// DCDC: Set inductor peak current
-// Min = 0x0
-// Max = 0x7
-// DCDC load support increases from 0x0 to 0x7
+// Internal. Only to be used through TI provided API.
 #define SYS0_TMUTE4_IPEAK_W                                                  3U
 #define SYS0_TMUTE4_IPEAK_M                                         0x00000700U
 #define SYS0_TMUTE4_IPEAK_S                                                  8U

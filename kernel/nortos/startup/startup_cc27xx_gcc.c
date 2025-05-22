@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -142,6 +142,8 @@ extern uint32_t __data_load__, __data_start__, __data_end__;
 //
 //*****************************************************************************
 //
+
+/* Marked as used due to being removed by LTO, but is used in resetISR() */
 __attribute__((used)) void localProgramStart(void)
 {
     uint32_t *bs;
@@ -210,6 +212,8 @@ __attribute__((used)) void localProgramStart(void)
 // resetting the bits in that register) are left solely in the hands of the
 // application.
 //
+// .ltorg is added to avoid literal pool errors when LTO is enabled.
+//
 //*****************************************************************************
 void __attribute__((naked)) resetISR(void)
 {
@@ -217,7 +221,8 @@ void __attribute__((naked)) resetISR(void)
                          " movt r0, #:upper16:resetVectors\n"
                          " ldr r0, [r0]\n"
                          " mov sp, r0\n"
-                         " bl localProgramStart");
+                         " bl localProgramStart\n"
+                         " .ltorg\n");
 }
 
 //*****************************************************************************

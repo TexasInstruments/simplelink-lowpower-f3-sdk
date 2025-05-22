@@ -494,7 +494,7 @@ local_AsymBigIntToHW(const uint8_t * const pData,
     }
     else
     {
-        /* Montgomery curve keys are already provided in little endian format, per PSA spec */
+        /* Keys for Curve25519 and Ed25519 are already provided in little endian format, per PSA spec */
         (void)memcpy(ptr, pData, CopySize);
     }
 
@@ -1575,8 +1575,6 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                     }
                                     else
                                     {
-                                        *modulus_size = CurveBits;
-                                        *exponentsize = CurveBits;
                                         /* Set the output data length to the CurveBits in bytes plus the number
                                          * of bytes for the sub-vector header word.
                                          */
@@ -1706,8 +1704,31 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         {
                             if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                             {
+                                CurveBits     = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                                 *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                                 *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+
+                                /* Convert to VaultIP HW format */
+                                if (isDerivedKey)
+                                {
+                                    /* Nothing to do - there are no input or output buffers of key material to format */
+                                }
+                                else if ((NULL == pOutputData) ||
+                                    (NULL == pOutputDataLength) ||
+                                    (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(CurveBits))))
+                                {
+                                    funcres = PSA_ERROR_BUFFER_TOO_SMALL;
+                                }
+                                else
+                                {
+                                    /* Set the output data length to the CurveBits in bytes plus the number
+                                     * of bytes for the sub-vector header word.
+                                     */
+                                    *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(CurveBits);
+
+                                    local_AsymBigIntToHW(data, CurveBits, 0,
+                                                         0x11, pOutputData);
+                                }
                             }
                             else
                             {
@@ -1748,14 +1769,45 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     }
                     else
                     {
-                        if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
+                        if (PSA_ECC_FAMILY_TWISTED_EDWARDS !=
+                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                         {
-                            *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
-                            *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                            funcres = PSA_ERROR_INVALID_ARGUMENT;
                         }
                         else
                         {
-                            funcres = PSA_ERROR_INVALID_ARGUMENT;
+                            if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
+                            {
+                                CurveBits     = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+
+                                /* Convert to VaultIP HW format */
+                                if (isDerivedKey)
+                                {
+                                    /* Nothing to do - there are no input or output buffers of key material to format */
+                                }
+                                else if ((NULL == pOutputData) ||
+                                    (NULL == pOutputDataLength) ||
+                                    (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(CurveBits))))
+                                {
+                                    funcres = PSA_ERROR_BUFFER_TOO_SMALL;
+                                }
+                                else
+                                {
+                                    /* Set the output data length to the CurveBits in bytes plus the number
+                                        * of bytes for the sub-vector header word.
+                                        */
+                                    *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(CurveBits);
+
+                                    local_AsymBigIntToHW(data, CurveBits, 0,
+                                                         0x11, pOutputData);
+                                }
+                            }
+                            else
+                            {
+                                funcres = PSA_ERROR_INVALID_ARGUMENT;
+                            }
                         }
                     }
                 }
@@ -2944,9 +2996,10 @@ local_AsymKeyGenPub(PsaAssetId_t PrvKeyAssetId,
              * big-endian octet format should be used. For Montgomery curves, little-endian format should
              * be used.
              */
-            if (CurveFamily == EIP130DOMAIN_ECC_FAMILY_MONTGOMERY)
+            if ((CurveFamily == EIP130DOMAIN_ECC_FAMILY_MONTGOMERY) ||
+                (CurveFamily == EIP130DOMAIN_ECC_FAMILY_TWISTED_EDWARDS))
             {
-                /* For Montgomery curves, the data should be output in little-endian, so we should not reverse
+                /* For Montgomery and Twisted Edwards curves, the data should be output in little-endian, so we should not reverse
                  * the HSM output data. Further, it is known that this CurveFamily has only one component and
                  * no octet byte prefix.
                  */
@@ -3174,13 +3227,13 @@ local_GetFreeKeyEntry(uint32_t * index, psa_key_persistence_t persistence)
         if (NULL != gl_PSA_Key[persistentOverwriteIndex].key)
         {
             /* Remove the volatile entry */
-            mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key);
+            psaInt_mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key);
         }
 
         if (NULL != gl_PSA_Key[persistentOverwriteIndex].key2)
         {
             /* Remove the volatile entry */
-            mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key2);
+            psaInt_mbedtls_free(gl_PSA_Key[persistentOverwriteIndex].key2);
         }
 
         /* Make sure that the key entry is cleared */
@@ -3263,7 +3316,7 @@ local_RemoveKey(psa_key_context_t * pKey)
         if (NULL != pKey->key)
         {
             /* Remove the volatile entry */
-            mbedtls_free(pKey->key);
+            psaInt_mbedtls_free(pKey->key);
         }
         else
         {
@@ -3273,7 +3326,7 @@ local_RemoveKey(psa_key_context_t * pKey)
         if (NULL != pKey->key2)
         {
             /* Remove the volatile entry */
-            mbedtls_free(pKey->key2);
+            psaInt_mbedtls_free(pKey->key2);
         }
         else
         {
@@ -4592,6 +4645,7 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
 
         if (PSA_SUCCESS == funcres)
         {
+            /* TODO: See HSM_DDK-80 and update this condition if 0 inputDataSize is to be supported */
             if ((derivationKeyID != PSA_KEY_ID_HSM_HUK) &&
                 (derivationKeyID != PSA_KEY_ID_HSM_TKDK))
             {
@@ -4940,7 +4994,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
                 {
                     if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                     {
-                        pKey->key = mbedtls_calloc(1, DataToSaveSize);
+                        pKey->key = psaInt_mbedtls_calloc(1, DataToSaveSize);
                         if (NULL == pKey->key)
                         {
                             funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -4992,7 +5046,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
                     DataSize = PSA_KEYBLOB_SIZE(DataToSaveSize);
                     if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                     {
-                        pKey->key = mbedtls_calloc(1, DataSize);
+                        pKey->key = psaInt_mbedtls_calloc(1, DataSize);
                         if (NULL == pKey->key)
                         {
                             funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5008,7 +5062,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
 
                         if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                         {
-                            pKey->key2 = mbedtls_calloc(1, DataSize);
+                            pKey->key2 = psaInt_mbedtls_calloc(1, DataSize);
 
                             if (NULL == pKey->key2)
                             {
@@ -5438,7 +5492,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                         {
                             keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
                             /* Store in volatile storage */
-                            pKey->key = mbedtls_calloc(1, KeySize);
+                            pKey->key = psaInt_mbedtls_calloc(1, KeySize);
                             if (NULL == pKey->key)
                             {
                                 funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5739,7 +5793,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                             {
                                 keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
                                 /* Store in volatile storage */
-                                pKey->key = mbedtls_calloc(1, KeyBlobSize);
+                                pKey->key = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                 if (NULL == pKey->key)
                                 {
                                     funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5752,7 +5806,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
 
                                 if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                                 {
-                                    pKey->key2 = mbedtls_calloc(1, KeyBlobSize);
+                                    pKey->key2 = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                     if (NULL == pKey->key2)
                                     {
                                         funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -5944,7 +5998,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
                     if (NULL != pKey->key)
                     {
                         /* Remove the volatile entry */
-                        mbedtls_free(pKey->key);
+                        psaInt_mbedtls_free(pKey->key);
 
                         funcres = PSA_SUCCESS;
                     }
@@ -5962,7 +6016,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
                     if (NULL != pKey->key2)
                     {
                         /* Remove the volatile entry */
-                        mbedtls_free(pKey->key2);
+                        psaInt_mbedtls_free(pKey->key2);
 
                         funcres = PSA_SUCCESS;
                     }
@@ -6038,7 +6092,7 @@ psa_get_key_attributes(mbedtls_svc_key_id_t key,
 void
 psa_reset_key_attributes(psa_key_attributes_t * attributes)
 {
-    mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+    psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
     memset(attributes, 0, sizeof(*attributes));
 }
 
@@ -6286,7 +6340,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                         if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence_trgt)
                         {
                             /* Store in volatile storage */
-                            pTrgtKeyEntry->key = mbedtls_calloc(1, CopyKeySize);
+                            pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, CopyKeySize);
                             if (NULL == pTrgtKeyEntry->key)
                             {
                                 funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6320,7 +6374,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                             if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src)
                             {
                                 /* Source key is already in wrapped format */
-                                pTrgtKeyEntry->key = mbedtls_calloc(1, CopyKeySize);
+                                pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, CopyKeySize);
                                 if (NULL == pTrgtKeyEntry->key)
                                 {
                                     funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6333,7 +6387,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
 
                                 if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                                 {
-                                    pTrgtKeyEntry->key2 = mbedtls_calloc(1, CopyKeySize);
+                                    pTrgtKeyEntry->key2 = psaInt_mbedtls_calloc(1, CopyKeySize);
                                     if (NULL == pTrgtKeyEntry->key2)
                                     {
                                         funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6351,7 +6405,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                                  * be converted to wrapped format */
                                 size_t KeyBlobSize = PSA_KEYBLOB_SIZE(CopyKeySize);
 
-                                pTrgtKeyEntry->key = mbedtls_calloc(1, KeyBlobSize);
+                                pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                 if (NULL == pTrgtKeyEntry->key)
                                 {
                                     funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6367,7 +6421,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
 
                                 if ((PSA_SUCCESS == funcres) && isBidirectionalKey)
                                 {
-                                    pTrgtKeyEntry->key2 = mbedtls_calloc(1, KeyBlobSize);
+                                    pTrgtKeyEntry->key2 = psaInt_mbedtls_calloc(1, KeyBlobSize);
                                     if (NULL == pTrgtKeyEntry->key2)
                                     {
                                         funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
@@ -6636,8 +6690,12 @@ psa_export_key(mbedtls_svc_key_id_t key,
     else
     {
         psa_key_location_t key_location;
+        psa_key_persistence_t key_persistance;
+        psa_key_usage_t key_usage;
 
         key_location = PSA_KEY_LIFETIME_GET_LOCATION(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_persistance = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_usage = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
         if (PSA_KEY_LOCATION_LOCAL_STORAGE == key_location)
         {
             if (PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
@@ -6655,6 +6713,43 @@ psa_export_key(mbedtls_svc_key_id_t key,
                  * psa_import_key() or psa_generate_key()
                  */
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
+            }
+        }
+        else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
+        {
+            if (PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
+            {
+                /* Current PSA implementation does not support exporting a symmetrically wrapped asymmetric private/public key. */
+                funcres = PSA_ERROR_NOT_SUPPORTED;
+            }
+            else if (PSA_KEY_TYPE_IS_SYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
+            {
+                /* In the two cases where the key's usage is either encrypt or decrypt, the pKey->key will always have the corresponding key blob. */
+                if (NULL != pKey->key)
+                {
+                    *data_length = (PSA_KEYBLOB_SIZE(pKey->key_size));
+
+                    (void)memcpy(data, pKey->key, *data_length);
+
+                    /* In the third and last case where the key's usage is for both encrypt and decrypt, the pKey->key2 will have the second key blob. */
+                    if ((NULL != pKey->key2) && (PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
+                        (PSA_KEY_USAGE_DECRYPT == (key_usage & PSA_KEY_USAGE_DECRYPT)))
+                    {
+                        (void)memcpy(data + (*data_length), pKey->key2, *data_length);
+
+                        *data_length += (PSA_KEYBLOB_SIZE(pKey->key_size));
+                    }
+                }
+                else if (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistance)
+                {
+                    /* Exporting a symmetric key from HSM Asset Store is not supported feature. */
+                    funcres = PSA_ERROR_NOT_SUPPORTED;
+                }
+                else
+                {
+                    /* If the asset does not exist in neither KeyStore or the HSM Asset Store, then the arguments passed in are wrong. */
+                    funcres = PSA_ERROR_INVALID_ARGUMENT;
+                }
             }
         }
         else

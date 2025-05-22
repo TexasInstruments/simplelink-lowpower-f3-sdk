@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,12 +34,15 @@
  */
 
 #include <stdbool.h>
+#include <string.h>
 
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/DebugP.h>
 
+#include <ti/drivers/ITM.h>
 #include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC27XX.h>
 #include <ti/drivers/Temperature.h>
 #include <ti/drivers/GPIO.h>
 
@@ -52,97 +55,22 @@
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_clkctl.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_evtull.h)
 #include DeviceFamily_constructPath(inc/hw_ckmd.h)
 #include DeviceFamily_constructPath(inc/hw_rtc.h)
 #include DeviceFamily_constructPath(inc/hw_systim.h)
 #include DeviceFamily_constructPath(inc/hw_pmctl.h)
-#include DeviceFamily_constructPath(inc/hw_pmud.h)
-#include DeviceFamily_constructPath(inc/hw_sys0.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
 #include DeviceFamily_constructPath(inc/hw_fcfg.h)
-#include DeviceFamily_constructPath(driverlib/cpu.h)
 #include DeviceFamily_constructPath(driverlib/ckmd.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 #include DeviceFamily_constructPath(driverlib/gpio.h)
 #include DeviceFamily_constructPath(driverlib/lrfd.h)
 #include DeviceFamily_constructPath(driverlib/pmctl.h)
+#include DeviceFamily_constructPath(driverlib/systick.h)
+#include DeviceFamily_constructPath(driverlib/ull.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
-
-/* Forward declarations */
-int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
-static void PowerCC27XX_oscillatorISR(uintptr_t arg);
-static void PowerCC27XX_rtcISR(uintptr_t arg);
-static void PowerCC27XX_enterStandby(void);
-static void PowerCC27XX_setDependencyCount(Power_Resource resourceId, uint8_t count);
-static void PowerCC27XX_startHFXT(void);
-bool PowerCC27XX_isValidResourceId(Power_Resource resourceId);
-
-static void PowerCC27XX_hfxtAmpsettledTimeout(uintptr_t arg);
-static void PowerCC27XX_initialHfxtAmpCompClockCb(uintptr_t searchDone);
-static void PowerCC27XX_forceHfxtFsmToRamp1(void);
-static void PowerCC27XX_startContHfxtAmpMeasurements(void);
-static void PowerCC27XX_stopContHfxtAmpMeasurements(void);
-static uint32_t PowerCC27XX_getHfxtAmpMeasurement(void);
-
-static void PowerCC27XX_hfxtCompensateFxn(int16_t currentTemperature,
-                                          int16_t thresholdTemperature,
-                                          uintptr_t clientArg,
-                                          Temperature_NotifyObj *notifyObject);
-static uint32_t PowerCC27XX_temperatureToRatio(int16_t temperature);
-static void PowerCC27XX_updateHFXTRatio(uint32_t ratio);
-
-/* Externs */
-extern const PowerCC27XX_Config PowerCC27XX_config;
-extern const uint_least8_t GPIO_pinLowerBound;
-extern const uint_least8_t GPIO_pinUpperBound;
-extern const uint_least8_t PowerLPF3_extlfPin;
-extern const uint_least8_t PowerLPF3_extlfPinMux;
-
-/* Macro for weak definition of the Power Log module */
-Log_MODULE_DEFINE_WEAK(LogModule_Power, {0});
-
-/* Function Macros */
-#define IOC_ADDR(index) (IOC_BASE + IOC_O_IOC0 + (sizeof(uint32_t) * index))
-
-/* Macro used to extract the resource group  from a resource ID */
-#define RESOURCE_GROUP(resourceId) ((resourceId)&PowerCC27XX_PERIPH_GROUP_M)
-
-/* Macro used to extract the bit index shift encoded from a resource ID */
-#define RESOURCE_BIT_INDEX(resourceId) ((resourceId)&PowerCC27XX_PERIPH_BIT_INDEX_M)
-
-#define HFXT_COMP_MAX_TEMP (125)
-#define HFXT_COMP_MIN_TEMP (-40)
-
-/* Workaround for missing enums for CKMD_HFTRACKCTL_RATIO */
-#define CKMD_HFTRACKCTL_RATIO_REF48M 0x00400000U
-
-/* Workaround for missing enums for CKMD_AFTRACKCTL_RATIO */
-#define CKMD_AFTRACKCTL_RATIO__90P3168MHZ 0x0880DEE9U
-#define CKMD_AFTRACKCTL_RATIO__98P304MHZ  0x07D00000U
-
-/* Magic VGMCFG register unlock value */
-#define SYS0_VGMCFG_KEY_UNLOCK 0x5AU
-
-/* Timeout value used to detect if HFXT FSM is stuck in RAMP0 state */
-#define HFXT_AMP_COMP_START_TIMEOUT_US 500
-
-/* Time to wait after changing HFXTTARG.IREF and measuring the resulting
- * HFXT amplitude
- */
-#define HFXT_AMP_COMP_MEASUREMENT_US 1000
-
-/* The limits for the allowed target IREF values to be passed to
- * CKMDSetTargetIrefTrim()
- */
-#define HFXT_TARGET_IREF_MAX 8
-#define HFXT_TARGET_IREF_MIN 3
-
-/* Initial LFINC value for the LFINC filter. The value is representing the
- * nominal LFOSC frequency of 32.768 kHz in us with 16 fractional bits.
- */
-#define LFINCCTL_INT_START_VALUE 0x1E8480
 
 /* Type definitions */
 
@@ -159,6 +87,100 @@ typedef union
     uint32_t value;
 } PowerCC27XX_hfxtConfig;
 
+/* Function type to qualify a LFCLK source.
+ * To be called from PowerCC27XX_oscillatorISR()
+ * maskedStatus is CMKD.MIS at the entry of PowerCC27XX_oscillatorISR()
+ *
+ * The function should return true if the qualification process is done,
+ * otherwise false.
+ */
+typedef bool (*PowerLPF3_LfclkQualFxn)(uint32_t maskedStatus);
+
+/* LFCLK TDC trigger sources used for LFCLK qualification. */
+typedef enum
+{
+    PowerCC27XX_LFOSC = CKMD_TRIGSRC_STOP_POL_HIGH | CKMD_TRIGSRC_STOP_SRC_LFOSC | CKMD_TRIGSRC_START_POL_HIGH |
+                        CKMD_TRIGSRC_START_SRC_LFOSC,
+    PowerCC27XX_LFXT = CKMD_TRIGSRC_STOP_POL_HIGH | CKMD_TRIGSRC_STOP_SRC_LFXT | CKMD_TRIGSRC_START_POL_HIGH |
+                       CKMD_TRIGSRC_START_SRC_LFXT,
+} PowerCC27XX_LfclkTdcTrigSrc;
+
+/* Forward declarations */
+int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
+static void PowerCC27XX_oscillatorISR(uintptr_t arg);
+static void PowerCC27XX_rtcISR(uintptr_t arg);
+static void PowerCC27XX_enterStandby(void);
+static void PowerCC27XX_setDependencyCount(Power_Resource resourceId, uint8_t count);
+bool PowerCC27XX_isValidResourceId(Power_Resource resourceId);
+static void PowerCC27XX_startHFXT(void);
+
+static void PowerCC27XX_hfxtCompensateFxn(int16_t currentTemperature,
+                                          int16_t thresholdTemperature,
+                                          uintptr_t clientArg,
+                                          Temperature_NotifyObj *notifyObject);
+static uint32_t PowerCC27XX_temperatureToRatio(int16_t temperature);
+static void PowerCC27XX_updateHFXTRatio(uint32_t ratio);
+
+static void PowerCC27XX_hfxtAmpsettledTimeout(uintptr_t arg);
+static void PowerCC27XX_initialHfxtAmpCompClockCb(uintptr_t searchDone);
+static void PowerCC27XX_forceHfxtFsmToRamp1(void);
+static void PowerCC27XX_startContHfxtAmpMeasurements(void);
+static void PowerCC27XX_stopContHfxtAmpMeasurements(void);
+static uint32_t PowerCC27XX_getHfxtAmpMeasurement(void);
+
+static void PowerCC27XX_startLfclkTdcMeasurement(PowerCC27XX_LfclkTdcTrigSrc tdcTrigSrc);
+static void PowerCC27XX_restartLfclkTdcMeasurement(void);
+static bool PowerCC27XX_extlfQual(uint32_t maskedStatus);
+static bool PowerCC27XX_lfxtQual(uint32_t maskedStatus);
+static bool PowerCC27XX_lfoscQual(uint32_t maskedStatus);
+
+/* Externs */
+extern const PowerCC27XX_Config PowerCC27XX_config;
+extern const uint_least8_t GPIO_pinLowerBound;
+extern const uint_least8_t GPIO_pinUpperBound;
+extern const uint_least8_t PowerLPF3_extlfPin;
+extern const uint_least8_t PowerLPF3_extlfPinMux;
+
+/* Macro for weak definition of the Power Log module */
+Log_MODULE_DEFINE_WEAK(LogModule_Power, {0});
+
+/* Function Macros */
+#define IOC_ADDR(index) (IOC_BASE + IOC_O_IOC0 + (sizeof(uint32_t) * (index)))
+
+/* Macro used to extract the resource group  from a resource ID */
+#define RESOURCE_GROUP(resourceId) ((resourceId)&PowerCC27XX_PERIPH_GROUP_M)
+
+/* Macro used to extract the bit index shift encoded from a resource ID */
+#define RESOURCE_BIT_INDEX(resourceId) ((resourceId)&PowerCC27XX_PERIPH_BIT_INDEX_M)
+
+#define HFXT_COMP_MAX_TEMP (125)
+#define HFXT_COMP_MIN_TEMP (-40)
+
+/* Workaround for missing enums for CKMD_AFTRACKCTL_RATIO */
+#define CKMD_AFTRACKCTL_RATIO__90P3168MHZ (0x0880DEE9U)
+#define CKMD_AFTRACKCTL_RATIO__98P304MHZ  (0x07D00000U)
+
+/* Timeout value used to detect if HFXT FSM is stuck in RAMP0 state */
+#define HFXT_AMP_COMP_START_TIMEOUT_US (500U)
+
+/* Time to wait after changing HFXTTARG.IREF and measuring the resulting
+ * HFXT amplitude
+ */
+#define HFXT_AMP_COMP_MEASUREMENT_US (1000U)
+
+/* The limits for the allowed target IREF values to be passed to
+ * CKMDSetTargetIrefTrim()
+ */
+#define HFXT_TARGET_IREF_MAX (8U)
+#define HFXT_TARGET_IREF_MIN (3U)
+
+/* Initial LFINC value for the LFINC filter. The value is representing the
+ * nominal LFOSC frequency of 32.768 kHz in us with 16 fractional bits.
+ */
+#define LFINCCTL_INT_START_VALUE (0x1E8480U)
+
+#define SYSTIMER_CHANNEL_COUNT (5U)
+
 /* Static Globals */
 
 /*! Temperature notification to compensate the HFXT */
@@ -167,7 +189,7 @@ static Temperature_NotifyObj PowerCC27XX_hfxtCompNotifyObj = {0};
 /* Initialize value to the CKMD:HFTRACKCTL.RATIO field reset value */
 static uint32_t hfxtCompRatio = CKMD_HFTRACKCTL_RATIO_REF48M;
 
-/*! Temperature compensation coefficients for HFXT */
+/*! Temperature compensation coefficients for HFXT. */
 static struct
 {
     int32_t P0;
@@ -177,25 +199,43 @@ static struct
     uint8_t shift;
 } PowerCC27XX_hfxtCompCoefficients;
 
+/*! Temperature compensation coefficients for the internal cap array.
+ *  The variables are weakly defined to allow the application to override them.
+ */
+__attribute__((weak)) const uint32_t PowerLPF3_capArrayP0   = 553648128;
+__attribute__((weak)) const uint32_t PowerLPF3_capArrayP1   = 4697620;
+__attribute__((weak)) const uint8_t PowerLPF3_capArrayShift = 26;
+
+/* LFCLK Qualification function */
+static PowerLPF3_LfclkQualFxn PowerLPF3_lfclkQualFxn = NULL;
+
 /* Global state variable to track if HFXT compensation is enabled or not.
  * It is used to check whether temperature notifications should be re-enabled
  * after an update or not, in case compensation has been asynchronously disabled
  */
 static bool PowerCC27XX_hfxtCompEnabled = false;
 
-/* Array to maintain constraint reference counts */
-static uint8_t constraintCounts[PowerCC27XX_NUMCONSTRAINTS];
+/* Array to maintain constraint reference counts.
+ * Declare volatile variable to ensure the toolchain does not use
+ * stack for the variable and does not optimize this memory allocation away.
+ */
+static volatile uint8_t constraintCounts[PowerCC27XX_NUMCONSTRAINTS];
 
-/* Mask of Power constraints for quick access */
-static uint32_t constraintMask = 0;
+/* Mask of Power constraints for quick access.
+ * Declare volatile variable to ensure the toolchain does not use
+ * stack for the variable and does not optimize this memory allocation away.
+ */
+static volatile uint32_t constraintMask = 0;
 
 /* Arrays to maintain resource dependency reference counts.
  * Each resource group will have an array associated with it, and the arrays can
  * be indexed using the bit index shift value encoded in the resource ID.
+ * Declare volatile variable to ensure the toolchain does not use
+ * stack for the variable and does not optimize this memory allocation away.
  */
-static uint8_t resourceCountsClkctl0[PowerCC27XX_NUMRESOURCES_CLKCTL0];
-static uint8_t resourceCountsClkctl1[PowerCC27XX_NUMRESOURCES_CLKCTL1];
-static uint8_t resourceCountsLrfd[PowerCC27XX_NUMRESOURCES_LRFD];
+static volatile uint8_t resourceCountsClkctl0[PowerCC27XX_NUMRESOURCES_CLKCTL0];
+static volatile uint8_t resourceCountsClkctl1[PowerCC27XX_NUMRESOURCES_CLKCTL1];
+static volatile uint8_t resourceCountsLrfd[PowerCC27XX_NUMRESOURCES_LRFD];
 
 /* Keeps track of the configured Power policy. Power_idleFunc() will not run
  * the policy if this is set to NULL
@@ -263,7 +303,7 @@ HwiP_Struct clockHwi;
 /*
  *  ======== Power_init ========
  */
-int_fast16_t Power_init()
+int_fast16_t Power_init(void)
 {
     /* If this function has already been called, just return */
     if (isInitialized)
@@ -273,17 +313,11 @@ int_fast16_t Power_init()
 
     isInitialized = true;
 
-    isPolicyEnabled = PowerCC27XX_config.policyFxn != NULL;
+    isPolicyEnabled = (PowerCC27XX_config.policyFxn != NULL);
 
     policyFxn = PowerCC27XX_config.policyFxn;
 
     startInitialHfxtAmpCompFxn = PowerCC27XX_config.startInitialHfxtAmpCompFxn;
-
-    /* Clear VDDIOPGIO to disable pad power. This is a workaround for a
-     * CC27xxx10 ROM bug that leaves the bit set rather than cleared. For other
-     * devices, this workaround has no effect.
-     */
-    HWREG(PMCTL_BASE + PMCTL_O_AONRCLR1) |= PMCTL_AONRCLR1_VDDIOPGIO_CLR;
 
     /* Construct the CKM hwi responsible for oscillator related events.
      * Since there is no dedicated CKM interrupt line, we need to mux one of
@@ -292,7 +326,14 @@ int_fast16_t Power_init()
      */
     HwiP_construct(&ckmHwi, INT_CPUIRQ3, PowerCC27XX_oscillatorISR, NULL);
 
-    HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ3SEL) = EVTSVT_CPUIRQ3SEL_PUBID_AON_CKM_COMB;
+    /* Mux the AON_CKM_COMB event to CPUIRQ3 */
+    EVTSVTConfigureEvent(EVTSVT_SUB_CPUIRQ3, EVTSVT_PUB_AON_CKM_COMB);
+
+    /* Clear VDDIOPGIO to disable pad power. This is a workaround for a
+     * CC27xxx10 ROM bug that leaves the bit set rather than cleared. For other
+     * devices, this workaround has no effect.
+     */
+    HWREG(PMCTL_BASE + PMCTL_O_AONRCLR1) |= PMCTL_AONRCLR1_VDDIOPGIO_CLR;
 
     /* Enable a selection of CKM signals as interrupt sources. For now,
      * we will stick to AMPSETTLED since it is related to existing notification
@@ -410,7 +451,7 @@ void Power_setPolicy(Power_PolicyFxn policy)
  */
 uint_fast32_t Power_getConstraintMask(void)
 {
-    return constraintMask;
+    return (uint_fast32_t)constraintMask;
 }
 
 /*
@@ -421,22 +462,28 @@ int_fast16_t Power_getDependencyCount(Power_Resource resourceId)
 {
     DebugP_assert(PowerCC27XX_isValidResourceId(resourceId));
 
+    int_fast16_t result;
     uint8_t bitIndex    = RESOURCE_BIT_INDEX(resourceId);
     uint_fast16_t group = RESOURCE_GROUP(resourceId);
+
     if (group == PowerCC27XX_PERIPH_GROUP_CLKCTL0)
     {
-        return (int_fast16_t)resourceCountsClkctl0[bitIndex];
+        result = (int_fast16_t)resourceCountsClkctl0[bitIndex];
     }
     else if (group == PowerCC27XX_PERIPH_GROUP_CLKCTL1)
     {
-        return (int_fast16_t)resourceCountsClkctl1[bitIndex];
+        result = (int_fast16_t)resourceCountsClkctl1[bitIndex];
     }
     else if (group == PowerCC27XX_PERIPH_GROUP_LRFD)
     {
-        return (int_fast16_t)resourceCountsLrfd[bitIndex];
+        result = (int_fast16_t)resourceCountsLrfd[bitIndex];
+    }
+    else
+    {
+        result = (int_fast16_t)Power_EINVALIDINPUT;
     }
 
-    return (int_fast16_t)Power_EINVALIDINPUT;
+    return result;
 }
 
 /*
@@ -448,14 +495,14 @@ int_fast16_t Power_getConstraintCount(uint_fast16_t constraintId)
 {
     DebugP_assert(constraintId < PowerCC27XX_NUMCONSTRAINTS);
 
+    int_fast16_t result = Power_EINVALIDINPUT;
+
     if (constraintId < PowerCC27XX_NUMCONSTRAINTS)
     {
-        return (int_fast16_t)constraintCounts[constraintId];
+        result = (int_fast16_t)constraintCounts[constraintId];
     }
-    else
-    {
-        return (int_fast16_t)Power_EINVALIDINPUT;
-    }
+
+    return result;
 }
 
 /*
@@ -469,7 +516,7 @@ uint_fast32_t Power_getTransitionLatency(uint_fast16_t sleepState, uint_fast16_t
      * between RTC timeout and re-enabling interrupts
      */
 
-    uint32_t latency = 0;
+    uint_fast32_t latency = 0;
 
     if (type == Power_RESUME)
     {
@@ -495,7 +542,7 @@ uint_fast32_t Power_getTransitionLatency(uint_fast16_t sleepState, uint_fast16_t
  */
 uint_fast16_t Power_getTransitionState(void)
 {
-    return powerState;
+    return (uint_fast16_t)powerState;
 }
 
 /*
@@ -585,7 +632,7 @@ int_fast16_t Power_setConstraint(uint_fast16_t constraintId)
     key = HwiP_disable();
 
     /* Set the specified constraint in the constraintMask for faster access */
-    constraintMask |= 1 << constraintId;
+    constraintMask |= 1U << constraintId;
 
     /* Increment the specified constraint count */
     constraintCounts[constraintId]++;
@@ -607,14 +654,14 @@ int_fast16_t Power_releaseConstraint(uint_fast16_t constraintId)
 
     key = HwiP_disable();
 
-    DebugP_assert(constraintCounts[constraintId] != 0);
+    DebugP_assert(constraintCounts[constraintId] != 0U);
 
     constraintCounts[constraintId]--;
 
     /* Only update the constraint mask if we removed the constraint entirely */
-    if (constraintCounts[constraintId] == 0)
+    if (constraintCounts[constraintId] == 0U)
     {
-        constraintMask &= ~(1 << constraintId);
+        constraintMask &= ~(1U << constraintId);
     }
 
     HwiP_restore(key);
@@ -650,13 +697,13 @@ int_fast16_t Power_setDependency(Power_Resource resourceId)
         switch (RESOURCE_GROUP(resourceId))
         {
             case PowerCC27XX_PERIPH_GROUP_CLKCTL0:
-                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENSET0) = 1 << bitIndex;
+                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENSET0) = 1U << bitIndex;
                 break;
             case PowerCC27XX_PERIPH_GROUP_CLKCTL1:
-                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENSET1) = 1 << bitIndex;
+                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENSET1) = 1U << bitIndex;
                 break;
             case PowerCC27XX_PERIPH_GROUP_LRFD:
-                LRFDSetClockDependency(1 << bitIndex, LRFD_CLK_DEP_POWER);
+                LRFDSetClockDependency(1U << bitIndex, LRFD_CLK_DEP_POWER);
                 break;
             default:
                 break;
@@ -703,13 +750,13 @@ int_fast16_t Power_releaseDependency(Power_Resource resourceId)
         switch (RESOURCE_GROUP(resourceId))
         {
             case PowerCC27XX_PERIPH_GROUP_CLKCTL0:
-                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENCLR0) = 1 << bitIndex;
+                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENCLR0) = 1U << bitIndex;
                 break;
             case PowerCC27XX_PERIPH_GROUP_CLKCTL1:
-                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENCLR1) = 1 << bitIndex;
+                HWREG(CLKCTL_BASE + CLKCTL_O_CLKENCLR1) = 1U << bitIndex;
                 break;
             case PowerCC27XX_PERIPH_GROUP_LRFD:
-                LRFDReleaseClockDependency(1 << bitIndex, LRFD_CLK_DEP_POWER);
+                LRFDReleaseClockDependency(1U << bitIndex, LRFD_CLK_DEP_POWER);
                 break;
             default:
                 break;
@@ -732,14 +779,14 @@ int_fast16_t Power_releaseDependency(Power_Resource resourceId)
 int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownTime)
 {
     int_fast16_t notifyStatus;
-    uint32_t hwiKey;
+    uintptr_t hwiKey;
     uint8_t i;
     bool ioPending = false;
 
     hwiKey = HwiP_disable();
 
     /* Check if there is a constraint to prohibit shutdown */
-    if (Power_getConstraintMask() & (1 << PowerLPF3_DISALLOW_SHUTDOWN))
+    if ((Power_getConstraintMask() & (1U << PowerLPF3_DISALLOW_SHUTDOWN)) != 0U)
     {
         HwiP_restore(hwiKey);
         return Power_ECHANGE_NOT_ALLOWED;
@@ -763,8 +810,8 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
         /* Read WUCFGSD field once and check both values */
         uint32_t ioShutdownConfig = HWREG(IOC_ADDR(i)) & IOC_IOC0_WUCFGSD_M;
 
-        if ((ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_HIGH || ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_LOW) &&
-            GPIOGetEventDio(i))
+        if (((ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_HIGH) || (ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_LOW)) &&
+            (GPIOGetEventDio(i) != 0U))
         {
             ioPending = true;
         }
@@ -862,7 +909,86 @@ void Power_reset(void)
  */
 void PowerCC27XX_doWFI(void)
 {
-    __WFI();
+    uint32_t constraints;
+    bool idleAllowed;
+
+    constraints = Power_getConstraintMask();
+    idleAllowed = (constraints & (1 << PowerLPF3_DISALLOW_IDLE)) == 0;
+
+    if (idleAllowed)
+    {
+        /* Flush any remaining log messages in the ITM */
+        ITM_flush();
+
+        /* Enter idle */
+        __WFI();
+
+        /* Restore ITM settings */
+        ITM_restore();
+    }
+}
+
+/*
+ *  ======== PowerLPF3_getResetReason ========
+ */
+PowerLPF3_ResetReason PowerLPF3_getResetReason(void)
+{
+    PowerLPF3_ResetReason resetReason;
+    uint32_t pmctlResetReason = PMCTLGetResetReason();
+    switch (pmctlResetReason)
+    {
+        case (uint32_t)PowerLPF3_RESET_SHUTDOWN_IO:
+            resetReason = PowerLPF3_RESET_SHUTDOWN_IO;
+            break;
+        case (uint32_t)PowerLPF3_RESET_SHUTDOWN_SWD:
+            resetReason = PowerLPF3_RESET_SHUTDOWN_SWD;
+            break;
+        case (uint32_t)PowerLPF3_RESET_WATCHDOG:
+            resetReason = PowerLPF3_RESET_WATCHDOG;
+            break;
+        case (uint32_t)PowerLPF3_RESET_SYSTEM:
+            resetReason = PowerLPF3_RESET_SYSTEM;
+            break;
+        case (uint32_t)PowerLPF3_RESET_CPU:
+            resetReason = PowerLPF3_RESET_CPU;
+            break;
+        case (uint32_t)PowerLPF3_RESET_LOCKUP:
+            resetReason = PowerLPF3_RESET_LOCKUP;
+            break;
+        case (uint32_t)PowerLPF3_RESET_TSD:
+            resetReason = PowerLPF3_RESET_TSD;
+            break;
+        case (uint32_t)PowerLPF3_RESET_SWD:
+            resetReason = PowerLPF3_RESET_SWD;
+            break;
+        case (uint32_t)PowerLPF3_RESET_LFXT:
+            resetReason = PowerLPF3_RESET_LFXT;
+            break;
+        case (uint32_t)PowerLPF3_RESET_VDDR:
+            resetReason = PowerLPF3_RESET_VDDR;
+            break;
+        case (uint32_t)PowerLPF3_RESET_VDDS:
+            resetReason = PowerLPF3_RESET_VDDS;
+            break;
+        case (uint32_t)PowerLPF3_RESET_PIN:
+            resetReason = PowerLPF3_RESET_PIN;
+            break;
+        case (uint32_t)PowerLPF3_RESET_POR:
+            resetReason = PowerLPF3_RESET_POR;
+            break;
+        default:
+            resetReason = PowerLPF3_RESET_UNKNOWN;
+            break;
+    }
+    return resetReason;
+}
+
+/*
+ *  ======== PowerLPF3_releaseLatches ========
+ */
+void PowerLPF3_releaseLatches(void)
+{
+    HWREG(PMCTL_BASE + PMCTL_O_SLPCTL) = PMCTL_SLPCTL_SLPN_DIS;
 }
 
 /*
@@ -872,19 +998,19 @@ void PowerCC27XX_doWFI(void)
  *  values on the stack while on the PSP and then restore them just after
  *  HapiEnterStandby() on the MSP. Which will cause wildly unexpected behaviour.
  */
-void PowerCC27XX_enterStandby(void)
+static void PowerCC27XX_enterStandby(void)
 {
     /* Read current stack pointer from CONTROL */
     uint32_t controlPreStandby = __get_CONTROL();
 
-    if (controlPreStandby & 0x02)
+    if ((controlPreStandby & 0x02U) == 0x02U)
     {
         /* Currently on PSP stack, switching to MSP.
          * HapiEnterStandby() must execute from MSP since the
          * device reboots into privileged mode on MSP and HapiEnterStandby()
          * assumes it will be called running on MSP.
          */
-        __set_CONTROL(0x00);
+        __set_CONTROL(0x00U);
 
         /* - Save CPU state on MSP and MSP in CLKCTL_STBYPTR
          * - Enter standby
@@ -895,7 +1021,7 @@ void PowerCC27XX_enterStandby(void)
         HapiEnterStandby(NULL);
 
         /* Switch back to PSP stack, where controlPreStandby is stored */
-        __set_CONTROL(0x02);
+        __set_CONTROL(0x02U);
 
         /* Restore control register */
         __set_CONTROL(controlPreStandby);
@@ -918,8 +1044,7 @@ void PowerCC27XX_enterStandby(void)
  */
 void PowerLPF3_selectLFOSC(void)
 {
-    /* Select LFOSC */
-    HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_MAIN_LFOSC;
+    uintptr_t key;
 
     /* Start LFOSC */
     HWREG(CKMD_BASE + CKMD_O_LFOSCCTL) = CKMD_LFOSCCTL_EN;
@@ -933,18 +1058,40 @@ void PowerLPF3_selectLFOSC(void)
 
     HWREG(CKMD_BASE + CKMD_O_LFINCCTL2) |= CKMD_LFINCCTL2_ADJUSTLFINC;
 
-    /* Enable LFCLKGOOD, TRACKREFLOSS, and TRACKREFOOR. TRACKREFLOSS may occur
-     * when entering and exiting fake standby with the debugger attached.
-     */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFCLKGOOD | CKMD_IMSET_TRACKREFOOR;
+    /* Enable TRACKREFOOR */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_TRACKREFOOR;
 
-    /* Disallow standby until LF clock is running. Otherwise, we will only
-     * vector to the ISR after we wake up from standby the next time since the
-     * CKM interrupt is purposefully not configured as a wakeup source.
+    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectLFOSC: LFOSC started");
+
+    /* Set LFCLK qualification function to be called by
+     * PowerCC27XX_oscillatorISR(). This function will process and evaluate the
+     * result of the TDC measurement which is started below.
+     */
+    PowerLPF3_lfclkQualFxn = PowerCC27XX_lfoscQual;
+
+    /* Disallow standby until LF clock is running.
+     * The PowerCC27XX_oscillatorISR() function will release the constraint once
+     * PowerLPF3_lfclkQualFxn returns true.
      */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
-    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectLFOSC: LFOSC selected");
+    key = HwiP_disable();
+
+    /* If the AMPSETTLED mask is no longer set, it means that the AMPSETTLED
+     * interrupt has already occured and been handled, so the HFXT is ready
+     * to be used by the TDC. Otherwise, HFXT is not ready and the TDC will
+     * be started by PowerCC27XX_lfoscQual() instead when receiving the
+     * AMPSETTLED interrupt.
+     */
+    if ((HWREG(CKMD_BASE + CKMD_O_IMASK) & CKMD_IMASK_AMPSETTLED_M) != CKMD_IMASK_AMPSETTLED_M)
+    {
+        /* Start TDC measurement of LFOSC. Result will be processed by
+         * PowerCC27XX_lfoscQual()
+         */
+        PowerCC27XX_startLfclkTdcMeasurement(PowerCC27XX_LFOSC);
+    }
+
+    HwiP_restore(key);
 }
 
 /*
@@ -952,32 +1099,41 @@ void PowerLPF3_selectLFOSC(void)
  */
 void PowerLPF3_selectLFXT(void)
 {
-    /* Set LFINC override to 32.768 kHz. Will not impact RTC since the fake LF
-     * ticks will have a higher priority than LFINCOVR.
-     *
-     * The value is calculated as period in microseconds with 16 fractional
-     * bits.
-     * The LFXT runs at 32.768 kHz -> 1 / 32768 Hz = 30.5176 us.
-     * 30.5176 * 2^16 = 2000000 = 0x001E8480
-     */
-    HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x001E8480 | CKMD_LFINCOVR_OVERRIDE;
-
-    /* Set LFCLK  */
-    HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_MAIN_LFXT;
+    uintptr_t key;
 
     /* Start LFXT */
     HWREG(CKMD_BASE + CKMD_O_LFXTCTL) = CKMD_LFXTCTL_EN;
 
-    /* Enable LFCLKGOOD */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD;
+    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectLFXT: LFXT started");
 
-    /* Disallow standby until LF clock is running. Otherwise, we will only
-     * vector to the ISR after we wake up from standby the next time since the
-     * CKM interrupt is purposefully not configured as a wakeup source.
+    /* Set LFCLK qualification function to be called by
+     * PowerCC27XX_oscillatorISR(). This function will process and evaluate the
+     * result of the TDC measurement which is started below.
+     */
+    PowerLPF3_lfclkQualFxn = PowerCC27XX_lfxtQual;
+
+    /* Disallow standby until LF clock is running.
+     * The PowerCC27XX_oscillatorISR() function will release the constraint once
+     * PowerLPF3_lfclkQualFxn returns true.
      */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
-    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectLFXT: LFXT selected");
+    key = HwiP_disable();
+
+    /* If the AMPSETTLED mask is no longer set, it means that the AMPSETTLED
+     * interrupt has already occured and been handled, so the HFXT is ready
+     * to be used by the TDC. Otherwise, HFXT is not ready and the TDC will
+     * be started by PowerCC27XX_lfxtQual() instead.
+     */
+    if ((HWREG(CKMD_BASE + CKMD_O_IMASK) & CKMD_IMASK_AMPSETTLED_M) != CKMD_IMASK_AMPSETTLED_M)
+    {
+        /* Start TDC measurement of LFXT. Result will be processed by
+         * PowerCC27XX_lfoscQual()
+         */
+        PowerCC27XX_startLfclkTdcMeasurement(PowerCC27XX_LFXT);
+    }
+
+    HwiP_restore(key);
 }
 
 /*
@@ -985,6 +1141,11 @@ void PowerLPF3_selectLFXT(void)
  */
 void PowerLPF3_selectEXTLF(void)
 {
+    /* Configure EXTLF to the right mux */
+    GPIO_setConfigAndMux(PowerLPF3_extlfPin, GPIO_CFG_INPUT, PowerLPF3_extlfPinMux);
+
+    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectEXTLF: EXTLF pin muxing configured");
+
     /* Set LFINC override to 31.25 kHz.
      *
      * The value is calculated as period in microseconds with 16 fractional
@@ -992,24 +1153,334 @@ void PowerLPF3_selectEXTLF(void)
      * The EXTLF runs at 31.25 kHz -> 1 / 31250 Hz = 32 us.
      * 32 * 2^16 = 2097152 = 0x00200000
      */
-    HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x00200000 | CKMD_LFINCOVR_OVERRIDE;
+    HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x00200000U | CKMD_LFINCOVR_OVERRIDE;
 
-    /* Set LFCLK to EXTLF */
+    /* Directly switch to EXTLF, LFTICK will be generated by HFOSC until EXTLF
+     * is running.
+     */
     HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_MAIN_EXTLF;
 
-    /* Configure EXTLF to the right mux */
-    GPIO_setConfigAndMux(PowerLPF3_extlfPin, GPIO_CFG_INPUT, PowerLPF3_extlfPinMux);
+    /* Set EXTLF qualification function to be called by
+     * PowerCC27XX_oscillatorISR(). This function will return true when getting
+     * the LFCLKGOOD interrupt.
+     */
+    PowerLPF3_lfclkQualFxn = PowerCC27XX_extlfQual;
 
-    /* Enable LFCLKGOOD */
-    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD;
-
-    /* Disallow standby until LF clock is running. Otherwise, we will only
-     * vector to the ISR after we wake up from standby the next time since the
-     * CKM interrupt is purposefully not configured as a wakeup source.
+    /* Disallow standby until LF clock is running.
+     * The PowerCC27XX_oscillatorISR() function will release the constraint once
+     * PowerLPF3_lfclkQualFxn returns true.
      */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
-    Log_printf(LogModule_Power, Log_INFO, "PowerLPF3_selectEXTLF: EXTLF selected");
+    /* Enable LFCLKGOOD interrupts */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_LFCLKGOOD;
+}
+
+/*
+ *  ======== PowerCC27XX_extlfQual ========
+ */
+static bool PowerCC27XX_extlfQual(uint32_t maskedStatus)
+{
+    /* For EXTLF, the qualification is done when the HW indicates LFCLKGOOD */
+    return (maskedStatus & CKMD_MIS_LFCLKGOOD_M) != 0U;
+}
+
+/*
+ *  ======== PowerCC27XX_lfxtQual ========
+ *  - When getting the AMPSETTLED interrupt:
+ *    - Start a TDC measurement of LFOSC
+ *  - When getting the TDCDONE interrupt:
+ *    - Determine if LFXT is good based on the TDC result.
+ *      - If LFXT is not good, the TDC will be restarted, and TDCDONE interrupt
+ *        will be re-enabled.
+ *      - If LFXT is good, the LFTICK interrupt will be enabled.
+ *  - When getting the LFTICK interrupt:
+ *     - Select LFXT as the LFCLK source.
+ *     - The LFTICK interrupt will remain enabled.
+ *  - When getting the second LFTICK interrupt:
+ *     - Configure the LFINC override value to match the LFXT frequency of
+ *       32.768 kHz.
+ *     - Return true to indicate that the qualification process is done.
+ */
+static bool PowerCC27XX_lfxtQual(uint32_t maskedStatus)
+{
+    static int32_t lastTdcCount = 0;
+    bool result                 = false;
+
+    if ((maskedStatus & CKMD_MIS_AMPSETTLED_M) != 0U)
+    {
+        PowerCC27XX_startLfclkTdcMeasurement(PowerCC27XX_LFXT);
+    }
+    else if ((maskedStatus & CKMD_MIS_TDCDONE_M) != 0U)
+    {
+        Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_lfxtQual: TDC measurement done");
+
+        bool isClockGood = false;
+
+        /* Read result from TDC */
+        uint32_t edges = HWREG(CKMD_BASE + CKMD_O_RESULT);
+
+        /* Only use TDC result if it is not too big to fit in a signed 32 bit
+         * integer, to support casting to int32_t below. If it does not fit,
+         * then the clock is not considered good.
+         */
+        if (edges <= (uint32_t)INT32_MAX)
+        {
+            /* Compute delta compared to the previous result */
+            int32_t edgeDeltaLast = (int32_t)edges - lastTdcCount;
+
+            /* Compute the offset of the previous measurement */
+            int32_t lastOffset = lastTdcCount - 1500000;
+
+            /* Store the result of the TDC */
+            lastTdcCount = (int32_t)edges;
+
+            /* Calculate offset from the expected result.
+             * The expected number of edges is (96MHz/32.768kHz)*512 = 1500000
+             */
+            int32_t edgeOffset = (int32_t)edges - 1500000;
+
+            /* For LFXT the clock is considered good if the frequency is
+             * within 32.768 kHz +/-100 ppm, and the frequency is within
+             * +/-100 ppm of the last measurement.
+             *
+             * The expected number of edges is (96 MHz/32.768 kHz)*512 =
+             * 1500000.
+             * 100 ppm of 1500000 edges is 150 edges.
+             */
+            isClockGood = (Math_ABS(lastOffset) < 150) && (Math_ABS(edgeOffset) < 150) &&
+                          (Math_ABS(edgeDeltaLast) < 150);
+        }
+
+        if (isClockGood)
+        {
+            /* Clock is stable */
+
+            /* Clear any pending LFTICK interrupt */
+            HWREG(CKMD_BASE + CKMD_O_ICLR) = CKMD_ICLR_LFTICK;
+
+            /* Enable LFTICK interrupt */
+            HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFTICK;
+
+            /* Reset lastTdcCount */
+            lastTdcCount = 0;
+        }
+        else
+        {
+            /* Clock is not stable. Start a new TDC measurement */
+            PowerCC27XX_restartLfclkTdcMeasurement();
+        }
+    }
+    else if ((maskedStatus & CKMD_MIS_LFTICK_M) != 0U)
+    {
+        if (HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) != (CKMD_LFCLKSEL_PRE_LFXT | CKMD_LFCLKSEL_MAIN_LFXT))
+        {
+            /* Select LFXT as LFCLK source */
+            HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_PRE_LFXT | CKMD_LFCLKSEL_MAIN_LFXT;
+
+            /* Wait for next LFTICK to change LFINC override
+             * Re-enable LFTICK interrupt. The next interrupt will
+             * trigger the else statement below.
+             */
+            HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFTICK;
+        }
+        else
+        {
+            /* Set LFINC override to 32.768 kHz.
+             *
+             * The value is calculated as period in microseconds with 16
+             * fractional bits.
+             * The LFXT runs at 32.768 kHz -> 1 / 32768 Hz = 30.5176 us.
+             * 30.5176 * 2^16 = 2000000 = 0x001E8480
+             */
+            HWREG(CKMD_BASE + CKMD_O_LFINCOVR) = 0x001E8480U | CKMD_LFINCOVR_OVERRIDE;
+
+            /* Qualification is done */
+            result = true;
+        }
+    }
+    else
+    {
+        /* Do nothing if none of the interrupts of interest to LFXT
+         * qualification are set
+         */
+    }
+
+    return result;
+}
+
+/*
+ *  ======== PowerCC27XX_lfoscQual ========
+ *  - When getting the AMPSETTLED interrupt:
+ *    - Start a TDC measurement of LFOSC
+ *  - When getting the TDCDONE interrupt:
+ *    - Determine if LFOSC is good.
+ *      - If LFOSC is not good, the TDC will be restarted, and TDCDONE interrupt
+ *        will be re-enabled.
+ *      - If LFOSC is good:
+ *        - The LFTICK interrupt will be enabled.
+ *        - "Seed" the LFINC filter based on the period measured by the TDC.
+ *  - When getting the LFTICK interrupt:
+ *    - Select the LFOSC as the LFCLK source.
+ *    - Return true to indicate that the qualification process is done.
+ */
+static bool PowerCC27XX_lfoscQual(uint32_t maskedStatus)
+{
+    static int32_t lastTdcCount = 0;
+    bool result                 = false;
+
+    if ((maskedStatus & CKMD_MIS_AMPSETTLED_M) != 0U)
+    {
+        PowerCC27XX_startLfclkTdcMeasurement(PowerCC27XX_LFOSC);
+    }
+    else if ((maskedStatus & CKMD_MIS_TDCDONE_M) != 0U)
+    {
+        Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_lfoscQual: TDC measurement done");
+
+        bool isClockGood = false;
+
+        /* Read result from TDC */
+        uint32_t edges = HWREG(CKMD_BASE + CKMD_O_RESULT);
+
+        /* Only use TDC result if it is not too big to fit in a signed 32 bit
+         * integer, to support casting to int32_t below. If it does not fit,
+         * then the clock is not considered good.
+         */
+        if (edges <= (uint32_t)INT32_MAX)
+        {
+            /* Compute delta compared to the previous result */
+            int32_t edgeDeltaLast = (int32_t)edges - lastTdcCount;
+
+            /* Compute the offset of the previous measurement */
+            int32_t lastOffset = lastTdcCount - 1500000;
+
+            /* Store the result of the TDC */
+            lastTdcCount = (int32_t)edges;
+
+            /* Calculate offset from the expected result.
+             * The expected number of edges is (96MHz/32.768kHz)*512 = 1500000
+             */
+            int32_t edgeOffset = (int32_t)edges - 1500000;
+
+            /* For LFOSC the clock is considered good if the frequency is
+             * within 32.768 kHz +/-3%, and the frequency is within +/-100
+             * ppm of the last measurement.
+             *
+             * The expected number of edges is (96 MHz/32.768 kHz)*512 =
+             * 1500000.
+             * 3% of 1500000 edges, is 45000 and 100 ppm of 1500000 edges is
+             * 150 edges.
+             */
+            isClockGood = (Math_ABS(lastOffset) < 45000) && (Math_ABS(edgeOffset) < 45000) &&
+                          (Math_ABS(edgeDeltaLast) < 150);
+        }
+
+        if (isClockGood)
+        {
+            /* Clock is stable */
+
+            /* Use calculated period to "seed" LFINC value */
+            uint32_t tmpLfincctl = HWREG(CKMD_BASE + CKMD_O_LFINCCTL);
+            tmpLfincctl &= ~CKMD_LFINCCTL_INT_M;
+
+            /* Time of one LFOSC period in us: (edges/512)/96
+             * Time of one LFOSC period in us, with 16 fractional bits (LFINC):
+             *    ((edges/512)/96)*2^16 =
+             *    ((edges/(2^9))/(3*2^5))*2^16 =
+             *    (edges*2^2)/3 =
+             *    (edges<<2)/3
+             */
+            tmpLfincctl |= (((edges << 2U) / 3U) << CKMD_LFINCCTL_INT_S) & CKMD_LFINCCTL_INT_M;
+
+            HWREG(CKMD_BASE + CKMD_O_LFINCCTL) = tmpLfincctl;
+
+            /* Clear any pending LFTICK interrupt */
+            HWREG(CKMD_BASE + CKMD_O_ICLR) = CKMD_ICLR_LFTICK;
+
+            /* Enable LFTICK interrupt */
+            HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_LFTICK;
+
+            /* Reset lastTdcCount */
+            lastTdcCount = 0;
+        }
+        else
+        {
+            /* Clock is not stable. Start a new TDC measurement */
+            PowerCC27XX_restartLfclkTdcMeasurement();
+        }
+    }
+    else if ((maskedStatus & CKMD_MIS_LFTICK_M) != 0U)
+    {
+        /* Select LFOSC as LFCLK source */
+        HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) = CKMD_LFCLKSEL_PRE_LFOSC | CKMD_LFCLKSEL_MAIN_LFOSC;
+
+        /* Qualification is done */
+        result = true;
+    }
+    else
+    {
+        /* Do nothing if none of the interrupts of interest to LFOSC
+         * qualification are set
+         */
+    }
+
+    return result;
+}
+
+/*
+ *  ======== PowerCC27XX_startLfclkTdcMeasurement ========
+ * This function will start a TDC measurment of the specified LFCLK source.
+ * The counter will increment on each edfe of CLKSVT (48MHz), meaning the
+ * counter will increment with a frequency of 96MHz. The TDC will be configured
+ * to measure 512 periods of the LFCLK source. Meaning the expected result for a
+ * 32.786kHz LFCLK will be (96MHz/32.786kHz)*512 = 1500000
+ *
+ * This function will also enable the TDCDONE interrupt. It is the caller's
+ * responsibility to handle this interrupt and process the result.
+ */
+static void PowerCC27XX_startLfclkTdcMeasurement(PowerCC27XX_LfclkTdcTrigSrc tdcTrigSrc)
+{
+    /* Configure TDC to measure the LFCLK source to be */
+    HWREG(CKMD_BASE + CKMD_O_TRIGSRC) = (uint32_t)tdcTrigSrc;
+
+    /* Enable stop-counter */
+    HWREG(CKMD_BASE + CKMD_O_TRIGCNTCFG) = CKMD_TRIGCNTCFG_EN;
+
+    /* Select CLKSVT (48MHz) as clock source for TDC. The TDC is counting edges.
+     * There are two edges per clock cycle, so the edge frequency will be
+     * 2*48MHz = 96MHz.
+     */
+    HWREG(CKMD_BASE + CKMD_O_TDCCLKSEL) = CKMD_TDCCLKSEL_REFCLK_CLKSVT;
+
+    /* Configure TDC to count for 512 LFCLK periods */
+    HWREG(CKMD_BASE + CKMD_O_TRIGCNTLOAD) = 512U;
+
+    /* Clear status from previous TDC measurement */
+    HWREG(CKMD_BASE + CKMD_O_CTL) = CKMD_CTL_CMD_CLR_RESULT;
+
+    /* Clear any pending TDCDONE interrupt */
+    HWREG(CKMD_BASE + CKMD_O_ICLR) = CKMD_ICLR_TDCDONE;
+
+    /* Start TDC measurement */
+    HWREG(CKMD_BASE + CKMD_O_CTL) = CKMD_CTL_CMD_RUN_SYNC_START;
+
+    /* Enable TDCDONE interrupt */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMASK_TDCDONE;
+}
+
+/*
+ *  ======== PowerCC27XX_restartLfclkTdcMeasurement ========
+ */
+static void PowerCC27XX_restartLfclkTdcMeasurement(void)
+{
+    /* Clear status from previous TDC measurement */
+    HWREG(CKMD_BASE + CKMD_O_CTL) = CKMD_CTL_CMD_CLR_RESULT;
+
+    /* Start new TDC measurement */
+    HWREG(CKMD_BASE + CKMD_O_CTL) = CKMD_CTL_CMD_RUN_SYNC_START;
+
+    /* Re-enable the TDCDONE interrupt */
+    HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMCLR_TDCDONE;
 }
 
 /*
@@ -1026,7 +1497,7 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
     HWREG(CKMD_BASE + CKMD_O_ICLR)  = maskedStatus;
     HWREG(CKMD_BASE + CKMD_O_IMCLR) = maskedStatus;
 
-    if (maskedStatus & CKMD_MIS_AMPSETTLED_M)
+    if ((maskedStatus & CKMD_MIS_AMPSETTLED_M) != 0U)
     {
         /* It has been observed a brief period of ~15us occurring ~130us after
          * starting HFXT where FLTSETTLED pulses high. If the idle loop attempts
@@ -1037,7 +1508,7 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
          * after HFXTGOOD is set), and then waiting for LFTICK to be set again
          * before entering standby.
          */
-        HWREG(CKMD_BASE + CKMD_O_ICLR) = (CKMD_ICLR_LFTICK);
+        HWREG(CKMD_BASE + CKMD_O_ICLR) = CKMD_ICLR_LFTICK;
 
         /* Stop AMPSETTLED timeout clock and change callback function of clock
          * object (NULL: not used)
@@ -1072,7 +1543,7 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
         }
     }
 
-    if (maskedStatus & (CKMD_MIS_HFXTFAULT_M | CKMD_MIS_TRACKREFLOSS_M))
+    if ((maskedStatus & (CKMD_MIS_HFXTFAULT_M | CKMD_MIS_TRACKREFLOSS_M)) != 0U)
     {
         Log_printf(LogModule_Power, Log_WARNING, "PowerCC27XX_oscillatorISR: HFXT fault and/or TRACKREFLOSS, restarting HFXT");
 
@@ -1100,8 +1571,10 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
         HWREG(CKMD_BASE + CKMD_O_IMSET) = maskedStatus & (CKMD_MIS_HFXTFAULT_M | CKMD_MIS_TRACKREFLOSS_M);
     }
 
-    if (maskedStatus & CKMD_MIS_TRACKREFLOSS_M)
+    if ((maskedStatus & CKMD_MIS_TRACKREFLOSS_M) != 0U)
     {
+        Log_printf(LogModule_Power, Log_WARNING, "PowerCC27XX_oscillatorISR: TRACKREFLOSS, re-enable tracking");
+
         /* Disable interrupts as HFXT SWTCXO may interrupt and modify
          * HFTRACKCTL with a higher priority depending on user interrupt
          * priorities.
@@ -1120,24 +1593,34 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
         HWREG(CKMD_BASE + CKMD_O_IMSET) = CKMD_IMSET_TRACKREFLOSS_M;
     }
 
-    if (maskedStatus & CKMD_MIS_LFCLKGOOD_M)
+    if (PowerLPF3_lfclkQualFxn != NULL)
     {
-        Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_oscillatorISR: LFCLK is ready");
+        if (PowerLPF3_lfclkQualFxn(maskedStatus))
+        {
+            /* LFCLK Qualification is done. Set qualification function to NULL,
+             * so it will no longer be called. It is no longer needed, and
+             * any additional calls could result in releasing the
+             * PowerLPF3_DISALLOW_STANDBY constraint below multiple times.
+             */
+            PowerLPF3_lfclkQualFxn = NULL;
 
-        /* Enable LF clock monitoring */
-        HWREG(CKMD_BASE + CKMD_O_LFMONCTL) = CKMD_LFMONCTL_EN;
+            Log_printf(LogModule_Power, Log_INFO, "PowerCC27XX_oscillatorISR: LFCLK is ready");
 
-        /* Enable LF clock loss reset while in standby */
-        HWREG(PMCTL_BASE + PMCTL_O_RSTCTL) |= PMCTL_RSTCTL_LFLOSS_ARMED;
+            /* Enable LF clock monitoring */
+            HWREG(CKMD_BASE + CKMD_O_LFMONCTL) = CKMD_LFMONCTL_EN;
 
-        /* Send out notification for LF clock switch */
-        PowerCC27XX_notify(PowerLPF3_LFCLK_SWITCHED);
+            /* Enable LF clock loss reset while in standby */
+            HWREG(PMCTL_BASE + PMCTL_O_RSTCTL) |= PMCTL_RSTCTL_LFLOSS_ARMED;
 
-        /* Allow standby again now that we have sent out the notification */
-        Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+            /* Send out notification for LF clock switch */
+            PowerCC27XX_notify(PowerLPF3_LFCLK_SWITCHED);
+
+            /* Allow standby again now that we have sent out the notification */
+            Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
+        }
     }
 
-    if (maskedStatus & CKMD_MIS_TRACKREFOOR_M)
+    if ((maskedStatus & CKMD_MIS_TRACKREFOOR_M) != 0U)
     {
         Log_printf(LogModule_Power, Log_ERROR, "PowerCC27XX_oscillatorISR: TRACKREFOOR, entering endless loop");
 
@@ -1190,16 +1673,16 @@ static void PowerCC27XX_startHFXT(void)
  */
 int_fast16_t PowerLPF3_startAFOSC(PowerLPF3_AfoscFreq frequency)
 {
+    uint16_t mode;
+    uint16_t mid;
+    uint16_t coarse;
+    uint32_t trackingRatio;
+
     /* Return failed if AFOSC is already enabled */
     if ((HWREG(CKMD_BASE + CKMD_O_AFOSCCTL) & CKMD_AFOSCCTL_EN_M) == CKMD_AFOSCCTL_EN)
     {
         return Power_EFAIL;
     }
-
-    uint8_t mode;
-    uint8_t mid;
-    uint8_t coarse;
-    uint32_t trackingRatio;
 
     /* Read AFOSC trims and select tracking loop ratio */
     switch (frequency)
@@ -1239,15 +1722,15 @@ int_fast16_t PowerLPF3_startAFOSC(PowerLPF3_AfoscFreq frequency)
      * subtracted from the full word bit shift values to convert them to bit
      * shift values for the upper half word.
      */
-    uint16_t upperHalfwordTrim0Tmp = 0;
-    upperHalfwordTrim0Tmp |= mode << (CKMD_TRIM0_AFOSC_MODE_S - 16);
-    upperHalfwordTrim0Tmp |= mid << (CKMD_TRIM0_AFOSC_MID_S - 16);
-    upperHalfwordTrim0Tmp |= coarse << (CKMD_TRIM0_AFOSC_COARSE_S - 16);
+    uint16_t upperHalfwordTrim0Tmp = 0U;
+    upperHalfwordTrim0Tmp |= (uint16_t)(mode << (CKMD_TRIM0_AFOSC_MODE_S - 16U));
+    upperHalfwordTrim0Tmp |= (uint16_t)(mid << (CKMD_TRIM0_AFOSC_MID_S - 16U));
+    upperHalfwordTrim0Tmp |= (uint16_t)(coarse << (CKMD_TRIM0_AFOSC_COARSE_S - 16U));
 
     /* Write the AFOSC trims to CKMD with half word access, to prevent writing
      * to the HFOSC trims.
      */
-    HWREGH(CKMD_BASE + CKMD_O_TRIM0 + 2) = upperHalfwordTrim0Tmp;
+    HWREGH(CKMD_BASE + CKMD_O_TRIM0 + 2U) = upperHalfwordTrim0Tmp;
 
     /* Set tracking ratio.
      * Note, trackingRatio is already bit aligned with the RATIO field.
@@ -1292,7 +1775,7 @@ void PowerLPF3_stopAFOSC(void)
 }
 
 /*
- *  ======== notify ========
+ *  ======== PowerCC27XX_notify ========
  *  Send notifications to registered clients.
  *  Note: Task scheduling is disabled when this function is called.
  */
@@ -1319,7 +1802,7 @@ int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType)
         /* Walk the queue and notify each registered client of the event */
         do
         {
-            if (((Power_NotifyObj *)elem)->eventTypes & eventType)
+            if ((((Power_NotifyObj *)elem)->eventTypes & eventType) != 0U)
             {
                 /* Pull params from notify object */
                 notifyFxn = ((Power_NotifyObj *)elem)->notifyFxn;
@@ -1389,23 +1872,32 @@ bool PowerCC27XX_isValidResourceId(Power_Resource resourceId)
 {
     uint8_t bitIndex    = RESOURCE_BIT_INDEX(resourceId);
     uint_fast16_t group = RESOURCE_GROUP(resourceId);
+    bool result;
 
-    if (group == PowerCC27XX_PERIPH_GROUP_CLKCTL0)
+    if (resourceId != ((uint32_t)bitIndex | (uint32_t)group))
     {
-        return bitIndex < PowerCC27XX_NUMRESOURCES_CLKCTL0;
-    }
-    else if (group == PowerCC27XX_PERIPH_GROUP_CLKCTL1)
-    {
-        return bitIndex < PowerCC27XX_NUMRESOURCES_CLKCTL1;
-    }
-    else if (group == PowerCC27XX_PERIPH_GROUP_LRFD)
-    {
-        return bitIndex < PowerCC27XX_NUMRESOURCES_LRFD;
+        result = false;
     }
     else
     {
-        return false;
+        switch (group)
+        {
+            case PowerCC27XX_PERIPH_GROUP_CLKCTL0:
+                result = bitIndex < PowerCC27XX_NUMRESOURCES_CLKCTL0;
+                break;
+            case PowerCC27XX_PERIPH_GROUP_CLKCTL1:
+                result = bitIndex < PowerCC27XX_NUMRESOURCES_CLKCTL1;
+                break;
+            case PowerCC27XX_PERIPH_GROUP_LRFD:
+                result = bitIndex < PowerCC27XX_NUMRESOURCES_LRFD;
+                break;
+            default:
+                result = false;
+                break;
+        }
     }
+
+    return result;
 }
 
 /*
@@ -1432,20 +1924,16 @@ static uint32_t PowerCC27XX_temperatureToRatio(int16_t temperature)
 #endif
     int32_t hfxtFreqOffset = (int32_t)((48LL * (int64_t)hfxtPpmOffset) >> PowerCC27XX_hfxtCompCoefficients.shift);
 
-    /* Calculate temperature dependent ppm offset of the capacitor array on the
-     * crystal input pins, modelled as ppm(T) = 0.07 * (T - 25) + 10
-     * Input frequency is assumed 48 MHz, and any potential crystal offset is
-     * neglected and not factored into the cap array offset calculation.
-     * frequency_offset(T) = 48000000 * (0.07 * (T - 25) + 10) / 1000000
-     *                     = 3.36 * (T - 25) + 480
-     * To avoid floating-point multiplication and integer division, 3.36 is
-     * approximated as 3523215 / 2^20 ~ 3.35999966. The error introduced by
-     * this approximation is negligable.
+    /* Calculate unshifted ppm offset for Cap array compensation. Fixed-point coefficients are assumed to
+     * be set so that this computation does not overflow 32 bits in the -40, 125
+     * degC range.
      */
+    int32_t hfxtCapArrayPpmOffset = PowerLPF3_capArrayP1 * temperature + PowerLPF3_capArrayP0;
+
 #if !(defined(__IAR_SYSTEMS_ICC__) || (defined(__clang__) && defined(__ti_version__)) || defined(__GNUC__))
     #warning The following signed right-shift operation is implementation-defined
 #endif
-    int32_t capArrayOffset = ((3523215 * (temperature - 25)) >> 20) + 480;
+    int32_t capArrayOffset = (int32_t)((48LL * (int64_t)hfxtCapArrayPpmOffset) >> PowerLPF3_capArrayShift);
 
     /* Calculate the actual reference input frequency to the tracking loop,
      * accounting for the HFXT offset and cap array offset
@@ -1490,6 +1978,7 @@ static void PowerCC27XX_hfxtCompensateFxn(int16_t currentTemperature,
 {
     uintptr_t key;
     uint32_t ratio;
+    int16_t inputTemperature = currentTemperature;
     PowerCC27XX_hfxtConfig hfxtConfig;
     hfxtConfig.value = (uint32_t)clientArg;
 
@@ -1513,7 +2002,6 @@ static void PowerCC27XX_hfxtCompensateFxn(int16_t currentTemperature,
      */
     if (PowerCC27XX_hfxtCompEnabled)
     {
-
         Log_printf(LogModule_Power,
                    Log_INFO,
                    "PowerCC27XX_hfxtCompensateFxn: Registering notification. Temp = %d, Temp threshold = %d",
@@ -1529,14 +2017,39 @@ static void PowerCC27XX_hfxtCompensateFxn(int16_t currentTemperature,
             ratio = PowerCC27XX_temperatureToRatio(currentTemperature);
             PowerCC27XX_updateHFXTRatio(ratio);
 
-            /* Register the notification again with updated thresholds. Notification thresholds must be crossed to
-             * trigger, so the upper and lower limits are decreased by 1 to maintain a range of +/- delta.
-             */
-            Temperature_registerNotifyRange(notifyObject,
-                                            currentTemperature + hfxtConfig.temperature.delta - 1,
-                                            currentTemperature - hfxtConfig.temperature.delta + 1,
-                                            PowerCC27XX_hfxtCompensateFxn,
-                                            clientArg);
+            if (inputTemperature <= HFXT_COMP_MIN_TEMP + hfxtConfig.temperature.delta)
+            {
+                /* If input temperature is at or below minimum temperature + delta, register
+                 * a new high notification. Notification thresholds must be crossed to trigger,
+                 * so the higher limit is decreased by 1 to get a notification after a temperature change of delta.
+                 */
+                Temperature_registerNotifyHigh(notifyObject,
+                                               currentTemperature + hfxtConfig.temperature.delta - 1,
+                                               PowerCC27XX_hfxtCompensateFxn,
+                                               clientArg);
+            }
+            else if (inputTemperature >= HFXT_COMP_MAX_TEMP - hfxtConfig.temperature.delta)
+            {
+                /* If input temperature is at or higher than maximum temperature - delta, register
+                 * a new low notification. Notification thresholds must be crossed to trigger,
+                 * so the lower limit is increased by 1 to get a notification after a temperature change of delta.
+                 */
+                Temperature_registerNotifyLow(notifyObject,
+                                              currentTemperature - hfxtConfig.temperature.delta + 1,
+                                              PowerCC27XX_hfxtCompensateFxn,
+                                              clientArg);
+            }
+            else
+            {
+                /* Register the notification again with updated thresholds. Notification thresholds must be crossed to
+                 * trigger, so the upper and lower limits are decreased by 1 to maintain a range of +/- delta.
+                 */
+                Temperature_registerNotifyRange(notifyObject,
+                                                currentTemperature + hfxtConfig.temperature.delta - 1,
+                                                currentTemperature - hfxtConfig.temperature.delta + 1,
+                                                PowerCC27XX_hfxtCompensateFxn,
+                                                clientArg);
+            }
         }
         else
         {
@@ -1648,11 +2161,19 @@ void PowerLPF3_disableHFXTCompensation(void)
 }
 
 /*
- *  ======== PowerLPF3_disableHFXTCompensation ========
+ *  ======== PowerLPF3_forceHFXTCompensationUpdate ========
  */
 void PowerLPF3_forceHFXTCompensationUpdate(void)
 {
     PowerCC27XX_updateHFXTRatio(hfxtCompRatio);
+}
+
+/*
+ *  ======== PowerLPF3_getHFXTCompensationRatio ========
+ */
+uint32_t PowerLPF3_getHFXTCompensationRatio(void)
+{
+    return (HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) & CKMD_HFTRACKCTL_RATIO_M) >> CKMD_HFTRACKCTL_RATIO_S;
 }
 
 /*
@@ -1905,7 +2426,7 @@ static void PowerCC27XX_stopContHfxtAmpMeasurements(void)
 
 /*
  *  ======== PowerCC27XX_getHfxtAmpMeasurement ========
- * Read the the latest HFXT amplitude measurement.
+ * Read the latest HFXT amplitude measurement.
  * Continuous measurements must have been started using
  * PowerCC27XX_startContHfxtAmpMeasurements().
  */
@@ -1922,6 +2443,138 @@ static uint32_t PowerCC27XX_getHfxtAmpMeasurement(void)
      * According to the register descriptions PEAK = 2*PEAKRAW - BIAS
      */
     uint32_t result = 2 * peakRaw > bias ? 2 * peakRaw - bias : 0;
+
+    return result;
+}
+
+/*
+ *  ======== PowerLPF3_sleep ========
+ */
+int_fast16_t PowerLPF3_sleep(uint32_t nextEventTimeUs)
+{
+    uint32_t sysTimerIMASK;
+    uint32_t sysTimerARMSET;
+    uint32_t sysTimerTimeouts[SYSTIMER_CHANNEL_COUNT];
+    int_fast16_t result = Power_SOK;
+
+    /* Disable SysTick */
+    SysTickDisable();
+
+    /* Save SysTimer IMASK to restore afterwards */
+    sysTimerIMASK = HWREG(SYSTIM_BASE + SYSTIM_O_IMASK);
+
+    /* Get current armed status of all SysTimer channels */
+    sysTimerARMSET = HWREG(SYSTIM_BASE + SYSTIM_O_ARMSET);
+
+    /* Store SysTimer timeouts */
+    memcpy(sysTimerTimeouts, (void *)(SYSTIM_BASE + SYSTIM_O_CH0CCSR), sizeof(sysTimerTimeouts));
+
+    /* Switch CPUIRQ16 in event fabric to RTC.
+     * Since the CC27XX only has limited interrupt lines, we need to switch the
+     * interrupt line from SysTimer to RTC in the event fabric. The triggered
+     * interrupt will wake up the device with interrupts disabled. We can
+     * consume that interrupt event without vectoring to the ISR and then change
+     * the event fabric signal back to the SysTimer. Thus, there is no need to
+     * swap out the actual interrupt function of the clockHwi.
+     */
+    EVTSVTConfigureEvent(EVTSVT_SUB_CPUIRQ16, EVTSVT_PUB_AON_RTC_COMB);
+
+    /* Clear interrupt in case it triggered since we disabled interrupts */
+    HwiP_clearInterrupt(INT_CPUIRQ16);
+
+    /* Ensure the device wakes up early enough to reinitialise the
+     * HW and take care of housekeeping.
+     */
+    nextEventTimeUs -= PowerCC27XX_WAKEDELAYSTANDBY;
+
+    /* RTC channel 0 compare is automatically armed upon writing the
+     * compare value. It will automatically be disarmed when it
+     * triggers.
+     */
+    HWREG(RTC_BASE + RTC_O_CH0CC1U) = nextEventTimeUs;
+
+    /* Go to standby mode */
+    result = Power_sleep(PowerLPF3_STANDBY);
+
+    /* Disarm RTC compare event in case we woke up from a GPIO or BATMON
+     * event. If the RTC times out after clearing RIS and the pending
+     * NVIC bit but before we swap event fabric subscribers for the
+     * shared interrupt line, we will be left with a pending interrupt
+     * in the NVIC that the ClockP callback may not gracefully handle
+     * since it did not cause it itself.
+     */
+    HWREG(RTC_BASE + RTC_O_ARMCLR) = RTC_ARMCLR_CH0_CLR;
+
+    /* Clear the RTC wakeup event */
+    HWREG(RTC_BASE + RTC_O_ICLR) = RTC_ICLR_EV0_CLR;
+
+    /* Explicitly read back from ULL domain to guarantee clearing RIS
+     * takes effect before clearing the pending NVIC interrupt to avoid
+     * the NVIC re-asserting on a set RIS.
+     */
+    ULLSync();
+
+    /* Clear any pending interrupt in the NVIC */
+    HwiP_clearInterrupt(INT_CPUIRQ16);
+
+    /* Switch CPUIRQ16 in event fabric back to SysTimer */
+    EVTSVTConfigureEvent(EVTSVT_SUB_CPUIRQ16, EVTSVT_PUB_SYSTIM0);
+
+    /* When waking up from standby, the SysTimer may not have
+     * synchronised with the RTC by now. Wait for SysTimer
+     * synchronisation with the RTC to complete. This should not take
+     * more than one LFCLK period.
+     *
+     * We need to wait both for RUN to be set and SYNCUP to go low. Any
+     * other register state will cause undefined behaviour.
+     */
+    while (HWREG(SYSTIM_BASE + SYSTIM_O_STATUS) != SYSTIM_STATUS_VAL_RUN) {}
+
+    /* Restore SysTimer timeouts */
+    memcpy((void *)(SYSTIM_BASE + SYSTIM_O_CH0CCSR), sysTimerTimeouts, sizeof(sysTimerTimeouts));
+
+    /* Restore SysTimer armed state. This will rearm all previously
+     * armed timeouts restored above and cause any that occurred in the
+     * past to trigger immediately.
+     */
+    HWREG(SYSTIM_BASE + SYSTIM_O_ARMSET) = sysTimerARMSET;
+
+    /* Restore SysTimer IMASK */
+    HWREG(SYSTIM_BASE + SYSTIM_O_IMASK) = sysTimerIMASK;
+
+    /* Re-configure LRFD clocks */
+    LRFDApplyClockDependencies();
+
+    /* Signal clients registered for standby wakeup notification;
+     * this should be used to initialize any timing critical or IO
+     * dependent hardware.
+     * The callback needs to go out after the SysTimer is restored
+     * such that notifications can invoke RCL and ClockP APIs if needed.
+     */
+    PowerCC27XX_notify(PowerLPF3_AWAKE_STANDBY);
+
+    return result;
+}
+
+/*
+ *  ======== PowerLPF3_isLfincFilterAllowingStandby ========
+ */
+bool PowerLPF3_isLfincFilterAllowingStandby(void)
+{
+    bool result = true;
+    /* If we are using LFOSC, it has been observed a brief period of ~15us
+     * occurring ~130us after starting HFXT where FLTSETTLED pulses high. If the
+     * idle loop attempts to enter standby while FLTSETTLED pulses high, it may
+     * enter standby before the filter is truly settled. To prevent this, we
+     * need to wait until the next LFTICK once HFXTGOOD is set before going to
+     * sleep. This is achieved by clearing the LFTICK interrupt once AMPSETTLED
+     * is set (which occurs after HFXTGOOD), and then check against LFTICK
+     * before entering standby.
+     */
+    if ((HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) & CKMD_LFCLKSEL_MAIN_M) == CKMD_LFCLKSEL_MAIN_LFOSC)
+    {
+        result = ((HWREG(CKMD_BASE + CKMD_O_RIS) & CKMD_RIS_LFTICK_M) == CKMD_RIS_LFTICK);
+    }
 
     return result;
 }

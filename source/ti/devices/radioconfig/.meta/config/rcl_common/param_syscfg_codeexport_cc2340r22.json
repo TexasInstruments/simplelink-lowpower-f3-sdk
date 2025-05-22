@@ -280,11 +280,11 @@
     },
     "ieee_15_4": {},
     "prop": {
-      "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
       "swConfig": "LRF_swConfig",
       "txPowerTable": "LRF_txPowerTable",
       "config": "LRF_config",
       "cfg_segment_list": "LRF_regConfigList",
+      "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
       "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
       "swConfig1Mbps": "LRF_swConfig1Mbps",
       "swConfig2Mbps": "LRF_swConfig2Mbps",

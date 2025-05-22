@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,9 @@
  */
 
 /* -----------------------------------------------------------------------------
-*  Includes
-* ------------------------------------------------------------------------------
-*/
+ *  Includes
+ * ------------------------------------------------------------------------------
+ */
 #include "ti_drivers_config.h"
 #include "ExtFlash.h"
 #include "string.h"
@@ -50,53 +50,53 @@
 #include DeviceFamily_constructPath(driverlib/ssi.h)
 
 /* -----------------------------------------------------------------------------
-*  Constants and macros
-* ------------------------------------------------------------------------------
-*/
+ *  Constants and macros
+ * ------------------------------------------------------------------------------
+ */
 
 /*
  * Implementation for JEDEC compatible Flash
  *
  */
-#define SPI_BIT_RATE              4000000
+#define SPI_BIT_RATE 4000000
 
 /* Instruction codes */
-#define BLS_CODE_PROGRAM          0x02 /**< Page Program */
-#define BLS_CODE_READ             0x03 /**< Read Data */
-#define BLS_CODE_READ_STATUS      0x05 /**< Read Status Register */
-#define BLS_CODE_WRITE_ENABLE     0x06 /**< Write Enable */
-#define BLS_CODE_SECTOR_ERASE     0x20 /**< Sector Erase */
-#define BLS_CODE_MDID             0x90 /**< Manufacturer Device ID */
+#define BLS_CODE_PROGRAM      0x02 /**< Page Program */
+#define BLS_CODE_READ         0x03 /**< Read Data */
+#define BLS_CODE_READ_STATUS  0x05 /**< Read Status Register */
+#define BLS_CODE_WRITE_ENABLE 0x06 /**< Write Enable */
+#define BLS_CODE_SECTOR_ERASE 0x20 /**< Sector Erase */
+#define BLS_CODE_MDID         0x90 /**< Manufacturer Device ID */
 
-#define BLS_CODE_DP               0xB9 /**< Power down */
-#define BLS_CODE_RDP              0xAB /**< Power standby */
+#define BLS_CODE_DP  0xB9 /**< Power down */
+#define BLS_CODE_RDP 0xAB /**< Power standby */
 
 /* Erase instructions */
-#define BLS_CODE_ERASE_4K         0x20 /**< Sector Erase */
-#define BLS_CODE_ERASE_32K        0x52
-#define BLS_CODE_ERASE_64K        0xD8
-#define BLS_CODE_ERASE_ALL        0xC7 /**< Mass Erase */
+#define BLS_CODE_ERASE_4K  0x20 /**< Sector Erase */
+#define BLS_CODE_ERASE_32K 0x52
+#define BLS_CODE_ERASE_64K 0xD8
+#define BLS_CODE_ERASE_ALL 0xC7 /**< Mass Erase */
 
 /* Bitmasks of the status register */
-#define BLS_STATUS_SRWD_BM        0x80
-#define BLS_STATUS_BP_BM          0x0C
-#define BLS_STATUS_WEL_BM         0x02
-#define BLS_STATUS_WIP_BM         0x01
+#define BLS_STATUS_SRWD_BM 0x80
+#define BLS_STATUS_BP_BM   0x0C
+#define BLS_STATUS_WEL_BM  0x02
+#define BLS_STATUS_WIP_BM  0x01
 
-#define BLS_STATUS_BIT_BUSY       0x01 /**< Busy bit of the status register */
+#define BLS_STATUS_BIT_BUSY 0x01 /**< Busy bit of the status register */
 
 /* Part specific constants */
-#define BLS_PROGRAM_PAGE_SIZE     256
-#define BLS_ERASE_SECTOR_SIZE     4096
+#define BLS_PROGRAM_PAGE_SIZE 256
+#define BLS_ERASE_SECTOR_SIZE 4096
 
 /* Manufacturer IDs */
-#define MF_MACRONIX               0xC2
-#define MF_WINBOND                0xEF
+#define MF_MACRONIX 0xC2
+#define MF_WINBOND  0xEF
 
 /* -----------------------------------------------------------------------------
-*  Private functions
-* ------------------------------------------------------------------------------
-*/
+ *  Private functions
+ * ------------------------------------------------------------------------------
+ */
 static bool Spi_open(uint32_t bitRate);
 static void Spi_close(void);
 static void Spi_flash(void);
@@ -106,48 +106,39 @@ static int ExtFlash_waitReady(void);
 static int ExtFlash_powerDown(void);
 
 /* -----------------------------------------------------------------------------
-*  Local variables
-* ------------------------------------------------------------------------------
-*/
-static PIN_Config BoardFlashPinTable[] =
-{
-    Board_SPI_FLASH_CS | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL | PIN_DRVSTR_MIN, /* Ext. flash chip select */
+ *  Local variables
+ * ------------------------------------------------------------------------------
+ */
+static PIN_Config BoardFlashPinTable[] = {Board_SPI_FLASH_CS | PIN_GPIO_OUTPUT_EN | PIN_GPIO_LOW | PIN_PUSHPULL |
+                                              PIN_DRVSTR_MIN, /* Ext. flash chip select */
 
-    PIN_TERMINATE
-};
+                                          PIN_TERMINATE};
 
 static PIN_Handle hFlashPin = NULL;
 static PIN_State pinState;
 
 // Supported flash devices
-static ExtFlashInfo_t flashInfo[] =
-{
-    {
-        .manfId = MF_MACRONIX,  // Macronics
-        .devId = 0x15,          // MX25R1635F
-        .deviceSize = 0x200000  // 2 MByte (16 Mbit)
-    },
-    {
-        .manfId = MF_MACRONIX,  // Macronics
-        .devId = 0x14,          // MX25R8035F
-        .deviceSize = 0x100000  // 1 MByte (8 Mbit)
-    },
-    {
-        .manfId = MF_WINBOND,   // WinBond
-        .devId = 0x12,          // W25X40CL
-        .deviceSize = 0x080000  // 512 KByte (4 Mbit)
-    },
-    {
-        .manfId = MF_WINBOND,   // WinBond
-        .devId = 0x11,          // W25X20CL
-        .deviceSize = 0x040000  // 256 KByte (2 Mbit)
-    },
-    {
-        .manfId = 0x0,
-        .devId = 0x0,
-        .deviceSize = 0x0
-    }
-};
+static ExtFlashInfo_t flashInfo[] = {{
+                                         .manfId     = MF_MACRONIX, // Macronics
+                                         .devId      = 0x15,        // MX25R1635F
+                                         .deviceSize = 0x200000     // 2 MByte (16 Mbit)
+                                     },
+                                     {
+                                         .manfId     = MF_MACRONIX, // Macronics
+                                         .devId      = 0x14,        // MX25R8035F
+                                         .deviceSize = 0x100000     // 1 MByte (8 Mbit)
+                                     },
+                                     {
+                                         .manfId     = MF_WINBOND, // WinBond
+                                         .devId      = 0x12,       // W25X40CL
+                                         .deviceSize = 0x080000    // 512 KByte (4 Mbit)
+                                     },
+                                     {
+                                         .manfId     = MF_WINBOND, // WinBond
+                                         .devId      = 0x11,       // W25X20CL
+                                         .deviceSize = 0x040000    // 256 KByte (2 Mbit)
+                                     },
+                                     {.manfId = 0x0, .devId = 0x0, .deviceSize = 0x0}};
 
 // Flash information
 static ExtFlashInfo_t *pFlashInfo = NULL;
@@ -158,9 +149,9 @@ static SPI_Handle spiHandle = NULL;
 static SPI_Params spiParams;
 
 /* -----------------------------------------------------------------------------
-*  Functions
-* ------------------------------------------------------------------------------
-*/
+ *  Functions
+ * ------------------------------------------------------------------------------
+ */
 
 /*******************************************************************************
  * @fn          extFlashSelect
@@ -173,47 +164,47 @@ static SPI_Params spiParams;
  */
 static void extFlashSelect(void)
 {
-    PIN_setOutputValue(hFlashPin,Board_SPI_FLASH_CS,Board_FLASH_CS_ON);
+    PIN_setOutputValue(hFlashPin, Board_SPI_FLASH_CS, Board_FLASH_CS_ON);
 }
 
 /*******************************************************************************
-* @fn          extFlashDeselect
-*
-* @brief       Deselect the external flash on the SensorTag
-*
-* @param       none
-*
-* @return      none
-*/
+ * @fn          extFlashDeselect
+ *
+ * @brief       Deselect the external flash on the SensorTag
+ *
+ * @param       none
+ *
+ * @return      none
+ */
 static void extFlashDeselect(void)
 {
-    PIN_setOutputValue(hFlashPin,Board_SPI_FLASH_CS,Board_FLASH_CS_OFF);
+    PIN_setOutputValue(hFlashPin, Board_SPI_FLASH_CS, Board_FLASH_CS_OFF);
 }
 
 /*******************************************************************************
-* @fn       ExtFlash_info
-*
-* @brief    Get information about the mounted flash
-*
-* @param    none
-*
-* @return   return flash info record (all fields are zero if not found)
-*******************************************************************************/
+ * @fn       ExtFlash_info
+ *
+ * @brief    Get information about the mounted flash
+ *
+ * @param    none
+ *
+ * @return   return flash info record (all fields are zero if not found)
+ *******************************************************************************/
 ExtFlashInfo_t *ExtFlash_info(void)
 {
     return pFlashInfo;
 }
 
 /*******************************************************************************
-* @fn       extFlashPowerDown
-*
-* @brief    Put the device in power save mode. No access to data; only
-*           the status register is accessible.
-*
-* @param    none
-*
-* @return   Returns true if transactions succeed
-*******************************************************************************/
+ * @fn       extFlashPowerDown
+ *
+ * @brief    Put the device in power save mode. No access to data; only
+ *           the status register is accessible.
+ *
+ * @param    none
+ *
+ * @return   Returns true if transactions succeed
+ *******************************************************************************/
 static bool extFlashPowerDown(void)
 {
     uint8_t cmd;
@@ -221,21 +212,21 @@ static bool extFlashPowerDown(void)
 
     cmd = BLS_CODE_DP;
     extFlashSelect();
-    success = Spi_write(&cmd,sizeof(cmd)) == 0;
+    success = Spi_write(&cmd, sizeof(cmd)) == 0;
     extFlashDeselect();
 
     return success;
 }
 
 /*******************************************************************************
-* @fn       extFlashPowerStandby
-*
-* @brief    Take device out of power save mode and prepare it for normal operation
-*
-* @param    none
-*
-* @return   Returns true if command successfully written
-*******************************************************************************/
+ * @fn       extFlashPowerStandby
+ *
+ * @brief    Take device out of power save mode and prepare it for normal operation
+ *
+ * @param    none
+ *
+ * @return   Returns true if command successfully written
+ *******************************************************************************/
 static bool extFlashPowerStandby(void)
 {
     uint8_t cmd;
@@ -243,7 +234,7 @@ static bool extFlashPowerStandby(void)
 
     cmd = BLS_CODE_RDP;
     extFlashSelect();
-    success = Spi_write(&cmd,sizeof(cmd)) == 0;
+    success = Spi_write(&cmd, sizeof(cmd)) == 0;
     extFlashDeselect();
 
     if (success)
@@ -258,12 +249,12 @@ static bool extFlashPowerStandby(void)
 }
 
 /**
-* Read flash information (manufacturer and device ID)
-* @return True when successful.
-*/
+ * Read flash information (manufacturer and device ID)
+ * @return True when successful.
+ */
 static bool ExtFlash_readInfo(void)
 {
-    const uint8_t wbuf[] = { BLS_CODE_MDID, 0xFF, 0xFF, 0x00 };
+    const uint8_t wbuf[] = {BLS_CODE_MDID, 0xFF, 0xFF, 0x00};
 
     extFlashSelect();
 
@@ -281,9 +272,9 @@ static bool ExtFlash_readInfo(void)
 }
 
 /**
-* Verify the flash part.
-* @return True when successful.
-*/
+ * Verify the flash part.
+ * @return True when successful.
+ */
 
 static bool extFlashVerifyPart(void)
 {
@@ -306,12 +297,12 @@ static bool extFlashVerifyPart(void)
 }
 
 /**
-* Wait till previous erase/program operation completes.
-* @return Zero when successful.
-*/
+ * Wait till previous erase/program operation completes.
+ * @return Zero when successful.
+ */
 static int ExtFlash_waitReady(void)
 {
-    const uint8_t wbuf[1] = { BLS_CODE_READ_STATUS };
+    const uint8_t wbuf[1] = {BLS_CODE_READ_STATUS};
     int ret;
 
     /* Throw away all garbage */
@@ -325,7 +316,7 @@ static int ExtFlash_waitReady(void)
 
         extFlashSelect();
         Spi_write(wbuf, sizeof(wbuf));
-        ret = Spi_read(&buf,sizeof(buf));
+        ret = Spi_read(&buf, sizeof(buf));
         extFlashDeselect();
 
         if (ret)
@@ -344,15 +335,15 @@ static int ExtFlash_waitReady(void)
 }
 
 /**
-* Wait until the part has entered power down (JDEC readout fails).
-* @return Zero when successful.
-*/
+ * Wait until the part has entered power down (JDEC readout fails).
+ * @return Zero when successful.
+ */
 static int ExtFlash_powerDown(void)
 {
     uint8_t i;
 
     i = 0;
-    while (i<10)
+    while (i < 10)
     {
         if (!ExtFlash_readInfo())
         {
@@ -365,15 +356,15 @@ static int ExtFlash_powerDown(void)
 }
 
 /**
-* Enable write.
-* @return Zero when successful.
-*/
+ * Enable write.
+ * @return Zero when successful.
+ */
 static int ExtFlash_writeEnable(void)
 {
-    const uint8_t wbuf[] = { BLS_CODE_WRITE_ENABLE };
+    const uint8_t wbuf[] = {BLS_CODE_WRITE_ENABLE};
 
     extFlashSelect();
-    int ret = Spi_write(wbuf,sizeof(wbuf));
+    int ret = Spi_write(wbuf, sizeof(wbuf));
     extFlashDeselect();
 
     if (ret)
@@ -382,7 +373,6 @@ static int ExtFlash_writeEnable(void)
     }
     return 0;
 }
-
 
 /* See ExtFlash.h file for description */
 bool ExtFlash_open(void)
@@ -455,8 +445,8 @@ bool ExtFlash_read(size_t offset, size_t length, uint8_t *buf)
     }
 
     /* SPI is driven with very low frequency (1MHz < 33MHz fR spec)
-    * in this temporary implementation.
-    * and hence it is not necessary to use fast read. */
+     * in this temporary implementation.
+     * and hence it is not necessary to use fast read. */
     wbuf[0] = BLS_CODE_READ;
     wbuf[1] = (offset >> 16) & 0xff;
     wbuf[2] = (offset >> 8) & 0xff;
@@ -515,10 +505,10 @@ bool ExtFlash_write(size_t offset, size_t length, const uint8_t *buf)
         length -= ilen;
 
         /* Up to 100ns CS hold time (which is not clear
-        * whether it's application only in between reads)
-        * is not imposed here since above instructions
-        * should be enough to delay
-        * as much. */
+         * whether it's application only in between reads)
+         * is not imposed here since above instructions
+         * should be enough to delay
+         * as much. */
         extFlashSelect();
 
         if (Spi_write(wbuf, sizeof(wbuf)))
@@ -528,7 +518,7 @@ bool ExtFlash_write(size_t offset, size_t length, const uint8_t *buf)
             return false;
         }
 
-        if (Spi_write(buf,ilen))
+        if (Spi_write(buf, ilen))
         {
             /* failure */
             extFlashDeselect();
@@ -545,8 +535,8 @@ bool ExtFlash_write(size_t offset, size_t length, const uint8_t *buf)
 bool ExtFlash_erase(size_t offset, size_t length)
 {
     /* Note that Block erase might be more efficient when the floor map
-    * is well planned for OTA but to simplify for the temporary implementation,
-    * sector erase is used blindly. */
+     * is well planned for OTA but to simplify for the temporary implementation,
+     * sector erase is used blindly. */
     uint8_t wbuf[4];
     size_t i, numsectors;
 
@@ -554,9 +544,8 @@ bool ExtFlash_erase(size_t offset, size_t length)
 
     {
         size_t endoffset = offset + length - 1;
-        offset = (offset / BLS_ERASE_SECTOR_SIZE) * BLS_ERASE_SECTOR_SIZE;
-        numsectors = (endoffset - offset + BLS_ERASE_SECTOR_SIZE - 1) /
-            BLS_ERASE_SECTOR_SIZE;
+        offset           = (offset / BLS_ERASE_SECTOR_SIZE) * BLS_ERASE_SECTOR_SIZE;
+        numsectors       = (endoffset - offset + BLS_ERASE_SECTOR_SIZE - 1) / BLS_ERASE_SECTOR_SIZE;
     }
 
     for (i = 0; i < numsectors; i++)
@@ -609,72 +598,70 @@ bool ExtFlash_test(void)
 }
 
 /*******************************************************************************
-*
-*   SPI interface
-*
-*******************************************************************************/
+ *
+ *   SPI interface
+ *
+ *******************************************************************************/
 
 /*******************************************************************************
-* @fn          Spi_write
-*
-* @brief       Write to an SPI device
-*
-* @param       buf - pointer to data buffer
-* @param       len - number of bytes to write
-*
-* @return      '0' if success, -1 if failed
-*/
+ * @fn          Spi_write
+ *
+ * @brief       Write to an SPI device
+ *
+ * @param       buf - pointer to data buffer
+ * @param       len - number of bytes to write
+ *
+ * @return      '0' if success, -1 if failed
+ */
 static int Spi_write(const uint8_t *buf, size_t len)
 {
     SPI_Transaction Transaction;
 
-    Transaction.count  = len;
-    Transaction.txBuf  = (void*)buf;
-    Transaction.arg    = NULL;
-    Transaction.rxBuf  = NULL;
+    Transaction.count = len;
+    Transaction.txBuf = (void *)buf;
+    Transaction.arg   = NULL;
+    Transaction.rxBuf = NULL;
 
     return SPI_transfer(spiHandle, &Transaction) ? 0 : -1;
 }
 
-
 /*******************************************************************************
-* @fn          Spi_read
-*
-* @brief       Read from an SPI device
-*
-* @param       buf - pointer to data buffer
-* @param       len - number of bytes to write
-*
-* @return      '0' if success, -1 if failed
-*/
+ * @fn          Spi_read
+ *
+ * @brief       Read from an SPI device
+ *
+ * @param       buf - pointer to data buffer
+ * @param       len - number of bytes to write
+ *
+ * @return      '0' if success, -1 if failed
+ */
 static int Spi_read(uint8_t *buf, size_t len)
 {
     SPI_Transaction Transaction;
 
     Transaction.count = len;
     Transaction.txBuf = NULL;
-    Transaction.arg = NULL;
+    Transaction.arg   = NULL;
     Transaction.rxBuf = buf;
 
     return SPI_transfer(spiHandle, &Transaction) ? 0 : -1;
 }
 
-
 /*******************************************************************************
-* @fn          Spi_open
-*
-* @brief       Open the RTOS SPI driver
-*
-* @param       bitRate - transfer speed in bits/sec
-*
-* @return      true if success
-*/
+ * @fn          Spi_open
+ *
+ * @brief       Open the RTOS SPI driver
+ *
+ * @param       bitRate - transfer speed in bits/sec
+ *
+ * @return      true if success
+ */
 static bool Spi_open(uint32_t bitRate)
 {
     /*  Configure SPI as controller */
     SPI_Params_init(&spiParams);
-    spiParams.bitRate = bitRate;
-    spiParams.mode = SPI_CONTROLLER;
+    spiParams.bitRate      = bitRate;
+    spiParams.mode         = SPI_CONTROLLER;
     spiParams.transferMode = SPI_MODE_BLOCKING;
 
     /* Attempt to open SPI. */
@@ -684,12 +671,12 @@ static bool Spi_open(uint32_t bitRate)
 }
 
 /*******************************************************************************
-* @fn          Spi_close
-*
-* @brief       Close the RTOS SPI driver
-*
-* @return      none
-*/
+ * @fn          Spi_close
+ *
+ * @brief       Close the RTOS SPI driver
+ *
+ * @return      none
+ */
 static void Spi_close(void)
 {
     if (spiHandle != NULL)
@@ -700,19 +687,17 @@ static void Spi_close(void)
     }
 }
 
-
 /*******************************************************************************
-* @fn          Spi_flash
-*
-* @brief       Get rid of garbage from the peripheral
-*
-* @param       none
-*
-* @return      none
-*/
+ * @fn          Spi_flash
+ *
+ * @brief       Get rid of garbage from the peripheral
+ *
+ * @param       none
+ *
+ * @return      none
+ */
 static void Spi_flash(void)
 {
     /* make sure SPI hardware module is done  */
-    while(SSIBusy(((SPICC26XXDMA_HWAttrsV1*)spiHandle->hwAttrs)->baseAddr))
-    { };
+    while (SSIBusy(((SPICC26XXDMA_HWAttrsV1 *)spiHandle->hwAttrs)->baseAddr)) {};
 }

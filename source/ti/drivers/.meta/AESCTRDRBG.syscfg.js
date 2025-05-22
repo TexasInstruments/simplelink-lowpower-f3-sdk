@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,15 +45,20 @@ let Common = system.getScript("/ti/drivers/Common.js");
 /* generic configuration parameters for AESCTRDRBG instances */
 let config = []; /* nothing (yet) beyond generic driver configs */
 
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
+
 /*
  *  ======== validate ========
  */
 function validate(inst, validation)
 {
     if (system.modules["/ti/utils/TrustZone"]) {
-        if (inst.$module.$instances.length != 1) {
-            validation.logError(`When using Secure/Non-secure features (TrustZone is enabled), the number of Crypto
-                                driver instances are fixed in the TF-M image. One AESCTRDRBG instance is supported.`, inst);
+        if (deviceId.match(/CC(13|26).[34]/) && (inst.$module.$instances.length != 1)) {
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, ` +
+                `the number of Crypto driver instances is fixed in the TF-M ` +
+                `image. Only one ` + base.displayName + ` instance is supported.`, inst);
         }
     }
 }
@@ -75,9 +80,9 @@ related purposes.
 * [Usage Synopsis][2]
 * [Examples][3]
 
-[1]: /drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#details "C API reference"
-[2]: /drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#ti_drivers_AESCTRDRBG_Synopsis "Basic C usage summary"
-[3]: /drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#ti_drivers_AESCTRDRBG_Examples "C usage examples"
+[1]: /secure_drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#details "C API reference"
+[2]: /secure_drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#ti_drivers_AESCTRDRBG_Synopsis "Basic C usage summary"
+[3]: /secure_drivers/doxygen/html/_a_e_s_c_t_r_d_r_b_g_8h.html#ti_drivers_AESCTRDRBG_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#AESCTRDRBG_Configuration_Options "Configuration options reference"
 `,
     config              : Common.addNameConfig(config, "/ti/drivers/aesctrdrbg", "CONFIG_AESCTRDRBG_"),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2024, Texas Instruments Incorporated
+ * Copyright (c) 2017-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #include <ti/devices/DeviceFamily.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/cryptoutils/ecc/ECCParamsLPF3HSM.h>
 #endif
 

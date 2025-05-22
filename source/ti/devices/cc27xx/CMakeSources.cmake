@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, Texas Instruments Incorporated
+# Copyright (c) 2022-2025, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -52,13 +52,12 @@ set(startup_sources
 #
 # Non-secure driverlib
 #
-# Default to the secure driverlib sources, and remove secure-only files below
+# Default to the secure driverlib sources.
+# *_veneers.c files are already excluded from the S sources.
+# Secure only content, for example functions accessing secure peripherals, must
+# be wrapped in #ifndef DRIVERLIB_NS.
 set(driverlib_sources_ns ${driverlib_sources})
-# ckmd.h kept as an example of a secure-only file. It is currently non-secure.
-#list(FILTER driverlib_sources_ns EXCLUDE REGEX driverlib/ckmd.c)
 
-# Filter out veneers (these are not compiled in any driverlib build)
-list(FILTER driverlib_sources_ns EXCLUDE REGEX driverlib/.*_veneers.c)
 set(startup_sources_ns
     startup_files/ccfg.c # Owned by non-secure side, but only accessible by secure side
     startup_files/scfg.c # Owned by non-secure side, but only accessible by secure side

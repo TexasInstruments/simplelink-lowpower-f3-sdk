@@ -24,7 +24,7 @@ following modification to enable the OPT3001's usage with the
 __i2copt3001_cpp__ example.
 
 * Use a jumper wire to connect BoosterPack pin header BP.27 (__`O_V+`__) to BP.18 (unlabeled).
-* Use a jumper wire to connect BoosterPack pin header BP.25 (__`O_INT`__) to BP.7 (__`P05`__).
+* Use a jumper wire to connect BoosterPack pin header BP.25 (__`O_INT`__) to BP.7 (unlabeled).
 
 ### [__BOOSTXL-SHARP128 LCD & SD Card BoosterPack__][boostxl-sharp128]
 
@@ -59,7 +59,7 @@ the CC3200 Audio BoosterPack:
 * BCLK: Remove `R72` and mount `R75`
 * FSYNC/WCLK: Remove `R74` and mount `R74`
 
-### [__BP-EM-CS BoosterPack__][bp-em-cs]
+### __BP-EM-CS BoosterPack__
 
 When using a CC27XX board, connect the P1 and P2 jumpers, and disconnect the P3
 and P4 jumpers on the BoosterPack. Add only the VC pins labelled CC27XX in
@@ -78,4 +78,3 @@ The VC pins are used to select the antenna on the BoosterPack:
 [boostxl-sharp128]: https://www.ti.com/tool/BOOSTXL-SHARP128
 [cc3200audboost]: https://www.ti.com/tool/CC3200AUDBOOST
 [cc3200audboost-user-guide]: https://www.ti.com/lit/pdf/swru383
-[bp-em-cs]: https://www.ti.com/tool/BP-EM-CS

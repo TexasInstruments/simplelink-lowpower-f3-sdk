@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -163,12 +163,39 @@ let signalList = [
         name: "PBEGPO7",
         displayName: Docs.config.rclPinOptions.pbeGpo7.displayName,
         description: Docs.config.rclPinOptions.pbeGpo7.description
-    }]
+    },
+    {
+        name: "COEX_GRANT",
+        displayName: Docs.config.rclPinOptions.coexGrant.displayName,
+        description: Docs.config.rclPinOptions.coexGrant.description
+    }
+]
 
 /* This maps each use case to their signals */
 let useCaseMap = {
     debugSignals: ["RFEGPO0","RFEGPO1"]
 }
+
+/* Supported coex modes */
+const coexModeSupport = [
+    "coexMode3Wire",
+    "coexMode2WireRequestGrant",
+    "coexMode2WireRequestPriority",
+    "coexMode1WireRequest",
+    "coexMode1WireGrant"
+];
+
+/* Array of level options */
+const coexLevelOptions = [
+    {
+        name: 0,
+        displayName: "Low"
+    },
+    {
+        name: 1,
+        displayName: "High"
+    }
+];
 
 /*Only enable FPGA use case when using FPGA board*/
 let board = system.deviceData.board;
@@ -210,10 +237,28 @@ let config = [
                     description: Docs.config.loggingEnabled.longDescription,
                     default: false
                 },
+                {
+                    name: "coexEnabled",
+                    displayName: Docs.coex.enable.displayName,
+                    description: Docs.coex.enable.description,
+                    longDescription: Docs.coex.enable.longDescription,
+                    hidden: false,
+                    default: false,
+                    onChange: (inst, ui) => onCoexEnableChanged(inst, ui, "coexEnabled")
+                },
+                {
+                    name: "pbeGpoMask",
+                    displayName: Docs.config.rclPbeGpoMask.displayName,
+                    displayFormat: { radix: "hex", bitSize: 8 },
+                    description: Docs.config.rclPbeGpoMask.description,
+                    longDescription: Docs.config.rclPbeGpoMask.longDescription,
+                    hidden: true,
+                    default: 0x00,
+                },
             ]
     },
     {
-    name: "rclObservables",
+        name: "rclObservables",
         displayName: Docs.config.rclObservables.displayName,
         longDescription: Docs.config.rclObservables.longDescription,
         collapsed: false,
@@ -243,6 +288,135 @@ let config = [
                 options: getAvailableSignals,
             }
         ]
+    },
+    {
+        name: "coexConfigGroup",
+        displayName: Docs.coex.configGroup.displayName,
+        collapsed: false,
+        config: [
+            {
+                name: "coexMode",
+                displayName: Docs.coex.mode.displayName,
+                description: Docs.coex.mode.description,
+                longDescription: Docs.coex.mode.longDescription,
+                hidden: true,
+                default: "coexMode3Wire",
+                options: [
+                    {
+                        name: "coexMode3Wire",
+                        displayName: Docs.coex.mode.threeWire.displayName,
+                        description: Docs.coex.mode.threeWire.description
+                    },
+                    {
+                        name: "coexMode2WireRequestGrant",
+                        displayName: Docs.coex.mode.twoWireRequestGrant.displayName,
+                        description: Docs.coex.mode.twoWireRequestGrant.description
+                    },
+                    {
+                        name: "coexMode2WireRequestPriority",
+                        displayName: Docs.coex.mode.twoWireRequestPriority.displayName,
+                        description: Docs.coex.mode.twoWireRequestPriority.description
+                    },
+                    {
+                        name: "coexMode1WireRequest",
+                        displayName: Docs.coex.mode.oneWireRequest.displayName,
+                        description: Docs.coex.mode.oneWireRequest.description
+                    },
+                    {
+                        name: "coexMode1WireGrant",
+                        displayName: Docs.coex.mode.oneWireGrant.displayName,
+                        description: Docs.coex.mode.oneWireGrant.description
+                    }
+                ],
+                onChange: onCoexModeChanged
+            },
+            {
+                name: "coexPinRequestIdleLevel",
+                displayName: Docs.coex.requestPinIdleLevel.displayName,
+                description: Docs.coex.requestPinIdleLevel.description,
+                longDescription: Docs.coex.requestPinIdleLevel.longDescription,
+                hidden: true,
+                default: 0,
+                options: coexLevelOptions
+            },
+            {
+                name: "coexPinPriorityIdleLevel",
+                displayName: Docs.coex.priorityPinIdleLevel.displayName,
+                description: Docs.coex.priorityPinIdleLevel.description,
+                longDescription: Docs.coex.priorityPinIdleLevel.longDescription,
+                hidden: true,
+                default: 0,
+                options: coexLevelOptions
+            },
+            {
+                name: "coexPinPriorityIndicationEnabled",
+                displayName: Docs.coex.priorityIndicationEnable.displayName,
+                description: Docs.coex.priorityIndicationEnable.description,
+                longDescription: Docs.coex.priorityIndicationEnable.longDescription,
+                hidden: true,
+                default: true,
+                onChange: onCoexPriorityIndicationEnabledChanged
+            },
+            {
+                name: "coexPinPriorityIndicationLowLevel",
+                displayName: Docs.coex.priorityIndicationLowLevel.displayName,
+                description: Docs.coex.priorityIndicationLowLevel.description,
+                longDescription: Docs.coex.priorityIndicationLowLevel.longDescription,
+                hidden: true,
+                default: 0,
+                options: coexLevelOptions
+            },
+            {
+                name: "coexPinPriorityIndicationTime",
+                displayName: Docs.coex.priorityIndicationTime.displayName,
+                description: Docs.coex.priorityIndicationTime.description,
+                longDescription: Docs.coex.priorityIndicationTime.longDescription,
+                hidden: true,
+                default: 20,
+            },
+            {
+                name: "coexPinGrantIdleLevel",
+                displayName: Docs.coex.grantPinIdleLevel.displayName,
+                description: Docs.coex.grantPinIdleLevel.description,
+                longDescription: Docs.coex.grantPinIdleLevel.longDescription,
+                hidden: true,
+                default: 1,
+                options: coexLevelOptions
+            },
+            {
+                name: "coexPinRequestRfActivityLatencyTime",
+                displayName: Docs.coex.requestRfActivityLatencyTime.displayName,
+                description: Docs.coex.requestRfActivityLatencyTime.description,
+                longDescription: Docs.coex.requestRfActivityLatencyTime.longDescription,
+                hidden: true,
+                default: 120,
+            },
+            {
+                name: "coexRuntimeChangeable",
+                displayName: Docs.coex.runtimeChangeable.displayName,
+                description: Docs.coex.runtimeChangeable.description,
+                longDescription: Docs.coex.runtimeChangeable.longDescription,
+                hidden: true,
+                default: false,
+            },
+            {
+                name: "coexPinRequestIeeeNumCorr",
+                displayName: Docs.coex.pinRequestIeeeNumCorr.displayName,
+                description: Docs.coex.pinRequestIeeeNumCorr.description,
+                longDescription: Docs.coex.pinRequestIeeeNumCorr.longDescription,
+                hidden: true,
+                options: [1, 2, 3, 4, 5, 6, 7, 8].map(it => ({name: it})),
+                default: 4
+            },
+            {
+                /* This parameter is always hidden. It controls the timeout of a request for
+                   IEEE 802.15.4 before sync must be found, when using the request on sync option.
+                   The parameter may be changed using the .syscfg file */
+                name: "ieeeTSync",
+                hidden: true,
+                default: 140
+            }
+        ]
     }
 ];
 
@@ -262,14 +436,156 @@ function filterHardware(component) {
     return (Common.typeMatches(component.type, ["RCL"]));
 }
 
+/*
+ *  ======== resetDefaultValue ========
+ *  Set specified configuration option to its default value
+ *
+ *  @param inst     - Module instance object containing the config
+ *  @param config   - Config option to reset
+ */
+function resetDefaultValue(inst, config){
+    if(config in inst)
+    {
+        if (config in inst.$module.$configByName)
+        {
+            inst[config] = inst.$module.$configByName[config].default;
+        }
+    }
+}
 
 /*
  *******************************************************************************
  Get Functions
  *******************************************************************************
  */
+ function getDisabledOptions(inst)
+{
+    let maxSignalsLimit = 8;
+    let disabledOptions = [];
+    if (inst.signals.length >= maxSignalsLimit){
+        for (let i = 0; i < signalList.length; i++) {
+            let signal = signalList[i].name
+            if (!inst.signals.includes(signal)){
+                disabledOptions.push({
+                    name: signal,
+                    reason: "Too many added signals"
+                })
+            }
+        }
+    }
 
+    return (disabledOptions);
+}
 
+function getAvailableSignals(inst)
+{
+    return signalList.slice(0);
+}
+
+/*  ======== getCoexPinInfo ========
+ *  Get list with info on enabled coex signals.
+ *
+ *  @param inst     - Module instance object containing the config
+ *  @return         - Array of coex pin information
+ */
+function getCoexPinInfo(inst)
+{
+    const {coexEnabled: enable, coexMode: mode} = inst;
+
+    const request = {
+        name: "PBEGPO0",
+        pinInstance: {
+            name:           "pbegpo0PinInstance",
+            displayName:    "PBEGPO0 (COEX_REQUEST) Pin Configuration", /* GUI name */
+            moduleName: "/ti/drivers/GPIO",
+            readOnly: false,
+            collapsed: true,
+            args: {
+                $name: "CONFIG_COEX_REQUEST",
+            },
+            requiredArgs: {
+                $hardware: null,
+                parentInterfaceName: "lrfGpio",
+                parentSignalName: "pbegpo0Pin",
+                parentSignalDisplayName: "COEX_REQUEST Pin",
+                mode: "Output",
+                pull: "None",
+                invert: inst["coexPinRequestIdleLevel"] ? true : false,
+                doNotConfig: false
+            }
+        }
+    };
+
+    const priority = {
+        name: "PBEGPO1",
+        pinInstance: {
+            name:           "pbegpo1PinInstance",
+            displayName:    "PBEGPO1 (COEX_PRIORITY) Pin Configuration", /* GUI name */
+            moduleName: "/ti/drivers/GPIO",
+            readOnly: false,
+            collapsed: true,
+            args: {
+                $name: "CONFIG_COEX_PRIORITY",
+            },
+            requiredArgs: {
+                $hardware: null,
+                parentInterfaceName: "lrfGpio",
+                parentSignalName: "pbegpo1Pin",
+                parentSignalDisplayName: "COEX_PRIORITY Pin",
+                mode: "Output",
+                pull: "None",
+                invert: inst["coexPinPriorityIdleLevel"] ? true : false,
+                doNotConfig: false
+            }
+        }
+    };
+
+    const grant = {
+        name: "COEX_GRANT",
+        pinInstance: {
+            name:           'coex_grantPinInstance',
+            displayName:    "COEX_GRANT Pin Configuration", /* GUI name */
+            moduleName: "/ti/drivers/GPIO",
+            readOnly: false,
+            collapsed: true,
+            args: {
+                $name: `CONFIG_COEX_GRANT`,
+            },
+            requiredArgs: {
+                $hardware: null,
+                parentInterfaceName: "lrfGpio",
+                parentSignalName: "coex_grantPin",
+                parentSignalDisplayName: "COEX_GRANT Pin",
+                mode: "Input",
+                invert: inst["coexPinGrantIdleLevel"] ? false : true,
+                doNotConfig: false
+            }
+        }
+    };
+
+    const coexPinInfo = [];
+    if(enable)
+    {
+        switch(mode) {
+            case "coexMode3Wire":
+                coexPinInfo.push(request, priority, grant);
+                break;
+            case "coexMode2WireRequestGrant":
+                coexPinInfo.push(request, grant);
+                break;
+            case "coexMode2WireRequestPriority":
+                coexPinInfo.push(request, priority);
+                break;
+            case "coexMode1WireRequest":
+                coexPinInfo.push(request);
+                break;
+            case "coexMode1WireGrant":
+                coexPinInfo.push(grant);
+                break;
+        }
+    }
+    return coexPinInfo;
+}
 
 /*
  *******************************************************************************
@@ -312,35 +628,118 @@ function onUseCaseChanged(inst, ui) {
 }
 
 
+/*
+ *  ======== onCoexEnableChanged ========
+ *  Called when config coexEnabled changes
+ *
+ *  @param inst   - Module instance object containing config that changed
+ *  @param ui     - User Interface state object
+ *  @param config - Name of calling config
+ */
+function onCoexEnableChanged(inst, ui, config) {
+    const {coexEnabled: enabled} = inst;
+
+    const coexInstances = Object.keys(ui).filter(key => ((key.includes("coex") && key !== "coex_grantPinInstance" && key !== config)));
+
+    /* Show coex config instances according to coexEnabled state */
+    coexInstances.forEach(instance => {
+        ui[instance].hidden = !enabled;
+    });
+
+    /* Reset config instances to default value if hidden */
+    coexInstances.filter(instance => ui[instance].hidden).forEach(instance => resetDefaultValue(inst, instance));
+
+    /* Make coex pins selected in GPIO signal list */
+    updatePinSymbols(inst, ui);
+}
+
+/*
+ *  ======== onCoexModeChanged ========
+ *  Called when config coexMode changes
+ *
+ *  @param inst - Module instance object containing config that changed
+ *  @param ui   - User Interface state object
+ */
+function onCoexModeChanged(inst, ui) {
+    const {coexMode: mode} = inst;
+    const coexPinInstances = Object.keys(ui).filter(key => key.includes("coexPin"));
+
+    /* Update pin config visibility according to mode */
+    coexPinInstances.forEach(instance => {
+        if(instance.includes("Request")) {
+            ui[instance].hidden = (mode == "coexMode1WireGrant");
+        }
+        else if(instance.includes("Priority")) {
+            ui[instance].hidden = (mode !== "coexMode3Wire" && mode != "coexMode2WireRequestPriority");
+            if (!ui[instance].hidden && instance.includes("PriorityIndication") && !instance.includes("Enabled")) {
+                ui[instance].hidden = !inst.coexPinPriorityIndicationEnabled;
+            }
+        }
+        else if(instance.includes("Grant")) {
+            ui[instance].hidden = (mode == "coexMode1WireRequest" || mode == "coexMode2WireRequestPriority");
+        }
+    });
+
+    /* Reset config instance to default value if hidden */
+    const hiddenInstances = coexPinInstances.filter(instance => ui[instance].hidden);
+    hiddenInstances.forEach(instance => resetDefaultValue(inst, instance));
+
+    /* Update which coex pins are selected in GPIO signal list */
+    updatePinSymbols(inst, ui);
+}
+
+/*
+ *  ======== onCoexPriorityIndicationEnabledChanged ========
+ *  Called when config coexPinPriorityIndicationEnabled changes
+ *
+ *  @param inst - Module instance object containing config that changed
+ *  @param ui   - User Interface state object
+ */
+function onCoexPriorityIndicationEnabledChanged(inst, ui) {
+    /* Hide or unhide the other signals*/
+    const priorityIndicationInstances = Object.keys(ui).filter(key => key.includes("coexPinPriorityIndication"));
+    priorityIndicationInstances.forEach(instance => {
+        if (!instance.includes("Enabled")) {
+            ui[instance].hidden = !inst.coexPinPriorityIndicationEnabled;
+        }
+    });
+}
 
 /*
  *******************************************************************************
  Update functions
  *******************************************************************************
  */
- function getDisabledOptions(inst)
-{
-    let maxSignalsLimit = 8;
-    let disabledOptions = [];
-    if (inst.signals.length >= maxSignalsLimit){
-        for (let i = 0; i < signalList.length; i++) {
-            let signal = signalList[i].name
-            if (!inst.signals.includes(signal)){
-                disabledOptions.push({
-                    name: signal,
-                    reason: "Too many added signals"
-                    })
-            }
+
+ /*  ======== updatePinSymbols ========
+ *  Update pin symbol visibility according to selected pins.
+ *
+ *  @param inst - Module instance object containing config that changed
+ *  @param ui   - User Interface state object
+ */
+function updatePinSymbols(inst, ui) {
+    const {coexEnabled: enable} = inst;
+    let coexSignals = getCoexPinInfo(inst).map(signal => signal.name);
+
+    let allCoexSignals = ["PBEGPO0", "PBEGPO1", "COEX_GRANT"];
+    let templist = [];
+    let index = 0;
+    inst.signals.forEach(signal => {
+        if (allCoexSignals.includes(signal))
+        {
+            templist = [...inst.signals]
+            index = templist.indexOf(signal);
+            templist.splice(index,1)
+            inst.signals = templist
+        }
+    });
+    if (enable)
+    {
+        if (inst.signals.length + coexSignals.length <= 8)
+        {
+            updateConfigValue(inst, ui, "signals",  [ ...inst.signals, ...coexSignals])
         }
     }
-
-
-    return (disabledOptions);
-}
-
-function getAvailableSignals(inst)
-{
-    return signalList.slice(1);
 }
 
 /*
@@ -389,13 +788,17 @@ function updateConfigValue(inst, ui, config, value){
      }
  }
 
- function getBoard()
+
+ function getDeviceType()
  {
-    let board = system.deviceData.board;
-    if (board.name.match(/CC23/)){
+    let device = "";
+    if ("device" in system.deviceData){
+        device = system.deviceData.device;
+    }
+    if (device.match(/CC23/)){
         return "CC23"
     }
-    else if (board.name.match(/CC27/)){
+    else if (device.match(/CC27/)){
         return "CC27"
     }
     else{
@@ -403,6 +806,20 @@ function updateConfigValue(inst, ui, config, value){
     }
  }
 
+ /*!
+ *  ======== allowedInputPins ========
+ *  Filter out pins that do not support LRFD input
+ */
+ function allowedInputPins(devicePin, peripheralPin)
+{
+    if (getDeviceType() == "CC23"){
+        /* On CC23xx, DIO3 and DIO4 are outputs only for LRFD */
+        return (devicePin.designSignalName.match(/^(?!.*(DIO3|DIO4))/));
+    }
+    else{
+        return (devicePin.designSignalName);
+    }
+}
 
 /*!
  *  ======== pinmuxRequirements ========
@@ -418,15 +835,21 @@ function pinmuxRequirements(inst) {
     let resources = [];
     let rclArray = [];
 
-
     signalList.forEach(signal => {
+
         if (inst.signals.includes(signal.name))
         {
-        resources.push({
-            name:           `${signal.name.toLowerCase()}Pin`,
-            displayName:    `${signal.name} Pin`, /* GUI name */
-            interfaceNames: ["D0","D1","D2","D3","D4","D5","D6","D7"]
-        });
+            let resourceItem = {
+                name:           `${signal.name.toLowerCase()}Pin`,
+                displayName:    `${signal.name} Pin`, /* GUI name */
+                interfaceNames: ["D0","D1","D2","D3","D4","D5","D6","D7"]
+            };
+
+            if (signal.name == "COEX_GRANT")
+            {
+                resourceItem.filter = allowedInputPins;
+            }
+            resources.push(resourceItem);
         }
     });
 
@@ -457,31 +880,66 @@ function pinmuxRequirements(inst) {
  *  Called when a configuration changes in the module.
  *
  *  @param inst - Module instance containing the config that changed
- *  @return     - Array of PIN instances
+ *  @return     - Array of pin instances
  */
 function moduleInstances(inst) {
     let dependencyModules = [];
 
-    signalList.forEach(signal => {
+    let coexSignalList = getCoexPinInfo(inst);
+
+    coexSignalList.forEach(signal => {
         if (inst.signals.includes(signal.name))
         {
-        dependencyModules.push({
-            name:           `${signal.name.toLowerCase()}PinInstance`,
-            displayName:    `${signal.name} PIN Configuration While Pin Is Not In Use`, /* GUI name */
-            moduleName: "/ti/drivers/GPIO",
-            readOnly: false,
-            collapsed: true,
-            requiredArgs: {
-                $name: `CONFIG_${signal.name}`,
-                parentInterfaceName: "lrfGpio",
-                parentSignalName: `${signal.name.toLowerCase()}Pin`,
-                parentSignalDisplayName:  `${signal.name.toLowerCase()} Pin`,
-                mode: "Output",
-                initialOutputState: "Low",
-                outputStrength: "High",
-                pull: "None"
+            dependencyModules.push(signal.pinInstance);
+        }
+    });
+    let coexNameList = coexSignalList.map(signal => signal.name);
+
+    signalList.forEach(signal => {
+        if (inst.signals.includes(signal.name) && !coexNameList.includes(signal.name))
+        {
+            if (signal.name == "COEX_GRANT")
+            {
+                dependencyModules.push({
+                    name:           `${signal.name.toLowerCase()}PinInstance`,
+                    displayName:    `${signal.name} Pin Configuration`, /* GUI name */
+                    moduleName: "/ti/drivers/GPIO",
+                    readOnly: false,
+                    collapsed: true,
+                    args: {
+                        $name: `CONFIG_${signal.name}`,
+                    },
+                    requiredArgs: {
+                        $hardware: null,
+                        parentInterfaceName: "lrfGpio",
+                        parentSignalName: `${signal.name.toLowerCase()}Pin`,
+                        parentSignalDisplayName: `${signal.name} Pin`,
+                        mode: "Input",
+                        doNotConfig: false
+                    }
+                });
             }
-        });
+            else {
+                dependencyModules.push({
+                    name:           `${signal.name.toLowerCase()}PinInstance`,
+                    displayName:    `${signal.name} Pin Configuration`, /* GUI name */
+                    moduleName: "/ti/drivers/GPIO",
+                    readOnly: false,
+                    collapsed: true,
+                    args: {
+                        $name: `CONFIG_${signal.name}`,
+                    },
+                    requiredArgs: {
+                        $hardware: null,
+                        parentInterfaceName: "lrfGpio",
+                        parentSignalName: `${signal.name.toLowerCase()}Pin`,
+                        parentSignalDisplayName: `${signal.name} Pin`,
+                        mode: "Output",
+                        pull: "None",
+                        doNotConfig: false
+                    }
+                });
+            }
         }
     });
 
@@ -587,20 +1045,43 @@ function getLibs(mod) {
  *  @param inst         - Module instance containing the config that changed
  *  @param validation   - Object to hold detected validation issues
  */
-//function validate(inst, validation){}
-function validate(inst, validation) {
-
+function validate(inst, validation)
+{
     if (inst.useCase.includes("rfDebugSignals")){
         useCaseMap.debugSignals.forEach(signal => {
             if (!inst.signals.includes(signal))
             {
                 Common.logError(validation, inst,"signals",
-                "All RCL debug signals are not set");
+                `All RCL debug signals are not set according to ${system.getReference(inst, "useCase")}.`);
             }
         });
     }
+    let coexSignalList = getCoexPinInfo(inst);
 
+    let coexSignalError = false;
+    coexSignalList.forEach(signal => {
+        if (!inst.signals.includes(signal.name))
+        {
+            coexSignalError = true;
+        }
+    });
+    if (coexSignalError)
+    {
+        Common.logError(validation, inst, "signals",
+            `All configured RCL coex signals are not set according to ${system.getReference(inst, "coexMode")}.`);
+    }
 
+    /* Check that coex times are within bounds */
+    if (inst.coexPinPriorityIndicationTime > 30 || inst.coexPinPriorityIndicationTime < 3)
+    {
+        Common.logError(validation, inst, "coexPinPriorityIndicationTime",
+            "Priority Indication Time must be between 3 and 30 µs");
+    }
+    if (inst.coexPinRequestRfActivityLatencyTime > 150 || inst.coexPinRequestRfActivityLatencyTime < 90)
+    {
+        Common.logError(validation, inst, "coexPinRequestRfActivityLatencyTime",
+            "RF Activity Latency Time must be between 90 and 150 µs");
+    }
 }
 
 /*

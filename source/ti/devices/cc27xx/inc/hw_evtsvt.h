@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_evtsvt_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -39,13 +39,17 @@
 // EVTSVT component
 //
 //*****************************************************************************
-// Description
+// Description Register. This register provides IP module ID, revision
+// information, instance index and standard MMR registers offset.
 #define EVTSVT_O_DESC                                               0x00000000U
 
-// Extended Description
+// Extended Description Register. This register provides configuration details
+// of the IP to software drivers and end users.
 #define EVTSVT_O_DESCEX                                             0x00000004U
 
-// Digital test bus control
+// Digital test bus control register. This register can be used to bring out IP
+// internal signals to the pads for observation. 16 signals can be observed per
+// select value.
 #define EVTSVT_O_DTB                                                0x00000064U
 
 // CPU NMI Interrupt Register
@@ -407,7 +411,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -530,7 +534,7 @@
 #define EVTSVT_CPUIRQ0SEL_PUBID_S                                            0U
 #define EVTSVT_CPUIRQ0SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_CPUIRQ0SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_CPUIRQ0SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_CPUIRQ0SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_CPUIRQ0SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_CPUIRQ0SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_CPUIRQ0SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -607,7 +611,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -730,7 +734,7 @@
 #define EVTSVT_CPUIRQ1SEL_PUBID_S                                            0U
 #define EVTSVT_CPUIRQ1SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_CPUIRQ1SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_CPUIRQ1SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_CPUIRQ1SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_CPUIRQ1SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_CPUIRQ1SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_CPUIRQ1SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -807,7 +811,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -930,7 +934,7 @@
 #define EVTSVT_CPUIRQ2SEL_PUBID_S                                            0U
 #define EVTSVT_CPUIRQ2SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_CPUIRQ2SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_CPUIRQ2SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_CPUIRQ2SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_CPUIRQ2SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_CPUIRQ2SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_CPUIRQ2SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -1007,7 +1011,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -1130,7 +1134,7 @@
 #define EVTSVT_CPUIRQ3SEL_PUBID_S                                            0U
 #define EVTSVT_CPUIRQ3SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_CPUIRQ3SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_CPUIRQ3SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_CPUIRQ3SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_CPUIRQ3SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_CPUIRQ3SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_CPUIRQ3SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -1207,7 +1211,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -1330,7 +1334,7 @@
 #define EVTSVT_CPUIRQ4SEL_PUBID_S                                            0U
 #define EVTSVT_CPUIRQ4SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_CPUIRQ4SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_CPUIRQ4SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_CPUIRQ4SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_CPUIRQ4SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_CPUIRQ4SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_CPUIRQ4SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -1583,7 +1587,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -1706,7 +1710,7 @@
 #define EVTSVT_CPUIRQ16SEL_PUBID_S                                           0U
 #define EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_CPUIRQ16SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_CPUIRQ16SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_CPUIRQ16SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_CPUIRQ16SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_CPUIRQ16SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_CPUIRQ16SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -1783,7 +1787,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -1906,7 +1910,7 @@
 #define EVTSVT_CPUIRQ17SEL_PUBID_S                                           0U
 #define EVTSVT_CPUIRQ17SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_CPUIRQ17SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_CPUIRQ17SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_CPUIRQ17SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_CPUIRQ17SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_CPUIRQ17SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_CPUIRQ17SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -2073,11 +2077,11 @@
 //
 // Read only selection value
 // ENUMs:
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 #define EVTSVT_CPUIRQ24SEL_PUBID_W                                           7U
 #define EVTSVT_CPUIRQ24SEL_PUBID_M                                  0x0000007FU
 #define EVTSVT_CPUIRQ24SEL_PUBID_S                                           0U
-#define EVTSVT_CPUIRQ24SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_CPUIRQ24SEL_PUBID_APU_IRQ                            0x00000046U
 
 //*****************************************************************************
 //
@@ -2231,7 +2235,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -2354,7 +2358,7 @@
 #define EVTSVT_SYSTIMC1SEL_PUBID_S                                           0U
 #define EVTSVT_SYSTIMC1SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_SYSTIMC1SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_SYSTIMC1SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_SYSTIMC1SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_SYSTIMC1SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_SYSTIMC1SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_SYSTIMC1SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -2479,7 +2483,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -2602,7 +2606,7 @@
 #define EVTSVT_SYSTIMC5SEL_PUBID_S                                           0U
 #define EVTSVT_SYSTIMC5SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_SYSTIMC5SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_SYSTIMC5SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_SYSTIMC5SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_SYSTIMC5SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_SYSTIMC5SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_SYSTIMC5SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -2679,7 +2683,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -2802,7 +2806,7 @@
 #define EVTSVT_ADCTRGSEL_PUBID_S                                             0U
 #define EVTSVT_ADCTRGSEL_PUBID_SYSTIM5                              0x0000004CU
 #define EVTSVT_ADCTRGSEL_PUBID_GPIO_EVT1                            0x0000004BU
-#define EVTSVT_ADCTRGSEL_PUBID_VCE_IRQ                              0x00000046U
+#define EVTSVT_ADCTRGSEL_PUBID_APU_IRQ                              0x00000046U
 #define EVTSVT_ADCTRGSEL_PUBID_SPI1_COMB                            0x00000045U
 #define EVTSVT_ADCTRGSEL_PUBID_CAN_EVT                              0x00000044U
 #define EVTSVT_ADCTRGSEL_PUBID_CAN_IRQ                              0x00000043U
@@ -2879,7 +2883,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -3002,7 +3006,7 @@
 #define EVTSVT_LGPTSYNCSEL_PUBID_S                                           0U
 #define EVTSVT_LGPTSYNCSEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_LGPTSYNCSEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_LGPTSYNCSEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_LGPTSYNCSEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_LGPTSYNCSEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_LGPTSYNCSEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_LGPTSYNCSEL_PUBID_CAN_IRQ                            0x00000043U
@@ -3079,7 +3083,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -3202,7 +3206,7 @@
 #define EVTSVT_LGPT0IN0SEL_PUBID_S                                           0U
 #define EVTSVT_LGPT0IN0SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_LGPT0IN0SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_LGPT0IN0SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_LGPT0IN0SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_LGPT0IN0SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_LGPT0IN0SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_LGPT0IN0SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -3639,7 +3643,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -3762,7 +3766,7 @@
 #define EVTSVT_LGPT1IN0SEL_PUBID_S                                           0U
 #define EVTSVT_LGPT1IN0SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_LGPT1IN0SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_LGPT1IN0SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_LGPT1IN0SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_LGPT1IN0SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_LGPT1IN0SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_LGPT1IN0SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -4199,7 +4203,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -4322,7 +4326,7 @@
 #define EVTSVT_LGPT2IN0SEL_PUBID_S                                           0U
 #define EVTSVT_LGPT2IN0SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_LGPT2IN0SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_LGPT2IN0SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_LGPT2IN0SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_LGPT2IN0SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_LGPT2IN0SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_LGPT2IN0SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -4759,7 +4763,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -4882,7 +4886,7 @@
 #define EVTSVT_LGPT3IN0SEL_PUBID_S                                           0U
 #define EVTSVT_LGPT3IN0SEL_PUBID_SYSTIM5                            0x0000004CU
 #define EVTSVT_LGPT3IN0SEL_PUBID_GPIO_EVT1                          0x0000004BU
-#define EVTSVT_LGPT3IN0SEL_PUBID_VCE_IRQ                            0x00000046U
+#define EVTSVT_LGPT3IN0SEL_PUBID_APU_IRQ                            0x00000046U
 #define EVTSVT_LGPT3IN0SEL_PUBID_SPI1_COMB                          0x00000045U
 #define EVTSVT_LGPT3IN0SEL_PUBID_CAN_EVT                            0x00000044U
 #define EVTSVT_LGPT3IN0SEL_PUBID_CAN_IRQ                            0x00000043U
@@ -5367,7 +5371,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -5490,7 +5494,7 @@
 #define EVTSVT_I2SSTMPSEL_PUBID_S                                            0U
 #define EVTSVT_I2SSTMPSEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_I2SSTMPSEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_I2SSTMPSEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_I2SSTMPSEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_I2SSTMPSEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_I2SSTMPSEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_I2SSTMPSEL_PUBID_CAN_IRQ                             0x00000043U
@@ -5728,7 +5732,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -5851,7 +5855,7 @@
 #define EVTSVT_DMACH10SEL_PUBID_S                                            0U
 #define EVTSVT_DMACH10SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_DMACH10SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_DMACH10SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_DMACH10SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_DMACH10SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_DMACH10SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_DMACH10SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -5937,7 +5941,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -6060,7 +6064,7 @@
 #define EVTSVT_DMACH11SEL_PUBID_S                                            0U
 #define EVTSVT_DMACH11SEL_PUBID_SYSTIM5                             0x0000004CU
 #define EVTSVT_DMACH11SEL_PUBID_GPIO_EVT1                           0x0000004BU
-#define EVTSVT_DMACH11SEL_PUBID_VCE_IRQ                             0x00000046U
+#define EVTSVT_DMACH11SEL_PUBID_APU_IRQ                             0x00000046U
 #define EVTSVT_DMACH11SEL_PUBID_SPI1_COMB                           0x00000045U
 #define EVTSVT_DMACH11SEL_PUBID_CAN_EVT                             0x00000044U
 #define EVTSVT_DMACH11SEL_PUBID_CAN_IRQ                             0x00000043U
@@ -6146,7 +6150,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -6269,7 +6273,7 @@
 #define EVTSVT_DMACH8SEL_PUBID_S                                             0U
 #define EVTSVT_DMACH8SEL_PUBID_SYSTIM5                              0x0000004CU
 #define EVTSVT_DMACH8SEL_PUBID_GPIO_EVT1                            0x0000004BU
-#define EVTSVT_DMACH8SEL_PUBID_VCE_IRQ                              0x00000046U
+#define EVTSVT_DMACH8SEL_PUBID_APU_IRQ                              0x00000046U
 #define EVTSVT_DMACH8SEL_PUBID_SPI1_COMB                            0x00000045U
 #define EVTSVT_DMACH8SEL_PUBID_CAN_EVT                              0x00000044U
 #define EVTSVT_DMACH8SEL_PUBID_CAN_IRQ                              0x00000043U
@@ -6355,7 +6359,7 @@
 // SYSTIM5                  SYSTIM Channel 5 event
 // GPIO_EVT1                GPIO generic published event 1, controlled by
 //                          GPIO:EVTCFG
-// VCE_IRQ                  VCE IRQ
+// APU_IRQ                  APU IRQ
 // SPI1_COMB                SPI1 combined interrupt request, interrupt flags
 //                          can be found here SPI1:MIS
 // CAN_EVT                  MCAN general event, interrupt flags can be found
@@ -6478,7 +6482,7 @@
 #define EVTSVT_DMACH9SEL_PUBID_S                                             0U
 #define EVTSVT_DMACH9SEL_PUBID_SYSTIM5                              0x0000004CU
 #define EVTSVT_DMACH9SEL_PUBID_GPIO_EVT1                            0x0000004BU
-#define EVTSVT_DMACH9SEL_PUBID_VCE_IRQ                              0x00000046U
+#define EVTSVT_DMACH9SEL_PUBID_APU_IRQ                              0x00000046U
 #define EVTSVT_DMACH9SEL_PUBID_SPI1_COMB                            0x00000045U
 #define EVTSVT_DMACH9SEL_PUBID_CAN_EVT                              0x00000044U
 #define EVTSVT_DMACH9SEL_PUBID_CAN_IRQ                              0x00000043U

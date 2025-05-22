@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -210,6 +210,14 @@ typedef struct LRF_TxShape_s {
     uint8_t       coeff[];
 } LRF_TxShape;
 
+typedef struct {
+    uint16_t T1;            /* T1 constant (RF activity latency) in 0.25 us steps. 0: REQUEST and PRIORITY not used */
+    uint8_t T2;             /* T2 constant (Priority indication time) in 0.25 us steps. 0: No priority indication */
+    uint8_t grantPin;       /* Grant pin in use if coex is enabled, or "disabled" if globally disabled */
+    bool invertedPriority;  /* True if coex priority signal is inverted (0 means high priority) */
+    uint16_t ieeeTSync;     /* IEEE 802.15.4: Timeout (0.25 us steps) of REQUEST on frame indication before sync must be seen */
+    uint8_t ieeeCorrMask;   /* IEEE 802.15.4: Bit mask indicating correlation tops needed to declare frame indication */
+} LRF_CoexConfiguration;
 
 /* Definitions for trim */
 #define LRF_TRIM_NUM_VARIANTS 2
@@ -595,6 +603,41 @@ static inline void LRF_clearRclClockEnable(uint16_t mask)
 }
 
 /**
+ * @brief Enable monitoring of coexistence grant signal in RFE
+ *
+ *  Turns on the coex grant signal for the configured IO pin (if any). The function must be called
+ *  before starting a PBE operation. The handler is responsible for disabling in order to avoid
+ *  coex operation in commands not supporting it.
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_enableCoexGrant(void);
+
+/**
+ * @brief Disable monitoring of coexistence grant signal in RFE
+ *
+ *  Turns off the coex grant signal to the RFE. Should be called by the handler at the end of a
+ *  command where LRF_enableCoexGrant was called. The function must be called after the PBE
+ *  operation ended, but can safely be called even without a previous LRF_enableCoexGrant.
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_disableCoexGrant(void);
+
+/**
+ * @brief Deassert coexistence REQUEST
+ *
+ *  Set coex REQUEST and PRIORITY lines low to indicate no request. Should only be done when PBE
+ *  is finished.
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ */
+void LRF_deassertCoexRequest(void);
+
+/**
  * @brief Enable temperature monitoring to allow handlers to update temperature compensation
  *
  *  @note This function is intended as internal to RCL and its handlers
@@ -628,6 +671,21 @@ void LRF_updateTemperatureCompensation(uint32_t rfFrequency, bool tx);
  * @brief Get temperature used in last setting of trims
  */
 int16_t LRF_getLastTrimTemperature(void);
+
+/**
+ * @brief Set the default antenna to be used during the next radio configuration.
+ *
+ * This function configures the antenna selection value for the current PHY.
+ * The selection does not take effect immediately but will be applied the next
+ * time the radio is configured. This typically occurs when a radio command is
+ * started or when the device wakes up from standby while running a radio command.
+ *
+ * @note This function is intended for internal use only.
+ *
+ * @param value Antenna selection value.
+ *
+ */
+void LRF_setAntennaSelection(uint32_t value);
 
 /* Temporarily added definitions until https://jira.itg.ti.com/browse/TIDRIVERS-6489 is implemented */
 #ifndef NO_DRIVERS

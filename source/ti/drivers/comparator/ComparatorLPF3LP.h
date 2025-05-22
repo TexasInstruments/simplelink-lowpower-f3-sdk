@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -175,17 +175,30 @@ typedef enum
  */
 typedef struct
 {
-    uint32_t intNum;                                            /*!< Device-specific interrupt number */
-    uint32_t intPriority;                                       /*!< Device-specific interrupt priority */
-    uint32_t intMux;                                            /*!< Device-specific interrupt muxing */
-    ComparatorLPF3LP_PositiveInputChannel positiveInputChannel; /*!< Internal muxing on the positive channel */
-    ComparatorLPF3LP_NegativeInputChannel negativeInputChannel; /*!< Internal muxing on the negative channel */
-    ComparatorLPF3LP_VoltageDividerPath voltageDividerPath;     /*!< Voltage divider path */
-    ComparatorLPF3LP_VoltageDividerFactor voltageDividerFactor; /*!< Voltage divider factor */
-    uint8_t positiveInputPin;                                   /*!< Positive input pin index */
-    uint8_t positiveInputPinMux;                                /*!< Positive input pin muxing */
-    uint8_t negativeInputPin;                                   /*!< Negative input pin index */
-    uint8_t negativeInputPinMux;                                /*!< Negative input pin muxing */
+    /*! Device-specific interrupt number */
+    uint32_t intNum;
+    /*! Device-specific interrupt priority */
+    uint32_t intPriority;
+    /*! Device-specific interrupt subscriber ID, as defined in
+     *  driverlib/evtsvt.h. This must match intNum.
+     */
+    uint32_t intSubscriberId;
+    /*! Internal muxing on the positive channel */
+    ComparatorLPF3LP_PositiveInputChannel positiveInputChannel;
+    /*! Internal muxing on the negative channel */
+    ComparatorLPF3LP_NegativeInputChannel negativeInputChannel;
+    /*! Voltage divider path */
+    ComparatorLPF3LP_VoltageDividerPath voltageDividerPath;
+    /*! Voltage divider factor */
+    ComparatorLPF3LP_VoltageDividerFactor voltageDividerFactor;
+    /*! Positive input pin index */
+    uint8_t positiveInputPin;
+    /*! Positive input pin muxing */
+    uint8_t positiveInputPinMux;
+    /*! Negative input pin index */
+    uint8_t negativeInputPin;
+    /*! Negative input pin muxing */
+    uint8_t negativeInputPinMux;
 } ComparatorLPF3LP_HWAttrs;
 
 /*!

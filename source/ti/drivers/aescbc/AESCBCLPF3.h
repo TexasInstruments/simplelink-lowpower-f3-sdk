@@ -64,13 +64,15 @@
 #include <ti/drivers/AESCBC.h>
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
+#include <ti/devices/DeviceFamily.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
 #endif
 
-#include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,7 +102,7 @@ typedef struct
     AESCBC_OperationUnion *operation;
     AESCBC_OperationType operationType;
     bool threadSafe;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     size_t inputLength;
     /*!
      * @brief The staus of the HSM Boot up process

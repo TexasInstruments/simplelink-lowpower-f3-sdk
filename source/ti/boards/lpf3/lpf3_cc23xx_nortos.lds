@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +37,23 @@ HEAPSIZE = 8196; /* Size of heap buffer used by HeapMem */
 
 MEMORY
 {
-    /* If device has HSM FW the last part of Flash is reserved for it */
-    FLASH (RX) : ORIGIN = ti_utils_build_GenMap_FLASH0_BASE, LENGTH = DEFINED(ti_utils_build_GenMap_HSM_FW_SIZE) ? ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE : ti_utils_build_GenMap_FLASH0_SIZE
+    /* If HSM FW is used and overlapping the user-accessible flash, reserve
+     * space for it. 
+     * The multiple ternary operators for the length are hard to understand, 
+     * this is the logic implemented by them:
+     * if (DEFINED(ti_utils_build_GenMap_HSM_FW_BASE)) {
+     *   // If HSM FW overlaps the user-accessible flash, reserve space for it,
+     *   // otherwise use the default flash size
+     *   if (ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) {
+     *     LENGTH = ti_utils_build_GenMap_HSM_FW_BASE - ti_utils_build_GenMap_FLASH0_BASE
+     *   } else {
+     *     LENGTH = ti_utils_build_GenMap_FLASH0_SIZE
+     *   }
+     * } else {
+     *   LENGTH = ti_utils_build_GenMap_FLASH0_SIZE
+     * }*/
+    FLASH (RX) : ORIGIN = ti_utils_build_GenMap_FLASH0_BASE,
+                 LENGTH = DEFINED(ti_utils_build_GenMap_HSM_FW_BASE) ? ((ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) ? (ti_utils_build_GenMap_HSM_FW_BASE - ti_utils_build_GenMap_FLASH0_BASE) : ti_utils_build_GenMap_FLASH0_SIZE) : ti_utils_build_GenMap_FLASH0_SIZE
     /*
      * Customer Configuration Area and Bootloader Backdoor configuration in
      * flash.
@@ -76,8 +91,11 @@ REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
 
 SECTIONS {
 
+    /* If _resetVecs_base_address is not defined, define it as the flash base
+     * address.
+     */
     PROVIDE (_resetVecs_base_address =
-        DEFINED(_resetVecs_base_address) ? _resetVecs_base_address : 0x0);
+        DEFINED(_resetVecs_base_address) ? _resetVecs_base_address : ti_utils_build_GenMap_FLASH0_BASE);
 
     .resetVecs (_resetVecs_base_address) : AT (_resetVecs_base_address) {
         KEEP (*(.resetVecs))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,7 +86,7 @@ void Exception_handlerSpin(void)
 /*
  *  ======== Exception_handlerMin ========
  */
-void Exception_handlerMin(void)
+__attribute((naked)) void Exception_handlerMin(void)
 {
     /* We need to code this in assembly to avoid the compiler pushing anything
      * to the stack if we were already on the MSP before we can get the
@@ -127,7 +127,7 @@ void Exception_handlerMin(void)
         "msr    psp,    r0                  \n"
 
         /* Branch to exception handler */
-        "bl     Exception_handlerMinC       \n"
+        "bl    %c0                          \n"
 
         /* We were on MSP when the exception occurred */
         "_MSPMIN:                           \n"
@@ -147,7 +147,7 @@ void Exception_handlerMin(void)
         "mov    r0,     sp                  \n"
 
         /* Branch to exception handler */
-        "bl     Exception_handlerMinC       \n");
+        "bl    %c0                          \n" ::"i"(Exception_handlerMinC));
 }
 
 /*
@@ -164,7 +164,7 @@ void Exception_handlerMinC(Exception_ExceptionContext *exceptionContext)
 /*
  *  ======== Exception_handlerMax ========
  */
-void Exception_handlerMax(void)
+__attribute((naked)) void Exception_handlerMax(void)
 {
     /* We need to code this in assembly to avoid the compiler pushing anything
      * to the stack if we were already on the MSP before we can get the
@@ -208,7 +208,7 @@ void Exception_handlerMax(void)
         "msr    psp,    r0                  \n"
 
         /* Branch to exception handler */
-        "bl     Exception_handlerMaxC       \n"
+        "bl    %c0                          \n"
 
         /* We were on MSP when the exception occurred */
         "_MSPMAX:                           \n"
@@ -228,7 +228,7 @@ void Exception_handlerMax(void)
         "mov    r0,     sp                  \n"
 
         /* Branch to exception handler */
-        "bl     Exception_handlerMaxC       \n");
+        "bl    %c0                          \n" ::"i"(Exception_handlerMaxC));
 }
 
 /*

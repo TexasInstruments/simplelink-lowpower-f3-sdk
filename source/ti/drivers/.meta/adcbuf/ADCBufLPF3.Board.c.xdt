@@ -1,6 +1,6 @@
 %%{
     /*
-     * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
+     * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
      * All rights reserved.
      *
      * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,6 @@
     /* Get Common /ti/drivers utility functions */
     let Common = system.getScript("/ti/drivers/Common.js");
     let devId = system.deviceData.deviceId;
-    let devicesDir = Common.device2DevicesDir(devId);
 
     let declarations = Common.genBoardDeclarations(instances);
 
@@ -68,23 +67,23 @@
 #include <ti/drivers/ADCBuf.h>
 #include <ti/drivers/adcbuf/ADCBufLPF3.h>
 #include <ti/drivers/dma/UDMALPF3.h>
-#include <ti/devices/`devicesDir`/inc/hw_evtsvt.h>
-#include <ti/devices/`devicesDir`/inc/hw_memmap.h>
+
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 
 #define `countDef` `instances.length`
 
 % for (let i = 0; i < instances.length; i++) {
 %   let inst = instances[i];
 %   let dataDmaChannelDevicePinName = inst.adc.dataDmaChannel.$solution.devicePinName;
-%   let dataDmaChannelNumber = dataDmaChannelDevicePinName.slice(6, dataDmaChannelDevicePinName.length);
-%   let auxDmaChannelNumber = fixedAuxDmaChannelNumber;
+%   let dataDmaChannelNumber = dataDmaChannelDevicePinName.replace("DMA_CH", "");
 
 ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dataDmaChannelNumber`ControlTableEntry, `dataDmaChannelNumber` + UDMA_PRI_SELECT);
 ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dataDmaChannelNumber`AltControlTableEntry, `dataDmaChannelNumber` + UDMA_ALT_SELECT);
 
 %   /* Only allocate auxiliary DMA channel once, since it is hard coded to channel fixedAuxDmaChannelNumber */
 %   if (i == 0) {
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`auxDmaChannelNumber`ControlTableEntry, `auxDmaChannelNumber` + UDMA_PRI_SELECT);
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`fixedAuxDmaChannelNumber`ControlTableEntry, `fixedAuxDmaChannelNumber` + UDMA_PRI_SELECT);
 %   }
 % }
 
@@ -113,7 +112,7 @@ const ADCBufLPF3_AdcChannelLutEntry ADCBufLPF3_channelLut`inst.$name`[`numChanne
         %
         % let channelInfo = ADCLPF3Channel._getChannelInfo(channel);
     /* `channel.$name` */
-    { 
+    {
         .refVoltage      = `channelInfo.refVoltage`,
         .adcInputDIO     = `channelInfo.inputPin`,
         .internalChannel = `channelInfo.adcChannel`,
@@ -131,8 +130,7 @@ const ADCBufLPF3_HWAttrs ADCBufLPF3_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
 %   let inst = instances[i];
 %   let dataDmaChannelDevicePinName = inst.adc.dataDmaChannel.$solution.devicePinName;
-%   let dataDmaChannelNumber = dataDmaChannelDevicePinName.slice(6, dataDmaChannelDevicePinName.length);
-%   let auxDmaChannelNumber = fixedAuxDmaChannelNumber;
+%   let dataDmaChannelNumber = dataDmaChannelDevicePinName.replace("DMA_CH", "");
     /* `inst.$name` */
 %   if (inst.$hardware) {
 %       if (inst.$hardware.displayName) {
@@ -142,15 +140,13 @@ const ADCBufLPF3_HWAttrs ADCBufLPF3_hwAttrs[`countDef`] = {
     {
         .dataDmaTableEntryPri = &dmaChannel`dataDmaChannelNumber`ControlTableEntry,
         .dataDmaTableEntryAlt = &dmaChannel`dataDmaChannelNumber`AltControlTableEntry,
-        .auxDmaTableEntryPri  = &dmaChannel`auxDmaChannelNumber`ControlTableEntry,
+        .auxDmaTableEntryPri  = &dmaChannel`fixedAuxDmaChannelNumber`ControlTableEntry,
         .adcChannelLut        = ADCBufLPF3_channelLut`inst.$name`,
         .resolutionBits       = `inst.resolution`,
         .dataDmaChannelMask   = UDMA_CHANNEL_`dataDmaChannelNumber`_M,
-        .auxDmaChannelMask    = UDMA_CHANNEL_`auxDmaChannelNumber`_M,
-        .dataDmaEvtReg        = EVTSVT_BASE + EVTSVT_O_DMACH`dataDmaChannelNumber`SEL,
-        .auxDmaEvtReg         = EVTSVT_BASE + EVTSVT_O_DMACH`auxDmaChannelNumber`SEL,
-        .dataDmaEvtMux        = EVTSVT_DMACH`dataDmaChannelNumber`SEL_IPID_ADC0TRG,
-        .auxDmaEvtMux         = EVTSVT_DMACH`auxDmaChannelNumber`SEL_PUBID_ADC_COMB,
+        .auxDmaChannelMask    = UDMA_CHANNEL_`fixedAuxDmaChannelNumber`_M,
+        .dataDmaSubscriberId  = EVTSVT_DMA_CH`dataDmaChannelNumber`,
+        .auxDmaSubscriberId   = EVTSVT_DMA_CH`fixedAuxDmaChannelNumber`,
         .intPriority          = `Common.intPriority2Hex(inst.interruptPriority)`,
 %   if (externalReference[i]) {
         .adcRefPosDIO         = `externalReference[i].adcRefPInstance.$name`,

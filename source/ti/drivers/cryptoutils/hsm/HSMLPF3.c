@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,10 @@
 #include <ti/drivers/SHA2.h>
 #include <ti/drivers/sha2/SHA2LPF3HSM.h>
 
-#include <ti/drivers/ECDSA.h>
-#include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
-
-#include <ti/drivers/ECDH.h>
-#include <ti/drivers/ecdh/ECDHLPF3HSM.h>
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/EDDSA.h>
+    #include <ti/drivers/eddsa/EDDSALPF3HSM.h>
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 #include <ti/drivers/TRNG.h>
 #include <ti/drivers/trng/TRNGLPF3HSM.h>
@@ -66,6 +65,12 @@
 #include <ti/drivers/AESCMAC.h>
 #include <ti/drivers/aescmac/AESCMACLPF3.h>
 
+#include <ti/drivers/ECDH.h>
+#include <ti/drivers/ecdh/ECDHLPF3HSM.h>
+
+#include <ti/drivers/ECDSA.h>
+#include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
+
 #include <third_party/hsmddk/include/Integration/HSMSAL/HSMSAL.h>
 #include <third_party/hsmddk/include/Kit/EIP130/DomainHelper/incl/eip130_domain_ecc_curves.h>
 #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_asset.h>
@@ -84,17 +89,31 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/drivers/dpl/HwiP.h>
-#include <ti/drivers/power/PowerCC27XX.h>
-#include <ti/devices/DeviceFamily.h>
 
-#include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(inc/hw_types.h)
-#include DeviceFamily_constructPath(inc/hw_vims.h)
-#include DeviceFamily_constructPath(inc/hw_clkctl.h)
-#include DeviceFamily_constructPath(inc/hw_hsm.h)
-#include DeviceFamily_constructPath(inc/hw_hsmcrypto.h)
-#include DeviceFamily_constructPath(inc/hw_tcm.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/power/PowerCC27XX.h>
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/power/PowerWFF3.h>
+#endif
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include DeviceFamily_constructPath(inc/hw_memmap.h)
+    #include DeviceFamily_constructPath(inc/hw_types.h)
+    #include DeviceFamily_constructPath(inc/hw_hsm.h)
+    #include DeviceFamily_constructPath(inc/hw_hsm_sec.h)
+    #include DeviceFamily_constructPath(inc/hw_hsm_non_sec.h)
+    #include DeviceFamily_constructPath(inc/hw_ints.h)
+    #include DeviceFamily_constructPath(inc/hw_soc_aon.h)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include DeviceFamily_constructPath(inc/hw_memmap.h)
+    #include DeviceFamily_constructPath(inc/hw_types.h)
+    #include DeviceFamily_constructPath(inc/hw_vims.h)
+    #include DeviceFamily_constructPath(inc/hw_clkctl.h)
+    #include DeviceFamily_constructPath(inc/hw_hsm.h)
+    #include DeviceFamily_constructPath(inc/hw_hsmcrypto.h)
+    #include DeviceFamily_constructPath(inc/hw_tcm.h)
+    #include DeviceFamily_constructPath(inc/hw_ints.h)
+#endif
 
 /* Defines and enumerations */
 typedef struct
@@ -179,6 +198,28 @@ typedef struct
 #define HSM_CRNG_RAW_KEY_ENC 0x7264
 #define HSM_TRNG_RAW_KEY_ENC 0x5244
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* HSM Register names for CC35XX are different compared to CC27XX
+     * Below mapping helps to keep the source code same between
+     * both devices.
+     */
+    #define HSMCRYPTO_BASE              HSM_BASE
+    #define HSMCRYPTO_O_MBSTA           HSM_O_MAILBOX_STAT
+    #define HSMCRYPTO_MBSTA_MB1IN       HSM_MAILBOX_STAT_INFULL1
+    #define HSMCRYPTO_MBSTA_MB1IN_FULL  HSM_MAILBOX_STAT_INFULL1
+    #define HSMCRYPTO_O_MB1IN           HSM_O_EIP130_072_MAILBOX1_IN
+    #define HSMCRYPTO_O_MBCTL           HSM_O_MBXCTL
+    #define HSMCRYPTO_MBCTL_MB1IN_FULL  HSM_MBXCTL_INFULL1
+    #define INT_HSM_SEC_IRQ             INT_OSPR_HSM_HOST_0_SEC_IRQ
+    #define HSMCRYPTO_MBCTL_MB1LNK_LNK  HSM_MBXCTL_LINK1
+    #define HSMCRYPTO_O_MBLNKID         HSM_O_MAILBOX_LINKID
+    #define HSMCRYPTO_O_MBLCKOUT        HSM_O_MAILBOX_LOCKOUT
+    #define HSMCRYPTO_MBSTA_MB1OUT_M    HSM_MAILBOX_STAT_OUTFULL1
+    #define HSMCRYPTO_MBSTA_MB1OUT_FULL HSM_MAILBOX_STAT_OUTFULL1
+    #define HSMCRYPTO_O_MB1OUT          HSM_O_EIP130_072_MAILBOX1_IN
+    #define HSMCRYPTO_MBCTL_MB1OUT_EMTY HSM_MBXCTL_OUTEMP1
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) */
+
 /* Synchronizes access to the HSM */
 static SemaphoreP_Struct HSMLPF3_accessSemaphore;
 /* Used by crypto drivers in blocking mode to wait on a result */
@@ -202,14 +243,16 @@ static Power_NotifyObj postNotify;
 static HSMLPF3_NRBGMode HSMLPF3_nrbgMode = HSMLPF3_MODE_CRNG;
 
 /* Forward declarations */
-static int_fast16_t HSMLPF3_isHSMfirmwareImgAccepted(void);
 static void HSMLPF3_writeToken(const uint32_t *token, uint32_t len);
 static void HSMLPF3_hwiFxn(uintptr_t arg0);
 static int_fast16_t HSMLPF3_boot(void);
 static void HSMLPF3_initMbox(void);
 static void HSMLPF3_enableClock(void);
 static void HSMLPF3_initAIC(void);
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 static int_fast16_t HSMLPF3_submitResetToken(void);
+static int_fast16_t HSMLPF3_isHSMfirmwareImgAccepted(void);
 
 /*
  *  ======== HSMLPF3_isHSMfirmwareImgAccepted ========
@@ -218,6 +261,8 @@ static int_fast16_t HSMLPF3_isHSMfirmwareImgAccepted(void)
 {
     return ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MODSTA) & HSMCRYPTO_MODSTA_FWACPTD_M) == HSMCRYPTO_MODSTA_FWACPTD);
 }
+
+#endif
 
 /* Write directly to HSM Mailbox */
 static void HSMLPF3_writeToken(const uint32_t *token, uint32_t len)
@@ -298,16 +343,17 @@ static int_fast16_t HSMLPF3_postNotifyFxn(unsigned int eventType, uintptr_t even
 static int_fast16_t HSMLPF3_boot(void)
 {
     uint32_t token[2];
-    uint32_t delay;
     uint32_t result = HSMLPF3_STATUS_ERROR;
-
-    token[0] = BOOT_TOKEN_WORD0;
-    token[1] = BOOT_TOKEN_WORD1;
 
     /* Initialize HSM clock and mailbox, then boot it */
     HSMLPF3_enableClock();
 
     HSMLPF3_initMbox();
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    uint32_t delay;
+    token[0] = BOOT_TOKEN_WORD0;
+    token[1] = BOOT_TOKEN_WORD1;
 
     if ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MODSTA) & HSMCRYPTO_MODSTA_FATAL_M) == HSMCRYPTO_MODSTA_FATAL)
     {
@@ -352,6 +398,45 @@ static int_fast16_t HSMLPF3_boot(void)
             }
         }
     }
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    uint32_t moduleStatus;
+    token[0] = SYSTEMINFO_TOKEN_WORD0;
+    token[1] = CRYPTO_OFFICER_ID;
+
+    if ((HWREG(HSMCRYPTO_BASE + HSM_O_MODULE_STATUS) & HSM_MODULE_STATUS_FATALERR) == HSM_MODULE_STATUS_FATALERR)
+    {
+        /* Do nothing. Error will be returned. */
+    }
+    else
+    {
+        moduleStatus = HWREG(HSMCRYPTO_BASE + HSM_O_MODULE_STATUS);
+        if ((moduleStatus & HSM_MODULE_STATUS_FATALERR) != HSM_MODULE_STATUS_FATALERR)
+        {
+            /* HSM is already booted, when the clocks are applied. */
+            HSMLPF3_writeToken(token, sizeof(token) / sizeof(uint32_t));
+
+            /* Wait for result in mbx1_out */
+            while ((HWREG(HSMCRYPTO_BASE + HSM_O_MAILBOX_STAT) & HSM_MAILBOX_STAT_OUTFULL1) !=
+                    HSM_MAILBOX_STAT_OUTFULL1)
+            {}
+
+            if ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MB1OUT) & OUTPUT_TOKEN_ERROR) != 0)
+            {
+                /* Notify the HSM that the mailbox has been read */
+                HWREG(HSMCRYPTO_BASE + HSM_O_MBXCTL) = HSM_MBXCTL_OUTEMP1;
+                /* The result returned from this path is HSMLPF3_STATUS_ERROR */
+            }
+            else
+            {
+                /* Notify the HSM that the mailbox has been read */
+                HWREG(HSMCRYPTO_BASE + HSM_O_MBXCTL) = HSM_MBXCTL_OUTEMP1;
+                result                               = HSMLPF3_STATUS_SUCCESS;
+                /* Register power notification function */
+                Power_registerNotify(&postNotify, PowerWFF3_ENTERING_SLEEP, HSMLPF3_postNotifyFxn, (uintptr_t)NULL);
+            }
+        }
+    }
+#endif
 
     return result;
 }
@@ -397,7 +482,10 @@ static void HSMLPF3_initAIC(void)
  */
 static void HSMLPF3_enableClock(void)
 {
-    uint32_t temp                 = 0;
+    uint32_t temp = 0;
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+
     /* Disable VIMS lock, allocate 3 32KB blocks to HSM */
     temp                          = HWREG(VIMS_BASE + VIMS_O_CFG);
     HWREG(VIMS_BASE + VIMS_O_CFG) = (temp & (~VIMS_CFG_HSMSZ_M)) | (VIMS_CFG_HSMSZ_SIZE_96) | VIMS_CFG_LOCK_DIS;
@@ -414,6 +502,19 @@ static void HSMLPF3_enableClock(void)
 
     /* Lock the CPU ID to app & disable DMA firewall */
     HWREG(HSM_BASE + HSM_O_CTL) = HSM_CTL_CPUIDUNLK_LOCK | HSM_CTL_DMAFWDIS_DIS;
+
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+
+    /* Initialize HSM Clock */
+    HWREG(HSM_NON_SEC_BASE + HSM_NON_SEC_O_CLK_MEM_CTRL) = 0x3F;
+
+    temp                                   = HWREG(HSM_SEC_BASE + HSM_SEC_O_CLKCTL);
+    HWREG(HSM_SEC_BASE + HSM_SEC_O_CLKCTL) = temp | (HSM_SEC_CLKCTL_CLKGO_EN | HSM_SEC_CLKCTL_HIFCLKGO_EN |
+                                                     HSM_SEC_CLKCTL_CNTCLKGO_EN);
+
+    /* Unlock CPUID0 and CPUID1 */
+    HWREG(HSMCRYPTO_BASE + HSM_O_MAILBOX_LOCKOUT) = 0xFFFFFCFC;
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 }
 
 /*
@@ -450,9 +551,20 @@ void HSMLPF3_constructRTOSObjects(void)
  */
 void HSMLPF3_disableClock(void)
 {
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     HWREG(CLKCTL_BASE + CLKCTL_O_CLKENCLR1) = CLKCTL_CLKENCLR1_HSM_CLK_CLR;
     /* Wait for clock to be disabled */
     while ((HWREG(CLKCTL_BASE + CLKCTL_O_CLKCFG1) & CLKCTL_CLKCFG1_HSM_M) == CLKCTL_CLKCFG1_HSM_CLK_EN) {}
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    uint32_t temp                                 = 0;
+    temp                                          = HWREG(HSM_SEC_BASE + HSM_SEC_O_CLKCTL);
+    /* Clear bits to disable clock(s) */
+    HWREG(HSM_SEC_BASE + HSM_SEC_O_CLKCTL)        = temp & ~(HSM_SEC_CLKCTL_CLKGO_EN | HSM_SEC_CLKCTL_HIFCLKGO_EN |
+                                                      HSM_SEC_CLKCTL_CNTCLKGO_EN);
+
+    temp                                                 = HWREG(HSM_NON_SEC_BASE + HSM_NON_SEC_O_CLK_MEM_CTRL);
+    HWREG(HSM_NON_SEC_BASE + HSM_NON_SEC_O_CLK_MEM_CTRL) = temp & ~(0x3F);
+#endif
 }
 
 /*
@@ -544,6 +656,11 @@ int_fast16_t HSMLPF3_init(void)
 
     if (!HSMLPF3_isInitialized)
     {
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+        /* Disable HSM Firewall on CC35XX. */
+        HWREG(SOC_AON_BASE + SOC_AON_O_HSMCFG) |= SOC_AON_HSMCFG_FIREWALL;
+#endif
+
         key = HwiP_disable();
 
         if (HSMLPF3_boot() != HSMLPF3_STATUS_SUCCESS)
@@ -572,13 +689,19 @@ int_fast16_t HSMLPF3_init(void)
             }
         }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+        HSMLPF3_nrbgMode = HSMLPF3_MODE_TRNG;
+#else
         HSMLPF3_nrbgMode = HSMLPF3_MODE_CRNG;
+#endif
     }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     if (HSMLPF3_isInitialized)
     {
         Power_setDependency(PowerLPF3_PERIPH_HSM);
     }
+#endif
 
     return HSMLPF3_hsmReturnStatus;
 }
@@ -589,6 +712,7 @@ int_fast16_t HSMLPF3_init(void)
 int_fast16_t HSMLPF3_provisionHUK(void)
 {
     int_fast16_t status = HSMLPF3_STATUS_ERROR;
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     uint32_t token[3];
 
     /* Try and obtain access to the crypto module */
@@ -650,6 +774,13 @@ int_fast16_t HSMLPF3_provisionHUK(void)
     {
         status = HSMLPF3_submitResetToken();
     }
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* HUK is provisioned on CC35XX at boot time by TI Device
+     * boot loader. As a result, HUK provisioning is not needed.
+     * Returning sucess here.
+     */
+    status = HSMLPF3_STATUS_SUCCESS;
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
     return status;
 }
@@ -764,6 +895,7 @@ int_fast16_t HSMLPF3_submitToken(HSMLPF3_ReturnBehavior retBehavior,
     return result;
 }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== HSMLPF3_submitResetToken ========
  */
@@ -810,6 +942,7 @@ static int_fast16_t HSMLPF3_submitResetToken(void)
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 /*
  *  ======== HSMLPF3_waitForResult ========
@@ -1213,39 +1346,169 @@ void HSMLPF3_constructECDHGenShrdSecPhysicalToken(ECDHLPF3HSM_Object *object)
 
     Eip130Token_Command_Pk_Asset_SetAdditionalAssetId(&operation.commandToken, object->publicDataAssetID);
 }
-
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
- *  ======== HSMLPF3_constructECDHnumLoadPhysicalToken ========
+ *  ======== HSMLPF3_constructEDDSAGenPubKeyPhysicalToken ========
  */
-void HSMLPF3_constructECDHnumLoadPhysicalToken(const uint8_t *buffer, uint8_t index, uint8_t length)
+void HSMLPF3_constructEDDSAGenPubKeyPhysicalToken(EDDSALPF3HSM_Object *object)
 {
-    Eip130Token_Command_Pk_NumLoad(&operation.commandToken, index, (uintptr_t)buffer, length);
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Pk_Asset_Command(&operation.commandToken,
+                                         VEXTOKEN_PKAS_EDDSA_GEN_PUBKEY,
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         0,
+                                         object->privateKeyAssetID,
+                                         object->paramAssetID,
+                                         object->publicKeyAssetID,
+                                         0,
+                                         0,
+                                         (uintptr_t)object->signature,
+                                         HSM_ASYM_DATA_SIZE_VWB(EDDSA_CURVE_LENGTH_25519));
 }
 
 /*
- *  ======== HSMLPF3_constructECDHnumSetPhysicalToken ========
+ *  ======== HSMLPF3_constructEDDSASignInitialPhysicalToken ========
  */
-void HSMLPF3_constructECDHnumSetPhysicalToken(uint8_t length)
+void HSMLPF3_constructEDDSASignInitialPhysicalToken(EDDSALPF3HSM_Object *object)
 {
-    Eip130Token_Command_Pk_Claim(&operation.commandToken, length, 0, 0);
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Pk_Asset_Command(&operation.commandToken,
+                                         VEXTOKEN_PKAS_EDDSA_SIGN_INITIAL,
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         0,
+                                         object->privateKeyAssetID,
+                                         object->paramAssetID,
+                                         object->tempAssetID,
+                                         (uintptr_t)object->input,
+                                         object->inputLength,
+                                         0U,
+                                         0U);
 }
 
 /*
- *  ======== HSMLPF3_constructECDHPKAOperationPhysicalToken ========
+ *  ======== HSMLPF3_constructEDDSAIntermediateHashPhysicalToken ========
  */
-void HSMLPF3_constructECDHPKAOperationPhysicalToken(uint8_t commandOperation,
-                                                    uint8_t *input,
-                                                    uint8_t *output,
-                                                    uint32_t inputLength)
+void HSMLPF3_constructEDDSAIntermediateHashPhysicalToken(const uint8_t *input, size_t inputLength, uint32_t tempAssetID)
 {
-    Eip130Token_Command_Pk_Operation(&operation.commandToken,
-                                     commandOperation,
-                                     0,
-                                     (uintptr_t)input,
-                                     inputLength,
-                                     (uintptr_t)output,
-                                     inputLength);
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Hash(&operation.commandToken,
+                             VEXTOKEN_ALGO_HASH_SHA512,
+                             false,
+                             false,
+                             (uintptr_t)input,
+                             inputLength);
+
+    Eip130Token_Command_Hash_SetStateASID(&operation.commandToken, tempAssetID);
 }
+
+/*
+ *  ======== HSMLPF3_constructEDDSASignUpdatePhysicalToken ========
+ */
+void HSMLPF3_constructEDDSASignUpdatePhysicalToken(EDDSALPF3HSM_Object *object)
+{
+    EDDSA_OperationSign *signOperation = (EDDSA_OperationSign *)object->operation;
+
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Pk_Asset_Command(&operation.commandToken,
+                                         VEXTOKEN_PKAS_EDDSA_SIGN_UPDATE,
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         0U,
+                                         object->publicKeyAssetID,
+                                         0U,
+                                         object->stateAssetID,
+                                         (uintptr_t)object->input,
+                                         object->inputLength,
+                                         0U,
+                                         0U);
+
+    Eip130Token_Command_Pk_Asset_SetAdditionalLength(&operation.commandToken, signOperation->preHashedMessageLength);
+}
+
+/*
+ *  ======== HSMLPF3_constructEDDSASignFinalizePhysicalToken ========
+ */
+void HSMLPF3_constructEDDSASignFinalizePhysicalToken(EDDSALPF3HSM_Object *object)
+{
+    EDDSA_OperationSign *signOperation = (EDDSA_OperationSign *)object->operation;
+
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Pk_Asset_Command(&operation.commandToken,
+                                         VEXTOKEN_PKAS_EDDSA_SIGN_FINAL,
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         0U,
+                                         0U,
+                                         0U,
+                                         object->stateAssetID,
+                                         (uintptr_t)object->input,
+                                         object->inputLength,
+                                         (uintptr_t)object->signature,
+                                         EDDSA_COMPONENT_VECTOR_LENGTH_BYTES);
+
+    Eip130Token_Command_Pk_Asset_SetAdditionalLength(&operation.commandToken, signOperation->preHashedMessageLength);
+}
+
+/*
+ *  ======== HSMLPF3_constructEDDSAVerifyInitialPhysicalToken ========
+ */
+void HSMLPF3_constructEDDSAVerifyInitialPhysicalToken(EDDSALPF3HSM_Object *object)
+{
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Pk_Asset_Command(&operation.commandToken,
+                                         VEXTOKEN_PKAS_EDDSA_VERIFY_INITIAL,
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         0U,
+                                         object->publicKeyAssetID,
+                                         object->paramAssetID,
+                                         object->tempAssetID,
+                                         (uintptr_t)object->input,
+                                         object->inputLength,
+                                         (uintptr_t)object->signature,
+                                         EDDSA_COMPONENT_VECTOR_LENGTH_BYTES);
+}
+
+/*
+ *  ======== HSMLPF3_constructEDDSAVerifyFinalizePhysicalToken ========
+ */
+void HSMLPF3_constructEDDSAVerifyFinalizePhysicalToken(EDDSALPF3HSM_Object *object)
+{
+    EDDSA_OperationVerify *verifyOperation = (EDDSA_OperationVerify *)object->operation;
+
+    (void)memset(&operation.commandToken, 0, sizeof(Eip130Token_Command_t));
+    (void)memset(&operation.resultToken, 0, sizeof(Eip130Token_Result_t));
+
+    Eip130Token_Command_Pk_Asset_Command(&operation.commandToken,
+                                         VEXTOKEN_PKAS_EDDSA_VERIFY_FINAL,
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         HSM_ASYM_DATA_SIZE_B2W(EDDSA_CURVE_LENGTH_25519),
+                                         0U,
+                                         0U,
+                                         0U,
+                                         object->stateAssetID,
+                                         (uintptr_t)object->input,
+                                         object->inputLength,
+                                         0U,
+                                         0U);
+
+    Eip130Token_Command_Pk_Asset_SetAdditionalLength(&operation.commandToken, verifyOperation->preHashedMessageLength);
+}
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 #if (ENABLE_KEY_STORAGE == 1)
 /*
@@ -1810,6 +2073,7 @@ void HSMLPF3_constructCMACToken(AESCMACLPF3_Object *object, bool isFirst, bool i
     }
 }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== HSMLPF3_constructRNGSwitchNRBGWithDefaultsPhysicalToken ========
  */
@@ -1836,6 +2100,7 @@ void HSMLPF3_constructRNGReseedDRBGPhysicalToken(void)
 {
     Eip130Token_Command_PRNG_ReseedNow(&operation.commandToken);
 }
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 /*
  *  ======== HSMLPF3_constructRNGGetRandomNumberPhysicalToken ========

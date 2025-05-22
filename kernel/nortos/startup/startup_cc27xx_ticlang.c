@@ -56,6 +56,7 @@ void resetISR(void);
 static void nmiISR(void);
 static void faultISR(void);
 static void intDefaultHandler(void);
+static void secureFaultHandler(void);
 
 //*****************************************************************************
 //
@@ -84,7 +85,7 @@ __attribute__((section(".resetVecs"), retain)) void (*const resetVectors[])(void
     intDefaultHandler,                             //  4 The MPU fault handler
     intDefaultHandler,                             //  5 The bus fault handler
     intDefaultHandler,                             //  6 The usage fault handler
-    intDefaultHandler,                             //  7 The secure fault handler
+    secureFaultHandler,                            //  7 The secure fault handler
     0,                                             //  8 Reserved
     0,                                             //  9 Reserved
     0,                                             // 10 Reserved
@@ -226,6 +227,21 @@ static void faultISR(void)
 //
 //*****************************************************************************
 static void intDefaultHandler(void)
+{
+    //
+    // Enter an infinite loop.
+    //
+    while (1) {}
+}
+
+//*****************************************************************************
+//
+//! This is the code that gets called when the processor receives a secure fault
+//! interrupt. This simply enters an infinite loop, preserving the system state
+//! for examination by a debugger.
+//
+//*****************************************************************************
+static void secureFaultHandler(void)
 {
     //
     // Enter an infinite loop.

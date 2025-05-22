@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
 
 let Common   = system.getScript("/ti/drivers/Common.js");
 let UART     = system.getScript("/ti/drivers/UART2");
+const family = Common.device2Family(system.deviceData, "Display");
 let logError = Common.logError;
 
 let config = [
@@ -49,7 +50,7 @@ let config = [
         onChange    : onChange,
         options : [
             {name: "UART"},
-            {name: "LCD"},
+            ...(_isLcdSupported() ? [{name: "LCD"}] : []), /* LCD should not be an option for unsupported devices */
             {name: "Host"}
         ]
     },
@@ -165,6 +166,22 @@ value that cannot be changed. Please refer to the
         ]
     }
 ];
+
+/*
+ *  ======== _isLcdSupported ========
+ *  Internally used function to determine if the current device supports LCD or
+ *  not.
+ *  Returns true if LCD is supported, otherwise false.
+ */
+function _isLcdSupported()
+{
+    if (family === "WFF3" || family === "LPF3")
+    {
+        return false;
+    }
+
+    return true;
+}
 
 /*
  *  ======== pinmuxRequirements ========
@@ -495,7 +512,7 @@ function filterHardware(component)
 
     if (component.type) {
         /* Check for known component types */
-        if (Common.typeMatches(component.type, ["SHARP_LCD", "SPI_LCD"])) {
+        if (_isLcdSupported() && Common.typeMatches(component.type, ["SHARP_LCD", "SPI_LCD"])) {
             return (true);
         }
     }
@@ -512,7 +529,7 @@ function onHardwareChanged(inst, ui)
 {
     if (inst.$hardware) {
 
-        if (Common.typeMatches(inst.$hardware.type, ["SHARP_LCD", "SPI_LCD"])) {
+        if (_isLcdSupported() && Common.typeMatches(inst.$hardware.type, ["SHARP_LCD", "SPI_LCD"])) {
             inst.displayType = "LCD";
             inst.lcdSize = inst.$hardware.settings.Display.size;
         } else if (Common.typeMatches(inst.$hardware.type, ["UART"])) {

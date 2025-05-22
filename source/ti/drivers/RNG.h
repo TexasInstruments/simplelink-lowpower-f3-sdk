@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,7 +83,7 @@
  *
  *  @code
  *
- *  // Use the function provided by RCL to read noise input //
+ *  // Use the function provided by RCL to read noise input
  *  extern int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t *buffer, uint32_t numWords);
  *
  *  @endcode
@@ -92,28 +92,41 @@
  *
  *  @code
  *
- *  int_fast16_t rclStatus, result;
+ *  int_fast16_t rclStatus, result, i;
 
  *  // User's global array for noise input based on size provided in syscfg //
  *  uint32_t localNoiseInput[]; //Minimum array size 80 words
+ *  uint8_t maxRetries = 4; //Maximum retries to get noise input from RCL
  *
  *   // Clear noise input //
  *  memset(localNoiseInput, 0, sizeof(localNoiseInput));
  *
  *  // Fill noise input from RCL //
- *  //RNGLPF3RF_noiseInputWordLen is external variable from RNGLPF3RF.h
- *   rclStatus = RCL_AdcNoise_get_samples_blocking(localNoiseInput, RNGLPF3RF_noiseInputWordLen);
- *
- *  if (rclStatus != 0)
+ *  // RNGLPF3RF_noiseInputWordLen is external variable from RNGLPF3RF.h
+ *  // Collect noise input from RCL till input has enough entropy.
+ *  for (i = 0; i < maxRetries; i++)
  *  {
- *      //Handle error;
- *  }
+ *      rclStatus = RCL_AdcNoise_get_samples_blocking(localNoiseInput, RNGLPF3RF_noiseInputWordLen);
+ *      if (rclStatus != 0)
+ *      {
+ *          // Handle error
+ *      }
  *
- *  // Initialize the RNG driver noise input pointer with global noise input array from user //
- *  result = RNGLPF3RF_conditionNoiseToGenerateSeed(localNoiseInput);
- *  if ( rclStatus != 0)
- *  {
- *      //Handle error;
+ *      // Initialize the RNG driver noise input pointer with global noise input array from user //
+ *      rclStatus = RNGLPF3RF_conditionNoiseToGenerateSeed(localNoiseInput);
+ *      if ((rclStatus == RNG_STATUS_RCT_FAIL) || (rclStatus == RNG_STATUS_APT_FAIL) ||
+ *          (rclStatus == RNG_STATUS_APT_BIMODAL_FAIL))
+ *      {
+ *          continue; // retry if health checks fail
+ *      }
+ *      else if (rclStatus != 0)
+ *      {
+ *          // Handle error
+ *      }
+ *      else
+ *      {
+ *          break; // break out of loop if success
+ *      }
  *  }
  *
  *  @endcode

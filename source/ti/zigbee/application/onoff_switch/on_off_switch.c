@@ -115,6 +115,15 @@ void my_main_loop()
   }
 }
 
+void off_network_attention(zb_uint8_t param)
+{
+  ZVUNUSED(param);
+  Log_printf(LogModule_Zigbee_App, Log_INFO, "off_network_attention");
+  zb_osif_led_toggle(1);
+
+  ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+}
+
 MAIN()
 {
   ARGV_UNUSED;
@@ -135,15 +144,21 @@ MAIN()
 
 #ifdef ZB_COORDINATOR_ROLE
   zb_set_network_coordinator_role(DEFAULT_CHANLIST);
+
+  /* Set keepalive mode to mac data poll so sleepy zeds consume less power */
+  zb_set_keepalive_mode(MAC_DATA_POLL_KEEPALIVE); 
 #ifdef DEFAULT_NWK_KEY
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
   zb_secur_setup_nwk_key(nwk_key, 0);
 #endif //DEFAULT_NWK_KEY
-  zb_set_max_children(MAX_CHILDREN);
+  zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
   zb_set_network_router_role(DEFAULT_CHANLIST);
-  zb_set_max_children(MAX_CHILDREN);
+  zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+
+  /* Set keepalive mode to mac data poll so sleepy zeds consume less power */
+  zb_set_keepalive_mode(MAC_DATA_POLL_KEEPALIVE); 
 
 #elif defined ZB_ED_ROLE
   zb_set_network_ed_role(DEFAULT_CHANLIST);
@@ -185,6 +200,10 @@ MAIN()
       perform_factory_reset = ZB_TRUE;
       Log_printf(LogModule_Zigbee_App, Log_INFO, "perform factory reset");
     }
+
+    zb_osif_led_button_init();
+    ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+    
     /* Call the application-specific main loop */
     my_main_loop();
   }
@@ -260,6 +279,12 @@ void send_toggle_req(zb_uint8_t param)
   }
 }
 
+void restart_commissioning(zb_uint8_t param)
+{
+  ZVUNUSED(param);
+  bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
+}
+
 void button_press_handler(zb_uint8_t param)
 {
   if (!param)
@@ -299,15 +324,6 @@ void zboss_signal_handler(zb_uint8_t param)
   zb_bufid_t buf;
   zb_bufid_t req_buf = 0;
   zb_zdo_mgmt_permit_joining_req_param_t *req_param;
-
-#ifdef ZB_USE_BUTTONS
-  /* Now register handlers for buttons */
-  zb_int32_t i;
-  for (i = 0; i < ZB_N_BUTTONS; ++i)
-  {
-    zb_button_register_handler(i, 0, button_press_handler);
-  }
-#endif
 
   if (ZB_GET_APP_SIGNAL_STATUS(param) == 0)
   {
@@ -350,7 +366,10 @@ void zboss_signal_handler(zb_uint8_t param)
         req_param->tc_significance = 1;
 
         zb_zdo_mgmt_permit_joining_req(buf, permit_joining_cb);
-
+      
+#ifdef ZB_USE_BUTTONS
+        zb_button_register_handler(0, 0, button_press_handler);
+#endif /* ZB_USE_BUTTONS */
         break;
       case ZB_BDB_SIGNAL_DEVICE_REBOOT:
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Device RESTARTED OK");
@@ -360,12 +379,9 @@ void zboss_signal_handler(zb_uint8_t param)
           zb_bdb_reset_via_local_action(0);
           perform_factory_reset = ZB_FALSE;
         }
-#ifndef ZB_USE_BUTTONS
-        /* Do not have buttons in simulator - just start periodic on/off sending */
-        cmd_in_progress = ZB_FALSE;
-        ZB_SCHEDULE_APP_ALARM_CANCEL(button_press_handler, ZB_ALARM_ANY_PARAM);
-        ZB_SCHEDULE_APP_ALARM(button_press_handler, 0, 7 * ZB_TIME_ONE_SECOND);
-#endif
+#ifdef ZB_USE_BUTTONS
+        zb_button_register_handler(0, 0, button_press_handler);
+#endif /* ZB_USE_BUTTONS */
         break;
 #ifdef ZB_COORDINATOR_ROLE
       case ZB_ZDO_SIGNAL_DEVICE_ANNCE:
@@ -380,6 +396,8 @@ void zboss_signal_handler(zb_uint8_t param)
         ZVUNUSED(device_type);
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Device (%d) STARTED OK", device_type);
         ZB_SCHEDULE_APP_ALARM(start_finding_binding, 0, 3 * ZB_TIME_ONE_SECOND);
+        ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+        zb_osif_led_off(1);
         break;
       }
 
@@ -420,6 +438,7 @@ void zboss_signal_handler(zb_uint8_t param)
     {
       case ZB_BDB_SIGNAL_DEVICE_FIRST_START:
         Log_printf(LogModule_Zigbee_App, Log_WARNING, "Device can not find any network on start, so try to perform network steering");
+        ZB_SCHEDULE_APP_ALARM(restart_commissioning, 0, 10 * ZB_TIME_ONE_SECOND);
         break; /* ZB_BDB_SIGNAL_DEVICE_FIRST_START */
 
       case ZB_BDB_SIGNAL_DEVICE_REBOOT:
@@ -449,6 +468,11 @@ void zboss_signal_handler(zb_uint8_t param)
 
         ZB_SCHEDULE_APP_ALARM(zb_bdb_initiate_tc_rejoin, 0, 3 * ZB_TIME_ONE_SECOND);
         break; /* ZB_BDB_SIGNAL_TC_REJOIN_DONE */
+
+      case ZB_BDB_SIGNAL_STEERING:
+        Log_printf(LogModule_Zigbee_App, Log_WARNING, "Steering failed, retrying again in 10 seconds");
+        ZB_SCHEDULE_APP_ALARM(restart_commissioning, 0, 10 * ZB_TIME_ONE_SECOND);
+        break; /* ZB_BDB_SIGNAL_STEERING */
 
       default:
         Log_printf(LogModule_Zigbee_App, Log_WARNING, "Unknown signal %hd with error status, do nothing", sig);

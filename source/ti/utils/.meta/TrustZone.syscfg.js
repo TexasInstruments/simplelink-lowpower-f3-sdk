@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@ function modules(inst)
 {
     let forcedModules = ["/ti/drivers/tfm/SecureCallback"];
 
-    if (deviceId.match(/CC27/)) {
+    if (inst.$module.enablePSACryptoDependency && deviceId.match(/CC27/)) {
         /* PSA Crypto + Key Store is always included in TFM */
         forcedModules.push("/ti/drivers/CryptoKeyKeyStore_PSA");
     }
@@ -127,6 +127,17 @@ let base = {
                 options: [
                     { name: "1", displayName: "Production Full" }
                 ]
+            },
+            {
+                name: "enablePSACryptoDependency",
+                displayName: "Enable Crypto Dependency",
+                description: "Enable Crypto Dependency",
+                longDescription: `This setting is for internal use only.
+                Disabling it will remove a key dependency which may cause
+                build failures.
+                `,
+                default: true,
+                hidden: true
             }
         ],
     },

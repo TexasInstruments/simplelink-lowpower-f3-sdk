@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2019-2022, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,12 +48,6 @@
     /* CONFIG_XXXCOUNT string, derived from defaultInstanceName */
     let countDef = UART2.defaultInstanceName + "COUNT";
 
-    /* localize the object names with this device ID */
-    let devId = system.deviceData.deviceId;
-
-    /* Get name of device specific include directory */
-    let devicesDir = Common.device2DevicesDir(devId);
-
     /* For mapping coding schemes into the enum names */
     let codingMap = {
         "UART" : "UART2LPF3_CODING_UART",
@@ -82,9 +76,11 @@
 #include <ti/drivers/Power.h>
 #include <ti/drivers/dma/UDMALPF3.h>
 #include <ti/drivers/Power.h>
-#include <ti/devices/`devicesDir`/inc/hw_memmap.h>
-#include <ti/devices/`devicesDir`/inc/hw_ints.h>
-#include <ti/devices/`devicesDir`/inc/hw_evtsvt.h>
+
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_ints.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 
 #define `countDef` `instances.length`
 
@@ -100,31 +96,31 @@ static unsigned char uart2TxRingBuffer`i`[`inst.txRingBufferSize`];
 % }
 
 % for (let i = 0; i < instances.length; i++) {
-%     let inst        = instances[i];
+%     let inst          = instances[i];
 
-%     let dmaRXDevicePinName = inst.uart.dmaRxChannel.$solution.devicePinName;
-%     let dmaTXDevicePinName = inst.uart.dmaTxChannel.$solution.devicePinName;
+%     let dmaRXChNumber = inst.uart.dmaRxChannel.$solution.devicePinName.replace("DMA_CH", "");
+%     let dmaTXChNumber = inst.uart.dmaTxChannel.$solution.devicePinName.replace("DMA_CH", "");
 
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry, `dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`);
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry, `dmaTXDevicePinName.slice(6, dmaRXDevicePinName.length)`);
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXChNumber`ControlTableEntry, `dmaRXChNumber`);
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXChNumber`ControlTableEntry, `dmaTXChNumber`);
 % }
 
 static const `driver`_HWAttrs `driver`_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
-%     let inst        = instances[i];
-%     let uart        = inst.uart;
-%     let solution    = uart.$solution;
-%     let peripheral  = system.deviceData.peripherals[solution.peripheralName];
-%     let dmaRXDevicePinName = inst.uart.dmaRxChannel.$solution.devicePinName;
-%     let dmaTXDevicePinName = inst.uart.dmaTxChannel.$solution.devicePinName;
+%     let inst          = instances[i];
+%     let uart          = inst.uart;
+%     let solution      = uart.$solution;
+%     let peripheral    = system.deviceData.peripherals[solution.peripheralName];
+%     let dmaRXChNumber = inst.uart.dmaRxChannel.$solution.devicePinName.replace("DMA_CH", "");
+%     let dmaTXChNumber = inst.uart.dmaTxChannel.$solution.devicePinName.replace("DMA_CH", "");
 %
-%     let rxPinName = 'GPIO_INVALID_INDEX';
-%     let txPinName = 'GPIO_INVALID_INDEX';
-%     let rxPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
-%     let txPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
-%     let flowName = 'UART2_FLOWCTRL_NONE';
-%     let ctsPinName = 'GPIO_INVALID_INDEX';
-%     let rtsPinName = 'GPIO_INVALID_INDEX';
+%     let rxPinName     = 'GPIO_INVALID_INDEX';
+%     let txPinName     = 'GPIO_INVALID_INDEX';
+%     let rxPinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let txPinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let flowName      = 'UART2_FLOWCTRL_NONE';
+%     let ctsPinName    = 'GPIO_INVALID_INDEX';
+%     let rtsPinName    = 'GPIO_INVALID_INDEX';
 %     let ctsPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
 %     let rtsPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
 %
@@ -156,37 +152,39 @@ static const `driver`_HWAttrs `driver`_hwAttrs[`countDef`] = {
 %
 %     let concatFIFOs = inst.concatenateFIFOs ? 'true' : 'false';
   {
-    .baseAddr           = `peripheral.name`_BASE,
-    .intNum             = INT_`peripheral.name`_COMB,
-    .intPriority        = `Common.intPriority2Hex(inst.interruptPriority)`,
-    .rxPin              = `rxPinName`,
-    .txPin              = `txPinName`,
-    .ctsPin             = `ctsPinName`,
-    .rtsPin             = `rtsPinName`,
-    .flowControl        = `flowName`,
-    .rxBufPtr           = uart2RxRingBuffer`i`,
-    .rxBufSize          = sizeof(uart2RxRingBuffer`i`),
+    .baseAddr              = `peripheral.name`_BASE,
+    .intNum                = INT_`peripheral.name`_COMB,
+    .intPriority           = `Common.intPriority2Hex(inst.interruptPriority)`,
+    .rxPin                 = `rxPinName`,
+    .txPin                 = `txPinName`,
+    .ctsPin                = `ctsPinName`,
+    .rtsPin                = `rtsPinName`,
+    .flowControl           = `flowName`,
+    .rxBufPtr              = uart2RxRingBuffer`i`,
+    .rxBufSize             = sizeof(uart2RxRingBuffer`i`),
 % if (inst.enableNonblocking == true) {
-    .txBufPtr           = uart2TxRingBuffer`i`,
-    .txBufSize          = sizeof(uart2TxRingBuffer`i`),
+    .txBufPtr              = uart2TxRingBuffer`i`,
+    .txBufSize             = sizeof(uart2TxRingBuffer`i`),
 % } else {
-    .txBufPtr           = NULL,
-    .txBufSize          = 0,
+    .txBufPtr              = NULL,
+    .txBufSize             = 0,
 % }
-    .txPinMux           = `txPinMuxName`,
-    .rxPinMux           = `rxPinMuxName`,
-    .ctsPinMux          = `ctsPinMuxName`,
-    .rtsPinMux          = `rtsPinMuxName`,
-    .dmaRxTableEntryPri = &dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry,
-    .dmaTxTableEntryPri = &dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry,
-    .rxChannelMask      = UDMA_CHANNEL_`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`_M,
-    .txChannelMask      = UDMA_CHANNEL_`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`_M,
-    .rxChannelEvtMux    = EVTSVT_DMACH`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`SEL_IPID_`solution.peripheralName`RXTRG,
-    .txChannelEvtMux    = EVTSVT_DMACH`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`SEL_IPID_`solution.peripheralName`TXTRG,
-    .codingScheme       = `codingMap[inst.codingScheme]`,
-    .concatenateFIFO    = `concatFIFOs`,
-    .irLPClkDivider     = `inst.SIRLPclockDivider`,
-    .powerID            = PowerLPF3_PERIPH_`solution.peripheralName`
+    .txPinMux              = `txPinMuxName`,
+    .rxPinMux              = `rxPinMuxName`,
+    .ctsPinMux             = `ctsPinMuxName`,
+    .rtsPinMux             = `rtsPinMuxName`,
+    .dmaRxTableEntryPri    = &dmaChannel`dmaRXChNumber`ControlTableEntry,
+    .dmaTxTableEntryPri    = &dmaChannel`dmaTXChNumber`ControlTableEntry,
+    .rxChannelMask         = UDMA_CHANNEL_`dmaRXChNumber`_M,
+    .txChannelMask         = UDMA_CHANNEL_`dmaTXChNumber`_M,
+    .rxChannelEvtMux       = EVTSVT_DMA_TRIG_`solution.peripheralName`RXTRG,
+    .txChannelEvtMux       = EVTSVT_DMA_TRIG_`solution.peripheralName`TXTRG,
+    .txChannelSubscriberId = EVTSVT_DMA_CH`dmaTXChNumber`,
+    .rxChannelSubscriberId = EVTSVT_DMA_CH`dmaRXChNumber`,
+    .codingScheme          = `codingMap[inst.codingScheme]`,
+    .concatenateFIFO       = `concatFIFOs`,
+    .irLPClkDivider        = `inst.SIRLPclockDivider`,
+    .powerID               = PowerLPF3_PERIPH_`solution.peripheralName`
   },
 % }
 };

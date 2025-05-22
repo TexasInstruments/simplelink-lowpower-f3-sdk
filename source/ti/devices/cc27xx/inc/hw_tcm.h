@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_tcm_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -224,8 +224,8 @@
 // [7]     =   AFA target gasket enable
 // [8]     =   DMA target gasket enable
 // [9]     =   CANFD target gasket enable
-// [10]   =   VCE target gasket enable
-// [11]   =   VCERAM target gasket enable
+// [10]   =   APU target gasket enable
+// [11]   =   APURAM target gasket enable
 // [12]   =   GPIO target gasket enable
 // [13]   =   SYSTIMER target gasket enable
 // [14]   =   UART0 target gasket enable
@@ -262,7 +262,7 @@
 //
 // Gasket enable. The gasket bit to IP mapping is given as follows :-
 // [0]     =   LGPT target gasket enable
-// [1]     =   NOWRAPPER target gasket enable
+// [1]     =   FLASH target gasket enable
 // [2]     =   VIMS target gasket enable
 // [3]     =   HSM target gasket enable
 // [4]     =   PMC target gasket enable

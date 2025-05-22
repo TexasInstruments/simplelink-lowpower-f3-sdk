@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,7 +65,11 @@ function getLibs(mod)
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        if (deviceId.match(/CC27/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        } else if (deviceId.match(/CC35/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc35xx_its.a"));
+        }
     }
 
     return (libGroup);
@@ -96,7 +100,7 @@ function extend(base)
     base = Common.addImplementationConfig(base, "AESCBC", null,
         [{name: "AESCBCLPF3"}], null);
 
-    if (deviceId.match(/CC27/)) {
+    if (deviceId.match(/CC27/) || deviceId.match(/CC35/)) {
         devSpecific["templates"]["/ti/utils/build/GenLibs.cmd.xdt"] = {modName: "/ti/drivers/AESCBC", getLibs: getLibs};
     }
 

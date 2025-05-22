@@ -55,7 +55,6 @@
 #include "AESCTRCC26X4_driverlib.h"
 #include "ECDSACC26X4_driverlib.h"
 
-
 /*
  *  ======== AES Global Variables ========
  */
@@ -64,16 +63,17 @@ AESCTRCC26XX_Object object_g;
 CryptoKey_Plaintext aesKey_g;
 bool periphRequired_g = true;
 
-
 /*
  *  ======== AESCTR_waitForResult ========
  */
-static inline int_fast16_t AESCTR_waitForResult(AESCTRCC26XX_Object *object) {
+static inline int_fast16_t AESCTR_waitForResult(AESCTRCC26XX_Object *object)
+{
 
     int_fast16_t status = AES_STATUS_ERROR;
 
     /* Wait until the operation is complete and check for DMA errors */
-    if (AESWaitForIRQFlags(AES_RESULT_RDY | AES_DMA_BUS_ERR) & AES_DMA_BUS_ERR) {
+    if (AESWaitForIRQFlags(AES_RESULT_RDY | AES_DMA_BUS_ERR) & AES_DMA_BUS_ERR)
+    {
 
         object->returnStatus = AES_STATUS_ERROR;
     }
@@ -114,7 +114,6 @@ static inline int_fast16_t AESCTR_waitForResult(AESCTRCC26XX_Object *object) {
     AESSelectAlgorithm(0x00);
 
     return status;
-
 }
 
 /*
@@ -137,7 +136,7 @@ static void AESCTR_initCounter(AESCTRCC26XX_Object *object, const uint8_t *initi
  */
 static int_fast16_t AESCTR_processData(AESCTRCC26XX_Object object)
 {
-    int_fast16_t status                 = AES_STATUS_SUCCESS;
+    int_fast16_t status = AES_STATUS_SUCCESS;
     size_t keyLength;
     uint8_t *keyingMaterial = NULL;
     uint32_t ctrlVal;
@@ -145,7 +144,6 @@ static int_fast16_t AESCTR_processData(AESCTRCC26XX_Object object)
     /* Only plaintext is supported currently */
     keyLength      = object.key.keyLength;
     keyingMaterial = object.key.keyMaterial;
-
 
     /* Load the key from RAM or flash into the key store at a hardcoded and
      * reserved location.
@@ -235,8 +233,7 @@ static int_fast16_t AESCTR_processData(AESCTRCC26XX_Object object)
 /*
  *  ======== AESCTR_startOneStepOperation ========
  */
-static int_fast16_t AESCTR_startOneStepOperation(AESCTR_OneStepOperation *operation,
-                                                 AESCTR_OperationType operationType)
+static int_fast16_t AESCTR_startOneStepOperation(AESCTR_OneStepOperation *operation, AESCTR_OperationType operationType)
 {
 
     /*AESCTRCC26XX_Object object; -> set this a static def
@@ -253,7 +250,7 @@ static int_fast16_t AESCTR_startOneStepOperation(AESCTR_OneStepOperation *operat
         return AES_STATUS_ERROR;
     }
 
-    object_g.operation = (AESCTR_OperationUnion *)operation;
+    object_g.operation     = (AESCTR_OperationUnion *)operation;
     object_g.operationType = operationType;
     /* We will only change the returnStatus if there is an error or cancellation */
     object_g.returnStatus  = AES_STATUS_SUCCESS;
@@ -270,7 +267,7 @@ static int_fast16_t AESCTR_startOneStepOperation(AESCTR_OneStepOperation *operat
 
     if (status != AES_STATUS_SUCCESS)
     {
-        object_g.operationInProgress  = false;
+        object_g.operationInProgress = false;
     }
     return status;
 }
@@ -278,7 +275,7 @@ static int_fast16_t AESCTR_startOneStepOperation(AESCTR_OneStepOperation *operat
 /*
  *  ======== AES_cancelOperation ========
  */
-static int_fast16_t AES_cancelOperation(AESCTRCC26XX_Object* object)
+static int_fast16_t AES_cancelOperation(AESCTRCC26XX_Object *object)
 {
     IntMasterDisable();
 
@@ -312,7 +309,6 @@ static int_fast16_t AES_cancelOperation(AESCTRCC26XX_Object* object)
     object->hwBusy              = false;
     object->operationInProgress = false;
 
-
     AESInvalidateKey(AES_KEY_AREA_6);
     AESInvalidateKey(AES_KEY_AREA_7);
 
@@ -329,14 +325,16 @@ static int_fast16_t AES_cancelOperation(AESCTRCC26XX_Object* object)
 /*
  *  ======== AESCTR_oneStepEncrypt ========
  */
-int_fast16_t AESCTR_oneStepEncrypt (AESCTR_OneStepOperation *operationStruct) {
+int_fast16_t AESCTR_oneStepEncrypt(AESCTR_OneStepOperation *operationStruct)
+{
     return AESCTR_startOneStepOperation(operationStruct, AESCTR_OPERATION_TYPE_ENCRYPT);
 }
 
 /*
  *  ======== AESCTR_oneStepDecrypt ========
  */
-int_fast16_t AESCTR_oneStepDecrypt (AESCTR_OneStepOperation *operationStruct ) {
+int_fast16_t AESCTR_oneStepDecrypt(AESCTR_OneStepOperation *operationStruct)
+{
     return AESCTR_startOneStepOperation(operationStruct, AESCTR_OPERATION_TYPE_DECRYPT);
 }
 
@@ -345,23 +343,29 @@ int_fast16_t AESCTR_oneStepDecrypt (AESCTR_OneStepOperation *operationStruct ) {
  */
 int_fast16_t AES_open()
 {
-    if(!object_g.isOpen)
+    if (!object_g.isOpen)
     {
-        object_g.isOpen = true;
+        object_g.isOpen              = true;
         object_g.operationInProgress = false;
     }
 
     if (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)
     {
         PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
-        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON);
+        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)
+        {
+            ;
+        }
     }
 
     PRCMPeripheralRunEnable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralSleepEnable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralDeepSleepEnable(PRCM_PERIPH_CRYPTO);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     IntMasterEnable();
     return AES_STATUS_SUCCESS;
@@ -370,16 +374,21 @@ int_fast16_t AES_open()
 int_fast16_t AES_close(void)
 {
     /* If there is still an operation ongoing, abort it now. */
-    if (object_g.operationInProgress) {
+    if (object_g.operationInProgress)
+    {
         AES_cancelOperation(&object_g);
     }
 
     IntMasterDisable();
     object_g.isOpen = false;
 
-    if (!periphRequired_g) {
+    if (!periphRequired_g)
+    {
         PRCMPowerDomainOff(PRCM_DOMAIN_PERIPH);
-        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF);
+        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF)
+        {
+            ;
+        }
     }
     periphRequired_g = true;
 
@@ -387,7 +396,10 @@ int_fast16_t AES_close(void)
     PRCMPeripheralSleepDisable(PRCM_PERIPH_CRYPTO);
     PRCMPeripheralDeepSleepDisable(PRCM_PERIPH_CRYPTO);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     IntMasterEnable();
 

@@ -115,8 +115,7 @@
 #define FLASH_INTERFACE
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*********************************************************************
@@ -137,12 +136,12 @@ extern "C"
 /*!
  * Flash operation succeeded
  */
-#define FLASH_SUCCESS   0x00
+#define FLASH_SUCCESS 0x00
 
 /*!
  * Flash operation failed
  */
-#define FLASH_FAILURE   0xFF
+#define FLASH_FAILURE 0xFF
 
 /*!
  * Maximum SPI read size, used for off-chip
@@ -153,41 +152,39 @@ extern "C"
  * MACROS
  */
 #if defined(CC26XX_R2)
-    #define FLASH_ADDRESS(page, offset)     (((page) << 12) + (offset))
-    #define FLASH_PAGE(addr)                (addr >> 12)
-    #define INTFLASH_PAGE_MASK              0xFFFFF000
-    #define INTFLASH_PAGE_SIZE              0x1000
-    #define MAX_ONCHIP_FLASH_PAGES          32
-    #define MAX_OFFCHIP_METADATA_PAGES      MAX_ONCHIP_FLASH_PAGES
-#elif defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || \
-      defined(DeviceFamily_CC26X2X7) || defined(DeviceFamily_CC13X2X7) || \
-      defined(DeviceFamily_CC26X1) || defined(DeviceFamily_CC13X1)
-    #define FLASH_ADDRESS(page, offset)     (((page) << 13) + (offset))
-    #define FLASH_PAGE(addr)                (addr >> 13)
-    #define INTFLASH_PAGE_MASK              0xFFFFE000
-    #define INTFLASH_PAGE_SIZE              0x2000
+    #define FLASH_ADDRESS(page, offset) (((page) << 12) + (offset))
+    #define FLASH_PAGE(addr)            (addr >> 12)
+    #define INTFLASH_PAGE_MASK          0xFFFFF000
+    #define INTFLASH_PAGE_SIZE          0x1000
+    #define MAX_ONCHIP_FLASH_PAGES      32
+    #define MAX_OFFCHIP_METADATA_PAGES  MAX_ONCHIP_FLASH_PAGES
+#elif defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2X7) || \
+    defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X1) || defined(DeviceFamily_CC13X1)
+    #define FLASH_ADDRESS(page, offset) (((page) << 13) + (offset))
+    #define FLASH_PAGE(addr)            (addr >> 13)
+    #define INTFLASH_PAGE_MASK          0xFFFFE000
+    #define INTFLASH_PAGE_SIZE          0x2000
     #if defined(DeviceFamily_CC26X2X7) || defined(DeviceFamily_CC13X2X7)
-        #define MAX_ONCHIP_FLASH_PAGES          88
+        #define MAX_ONCHIP_FLASH_PAGES 88
     #else
-        #define MAX_ONCHIP_FLASH_PAGES          44
+        #define MAX_ONCHIP_FLASH_PAGES 44
     #endif
-    #define MAX_OFFCHIP_METADATA_PAGES      MAX_ONCHIP_FLASH_PAGES
-#elif defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) ||  \
-      defined(DeviceFamily_CC26X3) || defined(DeviceFamily_CC23X0R5) || \
-      defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
-      defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_ID_CC27XX)
-    #define FLASH_ADDRESS(page, offset)     (((page) << 11) + (offset))
-    #define FLASH_PAGE(addr)                (addr >> 11)
-    #define INTFLASH_PAGE_MASK              0xFFFFF800
-    #define INTFLASH_PAGE_SIZE              0x800
+    #define MAX_OFFCHIP_METADATA_PAGES MAX_ONCHIP_FLASH_PAGES
+#elif defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || defined(DeviceFamily_CC26X3) ||      \
+    defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
+    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_ID_CC27XX)
+    #define FLASH_ADDRESS(page, offset) (((page) << 11) + (offset))
+    #define FLASH_PAGE(addr)            (addr >> 11)
+    #define INTFLASH_PAGE_MASK          0xFFFFF800
+    #define INTFLASH_PAGE_SIZE          0x800
     #if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53)
-        #define MAX_ONCHIP_FLASH_PAGES          256
+        #define MAX_ONCHIP_FLASH_PAGES 256
     #elif defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
-        #define MAX_ONCHIP_FLASH_PAGES          128
+        #define MAX_ONCHIP_FLASH_PAGES 128
     #else
-        #define MAX_ONCHIP_FLASH_PAGES          512
+        #define MAX_ONCHIP_FLASH_PAGES 512
     #endif
-    #define MAX_OFFCHIP_METADATA_PAGES      MAX_ONCHIP_FLASH_PAGES
+    #define MAX_OFFCHIP_METADATA_PAGES MAX_ONCHIP_FLASH_PAGES
 #else
     #error
 #endif
@@ -201,28 +198,28 @@ extern "C"
  * MMacro to return an address based on an external flash page and offset into
  * the page
  */
-#define EXT_FLASH_ADDRESS(page, offset)     (((page) << 12) + (offset))
+#define EXT_FLASH_ADDRESS(page, offset) (((page) << 12) + (offset))
 
 /*!
  * Macro to return a page based on an external flash page and offset into
  * the page
  */
-#define EXT_FLASH_PAGE(addr)                (addr >> 12)
+#define EXT_FLASH_PAGE(addr) (addr >> 12)
 
 /*!
  * Define for masking on external flash page size
  */
-#define EXTFLASH_PAGE_MASK                  0xFFFFF000
+#define EXTFLASH_PAGE_MASK 0xFFFFF000
 
 /*!
  * Page size of external flash
  */
-#define EFL_PAGE_SIZE                       0x1000
+#define EFL_PAGE_SIZE 0x1000
 
 /*!
  * Total size of external flash
  */
-#define EFL_FLASH_SIZE                      0x100000
+#define EFL_FLASH_SIZE 0x100000
 
 /** @} End EXT_FLASH_MACROS */
 
@@ -273,8 +270,7 @@ extern uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len);
  * @return  status - @ref FLASH_SUCCESS if programmed successfully or
  *                   @ref FLASH_FAILURE if programming failed
  */
-extern uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf,
-                            uint16_t len);
+extern uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len);
 
 /*!
  * Write data to flash using address
@@ -299,8 +295,7 @@ extern uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len);
  * @return  status - @ref FLASH_SUCCESS if programmed successfully or
  *                   @ref FLASH_FAILURE if programming failed
  */
-extern uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf,
-                            uint16_t len);
+extern uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len);
 
 /*!
  * Erase selected flash page.

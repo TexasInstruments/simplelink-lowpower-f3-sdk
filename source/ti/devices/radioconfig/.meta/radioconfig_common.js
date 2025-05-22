@@ -44,6 +44,7 @@ const PhyGroupPath = BasePath + "phy_groups/";
 
 // Mapping SysCfg device name notation to SmartRF Studio format
 const SysconfigRfconfigBoardMap = system.getScript("/ti/devices/radioconfig/data/sysconfig_rfconfig_board_map.json");
+// This is hand-maintained and should be moved away from: SLWSTUDIO-2023
 const DevNameMap = system.getScript("/ti/devices/radioconfig/data/sysconfig_studio_device_names.json");
 const DevFamilyMap = system.getScript("/ti/devices/radioconfig/data/device_family_map.json");
 const DevPhyProtocolMap = system.getScript("/ti/devices/radioconfig/config/rcl/device_phy_protocol_mapping.json");

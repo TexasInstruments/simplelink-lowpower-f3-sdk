@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,8 +45,6 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
-#include DeviceFamily_constructPath(inc/hw_evtull.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_pmud.h)
 #include DeviceFamily_constructPath(inc/hw_pmctl.h)
@@ -64,7 +62,7 @@
  * to trigger the HWI. The second is triggered by software within the HWI
  * function. If the first measurement is part of the long tail of the
  * distribution, it is highly probable that the second measurement will not
- * cross the threshold. This is effectively a spurrious interrupt that wastes
+ * cross the threshold. This is effectively a spurious interrupt that wastes
  * energy and CPU cycles.
  * If we program the actual hardware registers with an additional offset, we
  * effectively shift the distribution up or down such that the first measurement
@@ -115,7 +113,7 @@ static int16_t TemperatureLPF3_scaleFromRealTemperature(int32_t temperature);
 /* Globals */
 
 /* Global list that stores all registered notifications */
-static List_List notificationList;
+volatile static List_List notificationList;
 
 /* Current threshold values. These should always reflect the state of the
  * batmon registers without the need to read them out, shift down, and sign
@@ -223,7 +221,7 @@ static void setNextThresholds(void)
     /* Starting with the head of the list, keep track of the smallest high
      * threshold and largest low threshold.
      */
-    notifyLink = List_head(&notificationList);
+    notifyLink = List_head((List_List *)&notificationList);
 
     while (notifyLink != NULL)
     {
@@ -249,7 +247,7 @@ static void setNextThresholds(void)
  */
 static void walkNotifyList(void)
 {
-    List_Elem *notifyLink      = List_head(&notificationList);
+    List_Elem *notifyLink      = List_head((List_List *)&notificationList);
     int16_t currentTemperature = Temperature_getTemperature();
 
     /* If the notification list is empty, the head pointer will be
@@ -279,7 +277,7 @@ static void walkNotifyList(void)
             int16_t threshold = (currentTemperature <= notifyObject->thresholdLow) ? notifyObject->thresholdLow
                                                                                    : notifyObject->thresholdHigh;
 
-            List_remove(&notificationList, notifyLink);
+            List_remove((List_List *)&notificationList, notifyLink);
             notifyObject->isRegistered = false;
 
             notifyObject->notifyFxn(currentTemperature, threshold, notifyObject->clientArg, notifyObject);
@@ -423,7 +421,7 @@ int_fast16_t Temperature_registerNotifyHigh(Temperature_NotifyObj *notifyObject,
          * There is the implicit assumption that the notification is not already
          * in the list. Otherwise the list linkage will be corrupted.
          */
-        List_put(&notificationList, &notifyObject->link);
+        List_put((List_List *)&notificationList, &notifyObject->link);
 
         notifyObject->isRegistered = true;
     }
@@ -458,7 +456,7 @@ int_fast16_t Temperature_registerNotifyLow(Temperature_NotifyObj *notifyObject,
          * There is the implicit assumption that the notification is not already
          * in the list. Otherwise the list linkage will be corrupted.
          */
-        List_put(&notificationList, &notifyObject->link);
+        List_put((List_List *)&notificationList, &notifyObject->link);
 
         notifyObject->isRegistered = true;
     }
@@ -494,7 +492,7 @@ int_fast16_t Temperature_registerNotifyRange(Temperature_NotifyObj *notifyObject
          * There is the implicit assumption that the notification is not already
          * in the list. Otherwise the list linkage will be corrupted.
          */
-        List_put(&notificationList, &notifyObject->link);
+        List_put((List_List *)&notificationList, &notifyObject->link);
 
         notifyObject->isRegistered = true;
     }
@@ -518,7 +516,7 @@ int_fast16_t Temperature_unregisterNotify(Temperature_NotifyObj *notifyObject)
     if (notifyObject->isRegistered == true)
     {
         /* Remove the notification from the list */
-        List_remove(&notificationList, &(notifyObject->link));
+        List_remove((List_List *)&notificationList, &(notifyObject->link));
 
         notifyObject->isRegistered = false;
     }
@@ -559,7 +557,12 @@ void TemperatureLPF3_disableTSDMonitoring(void)
  */
 void TemperatureLPF3_triggerThermalShutdown(void)
 {
+    /* TODO: Remove preprocessor if statement when a dedicated secure
+     * Temperature driver is available.
+     */
+#ifndef TFM_ENABLED
     HWREG(PMCTL_BASE + PMCTL_O_RSTCTL) |= PMCTL_RSTCTL_TSDEN_EN;
+#endif
 }
 
 /*

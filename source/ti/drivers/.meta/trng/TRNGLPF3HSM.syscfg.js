@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,15 +40,8 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-let intPriority = Common.newIntPri()[0];
-intPriority.name = "interruptPriority";
-intPriority.displayName = "Interrupt Priority";
-intPriority.description = "TRNG peripheral interrupt priority";
-
-let swiPriority = Common.newSwiPri();
-swiPriority.name = "softwareInterruptPriority";
-swiPriority.displayName = "Software Interrupt Priority";
-swiPriority.description = "TRNG software interrupt priority";
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
 
 /*
  *  ======== getLibs ========
@@ -66,8 +59,13 @@ function getLibs(mod)
         allowDuplicates: true
     };
 
-    if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    /* Add appropriate HSMDDK library to libGroup for the current product. */
+    if (deviceId.match(/CC27/)) {
+        if (!system.modules["/ti/utils/TrustZone"]) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        }
+    } else if (deviceId.match(/CC35/)) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc35xx.a"));
     }
 
     return (libGroup);
@@ -78,9 +76,7 @@ function getLibs(mod)
  *  Device-specific extensions to be added to base TRNG configuration
  */
 let devSpecific = {
-    config: [
-        swiPriority
-    ],
+    config: [],
 
     templates : {
         boardc: "/ti/drivers/trng/TRNGLPF3HSM.Board.c.xdt",
@@ -96,8 +92,8 @@ let devSpecific = {
  *  ======== validate ========
  *  Validate this instance's configuration
  *
- *  param inst       - TRNG instance to be validated
- *  param validation - object to hold detected validation issues
+ *  @param inst       - TRNG instance to be validated
+ *  @param validation - object to hold detected validation issues
  *
  *  @param $super    - needed to call the generic module's functions
  */

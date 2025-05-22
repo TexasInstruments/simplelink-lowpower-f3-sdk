@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024, Texas Instruments Incorporated
+ *  Copyright 2024-2025, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -89,13 +89,19 @@
 
     #define ENABLE_TI_CRYPTO_ECDSA
 
-    // #define ENABLE_TI_CRYPTO_EDDSA
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+        #define ENABLE_TI_CRYPTO_RNG
+    #else
+        #define ENABLE_TI_CRYPTO_TRNG
+    #endif
 
-    #define ENABLE_TI_CRYPTO_RNG
+    #if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+
+        #define ENABLE_TI_CRYPTO_EDDSA
+
+    #endif
 
     #define ENABLE_TI_CRYPTO_SHA2
-
-    #define ENABLE_TI_CRYPTO_TRNG
 
 #endif /* TFM_BUILD */
 

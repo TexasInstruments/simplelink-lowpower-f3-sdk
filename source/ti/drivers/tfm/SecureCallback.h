@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,17 +93,6 @@ SecureCallback_Handle SecureCallback_construct(SecureCallback_Object *object,
  *  @param[in]  object  A pointer to a #SecureCallback_Object structure.
  */
 void SecureCallback_destruct(SecureCallback_Object *object);
-
-/*!
- *  @brief  Triggers the dispatcher targeting the specified callback.
- *
- *  @note   This API is available to both non-secure and secure code.
- *
- *  @param[in]  handle  A #SecureCallback_Handle pointer.
- *
- *  @pre The callback object must have been created by #SecureCallback_construct().
- */
-void SecureCallback_post(SecureCallback_Handle handle);
 
 #if defined(__cplusplus)
 }

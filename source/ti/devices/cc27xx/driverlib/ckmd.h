@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the CKMD module.
  *
- *  Copyright (c) 2023-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2023-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -87,8 +87,47 @@ extern "C" {
 //! \}
 
 //*****************************************************************************
+//! Values to pass to \ref CKMDSelectCanClock() to select the CAN clock source
+//@{
+//*****************************************************************************
+//! Select the AFOSC as the CAN clock source
+#define CKMD_CAN_CLOCK_SOURCE_CLKAF CKMD_CANCLKSEL_SRC_CLKAF
+//! Select the 96MHz CLKHF (HFOSC) as the CAN clock source
+#define CKMD_CAN_CLOCK_SOURCE_CLKHF CKMD_CANCLKSEL_SRC_CLKHF
+//! Disable clock for CAN
+#define CKMD_CAN_CLOCK_SOURCE_NONE  CKMD_CANCLKSEL_SRC_DIS
+//@}
+
+//*****************************************************************************
+//! Values to pass to \ref CKMDSelectAfclk() to select the AFCLK source
+//@{
+//*****************************************************************************
+//! Select the AFOSC as the AFCLK source
+#define CKMD_AFCLK_SOURCE_CLKAF  CKMD_AFCLKSEL_SRC_CLKAF
+//! Select the 96MHz CLKHF (HFOSC) as the AFCLK source
+#define CKMD_AFCLK_SOURCE_CLKHF  CKMD_AFCLKSEL_SRC_CLKHF
+//! Select the 48MHz reference clock (HFXT) as the AFCLK source
+#define CKMD_AFCLK_SOURCE_CLKREF CKMD_AFCLKSEL_SRC_CLKREF
+//! Disable the AFCLK
+#define CKMD_AFCLK_SOURCE_NONE   CKMD_AFCLKSEL_SRC_DIS
+//@}
+
+//! Watchdog unlocking value
+#define CKMD_WATCHDOG_UNLOCK 0x1ACCE551
+
+//*****************************************************************************
 //
 // API Functions and prototypes
+//
+//*****************************************************************************
+
+#ifndef DRIVERLIB_NS
+//*****************************************************************************
+//
+// Below functions will only be compiled into the driverlib.a library and not
+// the driverlib_ns.a library.
+// Non-secure applications might be able to access some/all of these functions
+// through veneers declared further below in the #else case.
 //
 //*****************************************************************************
 
@@ -558,15 +597,25 @@ __STATIC_INLINE uint32_t CKMDGetTargetAmplitudeThresholdTrim(void)
     return (HWREG(CKMD_BASE + CKMD_O_HFXTTARG) & CKMD_HFXTTARG_AMPTHR_M) >> CKMD_HFXTTARG_AMPTHR_S;
 }
 
-#ifndef DRIVERLIB_NS
 //*****************************************************************************
 //
-// Below functions will only be compiled into the driverlib.a library and not
-// the driverlib_ns.a library.
-// Non-secure applications might be able to access some/all of these functions
-// through veneers declared further below in the #else case.
+//! \brief Enable high performance clock buffer
 //
 //*****************************************************************************
+__STATIC_INLINE void CKMDEnableHighPerformanceClockBuffer(void)
+{
+    HWREG(CKMD_BASE + CKMD_O_HFXTCTL) |= CKMD_HFXTCTL_HPBUFEN;
+}
+
+//*****************************************************************************
+//
+//! \brief Disable high performance clock buffer
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDDisableHighPerformanceClockBuffer(void)
+{
+    HWREG(CKMD_BASE + CKMD_O_HFXTCTL) &= ~CKMD_HFXTCTL_HPBUFEN;
+}
 
 //*****************************************************************************
 //
@@ -644,6 +693,94 @@ __STATIC_INLINE uint_least16_t CKMDGetLfoscExtTempCoefficientPpmPerC(void)
     return ppmTempExt * 20;
 }
 
+//*****************************************************************************
+//
+//! \brief Unlock write access to the Watchdog
+//!
+//! The function will wait until the Watchdog has actually been unlocked, before
+//! returning.
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDUnlockWatchdog(void)
+{
+    // Unlock the Watchdog
+    HWREG(CKMD_BASE + CKMD_O_LOCK) = CKMD_WATCHDOG_UNLOCK;
+
+    // Make sure the Watchdog is unlocked before continuing
+    while (HWREG(CKMD_BASE + CKMD_O_LOCK) == 1) {}
+}
+
+//*****************************************************************************
+//
+//! \brief Lock write access to the Watchdog
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDLockWatchdog(void)
+{
+    HWREG(CKMD_BASE + CKMD_O_LOCK) = 0x0;
+}
+
+//*****************************************************************************
+//
+//! \brief Set watchdog counter value.
+//!
+//! Calling this function will immediately start (or restart) the counter. It
+//! will count down from the \c value
+//!
+//! \param value is the value to write to the Watchdog counter.
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDSetWatchdogCounter(uint32_t value)
+{
+    HWREG(CKMD_BASE + CKMD_O_CNT) = value;
+}
+
+//*****************************************************************************
+//
+//! \brief Configure if the Watchdog should stop when the CPU is halted by a
+//! debugger
+//!
+//! \param stopWhenCpuIsHalted if true, the Watchdog will stop counting while
+//! the CPU is stopped by a debugger. If false, the Watchdog will continue
+//! counting while the CPU is stopped by a debugger.
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDSetWatchdogDebugConfig(bool stopWhenCpuIsHalted)
+{
+    HWREG(CKMD_BASE + CKMD_O_TEST) = stopWhenCpuIsHalted ? CKMD_TEST_STALLEN_EN : CKMD_TEST_STALLEN_DIS;
+}
+
+//*****************************************************************************
+//
+//! \brief Selects the clock source for the CAN peripheral
+//!
+//! \param source is the clock source to select:
+//!  - \ref CKMD_CAN_CLOCK_SOURCE_CLKAF
+//!  - \ref CKMD_CAN_CLOCK_SOURCE_CLKHF
+//!  - \ref CKMD_CAN_CLOCK_SOURCE_NONE
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDSelectCanClock(uint32_t source)
+{
+    HWREG(CKMD_BASE + CKMD_O_CANCLKSEL) = source & CKMD_CANCLKSEL_SRC_M;
+}
+
+//*****************************************************************************
+//
+//! \brief Selects the clock source for AFCLK
+//!
+//! \param source is the clock source to select:
+//! - \ref CKMD_AFCLK_SOURCE_CLKAF
+//! - \ref CKMD_AFCLK_SOURCE_CLKHF
+//! - \ref CKMD_AFCLK_SOURCE_CLKREF
+//! - \ref CKMD_AFCLK_SOURCE_NONE
+//
+//*****************************************************************************
+__STATIC_INLINE void CKMDSelectAfclk(uint32_t source)
+{
+    HWREG(CKMD_BASE + CKMD_O_AFCLKSEL) = source & CKMD_AFCLKSEL_SRC_M;
+}
+
 #else
 //*****************************************************************************
 //
@@ -654,6 +791,12 @@ __STATIC_INLINE uint_least16_t CKMDGetLfoscExtTempCoefficientPpmPerC(void)
 //
 //*****************************************************************************
 
+extern void CKMDEnableHighPerformanceClockBuffer_veneer(void);
+    #define CKMDEnableHighPerformanceClockBuffer  CKMDEnableHighPerformanceClockBuffer_veneer
+
+extern void CKMDDisableHighPerformanceClockBuffer_veneer(void);
+    #define CKMDDisableHighPerformanceClockBuffer CKMDDisableHighPerformanceClockBuffer_veneer
+
 extern uint_least16_t CKMDGetLfoscRtnPpm_veneer(void);
     #define CKMDGetLfoscRtnPpm                    CKMDGetLfoscRtnPpm_veneer
 
@@ -662,6 +805,25 @@ extern uint_least16_t CKMDGetLfoscMidTempCoefficientPpmPerC_veneer(void);
 
 extern uint_least16_t CKMDGetLfoscExtTempCoefficientPpmPerC_veneer(void);
     #define CKMDGetLfoscExtTempCoefficientPpmPerC CKMDGetLfoscExtTempCoefficientPpmPerC_veneer
+
+extern void CKMDUnlockWatchdog_veneer(void);
+    #define CKMDUnlockWatchdog                    CKMDUnlockWatchdog_veneer
+
+extern void CKMDLockWatchdog_veneer(void);
+    #define CKMDLockWatchdog                      CKMDLockWatchdog_veneer
+
+extern void CKMDSetWatchdogCounter_veneer(uint32_t value);
+    #define CKMDSetWatchdogCounter                CKMDSetWatchdogCounter_veneer
+
+extern void CKMDSetWatchdogDebugConfig_veneer(bool stopWhenCpuIsHalted);
+    #define CKMDSetWatchdogDebugConfig            CKMDSetWatchdogDebugConfig_veneer
+
+extern void CKMDSelectCanClock_veneer(uint32_t source);
+    #define CKMDSelectCanClock                    CKMDSelectCanClock_veneer
+
+extern void CKMDSelectAfclk_veneer(uint32_t source);
+    #define CKMDSelectAfclk                       CKMDSelectAfclk_veneer
+
 #endif
 
 //*****************************************************************************

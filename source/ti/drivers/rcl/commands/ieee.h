@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,6 +73,7 @@ struct RCL_CMD_IEEE_RX_TX_t {
     RCL_Command             common;
     uint32_t                rfFrequency; /*!< RF frequency in Hz to program */
     RCL_Command_TxPower     txPower;     /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence lines as needed */
     RCL_CmdIeee_RxAction    *rxAction;   /*!< Configuration of receive part of command. NULL: Transmit only */
     RCL_CmdIeee_TxAction    *txAction;   /*!< Configuration of transmit part of command. NULL: No transmission configured */
     RCL_StatsIeee           *stats;      /*!< Statistics */
@@ -84,6 +85,7 @@ struct RCL_CMD_IEEE_RX_TX_t {
                                   RCL_Handler_Ieee_RxTx),   \
     .rfFrequency = 2440000000U,                             \
     .txPower = {.dBm = 0, .fraction = 0},                   \
+    .coexControl = {.value =  0},                           \
     .rxAction = NULL,                                       \
     .txAction = NULL,                                       \
     .stats = NULL,                                          \
@@ -138,6 +140,16 @@ typedef struct
     uint16_t framePending[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_NUM_WORDS];   /*!< Frame pending bits for the entries */
     uint64_t extEntry[];                                                    /*!< Extended address for the entry */
 } RCL_CmdIeee_SourceMatchingTableExt;
+
+/**
+ *  @brief Enable and frame pending bits of updated source matching entry
+ */
+typedef struct
+{
+    uint8_t entryEnable: 1;     /*!< New enable bit of entry */
+    uint8_t framePending: 1;    /*!< New frame pending bit of entry */
+    uint8_t reserved: 6;
+} RCL_CmdIeee_SourceMatchingEntryControl;
 
 typedef struct RCL_CmdIeee_PanConfig_t
 {
@@ -205,22 +217,23 @@ typedef enum
 
 struct RCL_CmdIeee_TxAction_t
 {
-    RCL_CommandStatus txStatus;         /*!< Returned status of TX operation */
-    int8_t rssiLimit;                   /*!< RSSI limit (dBm) for energy based CCA */
-    RCL_ScheduleType ccaScheduling : 1; /*!< Schedule type for the CCA part */
-    uint16_t allowDelay : 1;            /*!< 0: Give error if CCA time is in the past. 1: Start immediately if CCA time is in the past */
-    RCL_CmdIeee_CcaMode ccaMode : 3;    /*!< CCA mode */
-    uint16_t ccaCorrThresh : 3;         /*!< Correlation threshold for signal based CCA (0-7; correlation tops in 128 us window) */
-    uint16_t ccaContentionWindow : 2;   /*!< Initial contention window value for CCA */
-    uint16_t expectImmAck : 1;          /*!< 0: Immediate ACK not expected. 1: Immediate ACK expected */
-    uint16_t expectEnhAck : 1;          /*!< 0: Enhanced ACK not expected. 1: Enhanced ACK expected */
-    uint16_t allowTxDelay : 1;          /*!< 0: Give error if TX time is in the past. 1: Send TX packet immediately if TX time is in the past */
-    uint16_t endCmdWhenDone : 1;        /*!< 0: Keep command and RX action alive after TX action is done. 1: End command after TX action is done */
-    uint32_t absCcaStartTime;           /*!< Absolute start time of the CCA part */
-    uint16_t relativeTxStartTime;       /*!< Start time of TX packet relative to the CCA start time */
-    uint16_t ackTimeout;                /*!< Timeout for getting sync on ACK relative to end of transmitted packet */
-    RCL_Buffer_DataEntry *txEntry;      /*!< Entry holding frame to be transmitted */
-    uint32_t txTimeStamp;               /*!< Returned time stamp of transmitted packet. Not supported in this version. */
+    RCL_CommandStatus txStatus;                 /*!< Returned status of TX operation */
+    int8_t rssiLimit;                           /*!< RSSI limit (dBm) for energy based CCA */
+    RCL_ScheduleType ccaScheduling : 1;         /*!< Schedule type for the CCA part */
+    uint16_t allowDelay : 1;                    /*!< 0: Give error if CCA time is in the past. 1: Start immediately if CCA time is in the past */
+    RCL_CmdIeee_CcaMode ccaMode : 3;            /*!< CCA mode */
+    uint16_t ccaCorrThresh : 3;                 /*!< Correlation threshold for signal based CCA (0-7; correlation tops in 128 us window) */
+    uint16_t ccaContentionWindow : 2;           /*!< Initial contention window value for CCA */
+    uint16_t expectImmAck : 1;                  /*!< 0: Immediate ACK not expected. 1: Immediate ACK expected */
+    uint16_t expectEnhAck : 1;                  /*!< 0: Enhanced ACK not expected. 1: Enhanced ACK expected */
+    uint16_t allowTxDelay : 1;                  /*!< 0: Give error if TX time is in the past. 1: Send TX packet immediately if TX time is in the past */
+    uint16_t endCmdWhenDone : 1;                /*!< 0: Keep command and RX action alive after TX action is done. 1: End command after TX action is done */
+    RCL_Command_CoexPriority coexPriority : 1;  /*!< Coex priority to use during TX action */
+    uint32_t absCcaStartTime;                   /*!< Absolute start time of the CCA part */
+    uint16_t relativeTxStartTime;               /*!< Start time of TX packet relative to the CCA start time */
+    uint16_t ackTimeout;                        /*!< Timeout for getting sync on ACK relative to end of transmitted packet */
+    RCL_Buffer_DataEntry *txEntry;              /*!< Entry holding frame to be transmitted */
+    uint32_t txTimeStamp;                       /*!< Returned time stamp of transmitted packet (0.25 us units) */
 };
 #define RCL_CmdIeee_TxAction_Default()                      \
 {                                                           \
@@ -290,7 +303,7 @@ struct RCL_STATS_IEEE_t {
     uint8_t   timestampValid;        /*!< Returns 1 if %lastTimestamp is updated; 0 otherwise */
     int8_t    lastRssi;              /*!< RSSI of last received packet */
     int8_t    maxRssi;               /*!< Highest RSSI observed during the operation (only updated after packets and at the end of operation) */
-    uint32_t  lastTimestamp;         /*!< Timestamp of last successfully received packet */
+    uint32_t  lastTimestamp;         /*!< Timestamp of last successfully received packet (0.25 us units) */
     uint16_t  nRxNok;                /*!< Number of packets received with CRC error */
     uint16_t  nRxFifoFull;           /*!< Number of packets received that did not fit in RX FIFO */
     uint16_t  nRxOk;                 /*!< Number of correctly received packets */

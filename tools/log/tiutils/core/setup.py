@@ -1,5 +1,5 @@
 """
-Copyright (C) 2020-2024, Texas Instruments Incorporated
+Copyright (C) 2020-2025, Texas Instruments Incorporated
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -42,13 +42,13 @@ setuptools.setup(
         "console_scripts": ["tilogger = tilogger.logger:main"],
     },
     install_requires=[
-        "pyserial>=3.4",
-        "pyelftools==0.25",
-        "construct==2.9.45",
-        "appdirs==1.4.3",
-        "watchdog==1.0.2",
-        "typer==0.3.2",
-        "colorama==0.4.4",
+        "pyserial>=3.5",
+        "pyelftools==0.31",
+        "construct==2.10.70",
+        "appdirs==1.4.4",
+        "watchdog==6.0.0",
+        "typer==0.15.1",
+        "colorama==0.4.6",
         "coloredlogs",
     ],
 )

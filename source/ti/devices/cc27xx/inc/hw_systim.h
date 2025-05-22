@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_systim_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -193,17 +193,29 @@
 // Register: SYSTIM_O_IMASK
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Systimer counter overflow event interrupt mask.
 // ENUMs:
 // EN                       Enable Interrrupt Mask
 // DIS                      Disable Interrupt Mask
-#define SYSTIM_IMASK_OVFL                                           0x00000020U
-#define SYSTIM_IMASK_OVFL_M                                         0x00000020U
-#define SYSTIM_IMASK_OVFL_S                                                  5U
-#define SYSTIM_IMASK_OVFL_EN                                        0x00000020U
+#define SYSTIM_IMASK_OVFL                                           0x00000040U
+#define SYSTIM_IMASK_OVFL_M                                         0x00000040U
+#define SYSTIM_IMASK_OVFL_S                                                  6U
+#define SYSTIM_IMASK_OVFL_EN                                        0x00000040U
 #define SYSTIM_IMASK_OVFL_DIS                                       0x00000000U
+
+// Field:     [5] EV5
+//
+// Systimer channel 5 event interrupt mask.
+// ENUMs:
+// EN                       Enable Interrrupt Mask
+// DIS                      Disable Interrupt Mask
+#define SYSTIM_IMASK_EV5                                            0x00000020U
+#define SYSTIM_IMASK_EV5_M                                          0x00000020U
+#define SYSTIM_IMASK_EV5_S                                                   5U
+#define SYSTIM_IMASK_EV5_EN                                         0x00000020U
+#define SYSTIM_IMASK_EV5_DIS                                        0x00000000U
 
 // Field:     [4] EV4
 //
@@ -270,18 +282,32 @@
 // Register: SYSTIM_O_RIS
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Raw interrupt status for Systimer counter overflow event.
 // This bit is set to 1 when an event is received on SysTimer Overflow occurs.
 // ENUMs:
 // SET                      Interrupt occured
 // CLR                      Interrupt did not occur
-#define SYSTIM_RIS_OVFL                                             0x00000020U
-#define SYSTIM_RIS_OVFL_M                                           0x00000020U
-#define SYSTIM_RIS_OVFL_S                                                    5U
-#define SYSTIM_RIS_OVFL_SET                                         0x00000020U
+#define SYSTIM_RIS_OVFL                                             0x00000040U
+#define SYSTIM_RIS_OVFL_M                                           0x00000040U
+#define SYSTIM_RIS_OVFL_S                                                    6U
+#define SYSTIM_RIS_OVFL_SET                                         0x00000040U
 #define SYSTIM_RIS_OVFL_CLR                                         0x00000000U
+
+// Field:     [5] EV5
+//
+// Raw interrupt status for channel 5 event.
+// This bit is set to 1 when a CAPTURE or COMPARE event is received on channel
+// 5.
+// ENUMs:
+// SET                      Interrupt occured
+// CLR                      Interrupt did not occur
+#define SYSTIM_RIS_EV5                                              0x00000020U
+#define SYSTIM_RIS_EV5_M                                            0x00000020U
+#define SYSTIM_RIS_EV5_S                                                     5U
+#define SYSTIM_RIS_EV5_SET                                          0x00000020U
+#define SYSTIM_RIS_EV5_CLR                                          0x00000000U
 
 // Field:     [4] EV4
 //
@@ -358,17 +384,29 @@
 // Register: SYSTIM_O_MIS
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Mask Interrupt status for Systimer counter overflow Event in MIS register.
 // ENUMs:
 // SET                      Interrupt occured
 // CLR                      Interrupt did not occur
-#define SYSTIM_MIS_OVFL                                             0x00000020U
-#define SYSTIM_MIS_OVFL_M                                           0x00000020U
-#define SYSTIM_MIS_OVFL_S                                                    5U
-#define SYSTIM_MIS_OVFL_SET                                         0x00000020U
+#define SYSTIM_MIS_OVFL                                             0x00000040U
+#define SYSTIM_MIS_OVFL_M                                           0x00000040U
+#define SYSTIM_MIS_OVFL_S                                                    6U
+#define SYSTIM_MIS_OVFL_SET                                         0x00000040U
 #define SYSTIM_MIS_OVFL_CLR                                         0x00000000U
+
+// Field:     [5] EV5
+//
+// Mask interrupt status for channel 5 event.
+// ENUMs:
+// SET                      Interrupt occured
+// CLR                      Interrupt did not occur
+#define SYSTIM_MIS_EV5                                              0x00000020U
+#define SYSTIM_MIS_EV5_M                                            0x00000020U
+#define SYSTIM_MIS_EV5_S                                                     5U
+#define SYSTIM_MIS_EV5_SET                                          0x00000020U
+#define SYSTIM_MIS_EV5_CLR                                          0x00000000U
 
 // Field:     [4] EV4
 //
@@ -435,17 +473,29 @@
 // Register: SYSTIM_O_ISET
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Sets Systimer counter overflow  interrupt.
 // ENUMs:
 // SET                      Set Interrupt
 // NOEFF                    Writing 0 has no effect
-#define SYSTIM_ISET_OVFL                                            0x00000020U
-#define SYSTIM_ISET_OVFL_M                                          0x00000020U
-#define SYSTIM_ISET_OVFL_S                                                   5U
-#define SYSTIM_ISET_OVFL_SET                                        0x00000020U
+#define SYSTIM_ISET_OVFL                                            0x00000040U
+#define SYSTIM_ISET_OVFL_M                                          0x00000040U
+#define SYSTIM_ISET_OVFL_S                                                   6U
+#define SYSTIM_ISET_OVFL_SET                                        0x00000040U
 #define SYSTIM_ISET_OVFL_NOEFF                                      0x00000000U
+
+// Field:     [5] EV5
+//
+// Sets channel 5 interrupt.
+// ENUMs:
+// SET                      Set Interrupt
+// NOEFF                    Writing 0 has no effect
+#define SYSTIM_ISET_EV5                                             0x00000020U
+#define SYSTIM_ISET_EV5_M                                           0x00000020U
+#define SYSTIM_ISET_EV5_S                                                    5U
+#define SYSTIM_ISET_EV5_SET                                         0x00000020U
+#define SYSTIM_ISET_EV5_NOEFF                                       0x00000000U
 
 // Field:     [4] EV4
 //
@@ -512,17 +562,29 @@
 // Register: SYSTIM_O_ICLR
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Clears Systimer counter overflow  interrupt.
 // ENUMs:
 // CLR                      Clear Interrupt
 // NOEFF                    Writing 0 has no effect
-#define SYSTIM_ICLR_OVFL                                            0x00000020U
-#define SYSTIM_ICLR_OVFL_M                                          0x00000020U
-#define SYSTIM_ICLR_OVFL_S                                                   5U
-#define SYSTIM_ICLR_OVFL_CLR                                        0x00000020U
+#define SYSTIM_ICLR_OVFL                                            0x00000040U
+#define SYSTIM_ICLR_OVFL_M                                          0x00000040U
+#define SYSTIM_ICLR_OVFL_S                                                   6U
+#define SYSTIM_ICLR_OVFL_CLR                                        0x00000040U
 #define SYSTIM_ICLR_OVFL_NOEFF                                      0x00000000U
+
+// Field:     [5] EV5
+//
+// Clears channel 5 interrupt.
+// ENUMs:
+// CLR                      Clear Interrupt
+// NOEFF                    Writing 0 has no effect
+#define SYSTIM_ICLR_EV5                                             0x00000020U
+#define SYSTIM_ICLR_EV5_M                                           0x00000020U
+#define SYSTIM_ICLR_EV5_S                                                    5U
+#define SYSTIM_ICLR_EV5_CLR                                         0x00000020U
+#define SYSTIM_ICLR_EV5_NOEFF                                       0x00000000U
 
 // Field:     [4] EV4
 //
@@ -589,17 +651,29 @@
 // Register: SYSTIM_O_IMSET
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Sets Timer Overflow Event Interrupt Mask.
 // ENUMs:
 // SET                      Set interrupt mask
 // NOEFF                    Writing 0 has no effect
-#define SYSTIM_IMSET_OVFL                                           0x00000020U
-#define SYSTIM_IMSET_OVFL_M                                         0x00000020U
-#define SYSTIM_IMSET_OVFL_S                                                  5U
-#define SYSTIM_IMSET_OVFL_SET                                       0x00000020U
+#define SYSTIM_IMSET_OVFL                                           0x00000040U
+#define SYSTIM_IMSET_OVFL_M                                         0x00000040U
+#define SYSTIM_IMSET_OVFL_S                                                  6U
+#define SYSTIM_IMSET_OVFL_SET                                       0x00000040U
 #define SYSTIM_IMSET_OVFL_NOEFF                                     0x00000000U
+
+// Field:     [5] EV5
+//
+// Sets channel5 Event Interrupt mask
+// ENUMs:
+// SET                      Set interrupt mask
+// NOEFF                    Writing 0 has no effect
+#define SYSTIM_IMSET_EV5                                            0x00000020U
+#define SYSTIM_IMSET_EV5_M                                          0x00000020U
+#define SYSTIM_IMSET_EV5_S                                                   5U
+#define SYSTIM_IMSET_EV5_SET                                        0x00000020U
+#define SYSTIM_IMSET_EV5_NOEFF                                      0x00000000U
 
 // Field:     [4] EV4
 //
@@ -666,17 +740,29 @@
 // Register: SYSTIM_O_IMCLR
 //
 //*****************************************************************************
-// Field:     [5] OVFL
+// Field:     [6] OVFL
 //
 // Clears Timer Overflow Event Interrupt Mask.
 // ENUMs:
 // CLR                      Clear interrupt mask
 // NOEFF                    Writing 0 has no effect
-#define SYSTIM_IMCLR_OVFL                                           0x00000020U
-#define SYSTIM_IMCLR_OVFL_M                                         0x00000020U
-#define SYSTIM_IMCLR_OVFL_S                                                  5U
-#define SYSTIM_IMCLR_OVFL_CLR                                       0x00000020U
+#define SYSTIM_IMCLR_OVFL                                           0x00000040U
+#define SYSTIM_IMCLR_OVFL_M                                         0x00000040U
+#define SYSTIM_IMCLR_OVFL_S                                                  6U
+#define SYSTIM_IMCLR_OVFL_CLR                                       0x00000040U
 #define SYSTIM_IMCLR_OVFL_NOEFF                                     0x00000000U
+
+// Field:     [5] EV5
+//
+// Clears channel5 Event Interrupt Mask.
+// ENUMs:
+// CLR                      Clear interrupt mask
+// NOEFF                    Writing 0 has no effect
+#define SYSTIM_IMCLR_EV5                                            0x00000020U
+#define SYSTIM_IMCLR_EV5_M                                          0x00000020U
+#define SYSTIM_IMCLR_EV5_S                                                   5U
+#define SYSTIM_IMCLR_EV5_CLR                                        0x00000020U
+#define SYSTIM_IMCLR_EV5_NOEFF                                      0x00000000U
 
 // Field:     [4] EV4
 //
@@ -792,6 +878,18 @@
 // Register: SYSTIM_O_OUT
 //
 //*****************************************************************************
+// Field:     [5] OUT5
+//
+// Output Value of channel 5.
+// ENUMs:
+// SET                      Event occured
+// CLR                      Event did not occur.
+#define SYSTIM_OUT_OUT5                                             0x00000020U
+#define SYSTIM_OUT_OUT5_M                                           0x00000020U
+#define SYSTIM_OUT_OUT5_S                                                    5U
+#define SYSTIM_OUT_OUT5_SET                                         0x00000020U
+#define SYSTIM_OUT_OUT5_CLR                                         0x00000000U
+
 // Field:     [4] OUT4
 //
 // Output Value of channel 4.
@@ -1236,6 +1334,20 @@
 // Register: SYSTIM_O_ARMSET
 //
 //*****************************************************************************
+// Field:     [5] CH5
+//
+// Arming channel 5 for either compare or capture operation.
+// ENUMs:
+// SET                      if channel 5 is in CAPTURE state then no effect on
+//                          the channel else it can set channel in COMPARE
+//                          mode using existing CH4CC.VAL value.
+// NOEFF                    No effect on the channel
+#define SYSTIM_ARMSET_CH5                                           0x00000020U
+#define SYSTIM_ARMSET_CH5_M                                         0x00000020U
+#define SYSTIM_ARMSET_CH5_S                                                  5U
+#define SYSTIM_ARMSET_CH5_SET                                       0x00000020U
+#define SYSTIM_ARMSET_CH5_NOEFF                                     0x00000000U
+
 // Field:     [4] CH4
 //
 // Arming channel 4 for either compare or capture operation.
@@ -1311,6 +1423,20 @@
 // Register: SYSTIM_O_ARMCLR
 //
 //*****************************************************************************
+// Field:     [5] CH5
+//
+// Disarming channel 5
+// ENUMs:
+// CLR                      Set channel in UNARMED state without triggering
+//                          event unless a compare/capture event happens in
+//                          the same cycle
+// NOEFF                    No effect on the channel
+#define SYSTIM_ARMCLR_CH5                                           0x00000020U
+#define SYSTIM_ARMCLR_CH5_M                                         0x00000020U
+#define SYSTIM_ARMCLR_CH5_S                                                  5U
+#define SYSTIM_ARMCLR_CH5_CLR                                       0x00000020U
+#define SYSTIM_ARMCLR_CH5_NOEFF                                     0x00000000U
+
 // Field:     [4] CH4
 //
 // Disarming channel 4

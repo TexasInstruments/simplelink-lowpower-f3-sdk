@@ -1,0 +1,412 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+/*
+ *  ======== LP_EM_CC2340R53_WCSP_SOCKET.syscfg.json ========
+ *
+ */
+ {
+    "name": "LP_EM_CC2340R53_WCSP",
+    "displayName": "CC2340R53 WCSP on LP_EM_CC2340R5_YBG",
+    "device": "CC2340R53YBG",
+    "part": "Default",
+    "package": "YBG",
+    "headers": [
+        {
+            "type": "BoosterPack 40 pin",
+            "default": true,
+            "name": "boosterpack",
+            "displayName": "BoosterPack Standard Header",
+            "dimensions": {
+                "columns": [
+                    { "top":  1, "bottom": 10 },
+                    { "top": 21, "bottom": 30 },
+
+                    { "blank": true },
+
+                    { "top": 40, "bottom": 31 },
+                    { "top": 20, "bottom": 11 }
+                ]
+            },
+            "pins": [
+                {
+                    "number" : 1,
+                    "name"   : "3V3"
+                },
+                {
+                    "number" : 2,
+                    "name"   : "NC"
+                },
+                {
+                    "number": 3,
+                    "ball": "A3",
+                    "name": "DIO20"
+                },
+                {
+                    "number": 4,
+                    "ball": "D3",
+                    "name": "DIO6"
+                },
+                {
+                    /* Requires 0-Ohm resistor R7 to be mounted (default: Not mounted) */
+                    "number": 5,
+                    "name": "NC"
+                },
+                {
+                    "number": 6,
+                    "name": "NC"
+                },
+                {
+                    /* SPI SCLK: Requires header P6 pins 5 and 3 to be jumpered */
+                    "number": 7,
+                    "ball": "B3",
+                    "name": "DIO18",
+                    "preferredType": ["SPI_SCLK"]
+                },
+                {
+                    /* Requires 0-Ohm resistor R6 to be mounted (default: Not mounted) */
+                    "number": 8,
+                    "name": "NC"
+                },
+                {
+                    /* I2C SCL: Requires header P6 pins 2 and 4 to be jumpered */
+                    "number": 9,
+                    "ball": "C4",
+                    "name": "DIO24",
+                    "preferredType": ["I2C_SCL"]
+                },
+                {
+                    /* I2C SDA: Requires header P2 pins 5 and 3 to be jumpered */
+                    "number": 10,
+                    "ball": "C2",
+                    "name": "DIO8",
+                    "preferredType": ["I2C_SDA"]
+                },
+
+                {
+                    "number": 11,
+                    "name": "NC"
+                },
+                {
+                    /* BUTTON2: Requires header P6 pins 1 and 2 to be jumpered */
+                    "number": 12,
+                    "ball": "C4",
+                    "name": "DIO24"
+                },
+                {
+                    /* BUTTON1: Requires header P6 pins 5 and 6 to be jumpered */
+                    "number": 13,
+                    "ball": "B3",
+                    "name": "DIO18"
+                },
+                {
+                    /* SPI POCI: Requires header P2 pins 2 and 4 to be jumpered */
+                    "number": 14,
+                    "ball": "A4",
+                    "name": "DIO21",
+                    "preferredType": ["SPI_POCI"]
+                },
+                {
+                    "number": 15,
+                    "ball": "B2",
+                    "name": "DIO12",
+                    "preferredType": ["SPI_PICO"]
+                },
+                {
+                    "number" : 16,
+                    "ball" : "A5",
+                    "name"   : "LPRST"
+                },
+                {
+                    "number": 17,
+                    "name": "NC"
+                },
+                {
+                    /* Requires 0-Ohm resistor R19 to be mounted (default: Not mounted) */
+                    "number": 18,
+                    "name": "DIO11",
+                    "preferredType": ["SPI_CSN"]
+                },
+                {
+                    "number": 19,
+                    "name": "NC"
+                },
+                {
+                    "number" : 20,
+                    "name"   : "GND"
+                },
+
+                {
+                    "number" : 21,
+                    "name"   : "5V"
+                },
+                {
+                    "number" : 22,
+                    "name"   : "GND"
+                },
+                {
+                    "number": 23,
+                    "name": "NC"
+                },
+                {
+                    "number": 24,
+                    "name": "NC"
+                },
+                {
+                    "number": 25,
+                    "name": "NC"
+                },
+                {
+                    "number": 26,
+                    "name": "NC"
+                },
+                {
+                    "number": 27,
+                    "name": "NC"
+                },
+                {
+                    "number": 28,
+                    "name": "NC"
+                },
+                {
+                    "number" : 29,
+                    "name"   : "NC"
+                },
+                {
+                    "number" : 30,
+                    "name"   : "NC"
+                },
+                {
+                    "number" : 31,
+                    "name"   : "NC"
+                },
+                {
+                    "number" : 32,
+                    "name"   : "NC"
+                },
+                {
+                    /* DIO17 */
+                    "number" : 33,
+                    "ball" : "A2",
+                    "name"   : "SWDCK"
+                },
+                {
+                    /* DIO16 */
+                    "number" : 34,
+                    "ball" : "A1",
+                    "name"   : "SWDIO"
+                },
+                {
+                    /* Requires 0-Ohm resistor R52 to be mounted (default: Not mounted) */
+                    "number" : 35,
+                    "name"   : "BPRST"
+                },
+                {
+                    "number": 36,
+                    "name": "NC"
+                },
+                {
+                    "number": 37,
+                    "name": "NC"
+                },
+                {
+                    /* Requires 0-Ohm resistor R20 to be mounted (default: Mounted) */
+                    "number": 38,
+                    "ball": "B1",
+                    "name": "DIO11",
+                    "preferredType": ["SPI_CSN"]
+                },
+                {
+                    /* LED_RED: Requires header P2 pins 2 and 1 to be jumpered */
+                    "number": 39,
+                    "ball": "A4",
+                    "name": "DIO21"
+                },
+                {
+                    /* LED_GREEN: Requires header P2 pins 5 and 6 to be jumpered */
+                    "number": 40,
+                    "ball": "C2",
+                    "name": "DIO8"
+                }
+            ]
+        }
+    ],
+    "components": {
+        "LED_RED": {
+            "displayName" : "LaunchPad LED Red",
+            "definition"  : "/ti/boards/components/led_dimmable.json",
+            "connections" : {
+                "OUTPUT": "A4" /* DIO21 */
+            }
+        },
+        "LED_GREEN": {
+            "displayName" : "LaunchPad LED Green",
+            "definition"  : "/ti/boards/components/led_dimmable.json",
+            "connections" : {
+                "OUTPUT": "C2" /* DIO8 */
+            }
+        },
+
+        /* Symbolic links/aliases for LED portability between LaunchPads */
+        "LED": {
+            "link" : "LED_RED"
+        },
+        "LED_DIMMABLE": {
+            "link" : "LED_GREEN"
+        },
+        "LED0": {
+            "link": "LED_RED"
+        },
+        "LED1": {
+            "link": "LED_GREEN"
+        },
+        "LED0_PWM" : {
+            "link" : "LED0"
+        },
+        "LED1_PWM" : {
+            "link" : "LED1"
+        },
+
+        "BTN-1": {
+            "displayName" : "LaunchPad Button BTN-1 (Left)",
+            "definition"  : "/ti/boards/components/button.json",
+            "longDescription" : "BTN-1 (Left) LaunchPad button with no external pull.",
+            "settings": {
+                "DIN": {
+                    "pull": "Internal",
+                    "polarity": "Active Low"
+                }
+            },
+            "connections" : {
+                "INPUT": "B3" /* DIO18 */
+            }
+        },
+        "BTN-2": {
+            "displayName" : "LaunchPad Button BTN-2 (Right)",
+            "definition"  : "/ti/boards/components/button.json",
+            "longDescription" : "BTN-2 (Right) LaunchPad button with no external pull.",
+            "settings": {
+                "DIN": {
+                    "pull": "Internal",
+                    "polarity": "Active Low"
+                }
+            },
+            "connections" : {
+                "INPUT": "C4" /* DIO24 */
+            }
+        },
+
+        /* Symbolic links/aliases for BUTTON portability between LaunchPads */
+        "BUTTON0": {
+            "link": "BTN-1"
+        },
+        "BUTTON1": {
+            "link": "BTN-2"
+        },
+
+        "LP_SPI_BUS": {
+            "displayName" : "LaunchPad SPI Bus",
+            "description" : "Standard BoosterPack header SPI",
+            "longDescription" : "Standard BoosterPack header SPI",
+            "definition"  : "/ti/boards/components/spiBus.json",
+            "connections" : {
+                "SCLK": "B3", /* DIO18 */
+                "PICO": "B2", /* DIO12 */
+                "POCI": "A4"  /* DIO21 */
+            }
+        },
+
+        "LP_SPI": {
+            "displayName" : "LaunchPad SPI Bus with Chip Select",
+            "description" : "Standard BoosterPack header SPI with Chip Select",
+            "longDescription" : "Standard BoosterPack header SPI with Chip Select",
+            "definition"  : "/ti/boards/components/spiDevice.json",
+            "subComponents": {
+                "SPI": {
+                    "link": "LP_SPI_BUS"
+                },
+                "SELECT": {
+                    "displayName" : "LaunchPad SPI Bus Chip Select",
+                    "description" : "Standard BoosterPack header SPI Chip Select",
+                    "longDescription" : "Standard BoosterPack header SPI Chip Select",
+                    "connections" : {
+                        "CSN": "B1" /* DIO11 */
+                    }
+                }
+            }
+        },
+
+        "MX25R8035FZUIL0": {
+            "displayName" : "MX25R8035FZUIL0 SPI Flash",
+            "description" : "MX25R8035FZUIL0 ultra low power, 8Mb CMOS serial multi I/O SPI flash memory",
+            "longDescription": "[__MX25R8035FZUIL0__](https://www.macronix.com/en-us/products/NOR-Flash/Serial-NOR-Flash/Pages/spec.aspx?p=MX25R8035F&m=Serial%20NOR%20Flash&n=PM2164&epn=MX25R8035FZUIL0) is a 8Mb serial NOR flash memory, which is configured as 1,048,576 x 8 internally. When it is in four I/O mode, the structure becomes 2,097,152 bits x 4 or 4,194,304 bits x 2.",
+            "definition"  : "/ti/boards/components/spi25xFlash.json",
+            "settings" : {
+                "capacity" : 1048576
+            },
+            "subComponents": {
+                "SPI": {
+                    "link": "LP_SPI_BUS"
+                },
+                "SELECT": {
+                    "displayName" : "MX25R8035FZUIL0 SPI Flash Chip Select",
+                    "description" : "MX25R8035FZUIL0 SPI Flash Chip Select",
+                    "longDescription" : "MX25R8035FZUIL0 SPI flash Chip Select",
+                    "definition"  : "/ti/boards/components/spiSelect.json",
+                    "connections" : {
+                        "CSN": "B1" /* DIO11 */
+                    }
+                }
+            }
+        },
+
+        "SPI_FLASH" : {
+            "link": "MX25R8035FZUIL0"
+        },
+
+        "XDS110UART": {
+            "definition": "/ti/boards/components/xds110Uart.json",
+            "connections": {
+                "RXD": "A3", /* DIO20 */
+                "TXD": "D3"  /* DIO6 */
+            }
+        },
+        "HFXT" : {
+            "definition": "/ti/boards/components/crystal_tz3908aaa043.json",
+            "settings": {
+                "overrideCapArray": false,
+                "hfxtCapArrayQ1" : 0,
+                "hfxtCapArrayQ2" : 0
+            }
+        }
+    }
+}

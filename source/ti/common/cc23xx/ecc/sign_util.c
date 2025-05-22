@@ -57,7 +57,6 @@
 
 #include DeviceFamily_constructPath(driverlib/sha256sw.h)
 
-
 /********************************************************************
  * GLOBAL VARIABLES
  ********************************************************************/
@@ -71,13 +70,11 @@ extern const certElement_t _secureCertElement;
 /*********************************************************************
  * GLOBAL FUNCTION REFERENCES
  ********************************************************************/
-extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *,
-                                 uint32_t *);
+extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
 /*********************************************************************
  * FUNCTION DEFINITIONS
  ********************************************************************/
-
 
 /*********************************************************************
  * @fn         reverseOrder
@@ -86,13 +83,13 @@ extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *,
  * @param      pBufIn - pointer to input buffer
  * @param      pBufOut - pointer to output buffer
  */
-static void reverseOrder(const uint8_t *pBufIn,uint8_t *pBufOut)
+static void reverseOrder(const uint8_t *pBufIn, uint8_t *pBufOut)
 {
-  uint8_t i=0;
-  for(i=0;i<SECURE_FW_SIGN_LEN;i++)
-  {
-    pBufOut[i] = pBufIn[SECURE_FW_SIGN_LEN-1-i];
-  }
+    uint8_t i = 0;
+    for (i = 0; i < SECURE_FW_SIGN_LEN; i++)
+    {
+        pBufOut[i] = pBufIn[SECURE_FW_SIGN_LEN - 1 - i];
+    }
 }
 
 /*********************************************************************
@@ -105,11 +102,11 @@ static void reverseOrder(const uint8_t *pBufIn,uint8_t *pBufOut)
  */
 static void copyBytes(uint8_t *pDst, const uint8_t *pSrc, uint32_t len)
 {
-  uint32_t i;
-  for(i=0; i<len; i++)
-  {
-      pDst[i]=pSrc[i];
-  }
+    uint32_t i;
+    for (i = 0; i < len; i++)
+    {
+        pDst[i] = pSrc[i];
+    }
 }
 
 /*!
@@ -128,11 +125,16 @@ static void copyBytes(uint8_t *pDst, const uint8_t *pSrc, uint32_t len)
 
 int compareBytes(uint8_t *pData1, const uint8_t *pData2, uint8_t len)
 {
-  uint8_t i;
-  for(i=0; i<len; i++) if(pData1[i]!=pData2[i]) return (1);
-  return (0);
+    uint8_t i;
+    for (i = 0; i < len; i++)
+    {
+        if (pData1[i] != pData2[i])
+        {
+            return (1);
+        }
+    }
+    return (0);
 }
-
 
 /*!
  Check the validity of cert element
@@ -141,45 +143,48 @@ int compareBytes(uint8_t *pData1, const uint8_t *pData2, uint8_t len)
  */
 uint8_t verifyCertElement(uint8_t *signerInfo)
 {
-  /* read type in sign element and compare with type in cert element */
-  return compareBytes(signerInfo,
-                               _secureCertElement.signerInfo,8);
+    /* read type in sign element and compare with type in cert element */
+    return compareBytes(signerInfo, _secureCertElement.signerInfo, 8);
 }
 
 /**
-* @brief Check for Security Payload
-*
-*  Reads through the headers in the .bin file. If a security header is found
-*  the function checks to see if the header has a populated payload.
-*
-*
-*  @param       eFlStrAddr - The start address in external flash of the binary image
-*
-*  @return      0  - security not found
-*  @return      1  - security found
-*
-*/
-uint8_t  bimVerifyImage_ecc(const uint8_t *publicKeyX, const uint8_t *publicKeyY,
-                           uint8_t *hash, uint8_t *sign1, uint8_t *sign2,
-                           void* unused1, void* unused2)
+ * @brief Check for Security Payload
+ *
+ *  Reads through the headers in the .bin file. If a security header is found
+ *  the function checks to see if the header has a populated payload.
+ *
+ *
+ *  @param       eFlStrAddr - The start address in external flash of the binary image
+ *
+ *  @return      0  - security not found
+ *  @return      1  - security found
+ *
+ */
+uint8_t bimVerifyImage_ecc(const uint8_t *publicKeyX,
+                           const uint8_t *publicKeyY,
+                           uint8_t *hash,
+                           uint8_t *sign1,
+                           uint8_t *sign2,
+                           void *unused1,
+                           void *unused2)
 {
     uint8_t status = SECURE_FW_ECC_STATUS_INVALID_SIGNATURE;
     uint8_t keyBuffer[sizeof(eccKey_t) + 1]; // +1 for the uncompressed (0x04) prefix
-    eccKey_t *eccKey = (eccKey_t*)&keyBuffer[1];
+    eccKey_t *eccKey = (eccKey_t *)&keyBuffer[1];
     CryptoKey_Plaintext pubKey;
     ECDSA_OperationVerify operation;
 
-    keyBuffer[0] = 0x04; //prefix
+    keyBuffer[0] = 0x04; // prefix
     memcpy(eccKey->pubKeyX, publicKeyX, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
     memcpy(eccKey->pubKeyY, publicKeyY, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
 
     pubKey.keyMaterial = keyBuffer;
-    pubKey.keyLength = sizeof(keyBuffer);
+    pubKey.keyLength   = sizeof(keyBuffer);
 
     operation.theirPublicKey = &pubKey;
-    operation.hash = hash;
-    operation.r = sign1;
-    operation.s = sign2;
+    operation.hash           = hash;
+    operation.r              = sign1;
+    operation.s              = sign2;
 
     if (ECDSA_STATUS_SUCCESS == ECDSA_verify(&operation))
     {
@@ -205,8 +210,8 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     imgHdr_t *pImgHdr;
 
     /* Read first page of the image into the buffer. */
-#ifndef BIM_ONCHIP //off-chip case
-    if(!useExtFl)
+    #ifndef BIM_ONCHIP // off-chip case
+    if (!useExtFl)
     {
         CRC32_memCpy(SHABuff, (uint8_t *)(imgStartAddr), SHABuffLen);
     }
@@ -214,37 +219,37 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     {
         extFlashRead(imgStartAddr, SHABuffLen, SHABuff);
     }
-#else //on-chip case
+    #else // on-chip case
     CRC32_memCpy(SHABuff, (uint8_t *)(imgStartAddr), SHABuffLen);
-#endif
+    #endif
 
     pImgHdr = (imgHdr_t *)(SHABuff);
 
-    if(pImgHdr->fixedHdr.len == 0)
+    if (pImgHdr->fixedHdr.len == 0)
     {
         return NULL;
     }
 
-#ifdef BIM_DUAL_ONCHIP_IMAGE
+    #ifdef BIM_DUAL_ONCHIP_IMAGE
     /* ImgVld field can be changed for switching between valid images */
     /* overwrite the imgVld field in read buffer to 0xFFFFFFFF (default) to allow re-verification of sign */
     /* oad image tool calculated the sign over a fresh image where this value was 0xFFFFFFFF */
     pImgHdr->fixedHdr.imgVld = 0xFFFFFFFF;
 
-#ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
+        #ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
     /* if sign is being calculated, it means the commitFlag field is not set to rejected */
     /* overwrite the commitFlag in read buffer to 0xFF (default) to allow re-verification of sign */
     /* oad image tool calculated the sign over a fresh image where this value was 0xFF */
     pImgHdr->fixedHdr.commitFlag = 0xFF;
-#endif
+        #endif
 
     /* if sign is being calculated, it means the verifStatus field is not set to invalid */
     /* overwrite the verifStatus in read buffer to 0xFF (default) to allow re-verification of sign */
     /* oad image tool calculated the sign over a fresh image where this value was 0xFF */
     pImgHdr->secInfoSeg.verifStat = 0xFF;
-#endif
+    #endif
 
-    uint32_t addrRead = imgStartAddr + SHABuffLen;
+    uint32_t addrRead  = imgStartAddr + SHABuffLen;
     uint32_t secHdrLen = HDR_LEN_WITH_SECURITY_INFO;
 
     SHA256SW_Object sha256SWObject;
@@ -255,14 +260,14 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     SHA256SWAddData(sha256SWHandle, &SHABuff[secHdrLen], SHABuffLen - secHdrLen);
 
     uint32_t imgLengthLeft = pImgHdr->fixedHdr.len - SHABuffLen;
-    uint32_t byteToRead = SHABuffLen;
+    uint32_t byteToRead    = SHABuffLen;
 
     /* Read over image pages. */
-    while(imgLengthLeft > 0)
+    while (imgLengthLeft > 0)
     {
         /* Read data into the next buffer */
-#ifndef BIM_ONCHIP //off-chip case
-        if(!useExtFl)
+    #ifndef BIM_ONCHIP // off-chip case
+        if (!useExtFl)
         {
             CRC32_memCpy(SHABuff, (uint8_t *)addrRead, byteToRead);
         }
@@ -270,16 +275,20 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
         {
             extFlashRead(addrRead, byteToRead, SHABuff);
         }
-#else // on-chip case
+    #else // on-chip case
         CRC32_memCpy(SHABuff, (uint8_t *)addrRead, byteToRead);
-#endif
+    #endif
         SHA256SWAddData(sha256SWHandle, SHABuff, byteToRead);
 
         imgLengthLeft -= byteToRead;
-        if(imgLengthLeft > SHABuffLen)
+        if (imgLengthLeft > SHABuffLen)
+        {
             byteToRead = SHABuffLen;
+        }
         else
+        {
             byteToRead = imgLengthLeft;
+        }
 
         addrRead += SHABuffLen;
     } /* while(imgLengthLeft > 0) */
@@ -289,18 +298,18 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     /* check that final hash is not all zeros */
     uint8_t i, finalHashChk = 0;
 
-    for( i = 0; i < ECDSA_KEY_LEN; i++)
+    for (i = 0; i < ECDSA_KEY_LEN; i++)
     {
-        finalHashChk = finalHashChk | finalHash[i] ;
+        finalHashChk = finalHashChk | finalHash[i];
     }
 
-    if(0 == finalHashChk)
+    if (0 == finalHashChk)
     {
         return NULL;
     }
 
     /* final Hash is not all zeroes but a valid result */
-    return((uint8_t*)finalHash);
+    return ((uint8_t *)finalHash);
 }
 
 #endif /*#ifdef SECURITY */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,6 @@
 
 #include <stdint.h>
 #include <ti/drivers/utils/List.h>
-
 
 /**
  *  @brief Buffer state
@@ -401,6 +400,24 @@ extern bool RCL_MultiBuffer_RxEntry_isLast(RCL_MultiBuffer_ListInfo *listInfo);
  *  @param  elem Multi buffer to place onto the end of the linked list
  */
 extern void RCL_MultiBuffer_put(List_List *list, RCL_MultiBuffer *elem);
+
+/**
+ *  @brief  Read partially received packet into buffer
+ *
+ * If a packet is under reception, bytes received so far may be copied to a data entry for
+ * inspection. Once the packet reception is finished, this function will not return any data, and
+ * the packet must be read from the receive buffer of the running command. The length field of the
+ * data entry will show the number of bytes currently available, which is usually less than the
+ * final value after packet reception is finished.
+ *
+ *  @param    dataEntry      Entry for storing data
+ *
+ *  @param    entrySize      Number of bytes available in entry, including header fields (should be a multiple of 4)
+ *
+ * @return                   Number of bytes read into entry, including header fields
+ *
+ */
+ size_t RCL_Buffer_readPartialRxBuffer(RCL_Buffer_DataEntry *dataEntry, size_t entrySize);
 /** @}
  */
 

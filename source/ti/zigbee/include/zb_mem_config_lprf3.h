@@ -24,6 +24,8 @@
 #ifndef ZB_MEM_CONFIG_LPRF3_H
 #define ZB_MEM_CONFIG_LPRF3_H 1
 
+#include "ti_zigbee_config.h"
+
 /**
    @addtogroup configurable_mem
    @{
@@ -33,7 +35,7 @@
 
 /*#define ZB_CONFIG_OVERALL_NETWORK_SIZE 128*/
 /*#define ZB_CONFIG_OVERALL_NETWORK_SIZE 32*/
-#define ZB_CONFIG_OVERALL_NETWORK_SIZE 20U
+#define ZB_CONFIG_OVERALL_NETWORK_SIZE MAX_CHILDREN
 /*#define ZB_CONFIG_OVERALL_NETWORK_SIZE 16*/
 
 /**
@@ -54,9 +56,6 @@
  */
 #define ZB_CONFIG_APPLICATION_MODERATE
 /*#define ZB_CONFIG_APPLICATION_SIMPLE*/
-
-/* Logic for setting the srcMatchTableBuffer and its size. Used in ti_f3_mac.c. */
-#include "zb_src_matching.h"
 
 /**
    @}

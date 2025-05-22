@@ -1,6 +1,5 @@
----
 # BearSSL support for Modular Reduction
----
+
 ## Version
 v0.6
 

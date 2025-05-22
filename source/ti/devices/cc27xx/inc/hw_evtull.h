@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_evtull_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -39,19 +39,23 @@
 // EVTULL component
 //
 //*****************************************************************************
-// Description
+// Description Register.This register provides IP module ID, revision
+// information, instance index and standard MMR registers offset.
 #define EVTULL_O_DESC                                               0x00000000U
 
-// Extended Description
+// Extended Description Register. This register provides configuration details
+// of the IP to software drivers and end users.
 #define EVTULL_O_DESCEX                                             0x00000004U
 
-// Digital test bus control
+// Digital test bus control register. This register can be used to bring out IP
+// internal signals to the pads for observation. 16 signals can be observed per
+// select value.
 #define EVTULL_O_DTB                                                0x00000064U
 
-// Output Selection for RTCCPT
+// Output Selection for RTCCPT Register.
 #define EVTULL_O_RTCCPTSEL                                          0x00000404U
 
-// WAKEUP Mask
+// WAKEUP Mask Register.
 #define EVTULL_O_WKUPMASK                                           0x00000800U
 
 //*****************************************************************************

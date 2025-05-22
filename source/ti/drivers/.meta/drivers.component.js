@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,11 +55,9 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/GPIO",
                 "/ti/drivers/Power",
                 "/ti/drivers/PWM",
-                "/ti/drivers/RNG",
                 "/ti/drivers/Temperature",
                 "/ti/drivers/Timer",
                 "/ti/drivers/timer/GPTimerCC26XX",
-                "/ti/drivers/TRNG",
                 "/ti/drivers/Watchdog"
             ],
             "categories": [
@@ -89,26 +87,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "modules": [
                         "/ti/drivers/NVS",
                         "/ti/drivers/SD"
-                    ]
-                },
-                {
-                    "displayName": "Crypto Drivers",
-                    "description": "Encryption, Decryption and Authentication",
-                    "modules": [
-                        "/ti/drivers/AESCBC",
-                        "/ti/drivers/AESCCM",
-                        "/ti/drivers/AESCMAC",
-                        "/ti/drivers/AESCTR",
-                        "/ti/drivers/AESCTRDRBG",
-                        "/ti/drivers/AESECB",
-                        "/ti/drivers/AESGCM",
-                        "/ti/drivers/ANSIX936KDF",
-                        //"/ti/drivers/CryptoKey", // unused - no configuration currently required for CC26X4 family
-                        "/ti/drivers/ECDH",
-                        "/ti/drivers/ECDSA",
-                        "/ti/drivers/ECJPAKE",
-                        "/ti/drivers/EDDSA",
-                        "/ti/drivers/SHA2"
                     ]
                 },
                 {
@@ -135,11 +113,9 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/GPIO",
                 "/ti/drivers/Power",
                 "/ti/drivers/PWM",
-                "/ti/drivers/RNG",
                 "/ti/drivers/Temperature",
                 "/ti/drivers/Timer",
                 "/ti/drivers/timer/GPTimerCC26XX",
-                "/ti/drivers/TRNG",
                 "/ti/drivers/Watchdog"
             ],
             "categories": [
@@ -170,25 +146,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "modules": [
                         "/ti/drivers/NVS",
                         "/ti/drivers/SD"
-                    ]
-                },
-                {
-                    "displayName": "Crypto Drivers",
-                    "description": "Encryption, Decryption and Authentication",
-                    "modules": [
-                        "/ti/drivers/AESCBC",
-                        "/ti/drivers/AESCCM",
-                        "/ti/drivers/AESCMAC",
-                        "/ti/drivers/AESCTR",
-                        "/ti/drivers/AESCTRDRBG",
-                        "/ti/drivers/AESECB",
-                        "/ti/drivers/AESGCM",
-                        "/ti/drivers/ANSIX936KDF",
-                        "/ti/drivers/ECDH",
-                        "/ti/drivers/ECDSA",
-                        "/ti/drivers/ECJPAKE",
-                        "/ti/drivers/EDDSA",
-                        "/ti/drivers/SHA2"
                     ]
                 },
                 {
@@ -215,11 +172,9 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/GPIO",
                 "/ti/drivers/Power",
                 "/ti/drivers/PWM",
-                "/ti/drivers/RNG",
                 "/ti/drivers/Temperature",
                 "/ti/drivers/Timer",
                 "/ti/drivers/timer/GPTimerCC26XX",
-                "/ti/drivers/TRNG",
                 "/ti/drivers/Watchdog"
             ],
             "categories": [
@@ -250,22 +205,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "modules": [
                         "/ti/drivers/NVS",
                         "/ti/drivers/SD"
-                    ]
-                },
-                {
-                    "displayName": "Crypto Drivers",
-                    "description": "Encryption, Decryption and Authentication",
-                    "modules": [
-                        "/ti/drivers/AESCBC",
-                        "/ti/drivers/AESCCM",
-                        "/ti/drivers/AESCMAC",
-                        "/ti/drivers/AESCTR",
-                        "/ti/drivers/AESCTRDRBG",
-                        "/ti/drivers/AESECB",
-                        "/ti/drivers/ANSIX936KDF",
-                        "/ti/drivers/ECDH",
-                        "/ti/drivers/ECDSA",
-                        "/ti/drivers/SHA2"
                     ]
                 },
                 {
@@ -294,7 +233,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/LGPTimer",
                 "/ti/drivers/Power",
                 "/ti/drivers/PWM",
-                "/ti/drivers/RNG",
                 "/ti/drivers/Temperature",
                 "/ti/drivers/Watchdog"
             ],
@@ -325,23 +263,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "modules": [
                         "/ti/drivers/NVS",
                         "/ti/drivers/SD"
-                    ]
-                },
-                {
-                    "displayName": "Crypto Drivers",
-                    "description": "Encryption, Decryption and Authentication",
-                    "modules": [
-                        "/ti/drivers/AESCBC",
-                        "/ti/drivers/AESCCM",
-                        "/ti/drivers/AESCMAC",
-                        "/ti/drivers/AESCTR",
-                        "/ti/drivers/AESCTRDRBG",
-                        "/ti/drivers/AESECB",
-                        "/ti/drivers/ANSIX936KDF",
-                        "/ti/drivers/ECDH",
-                        "/ti/drivers/ECDSA",
-                        "/ti/drivers/ECIES",
-                        "/ti/drivers/SHA2"
                     ]
                 },
                 {
@@ -379,7 +300,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "displayName": "Serial Interfaces",
                     "description": "Data Transmission on a Wire",
                     "modules": [
-                        "/ti/drivers/CAN",
+                        /* Only CC2745 devices have CAN peripheral */
+                        ...(deviceId.match(/CC2745/) ? ["/ti/drivers/CAN"] : []),
                         "/ti/drivers/I2C",
                         "/ti/drivers/I2CTarget",
                         "/ti/drivers/I2S",
@@ -403,24 +325,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "modules": [
                         "/ti/drivers/NVS",
                         "/ti/drivers/SD"
-                    ]
-                },
-                {
-                    "displayName": "Crypto Drivers",
-                    "description": "Encryption, Decryption and Authentication",
-                    "modules": [
-                        "/ti/drivers/AESCBC",
-                        "/ti/drivers/AESCCM",
-                        "/ti/drivers/AESCMAC",
-                        "/ti/drivers/AESCTR",
-                        "/ti/drivers/AESECB",
-                        "/ti/drivers/AESGCM",
-                        "/ti/drivers/CryptoKeyKeyStore_PSA",
-                        "/ti/drivers/ECDH",
-                        "/ti/drivers/ECDSA",
-                        "/ti/drivers/SHA2",
-                        "/ti/drivers/RNG",
-                        "/ti/drivers/TRNG"
                     ]
                 },
                 {
@@ -448,8 +352,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                 "/ti/drivers/GPIO",
                 "/ti/drivers/GPTimer",
                 "/ti/drivers/Power",
-                "/ti/drivers/PWM"
-                // "/ti/drivers/Watchdog"
+                "/ti/drivers/PWM",
+                "/ti/drivers/Watchdog"
             ],
             "categories": [
                 {
@@ -460,19 +364,22 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                         // "/ti/drivers/I2S",
                         // "/ti/drivers/ITM",
                         "/ti/drivers/SPI",
-                        "/ti/drivers/UART2"
+                        "/ti/drivers/UART2",
+                        "/ti/drivers/SDIO"
                     ]
                 },
                 {
-                    "displayName": "Crypto Drivers",
-                    "description": "Encryption, Decryption and Authentication",
+                    "displayName": "Analog/Digital Conversion",
+                    "description": "Signal Transformation",
                     "modules": [
-                        // "/ti/drivers/Crypto",
-                        "/ti/drivers/AESCBC",
-                        "/ti/drivers/AESCCM",
-                        "/ti/drivers/AESGCM",
-                        "/ti/drivers/ECDSA",
-                        "/ti/drivers/SHA2"
+                        "/ti/drivers/ADC"
+                    ]
+                },
+                {
+                    "displayName": "Storage Interfaces",
+                    "description": "Permanent Data Storage",
+                    "modules": [
+                        //"/ti/drivers/SD"
                     ]
                 },
                 {

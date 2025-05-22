@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -472,6 +472,11 @@ static void MCAN_writeMsg(uint32_t elemAddr, const MCAN_TxBufElement *elem)
 void MCAN_setOpMode(MCAN_OperationMode mode)
 {
     MCAN_MODIFY_FIELD(MCAN_CCCR, MCAN_CCCR_INIT, mode);
+
+    while (MCAN_getOpMode() != mode)
+    {
+        /* Wait for the mode to be set */
+    }
 }
 
 /*

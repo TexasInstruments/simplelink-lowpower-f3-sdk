@@ -34,15 +34,16 @@
 </header>
 <div id="content">
   <h1></h1>
+<h1 id="psa-crypto">PSA Crypto</h1>
 <h2 id="overview">Overview</h2>
 <p>Arm’s Platform Security Architecture (PSA) is a holistic set of threat models, security analyses, hardware and firmware architecture specifications, an open source firmware reference implementation, and an independent evaluation and certification scheme. PSA provides a recipe, based on industry best practice, that allows security to be consistently designed in, at both a hardware and firmware level.</p>
-<p>The PSA Cryptographic API (Crypto API) is an important PSA component that provides a portable interface to cryptographic operations on a wide range of hardware. This implementation is provided as a wrapper around TI SimpleLink Crypto Drivers. Refer to <a href="https://arm-software.github.io/psa-api/crypto/">PSA Certified Crypto API v1.1.0</a> for details on the API.</p>
+<p>The PSA Crypto API is an important PSA component that provides a portable interface to cryptographic operations on a wide range of hardware. This implementation is provided as a wrapper around TI SimpleLink Crypto Drivers. Refer to <a href="https://arm-software.github.io/psa-api/crypto/">PSA Certified Crypto API v1.1.0</a> for details on the API.</p>
 <p>Hardware acceleration is implemented for AES-CBC, AES-CCM, AES-CMAC, AES-CBCMAC, AES-CTR, AES-ECB, AES-GCM, ECDH, ECDSA, SHA2, and TRNG.</p>
-<h2 id="using-psa-crypto">Using PSA Crypto</h2>
+<h2 id="usage">Usage</h2>
 <p>Pre-built libraries are provided in the <code>source/third_party/psa_crypto/lib</code> folder.</p>
 <p>To utilize PSA Crypto APIs, include the following header: <code>source/third_party/psa_crypto/include/psa/crypto.h</code></p>
-<p>For a TF-M enabled project, link the library <code>source/third_party/psa_crypto/lib/&lt;compiler&gt;/&lt;arch&gt;/psa_crypto_&lt;device&gt;_ns.a</code>.</p>
-<p>For a secure-only project, link the library <code>source/third_party/psa_crypto/lib/&lt;compiler&gt;/&lt;arch&gt;/psa_crypto_&lt;device&gt;.a</code>.</p>
+<p>For a TF-M enabled project, link the library: <code>source/third_party/psa_crypto/lib/&lt;compiler&gt;/&lt;arch&gt;/psa_crypto_&lt;device&gt;_ns.a</code>.</p>
+<p>For a secure-only project, link the library: <code>source/third_party/psa_crypto/lib/&lt;compiler&gt;/&lt;arch&gt;/psa_crypto_&lt;device&gt;.a</code>.</p>
 <h2 id="limitations">Limitations</h2>
 <p>Currently, this software library only supports TF-M enabled projects for CC13x4/CC26x4/x3 and secure-only projects for CC27xx.</p>
 <p>For information on support and limitations for crypto drivers, see the SimpleLink MCU SDK Driver API Reference.</p>
@@ -53,7 +54,7 @@
   with 100,000+ analog ICs and embedded processors, along with software, tools
   and the industry‘s largest sales/support staff.</p>
   <p>
-    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2024</a>, Texas Instruments Incorporated. All rights reserved. <br>
+    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2025</a>, Texas Instruments Incorporated. All rights reserved. <br>
     <a href="https://www.ti.com/corp/docs/legal/trademark/trademrk.htm">Trademarks</a> | <a href="https://www.ti.com/corp/docs/legal/privacy.shtml">Privacy policy</a> | <a href="https://www.ti.com/corp/docs/legal/termsofuse.shtml">Terms of use</a> | <a href="https://www.ti.com/lsds/ti/legal/termsofsale.page">Terms of sale</a>
   </p>
 </footer>

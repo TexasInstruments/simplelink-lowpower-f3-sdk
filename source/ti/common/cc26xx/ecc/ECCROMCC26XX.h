@@ -230,46 +230,46 @@ extern "C" {
  */
 
 /* Add ECCROMCC26XX_STATUS_* macros here */
-#define ECCROMCC26XX_STATUS_SUCCESS                              0  /*!< Success Return Code      */
-#define ECCROMCC26XX_STATUS_MALLOC_FAIL                         -1  /*!< Malloc Error Return Code */
-#define ECCROMCC26XX_STATUS_ILLEGAL_PARAM                       -2  /*!< Illegal parameter        */
-#define ECCROMCC26XX_STATUS_TIMEOUT                             -3  /*!< Semaphore Timeout        */
+#define ECCROMCC26XX_STATUS_SUCCESS       0  /*!< Success Return Code      */
+#define ECCROMCC26XX_STATUS_MALLOC_FAIL   -1 /*!< Malloc Error Return Code */
+#define ECCROMCC26XX_STATUS_ILLEGAL_PARAM -2 /*!< Illegal parameter        */
+#define ECCROMCC26XX_STATUS_TIMEOUT       -3 /*!< Semaphore Timeout        */
 
 /* ECC status error codes from module */
-#define ECCROMCC26XX_STATUS_MODULUS_EVEN                        0xDC  //!< Modulus Event
-#define ECCROMCC26XX_STATUS_MODULUS_LARGER_THAN_255_WORDS       0xD2  //!< Modulus Larger than 255 words
-#define ECCROMCC26XX_STATUS_MODULUS_LENGTH_ZERO                 0x08  //!< Modulus length zero
-#define ECCROMCC26XX_STATUS_MODULUS_MSW_IS_ZERO	                0x30  //!< Modulus MSW is zero
-#define ECCROMCC26XX_STATUS_SCALAR_TOO_LONG                     0x35  //!< Scalar too long
-#define ECCROMCC26XX_STATUS_SCALAR_LENGTH_ZERO	                0x53  //!< Scalar length zero
-#define ECCROMCC26XX_STATUS_ORDER_TOO_LONG                      0xC6  //!< Order too long
-#define ECCROMCC26XX_STATUS_ORDER_LENGTH_ZERO	                0x6C  //!< Order length zero
-#define ECCROMCC26XX_STATUS_X_COORD_TOO_LONG	                0x3C  //!< X Coordinate too long
-#define ECCROMCC26XX_STATUS_X_COORD_LENGTH_ZERO	                0xC3  //!< X Coordinate length zero
-#define ECCROMCC26XX_STATUS_Y_COORD_TOO_LONG	                0x65  //!< Y Coordinate too long
-#define ECCROMCC26XX_STATUS_Y_COORD_LENGTH_ZERO	                0x56  //!< Y coordinate length zero
-#define ECCROMCC26XX_STATUS_A_COEF_TOO_LONG                     0x5C  //!< A coefficient too long
-#define ECCROMCC26XX_STATUS_A_COEF_LENGTH_ZERO	                0xC5  //!< A coefficient length zero
-#define ECCROMCC26XX_STATUS_BAD_WINDOW_SIZE                     0x66  //!< Bad window size
-#define ECCROMCC26XX_STATUS_SCALAR_MUL_OK                       0x99  //!< Scalar mul ok
+#define ECCROMCC26XX_STATUS_MODULUS_EVEN                  0xDC //!< Modulus Event
+#define ECCROMCC26XX_STATUS_MODULUS_LARGER_THAN_255_WORDS 0xD2 //!< Modulus Larger than 255 words
+#define ECCROMCC26XX_STATUS_MODULUS_LENGTH_ZERO           0x08 //!< Modulus length zero
+#define ECCROMCC26XX_STATUS_MODULUS_MSW_IS_ZERO           0x30 //!< Modulus MSW is zero
+#define ECCROMCC26XX_STATUS_SCALAR_TOO_LONG               0x35 //!< Scalar too long
+#define ECCROMCC26XX_STATUS_SCALAR_LENGTH_ZERO            0x53 //!< Scalar length zero
+#define ECCROMCC26XX_STATUS_ORDER_TOO_LONG                0xC6 //!< Order too long
+#define ECCROMCC26XX_STATUS_ORDER_LENGTH_ZERO             0x6C //!< Order length zero
+#define ECCROMCC26XX_STATUS_X_COORD_TOO_LONG              0x3C //!< X Coordinate too long
+#define ECCROMCC26XX_STATUS_X_COORD_LENGTH_ZERO           0xC3 //!< X Coordinate length zero
+#define ECCROMCC26XX_STATUS_Y_COORD_TOO_LONG              0x65 //!< Y Coordinate too long
+#define ECCROMCC26XX_STATUS_Y_COORD_LENGTH_ZERO           0x56 //!< Y coordinate length zero
+#define ECCROMCC26XX_STATUS_A_COEF_TOO_LONG               0x5C //!< A coefficient too long
+#define ECCROMCC26XX_STATUS_A_COEF_LENGTH_ZERO            0xC5 //!< A coefficient length zero
+#define ECCROMCC26XX_STATUS_BAD_WINDOW_SIZE               0x66 //!< Bad window size
+#define ECCROMCC26XX_STATUS_SCALAR_MUL_OK                 0x99 //!< Scalar mul ok
 
-#define ECCROMCC26XX_STATUS_ORDER_LARGER_THAN_255_WORDS	        0x28  //!< Order larger than 255 words
-#define ECCROMCC26XX_STATUS_ORDER_EVEN                          0x82  //!< Order even
-#define ECCROMCC26XX_STATUS_ORDER_MSW_IS_ZERO                   0x23  //!< Order MSW is zero
-#define ECCROMCC26XX_STATUS_ECCROMCC26XX_STATUS_KEY_TOO_LONG    0x25  //!< Status key too long
-#define ECCROMCC26XX_STATUS_ECCROMCC26XX_STATUS_KEY_LENGTH_ZERO 0x52  //!< Status key length zero
-#define ECCROMCC26XX_STATUS_DIGEST_TOO_LONG                     0x27  //!< Digest too long
-#define ECCROMCC26XX_STATUS_DIGEST_LENGTH_ZERO                  0x72  //!< Digest length zero
-#define ECCROMCC26XX_STATUS_ECDSA_SIGN_OK                       0x32  //!< ECDSA sign OK
-#define ECCROMCC26XX_STATUS_ECDSA_INVALID_SIGNATURE             0x5A  //!< ECDSA invalid signature
-#define ECCROMCC26XX_STATUS_ECDSA_VALID_SIGNATURE               0xA5  //!< ECDSA valid signature
-#define ECCROMCC26XX_STATUS_SIG_P1_TOO_LONG                     0x11  //!< SIG P1 too long
-#define ECCROMCC26XX_STATUS_SIG_P1_LENGTH_ZERO                  0x12  //!< SIG P1 length zero
-#define ECCROMCC26XX_STATUS_SIG_P2_TOO_LONG                     0x22  //!< SIG P2 too long
-#define ECCROMCC26XX_STATUS_SIG_P2_LENGTH_ZERO                  0x21  //!< SIG P2 length zero
+#define ECCROMCC26XX_STATUS_ORDER_LARGER_THAN_255_WORDS         0x28 //!< Order larger than 255 words
+#define ECCROMCC26XX_STATUS_ORDER_EVEN                          0x82 //!< Order even
+#define ECCROMCC26XX_STATUS_ORDER_MSW_IS_ZERO                   0x23 //!< Order MSW is zero
+#define ECCROMCC26XX_STATUS_ECCROMCC26XX_STATUS_KEY_TOO_LONG    0x25 //!< Status key too long
+#define ECCROMCC26XX_STATUS_ECCROMCC26XX_STATUS_KEY_LENGTH_ZERO 0x52 //!< Status key length zero
+#define ECCROMCC26XX_STATUS_DIGEST_TOO_LONG                     0x27 //!< Digest too long
+#define ECCROMCC26XX_STATUS_DIGEST_LENGTH_ZERO                  0x72 //!< Digest length zero
+#define ECCROMCC26XX_STATUS_ECDSA_SIGN_OK                       0x32 //!< ECDSA sign OK
+#define ECCROMCC26XX_STATUS_ECDSA_INVALID_SIGNATURE             0x5A //!< ECDSA invalid signature
+#define ECCROMCC26XX_STATUS_ECDSA_VALID_SIGNATURE               0xA5 //!< ECDSA valid signature
+#define ECCROMCC26XX_STATUS_SIG_P1_TOO_LONG                     0x11 //!< SIG P1 too long
+#define ECCROMCC26XX_STATUS_SIG_P1_LENGTH_ZERO                  0x12 //!< SIG P1 length zero
+#define ECCROMCC26XX_STATUS_SIG_P2_TOO_LONG                     0x22 //!< SIG P2 too long
+#define ECCROMCC26XX_STATUS_SIG_P2_LENGTH_ZERO                  0x21 //!< SIG P2 length zero
 
-#define ECCROMCC26XX_STATUS_ECDH_KEYGEN_OK                      ECCROMCC26XX_STATUS_SCALAR_MUL_OK //!< status scalar mul OK
-#define ECCROMCC26XX_STATUS_ECDH_COMMON_KEY_OK                  ECCROMCC26XX_STATUS_SCALAR_MUL_OK //!< scalar mul OK
+#define ECCROMCC26XX_STATUS_ECDH_KEYGEN_OK     ECCROMCC26XX_STATUS_SCALAR_MUL_OK //!< status scalar mul OK
+#define ECCROMCC26XX_STATUS_ECDH_COMMON_KEY_OK ECCROMCC26XX_STATUS_SCALAR_MUL_OK //!< scalar mul OK
 /** @}*/
 
 /*!
@@ -277,19 +277,19 @@ extern "C" {
  * For use with ECC Window Size 3 only.  Used to store intermediary values in
  * ECC calculations.
  */
-#define ECCROMCC26XX_NIST_P256_WORKZONE_LEN_IN_BYTES           684
+#define ECCROMCC26XX_NIST_P256_WORKZONE_LEN_IN_BYTES 684
 
 /*!
  * ECC Workzone length in bytes for NIST P-256 key and shared secret generation.
  * For use with ECC Window Size 3 only.  Used to store intermediary values in
  * ECC calculations. This value needs to be adjusted while the sign and verify functions
  */
-#define ECCROMCC26XX_NIST_P256_WORKZONE_SIGN_VERIFY_LEN_IN_BYTES    1100
+#define ECCROMCC26XX_NIST_P256_WORKZONE_SIGN_VERIFY_LEN_IN_BYTES 1100
 
 /*!
  * ECC key length in bytes for NIST P-256 keys.
  */
-#define ECCROMCC26XX_NIST_P256_KEY_LEN_IN_BYTES                32
+#define ECCROMCC26XX_NIST_P256_KEY_LEN_IN_BYTES 32
 
 /*!
  * @brief Compute ECC workzone length in bytes for a generic key length and window size
@@ -300,7 +300,7 @@ extern "C" {
  * This workzone length is only valid for key and shared secret and signature generation.
  * A different workzone length would be used for verification.
  */
-#define ECCROMCC26XX_WORKZONE_LEN_IN_BYTES(len, win)           (4 * ((13 * (len)) + 13 + (3 * (len) * (1 << ((win) - 2)))))
+#define ECCROMCC26XX_WORKZONE_LEN_IN_BYTES(len, win) (4 * ((13 * (len)) + 13 + (3 * (len) * (1 << ((win)-2)))))
 
 /*!
  * @brief      ECCROMCC26XX Curve Parameters
@@ -310,15 +310,15 @@ extern "C" {
  */
 typedef struct ECCROMCC26XX_CurveParams
 {
-    uint8_t         keyLen;         /*!<  Length in bytes of curve parameters and keys */
-    uint16_t        workzoneLen;    /*!<  Length in bytes of work-zone to malloc        */
-    uint8_t         windowSize;     /*!<  Window size of operation                     */
-    uint32_t        *param_p;       /*!<  ECC Curve Parameter P                        */
-    uint32_t        *param_r;       /*!<  ECC Curve Parameter R                        */
-    uint32_t        *param_a;       /*!<  ECC Curve Parameter A                        */
-    uint32_t        *param_b;       /*!<  ECC Curve Parameter B                        */
-    uint32_t        *param_gx;      /*!<  ECC Curve Parameter Gx                       */
-    uint32_t        *param_gy;      /*!<  ECC Curve Parameter Gy                       */
+    uint8_t keyLen;       /*!<  Length in bytes of curve parameters and keys */
+    uint16_t workzoneLen; /*!<  Length in bytes of work-zone to malloc        */
+    uint8_t windowSize;   /*!<  Window size of operation                     */
+    uint32_t *param_p;    /*!<  ECC Curve Parameter P                        */
+    uint32_t *param_r;    /*!<  ECC Curve Parameter R                        */
+    uint32_t *param_a;    /*!<  ECC Curve Parameter A                        */
+    uint32_t *param_b;    /*!<  ECC Curve Parameter B                        */
+    uint32_t *param_gx;   /*!<  ECC Curve Parameter Gx                       */
+    uint32_t *param_gy;   /*!<  ECC Curve Parameter Gy                       */
 } ECCROMCC26XX_CurveParams;
 
 /*!
@@ -332,7 +332,7 @@ typedef struct ECCROMCC26XX_CurveParams
  */
 typedef uint8_t *(*ECCROMCC26XX_MallocCB)(uint16_t len);
 
- /*!
+/*!
  * @brief      ECCROMCC26XX Free Callback
  *
  *             Required to free temporary key buffers during operation.
@@ -348,12 +348,13 @@ typedef void (*ECCROMCC26XX_FreeCB)(uint8_t *pBuf);
  *
  *  Holds a client's parameters for performing an ECC operation.
  */
-typedef struct ECCROMCC26XX_Params {
-    ECCROMCC26XX_CurveParams curve;   /*!< ECC Curve Parameters   */
-    ECCROMCC26XX_MallocCB    malloc;  /*!< Malloc Callback        */
-    ECCROMCC26XX_FreeCB      free;    /*!< Free Callback          */
-    uint32_t                 timeout; /*!< Semaphore wait timeout */
-    int8_t                   status;  /*!< stored return status   */
+typedef struct ECCROMCC26XX_Params
+{
+    ECCROMCC26XX_CurveParams curve; /*!< ECC Curve Parameters   */
+    ECCROMCC26XX_MallocCB malloc;   /*!< Malloc Callback        */
+    ECCROMCC26XX_FreeCB free;       /*!< Free Callback          */
+    uint32_t timeout;               /*!< Semaphore wait timeout */
+    int8_t status;                  /*!< stored return status   */
 } ECCROMCC26XX_Params;
 
 /*!
@@ -402,8 +403,7 @@ void ECCROMCC26XX_Params_init(ECCROMCC26XX_Params *params);
  *
  *  @return status
  */
-int8_t ECCROMCC26XX_genKeys(uint8_t *privateKey, uint8_t *publicKeyX,
-                            uint8_t *publicKeyY, ECCROMCC26XX_Params *params);
+int8_t ECCROMCC26XX_genKeys(uint8_t *privateKey, uint8_t *publicKeyX, uint8_t *publicKeyY, ECCROMCC26XX_Params *params);
 
 /*!
  *  @brief  Generate Diffie-Hellman Shared Secret Key X and Y Coordinates.
@@ -432,9 +432,12 @@ int8_t ECCROMCC26XX_genKeys(uint8_t *privateKey, uint8_t *publicKeyX,
  *
  *  @return status
  */
-int8_t ECCROMCC26XX_genDHKey(uint8_t *privateKey, uint8_t *publicKeyX,
-                             uint8_t *publicKeyY, uint8_t *dHKeyX,
-                             uint8_t *dHKeyY, ECCROMCC26XX_Params *params);
+int8_t ECCROMCC26XX_genDHKey(uint8_t *privateKey,
+                             uint8_t *publicKeyX,
+                             uint8_t *publicKeyY,
+                             uint8_t *dHKeyX,
+                             uint8_t *dHKeyY,
+                             ECCROMCC26XX_Params *params);
 
 /** @} End ECCROMCC26XX */
 

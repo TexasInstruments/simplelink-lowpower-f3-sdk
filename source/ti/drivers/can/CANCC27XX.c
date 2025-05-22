@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/can.h)
-#include DeviceFamily_constructPath(inc/hw_ckmd.h)
+#include DeviceFamily_constructPath(driverlib/ckmd.h)
 #include DeviceFamily_constructPath(inc/hw_fcfg.h) /* For AFOSC trim */
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
@@ -772,7 +772,7 @@ int_fast16_t CAN_initDevice(uint_least8_t index, CAN_Params *params)
     }
 
     /* Set CAN functional clock to use AFOSC (80 MHz) */
-    HWREG(CKMD_BASE + CKMD_O_CANCLKSEL) |= CKMD_CANCLKSEL_SRC_CLKAF;
+    CKMDSelectCanClock(CKMD_CAN_CLOCK_SOURCE_CLKAF);
 
     /* Power up and enable host clock for MCAN peripheral */
     Power_setDependency(PowerLPF3_PERIPH_MCAN);

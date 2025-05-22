@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -97,6 +97,9 @@
 
 #define LRF_DCDC_IPEAK_RF_ACTIVITY  3
 
+/* Only the lower 8-bits of the LRFDPBE_O_GPOCTRL are supported */
+#define LRF_PBE_GPOCTRL_MASK 0xFF
+
 static uint32_t LRF_findPllMBase(uint32_t frequency);
 static uint32_t countLeadingZeros(uint16_t value);
 static uint32_t LRF_findCalM(uint32_t frequency, uint32_t prediv);
@@ -117,6 +120,7 @@ static uint32_t LRF_scaleFreqWithHFXTOffset(uint32_t frequency);
 static void LRF_writeFifoPtr(uint32_t value, uintptr_t regAddr);
 static void LRF_writeFifoPtrs(uint32_t value, uintptr_t regAddr0, uintptr_t regAddr1);
 static void LRF_temperatureNotification(int16_t currentTemperature);
+static void LRF_applyAntennaSelection(void);
 
 uint32_t swParamList[sizeof(LRF_SwParam)/sizeof(uint32_t)];
 const size_t swParamListSz = sizeof(LRF_SwParam);
@@ -144,6 +148,27 @@ static uint8_t dcdcIpeakRestoreSetting;
 
 /* Temperature threshold (degrees C) for use by the temperature monitoring. A value of 0 disables the feature. */
 uint16_t rclTemperatureThreshold = 8;
+
+/* Coexistence configuration to use if no other configuration is provided through SysConfig or other file. 
+ * This default configuration disables coex. */
+const LRF_CoexConfiguration lrfCoexConfiguration __attribute__((weak)) =
+{
+    .T1 = 0,
+    .T2 = 0,
+    .grantPin = RFE_COMMON_RAM_GRANTPIN_CFG_DIS >> RFE_COMMON_RAM_GRANTPIN_CFG_S,
+    .invertedPriority = false,
+    .ieeeTSync = RCL_SCHEDULER_SYSTIM_US(140),
+    .ieeeCorrMask = 0x03,
+};
+
+/* Bit mask indicating which bits in LRFDPBE_GPOCTRL register are written
+ * This is the configuration supposed to not change during runtime and allowed
+ * to be customized per project or platform
+ */
+__attribute__((weak)) uint8_t rclPbeGpoMask = 0x00;
+
+/* Default value set to LRFDPBE_GPOCTRL, which specifies the default antennas if rclPbeGpoMask is non-zero */
+static uint8_t rclPbeGpoVal = 0;
 
 LRF_SetupResult LRF_setupRadio(const LRF_Config *lrfConfig, uint16_t phyFeatures, LRF_RadioState lrfState)
 {
@@ -213,6 +238,13 @@ LRF_SetupResult LRF_setupRadio(const LRF_Config *lrfConfig, uint16_t phyFeatures
         HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_RSSI) = LRF_RSSI_INVALID;
         /* Set PBE to writing FIFO commands to FCMD */
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_FIFOCMDADD) = ((LRFDPBE_BASE + LRFDPBE_O_FCMD) & 0x0FFF) >> 2;
+        /* Turn off coex grant signal in RFE */
+        LRF_disableCoexGrant();
+        /* Check if a default value needs to be set for LRFDPBE_O_GPOCTRL */
+        if (rclPbeGpoMask != 0)
+        {
+            LRF_applyAntennaSelection();
+        }
     }
 
     if (result == SetupResult_Ok)
@@ -1037,6 +1069,47 @@ void LRF_setRxFifoEffSz(uint32_t maxSz)
     }
 }
 
+/*
+ *  ======== LRF_peekRxFifoWords ========
+ */
+void LRF_peekRxFifoWords(uint32_t *data32, uint32_t wordLength, uint32_t startRp)
+{
+    uint32_t fifoStart = ((HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG3) & LRFDPBE_FCFG3_RXSTRT_M) >> LRFDPBE_FCFG3_RXSTRT_S) << 2;
+    uint32_t *dataEntry = (uint32_t *) (RXF_UNWRAPPED_BASE_ADDR + fifoStart + startRp);
+#ifdef DeviceFamily_CC27XX
+    ASM_4_NOPS();
+#endif //DeviceFamily_CC27XX
+    for (uint32_t i = 0; i < wordLength; i++)
+    {
+        *data32++ = *dataEntry++;
+    }
+}
+
+/*
+ *  ======== LRF_getUncommittedFifoStatus ========
+ */
+uint32_t LRF_getUncommittedFifoStatus(uint32_t *currentRp)
+{
+    /* Find information  on RX FIFO */
+    int32_t fifosz = ((HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG4) & LRFDPBE_FCFG4_RXSIZE_M) >> LRFDPBE_FCFG4_RXSIZE_S) << 2;
+
+    uintptr_t key = HwiP_disable();
+    /* Check RX FIFO read and write pointers */
+    int32_t rp = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRP);
+    int32_t wp = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFWP);
+    HwiP_restore(key);
+
+    /* Find number of bytes written to FIFO (including uncommitted) */
+    int32_t ptrDiff = wp - rp;
+    if (ptrDiff < 0)
+    {
+        ptrDiff += fifosz;
+    }
+
+    *currentRp = (uint32_t)rp;
+    return (uint32_t) ptrDiff;
+}
+
 /* (FXTALINVL + (FXTALINVH << 16)) = round(2^67/48e6) */
 #define FXTALINVL 0x00001E52U
 #define FXTALINVH 0x02CBD3F0U
@@ -1560,6 +1633,27 @@ LRF_TxPowerTable_Entry LRF_getRawTxPower(void)
     }
 }
 
+void LRF_enableCoexGrant(void)
+{
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_GRANTPIN) =
+        (lrfCoexConfiguration.grantPin << RFE_COMMON_RAM_GRANTPIN_CFG_S);
+}
+
+void LRF_disableCoexGrant(void)
+{
+    HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_GRANTPIN) =
+        RFE_COMMON_RAM_GRANTPIN_CFG_DIS;
+}
+
+void LRF_deassertCoexRequest(void)
+{
+    /* Set coex REQUEST and PRIORITY lines low to indicate no request */
+    /* Should only be done when PBE is finished */
+    uint32_t pbeGpo = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL);
+    pbeGpo &= ~(LRFDPBE_GPOCTRL_GPO0_M | LRFDPBE_GPOCTRL_GPO1_M);
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL) = pbeGpo;
+}
+
 /* Avoid IB = 0 as it effectively turns the PA off */
 #define RFE_PA0_IB_MIN_USED 1
 
@@ -1725,4 +1819,23 @@ void LRF_updateTemperatureCompensation(uint32_t rfFrequency, bool tx)
 int16_t LRF_getLastTrimTemperature(void)
 {
     return lrfPhyState.lastTrimTemperature;
+}
+
+/*
+ * ======== LRF_setAntennaSelection ========
+ */
+void LRF_setAntennaSelection(uint32_t value)
+{
+    rclPbeGpoVal = value & LRF_PBE_GPOCTRL_MASK;
+}
+
+/*
+ * ======== LRF_applyAntennaSelection ========
+ */
+static void LRF_applyAntennaSelection(void)
+{
+    uint32_t pbeGpoVal = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL);
+    pbeGpoVal &= ~((uint32_t)rclPbeGpoMask);
+    pbeGpoVal |= (uint32_t)(rclPbeGpoVal & rclPbeGpoMask);
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL) = pbeGpoVal;
 }

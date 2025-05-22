@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include DeviceFamily_constructPath(inc/hw_clkctl.h)
 #include DeviceFamily_constructPath(inc/hw_hsm.h)
 #include DeviceFamily_constructPath(inc/hw_hsmcrypto.h)
+#include DeviceFamily_constructPath(inc/hw_ints.h)
 
 /* Defines */
 
@@ -52,8 +53,8 @@
 #define BIT_15                      ((uint32_t)0x00008000U)
 #define MASK_4_BITS                 (((uint32_t)0x00000010U) - 1U)
 #define MASK_5_BITS                 (((uint32_t)0x00000020U) - 1U)
-#define HSM_OUTPUT_TOKEN_WORD_COUNT 20
 #define HSM_TOKEN_MAX_LENGTH        64
+#define HSM_OUTPUT_TOKEN_WORD_COUNT HSM_TOKEN_MAX_LENGTH
 
 /* Boot-related Defines */
 #define HSM_BOOT_TOKEN_WORD0        0xCF000000
@@ -87,7 +88,7 @@
 #define HSM_HASH_DIGEST_LENGTH_256 32
 #define HSM_HASH_DIGEST_LENGTH_384 48
 #define HSM_HASH_DIGEST_LENGTH_512 64
-#define HSM_HASH_TOKEN_WORD_COUNT  12
+#define HSM_HASH_TOKEN_WORD_COUNT  64
 
 /* MAC Defines */
 #define HSM_MAC_TOKEN_WORD0      0x13000000
@@ -98,14 +99,18 @@
 #define HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0   0x27000000
 #define HSM_ASSET_MANAGEMENT_DELETE_TOKEN_WORD0 0x37000000
 #define HSM_ASSET_MANAGEMENT_READ_TOKEN_WORD0   0x47000000
+#define HSM_ASSET_LOAD_DERIVE                   0x01000000
+#define HSM_ASSET_LOAD_IMPORT                   0x04000000
 #define HSM_ASSET_LOAD_PLAINTEXT                0x08000000
-#define HSM_ASSET_MANAGEMENT_WORD_COUNT         12
+#define HSM_ASSET_LOAD_KEY_BLOB                 0x80000000
+#define HSM_ASSET_MANAGEMENT_WORD_COUNT         30
 
 /* Asset Policy Defines */
 #define HSM_ASSET_POLICY_SYM_HASH_MAC   0x00012801
 #define HSM_ASSET_POLICY_SYM_AES_MAC    0x00022801
 #define HSM_ASSET_POLICY_SYM_AES_BULK   0x00032801
 #define HSM_ASSET_POLICY_SYM_AES_AUTH   0x00042801
+#define HSM_ASSET_POLICY_SYM_WRAP       0x00052801
 #define HSM_ASSET_POLICY_ASYM_SIGNVRFY  0x00004001
 #define HSM_ASSET_POLICY_ASYM_KEYEXCH   0x00014001
 #define HSM_ASSET_POLICY_ASYM_KEYPARAMS 0x000F4401
@@ -116,6 +121,7 @@
 
 #define HSM_ASSET_POLICY_DIR_ENC_GEN  0x00100000
 #define HSM_ASSET_POLICY_DIR_DEC_VRFY 0x00200000
+#define HSM_ASSET_POLICY_DIR_ENC_DEC  0x00300000
 
 #define HSM_ASSET_POLICY_AIH_SHA2_224 0x01000000
 #define HSM_ASSET_POLICY_AIH_SHA2_256 0x01400000
@@ -139,10 +145,14 @@
 #define HSM_ASSET_POLICY_ASYM_SHA2_384 0x30000000
 #define HSM_ASSET_POLICY_ASYM_SHA2_512 0x38000000
 
+#define HSM_KEK_ASSET_POLICY HSM_ASSET_POLICY_SYM_WRAP | HSM_ASSET_POLICY_DIR_ENC_DEC
+#define HSM_KEK_ASSET_SIZE   64
+
 /* RNG Defines */
 #define HSM_RNG_GET_TOKEN_WORD0           0x04000000
 #define HSM_RNG_CONFIG_TOKEN_WORD0        0x14000000
-#define HSM_RNG_CONFIG_RESEED_TOKEN_WORD2 0x00000001
+#define HSM_RNG_CONFIG_TOKEN_WORD2        0X00000004
+#define HSM_RNG_CONFIG_RESEED_TOKEN_WORD2 0x00000002
 #define HSM_RNG_TOKEN_WORD_COUNT          5
 
 /* ECC Defines */
@@ -159,9 +169,23 @@
 #define HSM_PK_TOKEN_WORD3_SV_SHRD_SCRT 0x80000000
 #define HSM_PK_TOKEN_WORD3_EXP_DGST     0x40000000
 
+/* Misc Defines */
+#define HSM_HUK_TOKEN_WORD0              0x97000000
+#define HUK_PROVISION_TOKEN_WORD2_256BIT 0x00020000
+#define HSM_HUK_TOKEN_WORD2              HSM_RNG_CONFIG_TOKEN_WORD2 | HUK_PROVISION_TOKEN_WORD2_256BIT
+#define HSM_HUK_ALREADY_PROVISIONED      0x87
+#define HSM_RESET_TOKEN_WORD0            0x2F000000
+#define HSM_SEARCH_TOKEN_WORD0           0x07000000
+#define HSM_HUK_TOKEN_WORD_COUNT         3
+#define HSM_RESET_TOKEN_WORD_COUNT       2
+#define HSM_SEARCH_TOKEN_COUNT           5
+
 #define HSM_RNG_RAW_DATA_BLOCK_SIZE 256
 #define HSM_RNG_WORD_LENGTH         4
 #define HSM_DRBG_MAX_LENGTH         (1 << 16)
+
+#define HSM_AS_KEYBLOB_ADLABEL "SomeAssociatedDataForGeneratingTheKeyBlob"
+#define HSM_AS_DERIVE_ADLABEL  "JustSomeAssociatedDataForTheAssetLoadDerivationFunction"
 
 /* Metadata Structures */
 
@@ -201,7 +225,10 @@ static uint32_t HSMBareMetal_outputToken[HSM_TOKEN_MAX_LENGTH];
 
 static uint8_t HSMBareMetal_rawDataPool[HSM_RNG_RAW_DATA_BLOCK_SIZE] = {0};
 
-static HSMBareMetal_NRBGMode currentNRBGType = NRBG_TYPE_CRNG;
+static HSMBareMetal_NRBGMode HSMBareMetal_currentNRBGType = NRBG_TYPE_CRNG;
+
+static uint32_t HSMBareMetal_hukAssetId = 0U;
+static uint32_t HSMBareMetal_kekAssetId = 0U;
 
 /* Forward declarations */
 static void HSMBareMetal_writeToken(const uint32_t *token, uint32_t len);
@@ -209,8 +236,35 @@ static void HSMBareMetal_initMbox(void);
 static void HSMBareMetal_enableClock(void);
 static int_fast16_t HSMBareMetal_boot(void);
 static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount);
-static int_fast16_t HSMBareMetal_isHSMInFatalStatus();
-static int_fast16_t HSMBareMetal_isHSMfirmwareImgAccepted();
+static int_fast16_t HSMBareMetal_isHSMInFatalStatus(void);
+static int_fast16_t HSMBareMetal_isHSMfirmwareImgAccepted(void);
+static int_fast16_t HSMBareMetal_resetHSM(void);
+static int_fast16_t HSMBareMetal_deriveKekAsset(void);
+static int_fast16_t HSMBareMetal_createKeyAssetId(uint32_t assetPolicy, uint32_t keyLength, uint32_t *keyAssetId);
+static int_fast16_t HSMBareMetal_loadDerive(uint32_t *keyAssetId,
+                                            uint32_t *rootKeyAssetId,
+                                            uint8_t *data,
+                                            uint32_t dataLength);
+static int_fast16_t HSMBareMetal_loadImport(uint32_t *keyAssetId,
+                                            uint32_t *rootKeyAssetId,
+                                            uint8_t *blob,
+                                            uint32_t blobLength,
+                                            uint8_t *additionalData,
+                                            uint32_t additionalDataLength);
+static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetId(uint32_t *keyAssetId, uint8_t *key, uint32_t keyLength);
+static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetIdAndExport(uint32_t *keyAssetId,
+                                                                  uint32_t *rootKeyAssetId,
+                                                                  uint8_t *key,
+                                                                  uint32_t keyLength,
+                                                                  uint8_t *blob,
+                                                                  uint32_t blobLength,
+                                                                  uint8_t *additionalData,
+                                                                  uint32_t additionalDataLength);
+static int_fast16_t HSMBareMetal_constructAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                      HSMBareMetal_operationDirection operationDirection,
+                                                      uint32_t *assetPolicy);
+static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                     HSMBareMetal_operationDirection operationDirection);
 static int_fast16_t HSMBareMetal_ECCOperationGetCurveLength(HSMBareMetal_ECCOperationObject *object);
 static int_fast16_t HSMBareMetal_ECCOperationCreateCurveParamsAsset(HSMBareMetal_ECCOperationObject *object);
 static int_fast16_t HSMBareMetal_ECCOperationCreateAndLoadPrivateKeyAsset(HSMBareMetal_ECCOperationObject *object);
@@ -285,6 +339,76 @@ static void HSMBareMetal_initMbox(void)
 
     /* Make sure CPU_ID=0 host can access mailbox 1 & 2 (no lockout) */
     HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBLCKOUT) = 0xFFFFFF77 & HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBLCKOUT);
+}
+
+/*
+ *  ======== HSMBareMetal_writeToken ========
+ * Write directly to the HSM engine.
+ */
+static void HSMBareMetal_writeToken(const uint32_t *token, uint32_t len)
+{
+    uint32_t i;
+
+    /* Wait for mbx1_in_full to be false */
+    while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1IN) == HSMCRYPTO_MBSTA_MB1IN_FULL) {}
+
+    for (i = 0U; i < len; i++)
+    {
+        HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MB1IN + i*4) = token[i];
+    }
+
+    /* Mark mbx1 in as full*/
+    HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBCTL) = HSMCRYPTO_MBCTL_MB1IN_FULL;
+}
+
+/*
+ *  ======== HSMBareMetal_writeTokenAndWaitForResults ========
+ */
+static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount)
+{
+    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    uint32_t *output    = (uint32_t *)(HSMCRYPTO_BASE);
+
+    /* Turn on the HSM IP and initialize the HSM mailbox */
+    HSMBareMetal_enableClock();
+
+    HSMBareMetal_initMbox();
+
+    if (HSMBareMetal_inputToken[0] != HSM_BOOT_TOKEN_WORD0)
+    {
+        HSMBareMetal_inputToken[1] = HSM_CRYPTO_OFFICER_ID;
+    }
+
+    /* Write token to mbx1_in */
+    HSMBareMetal_writeToken(HSMBareMetal_inputToken, wordCount);
+
+    /* Wait for result in mbx1_out */
+    while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1OUT_M) != HSMCRYPTO_MBSTA_MB1OUT_FULL)
+    {
+        /* Any OTP write operation requires enabling the OTPEVT interrupt event.
+         * This means, the code requires constant clearing of the interrupt bit since we are not setting an interrupt
+         * handler.
+         */
+        if (HSMBareMetal_inputToken[0] == HSM_HUK_TOKEN_WORD0)
+        {
+            HWREG(HSM_BASE + HSM_O_CTL) |= HSM_CTL_OTPEVTCLR_CLR;
+        }
+    }
+
+    /* Copy the mailbox 1 out register into the static HSMBareMetal_outputToken buffer. */
+    (void)memcpy((void *)&HSMBareMetal_outputToken, (void *)&output[0], sizeof(HSMBareMetal_outputToken));
+
+    if ((HSMBareMetal_outputToken[0] & HSM_OUTPUT_TOKEN_ERROR_MASK) == 0)
+    {
+        status = HSMBAREMETAL_STATUS_SUCCESS;
+    }
+
+    HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBCTL) = HSMCRYPTO_MBCTL_MB1OUT_EMTY;
+
+    /* Turn off the HSM IP. */
+    HSMBareMetal_disableClock();
+
+    return status;
 }
 
 /*
@@ -386,11 +510,7 @@ int_fast16_t HSMBareMetal_init(void)
 
     if (!HSMBareMetal_isInitialized && !HSMBareMetal_isHSMfirmwareImgAccepted())
     {
-        /* Initialize HSM clock and mailbox, then boot it */
-        HSMBareMetal_enableClock();
-
-        HSMBareMetal_initMbox();
-
+        // /* Initialize HSM clock and mailbox, then boot it */
         if (HSMBareMetal_boot() == HSMBAREMETAL_STATUS_SUCCESS)
         {
             HSMBareMetal_isInitialized = true;
@@ -427,193 +547,171 @@ int_fast16_t HSMBareMetal_deInit(void)
 }
 
 /*
- *  ======== HSMBareMetal_writeToken ========
- * Write directly to the HSM engine.
+ *  ======== HSMBareMetal_checkHSMStatus ========
  */
-static void HSMBareMetal_writeToken(const uint32_t *token, uint32_t len)
+int_fast16_t HSMBareMetal_checkHSMStatus(void)
 {
-    uint32_t i;
+    int_fast16_t status = HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED;
 
-    /* Wait for mbx1_in_full to be false */
-    while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1IN) == HSMCRYPTO_MBSTA_MB1IN_FULL) {}
-
-    for (i = 0U; i < len; i++)
-    {
-        HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MB1IN + i*4) = token[i];
-    }
-
-    /* Mark mbx1 in as full*/
-    HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBCTL) = HSMCRYPTO_MBCTL_MB1IN_FULL;
-}
-
-/*
- *  ======== HSMBareMetal_writeTokenAndWaitForResults ========
- */
-static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount)
-{
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
-    uint32_t *output    = (uint32_t *)(HSMCRYPTO_BASE);
-
-    /* Turn on the HSM IP and initialize the HSM mailbox */
     HSMBareMetal_enableClock();
 
-    HSMBareMetal_initMbox();
-
-    if (HSMBareMetal_inputToken[0] != HSM_BOOT_TOKEN_WORD0)
+    /* Check whether the HSM has been initialized or in fatal error status. */
+    if (HSMBareMetal_isHSMInFatalStatus())
     {
-        HSMBareMetal_inputToken[1] = HSM_CRYPTO_OFFICER_ID;
+        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
+        status = HSMBAREMETAL_STATUS_HW_ERROR;
+    }
+    else if (!HSMBareMetal_isHSMfirmwareImgAccepted())
+    {
+        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
+         * is conducted. */
+        status = HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
+    }
+    else
+    {
+        HSMBareMetal_isInitialized = true;
     }
 
-    /* Write token to mbx1_in */
-    HSMBareMetal_writeToken(HSMBareMetal_inputToken, wordCount);
-
-    /* Wait for result in mbx1_out */
-    while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1OUT_M) != HSMCRYPTO_MBSTA_MB1OUT_FULL) {}
-
-    /* Copy the mailbox 1 out register into the static HSMBareMetal_outputToken buffer. */
-    (void)memcpy((void *)&HSMBareMetal_outputToken, (void *)&output[0], sizeof(HSMBareMetal_outputToken));
-
-    if ((HSMBareMetal_outputToken[0] & HSM_OUTPUT_TOKEN_ERROR_MASK) == 0)
-    {
-        status = HSMBAREMETAL_STATUS_SUCCESS;
-    }
-
-    HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBCTL) = HSMCRYPTO_MBCTL_MB1OUT_EMTY;
-
-    /* Turn off the HSM IP. */
     HSMBareMetal_disableClock();
 
     return status;
 }
 
 /*
- *  ======== HSMBareMetal_RNGOperation ========
+ *  ======== HSMBareMetal_resetHSM ========
  */
-int_fast16_t HSMBareMetal_RNGOperation(HSMBareMetal_RNGOperationStruct *operationStruct)
+static int_fast16_t HSMBareMetal_resetHSM(void)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
-    size_t randomLength = operationStruct->randomLength;
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
-    if ((randomLength == 0) || (randomLength > HSM_DRBG_MAX_LENGTH) ||
-        ((operationStruct->entropyType == ENTROPY_TYPE_DRBG) && (!HSM_IS_SIZE_MULTIPLE_OF_WORD(randomLength))) ||
-        (((operationStruct->entropyType == ENTROPY_TYPE_TRNG) || (operationStruct->entropyType == ENTROPY_TYPE_CRNG)) &&
-         (randomLength > HSM_RNG_RAW_DATA_BLOCK_SIZE) && (!HSM_IS_SIZE_MULTIPLE_OF_RAW_BLOCK(randomLength))))
-    {
-        /* Limitation:
-         *  1. entropy length cannot be 0.
-         *  2. entropy length less than or equal to 2^16 bytes.
-         *  3. If entropy type is DRBG, the entropy length has to be 32-bit aligned (multiple of 4 Bytes).
-         *  4. If entropy type is CRNG or TRNG, the entropy length can be anywhere between 1-256 bytes and multiple of
-         *      256 bytes if larger than 256 bytes.
-         */
-        return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
-    }
-
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RESET_TOKEN_WORD_COUNT);
     (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
 
-    HSMBareMetal_inputToken[0] = HSM_RNG_GET_TOKEN_WORD0;
-
-    if ((operationStruct->entropyType == ENTROPY_TYPE_CRNG) || (operationStruct->entropyType == ENTROPY_TYPE_TRNG))
-    {
-        uint8_t numBlocks = (operationStruct->randomLength / HSM_RNG_RAW_DATA_BLOCK_SIZE);
-        randomLength      = numBlocks == 0U ? 1U : numBlocks;
-
-        HSMBareMetal_inputToken[2] = (operationStruct->entropyType << 16) | randomLength;
-
-        if (operationStruct->randomLength < HSM_RNG_RAW_DATA_BLOCK_SIZE)
-        {
-            HSMBareMetal_inputToken[3] = (uintptr_t)(&HSMBareMetal_rawDataPool[0]);
-        }
-        else
-        {
-            HSMBareMetal_inputToken[3] = (uintptr_t)operationStruct->random;
-        }
-    }
-    else
-    {
-        HSMBareMetal_inputToken[2] = randomLength;
-        HSMBareMetal_inputToken[3] = (uintptr_t)operationStruct->random;
-    }
+    HSMBareMetal_inputToken[0] = HSM_RESET_TOKEN_WORD0;
 
     /* Perform the following:
      *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_TOKEN_WORD_COUNT);
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_RESET_TOKEN_WORD_COUNT);
+}
+
+/*
+ *  ======== HSMBareMetal_provisionHUK ========
+ */
+int_fast16_t HSMBareMetal_provisionHUK(void)
+{
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
+    uint32_t hukAssetId = 0U;
+
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    {
+        return status;
+    }
+
+    status = HSMBareMetal_searchStaticAsset(HSMBAREMETAL_HUK_ASSET_NUMBER, &hukAssetId);
+
+    if ((status == HSMBAREMETAL_STATUS_SUCCESS) && (hukAssetId != 0U))
+    {
+        return HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED;
+    }
+
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HUK_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_HUK_TOKEN_WORD0;
+    HSMBareMetal_inputToken[2] = (HSMBareMetal_currentNRBGType << 4) | HSM_HUK_TOKEN_WORD2;
+
+    /* Enable the OTP interrupt event */
+    HWREG(HSM_BASE + HSM_O_CTL) |= HSM_CTL_OTPEVTEN_EN;
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HUK_TOKEN_WORD_COUNT);
+
+    /* Disable the OTP interrupt event */
+    HWREG(HSM_BASE + HSM_O_CTL) &= ~HSM_CTL_OTPEVTEN_EN;
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
-        if ((operationStruct->entropyType == ENTROPY_TYPE_CRNG) || (operationStruct->entropyType == ENTROPY_TYPE_TRNG))
-        {
-            if (operationStruct->randomLength < HSM_RNG_RAW_DATA_BLOCK_SIZE)
-            {
-                /* Copy entropy from pool when request is less than 256 bytes. */
-                (void)memcpy((void *)operationStruct->random,
-                             (void *)&HSMBareMetal_rawDataPool[0],
-                             operationStruct->randomLength);
-            }
-        }
+        status = HSMBareMetal_resetHSM();
     }
 
     return status;
 }
 
 /*
- *  ======== HSMBareMetal_RNGSwitchNRBGMode ========
+ *  ======== HSMBareMetal_deriveKekAsset ========
  */
-int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode)
+static int_fast16_t HSMBareMetal_deriveKekAsset(void)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status           = HSMBareMetal_checkHSMStatus();
+    const uint8_t adLabelDerive[] = HSM_AS_DERIVE_ADLABEL;
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
-    }
-    else if (currentNRBGType == NRBGMode)
-    {
-        /* The cached NRBG mode is already in mode. */
-        return HSMBAREMETAL_STATUS_NRBG_ALREADY_IN_MODE;
+        return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(HSMBareMetal_outputToken));
+    status = HSMBareMetal_searchStaticAsset(HSMBAREMETAL_HUK_ASSET_NUMBER, &HSMBareMetal_hukAssetId);
 
-    HSMBareMetal_inputToken[0] = HSM_RNG_GET_TOKEN_WORD0;
-    HSMBareMetal_inputToken[2] = (NRBGMode << 4) | HSM_RNG_CONFIG_RESEED_TOKEN_WORD2;
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    status = HSMBareMetal_createKeyAssetId(HSM_KEK_ASSET_POLICY, HSM_KEK_ASSET_SIZE, &HSMBareMetal_kekAssetId);
+
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    status = HSMBareMetal_loadDerive(&HSMBareMetal_kekAssetId,
+                                     &HSMBareMetal_hukAssetId,
+                                     (uint8_t *)adLabelDerive,
+                                     (sizeof(adLabelDerive) - 1U));
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_searchStaticAsset ========
+ */
+int_fast16_t HSMBareMetal_searchStaticAsset(uint32_t assetNumber, uint32_t *assetId)
+{
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
+
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    {
+        return status;
+    }
+
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_SEARCH_TOKEN_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_SEARCH_TOKEN_WORD0;
+    HSMBareMetal_inputToken[4] = (assetNumber << 16);
 
     /* Perform the following:
      *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_SEARCH_TOKEN_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
-        currentNRBGType = NRBGMode;
+        *assetId = HSMBareMetal_outputToken[1];
     }
 
     return status;
@@ -650,9 +748,64 @@ static int_fast16_t HSMBareMetal_createKeyAssetId(uint32_t assetPolicy, uint32_t
 }
 
 /*
- *  ======== HSMBareMetal_loadKeyAssetId ========
+ *  ======== HSMBareMetal_loadDerive ========
  */
-static int_fast16_t HSMBareMetal_loadKeyAssetId(uint32_t *keyAssetId, uint8_t *key, uint32_t keyLength)
+static int_fast16_t HSMBareMetal_loadDerive(uint32_t *keyAssetId,
+                                            uint32_t *rootKeyAssetId,
+                                            uint8_t *additionalData,
+                                            uint32_t additionalDataLength)
+{
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
+    HSMBareMetal_inputToken[2] = *keyAssetId;
+    HSMBareMetal_inputToken[3] = HSM_ASSET_LOAD_DERIVE | (additionalDataLength << 16);
+    HSMBareMetal_inputToken[9] = *rootKeyAssetId;
+
+    (void)memcpy((void *)&HSMBareMetal_inputToken[10], (void *)additionalData, additionalDataLength);
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+}
+
+/*
+ *  ======== HSMBareMetal_loadImport ========
+ */
+static int_fast16_t HSMBareMetal_loadImport(uint32_t *keyAssetId,
+                                            uint32_t *rootKeyAssetId,
+                                            uint8_t *blob,
+                                            uint32_t blobLength,
+                                            uint8_t *additionalData,
+                                            uint32_t additionalDataLength)
+{
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
+    HSMBareMetal_inputToken[2] = *keyAssetId;
+    HSMBareMetal_inputToken[3] = HSM_ASSET_LOAD_IMPORT | (additionalDataLength << 16) | blobLength;
+    HSMBareMetal_inputToken[4] = (uintptr_t)blob;
+    HSMBareMetal_inputToken[9] = *rootKeyAssetId;
+
+    (void)memcpy((void *)&HSMBareMetal_inputToken[10], (void *)additionalData, additionalDataLength);
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+}
+
+/*
+ *  ======== HSMBareMetal_loadPlaintextKeyAssetId ========
+ */
+static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetId(uint32_t *keyAssetId, uint8_t *key, uint32_t keyLength)
 {
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
     (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
@@ -661,6 +814,40 @@ static int_fast16_t HSMBareMetal_loadKeyAssetId(uint32_t *keyAssetId, uint8_t *k
     HSMBareMetal_inputToken[2] = *keyAssetId;
     HSMBareMetal_inputToken[3] = HSM_ASSET_LOAD_PLAINTEXT | keyLength;
     HSMBareMetal_inputToken[4] = (uintptr_t)key;
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+}
+
+/*
+ *  ======== HSMBareMetal_loadPlaintextKeyAssetIdAndExport ========
+ */
+static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetIdAndExport(uint32_t *keyAssetId,
+                                                                  uint32_t *rootKeyAssetId,
+                                                                  uint8_t *key,
+                                                                  uint32_t keyLength,
+                                                                  uint8_t *blob,
+                                                                  uint32_t blobLength,
+                                                                  uint8_t *additionalData,
+                                                                  uint32_t additionalDataLength)
+{
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
+    HSMBareMetal_inputToken[2] = *keyAssetId;
+    HSMBareMetal_inputToken[3] = HSM_ASSET_LOAD_KEY_BLOB | HSM_ASSET_LOAD_PLAINTEXT | (additionalDataLength << 16) |
+                                 keyLength;
+    HSMBareMetal_inputToken[4] = (uintptr_t)key;
+    HSMBareMetal_inputToken[6] = (uintptr_t)blob;
+    HSMBareMetal_inputToken[8] = AES_BLOCK_SIZE + keyLength;
+    HSMBareMetal_inputToken[9] = *rootKeyAssetId;
+
+    (void)memcpy((void *)&HSMBareMetal_inputToken[10], (void *)additionalData, additionalDataLength);
 
     /* Perform the following:
      *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
@@ -773,16 +960,22 @@ static int_fast16_t HSMBareMetal_constructAssetPolicy(HSMBareMetal_AssetOperatio
     return status;
 }
 
+/*
+ *  ======== HSMBareMetal_createAndLoadSymKey ========
+ */
 static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperationStruct *operationStruct,
                                                      HSMBareMetal_operationDirection operationDirection)
 {
-    int_fast16_t status  = HSMBAREMETAL_STATUS_ERROR;
-    uint32_t assetPolicy = 0U;
-    uint32_t *keyAssetId = operationStruct->keyAssetIDs.encGenKeyAssetID;
+    int_fast16_t status            = HSMBAREMETAL_STATUS_ERROR;
+    uint32_t assetPolicy           = 0U;
+    uint32_t *keyAssetId           = operationStruct->keyAssetIDs.encGenKeyAssetID;
+    const uint8_t adLabelKeyblob[] = HSM_AS_KEYBLOB_ADLABEL;
+    uint8_t *keyBlob               = operationStruct->keyBlobs.encGenKeyBlob;
 
     if (operationDirection == HSMBareMetal_OPERATION_DIR_DEC_VRFY)
     {
         keyAssetId = operationStruct->keyAssetIDs.decVrfyKeyAssetID;
+        keyBlob    = operationStruct->keyBlobs.decVrfyKeyBlob;
     }
 
     /* Get the asset policy based on the user-provided data. */
@@ -799,8 +992,154 @@ static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperation
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
-        /* Load the key into the created asset. */
-        status = HSMBareMetal_loadKeyAssetId(keyAssetId, operationStruct->key, operationStruct->keyLength);
+        switch (operationStruct->operationType)
+        {
+            case HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_PLAINTEXT:
+                /* Load the key into the created asset. */
+                status = HSMBareMetal_loadPlaintextKeyAssetId(keyAssetId,
+                                                              operationStruct->key,
+                                                              operationStruct->keyLength);
+                break;
+            case HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB:
+                /* Load the key blob into the created asset. */
+                status = HSMBareMetal_loadImport(keyAssetId,
+                                                 &HSMBareMetal_kekAssetId,
+                                                 keyBlob,
+                                                 HSM_KEYBLOB_SIZE(operationStruct->keyLength),
+                                                 (uint8_t *)adLabelKeyblob,
+                                                 (sizeof(adLabelKeyblob) - 1U));
+                break;
+            case HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB:
+                /* Load the key into the created asset and export a key blob. */
+                status = HSMBareMetal_loadPlaintextKeyAssetIdAndExport(keyAssetId,
+                                                                       &HSMBareMetal_kekAssetId,
+                                                                       operationStruct->key,
+                                                                       operationStruct->keyLength,
+                                                                       keyBlob,
+                                                                       HSM_KEYBLOB_SIZE(operationStruct->keyLength),
+                                                                       (uint8_t *)adLabelKeyblob,
+                                                                       (sizeof(adLabelKeyblob) - 1U));
+                break;
+            default:
+                status = HSMBAREMETAL_STATUS_ERROR;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_RNGOperation ========
+ */
+int_fast16_t HSMBareMetal_RNGOperation(HSMBareMetal_RNGOperationStruct *operationStruct)
+{
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
+    size_t randomLength = operationStruct->randomLength;
+
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    {
+        return status;
+    }
+
+    if ((randomLength == 0) || (randomLength > HSM_DRBG_MAX_LENGTH) ||
+        ((operationStruct->entropyType == ENTROPY_TYPE_DRBG) && (!HSM_IS_SIZE_MULTIPLE_OF_WORD(randomLength))) ||
+        (((operationStruct->entropyType == ENTROPY_TYPE_TRNG) || (operationStruct->entropyType == ENTROPY_TYPE_CRNG)) &&
+         (randomLength > HSM_RNG_RAW_DATA_BLOCK_SIZE) && (!HSM_IS_SIZE_MULTIPLE_OF_RAW_BLOCK(randomLength))))
+    {
+        /* Limitation:
+         *  1. entropy length cannot be 0.
+         *  2. entropy length less than or equal to 2^16 bytes.
+         *  3. If entropy type is DRBG, the entropy length has to be 32-bit aligned (multiple of 4 Bytes).
+         *  4. If entropy type is CRNG or TRNG, the entropy length can be anywhere between 1-256 bytes and multiple of
+         *      256 bytes if larger than 256 bytes.
+         */
+        return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_RNG_GET_TOKEN_WORD0;
+
+    if ((operationStruct->entropyType == ENTROPY_TYPE_CRNG) || (operationStruct->entropyType == ENTROPY_TYPE_TRNG))
+    {
+        uint8_t numBlocks = (operationStruct->randomLength / HSM_RNG_RAW_DATA_BLOCK_SIZE);
+        randomLength      = numBlocks == 0U ? 1U : numBlocks;
+
+        HSMBareMetal_inputToken[2] = (operationStruct->entropyType << 16) | randomLength;
+
+        if (operationStruct->randomLength < HSM_RNG_RAW_DATA_BLOCK_SIZE)
+        {
+            HSMBareMetal_inputToken[3] = (uintptr_t)(&HSMBareMetal_rawDataPool[0]);
+        }
+        else
+        {
+            HSMBareMetal_inputToken[3] = (uintptr_t)operationStruct->random;
+        }
+    }
+    else
+    {
+        HSMBareMetal_inputToken[2] = randomLength;
+        HSMBareMetal_inputToken[3] = (uintptr_t)operationStruct->random;
+    }
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_TOKEN_WORD_COUNT);
+
+    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        if ((operationStruct->entropyType == ENTROPY_TYPE_CRNG) || (operationStruct->entropyType == ENTROPY_TYPE_TRNG))
+        {
+            if (operationStruct->randomLength < HSM_RNG_RAW_DATA_BLOCK_SIZE)
+            {
+                /* Copy entropy from pool when request is less than 256 bytes. */
+                (void)memcpy((void *)operationStruct->random,
+                             (void *)&HSMBareMetal_rawDataPool[0],
+                             operationStruct->randomLength);
+            }
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_RNGSwitchNRBGMode ========
+ */
+int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode)
+{
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
+
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    {
+        return status;
+    }
+    else if (HSMBareMetal_currentNRBGType == NRBGMode)
+    {
+        /* The cached NRBG mode is already in mode. */
+        return HSMBAREMETAL_STATUS_NRBG_ALREADY_IN_MODE;
+    }
+
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(HSMBareMetal_outputToken));
+
+    HSMBareMetal_inputToken[0] = HSM_RNG_CONFIG_TOKEN_WORD0;
+    HSMBareMetal_inputToken[2] = (NRBGMode << 4) | HSM_RNG_CONFIG_TOKEN_WORD2;
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_TOKEN_WORD_COUNT);
+
+    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        HSMBareMetal_currentNRBGType = NRBGMode;
     }
 
     return status;
@@ -820,18 +1159,37 @@ void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *crypt
 }
 
 /*
- *  ======== HSMBareMetal_CryptoKeyAssetStore_initKey ========
+ *  ======== HSMBareMetal_SymAssetOperation ========
  */
-int_fast16_t HSMBareMetal_CryptoKeyAssetStore_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey,
-                                                      uint32_t assetId,
-                                                      size_t keyLength)
+static int_fast16_t HSMBareMetal_SymAssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct)
 {
-    memset(cryptoKey, 0x00, sizeof(HSMBareMetal_CryptoKeyStruct));
+    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
 
-    cryptoKey->u.assetStore.assetId   = assetId;
-    cryptoKey->u.assetStore.keyLength = keyLength;
+    /* Perform Asset create and Asset load operations for encrypt mode. */
+    status = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_ENC_GEN);
 
-    return HSMBAREMETAL_STATUS_SUCCESS;
+    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        if (operationStruct->algorithm == HSMBareMetal_OPERATION_ALGO_AES)
+        {
+            /* Perform Asset create and Asset load operations for decrypt mode (only in the case of AES). */
+            status = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_DEC_VRFY);
+        }
+        else if (operationStruct->algorithm == HSMBareMetal_OPERATION_ALGO_MAC)
+        {
+            *operationStruct->keyAssetIDs.decVrfyKeyAssetID = *operationStruct->keyAssetIDs.encGenKeyAssetID;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_AsymAssetOperation ========
+ */
+static int_fast16_t HSMBareMetal_AsymAssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct)
+{
+    return HSMBAREMETAL_STATUS_FEATURE_NOT_SUPPORTED;
 }
 
 /*
@@ -839,19 +1197,17 @@ int_fast16_t HSMBareMetal_CryptoKeyAssetStore_initKey(HSMBareMetal_CryptoKeyStru
  */
 int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
+        return status;
     }
-    else if (HSMBareMetal_isHSMInFatalStatus())
+
+    if ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB) ||
+        (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB))
     {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        status = HSMBareMetal_deriveKekAsset();
     }
 
     /* When user requests the key generated, then the customer is not expected to provide the key. The key will be
@@ -876,13 +1232,13 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
         operationStruct->key = &HSMBareMetal_rawDataPool[0];
     }
 
-    /* Perform Asset create and Asset load operations for encrypt mode. */
-    status = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_ENC_GEN);
-
-    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    if (operationStruct->algorithm == HSMBareMetal_OPERATION_ALGO_ECC)
     {
-        /* Perform Asset create and Asset load operations for decrypt mode. */
-        status = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_DEC_VRFY);
+        status = HSMBareMetal_AsymAssetOperation(operationStruct);
+    }
+    else
+    {
+        status = HSMBareMetal_SymAssetOperation(operationStruct);
     }
 
     if (status != HSMBAREMETAL_STATUS_SUCCESS)
@@ -896,6 +1252,12 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
         operationStruct->key = NULL;
     }
 
+    if ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB) ||
+        (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB))
+    {
+        status = HSMBareMetal_freeKeyAsset(&HSMBareMetal_kekAssetId);
+    }
+
     return status;
 }
 
@@ -904,19 +1266,11 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
  */
 int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
@@ -945,11 +1299,15 @@ int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID)
  */
 int_fast16_t HSMBareMetal_freeAssetPair(HSMBareMetal_AssetPairStruct keyAssetPair)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status      = HSMBAREMETAL_STATUS_ERROR;
+    bool isPairWithSameAsset = (*keyAssetPair.encGenKeyAssetID) == (*keyAssetPair.decVrfyKeyAssetID);
 
     status = HSMBareMetal_freeKeyAsset(keyAssetPair.encGenKeyAssetID);
 
-    status |= HSMBareMetal_freeKeyAsset(keyAssetPair.decVrfyKeyAssetID);
+    if (!isPairWithSameAsset)
+    {
+        status |= HSMBareMetal_freeKeyAsset(keyAssetPair.decVrfyKeyAssetID);
+    }
 
     return status;
 }
@@ -991,7 +1349,7 @@ void HSMBareMetal_AESOperation_init(HSMBareMetal_AESOperationStruct *operationSt
  */
 void HSMBareMetal_MACOperation_init(HSMBareMetal_MACOperationStruct *operationStruct)
 {
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_AESOperationStruct));
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_MACOperationStruct));
 }
 
 /*
@@ -1007,22 +1365,14 @@ void HSMBareMetal_ECCOperation_init(HSMBareMetal_ECCOperationStruct *operationSt
  */
 int_fast16_t HSMBareMetal_AESOperation(HSMBareMetal_AESOperationStruct *operationStruct)
 {
-    int_fast16_t status       = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status       = HSMBareMetal_checkHSMStatus();
     uint32_t keyLengthCode    = 0U;
     uint32_t inputDataLength  = operationStruct->inputLength;
     uint32_t outputDataLength = operationStruct->inputLength;
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ENCRYPTION_TOKEN_WORD_COUNT);
@@ -1163,21 +1513,13 @@ int_fast16_t HSMBareMetal_AESOperation(HSMBareMetal_AESOperationStruct *operatio
  */
 int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operationStruct)
 {
-    int_fast16_t status      = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status      = HSMBareMetal_checkHSMStatus();
     uint32_t inputDataLength = operationStruct->inputLength;
     uint32_t padBytes        = 0U;
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_MAC_TOKEN_WORD_COUNT);
@@ -1220,12 +1562,6 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
     HSMBareMetal_inputToken[8]  = operationStruct->keyAssetID;
     HSMBareMetal_inputToken[10] = padBytes;
 
-    if (operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_DEC_VRFY)
-    {
-        /* Verify operation. Copy the MAC to the input token */
-        (void)memcpy((void *)&HSMBareMetal_inputToken[14], (void *)operationStruct->mac, operationStruct->macLength);
-    }
-
     /* Perform the following:
      *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
@@ -1244,13 +1580,13 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
         }
         else
         {
-            /* Verify operation. Return success. */
+            if (!HSMBareMetalECCParams_bufferMatch(operationStruct->mac,
+                                                   (void *)&HSMBareMetal_outputToken[2],
+                                                   operationStruct->macLength))
+            {
+                status = HSMBAREMETAL_STATUS_INVALID_MAC;
+            }
         }
-    }
-    else if ((operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_DEC_VRFY) &&
-             (HSMBareMetal_outputToken[0] == HSM_OUTPUT_TOKEN_VRFY_ERROR))
-    {
-        status = HSMBAREMETAL_STATUS_INVALID_MAC;
     }
 
     return status;
@@ -1261,53 +1597,76 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
  */
 int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operationStruct)
 {
-    int_fast16_t status   = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status   = HSMBareMetal_checkHSMStatus();
     uint32_t digestLength = 0U;
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
-    /* Determine the correct digest length. */
+    /* Determine the correct digest length for intermediate state. This will be updated if a final hash operation is
+     * being performed before retreiving the final hash
+     */
     switch (operationStruct->operationMode)
     {
         case HSMBareMetal_HASH_MODE_SHA2_224:
-            digestLength = HSM_HASH_DIGEST_LENGTH_224;
+        case HSMBareMetal_HASH_MODE_SHA2_256:
+            digestLength = HSM_HASH_DIGEST_LENGTH_256;
             break;
-
         case HSMBareMetal_HASH_MODE_SHA2_384:
-            digestLength = HSM_HASH_DIGEST_LENGTH_384;
-            break;
-
         case HSMBareMetal_HASH_MODE_SHA2_512:
             digestLength = HSM_HASH_DIGEST_LENGTH_512;
             break;
-
-        case HSMBareMetal_HASH_MODE_SHA2_256:
         default:
-            digestLength = HSM_HASH_DIGEST_LENGTH_256;
-            break;
+            return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
     }
 
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HASH_TOKEN_WORD_COUNT);
     (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
 
     /* Construct the input token. */
-    HSMBareMetal_inputToken[0]  = HSM_HASH_TOKEN_WORD0;
-    HSMBareMetal_inputToken[2]  = operationStruct->inputLength;
-    HSMBareMetal_inputToken[3]  = (uintptr_t)operationStruct->input;
-    HSMBareMetal_inputToken[5]  = operationStruct->inputLength;
-    HSMBareMetal_inputToken[6]  = operationStruct->operationMode;
-    HSMBareMetal_inputToken[10] = operationStruct->inputLength;
+    HSMBareMetal_inputToken[0] = HSM_HASH_TOKEN_WORD0;
+    HSMBareMetal_inputToken[2] = operationStruct->inputLength;
+    HSMBareMetal_inputToken[3] = (uintptr_t)operationStruct->input;
+    HSMBareMetal_inputToken[5] = operationStruct->inputLength;
+    HSMBareMetal_inputToken[6] = (operationStruct->operationType << 4) | operationStruct->operationMode;
+    if (operationStruct->operationType == HSMBareMetal_HASH_TYPE_INIT_TO_FINAL ||
+        operationStruct->operationType == HSMBareMetal_HASH_TYPE_CONT_TO_FINAL)
+    {
+        HSMBareMetal_inputToken[10] = operationStruct->totalInputLength;
+    }
+
+    if (operationStruct->operationType == HSMBareMetal_HASH_TYPE_CONT_TO_CONT ||
+        operationStruct->operationType == HSMBareMetal_HASH_TYPE_CONT_TO_FINAL)
+    {
+        (void)memcpy(&HSMBareMetal_inputToken[14], (void *)operationStruct->digest, digestLength);
+    }
+
+    /* Only update the digest length if this is a final operation, else use the digest length from above to retrieve the
+     * intermediate state
+     */
+    if (operationStruct->operationType == HSMBareMetal_HASH_TYPE_INIT_TO_FINAL ||
+        operationStruct->operationType == HSMBareMetal_HASH_TYPE_CONT_TO_FINAL)
+    {
+        switch (operationStruct->operationMode)
+        {
+            case HSMBareMetal_HASH_MODE_SHA2_224:
+                digestLength = HSM_HASH_DIGEST_LENGTH_224;
+                break;
+            case HSMBareMetal_HASH_MODE_SHA2_256:
+                digestLength = HSM_HASH_DIGEST_LENGTH_256;
+                break;
+            case HSMBareMetal_HASH_MODE_SHA2_384:
+                digestLength = HSM_HASH_DIGEST_LENGTH_384;
+                break;
+            case HSMBareMetal_HASH_MODE_SHA2_512:
+                digestLength = HSM_HASH_DIGEST_LENGTH_512;
+                break;
+            default:
+                return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+        }
+    }
 
     /* Perform the following:
      *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
@@ -1318,7 +1677,8 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
-        /* Read out the hash digest from the result token and copy it to the user-provided buffer. */
+        /* Read out the hash digest or intermediate state from the result token and copy it to the user-provided buffer.
+         */
         (void)memcpy((void *)operationStruct->digest, (void *)&HSMBareMetal_outputToken[2], digestLength);
     }
 
@@ -1404,7 +1764,7 @@ static int_fast16_t HSMBareMetal_ECCOperationCreateCurveParamsAsset(HSMBareMetal
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
-        status = HSMBareMetal_loadKeyAssetId(&object->paramAssetId, curveParamsPtr, curveParamsSize);
+        status = HSMBareMetal_loadPlaintextKeyAssetId(&object->paramAssetId, curveParamsPtr, curveParamsSize);
     }
 
     return status;
@@ -1496,7 +1856,7 @@ static int_fast16_t HSMBareMetal_ECCOperationCreateAndLoadPrivateKeyAsset(HSMBar
             HSMBareMetal_formatCurve25519PrivateKeyScratch(&componentVector[HSM_ASYM_DATA_VHEADER]);
         }
 
-        status = HSMBareMetal_loadKeyAssetId(&object->privateKeyAssetId, &componentVector[0], assetSize);
+        status = HSMBareMetal_loadPlaintextKeyAssetId(&object->privateKeyAssetId, &componentVector[0], assetSize);
     }
 
     return status;
@@ -1573,7 +1933,7 @@ static int_fast16_t HSMBareMetal_ECCOperationCreateAndLoadPublicKeyAsset(HSMBare
                                                object->domainId,
                                                &componentVector[0]);
 
-        status = HSMBareMetal_loadKeyAssetId(&object->publicKeyAssetId, &componentVector[0], assetSize);
+        status = HSMBareMetal_loadPlaintextKeyAssetId(&object->publicKeyAssetId, &componentVector[0], assetSize);
     }
 
     return status;
@@ -1736,20 +2096,11 @@ static int_fast16_t HSMBareMetal_ECCOperationValidateParams(HSMBareMetal_ECCOper
  */
 static int_fast16_t HSMBareMetal_ECCOperationInitializeOperation(HSMBareMetal_ECCOperationObject *object)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted.
-         */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
     /* Initializes critical ECC metadata and retrieves and stores ECC curve parameters in the object */

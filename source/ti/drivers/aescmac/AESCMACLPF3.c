@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,10 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 #include <ti/drivers/cryptoutils/utils/CryptoUtils.h>
-#include <ti/drivers/dma/UDMALPF3.h>
+#include <ti/devices/DeviceFamily.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    /* Using LPF3 driver implementation for WFF3, since the HSM IP is the same. */
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
     #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_asset_policy.h>
@@ -60,10 +61,12 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 
-#include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
-#include DeviceFamily_constructPath(inc/hw_aes.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/dma/UDMALPF3.h>
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+    #include DeviceFamily_constructPath(inc/hw_aes.h)
+    #include DeviceFamily_constructPath(inc/hw_ints.h)
+#endif
 
 /**
  * The threshold at which blocking and callback mode transfers will utilize DMA.
@@ -85,11 +88,13 @@ typedef enum
 } AESCMAC_SUBKEY_NUM;
 
 /* Forward declarations */
+static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object);
+static int_fast16_t AESCMACLPF3_setupSegmentedOperation(AESCMACLPF3_Object *object, const CryptoKey *key);
+
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 static void AESCMACLPF3_deriveSubKey(uint8_t *buffer);
 static void AESCMACLPF3_generateSubKey(AESCMAC_SUBKEY_NUM subKeyNum, uint32_t subKey[AES_BLOCK_SIZE_WORDS]);
-static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object);
 static inline void AESCMACLPF3_prepareFinalInputBlock(AESCMACLPF3_Object *object, size_t *transactionLength);
-static int_fast16_t AESCMACLPF3_setupSegmentedOperation(AESCMACLPF3_Object *object, const CryptoKey *key);
 static int_fast16_t AESCMACLPF3_oneStepOperation(AESCMAC_Handle handle,
                                                  AESCMAC_Operation *operation,
                                                  const CryptoKey *key,
@@ -97,8 +102,9 @@ static int_fast16_t AESCMACLPF3_oneStepOperation(AESCMAC_Handle handle,
 static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle);
 static inline int_fast16_t AESCMACLPF3_waitForResult(AESCMAC_Handle handle);
 static inline void AESCMACLPF3_xorBlock(uint32_t *block1_dst, const uint32_t *block2);
+#endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 /* OneStep-related internal APIs*/
 static int_fast16_t AESCMACLPF3HSM_oneStepOperation(AESCMAC_Handle handle,
                                                     AESCMAC_Operation *operation,
@@ -134,6 +140,7 @@ static inline AESCMACLPF3_Object *AESCMACLPF3_getObject(AESCMAC_Handle handle)
     return object;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCMACLPF3_hwiFxn ========
  */
@@ -147,7 +154,7 @@ static void AESCMACLPF3_hwiFxn(uintptr_t arg0)
      */
     uint32_t intStatus = AESGetMaskedInterruptStatus();
 
-    /* Disable DMA, clear interupts, and release power constraint */
+    /* Disable DMA, clear interrupts, and release power constraint */
     AESCommonLPF3_cleanupHwi(&object->common);
 
     if ((intStatus & (uint32_t)AES_MIS_CHADONE_M) != (uint32_t)0U)
@@ -181,16 +188,19 @@ static void AESCMACLPF3_hwiFxn(uintptr_t arg0)
         }
     }
 }
+#endif
 
 /*
  *  ======== AESCMAC_init ========
  */
 void AESCMAC_init(void)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     HSMLPF3_constructRTOSObjects();
 #endif
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     AESCommonLPF3_init();
+#endif
 }
 
 /*
@@ -200,11 +210,18 @@ AESCMAC_Handle AESCMAC_construct(AESCMAC_Config *config, const AESCMAC_Params *p
 {
     DebugP_assert(config);
 
-    int_fast16_t status;
     AESCMAC_Handle handle      = config;
     AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Callback return mode is not supported for CC35XX for now */
+    if ((params != NULL) && (params->returnBehavior == AESCMAC_RETURN_BEHAVIOR_CALLBACK))
+    {
+        return NULL;
+    }
+#endif
+
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     /* Initialize and boot HSM */
     if (HSMLPF3_init() != HSMLPF3_STATUS_SUCCESS)
     {
@@ -236,16 +253,35 @@ AESCMAC_Handle AESCMAC_construct(AESCMAC_Config *config, const AESCMAC_Params *p
     object->callbackFxn     = params->callbackFxn;
     object->threadSafe      = true;
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Set common parameters for later use. */
+    object->common.returnBehavior = (AES_ReturnBehavior)params->returnBehavior;
+
+    object->common.isOpen = true;
+
+    if (params->returnBehavior == AESCMAC_RETURN_BEHAVIOR_BLOCKING)
+    {
+        object->common.semaphoreTimeout = params->timeout;
+    }
+    else
+    {
+        object->common.semaphoreTimeout = SemaphoreP_NO_WAIT;
+    }
+#else
+    int_fast16_t status;
+
     status = AESCommonLPF3_construct(&object->common, (AES_ReturnBehavior)params->returnBehavior, params->timeout);
 
     if (status != AES_STATUS_SUCCESS)
     {
         handle = NULL;
     }
+#endif
 
     return handle;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCMACLPF3_readTag ========
  */
@@ -256,6 +292,7 @@ void AESCMACLPF3_readTag(uint32_t tagOut[AES_TAG_LENGTH_BYTES / 4U])
 
     AESReadTag32(&tagOut[0]);
 }
+#endif
 
 /*
  *  ======== AESCMACLPF3_getResult ========
@@ -267,19 +304,27 @@ static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object)
 
     if (object->common.returnStatus == AESCMAC_STATUS_SUCCESS)
     {
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
         if ((object->common.key.encoding == CryptoKey_PLAINTEXT) || (object->common.key.encoding == CryptoKey_KEYSTORE))
         {
             /* If One-step or Finalize operation, process the final input block */
             if (opcode != AESCMAC_OP_CODE_SEGMENTED)
             {
                 AESWriteBUF32(&object->finalInputBlock[0]);
+
+                /* Wait until engine is idle before reading MAC */
+                while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
             }
 
             AESCMACLPF3_readTag((uint32_t *)&object->intermediateTag[0]);
         }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-        else if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
-                 (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+        else
+    #endif
+            if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+                (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
         {
             /* Do nothing as HSM does not rely on AES engine */
         }
@@ -310,6 +355,7 @@ static void AESCMACLPF3_getResult(AESCMACLPF3_Object *object)
     }
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCMACLPF3_startOperation ========
  */
@@ -317,12 +363,12 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
 {
     AESCMACLPF3_Object *object   = AESCMACLPF3_getObject(handle);
     AESCMAC_Operation *operation = object->operation;
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     int_fast16_t keyStoreStatus;
     uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
     KeyStore_PSA_KeyUsage usage;
     KeyStore_PSA_Algorithm alg;
-#endif
+    #endif
 
     /* Input pointer cannot be NULL if input length is non-zero */
     DebugP_assert((operation->inputLength == 0U) || operation->input);
@@ -344,7 +390,7 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
     {
         AESCommonLPF3_loadKey(&object->common.key);
     }
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     else if (object->common.key.encoding == CryptoKey_KEYSTORE)
     {
         usage = (object->operationType & AESCMAC_OP_FLAG_SIGN) ? KEYSTORE_PSA_KEY_USAGE_SIGN_MESSAGE
@@ -371,7 +417,7 @@ static int_fast16_t AESCMACLPF3_startOperation(AESCMAC_Handle handle)
             return AESCMAC_STATUS_KEYSTORE_GENERIC_ERROR;
         }
     }
-#endif
+    #endif
     else
     {
         /* This condition should not occur - a valid encoding is checked before this point */
@@ -601,13 +647,13 @@ static int_fast16_t AESCMACLPF3_oneStepOperation(AESCMAC_Handle handle,
         return AESCMAC_STATUS_ERROR;
     }
 
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input pointer */
     if (!IS_WORD_ALIGNED(operation->input))
     {
         return AESCMAC_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
     }
-#endif
+    #endif
 
     if (operation->macLength > sizeof(object->intermediateTag))
     {
@@ -649,7 +695,7 @@ static int_fast16_t AESCMACLPF3_oneStepOperation(AESCMAC_Handle handle,
                        (uint8_t)0U,
                        sizeof(object->intermediateTag));
 
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT || object->common.key.encoding == CryptoKey_KEYSTORE)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT) || (object->common.key.encoding == CryptoKey_KEYSTORE))
     {
         status = AESCMACLPF3_startOperation(handle);
     }
@@ -719,6 +765,7 @@ static inline int_fast16_t AESCMACLPF3_waitForResult(AESCMAC_Handle handle)
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCMAC_oneStepSign ========
@@ -727,17 +774,20 @@ int_fast16_t AESCMAC_oneStepSign(AESCMAC_Handle handle, AESCMAC_Operation *opera
 {
     int_fast16_t status;
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCMACLPF3_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_SIGN);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
+    else
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+        if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCMACLPF3HSM_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_SIGN);
     }
-#endif
     else
+#endif
     {
         status = AESCMAC_STATUS_ERROR;
     }
@@ -751,17 +801,20 @@ int_fast16_t AESCMAC_oneStepVerify(AESCMAC_Handle handle, AESCMAC_Operation *ope
 {
     int_fast16_t status;
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCMACLPF3_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_VERIFY);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
+    else
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+        if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCMACLPF3HSM_oneStepOperation(handle, operation, key, AESCMAC_OP_TYPE_VERIFY);
     }
-#endif
     else
+#endif
     {
         status = AESCMAC_STATUS_ERROR;
     }
@@ -781,13 +834,16 @@ static int_fast16_t AESCMACLPF3_setupSegmentedOperation(AESCMACLPF3_Object *obje
      * Key material pointer and length are not asserted until adding or
      * finalizing data.
      */
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         /* When using the AES driver with the LAES engine */
         status = AESCommonLPF3_setupSegmentedOperation(&object->common, key);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
+    else
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+        if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         /* A segmented operation may have been started but not finalized yet */
         if (object->segmentedOperationInProgress)
@@ -806,8 +862,8 @@ static int_fast16_t AESCMACLPF3_setupSegmentedOperation(AESCMACLPF3_Object *obje
         object->keyAssetID  = 0U;
         object->tempAssetID = 0U;
     }
-#endif
     else
+#endif
     {
         status = AESCMAC_STATUS_ERROR;
     }
@@ -844,7 +900,7 @@ int_fast16_t AESCMAC_setupSign(AESCMAC_Handle handle, const CryptoKey *key)
     if (status == AESCMAC_STATUS_SUCCESS)
     {
         object->operationType = AESCMAC_OP_TYPE_SEGMENTED_SIGN;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
         {
             /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
@@ -887,7 +943,7 @@ int_fast16_t AESCMAC_setupVerify(AESCMAC_Handle handle, const CryptoKey *key)
     if (status == AESCMAC_STATUS_SUCCESS)
     {
         object->operationType = AESCMAC_OP_TYPE_SEGMENTED_VERIFY;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
         {
             /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
@@ -927,7 +983,7 @@ int_fast16_t AESCMAC_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation
     AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
     int_fast16_t status        = AESCMAC_STATUS_ERROR;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
         (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -935,6 +991,7 @@ int_fast16_t AESCMAC_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation
     }
 #endif
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     /* Assert the segmented operation was setup */
     DebugP_assert((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
                   (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY));
@@ -948,13 +1005,13 @@ int_fast16_t AESCMAC_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation
         return object->common.returnStatus;
     }
 
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input pointer */
     if (!IS_WORD_ALIGNED(operation->input))
     {
         return AESCMAC_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
     }
-#endif
+    #endif
 
     /* Verify the input length is non-zero and a multiple of the block size */
     if ((operation->inputLength == 0U) || (AES_NON_BLOCK_SIZE_MULTIPLE_LENGTH(operation->inputLength) > 0U))
@@ -987,10 +1044,12 @@ int_fast16_t AESCMAC_addData(AESCMAC_Handle handle, AESCMAC_Operation *operation
         CryptoResourceLPF3_releaseLock();
         object->common.cryptoResourceLocked = false;
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return status;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /* Perform ECB encryption on a block of zeros */
 static inline void AESCMACLPF3_encryptZeroBlockECB(uint32_t output[AES_BLOCK_SIZE_WORDS])
 {
@@ -1057,6 +1116,7 @@ static void AESCMACLPF3_deriveSubKey(uint8_t *buffer)
 
     buffer[AES_BLOCK_SIZE - 1U] ^= xorMask;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCMAC_finalize ========
@@ -1069,7 +1129,7 @@ int_fast16_t AESCMAC_finalize(AESCMAC_Handle handle, AESCMAC_Operation *operatio
     AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
     int_fast16_t status        = AESCMAC_STATUS_ERROR;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
         (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -1077,6 +1137,7 @@ int_fast16_t AESCMAC_finalize(AESCMAC_Handle handle, AESCMAC_Operation *operatio
     }
 #endif
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     /* Assert the segmented operation was setup */
     DebugP_assert((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
                   (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY));
@@ -1091,13 +1152,13 @@ int_fast16_t AESCMAC_finalize(AESCMAC_Handle handle, AESCMAC_Operation *operatio
         return object->common.returnStatus;
     }
 
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input pointer */
     if (!IS_WORD_ALIGNED(operation->input))
     {
         return AESCMAC_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
     }
-#endif
+    #endif
 
     if (operation->macLength > sizeof(object->intermediateTag))
     {
@@ -1148,6 +1209,7 @@ int_fast16_t AESCMAC_finalize(AESCMAC_Handle handle, AESCMAC_Operation *operatio
         CryptoResourceLPF3_releaseLock();
         object->common.cryptoResourceLocked = false;
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return status;
 }
@@ -1161,7 +1223,7 @@ void AESCMAC_close(AESCMAC_Handle handle)
 
     AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if (object->common.key.encoding & CRYPTOKEY_HSM)
     {
         /* Attempt to free all assets the driver created. If there is a failure,
@@ -1173,7 +1235,12 @@ void AESCMAC_close(AESCMAC_Handle handle)
     }
 #endif
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     AESCommonLPF3_close(&object->common);
+#else
+    /* Mark the module as available */
+    object->common.isOpen = false;
+#endif
 }
 
 /*
@@ -1195,7 +1262,7 @@ int_fast16_t AESCMAC_cancelOperation(AESCMAC_Handle handle)
     /* If the operation is in _HSM mode, then the driver does not rely on 'object->common' metadata
      * and instead relies on HSM metadata. The check below insures that.
      */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if (((object->common.key.encoding & CRYPTOKEY_HSM) == 0U) && (!object->common.operationInProgress))
 #else
     if (!object->common.operationInProgress)
@@ -1207,7 +1274,7 @@ int_fast16_t AESCMAC_cancelOperation(AESCMAC_Handle handle)
 
     HwiP_restore(interruptKey);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     /* Since the HSM cannot cancel an in-progress token, we must wait for the result to allow for
      * subsequent token submissions to succeed.
      */
@@ -1224,10 +1291,15 @@ int_fast16_t AESCMAC_cancelOperation(AESCMAC_Handle handle)
     }
 #endif
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     /* Cancel DMA for input channel A only, clear operation in-progress,
      * and release crypto resource if locked.
      */
     AESCommonLPF3_cancelOperation(&object->common, false);
+#else
+    /* Set return status explicitly here. */
+    object->common.returnStatus = AESCMAC_STATUS_CANCELED;
+#endif
 
     /* Operation pointer could be NULL if a segmented operation was setup
      * but neither AESCMAC_addData or AESCMAC_finalize was called.
@@ -1241,7 +1313,7 @@ int_fast16_t AESCMAC_cancelOperation(AESCMAC_Handle handle)
     return AESCMAC_STATUS_SUCCESS;
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 
 /*
  *  ======== AESCMACLPF3HSM_oneStepOperation ========
@@ -1853,14 +1925,14 @@ static int_fast16_t AESCMACLPF3HSM_CreateTempAssetID(AESCMAC_Handle handle)
 static int_fast16_t AESCMACLPF3HSM_freeAllAssets(AESCMAC_Handle handle)
 {
     AESCMACLPF3_Object *object = AESCMACLPF3_getObject(handle);
-    int_fast16_t status        = AESCCM_STATUS_SUCCESS;
+    int_fast16_t status        = AESCMAC_STATUS_SUCCESS;
 
     object->common.cryptoResourceLocked = true;
 
     if ((object->operationType == AESCMAC_OP_TYPE_SEGMENTED_SIGN) ||
         (object->operationType == AESCMAC_OP_TYPE_SEGMENTED_VERIFY))
     {
-        return AESCCM_STATUS_SUCCESS;
+        return AESCMAC_STATUS_SUCCESS;
     }
 
     if (object->keyAssetID != 0U)

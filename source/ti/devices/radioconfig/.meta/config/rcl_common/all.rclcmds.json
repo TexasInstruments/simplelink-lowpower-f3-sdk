@@ -1169,10 +1169,10 @@
             ]
           },
           {
-            "name": "mode.reportFormat",
+            "name": "mode.reserved",
             "type": "uint16_t",
             "size": "1",
-            "desc": "Select a vendor specific report format instead of the default HCI LE CS Subevent Result"
+            "desc": "Reserved"
           },
           {
             "name": "mode.nSteps",
@@ -1190,13 +1190,13 @@
             "name": "antennaConfig.gpoMask",
             "type": "uint8_t",
             "size": "8",
-            "desc": "Mask of GPOs on the LRF controlling the antennas"
+            "desc": "Selects which signals control the antenna switch"
           },
           {
             "name": "antennaConfig.gpoVal[4]",
             "type": "uint8_t",
             "size": "8",
-            "desc": "GPOCTRL word for antenna path 0..3"
+            "desc": "Logical values to chose given antenna on the antenna switch"
           },
           {
             "name": "timing.tFcs",
@@ -1270,42 +1270,66 @@
             "name": "frontend.rxGain",
             "type": "uint8_t",
             "size": "8",
-            "desc": "Index value of RX gain",
+            "desc": "Index value of RX gain to be used",
             "enum": [
               {
-                "symbol": "0",
+                "symbol": "RCL_CmdBleCs_RxGain_Auto",
                 "value": "0",
                 "label": "Auto"
               },
               {
-                "symbol": "7",
-                "value": "1",
-                "label": "Low_Gain"
+                "symbol": "RCL_CmdBleCs_RxGain_Low",
+                "value": "7",
+                "label": "Low"
               },
               {
-                "symbol": "15",
-                "value": "1",
-                "label": "High_Gain"
+                "symbol": "RCL_CmdBleCs_RxGain_High",
+                "value": "15",
+                "label": "High"
               }
             ]
           },
           {
-            "name": "frontend.foffOverride",
+            "name": "foffOverride",
             "type": "int16_t",
             "size": "16",
             "desc": "Frequency offset compensation override value in [4x FOFF] units."
           },
           {
-            "name": "frontend.foffOverrideEnable",
-            "type": "uint16_t",
+            "name": "foffOverrideEnable",
+            "type": "uint8_t",
             "size": "1",
-            "desc": "Disables automatic estimate foff estimation and enforces the use of the provided override"
+            "desc": "Disables automatic FOFF estimation and enforces the use of the provided override value",
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "0",
+                "label": "No override"
+              },
+              {
+                "symbol": "1",
+                "value": "1",
+                "label": "Use override value"
+              }
+            ]
           },
           {
-            "name": "frontend.reserved",
-            "type": "uint16_t",
-            "size": "15",
-            "desc": "Reserved"
+            "name": "reportFormat",
+            "type": "uint8_t",
+            "size": "8",
+            "desc": "Selects the data format which the subevent results shall be returned in",
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "0",
+                "label": "HCI"
+              },
+              {
+                "symbol": "1",
+                "value": "1",
+                "label": "Custom"
+              }
+            ]
           },
           {
             "name": "precalTable",

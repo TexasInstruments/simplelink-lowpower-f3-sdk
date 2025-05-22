@@ -55,7 +55,7 @@ endif()
 add_library(ThirdPartyPsaCryptoLib::psa_crypto_cc27xx STATIC IMPORTED)
 
 set_target_properties(ThirdPartyPsaCryptoLib::psa_crypto_cc27xx PROPERTIES
-  INTERFACE_LINK_LIBRARIES "TOOLCHAIN_gcc_m33f;Drivers::drivers_cc27xx;DriversUtils::secure_key_storage_enabled"
+  INTERFACE_LINK_LIBRARIES "TOOLCHAIN_gcc_m33f;SecureDrivers::secure_drivers_cc27xx;Drivers::drivers_cc27xx;SecureDriversUtils::secure_key_storage_enabled"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)
@@ -94,7 +94,7 @@ unset(_IMPORT_CHECK_TARGETS)
 # Make sure the targets which have been exported in some other
 # export set exist.
 unset(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets)
-foreach(_target "Drivers::drivers_cc27xx" "DriversUtils::secure_key_storage_enabled" )
+foreach(_target "SecureDrivers::secure_drivers_cc27xx" "SecureDriversUtils::secure_key_storage_enabled" )
   if(NOT TARGET "${_target}" )
     set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets "${${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets} ${_target}")
   endif()

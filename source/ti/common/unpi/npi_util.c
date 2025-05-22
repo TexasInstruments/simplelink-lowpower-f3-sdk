@@ -65,8 +65,8 @@
 // RTOS queue for profile/app messages.
 typedef struct _queueRec_
 {
-  Queue_Elem _elem;          // queue element
-  uint8_t *pData;            // pointer to app data
+    Queue_Elem _elem; // queue element
+    uint8_t *pData;   // pointer to app data
 } queueRec_t;
 
 //*****************************************************************************
@@ -88,7 +88,7 @@ uint8_t *NPIUtil_malloc(uint16_t size)
 #else
     volatile uint32_t keyHwi;
     keyHwi = Hwi_disable();
-    pMsg = malloc(size);
+    pMsg   = malloc(size);
     Hwi_restore(keyHwi);
 #endif
     return pMsg;
@@ -121,8 +121,8 @@ void NPIUtil_free(uint8_t *pMsg)
 _npiCSKey_t NPIUtil_EnterCS(void)
 {
     _npiCSKey_t key;
-    key.taskkey = (uint_least16_t) Task_disable();
-    key.hwikey = (uint_least16_t) Hwi_disable();
+    key.taskkey = (uint_least16_t)Task_disable();
+    key.hwikey  = (uint_least16_t)Hwi_disable();
     return key;
 }
 
@@ -135,10 +135,9 @@ _npiCSKey_t NPIUtil_EnterCS(void)
 // -----------------------------------------------------------------------------
 void NPIUtil_ExitCS(_npiCSKey_t key)
 {
-    Hwi_restore((UInt) key.hwikey);
-    Task_restore((UInt) key.taskkey);
+    Hwi_restore((UInt)key.hwikey);
+    Task_restore((UInt)key.taskkey);
 }
-
 
 // -----------------------------------------------------------------------------
 //! \brief   Initialize an RTOS queue to hold messages to be processed.
@@ -149,10 +148,10 @@ void NPIUtil_ExitCS(_npiCSKey_t key)
 // -----------------------------------------------------------------------------
 Queue_Handle NPIUtil_constructQueue(Queue_Struct *pQueue)
 {
-  // Construct a Queue instance.
-  Queue_construct(pQueue, NULL);
+    // Construct a Queue instance.
+    Queue_construct(pQueue, NULL);
 
-  return Queue_handle(pQueue);
+    return Queue_handle(pQueue);
 }
 
 // -----------------------------------------------------------------------------
@@ -173,41 +172,41 @@ uint8_t NPIUtil_enqueueMsg(Queue_Handle msgQueue,
 #ifdef ICALL_EVENTS
                            Event_Handle event,
                            uint32_t eventFlags,
-#else //!ICALL_EVENTS
+#else  //! ICALL_EVENTS
                            Semaphore_Handle sem,
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
                            uint8_t *pMsg)
 {
-  queueRec_t *pRec;
+    queueRec_t *pRec;
 
-  // Allocated space for queue node.
-  pRec = (queueRec_t *)NPIUtil_malloc(sizeof(queueRec_t));
-  if (pRec)
-  {
-    pRec->pData = pMsg;
+    // Allocated space for queue node.
+    pRec = (queueRec_t *)NPIUtil_malloc(sizeof(queueRec_t));
+    if (pRec)
+    {
+        pRec->pData = pMsg;
 
-    Queue_put(msgQueue, &pRec->_elem);
+        Queue_put(msgQueue, &pRec->_elem);
 
-    // Wake up the application thread event handler.
+        // Wake up the application thread event handler.
 #ifdef ICALL_EVENTS
-    if (event)
-    {
-      Event_post(event, eventFlags);
+        if (event)
+        {
+            Event_post(event, eventFlags);
+        }
+#else  //! ICALL_EVENTS
+        if (sem)
+        {
+            Semaphore_post(sem);
+        }
+#endif // ICALL_EVENTS
+
+        return TRUE;
     }
-#else //!ICALL_EVENTS
-    if (sem)
-    {
-      Semaphore_post(sem);
-    }
-#endif //ICALL_EVENTS
 
-    return TRUE;
-  }
+    // Free the message.
+    NPIUtil_free((uint8_t *)pMsg);
 
-  // Free the message.
-  NPIUtil_free((uint8_t *)pMsg);
-
-  return FALSE;
+    return FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -219,18 +218,18 @@ uint8_t NPIUtil_enqueueMsg(Queue_Handle msgQueue,
 // -----------------------------------------------------------------------------
 uint8_t *NPIUtil_dequeueMsg(Queue_Handle msgQueue)
 {
-  queueRec_t *pRec = Queue_get(msgQueue);
-  if (pRec != (queueRec_t *)msgQueue)
-  {
-    // Queue not empty
-    uint8_t *pData = pRec->pData;
+    queueRec_t *pRec = Queue_get(msgQueue);
+    if (pRec != (queueRec_t *)msgQueue)
+    {
+        // Queue not empty
+        uint8_t *pData = pRec->pData;
 
-    // Free the queue node
-    // Note:  this does not free space allocated by data within the node.
-    NPIUtil_free((uint8_t *)pRec);
+        // Free the queue node
+        // Note:  this does not free space allocated by data within the node.
+        NPIUtil_free((uint8_t *)pRec);
 
-    return pData;
-  }
+        return pData;
+    }
 
-  return NULL;
+    return NULL;
 }

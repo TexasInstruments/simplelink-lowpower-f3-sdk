@@ -3,7 +3,7 @@
  *
  *  Description:    Driver for LRFD
  *
- *  Copyright (c) 2023-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2023-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -42,6 +42,7 @@
 #include "../inc/hw_lrfddbell.h"
 
 #include "../driverlib/interrupt.h"
+#include "../driverlib/clkctl.h"
 
 static uint16_t lrfdClockDependencySets[LRFD_NUM_CLK_DEP];
 
@@ -80,8 +81,13 @@ void LRFDReleaseClockDependency(uint16_t mask, uint8_t dependencySetId)
 //*****************************************************************************
 void LRFDApplyClockDependencies(void)
 {
-    uint16_t clkctl  = 0;
+    // The combined clock dependencies for all dependency sets. It represents
+    // the value to be written to the LRFDDBELL_O_CLKCTL register.
+    uint16_t clkctl = 0;
+
     bool lrfdClocked = (HWREG(CLKCTL_BASE + CLKCTL_O_CLKCFG0) & CLKCTL_CLKCFG0_LRFD_M) == CLKCTL_CLKCFG0_LRFD_CLK_EN;
+
+    // Merge the clock dependencies for all sets
     for (int i = 0; i < LRFD_NUM_CLK_DEP; i++)
     {
         clkctl |= lrfdClockDependencySets[i];
@@ -91,14 +97,13 @@ void LRFDApplyClockDependencies(void)
     {
         // BRIDGE bit should not be needed, as hardware will automatically
         // enable the clock when needed. The bit should be always be 0 in the
-        // HW, and is thus cleared.
+        // HW, and is thus cleared here.
         HWREG(LRFDDBELL_BASE + LRFDDBELL_O_CLKCTL) = clkctl & ~LRFDDBELL_CLKCTL_BRIDGE_M;
 
         if (clkctl == 0)
         {
             // Disable LRFD module clock
-            HWREG( CLKCTL_BASE + CLKCTL_O_CLKENCLR0 ) = CLKCTL_CLKENCLR0_LRFD;
-            lrfdClocked                               = false;
+            CLKCTLDisableLrfdClock();
         }
     }
     else
@@ -106,18 +111,13 @@ void LRFDApplyClockDependencies(void)
         if (clkctl != 0)
         {
             // Enable LRFD module clock
-            HWREG( CLKCTL_BASE + CLKCTL_O_CLKENSET0 ) = CLKCTL_CLKENSET0_LRFD;
+            CLKCTLEnableLrfdClock();
 
-            // Wait for LRFD clock to be enabled. It is not expected that the
-            // LRFD clock will ever not be enabled, but this will add sufficient
-            // delay before enabling the internal LRFD clocks below.
-            while ((HWREG(CLKCTL_BASE + CLKCTL_O_CLKCFG0) & CLKCTL_CLKCFG0_LRFD_M) != CLKCTL_CLKCFG0_LRFD_CLK_EN) {}
-
-            // BRIDGE bit should not be needed, as hardware will automatically
-            // enable the clock when needed. The bit should be always be 0 in
-            // the HW, and is thus cleared. The bit can be used in the input to
-            // indicate the need for the LRFD module clock to be enabled, but no
-            // internal LRFD clocks.
+            // BRIDGE bit should not be needed as hardware will automatically
+            // enable the clock when needed. The bit should always be 0 in the
+            // HW, and is thus cleared here. The BRIDGE bit can be set as a
+            // dependency, making clkctl non-zero, to indicate the need for the
+            // LRFD module clock to be enabled, but no internal LRFD clocks.
             HWREG(LRFDDBELL_BASE + LRFDDBELL_O_CLKCTL) = clkctl & ~LRFDDBELL_CLKCTL_BRIDGE_M;
         }
     }

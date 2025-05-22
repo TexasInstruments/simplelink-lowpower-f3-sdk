@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,10 @@
 
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
+let CryptoCommon = system.getScript("/ti/drivers/CryptoCommon.syscfg.js");
 
 /* get /ti/drivers family name from device object */
-let family = Common.device2Family(system.deviceData, "ECDSA");
+let family = CryptoCommon.device2Family(system.deviceData, "ECDSA");
 
 let config = [];
 
@@ -52,13 +53,20 @@ let deviceId = system.deviceData.deviceId;
 /*
  *  ======== validate ========
  */
-
 function validate(inst, validation)
 {
     if (system.modules["/ti/utils/TrustZone"]) {
-        if (inst.$module.$instances.length > 1) {
-            validation.logError(`When using Secure/Non-secure features (TrustZone is enabled), the number of Crypto
-                                driver instances are fixed in the SPE image. One ECDSA instance is supported.`, inst);
+        if (deviceId.match(/CC(13|26).[34]/) && (inst.$module.$instances.length != 1)) {
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, ` +
+                `the number of Crypto driver instances is fixed in the TF-M ` +
+                `image. One ` + base.displayName + ` instance is supported.`, inst);
+        }
+        else if (deviceId.match(/CC27/) && (inst.$module.$instances.length != 0)) {
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, no ` +
+                base.displayName + ` instances can be added. PSA Crypto APIs must be ` +
+                `used instead.`, inst);
         }
     }
 }
@@ -73,22 +81,22 @@ let base = {
     description         : "Elliptic Curve Digital Signature Algorithm (ECDSA) Driver",
     alwaysShowLongDescription : true,
     longDescription     : `
-The [__ECDSA driver__][1] provides APIs for generating
-and verifying digital signatures.
+The [__ECDSA driver__][1] provides APIs for generating and verifying digital
+signatures.
 
 * [Usage Synopsis][2]
 * [Examples][3]
 * [Configuration Options][4]
 
-[1]: /drivers/doxygen/html/_e_c_d_s_a_8h.html#details "C API reference"
-[2]: /drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Synopsis "Basic C usage summary"
-[3]: /drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Examples "C usage examples"
+[1]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#details "C API reference"
+[2]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Synopsis "Basic C usage summary"
+[3]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#ECDSA_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_ECDSA_",
     config              : Common.addNameConfig(config, "/ti/drivers/ECDSA", "CONFIG_ECDSA_"),
     modules: (inst) => {
-        let forcedModules = ["Board", "Power"];
+        let forcedModules = ["Board", "Power", "CryptoBoard"];
 
         if (deviceId.match(/CC27/)) {
             /* HSM library requires Key Store module */

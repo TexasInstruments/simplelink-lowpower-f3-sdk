@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -124,7 +124,7 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
      */
     .bootCfg.crc32 = 0x00000000,
 
-    .hwOpts = {0xFFFFFFFF, 0xFFFFFFFF},
+    .res0 = {0xFFFFFFFF, 0xFFFFFFFF},
 
 % if(inst.allowDebugPort){
     .permissions.allowDebugPort = CCFG_PERMISSION_ALLOW,
@@ -180,7 +180,7 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .hwInitCopyList = {`inst.hwInitCopyListMacro`},
 
 % }
-    /* Set to 0. This checksum (across hwOpts through hwInitCopyList) must be
+    /* Set to 0. This checksum (after bootCfg through hwInitCopyList) must be
      * calculated and updated prior to programming the application to the device
      * (this is normally handled as a post-build step, or by the flashloader).
      */

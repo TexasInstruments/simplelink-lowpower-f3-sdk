@@ -1,5 +1,5 @@
 /******************************************************************************
-*  Copyright (c) 2022-2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2021-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -146,10 +146,7 @@ typedef struct {
         uint32_t crc32;
     } criticalTrim;
 
-    // Paperspin options     [80]: length 8 B
-    // Defines peripheral/feature availability and accessible memory
-    uint32_t hwOpts[2];
-
+    uint32_t res0[2];
 
     // Device permissions   [88]: length 4 B
     // This is maximally-restrictive combined with similar field in CCFG
@@ -167,7 +164,6 @@ typedef struct {
         uint32_t allowDebugPort       : 4;
     } permissions;
 
-
     // Miscellaneous fields
     // [92]: length 4B
     struct {
@@ -181,7 +177,6 @@ typedef struct {
         uint32_t allowMainAppErase  : 4;    // Extension of permissions above
         uint32_t res0               : 24;
     } misc;
-
 
     // Device information
     struct {    // [96]: length 48B
@@ -214,7 +209,6 @@ typedef struct {
             };
         } partId;
     } deviceInfo;
-
 
     // Flash protection     [144]: length 32 B
     // This is maximally-restrictive combined with similar field in CCFG
@@ -295,7 +289,6 @@ typedef struct {
         #define CPYLST_JUMP(a)           (((uint32_t)(a)) + 2)
         #define CPYLST_CALL(a)           (((uint32_t)(a)) + 3)
 
-
     // *******************************************************
     // ***        Extended Application Trims               ***
     // *******************************************************
@@ -349,7 +342,6 @@ typedef struct {
             } ateFtRev;
         } cc27xx;
     } appTrimsExt;
-
 
     // *******************************************************
     // ***            Application Trims                    ***
@@ -724,14 +716,12 @@ typedef struct {
         } bldrParam;
     } bootCfg;
 
-
     // [End-136] length: 4B
     uint32_t hsmSizeCfg;
         #define FCFG_HSM_SIZE_128KB     (VIMS_CFG_HSMSZ_SIZE_128)
         #define FCFG_HSM_SIZE_96KB      (VIMS_CFG_HSMSZ_SIZE_96)
 
-
-    // CRC across hwOpts through res1 (after criticalTrim to here)
+    // CRC of content after criticalTrim through res1
     // [End-132]: length 4B
     uint32_t crc32;
 
@@ -751,36 +741,6 @@ typedef struct {
             #define FCFG_LC_PRODDEV {FCFG_SET32, FCFG_SET32, FCFG_SET32, FCFG_UNSET32}
             #define FCFG_LC_RETEST  {FCFG_SET32, FCFG_SET32, FCFG_SET32, FCFG_SET32}
     } lifecycle;
-
-    // *******************************************************
-    // *** Read protection security barrier (16 B aligned) ***
-    // *******************************************************
-    // HSM config
-    // [End-112]: length 64B
-    struct {
-        // 256b hash of the TI owned public RSA key
-        uint8_t publicKeyHash[32];
-        // 128b aesKey for HSM decryption
-        uint8_t aesKey[32];
-    } hsmUpdateKeys;
-
-
-    // FA unlock password information
-    // [End-48]: length 48B
-    struct faUnlock_struct {
-        // SHA256 hash of FA unlock password
-        uint8_t hash[32];
-        // 32b unique test ID used to lookup FA unlock password
-        uint8_t testId[4];
-        // CRC32 integrity check of (corrected) hash+testId
-        uint32_t crc32;
-        // Parity bits to do SECDED correction of errors in hash/testId/crc32
-        uint8_t parity[5];
-        // Indicates validity of struct (only in corrected RAM-copy, no purpose in flash)
-        uint8_t isValid;
-        // Padding
-        uint8_t res0[2];
-    } faUnlock;
 } fcfg_t;
 
 #ifndef DRIVERLIB_NS // FCFG is not accessible in non-secure mode.

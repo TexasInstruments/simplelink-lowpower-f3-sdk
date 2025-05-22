@@ -52,22 +52,31 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/flash.h)
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
-  #include DeviceFamily_constructPath(inc/hw_vims.h)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
+    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+    #include DeviceFamily_constructPath(inc/hw_vims.h)
 #else
-  #include DeviceFamily_constructPath(driverlib/vims.h)
+    #include DeviceFamily_constructPath(driverlib/vims.h)
 #endif
 #include "ti/common/cc26xx/flash_interface/flash_interface.h"
-
 
 /*********************************************************************
  * MACROS
  */
-#define HAL_ENTER_CRITICAL_SECTION(x)  \
-  do { (x) = !IntMasterDisable(); } while (0)
+#define HAL_ENTER_CRITICAL_SECTION(x) \
+    do                                \
+    {                                 \
+        (x) = !IntMasterDisable();    \
+    } while (0)
 
 #define HAL_EXIT_CRITICAL_SECTION(x) \
-  do { if (x) { (void) IntMasterEnable(); } } while (0)
+    do                               \
+    {                                \
+        if (x)                       \
+        {                            \
+            (void)IntMasterEnable(); \
+        }                            \
+    } while (0)
 
 /*********************************************************************
  * TYPEDEFS
@@ -94,7 +103,7 @@ static void enableCache(uint8_t state);
  */
 bool flash_open(void)
 {
-  return (false);
+    return (false);
 }
 
 /*********************************************************************
@@ -108,7 +117,7 @@ bool flash_open(void)
  */
 void flash_close(void)
 {
-	// Intentionally left blank.
+    // Intentionally left blank.
 }
 
 /*********************************************************************
@@ -122,7 +131,7 @@ void flash_close(void)
  */
 bool hasExternalFlash(void)
 {
-  return (false);
+    return (false);
 }
 
 /*********************************************************************
@@ -139,22 +148,22 @@ bool hasExternalFlash(void)
  */
 uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
 {
-  halIntState_t cs;
-  uint8_t *ptr = (uint8_t *)addr;
+    halIntState_t cs;
+    uint8_t *ptr = (uint8_t *)addr;
 
-  // Enter critical section.
-  HAL_ENTER_CRITICAL_SECTION(cs);
+    // Enter critical section.
+    HAL_ENTER_CRITICAL_SECTION(cs);
 
-  // Read from pointer into buffer.
-  while (len--)
-  {
-    *pBuf++ = *ptr++;
-  }
+    // Read from pointer into buffer.
+    while (len--)
+    {
+        *pBuf++ = *ptr++;
+    }
 
-  // Exit critical section.
-  HAL_EXIT_CRITICAL_SECTION(cs);
+    // Exit critical section.
+    HAL_EXIT_CRITICAL_SECTION(cs);
 
-  return (FLASH_SUCCESS);
+    return (FLASH_SUCCESS);
 }
 
 /*********************************************************************
@@ -171,22 +180,22 @@ uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  */
 uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
-  halIntState_t cs;
-  uint8_t *ptr = (uint8_t *)FLASH_ADDRESS(page, offset);
+    halIntState_t cs;
+    uint8_t *ptr = (uint8_t *)FLASH_ADDRESS(page, offset);
 
-  // Enter critical section.
-  HAL_ENTER_CRITICAL_SECTION(cs);
+    // Enter critical section.
+    HAL_ENTER_CRITICAL_SECTION(cs);
 
-  // Read from pointer into buffer.
-  while (len--)
-  {
-    *pBuf++ = *ptr++;
-  }
+    // Read from pointer into buffer.
+    while (len--)
+    {
+        *pBuf++ = *ptr++;
+    }
 
-  // Exit critical section.
-  HAL_EXIT_CRITICAL_SECTION(cs);
+    // Exit critical section.
+    HAL_EXIT_CRITICAL_SECTION(cs);
 
-  return (FLASH_SUCCESS);
+    return (FLASH_SUCCESS);
 }
 
 /*********************************************************************
@@ -203,16 +212,16 @@ uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
  */
 uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
 {
-  uint8_t cacheState;
-  uint32_t flashStat = FLASH_SUCCESS;
+    uint8_t cacheState;
+    uint32_t flashStat = FLASH_SUCCESS;
 
-  cacheState = disableCache();
+    cacheState = disableCache();
 
-  flashStat = FlashProgram((uint8_t*)pBuf, (uint32_t)addr, len);
+    flashStat = FlashProgram((uint8_t *)pBuf, (uint32_t)addr, len);
 
-  enableCache(cacheState);
+    enableCache(cacheState);
 
-  return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
+    return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
 }
 
 /*********************************************************************
@@ -229,16 +238,16 @@ uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  */
 uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
-  uint8_t cacheState;
-  uint32_t flashStat = FLASH_SUCCESS;
+    uint8_t cacheState;
+    uint32_t flashStat = FLASH_SUCCESS;
 
-  cacheState = disableCache();
+    cacheState = disableCache();
 
-  flashStat = FlashProgram(pBuf, (uint32_t)FLASH_ADDRESS(page, offset), len);
+    flashStat = FlashProgram(pBuf, (uint32_t)FLASH_ADDRESS(page, offset), len);
 
-  enableCache(cacheState);
+    enableCache(cacheState);
 
-  return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
+    return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
 }
 
 /*********************************************************************
@@ -252,16 +261,16 @@ uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
  */
 uint8_t eraseFlashPg(uint8_t page)
 {
-  uint8_t cacheState;
-  uint8_t flashStat = FLASH_SUCCESS;
+    uint8_t cacheState;
+    uint8_t flashStat = FLASH_SUCCESS;
 
-  cacheState = disableCache();
+    cacheState = disableCache();
 
-  flashStat = FlashSectorErase((uint32_t)FLASH_ADDRESS(page, 0));
+    flashStat = FlashSectorErase((uint32_t)FLASH_ADDRESS(page, 0));
 
-  enableCache(cacheState);
+    enableCache(cacheState);
 
-  return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
+    return ((flashStat == FAPI_STATUS_SUCCESS) ? FLASH_SUCCESS : FLASH_FAILURE);
 }
 
 /*********************************************************************
@@ -280,19 +289,22 @@ uint8_t eraseFlashPg(uint8_t page)
  */
 static uint8_t disableCache(void)
 {
-  uint8_t state = VIMSModeGet(VIMS_BASE);
+    uint8_t state = VIMSModeGet(VIMS_BASE);
 
-  // Check VIMS state
-  if (state != VIMS_MODE_DISABLED)
-  {
-    // Invalidate cache
-    VIMSModeSet(VIMS_BASE, VIMS_MODE_DISABLED);
+    // Check VIMS state
+    if (state != VIMS_MODE_DISABLED)
+    {
+        // Invalidate cache
+        VIMSModeSet(VIMS_BASE, VIMS_MODE_DISABLED);
 
-    // Wait for disabling to be complete
-    while (VIMSModeGet(VIMS_BASE) != VIMS_MODE_DISABLED);
-  }
+        // Wait for disabling to be complete
+        while (VIMSModeGet(VIMS_BASE) != VIMS_MODE_DISABLED)
+        {
+            ;
+        }
+    }
 
-  return (state);
+    return (state);
 }
 
 /*********************************************************************
@@ -306,9 +318,9 @@ static uint8_t disableCache(void)
  */
 static void enableCache(uint8_t state)
 {
-  if (state != VIMS_MODE_DISABLED)
-  {
-    // Enable the Cache.
-    VIMSModeSet(VIMS_BASE, VIMS_MODE_ENABLED);
-  }
+    if (state != VIMS_MODE_DISABLED)
+    {
+        // Enable the Cache.
+        VIMSModeSet(VIMS_BASE, VIMS_MODE_ENABLED);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,7 +60,6 @@ The device has 2 dedicated configuration areas in flash that must contain a vali
 All of these configurations are done by simply letting SysConfig generate file ti_devices_config.c and including it in the project.`;
 
 let board = system.deviceData.board;
-let tzEnabled = system.modules["/ti/utils/TrustZone"]; /* UI callbacks cannot access system modules. Preload into variable */
 let defaultOverrideHfxtCapArray = false;
 let hfxtDefaultParams = {
     "P0": 14.56160,
@@ -68,9 +67,19 @@ let hfxtDefaultParams = {
     "P2": -0.00853,
     "P3": 0.00010,
     "shift": 22,
-    "hfxtCapArrayQ1" : 0,
-    "hfxtCapArrayQ2" : 0
+    "hfxtCapArrayQ1": 0,
+    "hfxtCapArrayQ2": 0
 };
+
+let hfxtCapArrayParams = {
+    "P0": 8.25,
+    "P1": 0.07
+};
+
+/* UI callbacks cannot access system modules. This will be updated in
+ * onModuleChanged() when TrustZone module is added/removed.
+ */
+let tzEnabled = system.modules["/ti/utils/TrustZone"] !== undefined;
 
 if(board !== undefined) {
     let crystal = board.components.HFXT;
@@ -91,18 +100,29 @@ if (system.compiler == "iar")
     defaultpAppVtorStr = "__vector_table";
 }
 
-
 let devSpecific = {
     hfxtDefaultParams: hfxtDefaultParams,
+    hfxtCapArrayParams: hfxtCapArrayParams,
+    maxShift: maxShift,
     longDescription: moduleDesc,
     templates: {
-        /* Contributes CRC symbols to linker file */
-        "/ti/utils/build/GenMap.cmd.xdt": { modName: "/ti/devices/CCFG", getLinkerSyms: getLinkerSyms }
+        /* Contributes CRC symbols and Secure Boot definitions to linker file */
+        "/ti/utils/build/GenMap.cmd.xdt": {
+            modName: "/ti/devices/CCFG",
+            getLinkerDefs: getLinkerDefs,
+            getLinkerSyms: getLinkerSyms
+        }
     },
     moduleStatic: {
         modules: modules,
         validate: validate,
         migrateLegacyConfiguration: migrateLegacyConfiguration,
+        dependencies: {
+            modules: {
+                "/ti/utils/TrustZone" : ["secureImage"]
+            },
+            onModuleChanged: onModuleChanged
+        },
         config: [
             {
                 name: "srcClkLF",
@@ -115,10 +135,22 @@ a 31.25 kHz square wave, with a peak voltage of VDDS and an offset of VDDS/2 to 
                 options: [
                     { name: "LF XOSC" },
                     { name: "LF RCOSC" },
-                    { name: "External LF clock" }
+                    { name: "External LF clock" },
+                    {
+                        name: "Fake",
+                        description: "LFTICK will be generated from HFOSC, STANDBY entry will be prevented"
+                    }
                 ],
                 default: "LF XOSC",
                 onChange: onChangeSrcClkLF
+            },
+            {
+                name: "useExternalHfxtCapacitors",
+                displayName: "Use External HFXT Capacitors",
+                description: "When using external HFXT capacitors, it is recommended to set the internal Cap Array trimmings to a minimum",
+                default: false,
+                readOnly: false,
+                hidden: false
             },
             {
                 name: "overrideHfxtCapArray",
@@ -127,16 +159,7 @@ a 31.25 kHz square wave, with a peak voltage of VDDS and an offset of VDDS/2 to 
                 default: defaultOverrideHfxtCapArray,
                 readOnly: false,
                 hidden: false,
-                onChange: (inst, ui) => {
-                    if (inst.overrideHfxtCapArray === true) {
-                        ui.hfxtCapArrayQ1.hidden = false;
-                        ui.hfxtCapArrayQ2.hidden = false;
-                    }
-                    else {
-                        ui.hfxtCapArrayQ1.hidden = true;
-                        ui.hfxtCapArrayQ2.hidden = true;
-                    }
-                }
+                onChange: onChangeHfxtCapsConfig
             },
             {
                 name: "hfxtCapArrayQ1",
@@ -161,6 +184,20 @@ Q1 and Q2 should not differ by more than one step.`,
                 default: hfxtDefaultParams.hfxtCapArrayQ2,
                 readOnly: false,
                 hidden: !defaultOverrideHfxtCapArray
+            },
+            {
+                name: "hfxtCapArrayCoefficientP0",
+                displayName: "HFXT Cap Array Coefficient P0",
+                description: "HFXT Cap Array Coefficient P0",
+                default: hfxtCapArrayParams.P0,
+                hidden: true
+            },
+            {
+                name: "hfxtCapArrayCoefficientP1",
+                displayName: "HFXT Cap Array Coefficient P1",
+                description: "HFXT Cap Array Coefficient P1",
+                default: hfxtCapArrayParams.P1,
+                hidden: true
             },
             {
                 name: "enableInitialHfxtAmpComp",
@@ -379,31 +416,6 @@ to be triggered during boot. Only valid if pin triggering is enabled.`,
                             { name: "HIGH" },
                             { name: "LOW" }
                         ]
-                    }
-                ]
-            },
-            {
-                displayName: "Hardware Options",
-                config: [
-                    {
-                        name: "hwOpts0",
-                        deprecated: true,
-                        displayName: "Hardware Options 1",
-                        description: "Hardware Options 1",
-                        longDescription: `Value written to both the PMCTL:HWOPT0 and CLKCTL:HWOPT0 registers by ROM code
-on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0xFFFFFFFF
-                    },
-                    {
-                        name: "hwOpts1",
-                        deprecated: true,
-                        displayName: "Hardware Options 2",
-                        description: "Hardware Options 2",
-                        longDescription: `Value written to both the PMCTL:HWOPT1 and CLKCTL:HWOPT1 registers by ROM code
-on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0xFFFFFFFF
                     }
                 ]
             },
@@ -734,14 +746,13 @@ Also used to pad out CCFG to correct size.`,
                         description: "Enable user record area in CCFG",
                         longDescription: `User record can contain any data, it has no dependencies in ROM boot code. This area is also
 programmable through separate SACI command. User record size is fixed at 124 bytes, plus an additional 4 bytes to hold a CRC32 checksum.
-The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area.
-The CRC32 checksum for the User Record will automatically be calculated and inserted regardless of whether the User Record is enabled or not`,
+The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area`,
                         default: false,
                         onChange: (inst, ui) => {
                             let setHidden = !(inst.enableUserRecord);
                             ui["userRecordMacro"].hidden = setHidden;
                             ui["userRecordFile"].hidden = setHidden;
-                            /* Also apply this to userRecordCRC once it's no longer unconditionally applied */
+                            ui["userRecordCRC"].hidden = setHidden;
                         }
                     },
                     {
@@ -765,7 +776,7 @@ The CRC32 checksum for the User Record will automatically be calculated and inse
                         longDescription: `Enable generation of user record begin/end symbols in the ELF executable.
 These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optional user record's CRC.`,
                         hidden: true,
-                        default: true
+                        default: false
                     }
                 ]
             },
@@ -828,7 +839,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                             { name: "Signature" },
                             { name: "Hash Lock" }
                         ],
-                        onChange: onChangeAuthMethod
+                        onChange: onChangeSecureBoot
                     },
                     {
                         name: "authAlg",
@@ -855,7 +866,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                             { name: "XIP Revert Enabled" },
                             { name: "XIP Revert Disabled" }
                         ],
-                        onChange: onChangeMode
+                        onChange: onChangeSecureBoot
                     },
                     {
                         name: "ssbEnabled",
@@ -864,7 +875,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                         longDescription: "Enables/Disables Secondary Secure Bootloader support. The application must send a command to ROM using HAPI to request that ROM boots the Secondary Secure Bootloader. Refer to the Technical Reference Manual (TRM) for usage details.",
                         hidden: true,
                         default: false,
-                        onChange: onChangeSsbEnabled
+                        onChange: onChangeSecureBoot
                     },
                     {
                         name: "bootSeedOffset",
@@ -1160,7 +1171,7 @@ function getLinkerSyms(inst) {
         { name: "CRC_SCFG_end", value: 0x4e0400E3 }
     ];
 
-    if (inst.$static.userRecordCRC) {
+    if (inst.$static.enableUserRecord && inst.$static.userRecordCRC) {
         linkerSyms.push(
             { name: "CRC_CCFG_USER_RECORD_begin", value: 0x4E020750 },
             { name: "CRC_CCFG_USER_RECORD_end", value: 0x4E0207CB },
@@ -1171,11 +1182,136 @@ function getLinkerSyms(inst) {
 }
 
 /*!
+ * ======== getLinkerDefs ========
+ *  Used by GenMap to define linker definitions
+ */
+function getLinkerDefs()
+{
+    let linkerDefs = [];
+    let dev2mem = [];
+    let deviceId = system.deviceData.deviceId;
+
+    var drvlib_mod = system.modules["/ti/devices/DriverLib"];
+    var ccfg_mod = system.modules["/ti/devices/CCFG"];
+
+    if (ccfg_mod && drvlib_mod && deviceId.match(/CC27../)) {
+        var inst = ccfg_mod.$static;
+
+        /* Only provide GenMap with Secure Boot definitions if enabled */
+        if (inst.authMethod != "No Authentication") {
+            let flash_base = 0, flash_size = 0, imgType;
+            let ram_base = 0, ram_size = 0, hw_ram_base, hw_ram_size;
+            let prim0Start, prim0Len, sec0Start, sec0Len;
+
+            /* Get device memory features from DriverLib module */
+            dev2mem = drvlib_mod.getLinkerDefs();
+
+            for (let i = 0; i < dev2mem.length; i++) {
+                if (dev2mem[i].name == "RAM0_BASE") {
+                    hw_ram_base = dev2mem[i].value;
+                    ram_base = hw_ram_base;
+                } else if (dev2mem[i].name == "RAM0_SIZE") {
+                    hw_ram_size = dev2mem[i].value;
+                    ram_size = hw_ram_size;
+                }
+            }
+
+            /* Get active imgType, and Primary/Secondary slots */
+            if (!(system.modules["/ti/utils/TrustZone"])) {
+                if (inst.mode == "Overwrite") {
+                    imgType = inst.imgTypeSingleOvrWrt;
+                } else {
+                    imgType = inst.imgTypeSingleXIP;
+                }
+
+                prim0Start = inst.prim0StartSingle;
+                prim0Len = inst.prim0LenSingle;
+                sec0Start = inst.sec0StartSingle;
+                sec0Len = inst.sec0LenSingle;
+
+            } else {
+                imgType = inst.imgTypeDual;
+
+                prim0Start = inst.prim0StartSecure;
+                prim0Len = inst.prim0LenSecure;
+                sec0Start = inst.sec0StartSecure;
+                sec0Len = inst.sec0LenSecure;
+            }
+
+            if (inst.mode == "Overwrite") {
+                if (system.modules["/ti/utils/TrustZone"]) {
+                    if (imgType == "APP 1") {
+                        flash_base = inst.prim1Start;
+                        flash_size = inst.prim1Len;
+                    } else {
+                        flash_base = prim0Start;
+                        flash_size = prim0Len;
+                    }
+                } else {
+                    flash_base = prim0Start;
+                    flash_size = prim0Len;
+                }
+            } else { /* XIP */
+                if (imgType == "APP for Primary") {
+                    flash_base = prim0Start;
+                    flash_size = prim0Len;
+                } else {
+                    flash_base = sec0Start;
+                    flash_size = sec0Len;
+                }
+            }
+
+            if (imgType == "SSB") {
+                flash_base = inst.ssbStart;
+                flash_size = inst.ssbLen;
+            }
+
+            /* In the following code, the CBOR prefix 8 bytes + 32 byte random number = 40 bytes,
+               so this is the offset at which the linker must see the start of physical SRAM.
+            */
+            if (inst.bootSeedOffset != 0xff) {
+                ram_base = hw_ram_base + (inst.bootSeedOffset * 16) + 40;
+                ram_size = hw_ram_size - (inst.bootSeedOffset * 16) - 40;
+            }
+
+            /* Final adjustment */
+            flash_base = flash_base + inst.hdrSize;
+            flash_size = flash_size - inst.hdrSize - 0x640 /* Minimum trailer size */;
+
+            linkerDefs.push(
+                {
+                    "name": "SECURE_BOOT_FLASH_BASE",
+                    "value": flash_base
+                },
+                {
+                    "name": "SECURE_BOOT_FLASH_SIZE",
+                    "value": flash_size
+                },
+                {
+                    "name": "SECURE_BOOT_RAM_BASE",
+                    "value": ram_base
+                },
+                {
+                    "name": "SECURE_BOOT_RAM_SIZE",
+                    "value": ram_size
+                },
+                {
+                    "name": "SECURE_BOOT_HDR_SIZE",
+                    "value": inst.hdrSize
+                }
+            );
+        }
+    }
+
+    return linkerDefs;
+}
+
+/*!
  *  ======== updateBldrVisibility ========
  *  Update the visibility of all fields in Bootloader settings
  *  whenever one of the fields change
  *
- *  @param inst - CCFG instance to be validated
+ *  @param inst - CCFG instance
  *  @param ui   -   GUI state
  */
 function updateBldrVisibility(inst, ui) {
@@ -1193,6 +1329,26 @@ function updateBldrVisibility(inst, ui) {
     ui["pinTriggerLevel"].hidden = setHidden;
 }
 
+/*!
+ *  ======== onChangeHfxtCapsConfig ========
+ *  Update the visibility of the HFXT Cap array settings
+ *  whenever one of the fields change
+ *
+ *  @param inst - CCFG instance
+ *  @param ui   -   GUI state
+ */
+function onChangeHfxtCapsConfig(inst, ui) {
+    if (inst.overrideHfxtCapArray === true) {
+        ui.hfxtCapArrayQ1.hidden = false;
+        ui.hfxtCapArrayQ2.hidden = false;
+    }
+    else
+    {
+        ui.hfxtCapArrayQ1.hidden = true;
+        ui.hfxtCapArrayQ2.hidden = true;
+    }
+}
+
 /*
  *  ======== onChangeEnableHFXTComp ========
  *  onChange callback function for the enableHFXTComp config
@@ -1207,7 +1363,6 @@ function onChangeHFXT(inst, ui) {
     ui.HFXTCoefficientP1.hidden = subState;
     ui.HFXTCoefficientP2.hidden = subState;
     ui.HFXTCoefficientP3.hidden = subState;
-
 }
 
 /*
@@ -1231,14 +1386,51 @@ function onChangeLfoscComp(inst, ui) {
 }
 
 /*
- *  ======== onChangeMode ========
- *  onChange callback function for Secure Boot mode config
+ *  ======== onChangeSecureBoot ========
+ *  onChange callback function for Secure Boot configs
  */
-function onChangeMode(inst, ui) {
-    /* Prevent UI calling this function asynchronously when sysconfig file is loaded */
+function onChangeSecureBoot(inst, ui)
+{
     if (inst.authMethod == "No Authentication") {
+        /* If Secure Boot is not enabled, hide all options and return early */
+        ui.authAlg.hidden = true;
+        ui.mode.hidden = true;
+        ui.ssbEnabled.hidden = true;
+        ui.bootSeedOffset.hidden = true;
+        ui.imgTypeSingleOvrWrt.hidden = true;
+        ui.imgTypeSingleXIP.hidden = true;
+        ui.imgTypeDual.hidden = true;
+        ui.secCnt.hidden = true;
+        ui.hdrSize.hidden = true;
+        ui.version.hidden = true;
+        ui.privKey.hidden = true;
+        ui.ssbStart.hidden = true;
+        ui.ssbLen.hidden = true;
+        ui.prim0StartSingle.hidden = true;
+        ui.prim0LenSingle.hidden = true;
+        ui.prim0StartSecure.hidden = true;
+        ui.prim0LenSecure.hidden = true;
+        ui.prim1Start.hidden = true;
+        ui.prim1Len.hidden = true;
+        ui.sec0StartSingle.hidden = true;
+        ui.sec0LenSingle.hidden = true;
+        ui.sec0StartSecure.hidden = true;
+        ui.sec0LenSecure.hidden = true;
+        ui.sec1Start.hidden = true;
+        ui.sec1Len.hidden = true;
+
         return;
     }
+
+    /* Secure boot is enabled */
+    ui.authAlg.hidden = false;
+    ui.mode.hidden = false;
+    ui.bootSeedOffset.hidden = false;
+    ui.ssbEnabled.hidden = false;
+    ui.privKey.hidden = false;
+    ui.secCnt.hidden = false;
+    ui.hdrSize.hidden = false;
+    ui.version.hidden = false;
 
     if (!tzEnabled) {
         if (inst.mode == "Overwrite") {
@@ -1283,17 +1475,6 @@ function onChangeMode(inst, ui) {
         ui.sec1Start.hidden = false;
         ui.sec1Len.hidden = false;
     }
-}
-
-/*
- *  ======== onChangeSsbEnabled ========
- *  onChange callback function for Secondary Secure Bootloader
- */
-function onChangeSsbEnabled(inst, ui) {
-    /* Prevent UI calling this function asynchronously when sysconfig file is loaded */
-    if (inst.authMethod == "No Authentication") {
-        return;
-    }
 
     if (inst.ssbEnabled) {
         ui.ssbStart.hidden = false;
@@ -1305,53 +1486,95 @@ function onChangeSsbEnabled(inst, ui) {
 }
 
 /*
- *  ======== onChangeAuthMethod ========
- *  onChange callback function for Secure Boot authMethod config
+ *  ======== onModuleChanged ========
+ *  onModuleChanged for when dependencies change
  */
+function onModuleChanged(inst, dependentInst, moduleName, configurables)
+{
+    if (moduleName == "/ti/utils/TrustZone")
+    {
+        if(dependentInst != undefined)
+        {
 
-function onChangeAuthMethod(inst, ui) {
-    let setHidden = false;
+            tzEnabled = true;
+            /* The TrustZone module is added. The following configs are fixed
+             * by the secure image:
+             *  - App vector table address. Should always be the vector table in
+             *    the secure image.
+             *  - SWTCXO is disabled.
+             *  - LFXT is always the LFCLK source.
+             *  - The voltage regulator is always DCDC.
+             *  - Initial HFXT amplitude compensation is always disabled.
+             *
+             * Set the value of these configs to the value fixed in the secure
+             * image, and make them read only.
+             */
 
-    if (inst.authMethod == "No Authentication") {
-        setHidden = true;
-    } else {
-        setHidden = false;
-    }
+            inst.pAppVtorStr = "0x0000D100";
+            inst.$uiState.pAppVtorStr.readOnly = "Application vector table is fixed when TrustZone is enabled";
 
-    if (setHidden) {
-        ui.imgTypeSingleOvrWrt.hidden = setHidden;
-        ui.imgTypeSingleXIP.hidden = setHidden;
-        ui.imgTypeDual.hidden = setHidden;
-        ui.prim0StartSingle.hidden = setHidden;
-        ui.prim0LenSingle.hidden = setHidden;
-        ui.prim0StartSecure.hidden = setHidden;
-        ui.prim0LenSecure.hidden = setHidden;
-        ui.sec0StartSingle.hidden = setHidden;
-        ui.sec0LenSingle.hidden = setHidden;
-        ui.sec0StartSecure.hidden = setHidden;
-        ui.sec0LenSecure.hidden = setHidden;
-        ui.prim1Start.hidden = setHidden;
-        ui.prim1Len.hidden = setHidden;
-        ui.sec1Start.hidden = setHidden;
-        ui.sec1Len.hidden = setHidden;
-    } else {
-        onChangeMode(inst, ui);
-    }
+            inst.enableHFXTComp = false;
+            inst.$uiState.enableHFXTComp.readOnly = "Not currently supported when TrustZone is enabled";
 
-    ui.authAlg.hidden = setHidden;
-    ui.mode.hidden = setHidden;
-    ui.bootSeedOffset.hidden = setHidden;
-    ui.ssbEnabled.hidden = setHidden;
-    ui.privKey.hidden = setHidden;
-    ui.secCnt.hidden = setHidden;
-    ui.hdrSize.hidden = setHidden;
-    ui.version.hidden = setHidden;
+            inst.srcClkLF = "LF XOSC";
+            inst.$uiState.srcClkLF.readOnly = "Only LF XOSC is supported when TrustZone is enabled";
 
-    if (setHidden) {
-        ui.ssbStart.hidden = setHidden;
-        ui.ssbLen.hidden = setHidden;
-    } else {
-        onChangeSsbEnabled(inst, ui);
+            inst.voltageRegulator = "DCDC";
+            inst.$uiState.voltageRegulator.readOnly = "Only DCDC is supported when TrustZone is enabled";
+
+            inst.enableInitialHfxtAmpComp = false;
+            inst.$uiState.enableInitialHfxtAmpComp.readOnly = "Not currently supported when TrustZone is enabled";
+
+            inst.overrideHfxtCapArray = true;
+            inst.$uiState.overrideHfxtCapArray.readOnly = "Cap array override settings are fixed when TrustZone is enabled. " +
+                                                          "If different settings are needed, modify tfm_s/cc27xx/production_full/config/config_tfm_project.h " +
+                                                          "and rebuild the secure image";
+
+            inst.hfxtCapArrayQ1 = 33;
+            inst.$uiState.hfxtCapArrayQ1.readOnly = inst.$uiState.overrideHfxtCapArray.readOnly;
+
+            inst.hfxtCapArrayQ2 = 33;
+            inst.$uiState.hfxtCapArrayQ2.readOnly = inst.$uiState.overrideHfxtCapArray.readOnly;
+
+        }
+        else
+        {
+            /* TrustZone module is not enabled, restore defaults of the configs
+             * fixed in secure image, and allow modifications.
+             */
+
+            inst.pAppVtorStr = defaultpAppVtorStr;
+            inst.$uiState.pAppVtorStr.readOnly = false;
+
+            inst.enableHFXTComp = true;
+            inst.$uiState.enableHFXTComp.readOnly = false;
+
+            inst.srcClkLF = "LF XOSC";
+            inst.$uiState.srcClkLF.readOnly = false;
+
+            inst.voltageRegulator = "DCDC";
+            inst.$uiState.voltageRegulator.readOnly = false;
+
+            inst.enableInitialHfxtAmpComp = false;
+            inst.$uiState.enableInitialHfxtAmpComp.readOnly = false;
+
+            inst.overrideHfxtCapArray = defaultOverrideHfxtCapArray;
+            inst.$uiState.overrideHfxtCapArray.readOnly = false;
+
+            inst.hfxtCapArrayQ1 = hfxtDefaultParams.hfxtCapArrayQ1;
+            inst.$uiState.hfxtCapArrayQ1.readOnly = false;
+
+            inst.hfxtCapArrayQ2 = hfxtDefaultParams.hfxtCapArrayQ2;
+            inst.$uiState.hfxtCapArrayQ2.readOnly = false;
+
+            tzEnabled = false;
+        }
+
+        /* Update UI */
+        onChangeSecureBoot(inst, inst.$uiState);
+
+        inst.$uiState.hfxtCapArrayQ1.hidden = !inst.overrideHfxtCapArray;
+        inst.$uiState.hfxtCapArrayQ2.hidden = !inst.overrideHfxtCapArray;
     }
 }
 
@@ -1496,10 +1719,6 @@ function IsSlotDefined (start, len)
  */
 function checkSlotConfiguration(inst, validation)
 {
-    if (tzEnabled) { /* The following is just to throw an error if TrustZone module is */
-        Common.logError(validation, inst, "authMethod", "The combination of TrustZone and Secure Boot is not yet supported. Before TrustZone can be enabled, this combination must be properly handled. Please reach out to R&D");
-    }
-
     let slots = [
         {cond: inst.ssbEnabled, name: "Secondary Secure Bootloader", name_start: "ssbStart",   name_len: "ssbLen",   start: inst.ssbStart, len: inst.ssbLen},
         {cond: !tzEnabled, name: "Primary",  name_start: "prim0StartSingle", name_len: "prim0LenSingle", start: inst.prim0StartSingle, len: inst.prim0LenSingle},
@@ -1612,10 +1831,13 @@ function checkPrivateKey (inst, validation)
  */
 function validate(inst, validation) {
 
-    checkBootSeedOffset(inst, validation);
-    checkMode(inst, validation);
-    checkSlotConfiguration(inst, validation);
-    checkPrivateKey(inst, validation);
+    if (inst.authMethod != "No Authentication")
+    {
+        checkBootSeedOffset(inst, validation);
+        checkMode(inst, validation);
+        checkSlotConfiguration(inst, validation);
+        checkPrivateKey(inst, validation);
+    }
 
     if (inst.debugAuthorization == "Require debug authentication") {
         Common.logError(validation, inst, "debugAuthorization",
@@ -1637,6 +1859,31 @@ function validate(inst, validation) {
             "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
         Common.logError(validation, inst, "hfxtCapArrayQ2",
             "The Q1 and Q2 cap trims may not differ by more than one step to avoid excessive RF noise.");
+    }
+
+    if (system.modules["/ti/utils/TrustZone"]) {
+        if(board !== undefined) {
+            if (board.components.HFXT !== undefined)
+            {
+                if (inst.overrideHfxtCapArray !== defaultOverrideHfxtCapArray)
+                {
+                    Common.logInfo(validation, inst, "overrideHfxtCapArray", "This board may not support the default setting in tfm_s/cc27xx/production_full/config/config_tfm_project.h. Consider updating the settings in config_tfm_project.h and rebuild the secure image.");
+                }
+
+                if (defaultOverrideHfxtCapArray === true)
+                {
+                    if (inst.hfxtCapArrayQ1 !== hfxtDefaultParams.hfxtCapArrayQ1)
+                    {
+                        Common.logInfo(validation, inst, "hfxtCapArrayQ1", "This board may not support the default setting in tfm_s/cc27xx/production_full/config/config_tfm_project.h. Consider updating the settings in config_tfm_project.h and rebuild the secure image.");
+                    }
+
+                    if (inst.hfxtCapArrayQ2 !== hfxtDefaultParams.hfxtCapArrayQ2)
+                    {
+                        Common.logInfo(validation, inst, "hfxtCapArrayQ2", "This board may not support the default setting in tfm_s/cc27xx/production_full/config/config_tfm_project.h. Consider updating the settings in config_tfm_project.h and rebuild the secure image.");
+                    }
+                }
+            }
+        }
     }
 
     if (Common.isCName(inst.pBldrVtorStr) == false)
@@ -1717,6 +1964,12 @@ function validate(inst, validation) {
     if (inst.HFXTCompTempDelta < 1) {
         Common.logError(validation, inst, "HFXTCompTempDelta",
             "Must be an integer greater than 0");
+    }
+
+    if (inst.useExternalHfxtCapacitors == true && inst.overrideHfxtCapArray == true) {
+        Common.logWarning(validation, inst, "useExternalHfxtCapacitors",
+            "The external HFXT capacitors is enabled and the HFXT cap-array is overridden. \
+             Make sure this was the intention. Normally with external HFXT capacitors the internal cap-array is not overridden.");
     }
 }
 
@@ -1814,6 +2067,59 @@ function pinmuxRequirements(inst) {
     }
 
     return (extlf);
+}
+
+/*!
+ *  ======== ppmOverflow ========
+ * Function that calculates the polynomials of the given temperature, shifts and coefficients.
+ * Then checks if any sum of the calculated values exceeds the limit of a signed 32bit integer.
+ * Note this only support calculations of up to 4 coefficients.
+ *
+ *  @param x            The temperature.
+ *  @param shift        The number of shifts.
+ *  @param coefficients List of coefficients to be used in the ppm calculation.
+ *                      The coefficients should be ordered from the lowest power to the highest.
+ */
+function ppmOverflow(x, shift, coefficients) {
+    var lim = 0x7FFFFFFF;
+
+    let pArr = [];
+    for (let i = 0; i < coefficients.length; i++) {
+        var p = Math.abs(coefficients[i] * Math.pow(2, shift) * Math.pow(x, i));
+        pArr.push(p);
+    }
+
+    /* Make sure that no partial sum in the polynomial can overflow. */
+    if (pArr.reduce((a, b) => a + b, 0) > lim) return true;
+
+    return false;
+}
+
+/*!
+ *  ======== maxShift ========
+ * Function that checks if any part of the of ppm calculation can overflow 32bit
+ * Used to establish what the maximum shift value can be to get the highest possible
+ * fixed-point precision without overflowing
+ *
+ *  @param coefficients List of coefficients to be used in the ppm calculation.
+ *                      The coefficients should be ordered from the lowest power to the highest.
+ */
+function maxShift(coefficients) {
+    let maxShiftTemp = 1;
+
+    /* The max temperature supported by the device. */
+    let temp = 125;
+
+    outerLoopLabel:
+    for(; maxShiftTemp < 32; maxShiftTemp++)
+    {
+        if(ppmOverflow(temp, maxShiftTemp, coefficients)) {
+            break outerLoopLabel;
+        }
+    }
+
+    /* Go back to the shift value that did not cause overflow */
+    return maxShiftTemp - 1;
 }
 
 /*

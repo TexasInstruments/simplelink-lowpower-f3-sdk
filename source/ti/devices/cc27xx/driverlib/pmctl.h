@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the PMCTL module.
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -66,12 +66,6 @@ extern "C" {
 #include "../cmsis/core/core_cm33.h"
 
 //*****************************************************************************
-//
-// API Functions and prototypes
-//
-//*****************************************************************************
-
-//*****************************************************************************
 //! \name PMCTLGetResetReason() return values
 //@{
 //*****************************************************************************
@@ -124,6 +118,22 @@ extern "C" {
 //! GLDO voltage regulator
 #define PMCTL_VOLTAGE_REGULATOR_GLDO PMCTL_VDDRCTL_SELECT_GLDO
 //@}
+
+//*****************************************************************************
+//
+// API Functions and prototypes
+//
+//*****************************************************************************
+
+#ifndef DRIVERLIB_NS
+//*****************************************************************************
+//
+// Below functions will only be compiled into the driverlib.a library and not
+// the driverlib_ns.a library.
+// Non-secure applications might be able to access some/all of these functions
+// through veneers declared further below in the #else case.
+//
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -234,6 +244,36 @@ __STATIC_INLINE uint32_t PMCTLGetVoltageRegulator(void)
 {
     return (HWREG(PMCTL_BASE + PMCTL_O_VDDRCTL) & PMCTL_VDDRCTL_SELECT_M);
 }
+
+//*****************************************************************************
+//
+//! \brief Enable pad power for GPIOs that uses VDDIO
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void PMCTLEnableVddioGpioPadPower(void)
+{
+    HWREG(PMCTL_BASE + PMCTL_O_AONRSET1) |= PMCTL_AONRSET1_VDDIOPGIO_SET;
+}
+
+#else
+//*****************************************************************************
+//
+// Secure-only API functions available from non-secure context through
+// veneers.
+//
+// These functions must be linked in from from the secure veneer library.
+//
+//*****************************************************************************
+
+extern bool PMCTLGetRtcResetStatus_veneer(void);
+    #define PMCTLGetRtcResetStatus       PMCTLGetRtcResetStatus_veneer
+
+extern bool PMCTLEnableVddioGpioPadPower_veneer(void);
+    #define PMCTLEnableVddioGpioPadPower PMCTLEnableVddioGpioPadPower_veneer
+
+#endif
 
 //*****************************************************************************
 //

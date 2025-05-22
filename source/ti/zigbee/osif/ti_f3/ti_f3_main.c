@@ -49,6 +49,8 @@
 #include "zb_osif.h"
 #else // R23_MAC
 #include "zb_osif_platform.h"
+// Required for sleepy zed check in zb_osif_sleep()
+#include "zb_mac_globals.h"
 #endif /* ZB_ZGPD_ROLE */
 
 /*cstat -MISRAC2012-* */
@@ -90,7 +92,7 @@
 static zb_bool_t gs_platform_init_done = ZB_FALSE;
 static volatile zb_uint8_t count = 0;
 static uintptr_t hwiKey;
-extern SemaphoreP_Handle buttonSem;
+extern SemaphoreP_Handle wakeSem;
 
 void *main_task_function(void *arg0)
 {
@@ -293,11 +295,17 @@ zb_uint32_t zb_osif_sleep(zb_uint32_t sleep_tmo)
   // Get starting time
   t1 = ClockP_getSystemTicks();
 
+  // When device is a sleepy ZED, ensure that RX is off when going to sleep.
+  if (MAC_PIB().mac_rx_on_when_idle == 0U)
+  {
+    ZB_TRANSCEIVER_SET_RX_ON_OFF(ZB_FALSE);
+  }
+
   /* zzzzZZZZZzzzzzz */
   SemaphoreP_Status semStatus = SemaphoreP_TIMEOUT;
-  if(NULL != buttonSem)
+  if(NULL != wakeSem)
   {
-    semStatus = SemaphoreP_pend(buttonSem, sleep_ticks);
+    semStatus = SemaphoreP_pend(wakeSem, sleep_ticks);
   }
   else
   {

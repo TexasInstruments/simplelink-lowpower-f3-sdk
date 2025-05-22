@@ -84,7 +84,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
 #include "ECDSACC26X4_driverlib.h"
@@ -96,10 +95,10 @@ extern "C" {
 // Field:    [29] SAVE_CONTEXT
 //
 // IV must be read before the AES engine can start a new operation.
-#define CRYPTO_AESCTL_SAVE_CONTEXT                                  0x20000000
-#define CRYPTO_AESCTL_SAVE_CONTEXT_BITN                                     29
-#define CRYPTO_AESCTL_SAVE_CONTEXT_M                                0x20000000
-#define CRYPTO_AESCTL_SAVE_CONTEXT_S                                        29
+#define CRYPTO_AESCTL_SAVE_CONTEXT      0x20000000
+#define CRYPTO_AESCTL_SAVE_CONTEXT_BITN 29
+#define CRYPTO_AESCTL_SAVE_CONTEXT_M    0x20000000
+#define CRYPTO_AESCTL_SAVE_CONTEXT_S    29
 
 /*!
  *  @brief  Mask for the operation mode.
@@ -137,7 +136,6 @@ extern "C" {
  */
 #define AESCTR_OP_FLAG_FINALIZE 0x20 /* bit 5 */
 
-
 /*!
  *  @brief  Struct containing the parameters required for encrypting/decrypting
  *          a message using a one-step operation.
@@ -147,32 +145,32 @@ extern "C" {
  */
 typedef struct
 {
-    const CryptoKey_Plaintext *key;/*!< Pointer to a previously initialized CryptoKey. */
-    const uint8_t *input;          /*!<
-                                    *   - Encryption: The plaintext buffer to be
-                                    *     encrypted in the CTR operation.
-                                    *   - Decryption: The ciphertext to be decrypted.
-                                    */
-    uint8_t *output;               /*!<
-                                    *   - Encryption: The output ciphertext buffer that
-                                    *     the encrypted plaintext is copied to.
-                                    *   - Decryption: The plaintext derived from the
-                                    *     decrypted ciphertext is copied here.
-                                    *   Size of the output buffer must be greater than
-                                    *   or equal to the inputLength.
-                                    */
-    const uint8_t *initialCounter; /*!< A buffer containing an initial counter. Under
-                                    *   the same key, each counter value may only be
-                                    *   used to encrypt or decrypt a single input
-                                    *   block. If NULL, zero will be used for the
-                                    *   initial counter value. The buffer's size must
-                                    *   be at least 16-bytes.
-                                    */
-    size_t inputLength;            /*!< Length of the input in bytes. An equal number
-                                    *   of bytes will be output by the operation.
-                                    *   Max length supported may be limited depending on
-                                    *   the return behavior.
-                                    */
+    const CryptoKey_Plaintext *key; /*!< Pointer to a previously initialized CryptoKey. */
+    const uint8_t *input;           /*!<
+                                     *   - Encryption: The plaintext buffer to be
+                                     *     encrypted in the CTR operation.
+                                     *   - Decryption: The ciphertext to be decrypted.
+                                     */
+    uint8_t *output;                /*!<
+                                     *   - Encryption: The output ciphertext buffer that
+                                     *     the encrypted plaintext is copied to.
+                                     *   - Decryption: The plaintext derived from the
+                                     *     decrypted ciphertext is copied here.
+                                     *   Size of the output buffer must be greater than
+                                     *   or equal to the inputLength.
+                                     */
+    const uint8_t *initialCounter;  /*!< A buffer containing an initial counter. Under
+                                     *   the same key, each counter value may only be
+                                     *   used to encrypt or decrypt a single input
+                                     *   block. If NULL, zero will be used for the
+                                     *   initial counter value. The buffer's size must
+                                     *   be at least 16-bytes.
+                                     */
+    size_t inputLength;             /*!< Length of the input in bytes. An equal number
+                                     *   of bytes will be output by the operation.
+                                     *   Max length supported may be limited depending on
+                                     *   the return behavior.
+                                     */
 } AESCTR_OneStepOperation;
 
 /*!
@@ -240,7 +238,6 @@ typedef enum
     AESCTR_OPERATION_TYPE_DECRYPT_FINALIZE  = (AESCTR_MODE_DECRYPT | AESCTR_OP_FLAG_FINALIZE),
 } AESCTR_OperationType;
 
-
 /*!
  *  @brief      AESCTRCC26XX Object
  *
@@ -261,23 +258,22 @@ typedef struct
     volatile bool operationInProgress;
 } AESCTRCC26XX_Object;
 
-
 /*
  *  ======== AESCTR_oneStepEncrypt ========
  */
-int_fast16_t AESCTR_oneStepEncrypt (AESCTR_OneStepOperation *operationStruct);
+int_fast16_t AESCTR_oneStepEncrypt(AESCTR_OneStepOperation *operationStruct);
 
 /*
  *  ======== AESCTR_oneStepDecrypt ========
  */
-int_fast16_t AESCTR_oneStepDecrypt (AESCTR_OneStepOperation *operationStruct );
+int_fast16_t AESCTR_oneStepDecrypt(AESCTR_OneStepOperation *operationStruct);
 
 /**
  * @fn         AES_open
  * @brief      Initializes the AES peripheral.
  *
  *             This function must be called before all other AES functions
-  *
+ *
  * @return     AES_STATUS_SUCCESS on success
  */
 int_fast16_t AES_open(void);
@@ -287,7 +283,7 @@ int_fast16_t AES_open(void);
  * @brief      Initializes the AES peripheral.
  *
  *             This function must be called before all other AES functions
-  *
+ *
  * @return     AES_STATUS_SUCCESS on success
  */
 int_fast16_t AES_close(void);

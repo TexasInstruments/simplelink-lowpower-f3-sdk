@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget ThirdPartyHSMDDKLib::hsmddk_cc35xx)
+foreach(_expectedTarget ThirdPartyHSMDDKLib::hsmddk_cc35xx ThirdPartyHSMDDKLib::hsmddk_cc35xx_its)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -55,6 +55,14 @@ endif()
 add_library(ThirdPartyHSMDDKLib::hsmddk_cc35xx STATIC IMPORTED)
 
 set_target_properties(ThirdPartyHSMDDKLib::hsmddk_cc35xx PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "TOOLCHAIN_gcc_m33f;Driverlib::cc35xx"
+)
+
+# Create imported target ThirdPartyHSMDDKLib::hsmddk_cc35xx_its
+add_library(ThirdPartyHSMDDKLib::hsmddk_cc35xx_its STATIC IMPORTED)
+
+set_target_properties(ThirdPartyHSMDDKLib::hsmddk_cc35xx_its PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
   INTERFACE_LINK_LIBRARIES "TOOLCHAIN_gcc_m33f;Driverlib::cc35xx"
 )

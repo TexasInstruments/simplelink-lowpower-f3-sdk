@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,8 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-/* Interrupt Priority for internal AESCTR instance */
-let intPriority = Common.newIntPri()[0];
-intPriority.name = "interruptPriority";
-intPriority.displayName = "Interrupt Priority";
-intPriority.description = "Crypto peripheral interrupt priority";
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
 
 /*
  *  ======== getLibs ========
@@ -62,8 +59,13 @@ function getLibs(mod)
         allowDuplicates: true
     };
 
-    if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+    /* Add the appropriate HSMDDK library for the current device */
+    if (deviceId.match(/CC27/)) {
+        if (!system.modules["/ti/utils/TrustZone"]) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        }
+    } else if (deviceId.match(/CC35/)) {
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc35xx.a"));
     }
 
     return (libGroup);
@@ -111,6 +113,15 @@ let devSpecific = {
     }
 };
 
+/*
+ *  ======== validate ========
+ *  Validate this instance's configuration
+ *
+ *  @param inst       - RNG instance to be validated
+ *  @param validation - object to hold detected validation issues
+ *
+ *  @param $super    - needed to call the generic module's functions
+ */
 function validate(inst, validation, $super) {
     if ($super.validate) {
         $super.validate(inst, validation);

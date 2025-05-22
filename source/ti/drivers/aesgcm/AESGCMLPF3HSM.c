@@ -49,12 +49,19 @@
 
 #include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/dpl/HwiP.h>
-#include <ti/drivers/power/PowerCC27XX.h>
-
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
-#include DeviceFamily_constructPath(inc/hw_aes.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/power/PowerCC27XX.h>
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/power/PowerWFF3.h>
+#endif
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+    #include DeviceFamily_constructPath(inc/hw_aes.h)
+    #include DeviceFamily_constructPath(inc/hw_ints.h)
+#endif
 
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23XX) && (ENABLE_KEY_STORAGE == 1))
     #error "Key storage is not supported for CC23XX"
@@ -120,6 +127,14 @@ AESGCM_Handle AESGCM_construct(AESGCM_Config *config, const AESGCM_Params *param
 
     AESGCM_Handle handle         = config;
     AESGCMLPF3HSM_Object *object = AESGCMLPF3HSM_getObject(handle);
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Callback return mode is not supported for CC35XX for now */
+    if ((params != NULL) && (params->returnBehavior == AESGCM_RETURN_BEHAVIOR_CALLBACK))
+    {
+        return NULL;
+    }
+#endif
 
     /* Initialize and boot HSM */
     if (HSMLPF3_init() != HSMLPF3_STATUS_SUCCESS)

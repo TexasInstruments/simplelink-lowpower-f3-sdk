@@ -26,11 +26,26 @@
 #ifndef __FLASH_LAYOUT_H__
 #define __FLASH_LAYOUT_H__
 
-#define FLASH0_BASE_S        (0x0)
-#define FLASH0_SIZE          (0x00E8000) /* 1 MB - 96 KB (HSM FW) */
-#define FLASH0_SECTOR_SIZE   (0x800)     /* 2 KB */
-#define FLASH0_PAGE_SIZE     (0x800)     /* 2 KB */
-#define FLASH0_PROGRAM_UNIT  (1)         /* Minimum write size */
+#include <DeviceFamily.h>
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #define PROGRAM_UNIT 1
+    #define BASE 0x0
+    #define SIZE 0x00E8000 /* 1 MB - 96 KB (HSM FW) */
+    #define SECTOR_SIZE 0x800 /* 2 KB */
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #define PROGRAM_UNIT 16
+    /* The following values are from drivers/source/ti/drivers/XMEMWFF3.c */
+    #define BASE 0x0021A000 /* XMEM Region physical address base */
+    #define SIZE 0x001E5000 /* Size of XMEM region */
+    #define SECTOR_SIZE 0x1000 /* 4 KB */
+#endif
+
+#define FLASH0_BASE_S        (BASE)
+#define FLASH0_SIZE          (SIZE)
+#define FLASH0_SECTOR_SIZE   (SECTOR_SIZE)
+#define FLASH0_PAGE_SIZE     (SECTOR_SIZE)
+#define FLASH0_PROGRAM_UNIT  (PROGRAM_UNIT)         /* Minimum write size */
 
 /* Sector size of the flash hardware */
 #define FLASH_AREA_IMAGE_SECTOR_SIZE FLASH0_SECTOR_SIZE
@@ -38,9 +53,8 @@
 
 /* Internal Trusted Storage (ITS) Service definitions */
 extern const size_t FLASH_ITS_SIZE;
-/* Default ITS configuration is for 18KB of flash. Of that, 5120 bytes are from 10 files of 512 bytes each. */
 #define FLASH_ITS_AREA_SIZE   (FLASH_ITS_SIZE)
-#define FLASH_ITS_AREA_OFFSET (FLASH_TOTAL_SIZE - FLASH_ITS_AREA_SIZE)
+#define FLASH_ITS_AREA_OFFSET ((FLASH_TOTAL_SIZE - FLASH_ITS_AREA_SIZE) + FLASH0_BASE_S)
 
 /*
  * Internal Trusted Storage (ITS) Service definitions

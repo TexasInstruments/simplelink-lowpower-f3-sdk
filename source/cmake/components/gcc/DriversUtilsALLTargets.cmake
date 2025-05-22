@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget DriversUtils::secure_key_storage_enabled DriversUtils::tfm_enabled)
+foreach(_expectedTarget DriversUtils::tfm_enabled)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -50,13 +50,6 @@ get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
-
-# Create imported target DriversUtils::secure_key_storage_enabled
-add_library(DriversUtils::secure_key_storage_enabled INTERFACE IMPORTED)
-
-set_target_properties(DriversUtils::secure_key_storage_enabled PROPERTIES
-  INTERFACE_COMPILE_DEFINITIONS "\$<\$<COMPILE_LANGUAGE:C>:ENABLE_KEY_STORAGE=1>"
-)
 
 # Create imported target DriversUtils::tfm_enabled
 add_library(DriversUtils::tfm_enabled INTERFACE IMPORTED)

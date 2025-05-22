@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,7 +60,7 @@ typedef struct _HwiP_Obj
 } HwiP_Obj;
 
 /* The name of this table is used by ROV */
-static HwiP_Obj *HwiP_dispatchTable[NUM_INTERRUPTS] = {0};
+static HwiP_Obj *HwiP_dispatchTable[NUM_INTERRUPTS] __attribute__((used)) = {0};
 
 void HwiP_dispatch(void);
 

@@ -39,3 +39,7 @@ set(SOURCES_CC23X0R2 ${SOURCES_CC23X0} startup/startup_cc23x0r2_${TI_TOOLCHAIN_N
 set(SOURCES_CC27XX ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
                    startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
 )
+
+set(SOURCES_CC27XX_NS ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
+                      startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
+)

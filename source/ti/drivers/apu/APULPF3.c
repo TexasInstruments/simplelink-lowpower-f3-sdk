@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
-#include DeviceFamily_constructPath(inc/hw_vce.h)
+#include DeviceFamily_constructPath(inc/hw_apu.h)
 #include DeviceFamily_constructPath(driverlib/apu.h)
 
 /* Forward declarations */
@@ -91,12 +91,12 @@ static void APULPF3_hwiIntFxn(uintptr_t arg)
 {
     uint32_t status;
 
-    /* Get and clear the interrupt */
-    status                       = HWREG(VCE_BASE + VCE_O_MIS);
-    HWREG(VCE_BASE + VCE_O_ICLR) = status;
+    /* Get and clear the interrupt. */
+    status                       = HWREG(APU_BASE + APU_O_MIS);
+    HWREG(APU_BASE + APU_O_ICLR) = status;
 
-    /* APU API has finished */
-    if (status && (VCE_IMASK_API))
+    /* APU API has finished. */
+    if (status && (APU_IMASK_API))
     {
         SemaphoreP_post(&apuSem);
     }
@@ -110,7 +110,7 @@ static void APULPF3_loadFW()
 {
     for (uint16_t i = 0; i < APULPF3_FW_SIZE; i++)
     {
-        *((uint32_t *)VCE_TOPSMRAM_BASE + i) = lrf_fw_image_seq_apu[i];
+        *((uint32_t *)APU_TOPSMRAM_BASE + i) = lrf_fw_image_seq_apu[i];
     }
 }
 
@@ -120,7 +120,7 @@ static void APULPF3_loadFW()
  */
 static bool APULPF3_inAPU(void *ptr)
 {
-    return VCERAM_DATA0_BASE <= (uint32_t)ptr && (uint32_t)ptr < VCERAM_DATA0_BASE + VCERAM_DATA0_SIZE;
+    return APURAM_DATA0_BASE <= (uint32_t)ptr && (uint32_t)ptr < APURAM_DATA0_BASE + APURAM_DATA0_SIZE;
 }
 
 /*
@@ -129,17 +129,20 @@ static bool APULPF3_inAPU(void *ptr)
  */
 static void APULPF3_copyBack()
 {
+    float *memPtr;
+    float *result;
+    float loadVal;
+
     if (!object.scratchpad)
     {
-        float *mem_ptr = (float *)object.result;
-        float *result  = (float *)object.resultBuffer;
-        float loadVal;
+        memPtr = (float *)object.result;
+        result = (float *)object.resultBuffer;
         for (uint32_t i = 0; i < 2 * object.resultSize; i++)
         {
             /* Load individual floats with a nop to
-             *  prevent back-to-back memory accesses
+             * prevent back-to-back memory accesses.
              */
-            loadVal = mem_ptr[i];
+            loadVal = memPtr[i];
             __asm volatile("nop");
             result[i] = loadVal;
             __asm volatile("nop");
@@ -152,30 +155,32 @@ static void APULPF3_copyBack()
  */
 void APULPF3_init(void)
 {
+    HwiP_Params hwiParams;
+
     if (!object.isInitialized)
     {
         APULPF3_HWAttrs *hwAttrs = (APULPF3_HWAttrs *)apuHwAttrs;
-        HwiP_Params hwiParams;
 
-        /* Clock the APU Peripheral*/
+        /* Clock the APU Peripheral. */
         Power_setDependency(PowerLPF3_PERIPH_APU);
 
-        /* Load firmware into TOPSM memory */
+        /* Load firmware into TOPSM memory. */
         APULPF3_loadFW();
 
-        /* Configure APU and wait for the configuration to complete */
+        /* Configure APU and wait for the configuration to complete. */
         APUSetConfig(0);
         APUWaitOnIrq();
 
         /* Create Hwi object for this APU peripheral. */
         HwiP_Params_init(&hwiParams);
         hwiParams.priority = hwAttrs->intPriority;
-        HwiP_construct(&(object.hwi), INT_VCE_IRQ, APULPF3_hwiIntFxn, &hwiParams);
+        HwiP_construct(&(object.hwi), INT_APU_IRQ, APULPF3_hwiIntFxn, &hwiParams);
 
-        HWREG(VCE_BASE + VCE_O_IMSET) = VCE_IMASK_API;
+        HWREG(APU_BASE + APU_O_IMSET) = APU_IMASK_API;
 
-        /* One semaphore to control when an API call has finished, and one to
-         * control access into APU functions
+        /*
+         * One semaphore to control when an API call has finished, and one to
+         * control access into APU functions.
          */
         SemaphoreP_constructBinary(&(apuSem), 0);
         SemaphoreP_constructBinary(&(apuAccessSem), 1);
@@ -211,18 +216,25 @@ int_fast16_t APULPF3_dotProduct(APULPF3_ComplexVector *vecA,
                                 bool conjugate,
                                 float complex *result)
 {
+    uint16_t inputSize;
+    uint16_t returnVal = APULPF3_STATUS_ERROR;
+
     if (vecA->size == vecB->size)
     {
         object.scratchpad = false;
         if (APULPF3_inAPU(vecA->data) && APULPF3_inAPU(vecB->data) && APULPF3_inAPU(result))
         {
+            /*
+             * If params are in APU memory, use them as is
+             * and do not copy result back to CPU memory.
+             */
             object.scratchpad = true;
         }
 
-        uint16_t inputSize = APULPF3_prepareVectors(vecA, vecB);
+        inputSize = APULPF3_prepareVectors(vecA, vecB);
         APULPF3_prepareResult(1, inputSize, result);
 
-        /* Tell the APU to do a dot product with the arguments we have provided */
+        /* Tell the APU to do a dot product with the arguments we have provided. */
         if (conjugate)
         {
             APUVectorDotConj(vecA->size, object.argA, object.argB, object.result);
@@ -235,10 +247,10 @@ int_fast16_t APULPF3_dotProduct(APULPF3_ComplexVector *vecA,
         SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
 
         APULPF3_copyBack();
-        return APULPF3_STATUS_SUCCESS;
+        returnVal = APULPF3_STATUS_SUCCESS;
     }
 
-    return APULPF3_STATUS_ERROR;
+    return returnVal;
 }
 
 /*
@@ -249,14 +261,21 @@ int_fast16_t APULPF3_vectorMult(APULPF3_ComplexVector *vecA,
                                 bool conjugate,
                                 APULPF3_ComplexVector *result)
 {
+    uint16_t inputSize;
+    int_fast16_t returnVal = APULPF3_STATUS_ERROR;
+
     if (vecA->size == vecB->size)
     {
         object.scratchpad = false;
         if (APULPF3_inAPU(vecA->data) && APULPF3_inAPU(vecB->data) && APULPF3_inAPU(result->data))
         {
+            /*
+             * If params are in APU memory, use them as is
+             * and do not copy result back to CPU memory.
+             */
             object.scratchpad = true;
         }
-        uint16_t inputSize = APULPF3_prepareVectors(vecA, vecB);
+        inputSize = APULPF3_prepareVectors(vecA, vecB);
 
         APULPF3_prepareResult(vecA->size, inputSize, result->data);
 
@@ -272,36 +291,198 @@ int_fast16_t APULPF3_vectorMult(APULPF3_ComplexVector *vecA,
         SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
 
         APULPF3_copyBack();
-        return APULPF3_STATUS_SUCCESS;
+        returnVal = APULPF3_STATUS_SUCCESS;
     }
-    return APULPF3_STATUS_ERROR;
+
+    return returnVal;
 }
 
 /*
  *  ======== APULPF3_vectorSum ========
  */
-int_fast16_t APULPF3_vectorSum(APULPF3_ComplexVector *vecA, APULPF3_ComplexVector *vecB, APULPF3_ComplexVector *result)
+int_fast16_t APULPF3_vectorSum(APULPF3_ComplexVector *vecA,
+                               APULPF3_ComplexVector *vecB,
+                               bool subtraction,
+                               APULPF3_ComplexVector *result)
 {
+    uint16_t inputSize;
+    int_fast16_t returnVal = APULPF3_STATUS_ERROR;
+
     if (vecA->size == vecB->size)
     {
         object.scratchpad = false;
         if (APULPF3_inAPU(vecA->data) && APULPF3_inAPU(vecB->data) && APULPF3_inAPU(result->data))
         {
+            /*
+             * If params are in APU memory, use them as is
+             * and do not copy result back to CPU memory.
+             */
             object.scratchpad = true;
         }
-        uint16_t inputSize = APULPF3_prepareVectors(vecA, vecB);
+        inputSize = APULPF3_prepareVectors(vecA, vecB);
 
         APULPF3_prepareResult(vecA->size, inputSize, result->data);
 
-        APUVectorSum(vecA->size, object.argA, object.argB, object.result);
+        APUVectorSum(vecA->size, object.argA, object.argB, subtraction, object.result);
 
         SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
 
         APULPF3_copyBack();
 
-        return APULPF3_STATUS_SUCCESS;
+        returnVal = APULPF3_STATUS_SUCCESS;
     }
-    return APULPF3_STATUS_ERROR;
+
+    return returnVal;
+}
+
+/*
+ *  ======== APULPF3_vectorScalarSum ========
+ */
+int_fast16_t APULPF3_vectorScalarSum(APULPF3_ComplexVector *vecA,
+                                     float complex *scalar,
+                                     bool subtraction,
+                                     APULPF3_ComplexVector *result)
+{
+    APULPF3_ComplexVector vecB;
+    uint16_t inputSize;
+    uint16_t op;
+
+    object.scratchpad = false;
+    if (APULPF3_inAPU(vecA->data) && APULPF3_inAPU(scalar) && APULPF3_inAPU(result->data))
+    {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
+        object.scratchpad = true;
+    }
+
+    vecB.data = scalar;
+    vecB.size = 1;
+
+    inputSize = APULPF3_prepareVectors(vecA, &vecB);
+
+    APULPF3_prepareResult(vecA->size, inputSize, result->data);
+    op = APU_OP_ADD;
+    if (subtraction)
+    {
+        op = APU_OP_SUB;
+    }
+
+    APUVectorScalarSum(vecA->size, object.argA, object.argB, op, object.result);
+
+    SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
+
+    APULPF3_copyBack();
+
+    return APULPF3_STATUS_SUCCESS;
+}
+
+/*
+ *  ======== APULPF3_vectorScalarMult ========
+ */
+int_fast16_t APULPF3_vectorScalarMult(APULPF3_ComplexVector *vecA, float complex *scalar, APULPF3_ComplexVector *result)
+{
+    APULPF3_ComplexVector vecB;
+    uint16_t inputSize;
+
+    object.scratchpad = false;
+    if (APULPF3_inAPU(vecA->data) && APULPF3_inAPU(scalar) && APULPF3_inAPU(result->data))
+    {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
+        object.scratchpad = true;
+    }
+
+    vecB.data = scalar;
+    vecB.size = 1;
+    inputSize = APULPF3_prepareVectors(vecA, &vecB);
+
+    APULPF3_prepareResult(vecA->size, inputSize, result->data);
+
+    APUVectorScalarMult(vecA->size, object.argA, object.argB, object.result);
+
+    SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
+
+    APULPF3_copyBack();
+
+    return APULPF3_STATUS_SUCCESS;
+}
+
+/*
+ *  ======== APULPF3_vectorR2C ========
+ */
+int_fast16_t APULPF3_vectorR2C(APULPF3_ComplexVector *vecA,
+                               APULPF3_ComplexVector *vecB,
+                               APULPF3_R2COp
+                               operator,
+                               APULPF3_ComplexVector * result)
+{
+    uint16_t inputSize;
+
+    object.scratchpad = false;
+    if (APULPF3_inAPU(vecA->data) && APULPF3_inAPU(vecB->data) && APULPF3_inAPU(result->data))
+    {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
+        object.scratchpad = true;
+    }
+
+    inputSize = APULPF3_prepareVectors(vecA, vecB);
+
+    APULPF3_prepareResult(vecA->size, inputSize, result->data);
+
+    APUVectorR2C(vecA->size, object.argA, object.argB, operator, object.result);
+
+    SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
+
+    APULPF3_copyBack();
+
+    return APULPF3_STATUS_SUCCESS;
+}
+
+/*
+ *  ======== APULPF3_vectorMaxMin ========
+ */
+int_fast16_t APULPF3_vectorMaxMin(APULPF3_ComplexVector *vec,
+                                  float scalarThreshold,
+                                  bool min,
+                                  APULPF3_ComplexVector *result)
+{
+    uint16_t inputSize;
+    uint16_t op;
+
+    object.scratchpad = false;
+    if (APULPF3_inAPU(vec->data) && APULPF3_inAPU(result->data))
+    {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
+        object.scratchpad = true;
+    }
+
+    inputSize = APULPF3_prepareVectors(vec, vec);
+
+    APULPF3_prepareResult(vec->size, inputSize, result->data);
+
+    op = APU_OP_MAX;
+    if (min)
+    {
+        op = APU_OP_MIN;
+    }
+
+    APUVectorMaxMin(vec->size, object.argA, scalarThreshold, op, object.result);
+
+    SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
+
+    APULPF3_copyBack();
+
+    return APULPF3_STATUS_SUCCESS;
 }
 
 /*
@@ -309,12 +490,18 @@ int_fast16_t APULPF3_vectorSum(APULPF3_ComplexVector *vecA, APULPF3_ComplexVecto
  */
 int_fast16_t APULPF3_cartesianToPolarVector(APULPF3_ComplexVector *vec, APULPF3_ComplexVector *result)
 {
+    uint16_t inputSize;
+
     object.scratchpad = false;
     if (APULPF3_inAPU(vec->data) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
-    uint16_t inputSize = APULPF3_prepareVectors(vec, vec);
+    inputSize = APULPF3_prepareVectors(vec, vec);
 
     APULPF3_prepareResult(vec->size, inputSize, result->data);
 
@@ -334,9 +521,15 @@ int_fast16_t APULPF3_polarToCartesianVector(APULPF3_ComplexVector *vec,
                                             float complex *temp,
                                             APULPF3_ComplexVector *result)
 {
+    uint16_t inputSize;
+
     object.scratchpad = false;
     if (APULPF3_inAPU(vec->data) && APULPF3_inAPU(result->data) && APULPF3_inAPU(temp))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
     else
@@ -345,7 +538,7 @@ int_fast16_t APULPF3_polarToCartesianVector(APULPF3_ComplexVector *vec,
         temp = object.result + 2 * vec->size;
     }
 
-    uint16_t inputSize = APULPF3_prepareVectors(vec, vec);
+    inputSize = APULPF3_prepareVectors(vec, vec);
 
     APULPF3_prepareResult(vec->size, inputSize, result->data);
 
@@ -354,6 +547,7 @@ int_fast16_t APULPF3_polarToCartesianVector(APULPF3_ComplexVector *vec,
     SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
 
     APULPF3_copyBack();
+
     return APULPF3_STATUS_SUCCESS;
 }
 
@@ -367,6 +561,10 @@ int_fast16_t APULPF3_sortVector(APULPF3_ComplexVector *vec, APULPF3_ComplexVecto
     object.scratchpad = false;
     if (APULPF3_inAPU(vec->data) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
 
@@ -391,13 +589,19 @@ int_fast16_t APULPF3_covMatrixSpatialSmoothing(APULPF3_ComplexVector *vec,
                                                bool fbAveraging,
                                                APULPF3_ComplexTriangleMatrix *result)
 {
+    uint16_t inputSize;
+
     object.scratchpad = false;
     if (APULPF3_inAPU(vec->data) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
 
-    uint16_t inputSize = APULPF3_prepareVectors(vec, vec);
+    inputSize = APULPF3_prepareVectors(vec, vec);
 
     APULPF3_prepareResult(covMatrixSize * covMatrixSize, inputSize, result->data);
 
@@ -415,15 +619,18 @@ int_fast16_t APULPF3_covMatrixSpatialSmoothing(APULPF3_ComplexVector *vec,
  */
 int_fast16_t APULPF3_computeFFT(APULPF3_ComplexVector *vec, bool inverse, APULPF3_ComplexVector *result)
 {
-    /* Check if size is a power of 2 */
+    bool isInAPU;
+    int_fast16_t returnVal = APULPF3_STATUS_ERROR;
+
+    /* Check if size is a power of 2. */
     if ((vec->size & (vec->size - 1)) == 0)
     {
         /* FFT/ IFFT is a two-part operation. First the APU is configured,
          * which produces no result. Then the actual computation happens,
-         * which may or may not use scratchpad mode
+         * which may or may not use scratchpad mode.
          */
         object.scratchpad = false;
-        bool isInAPU      = false;
+        isInAPU           = false;
         if (APULPF3_inAPU(vec->data) && APULPF3_inAPU(result->data))
         {
             isInAPU = true;
@@ -431,7 +638,7 @@ int_fast16_t APULPF3_computeFFT(APULPF3_ComplexVector *vec, bool inverse, APULPF
         }
         else
         {
-            APUConfigFft(vec->size, (void *)VCERAM_DATA0_BASE);
+            APUConfigFft(vec->size, (void *)APURAM_DATA0_BASE);
         }
 
         SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
@@ -455,9 +662,10 @@ int_fast16_t APULPF3_computeFFT(APULPF3_ComplexVector *vec, bool inverse, APULPF
 
         APULPF3_copyBack();
 
-        return APULPF3_STATUS_SUCCESS;
+        returnVal = APULPF3_STATUS_SUCCESS;
     }
-    return APULPF3_STATUS_ERROR;
+
+    return returnVal;
 }
 
 /* Matrix functions */
@@ -467,15 +675,22 @@ int_fast16_t APULPF3_computeFFT(APULPF3_ComplexVector *vec, bool inverse, APULPF
  */
 int_fast16_t APULPF3_matrixMult(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatrix *matB, APULPF3_ComplexMatrix *result)
 {
+    uint16_t inputSize;
+    int_fast16_t returnVal = APULPF3_STATUS_ERROR;
+
     if (matA->cols == matB->rows)
     {
         object.scratchpad = false;
         if (APULPF3_inAPU(matA->data) && APULPF3_inAPU(matB->data) && APULPF3_inAPU(result->data))
         {
+            /*
+             * If params are in APU memory, use them as is
+             * and do not copy result back to CPU memory.
+             */
             object.scratchpad = true;
         }
 
-        uint16_t inputSize = APULPF3_prepareMatrices(matA, matB);
+        inputSize = APULPF3_prepareMatrices(matA, matB);
         APULPF3_prepareResult(matA->cols * matB->rows, inputSize, result->data);
 
         APUMatrixMult(matA->rows, matA->cols, matB->cols, object.argA, object.argB, object.result);
@@ -484,9 +699,10 @@ int_fast16_t APULPF3_matrixMult(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatr
 
         APULPF3_copyBack();
 
-        return APULPF3_STATUS_SUCCESS;
+        returnVal = APULPF3_STATUS_SUCCESS;
     }
-    return APULPF3_STATUS_ERROR;
+
+    return returnVal;
 }
 
 /*
@@ -494,15 +710,22 @@ int_fast16_t APULPF3_matrixMult(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatr
  */
 int_fast16_t APULPF3_matrixSum(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatrix *matB, APULPF3_ComplexMatrix *result)
 {
+    uint16_t inputSize;
+    int_fast16_t returnVal = APULPF3_STATUS_ERROR;
+
     if (matA->rows == matB->rows && matA->cols == matB->cols)
     {
         object.scratchpad = false;
         if (APULPF3_inAPU(matA->data) && APULPF3_inAPU(matB->data) && APULPF3_inAPU(result->data))
         {
+            /*
+             * If params are in APU memory, use them as is
+             * and do not copy result back to CPU memory.
+             */
             object.scratchpad = true;
         }
 
-        uint16_t inputSize = APULPF3_prepareMatrices(matA, matB);
+        inputSize = APULPF3_prepareMatrices(matA, matB);
 
         APULPF3_prepareResult(matA->rows * matA->cols, inputSize, result->data);
 
@@ -512,10 +735,48 @@ int_fast16_t APULPF3_matrixSum(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatri
 
         APULPF3_copyBack();
 
-        return APULPF3_STATUS_SUCCESS;
+        returnVal = APULPF3_STATUS_SUCCESS;
     }
 
-    return APULPF3_STATUS_ERROR;
+    return returnVal;
+}
+/*
+ *  ======== APULPF3_HermLo ========
+ */
+int_fast16_t APULPF3_HermLo(APULPF3_ComplexTriangleMatrix *mat, APULPF3_ComplexTriangleMatrix *result)
+{
+    uint16_t inputSize;
+    uint16_t length;
+    uint_fast16_t returnVal = APULPF3_STATUS_ERROR;
+
+    if (mat->size == result->size)
+    {
+        object.scratchpad = false;
+        if (APULPF3_inAPU(mat->data) && APULPF3_inAPU(result->data))
+        {
+            /*
+             * If params are in APU memory, use them as is
+             * and do not copy result back to CPU memory.
+             */
+            object.scratchpad = true;
+        }
+        length                       = (mat->size * (mat->size + 1)) >> 1;
+        APULPF3_ComplexVector vecIn  = {.data = mat->data, .size = length};
+        APULPF3_ComplexVector vecOut = {.data = result->data, .size = length};
+        inputSize                    = APULPF3_prepareVectors(&vecIn, &vecIn);
+
+        APULPF3_prepareResult(vecOut.size, inputSize, vecOut.data);
+
+        APUHermLo(mat->size, object.argA, object.result);
+
+        SemaphoreP_pend(&apuSem, SemaphoreP_WAIT_FOREVER);
+
+        APULPF3_copyBack();
+
+        returnVal = APULPF3_STATUS_SUCCESS;
+    }
+
+    return returnVal;
 }
 
 /*
@@ -523,21 +784,28 @@ int_fast16_t APULPF3_matrixSum(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatri
  */
 int_fast16_t APULPF3_matrixScalarSum(APULPF3_ComplexMatrix *mat, float complex *scalar, APULPF3_ComplexMatrix *result)
 {
-    object.scratchpad = false;
     float complex *tempArgB;
+    void *argB;
+    uint16_t inputSize;
+
+    object.scratchpad = false;
     if (APULPF3_inAPU(mat->data) && APULPF3_inAPU(scalar) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
         tempArgB          = scalar;
     }
     else
     {
-        void *argB = APULPF3_loadArgMirrored(1, mat->rows * mat->cols, scalar);
-        tempArgB   = argB;
+        argB     = APULPF3_loadArgMirrored(1, mat->rows * mat->cols, scalar);
+        tempArgB = argB;
     }
 
-    /* This function overwrites argB so we have saved it somewhere else */
-    uint16_t inputSize = APULPF3_prepareMatrices(mat, mat);
+    /* This function overwrites argB so we have saved it somewhere else. */
+    inputSize = APULPF3_prepareMatrices(mat, mat);
 
     object.argB = tempArgB;
 
@@ -557,20 +825,27 @@ int_fast16_t APULPF3_matrixScalarSum(APULPF3_ComplexMatrix *mat, float complex *
  */
 int_fast16_t APULPF3_matrixScalarMult(APULPF3_ComplexMatrix *mat, float complex *scalar, APULPF3_ComplexMatrix *result)
 {
-    object.scratchpad = false;
     float complex *tempArgB;
+    void *argB;
+    uint16_t inputSize;
+
+    object.scratchpad = false;
     if (APULPF3_inAPU(mat->data) && APULPF3_inAPU(scalar) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
         tempArgB          = scalar;
     }
     else
     {
-        void *argB = APULPF3_loadArgMirrored(1, mat->rows * mat->cols, scalar);
-        tempArgB   = argB;
+        argB     = APULPF3_loadArgMirrored(1, mat->rows * mat->cols, scalar);
+        tempArgB = argB;
     }
 
-    uint16_t inputSize = APULPF3_prepareMatrices(mat, mat);
+    inputSize = APULPF3_prepareMatrices(mat, mat);
 
     object.argB = tempArgB;
 
@@ -590,13 +865,19 @@ int_fast16_t APULPF3_matrixScalarMult(APULPF3_ComplexMatrix *mat, float complex 
  */
 int_fast16_t APULPF3_matrixNorm(APULPF3_ComplexMatrix *mat, float complex *result)
 {
+    uint16_t inputSize;
+
     object.scratchpad = false;
     if (APULPF3_inAPU(mat->data) && APULPF3_inAPU(result))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
 
-    uint16_t inputSize = APULPF3_prepareMatrices(mat, mat);
+    inputSize = APULPF3_prepareMatrices(mat, mat);
 
     APULPF3_prepareResult(1, inputSize, result);
 
@@ -606,8 +887,9 @@ int_fast16_t APULPF3_matrixNorm(APULPF3_ComplexMatrix *mat, float complex *resul
 
     APULPF3_copyBack();
 
-    /* The APU actually returns the square of the norm */
+    /* The APU actually returns the square of the norm. */
     *result = sqrtf(*result);
+
     return APULPF3_STATUS_SUCCESS;
 }
 
@@ -619,35 +901,44 @@ int_fast16_t APULPF3_matrixNorm(APULPF3_ComplexMatrix *mat, float complex *resul
 int_fast16_t APULPF3_jacobiEVD(APULPF3_ComplexTriangleMatrix *mat,
                                uint16_t maxIter,
                                float stopThreshold,
+                               float epsTol,
                                APULPF3_ComplexVector *result)
 {
+    APULPF3_ComplexMatrix EVDmat;
+    uint16_t resultSize;
+    float complex *eigVecs;
+
     object.scratchpad = false;
     if (APULPF3_inAPU(mat->data) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
 
-    APULPF3_ComplexMatrix EVDmat = {.data = mat->data, .rows = mat->size, .cols = mat->size};
+    EVDmat.data = mat->data;
+    EVDmat.rows = mat->size;
+    EVDmat.cols = mat->size;
     APULPF3_prepareMatrices(&EVDmat, &EVDmat);
 
-    /* Produces both the upper triangular part of a NxN in-place matrix and an NxN matrix */
-    uint16_t resultSize = (mat->size * mat->size) + ((mat->size * mat->size + mat->size) / 2);
+    /* Produces both the upper triangular part of a NxN in-place matrix and an NxN matrix. */
+    resultSize = (mat->size * mat->size) + ((mat->size * mat->size + mat->size) / 2);
     APULPF3_prepareResult(resultSize, APULPF3_RESULT_INPLACE, result->data);
 
     if (!object.scratchpad)
     {
-        /* object.result will point to eigenvalues, which is followed by the eigenvectors*/
-        float complex *eigVecs = object.result + ((mat->size * mat->size + mat->size) / 2);
-        result->size           = resultSize;
+        /* object.result will point to eigenvalues, which is followed by the eigenvectors. */
+        eigVecs      = object.result + ((mat->size * mat->size + mat->size) / 2);
+        result->size = resultSize;
 
-        APUJacobiEVD(mat->size, object.argA, eigVecs, maxIter, stopThreshold);
+        APUJacobiEVD(mat->size, object.argA, eigVecs, maxIter, stopThreshold, epsTol);
     }
     else
     {
-        /* object.result will point to just the eigenvectors. Eigenvalues have
-         * overwritten argA
-         */
-        APUJacobiEVD(mat->size, object.argA, object.result, maxIter, stopThreshold);
+        /* object.result will point to just the eigenvectors. Eigenvalues have overwritten argA. */
+        APUJacobiEVD(mat->size, object.argA, object.result, maxIter, stopThreshold, epsTol);
         result->size = (mat->size * mat->size);
     }
 
@@ -666,6 +957,10 @@ int_fast16_t APULPF3_gaussJordanElim(APULPF3_ComplexMatrix *mat, float zeroThres
     object.scratchpad = false;
     if (APULPF3_inAPU(mat->data) && APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
 
@@ -694,6 +989,10 @@ int_fast16_t APULPF3_unitCircle(uint16_t numPoints,
     object.scratchpad = false;
     if (APULPF3_inAPU(result->data))
     {
+        /*
+         * If params are in APU memory, use them as is
+         * and do not copy result back to CPU memory.
+         */
         object.scratchpad = true;
     }
     APULPF3_prepareResult(numPoints, APULPF3_RESULT_INPLACE, result->data);
@@ -727,7 +1026,7 @@ uint16_t APULPF3_prepareVectors(APULPF3_ComplexVector *vecA, APULPF3_ComplexVect
         }
         else
         {
-            /* If they aren't the same put argB right after argA */
+            /* If they aren't the same put argB right after argA. */
             argB      = APULPF3_loadArgMirrored(vecB->size, vecA->size, vecB->data);
             inputSize = vecA->size + vecB->size;
         }
@@ -762,7 +1061,7 @@ uint16_t APULPF3_prepareMatrices(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMat
         }
         else
         {
-            /* If they aren't the same put argB right after argA */
+            /* If they aren't the same put argB right after argA. */
             argB      = APULPF3_loadArgMirrored(sizeB, sizeA, matB->data);
             inputSize = sizeA + sizeB;
         }
@@ -779,20 +1078,22 @@ uint16_t APULPF3_prepareMatrices(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMat
  */
 void *APULPF3_loadArgMirrored(uint16_t argSize, uint16_t offset, float complex *src)
 {
-    float *mem_ptr = (float *)(VCERAM_DATA0_BASE + offset * 8);
-    float *source  = (float *)src;
     float loadVal;
+    float *memPtr = (float *)(APURAM_DATA0_BASE + offset * 8);
+    float *source = (float *)src;
+
     for (uint32_t i = 0; i < 2 * argSize; i++)
     {
-        /* Load individual floats with a nop to
-         *  prevent back-to-back memory accesses
+        /*
+         * Load individual floats with a nop to
+         * prevent back-to-back memory accesses.
          */
         loadVal = source[i];
         __asm volatile("nop");
-        mem_ptr[i] = loadVal;
+        memPtr[i] = loadVal;
         __asm volatile("nop");
     }
-    void *arg = (void *)(VCERAM_DATA0_BASE + offset * 8);
+    void *arg = (void *)(APURAM_DATA0_BASE + offset * 8);
 
     return arg;
 }
@@ -803,7 +1104,7 @@ void *APULPF3_loadArgMirrored(uint16_t argSize, uint16_t offset, float complex *
 void *APULPF3_loadTriangular(APULPF3_ComplexMatrix *mat, uint16_t offset)
 {
     APULPF3_ComplexMatrix matrix = *mat;
-    float *mem_ptr               = (float *)(VCERAM_DATA0_BASE + offset * 8);
+    float *memPtr                = (float *)(APURAM_DATA0_BASE + offset * 8);
     float *source                = (float *)matrix.data;
     float loadVal;
     uint16_t elemCount = 0;
@@ -815,18 +1116,18 @@ void *APULPF3_loadTriangular(APULPF3_ComplexMatrix *mat, uint16_t offset)
         {
             loadVal = source[shift + 2 * j];
             __asm volatile("nop");
-            mem_ptr[elemCount] = loadVal;
+            memPtr[elemCount] = loadVal;
             elemCount++;
             __asm volatile("nop");
             loadVal = source[shift + 2 * j + 1];
             __asm volatile("nop");
-            mem_ptr[elemCount] = loadVal;
+            memPtr[elemCount] = loadVal;
             elemCount++;
             __asm volatile("nop");
         }
         shift += 2 * matrix.cols;
     }
-    void *arg = (void *)(VCERAM_DATA0_BASE + offset * 8);
+    void *arg = (void *)(APURAM_DATA0_BASE + offset * 8);
 
     return arg;
 }
@@ -840,12 +1141,12 @@ void APULPF3_prepareResult(uint16_t resultSize, uint16_t offset, complex float *
     object.resultSize   = resultSize;
     if (!object.scratchpad)
     {
-        /* If not in scratchpad mode, place at a known location in APU memory */
-        object.result = (void *)(VCERAM_DATA0_BASE + 8 * offset);
+        /* If not in scratchpad mode, place at a known location in APU memory. */
+        object.result = (void *)(APURAM_DATA0_BASE + 8 * offset);
     }
     else
     {
-        /* Otherwise result goes where the user has placed it in APU memory */
+        /* Otherwise result goes where the user has placed it in APU memory. */
         object.result = resultBuffer;
     }
 }

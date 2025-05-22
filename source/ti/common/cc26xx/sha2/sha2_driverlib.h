@@ -49,18 +49,17 @@
 #define sha2_driverlib__include
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*******************************************************************************
  * CONSTANTS
  */
 /* Successful status code */
-#define SHA2_STATUS_SUCCESS         (0)
+#define SHA2_STATUS_SUCCESS (0)
 
 /* Generic error status code */
-#define SHA2_STATUS_ERROR           (-1)
+#define SHA2_STATUS_ERROR (-1)
 
 /* The ongoing operation was canceled */
 #define SHA2_STATUS_CANCELED (-3)
@@ -104,7 +103,7 @@ void SHA2_close(void);
  *
  * @return     SHA2_STATUS_SUCCESS on success, SHA2_STATUS_ERROR otherwise.
  */
-int_fast16_t SHA2_addData(const void* data, size_t length);
+int_fast16_t SHA2_addData(const void *data, size_t length);
 
 /**
  * @fn         SHA2_finalize
@@ -159,8 +158,7 @@ int_fast16_t SHA2_setupHmac(const uint8_t *key, size_t keyLength);
  *  @return #SHA2_STATUS_CANCELED              The hash operation was canceled.
  *
  */
-int_fast16_t SHA2_finalizeHmac(uint8_t* data);
-
+int_fast16_t SHA2_finalizeHmac(uint8_t *data);
 
 /**
  * @fn         SHA2_cancelOperation

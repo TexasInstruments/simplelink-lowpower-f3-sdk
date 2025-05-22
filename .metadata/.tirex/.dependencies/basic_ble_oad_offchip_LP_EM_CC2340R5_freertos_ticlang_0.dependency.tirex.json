@@ -18,7 +18,7 @@
             "+../../app/Profiles/app_simple_gatt.c -> app/Profiles/app_simple_gatt.c",
             "+../basic_ble_oad_offchip.syscfg -> basic_ble_oad_offchip.syscfg",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",
-            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+            "+cc2340_freertos.cmd -> cc2340_freertos.cmd"
         ]
     }
 ]

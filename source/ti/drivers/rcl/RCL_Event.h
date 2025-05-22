@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,8 @@
 #define RCL_EventStopTimesUpdated      ((RCL_Events){ .value = (1 << 20)})  /*!< A change was made to the stop times */
 #define RCL_EventPacketTimeout         ((RCL_Events){ .value = (1 << 21)})  /*!< A manually set packet-specific timeout has expired */
 #define RCL_EventSilentlyRestartRadio  ((RCL_Events){ .value = (1 << 22)})  /*!< Restart radio to perform updates, to be detailed by handler */
+#define RCL_EventCmdUpdateDone         ((RCL_Events){ .value = (1 << 23)})  /*!< An update of the running command is finished */
+#define RCL_EventCoexNoTx              ((RCL_Events){ .value = (1 << 24)})  /*!< A transmission was refused or aborted by coexistence procedure; command continues */
 
 union RCL_Events_u {
     struct {
@@ -85,6 +87,8 @@ union RCL_Events_u {
         uint32_t stopTimesUpdated    : 1; /*!< A change was made to the stop times */
         uint32_t packetTimeout       : 1; /*!< A manually set packet-specific timeout has expired */
         uint32_t silentlyRestartRadio: 1; /*!< Restart radio to perform updates, to be detailed by handler */
+        uint32_t cmdUpdateDone       : 1; /*!< An update of the running command is finished */
+        uint32_t coexNoTx            : 1; /*!< A transmission was refused or aborted by coexistence procedure; command continues */
     };
     uint32_t value;
 };

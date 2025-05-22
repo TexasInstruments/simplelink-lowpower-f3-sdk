@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,14 +42,23 @@ let deviceGroup = null;
 const deviceGroupMcubootSettings = {
     
     DeviceGroup_CC13X2X7_CC26X2X7: {
-        tzEnabled:{ readOnly: true, hidden: true },
+        tzEnabled:{ readOnly: true, hidden: true, tzConfigurable: false },
         image1:
         {
-            primaryBase: 0x0,
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x0,
+                secondaryBase: 0x56000,
+            },
             primarySize: 0x56000,
-            secondaryBase: 0x56000,
             secondarySize: 0x56000
         },
+        /*This device does not support TZ enabled, so the defaults are 0 */
         image2: 
         {
             primaryBase: 0x0,
@@ -59,16 +68,35 @@ const deviceGroupMcubootSettings = {
         },
         antiRollbackProtection: { readOnly: true, hidden: true },
         enableEncryptedImage: { enabled: true },
-        bootloader: { base: 0xAC000, size: 0x4000 },
+        bootloader:
+        { 
+            tzEnabledBase:
+            {
+                base: null,
+            },
+            tzDisabledBase:
+            {
+                base: 0xAC000,
+            },
+            size: 0x4000 
+        },
         alignment: { flashBoundary: 0xB0000, sectorSize : 0x2000 }
    },
    DeviceGroup_CC13X4_CC26X3_CC26X4: {
-        tzEnabled: { readOnly: false, hidden: false },
+        tzEnabled: { readOnly: false, hidden: false, tzConfigurable: false},
         image1:
         {
-            primaryBase: 0x6000,
+            tzEnabledBase:
+            {
+                primaryBase: 0xd000,
+                secondaryBase: 0x86800,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x6000,
+                secondaryBase: 0x31000,
+            },
             primarySize: 0x2B000,
-            secondaryBase: 0x31000,
             secondarySize: 0x2B000
         },
         image2: 
@@ -80,18 +108,38 @@ const deviceGroupMcubootSettings = {
         },
         antiRollbackProtection: { readOnly: false, hidden: false },
         enableEncryptedImage: { enabled: true },
-        bootloader: { base: 0x0, size: 0x6000 },
+        bootloader:
+        { 
+            tzEnabledBase:
+            {
+                base: 0x800,
+            },
+            tzDisabledBase:
+            {
+                base: 0x0,
+            },
+            size: 0x6000 
+        },
         alignment: { flashBoundary: 0x100000, sectorSize : 0x800 }
    },
    DeviceGroup_CC23X0: {
         tzEnabled: { readOnly: true, hidden: true },
         image1:
         {
-            primaryBase: 0x06000,
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x06000,
+                secondaryBase: 0x43000,
+            },
             primarySize: 0x3D000,
-            secondaryBase: 0x43000,
             secondarySize: 0x3D000
         },
+        /*This device does not support TZ enabled, so the defaults are 0 */
         image2: 
         {
             primaryBase: 0x0,
@@ -99,10 +147,62 @@ const deviceGroupMcubootSettings = {
             secondaryBase: 0x0,
             secondarySize: 0x0
         },
+        antiRollbackProtection: { readOnly: false, hidden: false, tzConfigurable: false },
+        enableEncryptedImage:{ enabled: false },
+        bootloader:
+        { 
+            tzEnabledBase:
+            {
+                base: null,
+            },
+            tzDisabledBase:
+            {
+                base: 0x0,
+            },
+            size: 0x6000 
+        },
+        alignment: { flashBoundary: 0x80000, sectorSize : 0x800 }   
+   },
+   DeviceGroup_CC27XX: {
+        tzEnabled: { readOnly: false, hidden: false, tzConfigurable: true},
+        image1:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: 0x6800,
+                secondaryBase: 0x7A800,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x6000,
+                secondaryBase: 0x31000,
+            },
+            primarySize: 0x2B000,
+            secondarySize: 0x2B000
+        },
+        image2: 
+        {
+            /* The gap between image 1 primary and image 2 primary is for ITS, mcuboot does not care about ITS, so it is up to the user to configure accordingly. */
+            primaryBase: 0x38000,
+            primarySize: 0x42000,
+            secondaryBase: 0xA5800,
+            secondarySize: 0x42000
+        },
         antiRollbackProtection: { readOnly: false, hidden: false },
         enableEncryptedImage:{ enabled: false },
-        bootloader: { base: 0x0, size: 0x6000 },
-        alignment: { flashBoundary: 0x80000, sectorSize : 0x800 }   
+        bootloader:
+        { 
+            tzEnabledBase:
+            {
+                base: 0x800,
+            },
+            tzDisabledBase:
+            {
+                base: 0x0,
+            },
+            size: 0x6000 
+        },
+        alignment: { flashBoundary: 0xE8000, sectorSize : 0x800 }
    }
 };
 let externalFlashSectorSize = 0x1000;
@@ -131,6 +231,10 @@ function device2DeviceGroup(deviceId)
     else if(deviceId.match(/CC23.0/))
     {
         deviceGroup = "DeviceGroup_CC23X0";
+    }
+    else if(deviceId.match(/CC27/))
+    {
+        deviceGroup = "DeviceGroup_CC27XX";
     }
     else
     {

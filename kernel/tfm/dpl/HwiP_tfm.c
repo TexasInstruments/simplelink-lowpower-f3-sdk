@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,7 +51,10 @@
 #define IntSetPend IntPendSet
 #endif
 
-typedef struct _HwiP_Obj
+bool HwiP_inSwi(void);
+size_t HwiP_staticObjectSize(void);
+
+typedef struct
 {
     uint32_t intNum;
     HwiP_Fxn fxn;
@@ -82,10 +85,10 @@ uintptr_t HwiP_disable(void)
     uintptr_t primask_s;
 
     /* Read the non-secure primask */
-    primask_ns = __TZ_get_PRIMASK_NS();
+    primask_ns = (uintptr_t)__TZ_get_PRIMASK_NS();
 
     /* Read the secure primask */
-    primask_s = __get_PRIMASK();
+    primask_s = (uintptr_t)__get_PRIMASK();
 
     /* Write 1 to non-secure primask to disable non-secure interrupts */
     __TZ_set_PRIMASK_NS(1UL);
@@ -111,7 +114,7 @@ void HwiP_restore(uintptr_t key)
     }
 
     /* Restore non-secure interrupts */
-    __TZ_set_PRIMASK_NS(key >> PRIMASK_NS_OFFSET);
+    __TZ_set_PRIMASK_NS((uint32_t)((uint32_t)key >> PRIMASK_NS_OFFSET));
 }
 
 /*
@@ -147,7 +150,7 @@ void HwiP_disableInterrupt(int interruptNum)
 void HwiP_dispatchInterrupt(int interruptNum)
 {
     HwiP_Obj *obj = HwiP_dispatchTable[interruptNum];
-    if (obj)
+    if (obj != NULL)
     {
         (obj->fxn)(obj->arg);
     }
@@ -170,7 +173,7 @@ bool HwiP_interruptsEnabled(void)
 
     priMask = __get_PRIMASK();
 
-    return (priMask == 0);
+    return (priMask == 0U);
 }
 
 /*
@@ -179,46 +182,32 @@ bool HwiP_interruptsEnabled(void)
 HwiP_Handle HwiP_construct(HwiP_Struct *handle, int interruptNum, HwiP_Fxn hwiFxn, HwiP_Params *params)
 {
     HwiP_Params defaultParams;
+    HwiP_Params *finalParams = params;
     HwiP_Obj *obj = (HwiP_Obj *)handle;
 
     if (handle != NULL)
     {
         if (params == NULL)
         {
-            params = &defaultParams;
+            finalParams = &defaultParams;
             HwiP_Params_init(&defaultParams);
         }
 
-        if ((params->priority & 0xFF) == 0xFF)
-        {
-            /* SwiP_nortos.c uses INT_PRI_LEVEL7 as its scheduler */
-            params->priority = INT_PRI_LEVEL6;
-        }
+        HwiP_dispatchTable[interruptNum] = obj;
+        obj->fxn                         = hwiFxn;
+        obj->arg                         = finalParams->arg;
+        obj->intNum                      = (uint32_t)interruptNum;
 
-        if (interruptNum != HwiP_swiPIntNum && params->priority == INT_PRI_LEVEL7)
+        /*
+         * Do not register the interrupt here and do not configure priority.
+         * Within the Trusted Firmware-M (TF-M), HW interrupts are handled by
+         * the Secure Partition Manager (SPM) and converted to signals sent to
+         * the secure partition. The secure partition must then call
+         * HwiP_dispatchInterrupt() to call the ISR.
+         */
+        if (finalParams->enableInt)
         {
-            DebugP_log0("HwiP_construct: can't use reserved INT_PRI_LEVEL7");
-
-            handle = NULL;
-        }
-        else
-        {
-            HwiP_dispatchTable[interruptNum] = obj;
-            obj->fxn                         = hwiFxn;
-            obj->arg                         = params->arg;
-            obj->intNum                      = (uint32_t)interruptNum;
-
-            /*
-             * Do not register the interrupt here. Within the Trusted Firmware-M
-             * (TF-M), HW interrupts are handled by the Secure Partition Manager
-             * (SPM) and converted to signals sent to the secure partition. The
-             * secure partition must then call HwiP_dispatchInterrupt to call
-             * the ISR.
-             */
-            if (params->enableInt)
-            {
-                IntEnable((uint32_t)interruptNum);
-            }
+            IntEnable((uint32_t)interruptNum);
         }
     }
 
@@ -232,8 +221,8 @@ void HwiP_Params_init(HwiP_Params *params)
 {
     if (params != NULL)
     {
-        params->arg       = 0;
-        params->priority  = (~0);
+        params->arg       = 0U;
+        params->priority  = UINT32_MAX;
         params->enableInt = true;
     }
 }
@@ -249,9 +238,9 @@ void HwiP_plug(int interruptNum, void *fxn)
 /*
  *  ======== HwiP_setFunc ========
  */
-void HwiP_setFunc(HwiP_Handle hwiP, HwiP_Fxn fxn, uintptr_t arg)
+void HwiP_setFunc(HwiP_Handle handle, HwiP_Fxn fxn, uintptr_t arg)
 {
-    HwiP_Obj *obj = (HwiP_Obj *)hwiP;
+    HwiP_Obj *obj = (HwiP_Obj *)handle;
 
     uintptr_t key = HwiP_disable();
 
@@ -276,7 +265,7 @@ bool HwiP_inISR(void)
 {
     bool stat;
 
-    if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == 0)
+    if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == 0U)
     {
         stat = false;
     }
@@ -295,13 +284,15 @@ bool HwiP_inSwi(void)
 {
     uint32_t intNum = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
-    if (intNum == HwiP_swiPIntNum)
+    bool result = false;
+
+    if ((int)intNum == HwiP_swiPIntNum)
     {
         /* Currently in a Swi */
-        return (true);
+        result = true;
     }
 
-    return (false);
+    return result;
 }
 
 /*
@@ -315,6 +306,8 @@ void HwiP_setPriority(int interruptNum, uint32_t priority)
      * standard TF-M software, we will use the secure partition's YAML file
      * to configure secure IRQ priorities.
      */
+    (void)interruptNum;
+    (void)priority;
 }
 
 /*

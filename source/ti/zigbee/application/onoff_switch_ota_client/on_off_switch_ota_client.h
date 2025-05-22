@@ -218,10 +218,7 @@ typedef struct ota_upgrade_ctx_s
   zb_uint32_t address;          /* Supposed to be constant value, init
                                  * on OTA Upgrade start  */
   void       *flash_dev; //! Probably not needed
-#ifdef OTA_OFFCHIP
   zb_bool_t flash_is_open;
-#endif // OTA_OFFCHIP
-
   zb_uint32_t fw_version;
   zb_uint8_t param;     // buffer, contain process command (if scheduling process)
   zb_bool_t is_started_manually;

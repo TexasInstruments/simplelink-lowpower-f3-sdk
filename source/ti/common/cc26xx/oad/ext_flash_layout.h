@@ -77,8 +77,7 @@
 #define EXT_FLASH_LAYOUT_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*******************************************************************************
@@ -95,64 +94,66 @@ extern "C"
  *
  * \note This is only used by off-chip OAD
  */
-#define OAD_EFL_MAGIC               {'O', 'A', 'D', ' ', 'N', 'V', 'M', '1'}
+#define OAD_EFL_MAGIC                          \
+    {                                          \
+        'O', 'A', 'D', ' ', 'N', 'V', 'M', '1' \
+    }
 
 /*!
  * Length of external flash magic string, this is the length of
  * @ref OAD_EFL_MAGIC_SZ
  */
-#define OAD_EFL_MAGIC_SZ            8
+#define OAD_EFL_MAGIC_SZ 8
 
 /*!
  * Address at which the table of external flash image structures start
  * Each record is populated by @ref ExtImageInfo_t
  */
-#define EFL_ADDR_META               0x00000
+#define EFL_ADDR_META 0x00000
 
 /*!
  * Size of each entry in the external flash image header table
  * Entries in the table are page aligned to allow for easy erasing
  */
-#define EFL_SIZE_META               EFL_PAGE_SIZE
+#define EFL_SIZE_META EFL_PAGE_SIZE
 
 /*!
  * Flag to indicate that the candidate external flash image header page is
  * invalid
  */
-#define EFL_META_PG_INVALID         0xFF
+#define EFL_META_PG_INVALID 0xFF
 
 /*!
  * The page in which the external flash image header of the factory image
  * resides
  */
-#define EFL_FACT_IMG_META_PG        0
+#define EFL_FACT_IMG_META_PG 0
 
 /*!
  * The address of the external flash header for the factory image
  */
-#define EFL_ADDR_META_FACT_IMG      EFL_ADDR_META
+#define EFL_ADDR_META_FACT_IMG EFL_ADDR_META
 
 /*!
  * Size of core header portion to copy
  */
-#define EFL_META_COPY_SZ            offsetof(ExtImageInfo_t, fixedHdr.rfu)  +  \
-                                    sizeof(((ExtImageInfo_t){0}).fixedHdr.rfu)
+#define EFL_META_COPY_SZ offsetof(ExtImageInfo_t, fixedHdr.rfu) + sizeof(((ExtImageInfo_t){0}).fixedHdr.rfu)
 
 /*!
  * Length of @ref ExtImageInfo_t structure in bytes
  */
-#define EFL_METADATA_LEN            sizeof(ExtImageInfo_t)
+#define EFL_METADATA_LEN sizeof(ExtImageInfo_t)
 
 /*!
  * Offset of the image address in external flash into the @ref ExtImageInfo_t
  * structure
  */
-#define EFL_IMG_STR_ADDR_OFFSET     offsetof(ExtImageInfo_t, extFlAddr)
+#define EFL_IMG_STR_ADDR_OFFSET offsetof(ExtImageInfo_t, extFlAddr)
 
 /*!
  * Offset of the timestamp/counter into the @ref ExtImageInfo_t structure
  */
-#define EFL_META_COUNTER_OFFSET     offsetof(ExtImageInfo_t, counter)
+#define EFL_META_COUNTER_OFFSET offsetof(ExtImageInfo_t, counter)
 
 /*!
  * External flash image header used to populate the table of image headers in
@@ -160,16 +161,16 @@ extern "C"
  */
 TYPEDEF_STRUCT_PACKED
 {
-    imgFixedHdr_t        fixedHdr;      //!< This is the core image header
-    uint32_t             extFlAddr;     //!< Location of the image in ext flash
-    uint32_t             counter;       //!< Timestamp/counter of image
-} ExtImageInfo_t;
+    imgFixedHdr_t fixedHdr; //!< This is the core image header
+    uint32_t extFlAddr;     //!< Location of the image in ext flash
+    uint32_t counter;       //!< Timestamp/counter of image
+}
+ExtImageInfo_t;
 
 /** @} End EXT_FLASH_LAYOUT */
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* EXT_FLASH_LAYOUT_H */

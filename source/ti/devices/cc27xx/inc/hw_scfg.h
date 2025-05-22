@@ -1,41 +1,40 @@
 /******************************************************************************
-*  Copyright (c) 2023 Texas Instruments Incorporated. All rights reserved.
+*  Filename:       scfg_h (Security Configuration)
+*******************************************************************************
+* SPDX-License-Identifier: Apache-2.0
 *
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions are met:
+* Copyright (c) 2016-2020 Linaro LTD
+* Copyright (c) 2016-2019 JUUL Labs
+* Copyright (c) 2019-2020 Arm Limited
 *
-*  1) Redistributions of source code must retain the above copyright notice,
-*     this list of conditions and the following disclaimer.
+* Original license:
 *
-*  2) Redistributions in binary form must reproduce the above copyright notice,
-*     this list of conditions and the following disclaimer in the documentation
-*     and/or other materials provided with the distribution.
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
 *
-*  3) Neither the name of the copyright holder nor the names of its contributors
-*     may be used to endorse or promote products derived from this software
-*     without specific prior written permission.
+*  http://www.apache.org/licenses/LICENSE-2.0
 *
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-*  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-*  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-*  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-*  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-*  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-*  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-*  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-*  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************
-*  \file       hw_scfg.h
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
 *
-*  \brief      Security Configuration (SCFG) header file.
+* Copyright (c) 2023-2025, Texas Instruments Incorporated
+*
+* SPDX-License-Identifier: BSD-3-Clause
 ******************************************************************************/
-
 #ifndef __HW_SCFG_H__
 #define __HW_SCFG_H__
 #include <stdint.h>
 #include "hw_device.h"
+
 
 /*! SCFG sector data structure definition
  *  This structure should be allocated at the base of SCFG section defined in
@@ -159,7 +158,7 @@ typedef struct {
     // [221]: length 7B
     uint8_t res0[7];
 
-    // CRC accross hsmCfg through res0
+    // CRC across hsmCfg through res0
     // [228]: length 4B
     uint32_t crc32;
 
@@ -178,7 +177,7 @@ typedef struct {
         //      slots first.
         //  2. All remaining keyEntry[] slots must be set to `SCFG_UNDEFINED_KEY_HASH`
         //      a. !! If not done, future key updates will not be possible !!
-        // If you wish to permenantly disallow for future key updates, you can program any/all remaining keyEntry[] with
+        // If you wish to permanently disallow for future key updates, you can program any/all remaining keyEntry[] with
         // 0x00's instead. Any keyEntry[] slot which has this done will not be usable for future key updates.
         struct keyRingEntry { // length: 792B
             // SHA-256 hash a public key (key type depends on secBootCfg.policyCfg.authAlgorithm)
@@ -187,11 +186,11 @@ typedef struct {
             uint32_t type;
                 #define SCFG_KEY_ENTRY_TYPE_APP     0x3F68A5A5U
                 #define SCFG_KEY_ENTRY_TYPE_BLDR    0x6C715A5AU
-            // CRC accross keyHash through type
+            // CRC across keyHash through type
             uint32_t crc32;
             // Status is intentionally left out of crc32 coverage
             uint32_t status;
-                #define SCFG_KEY_ENTRY_STATUS_ACTIVE    0x59183d3bU
+                #define SCFG_KEY_ENTRY_STATUS_ACTIVE    0x59183D3BU
         } keyEntries[SCFG_KEY_HASH_RING_NUM];
     } keyRingCfg;
 
@@ -207,11 +206,9 @@ typedef struct keyRingEntry keyRingEntry_t;
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, \
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, }
 
-#define SCFG_UNDEFINED_KEY_ENTRY \
-    .keyHash = SCFG_UNDEFINED_KEY_HASH , \
-    .type = 0xFFFFFFFFU, .crc32 = 0xFFFFFFFFU, .status = 0xFFFFFFFFU
+#define SCFG_INVALID_KEY_ENTRY \
+    .keyHash = { 0x00U } , \
+    .type = 0x00000000U, .crc32 = 0x00000000U, .status = 0x00000000U
 
-#define SCFG_DUMMY_KEY_ENTRY \
-    .keyHash = { 0x0U }, .type = 0x0U, .crc32 = 0x0U, .status = 0x0U
 
 #endif // __SCFG_H__

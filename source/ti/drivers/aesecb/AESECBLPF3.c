@@ -40,13 +40,17 @@
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
-#include <ti/drivers/dma/UDMALPF3.h>
+#include <ti/devices/DeviceFamily.h>
+
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/dma/UDMALPF3.h>
+#endif
 
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23XX) && (ENABLE_KEY_STORAGE == 1))
     #error "Key storage is not supported for CC23XX"
 #endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
     #if (ENABLE_KEY_STORAGE == 1)
         #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
@@ -58,10 +62,11 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 
-#include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
-#include DeviceFamily_constructPath(inc/hw_aes.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+    #include DeviceFamily_constructPath(inc/hw_aes.h)
+    #include DeviceFamily_constructPath(inc/hw_ints.h)
+#endif
 
 /*
  * Default AES ECB auto config:
@@ -74,6 +79,8 @@
     #define AESECBLPF3_DEFAULT_AUTOCFG                                             \
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | \
          (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+/* Not used for CC35XX */
 #else
     #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
 #endif
@@ -99,11 +106,14 @@
         ((uint32_t)AES_DMA_ADRCHA_BUF0 | (uint32_t)AES_DMA_TRGCHA_AESSTART |                \
          (uint32_t)AES_DMA_DONEACT_GATE_TRGAES_ON_CHA_DEL | (uint32_t)AES_DMA_ADRCHB_TXT0 | \
          (uint32_t)AES_DMA_TRGCHB_AESDONE)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+/* Not used for CC35XX */
 #else
     #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
 #endif
 
 /* Forward declarations */
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 static int_fast16_t AESECBLPF3_checkOperation(const AESECBLPF3_Object *object, const AESECB_Operation *operation);
 static inline void AESECBLPF3_processDataCPU(const uint8_t *input, uint8_t *output, size_t inputLength);
 static inline void AESECBLPF3_processDataDMA(AESCommonLPF3_Object *object,
@@ -115,8 +125,9 @@ static inline int_fast16_t AESECBLPF3_oneStepOperation(AESECB_Handle handle,
                                                        AESECB_OperationType operationType);
 static int_fast16_t AESECBLPF3_startOperation(AESECB_Handle handle, AESECB_Operation *operation);
 static inline int_fast16_t AESECBLPF3_waitForResult(AESECB_Handle handle);
+#endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
 static int_fast16_t AESECBLPF3HSM_oneStepOperation(AESECB_Handle handle,
                                                    AESECB_Operation *operation,
                                                    AESECB_OperationType operationType);
@@ -147,9 +158,9 @@ static void AESECBLPF3HSM_keyUsageFromOperationType(KeyStore_PSA_KeyUsage *usage
 #endif
 
 /*
- *  ======== AESEBCLPF3_getObject ========
+ *  ======== AESECBLPF3_getObject ========
  */
-static inline AESECBLPF3_Object *AESEBCLPF3_getObject(AESECB_Handle handle)
+static inline AESECBLPF3_Object *AESECBLPF3_getObject(AESECB_Handle handle)
 {
     AESECBLPF3_Object *object = (AESECBLPF3_Object *)handle->object;
     DebugP_assert(object);
@@ -157,13 +168,14 @@ static inline AESECBLPF3_Object *AESEBCLPF3_getObject(AESECB_Handle handle)
     return object;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESECBLPF3_hwiFxn ========
  */
 static void AESECBLPF3_hwiFxn(uintptr_t arg0)
 {
     AESECB_Handle handle      = (AESECB_Handle)arg0;
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /*
      * Only the output channel B interrupt is enabled.
@@ -198,16 +210,19 @@ static void AESECBLPF3_hwiFxn(uintptr_t arg0)
         }
     }
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESECB_init ========
  */
 void AESECB_init(void)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     HSMLPF3_constructRTOSObjects();
 #endif
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     AESCommonLPF3_init();
+#endif
 }
 
 /*
@@ -217,11 +232,18 @@ AESECB_Handle AESECB_construct(AESECB_Config *config, const AESECB_Params *param
 {
     DebugP_assert(config);
 
-    int_fast16_t status;
     AESECB_Handle handle      = config;
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Callback return mode is not supported for CC35XX for now */
+    if ((params != NULL) && (params->returnBehavior == AESECB_RETURN_BEHAVIOR_CALLBACK))
+    {
+        return NULL;
+    }
+#endif
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     /* Initialize and boot HSM */
     if (HSMLPF3_init() != HSMLPF3_STATUS_SUCCESS)
     {
@@ -250,12 +272,20 @@ AESECB_Handle AESECB_construct(AESECB_Config *config, const AESECB_Params *param
     object->callbackFxn = params->callbackFxn;
     object->threadSafe  = true;
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    object->common.returnBehavior = (AES_ReturnBehavior)params->returnBehavior;
+#endif
+
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    int_fast16_t status;
+
     status = AESCommonLPF3_construct(&object->common, (AES_ReturnBehavior)params->returnBehavior, params->timeout);
 
     if (status != AES_STATUS_SUCCESS)
     {
         return NULL;
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return handle;
 }
@@ -267,9 +297,14 @@ void AESECB_close(AESECB_Handle handle)
 {
     DebugP_assert(handle);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     AESCommonLPF3_close(&object->common);
+#else
+    /* Mark the module as unavailable */
+    object->common.isOpen = false;
+#endif
 }
 
 /*
@@ -279,17 +314,20 @@ int_fast16_t AESECB_oneStepEncrypt(AESECB_Handle handle, AESECB_Operation *opera
 {
     int_fast16_t status = AESECB_STATUS_SUCCESS;
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if (operation->key->encoding == CryptoKey_PLAINTEXT || operation->key->encoding == CryptoKey_KEYSTORE)
     {
         status = AESECBLPF3_oneStepOperation(handle, operation, AESECB_OPERATION_TYPE_ENCRYPT);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
+    else
+#endif
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+        if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         status = AESECBLPF3HSM_oneStepOperation(handle, operation, AESECB_OPERATION_TYPE_ENCRYPT);
     }
-#endif
     else
+#endif
     {
         status = AESECB_STATUS_ERROR;
     }
@@ -310,7 +348,7 @@ int_fast16_t AESECB_oneStepDecrypt(AESECB_Handle handle, AESECB_Operation *opera
     {
         status = AESECB_STATUS_FEATURE_NOT_SUPPORTED;
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     else if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         status = AESECBLPF3HSM_oneStepOperation(handle, operation, AESECB_OPERATION_TYPE_DECRYPT);
@@ -324,18 +362,19 @@ int_fast16_t AESECB_oneStepDecrypt(AESECB_Handle handle, AESECB_Operation *opera
     return status;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESECBLPF3_checkOperation ========
  */
 static int_fast16_t AESECBLPF3_checkOperation(const AESECBLPF3_Object *object, const AESECB_Operation *operation)
 {
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input & output pointers */
     if (!IS_WORD_ALIGNED(operation->input) || !IS_WORD_ALIGNED(operation->output))
     {
         return AESECB_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
     }
-#endif
+    #endif
 
     /* Verify input length is a non-zero multiple of the AES block size */
     if ((operation->inputLength == 0UL) || (AES_NON_BLOCK_SIZE_MULTIPLE_LENGTH(operation->inputLength) > 0UL))
@@ -363,7 +402,7 @@ static inline int_fast16_t AESECBLPF3_oneStepOperation(AESECB_Handle handle,
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     int_fast16_t status;
 
     status = AESECBLPF3_checkOperation(object, operation);
@@ -410,13 +449,13 @@ static inline int_fast16_t AESECBLPF3_oneStepOperation(AESECB_Handle handle,
  */
 static int_fast16_t AESECBLPF3_startOperation(AESECB_Handle handle, AESECB_Operation *operation)
 {
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     int_fast16_t status;
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     int_fast16_t keyStoreStatus;
     uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
     KeyStore_PSA_KeyUsage usage;
-#endif
+    #endif
 
     if (operation->key->encoding == CryptoKey_PLAINTEXT)
     {
@@ -430,7 +469,7 @@ static int_fast16_t AESECBLPF3_startOperation(AESECB_Handle handle, AESECB_Opera
             AESCommonLPF3_setupOperation(&object->common.key, AESECBLPF3_DEFAULT_AUTOCFG);
         }
     }
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     else if (operation->key->encoding == CryptoKey_KEYSTORE)
     {
         AESECBLPF3HSM_keyUsageFromOperationType(&usage, object->operationType);
@@ -465,7 +504,7 @@ static int_fast16_t AESECBLPF3_startOperation(AESECB_Handle handle, AESECB_Opera
             return AESECB_STATUS_KEYSTORE_GENERIC_ERROR;
         }
     }
-#endif
+    #endif
     else
     {
         return AESECB_STATUS_FEATURE_NOT_SUPPORTED;
@@ -524,7 +563,7 @@ static inline void AESECBLPF3_processDataCPU(const uint8_t *input, uint8_t *outp
      * blocks consecutively to avoid overwriting data before the AES engine
      * can consume it.
      */
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 1)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 1)
     size_t inputBytesProcessed  = 0;
     size_t outputBytesProcessed = 0;
 
@@ -540,10 +579,10 @@ static inline void AESECBLPF3_processDataCPU(const uint8_t *input, uint8_t *outp
             AESWriteBUF(&input[inputBytesProcessed]);
             inputBytesProcessed += AES_BLOCK_SIZE;
 
-    #ifdef AES_BUSHALT_DISABLED
+        #ifdef AES_BUSHALT_DISABLED
             /* Wait for encryption of previous input to complete */
             while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-    #endif
+        #endif
             /*
              * Read output and trigger encryption of next input that was
              * preloaded at the start of this loop.
@@ -554,15 +593,15 @@ static inline void AESECBLPF3_processDataCPU(const uint8_t *input, uint8_t *outp
 
         /* Avoid triggering a spurious encryption upon reading the final output */
         AESClearAUTOCFGTrigger();
-    #ifdef AES_BUSHALT_DISABLED
+        #ifdef AES_BUSHALT_DISABLED
         /* Wait for encryption of final input block */
         while (AESGetStatus() != (uint32_t)AES_STA_STATE_IDLE) {}
-    #endif
+        #endif
         /* Read final output */
         AESReadTXT(&output[outputBytesProcessed]);
     }
     else
-#endif /* (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 1) */
+    #endif /* (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 1) */
     {
         AESProcessAlignedBlocksECB((const uint32_t *)input,
                                    (uint32_t *)output,
@@ -599,7 +638,7 @@ static inline void AESECBLPF3_processDataDMA(AESCommonLPF3_Object *object,
  */
 static inline int_fast16_t AESECBLPF3_waitForResult(AESECB_Handle handle)
 {
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     int_fast16_t status;
 
     if ((object->common.returnBehavior == AES_RETURN_BEHAVIOR_POLLING) ||
@@ -643,6 +682,7 @@ static inline int_fast16_t AESECBLPF3_waitForResult(AESECB_Handle handle)
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESECB_setupEncrypt ========
@@ -651,19 +691,22 @@ int_fast16_t AESECB_setupEncrypt(AESECB_Handle handle, const CryptoKey *key)
 {
     DebugP_assert(handle);
     int_fast16_t status       = AESECB_STATUS_SUCCESS;
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /*
      * Key material pointer and length are not checked until adding or
      * finalizing data.
      */
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if ((key->encoding == CryptoKey_PLAINTEXT) || (key->encoding == CryptoKey_KEYSTORE))
     {
         /* When using the AES driver with the LAES engine */
         status = AESCommonLPF3_setupSegmentedOperation(&object->common, key);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (key->encoding == CryptoKey_PLAINTEXT_HSM || key->encoding == CryptoKey_KEYSTORE_HSM)
+    else
+#endif
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+        if (key->encoding == CryptoKey_PLAINTEXT_HSM || key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
         {
@@ -684,8 +727,8 @@ int_fast16_t AESECB_setupEncrypt(AESECB_Handle handle, const CryptoKey *key)
 
         object->segmentedOperationInProgress = true;
     }
-#endif
     else
+#endif
     {
         status = AESECB_STATUS_ERROR;
     }
@@ -712,10 +755,10 @@ int_fast16_t AESECB_setupDecrypt(AESECB_Handle handle, const CryptoKey *key)
     DebugP_assert(handle);
     DebugP_assert(key);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     int_fast16_t status       = AESECB_STATUS_SUCCESS;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if (key->encoding == CryptoKey_PLAINTEXT_HSM || key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
@@ -765,15 +808,17 @@ int_fast16_t AESECB_addData(AESECB_Handle handle, AESECB_Operation *operation)
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
-    int_fast16_t status;
+    int_fast16_t status = AESECB_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         return AESECBLPF3HSM_addData(handle, operation);
     }
 #endif
+
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /*
      * Assert the segmented operation was setup.
@@ -810,7 +855,10 @@ int_fast16_t AESECB_addData(AESECB_Handle handle, AESECB_Operation *operation)
 
     object->operation = operation;
 
-    return AESECBLPF3_startOperation(handle, operation);
+    status = AESECBLPF3_startOperation(handle, operation);
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
+
+    return status;
 }
 
 /*
@@ -821,15 +869,17 @@ int_fast16_t AESECB_finalize(AESECB_Handle handle, AESECB_Operation *operation)
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
-    int_fast16_t status;
+    int_fast16_t status = AESECB_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if (operation->key->encoding == CryptoKey_PLAINTEXT_HSM || operation->key->encoding == CryptoKey_KEYSTORE_HSM)
     {
         return AESECBLPF3HSM_finalize(handle, operation);
     }
 #endif
+
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /*
      * Assert the segmented operation was setup.
@@ -849,13 +899,13 @@ int_fast16_t AESECB_finalize(AESECB_Handle handle, AESECB_Operation *operation)
 
     if (operation->inputLength > 0U)
     {
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
         /* Check word-alignment of input & output pointers */
         if (!IS_WORD_ALIGNED(operation->input) || !IS_WORD_ALIGNED(operation->output))
         {
             return AESECB_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
         }
-#endif
+    #endif
 
         /* Verify input length is a multiple of the AES block size */
         if ((AES_NON_BLOCK_SIZE_MULTIPLE_LENGTH(operation->inputLength) > 0U))
@@ -905,6 +955,7 @@ int_fast16_t AESECB_finalize(AESECB_Handle handle, AESECB_Operation *operation)
             status = AESECB_STATUS_SUCCESS;
         }
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return status;
 }
@@ -916,7 +967,7 @@ int_fast16_t AESECB_cancelOperation(AESECB_Handle handle)
 {
     DebugP_assert(handle);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /* Cancellation is only supported in callback mode */
     if (object->common.returnBehavior != AES_RETURN_BEHAVIOR_CALLBACK)
@@ -931,7 +982,7 @@ int_fast16_t AESECB_cancelOperation(AESECB_Handle handle)
      * Do not execute the callback as it would have been executed already
      * when the operation completed.
      */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if (((object->common.key.encoding & CRYPTOKEY_HSM) == 0) && (!object->common.operationInProgress))
 #else
     if (!object->common.operationInProgress)
@@ -943,13 +994,15 @@ int_fast16_t AESECB_cancelOperation(AESECB_Handle handle)
 
     HwiP_restore(interruptKey);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     /*
      * Cancel DMA for input and output channels, clear operation in-progress,
      * and releases crypto resource if necessary.
      */
     AESCommonLPF3_cancelOperation(&object->common, true);
+#endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     if ((object->common.key.encoding & CRYPTOKEY_HSM))
     {
         /* Since the HSM cannot cancel an in-progress token, we must wait for the result to allow for
@@ -974,7 +1027,7 @@ int_fast16_t AESECB_cancelOperation(AESECB_Handle handle)
     return AESECB_STATUS_SUCCESS;
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
 
 /*
  *  ======== AESECBLPF3HSM_oneStepOperation ========
@@ -986,7 +1039,7 @@ static int_fast16_t AESECBLPF3HSM_oneStepOperation(AESECB_Handle handle,
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
     if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
@@ -1016,7 +1069,7 @@ static int_fast16_t AESECBLPF3HSM_oneStepOperation(AESECB_Handle handle,
 static inline void AESECBLPF3HSM_OneStepPostProcessing(uintptr_t arg0)
 {
     AESECB_Handle handle      = (AESECB_Handle)arg0;
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     int_fast16_t status       = AESECB_STATUS_ERROR;
     int32_t physicalResult    = HSMLPF3_getResultCode();
     int32_t tokenResult       = physicalResult & HSMLPF3_RETVAL_MASK;
@@ -1048,7 +1101,7 @@ static int_fast16_t AESECBLPF3HSM_processOneStep(AESECB_Handle handle)
 {
     int_fast16_t status       = AESECB_STATUS_ERROR;
     int_fast16_t hsmRetval    = HSMLPF3_STATUS_ERROR;
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     #if (ENABLE_KEY_STORAGE == 1)
     KeyStore_PSA_KeyFileId keyID;
     KeyStore_PSA_KeyAttributes attributes = KEYSTORE_PSA_KEY_ATTRIBUTES_INIT;
@@ -1139,7 +1192,7 @@ static int_fast16_t AESECBLPF3HSM_addData(AESECB_Handle handle, AESECB_Operation
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
 
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */
     if (object->hsmStatus != HSMLPF3_STATUS_SUCCESS)
@@ -1174,7 +1227,7 @@ static int_fast16_t AESECBLPF3HSM_finalize(AESECB_Handle handle, AESECB_Operatio
     DebugP_assert(handle);
     DebugP_assert(operation);
 
-    AESECBLPF3_Object *object = AESEBCLPF3_getObject(handle);
+    AESECBLPF3_Object *object = AESECBLPF3_getObject(handle);
     int_fast16_t status;
 
     /* If the HSM IP and/or HSMSAL failed to boot then we cannot perform any HSM-related operation */

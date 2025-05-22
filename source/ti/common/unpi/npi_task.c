@@ -54,10 +54,10 @@
 
 #include <xdc/std.h>
 #ifdef ICALL_EVENTS
-#include <ti/sysbios/knl/Event.h>
-#else //!ICALL_EVENTS
-#include <ti/sysbios/knl/Semaphore.h>
-#endif //ICALL_EVENTS
+    #include <ti/sysbios/knl/Event.h>
+#else //! ICALL_EVENTS
+    #include <ti/sysbios/knl/Semaphore.h>
+#endif // ICALL_EVENTS
 #include <ti/sysbios/hal/Hwi.h>
 #include <ti/sysbios/knl/Queue.h>
 #include <ti/sysbios/knl/Task.h>
@@ -75,66 +75,62 @@
 // Defines
 //*****************************************************************************
 #ifdef ICALL_EVENTS
-#define NPITASK_ICALL_EVENT                 ICALL_MSG_EVENT_ID // Event_Id_31
+    #define NPITASK_ICALL_EVENT ICALL_MSG_EVENT_ID // Event_Id_31
 
-//! \brief ASYNC Message Received Event (no framing bytes)
-#define NPITASK_FRAME_RX_EVENT              Event_Id_00
+    //! \brief ASYNC Message Received Event (no framing bytes)
+    #define NPITASK_FRAME_RX_EVENT Event_Id_00
 
-//! \brief A framed message buffer is ready to be sent to the transport layer.
-#define NPITASK_TX_READY_EVENT              Event_Id_01
+    //! \brief A framed message buffer is ready to be sent to the transport layer.
+    #define NPITASK_TX_READY_EVENT Event_Id_01
 
-//! \brief ASYNC Message Received Event (no framing bytes)
-#define NPITASK_SYNC_FRAME_RX_EVENT         Event_Id_02
+    //! \brief ASYNC Message Received Event (no framing bytes)
+    #define NPITASK_SYNC_FRAME_RX_EVENT Event_Id_02
 
-//! \brief Last TX message has been successfully sent
-#define NPITASK_TX_DONE_EVENT               Event_Id_03
+    //! \brief Last TX message has been successfully sent
+    #define NPITASK_TX_DONE_EVENT Event_Id_03
 
-//! \brief Remote Rdy received Event
-#define NPITASK_REM_RDY_EVENT               Event_Id_04
+    //! \brief Remote Rdy received Event
+    #define NPITASK_REM_RDY_EVENT Event_Id_04
 
-//! \brief NPI assert message
-#define NPITASK_ASSERT_MSG_EVENT            Event_Id_05
+    //! \brief NPI assert message
+    #define NPITASK_ASSERT_MSG_EVENT Event_Id_05
 
-#define NPITASK_ALL_EVENTS                  (NPITASK_ICALL_EVENT | \
-                                             NPITASK_FRAME_RX_EVENT | \
-                                             NPITASK_TX_READY_EVENT | \
-                                             NPITASK_SYNC_FRAME_RX_EVENT | \
-                                             NPITASK_TX_DONE_EVENT | \
-                                             NPITASK_REM_RDY_EVENT | \
-                                             NPITASK_ASSERT_MSG_EVENT)
-#else //!ICALL_EVENTS
-//! \brief ASYNC Message Received Event (no framing bytes)
-#define NPITASK_FRAME_RX_EVENT              0x0008
+    #define NPITASK_ALL_EVENTS                                                                                 \
+        (NPITASK_ICALL_EVENT | NPITASK_FRAME_RX_EVENT | NPITASK_TX_READY_EVENT | NPITASK_SYNC_FRAME_RX_EVENT | \
+         NPITASK_TX_DONE_EVENT | NPITASK_REM_RDY_EVENT | NPITASK_ASSERT_MSG_EVENT)
+#else //! ICALL_EVENTS
+    //! \brief ASYNC Message Received Event (no framing bytes)
+    #define NPITASK_FRAME_RX_EVENT      0x0008
 
-//! \brief A framed message buffer is ready to be sent to the transport layer.
-#define NPITASK_TX_READY_EVENT              0x0010
+    //! \brief A framed message buffer is ready to be sent to the transport layer.
+    #define NPITASK_TX_READY_EVENT      0x0010
 
-//! \brief ASYNC Message Received Event (no framing bytes)
-#define NPITASK_SYNC_FRAME_RX_EVENT         0x0020
+    //! \brief ASYNC Message Received Event (no framing bytes)
+    #define NPITASK_SYNC_FRAME_RX_EVENT 0x0020
 
-//! \brief Last TX message has been successfully sent
-#define NPITASK_TX_DONE_EVENT               0x0040
+    //! \brief Last TX message has been successfully sent
+    #define NPITASK_TX_DONE_EVENT       0x0040
 
-//! \brief Remote Rdy received Event
-#define NPITASK_REM_RDY_EVENT               0x0080
+    //! \brief Remote Rdy received Event
+    #define NPITASK_REM_RDY_EVENT       0x0080
 
-//! \brief NPI assert message
-#define NPITASK_ASSERT_MSG_EVENT            0x0100
-#endif //ICALL_EVENTS
+    //! \brief NPI assert message
+    #define NPITASK_ASSERT_MSG_EVENT    0x0100
+#endif // ICALL_EVENTS
 
 //! \brief Task priority for NPI RTOS task
-#define NPITASK_PRIORITY                    2
+#define NPITASK_PRIORITY 2
 
 //! \brief NPI allows for NPI_MAX_SUBSTEM number of subsystems to be registered
 //         to receive NPI messages from the host.
-#define NPI_MAX_SUBSYSTEMS                  4
-#define NPI_MAX_SS_ENTRY                    NPI_MAX_SUBSYSTEMS
-#define NPI_MAX_ICALL_ENTRY                 NPI_MAX_SUBSYSTEMS
+#define NPI_MAX_SUBSYSTEMS  4
+#define NPI_MAX_SS_ENTRY    NPI_MAX_SUBSYSTEMS
+#define NPI_MAX_ICALL_ENTRY NPI_MAX_SUBSYSTEMS
 
-#define REM_RDY_ASSERTED                    0x00
-#define REM_RDY_DEASSERTED                  0x01
+#define REM_RDY_ASSERTED   0x00
+#define REM_RDY_DEASSERTED 0x01
 
-#define NPI_ASSERT_MSG_LEN                  5
+#define NPI_ASSERT_MSG_LEN 5
 
 //*****************************************************************************
 // Typedefs
@@ -144,8 +140,8 @@
 //         to handle all messages
 typedef struct _npiFromHostTableEntry_t
 {
-    uint8_t             ssID;
-    npiFromHostCBack_t  ssCB;
+    uint8_t ssID;
+    npiFromHostCBack_t ssCB;
 } _npiFromHostTableEntry_t;
 
 //! \brief When a subsystem registers with NPI Task to receive messages from
@@ -153,7 +149,7 @@ typedef struct _npiFromHostTableEntry_t
 //         to handle all messages
 typedef struct _npiFromICallTableEntry_t
 {
-    uint8_t              icallID;
+    uint8_t icallID;
     npiFromICallCBack_t ssCB;
 } _npiFromICallTableEntry_t;
 
@@ -188,13 +184,13 @@ static uint8_t *lastQueuedTxMsg;
 
 #ifdef ICALL_EVENTS
 static ICall_SyncHandle syncEvent = NULL;
-#else //!ICALL_EVENTS
-#ifdef USE_ICALL
+#else //! ICALL_EVENTS
+    #ifdef USE_ICALL
 //! \brief NPI thread ICall Semaphore.
 static ICall_Semaphore npiSem = NULL;
-#else
+    #else
 static Semaphore_Handle npiSem = NULL;
-#endif //USE_ICALL
+    #endif // USE_ICALL
 
 //! \brief Task pending events
 static uint16_t NPITask_events = 0;
@@ -202,12 +198,12 @@ static uint16_t NPITask_events = 0;
 //! \brief Event flags for capturing Task-related events from ISR context
 static uint16_t tlDoneISRFlag = 0;
 static uint16_t remRdyISRFlag = 0;
-#endif //ICALL_EVENTS
+#endif     // ICALL_EVENTS
 
 #ifdef USE_ICALL
 //! \brief NPI ICall Application Entity ID.
 ICall_EntityID npiAppEntityID = 0;
-#endif //USE_ICALL
+#endif // USE_ICALL
 
 //! \brief Routing table for translating incoming Host messages to the proper
 //!        subsystem callback based on SSID of the message
@@ -217,41 +213,42 @@ _npiFromHostTableEntry_t HostToSSTable[NPI_MAX_SS_ENTRY];
 //! \brief Routing table for translating incoming ICall messages to the proper
 //!        subsystem callback based on ICall msg source entity ID
 _npiFromICallTableEntry_t ICallToSSTable[NPI_MAX_ICALL_ENTRY];
-#endif //USE_ICALL
+#endif // USE_ICALL
 
 //! \brief Global flag to keep NPI from being opened twice without first closing
 static uint8_t taskOpen = 0;
 
 //! \brief Storage space for final assert NPI message
-static uint8_t sendAssertMessage[NPI_ASSERT_MSG_LEN] =
-{NPI_ASSERT_PAYLOAD_LEN,
- 0, RPC_SYS_BLE_SNP+(NPI_MSG_TYPE_ASYNC<<5),
- NPI_ASSERT_CMD1_ID ,0};
+static uint8_t sendAssertMessage[NPI_ASSERT_MSG_LEN] = {NPI_ASSERT_PAYLOAD_LEN,
+                                                        0,
+                                                        RPC_SYS_BLE_SNP + (NPI_MSG_TYPE_ASYNC << 5),
+                                                        NPI_ASSERT_CMD1_ID,
+                                                        0};
 
 //! \brief Save assert type locally for use in NPI assert message
 static uint8_t npiTask_assertType;
 
 /* Default NPI parameters structure */
 const NPI_Params NPI_defaultParams = {
-    .stackSize          = 1024,
-    .bufSize            = 530,
-    .mrdyPinID          = IOID_UNUSED,
-    .srdyPinID          = IOID_UNUSED,
+    .stackSize = 1024,
+    .bufSize   = 530,
+    .mrdyPinID = IOID_UNUSED,
+    .srdyPinID = IOID_UNUSED,
 #if defined(NPI_USE_UART)
-    .portType           = NPI_SERIAL_TYPE_UART,
-    .portBoardID        = 0,                     /* CC2650_UART0 */
+    .portType    = NPI_SERIAL_TYPE_UART,
+    .portBoardID = 0, /* CC2650_UART0 */
 #elif defined(NPI_USE_SPI)
-    .portType           = NPI_SERIAL_TYPE_SPI,
-#if (defined(CC2650DK_5XD) ||  defined(CC2650DK_4XS )) && !defined(TI_DRIVERS_DISPLAY_INCLUDED)
-    .portBoardID        = 0,                     /* CC2650_SPI0, conflicts with SRF06 display so both can't be enabled */
-#elif (defined(CC2650DK_7ID) || defined(CC2650_LAUNCHXL) || \
-    defined(CC2640R2_LAUNCHXL) || defined(CC26X2R1_LAUNCHXL) || defined(CC2652RB_LAUNCHXL) || \
-    defined(CC13X2R1_LAUNCHXL) || (defined (CC13X2P1_LAUNCHXL) || defined (CC13X2P_2_LAUNCHXL) || defined (CC13X2P_4_LAUNCHXL) || \
-    defined (CC2652PSIP_LP) || defined (CC2652RSIP_LP)))
-    .portBoardID        = 1,                     /* CC2650_SPI1 */
-#elif (defined(CC2650DK_5XD) || defined(CC2650DK_4XS)) && defined(TI_DRIVERS_DISPLAY_INCLUDED)
-#error "WARNING! CC2650_SPI0, is used to drive the SmartRF06 display. Cannot use SPI0 if display is enabled."
-#endif
+    .portType    = NPI_SERIAL_TYPE_SPI,
+    #if (defined(CC2650DK_5XD) || defined(CC2650DK_4XS)) && !defined(TI_DRIVERS_DISPLAY_INCLUDED)
+    .portBoardID = 0, /* CC2650_SPI0, conflicts with SRF06 display so both can't be enabled */
+    #elif (defined(CC2650DK_7ID) || defined(CC2650_LAUNCHXL) || defined(CC2640R2_LAUNCHXL) ||           \
+           defined(CC26X2R1_LAUNCHXL) || defined(CC2652RB_LAUNCHXL) || defined(CC13X2R1_LAUNCHXL) ||    \
+           (defined(CC13X2P1_LAUNCHXL) || defined(CC13X2P_2_LAUNCHXL) || defined(CC13X2P_4_LAUNCHXL) || \
+            defined(CC2652PSIP_LP) || defined(CC2652RSIP_LP)))
+    .portBoardID = 1, /* CC2650_SPI1 */
+    #elif (defined(CC2650DK_5XD) || defined(CC2650DK_4XS)) && defined(TI_DRIVERS_DISPLAY_INCLUDED)
+        #error "WARNING! CC2650_SPI0, is used to drive the SmartRF06 display. Cannot use SPI0 if display is enabled."
+    #endif
 
 #endif
 };
@@ -267,8 +264,8 @@ static void NPITask_transportDoneCallBack(uint16_t sizeRx, uint16_t sizeTx);
 static void NPITask_RemRdyEventCB(uint8_t state);
 
 const npiTLCallBacks transportCBs = {
-  &NPITask_RemRdyEventCB,
-  &NPITask_transportDoneCallBack,
+    &NPITask_RemRdyEventCB,
+    &NPITask_transportDoneCallBack,
 };
 
 //! \brief ASYNC TX Q Processing function.
@@ -286,15 +283,15 @@ static uint8_t NPITask_routeHostToSS(_npiFrame_t *pNPIMsg);
 #ifdef USE_ICALL
 //! \brief Function to route ICall Message to the appropriate subsystem
 static uint8_t NPITask_routeICallToSS(ICall_ServiceEnum src, uint8_t *pGenMsg);
-#endif //USE_ICALL
+#endif // USE_ICALL
 
 //! \brief Function that transforms NPI Frame struct into a byte array. This is
 //         necessary to send data over NPI Transport Layer
-static uint8_t * NPITask_SerializeFrame(_npiFrame_t *pNPIMsg);
+static uint8_t *NPITask_SerializeFrame(_npiFrame_t *pNPIMsg);
 
 //! \brief Function that transforms byte contents of NPI RxBuf into an NPI Frame
 //!        struct that can be routed.
-static _npiFrame_t * NPITask_DeserializeFrame();
+static _npiFrame_t *NPITask_DeserializeFrame();
 
 // -----------------------------------------------------------------------------
 //! \brief      NPI main event processing loop.
@@ -309,13 +306,12 @@ void NPITask_Fxn(UArg a0, UArg a1)
     ICall_ServiceEnum stackid;
     ICall_EntityID dest;
 
-#ifdef ICALL_EVENTS
-    ICall_enrollService(ICALL_SERVICE_CLASS_NPI, NULL, &npiAppEntityID,
-                        &syncEvent);
-#else //!ICALL_EVENTS
+    #ifdef ICALL_EVENTS
+    ICall_enrollService(ICALL_SERVICE_CLASS_NPI, NULL, &npiAppEntityID, &syncEvent);
+    #else  //! ICALL_EVENTS
     ICall_enrollService(ICALL_SERVICE_CLASS_NPI, NULL, &npiAppEntityID, &npiSem);
-#endif //ICALL_EVENTS
-#endif //USE_ICALL
+    #endif // ICALL_EVENTS
+#endif     // USE_ICALL
 
     /* Forever loop */
     for (;;)
@@ -324,13 +320,12 @@ void NPITask_Fxn(UArg a0, UArg a1)
 #ifdef ICALL_EVENTS
         uint32_t NPITask_events;
 
-        NPITask_events = Event_pend(syncEvent, Event_Id_NONE,
-                                    NPITASK_ALL_EVENTS, BIOS_WAIT_FOREVER);
+        NPITask_events = Event_pend(syncEvent, Event_Id_NONE, NPITASK_ALL_EVENTS, BIOS_WAIT_FOREVER);
 
         if (NPITask_events)
-#else //!ICALL_EVENTS
-        if (Semaphore_pend(npiSem,BIOS_WAIT_FOREVER))
-#endif //ICALL_EVENTS
+#else  //! ICALL_EVENTS
+        if (Semaphore_pend(npiSem, BIOS_WAIT_FOREVER))
+#endif // ICALL_EVENTS
         {
             // First check and Send NPI assert message
             if (NPITask_events & NPITASK_ASSERT_MSG_EVENT)
@@ -343,12 +338,11 @@ void NPITask_Fxn(UArg a0, UArg a1)
             key = NPIUtil_EnterCS();
 
 #ifndef ICALL_EVENTS
-            NPITask_events = NPITask_events | tlDoneISRFlag |
-                             remRdyISRFlag;
+            NPITask_events = NPITask_events | tlDoneISRFlag | remRdyISRFlag;
 
             tlDoneISRFlag = 0;
             remRdyISRFlag = 0;
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
 
             NPIUtil_ExitCS(key);
 
@@ -357,7 +351,7 @@ void NPITask_Fxn(UArg a0, UArg a1)
             {
 #ifndef ICALL_EVENTS
                 NPITask_events &= ~NPITASK_REM_RDY_EVENT;
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
 #if (NPI_FLOW_CTRL == 1)
                 NPITL_handleRemRdyEvent();
 #endif // NPI_FLOW_CTRL = 1
@@ -365,37 +359,35 @@ void NPITask_Fxn(UArg a0, UArg a1)
             // TX Frame has been successfully sent
             if (NPITask_events & NPITASK_TX_DONE_EVENT)
             {
-              //Deallocate most recent message being transmitted.
-              NPIUtil_free(lastQueuedTxMsg);
-              lastQueuedTxMsg = NULL;
+                // Deallocate most recent message being transmitted.
+                NPIUtil_free(lastQueuedTxMsg);
+                lastQueuedTxMsg = NULL;
 #ifndef ICALL_EVENTS
-              NPITask_events &= ~NPITASK_TX_DONE_EVENT;
-#endif //ICALL_EVENTS
+                NPITask_events &= ~NPITASK_TX_DONE_EVENT;
+#endif // ICALL_EVENTS
             }
             // Frame is ready to send to the Host
             if (NPITask_events & NPITASK_TX_READY_EVENT)
             {
-              // Cannot send if NPI Tl is already busy.
-              if (!NPITL_checkNpiBusy())
-              {
-                // Check for outstanding SYNC REQ/RSP transactions.  If so,
-                // this ASYNC message must remain Q'd while we wait for the
-                // SYNC RSP.
-                if (!Queue_empty(npiSyncTxQueue) &&
-                        syncTransactionInProgress >= 0)
+                // Cannot send if NPI Tl is already busy.
+                if (!NPITL_checkNpiBusy())
                 {
-                    // Prioritize Synchronous traffic
-                    NPITask_ProcessTXQ(npiSyncTxQueue);
+                    // Check for outstanding SYNC REQ/RSP transactions.  If so,
+                    // this ASYNC message must remain Q'd while we wait for the
+                    // SYNC RSP.
+                    if (!Queue_empty(npiSyncTxQueue) && syncTransactionInProgress >= 0)
+                    {
+                        // Prioritize Synchronous traffic
+                        NPITask_ProcessTXQ(npiSyncTxQueue);
+                    }
+                    else if (!(NPITask_events & NPITASK_SYNC_FRAME_RX_EVENT) && syncTransactionInProgress == 0 &&
+                             !Queue_empty(npiTxQueue))
+                    {
+                        // No outstanding SYNC REQ/RSP transactions, process
+                        // ASYNC messages.
+                        NPITask_ProcessTXQ(npiTxQueue);
+                    }
                 }
-                else if (!(NPITask_events & NPITASK_SYNC_FRAME_RX_EVENT) &&
-                             syncTransactionInProgress == 0 &&
-                               !Queue_empty(npiTxQueue))
-                {
-                    // No outstanding SYNC REQ/RSP transactions, process
-                    // ASYNC messages.
-                    NPITask_ProcessTXQ(npiTxQueue);
-                }
-              }
 
                 // The TX READY event flag can be cleared here regardless
                 // of the state of the TX queues. The TX done call back
@@ -410,31 +402,29 @@ void NPITask_Fxn(UArg a0, UArg a1)
                 // has been sent
 #ifndef ICALL_EVENTS
                 NPITask_events &= ~NPITASK_TX_READY_EVENT;
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
             }
 #ifdef USE_ICALL
             // ICall Message Event
-            if (ICall_fetchServiceMsg(&stackid, &dest, (void **) &pMsg)
-                == ICALL_ERRNO_SUCCESS)
+            if (ICall_fetchServiceMsg(&stackid, &dest, (void **)&pMsg) == ICALL_ERRNO_SUCCESS)
             {
                 // Route the ICall message to the appropriate subsystem
-                if (NPITask_routeICallToSS(stackid,pMsg) != NPI_SUCCESS)
+                if (NPITask_routeICallToSS(stackid, pMsg) != NPI_SUCCESS)
                 {
                     // Unable to route message. Subsystem not registered.
                     // Free message
                     ICall_freeMsg(pMsg);
                 }
             }
-#endif //USE_ICALL
-            // Synchronous Frame received from Host
-            if (NPITask_events & NPITASK_SYNC_FRAME_RX_EVENT &&
-                  syncTransactionInProgress <= 0)
+#endif // USE_ICALL
+       //  Synchronous Frame received from Host
+            if (NPITask_events & NPITASK_SYNC_FRAME_RX_EVENT && syncTransactionInProgress <= 0)
             {
                 // Process Queue and clear event flag
                 NPITask_processSyncRXQ();
 #ifndef ICALL_EVENTS
                 NPITask_events &= ~NPITASK_SYNC_FRAME_RX_EVENT;
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
 
                 if (!Queue_empty(npiSyncRxQueue))
                 {
@@ -442,47 +432,43 @@ void NPITask_Fxn(UArg a0, UArg a1)
                     // frame(s)
 #ifdef ICALL_EVENTS
                     Event_post(syncEvent, NPITASK_SYNC_FRAME_RX_EVENT);
-#else //!ICALL_EVENTS
+#else  //! ICALL_EVENTS
                     NPITask_events |= NPITASK_SYNC_FRAME_RX_EVENT;
                     Semaphore_post(npiSem);
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
                 }
             }
 #ifdef ICALL_EVENTS
-            else if ((NPITask_events & NPITASK_SYNC_FRAME_RX_EVENT) &&
-                     (syncTransactionInProgress > 0))
+            else if ((NPITask_events & NPITASK_SYNC_FRAME_RX_EVENT) && (syncTransactionInProgress > 0))
             {
                 // the event needs to be reposted or it will be lost
                 Event_post(syncEvent, NPITASK_SYNC_FRAME_RX_EVENT);
             }
 #endif
 
-
             // A complete frame (msg) has been received and is ready for handling
-            if (NPITask_events & NPITASK_FRAME_RX_EVENT &&
-                  syncTransactionInProgress == 0)
+            if (NPITask_events & NPITASK_FRAME_RX_EVENT && syncTransactionInProgress == 0)
             {
                 // Process the ASYNC message and clear event flag
                 NPITask_processRXQ();
 #ifndef ICALL_EVENTS
                 NPITask_events &= ~NPITASK_FRAME_RX_EVENT;
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
 
                 if (!Queue_empty(npiRxQueue))
                 {
                     // Q is not empty reset flag and process next message
 #ifdef ICALL_EVENTS
                     Event_post(syncEvent, NPITASK_FRAME_RX_EVENT);
-#else //!ICALL_EVENTS
+#else  //! ICALL_EVENTS
                     NPITask_events |= NPITASK_FRAME_RX_EVENT;
                     Semaphore_post(npiSem);
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
                 }
             }
         }
     }
 }
-
 
 // -----------------------------------------------------------------------------
 // Exported Functions
@@ -497,28 +483,28 @@ void NPITask_Fxn(UArg a0, UArg a1)
 // -----------------------------------------------------------------------------
 uint8_t NPITask_Params_init(uint8_t portType, NPI_Params *params)
 {
-  if (params != NULL)
-  {
-    *params = NPI_defaultParams;
+    if (params != NULL)
+    {
+        *params = NPI_defaultParams;
 
 #if defined(NPI_USE_UART)
-    UART_Params_init(&params->portParams.uartParams);
-    params->portParams.uartParams.readDataMode = UART_DATA_BINARY;
-    params->portParams.uartParams.writeDataMode = UART_DATA_BINARY;
-    params->portParams.uartParams.readMode = UART_MODE_CALLBACK;
-    params->portParams.uartParams.writeMode = UART_MODE_CALLBACK;
-    params->portParams.uartParams.readEcho = UART_ECHO_OFF;
+        UART_Params_init(&params->portParams.uartParams);
+        params->portParams.uartParams.readDataMode  = UART_DATA_BINARY;
+        params->portParams.uartParams.writeDataMode = UART_DATA_BINARY;
+        params->portParams.uartParams.readMode      = UART_MODE_CALLBACK;
+        params->portParams.uartParams.writeMode     = UART_MODE_CALLBACK;
+        params->portParams.uartParams.readEcho      = UART_ECHO_OFF;
 #elif defined(NPI_USE_SPI)
-    SPI_Params_init(&params->portParams.spiParams);
-    params->portParams.spiParams.mode = SPI_PERIPHERAL;
-    params->portParams.spiParams.bitRate = 8000000;
-    params->portParams.spiParams.frameFormat = SPI_POL1_PHA1;
-#endif //NPI_USE_UART
+        SPI_Params_init(&params->portParams.spiParams);
+        params->portParams.spiParams.mode        = SPI_PERIPHERAL;
+        params->portParams.spiParams.bitRate     = 8000000;
+        params->portParams.spiParams.frameFormat = SPI_POL1_PHA1;
+#endif // NPI_USE_UART
 
-    return NPI_SUCCESS;
-  }
+        return NPI_SUCCESS;
+    }
 
-  return NPI_TASK_INVALID_PARAMS;
+    return NPI_TASK_INVALID_PARAMS;
 }
 
 // -----------------------------------------------------------------------------
@@ -538,17 +524,18 @@ uint8_t NPITask_open(NPI_Params *params)
     // Check to see if NPI has already been opened
     if (taskOpen)
     {
-      return NPI_TASK_FAILURE;
+        return NPI_TASK_FAILURE;
     }
 
     taskOpen = 1;
 
     // If params are NULL use defaults.
-    if (params == NULL) {
+    if (params == NULL)
+    {
 #if defined(NPI_USE_UART)
-        NPITask_Params_init(NPI_SERIAL_TYPE_UART,&npiParams);
+        NPITask_Params_init(NPI_SERIAL_TYPE_UART, &npiParams);
 #elif defined(NPI_USE_SPI)
-        NPITask_Params_init(NPI_SERIAL_TYPE_SPI,&npiParams);
+        NPITask_Params_init(NPI_SERIAL_TYPE_SPI, &npiParams);
 #endif // NPI_USE_UART
 
         params = &npiParams;
@@ -557,56 +544,56 @@ uint8_t NPITask_open(NPI_Params *params)
     // Initialize globals
 #ifndef ICALL_EVENTS
     NPITask_events = 0;
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
     lastQueuedTxMsg = NULL;
 
 #ifndef ICALL_EVENTS
-#ifndef USE_ICALL
+    #ifndef USE_ICALL
     // create Semaphore instances
     npiSem = Semaphore_create(0, NULL, NULL);
-#endif //USE_ICALL
-#endif //ICALL_EVENTS
+    #endif // USE_ICALL
+#endif     // ICALL_EVENTS
 
     // create Queue instances
-    npiTxQueue = Queue_create(NULL, NULL);
-    npiRxQueue = Queue_create(NULL, NULL);
+    npiTxQueue     = Queue_create(NULL, NULL);
+    npiRxQueue     = Queue_create(NULL, NULL);
     npiSyncRxQueue = Queue_create(NULL, NULL);
     npiSyncTxQueue = Queue_create(NULL, NULL);
 
     // Initialize Transport Layer
     transportParams.npiTLBufSize = params->bufSize;
-    transportParams.mrdyPinID = params->mrdyPinID;
-    transportParams.srdyPinID = params->srdyPinID;
-    transportParams.portType = params->portType;
-    transportParams.portBoardID = params->portBoardID;
-    transportParams.portParams = params->portParams;
+    transportParams.mrdyPinID    = params->mrdyPinID;
+    transportParams.srdyPinID    = params->srdyPinID;
+    transportParams.portType     = params->portType;
+    transportParams.portBoardID  = params->portBoardID;
+    transportParams.portParams   = params->portParams;
     transportParams.npiCallBacks = transportCBs;
 
     NPITL_openTL(&transportParams);
 
-   // Clear Routing Tables
-    memset(HostToSSTable, 0, sizeof(_npiFromHostTableEntry_t)*NPI_MAX_SS_ENTRY);
+    // Clear Routing Tables
+    memset(HostToSSTable, 0, sizeof(_npiFromHostTableEntry_t) * NPI_MAX_SS_ENTRY);
 #ifdef USE_ICALL
-    memset(ICallToSSTable, 0, sizeof(_npiFromICallTableEntry_t)*NPI_MAX_ICALL_ENTRY);
-#endif //USE_ICALL
+    memset(ICallToSSTable, 0, sizeof(_npiFromICallTableEntry_t) * NPI_MAX_ICALL_ENTRY);
+#endif // USE_ICALL
 
     // Configure and create the NPI task.
     Task_Params_init(&npiTaskParams);
     npiTaskStack = NPIUtil_malloc(params->stackSize);
     if (npiTaskStack != NULL)
     {
-      npiTaskParams.stack = npiTaskStack;
-      npiTaskParams.stackSize = params->stackSize;
-      npiTaskParams.priority = NPITASK_PRIORITY;
-      npiTaskHandle = Task_create(NPITask_Fxn, &npiTaskParams, NULL);
-      if (npiTaskHandle == NULL)
-      {
-        return NPI_TASK_FAILURE;
-      }
+        npiTaskParams.stack     = npiTaskStack;
+        npiTaskParams.stackSize = params->stackSize;
+        npiTaskParams.priority  = NPITASK_PRIORITY;
+        npiTaskHandle           = Task_create(NPITask_Fxn, &npiTaskParams, NULL);
+        if (npiTaskHandle == NULL)
+        {
+            return NPI_TASK_FAILURE;
+        }
     }
     else
     {
-      return NPI_TASK_FAILURE;
+        return NPI_TASK_FAILURE;
     }
 
     return NPI_SUCCESS;
@@ -625,16 +612,16 @@ uint8_t NPITask_close(void)
 #else
     if (!taskOpen)
     {
-      return NPI_TASK_FAILURE;
+        return NPI_TASK_FAILURE;
     }
 
     // Close Tranpsort Layer
     NPITL_closeTL();
 
     // Delete RTOS allocated structures
-#ifndef ICALL_EVENTS
+    #ifndef ICALL_EVENTS
     Semaphore_delete(&npiSem);
-#endif //ICALL_EVENTS
+    #endif // ICALL_EVENTS
     Queue_delete(&npiTxQueue);
     Queue_delete(&npiRxQueue);
     Queue_delete(&npiSyncRxQueue);
@@ -643,7 +630,7 @@ uint8_t NPITask_close(void)
     // Free any message buffers for in-flight messages
     if (lastQueuedTxMsg != NULL)
     {
-      NPIUtil_free(lastQueuedTxMsg);
+        NPIUtil_free(lastQueuedTxMsg);
     }
 
     // Delete NPI task
@@ -652,7 +639,7 @@ uint8_t NPITask_close(void)
     taskOpen = 0;
 
     return NPI_SUCCESS;
-#endif //USE_ICALL
+#endif     // USE_ICALL
 }
 
 // -----------------------------------------------------------------------------
@@ -678,30 +665,28 @@ uint8_t NPITask_sendToHost(_npiFrame_t *pMsg)
         // Enqueue to appropriate NPI Task Q and post correpsonding event.
         case NPI_MSG_TYPE_SYNCRSP:
         case NPI_MSG_TYPE_SYNCREQ:
-        {
+            {
 #ifdef ICALL_EVENTS
-            NPIUtil_enqueueMsg(npiSyncTxQueue, syncEvent,
-                               NPITASK_TX_READY_EVENT,(unsigned char *) pMsg);
-#else //!ICALL_EVENTS
-            NPITask_events |= NPITASK_TX_READY_EVENT;
-            NPIUtil_enqueueMsg(npiSyncTxQueue, npiSem,(unsigned char *) pMsg);
-#endif //ICALL_EVENTS
-        }
-        break;
+                NPIUtil_enqueueMsg(npiSyncTxQueue, syncEvent, NPITASK_TX_READY_EVENT, (unsigned char *)pMsg);
+#else  //! ICALL_EVENTS
+                NPITask_events |= NPITASK_TX_READY_EVENT;
+                NPIUtil_enqueueMsg(npiSyncTxQueue, npiSem, (unsigned char *)pMsg);
+#endif // ICALL_EVENTS
+            }
+            break;
         case NPI_MSG_TYPE_ASYNC:
-        {
+            {
 #ifdef ICALL_EVENTS
-            NPIUtil_enqueueMsg(npiTxQueue, syncEvent, NPITASK_TX_READY_EVENT,
-                               (unsigned char *) pMsg);
-#else //!ICALL_EVENTS
-            NPITask_events |= NPITASK_TX_READY_EVENT;
-            NPIUtil_enqueueMsg(npiTxQueue, npiSem,(unsigned char *) pMsg);
-#endif //ICALL_EVENTS
-        }
-        break;
+                NPIUtil_enqueueMsg(npiTxQueue, syncEvent, NPITASK_TX_READY_EVENT, (unsigned char *)pMsg);
+#else  //! ICALL_EVENTS
+                NPITask_events |= NPITASK_TX_READY_EVENT;
+                NPIUtil_enqueueMsg(npiTxQueue, npiSem, (unsigned char *)pMsg);
+#endif // ICALL_EVENTS
+            }
+            break;
         default:
             status = NPI_INVALID_PKT;
-        break;
+            break;
     }
 
     NPIUtil_ExitCS(key);
@@ -757,7 +742,7 @@ uint8_t NPITask_regSSFromICallCB(uint8_t icallID, npiFromICallCBack_t pCB)
         if (ICallToSSTable[i].ssCB == NULL)
         {
             ICallToSSTable[i].icallID = icallID;
-            ICallToSSTable[i].ssCB = pCB;
+            ICallToSSTable[i].ssCB    = pCB;
 
             return NPI_SUCCESS;
         }
@@ -765,7 +750,7 @@ uint8_t NPITask_regSSFromICallCB(uint8_t icallID, npiFromICallCBack_t pCB)
 
     return NPI_ROUTING_FULL;
 }
-#endif //USE_ICALL
+#endif // USE_ICALL
 
 // -----------------------------------------------------------------------------
 // Routing Functions
@@ -818,8 +803,7 @@ static uint8_t NPITask_routeICallToSS(ICall_ServiceEnum src, uint8_t *pGenMsg)
     }
     return NPI_SS_NOT_FOUND;
 }
-#endif //USE_ICALL
-
+#endif // USE_ICALL
 
 // -----------------------------------------------------------------------------
 //! \brief      API to allocate an NPI frame of a given data length
@@ -828,7 +812,7 @@ static uint8_t NPITask_routeICallToSS(ICall_ServiceEnum src, uint8_t *pGenMsg)
 //!
 //! \return     _npiFrame_t *   Pointer to newly allocated frame
 // -----------------------------------------------------------------------------
-_npiFrame_t * NPITask_mallocFrame(uint16_t len)
+_npiFrame_t *NPITask_mallocFrame(uint16_t len)
 {
     _npiFrame_t *pMsg;
 
@@ -847,7 +831,7 @@ _npiFrame_t * NPITask_mallocFrame(uint16_t len)
     }
     else
     {
-       HAL_ASSERT(HAL_ASSERT_CAUSE_OUT_OF_MEMORY);
+        HAL_ASSERT(HAL_ASSERT_CAUSE_OUT_OF_MEMORY);
     }
     return pMsg;
 }
@@ -877,7 +861,7 @@ void NPITask_freeFrame(_npiFrame_t *frame)
 //!
 //! \return     uint8_t*    Equivalent byte array of the NPI Frame
 // -----------------------------------------------------------------------------
-static uint8_t * NPITask_SerializeFrame(_npiFrame_t *pNPIMsg)
+static uint8_t *NPITask_SerializeFrame(_npiFrame_t *pNPIMsg)
 {
     uint8_t *pSerMsg;
 
@@ -894,16 +878,15 @@ static uint8_t * NPITask_SerializeFrame(_npiFrame_t *pNPIMsg)
         pSerMsg[3] = pNPIMsg->cmd1;
 
         // Copy Data Payload
-        memcpy(&pSerMsg[4],pNPIMsg->pData,pNPIMsg->dataLen);
+        memcpy(&pSerMsg[4], pNPIMsg->pData, pNPIMsg->dataLen);
     }
     else
     {
-      HAL_ASSERT(HAL_ASSERT_CAUSE_OUT_OF_MEMORY);
+        HAL_ASSERT(HAL_ASSERT_CAUSE_OUT_OF_MEMORY);
     }
 
     return pSerMsg;
 }
-
 
 // -----------------------------------------------------------------------------
 //! \brief      Function creates an NPI Frame struct from RxBuf contents
@@ -913,7 +896,7 @@ static uint8_t * NPITask_SerializeFrame(_npiFrame_t *pNPIMsg)
 //!
 //! \return     _npiFrame_t*  Equivalent NPI Frame of RxBuf
 // -----------------------------------------------------------------------------
-static _npiFrame_t * NPITask_DeserializeFrame(void)
+static _npiFrame_t *NPITask_DeserializeFrame(void)
 {
     _npiFrame_t *pMsg;
     uint16_t datalen;
@@ -961,35 +944,34 @@ static void NPITask_ProcessTXQ(Queue_Handle txQ)
 
     // Must block task pre-emption so that the higher priority tasks
     // are not also manipulated txQ at the same time
-    key = NPIUtil_EnterCS();
-    pMsg = (_npiFrame_t *) NPIUtil_dequeueMsg(txQ);
+    key  = NPIUtil_EnterCS();
+    pMsg = (_npiFrame_t *)NPIUtil_dequeueMsg(txQ);
     NPIUtil_ExitCS(key);
 
     if (pMsg != NULL)
     {
         // Serialize NPI Frame to be sent over Transport Layer
-        if(lastQueuedTxMsg != NULL)
+        if (lastQueuedTxMsg != NULL)
         {
-          NPIUtil_free(lastQueuedTxMsg);
-          lastQueuedTxMsg = NULL;
+            NPIUtil_free(lastQueuedTxMsg);
+            lastQueuedTxMsg = NULL;
         }
         lastQueuedTxMsg = NPITask_SerializeFrame(pMsg);
 
         if (lastQueuedTxMsg != NULL)
         {
-          // Write byte array over Transport Layer
-          // We have already checked if TL is busy so we assume write succeeds
-          NPITL_writeTL(lastQueuedTxMsg, pMsg->dataLen + NPI_MSG_HDR_LENGTH);
-          // If the message is a synchronous response or request
-          if (NPI_GET_MSG_TYPE(pMsg) == NPI_MSG_TYPE_SYNCREQ ||
-              NPI_GET_MSG_TYPE(pMsg) == NPI_MSG_TYPE_SYNCRSP)
-          {
-              // Decrement the outstanding Sync REQ/RSP flag.
-              syncTransactionInProgress--;
-          }
+            // Write byte array over Transport Layer
+            // We have already checked if TL is busy so we assume write succeeds
+            NPITL_writeTL(lastQueuedTxMsg, pMsg->dataLen + NPI_MSG_HDR_LENGTH);
+            // If the message is a synchronous response or request
+            if (NPI_GET_MSG_TYPE(pMsg) == NPI_MSG_TYPE_SYNCREQ || NPI_GET_MSG_TYPE(pMsg) == NPI_MSG_TYPE_SYNCRSP)
+            {
+                // Decrement the outstanding Sync REQ/RSP flag.
+                syncTransactionInProgress--;
+            }
         }
 
-        //Free NPI frame
+        // Free NPI frame
         NPITask_freeFrame(pMsg);
     }
 }
@@ -1006,8 +988,8 @@ static void NPITask_processRXQ(void)
 
     // Must lock interrupts because RX Queues are accessed from
     // both NPI Task context and ISR
-    key = NPIUtil_EnterCS();
-    pMsg = (_npiFrame_t *) NPIUtil_dequeueMsg(npiRxQueue);
+    key  = NPIUtil_EnterCS();
+    pMsg = (_npiFrame_t *)NPIUtil_dequeueMsg(npiRxQueue);
     NPIUtil_ExitCS(key);
 
     if (pMsg != NULL)
@@ -1038,8 +1020,8 @@ static void NPITask_processSyncRXQ(void)
     {
         // Must lock interrupts because RX Queues are accessed from
         // both NPI Task context and ISR
-        key = NPIUtil_EnterCS();
-        pMsg = (_npiFrame_t *) NPIUtil_dequeueMsg(npiSyncRxQueue);
+        key  = NPIUtil_EnterCS();
+        pMsg = (_npiFrame_t *)NPIUtil_dequeueMsg(npiSyncRxQueue);
         NPIUtil_ExitCS(key);
 
         if (pMsg != NULL)
@@ -1047,8 +1029,8 @@ static void NPITask_processSyncRXQ(void)
             // Route to SS based on ID in message
             if (NPITask_routeHostToSS(pMsg) == NPI_SUCCESS)
             {
-              // Increment the outstanding Sync REQ/RSP flag.
-              syncTransactionInProgress++;
+                // Increment the outstanding Sync REQ/RSP flag.
+                syncTransactionInProgress++;
             }
             else
             {
@@ -1089,48 +1071,47 @@ static void NPITask_transportDoneCallBack(uint16_t sizeRx, uint16_t sizeTx)
                 // Enqueue to appropriate NPI Task Q and post corresponding event.
                 case NPI_MSG_TYPE_SYNCREQ:
                 case NPI_MSG_TYPE_SYNCRSP:
-                {
+                    {
 #ifdef ICALL_EVENTS
-                    NPIUtil_enqueueMsg(npiSyncRxQueue, syncEvent,
-                                       NPITASK_SYNC_FRAME_RX_EVENT,
-                                       (unsigned char *) pMsg);
-#else //!ICALL_EVENTS
-                    tlDoneISRFlag |= NPITASK_SYNC_FRAME_RX_EVENT;
-                    NPIUtil_enqueueMsg(npiSyncRxQueue, npiSem, (unsigned char *) pMsg);
-#endif //ICALL_EVENTS
-                    break;
-                }
+                        NPIUtil_enqueueMsg(npiSyncRxQueue,
+                                           syncEvent,
+                                           NPITASK_SYNC_FRAME_RX_EVENT,
+                                           (unsigned char *)pMsg);
+#else  //! ICALL_EVENTS
+                        tlDoneISRFlag |= NPITASK_SYNC_FRAME_RX_EVENT;
+                        NPIUtil_enqueueMsg(npiSyncRxQueue, npiSem, (unsigned char *)pMsg);
+#endif // ICALL_EVENTS
+                        break;
+                    }
                 case NPI_MSG_TYPE_ASYNC:
-                {
+                    {
 #ifdef ICALL_EVENTS
-                    NPIUtil_enqueueMsg(npiRxQueue, syncEvent,
-                                       NPITASK_FRAME_RX_EVENT,
-                                       (unsigned char *) pMsg);
-#else //!ICALL_EVENTS
-                    tlDoneISRFlag |= NPITASK_FRAME_RX_EVENT;
-                    NPIUtil_enqueueMsg(npiRxQueue, npiSem, (unsigned char *) pMsg);
-#endif //ICALL_EVENTS
-                    break;
-                }
+                        NPIUtil_enqueueMsg(npiRxQueue, syncEvent, NPITASK_FRAME_RX_EVENT, (unsigned char *)pMsg);
+#else  //! ICALL_EVENTS
+                        tlDoneISRFlag |= NPITASK_FRAME_RX_EVENT;
+                        NPIUtil_enqueueMsg(npiRxQueue, npiSem, (unsigned char *)pMsg);
+#endif // ICALL_EVENTS
+                        break;
+                    }
                 default:
-                {
-                    // Unexpected Msg Type. Free Msg
-                    NPITask_freeFrame(pMsg);
-                    break;
-                }
+                    {
+                        // Unexpected Msg Type. Free Msg
+                        NPITask_freeFrame(pMsg);
+                        break;
+                    }
             }
         }
     }
 
     if (sizeTx && lastQueuedTxMsg)
     {
-      txcomplete++;
+        txcomplete++;
 #ifdef ICALL_EVENTS
-      Event_post(syncEvent, NPITASK_TX_DONE_EVENT);
-#else //!ICALL_EVENTS
-      tlDoneISRFlag |= NPITASK_TX_DONE_EVENT;
-      Semaphore_post(npiSem);
-#endif //ICALL_EVENTS
+        Event_post(syncEvent, NPITASK_TX_DONE_EVENT);
+#else  //! ICALL_EVENTS
+        tlDoneISRFlag |= NPITASK_TX_DONE_EVENT;
+        Semaphore_post(npiSem);
+#endif // ICALL_EVENTS
     }
 
     // Check to see if there pending messages waiting to be sent
@@ -1142,10 +1123,10 @@ static void NPITask_transportDoneCallBack(uint16_t sizeRx, uint16_t sizeTx)
         // the semaphore.
 #ifdef ICALL_EVENTS
         Event_post(syncEvent, NPITASK_TX_READY_EVENT);
-#else //!ICALL_EVENTS
+#else  //! ICALL_EVENTS
         tlDoneISRFlag |= NPITASK_TX_READY_EVENT;
         Semaphore_post(npiSem);
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
     }
 }
 
@@ -1156,41 +1137,41 @@ static void NPITask_transportDoneCallBack(uint16_t sizeRx, uint16_t sizeTx)
 // -----------------------------------------------------------------------------
 static void NPITask_RemRdyEventCB(uint8_t state)
 {
-  if (state == REM_RDY_ASSERTED
+    if (state == REM_RDY_ASSERTED
 #ifdef ICALL_EVENTS
-      && syncEvent != NULL)
-#else //!ICALL_EVENTS
-      && npiSem != NULL)
-#endif //ICALL_EVENTS
-  {
-#ifdef ICALL_EVENTS
-    Event_post(syncEvent, NPITASK_REM_RDY_EVENT);
-#else //!ICALL_EVENTS
-    remRdyISRFlag = NPITASK_REM_RDY_EVENT;
-    Semaphore_post(npiSem);
-#endif //ICALL_EVENTS
-  }
-#ifdef NPI_CONTROLLER
-  else if (state == REM_RDY_DEASSERTED
-#ifdef ICALL_EVENTS
-      )
-#else //!ICALL_EVENTS
-      && npiSem != NULL)
-#endif //ICALL_EVENTS
-  {
-    // There could be pending TX messages that are waiting for Remote Ready
-    // signal to be deasserted so that NPI is no longer busy
-    if (!Queue_empty(npiSyncTxQueue) || !Queue_empty(npiTxQueue))
+        && syncEvent != NULL)
+#else  //! ICALL_EVENTS
+        && npiSem != NULL)
+#endif // ICALL_EVENTS
     {
 #ifdef ICALL_EVENTS
-        Event_post(syncEvent, NPITASK_TX_READY_EVENT);
-#else //!ICALL_EVENTS
-        remRdyISRFlag |= NPITASK_TX_READY_EVENT;
+        Event_post(syncEvent, NPITASK_REM_RDY_EVENT);
+#else  //! ICALL_EVENTS
+        remRdyISRFlag = NPITASK_REM_RDY_EVENT;
         Semaphore_post(npiSem);
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
     }
-  }
-#endif //NPI_CONTROLLER
+#ifdef NPI_CONTROLLER
+    else if (state == REM_RDY_DEASSERTED
+    #ifdef ICALL_EVENTS
+    )
+    #else  //! ICALL_EVENTS
+             && npiSem != NULL)
+    #endif // ICALL_EVENTS
+    {
+        // There could be pending TX messages that are waiting for Remote Ready
+        // signal to be deasserted so that NPI is no longer busy
+        if (!Queue_empty(npiSyncTxQueue) || !Queue_empty(npiTxQueue))
+        {
+    #ifdef ICALL_EVENTS
+            Event_post(syncEvent, NPITASK_TX_READY_EVENT);
+    #else  //! ICALL_EVENTS
+            remRdyISRFlag |= NPITASK_TX_READY_EVENT;
+            Semaphore_post(npiSem);
+    #endif // ICALL_EVENTS
+        }
+    }
+#endif // NPI_CONTROLLER
 }
 
 // -----------------------------------------------------------------------------
@@ -1199,18 +1180,18 @@ static void NPITask_RemRdyEventCB(uint8_t state)
 // -----------------------------------------------------------------------------
 void NPITask_sendAssertMsg(uint8_t assertMsg)
 {
-  // Disable all task switching and interrupts
-  Hwi_disable();
-  Swi_disable();
-  Task_disable();
+    // Disable all task switching and interrupts
+    Hwi_disable();
+    Swi_disable();
+    Task_disable();
 
-  // Setup and send final assert message via NPI
-  sendAssertMessage[4] = assertMsg;
-  NPITL_writeBypassSafeTL(&sendAssertMessage[0], NPI_ASSERT_MSG_LEN);
+    // Setup and send final assert message via NPI
+    sendAssertMessage[4] = assertMsg;
+    NPITL_writeBypassSafeTL(&sendAssertMessage[0], NPI_ASSERT_MSG_LEN);
 
-  // Spinlock doesn't work when power savings enbabled
+    // Spinlock doesn't work when power savings enbabled
 #ifndef POWER_SAVING
-  HAL_ASSERT_SPINLOCK;
+    HAL_ASSERT_SPINLOCK;
 #endif
 }
 
@@ -1220,14 +1201,14 @@ void NPITask_sendAssertMsg(uint8_t assertMsg)
 // -----------------------------------------------------------------------------
 void NPITask_chgAssertHdr(uint8_t npi_cmd0, uint8_t npi_cmd1)
 {
-  _npiCSKey_t key;
+    _npiCSKey_t key;
 
-  key = NPIUtil_EnterCS();
+    key = NPIUtil_EnterCS();
 
-  sendAssertMessage[2] = npi_cmd0;
-  sendAssertMessage[3] = npi_cmd1;
+    sendAssertMessage[2] = npi_cmd0;
+    sendAssertMessage[3] = npi_cmd1;
 
-  NPIUtil_ExitCS(key);
+    NPIUtil_ExitCS(key);
 }
 
 // -----------------------------------------------------------------------------
@@ -1236,25 +1217,24 @@ void NPITask_chgAssertHdr(uint8_t npi_cmd0, uint8_t npi_cmd1)
 #ifdef ICALL_EVENTS
 void NPIData_postAssertNpiMsgEvent(uint8_t assertType)
 {
-  npiTask_assertType = assertType;
-  if (syncEvent == NULL)
-  {
-    //NPI still not opened
-    return;
-  }
-  Event_post(syncEvent, NPITASK_ASSERT_MSG_EVENT);
+    npiTask_assertType = assertType;
+    if (syncEvent == NULL)
+    {
+        // NPI still not opened
+        return;
+    }
+    Event_post(syncEvent, NPITASK_ASSERT_MSG_EVENT);
 }
-#else //!ICALL_EVENTS
+#else  //! ICALL_EVENTS
 void NPIData_postAssertNpiMsgEvent(uint8_t assertType)
 {
-  npiTask_assertType = assertType;
-  if (npiSem == NULL)
-  {
-    //NPI still not opened
-    return;
-  }
-  NPITask_events |= NPITASK_ASSERT_MSG_EVENT;
-  Semaphore_post(npiSem);
+    npiTask_assertType = assertType;
+    if (npiSem == NULL)
+    {
+        // NPI still not opened
+        return;
+    }
+    NPITask_events |= NPITASK_ASSERT_MSG_EVENT;
+    Semaphore_post(npiSem);
 }
-#endif //ICALL_EVENTS
-
+#endif // ICALL_EVENTS

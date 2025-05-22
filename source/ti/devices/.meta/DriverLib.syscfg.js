@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -157,15 +157,28 @@ function getLibs() {
     /* get device ID to select appropriate libs */
     let deviceId = system.deviceData.deviceId;
 
+    let driverlibSuffix = "";
+
+    if (system.modules["/ti/utils/TrustZone"])
+    {
+        if (deviceId.match(/CC27/))
+        {
+            /* For CC27xx devices a non-secure version of the driverlib must be
+             * used.
+             */
+            driverlibSuffix = "_ns";
+        }
+    }
+
     let libs = [];
 
     if (deviceId.match(/CC13|CC26/)) {
         libs.push(
-            "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/bin/" + getToolchainDir() + "/driverlib.lib"
+            "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/bin/" + getToolchainDir() + "/driverlib" + driverlibSuffix +".lib"
         );
     } else {
         libs.push(
-            "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/lib/" + getToolchainDir() + "/driverlib.a"
+            "ti/devices/" + getAttrs(deviceId).deviceDir + "/driverlib/lib/" + getToolchainDir() + "/driverlib" + driverlibSuffix + ".a"
         );
     }
 
@@ -184,7 +197,20 @@ function getOpts() {
     /* get device ID to select appropriate defines */
     let deviceId = system.deviceData.deviceId;
 
-    return ["-D" + getAttrs(deviceId).deviceDefine];
+    let opts = ["-D" + getAttrs(deviceId).deviceDefine];
+
+    if (system.modules["/ti/utils/TrustZone"])
+    {
+        if (deviceId.match(/CC27/))
+        {
+            /* When using the non-secure driverlib, DRIVERLIB_NS must be
+             * defined.
+             */
+            opts.push("-DDRIVERLIB_NS");
+        }
+    }
+
+    return opts;
 }
 
 
@@ -194,7 +220,7 @@ function getLinkerDefs() {
 
     /* default region values, may vary per device*/
     let ccfg = [
-        { name: "CCFG_BASE", value: 0x4e020000 },
+        { name: "CCFG_BASE", value: 0x4E020000 },
         { name: "CCFG_SIZE", value: 0x00000800 }
     ];
     let s2rram = [
@@ -202,11 +228,14 @@ function getLinkerDefs() {
         { name: "S2RRAM_SIZE", value: 0x00001000 }
     ];
     let scfg = [
-        { name: "SCFG_BASE", value: 0x4e040000 },
+        { name: "SCFG_BASE", value: 0x4E040000 },
         { name: "SCFG_SIZE", value: 0x00000400 }
     ];
+    /* HSM might overlap with flash, if so flash size will be reduced in the
+     * linker file.
+     */
     let hsmFw = [
-        { name: "HSM_FW_SIZE", value: 0x00018000 }
+        { name: "HSM_FW_BASE", value: 0x000E8000 }
     ];
     let flashBase = [
         { name: "FLASH0_BASE", value: 0x00000000 }
@@ -249,89 +278,38 @@ function getLinkerDefs() {
     dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
     dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105RHA"];
 
-    var module = system.modules['/ti/devices/CCFG'];
-
-    /* Check if the device has a CCFG module */
-    if (module) {
-        var inst = module.$static;
-
-        /* Only override Flash/RAM, base/size if Secure Boot is enabled for CC27XX */
-        if (deviceId.match(/CC27../) &&
-            (dev2mem[deviceId] != undefined) &&
-            (inst.authMethod != "No Authentication")) {
+    /* Override FLASH, RAM and S2RRAM base/size if TFM is enabled */
+    if (system.modules["/ti/utils/TrustZone"]) {
+        if (deviceId.match(/CC27../)) {
+            let nonSecureOffset = 0x10000000;
+            let nonSecureHeaderSize = 0x100;
+            let secureFlashSize = 0x38000;
+            let secureRamSize = 0xC000;
 
             let entry = dev2mem[deviceId];
-            let flash_base = 0, flash_size = 0, imgType;
-            let prim0Start, prim0Len, sec0Start, sec0Len;
-
-            /* Get active imgType, and Primary/Secondary slots */
-            if (!(system.modules["/ti/utils/TrustZone"])) {
-                if (inst.mode == "Overwrite") {
-                    imgType = inst.imgTypeSingleOvrWrt;
-                } else {
-                    imgType = inst.imgTypeSingleXIP;
-                }
-
-                prim0Start = inst.prim0StartSingle;
-                prim0Len = inst.prim0LenSingle;
-                sec0Start = inst.sec0StartSingle;
-                sec0Len = inst.sec0LenSingle;
-
-            } else {
-                imgType = inst.imgTypeDual;
-
-                prim0Start = inst.prim0StartSecure;
-                prim0Len = inst.prim0LenSecure;
-                sec0Start = inst.sec0StartSecure;
-                sec0Len = inst.sec0LenSecure;
-            }
-
-            if (inst.mode == "Overwrite") {
-                if (system.modules["/ti/utils/TrustZone"]) {
-                    if (imgType == "APP 1") {
-                        flash_base = inst.prim1Start + inst.hdrSize;
-                        flash_size = inst.prim1Len;
-                    } else {
-                        flash_base = prim0Start + inst.hdrSize;
-                        flash_size = prim0Len;
-                    }
-                } else {
-                    flash_base = prim0Start + inst.hdrSize;
-                    flash_size = prim0Len;
-                }
-            } else { /* XIP */
-                if (imgType == "APP for Primary") {
-                    flash_base = prim0Start + inst.hdrSize;
-                    flash_size = prim0Len;
-                } else {
-                    flash_base = sec0Start + inst.hdrSize;
-                    flash_size = sec0Len;
-                }
-            }
-
-            if (imgType == "SSB") {
-                flash_base = inst.ssbStart + inst.hdrSize;
-                flash_size = inst.ssbLen;
-            }
-
             for (let i = 0; i < entry.length; i++) {
                 if (entry[i].name == "FLASH0_BASE") {
-                    entry[i].value = flash_base;
+                    entry[i].value += nonSecureOffset + secureFlashSize + nonSecureHeaderSize;
                 } else if (entry[i].name == "FLASH0_SIZE") {
-                    entry[i].value = flash_size;
-                }
-            }
-
-            /* In the following code, the CBOR prefix 8 bytes + 32 byte random number = 40 bytes,
-               so this is the offset at which the linker must see the start of physical SRAM.
-            */
-            if (inst.bootSeedOffset != 0xff) {
-                for (let i = 0; i < entry.length; i++) {
-                    if (entry[i].name == "RAM0_BASE") {
-                        entry[i].value = entry[i].value + (inst.bootSeedOffset * 16) + 40;
-                    } else if (entry[i].name == "RAM0_SIZE") {
-                        entry[i].value = entry[i].value - (inst.bootSeedOffset * 16) - 40;
-                    }
+                    entry[i].value -= secureFlashSize + nonSecureHeaderSize;
+                } else if (entry[i].name == "HSM_FW_BASE") {
+                    /* This is done to make the linker file logic which is using
+                     * HSM_FW_BASE to work correctly when TrustZone is enabled.
+                     * If this is not done, HSM_FW_BASE will be less than
+                     * FLASH0_SIZE, which the logic in the linker files does not
+                     * support.
+                     * The TrustZone specific logic in the DriverLib module
+                     * (this file) is planned to be moved elsewhere, and the
+                     * HSM FW specific logic will be updated according to the
+                     * new TrustZone logic.
+                     */
+                    entry[i].value += nonSecureOffset;
+                } else if (entry[i].name == "RAM0_BASE") {
+                    entry[i].value += nonSecureOffset + secureRamSize;
+                } else if (entry[i].name == "RAM0_SIZE") {
+                    entry[i].value -= secureRamSize;
+                } else if (entry[i].name == "S2RRAM_BASE") {
+                    entry[i].value += nonSecureOffset;
                 }
             }
         }
@@ -362,5 +340,6 @@ exports = {
     /* DriverLib-specific exports */
     getAttrs: getAttrs,
     getOpts: getOpts,
-    getLibs: getLibs
+    getLibs: getLibs,
+    getLinkerDefs: getLinkerDefs
 };

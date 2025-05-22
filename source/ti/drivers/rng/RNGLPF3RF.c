@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,15 +73,12 @@ typedef bool (*RNGLPF3RF_validator)(RNGLPF3RF_OperationParameters *opParams);
 /* Mask used to extract the upper or lower byte of a word */
 #define BYTE_MASK 0xff
 
-/*
- * Window size for Adaptive Proportion Test
- */
+/* Window size for Adaptive Proportion Test */
 #define RNG_APT_WINDOW_SIZE 512
 
 #define RNG_MAX_RESEED_INTERVAL UINT32_MAX
 
-/*
- * These values are used with the validator function prototype to provide potentially relevant parameters
+/* These values are used with the validator function prototype to provide potentially relevant parameters
  * for validation after a candidate number has been generated.
  */
 struct RNGLPF3RF_OperationParameters_
@@ -193,8 +190,7 @@ static int_fast16_t RNGLPF3RF_fillPoolIfLessThan(size_t bytes)
 
     if (RNGLPF3RF_instanceData.poolLevel < bytes)
     {
-        /*
-         * Adjust poolLevel to ensure word alignment as underlying AES
+        /* Adjust poolLevel to ensure word alignment as underlying AES
          * driver may only support output to word aligned addresses.
          */
         RNGLPF3RF_instanceData.poolLevel = (RNGLPF3RF_instanceData.poolLevel >> 2u) << 2u;
@@ -220,7 +216,7 @@ static int_fast16_t RNGLPF3RF_fillPoolIfLessThan(size_t bytes)
  * Updates bytesRemaining to fulfill the total request (rounded up from number of bits remaining.)
  * These will have to be generated since these additional bytes could not be copied from the pool.
  *
- * Postcondition: If dest is not word aligned, then bytesRemaining  will either be 0 or dest[byteSize-bytesRemaining]
+ * Postcondition: If dest is not word aligned, then bytesRemaining will either be 0 or dest[byteSize-bytesRemaining]
  *                will be word aligned.
  */
 /*
@@ -228,13 +224,17 @@ static int_fast16_t RNGLPF3RF_fillPoolIfLessThan(size_t bytes)
  */
 static int_fast16_t RNGLPF3RF_getEntropyFromPool(void *dest, size_t byteSize, size_t *bytesRemaining)
 {
+    int_fast16_t returnValue       = RNG_STATUS_SUCCESS;
+    size_t bytesToCopy             = byteSize;
+    size_t nonWordAlignedDestBytes = (uintptr_t)dest & 0x3u;
 
-    uint8_t *byteDest        = (uint8_t *)dest;
-    size_t bytesToCopy       = byteSize;
-    int_fast16_t returnValue = RNG_STATUS_SUCCESS;
-
-    if (RNGLPF3RF_instanceData.poolLevel < byteSize && ((uintptr_t)dest & 0x3u) != 0u &&
-        RNGLPF3RF_instanceData.poolLevel < (4 - ((uintptr_t)dest & 0x3u)))
+    /* Fill the entropy pool if:
+     * 1. The `poolLevel` is less than number of bytes requested.
+     * 2. The `dest` pointer is not aligned to a 4-byte boundary.
+     * 3. The `poolLevel` is less than the number of bytes needed to align `dest` to the next 4-byte boundary.
+     */
+    if ((RNGLPF3RF_instanceData.poolLevel < byteSize) && (nonWordAlignedDestBytes != 0u) &&
+        (RNGLPF3RF_instanceData.poolLevel < (4u - nonWordAlignedDestBytes)))
     {
         /* Fill pool so there will be enough entropy to get to an aligned address within dest[]. */
         returnValue = RNGLPF3RF_fillPoolIfLessThan(RNG_poolByteSize);
@@ -242,18 +242,20 @@ static int_fast16_t RNGLPF3RF_getEntropyFromPool(void *dest, size_t byteSize, si
 
     if (RNGLPF3RF_instanceData.poolLevel < byteSize)
     {
-        /*
-         * Cap number of bytes taken from pool to ensure next byte of entropy to generate into dest
+        /* Cap number of bytes taken from pool to ensure next byte of entropy to generate into dest
          * is at a word-aligned address.
          */
-        bytesToCopy = (4 - ((uintptr_t)dest & 0x3u));
+        bytesToCopy = (4 - nonWordAlignedDestBytes);
         bytesToCopy = bytesToCopy + (((RNGLPF3RF_instanceData.poolLevel - bytesToCopy) >> 2u) << 2u);
     }
 
-    /* Get entropy from pool */
-    if ((bytesToCopy > 0u) && (RNGLPF3RF_instanceData.poolLevel > 0u))
+    /* Get entropy from pool. The conditional check for (RNGLPF3RF_instanceData.poolLevel >= bytesToCopy) is needed
+     * to resolve GCC "warning: 'memcpy' specified bound 4294967295 exceeds maximum object size 2147483647"
+     */
+    if ((bytesToCopy > 0u) && (RNGLPF3RF_instanceData.poolLevel > 0u) &&
+        (RNGLPF3RF_instanceData.poolLevel >= bytesToCopy))
     {
-        (void)memcpy(byteDest, &RNG_instancePool[RNGLPF3RF_instanceData.poolLevel - bytesToCopy], bytesToCopy);
+        (void)memcpy(dest, &RNG_instancePool[RNGLPF3RF_instanceData.poolLevel - bytesToCopy], bytesToCopy);
         CryptoUtils_memset(&RNG_instancePool[RNGLPF3RF_instanceData.poolLevel - bytesToCopy],
                            RNG_poolByteSize,
                            0,
@@ -315,8 +317,7 @@ static int_fast16_t RNGLPF3RF_getValidatedNumber(RNG_Handle handle,
 
     if (returnValue == RNG_STATUS_SUCCESS)
     {
-        /*
-         * Convert bit length to byte size by rounding up the number of bytes.
+        /* Convert bit length to byte size by rounding up the number of bytes.
          * Mask the extra bits from rounding up written in the destination buffer.
          */
         byteSize        = (randomNumberBitLength + 7u) >> 3u;
@@ -540,7 +541,9 @@ int_fast16_t RNGLPF3RF_conditionNoiseToGenerateSeed(uint32_t *noisePtr)
 {
     int_fast16_t returnValue = RNG_STATUS_SUCCESS;
     int_fast16_t drbgResult;
-    uint32_t seed[256 / 32]; /* Seed is SHA256 Digest: 256 bits */
+    /* Seed length = key length + AES block length */
+    uint32_t seed[(AESCTRDRBG_AES_KEY_LENGTH_128 + AESCTRDRBG_AES_BLOCK_SIZE_BYTES) / 4];
+
     if (RNGLPF3RF_isSeeded == false)
     {
         RNGLPF3RF_instanceData.poolLevel = 0;
@@ -629,8 +632,7 @@ RNG_Handle RNG_construct(const RNG_Config *config, const RNG_Params *params)
         }
         else
         {
-            /*
-             * Return behavior is set statically for all instances and on open the requesting setting must
+            /* Return behavior is set statically for all instances and on open the requesting setting must
              * match the static setting.
              */
             if (params->returnBehavior != RNGLPF3RF_returnBehavior)
@@ -638,9 +640,7 @@ RNG_Handle RNG_construct(const RNG_Config *config, const RNG_Params *params)
                 handle = NULL;
             }
 
-            /*
-             * Callback return behavior is not supported.
-             */
+            /* Callback return behavior is not supported */
             if (params->returnBehavior == RNG_RETURN_BEHAVIOR_CALLBACK)
             {
                 handle = NULL;
@@ -727,17 +727,12 @@ int_fast16_t RNG_generateKey(RNG_Handle handle, CryptoKey *key)
     uint8_t *randomBits;
     size_t randomBitsLength;
 
-    if (key->encoding != CryptoKey_BLANK_PLAINTEXT)
+    if ((key == NULL) || (key->encoding != CryptoKey_BLANK_PLAINTEXT) ||
+        (key->u.plaintext.keyLength > (RNG_MAX_BIT_LENGTH >> 3u)))
     {
         returnValue = RNG_STATUS_INVALID_INPUTS;
     }
-
-    if (key->u.plaintext.keyLength > (RNG_MAX_BIT_LENGTH >> 3u))
-    {
-        returnValue = RNG_STATUS_INVALID_INPUTS;
-    }
-
-    if (returnValue == RNG_STATUS_SUCCESS)
+    else
     {
         randomBits       = key->u.plaintext.keyMaterial;
         randomBitsLength = key->u.plaintext.keyLength << 3u; /* Bytes to bits */
@@ -766,13 +761,12 @@ int_fast16_t RNG_generateLEKeyInRange(RNG_Handle handle,
     int_fast16_t returnValue;
     uint8_t *randomBits;
 
-    if (key->encoding != CryptoKey_BLANK_PLAINTEXT)
+    if ((key == NULL) || (key->encoding != CryptoKey_BLANK_PLAINTEXT))
     {
         returnValue = RNG_STATUS_INVALID_INPUTS;
     }
     else
     {
-
         randomBits = key->u.plaintext.keyMaterial;
 
         returnValue = RNGLPF3RF_getValidatedNumber(handle,
@@ -799,7 +793,7 @@ int_fast16_t RNG_generateBEKeyInRange(RNG_Handle handle,
     int_fast16_t returnValue;
     uint8_t *randomBits;
 
-    if (key->encoding != CryptoKey_BLANK_PLAINTEXT)
+    if ((key == NULL) || (key->encoding != CryptoKey_BLANK_PLAINTEXT))
     {
         returnValue = RNG_STATUS_INVALID_INPUTS;
     }

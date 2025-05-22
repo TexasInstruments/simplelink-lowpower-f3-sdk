@@ -97,7 +97,6 @@ extern uint8_t zb_mac_default_tx_power;
 #define ZB_HW_ECDH_P256_PUBLIC_KEY
 #define ZB_HW_ECDH_P256_SHARED_SECRET
 #define ZB_HW_HMAC_SHA_256
-#define ZB_MAC_RADIO_CANT_WAKEUP_MCU
 
 #if defined ZB_USE_SLEEP && defined NCP_MODE
 #define ZB_OSIF_NCP_TRANSPORT_PREPARE_TO_SLEEP() zb_osif_spi_prepare_to_sleep()
@@ -139,7 +138,7 @@ extern uint8_t zb_mac_default_tx_power;
 #endif //ZB_CONFIGURABLE_MEM
 
 #define ZB_MANUAL_ADDR_FILTER
-/* #define MAC_RADIO_TX_WATCHDOG_ALARM ZB_MILLISECONDS_TO_BEACON_INTERVAL(500) */
+#define MAC_RADIO_TX_WATCHDOG_ALARM ZB_MILLISECONDS_TO_BEACON_INTERVAL(1000)
 
 /*
  * Uncomment when implemented GP
@@ -164,5 +163,15 @@ extern uint8_t zb_mac_default_tx_power;
 /* our MAC */
 #define ZB_MAC_CONFIGURABLE_TX_POWER
 #define ZB_AUTO_ACK_TX
+
+#define ZB_INTERRUPT_SAFE_CALLBACKS
+#define ZB_INTERRUPT_SAFE_ALARMS
+#define ZB_INTERRUPT_SAFE_BUFS
+
+// Used for LQA calculation
+#define ZB_LQI_MIN 30
+#define ZB_LQI_MAX 64
+#define ZB_RSSI_MIN -100
+#define ZB_RSSI_MAX -20
 
 #endif /* ZB_PLATFORM_CONFIG_H */

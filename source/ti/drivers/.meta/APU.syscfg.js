@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@ mathematical acceleration module that is able to operate with single-precision
 floating point numbers (IEEE 754 format) and is optimized to work with
 complex numbers.
 
-[1]: /drivers/doxygen/html/_v_c_e_l_p_f3_8h.html#details "C API reference"
+[1]: /drivers/doxygen/html/_a_p_u_l_p_f3_8h.html#details "C API reference"
 `,
     maxInstances: 1,
     moduleStatic: {

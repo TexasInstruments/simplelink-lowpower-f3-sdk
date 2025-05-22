@@ -82,6 +82,16 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
             Driverlib::${TI_PLATFORM}
         )
 
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}_its
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}_its
+            SOURCES ${SOURCES_ITS_CC35XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
+
         ti_export_package()
     endif()
 endforeach()

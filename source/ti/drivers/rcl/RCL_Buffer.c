@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,7 @@
 #include <ti/drivers/rcl/RCL_Buffer.h>
 #include <ti/drivers/rcl/RCL_Debug.h>
 
-#include <ti/log/Log.h>
+#include <ti/drivers/dpl/HwiP.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_ints.h)
@@ -80,6 +80,12 @@ uint8_t *RCL_TxBuffer_init(RCL_Buffer_TxBuffer *buffer, uint32_t numPad, uint32_
         buffer->numPad = numPad;
         /* Start writing at pad0, then continue into data field */
         uint8_t *data = &buffer->pad0;
+        if (numPad > 0)
+        {
+            --numPad;
+            *data = numPad;
+            data = buffer->data;
+        }
         while (numPad > 0)
         {
             --numPad;
@@ -272,26 +278,35 @@ bool RCL_MultiBuffer_RxEntry_isLast(RCL_MultiBuffer_ListInfo *listInfo)
 }
 
 /*
- *  ======== RCL_MultiBuffer_RxEntry_consume ========
+ *  ======== RCL_Buffer_readPartialRxBuffer ========
  */
-void RCL_MultiBuffer_RxEntry_consume(RCL_MultiBuffer_ListInfo *listInfo, List_List *consumedBuffers)
+size_t RCL_Buffer_readPartialRxBuffer(RCL_Buffer_DataEntry *dataEntry, size_t entrySize)
 {
-    RCL_Debug_assert(listInfo != NULL);
-
-    List_List *multiBuffers = listInfo->multiBuffers;
-    RCL_Debug_assert(multiBuffers != NULL);
-
-    RCL_MultiBuffer *nextBuffer = listInfo->nextBuffer;
-    RCL_MultiBuffer *head = RCL_MultiBuffer_head(multiBuffers);
-    if (head != NULL)
+    /* Default to no data available */
+    size_t numBytesAvailable = 0;
+    if (dataEntry != NULL && entrySize >= offsetof(RCL_Buffer_DataEntry, data))
     {
-        while (head != nextBuffer)
+        uint32_t rp;
+        uintptr_t key = HwiP_disable();
+        numBytesAvailable = LRF_getUncommittedFifoStatus(&rp);
+        /* Round number of words up - uninitialized bytes may be read, but will not be shown as available */
+        uint32_t numWords = RCL_Buffer_bytesToWords(numBytesAvailable);
+        /* Make sure that everything fits in the entry, and do not use non-word part of end of entry */
+        if ((numWords << 2) > entrySize)
         {
-            RCL_Debug_assert(head != NULL);
-            List_consumeAndStore(multiBuffers, consumedBuffers);
-            head = (RCL_MultiBuffer *) List_next((List_Elem *) head);
+            numWords = entrySize >> 2;
+            numBytesAvailable = numWords << 2;
         }
+
+        if (numBytesAvailable >= sizeof(dataEntry->length))
+        {
+            LRF_peekRxFifoWords((uint32_t *)dataEntry, numWords, rp);
+            /* Write actual number of available bytes in length field */
+            dataEntry->length = numBytesAvailable - sizeof(dataEntry->length);
+        }
+        HwiP_restore(key);
     }
+    return numBytesAvailable;
 }
 
 /*
@@ -437,3 +452,4 @@ static void List_consumeAndStore(List_List *list, List_List *consumedBuffers)
         List_put(consumedBuffers, consumedBuffer);
     }
 }
+

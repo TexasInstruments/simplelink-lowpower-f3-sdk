@@ -3,7 +3,7 @@
  *
  *  Description:    Utility functions to interact with interrupts and the NVIC
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -71,14 +71,14 @@ static void IntDefaultHandler(void)
 //*****************************************************************************
 #if defined(DOXYGEN)
 // Dummy void pointer used as placeholder to generate Doxygen documentation.
-void (*ramVectorTable[NUM_INTERRUPTS])(void);
+void (*volatile ramVectorTable[NUM_INTERRUPTS])(void);
 #elif defined(__IAR_SYSTEMS_ICC__)
     #pragma data_alignment = 256
-static __no_init void (*ramVectorTable[NUM_INTERRUPTS])(void) @ ".ramVecs";
+static __no_init void (*volatile ramVectorTable[NUM_INTERRUPTS])(void) @ ".ramVecs";
 #elif defined(__clang__)
-static __attribute__((section(".ramVecs"), aligned(256))) void (*ramVectorTable[NUM_INTERRUPTS])(void);
+static __attribute__((section(".ramVecs"), aligned(256))) void (*volatile ramVectorTable[NUM_INTERRUPTS])(void);
 #else
-static __attribute__((section(".ramVecs"), aligned(256))) void (*ramVectorTable[NUM_INTERRUPTS])(void);
+static __attribute__((section(".ramVecs"), aligned(256))) void (*volatile ramVectorTable[NUM_INTERRUPTS])(void);
 #endif
 
 //*****************************************************************************

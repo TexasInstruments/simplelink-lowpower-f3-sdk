@@ -67,37 +67,32 @@
 /* Octet string format requires an extra byte at the start of the public key */
 #define OCTET_STRING_OFFSET 1
 
-#define SCRATCH_KEY_OFFSET 512
-#define SCRATCH_KEY_SIZE 96
+#define SCRATCH_KEY_OFFSET  512
+#define SCRATCH_KEY_SIZE    96
 #define SCRATCH_PRIVATE_KEY ((uint32_t *)(PKA_RAM_BASE + SCRATCH_KEY_OFFSET))
-#define SCRATCH_PUBLIC_X ((uint32_t *)(PKA_RAM_BASE + SCRATCH_KEY_OFFSET + 1 * SCRATCH_KEY_SIZE))
-#define SCRATCH_PUBLIC_Y ((uint32_t *)(PKA_RAM_BASE + SCRATCH_KEY_OFFSET + 2 * SCRATCH_KEY_SIZE))
+#define SCRATCH_PUBLIC_X    ((uint32_t *)(PKA_RAM_BASE + SCRATCH_KEY_OFFSET + 1 * SCRATCH_KEY_SIZE))
+#define SCRATCH_PUBLIC_Y    ((uint32_t *)(PKA_RAM_BASE + SCRATCH_KEY_OFFSET + 2 * SCRATCH_KEY_SIZE))
 
 #define SCRATCH_BUFFER_OFFSET 1024
-#define SCRATCH_BUFFER_SIZE 256
-#define SCRATCH_BUFFER_0 ((uint32_t *)(PKA_RAM_BASE + SCRATCH_BUFFER_OFFSET + 0 * SCRATCH_BUFFER_SIZE))
-#define SCRATCH_BUFFER_1 ((uint32_t *)(PKA_RAM_BASE + SCRATCH_BUFFER_OFFSET + 1 * SCRATCH_BUFFER_SIZE))
+#define SCRATCH_BUFFER_SIZE   256
+#define SCRATCH_BUFFER_0      ((uint32_t *)(PKA_RAM_BASE + SCRATCH_BUFFER_OFFSET + 0 * SCRATCH_BUFFER_SIZE))
+#define SCRATCH_BUFFER_1      ((uint32_t *)(PKA_RAM_BASE + SCRATCH_BUFFER_OFFSET + 1 * SCRATCH_BUFFER_SIZE))
 
 /*!
  *  @brief NIST P256 Curve Parameters
  */
-const ECCParams_CurveParams ECCParams_NISTP256 =
-{
-    .curveType      = ECCParams_CURVE_TYPE_SHORT_WEIERSTRASS_AN3,
-    .length         = NISTP256_PARAM_SIZE_BYTES,
-    .prime          = NISTP256_prime.byte,
-    .order          = NISTP256_order.byte,
-    .a              = NISTP256_a.byte,
-    .b              = NISTP256_b.byte,
-    .generatorX     = NISTP256_generator.x.byte,
-    .generatorY     = NISTP256_generator.y.byte,
-    .cofactor       = 1
-};
+const ECCParams_CurveParams ECCParams_NISTP256 = {.curveType  = ECCParams_CURVE_TYPE_SHORT_WEIERSTRASS_AN3,
+                                                  .length     = NISTP256_PARAM_SIZE_BYTES,
+                                                  .prime      = NISTP256_prime.byte,
+                                                  .order      = NISTP256_order.byte,
+                                                  .a          = NISTP256_a.byte,
+                                                  .b          = NISTP256_b.byte,
+                                                  .generatorX = NISTP256_generator.x.byte,
+                                                  .generatorY = NISTP256_generator.y.byte,
+                                                  .cofactor   = 1};
 
 /* Forward declarations */
-static void CryptoUtils_reverseCopyPad(const void *source,
-                                       uint32_t *destination,
-                                       size_t sourceLength);
+static void CryptoUtils_reverseCopyPad(const void *source, uint32_t *destination, size_t sourceLength);
 static inline bool CryptoUtils_buffersMatchWordAligned(const volatile uint32_t *volatile buffer0,
                                                        const volatile uint32_t *volatile buffer1,
                                                        size_t bufferByteLength);
@@ -111,13 +106,12 @@ static uint32_t scratchBuffer0Size = SCRATCH_BUFFER_SIZE;
 static uint32_t scratchBuffer1Size = SCRATCH_BUFFER_SIZE;
 static uint32_t resultPKAMemAddr;
 
-
 /*
  *  ======== CryptoUtils_reverseCopyPad ========
  */
 /*
-*  ======== CryptoUtils_copyPad ========
-*/
+ *  ======== CryptoUtils_copyPad ========
+ */
 #ifndef ECDH_BIG_ENDIAN_KEY
 static void CryptoUtils_copyPad(const void *source, uint32_t *destination, size_t sourceLength)
 {
@@ -185,9 +179,7 @@ static void CryptoUtils_copyPad(const void *source, uint32_t *destination, size_
     }
 }
 #endif
-static void CryptoUtils_reverseCopyPad(const void *source,
-                                       uint32_t *destination,
-                                       size_t sourceLength)
+static void CryptoUtils_reverseCopyPad(const void *source, uint32_t *destination, size_t sourceLength)
 {
     uint32_t i;
     uint8_t remainder;
@@ -195,9 +187,9 @@ static void CryptoUtils_reverseCopyPad(const void *source,
     uint8_t *tempBytePointer;
     const uint8_t *sourceBytePointer;
 
-    remainder = sourceLength % sizeof(uint32_t);
-    temp = 0;
-    tempBytePointer = (uint8_t *)&temp;
+    remainder         = sourceLength % sizeof(uint32_t);
+    temp              = 0;
+    tempBytePointer   = (uint8_t *)&temp;
     sourceBytePointer = (uint8_t *)source;
 
     /*
@@ -334,7 +326,6 @@ static int_fast16_t ECDHCC26X2_getKeyResult(CryptoKey_Plaintext *key,
     xCoordinate = NULL;
     yCoordinate = NULL;
 
-
     /*
      * Support for both Plaintext and KeyStore keys for myPrivateKey
      */
@@ -343,18 +334,17 @@ static int_fast16_t ECDHCC26X2_getKeyResult(CryptoKey_Plaintext *key,
 
     bytesToBeWritten += 2 * curve->length;
 #ifdef ECDH_BIG_ENDIAN_KEY
-    if(opType == ECDH_OPERATION_TYPE_GENERATE_PUBLIC_KEY)
+    if (opType == ECDH_OPERATION_TYPE_GENERATE_PUBLIC_KEY)
     {
         keyMaterial[0] = 0x04;
     }
     bytesToBeWritten += OCTET_STRING_OFFSET;
 #endif
 
-    if(bytesToBeWritten != keyLength)
+    if (bytesToBeWritten != keyLength)
     {
         return -1;
     }
-
 
     xCoordinate = keyMaterial;
     yCoordinate = keyMaterial + curve->length;
@@ -370,11 +360,9 @@ static int_fast16_t ECDHCC26X2_getKeyResult(CryptoKey_Plaintext *key,
     CryptoUtils_reverseBufferBytewise(yCoordinate, curve->length);
 #endif
     return ECDH_STATUS_SUCCESS;
-
-
-
 }
-static inline int_fast16_t ECDH_computeSharedSecretPolling(ECDH_OperationComputeSharedSecret *operation) {
+static inline int_fast16_t ECDH_computeSharedSecretPolling(ECDH_OperationComputeSharedSecret *operation)
+{
 
     uint32_t pkaResult;
 
@@ -408,9 +396,7 @@ static inline int_fast16_t ECDH_computeSharedSecretPolling(ECDH_OperationCompute
     while (PKAGetOpsStatus() == PKA_STATUS_OPERATION_BUSY) {}
 
     /*MULT_PRIVATE_KEY_BY_PUB_KEY_RESULT*/
-    ECDHCC26X2_getKeyResult(operation->sharedSecret,
-                                     operation->curve,
-                                     ECDH_OPERATION_TYPE_COMPUTE_SHARED_SECRET);
+    ECDHCC26X2_getKeyResult(operation->sharedSecret, operation->curve, ECDH_OPERATION_TYPE_COMPUTE_SHARED_SECRET);
 
     while (PKAGetOpsStatus() == PKA_STATUS_OPERATION_BUSY) {}
 
@@ -428,13 +414,9 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
     /* VERIFY_R_S_IN_RANGE */
 
     /* Convert r from OS format to little-endian integer */
-    CryptoUtils_reverseCopyPad(operation->r,
-                               SCRATCH_BUFFER_0,
-                               operation->curve->length);
+    CryptoUtils_reverseCopyPad(operation->r, SCRATCH_BUFFER_0, operation->curve->length);
 
-    PKABigNumCmpStart((uint8_t *)SCRATCH_BUFFER_0,
-                      operation->curve->order,
-                      operation->curve->length);
+    PKABigNumCmpStart((uint8_t *)SCRATCH_BUFFER_0, operation->curve->order, operation->curve->length);
 
     while (PKAGetOpsStatus() == PKA_STATUS_OPERATION_BUSY) {}
 
@@ -446,13 +428,9 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
     }
 
     /* Convert s from OS format to little-endian integer */
-    CryptoUtils_reverseCopyPad(operation->s,
-                               SCRATCH_BUFFER_0,
-                               operation->curve->length);
+    CryptoUtils_reverseCopyPad(operation->s, SCRATCH_BUFFER_0, operation->curve->length);
 
-    PKABigNumCmpStart((uint8_t *)SCRATCH_BUFFER_0,
-                      operation->curve->order,
-                      operation->curve->length);
+    PKABigNumCmpStart((uint8_t *)SCRATCH_BUFFER_0, operation->curve->order, operation->curve->length);
 
     while (PKAGetOpsStatus() == PKA_STATUS_OPERATION_BUSY) {}
 
@@ -489,9 +467,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
     /* VERIFY_COMPUTE_S_INV */
 
     /* Convert s from OS format to little-endian integer */
-    CryptoUtils_reverseCopyPad(operation->s,
-                               SCRATCH_BUFFER_0,
-                               operation->curve->length);
+    CryptoUtils_reverseCopyPad(operation->s, SCRATCH_BUFFER_0, operation->curve->length);
 
     PKABigNumInvModStart((uint8_t *)SCRATCH_BUFFER_0,
                          operation->curve->length,
@@ -503,9 +479,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     /* VERIFY_COMPUTE_S_INV_RESULT */
 
-    pkaResult = PKABigNumInvModGetResult((uint8_t *)SCRATCH_BUFFER_1,
-                                         operation->curve->length,
-                                         resultAddress);
+    pkaResult = PKABigNumInvModGetResult((uint8_t *)SCRATCH_BUFFER_1, operation->curve->length, resultAddress);
 
     if (pkaResult != PKA_STATUS_SUCCESS)
     {
@@ -515,9 +489,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
     /* VERIFY_MULT_S_INV_HASH */
 
     /* Convert hash from OS format to little-endian integer */
-    CryptoUtils_reverseCopyPad(operation->hash,
-                               SCRATCH_BUFFER_0,
-                               operation->curve->length);
+    CryptoUtils_reverseCopyPad(operation->hash, SCRATCH_BUFFER_0, operation->curve->length);
 
     PKABigNumMultiplyStart((uint8_t *)SCRATCH_BUFFER_1,
                            operation->curve->length,
@@ -531,9 +503,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     scratchBuffer0Size = SCRATCH_BUFFER_SIZE;
 
-    pkaResult = PKABigNumMultGetResult((uint8_t *)SCRATCH_BUFFER_0,
-                                       &scratchBuffer0Size,
-                                       resultAddress);
+    pkaResult = PKABigNumMultGetResult((uint8_t *)SCRATCH_BUFFER_0, &scratchBuffer0Size, resultAddress);
 
     if (pkaResult != PKA_STATUS_SUCCESS)
     {
@@ -552,9 +522,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     /* VERIFY_S_INV_MULT_HASH_MOD_N_RESULT */
     // Check previous result
-    pkaResult = PKABigNumModGetResult((uint8_t *)SCRATCH_BUFFER_0,
-                                      operation->curve->length,
-                                      resultAddress);
+    pkaResult = PKABigNumModGetResult((uint8_t *)SCRATCH_BUFFER_0, operation->curve->length, resultAddress);
 
     scratchBuffer0Size = operation->curve->length;
 
@@ -591,9 +559,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
     /* VERIFY_MULT_S_INV_R */
 
     /* Convert r from OS format to little-endian integer */
-    CryptoUtils_reverseCopyPad(operation->r,
-                               SCRATCH_PRIVATE_KEY,
-                               operation->curve->length);
+    CryptoUtils_reverseCopyPad(operation->r, SCRATCH_PRIVATE_KEY, operation->curve->length);
 
     PKABigNumMultiplyStart((uint8_t *)SCRATCH_BUFFER_1,
                            operation->curve->length,
@@ -607,9 +573,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     scratchBuffer1Size = SCRATCH_BUFFER_SIZE;
 
-    pkaResult = PKABigNumMultGetResult((uint8_t *)SCRATCH_BUFFER_1,
-                                       &scratchBuffer1Size,
-                                       resultAddress);
+    pkaResult = PKABigNumMultGetResult((uint8_t *)SCRATCH_BUFFER_1, &scratchBuffer1Size, resultAddress);
 
     if (pkaResult != PKA_STATUS_SUCCESS)
     {
@@ -628,9 +592,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     /* VERIFY_MULT_S_INV_R_MOD_N_RESULT */
 
-    pkaResult = PKABigNumModGetResult((uint8_t *)SCRATCH_BUFFER_1,
-                                      operation->curve->length,
-                                      resultAddress);
+    pkaResult = PKABigNumModGetResult((uint8_t *)SCRATCH_BUFFER_1, operation->curve->length, resultAddress);
 
     scratchBuffer1Size = operation->curve->length;
 
@@ -687,10 +649,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     /* VERIFY_ADD_MULT_RESULTS_RESULT */
 
-    pkaResult = PKAEccAddGetResult((uint8_t *)SCRATCH_BUFFER_0,
-                                   NULL,
-                                   resultAddress,
-                                   operation->curve->length);
+    pkaResult = PKAEccAddGetResult((uint8_t *)SCRATCH_BUFFER_0, NULL, resultAddress, operation->curve->length);
 
     if (pkaResult != PKA_STATUS_SUCCESS)
     {
@@ -709,9 +668,7 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     /* VERIFY_POINTX_MOD_N_RESULT */
 
-    pkaResult = PKABigNumModGetResult((uint8_t *)SCRATCH_BUFFER_0,
-                                      operation->curve->length,
-                                      resultAddress);
+    pkaResult = PKABigNumModGetResult((uint8_t *)SCRATCH_BUFFER_0, operation->curve->length, resultAddress);
 
     if (pkaResult != PKA_STATUS_SUCCESS)
     {
@@ -720,16 +677,12 @@ static inline int_fast16_t ECDSACC26X4_runVerifyPolling(ECDSA_OperationVerify *o
 
     /* VERIFY_COMPARE_RESULT_R */
 
-    CryptoUtils_reverseCopyPad(operation->r,
-                               SCRATCH_PRIVATE_KEY,
-                               operation->curve->length);
+    CryptoUtils_reverseCopyPad(operation->r, SCRATCH_PRIVATE_KEY, operation->curve->length);
 
     /* The CPU will rearrange each word in r to take care of aligned
      * access. The scratch buffer location is already word aligned.
      */
-    if (!CryptoUtils_buffersMatchWordAligned(SCRATCH_BUFFER_0,
-                                             SCRATCH_PRIVATE_KEY,
-                                             operation->curve->length))
+    if (!CryptoUtils_buffersMatchWordAligned(SCRATCH_BUFFER_0, SCRATCH_PRIVATE_KEY, operation->curve->length))
     {
         return ECDSA_STATUS_ERROR;
     }
@@ -785,7 +738,6 @@ int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation)
     return ECDSACC26X4_runVerifyPolling(operation);
 }
 
-
 /*
  *  ======== ECDSA_open ========
  */
@@ -798,7 +750,10 @@ void ECDSA_open(void)
         periphPwrRequired = false;
 
         PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
-        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON);
+        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)
+        {
+            ;
+        }
     }
 
     /* Power up and enable clock for PKA module. */
@@ -819,7 +774,10 @@ void ECDSA_close(void)
     if (!periphPwrRequired)
     {
         PRCMPowerDomainOff(PRCM_DOMAIN_PERIPH);
-        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF);
+        while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF)
+        {
+            ;
+        }
     }
 
     /* Power down and disable clock for PKA module */
@@ -828,11 +786,11 @@ void ECDSA_close(void)
     while (!PRCMLoadGet()) {}
 }
 
-
 /*
  *  ======== ECDH_computeSharedSecret ========
  */
-int_fast16_t ECDH_computeSharedSecret(ECDH_OperationComputeSharedSecret *operation) {
+int_fast16_t ECDH_computeSharedSecret(ECDH_OperationComputeSharedSecret *operation)
+{
 
     int_fast16_t status;
     uint8_t *myPrivateKeyMaterial;
@@ -851,16 +809,15 @@ int_fast16_t ECDH_computeSharedSecret(ECDH_OperationComputeSharedSecret *operati
 
 #ifdef ECDH_BIG_ENDIAN_KEY
     if ((myPrivateKeyLength != operation->curve->length) ||
-            (theirPublicKeyLength != 2 * operation->curve->length + OCTET_STRING_OFFSET) ||
-            (theirPublicKeyMaterial[0] != 0x04) ||
-            (sharedSecretKeyLength != 2 * operation->curve->length + OCTET_STRING_OFFSET))
+        (theirPublicKeyLength != 2 * operation->curve->length + OCTET_STRING_OFFSET) ||
+        (theirPublicKeyMaterial[0] != 0x04) ||
+        (sharedSecretKeyLength != 2 * operation->curve->length + OCTET_STRING_OFFSET))
     {
         return ECDH_STATUS_INVALID_KEY_SIZE;
     }
 #else
-    if ((myPrivateKeyLength != operation->curve->length) ||
-            (theirPublicKeyLength != 2 * operation->curve->length) ||
-            (sharedSecretKeyLength != 2 * operation->curve->length))
+    if ((myPrivateKeyLength != operation->curve->length) || (theirPublicKeyLength != 2 * operation->curve->length) ||
+        (sharedSecretKeyLength != 2 * operation->curve->length))
     {
         return ECDH_STATUS_INVALID_KEY_SIZE;
     }
@@ -881,9 +838,7 @@ int_fast16_t ECDH_computeSharedSecret(ECDH_OperationComputeSharedSecret *operati
 
     CryptoUtils_copyPad(theirPublicKeyMaterial, SCRATCH_PUBLIC_X, operation->curve->length);
 
-    CryptoUtils_copyPad(theirPublicKeyMaterial + operation->curve->length,
-                        SCRATCH_PUBLIC_Y,
-                        operation->curve->length);
+    CryptoUtils_copyPad(theirPublicKeyMaterial + operation->curve->length, SCRATCH_PUBLIC_Y, operation->curve->length);
 #endif
     status = ECDH_computeSharedSecretPolling(operation);
 
@@ -892,14 +847,11 @@ int_fast16_t ECDH_computeSharedSecret(ECDH_OperationComputeSharedSecret *operati
     return status;
 }
 
-
 /*
  *  ======== CryptoKeyPlaintext_initKey ========
  */
-void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle,
-                                uint8_t *key,
-                                size_t keyLength)
+void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle, uint8_t *key, size_t keyLength)
 {
     keyHandle->keyMaterial = key;
-    keyHandle->keyLength = keyLength;
+    keyHandle->keyLength   = keyLength;
 }

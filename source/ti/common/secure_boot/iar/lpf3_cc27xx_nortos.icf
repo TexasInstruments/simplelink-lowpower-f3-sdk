@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,34 @@
 
 include "ti_utils_build_linker.cmd.genmap";
 
-define symbol __intvec_start__ = ti_utils_build_GenMap_FLASH0_BASE;
+if (isdefinedsymbol(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE)) {
+    define symbol __intvec_start__ = ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE;
+} else {
+    define symbol __intvec_start__ = ti_utils_build_GenMap_FLASH0_BASE;
+}
+
 /*-Memory Regions-*/
-define symbol ROM_start__    = ti_utils_build_GenMap_FLASH0_BASE;
-define symbol ROM_end__      = ti_utils_build_GenMap_FLASH0_SIZE - 1;
-define symbol RAM_start__    = ti_utils_build_GenMap_RAM0_BASE;
-define symbol RAM_end__      = ti_utils_build_GenMap_RAM0_BASE + ti_utils_build_GenMap_RAM0_SIZE - 1;
+if (isdefinedsymbol(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE)) {
+    define symbol ROM_start__    = ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE;
+    define symbol ROM_end__      = ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE - 1;
+} else {
+    define symbol ROM_start__    = ti_utils_build_GenMap_FLASH0_BASE;
+    if (isdefinedsymbol(ti_utils_build_GenMap_HSM_FW_SIZE)) {
+        /* The last part of Flash is reserved for the HSM FW */
+        define symbol ROM_end__      = ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE - 1;
+    } else {
+        define symbol ROM_end__      = ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE - 1;
+    }
+}
+
+if (isdefinedsymbol(ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE)) {
+    define symbol RAM_start__    = ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE;
+    define symbol RAM_end__      = ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE + ti_utils_build_GenMap_SECURE_BOOT_RAM_SIZE - 1;
+} else {
+    define symbol RAM_start__    = ti_utils_build_GenMap_RAM0_BASE;
+    define symbol RAM_end__      = ti_utils_build_GenMap_RAM0_BASE + ti_utils_build_GenMap_RAM0_SIZE - 1;
+}
+
 if (isdefinedsymbol(ti_utils_build_GenMap_S2RRAM_BASE)) {
     define symbol S2RRAM_start__ = ti_utils_build_GenMap_S2RRAM_BASE;
     define symbol S2RRAM_end__   = ti_utils_build_GenMap_S2RRAM_BASE + ti_utils_build_GenMap_S2RRAM_SIZE - 1;

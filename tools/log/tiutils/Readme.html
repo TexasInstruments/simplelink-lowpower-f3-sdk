@@ -67,14 +67,14 @@
 </blockquote>
 <h2 id="quick-start-guide">Quick Start Guide</h2>
 <p>This section will briefly explain the steps needed to setup and use the logger tool. For more details about each transport/output module, please refer to their respective sections in this document.</p>
-<p>Install Python (3.8.10) from <a href="https://www.python.org/downloads/"><strong>python.org</strong></a>, and if you want to use the Wireshark output module, install the application from <a href="https://www.wireshark.org/download.html"><strong>wireshark.org</strong></a>.</p>
+<p>Install Python (3.10.12) from <a href="https://www.python.org/downloads/"><strong>python.org</strong></a>, and if you want to use the Wireshark output module, install the application from <a href="https://www.wireshark.org/download.html"><strong>wireshark.org</strong></a>.</p>
 <h3 id="install-tilogger-command-line-tool">Install <code>tilogger</code> command line tool</h3>
 <p>The logger modules can be installed in a local “virtualenv” so that the global Python install is not affected, or it can simply be installed to the global Python library.</p>
-<p><strong>NOTE:</strong> If you have several versions of Python installed, it is important that the tilogger is run with the correct version (3.8). On Windows, this can be controlled via the py launcher. To see a list of installed versions, run <code>py -0p</code>. The instructions below will assume there are multiple versions available, but will also work if only 3.8 is available.</p>
+<p><strong>NOTE:</strong> If you have several versions of Python installed, it is important that the tilogger is run with the correct version (3.10). On Windows, this can be controlled via the py launcher. To see a list of installed versions, run <code>py -0p</code>. The instructions below will assume there are multiple versions available, but will also work if only 3.10 is available.</p>
 <p>The following commands must be run from <code>&lt;SDK_INSTALL_DIR&gt;/tools/log/tiutils/</code>.</p>
 <h4 id="create-and-activate-a-venv-optional">Create and activate a venv (optional)</h4>
 <pre class="powershell"><code># Create a virtualenv (local copy of python + packages)
-$ py -3.8 -m venv .venv
+$ py -3.10 -m venv .venv
 # Activate virtualenv.
 $ .\.venv\Scripts\activate.ps1 (or .bat)</code></pre>
 <p>When you install to a virtualenv you must <code>activate</code> it again each time you open a new command line terminal window.</p>
@@ -88,7 +88,7 @@ $ python -m pip install [--proxy yourproxy.com] -r requirements.txt</code></pre>
 <h5 id="installing-the-tilogger-tool-globally">Installing the tilogger tool globally</h5>
 <p>If you wish to install the tilogger tool globally, use the following command</p>
 <pre class="powershell"><code># Install the tilogger tool globally
-$ py -3.8 -m pip install [--proxy yourproxy.com] -r requirements.txt</code></pre>
+$ py -3.10 -m pip install [--proxy yourproxy.com] -r requirements.txt</code></pre>
 <p>If you install globally, <code>python</code> must be available on PATH for these scripts to work, and the <code>Scripts</code> folder for the Python version you use to install must also be on the PATH.</p>
 <p>After installing you can use the <code>tilogger</code> command. Try it!</p>
 <h3 id="using-the-tilogger-command-line-interface-tool">Using the <code>tilogger</code> command line interface tool</h3>
@@ -125,6 +125,14 @@ Commands:
   to-replayfile    Store log outputs to a replay file.
   uart             Add UART transport as input to log.
   wireshark        Add Wireshark to log outputs.</code></pre>
+<h4 id="elf-files-specification">ELF Files Specification</h4>
+<p>The tilogger needs the project’s <a href="https://en.wikipedia.org/wiki/Executable_and_Linkable_Format">ELF file</a> in order to read the logs. The ELF file (<code>&lt;ProjectName&gt;.out</code>) is automatically generated to the output folder of your project after the build step, and the name of the file depends on the project. The ELF file will be referred to as my_elf.out throughout this document.</p>
+<p>If you wish, non-logging related sections of my_elf.out may be removed as they may contain sensitive information. To do this, use the utilities found in your toolchain to run the appropriate command below:</p>
+<ul>
+<li>GCC <code>arm-none-eabi-objcopy --only-section=.log_data --only-section=.log_ptr input.out output.out</code></li>
+<li>TICLANG and IAR projects <code>tiarmobjcopy --only-section=.log_data --only-section=.log_ptr input.out output.out</code></li>
+</ul>
+<p>You can provide ELF files containing Log-string information either globally (to all transports you add) if you have just one device or if the devices run the same firmware, and you can provide the ELF files to each transport individually.</p>
 <h4 id="extracting-logs">Extracting Logs</h4>
 <p>The tools must be started in sequence:</p>
 <ul>
@@ -140,14 +148,6 @@ Commands:
 <blockquote>
 <p><strong>Please refer to each module’s respective sections in this document for specific considerations.</strong></p>
 </blockquote>
-<h4 id="elf-files-specification">ELF Files Specification</h4>
-<p>The ELF file (<code>&lt;ProjectName&gt;.out</code>) is automatically generated to the output folder of your project after the build step, and the name of the file depends on the project. The ELF file will be referred to as my_elf.out throughout this document.</p>
-<p>Non-logging related sections from your elf.out file may be removed as they may contain sensitive information. To do this, use the utilities found in your toolchain to run the appropriate command below:</p>
-<ul>
-<li>GCC <code>arm-none-eabi-objcopy --only-section=.log_data --only-section=.log_ptr input.out output.out</code></li>
-<li>TICLANG and IAR projects <code>tiarmobjcopy --only-section=.log_data --only-section=.log_ptr input.out output.out</code></li>
-</ul>
-<p>You can provide ELF files containing Log-string information either globally (to all transports you add) if you have just one device or if the devices run the same firmware, and you can provide the ELF files to each transport individually.</p>
 <h4 id="examples">Examples</h4>
 <p>Below are more examples for launching the logger tool. These examples use UART, but ITM transport is invoked in the same way. Additional examples for each module can be found in their respective sections.</p>
 <ul>
@@ -371,7 +371,7 @@ Usage: tilogger to-replayfile [OPTIONS]
   A invocation storing an ITM stream parsed with the provided ELF file to
   replayfile.json:
 
-      tilogger --elf path/to/elf.out itm COM6 12000000 to-replayfile --file
+      tilogger --elf path/to/my_elf.out itm COM6 12000000 to-replayfile --file
       path/to/replayfile.json
 
   To replay the log events, use
@@ -402,7 +402,7 @@ Options:
   with 100,000+ analog ICs and embedded processors, along with software, tools
   and the industry‘s largest sales/support staff.</p>
   <p>
-    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2024</a>, Texas Instruments Incorporated. All rights reserved. <br>
+    <a href="https://www.ti.com/corp/docs/legal/copyright.shtml">© Copyright 1995-2025</a>, Texas Instruments Incorporated. All rights reserved. <br>
     <a href="https://www.ti.com/corp/docs/legal/trademark/trademrk.htm">Trademarks</a> | <a href="https://www.ti.com/corp/docs/legal/privacy.shtml">Privacy policy</a> | <a href="https://www.ti.com/corp/docs/legal/termsofuse.shtml">Terms of use</a> | <a href="https://www.ti.com/lsds/ti/legal/termsofsale.page">Terms of sale</a>
   </p>
 </footer>

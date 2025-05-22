@@ -1,68 +1,56 @@
-/******************************************************************************
-
- @file  led_debug.c
-
- @brief This module contains the definitions for the functionality of a
-        bim debug utility.
-
- Group: WCS, BTS
- Target Device: cc23xx
-
- ******************************************************************************
- 
- Copyright (c) 2012-2025, Texas Instruments Incorporated
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
-
- *  Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
- *  Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
- *  Neither the name of Texas Instruments Incorporated nor the names of
-    its contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
- ******************************************************************************
- 
- 
- *****************************************************************************/
+/*
+ * Copyright (c) 2012-2025, Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 
 /*******************************************************************************
  *                                          Includes
  */
 
 #include <ti/devices/DeviceFamily.h>
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
-#include DeviceFamily_constructPath(driverlib/prcm.h)
-#include DeviceFamily_constructPath(driverlib/ioc.h)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    #include DeviceFamily_constructPath(driverlib/prcm.h)
+    #include DeviceFamily_constructPath(driverlib/ioc.h)
 #endif
 #include DeviceFamily_constructPath(driverlib/gpio.h)
 #include "led_debug.h"
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
-/* Remap driverlib API names that changed only for cc23x0
- */
-#define GPIO_setDio             GPIOSetDio
-#define GPIO_clearDio           GPIOClearDio
-#define GPIO_setOutputEnableDio GPIOSetOutputEnableDio
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
+    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+    /* Remap driverlib API names that changed only for cc23x0
+     */
+    #define GPIO_setDio             GPIOSetDio
+    #define GPIO_clearDio           GPIOClearDio
+    #define GPIO_setOutputEnableDio GPIOSetOutputEnableDio
 #endif
 
 /*******************************************************************************
@@ -88,7 +76,7 @@ void blinkLed(uint32_t led, uint8_t nBlinks, uint32_t periodMs)
 {
     uint8_t i;
 
-    for(i=0; i<nBlinks; i++)
+    for (i = 0; i < nBlinks; i++)
     {
         GPIO_setDio(led);
         delay(periodMs);
@@ -125,7 +113,6 @@ void lightGreenLed(void)
     GPIO_setDio(GREEN_LED);
 }
 
-
 /**
  * @fn      delay
  *
@@ -140,7 +127,7 @@ void delay(uint32_t delayMs)
     uint32_t j;
 
     /* by experimentation, this is in ms (approx) */
-    for (j = 0; j < 4010 * delayMs; j++)
+    for (j = 0; j < 4290U * delayMs; j++)
     {
 #if defined(__IAR_SYSTEMS_ICC__)
         asm(" NOP");
@@ -161,15 +148,21 @@ void delay(uint32_t delayMs)
  */
 void powerUpGpio(void)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)    
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
     /* GPIO power up*/
     PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
-    while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH)
-           != PRCM_DOMAIN_POWER_ON);
+    while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)
+    {
+        ;
+    }
 
     PRCMPeripheralRunEnable(PRCM_PERIPH_GPIO);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 #endif
 
     /* set direction */
@@ -189,16 +182,22 @@ void powerUpGpio(void)
  */
 void powerDownGpio(void)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)    
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
     /* GPIO power down */
     PRCMPeripheralRunDisable(PRCM_PERIPH_GPIO);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     PRCMPowerDomainOff(PRCM_DOMAIN_PERIPH);
-    while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH)
-           != PRCM_DOMAIN_POWER_OFF);
+    while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_OFF)
+    {
+        ;
+    }
 #endif
 }
 /**************************************************************************************************
-*/
+ */

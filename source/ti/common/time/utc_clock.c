@@ -57,18 +57,18 @@
  * MACROS
  */
 
-#define	YearLength(yr)	(IsLeapYear(yr) ? 366 : 365)
+#define YearLength(yr) (IsLeapYear(yr) ? 366 : 365)
 
 /*********************************************************************
  * CONSTANTS
  */
 
 // Update every 1000ms
-#define UTC_UPDATE_PERIOD  1000
+#define UTC_UPDATE_PERIOD 1000
 
-#define	BEGYEAR	           2000     // UTC started at 00:00:00 January 1, 2000
+#define BEGYEAR 2000 // UTC started at 00:00:00 January 1, 2000
 
-#define	DAY                86400UL  // 24 hours * 60 minutes * 60 seconds
+#define DAY 86400UL // 24 hours * 60 minutes * 60 seconds
 
 /*********************************************************************
  * TYPEDEFS
@@ -110,7 +110,6 @@ static void UTC_timeUpdateHandler(void);
  * FUNCTIONS
  *********************************************************************/
 
-
 /*********************************************************************
  * @fn      UTC_init
  *
@@ -123,30 +122,30 @@ static void UTC_timeUpdateHandler(void);
  */
 void UTC_init(void)
 {
-  // Construct a periodic clock with a 1000ms duration and period to start
-  // immediately.
-  // Util_constructClock(&UTC_clock, UTC_timeUpdateHandler, UTC_UPDATE_PERIOD,
-  //                     UTC_UPDATE_PERIOD, true, 0);
-  ClockP_Params clockParams;
+    // Construct a periodic clock with a 1000ms duration and period to start
+    // immediately.
+    // Util_constructClock(&UTC_clock, UTC_timeUpdateHandler, UTC_UPDATE_PERIOD,
+    //                     UTC_UPDATE_PERIOD, true, 0);
+    ClockP_Params clockParams;
 
-  // Convert UTC_UPDATE_PERIOD in milliseconds to ticks.
-  uint32_t clockTicks = UTC_UPDATE_PERIOD * (1000 / ClockP_getSystemTickPeriod());
+    // Convert UTC_UPDATE_PERIOD in milliseconds to ticks.
+    uint32_t clockTicks = UTC_UPDATE_PERIOD * (1000 / ClockP_getSystemTickPeriod());
 
-  // Setup parameters.
-  ClockP_Params_init(&clockParams);
+    // Setup parameters.
+    ClockP_Params_init(&clockParams);
 
-  // Setup argument.
-  clockParams.arg = 0;
+    // Setup argument.
+    clockParams.arg = 0;
 
-  // If period is 0, this is a one-shot timer.
-  clockParams.period = clockTicks;
+    // If period is 0, this is a one-shot timer.
+    clockParams.period = clockTicks;
 
-  // Starts immediately after construction if true, otherwise wait for a call
-  // to start.
-  clockParams.startFlag = true;
+    // Starts immediately after construction if true, otherwise wait for a call
+    // to start.
+    clockParams.startFlag = true;
 
-  // Initialize clock instance.
-  ClockP_construct(&UTC_clock, (ClockP_Fxn)&UTC_timeUpdateHandler, clockTicks, &clockParams);
+    // Initialize clock instance.
+    ClockP_construct(&UTC_clock, (ClockP_Fxn)&UTC_timeUpdateHandler, clockTicks, &clockParams);
 }
 
 /*********************************************************************
@@ -162,60 +161,60 @@ void UTC_init(void)
  */
 void UTC_timeUpdateHandler(void)
 {
-  static uint32_t prevClockTicks = 0;
-  static uint16_t remUsTicks = 0;
-  uint32_t clockTicks, elapsedClockTicks;
-  uint32_t elapsedMSec = 0;
+    static uint32_t prevClockTicks = 0;
+    static uint16_t remUsTicks     = 0;
+    uint32_t clockTicks, elapsedClockTicks;
+    uint32_t elapsedMSec = 0;
 
-  // Get the running count of clock ticks.
-  clockTicks = ClockP_getSystemTicks();
+    // Get the running count of clock ticks.
+    clockTicks = ClockP_getSystemTicks();
 
-  // Check that time has passed.
-  if (clockTicks != prevClockTicks)
-  {
-    // To make sure time has passed and that a negative difference is not
-    // calculated, check if the tick count is greater than the previous
-    // measurement's.
-    if (clockTicks > prevClockTicks)
+    // Check that time has passed.
+    if (clockTicks != prevClockTicks)
     {
-      // Get the elapsed clock ticks.
-      elapsedClockTicks = clockTicks - prevClockTicks;
+        // To make sure time has passed and that a negative difference is not
+        // calculated, check if the tick count is greater than the previous
+        // measurement's.
+        if (clockTicks > prevClockTicks)
+        {
+            // Get the elapsed clock ticks.
+            elapsedClockTicks = clockTicks - prevClockTicks;
+        }
+        // Else tick count rolled over.
+        else
+        {
+            // Get the elapsed clock ticks, accounting for the roll over.
+            elapsedClockTicks = (0xFFFFFFFF - prevClockTicks) + clockTicks + 1;
+        }
+
+        // Convert to milliseconds.
+        elapsedMSec = (elapsedClockTicks * ClockP_getSystemTickPeriod()) / 1000;
+
+        // Find remainder.
+        remUsTicks += (elapsedClockTicks * ClockP_getSystemTickPeriod()) % 1000;
+
+        // If the running total of remaining microseconds is greater than or equal
+        // to one millisecond.
+        if (remUsTicks >= 1000)
+        {
+            // Add in the extra millisecond.
+            // Note: the remainder has an open upper limit of 2 milliseconds.
+            elapsedMSec += 1;
+
+            // Adjust the remainder.
+            remUsTicks %= 1000;
+        }
     }
-    // Else tick count rolled over.
-    else
+
+    // If time has passed
+    if (elapsedMSec)
     {
-      // Get the elapsed clock ticks, accounting for the roll over.
-      elapsedClockTicks = (0xFFFFFFFF - prevClockTicks) + clockTicks + 1;
+        // Store the tick count for the next iteration through this function.
+        prevClockTicks = clockTicks;
+
+        // Update the UTC Clock.
+        UTC_clockUpdate(elapsedMSec);
     }
-
-    // Convert to milliseconds.
-    elapsedMSec = (elapsedClockTicks * ClockP_getSystemTickPeriod()) / 1000;
-
-    // Find remainder.
-    remUsTicks += (elapsedClockTicks * ClockP_getSystemTickPeriod()) % 1000;
-
-    // If the running total of remaining microseconds is greater than or equal
-    // to one millisecond.
-    if (remUsTicks >= 1000)
-    {
-      // Add in the extra millisecond.
-      // Note: the remainder has an open upper limit of 2 milliseconds.
-      elapsedMSec += 1;
-
-      // Adjust the remainder.
-      remUsTicks %= 1000;
-    }
-  }
-
-  // If time has passed
-  if (elapsedMSec)
-  {
-    // Store the tick count for the next iteration through this function.
-    prevClockTicks = clockTicks;
-
-    // Update the UTC Clock.
-    UTC_clockUpdate(elapsedMSec);
-  }
 }
 
 /*********************************************************************
@@ -229,17 +228,17 @@ void UTC_timeUpdateHandler(void)
  */
 static void UTC_clockUpdate(uint32_t elapsedMSec)
 {
-  static uint32_t timeMSec = 0;
+    static uint32_t timeMSec = 0;
 
-  // Add elapsed milliseconds to the saved millisecond portion of time.
-  timeMSec += elapsedMSec;
+    // Add elapsed milliseconds to the saved millisecond portion of time.
+    timeMSec += elapsedMSec;
 
-  // Roll up milliseconds to the number of seconds.
-  if (timeMSec >= 1000)
-  {
-    UTC_timeSeconds += timeMSec / 1000;
-    timeMSec = timeMSec % 1000;
-  }
+    // Roll up milliseconds to the number of seconds.
+    if (timeMSec >= 1000)
+    {
+        UTC_timeSeconds += timeMSec / 1000;
+        timeMSec = timeMSec % 1000;
+    }
 }
 
 /*********************************************************************
@@ -255,7 +254,7 @@ static void UTC_clockUpdate(uint32_t elapsedMSec)
  */
 void UTC_setClock(UTCTime newTime)
 {
-  UTC_timeSeconds = newTime;
+    UTC_timeSeconds = newTime;
 }
 
 /*********************************************************************
@@ -272,7 +271,7 @@ void UTC_setClock(UTCTime newTime)
  */
 UTCTime UTC_getClock(void)
 {
-  return (UTC_timeSeconds);
+    return (UTC_timeSeconds);
 }
 
 /*********************************************************************
@@ -290,51 +289,51 @@ UTCTime UTC_getClock(void)
  */
 void UTC_convertUTCTime(UTCTimeStruct *tm, UTCTime secTime)
 {
-  // Calculate the time less than a day - hours, minutes, seconds.
-  {
-    // The number of seconds that have occured so far stoday.
-    uint32_t day = secTime % DAY;
-
-    // Seconds that have passed in the current minute.
-    tm->seconds = day % 60UL;
-    // Minutes that have passed in the current hour.
-    // (seconds per day) / (seconds per minute) = (minutes on an hour boundary)
-    tm->minutes = (day % 3600UL) / 60UL;
-    // Hours that have passed in the current day.
-    tm->hour = day / 3600UL;
-  }
-
-  // Fill in the calendar - day, month, year
-  {
-    uint16_t numDays = secTime / DAY;
-    uint8_t monthLen;
-    tm->year = BEGYEAR;
-
-    while (numDays >= YearLength(tm->year))
+    // Calculate the time less than a day - hours, minutes, seconds.
     {
-      numDays -= YearLength(tm->year);
-      tm->year++;
+        // The number of seconds that have occured so far stoday.
+        uint32_t day = secTime % DAY;
+
+        // Seconds that have passed in the current minute.
+        tm->seconds = day % 60UL;
+        // Minutes that have passed in the current hour.
+        // (seconds per day) / (seconds per minute) = (minutes on an hour boundary)
+        tm->minutes = (day % 3600UL) / 60UL;
+        // Hours that have passed in the current day.
+        tm->hour    = day / 3600UL;
     }
 
-    // January.
-    tm->month = 0;
-
-    monthLen = UTC_monthLength(IsLeapYear(tm->year), tm->month);
-
-    // Determine the number of months which have passed from remaining days.
-    while (numDays >= monthLen)
+    // Fill in the calendar - day, month, year
     {
-      // Subtract number of days in month from remaining count of days.
-      numDays -= monthLen;
-      tm->month++;
+        uint16_t numDays = secTime / DAY;
+        uint8_t monthLen;
+        tm->year = BEGYEAR;
 
-      // Recalculate month length.
-      monthLen = UTC_monthLength(IsLeapYear(tm->year), tm->month);
+        while (numDays >= YearLength(tm->year))
+        {
+            numDays -= YearLength(tm->year);
+            tm->year++;
+        }
+
+        // January.
+        tm->month = 0;
+
+        monthLen = UTC_monthLength(IsLeapYear(tm->year), tm->month);
+
+        // Determine the number of months which have passed from remaining days.
+        while (numDays >= monthLen)
+        {
+            // Subtract number of days in month from remaining count of days.
+            numDays -= monthLen;
+            tm->month++;
+
+            // Recalculate month length.
+            monthLen = UTC_monthLength(IsLeapYear(tm->year), tm->month);
+        }
+
+        // Store the remaining days.
+        tm->day = numDays;
     }
-
-    // Store the remaining days.
-    tm->day = numDays;
-  }
 }
 
 /*********************************************************************
@@ -348,26 +347,26 @@ void UTC_convertUTCTime(UTCTimeStruct *tm, UTCTime secTime)
  */
 static uint8_t UTC_monthLength(uint8_t lpyr, uint8_t mon)
 {
-  uint8_t days = 31;
+    uint8_t days = 31;
 
-  if (mon == 1) // feb
-  {
-    days = (28 + lpyr);
-  }
-  else
-  {
-    if (mon > 6) // aug-dec
+    if (mon == 1) // feb
     {
-      mon--;
+        days = (28 + lpyr);
+    }
+    else
+    {
+        if (mon > 6) // aug-dec
+        {
+            mon--;
+        }
+
+        if (mon & 1)
+        {
+            days = 30;
+        }
     }
 
-    if (mon & 1)
-    {
-      days = 30;
-    }
-  }
-
-  return (days);
+    return (days);
 }
 
 /*********************************************************************
@@ -382,37 +381,37 @@ static uint8_t UTC_monthLength(uint8_t lpyr, uint8_t mon)
  */
 UTCTime UTC_convertUTCSecs(UTCTimeStruct *tm)
 {
-  uint32_t seconds;
+    uint32_t seconds;
 
-  // Seconds for the partial day.
-  seconds = (((tm->hour * 60UL) + tm->minutes) * 60UL) + tm->seconds;
+    // Seconds for the partial day.
+    seconds = (((tm->hour * 60UL) + tm->minutes) * 60UL) + tm->seconds;
 
-  // Account for previous complete days.
-  {
-    // Start with complete days in current month.
-    uint16_t days = tm->day;
-
-    // Next, complete months in current year.
+    // Account for previous complete days.
     {
-      int8 month = tm->month;
-      while (--month >= 0)
-      {
-        days += UTC_monthLength(IsLeapYear(tm->year), month);
-      }
+        // Start with complete days in current month.
+        uint16_t days = tm->day;
+
+        // Next, complete months in current year.
+        {
+            int8 month = tm->month;
+            while (--month >= 0)
+            {
+                days += UTC_monthLength(IsLeapYear(tm->year), month);
+            }
+        }
+
+        // Next, complete years before current year.
+        {
+            uint16_t year = tm->year;
+            while (--year >= BEGYEAR)
+            {
+                days += YearLength(year);
+            }
+        }
+
+        // Add total seconds before partial day.
+        seconds += (days * DAY);
     }
 
-    // Next, complete years before current year.
-    {
-      uint16_t year = tm->year;
-      while (--year >= BEGYEAR)
-      {
-        days += YearLength(year);
-      }
-    }
-
-    // Add total seconds before partial day.
-    seconds += (days * DAY);
-  }
-
-  return (seconds);
+    return (seconds);
 }

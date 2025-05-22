@@ -78,7 +78,7 @@ extern "C" {
  * ---------------------------------
  */
 #ifndef ECDSA_LPF3_ECC_WINDOW_SIZE
-    #define ECDSA_LPF3_ECC_WINDOW_SIZE     (3)
+    #define ECDSA_LPF3_ECC_WINDOW_SIZE (3)
 #endif
 
 /*
@@ -86,13 +86,13 @@ extern "C" {
  * operations on supported curves with the selected window size.
  */
 #if (ECDSA_LPF3_ECC_WINDOW_SIZE == 2)
-    #define ECDSA_LPF3_ECC_WORKZONE_WORDS  (227)
+    #define ECDSA_LPF3_ECC_WORKZONE_WORDS (227)
 #elif (ECDSA_LPF3_ECC_WINDOW_SIZE == 3)
-    #define ECDSA_LPF3_ECC_WORKZONE_WORDS  (254)
+    #define ECDSA_LPF3_ECC_WORKZONE_WORDS (254)
 #elif (ECDSA_LPF3_ECC_WINDOW_SIZE == 4)
-    #define ECDSA_LPF3_ECC_WORKZONE_WORDS  (308)
+    #define ECDSA_LPF3_ECC_WORKZONE_WORDS (308)
 #elif (ECDSA_LPF3_ECC_WINDOW_SIZE == 5)
-    #define ECDSA_LPF3_ECC_WORKZONE_WORDS  (416)
+    #define ECDSA_LPF3_ECC_WORKZONE_WORDS (416)
 #else
     #error "Invalid ECDSA_LPF3_ECC_WINDOW_SIZE"
 #endif
@@ -100,7 +100,7 @@ extern "C" {
 /*!
  *  @brief Length of NIST P256 curve parameters in bytes
  */
-#define ECCParams_NISTP256_LENGTH           (32)
+#define ECCParams_NISTP256_LENGTH (32)
 
 /*!
  * @brief   Successful status code.
@@ -108,7 +108,7 @@ extern "C" {
  * Functions return ECDSA_STATUS_SUCCESS if the function was executed
  * successfully.
  */
-#define ECDSA_STATUS_SUCCESS                (0)
+#define ECDSA_STATUS_SUCCESS (0)
 
 /*!
  * @brief   Generic error status code.
@@ -116,7 +116,7 @@ extern "C" {
  * Functions return ECDSA_STATUS_ERROR if the function was not executed
  * successfully.
  */
-#define ECDSA_STATUS_ERROR                  (-1)
+#define ECDSA_STATUS_ERROR (-1)
 
 /*!
  *  @brief  The provided CryptoKey does not match the expected size
@@ -126,7 +126,7 @@ extern "C" {
  *  If the provided CryptoKeys for the public and private keys do not match this
  *  scheme, this error will be returned.
  */
-#define ECDSA_STATUS_INVALID_KEY_SIZE       (-10)
+#define ECDSA_STATUS_INVALID_KEY_SIZE (-10)
 
 /*!
  *  @brief  Plaintext CryptoKey datastructure.
@@ -134,7 +134,8 @@ extern "C" {
  * This structure contains all the information necessary to access keying material stored
  * in plaintext form in flash or RAM.
  */
-typedef struct {
+typedef struct
+{
     uint8_t *keyMaterial;
     uint32_t keyLength;
 } CryptoKey_Plaintext;
@@ -142,26 +143,27 @@ typedef struct {
 /*!
  *  @brief  Struct containing the parameters required for verifying a message.
  */
-typedef struct {
-    const CryptoKey_Plaintext       *theirPublicKey;    /*!< A pointer to the public key of the party
-                                                         *   that signed the hash of the message
-                                                         */
-    const uint8_t                   *hash;              /*!< A pointer to the hash of the message in
-                                                         *   octet string format.
-                                                         *   Must be the same length as the other curve parameters.
-                                                         */
-    const uint8_t                   *r;                 /*!< A pointer to the r component of the received
-                                                         *   signature.
-                                                         *   Formatted in octet string format.
-                                                         *   Must be of the same length
-                                                         *   as other params of the curve used.
-                                                         */
-    const uint8_t                   *s;                 /*!< A pointer to the s component of the received
-                                                         *   signature.
-                                                         *   Formatted in octet string format.
-                                                         *   Must be of the same length
-                                                         *   as other params of the curve used.
-                                                         */
+typedef struct
+{
+    const CryptoKey_Plaintext *theirPublicKey; /*!< A pointer to the public key of the party
+                                                *   that signed the hash of the message
+                                                */
+    const uint8_t *hash;                       /*!< A pointer to the hash of the message in
+                                                *   octet string format.
+                                                *   Must be the same length as the other curve parameters.
+                                                */
+    const uint8_t *r;                          /*!< A pointer to the r component of the received
+                                                *   signature.
+                                                *   Formatted in octet string format.
+                                                *   Must be of the same length
+                                                *   as other params of the curve used.
+                                                */
+    const uint8_t *s;                          /*!< A pointer to the s component of the received
+                                                *   signature.
+                                                *   Formatted in octet string format.
+                                                *   Must be of the same length
+                                                *   as other params of the curve used.
+                                                */
 } ECDSA_OperationVerify;
 
 /*!
@@ -174,14 +176,15 @@ typedef struct {
  *  @brief Length in bytes of NISTP256 curve parameters including the prepended
  *  length word.
  */
-#define ECC_NISTP256_PARAM_LENGTH_WITH_PREFIX_BYTES   (ECCParams_NISTP256_LENGTH + ECC_LENGTH_PREFIX_BYTES)
+#define ECC_NISTP256_PARAM_LENGTH_WITH_PREFIX_BYTES (ECCParams_NISTP256_LENGTH + ECC_LENGTH_PREFIX_BYTES)
 
 /*!
  *  @brief Union to access ECC_NISTP256 curve params in bytes or words.
  */
-typedef union {
-    uint8_t     byte[ECC_NISTP256_PARAM_LENGTH_WITH_PREFIX_BYTES];
-    uint32_t    word[ECC_NISTP256_PARAM_LENGTH_WITH_PREFIX_BYTES / sizeof(uint32_t)];
+typedef union
+{
+    uint8_t byte[ECC_NISTP256_PARAM_LENGTH_WITH_PREFIX_BYTES];
+    uint32_t word[ECC_NISTP256_PARAM_LENGTH_WITH_PREFIX_BYTES / sizeof(uint32_t)];
 } ECC_NISTP256_Param;
 
 /*!
@@ -192,7 +195,8 @@ typedef union {
  *                                  All struct members must be initialized.
  *
  *  @retval #ECDSA_STATUS_SUCCESS                       The operation succeeded.
- *  @retval #ECDSA_STATUS_ERROR                         The operation failed. This is the return status if the signature did not match.
+ *  @retval #ECDSA_STATUS_ERROR                         The operation failed. This is the return status if the signature
+ * did not match.
  *  @retval #ECDSA_STATUS_INVALID_KEY_SIZE              The provided public key size does not match curve parameters
  */
 int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation);
@@ -204,9 +208,7 @@ int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation);
  *  @param [in]     key         Pointer to keying material
  *  @param [in]     keyLength   Length of keying material in bytes
  */
-void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle,
-                                uint8_t *key,
-                                size_t keyLength);
+void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle, uint8_t *key, size_t keyLength);
 
 #ifdef __cplusplus
 }

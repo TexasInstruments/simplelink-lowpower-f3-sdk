@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,19 @@ let RCL = args[0];
 let instances = RCL.$instances;
 const rclStatic = RCL.$static;
 
-/* This function generates all necessary strings  */
-function getLrfdStrings(pin, pinInstance, pinFunction) {
-    let lrfMuxNumber = -1
-    let lrfdNumber = 0
-    let lrfMaxPinNumber = 7
-    let gpioSelTreshold = 3
+function findPinMapInfo(pin)
+{
+    const pinMapInfo = {
+        lrfMuxNumber: -1,
+        lrfdNumber: 0,
+        gpioSelNumber: 0
+    };
+
+    let lrfMuxNumber = -1;
+    let lrfdNumber = 0;
+    let lrfMaxPinNumber = 7;
+    let gpioSelTreshold = 3;
+
     const solution = rclStatic.lrfGpio.$solution;
     let peripheral = system.deviceData.peripherals[solution.peripheralName];
     for (; lrfdNumber <= lrfMaxPinNumber; lrfdNumber++) {
@@ -56,23 +63,104 @@ function getLrfdStrings(pin, pinInstance, pinFunction) {
 
         if (lrfMuxNumber != -1) {break; }
     }
-    let dioPin = GPIO.getDioForInst(pinInstance);
-    let gpioSelNumber = 0
+
+    pinMapInfo.lrfMuxNumber = lrfMuxNumber;
+    pinMapInfo.lrfdNumber = lrfdNumber;
     if (lrfdNumber > gpioSelTreshold){
-       gpioSelNumber = 1
+        pinMapInfo.gpioSelNumber = 1
     }
-    let gpioSelStr1 = 'LRFDDBELL_O_GPOSEL' + gpioSelNumber.toString()
-    let gpioSelStr2 = 'LRFDDBELL_GPOSEL' + gpioSelNumber.toString()
+
+    return pinMapInfo;
+}
+
+/* This function generates all necessary strings  */
+function getLrfdStrings(pin, pinInstance, pinFunction)
+{
+    const lrfdStrings =
+    {
+        setLrfdStr: "",
+        setGpioStr: "",
+        resetGpioStr: ""
+    };
+    let pinMapInfo = findPinMapInfo(pin);
+    let dioPin = GPIO.getDioForInst(pinInstance);
+    let gpioSelStr1 = 'LRFDDBELL_O_GPOSEL' + pinMapInfo.gpioSelNumber.toString()
+    let gpioSelStr2 = 'LRFDDBELL_GPOSEL' + pinMapInfo.gpioSelNumber.toString()
     let regWriteStr = 'HWREG_WRITE_LRF(LRFDDBELL_BASE + ' + gpioSelStr1 + ')'
     let regReadStr = 'HWREG_READ_LRF(LRFDDBELL_BASE + ' + gpioSelStr1 + ')'
-    let portCfgStr = 'IOC_IOC' + dioPin.toString() + '_PORTCFG_PFUNC' +  lrfMuxNumber.toString()
-    let setLrfdStr = regWriteStr + ' = ' + regReadStr + '| (' + gpioSelStr2 + '_SRC' + lrfdNumber + '_' + pinFunction + ')'
-    let setGpioStr = 'GPIO_setConfigAndMux' + '(' + dioPin + ', GPIO_CFG_NO_DIR, ' + portCfgStr + ')'
-    let resetGpioStr = 'GPIO_resetConfig' + '(' + dioPin + ')'
-    return [setLrfdStr, setGpioStr, resetGpioStr]
+    let portCfgStr = 'GPIO_MUX_PORTCFG_PFUNC' +  pinMapInfo.lrfMuxNumber.toString()
+
+    let pinOutput = pinFunction;
+    if (pinFunction == "COEX_GRANT")
+    {
+        pinOutput = "DIS";
+    }
+    lrfdStrings.setLrfdStr = regWriteStr + ' = ' + regReadStr + ' | (' + gpioSelStr2 + '_SRC' + pinMapInfo.lrfdNumber + '_' + pinOutput + ')'
+    lrfdStrings.setGpioStr = 'GPIO_setConfigAndMux' + '(' + dioPin + ', gpioPinConfigs[' + dioPin + '], ' + portCfgStr + ')'
+    lrfdStrings.resetGpioStr = 'GPIO_resetConfig' + '(' + dioPin + ')'
+    return lrfdStrings;
  }
 
+function findCoexConfig()
+{
+    const {coexEnabled: enable, coexMode: mode} = rclStatic;
+
+    const coexConfig =
+    {
+        lrfCoexType: "LRF_CoexConfiguration",
+        T1: 0,
+        T2: 0,
+        invertedPriority: "false",
+        grantPin: "RFE_COMMON_RAM_GRANTPIN_CFG_DIS >> RFE_COMMON_RAM_GRANTPIN_CFG_S",
+        ieeeTSync: 140,
+        ieeeCorrMask: 3,
+    }
+
+    if (enable)
+    {
+        if ((mode == "coexMode3Wire" || mode == "coexMode2WireRequestGrant" || mode == "coexMode1WireGrant") &&
+            "coex_grantPin" in rclStatic.lrfGpio)
+        {
+            let pinMapInfo = findPinMapInfo(rclStatic.lrfGpio["coex_grantPin"]);
+            coexConfig.grantPin = `RFE_COMMON_RAM_GRANTPIN_CFG_GPI${pinMapInfo.lrfdNumber} >> RFE_COMMON_RAM_GRANTPIN_CFG_S`;
+        }
+
+        if (!rclStatic.coexRuntimeChangeable)
+        {
+            coexConfig.lrfCoexType = "const " + coexConfig.lrfCoexType;
+        }
+    }
+    if (enable && mode != "coexMode1WireGrant")
+    {
+        coexConfig.T1 = rclStatic.coexPinRequestRfActivityLatencyTime;
+        if ((mode == "coexMode3Wire" || mode == "coexMode2WireRequestPriority") && rclStatic.coexPinPriorityIndicationEnabled)
+        {
+            coexConfig.T2 = rclStatic.coexPinPriorityIndicationTime;
+            let invertedPriority = rclStatic.coexPinPriorityIndicationLowLevel ^ rclStatic.coexPinPriorityIdleLevel;
+            if (invertedPriority)
+            {
+                coexConfig.invertedPriority = "true";
+            }
+        }
+    }
+    coexConfig.ieeeTSync = rclStatic.ieeeTSync;
+    coexConfig.ieeeCorrMask = (1 << rclStatic.coexPinRequestIeeeNumCorr) - 1;
+
+    return coexConfig;
+}
+
 %%}
+
+%if (rclStatic.pbeGpoMask != 0) {
+/*
+ * =============================== RCL Antenna Configuration ===============================
+ */
+/* Bit mask indicating which bits in LRFDPBE_GPOCTRL register are written
+ * This is the configuration supposed to not change during runtime and allowed
+ * to be customized per project or platform
+ */
+const uint8_t rclPbeGpoMask = 0x`rclStatic.pbeGpoMask.toString(16)`;
+%}
 
 % if(rclStatic.lrfGpio){
 /*
@@ -80,8 +168,23 @@ function getLrfdStrings(pin, pinInstance, pinFunction) {
  */
 #include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
+%if (rclStatic.coexEnabled)
+%{
 #include <ti/drivers/rcl/LRF.h>
+#include <ti/drivers/rcl/RCL_Scheduler.h>
+#include DeviceFamily_constructPath(inc/rfe_common_ram_regs.h)
 
+%    let coexConfig = findCoexConfig();
+`coexConfig.lrfCoexType` lrfCoexConfiguration = {
+    .T1 = RCL_SCHEDULER_SYSTIM_US(`coexConfig.T1`),
+    .T2 = RCL_SCHEDULER_SYSTIM_US(`coexConfig.T2`),
+    .grantPin = `coexConfig.grantPin`,
+    .invertedPriority = `coexConfig.invertedPriority`,
+    .ieeeTSync = RCL_SCHEDULER_SYSTIM_US(`coexConfig.ieeeTSync`),
+    .ieeeCorrMask = `coexConfig.ieeeCorrMask`,
+};
+
+%}
 /*
  *  ======== RCL_GPIO_enable ========
  */
@@ -89,16 +192,15 @@ void RCL_GPIO_enable (void)
 {
 %rclGpio.signalList.forEach(signal => {
 %   let pin = rclStatic.lrfGpio[`${signal.name.toLowerCase()}Pin`]
-%        if (pin && signal.name != "RFCTRC")
-%        {
-%           let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
-%           let lrfdStringList0 = getLrfdStrings(pin, pinInstance, signal.name)
+%      if (pin && signal.name != "RFCTRC") {
+%         let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
+%         let lrfdStrings = getLrfdStrings(pin, pinInstance, signal.name)
 
     /* `signal.name` */
-    `lrfdStringList0[0]`;
-    `lrfdStringList0[1]`;
-%        }
-%    });
+    `lrfdStrings.setLrfdStr`;
+    `lrfdStrings.setGpioStr`;
+%      }
+%   });
 }
 
 /*
@@ -111,10 +213,10 @@ void RCL_GPIO_disable (void)
 %        if (pin && signal.name != "RFCTRC")
 %        {
 %           let pinInstance = rclStatic[`${signal.name.toLowerCase()}PinInstance`]
-%           let lrfdStringList0 = getLrfdStrings(pin, pinInstance, signal.name)
+%           let lrfdStrings = getLrfdStrings(pin, pinInstance, signal.name)
 
     /* `signal.name` */
-    `lrfdStringList0[2]`;
+    `lrfdStrings.resetGpioStr`;
 %        }
 %    });
 }

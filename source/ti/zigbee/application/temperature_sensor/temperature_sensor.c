@@ -53,7 +53,6 @@
 #include "zboss_api.h"
 #include "zb_led_button.h"
 #include "zboss_api_error.h"
-#include "zb_app_test_common.h"
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/Temperature.h>
 
@@ -70,10 +69,10 @@
 #include "zb_mem_config_lprf3.h"
 #endif
 
+#include "zb_lnt_params.h"
+#include "zb_mac.h"
+
 /****** Application variables declarations ******/
-#ifdef ZB_SHORT_ADDR
-zb_uint16_t g_short_addr = ZB_SHORT_ADDR;
-#endif // ZB_SHORT_ADDR
 zb_uint16_t g_dst_addr;
 zb_uint8_t g_addr_mode;
 zb_uint8_t g_endpoint;
@@ -83,7 +82,6 @@ zb_bool_t perform_factory_reset = ZB_FALSE;
 /* Handler for specific ZCL commands */
 zb_uint8_t zcl_specific_cluster_cmd_handler(zb_uint8_t param);
 void test_device_interface_cb(zb_uint8_t param);
-void button_press_handler(zb_uint8_t param);
 
 /****** Cluster declarations ******/
 /* Basic cluster attributes data */
@@ -141,6 +139,14 @@ void tempTimeoutHandler (uintptr_t arg)
     g_attr_temp_measurement_value = Temperature_getTemperature()*100;
 }
 
+void off_network_attention(zb_uint8_t param)
+{
+  ZVUNUSED(param);
+  Log_printf(LogModule_Zigbee_App, Log_INFO, "off_network_attention");
+  zb_osif_led_toggle(1);
+
+  ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+}
 
 MAIN()
 {
@@ -154,13 +160,13 @@ MAIN()
   /* Global ZBOSS initialization */
   ZB_INIT("temperature_sensor");
 
-  #ifdef ZB_SHORT_ADDR
+  #if defined(ZB_SHORT_ADDR) && (ZB_SHORT_ADDR != 0xFFFF)
   // Use the pre-defined short address, and then get the long address out of that
   // extract each of the two bytes from the short address to use as the last two bytes for the long address
-  zb_uint8_t short_addr_byte1 = (g_short_addr & 0xFF00) >> 8;
-  zb_uint8_t short_addr_byte2 = (g_short_addr & 0x00FF);
+  zb_uint8_t short_addr_byte1 = (ZB_SHORT_ADDR & 0xFF00) >> 8;
+  zb_uint8_t short_addr_byte2 = (ZB_SHORT_ADDR & 0x00FF);
   zb_ieee_addr_t g_long_addr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, short_addr_byte1, short_addr_byte2};
-  ZB_PIBCACHE_NETWORK_ADDRESS() = g_short_addr;
+  ZB_PIBCACHE_NETWORK_ADDRESS() = ZB_SHORT_ADDR;
   zb_set_long_address(g_long_addr);
   #else
   /* Set the device's long address to the IEEE address pulling from the FCFG of the device */
@@ -169,6 +175,15 @@ MAIN()
   zb_set_long_address(ieee_mac_addr);
   #endif // ZB_SHORT_ADDR
 
+  #if defined(ZB_DENY_LIST)
+  const zb_uint16_t deny_list[] = ZB_DENY_LIST;
+  zb_uint8_t i;
+  for (i = 0; i < sizeof(deny_list) / sizeof(zb_uint16_t); i++)
+  {
+    MAC_ADD_INVISIBLE_SHORT(deny_list[i]);
+  }
+  #endif
+
 #ifdef ZB_COORDINATOR_ROLE
   /* Set up defaults for the commissioning */
   zb_set_network_coordinator_role(DEFAULT_CHANLIST);
@@ -176,12 +191,12 @@ MAIN()
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
   zb_secur_setup_nwk_key(nwk_key, 0);
 #endif //DEFAULT_NWK_KEY
-  zb_set_max_children(MAX_CHILDREN);
+  zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
 
   zb_set_network_router_role(DEFAULT_CHANLIST);
-  zb_set_max_children(MAX_CHILDREN);
+  zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
 
 #elif defined ZB_ED_ROLE
   /* Set up defaults for the commissioning */
@@ -208,10 +223,6 @@ MAIN()
   ZB_AF_REGISTER_DEVICE_CTX(&device_ctx);
   ZB_AF_SET_ENDPOINT_HANDLER(ZB_OUTPUT_ENDPOINT, zcl_specific_cluster_cmd_handler);
   ZB_ZCL_REGISTER_DEVICE_CB(test_device_interface_cb);
-
-#ifdef ZB_USE_BUTTONS
-  zb_button_register_handler(0, 0, button_press_handler);
-#endif
 
   zb_error_register_app_handler(error_ind_handler);
 
@@ -243,6 +254,10 @@ MAIN()
       perform_factory_reset = ZB_TRUE;
       Log_printf(LogModule_Zigbee_App, Log_INFO, "performing factory reset");
     }
+
+    zb_osif_led_button_init();
+    ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+
     while (1)
     {
       zboss_main_loop_iteration();
@@ -371,12 +386,6 @@ zb_uint8_t zcl_specific_cluster_cmd_handler(zb_uint8_t param)
     return ZB_FALSE;
 }
 
-void button_press_handler(zb_uint8_t param)
-{
-  ZVUNUSED(param);
-  Log_printf(LogModule_Zigbee_App, Log_INFO, "button is pressed, do nothing");
-}
-
 /* Callback to handle the stack events */
 void zboss_signal_handler(zb_uint8_t param)
 {
@@ -414,10 +423,18 @@ void zboss_signal_handler(zb_uint8_t param)
         bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
         break;
       }
-
+      case ZB_COMMON_SIGNAL_CAN_SLEEP:
+      {
+#ifdef ZB_USE_SLEEP
+        zb_sleep_now();
+#endif
+        break;
+      }
       case ZB_BDB_SIGNAL_STEERING:
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Successful steering, start f&b target");
         zb_bdb_finding_binding_target(ZB_OUTPUT_ENDPOINT);
+        ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+        zb_osif_led_off(1);
         break;
 
       default:

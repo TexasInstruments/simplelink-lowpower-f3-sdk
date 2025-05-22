@@ -1,12 +1,9 @@
----
-# Elliptic Curve Cryptographic (ECC) SW Library
----
+# Elliptic Curve Cryptography (ECC) SW Library
+
 ## Version
-_ECC R2.0 - August 9, 2021_
+R2.0 - August 9, 2021
 
 ## Summary
-_ECC_ is an Elliptic Curve Cryptographic (ECC) SW Library provided as pre-built
-libraries only. These libraries are used by ECDH, ECDSA, ECJPAKE, and EDDSA drivers
-on devices which do not have HW acceleration for ECC operations.
-
-
+The Elliptic Curve Cryptography (ECC) SW Library provided as pre-built libraries
+only. These libraries are used by ECDH, ECDSA, ECJPAKE, and EdDSA drivers on
+devices which do not have HW acceleration for ECC operations.

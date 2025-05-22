@@ -60,8 +60,8 @@
 #define DIGEST_MAX_LENGTH           PRIVATE_KEY_LENGTH
 
 /* UART pre-formatted strings */
-static const char promptStartup[]          = "\n\n\rBare Metal ECC operations via the Hardware Security Module (HSM) Demo\r";
-static const char promptSeparator[]        = "\n\n\r**********************************************************************\r";
+static const char promptStartup[]   = "\n\n\rBare Metal ECC operations via the Hardware Security Module (HSM) Demo\r";
+static const char promptSeparator[] = "\n\n\r**********************************************************************\r";
 static const char promptUserInputMessage[] = "\n\n\rEnter a message to Hash:\n\n\r";
 static const char digestPrompt[]           = "\n\n\rThe message SHA256 digest is: ";
 static const char signaturePrompt[]        = "\n\n\rThe message signature is: ";

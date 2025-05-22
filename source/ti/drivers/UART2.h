@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -173,7 +173,7 @@
  *      UART you just opened.
  *
  *  Only one UART index can be used at a time; calling UART2_open() a second
- *  time with the same index previosly passed to UART2_open() will result in
+ *  time with the same index previously passed to UART2_open() will result in
  *  an error.  You can, though, re-use the index if the instance is closed
  *  via UART2_close().
  *  In the previous example code, CONFIG_UART0 is passed to UART2_open().
@@ -248,7 +248,7 @@
  *
  *  ### Reading and Writing Data #
  *
- *  The example code reads one byte frome the UART instance, and then writes
+ *  The example code reads one byte from the UART instance, and then writes
  *  one byte back to the same instance:
  *
  *  @code

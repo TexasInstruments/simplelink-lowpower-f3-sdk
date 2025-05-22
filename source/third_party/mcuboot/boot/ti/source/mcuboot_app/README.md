@@ -117,3 +117,16 @@ This project is an example implementation of MCUBoot while `mcuboot_blinky` is a
 
 Refer to SDK example `mcuboot_blinky` for additional details.
 
+To enable MCUboot for LP_EM_CC2340r53-YBG, the user must define `BOARD_YBG`.
+
+### Enable as a Secondary Secure Bootloader
+
+MCUboot can also be enabled as a secondary secure bootloader to Secure Boot. 
+
+Open the project's `*.syscfg` file. The Secure Boot configuration is found under TI DEVICES -> Device Configuration -> Security Configuration.
+If **Secondary Secure Bootloader Enabled** is checked in sysconfig and **SSB** slots are defined, Secure Boot can verify MCUboot and once verification is complete, transfer control to it. From there, MCUboot can verify the images in each slot. The boot loader base and sizes are determined by Secure Boot, meaning those options in MCUboot SysConfig will be overwritten by Secure Boot. In this example MCUboot still has control over the slot definitions.
+
+Note that MCUboot does not support the same authentication algorithms that Secure Boot supports. This means that an application signed by imgtool will not work for Secure Boot. Likewise, an application signed by sbtool will not work for MCUboot.
+
+Refer to SDK example `secure_boot` for additional details on how to enable Secure Boot and sign Secure Boot images.
+

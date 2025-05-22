@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,18 +35,12 @@
  */
 
 #include <stdbool.h>
-#include <string.h>
 
 /* Driver header files */
 #include <ti/drivers/Power.h>
 
 /* Utilities header files */
 #include <ti/drivers/utils/Math.h>
-
-/* DPL header files */
-#include <ti/drivers/dpl/ClockP.h>
-#include "ClockPLPF3.h"
-#include <ti/drivers/dpl/HwiP.h>
 
 /* FreeRTOS header files */
 #include <FreeRTOS.h>
@@ -58,21 +52,11 @@
 
 /* Driverlib header files */
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/systick.h)
-#include DeviceFamily_constructPath(driverlib/cpu.h)
-#include DeviceFamily_constructPath(driverlib/lrfd.h)
-#include DeviceFamily_constructPath(driverlib/ull.h)
-#include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_systim.h)
-#include DeviceFamily_constructPath(inc/hw_rtc.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
-#include DeviceFamily_constructPath(inc/hw_ckmd.h)
-
-/* Function prototypes */
-extern int_fast16_t PowerCC23X0_notify(uint_fast16_t eventType);
+#include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
+#include DeviceFamily_constructPath(driverlib/systick.h)
 
 /* Number of microseconds between each FreeRTOS OS tick */
 #define FREERTOS_TICKPERIOD_US (1000000 / configTICK_RATE_HZ)
@@ -85,28 +69,19 @@ extern int_fast16_t PowerCC23X0_notify(uint_fast16_t eventType);
  * can schedule into the future is 2^32 - 2^22 - 1 ticks (~= 4290 sec at 1us
  * resolution).
  */
-#define MAX_SYSTIMER_DELTA 0xFFBFFFFFU
+#define MAX_SYSTIMER_DELTA (0xFFBFFFFFU)
 
 /* Clock frequency divider used as a conversion factor when working at a lower
  * clock rate on FPGA.
  */
 #define CLOCK_FREQUENCY_DIVIDER (48000000U / configCPU_CLOCK_HZ)
 
-/* The RTC has a time base of 8us and the SysTimer uses 1us or 250ns. The
- * conversion factor assumes that the SysTimer values have been converted to 1us
- * already.
- */
-#define RTC_TO_SYSTIMER_TICKS 8U
-
-#define SYSTIMER_CHANNEL_COUNT 5U
+#define SYSTIMER_CHANNEL_COUNT (5U)
 
 /* This global is used to pass the expected ticks that the OS will sleep from
  * vPortSuppressTicksAndSleep() to the Power policy.
  */
-static volatile uint32_t PowerCC23X0_idleTimeOS = 0;
-
-/* Global to stash the SysTimer timeouts while we enter standby */
-uint32_t sysTimerTimeouts[SYSTIMER_CHANNEL_COUNT];
+static volatile uint32_t PowerCC23X0_idleTimeOS = 0U;
 
 /* Shift values to convert between the different resolutions of the SysTimer
  * channels. Channel 0 can technically support either 1us or 250ns, but it is
@@ -135,21 +110,17 @@ void PowerCC23X0_standbyPolicy(void)
     uint32_t osDelta;
     uint32_t sysTimerDelta;
     uint32_t sysTimerIMASK;
-    uint32_t sysTimerARMSET;
     uint32_t sysTimerLoopDelta;
     uint32_t sysTimerCurrTime;
     uint8_t sysTimerIndex;
     uint32_t sysTickDelta;
-    uint32_t rtcCurrTime;
     uintptr_t key;
     bool standbyAllowed;
     bool idleAllowed;
-    bool fltSettled;
-    bool lfTick;
 
     key = HwiP_disable();
 
-    /* Final check with FreeRTOS to make sure still OK to go to sleep... */
+    /* Final check with FreeRTOS to make sure it is still OK to go to sleep... */
     eSleep = eTaskConfirmSleepModeStatus();
     if (eSleep == eAbortSleep)
     {
@@ -159,43 +130,25 @@ void PowerCC23X0_standbyPolicy(void)
 
     /* Check state of constraints */
     constraints    = Power_getConstraintMask();
-    standbyAllowed = (constraints & (1 << PowerLPF3_DISALLOW_STANDBY)) == 0;
-    idleAllowed    = (constraints & (1 << PowerLPF3_DISALLOW_IDLE)) == 0;
+    standbyAllowed = (constraints & (1U << PowerLPF3_DISALLOW_STANDBY)) == 0U;
+    idleAllowed    = (constraints & (1U << PowerLPF3_DISALLOW_IDLE)) == 0U;
 
-    /* If we are using LFOSC, we need to wait for the LFINC filter to settle
-     * before entering standby. We also cannot enter idle instead of standby
-     * because otherwise we could end up waiting for the next standby wakeup
-     * signal from the RTC or another wakeup source while we are still in idle.
-     * That could be a very long time.
-     * But if standby is currently disallowed from the constraints, that means
-     * we do want to enter idle since something set that constraint and will
-     * lift it again.
-     * Additionally, it has been observed a brief period of ~15us occurring
-     * ~130us after starting HFXT where FLTSETTLED pulses high. If the idle loop
-     * attempts to enter standby while FLTSETTLED pulses high, it may enter
-     * standby before the filter is truly settled. To prevent this, we need to
-     * wait until the next LFTICK after HFXTGOOD is set before going to sleep.
-     * This is achieved by checking against LFTICK before entering standby,
-     * which is cleared once AMPSETTLED is set (which occurs after HFXTGOOD is
-     * set).
-     */
-    if ((HWREG(CKMD_BASE + CKMD_O_LFCLKSEL) & CKMD_LFCLKSEL_MAIN_M) == CKMD_LFCLKSEL_MAIN_LFOSC)
+    if (standbyAllowed && (PowerLPF3_isLfincFilterAllowingStandby() == false))
     {
-        if (standbyAllowed)
-        {
-            fltSettled = ((HWREG(CKMD_BASE + CKMD_O_LFCLKSTAT) & CKMD_LFCLKSTAT_FLTSETTLED_M) ==
-                           CKMD_LFCLKSTAT_FLTSETTLED);
-            lfTick     = ((HWREG(CKMD_BASE + CKMD_O_RIS) & CKMD_RIS_LFTICK_M) == CKMD_RIS_LFTICK);
-            if (!fltSettled || !lfTick)
-            {
-                standbyAllowed = false;
-                idleAllowed    = false;
+        /* We cannot enter standby until LFINC filter has settled, we also
+         * cannot enter idle instead of standby because otherwise we could end
+         * up waiting for the next standby wakeup signal from SysTimer or
+         * another wakeup source while we are still in idle. That could be a
+         * very long time. But if standby is currently disallowed from the
+         * constraints, that means we do want to enter idle since something set
+         * that constraint and will lift it again.
+         */
+        standbyAllowed = false;
+        idleAllowed    = false;
 
-                Log_printf(LogModule_Power,
-                       Log_INFO,
-                       "PowerCC23X0_standbyPolicy: LFINC filter has not settled yet, FLTSETTLED is %u and LFTICK is %u. Standby and Idle are not allowed yet.", (uint32_t)fltSettled, (uint32_t)lfTick);
-            }
-        }
+        Log_printf(LogModule_Power,
+                Log_INFO,
+                "PowerCC23X0_standbyPolicy: LFINC filter has not settled yet. Standby and Idle are not allowed yet.");
     }
 
     Log_printf(LogModule_Power,
@@ -211,17 +164,11 @@ void PowerCC23X0_standbyPolicy(void)
          * far enough away for it to make sense.
          */
 
-        /* Save SysTimer IMASK to restore afterwards */
+        /* Get SysTimer IMASK state */
         sysTimerIMASK = HWREG(SYSTIM_BASE + SYSTIM_O_IMASK);
-
-        /* Get current armed status amongst all SysTimer channels */
-        sysTimerARMSET = HWREG(SYSTIM_BASE + SYSTIM_O_ARMSET);
 
         /* Get current time in 1us resolution */
         sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
-
-        /* Get current time in 8us resolution */
-        rtcCurrTime = HWREG(RTC_BASE + RTC_O_TIME8U);
 
         /* We only want to check the SysTimer channels if at least one of them
          * is active. It may be that no one is using ClockP or RCL in this
@@ -231,7 +178,7 @@ void PowerCC23X0_standbyPolicy(void)
         {
             /* Set initial SysTimer delta to max possible value. It needs to be
              * this large since we will shrink it down to the soonest timeout with
-             * Math_MIN() comparisons
+             * Math_MIN() comparisons.
              */
             sysTimerDelta = 0xFFFFFFFF;
 
@@ -245,16 +192,11 @@ void PowerCC23X0_standbyPolicy(void)
             {
                 if (sysTimerIMASK & (1 << sysTimerIndex))
                 {
-                    /* Stash SysTimer channel compare value. Read CHnCCSR to
-                     * avoid clearing any pending events as side effect of
-                     * reading CHnCC.
-                     */
-                    sysTimerTimeouts[sysTimerIndex] = HWREG(SYSTIM_BASE + SYSTIM_O_CH0CCSR + (sysTimerIndex * sizeof(uint32_t)));
-
                     /* Store current channel timeout in native channel
-                     * resolution
+                     * resolution. Read CHnCCSR to avoid clearing any pending
+                     * events as side effect of reading CHnCC.
                      */
-                    sysTimerLoopDelta = sysTimerTimeouts[sysTimerIndex];
+                    sysTimerLoopDelta = HWREG(SYSTIM_BASE + SYSTIM_O_CH0CCSR + (sysTimerIndex * sizeof(uint32_t)));
 
                     /* Convert current time from 1us to native resolution and
                      * subtract from timeout to get delta in in native channel
@@ -265,7 +207,7 @@ void PowerCC23X0_standbyPolicy(void)
                      * To simplify code paths and SRAM, we shift up the 1us
                      * resolution time stamp instead of reading out and keeping
                      * track of the 250ns time stamp and associating that with
-                     * channels 2 to 4. The loss of resolution for wakeup is not
+                     * 250ns channels. The loss of resolution for wakeup is not
                      * material as we wake up sufficiently early to handle
                      * timing jitter in the wakeup duration.
                      */
@@ -315,9 +257,6 @@ void PowerCC23X0_standbyPolicy(void)
             /* Disable scheduling */
             PowerCC23X0_schedulerDisable();
 
-            /* Stop FreeRTOS ticks */
-            SysTickDisable();
-
             /* Since the CPU and thus the SysTick does not have retention and
              * is instead restored programmatically in ROM, the SysTick counter
              * will be corrupted in standby.
@@ -329,107 +268,23 @@ void PowerCC23X0_standbyPolicy(void)
              */
             sysTickDelta = SysTickGetValue();
 
-            /* Do not use SysTickSetPeriod() since that does not allow 0 as an
-             * input, which we might get as a return value from
-             * SysTickGetValue().
-             */
-            HWREG(SYSTICK_BASE + SYSTICK_O_RVR) = sysTickDelta;
-
-            /* Switch EVTSVT_O_CPUIRQ16SEL in eventfabric to RTC
-             * Since the CC23X0 only has limited interrupt lines, we need
-             * to switch the interrupt line from SysTimer to RTC in the
-             * event fabric.
-             * The triggered interrupt will wake up the device with
-             * interrupts disabled. We can consume that interrupt event
-             * without vectoring to the ISR and then change the event fabric
-             * signal back to the SysTimer.
-             * Thus, there is no need to swap out the actual interrupt
-             * function of the clockHwi.
-             */
-            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_AON_RTC_COMB;
-
-            /* Clear interrupt in case it triggered since we disabled interrupts */
-            HwiP_clearInterrupt(INT_CPUIRQ16);
-
-            /* Ensure the device wakes up early enough to reinitialise the
-             * HW and take care of housekeeping.
-             */
-            soonestDelta -= PowerCC23X0_WAKEDELAYSTANDBY;
-
-            /* Divide delta until next timeout by two to sync with real time
-             * since the FPGA is running at half clock speed
-             */
-            soonestDelta /= CLOCK_FREQUENCY_DIVIDER;
-            soonestDelta /= RTC_TO_SYSTIMER_TICKS;
-
             /* Save SysTimer tick count before sleep */
             ticksBefore = sysTimerCurrTime;
 
-            /* RTC channel 0 compare is automatically armed upon writing the
-             * compare value. It will automatically be disarmed when it
-             * triggers.
-             */
-            HWREG(RTC_BASE + RTC_O_CH0CC8U) = rtcCurrTime + soonestDelta;
-
             /* Go to standby mode */
-            Power_sleep(PowerLPF3_STANDBY);
+            PowerLPF3_sleep(soonestDelta + sysTimerCurrTime);
 
-            /* Disarm RTC compare event in case we woke up from a GPIO or BATMON
-             * event. If the RTC times out after clearing RIS and the pending
-             * NVIC bit but before we swap event fabric subscribers for the
-             * shared interrupt line, we will be left with a pending interrupt
-             * in the NVIC that the ClockP callback may not gracefully handle
-             * since it did not cause it itself.
+            /* For CC23X0, PowerLPF3_sleep() will always disable SysTick.
+             * Restore SysTick.
              */
-            HWREG(RTC_BASE + RTC_O_ARMCLR) = RTC_ARMCLR_CH0_CLR;
 
-            /* Clear the RTC wakeup event */
-            HWREG(RTC_BASE + RTC_O_ICLR) = RTC_ICLR_EV0_CLR;
-
-            /* Explicitly read back from ULL domain to guarantee clearing RIS
-             * takes effect before clearing the pending NVIC interrupt to avoid
-             * the NVIC re-asserting on a set RIS.
+            /* Restore SysTick counter value by setting the period to the
+             * stored value from before entering standby.
+             * Do not use SysTickSetPeriod() since that does not allow 0 as
+             * an input, which we might get as a return value from
+             * SysTickGetValue().
              */
-            ULLSync();
-
-            /* Clear any pending interrupt in the NVIC */
-            HwiP_clearInterrupt(INT_CPUIRQ16);
-
-            /* Switch EVTSVT_O_CPUIRQ16SEL in eventfabric back to SysTimer */
-            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
-
-            /* When waking up from standby, the SysTimer may not have
-             * synchronised with the RTC by now. Wait for SysTimer
-             * synchronisation with the RTC to complete. This should not take
-             * more than one LFCLK period.
-             *
-             * We need to wait both for RUN to be set and SYNCUP to go low. Any
-             * other register state will cause undefined behaviour.
-             */
-            while (HWREG(SYSTIM_BASE + SYSTIM_O_STATUS) != SYSTIM_STATUS_VAL_RUN) {}
-
-            /* Restore SysTimer timeouts */
-            memcpy((void *)(SYSTIM_BASE + SYSTIM_O_CH0CCSR), sysTimerTimeouts, sizeof(sysTimerTimeouts));
-
-            /* Restore SysTimer armed state. This will rearm all previously
-             * armed timeouts restored above and cause any that occurred in the
-             * past to trigger immediately.
-             */
-            HWREG(SYSTIM_BASE + SYSTIM_O_ARMSET) = sysTimerARMSET;
-
-            /* Restore SysTimer IMASK */
-            HWREG(SYSTIM_BASE + SYSTIM_O_IMASK) = sysTimerIMASK;
-
-            /* Re-configure LRFD clocks */
-            LRFDApplyClockDependencies();
-
-            /* Signal clients registered for standby wakeup notification;
-             * this should be used to initialize any timing critical or IO
-             * dependent hardware.
-             * The callback needs to go out after the SysTimer is restored
-             * such that notifications can invoke RCL and ClockP APIs if needed.
-             */
-            PowerCC23X0_notify(PowerLPF3_AWAKE_STANDBY);
+            HWREG(SYSTICK_BASE + SYSTICK_O_RVR) = sysTickDelta;
 
             /* Get SysTimer tick count after sleep */
             ticksAfter = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
@@ -460,12 +315,13 @@ void PowerCC23X0_standbyPolicy(void)
             /* Restart FreeRTOS ticks */
             SysTickEnable();
 
-            /* Set the SysTick period to the previous value for next timeout.
+            /* Set the SysTick period back to the FreeRTOS tick period for
+             * the next and all subsequent timeouts.
              * Interrupts must still be disabled in between re-enabling the
              * SysTick to force a reload of the counter and changing the period
              * back to the FreeRTOS tick period.
              * Otherwise, a small leftover counter value could cause the reload
-             * value to be low enough to inifinitely trigger the ISR since we
+             * value to be low enough to infinitely trigger the ISR since we
              * do not reach the line below before timing out again.
              * If the timeout was small, it will time out and pend the
              * interrupt but not vector to it. Until after the new reload value
@@ -501,7 +357,7 @@ void PowerCC23X0_standbyPolicy(void)
                    Log_INFO,
                    "PowerCC23X0_standbyPolicy: Only WFI allowed");
 
-            __WFI();
+            PowerCC23X0_doWFI();
         }
     }
     else if (idleAllowed)
@@ -513,7 +369,7 @@ void PowerCC23X0_standbyPolicy(void)
                    Log_INFO,
                    "PowerCC23X0_standbyPolicy: Only WFI allowed");
 
-        __WFI();
+        PowerCC23X0_doWFI();
     }
 
     HwiP_restore(key);

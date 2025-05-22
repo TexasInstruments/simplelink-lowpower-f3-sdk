@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,8 +61,13 @@ let hfxtDefaultParams = {
     "P2": -0.00853,
     "P3": 0.00010,
     "shift": 22,
-    "hfxtCapArrayQ1" : 0,
-    "hfxtCapArrayQ2" : 0
+    "hfxtCapArrayQ1": 0,
+    "hfxtCapArrayQ2": 0
+};
+
+let hfxtCapArrayParams = {
+    "P0": 8.25,
+    "P1": 0.07
 };
 
 if(board !== undefined) {
@@ -86,6 +91,8 @@ if (system.compiler == "iar")
 
 let devSpecific = {
     hfxtDefaultParams: hfxtDefaultParams,
+    hfxtCapArrayParams: hfxtCapArrayParams,
+    maxShift: maxShift,
     longDescription: moduleDesc,
     templates: {
         /* Contributes CRC symbols to linker file */
@@ -107,9 +114,21 @@ a 31.25 kHz square wave, with a peak voltage of VDDS and an offset of VDDS/2 to 
                 options: [
                     { name: "LF XOSC" },
                     { name: "LF RCOSC" },
-                    { name: "External LF clock" }
+                    { name: "External LF clock" },
+                    {
+                        name: "Fake",
+                        description: "LFTICK will be generated from HFOSC, STANDBY entry will be prevented"
+                    }
                 ],
                 default: "LF XOSC"
+            },
+            {
+                name: "useExternalHfxtCapacitors",
+                displayName: "Use External HFXT Capacitors",
+                description: "When using external HFXT capacitors, it is recommended to set the internal Cap Array trimmings to a minimum",
+                default: false,
+                readOnly: false,
+                hidden: false
             },
             {
                 name: "overrideHfxtCapArray",
@@ -118,16 +137,7 @@ a 31.25 kHz square wave, with a peak voltage of VDDS and an offset of VDDS/2 to 
                 default: defaultOverrideHfxtCapArray,
                 readOnly: false,
                 hidden: false,
-                onChange: (inst, ui) => {
-                    if (inst.overrideHfxtCapArray === true) {
-                        ui.hfxtCapArrayQ1.hidden = false;
-                        ui.hfxtCapArrayQ2.hidden = false;
-                    }
-                    else {
-                        ui.hfxtCapArrayQ1.hidden = true;
-                        ui.hfxtCapArrayQ2.hidden = true;
-                    }
-                }
+                onChange: onChangeHfxtCapsConfig
             },
             {
                 name: "hfxtCapArrayQ1",
@@ -149,9 +159,23 @@ Q1 and Q2 should not differ by more than one step.`,
 The crystal's frequency offset can be controlled by changing this value.
 Q1 and Q2 should not differ by more than one step.`,
                 displayFormat: { radix: "hex", bitSize: 2 },
-                default: hfxtDefaultParams.hfxtCapArrayQ1,
+                default: hfxtDefaultParams.hfxtCapArrayQ2,
                 readOnly: false,
                 hidden: !defaultOverrideHfxtCapArray
+            },
+            {
+                name: "hfxtCapArrayCoefficientP0",
+                displayName: "HFXT Cap Array Coefficient P0",
+                description: "HFXT Cap Array Coefficient P0",
+                default: hfxtCapArrayParams.P0,
+                hidden: true
+            },
+            {
+                name: "hfxtCapArrayCoefficientP1",
+                displayName: "HFXT Cap Array Coefficient P1",
+                description: "HFXT Cap Array Coefficient P1",
+                default: hfxtCapArrayParams.P1,
+                hidden: true
             },
             {
                 name: "voltageRegulator",
@@ -369,31 +393,6 @@ to be triggered during boot. Only valid if pin triggering is enabled.`,
                 ]
             },
             {
-                displayName: "Hardware Options",
-                config: [
-                    {
-                        name: "hwOpts0",
-                        deprecated: true,
-                        displayName: "Hardware Options 1",
-                        description: "Hardware Options 1",
-                        longDescription: `Value written to both the PMCTL:HWOPT0 and CLKCTL:HWOPT0 registers by ROM code
-on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0xFFFFFFFF
-                    },
-                    {
-                        name: "hwOpts1",
-                        deprecated: true,
-                        displayName: "Hardware Options 2",
-                        description: "Hardware Options 2",
-                        longDescription: `Value written to both the PMCTL:HWOPT1 and CLKCTL:HWOPT1 registers by ROM code
-on PRODDEV at execution transfer from boot code/bootloader to application image`,
-                        displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0xFFFFFFFF
-                    }
-                ]
-            },
-            {
                 displayName: "Device Permission Settings",
                 config: [
                     {
@@ -593,14 +592,13 @@ Also used to pad out CCFG to correct size.`,
                         description: "Enable user record area in CCFG",
                         longDescription: `User record can contain any data, it has no dependencies in ROM boot code. This area is also
 programmable through separate SACI command. User record size is fixed at 124 bytes, plus an additional 4 bytes to hold a CRC32 checksum.
-The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area.
-The CRC32 checksum for the User Record will automatically be calculated and inserted regardless of whether the User Record is enabled or not`,
+The User Record Macro must be defined in the User Record File to be a list of values to be placed in the User Record Area`,
                         default: false,
                         onChange: (inst, ui) => {
                             let setHidden = !(inst.enableUserRecord);
                             ui["userRecordMacro"].hidden = setHidden;
                             ui["userRecordFile"].hidden = setHidden;
-                            /* Also apply this to userRecordCRC once it's no longer unconditionally applied */
+                            ui["userRecordCRC"].hidden = setHidden;
                         }
                     },
                     {
@@ -624,7 +622,7 @@ The CRC32 checksum for the User Record will automatically be calculated and inse
                         longDescription: `Enable generation of user record begin/end symbols in the ELF executable.
 These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optional user record's CRC.`,
                         hidden: true,
-                        default: true
+                        default: false
                     }
                 ]
             },
@@ -706,7 +704,7 @@ function getLinkerSyms(inst) {
         { name: "CRC_CCFG_DEBUG_end", value: 0x4E0207FB }
     ];
 
-    if (inst.$static.userRecordCRC) {
+    if (inst.$static.enableUserRecord && inst.$static.userRecordCRC) {
         linkerSyms.push(
             { name: "CRC_CCFG_USER_RECORD_begin", value: 0x4E020750 },
             { name: "CRC_CCFG_USER_RECORD_end", value: 0x4E0207CB },
@@ -721,7 +719,7 @@ function getLinkerSyms(inst) {
  *  Update the visibility of all fields in Bootloader settings
  *  whenever one of the fields change
  *
- *  @param inst - CCFG instance to be validated
+ *  @param inst - CCFG instance
  *  @param ui   -   GUI state
  */
 function updateBldrVisibility(inst, ui) {
@@ -739,6 +737,26 @@ function updateBldrVisibility(inst, ui) {
     ui["pinTriggerLevel"].hidden = setHidden;
 }
 
+/*!
+ *  ======== onChangeHfxtCapsConfig ========
+ *  Update the visibility of the HFXT Cap array settings
+ *  whenever one of the fields change
+ *
+ *  @param inst - CCFG instance
+ *  @param ui   -   GUI state
+ */
+function onChangeHfxtCapsConfig(inst, ui) {
+    if (inst.overrideHfxtCapArray === true) {
+        ui.hfxtCapArrayQ1.hidden = false;
+        ui.hfxtCapArrayQ2.hidden = false;
+    }
+    else
+    {
+        ui.hfxtCapArrayQ1.hidden = true;
+        ui.hfxtCapArrayQ2.hidden = true;
+    }
+}
+
 /*
  *  ======== onChangeEnableHFXTComp ========
  *  onChange callback function for the enableHFXTComp config
@@ -753,7 +771,6 @@ function onChangeHFXT(inst, ui) {
     ui.HFXTCoefficientP1.hidden = subState;
     ui.HFXTCoefficientP2.hidden = subState;
     ui.HFXTCoefficientP3.hidden = subState;
-
 }
 
 /*!
@@ -846,6 +863,12 @@ function validate(inst, validation) {
         Common.logError(validation, inst, "HFXTCompTempDelta",
             "Must be an integer greater than 0");
     }
+
+    if (inst.useExternalHfxtCapacitors == true && inst.overrideHfxtCapArray == true) {
+        Common.logWarning(validation, inst, "useExternalHfxtCapacitors",
+            "The external HFXT capacitors is enabled and the HFXT cap-array is overridden. \
+             Make sure this was the intention. Normally with external HFXT capacitors the internal cap-array is not overridden.");
+    }
 }
 
 /*
@@ -916,6 +939,59 @@ function pinmuxRequirements(inst) {
     }
 
     return (extlf);
+}
+
+/*!
+ *  ======== ppmOverflow ========
+ * Function that calculates the polynomials of the given temperature, shifts and coefficients.
+ * Then checks if any sum of the calculated values exceeds the limit of a signed 32bit integer.
+ * Note this only support calculations of up to 4 coefficients.
+ *
+ *  @param x            The temperature.
+ *  @param shift        The number of shifts.
+ *  @param coefficients List of coefficients to be used in the ppm calculation.
+ *                      The coefficients should be ordered from the lowest power to the highest.
+ */
+function ppmOverflow(x, shift, coefficients) {
+    var lim = 0x7FFFFFFF;
+
+    let pArr = [];
+    for (let i = 0; i < coefficients.length; i++) {
+        var p = Math.abs(coefficients[i] * Math.pow(2, shift) * Math.pow(x, i));
+        pArr.push(p);
+    }
+
+    /* Make sure that no partial sum in the polynomial can overflow. */
+    if (pArr.reduce((a, b) => a + b, 0) > lim) return true;
+
+    return false;
+}
+
+/*!
+ *  ======== maxShift ========
+ * Function that checks if any part of the of ppm calculation can overflow 32bit
+ * Used to establish what the maximum shift value can be to get the highest possible
+ * fixed-point precision without overflowing
+ *
+ *  @param coefficients List of coefficients to be used in the ppm calculation.
+ *                      The coefficients should be ordered from the lowest power to the highest.
+ */
+function maxShift(coefficients) {
+    let maxShiftTemp = 1;
+
+    /* The max temperature supported by the device. */
+    let temp = 125;
+
+    outerLoopLabel:
+    for(; maxShiftTemp < 32; maxShiftTemp++)
+    {
+        if(ppmOverflow(temp, maxShiftTemp, coefficients)) {
+            break outerLoopLabel;
+        }
+    }
+
+    /* Go back to the shift value that did not cause overflow */
+    return maxShiftTemp - 1;
 }
 
 /*

@@ -284,9 +284,9 @@
       "txPowerTable": "LRF_txPowerTable",
       "config": "LRF_config",
       "cfg_segment_list": "LRF_regConfigList",
-      "shapeBaseGfsk20": "LRF_shapeBaseGfsk20",
       "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
-      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067"
+      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
+      "shapeBaseGfsk20": "LRF_shapeBaseGfsk20"
     }
   }
 }

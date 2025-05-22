@@ -56,7 +56,7 @@ add_library(Drivers::display_cc27xx STATIC IMPORTED)
 
 set_target_properties(Drivers::display_cc27xx PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xx;grlib_m33f;TOOLCHAIN_gcc_m33f"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xx;TOOLCHAIN_gcc_m33f"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)

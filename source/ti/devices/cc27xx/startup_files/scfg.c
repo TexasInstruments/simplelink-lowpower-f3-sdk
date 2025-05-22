@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2023-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2023-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -65,8 +65,8 @@ const scfg_t __scfg __attribute__((section(".scfg"), used)) =
         // what the SACI programming interface on the device allows. Therefore,
         // we add 2 dummy entries here to ensure flash programming is
         // successful.
-        .keyRingCfg.keyEntries[0] = {SCFG_DUMMY_KEY_ENTRY},
-        .keyRingCfg.keyEntries[1] = {SCFG_DUMMY_KEY_ENTRY},
+        .keyRingCfg.keyEntries[0] = {SCFG_INVALID_KEY_ENTRY},
+        .keyRingCfg.keyEntries[1] = {SCFG_INVALID_KEY_ENTRY},
     };
 
 #endif // __SCFC_C__

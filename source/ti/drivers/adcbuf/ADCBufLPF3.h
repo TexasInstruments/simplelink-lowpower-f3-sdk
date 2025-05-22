@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -157,8 +157,7 @@
  *       - #ADCBufLPF3_HWAttrs.dataDmaTableEntryPri
  *       - #ADCBufLPF3_HWAttrs.dataDmaTableEntryAlt
  *       - #ADCBufLPF3_HWAttrs.dataDmaChannelMask
- *       - #ADCBufLPF3_HWAttrs.dataDmaEvtReg
- *       - #ADCBufLPF3_HWAttrs.dataDmaEvtMux
+ *       - #ADCBufLPF3_HWAttrs.dataDmaSubscriberId
  *   - Another "auxiliary" channel is used to re-configure the ADC to generate
  *     DMA triggers for the data DMA channel after each data DMA transfer. This
  *     is needed because the ADC disables generation of DMA triggers when a DMA
@@ -170,8 +169,7 @@
  *       #ADCBufLPF3_HWAttrs:
  *       - #ADCBufLPF3_HWAttrs.auxDmaTableEntryPri
  *       - #ADCBufLPF3_HWAttrs.auxDmaChannelMask
- *       - #ADCBufLPF3_HWAttrs.auxDmaEvtReg
- *       - #ADCBufLPF3_HWAttrs.auxDmaEvtMux
+ *       - #ADCBufLPF3_HWAttrs.auxDmaSubscriberId
  *
  ******************************************************************************
  */
@@ -197,11 +195,11 @@
 
 /* Driverlib includes */
 #include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_adc.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(driverlib/adc.h)
-#include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 
 #ifdef __cplusplus
 extern "C" {
@@ -332,10 +330,8 @@ typedef struct
  *          .resolutionBits   = ADCLPF3_RESOLUTION_12_BIT,
  *          .dataDmaChannelMask   = UDMA_CHANNEL_3_M,
  *          .auxDmaChannelMask    = UDMA_CHANNEL_7_M,
- *          .dataDmaEvtReg        = EVTSVT_BASE + EVTSVT_O_DMACH3SEL,
- *          .auxDmaEvtReg         = EVTSVT_BASE + EVTSVT_O_DMACH7SEL,
- *          .dataDmaEvtMux        = EVTSVT_DMACH3SEL_IPID_ADC0TRG,
- *          .auxDmaEvtMux         = EVTSVT_DMACH7SEL_PUBID_ADC_COMB,
+ *          .dataDmaSubscriberId  = EVTSVT_DMA_CH3,
+ *          .auxDmaSubscriberId   = EVTSVT_DMA_CH7,
  *          .intPriority      = ~0,
  *          .adcRefPosDIO     = GPIO_INVALID_INDEX,
  *          .adcRefNegDIO     = GPIO_INVALID_INDEX,
@@ -371,25 +367,15 @@ typedef struct
     /*! Mask for auxiliary DMA channel (1 << channel number) */
     uint32_t auxDmaChannelMask;
 
-    /*! Address of event fabric register EVTSVT.DMACHnSEL for the data DMA
-     * channel to be used.
+    /*! MCU event fabric subscriber ID for the data DMA channel to be used,
+     *  as defined in driverlib/evtsvt.h. Must support EVTSVT_DMA_TRIG_ADC0TRG.
      */
-    uint32_t dataDmaEvtReg;
+    uint32_t dataDmaSubscriberId;
 
-    /*! Address of event fabric register EVTSVT.DMACHnSEL for the auxiliary DMA
-     * channel to be used.
+    /*! MCU event fabric subscriber ID for the auxiliary DMA channel to be used,
+     *  as defined in driverlib/evtsvt.h. Must support EVTSVT_PUB_ADC_COMB.
      */
-    uint32_t auxDmaEvtReg;
-
-    /*! DMA Mux ID to be written to the register selected by #dataDmaEvtReg.
-     *  The value must select the ADC0TRG event.
-     */
-    uint8_t dataDmaEvtMux;
-
-    /*! DMA Mux ID to be written to the register selected by #auxDmaEvtReg.
-     *  The value must select the ADC_COMB event.
-     */
-    uint8_t auxDmaEvtMux;
+    uint32_t auxDmaSubscriberId;
 
     /*! ADC peripheral's interrupt priority. This value is passed unmodified to
      *  #HwiP_construct().

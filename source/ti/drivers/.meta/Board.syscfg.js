@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -129,18 +129,10 @@ function getLibs(mod)
     let libs = [];
 
     if (family != "") {
-        /* Add dependency on PSA Crypto library if key store module is present */
-        if (system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
-            libs.push(libPath("third_party/psa_crypto", "psa_crypto_" + family + ".a"));
-        }
-
-        /* Check for TrustZone module */
-        let tfmEnabled = family.match(/cc(13|26).[34]|cc27|cc35/) && system.modules["/ti/utils/TrustZone"];
-
-        if(tfmEnabled){
+        if (system.modules["/ti/utils/TrustZone"]) {
             libs.push(libPath("ti/drivers","drivers_" + family + "_ns" + log_suffix +".a"));
         }
-        else{
+        else {
             libs.push(libPath("ti/drivers","drivers_" + family + log_suffix +".a"));
         }
 
@@ -189,34 +181,6 @@ function getLibs(mod)
             }
         }
     }
-
-    if (system.modules["/ti/drivers/ECDSA"] || system.modules["/ti/drivers/ECIES"]
-        || system.modules["/ti/drivers/ECDH"]) {
-        /* Add dependency on ECC library for CC13x1/CC26x1 and CC23x0 */
-        if (family.match(/cc13.1/) || family.match(/cc26.1/) || family.match(/cc23.0/)) {
-            linkOpts.deps.push("/third_party/ecc");
-        }
-    }
-
-    if (system.modules["/ti/drivers/AESCCM"] ||
-        system.modules["/ti/drivers/AESCMAC"] ||
-        system.modules["/ti/drivers/SHA2"] ||
-        system.modules["/ti/drivers/AESECB"] ||
-        system.modules["/ti/drivers/AESCTR"] ||
-        system.modules["/ti/drivers/AESCTRDRBG"] ||
-        system.modules["/ti/drivers/AESGCM"] ||
-        system.modules["/ti/drivers/AESCBC"] ||
-        system.modules["/ti/drivers/ECDH"] ||
-        system.modules["/ti/drivers/ECDSA"] ||
-        system.modules["/ti/drivers/TRNG"] ||
-        system.modules["/ti/drivers/RNG"] ||
-        system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
-        /* Add dependency on HSMDDK library for CC27XX and CC35XX */
-        if (family.match(/cc27/) || family.match(/cc35/)) {
-            linkOpts.deps.push("/third_party/hsmddk");
-        }
-    }
-
     return (linkOpts);
 }
 

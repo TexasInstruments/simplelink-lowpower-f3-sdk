@@ -1,0 +1,15 @@
+wheel==0.45.0
+
+pyserial==3.5
+
+construct==2.10.66
+construct-typing==0.4.2
+
+tqdm==4.63.1
+wcwidth==0.2.4
+
+websockets==10.4
+
+-e unpi
+-e rtls
+-e ble_device

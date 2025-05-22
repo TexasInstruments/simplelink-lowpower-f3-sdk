@@ -46,6 +46,7 @@
 "use strict";
 
 // Get PM Settings script
+const common = system.getScript("/ti/zigbee/zigbee_common.js");
 const pmScript = system.getScript("/ti/zigbee/pm/zigbee_pm.syscfg.js");
 const rfScript = system.getScript("/ti/zigbee/rf/zigbee_rf.syscfg.js");
 const networkScript = system.getScript("/ti/zigbee/network/zigbee_network.syscfg.js");
@@ -72,15 +73,10 @@ const moduleStatic = {
             displayName: "Enabled Device Types",
             description: "The logical device type for the ZigBee node.",
             longDescription: deviceTypeLongDescription,
-            default: ["zc"],
+            default: [common.defaultDeviceType],
             minSelections: 1,
             onChange: onDeviceTypeChange,
-            options: [
-                {name: "zc", displayName: "ZigBee Coordinator"},
-                {name: "zr", displayName: "ZigBee Router"},
-                {name: "zed", displayName: "ZigBee End Device"},
-                {name: "gpd", displayName: "Green Power Device"},
-            ]
+            options: common.deviceTypeOptions
         },
         {
             name: "deviceTypeReadOnly",
@@ -96,14 +92,14 @@ const moduleStatic = {
         {
             name: "zgpDirectEnabled",
             displayName: "Enable Green Power Direct Support",
-            hidden : true,
+            hidden : !common.defaultDeviceTypeIsFFD,
             description: `Ability to receive any Green Power frame in both direct mode and in tunneled mode`,
             default: false
         },
         {
             name: "preInstalledNwkEnabled",
             displayName: "Enable use of APIs to Join a Pre-Installed Network",
-            hidden : true,
+            hidden : common.defaultDeviceTypeIsGPD,
             description: `Allow factory new devices join using pre-installed network parameters using the APIs in zb_bdb_preinst_nwk.h`,
             default: false
         },
@@ -190,6 +186,24 @@ function moduleInstances(inst)
                 collapsed: true,
                 args: {
                     $name: "LogModule_Zigbee_Low_Level_MAC",
+                    enable_DEBUG: false,
+                    enable_INFO: false,
+                    enable_VERBOSE: false,
+                    // Only enable WARNING and ERROR enabled by default
+                    enable_WARNING: true,
+                    enable_ERROR: true
+                }
+            }
+        );
+
+        submodules.push(
+            {
+                name: "LogModuleZigbeeOSIF",
+                displayName: "Zigbee OSIF Log Configuration",
+                moduleName: "/ti/log/LogModule",
+                collapsed: true,
+                args: {
+                    $name: "LogModule_Zigbee_OSIF",
                     enable_DEBUG: false,
                     enable_INFO: false,
                     enable_VERBOSE: false,

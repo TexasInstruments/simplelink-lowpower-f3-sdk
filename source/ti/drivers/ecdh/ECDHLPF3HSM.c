@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,10 +48,8 @@
 #include <third_party/hsmddk/include/Kit/EIP130/DomainHelper/incl/eip130_domain_ecc_curves.h>
 
 /* RTOS-related includes */
-#include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/DebugP.h>
-#include <ti/drivers/Power.h>
 
 /* KeyStore-related includes */
 #if (ENABLE_KEY_STORAGE == 1)
@@ -185,6 +183,10 @@ void ECDH_close(ECDH_Handle handle)
     object->isOpen = false;
 }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+/* BLE stack leverages ECCParams_CurveParams, therefore, we cannot get rid of it. However, for CC35XX devices, we can
+ * just rely on the curveType member in the operation struct.
+ */
 /*
  *  ======== ECDHLPF3HSM_compareCurves ========
  */
@@ -309,6 +311,7 @@ static int_fast16_t ECDHLPF3HSM_getECCCurveTypeByCurve(ECDHLPF3HSM_Object *objec
 
     return status;
 }
+#endif
 
 /*
  *  ======== ECDHLPF3HSM_getECCCurveTypeByValue ========
@@ -394,16 +397,20 @@ static int_fast16_t ECDHLPF3HSM_setECCurveParameters(ECDHLPF3HSM_Object *object)
     object->curveFamily = EIP130DOMAIN_ECC_FAMILY_NONE;
     object->domainId    = ECDH_DOMAIN_ID_SEC;
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* Try obtaining ECC curve type by parsing through a valid curve object */
-    if (ECDHLPF3HSM_getECCCurveTypeByCurve(object) == ECDH_STATUS_ERROR)
+    if (ECDHLPF3HSM_getECCCurveTypeByCurve(object) != ECDH_STATUS_SUCCESS)
     {
+#endif
         /* If a valid curve object does not exist (junk data or null), then read the operation's curveType value */
-        if (ECDHLPF3HSM_getECCCurveTypeByValue(object) == ECDH_STATUS_ERROR)
+        if (ECDHLPF3HSM_getECCCurveTypeByValue(object) != ECDH_STATUS_SUCCESS)
         {
             /* If the operation's curveType value is invalid, then return an error */
             return ECDHLPF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED;
         }
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     }
+#endif
 
     /* Retrieve and store the location of the appropriate curve parameters for later use.
      * These curve parameters will be loaded into the HSM IP as an asset holding the values
@@ -684,12 +691,13 @@ static int_fast16_t ECDHLPF3HSM_readSharedSecret(ECDH_Handle handle)
     int_fast16_t status        = ECDH_STATUS_ERROR;
     int_fast16_t hsmRetval     = HSMLPF3_STATUS_ERROR;
     int32_t tokenResult        = 0U;
+    uint8_t *key;
 
-    uint8_t componentVector[ECDH_COMPONENT_VECTOR_LENGTH];
-    (void)memset(&componentVector[0], 0, ECDH_COMPONENT_VECTOR_LENGTH);
+    /* Initialize a buffer that will hold the single- or multi-component vector for the operation's key */
+    (void)memset(&object->output[0], 0, ECDH_COMPONENT_VECTOR_LENGTH);
 
     HSMLPF3_getPublicDataRead(object->publicDataAssetID,
-                              &componentVector[0],
+                              &object->output[0],
                               HSM_ASYM_DATA_SIZE_B2WB(object->curveLength));
 
     /* Submit token to the HSM IP engine */
@@ -711,21 +719,21 @@ static int_fast16_t ECDHLPF3HSM_readSharedSecret(ECDH_Handle handle)
             {
                 status = ECDH_STATUS_SUCCESS;
 
-                uint8_t *key_p = object->sharedSecret->u.plaintext.keyMaterial;
+                key = object->sharedSecret->u.plaintext.keyMaterial;
 
                 /* The HSM stores the shared secret in the public data object in Big Endian format. */
                 if (object->keyMaterialEndianness == ECDH_BIG_ENDIAN_KEY)
                 {
                     /* First byte in big endian should always be 0x04 indicating that it is an uncompressed value */
                     object->sharedSecret->u.plaintext.keyMaterial[0] = HSM_ASYM_ECC_SRD_SCRT_ENC_VALUE;
-                    key_p                                            = key_p + HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG;
+                    key                                              = key + HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG;
 
-                    memcpy(key_p, componentVector, BITS_TO_BYTES(object->curveLength));
+                    memcpy(key, &object->output[0], BITS_TO_BYTES(object->curveLength));
                 }
                 else
                 {
                     /* Reverse the Big Endian formatting to Little Endian. */
-                    HSMLPF3_reverseMemCpy(key_p, componentVector, BITS_TO_BYTES(object->curveLength));
+                    HSMLPF3_reverseMemCpy(key, &object->output[0], BITS_TO_BYTES(object->curveLength));
                 }
             }
         }
@@ -828,6 +836,7 @@ int_fast16_t ECDH_generatePublicKey(ECDH_Handle handle, ECDH_OperationGeneratePu
     object->operationType         = ECDH_OPERATION_TYPE_GENERATE_PUBLIC_KEY;
     object->keyMaterialEndianness = operation->keyMaterialEndianness;
     object->operation             = (ECDH_Operation *)operation;
+    object->returnStatus          = ECDH_STATUS_SUCCESS;
 
     /* Initialize assets as unallocated so that a cleanup operation
      * doesn't attempt to free an asset that doesn't exist yet.
@@ -914,6 +923,7 @@ int_fast16_t ECDH_computeSharedSecret(ECDH_Handle handle, ECDH_OperationComputeS
     object->operationType         = ECDH_OPERATION_TYPE_COMPUTE_SHARED_SECRET;
     object->keyMaterialEndianness = operation->keyMaterialEndianness;
     object->operation             = (ECDH_Operation *)operation;
+    object->returnStatus          = ECDH_STATUS_SUCCESS;
 
     /* Initialize assets as unallocated so that a cleanup operation
      * doesn't attempt to free an asset that doesn't exist yet.
@@ -1260,23 +1270,24 @@ static int_fast16_t ECDHLPF3HSM_LoadPrivateKeyAsset(ECDH_Handle handle, uint8_t 
 
     if (!isFromKeyStore)
     {
-        /* Initialize a buffer that will hold the single- or multi-component vector for the operation's key */
-        uint8_t componentVector[ECDH_COMPONENT_VECTOR_LENGTH];
-        (void)memset(&componentVector[0], 0, componentLength);
+        /* Initialize the object->output buffer that will hold the single or
+         * multi-component vector for the operation's key.
+         */
+        (void)memset(&object->output[0], 0, componentLength);
 
         HSMLPF3_asymDHPriKeyToHW(object->privateKey->u.plaintext.keyMaterial,
                                  object->curveLength,
                                  object->domainId,
                                  (HSMLPF3_KeyMaterialEndianness)object->keyMaterialEndianness,
-                                 &componentVector[0]);
+                                 &object->output[0]);
         if (object->curveType == ECDH_TYPE_CURVE_25519)
         {
             /* The ECDH driver needs to prune the private key. */
-            ECDHLPF3HSM_formatCurve25519PrivateKeyScratch(&componentVector[HSM_ASYM_DATA_VHEADER]);
+            ECDHLPF3HSM_formatCurve25519PrivateKeyScratch(&object->output[HSM_ASYM_DATA_VHEADER]);
         }
 
         /* Populates the HSMLPF3 commandToken as a load asset token */
-        HSMLPF3_constructLoadPlaintextAssetToken(&componentVector[0], componentLength, object->privateKeyAssetID);
+        HSMLPF3_constructLoadPlaintextAssetToken(&object->output[0], componentLength, object->privateKeyAssetID);
     }
 #if (ENABLE_KEY_STORAGE == 1)
     else
@@ -1423,6 +1434,11 @@ static int_fast16_t ECDHLPF3HSM_LoadPublicKeyAsset(ECDH_Handle handle)
     uint32_t componentLength   = HSM_ASYM_DATA_SIZE_VWB(object->curveLength);
     uint8_t itemCount          = HSM_ASYM_CURVE25519_PUB_KEY_VCOUNT;
 
+    /* Initialize the object->output buffer that will hold the single or
+     * multi-component vector for the operation's key.
+     */
+    (void)memset(&object->output[0], 0, ECDH_COMPONENT_VECTOR_LENGTH);
+
     /* Public key for curve25519 is comprised of only one component, pubkey.u.
      * For shared secret operations, if the user provides in big endian
      * more than one component, the ECDH driver only takes the first one.
@@ -1433,19 +1449,15 @@ static int_fast16_t ECDHLPF3HSM_LoadPublicKeyAsset(ECDH_Handle handle)
         itemCount = HSM_ASYM_ECC_PUB_KEY_VCOUNT;
     }
 
-    /* Initialize a buffer that will hold the single- or multi-component vector for the operation's key */
-    uint8_t componentVector[ECDH_COMPONENT_VECTOR_LENGTH];
-    (void)memset(&componentVector[0], 0, componentLength);
-
     HSMLPF3_asymDHPubKeyToHW(object->publicKey->u.plaintext.keyMaterial,
                              object->curveLength,
                              itemCount,
                              object->domainId,
                              (HSMLPF3_KeyMaterialEndianness)object->keyMaterialEndianness,
-                             &componentVector[0]);
+                             &object->output[0]);
 
     /* Populates the HSMLPF3 commandToken as a load asset token */
-    HSMLPF3_constructLoadPlaintextAssetToken(&componentVector[0], componentLength, object->publicKeyAssetID);
+    HSMLPF3_constructLoadPlaintextAssetToken(&object->output[0], componentLength, object->publicKeyAssetID);
 
     /* Submit token to the HSM IP engine */
     hsmRetval = HSMLPF3_submitToken(HSMLPF3_RETURN_BEHAVIOR_POLLING,

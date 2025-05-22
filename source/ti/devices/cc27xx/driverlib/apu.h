@@ -1,10 +1,9 @@
-
 /******************************************************************************
  *  Filename:       apu.h
  *
  *  Description:    Defines and prototypes for the APU peripheral.
  *
- *  Copyright (c) 2024 Texas Instruments Incorporated
+ *  Copyright (c) 2024-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -67,10 +66,27 @@ extern "C" {
 #define APU_MEMORY_INTERLEAVED 1 //!< Set APU memory in interleaved mode
 #define APU_MEMORY_MIRRORED    0 //!< Set APU memory in mirrored mode
 
+//****************************************************************************
+// Operator defininitions
+//****************************************************************************
+#define APU_OP_R2C   0 //!< C=real(A)+j*real(B)
+#define APU_OP_R2CC  1 //!< C=real(A)-j*real(B)
+#define APU_OP_R2CA  2 //!< C=imag(A)+j*real(A)
+#define APU_OP_R2CCA 3 //!< C=imag(A)-j*real(A)
+#define APU_OP_RA    4 //!< C=real(A)
+#define APU_OP_IMA   5 //!< C=imag(A)
+#define APU_OP_ABS   6 //!< C=abs(real(A)) + j*abs(imag(A))
+
+#define APU_OP_ADD 0 //!< Vector addition
+#define APU_OP_SUB 1 //!< Vector subtraction
+
+#define APU_OP_MIN 0 //!< Minimum operator
+#define APU_OP_MAX 1 //!< Maximum operator
+
 // Macro to convert absolute-address to offset-address used by APU
-#define APU_GET_DATA_MEM_OFFSET(x) ((uint32_t)x - (uint32_t)VCERAM_DATA0_BASE) >> 3
+#define APU_GET_DATA_MEM_OFFSET(x) ((uint32_t)x - (uint32_t)APURAM_DATA0_BASE) >> 3
 // Macro to convert offset-address used by APU to absolute-address
-#define APU_GET_DATA_MEM_ABS(x)    ((uint32_t)VCERAM_DATA0_BASE + (((uint32_t)x) << 3))
+#define APU_GET_DATA_MEM_ABS(x)    ((uint32_t)APURAM_DATA0_BASE + (((uint32_t)x) << 3))
 
 //*****************************************************************************
 //
@@ -163,11 +179,14 @@ void APUNop(void);
 //! \code
 //!  c = A dot B = sum(A[i] * B[i]), i = 0 to N-1
 //! \endcode
-//! in which, A, B are complex vectors, c is a complex scalar
+//! in which, A, B are complex vectors, c is a complex scalar.
 //!
-//! \param N is the size of the input vectors. Both vectors must be the same size
-//! \param pInputA a pointer to the base of the first input vector, in APU memory
-//! \param pInputB a pointer to the base of the second input vector, in APU memory
+//! \param N is the size of the input vectors. Both vectors must be the same
+//! size
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input vector, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -179,18 +198,21 @@ void APUVectorDot(uint16_t N, void *pInputA, void *pInputB, void *pResult);
 //
 //! \brief APU accelerator for vector dot product c = A dot conj(B)
 //!
-//! Calculate the scalar product (dot product/inner product) of vector A and conjugate
-//! of vector B.
+//! Calculate the scalar product (dot product/inner product) of vector A and
+//! conjugate of vector B.
 //!
 //! Defined as:
 //! \code
 //!    c = A dot conj(B) = sum(A[i] * conj(B[i])), i = 0 to N-1
 //! \endcode
-//! in which, A, B are complex vectors, c is a complex scalar
+//! in which, A, B are complex vectors, c is a complex scalar.
 //!
-//! \param N is the size of the input vectors. Both vectors must be the same size
-//! \param pInputA a pointer to the base of the first input vector, in APU memory
-//! \param pInputB a pointer to the base of the second input vector, in APU memory
+//! \param N is the size of the input vectors. Both vectors must be the same
+//! size
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input vector, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -209,11 +231,14 @@ void APUVectorDotConj(uint16_t N, void *pInputA, void *pInputB, void *pResult);
 //! \code
 //!    C = A .* B = [A[0] * B[0], A[1] * B[1], .., A[N-1] * B[N-1]]
 //! \endcode
-//! in which, A, B and C are complex vectors
+//! in which, A, B and C are complex vectors.
 //!
-//! \param N is the size of the input vectors. Both vectors must be the same size
-//! \param pInputA a pointer to the base of the first input vector, in APU memory
-//! \param pInputB a pointer to the base of the second input vector, in APU memory
+//! \param N is the size of the input vectors. Both vectors must be the same
+//! size
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input vector, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -223,18 +248,45 @@ void APUVectorMult(uint16_t N, void *pInputA, void *pInputB, void *pResult);
 
 //*****************************************************************************
 //
+//! \brief APU accelerator for product of a vector and a scalar
+//!
+//! Calculate the product of a vector and a scalar.
+//!
+//! Defined as:
+//! \code
+//!    C = A * b = [A[0] * b, A[1] * b, .., A[N-1] * b]
+//! \endcode
+//! in which, A, C are complex vectors and b is a complex scalar.
+//!
+//! \param N is the size of the input and output vectors
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the scalar, in APU memory
+//! \param pResult a pointer to where the result will be placed, in APU memory
+//!
+//! \return None
+//
+//*****************************************************************************
+void APUVectorScalarMult(uint16_t N, void *pInputA, void *pInputB, void *pResult);
+
+//*****************************************************************************
+//
 //! \brief APU accelerator for element-wise product of vector A with the
 //!  conjugate of vector B.
 //!
 //! Defined as:
 //! \code
-//!    C = A .* conj(B) = [A[0] * conj(B[0]), A[1] * conj(B[1]), .., A[N-1] * conj(B[N-1])]
+//! C = A .* conj(B) = [A[0] * conj(B[0]), A[1] * conj(B[1]), .., A[N-1] *
+//! conj(B[N-1])]
 //! \endcode
-//! in which, A, B and C are complex vectors
+//! in which, A, B and C are complex vectors.
 //!
-//! \param N is the size of the input vectors. Both vectors must be the same size
-//! \param pInputA a pointer to the base of the first input vector, in APU memory
-//! \param pInputB a pointer to the base of the second input vector, in APU memory
+//! \param N is the size of the input vectors. Both vectors must be the same
+//! size
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input vector, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -244,7 +296,7 @@ void APUVectorMultConj(uint16_t N, void *pInputA, void *pInputB, void *pResult);
 
 //*****************************************************************************
 //
-//! \brief APU accelerator for addition of two vectors
+//! \brief APU accelerator for addition/subtraction of two vectors
 //!
 //! Calculate vector addition of two vectors.
 //!
@@ -252,17 +304,51 @@ void APUVectorMultConj(uint16_t N, void *pInputA, void *pInputB, void *pResult);
 //! \code
 //!    C = A + B = [A[0] + B[0], A[1] + B[1], .., A[N-1] + B[N-1]]
 //! \endcode
-//! in which, A, B and C are complex vectors
+//! in which, A, B and C are complex vectors.
 //!
-//! \param N is the size of the input vectors. Both vectors must be the same size
-//! \param pInputA a pointer to the base of the first input vector, in APU memory
-//! \param pInputB a pointer to the base of the second input vector, in APU memory
+//! \param N is the size of the input vectors. Both vectors must be the same
+//! size
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input vector, in APU
+//! memory
+//! \param op select the operator, addition or substraction
+//!    - \ref APU_OP_ADD
+//!    - \ref APU_OP_SUB
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
 //
 //*****************************************************************************
-void APUVectorSum(uint16_t N, void *pInputA, void *pInputB, void *pResult);
+void APUVectorSum(uint16_t N, void *pInputA, void *pInputB, uint16_t op, void *pResult);
+
+//*****************************************************************************
+//
+//! \brief APU accelerator for addition/subtraction of a vector and a scalar
+//!
+//! Calculate vector addition/subtraction of a vector and a scalar.
+//!
+//! Defined as:
+//! \code
+//!    C = A + b = [A[0] + b, A[1] + b, .., A[N-1] + b]
+//! \endcode
+//! in which, A, and C are complex vectors, and b is a scalar.
+//!
+//! \param N is the size of the input vectors. Both vectors must be the same
+//! size
+//! \param pInputA a pointer to the base of the first input vector, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input vector, in APU
+//! memory
+//! \param op select the operator, addition or substraction
+//!    - \ref APU_OP_ADD
+//!    - \ref APU_OP_SUB
+//! \param pResult a pointer to where the result will be placed, in APU memory
+//!
+//! \return None
+//
+//*****************************************************************************
+void APUVectorScalarSum(uint16_t N, void *pInputA, void *pInputB, uint16_t op, void *pResult);
 
 //*****************************************************************************
 //
@@ -281,7 +367,8 @@ void APUVectorSum(uint16_t N, void *pInputA, void *pInputB, void *pResult);
 //! representation. The elements of output vector C are in Polar representation.
 //!
 //! \param N length of the vector
-//! \param pInput a pointer to the base of the first input vector A, in APU memory
+//! \param pInput a pointer to the base of the first input vector A, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -300,7 +387,7 @@ void APUVectorCart2Pol(uint16_t N, void *pInput, void *pResult);
 //! \code
 //!  C[i] = polar_to_cartesian(A[i]), i = 0 to N-1
 //! \endcode
-//! //! in which A, C are two complex vectors.
+//! in which A, C are two complex vectors.
 //!
 //! \note The elements of input vector A are assumed in Polar representation.
 //! The elements of output vector C are in Cartesian representation. This API
@@ -310,7 +397,8 @@ void APUVectorCart2Pol(uint16_t N, void *pInput, void *pResult);
 //! utilization of available memory.
 //!
 //! \param N length of the vector
-//! \param pInput a pointer to the base of the first input vector A, in APU memory
+//! \param pInput a pointer to the base of the first input vector A, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //! \param pTemp a pointer to a temporary vector of length N in APU memory
 //!
@@ -373,8 +461,10 @@ void APUVectorSort(uint16_t N, void *pInput);
 //! \param M         number of rows of matrix A
 //! \param N         number of columns of matrix A (number of rows of matrix B)
 //! \param P         number of columns of matrix B
-//! \param pInputA a pointer to the base of the first input matrix A, in APU memory
-//! \param pInputB a pointer to the base of the second input matrix B, in APU memory
+//! \param pInputA a pointer to the base of the first input matrix A, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input matrix B, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -384,7 +474,8 @@ void APUMatrixMult(uint16_t M, uint16_t N, uint16_t P, void *pInputA, void *pInp
 
 //*****************************************************************************
 //
-//! \brief APU accelerator for matrix multiplication of two Hermitian matrices C = A*B
+//! \brief APU accelerator for matrix multiplication of two Hermitian matrices C
+//! = A*B
 //!
 //! Calculate matrix multiplication of two Hermitian matrices.
 //!
@@ -392,14 +483,16 @@ void APUMatrixMult(uint16_t M, uint16_t N, uint16_t P, void *pInputA, void *pInp
 //! \code
 //!    C[MxM] = A[MxM] * B[MxM]
 //! \endcode
-//! in which A, B, and C are Hermitian matrices with the same size [MxM]
+//! in which A, B, and C are Hermitian matrices with the same size [MxM].
 //!
-//! \note APU stores only upper/right triangular part of Hermitian matrices for memory
-//! saving. A Hermitian matrix (MxM) will take M*(M+1)/2 element spaces
+//! \note APU stores only upper/right triangular part of Hermitian matrices for
+//! memory saving. A Hermitian matrix (MxM) will take M*(M+1)/2 element spaces
 //!
 //! \param M         number of rows and columns of matrix A/B/C
-//! \param pInputA a pointer to the base of the first input matrix A, in APU memory
-//! \param pInputB a pointer to the base of the second input matrix B, in APU memory
+//! \param pInputA a pointer to the base of the first input matrix A, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input matrix B, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -418,14 +511,16 @@ void APUMatrixMultHerm(uint16_t M, void *pInputA, void *pInputB, void *pResult);
 //! \code
 //!    C[MxM] = A[MxM] * B[MxM]
 //! \endcode
-//! in which A, B are symmetric matrices with the same size [MxM]
+//! in which A, B are symmetric matrices with the same size [MxM].
 //!
 //! \note APU stores only upper/right triangular part of symmetric matrices for
 //! memory saving. A symmetric matrix (MxM) will take M*(M+1)/2 element spaces
 //!
 //! \param M         number of rows and columns of matrix A/B/C
-//! \param pInputA a pointer to the base of the first input matrix A, in APU memory
-//! \param pInputB a pointer to the base of the second input matrix B, in APU memory
+//! \param pInputA a pointer to the base of the first input matrix A, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input matrix B, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -443,12 +538,14 @@ void APUMatrixMultSym(uint16_t M, void *pInputA, void *pInputB, void *pResult);
 //! \code
 //!    C[MxN] = A[MxN] + B[MxN]
 //! \endcode
-//! in which, A, B, and C are matrices with the same size [MxN]
+//! in which, A, B, and C are matrices with the same size [MxN].
 //!
 //! \param M         number of rows of matrix A/B/C
 //! \param N         number of columns of matrix A/B/C
-//! \param pInputA a pointer to the base of the first input matrix A, in APU memory
-//! \param pInputB a pointer to the base of the second input matrix B, in APU memory
+//! \param pInputA a pointer to the base of the first input matrix A, in APU
+//! memory
+//! \param pInputB a pointer to the base of the second input matrix B, in APU
+//! memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
 //! \return None
@@ -467,11 +564,12 @@ void APUMatrixSum(uint16_t M, uint16_t N, void *pInputA, void *pInputB, void *pR
 //!   C[MxN] = b * A[MxN]
 //! \endcode
 //! in which, A and C are complex matrices with the same size [MxN], b is
-//! complex scalar
+//! complex scalar.
 //!
 //! \param M         number of rows of matrix A
 //! \param N         number of columns of matrix A
-//! \param pInputA a pointer to the base of the first input matrix A, in APU memory
+//! \param pInputA a pointer to the base of the first input matrix A, in APU
+//! memory
 //! \param pInputB a pointer to the base of the scalar b, in APU memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
@@ -490,11 +588,13 @@ void APUMatrixScalarMult(uint16_t M, uint16_t N, void *pInputA, void *pInputB, v
 //! \code
 //!  C[MxN] = b + A[MxN] (add scalar b to each of A's elements)
 //! \endcode
-//! in which, A and C are complex matrices with the same size [MxN], b is a complex scalar
+//! in which, A and C are complex matrices with the same size [MxN], b is a
+//! complex scalar.
 //!
 //! \param M         number of rows of matrix A/C
 //! \param N         number of columns of matrix A/C
-//! \param pInputA a pointer to the base of the first input matrix A, in APU memory
+//! \param pInputA a pointer to the base of the first input matrix A, in APU
+//! memory
 //! \param pInputB a pointer to the base of the scalar b, in APU memory
 //! \param pResult a pointer to where the result will be placed, in APU memory
 //!
@@ -563,7 +663,8 @@ void APUSpSmoothCovMatrix(uint16_t N, void *pInput, uint16_t L, void *pResult, u
 
 //*****************************************************************************
 //
-//! \brief APU accelerator for Jacobi Eigen-Decomposition (EVD) of Hermitian Matrix
+//! \brief APU accelerator for Jacobi Eigen-Decomposition (EVD) of Hermitian
+//! Matrix
 //!
 //! Calculate the eigenvalues and eigenvectors of a Hermitian matrix.
 //!
@@ -582,16 +683,18 @@ void APUSpSmoothCovMatrix(uint16_t N, void *pInput, uint16_t L, void *pResult, u
 //!
 //! \param N size of the input/output square matrices
 //! \param pInput a pointer to the base of the input Hermitian matrix and the
-//!     output diagonal matrix D, in APU memory
+//!     output diagonal matrix D, in APU memory.
 //! \param pResultV a pointer to output eigenvectors, in APU memory
 //! \param maxIter the maximum number of iterations (Jacobi sweeps), typically 3
 //! \param minSum  threshold for early stopping condition (if summation of the
 //!     off-diagonal values is smaller than this threshold)
+//! \param epsTol  threshold for off-diagonal elements to be considered small
+//! enough
 //!
 //! \return None
 //
 //*****************************************************************************
-void APUJacobiEVD(uint16_t N, void *pInput, void *pResultV, uint16_t maxIter, float minSum);
+void APUJacobiEVD(uint16_t N, void *pInput, void *pResultV, uint16_t maxIter, float minSum, float epsTol);
 
 //*****************************************************************************
 //
@@ -609,7 +712,7 @@ void APUJacobiEVD(uint16_t N, void *pInput, void *pResultV, uint16_t maxIter, fl
 //! echelon form (in other words, C[M,1:M] is the identity matrix).
 //!
 //! \note Gauss-Jordan reduces the matrix to REDUCED echelon form (instead of
-//! echelon form with Gauss) In addition, to save memory, the input matrix A is
+//! echelon form with Gauss). In addition, to save memory, the input matrix A is
 //! overwritten by its reduced echelon form C using in-place transformation. If
 //! out-place ever needed, the input matrix must be copied before calling this
 //! function.
@@ -636,10 +739,11 @@ void APUGaussJordanElim(uint16_t M, uint16_t N, void *pInput, float epsTol);
 //! \code
 //!  Y = DFT(X, N)
 //! \endcode
-//! in which, X is the input vector length N, Y is the DFT of X with same length.
+//! in which, X is the input vector length N, Y is the DFT of X with same
+//! length.
 //!
-//! \note This is the config function, must be called BEFORE feeding input vector
-//! to the APU memory
+//! \note This is the config function, must be called BEFORE feeding input
+//! vector to the APU memory
 //!
 //! \param N length of input/output vectors
 //! \param pX a pointer to the base of the input/output vector (since this is
@@ -663,7 +767,8 @@ void APUConfigFft(uint16_t N, void *pX);
 //! \code
 //!  Y = DFT(X, N)
 //! \endcode
-//! in which, X is the input vector length N, Y is the DFT of X with same length.
+//! in which, X is the input vector length N, Y is the DFT of X with same
+//! length.
 //!
 //! \note This is where the FFT computation happen. It should be called AFTER
 //! @ref APUConfigFft(). In addition, to save memory, the input is overwritten
@@ -692,7 +797,7 @@ void APUComputeFft(uint16_t N, void *pX);
 //! in which, X is the input vector length N, Y is the invert DFT of X with same
 //! length.
 //!
-//! \note This is where the IFFT computation happen. It should be called AFTER
+//! \note This is where the IFFT computation happens. It should be called AFTER
 //! @ref APUConfigFft(). In addition, to save memory, the input is overwritten
 //! by the output using in-place transformation. If out-place ever needed,
 //! the input vector must be copied before calling this function.
@@ -707,7 +812,8 @@ void APUComputeIfft(uint16_t N, void *pX);
 
 //*****************************************************************************
 //
-//! \brief APU accelerator for generating points evenly distributed on unit circle
+//! \brief APU accelerator for generating points evenly distributed on unit
+//! circle
 //!
 //! APU generates a unit circle as follows:
 //! exp(-j*2*pi*(k*M+phase)/1024 * (-1)^(conj))
@@ -730,6 +836,95 @@ void APUComputeIfft(uint16_t N, void *pX);
 //
 //*****************************************************************************
 void APUUnitCircle(uint16_t N, uint16_t M, uint16_t phase, uint16_t conj, void *pResult);
+
+//*****************************************************************************
+//
+//! \brief APU accelerator for computing max/min of the real part of a vector
+//! and a real value scalar
+//!
+//! APU accelerator for computing max/min of the real part of a vector
+//! and a real value scalar.
+//!
+//! When \c op is \ref APU_OP_MAX the function is defined as:
+//! \code
+//!  Y = max(X, thresh) = [max(real(X[i]), thresh)] for i = 1:N
+//! \endcode
+//!
+//! When \c op is \ref APU_OP_MIN the function is defined as:
+//! \code
+//!  Y = min(X, thresh) = [min(real(X[i]), thresh)] for i = 1:N
+//! \endcode
+//! in which, X and Y is the N-length complex vector, and thresh is a real
+//! scalar.
+//!
+//! \param N length of input/output vectors
+//! \param pInput a pointer to the base of the input vector, in APU memory
+//! \param thresh a real value threshold to be compared against
+//! \param op select between max or min operators
+//!    - \ref APU_OP_MAX
+//!    - \ref APU_OP_MIN
+//! \param pResult a pointer to the output vector of points, in APU memory
+//!
+//! \return None
+//
+//*****************************************************************************
+void APUVectorMaxMin(uint16_t N, void *pInput, float thresh, uint16_t op, void *pResult);
+
+//*****************************************************************************
+//
+//! \brief APU accelerator for converting back and forth between real and
+//! complex numbers
+//!
+//! APU accelerator for converting back and forth between real and complex
+//! numbers for vectors.
+//!
+//! Defined as:
+//! \code
+//!  Y = R2C(A, B) = [R2C(A[i], B[i])] for i = 1:N
+//! \endcode
+//! in which, A, B and Y are N-length complex vectors.
+//!
+//! \param N length of input/output vectors
+//! \param pInputA a pointer to the base of the input vector A, in APU memory
+//! \param pInputB a pointer to the base of the input vector B, in APU memory
+//! Note that when only vector A is used,
+//! this pInputB pointer is ignored and can be NULL.
+//! \param pResult a pointer to the base of the output vector Y, in APU
+//! memory \param op select among converters, must be one of:
+//!    - \ref APU_OP_R2C
+//!    - \ref APU_OP_R2CC
+//!    - \ref APU_OP_R2CA
+//!    - \ref APU_OP_R2CCA
+//!    - \ref APU_OP_RA
+//!    - \ref APU_OP_IMA
+//!    - \ref APU_OP_ABS
+//! \param pResult a pointer to the output vector of points, in APU memory
+//!
+//! \return None
+//
+//*****************************************************************************
+void APUVectorR2C(uint16_t N, void *pInputA, void *pInputB, uint16_t op, void *pResult);
+
+//*****************************************************************************
+//
+//! \brief APU accelerator for converting Hermitian upper-triangular to
+//! lower-triangular
+//!
+//! APU accelerator for converting converting Hermitian upper-triangular to
+//! lower-triangular.
+//! To save memory, APU stores only upper-triangular elements of Hermitian
+//! matrix in column-major order.
+//! This function converts this format to lower-triangular, column-major order
+//! Hermitian.
+//!
+//! \param N length of input/output vectors
+//! \param pInput a pointer to the base of the input vector, in APU memory
+//! \param pResult a pointer to the output vector of points, in APU memory
+//!
+//! \return None
+//
+//*****************************************************************************
+void APUHermLo(uint16_t N, void *pInput, void *pResult);
 
 //*****************************************************************************
 //

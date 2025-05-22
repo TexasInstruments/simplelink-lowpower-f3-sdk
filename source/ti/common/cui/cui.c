@@ -65,7 +65,7 @@
 #include <string.h>
 #include <stdio.h>
 #ifndef CUI_POSIX
-#include <ti/sysbios/BIOS.h>
+    #include <ti/sysbios/BIOS.h>
 #endif
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
@@ -78,49 +78,48 @@
 
 #include "ti/common/cui/cui.h"
 
-
 #define CUI_INITIAL_STATUS_OFFSET 5
-#define CUI_LABEL_VAL_SEP ": "
+#define CUI_LABEL_VAL_SEP         ": "
 #define CUI_MAX_LABEL_AND_SEP_LEN (MAX_STATUS_LINE_LABEL_LEN + (sizeof(CUI_LABEL_VAL_SEP)))
 
 /*
  * Ascii Escape characters to be used by testing scripts to bookend the
  * information being printed to the UART
  */
-#define CUI_MENU_START_CHAR         0x01 // SOH (start of heading) ascii character
-#define CUI_STATUS_LINE_START_CHAR  0x02 // SOT (start of text) ascii character
-#define CUI_END_CHAR                0x03 // ETX (end of text) ascii character
+#define CUI_MENU_START_CHAR        0x01 // SOH (start of heading) ascii character
+#define CUI_STATUS_LINE_START_CHAR 0x02 // SOT (start of text) ascii character
+#define CUI_END_CHAR               0x03 // ETX (end of text) ascii character
 
-#define CUI_NL_CR               "\n\r" // New line carriage return
+#define CUI_NL_CR "\n\r" // New line carriage return
 
-#define CUI_ESC_UP              "\033[A"
-#define CUI_ESC_DOWN            "\033[B"
-#define CUI_ESC_RIGHT           "\033[C"
-#define CUI_ESC_LEFT            "\033[D"
-#define CUI_ESC_ESC             "\033\0\0\0\0"
+#define CUI_ESC_UP    "\033[A"
+#define CUI_ESC_DOWN  "\033[B"
+#define CUI_ESC_RIGHT "\033[C"
+#define CUI_ESC_LEFT  "\033[D"
+#define CUI_ESC_ESC   "\033\0\0\0\0"
 
 /*
  * Escape sequences for terminal control.
  * Any sequences with '%' in them require require additional information to be used
  *  as is.
  */
-#define CUI_ESC_TRM_MODE            "\033[20"    // Set line feed mode for the terminal
+#define CUI_ESC_TRM_MODE "\033[20" // Set line feed mode for the terminal
 
-#define CUI_ESC_CLR                 "\033[2J"    // Clear the entire screen
-#define CUI_ESC_CLR_UP              "\033[1J"    // Clear screen from cursor up
-#define CUI_ESC_CLR_STAT_LINE_VAL   "\033[2K"    // Clear the status line
+#define CUI_ESC_CLR               "\033[2J" // Clear the entire screen
+#define CUI_ESC_CLR_UP            "\033[1J" // Clear screen from cursor up
+#define CUI_ESC_CLR_STAT_LINE_VAL "\033[2K" // Clear the status line
 
-#define CUI_ESC_CUR_HIDE            "\033[?25l"  // Hide cursor
-#define CUI_ESC_CUR_SHOW            "\033[?25h"  // Show cursor
-#define CUI_ESC_CUR_HOME            "\033[H"     // Move cursor to the top left of the terminal
-#define CUI_ESC_CUR_MENU_BTM        "\033[3;%dH" // Move cursor to the bottom right of the menu
-#define CUI_ESC_CUR_LINE            "\033[%d;0H" // Move cursor to a line of choice
-#define CUI_ESC_CUR_ROW_COL         "\033[%d;%dH"// Move cursor to row and col
+#define CUI_ESC_CUR_HIDE     "\033[?25l"   // Hide cursor
+#define CUI_ESC_CUR_SHOW     "\033[?25h"   // Show cursor
+#define CUI_ESC_CUR_HOME     "\033[H"      // Move cursor to the top left of the terminal
+#define CUI_ESC_CUR_MENU_BTM "\033[3;%dH"  // Move cursor to the bottom right of the menu
+#define CUI_ESC_CUR_LINE     "\033[%d;0H"  // Move cursor to a line of choice
+#define CUI_ESC_CUR_ROW_COL  "\033[%d;%dH" // Move cursor to row and col
 
-#define CUI_NUM_UART_CHARS          5
-#define CUI_MENU_START_ESCAPE_LEN   32
-#define CUI_NL_CR_LEN               2
-#define CUI_ETX_LEN                 1
+#define CUI_NUM_UART_CHARS        5
+#define CUI_MENU_START_ESCAPE_LEN 32
+#define CUI_NL_CR_LEN             2
+#define CUI_ETX_LEN               1
 
 /******************************************************************************
  Constants
@@ -132,11 +131,10 @@ typedef enum
     CUI_ACQUIRED = 0xDEADBEEF,
 } CUI_rscStatus_t;
 
-
 // Internal representation of a menu
 typedef struct
 {
-    CUI_menu_t* pMenu;
+    CUI_menu_t *pMenu;
     uint32_t clientHash;
 } CUI_menuResource_t;
 
@@ -177,15 +175,15 @@ static SemaphoreP_Handle gUartSem;
 static SemaphoreP_Struct gUartSemStruct;
 
 static uint8_t gTxBuff[512];
-static size_t gTxLen = 0;
+static size_t gTxLen  = 0;
 static size_t gTxSent = 0;
 
 #ifndef CUI_MIN_FOOTPRINT
 /*
  * [Menu Global Variables]
  */
-static CUI_menu_t* gpCurrMenu;
-static CUI_menu_t* gpMainMenu;
+static CUI_menu_t *gpCurrMenu;
+static CUI_menu_t *gpMainMenu;
 static size_t gCurrMenuItemEntry = 0;
 static size_t gPrevMenuItemEntry = 0;
 static bool gCursorActive;
@@ -196,10 +194,10 @@ static CUI_menuResource_t gMenuResources[MAX_REGISTERED_MENUS];
 static SemaphoreP_Handle gMenuSem;
 static SemaphoreP_Struct gMenuSemStruct;
 
-char menuBuff[CUI_MENU_START_ESCAPE_LEN             // Escape characters
-              + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN   // Additional new line and return char
-              + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN   // Additional new line and return char
-              + MAX_MENU_LINE_LEN + CUI_ETX_LEN];   // Additional ETX char
+char menuBuff[CUI_MENU_START_ESCAPE_LEN           // Escape characters
+              + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN // Additional new line and return char
+              + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN // Additional new line and return char
+              + MAX_MENU_LINE_LEN + CUI_ETX_LEN]; // Additional ETX char
 
 static char gpMultiMenuTitle[] = " TI DMM Application ";
 
@@ -208,14 +206,14 @@ static char gpMultiMenuTitle[] = " TI DMM Application ";
  * registered to the CUI. This menu will then be the top most Main Menu where
  * each menu that was registered will now be a sub menu.
  */
-uint8_t     cuiMultiMenuData[sizeof(CUI_menu_t) + ((MAX_REGISTERED_MENUS + 1) * sizeof(CUI_menuItem_t))];
+uint8_t cuiMultiMenuData[sizeof(CUI_menu_t) + ((MAX_REGISTERED_MENUS + 1) * sizeof(CUI_menuItem_t))];
 CUI_menu_t *cuiMultiMenu = (CUI_menu_t *)&cuiMultiMenuData;
 #endif /* CUI_MIN_FOOTPRINT */
 
 /*
  * [Status Line Variables]
  */
-static CUI_statusLineResource_t* gStatusLineResources[MAX_CLIENTS];
+static CUI_statusLineResource_t *gStatusLineResources[MAX_CLIENTS];
 
 static SemaphoreP_Handle gStatusSem;
 static SemaphoreP_Struct gStatusSemStruct;
@@ -224,24 +222,27 @@ static SemaphoreP_Struct gStatusSemStruct;
  Local Functions Prototypes
  *****************************************************************************/
 static CUI_retVal_t CUI_publicAPIChecks(const CUI_clientHandle_t _clientHandle);
-static CUI_retVal_t CUI_acquireStatusLine(const CUI_clientHandle_t _clientHandle, const char* _pLabel, const bool _refreshInd, uint32_t* _pLineId);
+static CUI_retVal_t CUI_acquireStatusLine(const CUI_clientHandle_t _clientHandle,
+                                          const char *_pLabel,
+                                          const bool _refreshInd,
+                                          uint32_t *_pLineId);
 static CUI_retVal_t CUI_validateHandle(const CUI_clientHandle_t _clientHandle);
 static int CUI_getClientIndex(const CUI_clientHandle_t _clientHandle);
 static void UartWriteCallback(UART2_Handle _handle, void *_buf, size_t _size, void *_userArg, int_fast16_t _status);
 #ifndef CUI_MIN_FOOTPRINT
 static void UartReadCallback(UART2_Handle _handle, void *_buf, size_t _size, void *_userArg, int_fast16_t _status);
 #endif
-static CUI_retVal_t CUI_updateRemLen(size_t* _currRemLen, char* _buff, size_t _buffSize);
-static CUI_retVal_t CUI_writeString(void * _buffer, size_t _size);
+static CUI_retVal_t CUI_updateRemLen(size_t *_currRemLen, char *_buff, size_t _buffSize);
+static CUI_retVal_t CUI_writeString(void *_buffer, size_t _size);
 #ifndef CUI_MIN_FOOTPRINT
 static void CUI_menuActionNavigate(uint8_t _navDir);
 static void CUI_menuActionExecute(void);
 static void CUI_dispMenu(bool _menuPopulated);
 static void CUI_callMenuUartUpdateFn();
 static void CUI_updateCursor(void);
-static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input);
-static bool CUI_handleMenuList(CUI_menuItem_t* _pItemEntry, uint8_t _input);
-static CUI_retVal_t CUI_findMenu(CUI_menu_t* _pMenu, CUI_menu_t* _pDesiredMenu, uint32_t* _pPrevItemIndex);
+static bool CUI_handleMenuIntercept(CUI_menuItem_t *_pItemEntry, uint8_t _input);
+static bool CUI_handleMenuList(CUI_menuItem_t *_pItemEntry, uint8_t _input);
+static CUI_retVal_t CUI_findMenu(CUI_menu_t *_pMenu, CUI_menu_t *_pDesiredMenu, uint32_t *_pPrevItemIndex);
 #endif
 /******************************************************************************
  * Public CUI APIs
@@ -256,7 +257,7 @@ static CUI_retVal_t CUI_findMenu(CUI_menu_t* _pMenu, CUI_menu_t* _pDesiredMenu, 
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-CUI_retVal_t CUI_init(CUI_params_t* _pParams)
+CUI_retVal_t CUI_init(CUI_params_t *_pParams)
 {
     /*
      *  Do nothing if the module has already been initialized or if
@@ -267,7 +268,7 @@ CUI_retVal_t CUI_init(CUI_params_t* _pParams)
     {
         // Semaphore Setup
         SemaphoreP_Params_init(&gSemParams);
-        //set all sems in this module to be binary sems
+        // set all sems in this module to be binary sems
         gSemParams.mode = SemaphoreP_Mode_BINARY;
 
         // Client Setup
@@ -294,7 +295,7 @@ CUI_retVal_t CUI_init(CUI_params_t* _pParams)
                 UART2_Params uartParams;
 
                 UART2_Params_init(&uartParams);
-                uartParams.baudRate = 115200;
+                uartParams.baudRate      = 115200;
                 uartParams.writeMode     = UART2_Mode_CALLBACK;
                 uartParams.writeCallback = UartWriteCallback;
 #ifndef CUI_MIN_FOOTPRINT
@@ -336,10 +337,10 @@ CUI_retVal_t CUI_init(CUI_params_t* _pParams)
                  * sub menu of the cuiMultiMenu instead.
                  */
                 memset(cuiMultiMenu, 0, sizeof(&cuiMultiMenu));
-                cuiMultiMenu->uartUpdateFn  = NULL;
-                cuiMultiMenu->pTitle        = gpMultiMenuTitle;
-                cuiMultiMenu->numItems      = MAX_REGISTERED_MENUS + 1;
-                cuiMultiMenu->pUpper        = NULL;
+                cuiMultiMenu->uartUpdateFn = NULL;
+                cuiMultiMenu->pTitle       = gpMultiMenuTitle;
+                cuiMultiMenu->numItems     = MAX_REGISTERED_MENUS + 1;
+                cuiMultiMenu->pUpper       = NULL;
             }
 #endif
 
@@ -368,7 +369,7 @@ CUI_retVal_t CUI_init(CUI_params_t* _pParams)
  *
  * @return      none
  */
-void CUI_paramsInit(CUI_params_t* _pParams)
+void CUI_paramsInit(CUI_params_t *_pParams)
 {
     _pParams->manageUart = true;
 }
@@ -384,7 +385,7 @@ void CUI_paramsInit(CUI_params_t* _pParams)
  *
  * @return      NULL on failure. Otherwise success.
  */
-CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t* _pParams)
+CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t *_pParams)
 {
     static size_t numClients = 0;
 
@@ -401,8 +402,9 @@ CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t* _pParams)
     }
 
     uint32_t randomNumber;
-    if (Random_STATUS_SUCCESS != Random_seedAutomatic()) {
-         return CUI_FAILURE;
+    if (Random_STATUS_SUCCESS != Random_seedAutomatic())
+    {
+        return CUI_FAILURE;
     }
 
     uint8_t attempts = 0;
@@ -410,14 +412,13 @@ CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t* _pParams)
     {
         randomNumber = Random_getNumber();
         attempts++;
-    }while(!randomNumber && (attempts <= 5));
-
+    } while (!randomNumber && (attempts <= 5));
 
     gClientHandles[numClients] = randomNumber;
 
     if (_pParams->maxStatusLines)
     {
-        gMaxStatusLines[numClients] = _pParams->maxStatusLines;
+        gMaxStatusLines[numClients]      = _pParams->maxStatusLines;
         gStatusLineResources[numClients] = malloc(_pParams->maxStatusLines * sizeof(gStatusLineResources[0][0]));
         if (gStatusLineResources[numClients] == NULL)
         {
@@ -442,7 +443,7 @@ CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t* _pParams)
  *
  * @return      void
  */
-void CUI_clientParamsInit(CUI_clientParams_t* _pClientParams)
+void CUI_clientParamsInit(CUI_clientParams_t *_pClientParams)
 {
     strcpy(_pClientParams->clientName, "");
     _pClientParams->maxStatusLines = 0;
@@ -478,7 +479,6 @@ CUI_retVal_t CUI_close()
     gModuleInitialized = false;
 
     return CUI_SUCCESS;
-
 }
 #ifndef CUI_MIN_FOOTPRINT
 /******************************************************************************
@@ -494,7 +494,7 @@ CUI_retVal_t CUI_close()
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu)
+CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu)
 {
     CUI_retVal_t retVal = CUI_publicAPIChecks(_clientHandle);
     if (CUI_SUCCESS != retVal)
@@ -515,11 +515,10 @@ CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t
     SemaphoreP_pend(gMenuSem, SemaphoreP_WAIT_FOREVER);
 
     int freeIndex = -1;
-    int numMenus = 0;
+    int numMenus  = 0;
     for (int i = 0; i < MAX_REGISTERED_MENUS; i++)
     {
-        if (!(gMenuResources[i].clientHash) &&
-              (NULL == gMenuResources[i].pMenu))
+        if (!(gMenuResources[i].clientHash) && (NULL == gMenuResources[i].pMenu))
         {
             if (-1 == freeIndex)
             {
@@ -547,7 +546,7 @@ CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t
     }
 
     gMenuResources[freeIndex].clientHash = _clientHandle;
-    gMenuResources[freeIndex].pMenu = _pMenu;
+    gMenuResources[freeIndex].pMenu      = _pMenu;
 
     if (numMenus > 0)
     {
@@ -565,47 +564,47 @@ CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t
              * The first menu that was registered needs to be added as the first
              * sub menu of the cuiMultiMenu object
              */
-            cuiMultiMenu->menuItems[0].itemType = CUI_MENU_ITEM_TYPE_SUBMENU;
+            cuiMultiMenu->menuItems[0].itemType        = CUI_MENU_ITEM_TYPE_SUBMENU;
             cuiMultiMenu->menuItems[0].interceptActive = false;
-            cuiMultiMenu->menuItems[0].pDesc = NULL;
-            cuiMultiMenu->menuItems[0].item.pSubMenu = gpMainMenu;
-            gpMainMenu->pUpper = cuiMultiMenu;
+            cuiMultiMenu->menuItems[0].pDesc           = NULL;
+            cuiMultiMenu->menuItems[0].item.pSubMenu   = gpMainMenu;
+            gpMainMenu->pUpper                         = cuiMultiMenu;
 
             /*
              * Change the old main menu Help action to a back action
              */
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].itemType = CUI_MENU_ITEM_TYPE_ACTION;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].itemType        = CUI_MENU_ITEM_TYPE_ACTION;
             gpMainMenu->menuItems[gpMainMenu->numItems - 1].interceptActive = false;
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].pDesc = CUI_MENU_ACTION_BACK_DESC;
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].item.pFnAction = (CUI_pFnAction_t) CUI_menuActionBack;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].pDesc           = CUI_MENU_ACTION_BACK_DESC;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].item.pFnAction  = (CUI_pFnAction_t)CUI_menuActionBack;
         }
 
         /*
          * Add the new menu being registered to the cuiMultiMenu as a sub
          * menu object
          */
-        cuiMultiMenu->menuItems[numMenus].itemType = CUI_MENU_ITEM_TYPE_SUBMENU;
+        cuiMultiMenu->menuItems[numMenus].itemType        = CUI_MENU_ITEM_TYPE_SUBMENU;
         cuiMultiMenu->menuItems[numMenus].interceptActive = false;
-        cuiMultiMenu->menuItems[numMenus].pDesc = NULL;
-        cuiMultiMenu->menuItems[numMenus].item.pSubMenu = _pMenu;
-        _pMenu->pUpper = cuiMultiMenu;
+        cuiMultiMenu->menuItems[numMenus].pDesc           = NULL;
+        cuiMultiMenu->menuItems[numMenus].item.pSubMenu   = _pMenu;
+        _pMenu->pUpper                                    = cuiMultiMenu;
 
         /*
          * Change the registering menu Help action to a back action
          */
-        _pMenu->menuItems[_pMenu->numItems - 1].itemType = CUI_MENU_ITEM_TYPE_ACTION;
+        _pMenu->menuItems[_pMenu->numItems - 1].itemType        = CUI_MENU_ITEM_TYPE_ACTION;
         _pMenu->menuItems[_pMenu->numItems - 1].interceptActive = false;
-        _pMenu->menuItems[_pMenu->numItems - 1].pDesc = CUI_MENU_ACTION_BACK_DESC;
-        _pMenu->menuItems[_pMenu->numItems - 1].item.pFnAction = (CUI_pFnAction_t) CUI_menuActionBack;
+        _pMenu->menuItems[_pMenu->numItems - 1].pDesc           = CUI_MENU_ACTION_BACK_DESC;
+        _pMenu->menuItems[_pMenu->numItems - 1].item.pFnAction  = (CUI_pFnAction_t)CUI_menuActionBack;
 
         /*
          * The Help screen must always be the last initialized item in the
          * cuiMultiMenu
          */
-        cuiMultiMenu->menuItems[numMenus + 1].itemType = CUI_MENU_ITEM_TYPE_INTERCEPT;
-        cuiMultiMenu->menuItems[numMenus + 1].interceptActive = false;
-        cuiMultiMenu->menuItems[numMenus + 1].pDesc = CUI_MENU_ACTION_HELP_DESC;
-        cuiMultiMenu->menuItems[numMenus + 1].item.pFnIntercept = (CUI_pFnIntercept_t) CUI_menuActionHelp;
+        cuiMultiMenu->menuItems[numMenus + 1].itemType          = CUI_MENU_ITEM_TYPE_INTERCEPT;
+        cuiMultiMenu->menuItems[numMenus + 1].interceptActive   = false;
+        cuiMultiMenu->menuItems[numMenus + 1].pDesc             = CUI_MENU_ACTION_HELP_DESC;
+        cuiMultiMenu->menuItems[numMenus + 1].item.pFnIntercept = (CUI_pFnIntercept_t)CUI_menuActionHelp;
 
         if (1 == numMenus)
         {
@@ -664,7 +663,7 @@ CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu)
+CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu)
 {
     char buff[32];
     CUI_retVal_t retVal = CUI_publicAPIChecks(_clientHandle);
@@ -687,19 +686,17 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
     SemaphoreP_pend(gMenuSem, SemaphoreP_WAIT_FOREVER);
 
     int matchingIndex = -1;
-    int numMenus = 0;
+    int numMenus      = 0;
     for (int i = 0; i < MAX_REGISTERED_MENUS; i++)
     {
-        if ((_clientHandle == gMenuResources[i].clientHash) &&
-              (_pMenu == gMenuResources[i].pMenu))
+        if ((_clientHandle == gMenuResources[i].clientHash) && (_pMenu == gMenuResources[i].pMenu))
         {
             if (-1 == matchingIndex)
             {
                 matchingIndex = i;
             }
         }
-        if ((0U != gMenuResources[i].clientHash) &&
-              (NULL != gMenuResources[i].pMenu))
+        if ((0U != gMenuResources[i].clientHash) && (NULL != gMenuResources[i].pMenu))
         {
             numMenus++;
         }
@@ -727,9 +724,7 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
             uint8_t newMainMenuIndex = 0;
             for (int i = 0; i < MAX_REGISTERED_MENUS; i++)
             {
-                if (0U != gMenuResources[i].clientHash &&
-                        NULL != gMenuResources[i].pMenu &&
-                        i != matchingIndex)
+                if (0U != gMenuResources[i].clientHash && NULL != gMenuResources[i].pMenu && i != matchingIndex)
                 {
                     newMainMenuIndex = i;
                     break;
@@ -744,10 +739,10 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
             /* Default to the Help item that was given to it */
             gCurrMenuItemEntry = gpMainMenu->numItems - 1;
 
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].itemType = CUI_MENU_ITEM_TYPE_INTERCEPT;
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].interceptActive = false;
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].pDesc = CUI_MENU_ACTION_HELP_DESC;
-            gpMainMenu->menuItems[gpMainMenu->numItems - 1].item.pFnIntercept = (CUI_pFnIntercept_t) CUI_menuActionHelp;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].itemType          = CUI_MENU_ITEM_TYPE_INTERCEPT;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].interceptActive   = false;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].pDesc             = CUI_MENU_ACTION_HELP_DESC;
+            gpMainMenu->menuItems[gpMainMenu->numItems - 1].item.pFnIntercept = (CUI_pFnIntercept_t)CUI_menuActionHelp;
         }
         else
         {
@@ -775,7 +770,9 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
                  *  It is safe to use this i+1 value because cuiMultiMenu was
                  * declared to contain MAX_REGISTERED_MENUS + 1 menuItems.
                  */
-                memcpy(&(cuiMultiMenu->menuItems[i]), &(cuiMultiMenu->menuItems[i+1]), sizeof(cuiMultiMenu->menuItems[0]));
+                memcpy(&(cuiMultiMenu->menuItems[i]),
+                       &(cuiMultiMenu->menuItems[i + 1]),
+                       sizeof(cuiMultiMenu->menuItems[0]));
             }
 
             // Decrement the count of items in cuiMultiMenu
@@ -788,7 +785,7 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
                  * displayed, then we need to choose a new thing to display.
                  * The easiest solution here is to display the Help action.
                  */
-                gpCurrMenu = cuiMultiMenu;
+                gpCurrMenu         = cuiMultiMenu;
                 gCurrMenuItemEntry = cuiMultiMenu->numItems;
             }
             else if (gpCurrMenu == cuiMultiMenu)
@@ -811,7 +808,6 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
         }
 
         CUI_dispMenu(false);
-
     }
     else
     {
@@ -821,20 +817,20 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
         /* Default to the Help item that was given to it */
         gCurrMenuItemEntry = 0;
 
-        SystemP_snprintf(buff, sizeof(buff),
-            CUI_ESC_CUR_HIDE CUI_ESC_CUR_MENU_BTM CUI_ESC_CLR_UP CUI_ESC_CUR_HOME,
-            MAX_MENU_LINE_LEN);
+        SystemP_snprintf(buff,
+                         sizeof(buff),
+                         CUI_ESC_CUR_HIDE CUI_ESC_CUR_MENU_BTM CUI_ESC_CLR_UP CUI_ESC_CUR_HOME,
+                         MAX_MENU_LINE_LEN);
         CUI_writeString(buff, strlen(buff));
     }
 
     gMenuResources[matchingIndex].clientHash = 0U;
-    gMenuResources[matchingIndex].pMenu = NULL;
+    gMenuResources[matchingIndex].pMenu      = NULL;
 
     SemaphoreP_post(gMenuSem);
 
     return CUI_SUCCESS;
 }
-
 
 /*********************************************************************
  * @fn          CUI_updateMultiMenuTitle
@@ -846,7 +842,7 @@ CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-CUI_retVal_t CUI_updateMultiMenuTitle(const char* _pTitle)
+CUI_retVal_t CUI_updateMultiMenuTitle(const char *_pTitle)
 {
     if (NULL == _pTitle)
     {
@@ -881,7 +877,7 @@ CUI_retVal_t CUI_updateMultiMenuTitle(const char* _pTitle)
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu, const uint32_t _itemIndex)
+CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu, const uint32_t _itemIndex)
 {
     CUI_retVal_t retVal = CUI_publicAPIChecks(_clientHandle);
     if (CUI_SUCCESS != retVal)
@@ -907,7 +903,7 @@ CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pM
         /*
          * Verify that the menu is apart of a registered Main Menu
          */
-        menuRetVal = CUI_findMenu(gMenuResources[i].pMenu, _pMenu, &prevItemIndex);
+        menuRetVal    = CUI_findMenu(gMenuResources[i].pMenu, _pMenu, &prevItemIndex);
         if (CUI_SUCCESS == menuRetVal)
         {
             /*
@@ -933,7 +929,7 @@ CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pM
      */
     gPrevMenuItemEntry = prevItemIndex;
     gCurrMenuItemEntry = _itemIndex;
-    gpCurrMenu = _pMenu;
+    gpCurrMenu         = _pMenu;
 
     CUI_dispMenu(false);
 
@@ -960,9 +956,9 @@ CUI_retVal_t CUI_processMenuUpdate(void)
         return CUI_FAILURE;
     }
 
-    CUI_menuItem_t* pItemEntry = &(gpCurrMenu->menuItems[gCurrMenuItemEntry]);
-    uint8_t input = gUartRxBuffer[0];
-    bool inputBad = false;
+    CUI_menuItem_t *pItemEntry = &(gpCurrMenu->menuItems[gCurrMenuItemEntry]);
+    uint8_t input              = gUartRxBuffer[0];
+    bool inputBad              = false;
 
     // Decode special escape sequences
     if (input == CUI_INPUT_ESC)
@@ -1010,7 +1006,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
         }
 
         bool interceptState = pItemEntry->interceptActive;
-        bool updateHandled = false;
+        bool updateHandled  = false;
 
         /*
          *  Allow the interceptable action, if it is being shown, the chance to
@@ -1040,7 +1036,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
 
         if (false == updateHandled)
         {
-            switch(input)
+            switch (input)
             {
                 // Up and Down have no effect on menu navigation
                 case CUI_INPUT_UP:
@@ -1058,7 +1054,7 @@ CUI_retVal_t CUI_processMenuUpdate(void)
                     // if there is a upper menu, navigate to it.
                     if (gpCurrMenu->pUpper)
                     {
-                        gpCurrMenu = gpCurrMenu->pUpper;
+                        gpCurrMenu         = gpCurrMenu->pUpper;
                         gCurrMenuItemEntry = gPrevMenuItemEntry;
                     }
                     else
@@ -1079,34 +1075,49 @@ CUI_retVal_t CUI_processMenuUpdate(void)
                     }
                     else
                     {
-                        gpCurrMenu = gpMainMenu;
+                        gpCurrMenu         = gpMainMenu;
                         // Display the help screen
                         gCurrMenuItemEntry = gpMainMenu->numItems - 1;
                     }
                     CUI_dispMenu(false);
                     break;
-                default :
+                default:
                     break;
             }
         }
     }
 
-    //Clear the buffer
+    // Clear the buffer
     memset(gUartRxBuffer, '\0', sizeof(gUartRxBuffer));
 
     UART2_read(gUartHandle, gUartRxBuffer, sizeof(gUartRxBuffer), NULL);
     return CUI_SUCCESS;
 }
 #else
-CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu) { return CUI_SUCCESS; }
+CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu)
+{
+    return CUI_SUCCESS;
+}
 
-CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu) { return CUI_SUCCESS; }
+CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu)
+{
+    return CUI_SUCCESS;
+}
 
-CUI_retVal_t CUI_updateMultiMenuTitle(const char* _pTitle) { return CUI_SUCCESS; }
+CUI_retVal_t CUI_updateMultiMenuTitle(const char *_pTitle)
+{
+    return CUI_SUCCESS;
+}
 
-CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu, const uint32_t _itemIndex) { return CUI_SUCCESS; }
+CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu, const uint32_t _itemIndex)
+{
+    return CUI_SUCCESS;
+}
 
-CUI_retVal_t CUI_processMenuUpdate(void) { return CUI_SUCCESS; }
+CUI_retVal_t CUI_processMenuUpdate(void)
+{
+    return CUI_SUCCESS;
+}
 #endif
 /******************************************************************************
  * Status Line CUI APIs
@@ -1124,7 +1135,10 @@ CUI_retVal_t CUI_processMenuUpdate(void) { return CUI_SUCCESS; }
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandle, const char _pLabel[MAX_STATUS_LINE_LABEL_LEN], const bool _refreshInd, uint32_t* _pLineId)
+CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandle,
+                                           const char _pLabel[MAX_STATUS_LINE_LABEL_LEN],
+                                           const bool _refreshInd,
+                                           uint32_t *_pLineId)
 {
     CUI_retVal_t retVal = CUI_publicAPIChecks(_clientHandle);
     if (CUI_SUCCESS != retVal)
@@ -1145,7 +1159,7 @@ CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandl
          * the user tries to print to this line even though it was
          * not successfully acquired.
          */
-        //TODO: change _pLineId to be a signed integer so that -1 may be used.
+        // TODO: change _pLineId to be a signed integer so that -1 may be used.
         *_pLineId = 0xFF;
         return retVal;
     }
@@ -1172,7 +1186,9 @@ CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandl
  * @return      CUI_retVal_t representing success or failure.
  */
 CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
-        const uint32_t _lineId, const char *_format, ...)
+                                  const uint32_t _lineId,
+                                  const char *_format,
+                                  ...)
 {
     /*
      * This buffer will be passed to CUI_writeString(). The address must be
@@ -1180,7 +1196,8 @@ CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
      * quick call to CUI_statusLinePrintf to not effect the buffer of a
      * previous unfinished call.
      */
-    char statusLineBuff[CUI_MAX_LABEL_AND_SEP_LEN + MAX_STATUS_LINE_VALUE_LEN + 32]; // plus 32 for cursor movement/clearing
+    char statusLineBuff[CUI_MAX_LABEL_AND_SEP_LEN + MAX_STATUS_LINE_VALUE_LEN + 32]; // plus 32 for cursor
+                                                                                     // movement/clearing
     va_list args;
 
     CUI_retVal_t retVal = CUI_publicAPIChecks(_clientHandle);
@@ -1204,7 +1221,7 @@ CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
 
 #if !defined(CUI_SCROLL_PRINT)
     uint32_t offset;
-#ifndef CUI_MIN_FOOTPRINT
+    #ifndef CUI_MIN_FOOTPRINT
     if (MAX_REGISTERED_MENUS == 0)
     {
         offset = 1;
@@ -1213,22 +1230,23 @@ CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
     {
         offset = CUI_INITIAL_STATUS_OFFSET;
     }
-#else
+    #else
     offset = 1;
-#endif
+    #endif
     offset += gStatusLineResources[clientIndex][_lineId].lineOffset;
 
-    //TODO: Remove magic length number
-    SystemP_snprintf(statusLineBuff, 32,
-        CUI_ESC_CUR_HIDE CUI_ESC_CUR_HOME CUI_ESC_CUR_LINE CUI_ESC_CLR_STAT_LINE_VAL "%c",
-         offset, CUI_STATUS_LINE_START_CHAR);
+    // TODO: Remove magic length number
+    SystemP_snprintf(statusLineBuff,
+                     32,
+                     CUI_ESC_CUR_HIDE CUI_ESC_CUR_HOME CUI_ESC_CUR_LINE CUI_ESC_CLR_STAT_LINE_VAL "%c",
+                     offset,
+                     CUI_STATUS_LINE_START_CHAR);
 #endif
     size_t availableLen = sizeof(statusLineBuff) - 1;
-    size_t buffSize = availableLen;
+    size_t buffSize     = availableLen;
 
     // Label must be printed for testing scripts to parse the output easier
-    strncat(statusLineBuff, gStatusLineResources[clientIndex][_lineId].label,
-            availableLen);
+    strncat(statusLineBuff, gStatusLineResources[clientIndex][_lineId].label, availableLen);
 
     retVal = CUI_updateRemLen(&availableLen, statusLineBuff, buffSize);
     if (CUI_SUCCESS != retVal)
@@ -1246,7 +1264,7 @@ CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
         return retVal;
     }
 
-    static char refreshChars[] = {'\\', '|', '/', '-'};
+    static char refreshChars[]    = {'\\', '|', '/', '-'};
     static uint8_t refreshCharIdx = 0;
 
     if (gStatusLineResources[clientIndex][_lineId].refreshInd)
@@ -1284,7 +1302,7 @@ CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
  *
  * @return      CUI_retVal_t representing success or failure.
  */
-void CUI_assert(const char* _assertMsg, const bool _spinLock)
+void CUI_assert(const char *_assertMsg, const bool _spinLock)
 {
 #ifndef CUI_POSIX
     if (BIOS_ThreadType_Main == BIOS_getThreadType())
@@ -1295,7 +1313,7 @@ void CUI_assert(const char* _assertMsg, const bool _spinLock)
          *  BIOS_start().
          */
         // TODO: solve this issue CUI_ledAssert();
-        while(1){};
+        while (1) {};
     }
 #endif
 
@@ -1312,12 +1330,18 @@ void CUI_assert(const char* _assertMsg, const bool _spinLock)
     // Display this in the line between the menu and the status lines
     uint32_t offset = CUI_INITIAL_STATUS_OFFSET - 1;
 
-    SystemP_snprintf(tmp, sizeof(tmp),
-        CUI_ESC_CUR_HIDE CUI_ESC_CUR_HOME CUI_ESC_CUR_LINE CUI_ESC_CLR_STAT_LINE_VAL "%c",
-        offset, CUI_STATUS_LINE_START_CHAR);
+    SystemP_snprintf(tmp,
+                     sizeof(tmp),
+                     CUI_ESC_CUR_HIDE CUI_ESC_CUR_HOME CUI_ESC_CUR_LINE CUI_ESC_CLR_STAT_LINE_VAL "%c",
+                     offset,
+                     CUI_STATUS_LINE_START_CHAR);
     CUI_writeString(tmp, strlen(tmp));
 
-    SystemP_snprintf(statusLineBuff, sizeof(statusLineBuff),  CUI_COLOR_RED "%s%c" CUI_COLOR_RESET, _assertMsg, CUI_END_CHAR);
+    SystemP_snprintf(statusLineBuff,
+                     sizeof(statusLineBuff),
+                     CUI_COLOR_RED "%s%c" CUI_COLOR_RESET,
+                     _assertMsg,
+                     CUI_END_CHAR);
 
     CUI_writeString(statusLineBuff, strlen(statusLineBuff));
 
@@ -1330,14 +1354,14 @@ void CUI_assert(const char* _assertMsg, const bool _spinLock)
         LED_Params ledParams;
         LED_Params_init(&ledParams);
 
-        for(uint8_t i = 0; i < LED_count; i++)
+        for (uint8_t i = 0; i < LED_count; i++)
         {
             LED_close(&LED_config[i]);
             LED_Handle ledHandle = LED_open(i, &ledParams);
             LED_startBlinking(ledHandle, 50, LED_BLINK_FOREVER);
         }
 
-        while(1){};
+        while (1) {};
     }
 }
 
@@ -1346,12 +1370,12 @@ void CUI_menuActionBack(const int32_t _itemEntry)
 {
     if (NULL != gpCurrMenu->pUpper)
     {
-       gpCurrMenu = gpCurrMenu->pUpper;
-       gCurrMenuItemEntry = gPrevMenuItemEntry;
+        gpCurrMenu         = gpCurrMenu->pUpper;
+        gCurrMenuItemEntry = gPrevMenuItemEntry;
     }
 }
 
-void CUI_menuActionHelp(char _input, char* _lines[3], CUI_cursorInfo_t* _curInfo)
+void CUI_menuActionHelp(char _input, char *_lines[3], CUI_cursorInfo_t *_curInfo)
 {
     if (_input == CUI_ITEM_PREVIEW)
     {
@@ -1369,7 +1393,7 @@ void CUI_menuActionHelp(char _input, char* _lines[3], CUI_cursorInfo_t* _curInfo
 /*********************************************************************
  * Private Functions
  */
-static CUI_retVal_t CUI_updateRemLen(size_t* _currRemLen, char* _buff, size_t _buffSize)
+static CUI_retVal_t CUI_updateRemLen(size_t *_currRemLen, char *_buff, size_t _buffSize)
 {
     size_t newLen = strlen(_buff);
 
@@ -1378,7 +1402,7 @@ static CUI_retVal_t CUI_updateRemLen(size_t* _currRemLen, char* _buff, size_t _b
         return CUI_FAILURE;
     }
 
-    *_currRemLen = (_buffSize - newLen -1);
+    *_currRemLen = (_buffSize - newLen - 1);
     return CUI_SUCCESS;
 }
 
@@ -1390,7 +1414,7 @@ static void UartWriteCallback(UART2_Handle _handle, void *_buf, size_t _size, vo
     gTxSent += _size;
     if (gTxSent < gTxLen)
     {
-        UART2_write(gUartHandle, (const void*)&(gTxBuff[gTxSent]), gTxLen - gTxSent, NULL);
+        UART2_write(gUartHandle, (const void *)&(gTxBuff[gTxSent]), gTxLen - gTxSent, NULL);
     }
     else
     {
@@ -1407,20 +1431,20 @@ static void UartReadCallback(UART2_Handle _handle, void *_buf, size_t _size, voi
 }
 #endif
 
-static CUI_retVal_t CUI_writeString(void * _buffer, size_t _size)
+static CUI_retVal_t CUI_writeString(void *_buffer, size_t _size)
 {
     // Check pre-conditions
-    if((gUartHandle == NULL) || (_buffer == NULL) || (_size > sizeof(gTxBuff)))
+    if ((gUartHandle == NULL) || (_buffer == NULL) || (_size > sizeof(gTxBuff)))
     {
         return CUI_UART_FAILURE;
     }
     SemaphoreP_pend(gUartSem, SemaphoreP_WAIT_FOREVER);
 
     gTxSent = 0;
-    gTxLen = _size;
+    gTxLen  = _size;
     memcpy(gTxBuff, _buffer, _size);
 
-    UART2_write(gUartHandle, (const void*)gTxBuff, _size, NULL);
+    UART2_write(gUartHandle, (const void *)gTxBuff, _size, NULL);
 
     return CUI_SUCCESS;
 }
@@ -1452,7 +1476,10 @@ static CUI_retVal_t CUI_validateHandle(const CUI_clientHandle_t _clientHandle)
     }
 }
 
-static CUI_retVal_t CUI_acquireStatusLine(const CUI_clientHandle_t _clientHandle, const char _pLabel[MAX_STATUS_LINE_LABEL_LEN], const bool _refreshInd, uint32_t* _pLineId)
+static CUI_retVal_t CUI_acquireStatusLine(const CUI_clientHandle_t _clientHandle,
+                                          const char _pLabel[MAX_STATUS_LINE_LABEL_LEN],
+                                          const bool _refreshInd,
+                                          uint32_t *_pLineId)
 {
     SemaphoreP_pend(gStatusSem, SemaphoreP_WAIT_FOREVER);
 
@@ -1483,22 +1510,24 @@ static CUI_retVal_t CUI_acquireStatusLine(const CUI_clientHandle_t _clientHandle
     for (uint32_t i = 0; i < clientIndex; i++)
     {
         offset += gMaxStatusLines[i];
-        offset ++; // allow 1 empty line between clients
+        offset++; // allow 1 empty line between clients
     }
 
     offset += freeIndex;
 
-    //Add a ": " to every label
-    memset(gStatusLineResources[clientIndex][freeIndex].label, '\0', sizeof(gStatusLineResources[clientIndex][freeIndex].label));
+    // Add a ": " to every label
+    memset(gStatusLineResources[clientIndex][freeIndex].label,
+           '\0',
+           sizeof(gStatusLineResources[clientIndex][freeIndex].label));
     SystemP_snprintf(gStatusLineResources[clientIndex][freeIndex].label,
-             MAX_STATUS_LINE_LABEL_LEN + strlen(CUI_LABEL_VAL_SEP),
-             "%s%s", _pLabel, CUI_LABEL_VAL_SEP);
+                     MAX_STATUS_LINE_LABEL_LEN + strlen(CUI_LABEL_VAL_SEP),
+                     "%s%s",
+                     _pLabel,
+                     CUI_LABEL_VAL_SEP);
     gStatusLineResources[clientIndex][freeIndex].lineOffset = offset;
     gStatusLineResources[clientIndex][freeIndex].clientHash = _clientHandle;
-    gStatusLineResources[clientIndex][freeIndex].status = CUI_ACQUIRED;
+    gStatusLineResources[clientIndex][freeIndex].status     = CUI_ACQUIRED;
     gStatusLineResources[clientIndex][freeIndex].refreshInd = _refreshInd;
-
-
 
     /*
      * Save this "line id" as a way to directly control the line, similarly to
@@ -1533,7 +1562,7 @@ static void CUI_callMenuUartUpdateFn()
      * If somehow the menu object has been corrupted and there is no non NULL
      * uart update function then nothing will be called.
      */
-    CUI_menu_t* menu = gpCurrMenu;
+    CUI_menu_t *menu = gpCurrMenu;
     while (NULL != menu)
     {
         if (menu->uartUpdateFn)
@@ -1556,16 +1585,18 @@ static void CUI_updateCursor(void)
     char buff[32];
     if (gCursorActive)
     {
-        SystemP_snprintf(buff, sizeof(buff),
-            CUI_ESC_CUR_HOME CUI_ESC_CUR_ROW_COL CUI_ESC_CUR_SHOW,
-            gCursorInfo.row, gCursorInfo.col);
+        SystemP_snprintf(buff,
+                         sizeof(buff),
+                         CUI_ESC_CUR_HOME CUI_ESC_CUR_ROW_COL CUI_ESC_CUR_SHOW,
+                         gCursorInfo.row,
+                         gCursorInfo.col);
         CUI_writeString(buff, strlen(buff));
     }
 }
 
-static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
+static bool CUI_handleMenuIntercept(CUI_menuItem_t *_pItemEntry, uint8_t _input)
 {
-    bool updateHandled = false;
+    bool updateHandled    = false;
     bool interceptStarted = false;
 
     char *line[3];
@@ -1573,7 +1604,8 @@ static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
 
     line[0] = &menuBuff[CUI_MENU_START_ESCAPE_LEN];
     line[1] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN];
-    line[2] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN];
+    line[2] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN + MAX_MENU_LINE_LEN +
+                        CUI_NL_CR_LEN];
 
     CUI_cursorInfo_t curInfo = {-1, -1};
 
@@ -1590,8 +1622,7 @@ static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
                 // send key to application for handling
                 if (_pItemEntry->item.pFnIntercept)
                 {
-                    _pItemEntry->item.pFnIntercept(CUI_ITEM_INTERCEPT_STOP,
-                                                   line, &curInfo);
+                    _pItemEntry->item.pFnIntercept(CUI_ITEM_INTERCEPT_STOP, line, &curInfo);
                 }
                 gCursorActive = false;
                 updateHandled = true;
@@ -1604,8 +1635,7 @@ static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
                 // send key to application for handling
                 if (_pItemEntry->item.pFnIntercept)
                 {
-                    _pItemEntry->item.pFnIntercept(CUI_ITEM_INTERCEPT_CANCEL,
-                                                   line, &curInfo);
+                    _pItemEntry->item.pFnIntercept(CUI_ITEM_INTERCEPT_CANCEL, line, &curInfo);
                 }
                 gCursorActive = false;
                 updateHandled = true;
@@ -1619,7 +1649,7 @@ static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
              *  allowing the application to intercept the key presses.
              */
             _pItemEntry->interceptActive = true;
-            interceptStarted = true;
+            interceptStarted             = true;
         }
 
         if (_pItemEntry->interceptActive)
@@ -1639,7 +1669,7 @@ static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
             // If a cursor should be shown, add this at the end of the string
             if ((curInfo.col != -1) && (curInfo.row != -1))
             {
-                gCursorActive = true;
+                gCursorActive   = true;
                 gCursorInfo.col = curInfo.col;
                 gCursorInfo.row = curInfo.row;
                 CUI_updateCursor();
@@ -1654,7 +1684,7 @@ static bool CUI_handleMenuIntercept(CUI_menuItem_t* _pItemEntry, uint8_t _input)
     return updateHandled;
 }
 
-static bool CUI_handleMenuList(CUI_menuItem_t* _pItemEntry, uint8_t _input)
+static bool CUI_handleMenuList(CUI_menuItem_t *_pItemEntry, uint8_t _input)
 {
     bool updateHandled = false;
 
@@ -1663,7 +1693,8 @@ static bool CUI_handleMenuList(CUI_menuItem_t* _pItemEntry, uint8_t _input)
 
     line[0] = &menuBuff[CUI_MENU_START_ESCAPE_LEN];
     line[1] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN];
-    line[2] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN];
+    line[2] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN + MAX_MENU_LINE_LEN +
+                        CUI_NL_CR_LEN];
 
     if (_pItemEntry->itemType == CUI_MENU_ITEM_TYPE_LIST)
     {
@@ -1676,18 +1707,24 @@ static bool CUI_handleMenuList(CUI_menuItem_t* _pItemEntry, uint8_t _input)
             }
 
             // update index value
-            if (CUI_INPUT_RIGHT ==  _input)
+            if (CUI_INPUT_RIGHT == _input)
             {
-                _pItemEntry->item.pList->currListIndex = (_pItemEntry->item.pList->currListIndex + 1 + _pItemEntry->item.pList->maxListItems) % _pItemEntry->item.pList->maxListItems;
+                _pItemEntry->item.pList->currListIndex = (_pItemEntry->item.pList->currListIndex + 1 +
+                                                          _pItemEntry->item.pList->maxListItems) %
+                                                         _pItemEntry->item.pList->maxListItems;
             }
             else if (CUI_INPUT_LEFT == _input)
             {
-                _pItemEntry->item.pList->currListIndex = (_pItemEntry->item.pList->currListIndex - 1 + _pItemEntry->item.pList->maxListItems) % _pItemEntry->item.pList->maxListItems;
+                _pItemEntry->item.pList->currListIndex = (_pItemEntry->item.pList->currListIndex - 1 +
+                                                          _pItemEntry->item.pList->maxListItems) %
+                                                         _pItemEntry->item.pList->maxListItems;
             }
 
             if (_pItemEntry->item.pList->pFnListAction)
             {
-                _pItemEntry->item.pList->pFnListAction(_pItemEntry->item.pList->currListIndex, line, (CUI_INPUT_EXECUTE == _input));
+                _pItemEntry->item.pList->pFnListAction(_pItemEntry->item.pList->currListIndex,
+                                                       line,
+                                                       (CUI_INPUT_EXECUTE == _input));
             }
 
             // let normal menu navigation handle the update if input was executed
@@ -1723,12 +1760,13 @@ static void CUI_dispMenu(bool _menuPopulated)
     char *line[3];
     line[0] = &menuBuff[CUI_MENU_START_ESCAPE_LEN];
     line[1] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN];
-    line[2] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN];
+    line[2] = &menuBuff[CUI_MENU_START_ESCAPE_LEN + MAX_MENU_LINE_LEN + CUI_NL_CR_LEN + MAX_MENU_LINE_LEN +
+                        CUI_NL_CR_LEN];
 
     if (false == _menuPopulated)
     {
         CUI_cursorInfo_t cursorInfo;
-        CUI_menuItem_t* itemEntry = &(gpCurrMenu->menuItems[gCurrMenuItemEntry]);
+        CUI_menuItem_t *itemEntry = &(gpCurrMenu->menuItems[gCurrMenuItemEntry]);
 
         memset(menuBuff, '\0', sizeof(menuBuff));
 
@@ -1743,8 +1781,8 @@ static void CUI_dispMenu(bool _menuPopulated)
              *  If the current Menu Item is the 'back' item, leave the
              *  first line empty to keep the back screen clean.
              */
-            CUI_menu_t* pMenu = gpCurrMenu;
-            while((pMenu->pUpper) && (pMenu->pUpper != cuiMultiMenu))
+            CUI_menu_t *pMenu = gpCurrMenu;
+            while ((pMenu->pUpper) && (pMenu->pUpper != cuiMultiMenu))
             {
                 pMenu = pMenu->pUpper;
             }
@@ -1783,11 +1821,13 @@ static void CUI_dispMenu(bool _menuPopulated)
      * The memory for the carriage returns, newlines, and the final
      *  CUI_END_CHAR are accounted for in the menuBuff already.
      */
-#if !defined(CUI_SCROLL_PRINT)
-    SystemP_snprintf(menuBuff, 32,
-        CUI_ESC_CUR_HIDE CUI_ESC_CUR_MENU_BTM CUI_ESC_CLR_UP CUI_ESC_CUR_HOME "%c",
-        MAX_MENU_LINE_LEN, CUI_MENU_START_CHAR);
-#endif
+    #if !defined(CUI_SCROLL_PRINT)
+    SystemP_snprintf(menuBuff,
+                     32,
+                     CUI_ESC_CUR_HIDE CUI_ESC_CUR_MENU_BTM CUI_ESC_CLR_UP CUI_ESC_CUR_HOME "%c",
+                     MAX_MENU_LINE_LEN,
+                     CUI_MENU_START_CHAR);
+    #endif
     // Note these memory regions do not overlap
     strncat(menuBuff, line[0], MAX_MENU_LINE_LEN);
     // Set the newline and carriage return
@@ -1798,12 +1838,12 @@ static void CUI_dispMenu(bool _menuPopulated)
 
     strncat(menuBuff, line[2], MAX_MENU_LINE_LEN);
 
-#if !defined(CUI_SCROLL_PRINT)
+    #if !defined(CUI_SCROLL_PRINT)
     char endChar[2] = {CUI_END_CHAR, '\0'};
     strncat(menuBuff, endChar, strlen(endChar));
-#else
+    #else
     strncat(menuBuff, CUI_NL_CR, strlen(CUI_NL_CR));
-#endif
+    #endif
 
     CUI_writeString(menuBuff, strlen(menuBuff));
 }
@@ -1819,12 +1859,12 @@ static void CUI_menuActionNavigate(uint8_t _navDir)
     if (CUI_INPUT_LEFT == _navDir)
     {
         // Wrap menu around from left to right
-        gCurrMenuItemEntry =  (gCurrMenuItemEntry - 1 + gpCurrMenu->numItems) % (gpCurrMenu->numItems);
+        gCurrMenuItemEntry = (gCurrMenuItemEntry - 1 + gpCurrMenu->numItems) % (gpCurrMenu->numItems);
     }
     else if (CUI_INPUT_RIGHT == _navDir)
     {
         // Wrap menu around from right to left
-        gCurrMenuItemEntry =  (gCurrMenuItemEntry + 1 + gpCurrMenu->numItems) % (gpCurrMenu->numItems);
+        gCurrMenuItemEntry = (gCurrMenuItemEntry + 1 + gpCurrMenu->numItems) % (gpCurrMenu->numItems);
     }
 
     CUI_dispMenu(false);
@@ -1838,7 +1878,7 @@ static void CUI_menuActionExecute(void)
          * If Item executed was a SubMenu, then preserve gCurrMenuItemEntry and enter the
          *  submenu.
          */
-        gpCurrMenu = gpCurrMenu->menuItems[gCurrMenuItemEntry].item.pSubMenu;
+        gpCurrMenu         = gpCurrMenu->menuItems[gCurrMenuItemEntry].item.pSubMenu;
         gPrevMenuItemEntry = gCurrMenuItemEntry;
         gCurrMenuItemEntry = 0;
     }
@@ -1856,7 +1896,7 @@ static void CUI_menuActionExecute(void)
     return;
 }
 
-static CUI_retVal_t CUI_findMenu(CUI_menu_t* _pMenu, CUI_menu_t* _pDesiredMenu, uint32_t* _pPrevItemIndex)
+static CUI_retVal_t CUI_findMenu(CUI_menu_t *_pMenu, CUI_menu_t *_pDesiredMenu, uint32_t *_pPrevItemIndex)
 {
     if (_pMenu == _pDesiredMenu)
     {
@@ -1872,7 +1912,7 @@ static CUI_retVal_t CUI_findMenu(CUI_menu_t* _pMenu, CUI_menu_t* _pDesiredMenu, 
          */
         if (NULL == _pMenu->menuItems[i].pDesc)
         {
-            CUI_menu_t* subMenu = _pMenu->menuItems[i].item.pSubMenu;
+            CUI_menu_t *subMenu = _pMenu->menuItems[i].item.pSubMenu;
 
             if (CUI_SUCCESS == CUI_findMenu(subMenu, _pDesiredMenu, _pPrevItemIndex))
             {
@@ -1883,4 +1923,3 @@ static CUI_retVal_t CUI_findMenu(CUI_menu_t* _pMenu, CUI_menu_t* _pDesiredMenu, 
     return CUI_FAILURE;
 }
 #endif /* ifndef CUI_MIN_FOOTPRINT */
-

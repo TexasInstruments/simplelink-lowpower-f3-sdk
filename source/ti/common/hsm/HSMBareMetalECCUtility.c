@@ -36,6 +36,12 @@
 
 #include "HSMBareMetalECCUtility.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+    #define CRYPTOUTILS_NOINLINE __attribute__((noinline))
+#else
+    #define CRYPTOUTILS_NOINLINE
+#endif
+
 /* NIST curves */
 
 /* NIST_P_224 = SEC_P_224_R1 */
@@ -468,4 +474,39 @@ void HSMBareMetalECCParams_asymDsaSignatureToHW(const uint8_t *const signatureR,
     HSMBareMetalECCParams_reverseMemCpy(&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits) + HSM_ASYM_DATA_VHEADER],
                                         &signatureS[0],
                                         BITS_TO_BYTES(modulusSizeBits));
+}
+
+/*
+ *  ======== HSMBareMetalECCParams_bufferMatch ========
+ */
+#if defined(__IAR_SYSTEMS_ICC__)
+    #pragma inline = never
+#elif defined(__TI_COMPILER_VERSION__) && !defined(__cplusplus)
+    #pragma FUNC_CANNOT_INLINE(CryptoUtils_buffersMatch)
+#elif defined(__TI_COMPILER_VERSION__)
+    #pragma FUNC_CANNOT_INLINE
+#endif
+CRYPTOUTILS_NOINLINE bool HSMBareMetalECCParams_bufferMatch(const volatile uint8_t *const buffer1,
+                                                            const volatile uint8_t *const buffer2,
+                                                            const size_t size)
+{
+    volatile uint8_t tempResult = 0;
+    uint8_t byte1;
+    uint8_t byte2;
+    size_t i;
+
+    /* XOR each byte of the buffer together and OR the results.
+     * If the OR'd result is non-zero, the buffers do not match.
+     * There is no branch based on the content of the buffers here to avoid
+     * timing attacks.
+     */
+    for (i = 0; i < size; i++)
+    {
+        byte1 = ((uint8_t *)buffer1)[i];
+        byte2 = ((uint8_t *)buffer2)[i];
+
+        tempResult |= byte1 ^ byte2;
+    }
+
+    return tempResult == 0;
 }

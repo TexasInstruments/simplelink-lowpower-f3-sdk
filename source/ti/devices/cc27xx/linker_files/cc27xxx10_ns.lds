@@ -3,7 +3,7 @@
 *  @brief     CC27XX NS linker configuration file for GNU toolchain
 *             (1MB FLASH, 162KB RAM).
 *
-*  Copyright (c) 2024 Texas Instruments Incorporated
+*  Copyright (c) 2024-2025 Texas Instruments Incorporated
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -54,7 +54,7 @@ MEMORY
     /* Application is stored in and executes from internal flash */
     FLASH (RX) : ORIGIN = 0x10038100, LENGTH = 0x000C7F00 - 0x18000
     /* Application uses internal RAM for data (size when parity enabled) */
-    SRAM (RWX) : ORIGIN = 0x3000C000, LENGTH = 0x00034000
+    SRAM (RWX) : ORIGIN = 0x3000C000, LENGTH = 0x1C800
     /* Customer Configuration Area (CCFG) */
     CCFG (R) : ORIGIN = 0x4E020000, LENGTH = 0x800
     /* Security Configuration Area (SCFG) */

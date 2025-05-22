@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013-2012 ARM Limited. All rights reserved.
- * Copyright (c) 2024, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -25,9 +25,41 @@
 
 #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/dpl/HwiP.h>
 
-#include <DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/flash.h) /* FAPI status codes */
-#include DeviceFamily_constructPath(driverlib/hapi.h) /* HAPI functions */
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include DeviceFamily_constructPath(driverlib/flash.h) /* FAPI status codes */
+    #include DeviceFamily_constructPath(driverlib/hapi.h) /* HAPI functions */
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <stdlib.h> // abs()
+    /* Erase status */
+    typedef enum
+    {
+        FLASH_ERASE_DONE    = 0, /*!< Erase command completed successfully */
+        FLASH_ERASE_TIMEOUT = 1, /*!< Erase command completed with timeout */
+        FLASH_ERASE_ERROR   = 2  /*!< Erase command did not complete successfully */
+    } FlashEraseStatus;
+
+    extern void FlashWrite(uint32_t *readFromAddr, uint32_t *writeToAddr, uint32_t length);
+    extern void FlashRead(uint32_t *readFromAddr, uint32_t *writeToAddr, uint32_t length);
+    extern void FlashSetTickPeriod(uint32_t TickPeriod);
+    extern FlashEraseStatus FlashSectorErase(uint32_t eraseStartAddr, uint32_t sectorEraseOpCode, uint32_t sectorEraseTimeout);
+
+    extern uint32_t ClockP_getSystemTicks(void);
+    extern uint32_t ClockP_getSystemTickPeriod(void);
+
+    /* Fixed values from XSPIWFF3 driver: Found in drivers/source/ti/drivers/XMEMWFF3.c */
+    static const size_t sectorEraseOpCode = 0x20;
+    static const size_t sectorEraseTimeout = 200;
+
+    /* Fixed values from XMEMWFF3 driver: Found in drivers/source/ti/drivers/XMEMWFF3.c */
+    static const size_t logicalBaseAddr = 0xA0050000;
+    static const size_t regionOffset = 0x1CA;
+
+    #define PHY_OFFSET 12
+    static uint32_t convertToLogicalAddr(uint32_t addr);
+
+    #define IS_WORD_ALIGNED(ptr) (((uintptr_t)(ptr) << 30) == 0U)
+#endif
 
 #ifndef ARG_UNUSED
 #define ARG_UNUSED(arg)  ((void)arg)
@@ -124,7 +156,7 @@ static bool isFlashRangeValid(struct arm_flash_dev_t *flash_dev, uint32_t offset
     bool isValid = true;
     uint32_t flash_limit;
 
-    flash_limit = (flash_dev->data->sector_count * flash_dev->data->sector_size) - 1;
+    flash_limit = ((flash_dev->data->sector_count * flash_dev->data->sector_size) - 1) + flash_dev->memory_base;
 
     if (offset > flash_limit) {
         isValid = false;
@@ -133,6 +165,7 @@ static bool isFlashRangeValid(struct arm_flash_dev_t *flash_dev, uint32_t offset
     return isValid;
 }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /**
   * \brief      Translates Flash API (FAPI) status into ARM driver status code
   * \param[in]  fapiStatus FAPI status code
@@ -158,6 +191,34 @@ static int32_t translateFAPIStatus(uint32_t fapiStatus)
 
     return status;
 }
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+/**
+  * \brief      Translates physical flash address offset to a logical address
+  * \param[in]  offset
+  * \return     ARM driver status code.
+  */
+static uint32_t convertToLogicalAddr(uint32_t addr)
+{
+    /* Calculates the logical address based on the given physical address. The addresses
+     * used by ITS prior to this function call are physical, due to the values set in
+     * flash_layout.h, which are used by the tfm_hal_its layer.
+     */
+    uint32_t calcAddr;
+    uint32_t blockBits;
+    uint32_t controlBits = 0xFFFFFFFF;
+    uint32_t regionOffsetAlign = (uint32_t)regionOffset << PHY_OFFSET;
+    size_t offset = addr - FLASH0_DEV->memory_base;
+
+    /* The following calculations (and this convertToLogicalAddr API as a whole) are copied from the XMEMWFF3
+     * implementation in drivers.
+     */
+    controlBits = (logicalBaseAddr & BITMASK_x_y(31, 26));
+    blockBits = ((uint32_t)abs((int)FLASH0_DEV->memory_base - (int)regionOffsetAlign) & BITMASK_x_y(25, 12));
+    calcAddr  = controlBits + blockBits + offset;
+
+    return calcAddr;
+}
+#endif
 
 static ARM_DRIVER_VERSION ARM_Flash_GetVersion(void)
 {
@@ -217,8 +278,16 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     (void)memcpy(data, (void *)addr, cnt);
-
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    if (!IS_WORD_ALIGNED(data))
+    {
+        return 0;
+    }
+    uint32_t logicalAddr = convertToLogicalAddr(addr);
+    FlashRead((uint32_t *)logicalAddr, (uint32_t *)data, cnt);
+#endif
     /* Conversion between bytes and data items */
     cnt /= data_width_byte[DriverCapabilities.data_width];
 
@@ -242,10 +311,24 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data, uint32_t c
      * programming.
      */
     key = HwiP_disable();
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     fapi_status = FlashProgram((uint8_t *)data, addr, cnt);
+
     HwiP_restore(key);
 
     status = translateFAPIStatus(fapi_status);
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    if (!IS_WORD_ALIGNED(data))
+    {
+        return 0;
+    }
+    uint32_t logicalAddr = convertToLogicalAddr(addr);
+    FlashWrite((uint32_t *)data, (uint32_t *)logicalAddr, cnt);
+
+    HwiP_restore(key);
+
+    status = ARM_DRIVER_OK;
+#endif
 
     if (status != ARM_DRIVER_OK) {
         return status;
@@ -259,7 +342,12 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data, uint32_t c
 
 static int32_t ARM_Flash_EraseSector(uint32_t addr)
 {
-    uint32_t status;
+    int32_t status;
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    FlashEraseStatus flashStatus;
+    uint32_t clockPTick;
+    uint32_t clockPTickPeriod;
+#endif
     uintptr_t key;
 
     /*
@@ -268,14 +356,45 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
      * automatically.
      */
     key = HwiP_disable();
-    status = FlashEraseSector(addr);
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    status = translateFAPIStatus(FlashEraseSector(addr));
+
     HwiP_restore(key);
 
-    return translateFAPIStatus(status);
+    return status;
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Driver_Flash is emulating the behavior of XMEMWFF3 in drivers. The following code
+     * is copied from XMEMWFF3.
+     */
+    clockPTick       = ClockP_getSystemTicks();
+    clockPTickPeriod = ClockP_getSystemTickPeriod();
+    FlashSetTickPeriod(clockPTickPeriod);
+
+    /* Note that FlashSectorErase is the one FlashWFF3 API that takes in a physical address as input.
+     * Therefore, we can use addr directly without converting it to logical. The addr provided to
+     * ARM_Flash_EraseSector by ITS is with offset from FLASH_0_BASE, which is the physical address.
+     */
+    flashStatus = FlashSectorErase(addr, sectorEraseOpCode, sectorEraseTimeout);
+
+    /* Set FAPI status codes to return same status translation API below */
+    if (flashStatus == FLASH_ERASE_DONE)
+    {
+        status = ARM_DRIVER_OK;
+    }
+    else
+    {
+        status = ARM_DRIVER_ERROR;
+    }
+
+    HwiP_restore(key);
+
+    return status;
+#endif
 }
 
 static int32_t ARM_Flash_EraseChip(void)
 {
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     uint32_t status;
     uintptr_t key;
 
@@ -293,6 +412,10 @@ static int32_t ARM_Flash_EraseChip(void)
     HwiP_restore(key);
 
     return translateFAPIStatus(status);
+#else
+    /* Not supported for Osprey - only eraseSector present in flash driver */
+    return ARM_DRIVER_ERROR;
+#endif
 }
 
 static ARM_FLASH_STATUS ARM_Flash_GetStatus(void)

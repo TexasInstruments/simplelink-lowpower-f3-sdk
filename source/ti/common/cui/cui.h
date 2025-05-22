@@ -499,8 +499,7 @@ Usage
 #include <ti/drivers/apps/LED.h>
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*********************************************************************
@@ -534,171 +533,169 @@ extern "C"
  * Client Configurable Defines
  */
 #ifndef MAX_CLIENTS
-#define MAX_CLIENTS                 2
+    #define MAX_CLIENTS 2
 #endif
 #ifndef MAX_CLIENT_NAME_LEN
-#define MAX_CLIENT_NAME_LEN         64
+    #define MAX_CLIENT_NAME_LEN 64
 #endif
-
 
 /*
  * Menu Configurable Defines
  */
 #ifndef MAX_REGISTERED_MENUS
-#define MAX_REGISTERED_MENUS        4
+    #define MAX_REGISTERED_MENUS 4
 #endif
 #ifndef MAX_MENU_LINE_LEN
-#define MAX_MENU_LINE_LEN           128
+    #define MAX_MENU_LINE_LEN 128
 #endif
 
 /*
  * Status Line Configurable Defines
  */
 #ifndef MAX_STATUS_LINE_LABEL_LEN
-#define MAX_STATUS_LINE_LABEL_LEN   32
+    #define MAX_STATUS_LINE_LABEL_LEN 32
 #endif
 #ifndef MAX_STATUS_LINE_VALUE_LEN
-#define MAX_STATUS_LINE_VALUE_LEN   128
+    #define MAX_STATUS_LINE_VALUE_LEN 128
 #endif
 
 #ifndef CUI_MIN_FOOTPRINT
-/*
- * Creates a main menu. A main menu must have a non NULL uart update function.
- * This will be verified when registering the menu. numItems is incremented by
- * one to allow for a common default "Back" or "Help" menu item between menus.
- */
-#define CUI_MAIN_MENU(_menuSymbol, _pMenuTitle, _numItems, _pMenuUpdateFn) \
-        CUI_menu_t _menuSymbol = { \
-        .uartUpdateFn=_pMenuUpdateFn, \
-        .pTitle=_pMenuTitle, \
-        .numItems=_numItems + 1, \
-        .pUpper=NULL, \
-            .menuItems = {
-/*
- * Creates a sub menu. This will be verified when registering the menu. numItems
- *  is incremented by one to allow for a common default "Back" or "Help" menu
- *  item between menus.
- */
-#define CUI_SUB_MENU(_menuSymbol, _pMenuTitle, _numItems, _pUpperMenu) \
-        extern CUI_menu_t _pUpperMenu; \
-        CUI_menu_t _menuSymbol = { \
-        .uartUpdateFn=NULL, \
-        .pTitle=_pMenuTitle, \
-        .numItems=_numItems + 1, \
-        .pUpper=&_pUpperMenu, \
-            .menuItems = {
+    /*
+     * Creates a main menu. A main menu must have a non NULL uart update function.
+     * This will be verified when registering the menu. numItems is incremented by
+     * one to allow for a common default "Back" or "Help" menu item between menus.
+     */
+    #define CUI_MAIN_MENU(_menuSymbol, _pMenuTitle, _numItems, _pMenuUpdateFn) \
+        CUI_menu_t _menuSymbol = {.uartUpdateFn = _pMenuUpdateFn,              \
+                                  .pTitle       = _pMenuTitle,                 \
+                                  .numItems     = _numItems + 1,               \
+                                  .pUpper       = NULL,                        \
+                                  .menuItems    = {
+    /*
+     * Creates a sub menu. This will be verified when registering the menu. numItems
+     *  is incremented by one to allow for a common default "Back" or "Help" menu
+     *  item between menus.
+     */
+    #define CUI_SUB_MENU(_menuSymbol, _pMenuTitle, _numItems, _pUpperMenu) \
+        extern CUI_menu_t _pUpperMenu;                                     \
+        CUI_menu_t _menuSymbol = {.uartUpdateFn = NULL,                    \
+                                  .pTitle       = _pMenuTitle,             \
+                                  .numItems     = _numItems + 1,           \
+                                  .pUpper       = &_pUpperMenu,            \
+                                  .menuItems    = {
 
-/*
- * Inserts _pSubMenu into the .menuItems[] of a parent menu.
- */
-#define CUI_MENU_ITEM_SUBMENU(_pSubMenu) { \
-        .pDesc=NULL, \
-        .itemType=CUI_MENU_ITEM_TYPE_SUBMENU, \
-        .item.pSubMenu=(&_pSubMenu)},
+    /*
+     * Inserts _pSubMenu into the .menuItems[] of a parent menu.
+     */
+    #define CUI_MENU_ITEM_SUBMENU(_pSubMenu) \
+        {.pDesc = NULL, .itemType = CUI_MENU_ITEM_TYPE_SUBMENU, .item.pSubMenu = (&_pSubMenu)},
 
-/*
- * Inserts an action into the .menuItems[] of a parent menu.
- */
-#define CUI_MENU_ITEM_ACTION(_pItemDesc, _pFnAction) { \
-        .pDesc=(_pItemDesc), \
-        .itemType=CUI_MENU_ITEM_TYPE_ACTION, \
-        .interceptActive=false, \
-        .item.pFnAction=(_pFnAction)},
+    /*
+     * Inserts an action into the .menuItems[] of a parent menu.
+     */
+    #define CUI_MENU_ITEM_ACTION(_pItemDesc, _pFnAction) \
+        {.pDesc           = (_pItemDesc),                \
+         .itemType        = CUI_MENU_ITEM_TYPE_ACTION,   \
+         .interceptActive = false,                       \
+         .item.pFnAction  = (_pFnAction)},
 
-/*
- * Inserts an interceptable action into the .menuItems[] of a parent menu.
- */
-#define CUI_MENU_ITEM_INT_ACTION(_pItemDesc, _pFnIntercept) { \
-            .pDesc=(_pItemDesc), \
-            .itemType=CUI_MENU_ITEM_TYPE_INTERCEPT, \
-            .interceptActive=false, \
-            .item.pFnIntercept=(_pFnIntercept)},
+    /*
+     * Inserts an interceptable action into the .menuItems[] of a parent menu.
+     */
+    #define CUI_MENU_ITEM_INT_ACTION(_pItemDesc, _pFnIntercept) \
+        {.pDesc             = (_pItemDesc),                     \
+         .itemType          = CUI_MENU_ITEM_TYPE_INTERCEPT,     \
+         .interceptActive   = false,                            \
+         .item.pFnIntercept = (_pFnIntercept)},
 
-/*
- * Inserts a list action into the .menuItems[] of a parent menu.
- */
-#define CUI_MENU_ITEM_LIST_ACTION(_pItemDesc, _maxListItems, _pFnListAction) { \
-            .pDesc=(_pItemDesc), \
-            .itemType=CUI_MENU_ITEM_TYPE_LIST, \
-            .interceptActive=false, \
-            .item.pList=&((CUI_list_t){ \
-                .pFnListAction=(_pFnListAction), \
-                .maxListItems=_maxListItems, \
-                .currListIndex=0})},
+    /*
+     * Inserts a list action into the .menuItems[] of a parent menu.
+     */
+    #define CUI_MENU_ITEM_LIST_ACTION(_pItemDesc, _maxListItems, _pFnListAction) \
+        {.pDesc           = (_pItemDesc),                                        \
+         .itemType        = CUI_MENU_ITEM_TYPE_LIST,                             \
+         .interceptActive = false,                                               \
+         .item.pList      = &(                                                   \
+             (CUI_list_t){.pFnListAction = (_pFnListAction), .maxListItems = _maxListItems, .currListIndex = 0})},
 
-/*
- * Helper macros to add generic Help and Back screens to all menus
- * The CUI will use these for you. Do not use these in an application.
- */
-#define CUI_MENU_ITEM_HELP CUI_MENU_ITEM_INT_ACTION(CUI_MENU_ACTION_HELP_DESC, (CUI_pFnIntercept_t) CUI_menuActionHelp)
-#define CUI_MENU_ITEM_BACK CUI_MENU_ITEM_ACTION(CUI_MENU_ACTION_BACK_DESC, (CUI_pFnAction_t) CUI_menuActionBack)
-#define CUI_MAIN_MENU_END CUI_MENU_ITEM_HELP }};
-#define CUI_SUB_MENU_END CUI_MENU_ITEM_BACK }};
-#define CUI_MENU_ACTION_BACK_DESC  "<      BACK      >"
-#define CUI_MENU_ACTION_HELP_DESC  "<      HELP      >"
+    /*
+     * Helper macros to add generic Help and Back screens to all menus
+     * The CUI will use these for you. Do not use these in an application.
+     */
+    #define CUI_MENU_ITEM_HELP \
+        CUI_MENU_ITEM_INT_ACTION(CUI_MENU_ACTION_HELP_DESC, (CUI_pFnIntercept_t)CUI_menuActionHelp)
+    #define CUI_MENU_ITEM_BACK CUI_MENU_ITEM_ACTION(CUI_MENU_ACTION_BACK_DESC, (CUI_pFnAction_t)CUI_menuActionBack)
+    #define CUI_MAIN_MENU_END \
+        CUI_MENU_ITEM_HELP    \
+        }                     \
+        }                     \
+        ;
+    #define CUI_SUB_MENU_END \
+        CUI_MENU_ITEM_BACK   \
+        }                    \
+        }                    \
+        ;
+    #define CUI_MENU_ACTION_BACK_DESC "<      BACK      >"
+    #define CUI_MENU_ACTION_HELP_DESC "<      HELP      >"
 #else
 
-#define CUI_MAIN_MENU(_menuSymbol, _pMenuTitle, _numItems, _pMenuUpdateFn) \
-        CUI_menu_t _menuSymbol;
+    #define CUI_MAIN_MENU(_menuSymbol, _pMenuTitle, _numItems, _pMenuUpdateFn) CUI_menu_t _menuSymbol;
 
-#define CUI_SUB_MENU(_menuSymbol, _pMenuTitle, _numItems, _pUpperMenu) \
-        CUI_menu_t _menuSymbol;
+    #define CUI_SUB_MENU(_menuSymbol, _pMenuTitle, _numItems, _pUpperMenu) CUI_menu_t _menuSymbol;
 
-#define CUI_MENU_ITEM_SUBMENU(_pSubMenu)
+    #define CUI_MENU_ITEM_SUBMENU(_pSubMenu)
 
-#define CUI_MENU_ITEM_ACTION(_pItemDesc, _pFnAction)
+    #define CUI_MENU_ITEM_ACTION(_pItemDesc, _pFnAction)
 
-#define CUI_MENU_ITEM_INT_ACTION(_pItemDesc, _pFnIntercept)
+    #define CUI_MENU_ITEM_INT_ACTION(_pItemDesc, _pFnIntercept)
 
-#define CUI_MENU_ITEM_LIST_ACTION(_pItemDesc, _maxListItems, _pFnListAction)
+    #define CUI_MENU_ITEM_LIST_ACTION(_pItemDesc, _maxListItems, _pFnListAction)
 
-#define CUI_MENU_ITEM_HELP
-#define CUI_MENU_ITEM_BACK
-#define CUI_MAIN_MENU_END
-#define CUI_SUB_MENU_END
-#define CUI_MENU_ACTION_BACK_DESC  "<      BACK      >"
-#define CUI_MENU_ACTION_HELP_DESC  "<      HELP      >"
+    #define CUI_MENU_ITEM_HELP
+    #define CUI_MENU_ITEM_BACK
+    #define CUI_MAIN_MENU_END
+    #define CUI_SUB_MENU_END
+    #define CUI_MENU_ACTION_BACK_DESC "<      BACK      >"
+    #define CUI_MENU_ACTION_HELP_DESC "<      HELP      >"
 #endif
 
-#define CUI_IS_INPUT_NUM(_input)        ((_input >= '0') && (_input <= '9'))
-#define CUI_IS_INPUT_ALPHA(_input)      ((_input >= 'a') && (_input <= 'z'))
-#define CUI_IS_INPUT_ALPHA_NUM(_input)  ((CUI_IS_INPUT_ALPHA(_input)) && (CUI_IS_INPUT_NUM(_input)))
-#define CUI_IS_INPUT_HEX(_input)        ((CUI_IS_INPUT_NUM(_input)) || ((_input >= 'a') && (_input <= 'f')))
-#define CUI_IS_INPUT_BINARY(_input)     ((_input == '0') || (_input == '1'))
-
-
+#define CUI_IS_INPUT_NUM(_input)       ((_input >= '0') && (_input <= '9'))
+#define CUI_IS_INPUT_ALPHA(_input)     ((_input >= 'a') && (_input <= 'z'))
+#define CUI_IS_INPUT_ALPHA_NUM(_input) ((CUI_IS_INPUT_ALPHA(_input)) && (CUI_IS_INPUT_NUM(_input)))
+#define CUI_IS_INPUT_HEX(_input)       ((CUI_IS_INPUT_NUM(_input)) || ((_input >= 'a') && (_input <= 'f')))
+#define CUI_IS_INPUT_BINARY(_input)    ((_input == '0') || (_input == '1'))
 
 /* Indication of previewing an interceptable item */
-#define CUI_ITEM_PREVIEW            0x00
+#define CUI_ITEM_PREVIEW 0x00
 
 /* Indication item is now intercepting the uart */
-#define CUI_ITEM_INTERCEPT_START    0xFE
+#define CUI_ITEM_INTERCEPT_START 0xFE
 
 /* Indication item is done intercepting the uart */
-#define CUI_ITEM_INTERCEPT_STOP     0xFF
+#define CUI_ITEM_INTERCEPT_STOP 0xFF
 
 /* Indication item intercept should be canceled */
-#define CUI_ITEM_INTERCEPT_CANCEL   0xF9
+#define CUI_ITEM_INTERCEPT_CANCEL 0xF9
 
-#define CUI_INPUT_UP                0xFA // Up Arrow
-#define CUI_INPUT_DOWN              0xFB // Down Arrow
-#define CUI_INPUT_RIGHT             0xFC // Right Arrow
-#define CUI_INPUT_LEFT              0xFD // Left Arrow
-#define CUI_INPUT_BACK              0x7F // Backspace Key
-#define CUI_INPUT_EXECUTE           0x0D // Enter Key
-#define CUI_INPUT_ESC               0x1B // ESC (escape) Key
+#define CUI_INPUT_UP      0xFA // Up Arrow
+#define CUI_INPUT_DOWN    0xFB // Down Arrow
+#define CUI_INPUT_RIGHT   0xFC // Right Arrow
+#define CUI_INPUT_LEFT    0xFD // Left Arrow
+#define CUI_INPUT_BACK    0x7F // Backspace Key
+#define CUI_INPUT_EXECUTE 0x0D // Enter Key
+#define CUI_INPUT_ESC     0x1B // ESC (escape) Key
 
-#define CUI_COLOR_RESET             "\033[0m"
-#define CUI_COLOR_RED               "\033[31m"
-#define CUI_COLOR_GREEN             "\033[32m"
-#define CUI_COLOR_YELLOW            "\033[33m"
-#define CUI_COLOR_BLUE              "\033[34m"
-#define CUI_COLOR_MAGENTA           "\033[35m"
-#define CUI_COLOR_CYAN              "\033[36m"
-#define CUI_COLOR_WHITE             "\033[37m"
+#define CUI_COLOR_RESET   "\033[0m"
+#define CUI_COLOR_RED     "\033[31m"
+#define CUI_COLOR_GREEN   "\033[32m"
+#define CUI_COLOR_YELLOW  "\033[33m"
+#define CUI_COLOR_BLUE    "\033[34m"
+#define CUI_COLOR_MAGENTA "\033[35m"
+#define CUI_COLOR_CYAN    "\033[36m"
+#define CUI_COLOR_WHITE   "\033[37m"
 
-#define CUI_DEBUG_MSG_START         "\0337"
-#define CUI_DEBUG_MSG_END           "\0338"
+#define CUI_DEBUG_MSG_START "\0337"
+#define CUI_DEBUG_MSG_END   "\0338"
 
 /******************************************************************************
  * TYPEDEFS
@@ -709,23 +706,23 @@ extern "C"
  */
 typedef enum CUI_retVal
 {
-  CUI_SUCCESS,
-  CUI_FAILURE,
-  CUI_INVALID_CB,
-  CUI_RESOURCE_ALREADY_ACQUIRED,
-  CUI_RESOURCE_NOT_ACQUIRED,
-  CUI_MODULE_UNINITIALIZED,
-  CUI_INVALID_CLIENT_HANDLE,
-  CUI_MAX_CLIENTS_REACHED,
-  CUI_NO_ASYNC_LINES_RELEASED,
-  CUI_INVALID_LINE_ID,
-  CUI_UNKOWN_VALUE_TYPE,
-  CUI_UART_FAILURE,
-  CUI_INVALID_PARAM,
-  CUI_MAX_MENUS_REACHED,
-  CUI_PREV_WRITE_UNFINISHED,
-  CUI_MISSING_UART_UPDATE_FN,
-  CUI_NOT_MANAGING_UART
+    CUI_SUCCESS,
+    CUI_FAILURE,
+    CUI_INVALID_CB,
+    CUI_RESOURCE_ALREADY_ACQUIRED,
+    CUI_RESOURCE_NOT_ACQUIRED,
+    CUI_MODULE_UNINITIALIZED,
+    CUI_INVALID_CLIENT_HANDLE,
+    CUI_MAX_CLIENTS_REACHED,
+    CUI_NO_ASYNC_LINES_RELEASED,
+    CUI_INVALID_LINE_ID,
+    CUI_UNKOWN_VALUE_TYPE,
+    CUI_UART_FAILURE,
+    CUI_INVALID_PARAM,
+    CUI_MAX_MENUS_REACHED,
+    CUI_PREV_WRITE_UNFINISHED,
+    CUI_MISSING_UART_UPDATE_FN,
+    CUI_NOT_MANAGING_UART
 } CUI_retVal_t;
 
 /*
@@ -733,11 +730,13 @@ typedef enum CUI_retVal
  */
 typedef uint32_t CUI_clientHandle_t;
 
-typedef struct {
+typedef struct
+{
     bool manageUart;
 } CUI_params_t;
 
-typedef struct {
+typedef struct
+{
     char clientName[MAX_CLIENT_NAME_LEN];
     uint8_t maxStatusLines;
 } CUI_clientParams_t;
@@ -745,7 +744,8 @@ typedef struct {
 /*
  * [Menu Related Types]
  */
-typedef struct {
+typedef struct
+{
     int16_t row;
     int16_t col;
 } CUI_cursorInfo_t;
@@ -754,43 +754,48 @@ typedef void (*CUI_pFnClientMenuUpdate_t)(void);
 
 /* Type definitions for action functions types */
 typedef void (*CUI_pFnAction_t)(const int32_t _itemEntry);
-typedef void (*CUI_pFnIntercept_t)(const char _input, char* _lines[3], CUI_cursorInfo_t * _curInfo);
-typedef void (*CUI_pFnListAction_t)(const uint32_t _listIndex, char* _lines[3], bool _selected);
+typedef void (*CUI_pFnIntercept_t)(const char _input, char *_lines[3], CUI_cursorInfo_t *_curInfo);
+typedef void (*CUI_pFnListAction_t)(const uint32_t _listIndex, char *_lines[3], bool _selected);
 
 typedef struct CUI_menu_s CUI_menu_t;
 typedef struct CUI_list_s CUI_list_t;
 
-typedef enum CUI_menuItems{
+typedef enum CUI_menuItems
+{
     CUI_MENU_ITEM_TYPE_SUBMENU,
     CUI_MENU_ITEM_TYPE_ACTION,
     CUI_MENU_ITEM_TYPE_INTERCEPT,
     CUI_MENU_ITEM_TYPE_LIST
-}CUI_itemType_t;
+} CUI_itemType_t;
 
 /* Type definition for a sub menu/action item entry */
-typedef struct {
-    char* pDesc;                      /* action description. NULL for sub menu */
-    CUI_itemType_t itemType;          /* What type of menu item is this */
-    bool interceptActive;             /* Is item currently being intercepted */
-    union {
-        CUI_menu_t* pSubMenu;               /* Sub menu */
-        CUI_pFnAction_t   pFnAction;        /* Function for action */
-        CUI_pFnIntercept_t pFnIntercept;    /* Function for interceptable action */
-        CUI_list_t* pList;                  /* List */
+typedef struct
+{
+    char *pDesc;             /* action description. NULL for sub menu */
+    CUI_itemType_t itemType; /* What type of menu item is this */
+    bool interceptActive;    /* Is item currently being intercepted */
+    union
+    {
+        CUI_menu_t *pSubMenu;            /* Sub menu */
+        CUI_pFnAction_t pFnAction;       /* Function for action */
+        CUI_pFnIntercept_t pFnIntercept; /* Function for interceptable action */
+        CUI_list_t *pList;               /* List */
     } item;
 } CUI_menuItem_t;
 
 /* Type definition for a menu object */
-struct CUI_menu_s {
-    CUI_pFnClientMenuUpdate_t uartUpdateFn;     /* Uart Update function */
-    const char* pTitle;                         /* Title of this menu */
-    uint8_t numItems;                           /* # of item entries */
-    CUI_menu_t*  pUpper;                        /* upper menu */
-    CUI_menuItem_t menuItems[];                 /* item entries */
+struct CUI_menu_s
+{
+    CUI_pFnClientMenuUpdate_t uartUpdateFn; /* Uart Update function */
+    const char *pTitle;                     /* Title of this menu */
+    uint8_t numItems;                       /* # of item entries */
+    CUI_menu_t *pUpper;                     /* upper menu */
+    CUI_menuItem_t menuItems[];             /* item entries */
 };
 
 /* Type definition for a list object */
-struct CUI_list_s {
+struct CUI_list_s
+{
     CUI_pFnListAction_t pFnListAction;
     uint16_t maxListItems;
     uint16_t currListIndex;
@@ -809,7 +814,7 @@ struct CUI_list_s {
  * @brief       Initialize the CUI module. This function must be called
  *                  before any other CUI functions.
  */
-CUI_retVal_t CUI_init(CUI_params_t* _pParams);
+CUI_retVal_t CUI_init(CUI_params_t *_pParams);
 
 /*********************************************************************
  * @fn          CUI_paramsInit
@@ -818,7 +823,7 @@ CUI_retVal_t CUI_init(CUI_params_t* _pParams);
  *                  The known state in this case setting each resource
  *                  management flag to true
  */
-void CUI_paramsInit(CUI_params_t* _pParams);
+void CUI_paramsInit(CUI_params_t *_pParams);
 
 /*********************************************************************
  * @fn          CUI_clientOpen
@@ -826,14 +831,14 @@ void CUI_paramsInit(CUI_params_t* _pParams);
  * @brief       Open a client with the CUI module. A client is required
  *                  to request/acquire resources
  */
-CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t* _pParams);
+CUI_clientHandle_t CUI_clientOpen(CUI_clientParams_t *_pParams);
 
 /*********************************************************************
  * @fn          CUI_clientParamsInit
  *
  * @brief       Initialize a CUI_clientParams_t struct to a known state.
  */
-void CUI_clientParamsInit(CUI_clientParams_t* _pClientParams);
+void CUI_clientParamsInit(CUI_clientParams_t *_pClientParams);
 
 /*********************************************************************
  * @fn          CUI_close
@@ -850,21 +855,21 @@ CUI_retVal_t CUI_close();
  *
  * @brief       Register a menu with the CUI module
  */
-CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu);
+CUI_retVal_t CUI_registerMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu);
 
 /*********************************************************************
  * @fn          CUI_deRegisterMenu
  *
  * @brief       De-registers a menu with the CUI module
  */
-CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu);
+CUI_retVal_t CUI_deRegisterMenu(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu);
 
 /*********************************************************************
  * @fn          CUI_updateMultiMenuTitle
  *
  * @brief       Changes the default multi menu title
  */
-CUI_retVal_t CUI_updateMultiMenuTitle(const char* _pTitle);
+CUI_retVal_t CUI_updateMultiMenuTitle(const char *_pTitle);
 
 /*********************************************************************
  * @fn          CUI_menuNav
@@ -872,7 +877,7 @@ CUI_retVal_t CUI_updateMultiMenuTitle(const char* _pTitle);
  * @brief       Navigate to a specific entry of a menu that has already been
  *              registered
  */
-CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t* _pMenu, const uint32_t _itemIndex);
+CUI_retVal_t CUI_menuNav(const CUI_clientHandle_t _clientHandle, CUI_menu_t *_pMenu, const uint32_t _itemIndex);
 
 /*********************************************************************
  * @fn          CUI_processMenuUpdate
@@ -890,16 +895,22 @@ CUI_retVal_t CUI_processMenuUpdate(void);
  *
  * @brief       Request access to a new status line
  */
-CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandle, const char _pLabel[MAX_STATUS_LINE_LABEL_LEN], const bool _refreshInd, uint32_t* _pLineId);
+CUI_retVal_t CUI_statusLineResourceRequest(const CUI_clientHandle_t _clientHandle,
+                                           const char _pLabel[MAX_STATUS_LINE_LABEL_LEN],
+                                           const bool _refreshInd,
+                                           uint32_t *_pLineId);
 
 /*********************************************************************
  * @fn          CUI_statusLinePrintf
  *
  * @brief        Update an acquired status line
  */
-CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle, const uint32_t _lineId, const char *format, ...);
+CUI_retVal_t CUI_statusLinePrintf(const CUI_clientHandle_t _clientHandle,
+                                  const uint32_t _lineId,
+                                  const char *format,
+                                  ...);
 
-void CUI_wrappedIncrement(size_t* _pValue, int32_t _incAmt, size_t _maxValue);
+void CUI_wrappedIncrement(size_t *_pValue, int32_t _incAmt, size_t _maxValue);
 /*********************************************************************
  * Assert Debug API
  ********************************************************************/
@@ -913,10 +924,10 @@ void CUI_wrappedIncrement(size_t* _pValue, int32_t _incAmt, size_t _maxValue);
  *                all existing clients that have been opened and then
  *                enter an infinite loop that flashes the leds.
  */
-void CUI_assert(const char* _assertMsg, const bool _spinLock);
+void CUI_assert(const char *_assertMsg, const bool _spinLock);
 #ifndef CUI_MIN_FOOTPRINT
 void CUI_menuActionBack(const int32_t _itemEntry);
-void CUI_menuActionHelp(const char _input, char* _pLines[3], CUI_cursorInfo_t* _pCurInfo);
+void CUI_menuActionHelp(const char _input, char *_pLines[3], CUI_cursorInfo_t *_pCurInfo);
 #endif
 #ifdef __cplusplus
 }

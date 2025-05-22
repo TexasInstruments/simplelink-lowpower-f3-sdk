@@ -38,8 +38,13 @@
 "use strict";
 
 const stacks = [
+    // Starting from F3 9_10 SDK, the F3 BLE module location
+    // has changed from /ti/ble5stack/ble to /ti/ble/ble, and
+    // F2 SDK still uses the old path /ti/ble5stack/ble.
+    // Maintain both paths since this file is shared between F2 and F3 SDKs.
     {name: "DMM", path: "/ti/dmm/dmm"},
     {name: "BLE", path: "/ti/ble5stack/ble"},
+    {name: "BLE", path: "/ti/ble/ble"},
     {name: "Custom", path: "/ti/devices/radioconfig/custom"},
     {name: "TI 15.4 Stack", path: "/ti/ti154stack/ti154stack"},
     {name: "TI-OpenThread", path: "/ti/thread/thread"},
@@ -65,6 +70,7 @@ const deviceToBoard = {
     CC1354R10: "LP_CC1354R10_RGZ",
     CC2674R10: "LP_CC2674R10_FPGA",
     CC2340R5: "LP_EM_CC2340R5",
+    CC2340R53: "LP_EM_CC2340R53",
     CC2340R2: "LP_EM_CC2340R2",
     CC2745R10_Q1: "LP_EM_CC2745R10_Q1",
     CC2674P10RGZ: "LP_EM_CC2674P10"

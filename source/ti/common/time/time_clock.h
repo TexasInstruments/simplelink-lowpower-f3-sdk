@@ -48,8 +48,7 @@
 #define TIME_CLOCK_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*********************************************************************
@@ -81,7 +80,7 @@ extern "C"
 /*
  * Time clock functions.
  */
-extern void Time_clockInit( void );
+extern void Time_clockInit(void);
 
 extern void Time_clockDisplay(CUI_clientHandle_t CuiHandle, uint32_t CuiLine);
 

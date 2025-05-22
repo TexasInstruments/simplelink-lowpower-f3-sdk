@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,6 +64,17 @@ extern uint32_t NIST_Curve_P256_Gy;
  * MACROS
  */
 
+/* Device family macros*/
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
+#define IS_CC23XX
+#elif defined(DeviceFamily_CC27XX)
+#define IS_CC27XX
+#elif defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
+#define IS_CC13X2_CC26X2
+#else
+#define IS_CC13X2X7_CC13X4_CC26X4
+#endif 
+
 #define AES_CTR_KEY_SIZE        (16)
 
 /* ECC Window Size.  Determines speed and workzone size of ECC operations.
@@ -111,7 +122,6 @@ extern uint32_t NIST_Curve_P256_Gy;
 
 #define NUM_ECC_BYTES (256 / 8)
 
-
 /*
  *  ======== SHA2 & HMAC ========
  */
@@ -124,11 +134,9 @@ int SlCrypto_sha256_update(const void *data,
 
 int SlCrypto_sha256_final(uint8_t *output);
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
 int SlCrypto_sha256_setupHmac(const uint8_t *key, unsigned int key_size);
 
 int SlCrypto_sha256_finalizeHmac(uint8_t *tag);
-#endif
 
 /*
  *  ======== ECDSA & ECDH ========
@@ -141,7 +149,6 @@ int SlCrypto_ecdsa_p256_verify(const uint8_t *pk,
                                const uint8_t *hash,
                                const uint8_t *sig);
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
 int SlCrypto_ecdh_p256_computeSharedSecret(const uint8_t *pk, const uint8_t *sk, uint8_t *z);
 
 /*
@@ -156,7 +163,6 @@ int SlCrypto_aesctr_setKey(const uint8_t *keyingMaterial);
 int SlCrypto_aesctr_encrypt(uint8_t *counter, const uint8_t *m, uint32_t mlen, size_t blk_off, uint8_t *c);
 
 int SlCrypto_aesctr_decrypt(uint8_t *counter, const uint8_t *c, uint32_t clen, size_t blk_off, uint8_t *m);
-#endif
 
 
 #endif /* __TI_CRYPTO_H__ */

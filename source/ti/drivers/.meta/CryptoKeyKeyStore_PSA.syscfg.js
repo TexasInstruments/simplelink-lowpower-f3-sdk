@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,10 +38,10 @@
 "use strict";
 
 /* get Common /ti/drivers utility functions */
-let Common = system.getScript("/ti/drivers/Common.js");
+let CryptoCommon = system.getScript("/ti/drivers/CryptoCommon.syscfg.js");
 
 /* get /ti/drivers family name from device object */
-let family = Common.device2Family(system.deviceData, "CryptoKeyKeyStore_PSA");
+let family = CryptoCommon.device2Family(system.deviceData, "CryptoKeyKeyStore_PSA");
 
 /*
  *  ======== base ========

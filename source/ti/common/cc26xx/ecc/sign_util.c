@@ -52,19 +52,20 @@
 #include "ti/common/cc26xx/flash_interface/flash_interface.h"
 #include "ti/common/flash/no_rtos/extFlash/ext_flash.h"
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
-#include "ti/common/cc26xx/sha2/sha2_driverlib.h"
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
+    #include "ti/common/cc26xx/sha2/sha2_driverlib.h"
 #else
-#include DeviceFamily_constructPath(driverlib/rom_sha256.h)
-#include DeviceFamily_constructPath(driverlib/rom_ecc.h)
-#include DeviceFamily_constructPath(driverlib/rom.h)
+    #include DeviceFamily_constructPath(driverlib/rom_sha256.h)
+    #include DeviceFamily_constructPath(driverlib/rom_ecc.h)
+    #include DeviceFamily_constructPath(driverlib/rom.h)
 #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
 /********************************************************************
  * GLOBAL VARIABLES
  ********************************************************************/
 uint8_t finalHash[ECDSA_KEY_LEN] = {0};
-bool periphRequired_g = true;
+bool periphRequired_g            = true;
 
 /********************************************************************
  * EXTERN VARIABLES
@@ -74,14 +75,14 @@ extern const certElement_t _secureCertElement;
 /*********************************************************************
  * GLOBAL FUNCTION REFERENCES
  ********************************************************************/
-extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *,
-                                 uint32_t *);
+extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
 
 /*********************************************************************
  * FUNCTION DEFINITIONS
  ********************************************************************/
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
 /*********************************************************************
  * @fn         initEccGlobals
  * @brief      Initializa global variables needed for ECC verify operation
@@ -91,16 +92,16 @@ extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *,
  */
 static void initEccGlobals(ECCROMCC26XX_CurveParams *pCurve)
 {
-  /* Store client parameters into ECC ROM parameters */
-  eccRom_param_p  = pCurve->param_p;
-  eccRom_param_r  = pCurve->param_r;
-  eccRom_param_a  = pCurve->param_a;
-  eccRom_param_b  = pCurve->param_b;
-  eccRom_param_Gx = pCurve->param_gx;
-  eccRom_param_Gy = pCurve->param_gy;
+    /* Store client parameters into ECC ROM parameters */
+    eccRom_param_p  = pCurve->param_p;
+    eccRom_param_r  = pCurve->param_r;
+    eccRom_param_a  = pCurve->param_a;
+    eccRom_param_b  = pCurve->param_b;
+    eccRom_param_Gx = pCurve->param_gx;
+    eccRom_param_Gy = pCurve->param_gy;
 
-  /* Initialize window size */
-  eccRom_windowSize = pCurve->windowSize;
+    /* Initialize window size */
+    eccRom_windowSize = pCurve->windowSize;
 }
 #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
@@ -111,13 +112,13 @@ static void initEccGlobals(ECCROMCC26XX_CurveParams *pCurve)
  * @param      pBufIn - pointer to input buffer
  * @param      pBufOut - pointer to output buffer
  */
-static void reverseOrder(const uint8_t *pBufIn,uint8_t *pBufOut)
+static void reverseOrder(const uint8_t *pBufIn, uint8_t *pBufOut)
 {
-  uint8_t i=0;
-  for(i=0;i<SECURE_FW_SIGN_LEN;i++)
-  {
-    pBufOut[i] = pBufIn[SECURE_FW_SIGN_LEN-1-i];
-  }
+    uint8_t i = 0;
+    for (i = 0; i < SECURE_FW_SIGN_LEN; i++)
+    {
+        pBufOut[i] = pBufIn[SECURE_FW_SIGN_LEN - 1 - i];
+    }
 }
 
 /*********************************************************************
@@ -130,11 +131,11 @@ static void reverseOrder(const uint8_t *pBufIn,uint8_t *pBufOut)
  */
 static void copyBytes(uint8_t *pDst, const uint8_t *pSrc, uint32_t len)
 {
-  uint32_t i;
-  for(i=0; i<len; i++)
-  {
-      pDst[i]=pSrc[i];
-  }
+    uint32_t i;
+    for (i = 0; i < len; i++)
+    {
+        pDst[i] = pSrc[i];
+    }
 }
 
 /*!
@@ -153,12 +154,19 @@ static void copyBytes(uint8_t *pDst, const uint8_t *pSrc, uint32_t len)
 
 int compareBytes(uint8_t *pData1, const uint8_t *pData2, uint8_t len)
 {
-  uint8_t i;
-  for(i=0; i<len; i++) if(pData1[i]!=pData2[i]) return (1);
-  return (0);
+    uint8_t i;
+    for (i = 0; i < len; i++)
+    {
+        if (pData1[i] != pData2[i])
+        {
+            return (1);
+        }
+    }
+    return (0);
 }
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
 /*********************************************************************
  * @fn         eccInit
  * @brief      Initialize Curve to NIST P-256 *
@@ -187,26 +195,29 @@ void eccInit(ECCROMCC26XX_Params *pParams)
  */
 uint8_t verifyCertElement(uint8_t *signerInfo)
 {
-  /* read type in sign element and compare with type in cert element */
-  return compareBytes(signerInfo,
-                               _secureCertElement.signerInfo,8);
+    /* read type in sign element and compare with type in cert element */
+    return compareBytes(signerInfo, _secureCertElement.signerInfo, 8);
 }
 
 /**
-* @brief Check for Security Payload
-*
-*  Reads through the headers in the .bin file. If a security header is found
-*  the function checks to see if the header has a populated payload.
-*
-*
-*  @param       eFlStrAddr - The start address in external flash of the binary image
-*
-*  @return      0  - security not found
-*  @return      1  - security found
-*
-*/
-uint8_t  bimVerifyImage_ecc(const uint8_t *publicKeyX, const uint8_t *publicKeyY,
-                           uint8_t *hash, uint8_t *sign1, uint8_t *sign2, uint32_t *eccWorkzone,
+ * @brief Check for Security Payload
+ *
+ *  Reads through the headers in the .bin file. If a security header is found
+ *  the function checks to see if the header has a populated payload.
+ *
+ *
+ *  @param       eFlStrAddr - The start address in external flash of the binary image
+ *
+ *  @return      0  - security not found
+ *  @return      1  - security found
+ *
+ */
+uint8_t bimVerifyImage_ecc(const uint8_t *publicKeyX,
+                           const uint8_t *publicKeyY,
+                           uint8_t *hash,
+                           uint8_t *sign1,
+                           uint8_t *sign2,
+                           uint32_t *eccWorkzone,
                            uint8_t *tempWorkzone)
 {
     uint8_t *publicKeyXBuf;
@@ -217,13 +228,14 @@ uint8_t  bimVerifyImage_ecc(const uint8_t *publicKeyX, const uint8_t *publicKeyY
 
     // Variables to be allocated on the tempworkzone,
     /* Split allocated memory into buffers */
-    uint8_t *reversedHash = tempWorkzone;
+    uint8_t *reversedHash    = tempWorkzone;
     uint8_t *reversedPubKeyX = reversedHash + ECDSA_KEY_LEN;
     uint8_t *reversedPubKeyY = reversedPubKeyX + ECDSA_KEY_LEN;
-    uint8_t *reversedSign1 = reversedPubKeyY + ECDSA_KEY_LEN;
-    uint8_t *reversedSign2 = reversedSign1 + ECDSA_KEY_LEN;
+    uint8_t *reversedSign1   = reversedPubKeyY + ECDSA_KEY_LEN;
+    uint8_t *reversedSign2   = reversedSign1 + ECDSA_KEY_LEN;
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
     ECCROMCC26XX_Params params;
     eccInit(&params);
 #else
@@ -237,75 +249,64 @@ uint8_t  bimVerifyImage_ecc(const uint8_t *publicKeyX, const uint8_t *publicKeyY
     reverseOrder(sign2, reversedSign2);
 
     /*total memory for operation: workzone and 5 key buffers*/
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
     eccRom_workzone = &eccWorkzone[0];
 #else
     eccRom_workzone = ecc_state.workzone;
 #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
     /* Split allocated memory into buffers */
-    publicKeyXBuf = (uint8_t *)eccRom_workzone +
-                 SECURE_FW_ECC_NIST_P256_WORKZONE_LEN_IN_BYTES;
-    publicKeyYBuf = publicKeyXBuf +
-                 SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-    hashBuf =  publicKeyYBuf +
-               SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-    sign1Buf  = hashBuf +
-             SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-    sign2Buf  = sign1Buf +
-             SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    publicKeyXBuf = (uint8_t *)eccRom_workzone + SECURE_FW_ECC_NIST_P256_WORKZONE_LEN_IN_BYTES;
+    publicKeyYBuf = publicKeyXBuf + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    hashBuf       = publicKeyYBuf + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    sign1Buf      = hashBuf + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    sign2Buf      = sign1Buf + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
     initEccGlobals(&params.curve);
 #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
     /* Set length of keys in words in the first word of each buffer*/
-    *((uint32_t *)&publicKeyXBuf[SECURE_FW_ECC_KEY_LEN_OFFSET]) =
-      (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
+    *((uint32_t *)&publicKeyXBuf[SECURE_FW_ECC_KEY_LEN_OFFSET]) = (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(
+        SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
 
-    *((uint32_t *)&publicKeyYBuf[SECURE_FW_ECC_KEY_LEN_OFFSET]) =
-     (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
+    *((uint32_t *)&publicKeyYBuf[SECURE_FW_ECC_KEY_LEN_OFFSET]) = (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(
+        SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
 
-    *((uint32_t *)&hashBuf[SECURE_FW_ECC_KEY_LEN_OFFSET]) =
-      (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
+    *((uint32_t *)&hashBuf[SECURE_FW_ECC_KEY_LEN_OFFSET]) = (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(
+        SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
 
-    *((uint32_t *)&sign1Buf[SECURE_FW_ECC_KEY_LEN_OFFSET]) =
-      (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
+    *((uint32_t *)&sign1Buf[SECURE_FW_ECC_KEY_LEN_OFFSET]) = (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(
+        SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
 
-    *((uint32_t *)&sign2Buf[SECURE_FW_ECC_KEY_LEN_OFFSET]) =
-      (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
+    *((uint32_t *)&sign2Buf[SECURE_FW_ECC_KEY_LEN_OFFSET]) = (uint32_t)(SECURE_FW_ECC_UINT32_BLK_LEN(
+        SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES));
 
     /* Copy input key into buffer */
-    copyBytes( publicKeyXBuf + SECURE_FW_ECC_KEY_OFFSET,
-               reversedPubKeyX,
-               SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-    copyBytes( publicKeyYBuf + SECURE_FW_ECC_KEY_OFFSET,
-               reversedPubKeyY,
-               SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-     /* copy hash into buffer */
-    copyBytes( hashBuf + SECURE_FW_ECC_KEY_OFFSET,reversedHash,
-              SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    copyBytes(publicKeyXBuf + SECURE_FW_ECC_KEY_OFFSET, reversedPubKeyX, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    copyBytes(publicKeyYBuf + SECURE_FW_ECC_KEY_OFFSET, reversedPubKeyY, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    /* copy hash into buffer */
+    copyBytes(hashBuf + SECURE_FW_ECC_KEY_OFFSET, reversedHash, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
 
-    copyBytes( sign1Buf + SECURE_FW_ECC_KEY_OFFSET,
-               reversedSign1,
-               SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-    copyBytes( sign2Buf + SECURE_FW_ECC_KEY_OFFSET,
-               reversedSign2,
-               SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    copyBytes(sign1Buf + SECURE_FW_ECC_KEY_OFFSET, reversedSign1, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
+    copyBytes(sign2Buf + SECURE_FW_ECC_KEY_OFFSET, reversedSign2, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+    defined(DeviceFamily_CC26X2X7)
     uint8_t status = ECDSA_verif((uint32_t *)publicKeyXBuf,
                                  (uint32_t *)publicKeyYBuf,
                                  (uint32_t *)hashBuf,
                                  (uint32_t *)sign1Buf,
                                  (uint32_t *)sign2Buf);
 #else
-    uint8_t status = ECC_ECDSA_verify(&ecc_state,
-                                      (uint32_t *) publicKeyXBuf,
-                                      (uint32_t *) publicKeyYBuf,
-                                      (uint32_t *) hashBuf,
-                                      (uint32_t *) sign1Buf,
-                                      (uint32_t *) sign2Buf);
+    uint8_t status  = ECC_ECDSA_verify(&ecc_state,
+                                      (uint32_t *)publicKeyXBuf,
+                                      (uint32_t *)publicKeyYBuf,
+                                      (uint32_t *)hashBuf,
+                                      (uint32_t *)sign1Buf,
+                                      (uint32_t *)sign2Buf);
 #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
     return status;
@@ -327,8 +328,8 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     imgHdr_t *pImgHdr;
 
     /* Read first page of the image into the buffer. */
-#ifndef BIM_ONCHIP //off-chip case
-    if(!useExtFl)
+    #ifndef BIM_ONCHIP // off-chip case
+    if (!useExtFl)
     {
         CRC32_memCpy(SHABuff, (uint8_t *)(imgStartAddr), SHABuffLen);
     }
@@ -336,62 +337,64 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
     {
         extFlashRead(imgStartAddr, SHABuffLen, SHABuff);
     }
-#else //on-chip case
+    #else // on-chip case
     CRC32_memCpy(SHABuff, (uint8_t *)(imgStartAddr), SHABuffLen);
-#endif
+    #endif
 
     pImgHdr = (imgHdr_t *)(SHABuff);
 
-    if(pImgHdr->fixedHdr.len == 0)
+    if (pImgHdr->fixedHdr.len == 0)
     {
         return NULL;
     }
 
-#ifdef BIM_DUAL_ONCHIP_IMAGE
+    #ifdef BIM_DUAL_ONCHIP_IMAGE
     /* ImgVld field can be changed for switching between valid images */
     /* overwrite the imgVld field in read buffer to 0xFFFFFFFF (default) to allow re-verification of sign */
     /* oad image tool calculated the sign over a fresh image where this value was 0xFFFFFFFF */
     pImgHdr->fixedHdr.imgVld = 0xFFFFFFFF;
 
-#ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
+        #ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
     /* if sign is being calculated, it means the commitFlag field is not set to rejected */
     /* overwrite the commitFlag in read buffer to 0xFF (default) to allow re-verification of sign */
     /* oad image tool calculated the sign over a fresh image where this value was 0xFF */
     pImgHdr->fixedHdr.commitFlag = 0xFF;
-#endif
+        #endif
 
     /* if sign is being calculated, it means the verifStatus field is not set to invalid */
     /* overwrite the verifStatus in read buffer to 0xFF (default) to allow re-verification of sign */
     /* oad image tool calculated the sign over a fresh image where this value was 0xFF */
     pImgHdr->secInfoSeg.verifStat = 0xFF;
-#endif
+    #endif
 
-    uint32_t addrRead = ((pImgHdr->fixedHdr.len > SHABuffLen) ? imgStartAddr + SHABuffLen : imgStartAddr);
+    uint32_t addrRead  = ((pImgHdr->fixedHdr.len > SHABuffLen) ? imgStartAddr + SHABuffLen : imgStartAddr);
     uint32_t secHdrLen = HDR_LEN_WITH_SECURITY_INFO;
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+    #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+        defined(DeviceFamily_CC26X2X7)
     SHA2_open();
-    SHA2_addData(&SHABuff[12], 4); //Start after the ID + CRC and go until CRC Status
-    SHA2_addData(&SHABuff[18], 47); //Start after CRC status and go to signature
+    SHA2_addData(&SHABuff[12], 4);  // Start after the ID + CRC and go until CRC Status
+    SHA2_addData(&SHABuff[18], 47); // Start after CRC status and go to signature
     SHA2_addData(&SHABuff[secHdrLen], SHABuffLen - secHdrLen);
-#else
+    #else
     SHA256_Workzone sha256_workzone;
     SHA256_init(&sha256_workzone);
 
     SHA256_process(&sha256_workzone, &SHABuff[12], 4);
     SHA256_process(&sha256_workzone, &SHABuff[18], 47);
     SHA256_process(&sha256_workzone, &SHABuff[secHdrLen], SHABuffLen - secHdrLen);
-#endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
+    #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
-    uint32_t imgLengthLeft = ((pImgHdr->fixedHdr.len > SHABuffLen) ? pImgHdr->fixedHdr.len - SHABuffLen : pImgHdr->fixedHdr.len);
-    uint32_t byteToRead = ((imgLengthLeft < SHABuffLen) ? imgLengthLeft : SHABuffLen);
+    uint32_t imgLengthLeft = ((pImgHdr->fixedHdr.len > SHABuffLen) ? pImgHdr->fixedHdr.len - SHABuffLen
+                                                                   : pImgHdr->fixedHdr.len);
+    uint32_t byteToRead    = ((imgLengthLeft < SHABuffLen) ? imgLengthLeft : SHABuffLen);
 
     /* Read over image pages. */
-    while(imgLengthLeft > 0)
+    while (imgLengthLeft > 0)
     {
         /* Read data into the next buffer */
-#ifndef BIM_ONCHIP //off-chip case
-        if(!useExtFl)
+    #ifndef BIM_ONCHIP // off-chip case
+        if (!useExtFl)
         {
             CRC32_memCpy(SHABuff, (uint8_t *)addrRead, byteToRead);
         }
@@ -399,46 +402,52 @@ uint8_t *computeSha2Hash(uint32_t imgStartAddr, uint8_t *SHABuff, uint16_t SHABu
         {
             extFlashRead(addrRead, byteToRead, SHABuff);
         }
-#else // on-chip case
+    #else // on-chip case
         CRC32_memCpy(SHABuff, (uint8_t *)addrRead, byteToRead);
-#endif
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+    #endif
+    #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+        defined(DeviceFamily_CC26X2X7)
         SHA2_addData(SHABuff, byteToRead);
-#else
+    #else
         SHA256_process(&sha256_workzone, SHABuff, byteToRead);
-#endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
+    #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
         imgLengthLeft -= byteToRead;
-        if(imgLengthLeft > SHABuffLen)
+        if (imgLengthLeft > SHABuffLen)
+        {
             byteToRead = SHABuffLen;
+        }
         else
+        {
             byteToRead = imgLengthLeft;
+        }
 
         addrRead += SHABuffLen;
     } /* while(imgLengthLeft > 0) */
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+    #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+        defined(DeviceFamily_CC26X2X7)
     SHA2_finalize(finalHash);
     SHA2_close();
-#else
+    #else
     SHA256_final(&sha256_workzone, (uint8_t *)&finalHash);
-#endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
+    #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
     /* check that final hash is not all zeros */
     uint8_t i, finalHashChk = 0;
 
-    for( i = 0; i < ECDSA_KEY_LEN; i++)
+    for (i = 0; i < ECDSA_KEY_LEN; i++)
     {
-        finalHashChk = finalHashChk | finalHash[i] ;
+        finalHashChk = finalHashChk | finalHash[i];
     }
 
-    if(0 == finalHashChk)
+    if (0 == finalHashChk)
     {
         return NULL;
     }
 
     /* final Hash is not all zeroes but a valid result */
-    return(finalHash);
+    return (finalHash);
 }
 
 #endif /*#ifdef SECURITY */

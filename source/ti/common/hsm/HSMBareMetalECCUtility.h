@@ -216,6 +216,29 @@ void HSMBareMetalECCParams_asymDsaSignatureToHW(const uint8_t *const Signature_r
                                                 const size_t modulusSizeBits,
                                                 uint8_t *const blob);
 
+/**
+ *  @brief Compares two buffers for equality without branching
+ *
+ *  @note   This is not a drop-in replacement for memcmp!
+ *
+ *  Most memcmp implementations break out of their comparison loop immediately
+ *  once a mismatch is detected to save execution time. For cryptographic
+ *  purposes, this is a flaw.
+ *
+ *  This function compares two buffers without branching thus requiring a
+ *  an amount of time that does not vary with the content of @c buffer0 and
+ *  @c buffer1.
+ *
+ *  @param  buffer0             Buffer to compare against @c buffer1.
+ *  @param  buffer1             Buffer tp compare against @c buffer0
+ *  @param  bufferByteLength    Length in bytes of @c buffer0 and @c buffer1.
+ *  @retval true                The contents of the buffers match.
+ *  @retval false               The contents of the buffers do not match.
+ */
+bool HSMBareMetalECCParams_bufferMatch(const volatile uint8_t *const buffer1,
+                                       const volatile uint8_t *const buffer2,
+                                       const size_t size);
+
 #ifdef __cplusplus
 }
 #endif

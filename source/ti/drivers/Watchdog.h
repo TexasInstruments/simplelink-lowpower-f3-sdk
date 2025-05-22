@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,15 +38,14 @@
  *  # Overview #
  *
  *  A watchdog timer can be used to generate a reset signal if a system has
- *  become unresponsive. The Watchdog driver simplifies configuring and
- *  starting the watchdog peripherals. The watchdog peripheral can be
- *  configured with resets either on or off and a user-specified timeout
- *  period.
+ *  become unresponsive. The Watchdog driver simplifies configuring and starting
+ *  the watchdog peripherals. The watchdog peripheral can be configured with
+ *  resets either on or off and a user-specified timeout period.
  *
- *  When the watchdog peripheral is configured not to generate a reset, it
- *  can be used to cause a hardware interrupt at a programmable interval.
- *  The driver provides the ability to specify a user-provided callback
- *  function that is called when the watchdog causes an interrupt.
+ *  When the watchdog peripheral is configured not to generate a reset, it can
+ *  be used to cause a hardware interrupt at a programmable interval. The driver
+ *  provides the ability to specify a user-provided callback function that is
+ *  called when the watchdog causes an interrupt.
  *
  *  The Watchdog driver simplifies configuring and starting the Watchdog
  *  peripherals. The Watchdog can be set up to produce a reset signal after a
@@ -77,26 +76,25 @@
  *  }
  *  @endcode
  *
- *  The Watchdog driver must be initialized by calling Watchdog_init(),
- *  before any other Watchdog APIs can be called.
- *  Once the watchdog is initialized, a Watchdog object can be created
- *  through the following steps:
+ *  The Watchdog driver must be initialized by calling Watchdog_init(), before
+ *  any other Watchdog APIs can be called.
+ *  Once the watchdog is initialized, a Watchdog object can be created through
+ *  the following steps:
  *  -   Create and initialize the #Watchdog_Params structure.
  *  -   Assign desired values to parameters.
  *  -   Call Watchdog_open().
- *  -   Save the Watchdog_Handle returned by Watchdog_open(). This will be
- *  used to interact with the Watchdog object just created.
+ *  -   Save the Watchdog_Handle returned by Watchdog_open(). This will be used
+ *      to interact with the Watchdog object just created.
  *
- *  To have a user-defined function run at the hardware interrupt caused by
- *  a watchdog timer timeout, define a function of the following type:
+ *  To have a user-defined function run at the hardware interrupt caused by a
+ *  watchdog timer timeout, define a function of the following type:
  *  @code
  *    typedef void (*Watchdog_Callback)(uintptr_t);
  *  @endcode
  *  Then pass the function to Watchdog_open() through the #Watchdog_Params
  *  structure.
  *
- *  An example of the Watchdog creation process that uses a callback
- *  function:
+ *  An example of the Watchdog creation process that uses a callback function:
  *  @anchor ti_drivers_Watchdog_example_callback
  *  @code
  *  void UserCallbackFxn(Watchdog_Handle handle)
@@ -124,17 +122,16 @@
  *
  *  @endcode
  *
- *  If no #Watchdog_Params structure is passed to Watchdog_open(), the
- *  default values are used. By default, the Watchdog driver has resets
- *  turned on, no callback function specified, and stalls the timer at
- *  breakpoints during debugging.
+ *  If no #Watchdog_Params structure is passed to Watchdog_open(), the default
+ *  values are used. By default, the Watchdog driver has resets turned on, no
+ *  callback function specified, and stalls the timer at breakpoints during
+ *  debugging. For CC35XX devices, debug stalling is not supported.
  *
  *  Options for the resetMode parameter are #Watchdog_RESET_ON and
- *  #Watchdog_RESET_OFF. The latter allows the watchdog to be used like
- *  another timer interrupt. When resetMode is #Watchdog_RESET_ON, it is up
- *  to the application to call Watchdog_clear() to clear the Watchdog
- *  interrupt flag to prevent a reset. Watchdog_clear() can be called at
- *  any time.
+ *  #Watchdog_RESET_OFF. The latter allows the watchdog to be used like another
+ *  timer interrupt. When resetMode is #Watchdog_RESET_ON, it is up to the
+ *  application to call Watchdog_clear() to clear the Watchdog interrupt flag to
+ *  prevent a reset. Watchdog_clear() can be called at any time.
  *
  *  @anchor ti_drivers_Watchdog_Examples
  *  # Examples
@@ -144,8 +141,8 @@
  *  @anchor ti_drivers_Watchdog_Configuration
  *  # Configuration
  *
- *  Refer to the @ref driver_configuration "Driver's Configuration" section
- *  for more information.
+ *  Refer to the @ref driver_configuration "Driver's Configuration" section for
+ *  more information.
  *
  *******************************************************************************
  */
@@ -236,8 +233,8 @@ extern "C" {
 
 /**
  *  @defgroup Watchdog_CMD Command Codes
- *  Watchdog_CMD_* macros are general command codes for Watchdog_control(). Not all Watchdog
- *  driver implementations support these command codes.
+ *  Watchdog_CMD_* macros are general command codes for Watchdog_control(). Not
+ *  all Watchdog driver implementations support these command codes.
  *  @{
  *  @ingroup Watchdog_CONTROL
  */
@@ -374,8 +371,8 @@ typedef struct
  *  The Watchdog_Config structure contains a set of pointers used to
  *  characterize the Watchdog driver implementation.
  *
- *  This structure needs to be defined before calling Watchdog_init() and
- *  it must not be changed thereafter.
+ *  This structure needs to be defined before calling Watchdog_init() and it
+ *  must not be changed thereafter.
  *
  *  @sa     Watchdog_init()
  */
@@ -405,7 +402,7 @@ extern void Watchdog_clear(Watchdog_Handle handle);
 
 /*!
  *  @brief  Function to close a Watchdog peripheral specified by the Watchdog
- *          handle.It stops (holds) the Watchdog counting on applicable
+ *          handle. It stops (holds) the Watchdog counting on applicable
  *          platforms.
  *
  *  @pre    Watchdog_open() has to be called first.
@@ -420,13 +417,13 @@ extern void Watchdog_close(Watchdog_Handle handle);
  *  @brief  Function performs implementation specific features on a given
  *          #Watchdog_Handle.
  *
- *  Commands for Watchdog_control can originate from Watchdog.h or from implementation
- *  specific Watchdog*.h files.
- *  While commands from Watchdog.h are API portable across driver implementations,
- *  not all implementations may support all these commands.
- *  Conversely, commands from driver implementation specific Watchdog*.h files add
- *  unique driver capabilities but are not API portable across all Watchdog driver
- *  implementations.
+ *  Commands for Watchdog_control can originate from Watchdog.h or from
+ *  implementation specific Watchdog*.h files.
+ *  While commands from Watchdog.h are API portable across driver
+ *  implementations, not all implementations may support all these commands.
+ *  Conversely, commands from driver implementation specific Watchdog*.h files
+ *  add unique driver capabilities but are not API portable across all Watchdog
+ *  driver implementations.
  *
  *  Commands supported by Watchdog.h follow a Watchdog_CMD_\<cmd\> naming
  *  convention.<br>
@@ -437,7 +434,8 @@ extern void Watchdog_close(Watchdog_Handle handle);
  *
  *  See @ref Watchdog_CMD "Watchdog_control command codes" for command codes.
  *
- *  See @ref Watchdog_STATUS "Watchdog_control return status codes" for status codes.
+ *  See @ref Watchdog_STATUS "Watchdog_control return status codes" for status
+ *  codes.
  *
  *  @pre    Watchdog_open() has to be called first.
  *
@@ -468,8 +466,8 @@ extern void Watchdog_init(void);
 /*!
  *  @brief      Opens a Watchdog
  *
- *  Opens a Watchdog object with the index and parameters specified, and
- *  returns a #Watchdog_Handle.
+ *  Opens a Watchdog object with the index and parameters specified, and returns
+ *  a #Watchdog_Handle.
  *
  *  @param  index         Logical peripheral number for the Watchdog indexed
  *                        into the Watchdog_config table
@@ -489,7 +487,7 @@ extern Watchdog_Handle Watchdog_open(uint_least8_t index, Watchdog_Params *param
 /*!
  *  @brief  Function to initialize the #Watchdog_Params structure to its defaults
  *
- *  @param  params      An pointer to #Watchdog_Params structure for
+ *  @param  params      A pointer to #Watchdog_Params structure for
  *                      initialization
  *
  *  Default parameters:
@@ -502,15 +500,15 @@ extern void Watchdog_Params_init(Watchdog_Params *params);
 /*!
  *  @brief      Sets the Watchdog reload value
  *
- *  Sets the value from which the Watchdog will countdown after it reaches
- *  zero. This is how the reload value can be changed after the Watchdog has
- *  already been opened. The new reload value will be loaded into the Watchdog
- *  timer when this function is called. Watchdog_setReload is not reentrant.
- *  For CC13XX/CC26XX, if the parameter 'ticks' is set to zero (0), a Watchdog
- *  interrupt is immediately generated.
+ *  Sets the value from which the Watchdog will countdown after it reaches zero
+ *  or Watchdog_clear() is called. This is how the reload value can be changed
+ *  after the Watchdog has already been opened. The new reload value will be
+ *  loaded into the Watchdog timer when this function is called.
+ *  Watchdog_setReload is not reentrant. For CC13XX/CC26XX, if the parameter
+ *  'ticks' is set to zero (0), a Watchdog interrupt is immediately generated.
  *
- *  This API is not applicable for all platforms. See the page for your
- *  specific driver implementation for details.
+ *  This API is not applicable for all platforms. See the page for your specific
+ *  driver implementation for details.
  *
  *  @param      handle      A #Watchdog_Handle
  *
@@ -519,6 +517,8 @@ extern void Watchdog_Params_init(Watchdog_Params *params);
  *
  *  @return #Watchdog_STATUS_SUCCESS on success, #Watchdog_STATUS_UNSUPPORTED
  *          if driver does not support this API.
+ *
+ *  @sa     Watchdog_clear()
  */
 extern int_fast16_t Watchdog_setReload(Watchdog_Handle handle, uint32_t ticks);
 
@@ -526,20 +526,24 @@ extern int_fast16_t Watchdog_setReload(Watchdog_Handle handle, uint32_t ticks);
  *  @brief      Converts milliseconds to Watchdog clock ticks
  *
  *  Converts the input value into number of Watchdog clock ticks as close as
- *  possible.  If the converted value exceeds 32 bits, a zero (0) will be
- *  returned to indicate overflow.  The converted value can be used as the
- *  function parameter 'ticks' in Watchdog_setReload().
+ *  possible. If the converted value exceeds 32 bits, a zero (0) will be
+ *  returned to indicate overflow. For WFF3, a zero (0) indicates that the value
+ *  exceeds the maximum allowed value or falls bellow the minimum possible
+ *  value. The converted value can be used as the function parameter 'ticks' in
+ *  Watchdog_setReload().
  *
- *  This API is not applicable for all platforms. See the page for your
- *  specific driver implementation for details.
+ *  This API is not applicable for all platforms. See the page for your specific
+ *  driver implementation for details.
  *
  *  @param      handle         A #Watchdog_Handle
  *
  *  @param      milliseconds   Value to be converted
  *
- *  @return Converted value in number of Watchdog clock ticks
- *          A value of zero (0) means the converted value exceeds 32 bits
- *          or that the operation is not supported for the specific device.
+ *  @return Converted value in number of Watchdog clock ticks A value of zero
+ *          (0) means the converted value exceeds 32 bits or that the operation
+ *          is not supported for the specific device. For WFF3, a value of zero
+ *          (0) means that the converted value exceeds the maximum allowed value
+ *          or falls bellow the minimum possible value.
  *
  *  @sa     Watchdog_setReload()
  */

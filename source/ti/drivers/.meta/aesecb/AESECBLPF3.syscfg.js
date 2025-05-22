@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== AESECBLpf3.syscfg.js ========
+ *  ======== AESECBLPF3.syscfg.js ========
  */
 
 "use strict";
@@ -40,7 +40,7 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-let family = Common.device2Family(system.deviceData, "Board");
+let deviceId = system.deviceData.deviceId;
 
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
@@ -63,7 +63,11 @@ function getLibs(mod)
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        if (deviceId.match(/CC27/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        } else if (deviceId.match(/CC35/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc35xx_its.a"));
+        }
     }
 
     return (libGroup);
@@ -94,7 +98,7 @@ function extend(base)
     base = Common.addImplementationConfig(base, "AESECB", null,
         [{name: "AESECBLPF3"}], null);
 
-    if (family == "CC27XX") {
+    if (deviceId.match(/CC27/) || deviceId.match(/CC35/)) {
         devSpecific["templates"]["/ti/utils/build/GenLibs.cmd.xdt"] = {modName: "/ti/drivers/AESECB", getLibs: getLibs};
     }
 

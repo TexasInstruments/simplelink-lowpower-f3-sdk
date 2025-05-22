@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,8 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
+let deviceId = system.deviceData.deviceId;
+
 /*
  *  ======== getLibs ========
  *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
@@ -56,7 +58,11 @@ function getLibs(mod) {
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        if (deviceId.match(/CC27/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        } else if (deviceId.match(/CC35/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc35xx_its.a"));
+        }
     }
 
     return (libGroup);

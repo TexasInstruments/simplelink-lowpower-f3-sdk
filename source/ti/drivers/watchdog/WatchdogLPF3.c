@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 #include <ti/drivers/Watchdog.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(inc/hw_ckmd.h)
+#include DeviceFamily_constructPath(driverlib/ckmd.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 
@@ -72,23 +72,13 @@ const Watchdog_FxnTable WatchdogLPF3_fxnTable = {WatchdogLPF3_clear,
 #define SCLK_LF_FREQ_HZ  32768      /* LFCLK frequency in Hz clocking Watchdog */
 #define MAX_RELOAD_VALUE 0xFFFFFFFF /* Maximum allowable reload value */
 #define MS_RATIO         1000       /* millisecond to second ratio */
-#define WATCHDOG_UNLOCK  0x1ACCE551 /* Watchdog unlocking value */
-
-/* TODO: Remove once CC27XX register names catch up */
-#if (DeviceFamily_ID == DeviceFamily_ID_CC27XX)
-    #define CKMD_O_WDTLOCK           CKMD_O_LOCK
-    #define CKMD_O_WDTCNT            CKMD_O_CNT
-    #define CKMD_O_WDTTEST           CKMD_O_TEST
-    #define CKMD_WDTTEST_STALLEN_EN  CKMD_TEST_STALLEN_EN
-    #define CKMD_WDTTEST_STALLEN_DIS CKMD_TEST_STALLEN_DIS
-#endif
 
 /*
  *  ======== WatchdogLPF3_lock ========
  */
 static inline void WatchdogLPF3_lock(void)
 {
-    HWREG(CKMD_BASE + CKMD_O_WDTLOCK) = 0x0;
+    CKMDLockWatchdog();
 }
 
 /*
@@ -96,15 +86,7 @@ static inline void WatchdogLPF3_lock(void)
  */
 static inline void WatchdogLPF3_unlock(void)
 {
-    HWREG(CKMD_BASE + CKMD_O_WDTLOCK) = WATCHDOG_UNLOCK;
-}
-
-/*
- *  ======== WatchdogLPF3_isLocked ========
- */
-static inline bool WatchdogLPF3_isLocked(void)
-{
-    return HWREG(CKMD_BASE + CKMD_O_WDTLOCK) == 1;
+    CKMDUnlockWatchdog();
 }
 
 /*
@@ -112,7 +94,7 @@ static inline bool WatchdogLPF3_isLocked(void)
  */
 static inline void WatchdogLPF3_setReloadValue(uint32_t ticks)
 {
-    HWREG(CKMD_BASE + CKMD_O_WDTCNT) = ticks;
+    CKMDSetWatchdogCounter(ticks);
 }
 
 /*
@@ -120,7 +102,7 @@ static inline void WatchdogLPF3_setReloadValue(uint32_t ticks)
  */
 static inline void WatchdogLPF3_enableStall(void)
 {
-    HWREG(CKMD_BASE + CKMD_O_WDTTEST) = CKMD_WDTTEST_STALLEN_EN;
+    CKMDSetWatchdogDebugConfig(true);
 }
 
 /*
@@ -128,7 +110,7 @@ static inline void WatchdogLPF3_enableStall(void)
  */
 static inline void WatchdogLPF3_disableStall(void)
 {
-    HWREG(CKMD_BASE + CKMD_O_WDTTEST) = CKMD_WDTTEST_STALLEN_DIS;
+    CKMDSetWatchdogDebugConfig(false);
 }
 
 /*
@@ -143,9 +125,6 @@ void WatchdogLPF3_clear(Watchdog_Handle handle)
 
     /* unlock the Watchdog configuration registers */
     WatchdogLPF3_unlock();
-
-    /* make sure the Watchdog is unlocked before continuing */
-    while (WatchdogLPF3_isLocked()) {}
 
     WatchdogLPF3_setReloadValue(reloadValue);
 
@@ -233,9 +212,6 @@ int_fast16_t WatchdogLPF3_setReload(Watchdog_Handle handle, uint32_t ticks)
     /* unlock the Watchdog configuration registers */
     WatchdogLPF3_unlock();
 
-    /* make sure the Watchdog is unlocked before continuing */
-    while (WatchdogLPF3_isLocked()) {}
-
     /* update the reload value */
     reloadValue = ticks;
     WatchdogLPF3_setReloadValue(reloadValue);
@@ -274,9 +250,6 @@ static void WatchdogLPF3_initHw(Watchdog_Handle handle)
 
     /* unlock the Watchdog configuration registers */
     WatchdogLPF3_unlock();
-
-    /* make sure the Watchdog is unlocked before continuing */
-    while (WatchdogLPF3_isLocked()) {}
 
     /* set debug stall mode */
     if (object->debugStallMode == Watchdog_DEBUG_STALL_ON)

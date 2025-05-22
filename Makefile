@@ -54,6 +54,12 @@ ifneq ($(wildcard build/gcc),)
 endif
 	@ $(RMDIR) build
 
-# All components for this SDK are built by CMake
 build-sdk-specific:
+ifeq ($(ENABLE_TFM_BUILD), 1)
+	@$(MAKE) -C tfm_s/cc27xx
+endif
+
 clean-sdk-specific:
+ifeq ($(ENABLE_TFM_BUILD), 1)
+	@$(MAKE) -C tfm_s/cc27xx clean
+endif

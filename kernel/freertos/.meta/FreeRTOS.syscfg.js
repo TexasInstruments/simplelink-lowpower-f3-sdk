@@ -1,4 +1,4 @@
-/* Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
+/* Copyright (c) 2022-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,35 +38,8 @@
 "use strict";
 
 /* get device specific Settings */
-let Settings = system.getScript("/freertos/Settings.syscfg.js");
+let SettingsScript = system.getScript("/freertos/Settings.syscfg.js");
 
-/*
- * ======== getLibs ========
- */
-function getLibs(mod)
-{
-    let GenLibs = system.getScript("/ti/utils/build/GenLibs.syscfg.js");
-    var toolchain = GenLibs.getToolchainDir();
-    var isa = GenLibs.getDeviceIsa();
-
-    var lib_base_name = "freertos/lib/" + toolchain + "/" + isa + "/";
-    var link_info = {
-        name: "freertos",
-        deps: [],
-        libs: []
-    };
-
-    if (toolchain == "iar") {
-        if (system.modules["/ti/utils/TrustZone"]) {
-            link_info.libs.push(lib_base_name + "freertos_tfm.a");
-        }
-        else {
-            link_info.libs.push(lib_base_name + "freertos.a");
-        }
-    }
-
-    return link_info;
-}
 
 /*
  *  ======== validate ========
@@ -109,10 +82,6 @@ function validate(mod, validation)
     if (mod.maxPriorities <= 0 ) {
         validation.logError("Maximum number of task priorities must be greater than 0", mod, "maxPriorities");
     }
-
-    if (!(system.deviceData.deviceId.match(/CC27|CC23/)) && system.compiler == "iar") {
-        validation.logError("FreeRTOS is not supported in this SDK version with IAR for devices other than CC27XX and CC23XX.", mod);
-    }
 }
 
 function getCFiles(kernel)
@@ -146,10 +115,21 @@ function getCFiles(kernel)
 function getPortableFiles()
 {
     if (system.compiler == "iar") {
-            return Settings.iarPortableFiles;
+            return SettingsScript.getDeviceSettings().iarPortableFiles;
     }
     else {
-            return Settings.gccPortableFiles;
+            return SettingsScript.getDeviceSettings().gccPortableFiles;
+    }
+}
+
+function getPortableASMFile()
+{
+    if (system.compiler == "iar") {
+            return SettingsScript.getDeviceSettings().iarPortableASMFile;
+    }
+    else
+    {
+        return "";
     }
 }
 
@@ -376,7 +356,7 @@ responsible for defining vPortFree and pvPortMalloc with their custom heap confi
                         description: `Total size of system heap in bytes`,
                         displayName: "Heap Size",
                         displayFormat: { radix: "hex", bitSize: 32 },
-                        default: Settings.defaultHeapSize
+                        default: SettingsScript.getDeviceSettings().defaultHeapSize
                     }
                 ]
             },
@@ -387,55 +367,70 @@ responsible for defining vPortFree and pvPortMalloc with their custom heap confi
                 name: "tickRate",
                 displayName: "Kernel Clock tick rate (Hz)",
                 default: 1000,
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "cpuFrequency",
                 displayName: "CPU Frequency (Hz)",
-                default: Settings.defaultCpuFrequency,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultCpuFrequency,
+                default: SettingsScript.getDeviceSettings().defaultCpuFrequency,
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "maxInterruptPriority",
                 displayName: "Max FreeRTOS SysCall Interrupt Priority",
                 description: "Max FreeRTOS SysCall Interrupt Priority. Changing this value with IAR requires rebuilding the IAR port library.",
-                default: Settings.defaultMaxInterruptPriority,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultMaxInterruptPriority,
+                default: SettingsScript.getDeviceSettings().defaultMaxInterruptPriority,
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "nvicPriBits",
                 displayName: "Number of NVIC Priority Bits available",
-                default: Settings.defaultNvicPriBits,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultNvicPriBits,
+                default: SettingsScript.getDeviceSettings().defaultNvicPriBits,
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "fpuEnabled",
                 displayName: "FPU is enabled for ths device",
                 description: "Enable FPU-related handling within the kernel. Changing this value with IAR requires rebuilding the IAR port library.",
-                default: Settings.defaultFpuEnabled,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultFpuEnabled,
+                default: SettingsScript.getDeviceSettings().defaultFpuEnabled,
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "idleSleepTicks",
                 displayName: "Idle Sleep Ticks",
                 description: "Free scheduler ticks before invoking power policy",
-                default: Settings.defaultIdleSleepTicks,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultIdleSleepTicks,
+                default: SettingsScript.getDeviceSettings().defaultIdleSleepTicks,
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "usePortTaskSelection",
                 displayName: "Task Selection Implementation",
-                default: Settings.defaultPortTaskSelection,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultPortTaskSelection,
+                default: SettingsScript.getDeviceSettings().defaultPortTaskSelection,
                 options: [
                     { name: 0, displayName: "Generic implementation" },
                     { name: 1, displayName: "Port implementation" }
                 ],
+                readOnly: true,
                 hidden: true
             },
             {
                 name: "interruptCount",
                 displayName: "Number of initial vector table interrupts",
-                default: Settings.defaultInterruptCount,
+                getValue: (inst) => SettingsScript.getDeviceSettings().defaultInterruptCount,
+                default: SettingsScript.getDeviceSettings().defaultInterruptCount,
+                readOnly: true,
                 hidden: true
             }
         ],
@@ -445,7 +440,7 @@ responsible for defining vPortFree and pvPortMalloc with their custom heap confi
         "/freertos/ti_freertos_config.h.xdt": true,
         "/freertos/ti_freertos_config.c.xdt": true,
         "/freertos/ti_freertos_portable_config.c.xdt": true,
-        "/ti/utils/build/GenLibs.cmd.xdt": { modName: "/freertos/FreeRTOS", getLibs: getLibs },
+        "/freertos/ti_freertos_portable_config_asm.s.xdt": true,
 
         "/ti/utils/rov/syscfg_c.rov.xs.xdt": ["crov:/kernel/freertos/rov/heap.rov.js",
                                               "crov:/kernel/freertos/rov/helper.rov.js",
@@ -465,7 +460,8 @@ responsible for defining vPortFree and pvPortMalloc with their custom heap confi
                                               "objView:/kernel/freertos/rov_theia/timer.rov.js"]
     },
     getCFiles: getCFiles,
-    getPortableFiles: getPortableFiles
+    getPortableFiles: getPortableFiles,
+    getPortableASMFile: getPortableASMFile
 };
 
 function onChooseCustomHeap(inst, ui)

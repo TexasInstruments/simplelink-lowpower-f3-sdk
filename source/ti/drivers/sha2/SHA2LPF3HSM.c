@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,6 @@
 #include <string.h>
 #include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/dpl/HwiP.h>
-#include <ti/drivers/power/PowerCC27XX.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 
 #if (ENABLE_KEY_STORAGE == 1)
@@ -52,7 +51,14 @@
 #include <ti/devices/DeviceFamily.h>
 
 #include DeviceFamily_constructPath(inc/hw_ints.h)
-#include DeviceFamily_constructPath(inc/hw_hsmcrypto.h)
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/power/PowerCC27XX.h>
+    #include DeviceFamily_constructPath(inc/hw_hsmcrypto.h)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/power/PowerWFF3.h>
+    #include DeviceFamily_constructPath(inc/hw_hsm.h)
+#endif
 
 /* Max key length supported by HSM for HMAC- needed for KeyStore material retrieval */
 #define SHA2LPF3HSM_MAX_HMAC_KEY_LENGTH_BYTES 128
@@ -768,6 +774,7 @@ static int_fast16_t SHA2LPF3HSM_hashData(SHA2_Handle handle, const void *data, s
     object->totalDataLength = object->inputLength;
     object->mode            = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2FINAL;
     object->key             = NULL;
+    object->returnStatus    = SHA2_STATUS_SUCCESS;
 
     /* Populates the HSMLPF3 commandToken as a hash token for a SHA2 operation. */
     HSMLPF3_constructSHA2PhysicalToken(object);
@@ -907,10 +914,11 @@ int_fast16_t SHA2_setupHmac(SHA2_Handle handle, const CryptoKey *key)
         object->digestLength = SHA2_DIGEST_LENGTH_BYTES_512;
     }
 
-    object->mode        = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2CONT;
-    object->key         = (CryptoKey *)key;
-    object->keyAssetID  = 0U;
-    object->tempAssetID = 0U;
+    object->mode         = (uint32_t)VEXTOKEN_MODE_HASH_MAC_INIT2CONT;
+    object->key          = (CryptoKey *)key;
+    object->keyAssetID   = 0U;
+    object->tempAssetID  = 0U;
+    object->returnStatus = SHA2_STATUS_SUCCESS;
 
     if ((object->key->encoding == CryptoKey_PLAINTEXT_HSM) || (object->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -975,6 +983,7 @@ int_fast16_t SHA2_hmac(SHA2_Handle handle, const CryptoKey *key, const void *dat
     object->key             = (CryptoKey *)key;
     object->keyAssetID      = 0U;
     object->tempAssetID     = 0U;
+    object->returnStatus    = SHA2_STATUS_SUCCESS;
 
     if ((object->key->encoding == CryptoKey_PLAINTEXT_HSM) || (object->key->encoding == CryptoKey_KEYSTORE_HSM))
     {

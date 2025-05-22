@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,29 +39,30 @@ typedef struct RCL_FILTER_LIST_t  RCL_FilterList;
 typedef struct RCL_ADDR_TYPE_t    RCL_AddrType;
 typedef struct RCL_CONN_PARAMS_t  RCL_ConnParams;
 
-typedef struct RCL_CMD_BLE5_ADV_t          RCL_CmdBle5Advertiser;
-typedef struct RCL_CMD_BLE5_AUX_ADV_t      RCL_CmdBle5AuxAdvertiser;
-typedef struct RCL_CMD_BLE5_PER_ADV_t      RCL_CmdBle5PeriodicAdvertiser;
-typedef struct RCL_CMD_BLE5_INITIATOR_t    RCL_CmdBle5Initiator;
-typedef struct RCL_CMD_BLE5_SCANNER_t      RCL_CmdBle5Scanner;
-typedef struct RCL_CMD_BLE5_PER_SCANNER_t  RCL_CmdBle5PeriodicScanner;
-typedef struct RCL_CMD_BLE5_CONNECTION_t   RCL_CmdBle5Connection;
-typedef struct RCL_CMD_BLE5_DTM_TX         RCL_CmdBle5DtmTx;
-typedef struct RCL_CMD_BLE5_GENERIC_RX_t   RCL_CmdBle5GenericRx;
-typedef struct RCL_CMD_BLE5_GENERIC_TX_t   RCL_CmdBle5GenericTx;
-typedef struct RCL_CMD_BLE5_TX_TEST_t      RCL_CmdBle5TxTest;
+typedef struct RCL_CMD_BLE5_ADV_t           RCL_CmdBle5Advertiser;
+typedef struct RCL_CMD_BLE5_AUX_ADV_t       RCL_CmdBle5AuxAdvertiser;
+typedef struct RCL_CMD_BLE5_PER_ADV_t       RCL_CmdBle5PeriodicAdvertiser;
+typedef struct RCL_CMD_BLE5_INITIATOR_t     RCL_CmdBle5Initiator;
+typedef struct RCL_CMD_BLE5_SCANNER_t       RCL_CmdBle5Scanner;
+typedef struct RCL_CMD_BLE5_PER_SCANNER_t   RCL_CmdBle5PeriodicScanner;
+typedef struct RCL_CMD_BLE5_CONNECTION_t    RCL_CmdBle5Connection;
+typedef struct RCL_CMD_BLE5_DTM_TX          RCL_CmdBle5DtmTx;
+typedef struct RCL_CMD_BLE5_GENERIC_RX_t    RCL_CmdBle5GenericRx;
+typedef struct RCL_CMD_BLE5_GENERIC_TX_t    RCL_CmdBle5GenericTx;
+typedef struct RCL_CMD_BLE5_TX_TEST_t       RCL_CmdBle5TxTest;
+typedef struct RCL_CMD_BLE5_CH_ASSESSMENT_t RCL_CmdBle5ChAssessment;
 
-typedef struct RCL_CTX_ADVERTISER_t        RCL_CtxAdvertiser;
-typedef struct RCL_CTX_PER_ADVERTISER_t    RCL_CtxPeriodicAdvertiser;
-typedef struct RCL_CTX_SCAN_INIT_t         RCL_CtxScanInit;
-typedef struct RCL_CTX_PER_SCANNER_t       RCL_CtxPeriodicScanner;
-typedef struct RCL_CTX_CONNECTION_t        RCL_CtxConnection;
-typedef struct RCL_CTX_GENERIC_RX_t        RCL_CtxGenericRx;
-typedef struct RCL_CTX_GENERIC_TX_t        RCL_CtxGenericTx;
+typedef struct RCL_CTX_ADVERTISER_t         RCL_CtxAdvertiser;
+typedef struct RCL_CTX_PER_ADVERTISER_t     RCL_CtxPeriodicAdvertiser;
+typedef struct RCL_CTX_SCAN_INIT_t          RCL_CtxScanInit;
+typedef struct RCL_CTX_PER_SCANNER_t        RCL_CtxPeriodicScanner;
+typedef struct RCL_CTX_CONNECTION_t         RCL_CtxConnection;
+typedef struct RCL_CTX_GENERIC_RX_t         RCL_CtxGenericRx;
+typedef struct RCL_CTX_GENERIC_TX_t         RCL_CtxGenericTx;
 
-typedef struct RCL_STATS_ADV_SCAN_INIT_t   RCL_StatsAdvScanInit;
-typedef struct RCL_STATS_CONNECTION_t      RCL_StatsConnection;
-typedef struct RCL_STATS_GENERIC_RX_t      RCL_StatsGenericRx;
+typedef struct RCL_STATS_ADV_SCAN_INIT_t    RCL_StatsAdvScanInit;
+typedef struct RCL_STATS_CONNECTION_t       RCL_StatsConnection;
+typedef struct RCL_STATS_GENERIC_RX_t       RCL_StatsGenericRx;
 
 /**
  * @brief Type for BLE channels
@@ -123,6 +124,7 @@ typedef union {
 #define RCL_CMDID_BLE5_AUX_ADV                 0x1009U
 #define RCL_CMDID_BLE5_PERIODIC_ADV            0x100AU
 #define RCL_CMDID_BLE5_PERIODIC_SCAN           0x100BU
+#define RCL_CMDID_BLE5_CH_ASSESSMENT           0x100CU
 
 /**
  * @brief Bit mask indicating the use of a custom frequency
@@ -455,7 +457,9 @@ struct RCL_CMD_BLE5_PER_SCANNER_t {
     RCL_Command common;
     RCL_Ble5Channel channel;       /*!< Channel index */
     RCL_Command_TxPower txPower;   /*!< Transmit power */
-    uint16_t maxAuxPtrWaitTime;    /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    bool perAdvType;               /*!< Periodic advertising type. 0: Without Responses (PA). 1: With Responses (PAwR) */
+    uint16_t maxAuxPtrWaitTime;    /*!< Periodic Advertising: Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    uint32_t receivedPktTime;      /*!< Periodic Advertising with Responses: Time of received AUX_SYNC_SUBEVENT_IND or AUX_CONNECT_REQ packet (if connection is formed) */
     RCL_CtxPeriodicScanner *ctx;   /*!< Pointer to context structure */
     RCL_StatsAdvScanInit *stats;   /*!< Pointer to statistics structure */
 };
@@ -466,7 +470,9 @@ struct RCL_CMD_BLE5_PER_SCANNER_t {
                                   RCL_Handler_BLE5_periodicScan),   \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .perAdvType = 0,                                                \
     .maxAuxPtrWaitTime = 20000,                                     \
+    .receivedPktTime = 0,                                           \
     .ctx = NULL,                                                    \
     .stats = NULL,                                                  \
 }
@@ -478,18 +484,28 @@ struct RCL_CMD_BLE5_PER_SCANNER_t {
  *  Context for periodic scanner command
  */
 struct RCL_CTX_PER_SCANNER_t {
+    List_List txBuffers;                  /*!< Periodic Advertising with Responses: Linked list of packets to transmit (Only for AUX_CONNECT_RSP PDUs) */
     List_List rxBuffers;                  /*!< Linked list of buffers for storing received packets */
-    uint16_t localClockAccuracy;          /*!< Maximum relative local clock error (in ppm) scaled by 2^26 */
+    uint16_t ownA[3];                     /*!< Periodic Advertising with Responses: Own device address of type %addrType.own */
+    uint16_t peerA[3];                    /*!< Periodic Advertising with Responses: Advertiser that initiates connection: Peer device address of type %addrType.peer */
+    RCL_AddrType addrType;                /*!< Periodic Advertising with Responses: Address types */
+    uint16_t localClockAccuracy;          /*!< Periodic Advertising: Maximum relative local clock error (in ppm) scaled by 2^26 (used for window widening) */
     uint32_t accessAddress;               /*!< Access address */
     uint32_t crcInit;                     /*!< CRC initialization value (24 bits) */
+    uint8_t acceptAllConnectInd;          /*!< Periodic Advertising with Responses: AUX_CONNECT_REQ treatment. 1: Accept all addresses in InitA of AUX_CONNECT_REQ. */
 };
 
 #define RCL_CtxPeriodicScanner_Default()   \
 {                                          \
+    .txBuffers = { 0 },                    \
     .rxBuffers = { 0 },                    \
+    .ownA = { 0 },                         \
+    .peerA = { 0 },                        \
+    .addrType = { 0 },                     \
     .localClockAccuracy = 3355,            \
     .accessAddress = 0,                    \
     .crcInit = 0,                          \
+    .acceptAllConnectInd = 1,              \
 }
 #define RCL_CtxPeriodicScanner_DefaultRuntime() (RCL_CtxPeriodicScanner) RCL_CtxPeriodicScanner_Default()
 
@@ -677,6 +693,7 @@ struct RCL_CTX_GENERIC_RX_t {
     uint32_t  accessAddress;   /*!< Access address */
     uint32_t  crcInit;         /*!< CRC initialization value (24 bits) */
     uint8_t   maxPktLen;       /*!< Maximum payload length of received packets */
+    uint8_t   maxPkts;         /*!< Maximum number of packets to be received before closing the Rx window. 0: Do not stop command based on received packets */
     struct {
         uint8_t  repeated: 1;         /*!< 0: End after receiving one packet. 1: Go back to sync search after receiving. */
         uint8_t  disableSync: 1;      /*!< 0: Listen for sync 1: Do not listen for sync */
@@ -690,6 +707,8 @@ struct RCL_CTX_GENERIC_RX_t {
     .rxBuffers = { 0 },             \
     .accessAddress = 0x71764129U,   \
     .crcInit = 0x555555,            \
+    .maxPktLen = 255,               \
+    .maxPkts = 0,                   \
     .config = {                     \
         .repeated = 1,              \
         .disableSync = 0,           \
@@ -804,5 +823,28 @@ struct RCL_CMD_BLE5_TX_TEST_t {
 #define RCL_CMD_BLE5_WH_MODE_PRBS9    1 /*!< config.whitenMode: PRBS-9  */
 #define RCL_CMD_BLE5_WH_MODE_PRBS15   2 /*!< config.whitenMode: PRBS-15 */
 #define RCL_CMD_BLE5_WH_MODE_PRBS32   3 /*!< config.whitenMode: PRBS-32 */
+
+
+/**
+ *  @brief Channel Assessment command
+ *
+ *  Command to assess if a BLE channel is idle or busy
+ */
+struct RCL_CMD_BLE5_CH_ASSESSMENT_t {
+    RCL_Command common;
+    RCL_Ble5Channel channel;       /*!< Channel index */
+    int8_t assessmentThreshold;    /*!< RSSI threshold for channel assessment in dBm */
+    uint16_t assessmentDuration;   /*!< Active measuring time in 0.25 us steps */
+};
+
+#define RCL_CmdBle5ChAssessment_Default()                                   \
+{                                                                           \
+    .common = RCL_Command_Default(RCL_CMDID_BLE5_CH_ASSESSMENT,             \
+                                  RCL_Handler_BLE5_ChannelAssessment),      \
+    .channel = 37,                                                          \
+    .assessmentThreshold = -70,                                             \
+    .assessmentDuration = 400,                                              \
+}
+#define RCL_CmdBle5ChAssessment_DefaultRuntime() (RCL_CmdBle5ChAssessment) RCL_CmdBle5ChAssessment_Default()
 
 #endif

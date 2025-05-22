@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_rtc_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -75,7 +75,7 @@
 // Channel1 capture Value
 #define RTC_O_CH1CC8U                                               0x00000038U
 
-// channel1 Input Configuration
+// Channel 1 Input Configuration
 #define RTC_O_CH1CFG                                                0x0000003CU
 
 // Interrupt mask

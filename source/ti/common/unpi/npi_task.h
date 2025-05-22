@@ -49,8 +49,7 @@
 #define NPI_TASK_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 //*****************************************************************************
@@ -76,13 +75,13 @@ typedef void (*npiFromICallCBack_t)(uint8_t *pGenMsg);
 
 typedef struct
 {
-  uint16_t              stackSize;      //!< Configurable size of stack for NPI Task
-  uint16_t              bufSize;        //!< Buffer size of Tx/Rx Transport layer buffers
-  uint32_t              mrdyPinID;      //!< Pin ID Mrdy (only with Power Saving enabled)
-  uint32_t              srdyPinID;      //!< Pin ID Srdy (only with Power Saving enabled)
-  uint8_t               portType;       //!< NPI_SERIAL_TYPE_[UART,SPI]
-  uint8_t               portBoardID;    //!< Board ID for HW, i.e. CC2650_UART0
-  npiInterfaceParams    portParams;     //!< Params to initialize NPI port
+    uint16_t stackSize;            //!< Configurable size of stack for NPI Task
+    uint16_t bufSize;              //!< Buffer size of Tx/Rx Transport layer buffers
+    uint32_t mrdyPinID;            //!< Pin ID Mrdy (only with Power Saving enabled)
+    uint32_t srdyPinID;            //!< Pin ID Srdy (only with Power Saving enabled)
+    uint8_t portType;              //!< NPI_SERIAL_TYPE_[UART,SPI]
+    uint8_t portBoardID;           //!< Board ID for HW, i.e. CC2650_UART0
+    npiInterfaceParams portParams; //!< Params to initialize NPI port
 } NPI_Params;
 
 //*****************************************************************************
@@ -164,7 +163,7 @@ extern uint8_t NPITask_regSSFromICallCB(uint8_t icallID, npiFromICallCBack_t pCB
 //!
 //! \return     _npiFrame_t *   Pointer to newly allocated frame
 // -----------------------------------------------------------------------------
-extern _npiFrame_t * NPITask_mallocFrame(uint16_t len);
+extern _npiFrame_t *NPITask_mallocFrame(uint16_t len);
 
 // -----------------------------------------------------------------------------
 //! \brief      API to de-allocate an NPI frame

@@ -2,15 +2,12 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_8_40_02_01.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_10_00_83.html",
         "devices": [
             "CC2340R5"
         ],
         "devtools": [
             "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
         ],
         "mainCategories": [
             [
@@ -31,9 +28,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
@@ -52,9 +46,6 @@
         ],
         "devtools": [
             "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
         ],
         "mainCategories": [
             [
@@ -75,9 +66,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
@@ -88,7 +76,29 @@
         ]
     },
     {
-        "name": "BLE5-Stack User's Guide",
+        "name": "TI Drivers API Reference",
+        "resourceType": "file",
+        "location": "../../docs/drivers/tidriversAPIs.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "TI Drivers"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "BLE Stack User's Guide",
         "resourceType": "file",
         "location": "../../docs/ble5stack/ble5stack-users-guide.html",
         "devices": [
@@ -97,23 +107,20 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
             ]
         ],
         "subCategories": [
-            "BLE5-Stack"
+            "BLE Stack"
         ],
         "resourceClass": [
             "document"
         ]
     },
     {
-        "name": "BLE5-Stack Quick Start Guide",
+        "name": "BLE Stack Quick Start Guide",
         "resourceType": "file",
         "location": "../../docs/ble5stack/ble5stack-quickstart-guide.html",
         "devices": [
@@ -122,23 +129,20 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
             ]
         ],
         "subCategories": [
-            "BLE5-Stack"
+            "BLE Stack"
         ],
         "resourceClass": [
             "document"
         ]
     },
     {
-        "name": "BLE5-Stack Migration Guide",
+        "name": "BLE Stack Migration Guide",
         "resourceType": "file",
         "location": "../../docs/ble5stack/ble5stack-migration-guide.html",
         "devices": [
@@ -147,23 +151,20 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
             ]
         ],
         "subCategories": [
-            "BLE5-Stack"
+            "BLE Stack"
         ],
         "resourceClass": [
             "document"
         ]
     },
     {
-        "name": "BLE5-Stack Debugging Guide",
+        "name": "BLE Stack Debugging Guide",
         "resourceType": "file",
         "location": "../../docs/ble5stack/ble5stack-debugging-guide.html",
         "devices": [
@@ -172,16 +173,13 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
             ]
         ],
         "subCategories": [
-            "BLE5-Stack"
+            "BLE Stack"
         ],
         "resourceClass": [
             "document"
@@ -196,9 +194,6 @@
         ],
         "devtools": [
             "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
         ],
         "mainCategories": [
             [
@@ -222,9 +217,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
@@ -246,9 +238,6 @@
         ],
         "devtools": [
             "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
         ],
         "mainCategories": [
             [
@@ -272,9 +261,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
@@ -297,17 +283,13 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents",
-            "TI-RTOS Kernel (SYS/BIOS)"
-        ],
         "mainCategories": [
             [
                 "Documents"
             ]
         ],
         "subCategories": [
-            "Proprietary RF"
+            "Core SDK"
         ],
         "resourceClass": [
             "document"
@@ -322,9 +304,6 @@
         ],
         "devtools": [
             "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
         ],
         "mainCategories": [
             [
@@ -348,9 +327,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
@@ -372,9 +348,6 @@
         ],
         "devtools": [
             "LP-EM-CC2340R5"
-        ],
-        "categories": [
-            "Documents"
         ],
         "mainCategories": [
             [
@@ -398,9 +371,6 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
-        "categories": [
-            "Documents"
-        ],
         "mainCategories": [
             [
                 "Documents"
@@ -414,9 +384,9 @@
         ]
     },
     {
-        "name": "SimpleLink Graphics Library Release Notes",
+        "name": "TI BLE Stack Release Notes",
         "resourceType": "file",
-        "location": "../../docs/grlib/release_notes_grlib_5_00_00_05.html",
+        "location": "../../docs/ble5stack/release_notes_ble5stack_9_10_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -429,29 +399,7 @@
             ]
         ],
         "subCategories": [
-            "Graphics Library"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "name": "TI BLE5-Stack Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble5stack_3_03_04_00.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Documents"
-            ]
-        ],
-        "subCategories": [
-            "BLE5-Stack"
+            "BLE Stack"
         ],
         "resourceClass": [
             "document"
@@ -460,7 +408,7 @@
     {
         "name": "SimpleLink Common Components Module (SCCM) Release Notes",
         "resourceType": "file",
-        "location": "../../docs/sccm/release_notes_sccm_8_40_01.html",
+        "location": "../../docs/sccm/release_notes_sccm_9_10_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -502,9 +450,9 @@
         ]
     },
     {
-        "name": "CoreSDK Release Notes",
+        "name": "Core SDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_8_40_00_09.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_10_00_11.html",
         "devices": [
             "CC2340R5"
         ],
@@ -517,7 +465,29 @@
             ]
         ],
         "subCategories": [
-            "TI Drivers"
+            "Core SDK"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "TI Proprietary RF Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_10_00.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Proprietary RF"
         ],
         "resourceClass": [
             "document"
@@ -540,28 +510,6 @@
         ],
         "subCategories": [
             "RCL"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "name": "TI Proprietary RF Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_8_40_00.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Documents"
-            ]
-        ],
-        "subCategories": [
-            "Proprietary RF"
         ],
         "resourceClass": [
             "document"

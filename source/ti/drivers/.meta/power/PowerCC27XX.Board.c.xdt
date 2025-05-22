@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,20 @@
     let pow                        = POWER.$static;
     let policyInitFxn              = pow.policyInitFunction;
     let policyFxn                  = pow.policyFunction;
+    let capArrayCoefficientP0 = CCFG.$static.hfxtCapArrayCoefficientP0;
+    let capArrayCoefficientP1 = CCFG.$static.hfxtCapArrayCoefficientP1;
+
+    /* If external capacitors is used, the coefficients should be forced to zero. */
+    if (CCFG.$static.useExternalHfxtCapacitors) {
+        capArrayCoefficientP0 = 0;
+        capArrayCoefficientP1 = 0;
+    }
+
+    let capArrayCoefficients = [capArrayCoefficientP0, capArrayCoefficientP1];
+    let shift = CCFG.maxShift(capArrayCoefficients);
+
+    let capArrayP0Shifted =  Math.trunc(capArrayCoefficientP0 * Math.pow(2,shift));
+    let capArrayP1Shifted =  Math.trunc(capArrayCoefficientP1 * Math.pow(2,shift));
 
     /* By default, disable initial HFXT amplitude compensation by setting
      * the C pointer to the function to start the HFXT amplitude compensation
@@ -80,6 +94,10 @@ extern void `policyInitFxn`(void);
 % if (policyFxn !== 'NULL') {
 extern void `policyFxn`(void);
 % }
+
+const uint32_t PowerLPF3_capArrayP0 = `capArrayP0Shifted`; /* floor(`capArrayCoefficientP0` * 2^`shift`) */
+const uint32_t PowerLPF3_capArrayP1 = `capArrayP1Shifted`; /* floor(`capArrayCoefficientP1` * 2^`shift`) */
+const uint8_t  PowerLPF3_capArrayShift = `shift`;  /* shift-value to bring floating-point coefficients to fixed-point */
 
 %if (CCFG.$static.srcClkLF === "External LF clock") {
 const uint8_t PowerLPF3_extlfPin      = `CCFG.$static.extlfPinInstance.$name`;

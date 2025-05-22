@@ -123,8 +123,7 @@
 #define OAD_IMAGE_HEADER_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*******************************************************************************
@@ -137,31 +136,30 @@ extern "C"
  * CONSTANTS
  ******************************************************************************/
 
-
 #ifdef OAD_ONCHIP
-  /*!
-   * BIM Variable Address
-   *
-   * The bim_var is a variable stored in RAM that is used to control switching
-   * between persistent and user application in the BIM
-   * On CC26xx platforms RAM is retained between resets and this is possible
-   *
-   * Warning! placement of the BIM variable must respect the following
-   * reserved RAM regions ( Valid for CC2640R2):
-   *    - TI-RTOS in ROM reserved region: 0x20000100-0x20000280
-   *    - BLE Stack memory: < ICALL_RAM0_START
-   *    - Vector Table in RAM: 0x20000000-0x200000C8
-   * Failing to respect either of the above boundaries will result in a
-   * linker error
-   */
-  #define BIM_VAR_ADDR  0x20000400
+    /*!
+     * BIM Variable Address
+     *
+     * The bim_var is a variable stored in RAM that is used to control switching
+     * between persistent and user application in the BIM
+     * On CC26xx platforms RAM is retained between resets and this is possible
+     *
+     * Warning! placement of the BIM variable must respect the following
+     * reserved RAM regions ( Valid for CC2640R2):
+     *    - TI-RTOS in ROM reserved region: 0x20000100-0x20000280
+     *    - BLE Stack memory: < ICALL_RAM0_START
+     *    - Vector Table in RAM: 0x20000000-0x200000C8
+     * Failing to respect either of the above boundaries will result in a
+     * linker error
+     */
+    #define BIM_VAR_ADDR 0x20000400
 
-  /*!
-   * BIM Argument variable
-   *
-   * The application is responsible for defining this variable for on-chip OAD
-   */
-  extern uint32_t _bim_var;
+/*!
+ * BIM Argument variable
+ *
+ * The application is responsible for defining this variable for on-chip OAD
+ */
+extern uint32_t _bim_var;
 #endif // OAD_ONCHIP
 
 #if defined(BIM_DUAL_ONCHIP_IMAGE) && !defined(SECURITY)
@@ -170,12 +168,12 @@ extern "C"
     #error "Error: DUAL ON CHIP BIM needs the macro SECURITY to be enabled"
 #endif
 
-#if defined (DeviceFamily_CC23X0R2)
-    #define SIGN_FN_PTR 0x37fc       //!< Pointer to BIM Function
+#if defined(DeviceFamily_CC23X0R2)
+    #define SIGN_FN_PTR 0x37fc //!< Pointer to BIM Function
 #else
-    #define SIGN_FN_PTR 0x57fa0      //!< Pointer to BIM Function
+    #define SIGN_FN_PTR 0x57fa0 //!< Pointer to BIM Function
 #endif
-extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
+extern uint32_t _sign_fnPtr; //!< Variable for Pointer to BIM Function
 
 /**
  * @defgroup OAD_IMG_TYPE OAD image types
@@ -188,21 +186,21 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  * The persistent app is the permanently resident app used in on-chip OAD
  * The persistent app is responsible for updating the user application
  */
-#define OAD_IMG_TYPE_PERSISTENT_APP       0
+#define OAD_IMG_TYPE_PERSISTENT_APP 0
 
 /*!
  * OAD user application image
  *
  * A user application of split app/stack type
  */
-#define OAD_IMG_TYPE_APP                  1
+#define OAD_IMG_TYPE_APP 1
 
 /*!
  * OAD stack image
  *
  * An OAD enabled stack image of split image type
  */
-#define OAD_IMG_TYPE_STACK                2
+#define OAD_IMG_TYPE_STACK 2
 
 /*!
  * OAD app + stack merge
@@ -210,7 +208,7 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  * An OAD enabled image that is a merge of both app and stack that are of split
  * image type.
  */
-#define OAD_IMG_TYPE_APP_STACK            3
+#define OAD_IMG_TYPE_APP_STACK 3
 
 /*!
  * OAD network processor image
@@ -218,7 +216,7 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  * A network processor image. This image is intended to run an external
  * processor
  */
-#define OAD_IMG_TYPE_NP                   4
+#define OAD_IMG_TYPE_NP 4
 
 /*!
  * OAD network processor image
@@ -226,7 +224,7 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  * A network processor image. This image is intended to run an external
  * processor
  */
-#define OAD_IMG_TYPE_FACTORY              5
+#define OAD_IMG_TYPE_FACTORY 5
 
 /*!
  * OAD Boot Image Manager (BIM) image
@@ -234,7 +232,7 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  * A BIM image
  * \note BIM upgrade is not currently supported
  */
-#define OAD_IMG_TYPE_BIM                  6
+#define OAD_IMG_TYPE_BIM 6
 
 /*!
  * OAD app + stack library image
@@ -244,21 +242,21 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  * \note This is different than @ref OAD_IMG_TYPE_APP_STACK which is a post
  *        build merge of two split images.
  */
-#define OAD_IMG_TYPE_APPSTACKLIB          7
+#define OAD_IMG_TYPE_APPSTACKLIB 7
 
 /*!
  * OAD reserved image type begin
  *
  * \warning These fields are RFU
  */
-#define OAD_IMG_TYPE_RSVD_BEGIN           64
+#define OAD_IMG_TYPE_RSVD_BEGIN 64
 
 /*!
  * OAD reserved image type end
  *
  * \warning These fields are RFU
  */
-#define OAD_IMG_TYPE_RSVD_END             255
+#define OAD_IMG_TYPE_RSVD_END 255
 
 /** @} End OAD_IMG_TYPE */
 
@@ -270,90 +268,107 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 /*!
  * Image built for BLE
  */
-#define OAD_WIRELESS_TECH_BLE             0xFFFE
+#define OAD_WIRELESS_TECH_BLE 0xFFFE
 
 /*!
  * Image built for Sub1-GHz TI 15.4-Stack
  */
-#define OAD_WIRELESS_TECH_TIMAC_SUBG      0xFFFD
+#define OAD_WIRELESS_TECH_TIMAC_SUBG 0xFFFD
 
 /*!
  * Image built for 2.4-GHz TI 15.4-Stack
  */
-#define OAD_WIRELESS_TECH_TIMAC_2_4G      0xFFFB
+#define OAD_WIRELESS_TECH_TIMAC_2_4G 0xFFFB
 
 /*!
  * Image built for Zigbee
  */
-#define OAD_WIRELESS_TECH_ZIGBEE          0xFFF7
+#define OAD_WIRELESS_TECH_ZIGBEE 0xFFF7
 
 /*!
  * Image built for RF4CE
  */
-#define OAD_WIRELESS_TECH_RF4CE           0xFFEF
+#define OAD_WIRELESS_TECH_RF4CE 0xFFEF
 
 /*!
  * Image built for TI Open Thread
  */
-#define OAD_WIRELESS_TECH_THREAD          0xFFDF
+#define OAD_WIRELESS_TECH_THREAD 0xFFDF
 
 /*!
  * Image built for EasyLink
  */
-#define OAD_WIRELESS_TECH_PROPRF          0xFFBF
+#define OAD_WIRELESS_TECH_PROPRF 0xFFBF
 
 /*!
  * Image built for MIOTY
  */
-#define OAD_WIRELESS_TECH_MIOTY           0xFF7F
+#define OAD_WIRELESS_TECH_MIOTY 0xFF7F
 
 /*!
  * Image built for WBMS WDevice
  */
-#define OAD_WIRELESS_TECH_WBMS_WD         0xFEFF
+#define OAD_WIRELESS_TECH_WBMS_WD 0xFEFF
 
 /*!
  * Image built for WBMS WMain
  */
-#define OAD_WIRELESS_TECH_WBMS_WM         0xFDFF
-
+#define OAD_WIRELESS_TECH_WBMS_WM 0xFDFF
 
 /** @} End OAD_WIRELESS_TECH */
 
-#if defined(DeviceFamily_CC26X2) || defined (DeviceFamily_CC26X2_V2) || \
-    defined(DeviceFamily_CC26X2X7) || defined(DeviceFamily_CC26X1)
-  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '2', 'R', '1'}
-#elif defined (DeviceFamily_CC13X2) ||                                        \
-      defined (DeviceFamily_CC13X2X7) ||                                      \
-      defined (DeviceFamily_CC13X1) ||                                        \
-      defined (DeviceFamily_CC13X2_V1) ||                                     \
-      defined (DeviceFamily_CC13X2_V2)
-  #define OAD_IMG_ID_VAL                    {'C', 'C', '1', '3', 'x', '2', 'R', '1'}
-#elif defined (DeviceFamily_CC13X4)
-  #define OAD_IMG_ID_VAL                    {'C', 'C', '1', '3', 'x', '4', ' ', ' '}
-#elif defined (DeviceFamily_CC26X3)
-  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '3', ' ', ' '}
-#elif defined (DeviceFamily_CC26X4)
-  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '4', ' ', ' '}
-#elif defined (DeviceFamily_CC26X0R2)
-  #define OAD_IMG_ID_VAL                    {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '}
-#elif defined (DeviceFamily_CC23X0R2)
-  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '3', 'x', '0', 'R', '2'}
-#elif defined (DOXYGEN)
-  /*!
-   * Magic number to identify OAD image header. It is recommended that the
-   * customer adjust these to uniquely identify their device
-   *
-   * This define will be filled in conditionally based on DeviceFamily_*
-   *   - DeviceFamily_CC26X2:  @code {'C', 'C', '2', '6', 'x', '2', 'R', '1'} @endcode
-   *   - DeviceFamily_CC13X2:  @code {'C', 'C', '1', '3', 'x', '2', 'R', '1'} @endcode
-   *   - DeviceFamily_CC26X0R2: @code {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '} @endcode
-   *   - Else an error will be thrown
-   */
-  #define OAD_IMG_ID_VAL
+#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC26X2_V2) || defined(DeviceFamily_CC26X2X7) || \
+    defined(DeviceFamily_CC26X1)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'C', 'C', '2', '6', 'x', '2', 'R', '1' \
+        }
+#elif defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC13X1) || \
+    defined(DeviceFamily_CC13X2_V1) || defined(DeviceFamily_CC13X2_V2)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'C', 'C', '1', '3', 'x', '2', 'R', '1' \
+        }
+#elif defined(DeviceFamily_CC13X4)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'C', 'C', '1', '3', 'x', '4', ' ', ' ' \
+        }
+#elif defined(DeviceFamily_CC26X3)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'C', 'C', '2', '6', 'x', '3', ' ', ' ' \
+        }
+#elif defined(DeviceFamily_CC26X4)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'C', 'C', '2', '6', 'x', '4', ' ', ' ' \
+        }
+#elif defined(DeviceFamily_CC26X0R2)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'O', 'A', 'D', ' ', 'I', 'M', 'G', ' ' \
+        }
+#elif defined(DeviceFamily_CC23X0R2)
+    #define OAD_IMG_ID_VAL                         \
+        {                                          \
+            'C', 'C', '2', '3', 'x', '0', 'R', '2' \
+        }
+#elif defined(DOXYGEN)
+    /*!
+     * Magic number to identify OAD image header. It is recommended that the
+     * customer adjust these to uniquely identify their device
+     *
+     * This define will be filled in conditionally based on DeviceFamily_*
+     *   - DeviceFamily_CC26X2:  @code {'C', 'C', '2', '6', 'x', '2', 'R', '1'} @endcode
+     *   - DeviceFamily_CC13X2:  @code {'C', 'C', '1', '3', 'x', '2', 'R', '1'} @endcode
+     *   - DeviceFamily_CC26X0R2: @code {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '} @endcode
+     *   - Else an error will be thrown
+     */
+    #define OAD_IMG_ID_VAL
 #else
-  #error "Unknown Device Family"
-#endif //DeviceFamily_CC26X2
+    #error "Unknown Device Family"
+#endif // DeviceFamily_CC26X2
 
 /*!
  * Magic number used by entries in the image header table at the beginning of
@@ -363,8 +378,10 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  *
  * \note This is only used by off-chip OAD
  */
-#define OAD_EXTFL_ID_VAL                  {'O', 'A', 'D', ' ', 'N', 'V', 'M', '1'}
-
+#define OAD_EXTFL_ID_VAL                       \
+    {                                          \
+        'O', 'A', 'D', ' ', 'N', 'V', 'M', '1' \
+    }
 
 /**
  * @defgroup OAD_OFFSETS OAD Image Header offsets
@@ -374,90 +391,90 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 /*!
  * Offset in bytes of crc32 into the structure @ref imgFixedHdr_t
  */
-#define CRC_OFFSET                   offsetof(imgHdr_t, fixedHdr.crc32)
+#define CRC_OFFSET offsetof(imgHdr_t, fixedHdr.crc32)
 
 /*!
  * Offset in bytes of bimVer into the structure @ref imgFixedHdr_t
  */
-#define BIM_VER_OFFSET               offsetof(imgHdr_t, fixedHdr.bimVer)
+#define BIM_VER_OFFSET offsetof(imgHdr_t, fixedHdr.bimVer)
 
 /*!
  * Offset in bytes of bimVer into the structure
  * @ref imgFixedHdr_t. This is the start of data after the CRC bytes
  */
-#define IMG_DATA_OFFSET              BIM_VER_OFFSET
+#define IMG_DATA_OFFSET BIM_VER_OFFSET
 
 /*!
  * Offset in bytes of imgCpStat into the structure @ref imgFixedHdr_t
  */
-#define IMG_INFO_OFFSET              offsetof(imgHdr_t, fixedHdr.imgCpStat)
+#define IMG_INFO_OFFSET offsetof(imgHdr_t, fixedHdr.imgCpStat)
 
 /*!
  * Offset in bytes of @ref IMG_INFO_OFFSET into the structure @ref imgFixedHdr_t
  */
-#define IMG_COPY_STAT_OFFSET         IMG_INFO_OFFSET
+#define IMG_COPY_STAT_OFFSET IMG_INFO_OFFSET
 
 /*!
  * Offset in bytes of CRC status into the structure @ref imgFixedHdr_t
  */
-#define CRC_STAT_OFFSET              offsetof(imgHdr_t, fixedHdr.crcStat)
+#define CRC_STAT_OFFSET offsetof(imgHdr_t, fixedHdr.crcStat)
 
 /*!
  * Offset in bytes of imgType into the structure @ref imgFixedHdr_t
  */
-#define IMG_TYPE_OFFSET              offsetof(imgHdr_t, fixedHdr.imgType)
+#define IMG_TYPE_OFFSET offsetof(imgHdr_t, fixedHdr.imgType)
 
 /*!
  * Offset in bytes of imgVal into the structure @ref imgFixedHdr_t
  */
-#define IMG_VALIDATION_OFFSET        offsetof(imgHdr_t, fixedHdr.imgVld)
+#define IMG_VALIDATION_OFFSET offsetof(imgHdr_t, fixedHdr.imgVld)
 
 /*!
  * Offset in bytes of imgVal into the structure @ref imgFixedHdr_t
  */
-#define IMG_COMMIT_FLAG_OFFSET        offsetof(imgHdr_t, fixedHdr.commitFlag)
+#define IMG_COMMIT_FLAG_OFFSET offsetof(imgHdr_t, fixedHdr.commitFlag)
 
 /*!
  * Offset in bytes of the boundary segment into the structure @ref imgHdr_t
  */
-#define BOUNDARY_SEG_OFFSET          offsetof(imgHdr_t, fixedHdr.segTypeBd)
+#define BOUNDARY_SEG_OFFSET offsetof(imgHdr_t, fixedHdr.segTypeBd)
 
 /*!
  * Offset in bytes of the length field into the structure @ref boundarySeg_t
  */
-#define SEG_LEN_OFFSET               4
+#define SEG_LEN_OFFSET 4
 
 /** @} End OAD_OFFSETS */
 
 /*!
  * Offset in bytes of the signerInfo field into the structure @ref securityInfoSeg_t
  */
-#define SEG_SIGERINFO_OFFSET         offsetof(imgHdr_t, secInfoSeg.secSignerInfo)
+#define SEG_SIGERINFO_OFFSET offsetof(imgHdr_t, secInfoSeg.secSignerInfo)
 
 /*!
  * Offset in bytes of the sign_r field into the structure @ref securityInfoSeg_t
  */
-#define SEG_SIGNR_OFFSET             offsetof(imgHdr_t, secInfoSeg.eccSign.sign_r)
+#define SEG_SIGNR_OFFSET offsetof(imgHdr_t, secInfoSeg.eccSign.sign_r)
 
 /*!
  * Offset in bytes of the sign_r field into the structure @ref securityInfoSeg_t
  */
-#define SEG_SIGNS_OFFSET             offsetof(imgHdr_t, secInfoSeg.eccSign.sign_s)
+#define SEG_SIGNS_OFFSET offsetof(imgHdr_t, secInfoSeg.eccSign.sign_s)
 
 /*!
  * Offset in bytes of the sign_r field into the structure @ref securityInfoSeg_t
  */
-#define SEC_VERIF_STAT_OFFSET        offsetof(imgHdr_t, secInfoSeg.verifStat)
+#define SEC_VERIF_STAT_OFFSET offsetof(imgHdr_t, secInfoSeg.verifStat)
 
 /*!
  * Offset in bytes of the sign_r field into the structure @ref securityInfoSeg_t
  */
-#define HDR_LEN_WITH_SECURITY_INFO   offsetof(imgHdr_t, secInfoSeg.segTypeSecure) + sizeof(securityInfoSeg_t)
+#define HDR_LEN_WITH_SECURITY_INFO offsetof(imgHdr_t, secInfoSeg.segTypeSecure) + sizeof(securityInfoSeg_t)
 
 /*!
  * Offset in bytes of image start address field into the structure @ref imgPayloadSeg_t
  */
-#define IMG_START_ADDR_OFFSET        offsetof(imgHdr_t, imgPayload.startAddr)
+#define IMG_START_ADDR_OFFSET offsetof(imgHdr_t, imgPayload.startAddr)
 
 /** @} End OAD_OFFSETS */
 
@@ -469,26 +486,25 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 /*!
  * Length of @ref boundarySeg_t in bytes
  */
-#define SEG_HDR_LEN                  12
+#define SEG_HDR_LEN 12
 
 /*!
  * Length of OAD image ID field, this is the length of @ref OAD_IMG_ID_VAL and
  * @ref OAD_EXTFL_ID_VAL
  */
-#define OAD_IMG_ID_LEN               8
+#define OAD_IMG_ID_LEN 8
 
 /*!
  * Length of software version in bytes
  */
-#define OAD_SW_VER_LEN               4
+#define OAD_SW_VER_LEN 4
 
 /*!
  * Length of @ref imgFixedHdr_t, this is the length of the core header
  */
-#define OAD_IMG_HDR_LEN              sizeof(imgFixedHdr_t)
+#define OAD_IMG_HDR_LEN sizeof(imgFixedHdr_t)
 
 /** @} End OAD_LENGTHS */
-
 
 /**
  * @defgroup OAD_SEG_CODES OAD segment op codes
@@ -498,177 +514,176 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
 /*!
  * Op code used to identify a boundary segment @ref boundarySeg_t
  */
-#define IMG_BOUNDARY_SEG_ID          0x00
+#define IMG_BOUNDARY_SEG_ID 0x00
 
 /*!
  * Op code used to identify a contiguous image segment  @ref imgPayloadSeg_t
  */
-#define IMG_PAYLOAD_SEG_ID           0x01
-
+#define IMG_PAYLOAD_SEG_ID 0x01
 
 /*!
  * Op code used to identify a non-contiguous image segment.
  */
-#define IMG_NONCOUNT_SEG_ID          0x02
+#define IMG_NONCOUNT_SEG_ID 0x02
 
 /*!
  * Op code used to identify a security segment.
  */
-#define IMG_SECURITY_SEG_ID          0x03
+#define IMG_SECURITY_SEG_ID 0x03
 
 /** @} End OAD_SEG_CODES */
 
-
-#define OAD_IMG_FULL_HDR_LEN         sizeof(imgHdr_t)                     //!< The length of the OAD Header + Segments
-#define OAD_IMG_ID_LEN               8                                    //!< OAD image identification bytes length
-#define OAD_SW_VER_LEN               4                                    //!< OAD software version length in bytes
+#define OAD_IMG_FULL_HDR_LEN sizeof(imgHdr_t) //!< The length of the OAD Header + Segments
+#define OAD_IMG_ID_LEN       8                //!< OAD image identification bytes length
+#define OAD_SW_VER_LEN       4                //!< OAD software version length in bytes
 
 #ifndef STACK_LIBRARY
-  #define BOUNDARY_SEG_LEN           0x18 //!< Length of the boundary segment
+    #define BOUNDARY_SEG_LEN 0x18 //!< Length of the boundary segment
 #endif
-#define SECURITY_SEG_LEN             0x55 //!< Length of the security segment
+#define SECURITY_SEG_LEN 0x55 //!< Length of the security segment
 
-#define IMG_COPY_STAT_OFFSET         IMG_INFO_OFFSET                      /* Image copy status */
+#define IMG_COPY_STAT_OFFSET IMG_INFO_OFFSET /* Image copy status */
 
-#define SEG_LEN_OFFSET               4                                    /* Offset from seg header to seg len */
-#define SIG_OFFSET                   offsetof(securityInfoSeg_t, eccSign.sign_r)      //!< Offset from the start of security seg to sig
+#define SEG_LEN_OFFSET 4                                           /* Offset from seg header to seg len */
+#define SIG_OFFSET     offsetof(securityInfoSeg_t, eccSign.sign_r) //!< Offset from the start of security seg to sig
 
-#define ECDSA_KEY_LEN                32    //!< Length of the ECDSA security key
+#define ECDSA_KEY_LEN 32 //!< Length of the ECDSA security key
 
-#define ECDSA_SHA_TEMPWORKZONE_LEN   ECDSA_KEY_LEN*6  //!< space for six buffers hash, reverseHash, pubkeyX, pubKeyY, sign1, sign2
+#define ECDSA_SHA_TEMPWORKZONE_LEN \
+    ECDSA_KEY_LEN * 6 //!< space for six buffers hash, reverseHash, pubkeyX, pubKeyY, sign1, sign2
 
 /*!
  * Version of BIM this image is intended to work with
  *
  * \warning This is not intended to be changed
  */
-#define BIM_VER                      0x3
+#define BIM_VER 0x3
 
 /*!
  * Version of metadata that defined this image header
  *
  * \warning This is not intended to be changed
  */
-#define META_VER                     0x1
+#define META_VER 0x1
 
 /*!
  * Version of metadata that defined this image header
  *
  * \warning This is not intended to be changed
  */
-#define SECURITY_VER                 0x1
+#define SECURITY_VER 0x1
 
 /*!
  * Default state of unprogrammed flash in an image header field
  */
-#define DEFAULT_STATE                0xFF
+#define DEFAULT_STATE 0xFF
 
 /*!
  * Flag for crcStat indicating the CRC of the image is
  * valid
  */
-#define CRC_VALID                    0xFE
+#define CRC_VALID 0xFE
 
 /*!
  * Flag for crcStat indicating the CRC of the image is
  * invalid
  */
-#define CRC_INVALID                  0xFC
+#define CRC_INVALID 0xFC
 
 /*!
  * FlagimgCpStat indicating the image should be copied
  */
-#define NEED_COPY                    0xFE
+#define NEED_COPY 0xFE
 
 /*!
  * FlagimgCpStat indicating the image is already copied
  */
-#define COPY_DONE                    0xFC
+#define COPY_DONE 0xFC
 
 #ifdef BIM_DUAL_ONCHIP_IMAGE
-/*!
-* Flagimg verification status indicating the successful sign verification
-* and is the current image executing/to be executed
-*/
-#define VERIFY_PASS_CURRENT          0xFE
+    /*!
+     * Flagimg verification status indicating the successful sign verification
+     * and is the current image executing/to be executed
+     */
+    #define VERIFY_PASS_CURRENT 0xFE
 
-/*!
-* Flagimg verification status indicating the successful sign verification
-* and is not the current image executing/to be executed
-*/
-#define VERIFY_PASS_NOT_CURRENT      0xFC
+    /*!
+     * Flagimg verification status indicating the successful sign verification
+     * and is not the current image executing/to be executed
+     */
+    #define VERIFY_PASS_NOT_CURRENT 0xFC
 
-/*!
-* Flagimg verification status indicating the failed sign verification or
-* security version check failed
-*/
-#define VERIFY_FAIL                  0xF8
+    /*!
+     * Flagimg verification status indicating the failed sign verification or
+     * security version check failed
+     */
+    #define VERIFY_FAIL 0xF8
 
 #else
 
-/*!
-* Flagimg verification status indicating the failed sign verification
-*/
-#define VERIFY_FAIL                  0xFC
+    /*!
+     * Flagimg verification status indicating the failed sign verification
+     */
+    #define VERIFY_FAIL 0xFC
 
 #endif // BIM_DUAL_ONCHIP_IMAGE
 
 /*!
-* Flagimg verification status indicating the successful sign verification
-*/
-#define VERIFY_PASS                  0xFE
+ * Flagimg verification status indicating the successful sign verification
+ */
+#define VERIFY_PASS 0xFE
 
 #ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
-/*!
-* Flagging image commit flag indicating image has not been committed yet
-* but might be running. Image is doing its own tests and verification to decide to commit or not
-*/
-#define COMMIT_PENDING               0XFF
+    /*!
+     * Flagging image commit flag indicating image has not been committed yet
+     * but might be running. Image is doing its own tests and verification to decide to commit or not
+     */
+    #define COMMIT_PENDING 0XFF
 
-/*!
-* Flagging image commit flag indicating image has been committed
-* and image successfully passed its verification tests
-*/
-#define COMMIT_ACCEPTED              0XFE
+    /*!
+     * Flagging image commit flag indicating image has been committed
+     * and image successfully passed its verification tests
+     */
+    #define COMMIT_ACCEPTED 0XFE
 
-/*!
-* Flagging image commit flag indicating image has been rejected
-* and image failed ist verification tests
-*/
-#define COMMIT_REJECTED              0XEF
+    /*!
+     * Flagging image commit flag indicating image has been rejected
+     * and image failed ist verification tests
+     */
+    #define COMMIT_REJECTED 0XEF
 
 #endif
 
 /*!
  * Length of image external flash image header
  */
-#define EFL_MATADATA_HDR_LEN         OAD_IMG_HDR_LEN + 8
+#define EFL_MATADATA_HDR_LEN OAD_IMG_HDR_LEN + 8
 
 /*!
  * An invalid address as shown by unprogrammed flash
  */
-#define INVALID_ADDR                 0xFFFFFFFF
+#define INVALID_ADDR 0xFFFFFFFF
 
 /*!
  * An invalid length as shown by unprogrammed flash.
  */
-#define INVALID_LEN                  INVALID_ADDR
+#define INVALID_LEN INVALID_ADDR
 
 /*!
  * An invalid address as shown by unprogrammed flash.
  */
-#define DEFAULT_CRC                  0xFFFFFFFF
+#define DEFAULT_CRC 0xFFFFFFFF
 
 #if (defined(SECURITY))
     /*!
      * Size of Signer Info
      */
-    #define SIGNER_INFO_SIZE                  8
+    #define SIGNER_INFO_SIZE 8
 
     /*!
      * Size of Signature
      */
-    #define SIGNATURE_SIZE                    64
+    #define SIGNATURE_SIZE 64
 #endif
 
 /*******************************************************************************
@@ -676,24 +691,25 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  */
 
 /// @cond NODOC
-#if defined (__IAR_SYSTEMS_ICC__)
-  #define TYPEDEF_STRUCT_PACKED        __packed typedef struct
+#if defined(__IAR_SYSTEMS_ICC__)
+    #define TYPEDEF_STRUCT_PACKED __packed typedef struct
 #elif defined __TI_COMPILER_VERSION || defined __TI_COMPILER_VERSION__ || __clang__
-  #define TYPEDEF_STRUCT_PACKED        typedef struct __attribute__((packed))
-#elif defined (__GNUC__)
-  #define TYPEDEF_STRUCT_PACKED        typedef struct __attribute__((__packed__))
+    #define TYPEDEF_STRUCT_PACKED typedef struct __attribute__((packed))
+#elif defined(__GNUC__)
+    #define TYPEDEF_STRUCT_PACKED typedef struct __attribute__((__packed__))
 #endif
 /// @endcond // NODOC
 
 #if (defined(SECURITY))
-    /*!
-    * Structure to hold the Signer Info and the Signature
-    */
-    TYPEDEF_STRUCT_PACKED
-    {
-        uint8_t     signerInfo[SIGNER_INFO_SIZE];
-        uint8_t     signature[SIGNATURE_SIZE];
-    }signPld_ECDSA_P256_t;
+/*!
+ * Structure to hold the Signer Info and the Signature
+ */
+TYPEDEF_STRUCT_PACKED
+{
+    uint8_t signerInfo[SIGNER_INFO_SIZE];
+    uint8_t signature[SIGNATURE_SIZE];
+}
+signPld_ECDSA_P256_t;
 #endif
 
 /*!
@@ -702,32 +718,33 @@ extern uint32_t _sign_fnPtr;     //!< Variable for Pointer to BIM Function
  */
 TYPEDEF_STRUCT_PACKED
 {
-  uint8_t   imgID[8];       //!< User-defined Image Identification bytes
-  uint32_t  crc32;          //!< Image's 32-bit CRC value
-  uint8_t   bimVer;         //!< BIM version
-  uint8_t   metaVer;        //!< Metadata version
-  uint16_t  techType;       //!< Wireless protocol type BLE/TI-MAC/ZIGBEE etc.
-  uint8_t   imgCpStat;      //!< Image copy status
-  uint8_t   crcStat;        //!< CRC status
-  uint8_t   imgType;        //!< Image Type
-  uint8_t   imgNo;          //!< Image number of 'image type'
-  uint32_t  imgVld;         //!< Image validation bytes, used by BIM.
-  uint32_t  len;            //!< Image length in bytes.
-  uint32_t  prgEntry;       //!< Program entry address
+    uint8_t imgID[8];  //!< User-defined Image Identification bytes
+    uint32_t crc32;    //!< Image's 32-bit CRC value
+    uint8_t bimVer;    //!< BIM version
+    uint8_t metaVer;   //!< Metadata version
+    uint16_t techType; //!< Wireless protocol type BLE/TI-MAC/ZIGBEE etc.
+    uint8_t imgCpStat; //!< Image copy status
+    uint8_t crcStat;   //!< CRC status
+    uint8_t imgType;   //!< Image Type
+    uint8_t imgNo;     //!< Image number of 'image type'
+    uint32_t imgVld;   //!< Image validation bytes, used by BIM.
+    uint32_t len;      //!< Image length in bytes.
+    uint32_t prgEntry; //!< Program entry address
 #ifdef BIM_VERIFY_VERSION_IMAGE
-  uint32_t  softVer;        //!< Software version of the image
+    uint32_t softVer; //!< Software version of the image
 #else
-  uint8_t   softVer[4];     //!< Software version of the image
+    uint8_t softVer[4]; //!< Software version of the image
 #endif
-  uint32_t  imgEndAddr;     //!< Address of the last byte of a contiguous image
-  uint16_t  hdrLen;         //!< Total length of the image header
+    uint32_t imgEndAddr; //!< Address of the last byte of a contiguous image
+    uint16_t hdrLen;     //!< Total length of the image header
 #ifdef BIM_RESTRICTED_ROLLBACK_VERIFY_COMMIT_IMAGE
-  uint8_t   commitFlag;     //!< whether or not this image has not been committed, committed or rejected.
-  uint8_t   rfu;            //!< Reserved bytes
+    uint8_t commitFlag; //!< whether or not this image has not been committed, committed or rejected.
+    uint8_t rfu;        //!< Reserved bytes
 #else
-  uint16_t  rfu;            //!< Reserved bytes
+    uint16_t rfu;       //!< Reserved bytes
 #endif
-}imgFixedHdr_t;
+}
+imgFixedHdr_t;
 
 /*!
  * OAD continuous image payload segment
@@ -737,12 +754,13 @@ TYPEDEF_STRUCT_PACKED
  */
 TYPEDEF_STRUCT_PACKED
 {
-  uint8_t   segTypeImg;     //!< Segment type - for Contiguous image payload
-  uint16_t  wirelessTech;   //!< Wireless technology type
-  uint8_t   rfu;            //!< Reserved byte
-  uint32_t  imgSegLen;      //!< Payload segment length
-  uint32_t  startAddr;      //!< Start address of image on internal flash
-}imgPayloadSeg_t;
+    uint8_t segTypeImg;    //!< Segment type - for Contiguous image payload
+    uint16_t wirelessTech; //!< Wireless technology type
+    uint8_t rfu;           //!< Reserved byte
+    uint32_t imgSegLen;    //!< Payload segment length
+    uint32_t startAddr;    //!< Start address of image on internal flash
+}
+imgPayloadSeg_t;
 
 /*!
  * OAD boundary segment
@@ -755,21 +773,22 @@ TYPEDEF_STRUCT_PACKED
  */
 TYPEDEF_STRUCT_PACKED
 {
-  uint8_t   segTypeBd;      //!< Segment type - for boundary segment
-  uint16_t  wirelessTech;   //!< Wireless technology type
-  uint8_t   rfu;            //!< Reserved byte
-  uint32_t  boundarySegLen; //!< Boundary segment length
-  uint32_t  stackStartAddr; //!< Start address of stack image on internal flash
-  uint32_t  stackEntryAddr; //!< Stack start address
-  uint32_t  ram0StartAddr;  //!< RAM entry start address
-  uint32_t  ram0EndAddr;    //!< RAM entry end address
-}boundarySeg_t;
-
+    uint8_t segTypeBd;       //!< Segment type - for boundary segment
+    uint16_t wirelessTech;   //!< Wireless technology type
+    uint8_t rfu;             //!< Reserved byte
+    uint32_t boundarySegLen; //!< Boundary segment length
+    uint32_t stackStartAddr; //!< Start address of stack image on internal flash
+    uint32_t stackEntryAddr; //!< Stack start address
+    uint32_t ram0StartAddr;  //!< RAM entry start address
+    uint32_t ram0EndAddr;    //!< RAM entry end address
+}
+boundarySeg_t;
 
 /*! ECC signature pair */
-typedef struct {
-  uint8_t  sign_r[32];     //!< ECC reciever signature
-  uint8_t  sign_s[32];     //!< ECC sender signature
+typedef struct
+{
+    uint8_t sign_r[32]; //!< ECC reciever signature
+    uint8_t sign_s[32]; //!< ECC sender signature
 } eccSignature_t;
 
 /*!
@@ -780,15 +799,16 @@ typedef struct {
  */
 TYPEDEF_STRUCT_PACKED
 {
-  uint8_t   segTypeSecure;     //!< Segment type - for Secuirty info payload
-  uint16_t  wirelessTech;      //!< Wireless technology type
-  uint8_t   verifStat;         //!< Verification status
-  uint32_t  secSegLen;         //!< Payload segment length
-  uint8_t   secVer;            //!< Security version */
-  uint32_t  secTimestamp;      //!< Security timestamp */
-  uint8_t   secSignerInfo[8];  //!< Security signer info */
-  eccSignature_t  eccSign;     //!< Security signature */
-}securityInfoSeg_t;
+    uint8_t segTypeSecure;    //!< Segment type - for Secuirty info payload
+    uint16_t wirelessTech;    //!< Wireless technology type
+    uint8_t verifStat;        //!< Verification status
+    uint32_t secSegLen;       //!< Payload segment length
+    uint8_t secVer;           //!< Security version */
+    uint32_t secTimestamp;    //!< Security timestamp */
+    uint8_t secSignerInfo[8]; //!< Security signer info */
+    eccSignature_t eccSign;   //!< Security signature */
+}
+securityInfoSeg_t;
 
 /*!
  * OAD Image Header
@@ -800,28 +820,30 @@ TYPEDEF_STRUCT_PACKED
  */
 TYPEDEF_STRUCT_PACKED
 {
-   imgFixedHdr_t         fixedHdr;    //!< Required core image header
+    imgFixedHdr_t fixedHdr; //!< Required core image header
 #if (defined(SECURITY))
-   securityInfoSeg_t     secInfoSeg;  //!< Security information segment
+    securityInfoSeg_t secInfoSeg; //!< Security information segment
 #endif
 #if (!defined(STACK_LIBRARY) && (defined(SPLIT_APP_STACK_IMAGE)))
-   boundarySeg_t         boundarySeg; //!< Optional boundary segment
+    boundarySeg_t boundarySeg; //!< Optional boundary segment
 #endif
-   imgPayloadSeg_t       imgPayload;  //!< Required contiguous image segment
-} imgHdr_t;
+    imgPayloadSeg_t imgPayload; //!< Required contiguous image segment
+}
+imgHdr_t;
 
 TYPEDEF_STRUCT_PACKED
 {
-   uint32_t *eccWorkzone;    //!< Should be of length ECCROMCC26XX_NIST_P256_WORKZONE_SIGN_VERIFY_LEN_IN_BYTES*sizeof(uint32_t) bytes
-   uint8_t *SHAWorkzone;  //!< SHA workzone buffer should be of size(SHA256_memory_t) bytes
-   uint8_t *tempWorkzone;         //!< Should be size 6*ECDSA_KEY_LEN bytes
-   uint8_t *SHADataBuf;           //!< this buff is used for reading data for calculating SHA2 hash, length depends on available RAM of calling application */
-   uint8_t  SHADataBufLen;                //!< length of allocate SHA data buffer
-} ecdsaSigVerifyBuf_t;
+    uint32_t *eccWorkzone; //!< Should be of length
+                           //!< ECCROMCC26XX_NIST_P256_WORKZONE_SIGN_VERIFY_LEN_IN_BYTES*sizeof(uint32_t) bytes
+    uint8_t *SHAWorkzone;  //!< SHA workzone buffer should be of size(SHA256_memory_t) bytes
+    uint8_t *tempWorkzone; //!< Should be size 6*ECDSA_KEY_LEN bytes
+    uint8_t *SHADataBuf; //!< this buff is used for reading data for calculating SHA2 hash, length depends on available
+                         //!< RAM of calling application */
+    uint8_t SHADataBufLen; //!< length of allocate SHA data buffer
+}
+ecdsaSigVerifyBuf_t;
 
 /** @} End OAD_IMAGE_HEADER */
-
-
 
 /*******************************************************************************
  * Typedefs
@@ -832,8 +854,7 @@ TYPEDEF_STRUCT_PACKED
  *
  * Function typdef for bim_payloadVerify() fxn defined in bim_main.c
  */
-typedef uint8_t (*bimSignFnPtr_t)(uint8_t, uint32_t, uint32_t, uint8_t *,
-                                  uint8_t *, ecdsaSigVerifyBuf_t *);
+typedef uint8_t (*bimSignFnPtr_t)(uint8_t, uint32_t, uint32_t, uint8_t *, uint8_t *, ecdsaSigVerifyBuf_t *);
 
 #ifdef __cplusplus
 }

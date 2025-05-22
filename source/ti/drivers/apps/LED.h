@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2021, Texas Instruments Incorporated
+ * Copyright (c) 2016-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,11 +47,15 @@
  *  LED_Handle handle;
  *  LED_Params ledParams;
  *
- *  // Assume our LED is configured to be a PWM LED
+ *  // Initialize the driver
+ *  LED_init();
+ *
+ *  // Open LED instance with default parameters
  *  LED_Params_init(&ledParams);
- *  ledHandle = LED_open(CONFIG_LED0, &ledParams);
+ *  handle = LED_open(CONFIG_LED_0, &ledParams);
  *
  *  // Turn on, set brightness, and blink
+ *  // If LED is configured as GPIO controlled, brightness is ignored
  *  LED_setOn(handle, 80);
  *  LED_startBlinking(handle, 500, LED_BLINK_FOREVER);
  *
@@ -194,21 +198,23 @@
  *
  *  In "ti_drivers_config.h"
  *  @code
- *  #define CONFIG_LED0     0
+ *  #define CONFIG_LED_0     0
  *  @endcode
  *
  *  In application code:
  *  @code
  *  #include <ti/drivers/apps/LED.h>
  *
- *  LED_Handle LEDHandle;
+ *  LED_Handle ledHandle;
  *  LED_Params ledParams;
+ *
+ *  LED_init();
  *
  *  LED_Params_init(&ledParams);
  *  ledParams.pwmPeriod = 100; // 0.1 ms period
  *  ledParams.blinkPeriod = 500; // LED will toggle twice a second
  *  ledParams.setState = LED_STATE_BLINKING; // Start LED blink on open
- *  ledHandle = LED_open(CONFIG_LED0, &ledParams); // Open the first LED_Config
+ *  ledHandle = LED_open(CONFIG_LED_0, &ledParams); // Open the first LED_Config
  *
  *  // Turn on at half brightness level
  *  LED_setOn(ledHandle, 50);

@@ -52,6 +52,8 @@
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>
 #include <third_party/hsmddk/include/Config/cs_mbedtls.h>
 
+#include <DeviceFamily.h>
+
 static bool KeyMgmt_isInitialized = false;
 
 extern uint8_t volatileAllocBuffer[];
@@ -104,14 +106,16 @@ psa_crypto_init(void)
             /* MISRA - Intentially empty */
         }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
         if (PSA_SUCCESS == funcres)
         {
             funcres = KeyMgmt_initPreProvisionedKeys();
         }
+#endif
 
         if (PSA_SUCCESS == funcres)
         {
-            mbedtls_memory_buffer_alloc_init(volatileAllocBuffer, volatileAllocBufferSizeBytes);
+            psaInt_mbedtls_memory_buffer_alloc_init(volatileAllocBuffer, volatileAllocBufferSizeBytes);
 
             KeyMgmt_isInitialized = true;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,6 @@
 
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
-let logError = Common.logError;
 
 /* Amount of bytes necessary to store a key's metadata in KeyStore. Keys of
  * every type require a slot, each with a constant size.
@@ -72,9 +71,18 @@ const defaultVolatileSlots = 0;
 
 let defaultTotalSlots = defaultAssetStoreSlots + defaultPersistentSlots + defaultVolatileSlots;
 
+/* 1 is added to defaultPersistentSlots to account for the temporary memory used
+ * when importing a persistent key.
+ */
 let defaultRamUsage = (defaultTotalSlots * slotMetadataSize) + constantOverheadRam +
-                      ((keyItemSizeMaxDefault) * defaultPersistentSlots);
+                      ((keyItemSizeMaxDefault) * (defaultPersistentSlots + 1));
 
+/* Even if no RAM is used for volatile keys in the default configuration, there must still be some
+ * allocated to allow for imports of persistent keys that still make use of KeyStore's internal
+ * memory allocator. By default, there must be RAM available for caching defaultPersistentSlots number
+ * of persistent keys, plus some for overhead and temporary allocations.
+ */
+let defaultVolatileMemoryPoolSize = (keyItemSizeMaxDefault * (defaultPersistentSlots + 1)) + constantOverheadRam;
 
 /*
  *  ======== getLibs ========
@@ -296,7 +304,7 @@ let configBase = [
         description   : "This is the amount of RAM space that will be necessary to hold the specified "
                         + "number of volatile keys of the given sizes, as well as the space required for "
                         + "caching 3 persistent keys, in KeyStore's memory allocator pool.",
-        default       : 0,
+        default       : defaultVolatileMemoryPoolSize,
         displayFormat : "dec",
         hidden        : true
     },
@@ -347,28 +355,9 @@ let configBase = [
 ];
 
 /*
- *  ======== devSpecific ========
- *  Device-specific extensions to be added to base CryptoKeyKeyStore_PSA configuration
+ *  ======== updateKeySize ========
+ *  Update RAM usage based on total key slot count and number of volatile keys
  */
-let devSpecific = {
-    moduleStatic: {
-        config   : configBase.concat(keyConfig),
-        validate: validate,
-        /* AES drivers which support LAES require DMA module and an RNG module
-         * is required since it defines global return behavior variable.
-         */
-        modules  : Common.autoForceModules(["Board", "Power", "DMA", "RNG"])
-    },
-    templates : {
-        boardc: "/ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSACC27XX.Board.c.xdt",
-        boardh: "/ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.Board.h.xdt",
-
-        /* contribute libraries to linker command file */
-        "/ti/utils/build/GenLibs.cmd.xdt":
-                {modName: "/ti/drivers/CryptoKeyKeyStore_PSA", getLibs: getLibs}
-    }
-};
-
 function updateKeySize(inst, ui)
 {
     let volatileSize = 0;
@@ -434,14 +423,14 @@ function updateKeySize(inst, ui)
 
     /* Technically, metadataOverheadRAM is only necessary to show RAM usage to customer -
      * it does not actually need to be a part of the define that is used for the memory
-     * pool size.
+     * pool size. keyItemSizeMaxDefault is added to account for the temporary memory used
+     * when importing a persistent key.
      */
     inst.volatileMemoryPoolSize = volatileSize + persistentKeysRAM + constantOverheadRam + keyItemSizeMaxDefault;
 
     /* Customer-facing value about how much RAM KeyStore will require between selected keys + overhead */
     ui.ramUsage.readOnly = false;
-    inst.ramUsage = volatileSize + persistentKeysRAM +
-                    constantOverheadRam + metadataOverheadRAM;
+    inst.ramUsage = inst.volatileMemoryPoolSize + metadataOverheadRAM;
     ui.ramUsage.readOnly = true;
 }
 
@@ -489,7 +478,7 @@ function onChangeUpdateFlash(inst)
     else if (inst.flashSizeConfig == "8KB (23 Persistent Keys Max)")
     {
         inst.persistentNumKeys = 23;
-        inst.flashSize = 8196;
+        inst.flashSize = 8192;
     }
     else
     {
@@ -499,13 +488,87 @@ function onChangeUpdateFlash(inst)
     }
 }
 
+/*
+ *  ======== validate ========
+ *  Validate this module's configuration
+ *
+ *  @param inst - Instance to be validated
+ *  @param validation - Object to hold detected validation issues
+ *
+ */
 function validate(inst, validation)
 {
-    if (inst.assetStoreSlotCount > 5) {
-        logError(validation, inst, "assetStoreSlotCount",
-                 "Value must be less than or equal to 5, to leave space in HSM DRAM for driver operations.");
+    if (system.modules["/ti/utils/TrustZone"]) {
+        validation.logInfo(
+            "Note: The KeyStore configuration is fixed when TrustZone is enabled. " +
+            "If different settings are needed, modify tfm_s/cc27xx/production_full/config/config_tfm_project.h " +
+            "and rebuild the secure image.", inst);
     }
 }
+
+/*
+ *  ======== onModuleChanged ========
+ *  Changes visibility of KeyStore config depending on the presence of TrustZone module
+ */
+function onModuleChanged(inst, dependentInst, moduleName, configurables) {
+    if (moduleName == "/ti/utils/TrustZone") {
+        if (dependentInst !== undefined) {
+            /* Hide base config */
+            inst.$uiState.assetStoreSlotCount.hidden = true;
+            inst.$uiState.flashSizeConfig.hidden = true;
+            inst.$uiState.ramUsage.hidden = true;
+
+            /* Hide volatile key configs */
+            Object.keys(inst.$uiState).forEach(key => {
+                if (key.includes('NumVolatile')) {
+                    inst.$uiState[key].hidden = true;
+                }
+            });
+        }
+        else {
+            /* Display base config */
+            inst.$uiState.assetStoreSlotCount.hidden = false;
+            inst.$uiState.flashSizeConfig.hidden = false;
+            inst.$uiState.ramUsage.hidden = false;
+
+            /* Display volatile key configs */
+            Object.keys(inst.$uiState).forEach(key => {
+                if (key.includes('NumVolatile')) {
+                    inst.$uiState[key].hidden = false;
+                }
+            });
+        }
+    }
+}
+
+/*
+ *  ======== devSpecific ========
+ *  Device-specific extensions to be added to base CryptoKeyKeyStore_PSA configuration
+ */
+let devSpecific = {
+    moduleStatic: {
+        config   : configBase.concat(keyConfig),
+        validate : validate,
+        /* AES drivers which support LAES require DMA module and an RNG module
+         * is required since it defines global return behavior variable.
+         */
+        modules  : Common.autoForceModules(["Board", "Power", "CryptoBoard", "DMA", "RNG"]),
+        dependencies: {
+            modules: {
+                "/ti/utils/TrustZone" : ["secureImage"]
+            },
+            onModuleChanged: onModuleChanged
+        }
+    },
+    templates : {
+        boardc: "/ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSACC27XX.Board.c.xdt",
+        boardh: "/ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.Board.h.xdt",
+
+        /* Contribute libraries to linker command file */
+        "/ti/utils/build/GenLibs.cmd.xdt":
+                {modName: "/ti/drivers/CryptoKeyKeyStore_PSA", getLibs: getLibs}
+    }
+};
 
 /*
  *  ======== extend ========

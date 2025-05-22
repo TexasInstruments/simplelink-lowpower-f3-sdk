@@ -223,14 +223,21 @@ function create(phyGroup) {
         return sections;
     }
 
+    function zeroPadStart(valueString, width) {
+        while (valueString.length < width) {
+            valueString = "0" + valueString;
+        }
+        return valueString;
+    }
+
     function hexString(value, width) {
-        return Number(value).toString(16).padStart(width, "0");
+        return zeroPadStart(Number(value).toString(16), width);
     }
 
     function byteString(values) {
         var bytes = [];
         for (i = 0; i < values.length; i++) {
-            bytes[i] = Number(values[i]).toString(16).padStart(2, "0");
+            bytes[i] = zeroPadStart(Number(values[i]).toString(16), 2);
         }
         return bytes.join(" ");
     }

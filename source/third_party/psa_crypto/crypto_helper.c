@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022-2024, Texas Instruments Incorporated
+ *  Copyright 2022-2025, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -26,23 +26,24 @@
 #include <ti/drivers/AESCommon.h>
 #include <ti/drivers/ECDH.h>
 #include <ti/drivers/ECDSA.h>
-// TODO: Remove conditional compile once EDDSA driver is completed for CC27xx
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
-     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
-    /* EDDSA is not yet supported for CC27xx */
-    #include <ti/drivers/EDDSA.h>
-#endif
 #include <ti/drivers/RNG.h>
 #include <ti/drivers/SHA2.h>
 #include <ti/drivers/TRNG.h>
 
 #include <ti/devices/DeviceFamily.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/EDDSA.h>
+#endif
+
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #include <ti/drivers/ecdh/ECDHLPF3HSM.h>
     #include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
     #include <ti/drivers/rng/RNGLPF3HSM.h>
     #include <ti/drivers/trng/TRNGLPF3HSM.h>
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+        #include <ti/drivers/eddsa/EDDSALPF3HSM.h>
+    #endif
 #endif
 
 #ifdef TFM_BUILD
@@ -430,7 +431,7 @@ psa_status_t map_AES_status(int_fast16_t status)
     return psaStatus;
 }
 
-#ifdef DeviceFamily_CC27XX
+#if (defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC35XX))
 /*
  *  ======== map_keyTypeToECDSACurveTypeHSM ========
  */
@@ -558,7 +559,7 @@ ECDH_CurveType map_keyTypeToECDHCurveTypeHSM(psa_key_type_t keyType, size_t keyB
     return curveType;
 }
 
-#endif /* DeviceFamily_CC27XX */
+#endif /* defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC35XX) */
 
 /*
  *  ======== map_keyTypeToECCParams ========

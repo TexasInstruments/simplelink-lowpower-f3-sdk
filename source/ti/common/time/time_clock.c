@@ -86,21 +86,18 @@
  */
 
 // Month string
-static const char timeMonthStr[12][3] =
-{
-  {'J', 'a', 'n'},
-  {'F', 'e', 'b'},
-  {'M', 'a', 'r'},
-  {'A', 'p', 'r'},
-  {'M', 'a', 'y'},
-  {'J', 'u', 'n'},
-  {'J', 'u', 'l'},
-  {'A', 'u', 'g'},
-  {'S', 'e', 'p'},
-  {'O', 'c', 't'},
-  {'N', 'o', 'v'},
-  {'D', 'e', 'c'}
-};
+static const char timeMonthStr[12][3] = {{'J', 'a', 'n'},
+                                         {'F', 'e', 'b'},
+                                         {'M', 'a', 'r'},
+                                         {'A', 'p', 'r'},
+                                         {'M', 'a', 'y'},
+                                         {'J', 'u', 'n'},
+                                         {'J', 'u', 'l'},
+                                         {'A', 'u', 'g'},
+                                         {'S', 'e', 'p'},
+                                         {'O', 'c', 't'},
+                                         {'N', 'o', 'v'},
+                                         {'D', 'e', 'c'}};
 
 /*********************************************************************
  * LOCAL FUNCTIONS
@@ -118,8 +115,8 @@ static char *year2Str(char *pStr, uint16_t year);
  */
 void Time_clockInit(void)
 {
-  // Start the UTC clock.
-  UTC_init();
+    // Start the UTC clock.
+    UTC_init();
 }
 
 /*********************************************************************
@@ -134,33 +131,33 @@ void Time_clockInit(void)
  */
 void Time_clockDisplay(CUI_clientHandle_t cuiHandle, uint32_t cuiLine)
 {
-  char lineFormat[MAX_STATUS_LINE_VALUE_LEN];
-  char *p = lineFormat;
-  UTCTimeStruct time;
+    char lineFormat[MAX_STATUS_LINE_VALUE_LEN];
+    char *p = lineFormat;
+    UTCTimeStruct time;
 
-  memset(lineFormat, 0x00, MAX_STATUS_LINE_VALUE_LEN);
+    memset(lineFormat, 0x00, MAX_STATUS_LINE_VALUE_LEN);
 
-  // Get time structure from UTC.
-  UTC_convertUTCTime(&time, UTC_getClock());
+    // Get time structure from UTC.
+    UTC_convertUTCTime(&time, UTC_getClock());
 
-  // Display is in the format:
-  // HH:MM MmmDD YYYY
+    // Display is in the format:
+    // HH:MM MmmDD YYYY
 
-  p = num2Str(p, time.hour);
-  *p++ = ':';
-  p = num2Str(p, time.minutes);
-  *p++ = ' ';
+    p    = num2Str(p, time.hour);
+    *p++ = ':';
+    p    = num2Str(p, time.minutes);
+    *p++ = ' ';
 
-  *p++ = timeMonthStr[time.month][0];
-  *p++ = timeMonthStr[time.month][1];
-  *p++ = timeMonthStr[time.month][2];
+    *p++ = timeMonthStr[time.month][0];
+    *p++ = timeMonthStr[time.month][1];
+    *p++ = timeMonthStr[time.month][2];
 
-  p = num2Str(p, time.day + 1);
-  *p++ = ' ';
+    p    = num2Str(p, time.day + 1);
+    *p++ = ' ';
 
-  p = year2Str(p, time.year);
+    p = year2Str(p, time.year);
 
-  CUI_statusLinePrintf(cuiHandle, cuiLine, lineFormat);
+    CUI_statusLinePrintf(cuiHandle, cuiLine, lineFormat);
 }
 
 /*********************************************************************
@@ -174,31 +171,31 @@ void Time_clockDisplay(CUI_clientHandle_t cuiHandle, uint32_t cuiLine)
  */
 void Time_clockSet(uint8_t *pData)
 {
-  UTCTimeStruct time;
+    UTCTimeStruct time;
 
-  // Parse time service structure to UTC time structure.
-  time.year = BUILD_UINT16(pData[0], pData[1]);
-  if (time.year == 0)
-  {
-    time.year = 2000;
-  }
-  pData += 2;
-  time.month = *pData++;
-  if (time.month > 0)
-  {
-   // time.month--;
-  }
-  time.day = *pData++;
-  if (time.day > 0)
-  {
-  //  time.day--;
-  }
-  time.hour = *pData++;
-  time.minutes = *pData++;
-  time.seconds = *pData;
+    // Parse time service structure to UTC time structure.
+    time.year = BUILD_UINT16(pData[0], pData[1]);
+    if (time.year == 0)
+    {
+        time.year = 2000;
+    }
+    pData += 2;
+    time.month = *pData++;
+    if (time.month > 0)
+    {
+        // time.month--;
+    }
+    time.day = *pData++;
+    if (time.day > 0)
+    {
+        //  time.day--;
+    }
+    time.hour    = *pData++;
+    time.minutes = *pData++;
+    time.seconds = *pData;
 
-  // Update UTC time.
-  UTC_setClock(UTC_convertUTCSecs(&time));
+    // Update UTC time.
+    UTC_setClock(UTC_convertUTCSecs(&time));
 }
 
 /*********************************************************************
@@ -210,10 +207,10 @@ void Time_clockSet(uint8_t *pData)
  */
 static char *num2Str(char *pStr, uint8_t num)
 {
-  *pStr++ = (num / 10) + '0';
-  *pStr++ = (num % 10) + '0';
+    *pStr++ = (num / 10) + '0';
+    *pStr++ = (num % 10) + '0';
 
-  return pStr;
+    return pStr;
 }
 
 /*********************************************************************
@@ -227,18 +224,17 @@ static char *num2Str(char *pStr, uint8_t num)
  */
 static char *year2Str(char *pStr, uint16_t year)
 {
-  //thousands
-  *pStr++ = ((year / 1000) % 10) + '0';
-  //hundreds
-  *pStr++ = ((year / 100) % 10) + '0';
-  //tens
-  *pStr++ = ((year / 10) % 10) + '0';
-  //units
-  *pStr++ = (year % 10) + '0';
+    // thousands
+    *pStr++ = ((year / 1000) % 10) + '0';
+    // hundreds
+    *pStr++ = ((year / 100) % 10) + '0';
+    // tens
+    *pStr++ = ((year / 10) % 10) + '0';
+    // units
+    *pStr++ = (year % 10) + '0';
 
-  return pStr;
+    return pStr;
 }
-
 
 /*********************************************************************
 *********************************************************************/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -245,7 +245,7 @@
 #include <ti/drivers/Power.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(inc/hw_ckmd.h)
+#include DeviceFamily_constructPath(driverlib/ckmd.h)
 
 #ifdef __cplusplus
 extern "C" {
@@ -261,9 +261,9 @@ extern "C" {
  */
 typedef enum
 {
-    I2SLPF3_AFCLK_SRC_CLKREF = CKMD_AFCLKSEL_SRC_CLKREF, /*!< 48MHz reference clock (HFXT) */
-    I2SLPF3_AFCLK_SRC_CLKHF  = CKMD_AFCLKSEL_SRC_CLKHF,  /*!< 96MHz CLKHF */
-    I2SLPF3_AFCLK_SRC_CLKAF  = CKMD_AFCLKSEL_SRC_CLKAF,  /*!< AFOSC clock */
+    I2SLPF3_AFCLK_SRC_CLKREF = CKMD_AFCLK_SOURCE_CLKREF, /*!< 48MHz reference clock (HFXT) */
+    I2SLPF3_AFCLK_SRC_CLKHF  = CKMD_AFCLK_SOURCE_CLKHF,  /*!< 96MHz CLKHF */
+    I2SLPF3_AFCLK_SRC_CLKAF  = CKMD_AFCLK_SOURCE_CLKAF,  /*!< AFOSC clock */
 } I2SLPF3_AfclkSrc;
 
 /*!

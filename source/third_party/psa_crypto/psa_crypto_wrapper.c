@@ -1,6 +1,6 @@
 /*
  *  Copyright The Mbed TLS Contributors
- *  Copyright 2022-2024, Texas Instruments Incorporated
+ *  Copyright 2022-2025, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -36,11 +36,6 @@
 #include <ti/drivers/AESGCM.h>
 #include <ti/drivers/ECDH.h>
 #include <ti/drivers/ECDSA.h>
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
-     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
-    /* EDDSA is not yet supported for CC27xx */
-    #include <ti/drivers/EDDSA.h>
-#endif
 #include <ti/drivers/RNG.h>
 #include <ti/drivers/SHA2.h>
 #include <ti/drivers/TRNG.h>
@@ -62,9 +57,28 @@
     #include <ti/drivers/aesgcm/AESGCMCC26X4.h>
     #include <ti/drivers/ecdh/ECDHCC26X2.h>
     #include <ti/drivers/ecdsa/ECDSACC26X2.h>
+    #include <ti/drivers/eddsa/EDDSACC26X2.h>
     #include <ti/drivers/sha2/SHA2CC26X2.h>
     #include <ti/drivers/trng/TRNGCC26XX.h>
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/EDDSA.h>
+    #include <ti/drivers/aescbc/AESCBCLPF3.h>
+    #include <ti/drivers/aesccm/AESCCMLPF3.h>
+    #include <ti/drivers/aescmac/AESCMACLPF3.h>
+    #include <ti/drivers/aesctr/AESCTRLPF3.h>
+    #include <ti/drivers/aesecb/AESECBLPF3.h>
+    #include <ti/drivers/aesgcm/AESGCMLPF3HSM.h>
+    #include <ti/drivers/ecdh/ECDHLPF3HSM.h>
+    #include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
+    #include <ti/drivers/eddsa/EDDSALPF3HSM.h>
+    #include <ti/drivers/rng/RNGLPF3HSM.h>
+    #include <ti/drivers/sha2/SHA2LPF3HSM.h>
+
+    #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+    #include <ti/drivers/dpl/SemaphoreP.h>
+
+    #define KeyStore_PSA_initKey KeyStore_PSA_initKeyHSM
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/aescbc/AESCBCLPF3.h>
     #include <ti/drivers/aesccm/AESCCMLPF3.h>
     #include <ti/drivers/aescmac/AESCMACLPF3.h>
@@ -174,11 +188,24 @@ typedef enum
     #define AESGCM_Object  AESGCMLPF3HSM_Object
     #define ECDH_Object    ECDHLPF3HSM_Object
     #define ECDSA_Object   ECDSALPF3HSM_Object
+    #define EDDSA_Object   EDDSALPF3HSM_Object
+    #define RNG_Object     RNGLPF3HSM_Object
+    #define SHA2_Object    SHA2LPF3HSM_Object
+
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+
+    #define AESCBC_Object  AESCBCLPF3_Object
+    #define AESCCM_Object  AESCCMLPF3_Object
+    #define AESCMAC_Object AESCMACLPF3_Object
+    #define AESCTR_Object  AESCTRLPF3_Object
+    #define AESECB_Object  AESECBLPF3_Object
+    #define AESGCM_Object  AESGCMLPF3HSM_Object
+    #define ECDH_Object    ECDHLPF3HSM_Object
+    #define ECDSA_Object   ECDSALPF3HSM_Object
     /* TODO: Uncomment when EDDSA HSM driver is supported (TIDRIVERS-6430) */
     // #define EDDSA_Object EDDSALPF3HSM_Object
     #define RNG_Object     RNGLPF3HSM_Object
     #define SHA2_Object    SHA2LPF3HSM_Object
-
 #else
     #error "Device family not supported"
 #endif
@@ -230,11 +257,12 @@ static ECDSA_Config ecdsaConfig;
 static ECDSA_Object ecdsaObject;
 #endif
 #ifdef ENABLE_TI_CRYPTO_EDDSA
-static ECDSA_Handle EDDSA_Hand = NULL;
+static EDDSA_Handle EDDSA_Hand = NULL;
 static EDDSA_Config eddsaConfig;
 static EDDSA_Object eddsaObject;
 #endif
-#if defined(ENABLE_TI_CRYPTO_RNG) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if defined(ENABLE_TI_CRYPTO_RNG) && \
+    ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 static RNG_Handle RNG_Hand = NULL;
 static RNG_Config rngConfig;
 static RNG_Object rngObject;
@@ -244,7 +272,8 @@ static SHA2_Handle SHA2_Hand = NULL;
 static SHA2_Config sha2Config;
 static SHA2_Object sha2Object;
 #endif
-#if defined(ENABLE_TI_CRYPTO_TRNG) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
+#if defined(ENABLE_TI_CRYPTO_TRNG) && \
+    ((DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX))
 static TRNG_Handle TRNG_Hand = NULL;
 static TRNG_Config trngConfig;
 static TRNG_Object trngObject;
@@ -342,11 +371,59 @@ static ECDSALPF3HSM_HWAttrs ecdsaHWAttrs          = {.dummy = 0};
     #endif
 
     #ifdef ENABLE_TI_CRYPTO_EDDSA
-    /* TODO: Added LFP3HSM EDDSA objects when that driver is supported (TIDRIVERS-6430) */
+static EDDSALPF3HSM_HWAttrs eddsaHWAttrs          = {.reserved1 = 0};
     #endif
 
     #ifdef ENABLE_TI_CRYPTO_RNG
-static RNGLPF3HSM_HWAttrs rngHWAttrs              = {.intPriority = (~0)};
+static RNGLPF3HSM_HWAttrs rngHWAttrs              = {.reserved1 = 0};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_SHA2
+static SHA2LPF3HSM_HWAttrs sha2HWAttrs            = {.reserved1 = 0};
+    #endif
+
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+
+    #ifdef ENABLE_TI_CRYPTO_AESCBC
+static const AESCBCLPF3_HWAttrs aescbcHWAttrs = {.intPriority = (~0)};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_AESCCM
+static const AESCCMLPF3_HWAttrs aesccmHWAttrs = {.intPriority = (~0)};
+    #endif
+
+/* TODO: Add below driver objects when each driver is supported */
+    #ifdef ENABLE_TI_CRYPTO_AESCMAC
+static const AESCMACLPF3_HWAttrs aescmacHWAttrs   = {.intPriority = (~0)};
+static const AESCMACLPF3_HWAttrs aescbcmacHWAttrs = {.intPriority = (~0)};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_AESCTR
+static const AESCTRLPF3_HWAttrs aesctrHWAttrs     = {.intPriority = (~0)};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_AESECB
+static const AESECBLPF3_HWAttrs aesecbHWAttrs     = {.intPriority = (~0)};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_AESGCM
+static const AESGCMLPF3HSM_HWAttrs aesgcmHWAttrs  = {.intPriority = (~0)};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_ECDH
+static ECDHLPF3HSM_HWAttrs ecdhHWAttrs            = {.reserved1 = 0};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_ECDSA
+static ECDSALPF3HSM_HWAttrs ecdsaHWAttrs          = {.dummy = 0};
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_EDDSA
+    /* TODO: Added LPF3HSM EDDSA objects when that driver is supported (TIDRIVERS-6430) */
+    #endif
+
+    #ifdef ENABLE_TI_CRYPTO_RNG
+static RNGLPF3HSM_HWAttrs rngHWAttrs              = {.reserved1 = 0};
     #endif
 
     #ifdef ENABLE_TI_CRYPTO_SHA2
@@ -357,7 +434,7 @@ static SHA2LPF3HSM_HWAttrs sha2HWAttrs            = {.reserved1 = 0};
     #error "Device family not supported"
 #endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 /* Externs for KeyMgmt functions */
 extern psa_status_t KeyMgmt_psa_copy_key(mbedtls_svc_key_id_t source_key,
                                          const psa_key_attributes_t *attributes,
@@ -730,7 +807,7 @@ static psa_status_t psa_key_attributes_usage_check(psa_key_attributes_t *attribu
     return status;
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 
 /*
  *  ======== psa_destroy_key ========
@@ -1013,6 +1090,27 @@ psa_status_t psa_copy_key(psa_key_id_t source_key, const psa_key_attributes_t *a
     }
 
     return status;
+}
+
+/*
+ *  ======== psa_can_do_hash ========
+ *  Helper function implemented by mbedTLS that must be implemented in our PSA Crypto library
+ */
+int psa_can_do_hash(psa_algorithm_t hash_alg)
+{
+    (void)hash_alg;
+    return 1;
+}
+
+/*
+ *  ======== psa_can_do_cipher ========
+ *  Helper function implemented by mbedTLS that must be implemented in our PSA Crypto library
+ */
+int psa_can_do_cipher(psa_key_type_t key_type, psa_algorithm_t cipher_alg)
+{
+    (void)key_type;
+    (void)cipher_alg;
+    return 1;
 }
 
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
@@ -1309,7 +1407,8 @@ psa_status_t psa_copy_key(psa_key_id_t source_key, const psa_key_attributes_t *a
 
     #error "Key Management functions not supported for this device"
 
-#endif /* DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX */
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC235X) \
+        */
 
 /******************************************************************************/
 /* Message digests */
@@ -1409,7 +1508,8 @@ psa_status_t psa_hash_resume(psa_hash_operation_t *operation, const uint8_t *has
         #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
             (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     SHA2CC26X2_Object *object = (SHA2CC26X2_Object *)SHA2_Hand->object;
-        #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+        #elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || \
+               (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)SHA2_Hand->object;
         #else
             #error "Device family not supported"
@@ -1501,7 +1601,8 @@ psa_status_t psa_hash_suspend(psa_hash_operation_t *operation,
         #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
             (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     SHA2CC26X2_Object *object   = (SHA2CC26X2_Object *)SHA2_Hand->object;
-        #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+        #elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || \
+               (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     SHA2LPF3HSM_Object *object = (SHA2LPF3HSM_Object *)SHA2_Hand->object;
         #else
             #error "Device family not supported"
@@ -1520,7 +1621,7 @@ psa_status_t psa_hash_suspend(psa_hash_operation_t *operation,
          * support hash suspend/resume which limits the amount of unprocessed input
          * to (block_size - 1) bytes.
          */
-        #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+        #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if (object->bytesInBuffer == PSA_HASH_BLOCK_LENGTH(alg))
     {
         /* Finalize to cleanup the operation */
@@ -3003,7 +3104,7 @@ psa_status_t psa_sign_message(psa_key_id_t key,
         ECDSA_OperationSign operationSign;
         ECDSA_OperationSign_init(&operationSign);
 
-    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         operationSign.curveType = map_keyTypeToECDSACurveTypeHSM(key_type, key_bits);
 
         if (operationSign.curveType == (ECDSA_CurveType)0)
@@ -3154,7 +3255,7 @@ psa_status_t psa_verify_message(psa_key_id_t key,
         EDDSA_OperationVerify EDDSA_operationVerify;
         EDDSA_OperationVerify_init(&EDDSA_operationVerify);
         EDDSA_operationVerify.curve                  = &ECCParams_Ed25519;
-        EDDSA_operationVerify.theirPublicKey         = &myPublicKey;
+        EDDSA_operationVerify.theirPublicKey         = &theirPublicKey;
         EDDSA_operationVerify.preHashedMessage       = input;
         EDDSA_operationVerify.preHashedMessageLength = input_length;
         EDDSA_operationVerify.R                      = signature;
@@ -3181,7 +3282,7 @@ psa_status_t psa_verify_message(psa_key_id_t key,
         ECDSA_OperationVerify operationVerify;
         ECDSA_OperationVerify_init(&operationVerify);
 
-    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         operationVerify.curveType = map_keyTypeToECDSACurveTypeHSM(key_type, key_bits);
 
         if (operationVerify.curveType == (ECDSA_CurveType)0)
@@ -3356,7 +3457,7 @@ psa_status_t psa_sign_hash(psa_key_id_t key,
     ECDSA_OperationSign operation;
     ECDSA_OperationSign_init(&operation);
 
-    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     operation.curveType = map_keyTypeToECDSACurveTypeHSM(privateKeyType, key_bits);
 
     if (operation.curveType == (ECDSA_CurveType)0)
@@ -3482,7 +3583,7 @@ psa_status_t psa_verify_hash(psa_key_id_t key,
     ECDSA_OperationVerify operation;
     ECDSA_OperationVerify_init(&operation);
 
-    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     operation.curveType = map_keyTypeToECDSACurveTypeHSM(keyType, keyBits);
 
     if (operation.curveType == (ECDSA_CurveType)0)
@@ -5254,7 +5355,7 @@ psa_status_t psa_aead_generate_nonce(psa_aead_operation_t *operation,
                                      size_t *nonce_length)
 {
     psa_status_t status;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     uint8_t buffer[16]; /* word multiple buffer as required by HSM */
 #endif
 
@@ -5285,7 +5386,7 @@ psa_status_t psa_aead_generate_nonce(psa_aead_operation_t *operation,
         return psa_aead_error(operation, PSA_ERROR_BUFFER_TOO_SMALL, NULL);
     }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     status = psa_generate_random(buffer, sizeof(buffer));
 
     (void)memcpy(nonce, buffer, *nonce_length);
@@ -5943,7 +6044,7 @@ psa_status_t psa_aead_decrypt(psa_key_id_t key,
  */
 psa_status_t psa_key_derivation_abort(psa_key_derivation_operation_t *operation)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -5968,7 +6069,7 @@ psa_status_t psa_key_derivation_abort(psa_key_derivation_operation_t *operation)
  */
 psa_status_t psa_key_derivation_get_capacity(const psa_key_derivation_operation_t *operation, size_t *capacity)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -5993,7 +6094,7 @@ psa_status_t psa_key_derivation_get_capacity(const psa_key_derivation_operation_
  */
 psa_status_t psa_key_derivation_set_capacity(psa_key_derivation_operation_t *operation, size_t capacity)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -6020,7 +6121,7 @@ psa_status_t psa_key_derivation_output_bytes(psa_key_derivation_operation_t *ope
                                              uint8_t *output,
                                              size_t output_length)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     return PSA_ERROR_NOT_SUPPORTED;
 #else
     return PSA_ERROR_NOT_SUPPORTED;
@@ -6034,7 +6135,7 @@ psa_status_t psa_key_derivation_output_key(const psa_key_attributes_t *attribute
                                            psa_key_derivation_operation_t *operation,
                                            psa_key_id_t *key)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
     mbedtls_svc_key_id_t outputKeyID;
     psa_key_attributes_t attributesCopy;
@@ -6087,7 +6188,7 @@ psa_status_t psa_key_derivation_output_key(const psa_key_attributes_t *attribute
  */
 psa_status_t psa_key_derivation_setup(psa_key_derivation_operation_t *operation, psa_algorithm_t alg)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -6115,7 +6216,7 @@ psa_status_t psa_key_derivation_input_bytes(psa_key_derivation_operation_t *oper
                                             const uint8_t *data,
                                             size_t data_length)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -6142,7 +6243,7 @@ psa_status_t psa_key_derivation_input_integer(psa_key_derivation_operation_t *op
                                               psa_key_derivation_step_t step,
                                               uint64_t value)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -6169,7 +6270,7 @@ psa_status_t psa_key_derivation_input_key(psa_key_derivation_operation_t *operat
                                           psa_key_derivation_step_t step,
                                           psa_key_id_t key)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_status_t status;
 
     if (KeyStore_acquireLock())
@@ -6196,7 +6297,7 @@ psa_status_t psa_key_derivation_verify_bytes(psa_key_derivation_operation_t *ope
                                              const uint8_t *expected_output,
                                              size_t output_length)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     return PSA_ERROR_NOT_SUPPORTED;
 #else
     return PSA_ERROR_NOT_SUPPORTED;
@@ -6208,7 +6309,7 @@ psa_status_t psa_key_derivation_verify_bytes(psa_key_derivation_operation_t *ope
  */
 psa_status_t psa_key_derivation_verify_key(psa_key_derivation_operation_t *operation, psa_key_id_t expected)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     return PSA_ERROR_NOT_SUPPORTED;
 #else
     return PSA_ERROR_NOT_SUPPORTED;
@@ -6286,7 +6387,7 @@ psa_status_t psa_raw_key_agreement(psa_algorithm_t alg,
     ECDH_OperationComputeSharedSecret operation;
     ECDH_OperationComputeSharedSecret_init(&operation);
 
-    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     operation.curveType = map_keyTypeToECDHCurveTypeHSM(privateKeyType, keyBits);
 
     if (operation.curveType == 0)
@@ -6398,7 +6499,8 @@ psa_status_t psa_key_derivation_key_agreement(psa_key_derivation_operation_t *op
  */
 psa_status_t psa_generate_random(uint8_t *output, size_t output_size)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if defined(ENABLE_TI_CRYPTO_RNG) && \
+    ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     int_fast16_t ret;
     psa_status_t status;
 
@@ -6423,7 +6525,8 @@ psa_status_t psa_generate_random(uint8_t *output, size_t output_size)
 
     return status;
     #endif /* ENABLE_TI_CRYPTO_TRNG */
-#endif     /* DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX */
+#endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
+        */
 }
 
 /*
@@ -6434,7 +6537,8 @@ psa_status_t psa_generate_random(uint8_t *output, size_t output_size)
  */
 psa_status_t psa_generate_key(const psa_key_attributes_t *attributes, psa_key_id_t *key)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if defined(ENABLE_TI_CRYPTO_RNG) && \
+    ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     int_fast16_t ret;
     uint8_t *keyMaterial   = NULL;
     psa_key_type_t keyType = psa_get_key_type(attributes);
@@ -6507,7 +6611,8 @@ psa_status_t psa_generate_key(const psa_key_attributes_t *attributes, psa_key_id
 
     return status;
     #endif /* ENABLE_TI_CRYPTO_TRNG */
-#endif     /* DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX */
+#endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
+        */
 }
 
 /******************************************************************************/
@@ -6521,7 +6626,7 @@ psa_status_t psa_crypto_init(void)
 {
     psa_status_t status = PSA_SUCCESS;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if (HSMLPF3_init() != HSMLPF3_STATUS_SUCCESS)
     {
         return PSA_ERROR_HARDWARE_FAILURE;
@@ -6713,7 +6818,8 @@ psa_status_t psa_crypto_init(void)
     }
 #endif
 
-#if defined(ENABLE_TI_CRYPTO_RNG) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if defined(ENABLE_TI_CRYPTO_RNG) && \
+    ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if (RNG_Hand == NULL)
     {
         RNG_init();
@@ -6730,7 +6836,8 @@ psa_status_t psa_crypto_init(void)
     }
 #endif
 
-#if defined(ENABLE_TI_CRYPTO_TRNG) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
+#if defined(ENABLE_TI_CRYPTO_TRNG) && \
+    ((DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX))
     if (TRNG_Hand == NULL)
     {
         TRNG_init();

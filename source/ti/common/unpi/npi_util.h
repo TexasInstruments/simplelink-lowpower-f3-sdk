@@ -48,8 +48,7 @@
 #define NPI_UTIL_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 //*****************************************************************************
@@ -57,18 +56,18 @@ extern "C"
 //*****************************************************************************
 
 #ifdef USE_ICALL
-#include "icall.h"
+    #include "icall.h"
 #else
-#include <stdlib.h>
-#include "hal_assert.h"
-#endif //USE_ICALL
+    #include <stdlib.h>
+    #include "hal_assert.h"
+#endif // USE_ICALL
 
 #include <ti/sysbios/knl/Queue.h>
 #ifdef ICALL_EVENTS
-#include <ti/sysbios/knl/Event.h>
-#else //!ICALL_EVENTS
-#include <ti/sysbios/knl/Semaphore.h>
-#endif //ICALL_EVENTS
+    #include <ti/sysbios/knl/Event.h>
+#else //! ICALL_EVENTS
+    #include <ti/sysbios/knl/Semaphore.h>
+#endif // ICALL_EVENTS
 
 //*****************************************************************************
 // Defines
@@ -157,9 +156,9 @@ extern uint8_t NPIUtil_enqueueMsg(Queue_Handle msgQueue,
 #ifdef ICALL_EVENTS
                                   Event_Handle event,
                                   uint32_t eventFlags,
-#else //!ICALL_EVENTS
+#else  //! ICALL_EVENTS
                                   Semaphore_Handle sem,
-#endif //ICALL_EVENTS
+#endif // ICALL_EVENTS
                                   uint8_t *pMsg);
 
 // -----------------------------------------------------------------------------
@@ -169,7 +168,7 @@ extern uint8_t NPIUtil_enqueueMsg(Queue_Handle msgQueue,
 //!
 //! \return  pointer to dequeued message, NULL otherwise.
 // -----------------------------------------------------------------------------
-extern uint8_t * NPIUtil_dequeueMsg(Queue_Handle msgQueue);
+extern uint8_t *NPIUtil_dequeueMsg(Queue_Handle msgQueue);
 
 #ifdef __cplusplus
 }

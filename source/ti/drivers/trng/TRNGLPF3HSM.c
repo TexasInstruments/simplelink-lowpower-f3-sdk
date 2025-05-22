@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,15 @@
 
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
+#include <ti/devices/DeviceFamily.h>
 
 #include <ti/drivers/Power.h>
-#include <ti/drivers/power/PowerCC27XX.h>
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/power/PowerCC27XX.h>
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/power/PowerWFF3.h>
+#endif
 
 #include <ti/drivers/TRNG.h>
 #include <ti/drivers/trng/TRNGLPF3HSM.h>
@@ -47,7 +53,6 @@
 #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
 #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
 
-#include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -163,6 +168,7 @@ void TRNG_close(TRNG_Handle handle)
     object->isOpen = false;
 }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== TRNGLPF3HSM_reseedHSMPostProcessing ========
  */
@@ -379,6 +385,7 @@ int_fast16_t TRNGLPF3HSM_switchNrbgMode(TRNG_Handle handle, TRNGLFP3HSM_NRBGMode
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 /*
  *  ======== TRNG_getRandomRawPostProcessing ========

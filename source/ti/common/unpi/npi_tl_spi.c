@@ -66,21 +66,21 @@
 // Defines
 //*****************************************************************************
 
-#define SPI_TX_FIELD_LEN                        NPI_SPI_HDR_LEN
-#define SPI_TX_HDR_LEN                          3
-#define SPI_TX_ZERO_PAD_INDEX                   0
-#define SPI_TX_SOF_INDEX                        1
-#define SPI_TX_LEN_INDEX                        2
+#define SPI_TX_FIELD_LEN      NPI_SPI_HDR_LEN
+#define SPI_TX_HDR_LEN        3
+#define SPI_TX_ZERO_PAD_INDEX 0
+#define SPI_TX_SOF_INDEX      1
+#define SPI_TX_LEN_INDEX      2
 
 //! \brief NPI SPI Message Indexes and Constants
 //
-#define NPI_SPI_MSG_LEN_LSB_IDX                     0x01
-#define NPI_SPI_MSG_LEN_MSB_IDX                     0x02
-#define NPI_SPI_MSG_HDR_LEN                         0x05
-#define NPI_SPI_MSG_HDR_NOSOF_LEN                   0x04
-#define NPI_SPI_MSG_SOF                             0xFE
-#define NPI_SPI_MSG_SOF_IDX                         0x00
-#define ZERO_PAD                                    1
+#define NPI_SPI_MSG_LEN_LSB_IDX   0x01
+#define NPI_SPI_MSG_LEN_MSB_IDX   0x02
+#define NPI_SPI_MSG_HDR_LEN       0x05
+#define NPI_SPI_MSG_HDR_NOSOF_LEN 0x04
+#define NPI_SPI_MSG_SOF           0xFE
+#define NPI_SPI_MSG_SOF_IDX       0x00
+#define ZERO_PAD                  1
 
 //*****************************************************************************
 // Typedefs
@@ -103,8 +103,8 @@ static npiCB_t npiTransmitCB = NULL;
 static uint16_t tlWriteLen = 0;
 
 //! \brief NPI Transport Layer Buffer variables defined in npi_tl.c
-extern uint8_t * npiRxBuf;
-extern uint8_t * npiTxBuf;
+extern uint8_t *npiRxBuf;
+extern uint8_t *npiTxBuf;
 extern uint16_t npiBufSize;
 
 //! \brief Flag signalling receive in progress
@@ -115,7 +115,7 @@ static uint8 RxActive = FALSE;
 //*****************************************************************************
 
 //! \brief Call back function invoked at the end of a SPI transaction
-static void NPITLSPI_CallBack(SPI_Handle handle, SPI_Transaction  *objTransaction);
+static void NPITLSPI_CallBack(SPI_Handle handle, SPI_Transaction *objTransaction);
 
 //! \brief Calculate FCS field of SPI Transaction frame
 static uint8_t NPITLSPI_calcFCS(uint8_t *buf, uint16_t len);
@@ -130,8 +130,7 @@ static uint8_t NPITLSPI_calcFCS(uint8_t *buf, uint16_t len);
 //!
 //! \return     void
 // -----------------------------------------------------------------------------
-void NPITLSPI_openTransport(uint8_t portID, SPI_Params *portParams,
-                            npiCB_t npiCBack)
+void NPITLSPI_openTransport(uint8_t portID, SPI_Params *portParams, npiCB_t npiCBack)
 {
     npiTransmitCB = npiCBack;
 
@@ -139,7 +138,7 @@ void NPITLSPI_openTransport(uint8_t portID, SPI_Params *portParams,
     SPI_init();
 
     // Add call backs SPI parameters.
-    portParams->transferMode = SPI_MODE_CALLBACK;
+    portParams->transferMode        = SPI_MODE_CALLBACK;
     portParams->transferCallbackFxn = NPITLSPI_CallBack;
 
     // Attempt to open SPI
@@ -184,7 +183,7 @@ void NPITLSPI_handleRemRdyEvent(void)
     // check ignores the MRDY event if Rx is already in progress
     if (!tlWriteLen && !RxActive)
     {
-      NPITLSPI_readTransport();
+        NPITLSPI_readTransport();
     }
 
     ICall_leaveCriticalSection(key);
@@ -206,15 +205,14 @@ static void NPITLSPI_CallBack(SPI_Handle handle, SPI_Transaction *objTransaction
 
     // Check if a valid packet was found
     // SOF:
-    if (npiRxBuf[NPI_SPI_MSG_SOF_IDX] == NPI_SPI_MSG_SOF &&
-            objTransaction->count)
+    if (npiRxBuf[NPI_SPI_MSG_SOF_IDX] == NPI_SPI_MSG_SOF && objTransaction->count)
     {
         // Length:
         readLen = npiRxBuf[NPI_SPI_MSG_LEN_LSB_IDX];
         readLen += ((uint16)npiRxBuf[NPI_SPI_MSG_LEN_MSB_IDX] << 8);
         readLen += NPI_SPI_MSG_HDR_NOSOF_LEN; // Include the header w/o SOF
 
-        if ( readLen > npiBufSize)
+        if (readLen > npiBufSize)
         {
             // the frame we receive is bigger than our buffer...
             // Discard it...
@@ -223,11 +221,10 @@ static void NPITLSPI_CallBack(SPI_Handle handle, SPI_Transaction *objTransaction
         else
         {
             // FCS:
-            if (npiRxBuf[readLen + 1] ==
-                NPITLSPI_calcFCS(&npiRxBuf[NPI_SPI_MSG_LEN_LSB_IDX],readLen))
+            if (npiRxBuf[readLen + 1] == NPITLSPI_calcFCS(&npiRxBuf[NPI_SPI_MSG_LEN_LSB_IDX], readLen))
             {
                 // Message is valid. Shift bytes to remove SOF
-                for (i = 0 ; i < readLen; i++)
+                for (i = 0; i < readLen; i++)
                 {
                     npiRxBuf[i] = npiRxBuf[i + 1];
                 }
@@ -240,14 +237,14 @@ static void NPITLSPI_CallBack(SPI_Handle handle, SPI_Transaction *objTransaction
         }
     }
 
-    //All bytes in TxBuf must be sent by this point
+    // All bytes in TxBuf must be sent by this point
     storeWriteLen = tlWriteLen;
-    tlWriteLen = 0;
-    RxActive = FALSE;
+    tlWriteLen    = 0;
+    RxActive      = FALSE;
 
     if (npiTransmitCB)
     {
-        npiTransmitCB(readLen,storeWriteLen);
+        npiTransmitCB(readLen, storeWriteLen);
     }
 }
 
@@ -263,7 +260,7 @@ void NPITLSPI_readTransport(void)
     key = ICall_enterCriticalSection();
 
     tlWriteLen = 0;
-    RxActive = TRUE;
+    RxActive   = TRUE;
 
     // Clear DMA Rx buffer and clear extra Tx buffer bytes to ensure clean buffer
     //    for next RX/TX
@@ -305,8 +302,8 @@ uint16_t NPITLSPI_writeTransport(uint16_t len)
     memset(npiTxBuf, 0, ZERO_PAD);
 
     npiTxBuf[NPI_SPI_MSG_SOF_IDX + ZERO_PAD] = NPI_SPI_MSG_SOF;
-    npiTxBuf[len + ZERO_PAD + 1] = NPITLSPI_calcFCS((uint8_t *)&npiTxBuf[2],len);
-    tlWriteLen = len + ZERO_PAD + 2; // 2 = SOF + FCS
+    npiTxBuf[len + ZERO_PAD + 1]             = NPITLSPI_calcFCS((uint8_t *)&npiTxBuf[2], len);
+    tlWriteLen                               = len + ZERO_PAD + 2; // 2 = SOF + FCS
 
     // Clear DMA Rx buffer and clear extra Tx buffer bytes to ensure clean buffer
     //    for next RX/TX
@@ -322,12 +319,12 @@ uint16_t NPITLSPI_writeTransport(uint16_t len)
     // another write to be processed
     if (!SPI_transfer(spiHandle, &spiTransaction))
     {
-      tlWriteLen = 0;
+        tlWriteLen = 0;
     }
 
     ICall_leaveCriticalSection(key);
 
-    return(len);
+    return (len);
 }
 
 // ----------------------------------------------------------------------------
@@ -350,5 +347,5 @@ uint8_t NPITLSPI_calcFCS(uint8_t *buf, uint16_t len)
         fcs ^= buf[i];
     }
 
-    return(fcs);
+    return (fcs);
 }

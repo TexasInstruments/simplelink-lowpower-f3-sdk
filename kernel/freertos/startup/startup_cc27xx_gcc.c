@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,8 @@ extern uint32_t __data_load__;
 extern uint32_t __data_start__;
 extern uint32_t __data_end__;
 
-void localProgramStart(void)
+/* Marked as used due to being removed by LTO, but is used in resetISR() */
+__attribute__((used)) void localProgramStart(void)
 {
     volatile uint32_t *cpacr = (volatile uint32_t *)0xE000ED88;
     uint32_t *vtor           = (unsigned long *)0xE000ED08;
@@ -177,12 +178,15 @@ void __attribute__((naked)) resetISR(void)
      *  This code ensures that the stack pointer is initialized.  We branch
      *  to localProgramStart() so that nothing is pushed to the stack
      *  before it has been initialized.
+     *
+     * .ltorg is added to avoid literal pool errors when LTO is enabled.
      */
     __asm__ __volatile__(" movw r0, #:lower16:resetVectors\n"
                          " movt r0, #:upper16:resetVectors\n"
                          " ldr r0, [r0]\n"
                          " mov sp, r0\n"
-                         " b localProgramStart");
+                         " b localProgramStart\n"
+                         " .ltorg\n");
 }
 
 //*****************************************************************************

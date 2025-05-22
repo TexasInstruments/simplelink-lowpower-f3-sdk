@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_vims_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -113,9 +113,6 @@
 
 // Control register
 #define VIMS_O_CTL                                                  0x000004FCU
-
-// Digital Test Bus
-#define VIMS_O_DTB                                                  0x00000800U
 
 //*****************************************************************************
 //
@@ -873,22 +870,6 @@
 #define VIMS_CTL_SWAP_S                                                      0U
 #define VIMS_CTL_SWAP_SWAPED                                        0x00000001U
 #define VIMS_CTL_SWAP_NOSWAP                                        0x00000000U
-
-//*****************************************************************************
-//
-// Register: VIMS_O_DTB
-//
-//*****************************************************************************
-// Field:   [3:0] SEL
-//
-// Digital test bus selection mux control.
-// Non-zero select values output a 16 bit selected group of signals per value.
-// ENUMs:
-// DIS                      DTB output from peripheral is 0x0
-#define VIMS_DTB_SEL_W                                                       4U
-#define VIMS_DTB_SEL_M                                              0x0000000FU
-#define VIMS_DTB_SEL_S                                                       0U
-#define VIMS_DTB_SEL_DIS                                            0x00000000U
 
 
 #endif // __VIMS__

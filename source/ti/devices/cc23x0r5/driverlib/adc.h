@@ -3,7 +3,7 @@
  *
  *  Description:    Prototypes and defines for the ADC API.
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -798,7 +798,7 @@ extern uint16_t ADCGetAdjustmentGain(uint32_t reference);
 //
 //! \brief Write correct offset value to ADC-peripheral trim register
 //!
-//! The ADC peripheral relies on an offset trim value in \ref SYS0_O_TMUTE2. This value
+//! The ADC peripheral relies on an offset trim value in SYS0_O_TMUTE2. This value
 //! needs to be set depending on which reference source is used in the conversion
 //!
 //! \param reference reference source used in conversion

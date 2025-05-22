@@ -48,12 +48,11 @@
 #define NVOCMP_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #ifndef NV_LINUX
-#include <ti/drivers/NVS.h>
+    #include <ti/drivers/NVS.h>
 #endif
 
 #include "nvintf.h"
@@ -63,7 +62,10 @@ extern "C"
 //*****************************************************************************
 
 // NV driver item ID definitions
-#define NVOCMP_NVID_DIAG {NVINTF_SYSID_NVDRVR, 1, 0}
+#define NVOCMP_NVID_DIAG          \
+    {                             \
+        NVINTF_SYSID_NVDRVR, 1, 0 \
+    }
 
 //*****************************************************************************
 // Typedefs
@@ -78,8 +80,7 @@ typedef struct
     uint16_t active;    // Number of active items after last compaction
     uint16_t deleted;   // Number of items not transferred during compaction
     uint16_t badCRC;    // Number of bad CRCs encountered
-}
-NVOCMP_diag_t;
+} NVOCMP_diag_t;
 
 // Low Voltage Check Callback function, voltage is measured voltage value
 typedef void (*lowVoltCbFptr)(uint32_t voltage);
@@ -157,8 +158,8 @@ extern void NVOCMP_setLowVoltageCb(lowVoltCbFptr funcPtr);
 
 // Exception function can be defined to handle NV corruption issues
 // If none provided, NV module attempts to proceed ignoring problem
-#if !defined (NVOCMP_EXCEPTION)
-#define NVOCMP_EXCEPTION(pg, err)
+#if !defined(NVOCMP_EXCEPTION)
+    #define NVOCMP_EXCEPTION(pg, err)
 #endif
 
 #ifdef NVDEBUG
@@ -171,4 +172,3 @@ extern NVS_Handle nvsHandle;
 #endif
 
 #endif /* NVOCMP_H */
-

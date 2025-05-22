@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,7 @@
     let CCFG = system.modules["/ti/devices/CCFG"];
     let overrideCapArraySettings = false;
     let enableHFXTCompensation = false;
+    let tfmEnabled = (system.modules["/ti/utils/TrustZone"] !== undefined);
 
     /* Default values for HFXT */
     let HFXTcoeffP0 = CCFG.hfxtDefaultParams["P0"];
@@ -45,31 +46,15 @@
     let HFXTcoeffP2 = CCFG.hfxtDefaultParams["P2"];
     let HFXTcoeffP3 = CCFG.hfxtDefaultParams["P3"];
     let HFXTcoeffShift = CCFG.hfxtDefaultParams["shift"];
+    let HFXTCapArrayQ1 = CCFG.hfxtDefaultParams["hfxtCapArrayQ1"];
+    let HFXTCapArrayQ2 = CCFG.hfxtDefaultParams["hfxtCapArrayQ2"];
     var HFXTTempThreshold, HFXTTempDelta;
-
-    /* Function that checks if any part of the of ppm calulation can overflow 32bit
-     * Used to establish what the maximum shift value can be to get the highest possible
-     * fixed-point precision without overflowing
-     */
-    function ppmOverflow(x, shift) {
-        var lim = 0x7FFFFFFF;
-        var A = Math.abs(HFXTcoeffP0 * Math.pow(2, shift));
-        var B = Math.abs(HFXTcoeffP1 * Math.pow(2, shift) * x);
-        var C = Math.abs(HFXTcoeffP2 * Math.pow(2, shift) * x * x);
-        var D = Math.abs(HFXTcoeffP3 * Math.pow(2, shift) * x * x * x);
-
-        /* Make sure that no partial sum in the polynomial can overflow */
-
-        if(A > lim || B > lim || C > lim || D > lim) return true;
-        if(A+B > lim || A+C > lim || A+D > lim || B+C > lim || B+D > lim || C+D > lim) return true;
-        if(A+B+C > lim || A+B+D > lim || A+C+D > lim || B+C+D > lim || A+B+C+D > lim) return true;
-
-        return false;
-    }
 
     if (CCFG !== undefined) {
         if (CCFG.$static.overrideHfxtCapArray === true) {
             // If the cap array settings were altered from their default, emit the code to set them
+            HFXTCapArrayQ1 = CCFG.$static.hfxtCapArrayQ1;
+            HFXTCapArrayQ2 = CCFG.$static.hfxtCapArrayQ2;
             overrideCapArraySettings = true;
         }
 
@@ -84,22 +69,18 @@
             HFXTcoeffP3 = CCFG.$static.HFXTCoefficientP3;
 
             /* If custom coefficients are used, we dynamically find the maximum scale-factor for maximum precision */
-            let maxShiftTemp = 1;
-
-            outerLoopLabel:
-            for(; maxShiftTemp < 32; maxShiftTemp++)
-            {
-                /* Computation on target is limited to range [-40, +125] */
-                for(let temp = -40; temp < 125; temp++){
-                    if(ppmOverflow(temp, maxShiftTemp)) {
-                        break outerLoopLabel;
-                    }
-                }
-            }
-
-            /* Go back to the shift value that did not cause overflow */
-            HFXTcoeffShift = maxShiftTemp - 1;
+            let coefficients = [HFXTcoeffP0, HFXTcoeffP1, HFXTcoeffP2, HFXTcoeffP3];
+            HFXTcoeffShift = CCFG.maxShift(coefficients);
         }
+
+        /* If external capacitors are used the cap-array coefficients should be set to zero.
+         * The cap-array overrides should be forced to zero if the overrides have not been enabled.
+         */
+        if (CCFG.$static.useExternalHfxtCapacitors && (CCFG.$static.overrideHfxtCapArray === false)) {
+            HFXTCapArrayQ1 = 0;
+            HFXTCapArrayQ2 = 0;
+            overrideCapArraySettings = true;
+        } 
     }
 
     /* Scale coefficients to fixed-point integers */
@@ -116,34 +97,30 @@
         isFPGA = board.name.match(/FPGA/);
     }
 %%}
-%   if (overrideCapArraySettings) {
+%   if (!tfmEnabled && overrideCapArraySettings) {
 
     /* Set non-default cap array trims */
-    CKMDSetInitialCapTrim(`CCFG.$static.hfxtCapArrayQ1`, `CCFG.$static.hfxtCapArrayQ2`);
-    CKMDSetTargetCapTrim(`CCFG.$static.hfxtCapArrayQ1`, `CCFG.$static.hfxtCapArrayQ2`);
+    CKMDSetInitialCapTrim(`HFXTCapArrayQ1`, `HFXTCapArrayQ2`);
+    CKMDSetTargetCapTrim(`HFXTCapArrayQ1`, `HFXTCapArrayQ2`);
 %   }
 
     Power_init();
 
-%   if (system.modules["/ti/utils/TrustZone"]) {
-    /* Until an S/NS power-driver is available, entering standby is not
-     * supported because crypto drivers on the secure side will not be able to
-     * set/release power constraints as required.
-     */
-    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
-%   }
-
-%   if (CCFG.$static.srcClkLF === "LF XOSC") {
+%   /* Only select LFCLK source and voltage regulator if TrustZone is disabled */
+%   if (!tfmEnabled){
+%       if (CCFG.$static.srcClkLF === "LF XOSC") {
     PowerLPF3_selectLFXT();
-%   }
-%   else if (CCFG.$static.srcClkLF === "LF RCOSC") {
+%       }
+%       else if (CCFG.$static.srcClkLF === "LF RCOSC") {
     PowerLPF3_selectLFOSC();
-%   }
-%   else if (CCFG.$static.srcClkLF === "External LF clock") {
+%       }
+%       else if (CCFG.$static.srcClkLF === "External LF clock") {
     PowerLPF3_selectEXTLF();
-%   }
-%   if (!isFPGA && CCFG.$static.voltageRegulator == 'DCDC') {
+%       }
+
+%       if (!isFPGA && CCFG.$static.voltageRegulator == 'DCDC') {
     PMCTLSetVoltageRegulator(PMCTL_VOLTAGE_REGULATOR_DCDC);
+%       }
 %   }
 
 %   if (isFPGA) {
@@ -170,4 +147,5 @@
      * degrees Celsius, and drifts `HFXTTempDelta` degrees or more.
      */
     PowerLPF3_enableHFXTCompensation(`HFXTTempThreshold`, `HFXTTempDelta`);
+
 %   }

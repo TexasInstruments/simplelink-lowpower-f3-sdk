@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ const displayName = "Image Bootloaders";
 const description = "Image Bootloader Configurations";
 const deviceId = system.deviceData.deviceId;
 
-if (deviceId.match(/CC13.[2].[7]|CC26.[2].[7]|CC13.[4]|CC26.[34]|CC23.0/)) {
+if (deviceId.match(/CC13.[2].[7]|CC26.[2].[7]|CC13.[4]|CC26.[34]|CC23.0|CC27/)) {
     topModules = [
         {
             displayName: displayName,

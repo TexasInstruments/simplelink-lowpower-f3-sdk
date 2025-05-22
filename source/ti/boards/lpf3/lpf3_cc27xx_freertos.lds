@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,14 +36,34 @@ STACKSIZE = 0x800;
 
 MEMORY
 {
-    /* If device has HSM FW the last part of Flash is reserved for it */
-    FLASH (RX) : ORIGIN = ti_utils_build_GenMap_FLASH0_BASE, LENGTH = DEFINED(ti_utils_build_GenMap_HSM_FW_SIZE) ? ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE : ti_utils_build_GenMap_FLASH0_SIZE
+    /* If secure boot is enabled, set FLASH region origin and size as defined by secure boot.
+     * If HSM FW is used and overlapping the user-accessible flash, reserve space for it.
+     * The multiple ternary operators for the length are hard to understand, 
+     * this is the logic implemented by them:
+     * if (DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE)) {
+     *   // Use secure boot defined flash size
+     *   LENGTH = ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE
+     * } else if (DEFINED(ti_utils_build_GenMap_HSM_FW_BASE)) {
+     *   // If HSM FW overlaps the user-accessible flash, reserve space for it,
+     *   // otherwise use the default flash size
+     *   if (ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) {
+     *     LENGTH = ti_utils_build_GenMap_HSM_FW_BASE - ti_utils_build_GenMap_FLASH0_BASE
+     *   } else {
+     *     LENGTH = ti_utils_build_GenMap_FLASH0_SIZE
+     *   }
+     * } else {
+     *   LENGTH = ti_utils_build_GenMap_FLASH0_SIZE
+     * }
+     */
+    FLASH (RX) : ORIGIN = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE) ? ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE : ti_utils_build_GenMap_FLASH0_BASE,
+                 LENGTH = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE) ? ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE : DEFINED(ti_utils_build_GenMap_HSM_FW_BASE) ? ((ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) ? (ti_utils_build_GenMap_HSM_FW_BASE - ti_utils_build_GenMap_FLASH0_BASE) : ti_utils_build_GenMap_FLASH0_SIZE) : ti_utils_build_GenMap_FLASH0_SIZE
     /*
      * Customer Configuration Area and Bootloader Backdoor configuration in
      * flash.
      */
     CCFG (R)   : ORIGIN = ti_utils_build_GenMap_CCFG_BASE, LENGTH = ti_utils_build_GenMap_CCFG_SIZE
-    SRAM (RWX) : ORIGIN = ti_utils_build_GenMap_RAM0_BASE, LENGTH = ti_utils_build_GenMap_RAM0_SIZE
+    SRAM (RWX) : ORIGIN = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE) ? ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE : ti_utils_build_GenMap_RAM0_BASE,
+                 LENGTH = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_RAM_SIZE) ? ti_utils_build_GenMap_SECURE_BOOT_RAM_SIZE : ti_utils_build_GenMap_RAM0_SIZE
 
     /* Security Configuration Area (SCFG) - if device supports it */
     SCFG (R)    : ORIGIN = DEFINED(ti_utils_build_GenMap_SCFG_BASE) ? ti_utils_build_GenMap_SCFG_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_SCFG_SIZE) ? ti_utils_build_GenMap_SCFG_SIZE : 0x0
@@ -75,8 +95,12 @@ REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
 
 SECTIONS {
 
+    /* If _resetVecs_base_address is not defined, define it as the flash base
+     * address.
+     */
     PROVIDE (_resetVecs_base_address =
-        DEFINED(_resetVecs_base_address) ? _resetVecs_base_address : 0x0);
+        DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE) ? ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE :
+        DEFINED(_resetVecs_base_address) ? _resetVecs_base_address : ti_utils_build_GenMap_FLASH0_BASE);
 
     .resetVecs (_resetVecs_base_address) : AT (_resetVecs_base_address) {
         KEEP (*(.resetVecs))
@@ -90,9 +114,10 @@ SECTIONS {
      * UDMALPF3_CONFIG_BASE below must match UDMALPF3_CONFIG_BASE defined
      * by ti/drivers/dma/UDMALPF3.h
      * The user is allowed to change UDMALPF3_CONFIG_BASE to move it away from
-     * the default address 0x2000_0400, but remember it must be 1024 bytes aligned.
+     * the default address 0x20000400 (0x3000C400 if TFM is enabled), but
+     * remember it must be 1024 bytes aligned.
      */
-    UDMALPF3_CONFIG_BASE = 0x20000400;
+    UDMALPF3_CONFIG_BASE = ((ti_utils_build_GenMap_FLASH0_BASE & 0x10000000) != 0) ? 0x3000C400 : 0x20000400;
 
     /*
      * Define absolute addresses for the DMA channels.

@@ -48,8 +48,7 @@
 #define NPI_TL_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 //*****************************************************************************
@@ -64,20 +63,20 @@ extern "C"
 //*****************************************************************************
 
 #if defined(NPI_USE_UART)
-#define transportOpen NPITLUART_openTransport
-#define transportClose NPITLUART_closeTransport
-#define transportRead NPITLUART_readTransport
-#define transportWrite NPITLUART_writeTransport
-#define transportStopTransfer NPITLUART_stopTransfer
-#define transportRemRdyEvent NPITLUART_handleRemRdyEvent
+    #define transportOpen         NPITLUART_openTransport
+    #define transportClose        NPITLUART_closeTransport
+    #define transportRead         NPITLUART_readTransport
+    #define transportWrite        NPITLUART_writeTransport
+    #define transportStopTransfer NPITLUART_stopTransfer
+    #define transportRemRdyEvent  NPITLUART_handleRemRdyEvent
 #elif defined(NPI_USE_SPI)
-#define transportOpen NPITLSPI_openTransport
-#define transportClose NPITLSPI_closeTransport
-#define transportRead NPITLSPI_readTransport
-#define transportWrite NPITLSPI_writeTransport
-#define transportStopTransfer NPITLSPI_stopTransfer
-#define transportRemRdyEvent NPITLSPI_handleRemRdyEvent
-#endif //NPI_USE_UART
+    #define transportOpen         NPITLSPI_openTransport
+    #define transportClose        NPITLSPI_closeTransport
+    #define transportRead         NPITLSPI_readTransport
+    #define transportWrite        NPITLSPI_writeTransport
+    #define transportStopTransfer NPITLSPI_stopTransfer
+    #define transportRemRdyEvent  NPITLSPI_handleRemRdyEvent
+#endif // NPI_USE_UART
 
 //*****************************************************************************
 // Typedefs
@@ -94,19 +93,19 @@ typedef void (*npiMrdyRtosCB_t)(uint8_t state);
 //! \brief      Struct for transport layer call backs
 typedef struct
 {
-  npiMrdyRtosCB_t remRdyCB;
-  npiRtosCB_t     transCompleteCB;
+    npiMrdyRtosCB_t remRdyCB;
+    npiRtosCB_t transCompleteCB;
 } npiTLCallBacks;
 
 typedef struct
 {
-  uint16_t              npiTLBufSize;   //!< Buffer size of Tx/Rx Transport layer buffers
-  uint32_t              mrdyPinID;      //!< Pin ID Mrdy (only with Power Saving enabled)
-  uint32_t              srdyPinID;      //!< Pin ID Srdy (only with Power Saving enabled)
-  uint8_t               portType;       //!< NPI_SERIAL_TYPE_[UART,SPI]
-  uint8_t               portBoardID;    //!< Board ID for HW, i.e. CC2650_UART0
-  npiInterfaceParams    portParams;     //!< Params to initialize NPI port
-  npiTLCallBacks        npiCallBacks;   //!< Call backs to NPI Task
+    uint16_t npiTLBufSize;         //!< Buffer size of Tx/Rx Transport layer buffers
+    uint32_t mrdyPinID;            //!< Pin ID Mrdy (only with Power Saving enabled)
+    uint32_t srdyPinID;            //!< Pin ID Srdy (only with Power Saving enabled)
+    uint8_t portType;              //!< NPI_SERIAL_TYPE_[UART,SPI]
+    uint8_t portBoardID;           //!< Board ID for HW, i.e. CC2650_UART0
+    npiInterfaceParams portParams; //!< Params to initialize NPI port
+    npiTLCallBacks npiCallBacks;   //!< Call backs to NPI Task
 } NPITL_Params;
 
 //*****************************************************************************

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,7 @@
     #include <third_party/mbedtls/library/psa_crypto_core.h>
     #include <third_party/mbedtls/library/psa_crypto_slot_management.h>
     #include <third_party/mbedtls/library/psa_crypto_storage.h>
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #else
     #error "Unsupported DeviceFamily_Parent for CryptoKeyKeyStore_PSA_helpers"
@@ -123,7 +123,7 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
                                  KeyStore_PSA_Algorithm alg,
                                  KeyStore_PSA_KeyUsage usage);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 /**
  * @brief Attempt to acquire lock to access KeyStore.
  * This function is used to synchronize drivers and the application
@@ -149,7 +149,7 @@ void KeyStore_releaseLock(void);
 /**
  * @brief Retrieve the key in either plaintext format or as an Asset ID.
  *
- * This function handles the logic of retrieving a key from CC27XX KeyStore, which
+ * This function handles the logic of retrieving a key from CC27XX/CC35XX KeyStore, which
  * depends both on the CryptoKey encoding and the key lifetime/location. If the key
  * location is #KEYSTORE_PSA_KEY_LOCATION_HSM_ASSET_STORE, then the key will be returned
  * via asset ID. If the requested key was not already in the asset store upon request, it
@@ -261,7 +261,8 @@ int_fast16_t KeyStore_PSA_getKeyAssetId(KeyStore_PSA_KeyFileId key,
  */
 int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key);
 /*! @endcond */
-#endif
+#endif /* #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == \
+          DeviceFamily_PARENT_CC35XX)) */
 
 /**
  * @brief Initialize the Key Store.

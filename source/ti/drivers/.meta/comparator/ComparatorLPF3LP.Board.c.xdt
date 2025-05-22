@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2024 Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2022-2025 Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,8 +77,8 @@
 #include <ti/drivers/GPIO.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 
 #define `countDef` `instances.length`
 
@@ -96,8 +96,7 @@
     % let hwName = inst.comparator.$solution.peripheralName;
     % let peripheral = system.deviceData.peripherals[hwName];
     %
-    % let intNum = inst.interruptNumber;
-    % let intMux = 'EVTSVT_' + inst.interruptNumber.substring(4) + 'SEL_PUBID_AON_LPMCMP_IRQ';
+    % let intName = inst.interruptNumber;
     % let positiveInputPinName = 'GPIO_INVALID_INDEX';
     % let positiveInputPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
     % let negativeInputPinName = 'GPIO_INVALID_INDEX';
@@ -139,16 +138,16 @@
     %   negativeChannel = inst.negativeInputSource.split(' ').pop();
     % }
     {
-        .intNum = `intNum`,
-        .intPriority = `Common.intPriority2Hex(inst.interruptPriority)`,
-        .intMux = `intMux`,
-        .positiveInputPin = `positiveInputPinName`,
-        .positiveInputPinMux = `positiveInputPinMuxName`,
+        .intNum               = `intName`,
+        .intPriority          = `Common.intPriority2Hex(inst.interruptPriority)`,
+        .intSubscriberId      = EVTSVT_SUB_CPUIRQ`intName.replace("INT_CPUIRQ", "")`,
+        .positiveInputPin     = `positiveInputPinName`,
+        .positiveInputPinMux  = `positiveInputPinMuxName`,
         .positiveInputChannel = ComparatorLPF3LP_POS_INPUT_`positiveChannel`,
-        .negativeInputPin = `negativeInputPinName`,
-        .negativeInputPinMux = `negativeInputPinMuxName`,
+        .negativeInputPin     = `negativeInputPinName`,
+        .negativeInputPinMux  = `negativeInputPinMuxName`,
         .negativeInputChannel = ComparatorLPF3LP_NEG_INPUT_`negativeChannel`,
-        .voltageDividerPath = ComparatorLPF3LP_V_DIV_PATH_`dividerPath`,
+        .voltageDividerPath   = ComparatorLPF3LP_V_DIV_PATH_`dividerPath`,
         .voltageDividerFactor = ComparatorLPF3LP_V_DIV_FACTOR_`dividerRatio`,
     },
 
@@ -163,8 +162,8 @@ const Comparator_Config Comparator_config[`countDef`] = {
     % let inst = instances[i];
     {
         .fxnTablePtr = &ComparatorLPF3LP_fxnTable,
-        .object = &`driver`_objects[`inst.$name`],
-        .hwAttrs = &`driver`_hwAttrs[`inst.$name`]
+        .object      = &`driver`_objects[`inst.$name`],
+        .hwAttrs     = &`driver`_hwAttrs[`inst.$name`]
     },
 % }
 };

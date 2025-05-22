@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,9 +39,9 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/gpio/GPIOLPF3.h>
 
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(driverlib/cpu.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 
 /* Settle time required by LPCMP to have a valid output after being enabled */
@@ -209,13 +209,8 @@ Comparator_Handle ComparatorLPF3LP_open(Comparator_Handle handle, Comparator_Par
     }
     else
     {
-        /* Configure the interrupt line selected in SysConfig to output LPCMP events.
-         * The offset calculation below implies that configurable interrupt lines
-         * on Low Power F3 devices have:
-         * - Configuration registers with contiguous addresses in memory.
-         * - Consecutive interrupt numbers
-         */
-        HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ0SEL + (hwAttrs->intNum - INT_CPUIRQ0) * sizeof(uint32_t)) = hwAttrs->intMux;
+        /* Mux the interrupt line selected in SysConfig to LPCMP events. */
+        EVTSVTConfigureEvent(hwAttrs->intSubscriberId, EVTSVT_PUB_AON_LPMCMP_IRQ);
 
         hwiParams.enableInt = true;
     }
@@ -328,7 +323,7 @@ int_fast16_t ComparatorLPF3LP_setTrigger(Comparator_Handle handle, Comparator_Tr
         if (object->trigger == Comparator_TRIGGER_NONE)
         {
             HwiP_enableInterrupt(hwAttrs->intNum);
-            HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ0SEL + (hwAttrs->intNum - INT_CPUIRQ0) * sizeof(uint32_t)) = hwAttrs->intMux;
+            EVTSVTConfigureEvent(hwAttrs->intSubscriberId, EVTSVT_PUB_AON_LPMCMP_IRQ);
         }
     }
     object->trigger = trigger;

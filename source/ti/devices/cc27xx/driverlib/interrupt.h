@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the NVIC Interrupt Controller
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -227,22 +227,22 @@ extern void IntUnregister(uint32_t intNum);
 //!   - INT_AON_VGM_IRQ
 //!
 //! \param priority specifies the priority of the interrupt.
-//! - \ref INT_PRI_LEVEL0 : Highest priority.
-//! - \ref INT_PRI_LEVEL1
-//! - \ref INT_PRI_LEVEL2
-//! - \ref INT_PRI_LEVEL3
-//! - \ref INT_PRI_LEVEL4
-//! - \ref INT_PRI_LEVEL5
-//! - \ref INT_PRI_LEVEL6
-//! - \ref INT_PRI_LEVEL7
-//! - \ref INT_PRI_LEVEL8
-//! - \ref INT_PRI_LEVEL9
-//! - \ref INT_PRI_LEVEL10
-//! - \ref INT_PRI_LEVEL11
-//! - \ref INT_PRI_LEVEL12
-//! - \ref INT_PRI_LEVEL13
-//! - \ref INT_PRI_LEVEL14
-//! - \ref INT_PRI_LEVEL15 : Lowest priority.
+//! - INT_PRI_LEVEL0 : Highest priority.
+//! - INT_PRI_LEVEL1
+//! - INT_PRI_LEVEL2
+//! - INT_PRI_LEVEL3
+//! - INT_PRI_LEVEL4
+//! - INT_PRI_LEVEL5
+//! - INT_PRI_LEVEL6
+//! - INT_PRI_LEVEL7
+//! - INT_PRI_LEVEL8
+//! - INT_PRI_LEVEL9
+//! - INT_PRI_LEVEL10
+//! - INT_PRI_LEVEL11
+//! - INT_PRI_LEVEL12
+//! - INT_PRI_LEVEL13
+//! - INT_PRI_LEVEL14
+//! - INT_PRI_LEVEL15 : Lowest priority.
 //!
 //! \return None
 //
@@ -265,22 +265,22 @@ extern void IntSetPriority(uint32_t intNum, uint8_t priority);
 //! - See \ref IntSetPriority() for list of valid arguments.
 //!
 //! \return Returns the interrupt priority:
-//! - \ref INT_PRI_LEVEL0 : Highest priority.
-//! - \ref INT_PRI_LEVEL1
-//! - \ref INT_PRI_LEVEL2
-//! - \ref INT_PRI_LEVEL3
-//! - \ref INT_PRI_LEVEL4
-//! - \ref INT_PRI_LEVEL5
-//! - \ref INT_PRI_LEVEL6
-//! - \ref INT_PRI_LEVEL7
-//! - \ref INT_PRI_LEVEL8
-//! - \ref INT_PRI_LEVEL9
-//! - \ref INT_PRI_LEVEL10
-//! - \ref INT_PRI_LEVEL11
-//! - \ref INT_PRI_LEVEL12
-//! - \ref INT_PRI_LEVEL13
-//! - \ref INT_PRI_LEVEL14
-//! - \ref INT_PRI_LEVEL15 : Lowest priority.
+//! - INT_PRI_LEVEL0 : Highest priority.
+//! - INT_PRI_LEVEL1
+//! - INT_PRI_LEVEL2
+//! - INT_PRI_LEVEL3
+//! - INT_PRI_LEVEL4
+//! - INT_PRI_LEVEL5
+//! - INT_PRI_LEVEL6
+//! - INT_PRI_LEVEL7
+//! - INT_PRI_LEVEL8
+//! - INT_PRI_LEVEL9
+//! - INT_PRI_LEVEL10
+//! - INT_PRI_LEVEL11
+//! - INT_PRI_LEVEL12
+//! - INT_PRI_LEVEL13
+//! - INT_PRI_LEVEL14
+//! - INT_PRI_LEVEL15 : Lowest priority.
 //
 //*****************************************************************************
 extern int32_t IntGetPriority(uint32_t intNum);

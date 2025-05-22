@@ -1,5 +1,5 @@
 /******************************************************************************
-*  Copyright (c) 2022-2023 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2021-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -83,13 +83,7 @@ typedef struct {
         uint32_t crc32;
     } bootCfg;
 
-
-    // Paperspin options     [16]: length 8 B
-    // Defines peripheral/feature availability and accessible memory. Allows
-    // customer to target a paperspin device features on a superset device
-    // AND-combined with FCFG.hwOpts.
-    uint32_t hwOpts[2];
-
+    uint32_t res0[2];
 
     // Device permissions   [24]: length 4 B
     // This is maximally-restrictive combined with similar fields in FCFG and SCFG
@@ -107,7 +101,6 @@ typedef struct {
         uint32_t allowDebugPort       : 4;
     } permissions;
 
-
     // Miscellaneous fields         [28]: length 4B
     struct {
         // SACI timeout is infinite when 0, else (2^saciTimeoutExp)*64 ms
@@ -120,7 +113,6 @@ typedef struct {
         uint32_t allowMainAppErase   : 4;    // Extension of permissions above
         uint32_t res0                : 24;
     } misc;
-
 
     // Flash protection     [32]: length 32 B
     // This is maximally-restrictive combined with similar field in FCFG
@@ -167,7 +159,6 @@ typedef struct {
         } chipEraseRetain;
     } flashProt;
 
-
     // Optional HW initialization copy-list   [64]: length x B
     // Copy list applied before user application is entered. May be used by customer/SYSCFG to
     // initialize hardware right before application is entered.
@@ -185,11 +176,9 @@ typedef struct {
         #define CPYLST_JUMP(a)           (((uint32_t)(a)) + 2)
         #define CPYLST_CALL(a)           (((uint32_t)(a)) + 3)
 
-
-    // CRC across hwOpts through hwInitCopyList
+    // CRC of content after bootCfg through hwInitCopyList
     // [End-180]: length 4B
     uint32_t crc32;
-
 
     // User record (programmable also through separate SACI command), no dependencies in boot code
     // User record size is fixed at 128 B. Last word assumed to be CRC over first 124 B (optional)
@@ -207,14 +196,12 @@ typedef struct {
         };
     } userRecord;
 
-
     // *******************************************************
     // *** Read protection security barrier (16 B aligned) ***
     // *******************************************************
     // Note: The CCFG field flashProt.readProt.ccfgSector can set the security barrier here or
     //       at some point in the userRecord above. debugCfg.pwdId only readable through
     //       SACI command if read protection barrier set here [on purpose]
-
 
     // Debug configuration and password
     struct {    // [End-48]: length 48B
@@ -229,7 +216,6 @@ typedef struct {
         // CRC32 of previous fields in debugCfg
         uint32_t crc32;
     } debugCfg;
-
 } ccfg_t;
 
 

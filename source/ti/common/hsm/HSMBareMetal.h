@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,11 +43,15 @@
  *      * Initialize and link the designated HSM mailbox for token exchanges
  *      * Boot up the HSM by sending a boot operation to the HSM to initialize the HSM FW.
  *  - HSM un-init sequence.
+ *  - HSM HUK provisioning.
  *  - HSM Asset-related Operations:
  *      * Dynamic Asset creation and plaintext-only load to the HSM internal AssetStore.
  *      * Support for AES and MAC keys including HMAC.
  *      * In-API key generation:
  *        (The user can request to generate key, create an asset, and load key in HSM AssetStore in one API)
+ *      * Loading plaintext, returning an asset ID pair, and extracting a Key blob pair for AES operations.
+ *        - Please use the HSM_KEYBLOB_SIZE() macro to determine the appropriate size of key blob buffers.
+ *      * Importing a key blob pair for AES operations and returning an asset ID pair
  *  - HSM Cryptography-related Operations:
  *      * AES operations, (CCM, GCM, CTR, ECB, CBC).
  *      * MAC operations, (128-bit CMAC, 128-bit CBC-MAC, HMAC).
@@ -76,6 +80,12 @@
  *      * SHA2-256 with digest length 32 Bytes.
  *      * SHA2-384 with digest length 48 Bytes.
  *      * SHA2-512 with digest length 64 Bytes.
+ *      * Multi-step hash operations are supported. To perform a multi-step hash operation, the user will need to create
+ *      * a series of operations with the operation Type in the following order:
+ *          - INIT_TO_CONT (once)
+ *          - CONT_TO_CONT (as many times as necessary)
+ *          - CONT_TO_FINAL (once)
+ *      * Multi-step hash operations are supported for all digest lengths and sha2 algorithms.
  *  - HSM Support for RNG Operations:
  *      * Size must be 0 < x < (2^16 Bytes).
  *      * For DRBG data, size must be 32-bit aligned. (Multiple of 4 bytes).
@@ -97,7 +107,11 @@
  *  - HSM limitations:
  *      * All buffer address must be word-aligned.
  *      * Input plaintext length for (CCM, GCM, CBC, CTR, ECB, CMAC, CBC-MAC, SHA2, HMAC) shall be upto 2^21 -1 Bytes
- * and block-size aligned.
+ *        and block-size aligned.
+ *      * For non-final hash operations, the input data should be block-size aligned (128 bytes for SHA-2-384 and
+ *        SHA-2-512 or 64 bytes for the other algorithms).
+ *      * For segmented hashing, the user must maintain the intermediate digest buffer to be passed between operations.
+ *      * Input for every ECC operation must be in big endian format.
  *      * Input and output buffers shall be a multiple of block length.
  *        Meaning that while the input data can be of any length, the buffers for the input and output data
  *        should be rounded up to the nearest size that is a multiple of block size.
@@ -129,6 +143,9 @@
  *
  *  Before starting a BareMetal operation
  *      - Call HSMBareMetal_init() to initialize the HSM IP and the SW architecture.
+ *
+ *      - Call HSMBareMetal_provisionHUK() to use any asset-related operations and specifically key blob-related
+ * operations.
  *
  *  ## Starting a BareMetal operation #
  *
@@ -302,18 +319,57 @@ extern "C" {
  */
 #define HSMBAREMETAL_STATUS_NRBG_ALREADY_IN_MODE ((int_fast16_t)-7)
 
+/*!
+ *  @brief   Private key size is invalid.
+ */
 #define HSMBAREMETAL_STATUS_INVALID_PRIVATE_KEY_SIZE ((int_fast16_t)-8)
 
+/*!
+ *  @brief   Public key size is invalid.
+ */
 #define HSMBAREMETAL_STATUS_INVALID_PUBLIC_KEY_SIZE ((int_fast16_t)-9)
 
+/*!
+ *  @brief   The public key's first byte is an invalid value.
+ */
 #define HSMBAREMETAL_STATUS_INVALID_PUBLIC_KEY_OCTET_VALUE ((int_fast16_t)-10)
 
+/*!
+ *  @brief   Shared secret key size is invalid.
+ */
 #define HSMBAREMETAL_STATUS_INVALID_SHARED_SECRET_KEY_SIZE ((int_fast16_t)-11)
 
 /*!
- *  @brief    Wait forever for a result token define
+ *  @brief   This device has already been provisioned with a Hardware Unique Key (HUK).
+ */
+#define HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED ((int_fast16_t)-12)
+
+/*!
+ *  @brief   The combination of parameters passed filtered to a feature that exists but is not supported yet.
+ */
+#define HSMBAREMETAL_STATUS_FEATURE_NOT_SUPPORTED ((int_fast16_t)-13)
+
+/*!
+ *  @brief    Wait forever for a result token define.
  */
 #define HSMBareMetal_WAIT_FOREVER ~(0)
+
+/*!
+ *  @brief    The Hardware Unique key (HUK) asset number in the HSM.
+ */
+#define HSMBAREMETAL_HUK_ASSET_NUMBER 0x61
+
+/*!
+ *  @brief    The size of an HSM block for symmetric operations.
+ */
+#define HSMBAREMETAL_AES_BLOCK_SIZE 16
+
+/*!
+ *  @brief The expected size of an AES-SIV keyblob.
+ *
+ *  Note: keyLength is the size of the Asset in octects (bytes).
+ */
+#define HSM_KEYBLOB_SIZE(keyLength) (HSMBAREMETAL_AES_BLOCK_SIZE + keyLength)
 
 /*!
  *  @brief  Enum for entropy type.
@@ -348,7 +404,7 @@ typedef enum
     HSMBareMetal_OPERATION_ALGO_AES  = 1,
     HSMBareMetal_OPERATION_ALGO_MAC  = 2,
     HSMBareMetal_OPERATION_ALGO_HASH = 3,
-    HSMBareMetal_OPERATION_ALGO_PK   = 4,
+    HSMBareMetal_OPERATION_ALGO_ECC  = 4,
 } HSMBareMetal_operationAlgorithm;
 
 /*!
@@ -388,7 +444,7 @@ typedef enum
 } HSMBareMetal_MACOperationMode;
 
 /*!
- *  @brief  Enum for Hash operation modes.
+ *  @brief  Enum for Hash operation modes (algorithms).
  */
 typedef enum
 {
@@ -397,6 +453,17 @@ typedef enum
     HSMBareMetal_HASH_MODE_SHA2_384 = 4,
     HSMBareMetal_HASH_MODE_SHA2_512 = 5,
 } HSMBareMetal_HASHOperationMode;
+
+/*!
+ *  @brief  Enum for Hash operation types (hash mode).
+ */
+typedef enum
+{
+    HSMBareMetal_HASH_TYPE_INIT_TO_FINAL = 0,
+    HSMBareMetal_HASH_TYPE_CONT_TO_FINAL = 1,
+    HSMBareMetal_HASH_TYPE_INIT_TO_CONT  = 2,
+    HSMBareMetal_HASH_TYPE_CONT_TO_CONT  = 3,
+} HSMBareMetal_HASHOperationType;
 
 /*!
  *  @brief  Enum for ECC operation curve types.
@@ -457,6 +524,16 @@ typedef enum
     HSMBareMetal_KEY_INPUT_PLAINTEXT  = 0,
     HSMBareMetal_KEY_INPUT_ASSETSTORE = 1,
 } HSMBareMetal_KeyInput;
+
+/*!
+ *  @brief  Enum for the Asset operation type.
+ */
+typedef enum
+{
+    HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_PLAINTEXT       = 0,
+    HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB = 1,
+    HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB = 2,
+} HSMBareMetal_AssetOperationType;
 
 /* Operation Structures */
 
@@ -562,6 +639,8 @@ typedef struct
 
 /*!
  *  @brief  Struct containing the two asset IDs returned for usage in a symmetric operation.
+ *
+ *  For any given plaintext key material, there exists two asset IDs.
  */
 typedef struct
 {
@@ -570,14 +649,23 @@ typedef struct
 } HSMBareMetal_AssetPairStruct;
 
 /*!
- *  @brief  Struct containing the two asset IDs returned for ECC operations
+ *  @brief  Struct containing the two buffers for symmetric key blob data.
  *
- *  The first asset is for the private key and the second asset is for the public key.
+ *  For any given plaintext key material, there exists two key blobs.
  */
 typedef struct
 {
-    uint32_t *privateKeyAssetID; /* Asset ID for encryption/generation */
-    uint32_t *publicKeyAssetID;  /* Asset ID for decryption/Verification */
+    uint8_t *encGenKeyBlob;  /* Key blob data for encryption/generation operations. */
+    uint8_t *decVrfyKeyBlob; /* Key blob data for decryption/Verification operations. */
+} HSMBareMetal_AssetPairKeyBlobStruct;
+
+/*!
+ *  @brief  Struct containing the two asset IDs returned for ECC operations.
+ */
+typedef struct
+{
+    uint32_t *privateKeyAssetID; /* Asset ID for the private key. */
+    uint32_t *publicKeyAssetID;  /* Asset ID for the public key. */
 } HSMBareMetal_AsymAssetPairStruct;
 
 /*!
@@ -589,9 +677,14 @@ typedef struct
     uint8_t keyLength;   /* Key length. */
     bool isKeyGenerated; /* When set, HSMBareMetal will leverage the #HSMBareMetal_RNGOperation to generate a DRBG key
                             internally and return the AssetIDPair only. */
+    HSMBareMetal_AssetPairKeyBlobStruct keyBlobs; /* Contains a pair of pointers to the encrypt and decrypt key blob
+                                                     data. This field is used as an input and an ouput depending on the
+                                                     operationType. */
     HSMBareMetal_AssetPairStruct keyAssetIDs; /* In a symmetric operation, for every key there exists two key Asset IDs.
                                                  One for ENC/GEN and the other for DEC/VRFY. */
-    HSMBareMetal_operationAlgorithm algorithm; /* AES or MAC. */
+    HSMBareMetal_operationAlgorithm algorithm;     /* AES or MAC. */
+    HSMBareMetal_AssetOperationType operationType; /* Load plaintext, load plaintext and export key blobs, or import key
+                                                      blobs. */
     HSMBareMetal_AESOperationMode aesOperationMode;
     HSMBareMetal_MACOperationMode macOperationMode;
 } HSMBareMetal_AssetOperationStruct;
@@ -605,6 +698,8 @@ typedef struct
     size_t inputLength;
     uint8_t *digest;
     HSMBareMetal_HASHOperationMode operationMode;
+    HSMBareMetal_HASHOperationType operationType;
+    size_t totalInputLength;
 } HSMBareMetal_HASHOperationStruct;
 
 /*!
@@ -671,6 +766,10 @@ typedef struct
  *      1. Turning on the HSM IP by enabling the clock.
  *      2. Initializing the HSM Mailboxes and corresponding registers.
  *      3. Booting the HSM (Sending a boot token and ensuring that the HSM FW image is accepted).
+ *
+ *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    Initialization process was successful
+ *  @retval #HSMBAREMETAL_STATUS_ERROR                      Initialization process was unsuccessful.
+ *  @retval #HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED    HSM already initialized.
  */
 int_fast16_t HSMBareMetal_init(void);
 
@@ -682,48 +781,98 @@ int_fast16_t HSMBareMetal_init(void);
 int_fast16_t HSMBareMetal_deInit(void);
 
 /*!
+ *  @brief  Check HSM HW status
+ *
+ *  @retval #HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED    HSM is initialized properly and ready for use.
+ *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
+ */
+int_fast16_t HSMBareMetal_checkHSMStatus(void);
+
+/*!
+ *  @brief  Provision the Hardware Unique Key (HUK) for this device.
+ *
+ *  This is an operation that should be done only once per device lifetime.
+ *
+ *  @pre Must call #HSMBareMetal_init() prior.
+ *
+ *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
+ *  @retval #HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED    HUK already provisioned.
+ *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
+ *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
+ */
+int_fast16_t HSMBareMetal_provisionHUK(void);
+
+/*!
+ *  @brief  Perform an HSM OTP search for static asset.
+ *
+ *  This API searches the HSM OTP for the specified asset number and returns found or not found.
+ *
+ *  @param [in]     assetNumber         Static asset number
+ *
+ *  @param [out]    assetId             The corresponding asset ID
+ *
+ *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    Asset found.
+ *  @retval #HSMBAREMETAL_STATUS_ERROR                      Asset not found.
+ *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
+ */
+int_fast16_t HSMBareMetal_searchStaticAsset(uint32_t assetNumber, uint32_t *assetId);
+
+/*!
  *  @brief  Returns the HSM FW image version number (major, minor, and patch)
  *  @pre    HSMBareMetal must be initialized using #HSMBareMetal_init()
  *
  *  This function sends a system info token and extracts HSM version numbers and returns the FW version.
+ *
+ *  @param [in]     firmwareVersionStruct           firmware version structure
  *
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS               System info token returned data successfully.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                 Error. System info failed or HSMBareMetal is not initialized.
  */
 int_fast16_t HSMBareMetal_getHSMFirmwareVersion(HSMBareMetal_systemInfoVersionStruct *firmwareVersionStruct);
 
-/*
- *  ======== HSMBareMetal_RNGOperation_init ========
+/*!
+ *  @brief  Initializes a CryptoKey with plaintext encoding
+ *
+ *  @param [in]     cryptoKey   Pointer to a CryptoKey which will be initialized
+ *                              to type HSMBareMetal_KEY_INPUT_PLAINTEXT
+ *                              and ready for use
+ *  @param [in]     key         Pointer to keying material
+ *
+ *  @param [in]     keyLength   Length of keying material in bytes
+ *
+ */
+void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey, uint8_t *key, size_t keyLength);
+
+/*!
+ *  @brief Function to initialize an #HSMBareMetal_RNGOperation struct to its default (all zeroes)
  */
 void HSMBareMetal_RNGOperation_init(HSMBareMetal_RNGOperationStruct *operationStruct);
 
-/*
- *  ======== HSMBareMetal_AssetOperation_init ========
+/*!
+ *  @brief Function to initialize an #HSMBareMetal_AssetOperation struct to its default (all zeroes)
  */
 void HSMBareMetal_AssetOperation_init(HSMBareMetal_AssetOperationStruct *operationStruct);
 
-/*
- *  ======== HSMBareMetal_HASHOperation_init ========
+/*!
+ *  @brief Function to initialize an #HSMBareMetal_HASHOperation struct to its default (all zeroes)
  */
 void HSMBareMetal_HASHOperation_init(HSMBareMetal_HASHOperationStruct *operationStruct);
 
-/*
- *  ======== HSMBareMetal_AESOperation_init ========
+/*!
+ *  @brief Function to initialize an #HSMBareMetal_AESOperation struct to its default (all zeroes)
  */
 void HSMBareMetal_AESOperation_init(HSMBareMetal_AESOperationStruct *operationStruct);
 
-/*
- *  ======== HSMBareMetal_MACOperation_init ========
+/*!
+ *  @brief Function to initialize an #HSMBareMetal_MACOperation struct to its default (all zeroes)
  */
 void HSMBareMetal_MACOperation_init(HSMBareMetal_MACOperationStruct *operationStruct);
 
-/*
- *  ======== HSMBareMetal_CryptoKey_init ========
- */
-void HSMBareMetal_CryptoKey_init(HSMBareMetal_CryptoKeyStruct *operationStruct);
-
-/*
- *  ======== HSMBareMetal_ECCOperation_init ========
+/*!
+ *  @brief Function to initialize an #HSMBareMetal_ECCOperation struct to its default (all zeroes)
  */
 void HSMBareMetal_ECCOperation_init(HSMBareMetal_ECCOperationStruct *operationStruct);
 
@@ -747,7 +896,7 @@ void HSMBareMetal_ECCOperation_init(HSMBareMetal_ECCOperationStruct *operationSt
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
@@ -763,25 +912,12 @@ int_fast16_t HSMBareMetal_RNGOperation(HSMBareMetal_RNGOperationStruct *operatio
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
  */
 int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode);
-
-/*!
- *  @brief  Initializes a CryptoKey type
-
- *  @param [in]     keyHandle   Pointer to a CryptoKey which will be initialized
- *                              to type HSMBareMetal_KEY_INPUT_PLAINTEXT
- *                              and ready for use
- *  @param [in]     key         Pointer to keying material
- *
- *  @param [in]     keyLength   Length of keying material in bytes
- *
- */
-void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey, uint8_t *key, size_t keyLength);
 
 /*!
  *  @brief  Perform a Bare Metal Asset Create and Load Operations.
@@ -800,7 +936,7 @@ void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *crypt
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
@@ -817,7 +953,7 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
@@ -834,7 +970,7 @@ int_fast16_t HSMBareMetal_freeAssetPair(HSMBareMetal_AssetPairStruct keyAssetPai
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *
  */
 int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID);
@@ -848,7 +984,7 @@ int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID);
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
@@ -864,7 +1000,7 @@ int_fast16_t HSMBareMetal_AESOperation(HSMBareMetal_AESOperationStruct *operatio
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
@@ -880,7 +1016,7 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *
@@ -907,7 +1043,7 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
  *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
  *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
  *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Rest Device.
+ *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  *  @retval #HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS   One or more of the input parameters
  *                                                          is incorrect.
  *

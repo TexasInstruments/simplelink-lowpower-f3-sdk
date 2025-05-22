@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -312,6 +312,7 @@ static inline void ECDSALPF3HSM_ecdsaPostProcessing(uintptr_t arg0)
             ECDSA_OperationSign *signOperation = (ECDSA_OperationSign *)object->operation;
             HSMLPF3_asymDsaSignatureFromHW(&object->signature[0],
                                            object->curveLength,
+                                           HSMLPF3_BIG_ENDIAN_KEY,
                                            signOperation->r,
                                            signOperation->s);
         }
@@ -353,6 +354,7 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
     object->input               = (uint8_t *)operation->hash;
     object->keyAssetID          = 0;
     object->paramAssetID        = 0;
+    object->returnStatus        = ECDSA_STATUS_SUCCESS;
 
     /* Perform the following operations:
      * - Check the HSM HW status
@@ -382,6 +384,7 @@ int_fast16_t ECDSA_sign(ECDSA_Handle handle, ECDSA_OperationSign *operation)
     hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->returnBehavior,
                                     ECDSALPF3HSM_ecdsaPostProcessing,
                                     (uintptr_t)handle);
+
     if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
     {
         /* Handles post command token submission mechanism.
@@ -430,6 +433,7 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
     object->input               = (uint8_t *)operation->hash;
     object->keyAssetID          = 0;
     object->paramAssetID        = 0;
+    object->returnStatus        = ECDSA_STATUS_SUCCESS;
 
     /* Perform the following operations:
      * - Check the HSM HW status
@@ -458,10 +462,14 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
      * - Total number of sub-vector components
      * - Domain ID of the sub-vector component
      * - Index of each sub-vector component
-     * The data in the body of the sub-vector component should be revered into little endian format.
+     * The data in the body of the sub-vector component should be reversed into little endian format.
      */
     memset(&object->signature[0], 0, sizeof(object->signature));
-    HSMLPF3_asymDsaSignatureToHW(operation->r, operation->s, object->curveLength, &object->signature[0]);
+    HSMLPF3_asymDsaSignatureToHW(operation->r,
+                                 operation->s,
+                                 HSMLPF3_BIG_ENDIAN_KEY,
+                                 object->curveLength,
+                                 &object->signature[0]);
 
     /* Populates the HSMLPF3 commandToken as a PK token for an ECDSA verify operation */
     HSMLPF3_constructECDSASignPhysicalToken(object);
@@ -470,6 +478,7 @@ int_fast16_t ECDSA_verify(ECDSA_Handle handle, ECDSA_OperationVerify *operation)
     hsmRetval = HSMLPF3_submitToken((HSMLPF3_ReturnBehavior)object->returnBehavior,
                                     ECDSALPF3HSM_ecdsaPostProcessing,
                                     (uintptr_t)handle);
+
     if (hsmRetval == HSMLPF3_STATUS_SUCCESS)
     {
         /* Handles post command token submission mechanism.

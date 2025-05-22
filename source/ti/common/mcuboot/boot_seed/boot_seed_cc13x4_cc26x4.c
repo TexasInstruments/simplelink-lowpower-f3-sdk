@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2022, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,24 +44,31 @@
 
 #define BOOT_SEED_SIZE 32
 
-typedef struct {
+typedef struct
+{
     uint8_t data[BOOT_SEED_SIZE];
 } Boot_Seed_T;
 
 #define BOOT_SEED_ITERATIONS (BOOT_SEED_SIZE >> 3)
 
-void Boot_Seed (void)
+void Boot_Seed(void)
 {
     int i;
     Boot_Seed_T boot_seed;
-    uint32_t *word = (uint32_t*)&boot_seed.data, lo, hi;
+    uint32_t *word = (uint32_t *)&boot_seed.data, lo, hi;
 
     PRCMPowerDomainOn(PRCM_PERIPH_TRNG);
-    while (PRCMPowerDomainsAllOn(PRCM_PERIPH_TRNG) != PRCM_DOMAIN_POWER_ON);
+    while (PRCMPowerDomainsAllOn(PRCM_PERIPH_TRNG) != PRCM_DOMAIN_POWER_ON)
+    {
+        ;
+    }
 
     PRCMPeripheralRunEnable(PRCM_PERIPH_TRNG);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     TRNGConfigure(0, 24000, 0);
     TRNGEnable();
@@ -74,10 +81,12 @@ void Boot_Seed (void)
      * TODO: Find TRNG root cause of this first round as 0's. Very likely output
      * is not ready yet.
      */
-    for (i=0; i <= BOOT_SEED_ITERATIONS; i++) {
+    for (i = 0; i <= BOOT_SEED_ITERATIONS; i++)
+    {
         lo = TRNGNumberGet(TRNG_LOW_WORD);
         hi = TRNGNumberGet(TRNG_HI_WORD);
-        if (i > 0) {
+        if (i > 0)
+        {
             *word++ = lo;
             *word++ = hi;
         }
@@ -85,22 +94,26 @@ void Boot_Seed (void)
     }
 
     MCUBOOT_LOG_INF("Boot seed: ");
-    for (i=0; i < BOOT_SEED_SIZE; i++) {
+    for (i = 0; i < BOOT_SEED_SIZE; i++)
+    {
         MCUBOOT_LOG_INF("%02x", boot_seed.data[i]);
     }
     MCUBOOT_LOG_INF("\n");
 
-    boot_add_data_to_shared_area(0, 0, BOOT_SEED_SIZE,
-                                 boot_seed.data);
+    boot_add_data_to_shared_area(0, 0, BOOT_SEED_SIZE, boot_seed.data);
 
     TRNGDisable();
 
     PRCMPeripheralRunDisable(PRCM_PERIPH_TRNG);
     PRCMLoadSet();
-    while (!PRCMLoadGet());
+    while (!PRCMLoadGet())
+    {
+        ;
+    }
 
     PRCMPowerDomainOff(PRCM_PERIPH_TRNG);
-    while (PRCMPowerDomainsAllOn(PRCM_PERIPH_TRNG) != PRCM_DOMAIN_POWER_OFF);
+    while (PRCMPowerDomainsAllOn(PRCM_PERIPH_TRNG) != PRCM_DOMAIN_POWER_OFF)
+    {
+        ;
+    }
 }
-
-

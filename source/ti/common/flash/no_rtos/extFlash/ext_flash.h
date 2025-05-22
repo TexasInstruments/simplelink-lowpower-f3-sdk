@@ -49,11 +49,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define EXT_FLASH_PAGE_SIZE   4096
+#define EXT_FLASH_PAGE_SIZE 4096
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef struct
@@ -64,48 +63,48 @@ typedef struct
 } ExtFlashInfo_t;
 
 /**
-* Initialize storage driver.
-*
-* @return True when successful.
-*/
+ * Initialize storage driver.
+ *
+ * @return True when successful.
+ */
 extern bool extFlashOpen(void);
 
 /**
-* Close the storage driver
-*/
+ * Close the storage driver
+ */
 extern void extFlashClose(void);
 
 /**
-* Get flash information
-*/
+ * Get flash information
+ */
 extern const ExtFlashInfo_t *extFlashInfo(void);
 
 /**
-* Read storage content
-*
-* @return True when successful.
-*/
+ * Read storage content
+ *
+ * @return True when successful.
+ */
 extern bool extFlashRead(size_t offset, size_t length, uint8_t *buf);
 
 /**
-* Erase storage sectors corresponding to the range.
-*
-* @return True when successful.
-*/
+ * Erase storage sectors corresponding to the range.
+ *
+ * @return True when successful.
+ */
 extern bool extFlashErase(size_t offset, size_t length);
 
 /**
-* Write to storage sectors.
-*
-* @return True when successful.
-*/
+ * Write to storage sectors.
+ *
+ * @return True when successful.
+ */
 extern bool extFlashWrite(size_t offset, size_t length, const uint8_t *buf);
 
 /**
-* Test the flash (power on self-test)
-*
-* @return True when successful.
-*/
+ * Test the flash (power on self-test)
+ *
+ * @return True when successful.
+ */
 extern bool extFlashTest(void);
 
 #ifdef __cplusplus

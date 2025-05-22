@@ -63,7 +63,7 @@ const uint8_t OAD_IMG_ID[OAD_IMG_ID_LEN] = OAD_IMG_ID_VAL;
 
 #ifndef BIM_ONCHIP /* used for off-chip case only */
 const uint8_t OAD_EXTFL_ID[OAD_IMG_ID_LEN] = OAD_EXTFL_ID_VAL;
-#endif //#ifdef BIM_ONCHIP
+#endif // #ifdef BIM_ONCHIP
 
 /*******************************************************************************
  * LOCAL FUNCTIONS
@@ -105,11 +105,10 @@ __attribute__((naked)) void jumpToPrgEntry(uint32_t *vectorTable)
      *
      * */
 
-    __asm volatile ("ldr r1, [r0, #0]\n"
-                    "msr msp, r1\n"
-                    "ldr r1, [r0, #4]\n"
-                    "mov pc, r1\n"
-                    );
+    __asm volatile("ldr r1, [r0, #0]\n"
+                   "msr msp, r1\n"
+                   "ldr r1, [r0, #4]\n"
+                   "mov pc, r1\n");
 }
 
 /*******************************************************************************
@@ -124,18 +123,18 @@ __attribute__((naked)) void jumpToPrgEntry(uint32_t *vectorTable)
  */
 bool imgIDCheck(imgFixedHdr_t *imgHdr)
 {
-    uint8_t* pBuff = imgHdr->imgID;
+    uint8_t *pBuff = imgHdr->imgID;
 
     int8_t idLen = OAD_IMG_ID_LEN - 1;
-    while( idLen >= 0)
+    while (idLen >= 0)
     {
         if (pBuff[idLen] != OAD_IMG_ID[idLen])
         {
-            return(false);
+            return (false);
         }
         idLen--;
     }
-    return(true);
+    return (true);
 }
 
 /*******************************************************************************
@@ -148,7 +147,6 @@ void setLowPowerMode()
 {
     /* Disable interrupts */
     IntDisableMaster();
-
 
     /* - Save CPU state on MSP and MSP in CLKCTL_STBYPTR
      * - Enter standby
@@ -174,22 +172,21 @@ void setLowPowerMode()
  */
 bool metadataIDCheck(imgFixedHdr_t *imgHdr)
 {
-    uint8_t* pBuff = imgHdr->imgID;
+    uint8_t *pBuff = imgHdr->imgID;
 
     int8_t idLen = OAD_IMG_ID_LEN - 1;
-    while( idLen >= 0)
+    while (idLen >= 0)
     {
         if (pBuff[idLen] != OAD_EXTFL_ID[idLen])
         {
-            return(false);
+            return (false);
         }
         idLen--;
     }
-    return(true);
+    return (true);
 }
 
 #endif // #ifndef BIM_ONCHIP
-
 
 #ifdef BIM_ONCHIP /* used for on-chip case only */
 /*******************************************************************************
@@ -204,24 +201,24 @@ bool metadataIDCheck(imgFixedHdr_t *imgHdr)
  */
 bool evenBitCount(uint32_t value)
 {
-  uint8_t count;
+    uint8_t count;
 
-  for (count = 0; value; count++)
-  {
-    value &= value - 1;
-  }
+    for (count = 0; value; count++)
+    {
+        value &= value - 1;
+    }
 
-  if (count % 2)
-  {
-    return false;
-  }
-  else
-  {
-    return true;
-  }
+    if (count % 2)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
-#endif //#ifdef BIM_ONCHIP
+#endif // #ifdef BIM_ONCHIP
 
 /*******************************************************************************
-*/
+ */

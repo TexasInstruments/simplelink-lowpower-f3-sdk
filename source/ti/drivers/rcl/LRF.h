@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -272,6 +272,8 @@ void LRF_discardRxFifoWords(uint32_t wordLength);
 void LRF_readRxFifoWords(uint32_t *data32, uint32_t wordLength);
 void LRF_writeTxFifoWords(const uint32_t *data32, uint32_t wordLength);
 void LRF_setRxFifoEffSz(uint32_t maxSz);
+void LRF_peekRxFifoWords(uint32_t *data32, uint32_t wordLength, uint32_t startRp);
+uint32_t LRF_getUncommittedFifoStatus(uint32_t *currentRp);
 void LRF_programFrequency(uint32_t frequency, bool tx);
 uint32_t LRF_enableSynthRefsys(void);
 void LRF_disableSynthRefsys(void);

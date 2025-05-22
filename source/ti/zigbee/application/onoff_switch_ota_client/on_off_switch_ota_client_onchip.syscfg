@@ -129,3 +129,12 @@ for(var setting in rfDesignSettings)
 {
     rfDesign[setting] = rfDesignSettings[setting];
 }
+
+/* ======== Internal Flash for Image Slot 2 ======== */
+const NVS      = scripting.addModule("/ti/drivers/NVS", {}, false);
+const NVS2       = NVS.addInstance();
+NVS2.$name                    = "CONFIG_NVSINTERNAL1";
+NVS2.internalFlash.$name      = "ti_drivers_nvs_NVSLPF30";
+NVS2.internalFlash.regionType = "Pointer";
+NVS2.internalFlash.regionBase = 0x41800;
+NVS2.internalFlash.regionSize = 0x3D800;

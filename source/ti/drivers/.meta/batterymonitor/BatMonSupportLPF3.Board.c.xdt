@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,11 +47,11 @@
 #include <ti/drivers/batterymonitor/BatMonSupportLPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 
 const BatMonSupportLPF3_Config BatMonSupportLPF3_config = {
     .intNum = `BatMonSupport.interruptNumber`,
     .intPriority = `Common.intPriority2Hex(BatMonSupport.interruptPriority)`,
-    .intMux = `'EVTSVT_' + BatMonSupport.interruptNumber.substring(4) + 'SEL_PUBID_AON_PMU_COMB'`
+    .intSubscriberId = EVTSVT_SUB_CPUIRQ`BatMonSupport.interruptNumber.replace("INT_CPUIRQ", "")`,
 };

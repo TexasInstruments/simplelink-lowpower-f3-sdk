@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,14 @@
  *
  */
 
+/*! @cond NODOC */
+
 #include <stdint.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+#endif
 
 /* Defines */
 #define HSM_ASYM_DATA_VHEADER                (4U)
@@ -72,16 +76,31 @@
 /* HSM token-related Defines */
 
 /* Asset Policy Codes */
-#define HSM_ASSET_POLICY_SYM_HASH_MAC 0X00012800
-#define HSM_ASSET_POLICY_SYM_AES_MAC  0X00022800
-#define HSM_ASSET_POLICY_SYM_AES_BULK 0X00032800
-#define HSM_ASSET_POLICY_SYM_AES_AUTH 0X00042800
+#define HSM_ASSET_POLICY_NONMODIFIABLE 0x00000001
+#define HSM_ASSET_POLICY_TEMPORARY     0x00000002
 
-#define HSM_ASSET_POLICY_NON_MODIFIABLE 0x00000001
-#define HSM_ASSET_POLICY_TEMPORARY      0x00000002
+#define HSM_ASSET_POLICY_SYM_HASH       0x00002800
+#define HSM_ASSET_POLICY_SYM_HASH_MAC   0x00012800
+#define HSM_ASSET_POLICY_SYM_AES_MAC    0x00022800
+#define HSM_ASSET_POLICY_SYM_AES_BULK   0x00032800
+#define HSM_ASSET_POLICY_SYM_AES_AUTH   0x00042800
+#define HSM_ASSET_POLICY_SYM_WRAP       0x00052800
+#define HSM_ASSET_POLICY_ASYM_SIGNVRFY  0x00004000
+#define HSM_ASSET_POLICY_ASYM_KEYEXCH   0x00014000
+#define HSM_ASSET_POLICY_ASYM_KEYPARAMS 0x000F4400
+#define HSM_ASSET_POLICY_GENERIC_DATA   0x00000400
 
-#define HSM_ASSET_POLICY_DIR_ENC_GEN  0X00100000
-#define HSM_ASSET_POLICY_DIR_DEC_VRFY 0X00200000
+#define HSM_ASSET_POLICY_PRIVATEDATA 0x00000800
+#define HSM_ASSET_POLICY_ST_ANY      0x04000000
+
+#define HSM_ASSET_POLICY_DIR_ENC_GEN  0x00100000
+#define HSM_ASSET_POLICY_DIR_DEC_VRFY 0x00200000
+#define HSM_ASSET_POLICY_DIR_ENC_DEC  0x00300000
+
+#define HSM_ASSET_POLICY_SYM_AIH_SHA2_224 0x01000000
+#define HSM_ASSET_POLICY_SYM_AIH_SHA2_256 0x01400000
+#define HSM_ASSET_POLICY_SYM_AIH_SHA2_384 0x01800000
+#define HSM_ASSET_POLICY_SYM_AIH_SHA2_512 0x01C00000
 
 #define HSM_ASSET_POLICY_SYM_MODE_ECB     0X00000000
 #define HSM_ASSET_POLICY_SYM_MODE_CBC     0X08000000
@@ -90,6 +109,16 @@
 #define HSM_ASSET_POLICY_SYM_MODE_GCM     0X08000000
 #define HSM_ASSET_POLICY_SYM_MODE_CMAC    0X00000000
 #define HSM_ASSET_POLICY_SYM_MODE_CBC_MAC 0X08000000
+
+#define HSM_ASSET_POLICY_ASYM_ECDH       0x00200000
+#define HSM_ASSET_POLICY_ASYM_ECDSA      0x00300000
+#define HSM_ASSET_POLICY_ASYM_CURVE25519 0x00400000
+#define HSM_ASSET_POLICY_ASYM_ED25519    0x00500000
+
+#define HSM_ASSET_POLICY_ASYM_SHA2_224 0x20000000
+#define HSM_ASSET_POLICY_ASYM_SHA2_256 0x28000000
+#define HSM_ASSET_POLICY_ASYM_SHA2_384 0x30000000
+#define HSM_ASSET_POLICY_ASYM_SHA2_512 0x38000000
 
 /* Encryption Defines */
 #define HSM_ENCRYPTION_TOKEN_WORD0         0x01000000
@@ -117,6 +146,22 @@
 #define HSM_MAC_TOKEN_WORD6_CONT2FINAL 0X00000010
 #define HSM_MAC_TOKEN_WORD6_INIT2CONT  0X00000020
 #define HSM_MAC_TOKEN_WORD6_CONT2CONT  0X00000030
+
+/* ECC Defines */
+#define HSM_PK_TOKEN_WORD0                         0x19000000
+#define HSM_PK_TOKEN_WORD2_CMD_ECC_KEYS_CHECK      0x00000001
+#define HSM_PK_TOKEN_WORD2_CMD_ECDSA_SIGN          0x00000006
+#define HSM_PK_TOKEN_WORD2_CMD_ECDSA_VRFY          0x00000007
+#define HSM_PK_TOKEN_WORD2_CMD_ECC_GEN_PUBKEY      0x00000014
+#define HSM_PK_TOKEN_WORD2_CMD_ECDH_GEN_SHRD_SCRT  0x00000016
+#define HSM_PK_TOKEN_WORD2_CMD_25519_GEN_PUBKEY    0x00000028
+#define HSM_PK_TOKEN_WORD2_CMD_25519_GEN_SHRD_SCRT 0x0000002A
+#define HSM_PK_TOKEN_WORD2_CMD_EDDSA_GEN_PUBKEY    0x0000002B
+#define HSM_PK_TOKEN_WORD2_CMD_EDDSA_SIGN_INITIAL  0x0000002D
+#define HSM_PK_TOKEN_WORD2_CMD_EDDSA_SIGN_UPDATE   0x0000002E
+#define HSM_PK_TOKEN_WORD2_CMD_EDDSA_SIGN_FINAL    0x0000002F
+#define HSM_PK_TOKEN_WORD2_CMD_EDDSA_VRFY_INITIAL  0x00000030
+#define HSM_PK_TOKEN_WORD2_CMD_EDDSA_VRFY_FINAL    0x00000031
 
 typedef enum
 {
@@ -200,7 +245,7 @@ void HSMLPF3_asymVectorHeaderFormat(const size_t modulusSizeBits,
  *  @param  [in]  in                    Pointer of private key buffer
  *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
  *  @param  [out] domainId              The domain to construct a vector header for (BrainPool or NIST).
- *  @param  [in]  endianness            The endianness format to copy the output in.
+ *  @param  [in]  endianness            The endianness format of the user-provided buffer(s).
  *  @param  [out] blob                  Buffer to copy the output vector to.
  */
 void HSMLPF3_asymDHPriKeyToHW(uint8_t *in,
@@ -216,7 +261,7 @@ void HSMLPF3_asymDHPriKeyToHW(uint8_t *in,
  *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
  *  @param  [in]  itemsLength           The number of sub-vector components.
  *  @param  [in]  domainId              The domain to construct a vector header for (BrainPool or NIST).
- *  @param  [in]  endianness            The endianness format to copy the output in.
+ *  @param  [in]  endianness            The endianness format of the user-provided buffer(s).
  *  @param  [out] blob                  Buffer to copy the output vector to.
  */
 void HSMLPF3_asymDHPubKeyToHW(uint8_t *in,
@@ -233,7 +278,7 @@ void HSMLPF3_asymDHPubKeyToHW(uint8_t *in,
  *  @param  [in]  in                    Pointer to the input from HSM.
  *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
  *  @param  [in]  itemsLength           The number of sub-vector components.
- *  @param  [in]  endianness            The endianness format to copy the output in.
+ *  @param  [in]  endianness            The endianness format of the user-provided buffer(s).
  *  @param  [out] out_pubKey            Buffer to copy the public key to.
  */
 void HSMLPF3_asymDHPubKeyFromHW(const uint8_t *const in,
@@ -247,11 +292,13 @@ void HSMLPF3_asymDHPubKeyFromHW(const uint8_t *const in,
  *
  *  @param  [in]  in                    Pointer to the input from HSM.
  *  @param  [in]  modulusSizeBits       Size of each sub-vector component in bits.
+ *  @param  [in]  endianness            The endianness format of the user-provided buffer(s).
  *  @param  [out] out_r                 Buffer to copy the R component of the signature to.
  *  @param  [out] out_s                 Buffer to copy the S component of the signature to.
  */
 void HSMLPF3_asymDsaSignatureFromHW(const uint8_t *const in,
                                     const size_t modulusSizeBits,
+                                    HSMLPF3_KeyMaterialEndianness endianness,
                                     uint8_t *out_r,
                                     uint8_t *out_s);
 
@@ -260,11 +307,13 @@ void HSMLPF3_asymDsaSignatureFromHW(const uint8_t *const in,
  *
  *  @param  [in]  Signature_r           Pointer to R component of the signature to copy from.
  *  @param  [in]  Signature_s           Pointer to S component of the signature to copy from.
+ *  @param  [in]  endianness            The endianness format of the user-provided buffer(s).
  *  @param  [out] modulusSizeBits       size of each sub-vector component in bits.
  *  @param  [out] blob                  Buffer to copy the output vector to.
  */
 void HSMLPF3_asymDsaSignatureToHW(const uint8_t *const Signature_r,
                                   const uint8_t *const Signature_s,
+                                  HSMLPF3_KeyMaterialEndianness endianness,
                                   const size_t modulusSizeBits,
                                   uint8_t *const blob);
 
@@ -293,3 +342,5 @@ void HSMLPF3_asymDsaPriKeyToHW(const uint8_t *const pubKey,
                                const size_t modulusSizeBits,
                                const uint8_t domainId,
                                uint8_t *const blob);
+
+/*! @endcond */

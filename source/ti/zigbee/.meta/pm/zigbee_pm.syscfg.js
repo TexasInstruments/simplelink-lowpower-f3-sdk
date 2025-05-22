@@ -77,6 +77,7 @@ const config = {
             longDescription: powerModeLongDescription,
             default: "sleepy",
             readOnly: true,
+            hidden: Common.defaultDeviceTypeIsGPD || Common.defaultDeviceTypeIsFFD,
             options: [
                 {
                     name: "alwaysOn",
@@ -95,7 +96,7 @@ const config = {
             description: pollPeriodDescription,
             longDescription: pollPeriodLongDescription,
             default: 3000,
-            hidden: false
+            hidden: Common.defaultDeviceTypeIsGPD || Common.defaultDeviceTypeIsFFD,
         },
     ],
 };

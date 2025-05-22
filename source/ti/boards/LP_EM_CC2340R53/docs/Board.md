@@ -50,7 +50,7 @@ Place the BoosterPack directly atop the LaunchPad.
 
 * No modifications are needed.
 
-### [__BP-EM-CS BoosterPack__][bp-em-cs]
+### __BP-EM-CS BoosterPack__
 
 When using a CC23X0 board, connect the P3 and P4 jumpers, and disconnect the P1
 and P2 jumpers on the BoosterPack. Add only the VC pins labelled CC23X0 in
@@ -69,4 +69,3 @@ The VC pins are used to select the antenna on the BoosterPack:
 [boostxl-sharp128]: https://www.ti.com/tool/BOOSTXL-SHARP128
 [bp-bassensorsmkii]: https://www.ti.com/tool/BP-BASSENSORSMKII
 [cc3200audboost]: https://www.ti.com/tool/CC3200AUDBOOST
-[bp-em-cs]: https://www.ti.com/tool/BP-EM-CS

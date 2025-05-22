@@ -1,0 +1,18 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2023, Arm Limited. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+menuconfig TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    bool "Internal Trusted Storage"
+    default n
+
+if TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+
+config ITS_ENCRYPTION
+    bool "Enable authenticated encryption of ITS files using platform specific APIs"
+    default n
+
+endif

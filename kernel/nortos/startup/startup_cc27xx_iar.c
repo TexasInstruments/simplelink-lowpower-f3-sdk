@@ -56,6 +56,7 @@
 static void nmiISR(void);
 static void faultISR(void);
 static void intDefaultHandler(void);
+static void secureFaultHandler(void);
 extern int main(void);
 
 //*****************************************************************************
@@ -92,7 +93,7 @@ __root void (*const __vector_table[])(void) @ ".resetVecs" = {
     intDefaultHandler,            //  4 The MPU fault handler
     intDefaultHandler,            //  5 The bus fault handler
     intDefaultHandler,            //  6 The usage fault handler
-    intDefaultHandler,            //  7 The secure fault handler
+    secureFaultHandler,           //  7 The secure fault handler
     0,                            //  8 Reserved
     0,                            //  9 Reserved
     0,                            // 10 Reserved
@@ -174,16 +175,16 @@ int localProgramStart(void)
 {
     unsigned long *vtor = (unsigned long *)0xE000ED08;
 
-    /* do final trim of device */
+    /* Do final trim of device */
     SetupTrimDevice();
 
-    /* disable interrupts */
+    /* Disable interrupts */
     __disable_irq();
     __DSB();
     __ISB();
 
     /*
-     * set vector table base to point to above vectors in Flash; during
+     * Set vector table base to point to above vectors in Flash; during
      * driverlib interrupt initialization this table will be copied to RAM
      */
     *vtor = (unsigned long)&__vector_table[0];
@@ -255,6 +256,21 @@ static void faultISR(void)
 //
 //*****************************************************************************
 static void intDefaultHandler(void)
+{
+    //
+    // Enter an infinite loop.
+    //
+    while (1) {}
+}
+
+//*****************************************************************************
+//
+//! This is the code that gets called when the processor receives a secure fault
+//! interrupt. This simply enters an infinite loop, preserving the system state
+//! for examination by a debugger.
+//
+//*****************************************************************************
+static void secureFaultHandler(void)
 {
     //
     // Enter an infinite loop.

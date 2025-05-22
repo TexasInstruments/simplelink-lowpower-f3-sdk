@@ -67,8 +67,6 @@ typedef struct RCL_s {
     LRF_RadioState            lrfState;
     RCL_PowerState            powerState;
     const LRF_Config         *lrfConfig;
-    RCL_Command              *nextCmd;
-    RCL_Command              *doneCmd;
 } RCL;
 
 /**
@@ -155,5 +153,24 @@ RCL_CommandStatus RCL_Command_stop(RCL_Command_Handle c, RCL_StopType stopType);
  * or if the radio is unavailable (e.g. in the middle of a Tx operation).
  */
 int8_t RCL_readRssi(void);
+
+/**
+ * @brief Trigger the RCL Scheduler
+ *
+ * This API is meant to be used when there is an update in the command queue by DMM due to
+ * change in order of priority. RCL will update nextCmd based on this.
+ *
+ */
+void RCL_triggerScheduler(void);
+
+/**
+ * @brief Get Phy RCL Switching time
+ *
+ * This API will return the phy switching time for the radio including the wakeup margin,
+ * configuration time, buffer preparation time and phy load time.
+ *
+ * @return Returns the phy switching time in microseconds
+ */
+uint32_t RCL_getPhySwitchingTime(void);
 
 #endif

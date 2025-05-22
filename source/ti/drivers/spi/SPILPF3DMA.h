@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -280,45 +280,59 @@
  * ### Basic Peripheral Mode #
  *  Receive 100 bytes over SPI in #SPI_MODE_BLOCKING.
  *  @code
- *  SPI_Handle handle; SPI_Params params; SPI_Transaction transaction; uint8_t
- *  rxBuf[100];     // Receive buffer
+ *  SPI_Handle handle;
+ *  SPI_Params params;
+ *  SPI_Transaction transaction;
+ *  uint8_t rxBuf[100];     // Receive buffer
  *
- *  // Init SPI and specify non-default parameters SPI_Params_init(&params);
- *  params.bitRate     = 1000000; params.frameFormat = SPI_POL1_PHA1;
+ *  // Init SPI and specify non-default parameters
+ *  SPI_Params_init(&params);
+ *  params.bitRate     = 1000000;
+ *  params.frameFormat = SPI_POL1_PHA1;
  *  params.mode        = SPI_PERIPHERAL;
  *
- *  // Configure the transaction transaction.count = 100; transaction.txBuf =
- *  NULL; transaction.rxBuf = rxBuf;
+ *  // Configure the transaction
+ *  transaction.count = 100;
+ *  transaction.txBuf = NULL;
+ *  transaction.rxBuf = rxBuf;
  *
- *  // Open the SPI and perform the transfer handle = SPI_open(CONFIG_SPI,
- *  &params); SPI_transfer(handle, &transaction);
+ *  // Open the SPI and perform the transfer
+ *  handle = SPI_open(CONFIG_SPI, &params);
+ *  SPI_transfer(handle, &transaction);
  *  @endcode
  *
  * ### Peripheral Mode With Return Partial @anchor USE_CASE_RP_23X0 #
  *  This use case will perform a transfer in #SPI_MODE_BLOCKING until the wanted
-    amount of bytes is transferred or until chip select is deasserted by the SPI
-    controller. This SPI_transfer() call can be used when unknown amount of
-    bytes shall be transferred. Note: The partial return is also possible in
-    #SPI_MODE_CALLBACK mode. Note: Polling transfers are not available when
-    using return partial mode.
+ *  amount of bytes is transferred or until chip select is deasserted by the SPI
+ *  controller. This SPI_transfer() call can be used when unknown amount of
+ *  bytes shall be transferred. Note: The partial return is also possible in
+ *  #SPI_MODE_CALLBACK mode. Note: Polling transfers are not available when
+ *  using return partial mode.
  *  @code
- *  SPI_Handle handle; SPI_Params params; SPI_Transaction transaction; uint8_t
- *  rxBuf[100];     // Receive buffer
+ *  SPI_Handle handle;
+ *  SPI_Params params;
+ *  SPI_Transaction transaction;
+ *  uint8_t rxBuf[100];     // Receive buffer
  *
- *  // Init SPI and specify non-default parameters SPI_Params_init(&params);
- *  params.bitRate     = 1000000; params.frameFormat = SPI_POL1_PHA1;
+ *  // Init SPI and specify non-default parameters
+ *  SPI_Params_init(&params);
+ *  params.bitRate     = 1000000;
+ *  params.frameFormat = SPI_POL1_PHA1;
  *  params.mode        = SPI_PERIPHERAL;
  *
- *  // Configure the transaction transaction.count = 100; transaction.txBuf =
- *  NULL; transaction.rxBuf = rxBuf;
+ *  // Configure the transaction
+ *  transaction.count = 100;
+ *  transaction.txBuf = NULL;
+ *  transaction.rxBuf = rxBuf;
  *
- *  // Open the SPI and initiate the partial read handle = SPI_open(CONFIG_SPI,
- *  &params);
+ *  // Open the SPI and initiate the partial read
+ *  handle = SPI_open(CONFIG_SPI, &params);
  *
- *  // Enable RETURN_PARTIAL SPI_control(handle,
- *  SPILPF3DMA_RETURN_PARTIAL_ENABLE, NULL);
+ *  // Enable RETURN_PARTIAL
+ *  SPI_control(handle, SPILPF3DMA_RETURN_PARTIAL_ENABLE, NULL);
  *
- *  // Begin transfer SPI_transfer(handle, &transaction);
+ *  // Begin transfer
+ *  SPI_transfer(handle, &transaction);
  *  @endcode
  *
  * ### Continuous Peripheral Transfer In #SPI_MODE_CALLBACK @anchor USE_CASE_CST_23X0 #
@@ -326,8 +340,8 @@
  *  #SPI_MODE_CALLBACK, 16 bytes at the time and echoing received data after
  *  every 16 bytes.
  *  @code
- *  // Callback function static void transferCallback(SPI_Handle handle,
- *  SPI_Transaction *transaction)
+ *  // Callback function
+ *  static void transferCallback(SPI_Handle handle, SPI_Transaction *transaction)
  *  {
  *      // Start another transfer
  *      SPI_transfer(handle, transaction);
@@ -366,19 +380,25 @@
  *  This use case will configure a SPI controller to send the data in txBuf
     while receiving data to rxBuf in BLOCKING_MODE.
  *  @code
- *  SPI_Handle handle; SPI_Params params; SPI_Transaction transaction; uint8_t
- *  txBuf[] = "Hello World";    // Transmit buffer uint8_t rxBuf[11];
- *  // Receive buffer
+ *  SPI_Handle handle;
+ *  SPI_Params params;
+ *  SPI_Transaction transaction;
+ *  uint8_t txBuf[] = "Hello World"; // Transmit buffer
+ *  uint8_t rxBuf[11];               // Receive buffer
  *
- *  // Init SPI and specify non-default parameters SPI_Params_init(&params);
+ *  // Init SPI and specify non-default parameters
+ *  SPI_Params_init(&params);
  *  params.bitRate     = 1000000; params.frameFormat = SPI_POL1_PHA1;
  *  params.mode        = SPI_CONTROLLER;
  *
- *  // Configure the transaction transaction.count = sizeof(txBuf);
- *  transaction.txBuf = txBuf; transaction.rxBuf = rxBuf;
+ *  // Configure the transaction
+ *  transaction.count = sizeof(txBuf);
+ *  transaction.txBuf = txBuf;
+ *  transaction.rxBuf = rxBuf;
  *
- *  // Open the SPI and perform the transfer handle = SPI_open(CONFIG_SPI,
- *  &params); SPI_transfer(handle, &transaction);
+ *  // Open the SPI and perform the transfer
+ *  handle = SPI_open(CONFIG_SPI, &params);
+ *  SPI_transfer(handle, &transaction);
  *  @endcode
  *
  *  ### Controller Mode With Multiple Peripherals @anchor USE_CASE_MMMS_23X0 #
@@ -390,34 +410,47 @@
     select pin.
  *
  *  @code
- *  // From ti_drivers_config.c // Use the sysconfig settings to make sure both
- *  pins are set to HIGH when not in use GPIO_PinConfig gpioPinConfigs[31] = {
+ *  // From ti_drivers_config.c
+ *  // Use the sysconfig settings to make sure both pins are set to HIGH when
+ *  // not in use
+ *  GPIO_PinConfig gpioPinConfigs[31] = {
  *      ...
  *      GPIO_CFG_OUT_STD | GPIO_CFG_OUT_HIGH, // CONFIG_CSN_0
  *      ...
  *      GPIO_CFG_OUT_STD | GPIO_CFG_OUT_HIGH, // CONFIG_CSN_1
  *  }
  *
- *  const SPILPF3DMA_HWAttrs SPILPF3DMAHWAttrs[CONFIG_SPI_COUNT] = { {   // Use
- *  SPI0 module with default chip select on CONFIG_CSN_0 .baseAddr = SPI0_BASE,
- *  .intNum = INT_SPI0_COMB, .intPriority = (~0), .swiPriority = 0, .powerID =
- *  PowerLPF3_PERIPH_SPI0, .defaultTxBufValue = 0xFF, .rxChannelBitMask =
- *  UDMA_CHANNEL_1_M, .txChannelBitMask = UDMA_CHANNEL_0_M, .rxChannelEvtMux =
- *  EVTSVT_DMACH1SEL_IPID_SPI0RXTRG, .txChannelEvtMux =
- *  EVTSVT_DMACH0SEL_IPID_SPI0TXTRG, .dmaTxTableEntryPri =
- *  &dmaChannel0ControlTableEntry, .dmaRxTableEntryPri =
- *  &dmaChannel1ControlTableEntry, .dmaTxTableEntryAlt =
- *  &dmaChannel0AltControlTableEntry, .dmaRxTableEntryAlt =
- *  &dmaChannel1AltControlTableEntry, .minDmaTransferSize = 10, .picoPinMux =
- *  GPIO_MUX_PORTCFG_PFUNC2, .pociPinMux   = GPIO_MUX_PORTCFG_PFUNC1,
- *  .sclkPinMux  = GPIO_MUX_PORTCFG_PFUNC4, .csnPinMux  =
- *  GPIO_MUX_PORTCFG_PFUNC1, .picoPin = CONFIG_GPIO_SPI_CONTROLLER_PICO,
- *  .pociPin = CONFIG_GPIO_SPI_CONTROLLER_POCI, .sclkPin  =
- *  CONFIG_GPIO_SPI_CONTROLLER_SCLK, .csnPin  = CONFIG_SPI_CSN_0,
+ *  const SPILPF3DMA_HWAttrs SPILPF3DMAHWAttrs[CONFIG_SPI_COUNT] = {
+ *      // Use SPI0 module with default chip select on CONFIG_CSN_0
+ *      .baseAddr              = SPI0_BASE,
+ *      .intNum                = INT_SPI0_COMB,
+ *      .intPriority           = (~0),
+ *      .swiPriority           = 0,
+ *      .powerID               = PowerLPF3_PERIPH_SPI0,
+ *      .defaultTxBufValue     = 0xFF,
+ *      .rxChannelBitMask      = UDMA_CHANNEL_1_M,
+ *      .txChannelBitMask      = UDMA_CHANNEL_0_M,
+ *      .rxChannelEvtMux       = EVTSVT_DMA_TRIG_SPI0RXTRG,
+ *      .txChannelEvtMux       = EVTSVT_DMA_TRIG_SPI0TXTRG,
+ *      .rxChannelSubscriberId = EVTSVT_DMA_CH1,
+ *      .txChannelSubscriberId = EVTSVT_DMA_CH0,
+ *      .dmaTxTableEntryPri    = &dmaChannel0ControlTableEntry,
+ *      .dmaRxTableEntryPri    = &dmaChannel1ControlTableEntry,
+ *      .dmaTxTableEntryAlt    = &dmaChannel0AltControlTableEntry,
+ *      .dmaRxTableEntryAlt    = &dmaChannel1AltControlTableEntry,
+ *      .minDmaTransferSize    = 10,
+ *      .picoPinMux            = GPIO_MUX_PORTCFG_PFUNC2,
+ *      .pociPinMux            = GPIO_MUX_PORTCFG_PFUNC1,
+ *      .sclkPinMux            = GPIO_MUX_PORTCFG_PFUNC4,
+ *      .csnPinMux             = GPIO_MUX_PORTCFG_PFUNC1,
+ *      .picoPin               = CONFIG_GPIO_SPI_CONTROLLER_PICO,
+ *      .pociPin               = CONFIG_GPIO_SPI_CONTROLLER_POCI,
+ *      .sclkPin               = CONFIG_GPIO_SPI_CONTROLLER_SCLK,
+ *      .csnPin                = CONFIG_SPI_CSN_0,
  *  }
  *
- *  // From your_application.c static void taskFxn(uintptr_t a0, uintptr_t a1)
- *  {
+ *  // From your_application.c
+ *  static void taskFxn(uintptr_t a0, uintptr_t a1) {
  *      SPI_Handle handle;
  *      SPI_Params params;
  *      SPI_Transaction transaction;
@@ -440,9 +473,9 @@
  *      SPI_transfer(handle, &transaction);
  *
  *      // Then switch chip select pin and perform transfer to the second
-        peripheral
-        SPI_control(handle, SPILPF3DMA_SET_CSN_PIN, &csnPin1);
-        SPI_transfer(handle, &transaction);
+ *      peripheral
+ *      SPI_control(handle, SPILPF3DMA_SET_CSN_PIN, &csnPin1);
+ *      SPI_transfer(handle, &transaction);
  *  }
  *  @endcode
  *
@@ -450,8 +483,8 @@
  *  @anchor USE_CASE_QUEUE_23X0 Below is an example of queueing three
  *  transactions
  *  @code
- *  // SPI already opened in callback mode SPI_Transaction t0, t1, t2;
- *
+ *  // SPI already opened in callback mode
+ *  SPI_Transaction t0, t1, t2;
  *  t0.txBuf = txBuff0; t0.rxBuf = rxBuff0; t0.count = 2000;
  *
  *  t1.txBuf = txBuff1; t1.rxBuf = rxBuff1; t1.count = 1000;
@@ -460,9 +493,9 @@
  *
  *  bool transferOk = false;
  *
- *  if (SPI_transfer(spiHandle, &t0)) { if (SPI_transfer(spiHandle, &t1)) {
- *      transferOk = SPI_transfer(spiHandle, &t2);
- *          }
+ *  if (SPI_transfer(spiHandle, &t0)) {
+ *      if (SPI_transfer(spiHandle, &t1)) {
+ *           transferOk = SPI_transfer(spiHandle, &t2);
  *      }
  *  }
  *  @endcode
@@ -472,101 +505,132 @@
  *  complete one after the other. From the controller's perspective there will
  *  be one long transfer.
  *  @note Manual mode also works while the device is in #SPI_CONTROLLER mode.
-    The control call to MANUAL_START will start the transfers.
+ *  The control call to MANUAL_START will start the transfers.
  *
  *  @warning Manual start mode should not be enabled or disabled while a
  *  transaction is in progress.
  *
  *  @anchor USE_CASE_MANUAL_START_23X0
  *  @code
- *  SPI_Handle spi; SPI_Params params; SPI_Transaction t0, t1; uint8_t status =
- *  SPI_STATUS_SUCCESS;
+ *  SPI_Handle spi;
+ *  SPI_Params params;
+ *  SPI_Transaction t0, t1;
+ *  uint8_t status = SPI_STATUS_SUCCESS;
  *
- *  SPI_Params_init(&params); params.mode = SPI_PERIPHERAL; spi =
- *  SPI_open(CONFIG_SPI, &params);
+ *  SPI_Params_init(&params);
+ *  params.mode = SPI_PERIPHERAL;
+ *  spi = SPI_open(CONFIG_SPI, &params);
  *
- *  if (spi == NULL) { exit(0);
+ *  if (spi == NULL) {
+ *      exit(0);
  *  }
  *
- *  // Enable manual start mode SPI_control(spi, SPILPF3DMA_CMD_SET_MANUAL,
- *  NULL);
+ *  // Enable manual start mode
+ *  SPI_control(spi, SPILPF3DMA_CMD_SET_MANUAL, NULL);
  *
- *  // Queue transactions t0.txBuf = txBuff0; t0.rxBuf = rxBuff0; t0.count =
- *  2000; if (!SPI_transfer(spi, &t0)) { status = SPI_STATUS_FAIL;
+ *  // Queue transactions
+ *  t0.txBuf = txBuff0;
+ *  t0.rxBuf = rxBuff0;
+ *  t0.count = 2000;
+ *  if (!SPI_transfer(spi, &t0)) {
+ *      status = SPI_STATUS_FAIL;
  *  }
  *
- *  t1.txBuf = txBuff1; t1.rxBuf = rxBuff1; t1.count = 1000; if
- *  (!SPI_transfer(spi, &t1)) { status = SPI_STATUS_FAIL;
+ *  t1.txBuf = txBuff1;
+ *  t1.rxBuf = rxBuff1;
+ *  t1.count = 1000;
+ *  if (!SPI_transfer(spi, &t1)) {
+ *      status = SPI_STATUS_FAIL;
  *  }
  *
- *  // Enable the transfers if (status == SPI_STATUS_SUCCESS) { SPI_control(spi,
- *  SPILPF3DMA_CMD_MANUAL_START, NULL);
+ *  // Enable the transfers
+ *  if (status == SPI_STATUS_SUCCESS) {
+ *      SPI_control(spi, SPILPF3DMA_CMD_MANUAL_START, NULL);
  *  }
- *  else { status = SPI_STATUS_FAILURE;
+ *  else {
+ *      status = SPI_STATUS_FAILURE;
  *  }
  *
- *  // At this point the peripheral is ready for the controller to start the
-    transfer // Assume the callback implementation (not shown) posts a semaphore
-    when // the last transaction completes sem_wait(&spiSemaphore);
+ *  // At this point the peripheral is ready for the controller to
+ *  // start the transfer
+ *  // Assume the callback implementation (not shown) posts a semaphore when
+ *  // the last transaction completes
+ *  sem_wait(&spiSemaphore);
  *
- *  // Disable manual start mode SPI_control(spi, SPILPF3DMA_CMD_CLR_MANUAL,
- *  NULL);
+ *  // Disable manual start mode
+ *  SPI_control(spi, SPILPF3DMA_CMD_CLR_MANUAL, NULL);
  *
  *  @endcode
  *
  *  ### Ensure low power during inactive periods @anchor USE_CASE_LPWR_23X0 #
  *  External hardware connected on the SPI, i.e. SPI controller/peripheral,
-    might have configured a pull on one or more of the SPI lines. Dependent on
-    the hardware, it might conflict with the pull used for the Low Power F3
-    device SPI. To avoid increased leakage and ensure the lowest possible power
-    consumption when the SPI is inactive, the application must configure a
-    matching pull on the SPI IOs. An example of how this can be done is shown
-    below.
+ *  might have configured a pull on one or more of the SPI lines. Dependent on
+ *  the hardware, it might conflict with the pull used for the Low Power F3
+ *  device SPI. To avoid increased leakage and ensure the lowest possible power
+ *  consumption when the SPI is inactive, the application must configure a
+ *  matching pull on the SPI IOs. An example of how this can be done is shown
+ *  below.
  *
  *  @code
- *  SPI_Params params; SPI_Transaction transaction; uint8_t txBuf[] =
- *  "Heartbeat";    // Transmit buffer uint8_t rxBuf[9];                 //
- *  Receive buffer uint32_t standbyDurationMs = 100;
+ *  SPI_Params params;
+ *  SPI_Transaction transaction;
+ *  uint8_t txBuf[] = "Heartbeat"; // Transmit buffer
+ *  uint8_t rxBuf[9];              // Receive buffer
+ *  uint32_t standbyDurationMs = 100;
  *
- *  // Init SPI and specify non-default parameters SPI_Params_init(&params);
- *  params.bitRate     = 1000000; params.frameFormat = SPI_POL1_PHA1;
+ *  // Init SPI and specify non-default parameters
+ *  SPI_Params_init(&params);
+ *  params.bitRate     = 1000000;
+ *  params.frameFormat = SPI_POL1_PHA1;
  *  params.mode        = SPI_CONTROLLER;
  *
- *  // Configure the transaction transaction.count = sizeof(txBuf);
- *  transaction.txBuf = txBuf; transaction.rxBuf = rxBuf;
+ *  // Configure the transaction
+ *  transaction.count = sizeof(txBuf);
+ *  transaction.txBuf = txBuf;
+ *  transaction.rxBuf = rxBuf;
  *
- *  // Open the SPI and perform the transfer handle = SPI_open(CONFIG_SPI_0,
- *  &params);
+ *  // Open the SPI and perform the transfer
+ *  handle = SPI_open(CONFIG_SPI_0, &params);
  *
  *  // Apply low power sleep pull config for POCI
  *  GPIO_setConfig(CONFIG_GPIO_SPI_0_POCI, GPIO_CFG_IN_PU);
  *
- *  // Do forever while(1) { // Transfer data SPI_transfer(handle,
- *  &transaction); // Sleep Task_sleep(standbyDurationMs*100);
+ *  // Do forever
+ *  while(1) {
+ *      // Transfer data
+ *      SPI_transfer(handle, &transaction);
+ *
+ *      // Sleep
+ *      Task_sleep(standbyDurationMs*100);
  *  }
  *  @endcode
  *
  *  ### Wake Up On Chip Select Deassertion In Peripheral Mode Using #SPI_MODE_CALLBACK #
  *  This example demonstrates using a GPIO callback on Chip Select to wake up
-    the device to allow low power modes while waiting for a chip select edge.
+ *  the device to allow low power modes while waiting for a chip select edge.
  *
  *  In sysconfig or the board file, the CSN GPIO should be configured as
  *  input/pull up with an interrupt on falling edge. Otherwise, SPI_close() will
  *  reset the pin to the wrong settings and you may see line glitches.
  *
  *  *Note: The SPI controller must allow enough time between deasserting the
-    chip select and the start of the transaction for the SPI peripheral to wake
-    up and open up the SPI driver.
+ *  chip select and the start of the transaction for the SPI peripheral to wake
+ *  up and open up the SPI driver.
  *
  *  @code
- *  // Global variables SPI_Handle spiHandle SPI_Params spiParams;
- *  SPI_Transaction spiTransaction; const uint8_t transferSize = 8; uint8_t
- *  txBuf[8];
+ *  // Global variables
+ *  SPI_Handle spiHandle;
+ *  SPI_Params spiParams;
+ *  SPI_Transaction spiTransaction;
+ *  const uint8_t transferSize = 8;
+ *  uint8_t txBuf[8];
  *
- *  // Chip select callback static void chipSelectCallback(uint_least8_t)
+ *  // Chip select callback
+ *  static void chipSelectCallback(uint_least8_t)
  *  {
  *      // Open SPI driver, which will override any previous GPIO configuration
  *      spiHandle = SPI_open(CONFIG_SPI, &spiParams);
+ *
  *      // Issue the transfer
  *      SPI_transfer(spiHandle, &spiTransaction);
  *  }
@@ -804,11 +868,12 @@ typedef enum
 /*!
  *  @brief  SPILPF3DMA Hardware attributes
  *
- *  These fields, with the exception of intPriority,
- *  are used by driverlib APIs and therefore must be populated by
- *  driverlib macro definitions. For driverlib these definitions are found in:
+ *  Many of these fields are used by driverlib APIs and therefore must be
+ *  populated by driverlib macro definitions. For driverlib these definitions
+ *  are found in:
  *      - inc/hw_memmap.h
  *      - inc/hw_ints.h
+ *      - driverlib/evtsvt.h
  *      - driverlib/udma.h
  *
  *  intPriority is the SPI peripheral's interrupt priority, as defined by the
@@ -823,34 +888,33 @@ typedef enum
  *
  *  A sample structure is shown below:
  *  @code
- *  const SPILPF3DMA_HWAttrs SPILPF3DMAobjects[] = {
+ *  const SPILPF3DMA_HWAttrs SPILPF3DMAobjects[CONFIG_SPI_COUNT] = {
  *      {
- *          .baseAddr = SPI0_BASE,
- *          .intNum = INT_SPI0,
- *          .intPriority = ~0,
- *          .swiPriority = 0,
- *          .powerMngrId = PERIPH_SPI0,
- *          .defaultTxBufValue = 0,
- *          .rxChannelBitMask = UDMA_CHAN_SPI0_RX,
- *          .txChannelBitMask = UDMA_CHAN_SPI0_TX,
- *          .picoPin = CONFIG_SPI0_POCI,
- *          .pociPin = CONFIG_SPI0_PICO,
- *          .clkPin = CONFIG_SPI0_CLK,
- *          .csnPin = CONFIG_SPI0_CSN
- *      },
- *      {
- *          .baseAddr = SPI1_BASE,
- *          .intNum = INT_SPI1,
- *          .intPriority = ~0,
- *          .swiPriority = 0,
- *          .powerMngrId = PERIPH_SPI1,
- *          .defaultTxBufValue = 0,
- *          .rxChannelBitMask = UDMA_CHAN_SPI1_RX,
- *          .txChannelBitMask = UDMA_CHAN_SPI1_TX,
- *          .picoPin = CONFIG_SPI1_POCI,
- *          .pociPin = CONFIG_SPI1_PICO,
- *          .clkPin = CONFIG_SPI1_CLK,
- *          .csnPin = CONFIG_SPI1_CSN
+ *          .baseAddr              = SPI0_BASE,
+ *          .intNum                = INT_SPI0_COMB,
+ *          .intPriority           = (~0),
+ *          .swiPriority           = 0,
+ *          .powerID               = PowerLPF3_PERIPH_SPI0,
+ *          .defaultTxBufValue     = 0xFF,
+ *          .rxChannelBitMask      = UDMA_CHANNEL_1_M,
+ *          .txChannelBitMask      = UDMA_CHANNEL_0_M,
+ *          .rxChannelEvtMux       = EVTSVT_DMA_TRIG_SPI0RXTRG,
+ *          .txChannelEvtMux       = EVTSVT_DMA_TRIG_SPI0TXTRG,
+ *          .rxChannelSubscriberId = EVTSVT_DMA_CH1,
+ *          .txChannelSubscriberId = EVTSVT_DMA_CH0,
+ *          .dmaTxTableEntryPri    = &dmaChannel0ControlTableEntry,
+ *          .dmaRxTableEntryPri    = &dmaChannel1ControlTableEntry,
+ *          .dmaTxTableEntryAlt    = &dmaChannel0AltControlTableEntry,
+ *          .dmaRxTableEntryAlt    = &dmaChannel1AltControlTableEntry,
+ *          .minDmaTransferSize    = 10,
+ *          .picoPinMux            = GPIO_MUX_PORTCFG_PFUNC2,
+ *          .pociPinMux            = GPIO_MUX_PORTCFG_PFUNC1,
+ *          .sclkPinMux            = GPIO_MUX_PORTCFG_PFUNC4,
+ *          .csnPinMux             = GPIO_MUX_PORTCFG_PFUNC1,
+ *          .picoPin               = CONFIG_GPIO_SPI_CONTROLLER_PICO,
+ *          .pociPin               = CONFIG_GPIO_SPI_CONTROLLER_POCI,
+ *          .sclkPin               = CONFIG_GPIO_SPI_CONTROLLER_SCLK,
+ *          .csnPin                = CONFIG_SPI_CSN_0,
  *      },
  *  };
  *  @endcode
@@ -918,6 +982,14 @@ typedef struct
     uint_least8_t sclkPin;
     /*! SPI CSN pin */
     uint_least8_t csnPin;
+    /*! DMA subscriber ID for this SPI TX channel, as defined in
+     *  driverlib/evtsvt.h
+     */
+    uint32_t txChannelSubscriberId;
+    /*! DMA subscriber ID for this SPI RX channel, as defined in
+     * driverlib/evtsvt.h
+     */
+    uint32_t rxChannelSubscriberId;
 } SPILPF3DMA_HWAttrs;
 
 /*!

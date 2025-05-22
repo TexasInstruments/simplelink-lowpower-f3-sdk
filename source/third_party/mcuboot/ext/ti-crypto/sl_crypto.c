@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,36 +35,65 @@
 #include "mcuboot_config.h"
 #include "string.h"
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if defined(IS_CC13XX_CC26XX)
 #include "ti/common/cc26xx/sha2/sha2_driverlib.h"
 #include "ti/common/cc26xx/ecc/ECDSACC26X4_driverlib.h"
 #include "ti/common/cc26xx/ecc/AESCTRCC26X4_driverlib.h"
-#else
+#elif defined(IS_CC27XX)
+#include "ti/common/hsm/HSMBareMetal.h"
+#include "ti/common/hsm/HSMBareMetalECCUtility.h"
+#elif defined(IS_CC23XX)
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 #include "ti/common/ecdsa_lpf3/ecdsa_lpf3.h"
 #endif
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
-static SHA256SW_Object sha256SWObject;
-static SHA256SW_Handle sha256SWHandle = &sha256SWObject;
-#endif
-
+/* define macros */
 #if defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
 #define ECDSA_PUB_KEY_SIZE 64
-
-/*********************************************************************
- * GLOBAL FUNCTION REFERENCES
- ********************************************************************/
-extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *,
-                                 uint32_t *);
-
-
-uint32_t eccWorkzone[SECURE_FW_ECC_NIST_P256_WORKZONE_LEN_IN_BYTES + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES)*5] = {0};
-
+#endif
+#if defined(IS_CC27XX)
+#define DIGEST_MAX_LENGTH 32U
+#define BUFFER_MAX_LENGTH 256U
 #endif
 
-#if defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
+/* global variables */
+#if defined(IS_CC23XX)
+static SHA256SW_Object sha256SWObject;
+static SHA256SW_Handle sha256SWHandle = &sha256SWObject;
+#elif defined(IS_CC27XX)
+/* sl_crypto handle for CC27XX */
+typedef struct
+{
+    uint8_t remainingBuffer[BUFFER_MAX_LENGTH];
+    uint8_t intermediateDigest[DIGEST_MAX_LENGTH];
+    uint32_t remainingBufferSize;
+    uint32_t blockSize;
+    uint32_t totalMessageLength;
+    bool     sha256HSMInitial;
+} SHA256_Handle;
+
+
+static HSMBareMetal_CryptoKeyStruct publicKey;
+static HSMBareMetal_ECCOperationStruct ecdsaHSMObject;
+static SHA256_Handle sha256SlCryptoHandle;
+#endif
+
+#if defined(IS_CC13X2_CC26X2)
+uint32_t eccWorkzone[SECURE_FW_ECC_NIST_P256_WORKZONE_LEN_IN_BYTES + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES)*5] = {0};
+#endif
+
+/* extern */
+#if defined(IS_CC13X2_CC26X2)
+extern uint8_t ECDSA_verif(uint32_t *, uint32_t *, uint32_t *, uint32_t *, uint32_t *);
+#endif
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
+extern AESCTR_OneStepOperation operation_g;
+extern CryptoKey_Plaintext aesKey_g;
+#endif
+
+/* Utility functions */
+#if defined(IS_CC13X2_CC26X2)
 
 /*********************************************************************
  * @fn         reverseOrder
@@ -98,7 +127,36 @@ static void copyBytes(uint8_t *pDst, const uint8_t *pSrc, uint32_t len)
       pDst[i]=pSrc[i];
   }
 }
+#endif
 
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
+int_fast16_t ECCParams_getUncompressedGeneratorPoint(const ECCParams_CurveParams *curveParams,
+                                                     uint8_t *buffer,
+                                                     size_t length)
+{
+
+    size_t paramLength = curveParams->length;
+    size_t pointLength = (paramLength * 2) + 1;
+
+    if (length < pointLength)
+    {
+        return -1;
+    }
+
+    /* Reverse and concatenate x and y */
+    uint32_t i = 0;
+    for (i = 0; i < paramLength; i++)
+    {
+        buffer[i + 1]               = curveParams->generatorX[paramLength - i - 1];
+        buffer[i + 1 + paramLength] = curveParams->generatorY[paramLength - i - 1];
+    }
+
+    buffer[0] = 0x04;
+    /* Fill the remaining buffer with 0 if needed */
+    memset(buffer + pointLength, 0, length - pointLength);
+
+    return 0;
+}
 #endif
 
 /*
@@ -106,9 +164,16 @@ static void copyBytes(uint8_t *pDst, const uint8_t *pSrc, uint32_t len)
  */
 void SlCrypto_sha256_init(void)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SHA2_open();
-#else
+#elif defined(IS_CC27XX)
+    memset(&sha256SlCryptoHandle, 0x00, sizeof(SHA256_Handle));
+    HSMBareMetal_init();
+    /* Init the SHA256 sl_crypto handle*/
+    sha256SlCryptoHandle.blockSize = 64U;
+    sha256SlCryptoHandle.remainingBufferSize = 0U;
+    sha256SlCryptoHandle.sha256HSMInitial = true;
+#elif defined(IS_CC23XX)
     HapiSha256SwStart(sha256SWHandle);
 #endif
 }
@@ -116,45 +181,200 @@ void SlCrypto_sha256_init(void)
 
 void SlCrypto_sha256_drop(void)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SHA2_close();
+#elif defined(IS_CC27XX)
+    HSMBareMetal_deInit();
 #endif
 }
-
 int SlCrypto_sha256_update(const void *data,
                            uint32_t data_len)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+    int8_t rtn = -1;
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SHA2_open();
-    return SHA2_addData(data, data_len);
-#else
-    return HapiSha256SwAddData(sha256SWHandle, data, data_len);
+    rtn = SHA2_addData(data, data_len);
+#elif defined(IS_CC27XX)
+
+    uint8_t inputData[BUFFER_MAX_LENGTH];
+    uint8_t inputDataLen = 0U;
+    HSMBareMetal_HASHOperationStruct sha256HSMObject;
+    HSMBareMetal_HASHOperation_init(&sha256HSMObject);
+    uint8_t digest[DIGEST_MAX_LENGTH] ={0U};
+
+    /* if bytes in buffer is more than blockSize */
+    if(sha256SlCryptoHandle.remainingBufferSize + data_len > sha256SlCryptoHandle.blockSize)
+    {
+        /* if there are still bytes in the handler buffer */
+        if(sha256SlCryptoHandle.remainingBufferSize > 0)
+        {
+            /*If there is at least 1 block size of data, perform hsm operation */
+            if(sha256SlCryptoHandle.remainingBufferSize >= sha256SlCryptoHandle.blockSize)
+            {
+                /* copy handler buffer data to the inputData buffer */
+                memcpy(inputData, sha256SlCryptoHandle.remainingBuffer, sha256SlCryptoHandle.remainingBufferSize);
+                inputDataLen += sha256SlCryptoHandle.remainingBufferSize;
+
+                (void)memcpy(digest, sha256SlCryptoHandle.intermediateDigest, (DIGEST_MAX_LENGTH));
+                /* perform baremetal operation */
+                sha256HSMObject.input         = (uint8_t *)inputData;
+                sha256HSMObject.inputLength   = inputDataLen;
+                sha256HSMObject.digest        = digest;
+                sha256HSMObject.operationMode = HSMBareMetal_HASH_MODE_SHA2_256;
+
+                if(sha256SlCryptoHandle.sha256HSMInitial)
+                {
+                    sha256HSMObject.operationType = HSMBareMetal_HASH_TYPE_INIT_TO_CONT;
+                    sha256SlCryptoHandle.sha256HSMInitial = false;
+                }
+                else
+                {
+                    sha256HSMObject.operationType = HSMBareMetal_HASH_TYPE_CONT_TO_CONT;
+                }
+                rtn = HSMBareMetal_HASHOperation(&sha256HSMObject);
+                /* copy final digest */
+                (void)memcpy(sha256SlCryptoHandle.intermediateDigest, (void *)sha256HSMObject.digest, (DIGEST_MAX_LENGTH));
+                sha256SlCryptoHandle.totalMessageLength += inputDataLen;
+                sha256SlCryptoHandle.remainingBufferSize = 0U;
+            }
+        }
+        uint8_t remainingBytes = 0U;
+
+        /* leave at least 1 blockSize in buffer */
+        if (data_len > sha256SlCryptoHandle.blockSize)
+        {
+            inputDataLen = data_len - sha256SlCryptoHandle.blockSize;
+            remainingBytes = sha256SlCryptoHandle.blockSize;
+        }
+
+        /* Is there any data left to process ? */
+        if(inputDataLen > sha256SlCryptoHandle.blockSize)
+        {
+            /* is remaining blockSize aligned?
+             * if no, copy upto the closest block aligned data for input and copy rest to buffer
+             * if yes, copy the 1 blockSize of data from earlier
+             */
+            if(inputDataLen % sha256SlCryptoHandle.blockSize != 0U)
+            {
+                uint8_t leastAlignedBytes = (inputDataLen / sha256SlCryptoHandle.blockSize) * sha256SlCryptoHandle.blockSize;
+                remainingBytes += inputDataLen - leastAlignedBytes;
+                inputDataLen = leastAlignedBytes;
+            }
+
+            memcpy(sha256SlCryptoHandle.remainingBuffer, (uint8_t *)data + inputDataLen, remainingBytes);
+            sha256SlCryptoHandle.remainingBufferSize = remainingBytes;
+            memcpy(inputData, data, inputDataLen);
+
+            (void)memcpy(digest, sha256SlCryptoHandle.intermediateDigest, (DIGEST_MAX_LENGTH));
+
+            /* perform baremetal operation */
+            sha256HSMObject.input         = (uint8_t *)inputData;
+            sha256HSMObject.inputLength   = inputDataLen;
+            sha256HSMObject.digest        = digest;
+            sha256HSMObject.operationMode = HSMBareMetal_HASH_MODE_SHA2_256;
+
+            if(sha256SlCryptoHandle.sha256HSMInitial)
+            {
+                sha256HSMObject.operationType = HSMBareMetal_HASH_TYPE_INIT_TO_CONT;
+                sha256SlCryptoHandle.sha256HSMInitial = false;
+            }
+            else
+            {
+                sha256HSMObject.operationType = HSMBareMetal_HASH_TYPE_CONT_TO_CONT;
+            }
+
+            rtn = HSMBareMetal_HASHOperation(&sha256HSMObject);
+            
+            /* copy final digest */
+            (void)memcpy(sha256SlCryptoHandle.intermediateDigest, (void *)sha256HSMObject.digest, (DIGEST_MAX_LENGTH));
+            sha256SlCryptoHandle.totalMessageLength += inputDataLen;
+        }
+
+        /* copy all to buffer if there isn't enough data to process after reserving a block size */
+        else
+        {
+            memcpy(sha256SlCryptoHandle.remainingBuffer, data, data_len);
+            sha256SlCryptoHandle.remainingBufferSize = data_len;
+        }
+    }
+
+    /* if bytes in buffer is the same size as blockSize or less than blockSize */
+    else
+    {
+        uint8_t *bufferTail = &sha256SlCryptoHandle.remainingBuffer[sha256SlCryptoHandle.remainingBufferSize];
+        memcpy(bufferTail, data, data_len);
+        sha256SlCryptoHandle.remainingBufferSize += data_len;
+        rtn = 0U;
+    }
+#elif defined(IS_CC23XX)
+    rtn = HapiSha256SwAddData(sha256SWHandle, data, data_len);
 #endif
+    return rtn;
 }
 
 int SlCrypto_sha256_final(uint8_t *output)
 {
     int rtn;
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SlCrypto_sha256_init();
     rtn = SHA2_finalize(output);
     SHA2_close();
-#else
+#elif defined(IS_CC27XX)
+
+    uint8_t inputData[BUFFER_MAX_LENGTH];
+    uint8_t digest[DIGEST_MAX_LENGTH] = {0U};
+    uint8_t inputDataLen = 0U;
+    HSMBareMetal_HASHOperationStruct sha256HSMObject;
+    HSMBareMetal_HASHOperation_init(&sha256HSMObject);
+    
+    /* copy remaining buffer to perform final operation */
+    memcpy(inputData, sha256SlCryptoHandle.remainingBuffer, sha256SlCryptoHandle.remainingBufferSize);
+    inputDataLen = sha256SlCryptoHandle.remainingBufferSize;
+
+    (void)memcpy(digest, sha256SlCryptoHandle.intermediateDigest, (DIGEST_MAX_LENGTH));
+    sha256HSMObject.input         = (uint8_t *)inputData;
+    sha256HSMObject.inputLength   = inputDataLen;
+    sha256HSMObject.digest        = digest;
+    sha256HSMObject.operationMode = HSMBareMetal_HASH_MODE_SHA2_256;
+    sha256HSMObject.totalInputLength = sha256SlCryptoHandle.totalMessageLength + inputDataLen;
+
+    if(sha256SlCryptoHandle.sha256HSMInitial)
+    {
+        sha256HSMObject.operationType = HSMBareMetal_HASH_TYPE_INIT_TO_FINAL;
+        sha256SlCryptoHandle.sha256HSMInitial = false;
+    }
+    else
+    {
+        sha256HSMObject.operationType = HSMBareMetal_HASH_TYPE_CONT_TO_FINAL;
+    }
+
+    rtn = HSMBareMetal_HASHOperation(&sha256HSMObject);
+    sha256SlCryptoHandle.totalMessageLength += inputDataLen;
+
+    /* copy final digest */
+    (void)memcpy((void *)output, (void *)sha256HSMObject.digest, (DIGEST_MAX_LENGTH));
+    
+#elif defined(IS_CC23XX)
     rtn = HapiSha256SwFinalize(sha256SWHandle, (uint32_t*)output);
 #endif
 
     return rtn;
 }
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
 int SlCrypto_sha256_setupHmac(const uint8_t *key, unsigned int key_size) {
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     return (SHA2_setupHmac(key, key_size));
+#endif
+    return 0U;
 }
 
 int SlCrypto_sha256_finalizeHmac(uint8_t *tag) {
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     return (SHA2_finalizeHmac(tag));
-}
 #endif
+    return 0U;
+}
+
 
 /*
  *  ======== ECDSA & ECDH ========
@@ -162,7 +382,7 @@ int SlCrypto_sha256_finalizeHmac(uint8_t *tag) {
 
 void SlCrypto_ecdsa_p256_init(void)
 {
-#if defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
+#if defined(IS_CC13X2_CC26X2)
 
     /* Store client parameters into ECC ROM parameters */
     eccRom_param_p  = &NIST_Curve_P256_p;
@@ -175,27 +395,31 @@ void SlCrypto_ecdsa_p256_init(void)
     /* Initialize window size */
     eccRom_windowSize = SECURE_FW_ECC_WINDOW_SIZE;
 
-#else
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
-        ECDSA_open();
 #endif
+
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
+    ECDSA_open();
+#endif
+#if defined(IS_CC27XX)
+    HSMBareMetal_init();
+    HSMBareMetal_ECCOperation_init(&ecdsaHSMObject);
 #endif
 }
 
 void SlCrypto_ecdsa_p256_drop(void)
 {
-#if defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
+#if defined(IS_CC13X2_CC26X2)
     return;
-#else
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#elif defined(IS_CC13X2X7_CC13X4_CC26X4)
     ECDSA_close();
-#endif
+#elif defined(IS_CC27XX)
+    HSMBareMetal_deInit();
 #endif
 }
 
 int SlCrypto_ecdsa_p256_verify(const uint8_t *pk, const uint8_t *hash, const uint8_t *sig)
 {
-#if defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
+#if defined(IS_CC13X2_CC26X2)
     uint8_t *publicKeyXBuf;
     uint8_t *publicKeyYBuf;
     uint8_t *hashBuf;
@@ -288,7 +512,7 @@ int SlCrypto_ecdsa_p256_verify(const uint8_t *pk, const uint8_t *hash, const uin
     }
 
     return 0;
-#else
+#elif defined(IS_CC13X2X7_CC13X4_CC26X4) || defined(IS_CC23XX)
     CryptoKey_Plaintext publicKey;
     ECDSA_OperationVerify operationVerify;
     int_fast16_t operationResult;
@@ -306,7 +530,7 @@ int SlCrypto_ecdsa_p256_verify(const uint8_t *pk, const uint8_t *hash, const uin
                                sizeof(publicKeyingMaterial));
 
     /* Initialize the operation */
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     operationVerify.curve           = &ECCParams_NISTP256;
 #endif
     operationVerify.theirPublicKey  = &publicKey;
@@ -321,44 +545,28 @@ int SlCrypto_ecdsa_p256_verify(const uint8_t *pk, const uint8_t *hash, const uin
         return -1;
     }
     return 0;
+#elif defined(IS_CC27XX)
+    uint8_t newpk[65] = {0};
+    newpk[0] = 0x04;
+    memcpy(&newpk[1], pk, 64);
+    HSMBareMetal_CryptoKeyPlaintext_initKey(&publicKey, (uint8_t *)&newpk, 65);
+
+    ecdsaHSMObject.publicKey          = &publicKey;
+    ecdsaHSMObject.hashDigest         = (uint8_t *)hash;
+    ecdsaHSMObject.signatureR         = (uint8_t *)sig;
+    ecdsaHSMObject.signatureS         = (uint8_t *)sig + 32;
+    ecdsaHSMObject.operationMode      = HSMBareMetal_PK_MODE_ECDSA_VERIFY;
+    ecdsaHSMObject.operationCurveType = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+
+    return HSMBareMetal_ECCOperation(&ecdsaHSMObject);
+#else
+    return -1;
 #endif
 }
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
-/*
- *  ======== ECCParams_getUncompressedGeneratorPoint ========
- */
-int_fast16_t ECCParams_getUncompressedGeneratorPoint(const ECCParams_CurveParams *curveParams,
-                                                     uint8_t *buffer,
-                                                     size_t length)
+int SlCrypto_ecdh_p256_computeSharedSecret(const uint8_t *pk, const uint8_t *sk, uint8_t *z) 
 {
-
-    size_t paramLength = curveParams->length;
-    size_t pointLength = (paramLength * 2) + 1;
-
-    if (length < pointLength)
-    {
-        return -1;
-    }
-
-    /* Reverse and concatenate x and y */
-    uint32_t i = 0;
-    for (i = 0; i < paramLength; i++)
-    {
-        buffer[i + 1]               = curveParams->generatorX[paramLength - i - 1];
-        buffer[i + 1 + paramLength] = curveParams->generatorY[paramLength - i - 1];
-    }
-
-    buffer[0] = 0x04;
-    /* Fill the remaining buffer with 0 if needed */
-    memset(buffer + pointLength, 0, length - pointLength);
-
-    return 0;
-}
-
-
-int SlCrypto_ecdh_p256_computeSharedSecret(const uint8_t *pk, const uint8_t *sk, uint8_t *z) {
-
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     ECDH_OperationComputeSharedSecret operation;
     CryptoKey_Plaintext privateKey;
     CryptoKey_Plaintext publicKey;
@@ -384,85 +592,83 @@ int SlCrypto_ecdh_p256_computeSharedSecret(const uint8_t *pk, const uint8_t *sk,
     CryptoKeyPlaintext_initKey(&SharedKey, z,
                                2*SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES+1);
 
-    /* Test code */
-    //ECCParams_getUncompressedGeneratorPoint(&ECCParams_NISTP256,publicKeyingMaterial,sizeof(publicKeyingMaterial)); // only for test.
-
     /* Initialize the operation */
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
     operation.curve           = &ECCParams_NISTP256;
-#endif
     operation.myPrivateKey = &privateKey;
     operation.theirPublicKey = &publicKey;
     operation.sharedSecret = &SharedKey;
-//#ifdef ECDH_BIG_ENDIAN_KEY
-//    operation.keyMaterialEndianness = ECDH_BIG_ENDIAN_KEY; //ECDH_LITTLE_ENDIAN_KEY;
-//#elif
-//    operation.keyMaterialEndianness = ECDH_LITTLE_ENDIAN_KEY;
-//#endif
-
-
     return ECDH_computeSharedSecret(&operation);
+#endif
+    return -1;
 }
 
 /*
  *  ======== AESCTR ========
  */
 
-extern AESCTR_OneStepOperation operation_g;
-extern CryptoKey_Plaintext aesKey_g;
-
-void SlCrypto_aesctr_init(void) {
+void SlCrypto_aesctr_init(void)
+{
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     AES_open();
+#endif
 }
 
-void SlCrypto_aesctr_drop(void) {
+void SlCrypto_aesctr_drop(void)
+{
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     AES_close();
+#endif
 }
 
 
-int SlCrypto_aesctr_setKey(const uint8_t *keyingMaterial) {
+int SlCrypto_aesctr_setKey(const uint8_t *keyingMaterial)
+{
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
 
-    SlCrypto_aesctr_init(); //make sure the prcm peripherals are enabled
+    //ensure the prcm peripherals are enabled
+    SlCrypto_aesctr_init();
 
     /* init operation */
     memset(&operation_g, 0x00, sizeof(AESCTR_OneStepOperation));
 
-    //uint8_t aesKeyMaterial[AES_CTR_KEY_SIZE] =  {0};
-    //memcpy(aesKeyMaterial, keyingMaterial, AES_CTR_KEY_SIZE);
-
-    CryptoKeyPlaintext_initKey(&aesKey_g,
-                               (uint8_t *) keyingMaterial,
-                               AES_CTR_KEY_SIZE);
+    CryptoKeyPlaintext_initKey(&aesKey_g, (uint8_t *) keyingMaterial, AES_CTR_KEY_SIZE);
 
     /* Get the key */
     operation_g.key = &aesKey_g;
 
     return 0;
+#endif
+    return 0U;
 }
 
 int SlCrypto_aesctr_encrypt(uint8_t *counter, const uint8_t *m, uint32_t mlen, size_t blk_off, uint8_t *c)
 {
-    SlCrypto_aesctr_init(); //make sure the prcm peripherals are enabled
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
+    
+    //ensure the prcm peripherals are enabled
+    SlCrypto_aesctr_init(); 
     operation_g.input             = m;
     operation_g.inputLength       = mlen;
     operation_g.initialCounter    = counter;
     operation_g.output            = c;
 
     return AESCTR_oneStepEncrypt (&operation_g);
-    //return 0;
-    //return AESCTR_startOneStepOperation(&operation_g, AESCTR_OPERATION_TYPE_ENCRYPT);
-
+#endif
+    return 0U;
 }
 
 int SlCrypto_aesctr_decrypt(uint8_t *counter, const uint8_t *c, uint32_t clen, size_t blk_off, uint8_t *m)
 {
-    SlCrypto_aesctr_init(); //make sure the prcm peripherals are enabled
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
+
+    //ensure the prcm peripherals are enabled
+    SlCrypto_aesctr_init(); 
     operation_g.input             = c;
     operation_g.inputLength       = clen;
     operation_g.initialCounter    = counter;
     operation_g.output            = m;
 
-    return AESCTR_oneStepDecrypt (&operation_g);
-    //return AESCTR_startOneStepOperation(&operation_g, AESCTR_OPERATION_TYPE_DECRYPT);
-}
+    return AESCTR_oneStepDecrypt(&operation_g);
 #endif
+    return 0U;
+}

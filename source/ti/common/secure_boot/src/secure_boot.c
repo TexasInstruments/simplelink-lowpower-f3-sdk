@@ -46,8 +46,7 @@
 /* Driver configuration */
 #include "ti_drivers_config.h"
 
-
-#define BLINK_INTERVAL     500000  /* 500 ms */
+#define BLINK_INTERVAL 500000 /* 500 ms */
 
 /*
  *  ======== mainThread ========
@@ -58,11 +57,10 @@ void *mainThread(void *arg0)
     GPIO_write(CONFIG_GPIO_LED_0, CONFIG_GPIO_LED_ON);
     GPIO_write(CONFIG_GPIO_LED_1, CONFIG_GPIO_LED_OFF);
 
-    while(1)
+    while (1)
     {
         usleep(BLINK_INTERVAL);
         GPIO_write(CONFIG_GPIO_LED_0, !GPIO_read(CONFIG_GPIO_LED_0));
         GPIO_write(CONFIG_GPIO_LED_1, !GPIO_read(CONFIG_GPIO_LED_1));
     }
 }
-

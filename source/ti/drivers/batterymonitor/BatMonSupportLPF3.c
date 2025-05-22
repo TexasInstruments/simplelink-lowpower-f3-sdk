@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,8 @@
 #include <ti/drivers/temperature/TemperatureLPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_evtull.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_pmud.h)
@@ -103,7 +103,7 @@ void BatMonSupportLPF3_init(void)
     if (isInitialized == false)
     {
         /* Claim configurable CPUIRQ as AON_PMU_COMB */
-        HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ0SEL + (BatMonSupportLPF3_config.intNum - INT_CPUIRQ0) * sizeof(uint32_t)) = BatMonSupportLPF3_config.intMux;
+        EVTSVTConfigureEvent(BatMonSupportLPF3_config.intSubscriberId, EVTSVT_PUB_AON_PMU_COMB);
 
         /* Initialise the BatMon HWI. The temperature sensor shares this
          * interrupt with the battery voltage monitoring events.

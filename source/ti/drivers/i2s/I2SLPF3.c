@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/i2s.h)
+#include DeviceFamily_constructPath(driverlib/ckmd.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(inc/hw_ckmd.h)
 
 #include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/GPIO.h>
@@ -192,7 +192,7 @@ void I2S_close(I2S_Handle handle)
     I2SDisableControllerClocks(I2S_BASE);
 
     /* Disable the audio clock */
-    HWREG(CKMD_BASE + CKMD_O_AFCLKSEL) = CKMD_AFCLKSEL_SRC_DIS;
+    CKMDSelectAfclk(CKMD_AFCLK_SOURCE_NONE);
 
     if (hwAttrs->afclkSrc == I2SLPF3_AFCLK_SRC_CLKAF)
     {
@@ -272,7 +272,7 @@ void I2S_stopClocks(I2S_Handle handle)
     I2SDisableControllerClocks(I2S_BASE);
 
     /* Disable the audio clock */
-    HWREG(CKMD_BASE + CKMD_O_AFCLKSEL) = CKMD_AFCLKSEL_SRC_DIS;
+    CKMDSelectAfclk(CKMD_AFCLK_SOURCE_NONE);
 
     Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
 }
@@ -1133,7 +1133,7 @@ static void enableClocks(I2S_Handle handle)
     if (object->moduleRole == I2S_CONTROLLER)
     {
         /* Enable the audio clock, which is used to generate the I2S clocks */
-        HWREG(CKMD_BASE + CKMD_O_AFCLKSEL) = hwAttrs->afclkSrc;
+        CKMDSelectAfclk(hwAttrs->afclkSrc);
 
         /* Enable controller generated clocks */
         I2SEnableControllerClocks(I2S_BASE);

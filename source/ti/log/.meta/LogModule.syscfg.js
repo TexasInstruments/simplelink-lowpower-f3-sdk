@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,16 +64,19 @@ function getLogSinks() {
     let logSinks = []
     // Get all components in all products
     for (var i = 0; i < system.getProducts().length; i++){
-        let components = system.getProducts()[i].components;
-        for (var j = 0; j < components.length; j++) {
-            let temp = system.getScript(components[j]);
-            // Get all modules in component topModule
-            let modules = []
-            if ('topModules' in temp) {
-                objectValuesToArray(temp.topModules, modules);
-                for (var k = 0; k < modules.length; k++) {
-                    if (typeof modules[k] === 'string' && modules[k].match(/\/LogSink[A-Z]/)) {
-                        logSinks.push({ name: modules[k] });
+        let product = system.getProducts()[i];
+        if ('components' in product) {
+            let components = product.components;
+            for (var j = 0; j < components.length; j++) {
+                let temp = system.getScript(components[j]);
+                // Get all modules in component topModule
+                let modules = []
+                if ('topModules' in temp) {
+                    objectValuesToArray(temp.topModules, modules);
+                    for (var k = 0; k < modules.length; k++) {
+                        if (typeof modules[k] === 'string' && modules[k].match(/\/LogSink[A-Z]/)) {
+                            logSinks.push({ name: modules[k] });
+                        }
                     }
                 }
             }

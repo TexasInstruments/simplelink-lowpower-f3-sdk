@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2023, Texas Instruments Incorporated
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -92,10 +92,10 @@
  *  cache; this can be increased or reduced later.
  *
  *  As an example assume that we want to use SPIFFS with a NVS driver instance
- *  that has 128k of memory and the the physical block size is 4096 bytes. In
- *  this case the logical block size can be set to 8192 bytes (16 logical
- *  blocks). Now we can set the logical page size to 256 bytes (32 logical pages
- *  per logical block).
+ *  that has 128k of memory and the physical block size is 4096 bytes. In this
+ *  case the logical block size can be set to 8192 bytes (16 logical blocks).
+ *  Now we can set the logical page size to 256 bytes (32 logical pages per
+ *  logical block).
  *
  *  @note SPIFFS always keeps 2 logical blocks free; in the example above there
  *  would only be 14 logical blocks available for storage (16k is unusable). The

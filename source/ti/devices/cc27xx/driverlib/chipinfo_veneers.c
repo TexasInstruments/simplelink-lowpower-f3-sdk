@@ -3,7 +3,7 @@
  *
  *  Description:    Veneers for accessing ChipInfo API from non-secure context.
  *
- *  Copyright (c) 2024 Texas Instruments Incorporated
+ *  Copyright (c) 2024-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -36,11 +36,10 @@
 #include "chipinfo.h"
 
 #include <third_party/tfm/secure_fw/include/security_defs.h> // __tz_c_veneer
-#include <third_party/tfm/secure_fw/spm/include/utilities.h> // tfm_core_panic()
 
 __tz_c_veneer ChipType ChipInfoGetChipType_veneer(void)
 {
-    return ChipInfoGetPartId();
+    return ChipInfoGetChipType();
 }
 
 __tz_c_veneer ChipPartId ChipInfoGetPartId_veneer(void)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -156,7 +156,7 @@ let base = {
                         displayName : "Base",
                         description : "Base Address of Mcuboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
-                        default     : mcubootSettings["bootloader"]["base"],
+                        default     : mcubootSettings["bootloader"]["tzDisabledBase"]["base"],
                         readOnly    : false,
                         hidden      : false
                     },
@@ -187,7 +187,7 @@ let base = {
                                 displayName : "Base Address",
                                 description : "Base Address of Primary Image",
                                 displayFormat: { radix: "hex", bitSize: 32 },
-                                default     : mcubootSettings["image1"]["primaryBase"],
+                                default     : mcubootSettings["image1"]["tzDisabledBase"]["primaryBase"],
                                 readOnly    : false,
                                 hidden      : false
                             },
@@ -212,7 +212,7 @@ let base = {
                                 displayName : "Base Address",
                                 description : "Base Address of Secondary Image",
                                 displayFormat: { radix: "hex", bitSize: 32 },
-                                default     : mcubootSettings["image1"]["secondaryBase"],
+                                default     : mcubootSettings["image1"]["tzDisabledBase"]["secondaryBase"],
                                 readOnly    : false,
                                 hidden      : false
                             },
@@ -232,7 +232,7 @@ let base = {
             {
                 name: "image2",
                 displayName: "Image 2",
-                description: "Non-secure image",
+                description: "Non-secure image.",
                 collapsed: true,
                 config  : [
                     {
@@ -246,7 +246,7 @@ let base = {
                                 description : "Base of Primary Image",
                                 displayFormat: { radix: "hex", bitSize: 32 },
                                 default     : mcubootSettings["image2"]["primaryBase"],
-                                readOnly    : true,
+                                readOnly    : !mcubootSettings["tzEnabled"]["tzConfigurable"] /* if tz is configurable, then it this field should not be read only */,
                                 hidden      : true
                             },
                             {
@@ -302,11 +302,11 @@ function changeExternalFlash(inst, ui)
     {
         if(!inst.tzEnabled)
         {
-            inst.secondaryBase1 = mcubootSettings["image1"]["secondaryBase"];
+            inst.secondaryBase1 = mcubootSettings["image1"]["tzDisabledBase"]["secondaryBase"];
         }
         else
         {
-            inst.secondaryBase1 = 0x86800;
+            inst.secondaryBase1 = mcubootSettings["image1"]["tzEnabledBase"]["secondaryBase"];
         }
     }
 }
@@ -344,31 +344,37 @@ function changeTzEnable(inst, ui)
 
     //set readonly properties for first image slots
     ui.primaryBase1.readOnly = !ui.primaryBase1.readOnly;
-    ui.primarySize1.readOnly = !ui.primarySize1.readOnly;
-    // ui.secondaryBase1.readOnly = !ui.secondaryBase1.readOnly;
-    ui.secondarySize1.readOnly = !ui.secondarySize1.readOnly;
+
+    if(!mcubootSettings["tzEnabled"]["tzConfigurable"])
+    {
+        ui.primaryBase2.readOnly = !ui.primaryBase2.readOnly;
+        ui.primarySize1.readOnly = !ui.primarySize1.readOnly;
+        ui.secondarySize1.readOnly = !ui.secondarySize1.readOnly;
+    }
 
     //change readonly properties for bootloader
     ui.bootloaderBaseAddress.readOnly = !ui.bootloaderBaseAddress.readOnly;
     ui.bootloaderSize.readOnly = !ui.bootloaderSize.readOnly;
 
-    /*  update enable encrypted image settings - any device that supports tzEnable will support encrypted images as well,
-    therefore no need to reference template to see if encrypted images are enabled.*/
-    ui.enableEncryptedImage.hidden = false;
-    inst.enableEncryptedImage = false;
+    /* If encrypted images are enabled then update the instance and ui.*/
+    if(mcubootSettings["enableEncryptedImage"]["enabled"])
+    {
+        ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
+        inst.enableEncryptedImage = false;
+    }
 
     // if tz_enable is selected
     if(inst.tzEnabled)
     {
         // set bootloader size and base and make them uneditable
-        inst.bootloaderBaseAddress = 0x800;
-        inst.bootloaderSize = 0x6000;
+        inst.bootloaderBaseAddress = mcubootSettings["bootloader"]["tzEnabledBase"]["base"];
+        inst.bootloaderSize = mcubootSettings["bootloader"]["size"];
 
         // set first image slots
-        inst.primaryBase1 = 0x0000d000;
-        inst.primarySize1 = 0x0002b000;
-        inst.secondaryBase1 = 0x00086800;
-        inst.secondarySize1 = 0x0002b000;
+        inst.primaryBase1 = mcubootSettings["image1"]["tzEnabledBase"]["primaryBase"];
+        inst.primarySize1 = mcubootSettings["image1"]["primarySize"];
+        inst.secondaryBase1 = mcubootSettings["image1"]["tzEnabledBase"]["secondaryBase"];
+        inst.secondarySize1 = mcubootSettings["image1"]["secondarySize"];
 
         // set second image slots
         inst.primaryBase2 = mcubootSettings["image2"]["primaryBase"];
@@ -379,12 +385,12 @@ function changeTzEnable(inst, ui)
     // else revert to default
     else
     {
-        inst.bootloaderBaseAddress = mcubootSettings["bootloader"]["base"];
+        inst.bootloaderBaseAddress = mcubootSettings["bootloader"]["tzDisabledBase"]["base"];
         inst.bootloaderSize = mcubootSettings["bootloader"]["size"];
 
-        inst.primaryBase1 = mcubootSettings["image1"]["primaryBase"];
+        inst.primaryBase1 = mcubootSettings["image1"]["tzDisabledBase"]["primaryBase"];
         inst.primarySize1 = mcubootSettings["image1"]["primarySize"];
-        inst.secondaryBase1 = mcubootSettings["image1"]["secondaryBase"];
+        inst.secondaryBase1 = mcubootSettings["image1"]["tzDisabledBase"]["secondaryBase"];
         inst.secondarySize1 = mcubootSettings["image1"]["secondarySize"];
 
         inst.primaryBase2 = mcubootSettings["image2"]["primaryBase"];
@@ -661,7 +667,11 @@ function validate(inst, validation) {
                         "MCUboot layout exceeds the flash boundaries. Make sure all image sizes are less than 0x" + mcubootSettings["alignment"]["flashBoundary"].toString(16));
             }
         }
-        
+    }
+    if (system.modules["/ti/devices/CCFG"] !== undefined && system.modules["/ti/devices/CCFG"].$static.ssbEnabled === true)
+    {
+        logWarning(validation, inst, "bootloaderSize",
+                    "MCUboot has been enabled as a Secondary Secure Bootloader. Secure Boot will define the base and size of MCUboot and ignore these values.");
     }
 }
 

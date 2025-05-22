@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,13 +73,13 @@ to select, please refer to [Selecting the Audio Frequency Clock](drivers/doxygen
                     ],
                     default: "I2SLPF3_AFCLK_SRC_CLKHF",
                     onChange: (inst, ui) => {
-                        ui.afoscFreq.hidden = inst.afclkSrc != "CKMD_AFCLKSEL_SRC_CLKAF";
+                        ui.afoscFreq.hidden = inst.afclkSrc != "I2SLPF3_AFCLK_SRC_CLKAF";
                     }
                 },
                 {
                     name: "afoscFreq",
-                    displayName: "Auxiliary Frequency Oscillator (AFOSC) Frequency",
-                    description: "Select the the frequency of AFOSC",
+                    displayName: "AFOSC Frequency",
+                    description: "Select the Auxiliary Frequency Oscillator (AFOSC) frequency",
                     readOnly: false,
                     hidden: true,
                     default: "PowerLPF3_AFOSC_FREQ_98P304MHZ",

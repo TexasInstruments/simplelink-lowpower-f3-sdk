@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -232,7 +232,7 @@ extern int HwiP_swiPIntNum;
 /*!
  *  @brief  Function to construct a hardware interrupt object.
  *
- *  @param  hwiP   Pointer to HwiP_Struct object.
+ *  @param  handle Pointer to #HwiP_Struct object.
  *  @param  interruptNum Interrupt Vector Id
  *  @param  hwiFxn entry function of the hardware interrupt
  *
@@ -240,19 +240,19 @@ extern int HwiP_swiPIntNum;
  *                    denotes to use the default parameters. The HwiP default
  *                    parameters are noted in #HwiP_Params_init().
  *
- *  @return A HwiP_Handle on success or a NULL on an error
+ *  @return A #HwiP_Handle on success or a NULL on an error
  */
-extern HwiP_Handle HwiP_construct(HwiP_Struct *hwiP, int interruptNum, HwiP_Fxn hwiFxn, HwiP_Params *params);
+extern HwiP_Handle HwiP_construct(HwiP_Struct *handle, int interruptNum, HwiP_Fxn hwiFxn, HwiP_Params *params);
 
 /*!
  *  @brief  Function to destruct a hardware interrupt object
  *
- *  @param  hwiP  Pointer to a HwiP_Struct object that was passed to
- *                #HwiP_construct().
+ *  @param  handle Pointer to a #HwiP_Struct object that was passed to
+ *                 #HwiP_construct().
  *
  *  @return
  */
-extern void HwiP_destruct(HwiP_Struct *hwiP);
+extern void HwiP_destruct(HwiP_Struct *handle);
 
 /*!
  *  @brief  Function to clear a single interrupt
@@ -380,11 +380,12 @@ extern void HwiP_restore(uintptr_t key);
 /*!
  *  @brief  Function to overwrite HwiP function and arg
  *
- *  @param  hwiP handle returned from the HwiP_create or construct call
+ *  @param  handle Handle returned from the #HwiP_create() or #HwiP_construct()
+ *                 call
  *  @param  fxn  pointer to ISR function
  *  @param  arg  argument to ISR function
  */
-extern void HwiP_setFunc(HwiP_Handle hwiP, HwiP_Fxn fxn, uintptr_t arg);
+extern void HwiP_setFunc(HwiP_Handle handle, HwiP_Fxn fxn, uintptr_t arg);
 
 /*!
  *  @brief  Function to set the priority of a hardware interrupt

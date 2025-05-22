@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_aes_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -310,7 +310,7 @@
 #define AES_STA_KEYINTID_W                                                   2U
 #define AES_STA_KEYINTID_M                                          0x00000018U
 #define AES_STA_KEYINTID_S                                                   3U
-#define AES_STA_KEYINTID_HSM                                        0x00000008U
+#define AES_STA_KEYINTID_HSM                                        0x00000018U
 #define AES_STA_KEYINTID_CORE                                       0x00000000U
 
 // Field:     [2] KEYSTATE

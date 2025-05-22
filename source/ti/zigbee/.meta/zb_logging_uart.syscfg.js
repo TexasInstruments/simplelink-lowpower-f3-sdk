@@ -42,6 +42,7 @@ RCL.loggingEnabled = true;
 RCL.LogModule.loggerSink               = "/ti/log/LogSinkUART";
 ZIGBEE.LogModuleZigbeeLLMAC.loggerSink = "/ti/log/LogSinkUART";
 ZIGBEE.LogModuleZigbeeApp.loggerSink   = "/ti/log/LogSinkUART";
+ZIGBEE.LogModuleZigbeeOSIF.loggerSink   = "/ti/log/LogSinkUART";
 
 const LogSinkUART       = scripting.addModule("/ti/log/LogSinkUART", {}, false);
 const LogSinkUART1      = LogSinkUART.addInstance({}, false);
@@ -51,10 +52,10 @@ LogSinkUART1.uart.$name = "CONFIG_UART2_ZB";
 RCL.LogModule.logger               = LogSinkUART1;
 ZIGBEE.LogModuleZigbeeLLMAC.logger = LogSinkUART1;
 ZIGBEE.LogModuleZigbeeApp.logger   = LogSinkUART1;
+ZIGBEE.LogModuleZigbeeOSIF.logger  = LogSinkUART1;
 
 LogSinkUART1.uart.enableNonblocking = scripting.forceWrite(true);
 LogSinkUART1.uart.$hardware         = system.deviceData.board.components.XDS110UART;
-
 
 ZIGBEE.LogModuleZigbeeLLMAC.enable_DEBUG = true;
 ZIGBEE.LogModuleZigbeeLLMAC.enable_INFO = true;
@@ -63,3 +64,19 @@ ZIGBEE.LogModuleZigbeeLLMAC.enable_VERBOSE = true;
 ZIGBEE.LogModuleZigbeeApp.enable_DEBUG = true;
 ZIGBEE.LogModuleZigbeeApp.enable_INFO = true;
 ZIGBEE.LogModuleZigbeeApp.enable_VERBOSE = true;
+
+// Many calls in the OSIF so we don't enable all by default
+ZIGBEE.LogModuleZigbeeOSIF.enable_DEBUG = true;
+ZIGBEE.LogModuleZigbeeOSIF.enable_INFO = true;
+ZIGBEE.LogModuleZigbeeOSIF.enable_VERBOSE = true;
+
+/* ======= Advanced exception-handling if FreeRTOS is enabled ====== */
+if (system.getRTOS() === "freertos")
+{
+    const exception = scripting.addModule("/freertos/exception");
+    exception.nmiHandler       = "Exception_handlerMax";
+    exception.hardFaultHandler = "Exception_handlerMax";
+    exception.defaultHandler   = "Exception_handlerMax";
+    exception.LogModule.loggerSink = "/ti/log/LogSinkUART";
+    exception.LogModule.logger     = LogSinkUART1;
+}

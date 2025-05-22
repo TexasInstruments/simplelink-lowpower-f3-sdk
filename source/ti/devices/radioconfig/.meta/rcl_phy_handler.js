@@ -328,36 +328,43 @@ function create(phyGroup, phyID, first) {
         }
 
         /**
-         * Get bitmask feature selector
-         * @param feature - feature you want to get selector for
-         * @returns bitmask, throws error if not found
+         * Get current feature selector bitmask for the PHY, based on all
+         * feature type PHY properties
+         * @returns bitmask, zero if there are no features
          */
         // eslint-disable-next-line no-unused-vars
-        function getFeatureSelector(feature) {
-            // Invoked from PHY definition
-            if (feature in RfParamCache) {
-                // Look up type in PHY properties
-                for (const category of Common.forceArray(PhyDef.phy_properties)) {
-                    for (const prop of Common.forceArray(category.property)) {
-                        if (prop.name === feature) {
-                            const type = prop.type.replace("feature:", "");
-                            // Look up feature in the feature group
-                            for (const group of Common.forceArray(PhyDef.feature_group)) {
-                                if (type === group.name) {
-                                    // Find bitmask
-                                    const featName = RfParamCache[feature];
-                                    for (const feat of group.feature) {
-                                        if (featName === feat.name) {
-                                            return feat.bitmask;
-                                        }
+        function getFeatureSelector() {
+            let bitmask = 0x0000;
+
+            // For each PHY property category ...
+            for (const category of Common.forceArray(PhyDef.phy_properties)) {
+
+                // For each feature-type PHY property ...
+                for (const prop of Common.forceArray(category.property)) {
+                    if (prop.type.startsWith("feature:")) {
+                        
+                        // Find the feature group through the property type
+                        const featureGroupName = prop.type.replace("feature:", "");
+                        for (const featureGroup of Common.forceArray(PhyDef.feature_group)) {
+                            if (featureGroup.name === featureGroupName) {
+                                
+                                // Find the selected feature
+                                const featureName = RfParamCache[prop.name];
+                                for (const feature of featureGroup.feature) {
+                                    if (feature.name === featureName) {
+
+                                        // Add to feature selector bit mask 
+                                        bitmask |= feature.bitmask;
+                                        break;
                                     }
                                 }
+                                break;
                             }
                         }
                     }
                 }
             }
-            throw Error(feature + " not found");
+            return bitmask;
         }
     }
 

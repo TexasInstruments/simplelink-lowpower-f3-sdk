@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,22 +43,25 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 #include <ti/drivers/cryptoutils/utils/CryptoUtils.h>
-#include <ti/drivers/dma/UDMALPF3.h>
+#include <ti/devices/DeviceFamily.h>
 
 #include <ti/drivers/dpl/DebugP.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 
-#include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
-#include DeviceFamily_constructPath(inc/hw_aes.h)
-#include DeviceFamily_constructPath(inc/hw_ints.h)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/dma/UDMALPF3.h>
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+    #include DeviceFamily_constructPath(inc/hw_aes.h)
+    #include DeviceFamily_constructPath(inc/hw_ints.h)
+#endif
 
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23XX) && (ENABLE_KEY_STORAGE == 1))
     #error "Key storage is not supported for CC23XX"
 #endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    /* Using LPF3 driver implementation for WFF3, since the HSM IP is the same. */
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
     #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
     #include <third_party/hsmddk/include/Integration/Adapter_VEX/incl/adapter_vex.h>
@@ -102,6 +105,7 @@
 #define AESCCMLPF3_DMA_SIZE_THRESHOLD (1U * AES_BLOCK_SIZE)
 
 /* Forward declarations */
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
                                        AESCCM_OperationType operationType,
                                        AESCCM_OperationUnion *operation,
@@ -144,8 +148,9 @@ static int_fast16_t AESCCMLPF3_processSegmentedCBCMAC(AESCCMLPF3_Object *object,
 static int_fast16_t AESCCMLPF3_processSegmentedCTR(AESCCMLPF3_Object *object, size_t dataSegmentLength);
 static void AESCCMLPF3_processTagCTR(AESCCMLPF3_Object *object);
 static int_fast16_t AESCCMLPF3_waitForDMA(const AESCCMLPF3_Object *object);
+#endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #if (ENABLE_KEY_STORAGE == 1)
 static int_fast16_t AESCCMLPF3HSM_getKeyMaterial(AESCCMLPF3_Object *object);
     #endif
@@ -198,6 +203,7 @@ static inline AESCCMLPF3_Object *AESCCMLPF3_getObject(AESCCM_Handle handle)
     return object;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCCMLPF3_hwiFxn ========
  *
@@ -412,16 +418,19 @@ static int_fast16_t AESCCMLPF3_waitForDMA(const AESCCMLPF3_Object *object)
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCCM_init ========
  */
 void AESCCM_init(void)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     HSMLPF3_constructRTOSObjects();
 #endif
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     AESCommonLPF3_init();
+#endif
 }
 
 /*
@@ -431,11 +440,18 @@ AESCCM_Handle AESCCM_construct(AESCCM_Config *config, const AESCCM_Params *param
 {
     DebugP_assert(config);
 
-    int_fast16_t status;
     AESCCM_Handle handle      = config;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Callback return mode is not supported for CC35XX for now */
+    if ((params != NULL) && (params->returnBehavior == AESCCM_RETURN_BEHAVIOR_CALLBACK))
+    {
+        return NULL;
+    }
+#endif
+
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     /* Initialize and boot HSM */
     if (HSMLPF3_init() != HSMLPF3_STATUS_SUCCESS)
     {
@@ -463,12 +479,29 @@ AESCCM_Handle AESCCM_construct(AESCCM_Config *config, const AESCCM_Params *param
 
     object->callbackFxn = params->callbackFxn;
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Set common parameters for later use. */
+    object->common.isOpen = true;
+
+    object->common.returnBehavior = (AES_ReturnBehavior)params->returnBehavior;
+
+    if (params->returnBehavior == AESCCM_RETURN_BEHAVIOR_BLOCKING)
+    {
+        object->common.semaphoreTimeout = params->timeout;
+    }
+    else
+    {
+        object->common.semaphoreTimeout = SemaphoreP_NO_WAIT;
+    }
+#else
+    int_fast16_t status;
     status = AESCommonLPF3_construct(&object->common, (AES_ReturnBehavior)params->returnBehavior, params->timeout);
 
     if (status != AES_STATUS_SUCCESS)
     {
         handle = NULL;
     }
+#endif
 
     return handle;
 }
@@ -482,9 +515,15 @@ void AESCCM_close(AESCCM_Handle handle)
 
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     AESCommonLPF3_close(&object->common);
+#else
+    /* Mark the module as available */
+    object->common.isOpen = false;
+#endif
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCCMLPF3_processCBCMACFinalBlock ========
  */
@@ -508,18 +547,18 @@ static void AESCCMLPF3_processCBCMACFinalBlock(const uint8_t *input, size_t byte
     AESSetTrigger((uint32_t)AES_TRG_AESOP_TXTXBUF);
 }
 
-#define M_PRIME_OFFSET 3
+    #define M_PRIME_OFFSET 3
 
-/*
- *  ======== AESCCMLPF3_processB0 ========
- */
-#if defined(__IAR_SYSTEMS_ICC__)
-    #pragma inline = forced
-#elif defined(__TI_COMPILER_VERSION__)
-    #pragma FUNC_ALWAYS_INLINE(AESCCMLPF3_processB0)
-#else
+    /*
+     *  ======== AESCCMLPF3_processB0 ========
+     */
+    #if defined(__IAR_SYSTEMS_ICC__)
+        #pragma inline = forced
+    #elif defined(__TI_COMPILER_VERSION__)
+        #pragma FUNC_ALWAYS_INLINE(AESCCMLPF3_processB0)
+    #else
 __attribute__((always_inline)) inline
-#endif
+    #endif
 static void AESCCMLPF3_processB0(const uint8_t *nonce,
                                  uint8_t nonceLength,
                                  size_t totalAADLength,
@@ -826,20 +865,20 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
         bool dmaActive        = false;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
     int_fast16_t status;
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     int_fast16_t keyStoreStatus;
     uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
     KeyStore_PSA_KeyUsage usage = (operationType == AESCCM_OP_TYPE_ONESTEP_ENCRYPT) ? KEYSTORE_PSA_KEY_USAGE_ENCRYPT
                                                                                     : KEYSTORE_PSA_KEY_USAGE_DECRYPT;
-#endif
+    #endif
 
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input & output pointers */
     if (!IS_WORD_ALIGNED(operation->input) || !IS_WORD_ALIGNED(operation->output))
     {
         return AESCCM_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
     }
-#endif
+    #endif
 
     /* The nonce length must be 7 to 13 bytes long */
     if ((operation->nonceLength < (uint8_t)7U) || (operation->nonceLength > (uint8_t)13U))
@@ -883,7 +922,7 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
     {
         AESCommonLPF3_loadKey(operation->key);
     }
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     else if (operation->key->encoding == CryptoKey_KEYSTORE)
     {
         /* AES engine supports only 128-bit (16-byte) keys. */
@@ -912,7 +951,7 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
             return AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
         }
     }
-#endif
+    #endif
     else
     {
         return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
@@ -1000,6 +1039,7 @@ static int_fast16_t AESCCMLPF3_oneStepOperation(AESCCM_Handle handle,
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCCM_oneStepEncrypt ========
@@ -1008,18 +1048,21 @@ int_fast16_t AESCCM_oneStepEncrypt(AESCCM_Handle handle, AESCCM_OneStepOperation
 {
     int_fast16_t status = AESCCM_STATUS_SUCCESS;
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if ((operation->key->encoding == CryptoKey_PLAINTEXT) || (operation->key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCCMLPF3_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_ENCRYPT);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if ((operation->key->encoding == CryptoKey_PLAINTEXT_HSM) ||
-             (operation->key->encoding == CryptoKey_KEYSTORE_HSM))
+    else
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+        if ((operation->key->encoding == CryptoKey_PLAINTEXT_HSM) ||
+            (operation->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCCMLPF3HSM_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_ENCRYPT);
     }
-#endif
     else
+#endif
     {
         status = AESCCM_STATUS_ERROR;
     }
@@ -1033,24 +1076,28 @@ int_fast16_t AESCCM_oneStepDecrypt(AESCCM_Handle handle, AESCCM_OneStepOperation
 {
     int_fast16_t status = AESCCM_STATUS_SUCCESS;
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     if ((operation->key->encoding == CryptoKey_PLAINTEXT) || (operation->key->encoding == CryptoKey_KEYSTORE))
     {
         status = AESCCMLPF3_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_DECRYPT);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if ((operation->key->encoding == CryptoKey_PLAINTEXT_HSM) ||
-             (operation->key->encoding == CryptoKey_KEYSTORE_HSM))
+    else
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+        if ((operation->key->encoding == CryptoKey_PLAINTEXT_HSM) ||
+            (operation->key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCCMLPF3HSM_oneStepOperation(handle, operation, AESCCM_OP_TYPE_ONESTEP_DECRYPT);
     }
-#endif
     else
+#endif
     {
         status = AESCCM_STATUS_ERROR;
     }
     return status;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCCMLPF3_setupSegmentedOperation ========
  */
@@ -1091,6 +1138,7 @@ static int_fast16_t AESCCMLPF3_setupSegmentedOperation(AESCCMLPF3_Object *object
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCCM_setupEncrypt ========
@@ -1102,24 +1150,24 @@ int_fast16_t AESCCM_setupEncrypt(AESCCM_Handle handle,
                                  size_t macLength)
 {
     DebugP_assert(handle);
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status = AES_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_setupEncrypt(handle, key, totalAADLength, totalPlaintextLength, macLength);
     }
 #endif
 
-    int_fast16_t status = AESCCMLPF3_setupSegmentedOperation(object,
-                                                             key,
-                                                             totalAADLength,
-                                                             totalPlaintextLength,
-                                                             macLength);
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+
+    status = AESCCMLPF3_setupSegmentedOperation(object, key, totalAADLength, totalPlaintextLength, macLength);
     if (status == AES_STATUS_SUCCESS)
     {
         object->operationType = AESCCM_OPERATION_TYPE_ENCRYPT;
     }
+#endif
 
     return status;
 }
@@ -1135,24 +1183,24 @@ int_fast16_t AESCCM_setupDecrypt(AESCCM_Handle handle,
 {
     DebugP_assert(handle);
 
-    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status = AES_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((key->encoding == CryptoKey_PLAINTEXT_HSM) || (key->encoding == CryptoKey_KEYSTORE_HSM))
     {
         return AESCCMLPF3HSM_setupDecrypt(handle, key, totalAADLength, totalPlaintextLength, macLength);
     }
 #endif
 
-    int_fast16_t status = AESCCMLPF3_setupSegmentedOperation(object,
-                                                             key,
-                                                             totalAADLength,
-                                                             totalPlaintextLength,
-                                                             macLength);
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+
+    status = AESCCMLPF3_setupSegmentedOperation(object, key, totalAADLength, totalPlaintextLength, macLength);
     if (status == AESCCM_STATUS_SUCCESS)
     {
         object->operationType = AESCCM_OPERATION_TYPE_DECRYPT;
     }
+#endif
 
     return status;
 }
@@ -1191,7 +1239,7 @@ int_fast16_t AESCCM_setLengths(AESCCM_Handle handle, size_t aadLength, size_t pl
     object->totalCTRLengthRemaining    = plaintextLength;
     object->macLength                  = (uint8_t)macLength;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     object->aadBytesProcessed        = 0U;
     object->bufferedAADLength        = 0U;
     object->totalAADLengthRemaining  = aadLength;
@@ -1270,6 +1318,7 @@ int_fast16_t AESCCM_generateNonce(AESCCM_Handle handle, uint8_t *nonce, size_t n
     return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCCMLPF3_processSegmentedCBCMAC ========
  */
@@ -1605,6 +1654,7 @@ static int_fast16_t AESCCMLPF3_processSegmentedCTR(AESCCMLPF3_Object *object, si
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCCM_addAAD ========
@@ -1613,14 +1663,10 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
 {
     DebugP_assert(handle);
     DebugP_assert(operation);
-#if (ENABLE_KEY_STORAGE == 1)
-    int_fast16_t keyStoreStatus;
-    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
-    KeyStore_PSA_KeyUsage usage;
-#endif
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AES_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
         (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -1628,7 +1674,12 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
     }
 #endif
 
-    int_fast16_t status;
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #if (ENABLE_KEY_STORAGE == 1)
+    int_fast16_t keyStoreStatus;
+    uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
+    KeyStore_PSA_KeyUsage usage;
+    #endif
 
     object->operation = (AESCCM_OperationUnion *)operation;
 
@@ -1689,7 +1740,7 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
     {
         AESCommonLPF3_loadKey(&object->common.key);
     }
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     else if (object->common.key.encoding == CryptoKey_KEYSTORE)
     {
         /* AES engine supports only 128-bit (16-byte) keys. */
@@ -1719,7 +1770,7 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
             return AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
         }
     }
-#endif
+    #endif
     else
     {
         return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
@@ -1755,10 +1806,12 @@ int_fast16_t AESCCM_addAAD(AESCCM_Handle handle, AESCCM_SegmentedAADOperation *o
         /* Always return success in callback mode */
         status = AESCCM_STATUS_SUCCESS;
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return status;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCCMLPF3_addDataDMA ========
  */
@@ -1805,7 +1858,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
 {
     int_fast16_t status       = AESCCM_STATUS_SUCCESS;
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     int_fast16_t keyStoreStatus;
     uint8_t KeyStore_keyingMaterial[AESCommonLPF3_256_KEY_LENGTH_BYTES];
     KeyStore_PSA_KeyUsage usage;
@@ -1821,7 +1874,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
          */
         usage = KEYSTORE_PSA_KEY_USAGE_DECRYPT;
     }
-#endif
+    #endif
 
     if (!CryptoResourceLPF3_acquireLock(object->common.semaphoreTimeout))
     {
@@ -1837,7 +1890,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
     {
         AESCommonLPF3_loadKey(&object->common.key);
     }
-#if (ENABLE_KEY_STORAGE == 1)
+    #if (ENABLE_KEY_STORAGE == 1)
     else if (object->common.key.encoding == CryptoKey_KEYSTORE)
     {
         /* AES engine supports only 128-bit (16-byte) keys. */
@@ -1865,7 +1918,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
             return AESCCM_STATUS_KEYSTORE_GENERIC_ERROR;
         }
     }
-#endif
+    #endif
     else
     {
         return AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
@@ -1930,6 +1983,7 @@ static int_fast16_t AESCCMLPF3_addData(AESCCM_Handle handle,
 
     return status;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCCM_addData ========
@@ -1959,7 +2013,7 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
     }
 #endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
         (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -2005,21 +2059,25 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
      * specified in the setLengths() or setupXXXX() calls.
      * All AAD input must be processed at this point.
      */
-    if (object->aadBytesProcessed != object->totalAADLength
+    if ((object->aadBytesProcessed != object->totalAADLength)
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-        && (object->common.key.encoding == CryptoKey_PLAINTEXT || object->common.key.encoding == CryptoKey_KEYSTORE)
+        && ((object->common.key.encoding == CryptoKey_PLAINTEXT) || (object->common.key.encoding == CryptoKey_KEYSTORE))
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+        && (object->common.key.encoding == CryptoKey_KEYSTORE)
 #endif
     )
     {
         return AESCCM_STATUS_ERROR;
     }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     /* Check DMA xfer limit for blocking and callback modes */
     if ((object->common.returnBehavior != AES_RETURN_BEHAVIOR_POLLING) &&
         !AESCommonLPF3_isDMALengthValid(operation->input, operation->output, operation->inputLength))
     {
         return AESCCM_STATUS_ERROR;
     }
+#endif
 
     AESCCM_OperationType operationType = AESCCM_OP_TYPE_DATA_ENCRYPT;
 
@@ -2029,7 +2087,8 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
         operationType = AESCCM_OP_TYPE_DATA_DECRYPT;
     }
 
-    if (object->common.key.encoding == CryptoKey_PLAINTEXT || object->common.key.encoding == CryptoKey_KEYSTORE)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    if ((object->common.key.encoding == CryptoKey_PLAINTEXT) || (object->common.key.encoding == CryptoKey_KEYSTORE))
     {
         status = AESCCMLPF3_addData(handle,
                                     operationType,
@@ -2038,15 +2097,17 @@ int_fast16_t AESCCM_addData(AESCCM_Handle handle, AESCCM_SegmentedDataOperation 
                                     operation->output,
                                     operation->inputLength);
     }
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    else if (object->common.key.encoding == CryptoKey_PLAINTEXT_HSM ||
-             object->common.key.encoding == CryptoKey_KEYSTORE_HSM)
+    else
+#endif
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+        if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
+            (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
         status = AESCCMLPF3HSM_addData(handle, operationType, (AESCCM_OperationUnion *)operation);
         return status;
     }
-#endif
     else
+#endif
     {
         status = AESCCM_STATUS_ERROR;
     }
@@ -2072,8 +2133,9 @@ int_fast16_t AESCCM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
     DebugP_assert(operation);
 
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AES_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
         (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -2081,8 +2143,7 @@ int_fast16_t AESCCM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
     }
 #endif
 
-    int_fast16_t status;
-
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     status = AESCCMLPF3_performFinalizeChecks(object, operation);
 
     if (status != AESCCM_STATUS_SUCCESS)
@@ -2130,6 +2191,7 @@ int_fast16_t AESCCM_finalizeEncrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
             status = AESCCM_STATUS_SUCCESS;
         }
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return status;
 }
@@ -2143,8 +2205,9 @@ int_fast16_t AESCCM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
     DebugP_assert(operation);
 
     AESCCMLPF3_Object *object = AESCCMLPF3_getObject(handle);
+    int_fast16_t status       = AESCCM_STATUS_FEATURE_NOT_SUPPORTED;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if ((object->common.key.encoding == CryptoKey_PLAINTEXT_HSM) ||
         (object->common.key.encoding == CryptoKey_KEYSTORE_HSM))
     {
@@ -2152,7 +2215,7 @@ int_fast16_t AESCCM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
     }
 #endif
 
-    int_fast16_t status;
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 
     status = AESCCMLPF3_performFinalizeChecks(object, operation);
 
@@ -2204,10 +2267,12 @@ int_fast16_t AESCCM_finalizeDecrypt(AESCCM_Handle handle, AESCCM_SegmentedFinali
             status = AESCCM_STATUS_SUCCESS;
         }
     }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
     return status;
 }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*
  *  ======== AESCCMLPF3_performFinalizeChecks ========
  */
@@ -2226,13 +2291,13 @@ static int_fast16_t AESCCMLPF3_performFinalizeChecks(const AESCCMLPF3_Object *ob
         return object->common.returnStatus;
     }
 
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+    #if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input & output pointers */
     if (!IS_WORD_ALIGNED(operation->input) || !IS_WORD_ALIGNED(operation->output))
     {
         return AESCCM_STATUS_UNALIGNED_IO_NOT_SUPPORTED;
     }
-#endif
+    #endif
 
     /* All AAD should be processed at this point in time. */
     if (object->aadBytesProcessed != object->totalAADLength)
@@ -2255,6 +2320,7 @@ static int_fast16_t AESCCMLPF3_performFinalizeChecks(const AESCCMLPF3_Object *ob
 
     return AESCCM_STATUS_SUCCESS;
 }
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 /*
  *  ======== AESCCM_cancelOperation ========
@@ -2278,7 +2344,7 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
      * Do not execute the callback as it would have been executed already
      * when the operation completed.
      */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     if (((object->common.key.encoding & CRYPTOKEY_HSM) == 0) && (!object->common.operationInProgress))
 #else
     if (!object->common.operationInProgress)
@@ -2290,12 +2356,14 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
     {
         HwiP_restore(interruptKey);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
         /* Cancel DMA for input and output channels, clear operation in-progress,
          * and releases crypto resource if necessary.
          */
         AESCommonLPF3_cancelOperation(&object->common, true);
+#endif
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         /* Since the HSM cannot cancel an in-progress token, we must wait for the result to allow for
          * subsequent token submissions to succeed.
          */
@@ -2339,7 +2407,7 @@ int_fast16_t AESCCM_cancelOperation(AESCCM_Handle handle)
     return status;
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 
 /*
  *  ======== AESCCMLPF3HSM_setMac ========

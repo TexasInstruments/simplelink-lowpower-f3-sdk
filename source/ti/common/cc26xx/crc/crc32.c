@@ -55,10 +55,10 @@
  *                                          Constants
  */
 
-#define CRC32_POLYNOMIAL      ((uint32_t)0xEDB88320)  /* reversed version or 802.3 polynomial 0x04C11DB7 */
+#define CRC32_POLYNOMIAL ((uint32_t)0xEDB88320) /* reversed version or 802.3 polynomial 0x04C11DB7 */
 
 /* Warning! this must be a power of 2 less than 1024 */
-#define CRC32_BUF_SZ          256
+#define CRC32_BUF_SZ 256
 
 /*******************************************************************************
  *                                       Local Variables
@@ -69,7 +69,7 @@ __no_init uint8_t crcBuf[CRC32_BUF_SZ];
 #elif defined(__TI_COMPILER_VERSION__) || defined(__clang__)
 uint8_t crcBuf[CRC32_BUF_SZ];
 #elif defined(__GNUC__)
-uint8_t crcBuf[CRC32_BUF_SZ] __attribute__ ((section (".noinit")));
+uint8_t crcBuf[CRC32_BUF_SZ] __attribute__((section(".noinit")));
 #endif
 
 /*******************************************************************************
@@ -85,16 +85,15 @@ uint8_t crcBuf[CRC32_BUF_SZ] __attribute__ ((section (".noinit")));
  */
 void *CRC32_memCpy(void *dest, const void *src, uint16_t len)
 {
-    if(dest == NULL)
+    if (dest == NULL)
     {
-        return(NULL);
+        return (NULL);
     }
-    while(len--)
+    while (len--)
     {
         ((uint8_t *)dest)[len] = ((uint8_t *)src)[len];
     }
-    return(dest);
-
+    return (dest);
 }
 /*******************************************************************************
  * @fn          CRC32_value
@@ -107,7 +106,7 @@ void *CRC32_memCpy(void *dest, const void *src, uint16_t len)
  */
 uint32_t CRC32_value(uint32_t inCRC)
 {
-    uint8_t  j;
+    uint8_t j;
     uint32_t ulCRC = inCRC;
 
     /* for this byte (inCRC).. */
@@ -124,7 +123,7 @@ uint32_t CRC32_value(uint32_t inCRC)
         }
     }
 
-    return(ulCRC);
+    return (ulCRC);
 }
 
 /*******************************************************************************
@@ -151,14 +150,13 @@ uint32_t CRC32_calc(uint8_t page, uint32_t pageSize, uint16_t offset, uint32_t l
     uint8_t bufNum;
 
     /* Check for invalid length */
-    if((len == 0) || (len == 0xFFFFFFFF) ||
-       (useExtFl == true && len > EFL_FLASH_SIZE) ||
-       (useExtFl == false && len > (MAX_ONCHIP_FLASH_PAGES*INTFLASH_PAGE_SIZE)))
+    if ((len == 0) || (len == 0xFFFFFFFF) || (useExtFl == true && len > EFL_FLASH_SIZE) ||
+        (useExtFl == false && len > (MAX_ONCHIP_FLASH_PAGES * INTFLASH_PAGE_SIZE)))
     {
         return crc;
     }
     /* Read first page of the image into the buffer. */
-    if(!useExtFl)
+    if (!useExtFl)
     {
         CRC32_memCpy(crcBuf, (uint8_t *)(page * pageSize) + offset, CRC32_BUF_SZ);
     }
@@ -180,13 +178,13 @@ uint32_t CRC32_calc(uint8_t page, uint32_t pageSize, uint16_t offset, uint32_t l
         uint8_t numBufInCurPg;
 
         /* Find the number of buffers within this page */
-        if(pageIdx == pageEnd)
+        if (pageIdx == pageEnd)
         {
             /* Number of bytes divided by buf_sz is the number of buffers */
             numBufInCurPg = numBytesInLastPg / CRC32_BUF_SZ;
 
             /* Round up a buffer if a partial buffer must be used */
-            if(numBytesInLastPg % CRC32_BUF_SZ != 0)
+            if (numBytesInLastPg % CRC32_BUF_SZ != 0)
             {
                 numBufInCurPg++;
             }
@@ -198,16 +196,16 @@ uint32_t CRC32_calc(uint8_t page, uint32_t pageSize, uint16_t offset, uint32_t l
             numBufInCurPg = pageSize / CRC32_BUF_SZ;
         }
         /* Read over buffers within each page */
-        for(bufNum = 0; bufNum < numBufInCurPg; bufNum++)
+        for (bufNum = 0; bufNum < numBufInCurPg; bufNum++)
         {
             /* Find ending offset in bytes last buffer. */
             uint16_t osetEnd;
             /* Calculate the ending offset for this buffer */
-            if(bufNum == (numBufInCurPg - 1) && pageIdx == pageEnd)
+            if (bufNum == (numBufInCurPg - 1) && pageIdx == pageEnd)
             {
-                if(numBytesInLastPg % CRC32_BUF_SZ != 0)
+                if (numBytesInLastPg % CRC32_BUF_SZ != 0)
                 {
-                    osetEnd = (numBytesInLastPg % CRC32_BUF_SZ );
+                    osetEnd = (numBytesInLastPg % CRC32_BUF_SZ);
                 }
                 else
                 {
@@ -223,41 +221,39 @@ uint32_t CRC32_calc(uint8_t page, uint32_t pageSize, uint16_t offset, uint32_t l
              * of the first page and all bytes after the remainder bytes in the
              * last buffer
              */
-            for (oset = ((pageIdx == pageBeg && bufNum == 0) ? IMG_DATA_OFFSET : 0);
-                     oset < osetEnd;
-                     oset++)
+            for (oset = ((pageIdx == pageBeg && bufNum == 0) ? IMG_DATA_OFFSET : 0); oset < osetEnd; oset++)
             {
                 temp1 = (crc >> 8) & 0x00FFFFFFL;
                 temp2 = CRC32_value(((uint32_t)crc ^ crcBuf[oset]) & 0xFF);
-                crc = temp1 ^ temp2;
+                crc   = temp1 ^ temp2;
             }
 
             /* Read data into the next buffer */
-            if(!useExtFl)
+            if (!useExtFl)
             {
-                CRC32_memCpy(crcBuf, (uint8_t *)((pageIdx*pageSize) + offset + ((bufNum + 1)*CRC32_BUF_SZ)),
-                        CRC32_BUF_SZ);
+                CRC32_memCpy(crcBuf,
+                             (uint8_t *)((pageIdx * pageSize) + offset + ((bufNum + 1) * CRC32_BUF_SZ)),
+                             CRC32_BUF_SZ);
             }
             else
             {
                 /* Check to see    if the next buffer is on the next page */
-                if(bufNum    == (numBufInCurPg - 1))
+                if (bufNum == (numBufInCurPg - 1))
                 {
                     readFlashPg((pageIdx + 1), 0, crcBuf, CRC32_BUF_SZ);
                 }
                 else
                 {
-                    readFlashPg(pageIdx, ((bufNum + 1)*CRC32_BUF_SZ), crcBuf,
-                                      CRC32_BUF_SZ);
+                    readFlashPg(pageIdx, ((bufNum + 1) * CRC32_BUF_SZ), crcBuf, CRC32_BUF_SZ);
                 }
             }
         } /* for(uint8_t bufNum = 0; bufNum < numBufInCurPg; bufNum++) */
-    } /* for (uint8_t pageIdx = pageBeg; pageIdx <= pageEnd; pageIdx++) */
+    }     /* for (uint8_t pageIdx = pageBeg; pageIdx <= pageEnd; pageIdx++) */
 
     /* XOR CRC with all bits on */
     crc = crc ^ 0xFFFFFFFF;
-    return(crc);
+    return (crc);
 }
 
 /**************************************************************************************************
-*/
+ */

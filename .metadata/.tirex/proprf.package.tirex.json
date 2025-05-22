@@ -3,16 +3,16 @@
         "metadataVersion": "3.1.0",
         "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK_PROPRF_MODULE",
         "name": "TI Proprietary RF Stack Core",
-        "version": "8.40.02.01",
+        "version": "9.10.00.83",
         "type": "software",
         "devices": [
             "CC23x0"
         ],
-        "image": "",
+        "image": "lpf3-tirex.png",
         "description": "Low Power F3 TI Proprietary RF Stack",
         "moduleOf": {
             "packageId": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
-            "semver": "8.40.2"
+            "semver": "9.10.0"
         }
     }
 ]

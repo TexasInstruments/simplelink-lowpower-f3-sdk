@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,19 +43,18 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define EXT_FLASH_PAGE_SIZE   4096
+#define EXT_FLASH_PAGE_SIZE 4096
 
 #ifndef Board_FLASH_CS_ON
-#define Board_FLASH_CS_ON (0)
+    #define Board_FLASH_CS_ON (0)
 #endif
 
 #ifndef Board_FLASH_CS_OFF
-#define Board_FLASH_CS_OFF (1)
+    #define Board_FLASH_CS_OFF (1)
 #endif
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef struct
@@ -66,48 +65,48 @@ typedef struct
 } ExtFlashInfo_t;
 
 /**
-* Initialize storage driver.
-*
-* @return True when successful.
-*/
+ * Initialize storage driver.
+ *
+ * @return True when successful.
+ */
 extern bool ExtFlash_open(void);
 
 /**
-* Close the storage driver
-*/
+ * Close the storage driver
+ */
 extern void ExtFlash_close(void);
 
 /**
-* Get flash information
-*/
+ * Get flash information
+ */
 extern ExtFlashInfo_t *ExtFlash_info(void);
 
 /**
-* Read storage content
-*
-* @return True when successful.
-*/
+ * Read storage content
+ *
+ * @return True when successful.
+ */
 extern bool ExtFlash_read(size_t offset, size_t length, uint8_t *buf);
 
 /**
-* Erase storage sectors corresponding to the range.
-*
-* @return True when successful.
-*/
+ * Erase storage sectors corresponding to the range.
+ *
+ * @return True when successful.
+ */
 extern bool ExtFlash_erase(size_t offset, size_t length);
 
 /**
-* Write to storage sectors.
-*
-* @return True when successful.
-*/
+ * Write to storage sectors.
+ *
+ * @return True when successful.
+ */
 extern bool ExtFlash_write(size_t offset, size_t length, const uint8_t *buf);
 
 /**
-* Test the flash (power on self-test)
-*
-* @return True when successful.
-*/
+ * Test the flash (power on self-test)
+ *
+ * @return True when successful.
+ */
 extern bool ExtFlash_test(void);
 
 #ifdef __cplusplus

@@ -224,6 +224,7 @@ const boardSpecificCCFGSettings = {
         levelBootloaderBackdoor: "Active low"
     },
     LP_EM_CC2340R5_CCFG_SETTINGS: {},
+    LP_EM_CC2340R53_CCFG_SETTINGS: {},
     LP_EM_CC2340R2_CCFG_SETTINGS: {},
     LP_EM_CC2745R10_Q1_CCFG_SETTINGS: {},
     LP_EM_CC2674P10_CCFG_SETTINGS: {

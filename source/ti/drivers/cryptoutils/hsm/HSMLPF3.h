@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,14 +55,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <ti/devices/DeviceFamily.h>
 #include <ti/drivers/SHA2.h>
 #include <ti/drivers/sha2/SHA2LPF3HSM.h>
 
-#include <ti/drivers/ECDSA.h>
-#include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
-
-#include <ti/drivers/ECDH.h>
-#include <ti/drivers/ecdh/ECDHLPF3HSM.h>
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #include <ti/drivers/EDDSA.h>
+    #include <ti/drivers/eddsa/EDDSALPF3HSM.h>
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 #include <ti/drivers/AESGCM.h>
 #include <ti/drivers/aesgcm/AESGCMLPF3HSM.h>
@@ -81,6 +81,12 @@
 
 #include <ti/drivers/AESCCM.h>
 #include <ti/drivers/aesccm/AESCCMLPF3.h>
+
+#include <ti/drivers/ECDH.h>
+#include <ti/drivers/ecdh/ECDHLPF3HSM.h>
+
+#include <ti/drivers/ECDSA.h>
+#include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
 
 #include <ti/drivers/TRNG.h>
 #include <ti/drivers/trng/TRNGLPF3HSM.h>
@@ -149,6 +155,13 @@
 #define HSMLPF3_RNG_CONFG_CRNG_DEFAULT_MIXCYCLE 0x2
 
 #define HSMLPF3_RETVAL_MASK MASK_8_BITS
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Power state defines from LPF3 to WFF3 mapping. */
+    #define PowerLPF3_ENTERING_STANDBY PowerWFF3_ENTERING_SLEEP
+    #define PowerLPF3_AWAKE_STANDBY    PowerWFF3_AWAKE_SLEEP
+    #define PowerLPF3_DISALLOW_STANDBY PowerWFF3_DISALLOW_SLEEP
+#endif
 
 /*!
  *  @brief  Enum for the NRBG engine type
@@ -513,7 +526,6 @@ void HSMLPF3_constructDeleteAssetToken(uint32_t assetId);
 /*
  *  ================ APIs to construct driver-specific command tokens ================
  */
-
 /*!
  *  @brief  Constructs a SHA2 onestep/segmented command token
  *
@@ -550,34 +562,60 @@ void HSMLPF3_constructECDHVerifyKeysPhysicalToken(ECDHLPF3HSM_Object *object);
  */
 void HSMLPF3_constructECDSASignPhysicalToken(ECDSALPF3HSM_Object *object);
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*!
- *  @brief  Constructs a ECDH num load command token
+ *  @brief  Constructs a EDDSA gen pub key command token
  *
- *  @param  [in] buffer             Input data to load on to the HSM
- *  @param  [in] index              Input index to pass on to the HSM
- *  @param  [in] length             Input data length
+ *  @param  [in] object             ECDSALPF3HSM object
  */
-void HSMLPF3_constructECDHnumLoadPhysicalToken(const uint8_t *buffer, uint8_t index, uint8_t length);
+void HSMLPF3_constructEDDSAGenPubKeyPhysicalToken(EDDSALPF3HSM_Object *object);
 
 /*!
- *  @brief  Constructs a ECDH num set command token
+ *  @brief  Constructs an EDDSA sign initial command token
  *
- *  @param  [in] length             Curve length to notify the HSM about
+ *  @param  [in] object             EDDSALPF3HSM object
  */
-void HSMLPF3_constructECDHnumSetPhysicalToken(uint8_t length);
+void HSMLPF3_constructEDDSASignInitialPhysicalToken(EDDSALPF3HSM_Object *object);
 
 /*!
- *  @brief  Constructs a ECDH PK command token
+ *  @brief  Constructs an EDDSA intermediate hash command token
  *
- *  @param  [in] operation          Operation type
- *  @param  [in] input              Input data address
- *  @param  [in] output             Output data address
- *  @param  [in] inputLength        Input data length
+ *  @param  [in] input              Data buffer input address.
+ *  @param  [in] inputLength        Data buffer input length.
+ *  @param  [in] tempAssetID        Asset ID holding the intermediate digest.
  */
-void HSMLPF3_constructECDHPKAOperationPhysicalToken(uint8_t operation,
-                                                    uint8_t *input,
-                                                    uint8_t *output,
-                                                    uint32_t inputLength);
+void HSMLPF3_constructEDDSAIntermediateHashPhysicalToken(const uint8_t *input,
+                                                         size_t inputLength,
+                                                         uint32_t tempAssetID);
+
+/*!
+ *  @brief  Constructs an EDDSA sign update command token
+ *
+ *  @param  [in] object             EDDSALPF3HSM object
+ */
+void HSMLPF3_constructEDDSASignUpdatePhysicalToken(EDDSALPF3HSM_Object *object);
+
+/*!
+ *  @brief  Constructs an EDDSA sign finalize command token
+ *
+ *  @param  [in] object             EDDSALPF3HSM object
+ */
+void HSMLPF3_constructEDDSASignFinalizePhysicalToken(EDDSALPF3HSM_Object *object);
+
+/*!
+ *  @brief  Constructs an EDDSA verify initial command token
+ *
+ *  @param  [in] object             EDDSALPF3HSM object
+ */
+void HSMLPF3_constructEDDSAVerifyInitialPhysicalToken(EDDSALPF3HSM_Object *object);
+
+/*!
+ *  @brief  Constructs an EDDSA verify final command token
+ *
+ *  @param  [in] object             EDDSALPF3HSM object
+ */
+void HSMLPF3_constructEDDSAVerifyFinalizePhysicalToken(EDDSALPF3HSM_Object *object);
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 /*!
  *  @brief  Constructs an AES-GCM Token
@@ -630,6 +668,7 @@ void HSMLPF3_constructAESCBCOneStepPhysicalToken(AESCBCLPF3_Object *object, uint
  */
 void HSMLPF3_constructCMACToken(AESCMACLPF3_Object *object, bool isFirst, bool isFinal);
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*!
  *  @brief  Constructs an RNG configure token for CRNG/TRNG operations command token
  *
@@ -642,6 +681,7 @@ void HSMLPF3_constructRNGSwitchNRBGWithDefaultsPhysicalToken(HSMLPF3_NRBGMode HS
  *
  */
 void HSMLPF3_constructRNGReseedDRBGPhysicalToken(void);
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 /*!
  *  @brief  Constructs an RNG get random number command token

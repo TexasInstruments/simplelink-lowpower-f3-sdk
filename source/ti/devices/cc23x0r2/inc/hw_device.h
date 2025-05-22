@@ -1,5 +1,5 @@
 /******************************************************************************
-*  Copyright (c) 2021-2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2022-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -29,7 +29,6 @@
 ******************************************************************************/
 #ifndef __HW_DEVICE_H__
 #define __HW_DEVICE_H__
-
 #include "hw_memmap.h"
 #include "hw_platform.h"
 
@@ -59,6 +58,10 @@
 /// Size of generalTrims section in FCFG, in number of 32-bit words
 #define FCFG_GENERALTRIMS_SIZE                  ((FLASH_2T_SECTOR_SIZE / 4) - 104)
 
+#define INTERNAL_FIELD_0 res0 = {0xFFFFFFFFU, 0xFFFFFFFFU}
+
+#define INTERNAL_FIELD_1 res = 0xFFFFFFFFU
+
 // --- Customer Configuration (CCFG) definitions ---
 /*! Macro for default CCFG configuration. All fields can be overwritten by
  *  setting the field to another value further down in the struct definition
@@ -71,8 +74,7 @@
         .pAppVtor = CCFG_BC_PAPP_NONE, \
         .crc32 = 0x0BAD0BAD \
     }, \
-    .hwOpts[0] = 0xFFFFFFFF, \
-    .hwOpts[1] = 0xFFFFFFFF, \
+    .INTERNAL_FIELD_0, \
     .permissions = { \
         .allowReturnToFactory   = CCFG_PERMISSION_ALLOW, \
         .allowFakeStby          = CCFG_PERMISSION_ALLOW, \
@@ -92,7 +94,7 @@
             .mainSectors32_255 = 0xFFFFFFFF, \
             .auxSectors        = 0xFFFFFFFF, \
         }, \
-        .res = 0xFFFFFFFF, \
+        .INTERNAL_FIELD_1, \
         .chipEraseRetain = { \
             .mainSectors0_31   = 0, \
             .mainSectors32_255 = 0, \

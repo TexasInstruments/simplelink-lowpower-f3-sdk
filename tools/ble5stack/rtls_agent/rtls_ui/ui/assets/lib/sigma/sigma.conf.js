@@ -1,1 +1,0 @@
-mxBasePath = 'assets/lib/sigma';

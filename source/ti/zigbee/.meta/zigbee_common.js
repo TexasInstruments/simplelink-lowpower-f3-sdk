@@ -45,6 +45,17 @@ const POLL_PERIOD_MAX = 0xFFFFFFFF;
 /* Network Key length (bytes) */
 const NWK_KEY_LEN = 16;
 
+const deviceTypeOptions = [
+    {name: "zc", displayName: "ZigBee Coordinator"},
+    {name: "zr", displayName: "ZigBee Router"},
+    {name: "zed", displayName: "ZigBee End Device"},
+    {name: "gpd", displayName: "Green Power Device"},
+];
+const defaultDeviceType = 'zc';
+const defaultDeviceTypeIsFFD = (defaultDeviceType === 'zc' || defaultDeviceType === 'zr');
+const defaultDeviceTypeIsRFD = (defaultDeviceType === 'zed');
+const defaultDeviceTypeIsGPD = (defaultDeviceType === 'gpd');
+
 /* Function that converts the channel array from the RF channel configurables
  * to a bitmask in hex string format */
 function chanArrToBitmask(chanArr)
@@ -91,5 +102,9 @@ exports = {
     POLL_PERIOD_MIN: POLL_PERIOD_MIN,
     POLL_PERIOD_MAX: POLL_PERIOD_MAX,
     NWK_KEY_LEN: NWK_KEY_LEN,
-
+    deviceTypeOptions: deviceTypeOptions,
+    defaultDeviceType: defaultDeviceType,
+    defaultDeviceTypeIsFFD: defaultDeviceTypeIsFFD,
+    defaultDeviceTypeIsRFD: defaultDeviceTypeIsRFD,
+    defaultDeviceTypeIsGPD: defaultDeviceTypeIsGPD
 }

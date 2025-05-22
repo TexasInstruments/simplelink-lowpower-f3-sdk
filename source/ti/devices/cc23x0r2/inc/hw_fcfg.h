@@ -1,5 +1,5 @@
 /******************************************************************************
-*  Copyright (c) 2021-2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2021-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -33,7 +33,6 @@
 ******************************************************************************/
 #ifndef __HW_FCFG_H__
 #define __HW_FCFG_H__
-
 #include <stdint.h>
 #include "hw_device.h"
 #include "hw_ccfg.h"
@@ -139,10 +138,7 @@ typedef struct {
         uint32_t crc32;
     } criticalTrim;
 
-    // Paperspin options    [64]: length 8 B
-    // Defines peripheral/feature availability and accessible memory
-    uint32_t hwOpts[2];
-
+    uint32_t res0[2];
 
     // Device permissions   [72]: length 4 B
     // This is maximally-restrictive combined with similar field in CCFG
@@ -160,7 +156,6 @@ typedef struct {
         uint32_t allowDebugPort       : 4;
     } permissions;
 
-
     // Miscellaneous fields
     // [76]: length 4B
     struct {
@@ -172,7 +167,6 @@ typedef struct {
             #define XCFG_MISC_SACITOEXP_INFINITE    0
         uint32_t res0               : 29;
     } misc;
-
 
     // Device information
     struct {    // [80]: length 48B
@@ -205,7 +199,6 @@ typedef struct {
             };
         } partId;
     } deviceInfo;
-
 
     // Flash protection     [128]: length 16 B
     // This is maximally-restrictive combined with similar field in CCFG
@@ -245,7 +238,6 @@ typedef struct {
         #define CPYLST_CPYFULLADDR(a)    (((uint32_t)(a)) + 1)
         #define CPYLST_JUMP(a)           (((uint32_t)(a)) + 2)
         #define CPYLST_CALL(a)           (((uint32_t)(a)) + 3)
-
 
     // *******************************************************
     // ***        Extended Application Trims               ***
@@ -299,7 +291,6 @@ typedef struct {
             } ateFtRev;
         } cc23x0r2;
     } appTrimsExt;
-
 
     // *******************************************************
     // ***            Application Trims                    ***
@@ -614,17 +605,15 @@ typedef struct {
         union {
             uint32_t val32;
             // Serial ROM bootloader parameters (defined in CCFG.h)
-            serialRomBldrParam_t params;
+            serialRomBldrParam_t bldrParam;
         } bldrParam;
     } bootCfg;
-
 
     // Reserved/padding to get 16 B alignment
     // [End-72] length: 4B
     uint32_t res1;
 
-
-    // CRC across hwOpts through res1 (after criticalTrim to here)
+    // CRC of content after criticalTrim through res1
     // [End-68]: length 4B
     uint32_t crc32;
 

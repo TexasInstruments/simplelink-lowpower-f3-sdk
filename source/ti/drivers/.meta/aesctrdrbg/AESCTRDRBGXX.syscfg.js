@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,11 +91,11 @@ let devSpecific = {
         if (deviceId.match(/CC23|CC27/))
         {
             /* LAES driver requires DMA module */
-            return Common.autoForceModules(["Board", "Power", "DMA"])();
+            return Common.autoForceModules(["Board", "Power", "DMA", "CryptoBoard"])();
         }
         else
         {
-            return Common.autoForceModules(["Board", "Power"])();
+            return Common.autoForceModules(["Board", "Power", "CryptoBoard"])();
         }
     }
 };

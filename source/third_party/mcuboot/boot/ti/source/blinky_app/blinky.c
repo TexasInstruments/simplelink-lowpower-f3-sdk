@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/flash.h)
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
 #include DeviceFamily_constructPath(driverlib/sys_ctrl.h)
 #else
 #include DeviceFamily_constructPath(driverlib/hapi.h)
@@ -63,7 +63,7 @@
 extern int MCUBOOT_HDR_BASE;
 struct image_header *mcubootHdr = (struct image_header *)&MCUBOOT_HDR_BASE;
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
 /*
  *  ======== disableFlashCache ========
  */
@@ -107,20 +107,20 @@ void gpioButtonFxn0(uint_least8_t index)
     struct image_version versionZero = {0};
     uint32_t flashStat;
     unsigned int key;
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
     uint8_t mode;
 #endif
 
     TRACE_LOG_INF("blinky_app invalidating image");
 
     /* Set mcuboot header ver to 0 to invalidate the image */
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
     mode = disableFlashCache();
 #endif
     key = HwiP_disable();
     flashStat = FlashProgram((uint8_t *) &versionZero, (uint32_t) &(mcubootHdr->ih_ver), sizeof(mcubootHdr->ih_ver));
     HwiP_restore(key);
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
     restoreFlashCache(mode);
 #endif
 
@@ -130,7 +130,7 @@ void gpioButtonFxn0(uint_least8_t index)
     }
 
     /* Reset and run mcuboot */
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
     SysCtrlSystemReset();
 #else
     HapiResetDevice();

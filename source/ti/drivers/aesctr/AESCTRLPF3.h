@@ -35,10 +35,12 @@
  *  @brief      AESCTR driver implementation for the Low Power F3 family
  *
  * # Hardware Accelerator #
- * The Low Power F3 family of devices has dedicated hardware accelerators.
+ * The Low Power F3 and WiFi F3 families of devices have dedicated hardware accelerators.
  * CC23XX devices have one dedicated accelerator whereas CC27XX devices have two
  * (Primary and Secondary). Combined they can perform AES encryption operations with
- * 128-bit, 192-bit and 256-bit keys. Only one operation can be carried out on the
+ * 128-bit, 192-bit and 256-bit keys.
+ * CC35XX devices have only one dedicated hardware accelerator.
+ * Only one operation can be carried out on the
  * accelerator at a time. Mutual exclusion is implemented at the driver level and
  * coordinated between all drivers relying on the accelerator. It is transparent to
  * the application and only noted to ensure sensible access timeouts are set.
@@ -64,9 +66,12 @@
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/aes.h)
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include DeviceFamily_constructPath(driverlib/aes.h)
+#endif
+
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
 #endif
 
@@ -88,6 +93,8 @@ extern "C" {
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S |    \
          (uint32_t)AES_AUTOCFG_TRGAES_RDTXT3 | (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | \
          (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Not used for CC35XX */
 #else
     #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
 #endif
@@ -109,6 +116,8 @@ extern "C" {
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S |        \
          (uint32_t)AES_AUTOCFG_CTRSIZE_CTR128 | (uint32_t)AES_AUTOCFG_CTRENDN_BIGENDIAN | \
          (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Not used for CC35XX */
 #else
     #error "Unsupported DeviceFamily_Parent for AESCTRLPF3!"
 #endif
@@ -139,7 +148,7 @@ typedef struct
     AESCTR_CallbackFxn callbackFxn;
     AESCTR_OperationType operationType;
     bool threadSafe;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     /*!
      * @brief The staus of the HSM Boot up process
      * if HSMLPF3_STATUS_SUCCESS, the HSM booted properly.
@@ -168,6 +177,7 @@ typedef struct
  */
 void AESCTRLPF3_processData(const uint8_t *input, uint8_t *output, size_t inputLength, bool isOneStepOrFinalOperation);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /*!
  * @brief Configures the DMA to process the given input data.
  *        #AESCTRLPF3_writeCounter must be called to start the operation
@@ -275,6 +285,7 @@ __STATIC_INLINE void AESCTR_disableThreadSafety(AESCTR_Handle handle)
     object->threadSafe        = false;
 }
 /*! @endcond */
+#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */
 
 #ifdef __cplusplus
 }

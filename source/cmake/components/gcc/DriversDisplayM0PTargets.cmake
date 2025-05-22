@@ -56,7 +56,7 @@ add_library(Drivers::display_cc23x0r2 STATIC IMPORTED)
 
 set_target_properties(Drivers::display_cc23x0r2 PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x0r2;grlib_m0p;TOOLCHAIN_gcc_m0p"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x0r2;TOOLCHAIN_gcc_m0p"
 )
 
 # Create imported target Drivers::display_cc23x0r5
@@ -64,7 +64,7 @@ add_library(Drivers::display_cc23x0r5 STATIC IMPORTED)
 
 set_target_properties(Drivers::display_cc23x0r5 PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x0r5;grlib_m0p;TOOLCHAIN_gcc_m0p"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x0r5;TOOLCHAIN_gcc_m0p"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)

@@ -1,0 +1,18 @@
+[
+    {
+        "metadataVersion": "3.1.0",
+        "id": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK_BLE_LPF3_MODULE",
+        "name": "TI Bluetooth® Low Energy Stack Stack Core",
+        "version": "9.10.00.83",
+        "type": "software",
+        "devices": [
+            "CC23x0"
+        ],
+        "image": "lpf3-tirex.png",
+        "description": "Low Power F3 TI Bluetooth® Low Energy Stack Stack",
+        "moduleOf": {
+            "packageId": "com.ti.SIMPLELINK_LOWPOWER_F3_SDK",
+            "semver": "9.10.0"
+        }
+    }
+]

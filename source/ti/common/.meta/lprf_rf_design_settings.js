@@ -134,6 +134,9 @@ const boardSpecificRfDesignSettings = {
     LP_EM_CC2340R5_RF_DESIGN_SETTINGS: {
         rfDesign: "LP_EM_CC2340R5"
     },
+    LP_EM_CC2340R53_RF_DESIGN_SETTINGS: {
+        rfDesign: "LP_EM_CC2340R5"
+    },
     LP_EM_CC2340R2_RF_DESIGN_SETTINGS: {
         rfDesign: "LP_EM_CC2340R2"
     },

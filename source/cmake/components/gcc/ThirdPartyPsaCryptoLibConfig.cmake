@@ -31,9 +31,12 @@ endmacro()
 ####################################################################################
 
 find_package("Drivers" REQUIRED)
+find_package("SecureDrivers" REQUIRED)
 find_package("DriversUtils" REQUIRED)
+find_package("SecureDriversUtils" REQUIRED)
 find_package("TrustZone" REQUIRED)
-find_package("DriversCC27XX" REQUIRED)
+find_package("DriversLPF3" REQUIRED)
+find_package("SecureDriversLPF3" REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartyPsaCryptoLibM33FTargets.cmake")
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, Texas Instruments Incorporated
+# Copyright (c) 2022-2024, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -106,7 +106,7 @@ if(NOT TARGET TOOLCHAIN_ticlang)
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_LINKER_MAP_FILE>,>>:-Wl,-m,$<TARGET_PROPERTY:TI_LINKER_MAP_FILE>>
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_LINKER_REFERENCE_FILE>,>>:-Wl,--emit_references:file=$<TARGET_PROPERTY:TI_LINKER_REFERENCE_FILE>>
         $<$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>:-Wl,--emit_warnings_as_errors>
-        >
+        -flto>
         # If TI_CFLAGS_OVERRIDE, use it exclusively
         $<$<NOT:$<STREQUAL:$<TARGET_PROPERTY:TI_CFLAGS_OVERRIDE>,>>:$<TARGET_PROPERTY:TI_LFLAGS_OVERRIDE>>
     )

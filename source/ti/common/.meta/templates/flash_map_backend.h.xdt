@@ -33,6 +33,9 @@
     var module = system.modules['/ti/common/mcuboot'];
     var inst = module.$static;
 
+    // included to see if secure secondary bootloader has been enabled
+    let CCFG = system.modules["/ti/devices/CCFG"];
+
 %%}
 /*
  *  ======== flash_map_backend.h ========
@@ -61,8 +64,13 @@
 * TI_BOOT_USE_EXTERNAL_FLASH is not defined; that is, both
 * Primary and Secondary slots are located in on-chip memory.
 */
+% if ((CCFG != undefined ) && CCFG.$static.ssbEnabled === true) {
+#define BOOTLOADER_BASE_ADDRESS         0x`inst.bootloaderBaseAddress.toString(16)` + 0x`CCFG.$static.hdrSize.toString(16)`
+#define BOOT_BOOTLOADER_SIZE            0x`inst.bootloaderSize.toString(16)` - 0x`CCFG.$static.hdrSize.toString(16)`
+% } else {
 #define BOOTLOADER_BASE_ADDRESS         0x`inst.bootloaderBaseAddress.toString(16)`
 #define BOOT_BOOTLOADER_SIZE            0x`inst.bootloaderSize.toString(16)`
+% }
 
 #define BOOT_PRIMARY_1_BASE_ADDRESS     0x`inst.primaryBase1.toString(16)`
 #define BOOT_PRIMARY_1_SIZE             0x`inst.primarySize1.toString(16)`

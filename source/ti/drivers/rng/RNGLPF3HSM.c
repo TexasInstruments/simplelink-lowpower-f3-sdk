@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,6 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(driverlib/hapi.h)
 
 extern const RNGLPF3HSM_HWAttrs RNGLPF3HSM_hwAttrs;
 extern uint8_t RNG_instancePool[];
@@ -366,7 +365,6 @@ static int_fast16_t RNGLPF3HSM_getValidatedNumber(RNG_Handle handle,
  */
 int_fast16_t RNG_getRandomBits(RNG_Handle handle, void *randomBits, size_t randomBitsLength)
 {
-
     return RNGLPF3HSM_getValidatedNumber(handle,
                                          randomBits,
                                          randomBitsLength,
@@ -385,7 +383,6 @@ int_fast16_t RNG_getLERandomNumberInRange(RNG_Handle handle,
                                           void *randomNumber,
                                           size_t randomNumberBitLength)
 {
-
     return RNGLPF3HSM_getValidatedNumber(handle,
                                          randomNumber,
                                          randomNumberBitLength,
@@ -404,7 +401,6 @@ int_fast16_t RNG_getBERandomNumberInRange(RNG_Handle handle,
                                           void *randomNumber,
                                           size_t randomNumberBitLength)
 {
-
     return RNGLPF3HSM_getValidatedNumber(handle,
                                          randomNumber,
                                          randomNumberBitLength,
@@ -463,7 +459,7 @@ int_fast16_t RNG_generateLEKeyInRange(RNG_Handle handle,
 
     if (key == NULL)
     {
-        return RNG_STATUS_INVALID_INPUTS;
+        returnValue = RNG_STATUS_INVALID_INPUTS;
     }
     else if ((key->encoding != CryptoKey_BLANK_PLAINTEXT) && (key->encoding != CryptoKey_BLANK_PLAINTEXT_HSM))
     {
@@ -471,7 +467,6 @@ int_fast16_t RNG_generateLEKeyInRange(RNG_Handle handle,
     }
     else
     {
-
         randomBits = key->u.plaintext.keyMaterial;
 
         returnValue = RNGLPF3HSM_getValidatedNumber(handle,
@@ -497,9 +492,10 @@ int_fast16_t RNG_generateBEKeyInRange(RNG_Handle handle,
 {
     int_fast16_t returnValue;
     uint8_t *randomBits;
+
     if (key == NULL)
     {
-        return RNG_STATUS_INVALID_INPUTS;
+        returnValue = RNG_STATUS_INVALID_INPUTS;
     }
     else if ((key->encoding != CryptoKey_BLANK_PLAINTEXT) && (key->encoding != CryptoKey_BLANK_PLAINTEXT_HSM))
     {

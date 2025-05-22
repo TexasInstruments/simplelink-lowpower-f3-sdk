@@ -1,6 +1,7 @@
 [
     {
         "files": [
+            "+../../README.html -> README.html",
             "+../../Application/app_main.c -> Application/app_main.c",
             "+../../Application/app_main.h -> Application/app_main.h",
             "+../../Tools/build_config.opt -> Tools/build_config.opt",
@@ -9,7 +10,7 @@
             "+../../NPI/Queue_freertos.c -> NPI/Queue_freertos.c",
             "+../../NPI/Queue_freertos.h -> NPI/Queue_freertos.h",
             "+../ble_controller.syscfg -> ble_controller.syscfg",
-            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+            "+cc27xx_freertos.cmd -> cc27xx_freertos.cmd"
         ]
     }
 ]

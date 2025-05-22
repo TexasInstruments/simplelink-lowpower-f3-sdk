@@ -19,14 +19,21 @@ users by packaging essential software components, such as:
 
 ## What's New
 
-This is version 8.40.02.01 of the LPF3 SDK. This release includes:
+This is version 9.10.00.83 of the LPF3 SDK. This release includes:
 
-* Certified Zigbee Stack.
-* Zigbee OTA support.
-* Minor bug fixes in SCCM.
+* Bluetooth LE Channel Sounding preview.
+* Bluetooth LE Connection Monitor with BLE Stack integration for CC23xx and
+  CC27xx devices.
+* Bluetooth LE Power Control Preview for CC23XX and CC27xx devices.
+* Bluetooth LE Connection Handover with GATT Layer.
+* Certification of devices to be compliant with China MIIT (Ministry of Industry
+  and Information Technology) and the EU RED (European Union Radio Equipment
+  Directive) regulations on 2.4GHz.
+* Zigbee Stack Certification - Zigbee Pro 2023 (R23) and Green Power Proxy
+  v1.1.2 (Zigbee Core v1.0.0.0)
 
 More details, including supported devices, IDEs, and toolchains are provided in
-the [LPF3 8.40.02.01 SDK release notes][sdk release notes].
+the [LPF3 9.10.00.83 SDK release notes][sdk release notes].
 
 ## About this Repository
 
@@ -46,6 +53,13 @@ it available as a Git repository to cater to various use cases:
   identify changes that may affect (or not!) your application.
 * **Simplified workflow for rebasing**: Git makes it simpler for you to rebase
   your changes to new releases.
+
+One temporary, notable difference in this LPF3 9.10.00.83 SDK GitHub
+distribution when compared to the classic installer above, is the exclusion of
+the **tools/ble/ble_agent/ble_toolbox/** directory. This has been temporarily
+done as the ble_toolbox executable currently exceeds GitHub's file size limit.
+Users can obtain the ble_toolbox executable using the classic installer. This
+GitHub-specific difference will be resolved in the near future.
 
 ## Example Repos
 
@@ -111,8 +125,8 @@ Dependency download locations:
 
 Please consider creating a post on [TI's E2E forum](https://e2e.ti.com).
 
-[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.02.01
-[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__8.40.02.01
+[sdk release notes]: https://dev.ti.com/tirex/explore/node?node=A__ADMjnimJ4C5BfFnmM3X-jg__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__9.10.00.83
+[sdk docs]: https://dev.ti.com/tirex/explore/node?node=A__AHaph7YfvcrVy2cDlmb4sQ__com.ti.SIMPLELINK_LOWPOWER_F3_SDK__58mgN04__9.10.00.83
 [sysconfig download]: https://www.ti.com/tool/SYSCONFIG
 [ticlang download]: https://www.ti.com/tool/download/ARM-CGT-CLANG
 [gcc download]: https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads

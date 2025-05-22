@@ -125,23 +125,22 @@
 #define ti_drivers_SHA2CC26XX__include
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #ifndef NULL
-#define NULL 0L
+    #define NULL 0L
 #endif
 
-#define SHA2CC26XX_STATUS_ILLEGAL_PARAM                       -1  /*!< Illegal parameter        */
+#define SHA2CC26XX_STATUS_ILLEGAL_PARAM -1 /*!< Illegal parameter        */
 /* A SHA256_memory_t variable of this type must be allocated before running any
  SHA256 functions. */
-  typedef struct
-  {
+typedef struct
+{
     uint32_t state[8];
     uint32_t textLen[2];
     uint32_t W[16];
-  } SHA256_memory_t;
+} SHA256_memory_t;
 
 //*****************************************************************************
 /*!
@@ -159,7 +158,7 @@ extern uint8_t SHA2CC26XX_initialize(SHA256_memory_t *pWorkZone);
 
 //*****************************************************************************
 /*!
-* \brief Perform SHA256.
+ * \brief Perform SHA256.
  *
  * Must call \ref SHA256_output() to receive output from this operation.
  *
@@ -170,8 +169,7 @@ extern uint8_t SHA2CC26XX_initialize(SHA256_memory_t *pWorkZone);
  * \return Status
  */
 //*****************************************************************************
-extern uint8_t SHA2CC26XX_execute(SHA256_memory_t *pMemory, uint8_t *pBufIn,
-uint32_t bufLen);
+extern uint8_t SHA2CC26XX_execute(SHA256_memory_t *pMemory, uint8_t *pBufIn, uint32_t bufLen);
 
 //*****************************************************************************
 /*!
@@ -187,7 +185,7 @@ extern uint8_t SHA2CC26XX_output(SHA256_memory_t *pMemory, uint8_t *pBufOut);
 
 //*****************************************************************************
 /*!
-* \brief Perform SHA256 on the the input data.
+ * \brief Perform SHA256 on the the input data.
  *
  * The input and output buffer can point to the same memory.
  * This is the equivalent of calling \ref SHA256_initialize(),
@@ -201,8 +199,10 @@ extern uint8_t SHA2CC26XX_output(SHA256_memory_t *pMemory, uint8_t *pBufOut);
  * \return Status
  */
 //*****************************************************************************
-extern uint8_t SHA2CC26XX_runFullAlgorithm(SHA256_memory_t *pMemory, uint8_t *pBufIn,
-uint32_t bufLen, uint8_t *pBufOut);
+extern uint8_t SHA2CC26XX_runFullAlgorithm(SHA256_memory_t *pMemory,
+                                           uint8_t *pBufIn,
+                                           uint32_t bufLen,
+                                           uint8_t *pBufOut);
 
 #ifdef __cplusplus
 }

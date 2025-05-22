@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,8 +77,8 @@ var cc23x0r2DeviceFiles = [
 var cc27xxDeviceFiles = [
     "dpl/ClockPLPF3_freertos.c",
     "dpl/HwiPCC27XX_freertos.c",
-    "dpl/PowerCC27XX_freertos.c",
-    "dpl/TimestampPLPF3_freertos.c"
+    "dpl/TimestampPLPF3_freertos.c",
+    "dpl/PowerCC27XX_freertos.c"
 ];
 
 var cc35xxDeviceFiles = [
@@ -91,8 +91,8 @@ var cc35xxDeviceFiles = [
 function getStartupFiles(family)
 {
     var startupFile;
-    if (system.modules["/ti/utils/TrustZone"]) {
-        // TFM-enabled startup files have the suffix "_ns"
+    if (system.modules["/ti/utils/TrustZone"] && family.match(/cc13x4_cc26x4/)) {
+        /* TFM-enabled startup files for CC13X4/CC26X4 have the suffix "_ns" */
         startupFile = `startup/startup_${family}_${system.compiler}_ns.c`;
     }
     else {
@@ -110,14 +110,14 @@ function getCFiles(kernel)
     } else if (system.deviceData.deviceId.match(/CC(13|26).[34]/)) {
         return dplFiles.concat(cc13xxcc26xxDeviceFiles, getStartupFiles("cc13x4_cc26x4"));
     } else if (system.deviceData.deviceId.match(/CC23.0R22/)) {
-        // cc2340r22 uses cc2340r5 driverlib
+        /* cc2340r22 uses cc2340r5 driverlib */
         return dplFiles.concat(cc23x0r5DeviceFiles, getStartupFiles("cc23x0r5"));
     } else if (system.deviceData.deviceId.match(/CC23.0R2/)) {
         return dplFiles.concat(cc23x0r2DeviceFiles, getStartupFiles("cc23x0r2"));
     } else if (system.deviceData.deviceId.match(/CC23.0R5/)) {
         return dplFiles.concat(cc23x0r5DeviceFiles, getStartupFiles("cc23x0r5"));
     } else if (system.deviceData.deviceId.match(/CC27../)) {
-        return dplFiles.concat(cc27xxDeviceFiles, getStartupFiles("cc27xx"));
+            return dplFiles.concat(cc27xxDeviceFiles, getStartupFiles("cc27xx"));
     } else if (system.deviceData.deviceId.match(/CC35../)) {
         return dplFiles.concat(cc35xxDeviceFiles, getStartupFiles("cc35xx"));
     } else {

@@ -53,16 +53,16 @@ if (TI_INTERNAL_BUILD)
             ecc_cc27xx
             OUTPUT_NAME ecc
             SOURCES ${SOURCES_CC27XX} ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include/ECCSW.h
+            ADD_SDK_INCLUDE_PATH source
             ARCH m33f
             LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m33f
         )
-        target_include_directories(ecc_cc27xx INTERFACE "${CMAKE_SOURCE_DIR}/source")
 
         if (${TI_TOOLCHAIN_NAME} STREQUAL "ticlang" OR ${TI_TOOLCHAIN_NAME} STREQUAL "gcc")
             target_sources(ecc_cc27xx PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_gnu.s)
         elseif (${TI_TOOLCHAIN_NAME} STREQUAL "iar")
             target_sources(ecc_cc27xx PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_iar.s)
-        endif ()        
+        endif ()
     endif ()
 
     if ("m0p" IN_LIST SUPPORTED_ARCHITECTURES)
@@ -70,10 +70,10 @@ if (TI_INTERNAL_BUILD)
             ecc_cc23x0
             OUTPUT_NAME ecc
             SOURCES ${SOURCES_CC23X0} ${CMAKE_SOURCE_DIR}/source/third_party/ecc/include/ECCSW.h
+            ADD_SDK_INCLUDE_PATH source
             ARCH m0p
             LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_m0p
         )
-        target_include_directories(ecc_cc23x0 INTERFACE "${CMAKE_SOURCE_DIR}/source")
 
         if (${TI_TOOLCHAIN_NAME} STREQUAL "ticlang" OR ${TI_TOOLCHAIN_NAME} STREQUAL "gcc")
             target_sources(ecc_cc23x0 PUBLIC ${INVIA_LIB_INSTALL_DIR}/source/third_party/ecc/src/lowlevelapi_m0_gnu.s)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,16 +32,16 @@
 /*!****************************************************************************
  *  @file       TRNGLPF3HSM.h
  *
- *  @brief      TRNG driver implementation for the CC27XX family
+ *  @brief      TRNG driver implementation for CC27XX and CC35XX device families
  *
  *  This file should only be included in the board file to fill the TRNG_config
  *  struct.
  *
  *  # Hardware
  *
- *  The CC27XX family has a dedicated hardware engine, the Hardware Security Module (HSM)
- *  that contains TRNG capabilities based on sampling multiple free running oscillators
- *  (FROs).
+ *  The CC27XX and CC35XX device families have a dedicated hardware engine,
+ *  the Hardware Security Module (HSM) that contains TRNG capabilities based on
+ *  sampling multiple free running oscillators (FROs).
  *
  *  # Behaviour
  *
@@ -99,9 +99,9 @@ extern "C" {
 /*
  *
  *  !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
- *  ## TRNG Driver Limitation for CC27XX devices #
+ *  ## TRNG Driver Limitation for CC27XX and CC35XX device families #
  *
- *  For CC27XX devices, the size of random data requested must be a 32-bit multiple. The
+ *  For CC27XX and CC35XX devices, the size of random data requested must be a 32-bit multiple. The
  *  appropriate error code, TRNG_STATUS_INVALID_INPUT_SIZE, will be returned to the user in
  *  the case this rule is not adhered to and the input size is not a multiple of 4 bytes, (32-bits).
  *
@@ -143,22 +143,7 @@ typedef enum
  */
 typedef struct
 {
-    /*!
-     * @brief Crypto Peripheral's interrupt priority.
-     *
-     * The CC27xx uses four of the priority bits,
-     * meaning ~0 has the same effect as INT_PRI_LEVEL15.
-     *
-     * (15 << 4) will apply the lowest priority.
-     *
-     * (1 << 5) will apply the highest priority.
-     *
-     * Setting the priority to 0 is not supported by this driver.
-     *
-     * HWI's with priority 0 ignore the HWI dispatcher to support zero-latency
-     * interrupts, thus invalidating the critical sections in this driver.
-     */
-    uint8_t intPriority;
+    uint8_t reserved1;
 } TRNGLPF3HSM_HWAttrs;
 
 /*! \cond Internal APIs */
@@ -185,6 +170,7 @@ typedef struct
 
 /*! \endcond */
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*!
  *  @brief   Reseed the HSM IP DRBG engine
  *
@@ -234,6 +220,7 @@ extern int_fast16_t TRNGLPF3HSM_reseedHSMAsync();
  *  @sa     TRNG_open()
  */
 extern int_fast16_t TRNGLPF3HSM_switchNrbgMode(TRNG_Handle handle, TRNGLFP3HSM_NRBGMode nrbgMode);
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
 
 #ifdef __cplusplus
 }

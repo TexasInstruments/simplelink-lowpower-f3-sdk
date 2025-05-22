@@ -16,7 +16,7 @@
             "+../../app/app_data.c -> app/app_data.c",
             "+../data_stream.syscfg -> data_stream.syscfg",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",
-            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+            "+cc27xx_freertos.cmd -> cc27xx_freertos.cmd"
         ]
     }
 ]

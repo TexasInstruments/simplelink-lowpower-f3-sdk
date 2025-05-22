@@ -48,8 +48,7 @@
 #define UTC_CLOCK_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*********************************************************************
@@ -59,7 +58,7 @@ extern "C"
 /*********************************************************************
  * MACROS
  */
-#define	IsLeapYear(yr)	(!((yr) % 400) || (((yr) % 100) && !((yr) % 4)))
+#define IsLeapYear(yr) (!((yr) % 400) || (((yr) % 100) && !((yr) % 4)))
 
 /*********************************************************************
  * CONSTANTS
@@ -76,12 +75,12 @@ typedef uint32_t UTCTime;
 // UTC time structs broken down until standard components.
 typedef struct
 {
-  uint8_t seconds;  // 0-59
-  uint8_t minutes;  // 0-59
-  uint8_t hour;     // 0-23
-  uint8_t day;      // 0-30
-  uint8_t month;    // 0-11
-  uint16_t year;    // 2000+
+    uint8_t seconds; // 0-59
+    uint8_t minutes; // 0-59
+    uint8_t hour;    // 0-23
+    uint8_t day;     // 0-30
+    uint8_t month;   // 0-11
+    uint16_t year;   // 2000+
 } UTCTimeStruct;
 
 /*********************************************************************
@@ -110,7 +109,7 @@ extern void UTC_init(void);
  *     newTime - number of seconds since 0 hrs, 0 minutes,
  *               0 seconds, on the 1st of January 2000 UTC
  */
-extern void UTC_setClock( UTCTime newTime );
+extern void UTC_setClock(UTCTime newTime);
 
 /*
  * Gets the current time.  This will only return the seconds
@@ -118,7 +117,7 @@ extern void UTC_setClock( UTCTime newTime );
  *     returns: number of seconds since 0 hrs, 0 minutes,
  *              0 seconds, on the 1st of January 2000 UTC
  */
-extern UTCTime UTC_getClock( void );
+extern UTCTime UTC_getClock(void);
 
 /*
  * Converts UTCTime to UTCTimeStruct
@@ -127,14 +126,14 @@ extern UTCTime UTC_getClock( void );
  *          0 seconds, on the 1st of January 2000 UTC
  * tm - pointer to breakdown struct
  */
-extern void UTC_convertUTCTime( UTCTimeStruct *tm, UTCTime secTime );
+extern void UTC_convertUTCTime(UTCTimeStruct *tm, UTCTime secTime);
 
 /*
  * Converts UTCTimeStruct to UTCTime (seconds since 00:00:00 01/01/2000)
  *
  * tm - pointer to UTC time struct
  */
-extern UTCTime UTC_convertUTCSecs( UTCTimeStruct *tm );
+extern UTCTime UTC_convertUTCSecs(UTCTimeStruct *tm);
 
 /*********************************************************************
 *********************************************************************/

@@ -50,6 +50,4 @@ extern void gboss_set_buttons_max_num(zb_uint8_t num);
 extern void zgpd_button_enable_debounce(void);
 extern void zgpd_button_disable_debounce(void);
 
-extern  SemaphoreP_Handle buttonSem;
-
 #endif /* ZB_HAL_BUTTONS_H */

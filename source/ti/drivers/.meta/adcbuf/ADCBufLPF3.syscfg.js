@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,7 +70,8 @@ let devSpecific = {
                 { displayName: "10 Bits", name: "ADCLPF3_RESOLUTION_10_BIT"},
                 { displayName: "12 Bits", name: "ADCLPF3_RESOLUTION_12_BIT"}
             ]
-        }
+        },
+        intPriority
     ],
     pinmuxRequirements: pinmuxRequirements,
     moduleInstances: moduleInstances,

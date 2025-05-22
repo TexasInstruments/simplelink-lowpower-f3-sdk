@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -388,7 +388,13 @@ function device2Family(device, mod)
      * contain all CC35XX specific modules
      */
     let cc35xxMods = {
-        "SHA2" :           "WFF3HSM"
+        "AESGCM":          "LPF3HSM",
+        "AESECB":          "LPF3",
+        "AESCBC":          "LPF3",
+        "AESCCM":          "LPF3",
+        "AESCMAC":         "LPF3",
+        "AESCTR":          "LPF3",
+        "SHA2":            "LPF3HSM"
     };
 
     /* deviceId is the directory name within the pinmux/deviceData */
@@ -942,6 +948,11 @@ hardware interrupt priority.`,
  */
 function intPriority2Hex(intPri)
 {
+    if (intPri == undefined) {
+        /* throw exception */
+        throw new Error("intPriority2Hex: intPri is undefined");
+    }
+
     const numPriBits = numPriorityBits();
 
     /* NoRTOS and FreeRTOS DPL do not support the lowest priority (e.g. 3 with 2

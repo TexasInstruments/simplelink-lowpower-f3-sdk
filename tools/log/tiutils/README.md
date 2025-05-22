@@ -31,7 +31,7 @@ This section will briefly explain the steps needed to setup and use the logger
 tool. For more details about each transport/output module, please refer to their
 respective sections in this document.
 
-Install Python (3.8.10) from [**python.org**][python-web], and if you want to
+Install Python (3.10.12) from [**python.org**][python-web], and if you want to
 use the Wireshark output module, install the application from
 [**wireshark.org**][wireshark-web].
 
@@ -42,10 +42,10 @@ Python install is not affected, or it can simply be installed to the global
 Python library.
 
 __NOTE:__ If you have several versions of Python installed, it is important that
-the tilogger is run with the correct version (3.8). On Windows, this can be
+the tilogger is run with the correct version (3.10). On Windows, this can be
 controlled via the py launcher. To see a list of installed versions, run `py
 -0p`. The instructions below will assume there are multiple versions available,
-but will also work if only 3.8 is available.
+but will also work if only 3.10 is available.
 
 The following commands must be run from `<SDK_INSTALL_DIR>/tools/log/tiutils/`.
 
@@ -53,7 +53,7 @@ The following commands must be run from `<SDK_INSTALL_DIR>/tools/log/tiutils/`.
 
 ```powershell
 # Create a virtualenv (local copy of python + packages)
-$ py -3.8 -m venv .venv
+$ py -3.10 -m venv .venv
 # Activate virtualenv.
 $ .\.venv\Scripts\activate.ps1 (or .bat)
 ```
@@ -85,7 +85,7 @@ If you wish to install the tilogger tool globally, use the following command
 
 ```powershell
 # Install the tilogger tool globally
-$ py -3.8 -m pip install [--proxy yourproxy.com] -r requirements.txt
+$ py -3.10 -m pip install [--proxy yourproxy.com] -r requirements.txt
 ```
 
 If you install globally, `python` must be available on PATH for these scripts to
@@ -134,6 +134,27 @@ Commands:
   uart             Add UART transport as input to log.
   wireshark        Add Wireshark to log outputs.
 ```
+#### ELF Files Specification
+
+The tilogger needs the project's [ELF
+file](https://en.wikipedia.org/wiki/Executable_and_Linkable_Format) in order to
+read the logs. The ELF file (`<ProjectName>.out`) is automatically generated to
+the output folder of your project after the build step, and the name of the file
+depends on the project. The ELF file will be referred to as my_elf.out
+throughout this document.
+
+If you wish, non-logging related sections of my_elf.out may be removed as they may
+contain sensitive information. To do this, use the utilities found in your
+toolchain to run the appropriate command below:
+
+* GCC
+   ```arm-none-eabi-objcopy --only-section=.log_data --only-section=.log_ptr input.out output.out```
+* TICLANG and IAR projects
+   ```tiarmobjcopy --only-section=.log_data --only-section=.log_ptr input.out output.out```
+
+You can provide ELF files containing Log-string information either globally (to
+all transports you add) if you have just one device or if the devices run the
+same firmware, and you can provide the ELF files to each transport individually.
 
 #### Extracting Logs
 
@@ -153,25 +174,6 @@ transport and output modules.
 > **Please refer to each module’s respective sections in this document for
 > specific considerations.**
 
-#### ELF Files Specification
-
-The ELF file (`<ProjectName>.out`) is automatically generated to the output
-folder of your project after the build step, and the name of the file depends on
-the project. The ELF file will be referred to as my_elf.out throughout this
-document.
-
-Non-logging related sections from your elf.out file may be removed as they may
-contain sensitive information. To do this, use the utilities found in your
-toolchain to run the appropriate command below:
-
-* GCC
-   ```arm-none-eabi-objcopy --only-section=.log_data --only-section=.log_ptr input.out output.out```
-* TICLANG and IAR projects
-   ```tiarmobjcopy --only-section=.log_data --only-section=.log_ptr input.out output.out```
-
-You can provide ELF files containing Log-string information either globally (to
-all transports you add) if you have just one device or if the devices run the
-same firmware, and you can provide the ELF files to each transport individually.
 
 #### Examples
 
@@ -435,7 +437,7 @@ Usage: tilogger to-replayfile [OPTIONS]
   A invocation storing an ITM stream parsed with the provided ELF file to
   replayfile.json:
 
-      tilogger --elf path/to/elf.out itm COM6 12000000 to-replayfile --file
+      tilogger --elf path/to/my_elf.out itm COM6 12000000 to-replayfile --file
       path/to/replayfile.json
 
   To replay the log events, use

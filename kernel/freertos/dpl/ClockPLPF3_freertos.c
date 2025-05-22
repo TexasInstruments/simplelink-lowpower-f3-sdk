@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,8 +49,8 @@
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(inc/hw_systim.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 
 /* Defines */
@@ -89,13 +89,13 @@
 /* The name of this struct and the names of its members are used by ROV */
 typedef struct ClockP_Obj
 {
-    List_Elem elem;       ///< Clock's List element. Must be first in struct
-    uint32_t timeout;     ///< Timeout value (used for one-shot)
-    uint32_t currTimeout; ///< Next timeout value in number of tick periods
-    uint32_t period;      ///< Period of periodic clock. 0 for one-shot.
-    volatile bool active; ///< Clock is active
-    ClockP_Fxn fxn;       ///< Callback function
-    uintptr_t arg;        ///< Argument passed to callback function
+    List_Elem elem;                ///< Clock's List element. Must be first in struct
+    uint32_t timeout;              ///< Timeout value (used for one-shot)
+    volatile uint32_t currTimeout; ///< Next timeout value in number of tick periods
+    volatile uint32_t period;      ///< Period of periodic clock. 0 for one-shot.
+    volatile bool active;          ///< Clock is active
+    volatile ClockP_Fxn fxn;       ///< Callback function
+    volatile uintptr_t arg;        ///< Argument passed to callback function
 } ClockP_Obj;
 
 /* Shared variables */
@@ -171,7 +171,7 @@ void ClockP_startup(void)
          * SysTimer channel 0 signal to CPUIRQ16.
          */
         HwiP_setFunc(&clockHwi, ClockP_hwiCallback, (uintptr_t)NULL);
-        HWREG(EVTSVT_BASE + EVTSVT_O_CPUIRQ16SEL) = EVTSVT_CPUIRQ16SEL_PUBID_SYSTIM0;
+        EVTSVTConfigureEvent(EVTSVT_SUB_CPUIRQ16, EVTSVT_PUB_SYSTIM0);
 
         /* Set IMASK for channel 0. IMASK is used by the power driver to know
          * which systimer channels are active.
@@ -223,7 +223,7 @@ void ClockP_scheduleNextTick(uint32_t absTick)
 
     /* At this point, we no longer care about the previously set compare value,
      * but we might end up getting a pending interrupt from the old compare
-     * value because it could now be in the past. To prevent the the CPU from
+     * value because it could now be in the past. To prevent the CPU from
      * vectoring to the ISR for the wrong compare value, the pending interrupt
      * needs to be cleared, but before that is done, the channel also needs to
      * be un-armed. This is for the case where the interrupt would become
@@ -263,6 +263,8 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
     List_Elem *elem;
     ClockP_Obj *obj;
     uint32_t delta;
+    uint32_t period;
+    uintptr_t arg;
 
     /* Traverse clock queue */
     for (elem = List_head(list); elem != NULL; elem = List_next(elem))
@@ -281,8 +283,13 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
                 /* If this object is timing out update its state */
                 if (obj->currTimeout == thisTick)
                 {
+                    /* Read volatile members to prevent undefined order of
+                     * volatile accesses warnings.
+                     */
+                    period = obj->period;
+                    arg    = obj->arg;
 
-                    if (obj->period == 0)
+                    if (period == 0)
                     {
                         /* Oneshot: Mark object idle */
                         obj->active = false;
@@ -290,11 +297,11 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
                     else
                     {
                         /* Periodic: Refresh timeout */
-                        obj->currTimeout += (obj->period / CLOCK_FREQUENCY_DIVIDER);
+                        obj->currTimeout += (period / CLOCK_FREQUENCY_DIVIDER);
                     }
 
                     /* Call handler */
-                    obj->fxn(obj->arg);
+                    obj->fxn(arg);
                 }
             }
 
@@ -371,7 +378,7 @@ void ClockP_workFuncDynamic(uintptr_t arg)
     HwiP_restore(hwiKey);
 
     /* In the first iteration of below loop, the distance is set to 0, to ensure
-     * that the the first expired timeout will be serviced.
+     * that the first expired timeout will be serviced.
      */
     distance = 0;
 
@@ -691,10 +698,12 @@ void ClockP_setPeriod(ClockP_Handle handle, uint32_t period)
 uint32_t ClockP_getTimeout(ClockP_Handle handle)
 {
     ClockP_Obj *obj = (ClockP_Obj *)handle;
+    uint32_t currentTime;
 
     if (obj->active == true)
     {
-        return (obj->currTimeout - getClockPTick());
+        currentTime = getClockPTick();
+        return (obj->currTimeout - currentTime);
     }
     else
     {

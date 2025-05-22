@@ -196,7 +196,7 @@ function create(phyGroup) {
 
         // Add header
         var packetData = [getDataArray()];
-        sections[n++] = "PCF (11-bit);" + Number(packetData[0] + (packetData[1] << 8)).toString(2).padStart(11, "0");
+        sections[n++] = "PCF (11-bit);" + zeroPadStart(Number(packetData[0] + (packetData[1] << 8)).toString(2), 11);
 
         // Constrain displayed payload to 100 bytes
         var payloadSuffix = "";
@@ -262,14 +262,21 @@ function create(phyGroup) {
         return sections;
     }
 
+    function zeroPadStart(valueString, width) {
+        while (valueString.length < width) {
+            valueString = "0" + valueString;
+        }
+        return valueString;
+    }
+
     function hexString(value, width) {
-        return Number(value).toString(16).padStart(width, "0");
+        return zeroPadStart(Number(value).toString(16), width);
     }
 
     function byteString(values) {
         var bytes = [];
         for (i = 0; i < values.length; i++) {
-            bytes[i] = Number(values[i]).toString(16).padStart(2, "0");
+            bytes[i] = zeroPadStart(Number(values[i]).toString(16), 2);
         }
         return bytes.join(" ");
     }

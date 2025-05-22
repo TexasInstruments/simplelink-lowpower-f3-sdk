@@ -95,6 +95,7 @@ typedef struct zb_transceiver_ctx_s
   uint8_t pending_bit;
   uint8_t seq_num;
   uint8_t ackReq;
+  uint8_t csmaAckReq;
 #endif // defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
 }
 zb_transceiver_ctx_t;
@@ -234,12 +235,8 @@ extern void update_rx_panconfig(zb_uint16_t pan_id);
 extern zb_int8_t mac_ti23xx_get_sync_rssi(void);
 extern void mac_ti23xx_set_cca_rssi_threshold(zb_int8_t new_rssi_threshold);
 extern void mac_ti23xx_get_cca_rssi_threshold_ptr(zb_int8_t* rssi_threshold);
-
-#include <ti/drivers/rcl/RCL.h>
-#include <ti/drivers/rcl/LRF.h>
-#include <ti/drivers/rcl/RCL_Scheduler.h>
-#include <ti/drivers/rcl/commands/ieee.h>
-
+extern void mac_ti23xx_start_ed_scan(uint8_t scan_duration_bi);
+extern void mac_ti23xx_get_energy_level(uint8_t *energy_level);
 
 /**
    Definitions for extra information size in RX fifo packet. Packet format:
@@ -283,28 +280,6 @@ extern void mac_ti23xx_get_cca_rssi_threshold_ptr(zb_int8_t* rssi_threshold);
 
 /* src index (1 byte) + rssi (1 byte) + timestamp (4 bytes) */
 #define ZB_MAC_BUFFER_EXTRA_SPACE (1U + 1U + 4U)
-
-#define ZB_MAC_SHORT_MATCH_LIST_SIZE ZB_NEIGHBOR_TABLE_SIZE
-
-#if defined ZB_CONFIG_DEFAULT_KERNEL_DEFINITION
-
-/**
- Kernel's default buffers. Define weak global variables.
-*/
-#define ZB_KERNEL_POST
-#define ZB_KERNEL_PRE  __attribute__ ((weak))
-
-#if ZB_CONFIG_OVERALL_NETWORK_SIZE > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN
-#define ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE ((offsetof(RCL_CmdIeee_SourceMatchingTableShort, shortEntry) / sizeof(uint32_t)) + RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN)
-#else
-#define ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE ((offsetof(RCL_CmdIeee_SourceMatchingTableShort, shortEntry) / sizeof(uint32_t)) + ZB_CONFIG_OVERALL_NETWORK_SIZE)
-#endif // ZB_CONFIG_OVERALL_NETWORK_SIZE > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN
-
-ZB_KERNEL_PRE uint32_t gc_srcMatchTableBuffer[ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE] ZB_KERNEL_POST = { 0 };
-ZB_KERNEL_PRE zb_uint8_t gc_zb_mac_short_match_list_size ZB_KERNEL_POST = ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE;
-ZB_KERNEL_PRE uint8_t gc_neighborToSrcMatchTable[ZB_CONFIG_MAC_SHORT_MATCH_LIST_SIZE] ZB_KERNEL_POST;
-
-#endif  /* ZB_CONFIG_DEFAULT_KERNEL_DEFINITION */
 
 /*************************************************************************/
 

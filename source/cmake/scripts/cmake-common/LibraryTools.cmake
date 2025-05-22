@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023, Texas Instruments Incorporated
+# Copyright (c) 2022-2025, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -99,14 +99,15 @@ endfunction()
 # component_install_dir: The INSTALL_DIR variable, e.g. TIUTILS_INSTALL_DIR
 #
 # If the variable is set, and this is an internal build, the existing value is
-# returned. Otherwise, CMAKE_SOURCE_DIR is returned.
+# returned. Otherwise, the relative path to CMAKE_SOURCE_DIR is returned.
 function(get_install_dir component_install_dir)
     if(TI_INTERNAL_BUILD AND ${component_install_dir})
         set(${component_install_dir} ${${component_install_dir}} PARENT_SCOPE)
         message(DEBUG "get_install_dir: setting ${component_install_dir} to ${${component_install_dir}}")
     else()
-        set(${component_install_dir} ${CMAKE_SOURCE_DIR} PARENT_SCOPE)
-        message(DEBUG "get_install_dir: setting ${component_install_dir} to CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+        file(RELATIVE_PATH REL_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
+        set(${component_install_dir} ${REL_PATH} PARENT_SCOPE)
+        message(DEBUG "get_install_dir: setting ${component_install_dir} to ${REL_PATH}")
     endif()
 endfunction()
 

@@ -69,23 +69,23 @@
 //*****************************************************************************
 
 #if defined(NPI_USE_SPI)
-#include "inc/npi_tl_spi.h"
+    #include "inc/npi_tl_spi.h"
 #elif defined(NPI_USE_UART)
-#include "inc/npi_tl_uart.h"
+    #include "inc/npi_tl_uart.h"
 #else
-#error "Must define an underlying serial bus for NPI"
-#endif //NPI_USE_SPI
+    #error "Must define an underlying serial bus for NPI"
+#endif // NPI_USE_SPI
 
 #if (NPI_FLOW_CTRL == 1)
-// Indexes for pin configurations in PIN_Config array
-#define REM_RDY_PIN_IDX      0
-#define LOC_RDY_PIN_IDX      1
+    // Indexes for pin configurations in PIN_Config array
+    #define REM_RDY_PIN_IDX 0
+    #define LOC_RDY_PIN_IDX 1
 
-#define LocRDY_ENABLE()      PIN_setOutputValue(hNpiHandshakePins, locRdyPIN, 0)
-#define LocRDY_DISABLE()     PIN_setOutputValue(hNpiHandshakePins, locRdyPIN, 1)
+    #define LocRDY_ENABLE()  PIN_setOutputValue(hNpiHandshakePins, locRdyPIN, 0)
+    #define LocRDY_DISABLE() PIN_setOutputValue(hNpiHandshakePins, locRdyPIN, 1)
 #else
-#define LocRDY_ENABLE()
-#define LocRDY_DISABLE()
+    #define LocRDY_ENABLE()
+    #define LocRDY_DISABLE()
 #endif // NPI_FLOW_CTRL = 1
 
 //*****************************************************************************
@@ -131,12 +131,9 @@ npiTLCallBacks taskCBs;
 
 #if (NPI_FLOW_CTRL == 1)
 //! \brief PIN Config for Mrdy and Srdy signals without PIN IDs
-static PIN_Config npiHandshakePinsCfg[] =
-{
-    PIN_GPIO_OUTPUT_DIS | PIN_INPUT_EN | PIN_PULLUP,
-    PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MAX,
-    PIN_TERMINATE
-};
+static PIN_Config npiHandshakePinsCfg[] = {PIN_GPIO_OUTPUT_DIS | PIN_INPUT_EN | PIN_PULLUP,
+                                           PIN_GPIO_OUTPUT_EN | PIN_GPIO_HIGH | PIN_PUSHPULL | PIN_DRVSTR_MAX,
+                                           PIN_TERMINATE};
 
 static uint32_t remRdyPIN = (IOID_UNUSED & IOC_IOID_MASK);
 static uint32_t locRdyPIN = (IOID_UNUSED & IOC_IOID_MASK);
@@ -190,7 +187,7 @@ void NPITL_openTL(NPITL_Params *params)
 
     // Allocate memory for Transport Layer Tx/Rx buffers
     npiBufSize = params->npiTLBufSize;
-    npiRxBuf = NPIUtil_malloc(params->npiTLBufSize);
+    npiRxBuf   = NPIUtil_malloc(params->npiTLBufSize);
     memset(npiRxBuf, 0, npiBufSize);
     npiTxBuf = NPIUtil_malloc(params->npiTLBufSize);
     memset(npiTxBuf, 0, npiBufSize);
@@ -198,24 +195,20 @@ void NPITL_openTL(NPITL_Params *params)
     // This will be updated to be able to select SPI/UART TL at runtime
     // Now only compile time with the NPI_USE_[UART,SPI] flag
 #if defined(NPI_USE_UART)
-    transportOpen(params->portBoardID,
-                  &params->portParams.uartParams,
-                  NPITL_transmissionCallBack);
+    transportOpen(params->portBoardID, &params->portParams.uartParams, NPITL_transmissionCallBack);
 #elif defined(NPI_USE_SPI)
-    transportOpen(params->portBoardID,
-                  &params->portParams.spiParams,
-                  NPITL_transmissionCallBack);
-#endif //NPI_USE_UART
+    transportOpen(params->portBoardID, &params->portParams.spiParams, NPITL_transmissionCallBack);
+#endif // NPI_USE_UART
 
 #if (NPI_FLOW_CTRL == 1)
     // Assign PIN IDs to remRdy and locRrdy
-#ifdef NPI_CONTROLLER
+    #ifdef NPI_CONTROLLER
     remRdyPIN = (params->srdyPinID & IOC_IOID_MASK);
     locRdyPIN = (params->mrdyPinID & IOC_IOID_MASK);
-#else
+    #else
     remRdyPIN = (params->mrdyPinID & IOC_IOID_MASK);
     locRdyPIN = (params->srdyPinID & IOC_IOID_MASK);
-#endif //NPI_CONTROLLER
+    #endif // NPI_CONTROLLER
 
     // Add PIN IDs to PIN Configuration
     npiHandshakePinsCfg[REM_RDY_PIN_IDX] |= remRdyPIN;
@@ -224,14 +217,10 @@ void NPITL_openTL(NPITL_Params *params)
     // Initialize LOCRDY/REMRDY. Enable int after callback registered
     hNpiHandshakePins = PIN_open(&npiHandshakePins, npiHandshakePinsCfg);
     PIN_registerIntCb(hNpiHandshakePins, NPITL_remRdyPINHwiFxn);
-    PIN_setConfig(hNpiHandshakePins,
-                  PIN_BM_IRQ,
-                  remRdyPIN | PIN_IRQ_BOTHEDGES);
+    PIN_setConfig(hNpiHandshakePins, PIN_BM_IRQ, remRdyPIN | PIN_IRQ_BOTHEDGES);
 
     // Enable wakeup
-    PIN_setConfig(hNpiHandshakePins,
-                  PINCC26XX_BM_WAKEUP,
-                  remRdyPIN | PINCC26XX_WAKEUP_NEGEDGE);
+    PIN_setConfig(hNpiHandshakePins, PINCC26XX_BM_WAKEUP, remRdyPIN | PINCC26XX_WAKEUP_NEGEDGE);
 
     remRdy_state = PIN_getInputValue(remRdyPIN);
 
@@ -304,11 +293,11 @@ void NPITL_closeTL(void)
 bool NPITL_checkNpiBusy(void)
 {
 #if (NPI_FLOW_CTRL == 1)
-#ifdef NPI_CONTROLLER
+    #ifdef NPI_CONTROLLER
     return !PIN_getOutputValue(locRdyPIN) || npiRxActive;
-#else
+    #else
     return !PIN_getOutputValue(locRdyPIN);
-#endif //NPI_CONTROLLER
+    #endif // NPI_CONTROLLER
 #else
     return npiTxActive;
 #endif // NPI_FLOW_CTRL = 1
@@ -369,8 +358,7 @@ void NPITL_handleRemRdyEvent(void)
 
     // Check to make sure this event is not occurring during the next packet
     // transmission
-    if (PIN_getInputValue(remRdyPIN) == 0 ||
-        (npiTxActive && mrdyPktStamp == txPktCount))
+    if (PIN_getInputValue(remRdyPIN) == 0 || (npiTxActive && mrdyPktStamp == txPktCount))
     {
         transportRemRdyEvent();
         npiRxActive = TRUE;
@@ -449,7 +437,7 @@ static void NPITL_transmissionCallBack(uint16_t Rxlen, uint16_t Txlen)
     // Only set TX Active flag false if a tx was taking place
     if (Txlen > 0)
     {
-      npiTxActive = FALSE;
+        npiTxActive = FALSE;
     }
 
     // If Task is registered, invoke transaction complete callback
@@ -576,7 +564,7 @@ void NPITL_writeBypassSafeTL(uint8_t *buf, uint16_t len)
 // -----------------------------------------------------------------------------
 uint16_t NPITL_getMaxRxBufSize(void)
 {
-    return(npiBufSize);
+    return (npiBufSize);
 }
 
 // -----------------------------------------------------------------------------
@@ -586,7 +574,7 @@ uint16_t NPITL_getMaxRxBufSize(void)
 // -----------------------------------------------------------------------------
 uint16_t NPITL_getMaxTxBufSize(void)
 {
-    return(npiBufSize);
+    return (npiBufSize);
 }
 
 // -----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 #include <ti/devices/DeviceFamily.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/tfm_internal_trusted_storage.h> /* tfm_its_init() */
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
@@ -84,7 +84,7 @@ static bool isKeyStoreInitialized = false;
 /*
  *  ======== KeyStore_acquireLock ========
  */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 bool KeyStore_acquireLock(void)
 #else
 static inline bool KeyStore_acquireLock(void)
@@ -101,7 +101,7 @@ static inline bool KeyStore_acquireLock(void)
 /*
  *  ======== KeyStore_releaseLock ========
  */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 void KeyStore_releaseLock(void)
 #else
 static inline void KeyStore_releaseLock(void)
@@ -144,7 +144,7 @@ int_fast16_t KeyStore_PSA_purgeKey(KeyStore_PSA_KeyFileId key)
     {
         status = psa_purge_key(key);
     }
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #if defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
     if ((key.MBEDTLS_PRIVATE(key_id) >= KEYSTORE_PSA_KEY_ID_USER_MIN) &&
         (key.MBEDTLS_PRIVATE(key_id) <= KEYSTORE_PSA_KEY_ID_USER_MAX))
@@ -190,7 +190,7 @@ int_fast16_t KeyStore_PSA_init(void)
 
     if (!isKeyStoreInitialized)
     {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         int_fast16_t hsmStatus;
 
         hsmStatus = HSMLPF3_init();
@@ -200,7 +200,7 @@ int_fast16_t KeyStore_PSA_init(void)
             return status;
         }
 
-        /* CC27XX requires the HSM lock before calling psa_crypto_init() because
+        /* CC27XX and CC35XX require the HSM lock before calling psa_crypto_init() because
          * that function call requires a token submission.
          */
         HSMLPF3_constructRTOSObjects();
@@ -230,7 +230,7 @@ int_fast16_t KeyStore_PSA_init(void)
 
             if (status != PSA_SUCCESS)
             {
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX))
                 psa_wipe_all_key_slots();
 #endif
                 return KEYSTORE_PSA_STATUS_GENERIC_ERROR;
@@ -275,7 +275,7 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
                                  KeyStore_PSA_KeyUsage usage)
 {
     psa_status_t status = KEYSTORE_PSA_STATUS_GENERIC_ERROR;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_key_context_t *slot;
     psa_status_t unlockStatus;
 #else
@@ -307,11 +307,12 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
     *dataLength = 0;
 
     /* Fetch key slot from key storage. */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     status = psaInt_KeyMgmtGetAndLockKey(key, &slot);
 #else
     status                          = psa_get_and_lock_key_slot_with_policy(key, &slot, usage, alg);
-#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
+#endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
+        */
 
     if (status != KEYSTORE_PSA_STATUS_SUCCESS)
     {
@@ -319,14 +320,14 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
          * application. Note that psaInt_KeyMgmtGetAndLockKey does not lock the key slot in the case that retrieving it
          * was not successful - this means we do not need to release the key slot in this error condition.
          */
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX))
         (void)psa_unlock_key_slot(slot);
 #endif
         return KeyStore_cleanUp(status);
     }
 
     /* Access the key material then decrement lock counter on key slot */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     status = psaInt_KeyMgmtLoadKey(slot, NULL, alg, usage, data, dataSize, (uint32_t *)dataLength);
 
     unlockStatus = psaInt_KeyMgmtClrKeyInUse(key);
@@ -345,12 +346,13 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
     status = psa_export_key_internal(&attributes, slot->key.data, slot->key.bytes, data, dataSize, dataLength);
 
     status = psa_unlock_key_slot(slot);
-#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
+#endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
+        */
 
     return KeyStore_cleanUp(status);
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 /*
  *  ======== KeyStore_PSA_getKeyAssetId ========
  */
@@ -559,7 +561,8 @@ int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key)
 
     return KeyStore_cleanUp(status);
 }
-#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
+#endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
+        */
 
 /*
  *  ======== KeyStore_PSA_importKey ========
@@ -677,11 +680,18 @@ int_fast16_t KeyStore_PSA_getKeyAttributes(KeyStore_PSA_KeyFileId key, KeyStore_
  */
 void KeyStore_PSA_resetKeyAttributes(KeyStore_PSA_KeyAttributes *attributes)
 {
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+#else
+    #error "Unsupported DeviceFamily_Parent for CryptoKeyKeyStore_PSA_helpers"
+#endif
+
     memset(attributes, 0, sizeof(*attributes));
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 /*
  *  ======== KeyStore_PSA_copyKey ========
  */
@@ -704,4 +714,5 @@ int_fast16_t KeyStore_PSA_copyKey(KeyStore_PSA_KeyFileId source_key,
     return KeyStore_cleanUp(status);
 }
 
-#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
+#endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
+        */

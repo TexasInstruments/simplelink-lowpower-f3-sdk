@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,7 +82,7 @@ extern "C" {
  *
  *  @return     The absolute value of  @c x
  */
-#define Math_ABS(x) ((x) < 0 ? -(x) : (x))
+#define Math_ABS(x) (((x) < 0) ? -(x) : (x))
 
 /*!
  *  @brief      Divide a number by 1000

@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, Texas Instruments Incorporated
+# Copyright (c) 2022-2025, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,30 +32,59 @@ cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources.cmake)
 
 project(psa_crypto LANGUAGES C ASM)
-ti_init_package(NAMESPACE ThirdPartyPsaCryptoLib DEPENDS_ON Drivers DriversUtils TrustZone)
+ti_init_package(
+    NAMESPACE ThirdPartyPsaCryptoLib
+              DEPENDS_ON
+              Drivers
+              SecureDrivers
+              DriversUtils
+              SecureDriversUtils
+              TrustZone
+)
 
 # Pull "all supported architectures" from cmake-common
 foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
 
     if(${TI_PLATFORM} MATCHES "cc(13|26).4")
-        ti_add_package_dependency(DriversCC13X4CC26X3CC26X4)
+        ti_add_package_dependency(DriversLPF2)
+        ti_add_package_dependency(SecureDriversLPF2)
 
         # Non-secure PSA Crypto library (for use with TF-M)
         ti_add_library(
-            psa_crypto_${TI_PLATFORM}_ns SOURCES ${SOURCES}
-            LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} TrustZone::tfm_dependencies_cc26x4 DriversUtils::tfm_enabled
-                        CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            psa_crypto_${TI_PLATFORM}_ns
+            SOURCES ${SOURCES}
+            LINK_PUBLIC
+                Drivers::drivers_${TI_PLATFORM} SecureDrivers::secure_drivers_${TI_PLATFORM}
+                TrustZone::tfm_dependencies_cc26x4 DriversUtils::tfm_enabled
+                CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
         )
     endif()
 
     if(${TI_PLATFORM} MATCHES "cc27")
-        ti_add_package_dependency(DriversCC27XX)
+        ti_add_package_dependency(DriversLPF3)
+        ti_add_package_dependency(SecureDriversLPF3)
 
         # Secure-only PSA Crypto library
         ti_add_library(
-            psa_crypto_${TI_PLATFORM} SOURCES ${SOURCES}
-            LINK_PUBLIC CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} Drivers::drivers_${TI_PLATFORM}
-                        DriversUtils::secure_key_storage_enabled
+            psa_crypto_${TI_PLATFORM}
+            SOURCES ${SOURCES}
+            LINK_PUBLIC
+                CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} SecureDrivers::secure_drivers_${TI_PLATFORM}
+                Drivers::drivers_${TI_PLATFORM} SecureDriversUtils::secure_key_storage_enabled
+        )
+    endif()
+
+    if(${TI_PLATFORM} MATCHES "cc35")
+        ti_add_package_dependency(DriversWFF3)
+        ti_add_package_dependency(SecureDriversWFF3)
+
+        # Secure-only PSA Crypto library
+        ti_add_library(
+            psa_crypto_${TI_PLATFORM}
+            SOURCES ${SOURCES}
+            LINK_PUBLIC
+                CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} SecureDrivers::secure_drivers_${TI_PLATFORM}
+                Drivers::drivers_${TI_PLATFORM} SecureDriversUtils::secure_key_storage_enabled
         )
     endif()
 

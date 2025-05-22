@@ -3,7 +3,7 @@
  *
  *  Description:    Collection of functions returning chip information.
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -79,12 +79,14 @@ typedef enum
 //*****************************************************************************
 typedef enum
 {
-    CC2744R74E0WRHARQ1 = 0x484835U, //!< Part ID is CC2744R74E0WRHARQ1
+    CC2744R74E0WRHARQ1 = 0x483548U, //!< Part ID is CC2744R74E0WRHARQ1
     CC2745R10E0WRHARQ1 = 0xE8AF23U, //!< Part ID is CC2745R10E0WRHARQ1
+    CC2745R10E1WRHARQ1 = 0xE8AF23U, //!< Part ID is CC2745R10E1WRHARQ1
     CC2745P10E0WRHARQ1 = 0xDEAF23U, //!< Part ID is CC2745P10E0WRHARQ1
     CC2745R74E0WRHARQ1 = 0x87AF23U, //!< Part ID is CC2745R74E0WRHARQ1
-    CC2755R105E0RKPR   = 0x9D6301U, //!< Part ID is CC2755R105E0RKPR
-    CC2755P105E0RKPR   = 0xE66301U, //!< Part ID is CC2755P105E0RKPR
+    CC2755R105E0WRHAR  = 0x9D6301U, //!< Part ID is CC2755R105E0WRHAR
+    CC2755P105E0WRHAR  = 0xE66301U, //!< Part ID is CC2755P105E0WRHAR
+    CC2755R105E0YCJR   = 0x316301U, //!< Part ID is CC2755R105E0YCJR
 } ChipPartId;
 
 //*****************************************************************************

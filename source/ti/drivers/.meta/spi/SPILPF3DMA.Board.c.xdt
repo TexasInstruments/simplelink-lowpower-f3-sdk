@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,7 @@
 #include <ti/drivers/dma/UDMALPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 
 #define `countDef` `instances.length`
 
@@ -72,12 +72,12 @@ SPILPF3DMA_Object SPILPF3DMA_objects[`countDef`];
  */
 % for (let i = 0; i < instances.length; i++) {
     % let inst = instances[i];
-    % let dmaRXDevicePinName = inst.spi.dmaRxChannel.$solution.devicePinName;
-    % let dmaTXDevicePinName = inst.spi.dmaTxChannel.$solution.devicePinName;
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry, (`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)` | UDMA_PRI_SELECT));
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry, (`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)` | UDMA_PRI_SELECT));
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`AltControlTableEntry, (`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)` | UDMA_ALT_SELECT));
-ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`AltControlTableEntry, (`dmaRXDevicePinName.slice(6, dmaTXDevicePinName.length)` | UDMA_ALT_SELECT));
+    % let dmaRXChNumber = inst.spi.dmaRxChannel.$solution.devicePinName.replace("DMA_CH", "");
+    % let dmaTXChNumber = inst.spi.dmaTxChannel.$solution.devicePinName.replace("DMA_CH", "");
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXChNumber`ControlTableEntry, (`dmaTXChNumber` | UDMA_PRI_SELECT));
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXChNumber`ControlTableEntry, (`dmaRXChNumber` | UDMA_PRI_SELECT));
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaTXChNumber`AltControlTableEntry, (`dmaTXChNumber` | UDMA_ALT_SELECT));
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaRXChNumber`AltControlTableEntry, (`dmaRXChNumber` | UDMA_ALT_SELECT));
 %}
 
 /*
@@ -88,9 +88,10 @@ const SPILPF3DMA_HWAttrs SPILPF3DMA_hwAttrs[`countDef`] = {
     % let inst = instances[i];
     % let spi = inst.spi;
     % let name = spi.$solution.peripheralName;
-    % let dmaRXDevicePinName = inst.spi.dmaRxChannel.$solution.devicePinName;
-    % let dmaTXDevicePinName = inst.spi.dmaTxChannel.$solution.devicePinName;
+    % let dmaRXChNumber = inst.spi.dmaRxChannel.$solution.devicePinName.replace("DMA_CH", "");
+    % let dmaTXChNumber = inst.spi.dmaTxChannel.$solution.devicePinName.replace("DMA_CH", "");
     % let peripheral  = system.deviceData.peripherals[name];
+
     % /* Get the index of the SPI instance by extracting the last character */
 
     % let pociPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'MISO'],
@@ -111,33 +112,35 @@ const SPILPF3DMA_HWAttrs SPILPF3DMA_hwAttrs[`countDef`] = {
     %   var csnPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + csnPinMuxMode.toString();
     % }
     {
-        .baseAddr = `name`_BASE,
-        .intNum = INT_`name`_COMB,
-        .intPriority = `Common.intPriority2Hex(inst.dmaInterruptPriority)`,
-        .swiPriority = `Common.swiPriority2Int(inst.softwareInterruptPriority)`,
-        .defaultTxBufValue = `inst.defaultTxBufferValue`,
-        .rxChannelBitMask = UDMA_CHANNEL_`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`_M,
-        .txChannelBitMask = UDMA_CHANNEL_`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`_M,
-        .rxChannelEvtMux = EVTSVT_DMACH`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`SEL_IPID_`name`RXTRG,
-        .txChannelEvtMux = EVTSVT_DMACH`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`SEL_IPID_`name`TXTRG,
-        .dmaTxTableEntryPri = &dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`ControlTableEntry,
-        .dmaRxTableEntryPri = &dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`ControlTableEntry,
-        .dmaTxTableEntryAlt = &dmaChannel`dmaTXDevicePinName.slice(6, dmaTXDevicePinName.length)`AltControlTableEntry,
-        .dmaRxTableEntryAlt = &dmaChannel`dmaRXDevicePinName.slice(6, dmaRXDevicePinName.length)`AltControlTableEntry,
-        .minDmaTransferSize = `inst.minDmaTransferSize`,
-        .picoPinMux   = `picoPinMuxName`,
-        .pociPinMux   = `pociPinMuxName`,
-        .sclkPinMux  = `sclkPinMuxName`,
-        .picoPin = `inst.picoPinInstance.$name`,
-        .pociPin = `inst.pociPinInstance.$name`,
-        .sclkPin  = `inst.sclkPinInstance.$name`,
+        .baseAddr              = `name`_BASE,
+        .intNum                = INT_`name`_COMB,
+        .intPriority           = `Common.intPriority2Hex(inst.dmaInterruptPriority)`,
+        .swiPriority           = `Common.swiPriority2Int(inst.softwareInterruptPriority)`,
+        .defaultTxBufValue     = `inst.defaultTxBufferValue`,
+        .rxChannelBitMask      = UDMA_CHANNEL_`dmaRXChNumber`_M,
+        .txChannelBitMask      = UDMA_CHANNEL_`dmaTXChNumber`_M,
+        .rxChannelEvtMux       = EVTSVT_DMA_TRIG_`name`RXTRG,
+        .txChannelEvtMux       = EVTSVT_DMA_TRIG_`name`TXTRG,
+        .rxChannelSubscriberId = EVTSVT_DMA_CH`dmaRXChNumber`,
+        .txChannelSubscriberId = EVTSVT_DMA_CH`dmaTXChNumber`,
+        .dmaTxTableEntryPri    = &dmaChannel`dmaTXChNumber`ControlTableEntry,
+        .dmaRxTableEntryPri    = &dmaChannel`dmaRXChNumber`ControlTableEntry,
+        .dmaTxTableEntryAlt    = &dmaChannel`dmaTXChNumber`AltControlTableEntry,
+        .dmaRxTableEntryAlt    = &dmaChannel`dmaRXChNumber`AltControlTableEntry,
+        .minDmaTransferSize    = `inst.minDmaTransferSize`,
+        .picoPinMux            = `picoPinMuxName`,
+        .pociPinMux            = `pociPinMuxName`,
+        .sclkPinMux            = `sclkPinMuxName`,
+        .picoPin               = `inst.picoPinInstance.$name`,
+        .pociPin               = `inst.pociPinInstance.$name`,
+        .sclkPin               = `inst.sclkPinInstance.$name`,
     % if (inst.mode != 'Three Pin') {
-        .csnPin  = `inst.csnPinInstance.$name`,
-        .csnPinMux  = `csnPinMuxName`,
+        .csnPin                = `inst.csnPinInstance.$name`,
+        .csnPinMux             = `csnPinMuxName`,
     % } else {
-        .csnPin  = GPIO_INVALID_INDEX,
+        .csnPin                = GPIO_INVALID_INDEX,
     % }
-        .powerID = PowerLPF3_PERIPH_`name`,
+        .powerID               = PowerLPF3_PERIPH_`name`,
     },
 % }
 };

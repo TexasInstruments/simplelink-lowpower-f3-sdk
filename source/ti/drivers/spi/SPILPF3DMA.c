@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,8 @@
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_spi.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/udma.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 
 #include <ti/drivers/dma/UDMALPF3.h>
 #include <ti/drivers/dpl/DebugP.h>
@@ -83,7 +83,6 @@ static void blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg);
 static void configNextTransfer(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs);
 static void csnCallback(uint_least8_t);
 static void flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs);
-static inline uint32_t getDmaChannelNumber(uint32_t channelBitMask);
 static bool initHw(SPI_Handle handle);
 static void initIO(SPI_Handle handle);
 static void finalizeIO(SPI_Handle handle);
@@ -138,6 +137,17 @@ static bool isSPIbusy(uint32_t baseAddr);
 /* Maximum serial clock divider value */
 #define SERIAL_CLK_DIVIDER_MAX 0x3FFU
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    /*
+     * DMA arbitration selection for TX channel
+     * This is a workaround for a DMA errata documented at:
+     * https://confluence.itg.ti.com/display/LPRF/UDMA_01
+     */
+    #define UDMA_ARB_TX UDMA_ARB_2
+#else
+    #define UDMA_ARB_TX UDMA_ARB_4
+#endif
+
 /* SPI function table for SPILPF3DMA implementation */
 const SPI_FxnTable SPILPF3DMA_fxnTable = {SPILPF3DMA_close,
                                           SPILPF3DMA_control,
@@ -174,9 +184,9 @@ static const uint32_t frameFormat[] = {
  * appropriate (8bit/16bit) transfer sizes.
  */
 static const uint32_t dmaTxConfig[] = {UDMA_MODE_PINGPONG | UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_NONE |
-                                           UDMA_ARB_4,
+                                           UDMA_ARB_TX,
                                        UDMA_MODE_PINGPONG | UDMA_SIZE_16 | UDMA_SRC_INC_16 | UDMA_DST_INC_NONE |
-                                           UDMA_ARB_4};
+                                           UDMA_ARB_TX};
 
 static const uint32_t dmaRxConfig[] = {UDMA_MODE_PINGPONG | UDMA_SIZE_8 | UDMA_SRC_INC_NONE | UDMA_DST_INC_8 |
                                            UDMA_ARB_4,
@@ -326,6 +336,13 @@ int_fast16_t SPILPF3DMA_control(SPI_Handle handle, uint_fast16_t cmd, void *arg)
             if (object->headPtr != NULL && object->manualStart)
             {
                 enableSPI(handle);
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+                /*
+                 * This is a workaround for a DMA errata documented at:
+                 * https://confluence.itg.ti.com/display/LPRF/UDMA_01
+                 */
+                uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
+#endif
                 enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
                 UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                 ret = SPI_STATUS_SUCCESS;
@@ -470,6 +487,13 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                      * start the following transaction if necessary.
                      */
                     configNextTransfer(object, hwAttrs);
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+                    /*
+                     * This is a workaround for a DMA errata documented at:
+                     * https://confluence.itg.ti.com/display/LPRF/UDMA_01
+                     */
+                    uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
+#endif
                     enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
                     UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                 }
@@ -529,6 +553,13 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                     {
                         /* Reconfigure channel for following transaction */
                         configNextTransfer(object, hwAttrs);
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+                        /*
+                         * This is a workaround for a DMA errata documented at:
+                         * https://confluence.itg.ti.com/display/LPRF/UDMA_01
+                         */
+                        uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
+#endif
                         enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
                         UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                     }
@@ -1249,22 +1280,6 @@ static void flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs)
 }
 
 /*
- *  ======== getDmaChannelNumber ========
- */
-static inline uint32_t getDmaChannelNumber(uint32_t channelBitMask)
-{
-#if defined(__TI_COMPILER_VERSION__)
-    return ((uint32_t)__clz(__rbit(channelBitMask)));
-#elif defined(__GNUC__)
-    return ((uint32_t)__builtin_ctz(channelBitMask));
-#elif defined(__IAR_SYSTEMS_ICC__)
-    return ((uint32_t)__CLZ(__RBIT(channelBitMask)));
-#else
-    #error "Unsupported compiler"
-#endif
-}
-
-/*
  *  ======== initHw ========
  */
 static bool initHw(SPI_Handle handle)
@@ -1437,10 +1452,10 @@ static inline void primeTransfer(SPI_Handle handle)
         UDMALPF3_disableAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_ALTSELECT);
 
         /* Mux RX DMA channel to SPI peripheral */
-        HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + getDmaChannelNumber(hwAttrs->rxChannelBitMask) * sizeof(uint32_t)) = hwAttrs->rxChannelEvtMux;
+        EVTSVTConfigureDma(hwAttrs->rxChannelSubscriberId, hwAttrs->rxChannelEvtMux);
 
         /* Mux TX DMA channel to SPI peripheral */
-        HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + getDmaChannelNumber(hwAttrs->txChannelBitMask) * sizeof(uint32_t)) = hwAttrs->txChannelEvtMux;
+        EVTSVTConfigureDma(hwAttrs->txChannelSubscriberId, hwAttrs->txChannelEvtMux);
 
         HwiP_clearInterrupt(hwAttrs->intNum);
         HwiP_enableInterrupt(hwAttrs->intNum);
@@ -1457,6 +1472,13 @@ static inline void primeTransfer(SPI_Handle handle)
         {
             enableSPI(handle);
             /* Enable DMA to generate interrupt on SPI peripheral */
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+            /*
+             * This is a workaround for a DMA errata documented at:
+             * https://confluence.itg.ti.com/display/LPRF/UDMA_01
+             */
+            uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
+#endif
             enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
             UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
         }
@@ -1474,7 +1496,7 @@ static inline void primeTransfer(SPI_Handle handle)
 static inline void releaseConstraint(uint32_t txBufAddr)
 {
     /* Release need flash if buffer was in flash. */
-    if (((txBufAddr & 0xF0000000) == 0x0) && (txBufAddr))
+    if (((txBufAddr & 0xE0000000) == 0x0) && (txBufAddr))
     {
         Power_releaseConstraint(PowerLPF3_NEED_FLASH_IN_IDLE);
     }
@@ -1490,9 +1512,9 @@ static inline void setConstraint(uint32_t txBufAddr)
 {
     /*
      * Ensure flash is available if TX buffer is in flash.
-     * Flash starts with 0x0..
+     * Flash starts with 0x0.. (bit 28 is ignored)
      */
-    if (((txBufAddr & 0xF0000000) == 0x0) && (txBufAddr))
+    if (((txBufAddr & 0xE0000000) == 0x0) && (txBufAddr))
     {
         Power_setConstraint(PowerLPF3_NEED_FLASH_IN_IDLE);
     }
@@ -1782,6 +1804,13 @@ static bool configSPI(uint32_t baseAddr,
     /* Calculate scr variable */
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     ratio = (freq / 2) / (2 * bitRate);
+
+    /*
+     * Set TX FIFO <= 1/4 empty, and RX FIFO >= 1/2 full (default).
+     * This is a workaround for a DMA errata documented at:
+     * https://confluence.itg.ti.com/display/LPRF/UDMA_01
+     */
+    HWREG(baseAddr + SPI_O_IFLS) = SPI_IFLS_TXSEL_LVL_1_4 | SPI_IFLS_RXSEL_LVL_1_2;
 #else
     ratio = freq / (2 * bitRate);
 #endif

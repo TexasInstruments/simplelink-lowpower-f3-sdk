@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_dbgss_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -891,6 +891,30 @@
 // Register: DBGSS_O_APP_AUTH
 //
 //*****************************************************************************
+// Field:     [3] SPNIDEN
+//
+// Controls Secure non-invasive debug enable.
+// ENUMs:
+// EN                       Secure non-invasive debug enabled
+// DIS                      Secure non-invasive debug disabled
+#define DBGSS_APP_AUTH_SPNIDEN                                      0x00000008U
+#define DBGSS_APP_AUTH_SPNIDEN_M                                    0x00000008U
+#define DBGSS_APP_AUTH_SPNIDEN_S                                             3U
+#define DBGSS_APP_AUTH_SPNIDEN_EN                                   0x00000008U
+#define DBGSS_APP_AUTH_SPNIDEN_DIS                                  0x00000000U
+
+// Field:     [2] SPIDEN
+//
+// Controls Secure invasive debug enable.
+// ENUMs:
+// EN                       Secure invasive debug enabled
+// DIS                      Secure invasive debug disabled
+#define DBGSS_APP_AUTH_SPIDEN                                       0x00000004U
+#define DBGSS_APP_AUTH_SPIDEN_M                                     0x00000004U
+#define DBGSS_APP_AUTH_SPIDEN_S                                              2U
+#define DBGSS_APP_AUTH_SPIDEN_EN                                    0x00000004U
+#define DBGSS_APP_AUTH_SPIDEN_DIS                                   0x00000000U
+
 // Field:     [1] NIDEN
 //
 // Controls non-invasive debug enable.
@@ -931,6 +955,30 @@
 #define DBGSS_APP_AUTH_SET_KEY_S                                            24U
 #define DBGSS_APP_AUTH_SET_KEY__TO_UNLOCK_W_                        0x39000000U
 
+// Field:     [3] SPNIDEN
+//
+// Sets SPNIDEN bit in APP_AUTH register.
+// ENUMs:
+// SET                      Sets SPNIDEN
+// NOEFF                    Writing 0 has no effect
+#define DBGSS_APP_AUTH_SET_SPNIDEN                                  0x00000008U
+#define DBGSS_APP_AUTH_SET_SPNIDEN_M                                0x00000008U
+#define DBGSS_APP_AUTH_SET_SPNIDEN_S                                         3U
+#define DBGSS_APP_AUTH_SET_SPNIDEN_SET                              0x00000008U
+#define DBGSS_APP_AUTH_SET_SPNIDEN_NOEFF                            0x00000000U
+
+// Field:     [2] SPIDEN
+//
+// Sets SPIDEN bit in APP_AUTH register.
+// ENUMs:
+// SET                      Sets SPIDEN
+// NOEFF                    Writing 0 has no effect
+#define DBGSS_APP_AUTH_SET_SPIDEN                                   0x00000004U
+#define DBGSS_APP_AUTH_SET_SPIDEN_M                                 0x00000004U
+#define DBGSS_APP_AUTH_SET_SPIDEN_S                                          2U
+#define DBGSS_APP_AUTH_SET_SPIDEN_SET                               0x00000004U
+#define DBGSS_APP_AUTH_SET_SPIDEN_NOEFF                             0x00000000U
+
 // Field:     [1] NIDEN
 //
 // Sets NIDEN bit in [APP_AUTH ]register.
@@ -970,6 +1018,30 @@
 #define DBGSS_APP_AUTH_CLR_KEY_M                                    0xFF000000U
 #define DBGSS_APP_AUTH_CLR_KEY_S                                            24U
 #define DBGSS_APP_AUTH_CLR_KEY__TO_UNLOCK_W_                        0x7D000000U
+
+// Field:     [3] SPNIDEN
+//
+// Clears SPNIDEN bit in APP_AUTH register.
+// ENUMs:
+// CLR                      Clears SPIDEN
+// NOEFF                    Writing 0 has no effect
+#define DBGSS_APP_AUTH_CLR_SPNIDEN                                  0x00000008U
+#define DBGSS_APP_AUTH_CLR_SPNIDEN_M                                0x00000008U
+#define DBGSS_APP_AUTH_CLR_SPNIDEN_S                                         3U
+#define DBGSS_APP_AUTH_CLR_SPNIDEN_CLR                              0x00000008U
+#define DBGSS_APP_AUTH_CLR_SPNIDEN_NOEFF                            0x00000000U
+
+// Field:     [2] SPIDEN
+//
+// Sets SPIDEN bit in APP_AUTH register.
+// ENUMs:
+// CLR                      Clear SPIDEN
+// NOEFF                    Writing 0 has no effect
+#define DBGSS_APP_AUTH_CLR_SPIDEN                                   0x00000004U
+#define DBGSS_APP_AUTH_CLR_SPIDEN_M                                 0x00000004U
+#define DBGSS_APP_AUTH_CLR_SPIDEN_S                                          2U
+#define DBGSS_APP_AUTH_CLR_SPIDEN_CLR                               0x00000004U
+#define DBGSS_APP_AUTH_CLR_SPIDEN_NOEFF                             0x00000000U
 
 // Field:     [1] NIDEN
 //

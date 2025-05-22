@@ -57,10 +57,11 @@
 #define CPU_convertMsToDelayCycles(milliseconds) \
     (((uint32_t)(milliseconds)) * (48000 / 3))
 
-static zb_uint8_t gs_inited = ZB_FALSE;
+static zb_uint8_t buttonsInit = ZB_FALSE;
+static zb_uint8_t ledsInit = ZB_FALSE;
 static zb_uint8_t s_btn_max_num = 0;
 static zb_bool_t s_btn_debounce = ZB_FALSE;
-SemaphoreP_Handle buttonSem = NULL;
+extern SemaphoreP_Handle wakeSem;
 
 /***** Function definitions *****/
 /* GPIO interrupt Callback function for CONFIG_GPIO_BTN1 and CONFIG_GPIO_BTN2. */
@@ -82,7 +83,7 @@ void button_callback(zb_uint8_t index)
   }
 
   // Signal a button event just occurred
-  SemaphoreP_post(buttonSem);
+  SemaphoreP_post(wakeSem);
 
 #if defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
   zb_bool_t state;
@@ -124,25 +125,18 @@ static void ti_f3_buttons_disable_irq(void)
 
 void ti_f3_buttons_init(void)
 {
-  if(NULL == buttonSem)
-  {
-    SemaphoreP_Params semParams;
-    SemaphoreP_Params_init(&semParams);
-    buttonSem = SemaphoreP_create(0,&semParams);
-
 #if defined ZB_ZGPD_ROLE
-    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
-    GPIO_setConfig(CONFIG_GPIO_BTN2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
+  GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
+  GPIO_setConfig(CONFIG_GPIO_BTN2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
 #else //defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
-    GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_BOTH_EDGES);
-    GPIO_setConfig(CONFIG_GPIO_BTN2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_BOTH_EDGES);
-    ti_f3_buttons_enable_irq();
+  GPIO_setConfig(CONFIG_GPIO_BTN1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_BOTH_EDGES);
+  GPIO_setConfig(CONFIG_GPIO_BTN2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_BOTH_EDGES);
+  ti_f3_buttons_enable_irq();
 #endif // ZB_ZGPD_ROLE
 
-    /* Install Button callback */
-    GPIO_setCallback(CONFIG_GPIO_BTN1, button_callback);
-    GPIO_setCallback(CONFIG_GPIO_BTN2, button_callback);
-  } // ELSE: already initialized
+  /* Install Button callback */
+  GPIO_setCallback(CONFIG_GPIO_BTN1, button_callback);
+  GPIO_setCallback(CONFIG_GPIO_BTN2, button_callback);
 }
 
 #if defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
@@ -158,12 +152,17 @@ void ti_f3_leds_init(void)
 void zb_osif_led_button_init(void)
 {
 
-  if (!gs_inited)
+  if (!buttonsInit)
   {
+    /* Initialize buttons only once */
     ti_f3_buttons_init();
+    buttonsInit = ZB_TRUE;
+  }
+  if(!ledsInit)
+  {
+    /* Initialize LEDs only once */
     ti_f3_leds_init();
-
-    gs_inited = ZB_TRUE;
+    ledsInit = ZB_TRUE;
   }
 }
 
@@ -192,6 +191,22 @@ void zb_osif_led_off(zb_uint8_t led_no)
       break;
     case 1U:
       GPIO_write(CONFIG_GPIO_RLED, CONFIG_GPIO_LED_OFF);
+      break;
+    default:
+      /*Nothing to do*/
+      break;
+  }
+}
+
+void zb_osif_led_toggle(zb_uint8_t led_no)
+{
+  switch(led_no)
+  {
+    case 0U:
+      GPIO_toggle(CONFIG_GPIO_GLED);
+      break;
+    case 1U:
+      GPIO_toggle(CONFIG_GPIO_RLED);
       break;
     default:
       /*Nothing to do*/
@@ -228,7 +243,7 @@ zb_bool_t zb_osif_button_state(zb_uint8_t arg)
 zb_bool_t zb_setup_buttons_cb(zb_callback_t cb)
 {
   ZVUNUSED(cb);
-  return(!gs_inited);
+  return(!buttonsInit);
 }
 #endif //defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
 

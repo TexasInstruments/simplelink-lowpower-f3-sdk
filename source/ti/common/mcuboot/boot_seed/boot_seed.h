@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2022, Texas Instruments Incorporated
+ * Copyright (c) 2015-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,9 @@
 #include <ti/devices/DeviceFamily.h>
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
-void Boot_Seed (void);
+void Boot_Seed(void);
 #else
-#define Boot_Seed()
+    #define Boot_Seed()
 #endif
 
 #endif

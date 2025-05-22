@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2021-2023 Texas Instruments Incorporated. All rights reserved.
+ *  Copyright (c) 2021-2025 Texas Instruments Incorporated. All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -39,16 +39,18 @@
 //*****************************************************************************
 // --- ROM definitions ---
 /// Address of ROM FW revision structure
-#define ROM_FWREV_ADDR (ROM_BASE + 0x0048)
+#define ROM_FWREV_ADDR                          (ROM_BASE+0x0048)
 /// Base address of HAPI table in ROM
-#define ROM_HAPI_BASE  (ROM_BASE + 0x004C)
+#define ROM_HAPI_BASE                           (ROM_BASE+0x004C)
 /// Address of CRC32 calculated over entire ROM
-#define ROM_CRC_ADDR   (ROM_BASE + ROM_SIZE - 4)
+#define ROM_CRC_ADDR                            (ROM_BASE+ROM_SIZE-4)
 
 // --- SRAM definitions ---
 /// Magic value used in Fcfg.criticalTrim.sramRepair.magicWord to
 /// indicate that SRAM repair information is valid
-#define SRAMREP_MAGICWORD 0x40008100
+#define SRAMREP_MAGICWORD                       0x40008100
+
+
 
 //*****************************************************************************
 //
@@ -86,5 +88,6 @@ typedef union
 } bldrEntryFlags_t;
 
 #endif //!(defined(__ASM_INCLUDE__)
+
 
 #endif // __HW_PLATFORM_H__

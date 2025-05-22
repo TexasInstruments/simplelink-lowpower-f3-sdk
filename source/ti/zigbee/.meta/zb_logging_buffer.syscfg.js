@@ -46,4 +46,27 @@ LogSinkBuf1.$name       = "CONFIG_ti_log_LogSinkBuf_0";
 RCL.LogModule.logger                = LogSinkBuf1;
 ZIGBEE.LogModuleZigbeeLLMAC.logger  = LogSinkBuf1;
 ZIGBEE.LogModuleZigbeeApp.logger    = LogSinkBuf1;
+ZIGBEE.LogModuleZigbeeOSIF.logger    = LogSinkBuf1;
 
+ZIGBEE.LogModuleZigbeeApp.enable_DEBUG = true;
+ZIGBEE.LogModuleZigbeeApp.enable_INFO = true;
+ZIGBEE.LogModuleZigbeeApp.enable_VERBOSE = true;
+
+ZIGBEE.LogModuleZigbeeLLMAC.enable_DEBUG = true;
+ZIGBEE.LogModuleZigbeeLLMAC.enable_INFO = true;
+ZIGBEE.LogModuleZigbeeLLMAC.enable_VERBOSE = true;
+
+// Many calls in the OSIF so we don't enable all by default
+ZIGBEE.LogModuleZigbeeOSIF.enable_DEBUG = false;
+ZIGBEE.LogModuleZigbeeOSIF.enable_INFO = false;
+ZIGBEE.LogModuleZigbeeOSIF.enable_VERBOSE = false;
+
+/* ======= Advanced exception-handling if FreeRTOS is enabled ====== */
+if (system.getRTOS() === "freertos")
+{
+    const exception = scripting.addModule("/freertos/exception");
+    exception.nmiHandler       = "Exception_handlerMax";
+    exception.hardFaultHandler = "Exception_handlerMax";
+    exception.defaultHandler   = "Exception_handlerMax";
+    exception.LogModule.logger     = LogSinkBuf1;
+}

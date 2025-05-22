@@ -11,7 +11,7 @@
             "+../../Application/Queue_freertos.c -> Application/Queue_freertos.c",
             "+../../Application/Queue_freertos.h -> Application/Queue_freertos.h",
             "+../host_test.syscfg -> host_test.syscfg",
-            "+lpf3_app_freertos.cmd -> lpf3_app_freertos.cmd"
+            "+cc27xx_freertos.cmd -> cc27xx_freertos.cmd"
         ]
     }
 ]

@@ -68,10 +68,10 @@
 
 //! \brief NPI UART Message Indexes and Constants
 //
-#define NPI_UART_MSG_NON_PAYLOAD_LEN                 0x05
-#define NPI_UART_MSG_HDR_LEN                         0x04
-#define NPI_UART_MSG_SOF                             0xFE
-#define NPI_UART_MSG_SOF_IDX                         0x00
+#define NPI_UART_MSG_NON_PAYLOAD_LEN 0x05
+#define NPI_UART_MSG_HDR_LEN         0x04
+#define NPI_UART_MSG_SOF             0xFE
+#define NPI_UART_MSG_SOF_IDX         0x00
 
 //*****************************************************************************
 // Typedefs
@@ -143,8 +143,7 @@ static uint8_t NPITLUART_calcFCS(uint8_t *buf, uint16_t len);
 //!
 //! \return     void
 // -----------------------------------------------------------------------------
-void NPITLUART_openTransport(uint8_t portID, UART_Params *portParams,
-                             npiCB_t npiCBack)
+void NPITLUART_openTransport(uint8_t portID, UART_Params *portParams, npiCB_t npiCBack)
 {
     npiTransmitCB = npiCBack;
 
@@ -152,13 +151,13 @@ void NPITLUART_openTransport(uint8_t portID, UART_Params *portParams,
     UART_init();
 
     // Add call backs UART parameters.
-    portParams->readCallback = NPITLUART_readCallBack;
+    portParams->readCallback  = NPITLUART_readCallBack;
     portParams->writeCallback = NPITLUART_writeCallBack;
 
     // Open / power on the UART.
     uartHandle = UART_open(portID, portParams);
-    //Enable Partial Reads on all subsequent UART_read()
-    UART_control(uartHandle, UARTCC26XX_CMD_RETURN_PARTIAL_ENABLE,  NULL);
+    // Enable Partial Reads on all subsequent UART_read()
+    UART_control(uartHandle, UARTCC26XX_CMD_RETURN_PARTIAL_ENABLE, NULL);
 }
 
 // -----------------------------------------------------------------------------
@@ -232,8 +231,8 @@ void NPITLUART_handleRemRdyEvent(void)
         // another write to be processed
         if (UART_write(uartHandle, npiTxBuf, TransportTxLen) == UART_ERROR)
         {
-          TxActive = FALSE;
-          TransportTxLen = 0;
+            TxActive       = FALSE;
+            TransportTxLen = 0;
         }
     }
 
@@ -264,16 +263,16 @@ void NPITLUART_writeCallBack(UART_Handle handle, void *ptr, size_t size)
         {
             if (NPITLUART_validPacketFound() == NPI_SUCCESS)
             {
-              // Decrement as to not include trailing FCS byte
-              TransportRxLen--;
+                // Decrement as to not include trailing FCS byte
+                TransportRxLen--;
             }
             else
             {
-              // Did not receive valid packet so denote RX length as zero in CB
-              TransportRxLen = 0;
+                // Did not receive valid packet so denote RX length as zero in CB
+                TransportRxLen = 0;
             }
 
-            npiTransmitCB(TransportRxLen,TransportTxLen);
+            npiTransmitCB(TransportRxLen, TransportTxLen);
         }
     }
 
@@ -282,7 +281,7 @@ void NPITLUART_writeCallBack(UART_Handle handle, void *ptr, size_t size)
 #else
     if (npiTransmitCB)
     {
-        npiTransmitCB(0,TransportTxLen);
+        npiTransmitCB(0, TransportTxLen);
     }
 #endif // NPI_FLOW_CTRL = 1
 
@@ -322,8 +321,7 @@ void NPITLUART_readCallBack(UART_Handle handle, void *ptr, size_t size)
 #if (NPI_FLOW_CTRL == 1)
     // Read has been cancelled by transport layer, or bus timeout and no bytes in FIFO
     //    - do not invoke another read
-    if (!UARTCharsAvail(((UARTCC26XX_HWAttrsV2 const *)(uartHandle->hwAttrs))->baseAddr) &&
-            remRdy_flag)
+    if (!UARTCharsAvail(((UARTCC26XX_HWAttrsV2 const *)(uartHandle->hwAttrs))->baseAddr) && remRdy_flag)
     {
         RxActive = FALSE;
 
@@ -341,7 +339,7 @@ void NPITLUART_readCallBack(UART_Handle handle, void *ptr, size_t size)
                 TransportRxLen = 0;
             }
 
-            npiTransmitCB(TransportRxLen,TransportTxLen);
+            npiTransmitCB(TransportRxLen, TransportTxLen);
         }
     }
     else
@@ -349,8 +347,7 @@ void NPITLUART_readCallBack(UART_Handle handle, void *ptr, size_t size)
         UART_read(uartHandle, &isrRxBuf[0], UART_ISR_BUF_SIZE);
     }
 #else
-    while (NPITLUART_validPacketFound() == NPI_SUCCESS &&
-          npiTransmitCB)
+    while (NPITLUART_validPacketFound() == NPI_SUCCESS && npiTransmitCB)
     {
         // The Rx Buffer can contain more than the one valid packet
         // Must only return the number of bytes for the first valid packet and
@@ -359,16 +356,16 @@ void NPITLUART_readCallBack(UART_Handle handle, void *ptr, size_t size)
 
         // SOF has already been removed from npiRxBuf here. It is removed
         // when bytes are copied from the ISR Rx buffer to npiRxBuf
-        packetSize = (uint16) npiRxBuf[0];
-        packetSize += ((uint16) npiRxBuf[1]) << 8;
+        packetSize = (uint16)npiRxBuf[0];
+        packetSize += ((uint16)npiRxBuf[1]) << 8;
         packetSize += NPI_UART_MSG_HDR_LEN;
 
-        npiTransmitCB(packetSize,0);
+        npiTransmitCB(packetSize, 0);
 
         // Must look for SOF of next packet, first eligible byte is after the
         // FCS of the valid packet
         sofIndex = packetSize + 1;
-        while(sofIndex < TransportRxLen)
+        while (sofIndex < TransportRxLen)
         {
 
             if (npiRxBuf[sofIndex] == NPI_UART_MSG_SOF)
@@ -381,12 +378,11 @@ void NPITLUART_readCallBack(UART_Handle handle, void *ptr, size_t size)
 
         // New RX len does not include bytes prior to and include the
         // next found SOF byte. If no next SOF byte then len is 0
-        TransportRxLen = (TransportRxLen == sofIndex) ? 0 :
-                              TransportRxLen - sofIndex - 1;
+        TransportRxLen = (TransportRxLen == sofIndex) ? 0 : TransportRxLen - sofIndex - 1;
 
         // Copy all bytes following next found SOF to beginning of the RX buf
         // and check again for another valid packet
-        memcpy(npiRxBuf,&npiRxBuf[sofIndex + 1],TransportRxLen);
+        memcpy(npiRxBuf, &npiRxBuf[sofIndex + 1], TransportRxLen);
     }
 
     UART_read(uartHandle, &isrRxBuf[0], UART_ISR_BUF_SIZE);
@@ -408,8 +404,7 @@ uint16_t NPITLUART_readIsrBuf(size_t size)
     // Check to see if there is enough room in the npiRxBuf to move all
     // bytes from the ISR buf. If not, move as much as possible. A return value
     // not equal to size will notify of a lack of buffer space
-    size = ((TransportRxLen + size) > npiBufSize)?
-            npiBufSize - TransportRxLen : size;
+    size = ((TransportRxLen + size) > npiBufSize) ? npiBufSize - TransportRxLen : size;
 
     // Check if this is the first byte in the message. If it is then
     // make sure it is equal to SOF but do not write it into the
@@ -417,20 +412,20 @@ uint16_t NPITLUART_readIsrBuf(size_t size)
     if (TransportRxLen == 0 && isrRxBuf[0] == NPI_UART_MSG_SOF)
     {
         // Start the copying of the message but skip SOF byte
-        memcpy(&npiRxBuf[TransportRxLen],&isrRxBuf[1],size-1);
+        memcpy(&npiRxBuf[TransportRxLen], &isrRxBuf[1], size - 1);
         TransportRxLen += (size - 1);
     }
     else if (TransportRxLen != 0)
     {
         // This is not the first ISR RX of the message, copy all bytes
-        memcpy(&npiRxBuf[TransportRxLen],&isrRxBuf[0],size);
+        memcpy(&npiRxBuf[TransportRxLen], &isrRxBuf[0], size);
         TransportRxLen += size;
     }
 
     // Clear ISR Buffer
-    memset(isrRxBuf,0,size);
+    memset(isrRxBuf, 0, size);
 
-    return(size);
+    return (size);
 }
 
 // -----------------------------------------------------------------------------
@@ -453,7 +448,6 @@ void NPITLUART_readTransport(void)
     NPIUtil_ExitCS(key);
 }
 
-
 // -----------------------------------------------------------------------------
 //! \brief      This routine writes copies buffer addr to the transport layer.
 //!
@@ -467,8 +461,8 @@ uint16_t NPITLUART_writeTransport(uint16_t len)
     key = NPIUtil_EnterCS();
 
     npiTxBuf[NPI_UART_MSG_SOF_IDX] = NPI_UART_MSG_SOF;
-    npiTxBuf[len + 1] = NPITLUART_calcFCS((uint8_t *)&npiTxBuf[1],len);
-    TransportTxLen = len + 2;
+    npiTxBuf[len + 1]              = NPITLUART_calcFCS((uint8_t *)&npiTxBuf[1], len);
+    TransportTxLen                 = len + 2;
 
 #if (NPI_FLOW_CTRL == 1)
     TxActive = TRUE;
@@ -480,15 +474,15 @@ uint16_t NPITLUART_writeTransport(uint16_t len)
 #else
     // Check to see if transport is successful. If not, reset TxLen to allow
     // another write to be processed
-    if(UART_write(uartHandle, npiTxBuf, TransportTxLen) == UART_ERROR)
+    if (UART_write(uartHandle, npiTxBuf, TransportTxLen) == UART_ERROR)
     {
-      TransportTxLen = NPI_BUSY;
+        TransportTxLen = NPI_BUSY;
     }
 #endif // NPI_FLOW_CTRL = 1
 
     NPIUtil_ExitCS(key);
 
-    return(len);
+    return (len);
 }
 
 // -----------------------------------------------------------------------------
@@ -507,22 +501,22 @@ uint8_t NPITLUART_validPacketFound(void)
 
     // SOF has already been removed from npiRxBuf here. It is removed
     // when bytes are copied from the ISR Rx buffer to npiRxBuf
-    payloadLen = (uint16) npiRxBuf[0];
-    payloadLen += ((uint16) npiRxBuf[1]) << 8;
+    payloadLen = (uint16)npiRxBuf[0];
+    payloadLen += ((uint16)npiRxBuf[1]) << 8;
 
     if ((payloadLen + NPI_UART_MSG_NON_PAYLOAD_LEN) > npiBufSize)
     {
-      // Bad Frame Length, impossible to receive it entierely.
-      // Frame might be corrupted.
-      // Flush RX buffer before returning error.
-      TransportRxLen = 0;
-      return(NPI_INVALID_PKT);
+        // Bad Frame Length, impossible to receive it entierely.
+        // Frame might be corrupted.
+        // Flush RX buffer before returning error.
+        TransportRxLen = 0;
+        return (NPI_INVALID_PKT);
     }
 
     // Check to make sure we have received all bytes of this message
     if (TransportRxLen < (payloadLen + NPI_UART_MSG_NON_PAYLOAD_LEN))
     {
-        return(NPI_INCOMPLETE_PKT);
+        return (NPI_INCOMPLETE_PKT);
     }
 
     // Calculate FCS of this message
@@ -533,10 +527,10 @@ uint8_t NPITLUART_validPacketFound(void)
         // Invalid FCS, Flush RX buffer before returning error
         TransportRxLen = 0;
 
-        return(NPI_INVALID_PKT);
+        return (NPI_INVALID_PKT);
     }
 
-    return(NPI_SUCCESS);
+    return (NPI_SUCCESS);
 }
 
 // -----------------------------------------------------------------------------
@@ -557,5 +551,5 @@ uint8_t NPITLUART_calcFCS(uint8_t *buf, uint16_t len)
         fcs ^= buf[i];
     }
 
-    return(fcs);
+    return (fcs);
 }

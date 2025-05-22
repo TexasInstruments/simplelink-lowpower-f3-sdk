@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,8 +50,6 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
-#include DeviceFamily_constructPath(inc/hw_evtull.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_pmud.h)
 #include DeviceFamily_constructPath(inc/hw_pmctl.h)
@@ -81,7 +79,7 @@ static void clearEventFlags(void);
 /* Globals */
 
 /* Global list that stores all registered notifications */
-static List_List notificationList;
+volatile static List_List notificationList;
 
 /* Current threshold values. These should always reflect the state of the
  * BATMON registers without the need to read them out, and convert to
@@ -188,7 +186,7 @@ static void setNextThresholds(void)
     /* Starting with the head of the list, keep track of the smallest high
      * threshold and largest low threshold.
      */
-    notifyLink = List_head(&notificationList);
+    notifyLink = List_head((List_List *)&notificationList);
 
     while (notifyLink != NULL)
     {
@@ -214,7 +212,7 @@ static void setNextThresholds(void)
  */
 static void walkNotifyList(uint16_t currentVoltage)
 {
-    List_Elem *notifyLink = List_head(&notificationList);
+    List_Elem *notifyLink = List_head((List_List *)&notificationList);
 
     /* If the notification list is empty, the head pointer will be
      * NULL and the while loop will never execute the statement.
@@ -243,7 +241,7 @@ static void walkNotifyList(uint16_t currentVoltage)
             uint16_t threshold = (currentVoltage <= notifyObject->thresholdLow) ? notifyObject->thresholdLow
                                                                                 : notifyObject->thresholdHigh;
 
-            List_remove(&notificationList, notifyLink);
+            List_remove((List_List *)&notificationList, notifyLink);
             notifyObject->isRegistered = false;
 
             notifyObject->notifyFxn(currentVoltage, threshold, notifyObject->clientArg, notifyObject);
@@ -375,7 +373,7 @@ int_fast16_t BatteryMonitor_registerNotifyHigh(BatteryMonitor_NotifyObj *notifyO
          * There is the implicit assumption that the notification is not already
          * in the list. Otherwise the list linkage will be corrupted.
          */
-        List_put(&notificationList, &notifyObject->link);
+        List_put((List_List *)&notificationList, &notifyObject->link);
 
         notifyObject->isRegistered = true;
     }
@@ -410,7 +408,7 @@ int_fast16_t BatteryMonitor_registerNotifyLow(BatteryMonitor_NotifyObj *notifyOb
          * There is the implicit assumption that the notification is not already
          * in the list. Otherwise the list linkage will be corrupted.
          */
-        List_put(&notificationList, &notifyObject->link);
+        List_put((List_List *)&notificationList, &notifyObject->link);
 
         notifyObject->isRegistered = true;
     }
@@ -446,7 +444,7 @@ int_fast16_t BatteryMonitor_registerNotifyRange(BatteryMonitor_NotifyObj *notify
          * There is the implicit assumption that the notification is not already
          * in the list. Otherwise the list linkage will be corrupted.
          */
-        List_put(&notificationList, &notifyObject->link);
+        List_put((List_List *)&notificationList, &notifyObject->link);
 
         notifyObject->isRegistered = true;
     }
@@ -470,7 +468,7 @@ int_fast16_t BatteryMonitor_unregisterNotify(BatteryMonitor_NotifyObj *notifyObj
     if (notifyObject->isRegistered == true)
     {
         /* Remove the notification from the list */
-        List_remove(&notificationList, &(notifyObject->link));
+        List_remove((List_List *)&notificationList, &(notifyObject->link));
 
         notifyObject->isRegistered = false;
     }

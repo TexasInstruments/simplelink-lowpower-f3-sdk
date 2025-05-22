@@ -7,22 +7,6 @@ set(SOURCES_CC23X0_COMMON
     adc/ADCLPF3.c
     ADCBuf.c
     adcbuf/ADCBufLPF3.c
-    AESCBC.c
-    aescbc/AESCBCLPF3.c
-    AESCCM.c
-    aesccm/AESCCMLPF3.c
-    AESCMAC.c
-    aescmac/AESCMACLPF3.c
-    AESCTR.c
-    aesctr/AESCTRLPF3.c
-    AESCTRDRBG.c
-    aesctrdrbg/AESCTRDRBGXX.c
-    AESECB.c
-    aesecb/AESECBLPF3.c
-    AESGCM.c
-    aesgcm/AESGCMLPF3.c
-    ANSIX936KDF.c
-    ansix936kdf/ANSIX936KDFXX.c
     batterymonitor/BatteryMonitorLPF3.c
     batterymonitor/BatMonSupportLPF3.c
     CAN.c
@@ -31,26 +15,7 @@ set(SOURCES_CC23X0_COMMON
     ../../third_party/mcan/MCAN.c
     Comparator.c
     comparator/ComparatorLPF3LP.c
-    cryptoutils/aes/AESCommonLPF3.c
-    cryptoutils/cryptokey/CryptoKey.c
-    cryptoutils/cryptokey/CryptoKeyPlaintext.c
-    cryptoutils/ecc/ECCInitLPF3SW.c
-    utils/BigNum.c
-    ../../third_party/bearssl/src/i32_muladd.c
-    ../../third_party/bearssl/src/i32_reduce.c
-    ../../third_party/bearssl/src/i32_sub.c
-    ../../third_party/bearssl/src/i32_add.c
-    ../../third_party/bearssl/src/i32_div32.c
-    cryptoutils/ecc/ECCParamsLPF3SW.c
-    cryptoutils/sharedresources/CryptoResourceLPF3.c
-    cryptoutils/utils/CryptoUtils.c
     dma/UDMALPF3.c
-    ECDH.c
-    ecdh/ECDHLPF3SW.c
-    ECDSA.c
-    ecdsa/ECDSALPF3SW.c
-    ECIES.c
-    ecies/ECIESXX.c
     GPIO.c
     gpio/GPIOLPF3.c
     I2C.c
@@ -64,15 +29,11 @@ set(SOURCES_CC23X0_COMMON
     power/PowerCC23X0.c
     PWM.c
     pwm/PWMTimerLPF3.c
-    RNG.c
-    rng/RNGLPF3RF.c
     SD.c
     sd/SDSPI.c
     SPI.c
     spi/SPILPF3DMA.c
     SDFatFS.c
-    SHA2.c
-    sha2/SHA2LPF3SW.c
     Temperature.c
     temperature/TemperatureLPF3.c
     timer/LGPTimerLPF3.c

@@ -206,6 +206,13 @@
           "desc": "Callback function",
           "name": "callback",
           "type": "RCL_Callback"
+        },
+        {
+          "desc": "DMM (Dynamic Multi-protocol Manager) run-time priority information",
+          "name": "activityInfo",
+          "type": "uint32_t",
+          "size": "32",
+          "default": "0"
         }
       ]
     },

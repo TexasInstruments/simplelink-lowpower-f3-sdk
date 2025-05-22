@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,12 +42,12 @@
 #include <ti/drivers/gpio/GPIOLPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/pmctl.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
 #include DeviceFamily_constructPath(inc/hw_gpio.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
-#include DeviceFamily_constructPath(inc/hw_pmctl.h)
 
 static bool initCalled = false;
 
@@ -63,7 +63,7 @@ extern const uint_least8_t GPIO_pinUpperBound;
 static void setPinmaskNonatomic(uint_least8_t index, uint32_t registerBaseAddress);
 
 #define IOC_BASE_PIN_REG 0x00000100
-#define IOC_ADDR(index)  (IOC_BASE + IOC_BASE_PIN_REG + (sizeof(uint32_t) * index))
+#define IOC_ADDR(index)  (IOC_BASE + IOC_BASE_PIN_REG + (sizeof(uint32_t) * (index)))
 
 /*
  *  ======== GPIO_clearInt ========
@@ -164,7 +164,7 @@ void GPIO_init()
     /* Enable pad power to use GPIOs by setting VDDIOPGIO. This is only done
      * for CC27XX to support split rails.
      */
-    HWREG(PMCTL_BASE + PMCTL_O_AONRSET1) |= PMCTL_AONRSET1_VDDIOPGIO_SET;
+    PMCTLEnableVddioGpioPadPower();
 #endif
 
     /* Setup HWI handler */

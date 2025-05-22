@@ -53,8 +53,8 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/flash.h)
 #if !defined(DeviceFamily_CC23X0R2)
-#include DeviceFamily_constructPath(driverlib/watchdog.h)
-#include DeviceFamily_constructPath(inc/hw_prcm.h)
+    #include DeviceFamily_constructPath(driverlib/watchdog.h)
+    #include DeviceFamily_constructPath(inc/hw_prcm.h)
 #endif
 
 #include "ti/common/cc26xx/oad/ext_flash_layout.h"
@@ -62,87 +62,91 @@
 #include "ti/common/flash/no_rtos/extFlash/ext_flash.h"
 #include "ti/common/cc26xx/flash_interface/flash_interface.h"
 #if !defined(DeviceFamily_CC23X0R2)
-#include "ti/common/cc26xx/bim/bim_util.h"
+    #include "ti/common/cc26xx/bim/bim_util.h"
 #else
-#include "ti/common/cc23xx/bim/bim_util.h"
+    #include "ti/common/cc23xx/bim/bim_util.h"
 #endif
 #include "ti/common/cc26xx/oad/oad_image_header.h"
 #ifdef __IAR_SYSTEMS_ICC__
-#include <intrinsics.h>
+    #include <intrinsics.h>
 #endif
 
 #ifdef DEBUG_BIM
-#include "ti/common/cc26xx/debug/led_debug.h"
+    #include "ti/common/cc26xx/debug/led_debug.h"
 #endif
 
-#if defined (SECURITY)
-#include "ti/common/cc26xx/ecc/sign_util.h"
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
-#include "ti/common/cc26xx/sha2/sha2_driverlib.h"
-#elif defined(DeviceFamily_CC23X0R2)
-#include DeviceFamily_constructPath(driverlib/sha256sw.h)
-#else
-#include DeviceFamily_constructPath(driverlib/rom_sha256.h)
-#endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
+#if defined(SECURITY)
+    #include "ti/common/cc26xx/ecc/sign_util.h"
+    #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+        defined(DeviceFamily_CC26X2X7)
+        #include "ti/common/cc26xx/sha2/sha2_driverlib.h"
+    #elif defined(DeviceFamily_CC23X0R2)
+        #include DeviceFamily_constructPath(driverlib/sha256sw.h)
+    #else
+        #include DeviceFamily_constructPath(driverlib/rom_sha256.h)
+    #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 #endif
 /*******************************************************************************
  *                                          Constants
  */
 
-#define IMG_HDR_FOUND                  -1
-#define EMPTY_METADATA                 -2
+#define IMG_HDR_FOUND  -1
+#define EMPTY_METADATA -2
 
-#define SUCCESS                         0
-#define FAIL                           ~0x0
+#define SUCCESS 0
+#define FAIL    ~0x0
 
-#define ONCHIP_COPY_CHUNK_SIZE          256            /* Max number of bytes to copy on on-chip flash */
+#define ONCHIP_COPY_CHUNK_SIZE 256 /* Max number of bytes to copy on on-chip flash */
 
 #if defined(DeviceFamily_CC23X0R2)
-#define START_PAGE                      7
-#define MAX_ONCHIP_FLASH_SEARCH_PAGE    MAX_ONCHIP_FLASH_PAGES
+    #define START_PAGE                   7
+    #define MAX_ONCHIP_FLASH_SEARCH_PAGE MAX_ONCHIP_FLASH_PAGES
 #else
-#define START_PAGE                      0
-#define MAX_ONCHIP_FLASH_SEARCH_PAGE    (MAX_ONCHIP_FLASH_PAGES - 1)
+    #define START_PAGE                   0
+    #define MAX_ONCHIP_FLASH_SEARCH_PAGE (MAX_ONCHIP_FLASH_PAGES - 1)
 #endif
 
-#if defined (SECURITY)
-#define SHA_BUF_SZ                      EFL_PAGE_SIZE
+#if defined(SECURITY)
+    #define SHA_BUF_SZ EFL_PAGE_SIZE
 #endif
 
 /*******************************************************************************
  * LOCAL VARIABLES
  */
-static uint32_t intFlashPageSize;                   /* Size of internal flash page */
+static uint32_t intFlashPageSize; /* Size of internal flash page */
 
 #if (defined(SECURITY))
 
-#if defined(__IAR_SYSTEMS_ICC__)
+    #if defined(__IAR_SYSTEMS_ICC__)
 __no_init uint8_t shaBuf[SHA_BUF_SZ];
-#elif defined(__TI_COMPILER_VERSION__) || defined(__clang__)
+    #elif defined(__TI_COMPILER_VERSION__) || defined(__clang__)
 uint8_t shaBuf[SHA_BUF_SZ];
-#endif
+    #endif
 
-/* Cert element stored in flash where public keys in Little endian format*/
-#ifdef __TI_COMPILER_VERSION__
-#pragma DATA_SECTION(_secureCertElement, ".cert_element")
-#pragma RETAIN(_secureCertElement)
+    /* Cert element stored in flash where public keys in Little endian format*/
+    #ifdef __TI_COMPILER_VERSION__
+        #pragma DATA_SECTION(_secureCertElement, ".cert_element")
+        #pragma RETAIN(_secureCertElement)
 const certElement_t _secureCertElement =
-#elif __clang__
+    #elif __clang__
 const certElement_t _secureCertElement __attribute__((section(".cert_element"))) =
-#elif  defined(__IAR_SYSTEMS_ICC__)
-#pragma location=".cert_element"
+    #elif defined(__IAR_SYSTEMS_ICC__)
+        #pragma location = ".cert_element"
 const certElement_t _secureCertElement @ ".cert_element" =
-#endif
-{
-  .version    = SECURE_SIGN_TYPE,
-  .len        = SECURE_CERT_LENGTH,
-  .options    = SECURE_CERT_OPTIONS,
-  .signerInfo = {0xb0,0x17,0x7d,0x51,0x1d,0xec,0x10,0x8b},
-  .certPayload.eccKey.pubKeyX = {0xd8,0x51,0xbc,0xa2,0xed,0x3d,0x9e,0x19,0xb7,0x33,0xa5,0x2f,0x33,0xda,0x05,0x40,0x4d,0x13,0x76,0x50,0x3d,0x88,0xdf,0x5c,0xd0,0xe2,0xf2,0x58,0x30,0x53,0xc4,0x2a},
-  .certPayload.eccKey.pubKeyY = {0xb9,0x2a,0xbe,0xef,0x66,0x5f,0xec,0xcf,0x56,0x16,0xcc,0x36,0xef,0x2d,0xc9,0x5e,0x46,0x2b,0x7c,0x3b,0x09,0xc1,0x99,0x56,0xd9,0xaf,0x95,0x81,0x63,0x23,0x7b,0xe7}
- };
+    #endif
+    {.version                    = SECURE_SIGN_TYPE,
+     .len                        = SECURE_CERT_LENGTH,
+     .options                    = SECURE_CERT_OPTIONS,
+     .signerInfo                 = {0xb0, 0x17, 0x7d, 0x51, 0x1d, 0xec, 0x10, 0x8b},
+     .certPayload.eccKey.pubKeyX = {0xd8, 0x51, 0xbc, 0xa2, 0xed, 0x3d, 0x9e, 0x19, 0xb7, 0x33, 0xa5,
+                                    0x2f, 0x33, 0xda, 0x05, 0x40, 0x4d, 0x13, 0x76, 0x50, 0x3d, 0x88,
+                                    0xdf, 0x5c, 0xd0, 0xe2, 0xf2, 0x58, 0x30, 0x53, 0xc4, 0x2a},
+     .certPayload.eccKey.pubKeyY = {0xb9, 0x2a, 0xbe, 0xef, 0x66, 0x5f, 0xec, 0xcf, 0x56, 0x16, 0xcc,
+                                    0x36, 0xef, 0x2d, 0xc9, 0x5e, 0x46, 0x2b, 0x7c, 0x3b, 0x09, 0xc1,
+                                    0x99, 0x56, 0xd9, 0xaf, 0x95, 0x81, 0x63, 0x23, 0x7b, 0xe7}};
 
-uint32_t eccWorkzone[SECURE_FW_ECC_NIST_P256_WORKZONE_LEN_IN_BYTES + SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES)*5] = {0};
+uint32_t eccWorkzone[SECURE_FW_ECC_NIST_P256_WORKZONE_LEN_IN_BYTES +
+                     SECURE_FW_ECC_BUF_TOTAL_LEN(SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES) * 5] = {0};
 uint8_t headerBuf[HDR_LEN_WITH_SECURITY_INFO];
 
 #endif
@@ -150,7 +154,6 @@ uint8_t headerBuf[HDR_LEN_WITH_SECURITY_INFO];
 /*******************************************************************************
  * EXTERN FUNCTIONS
  */
-
 
 /*******************************************************************************
  * LOCAL FUNCTIONS
@@ -165,16 +168,19 @@ static bool Bim_revertFactoryImage(void);
 static void Bim_checkImages(void);
 
 #if defined(SECURITY)
-uint8_t Bim_payloadVerify(uint8_t ver, uint32_t cntr, uint32_t payloadlen,
-                         uint8_t  *dataPayload, uint8_t *signPayload,
-                         ecdsaSigVerifyBuf_t *ecdsaSigVerifyBuf);
+uint8_t Bim_payloadVerify(uint8_t ver,
+                          uint32_t cntr,
+                          uint32_t payloadlen,
+                          uint8_t *dataPayload,
+                          uint8_t *signPayload,
+                          ecdsaSigVerifyBuf_t *ecdsaSigVerifyBuf);
 static bool Bim_checkForSecSegmntIntFlash(uint32_t startAddr, uint32_t imgLen);
-static bool    Bim_checkForSecSegmnt(uint32_t eflStartAddr, uint32_t imgLen);
+static bool Bim_checkForSecSegmnt(uint32_t eflStartAddr, uint32_t imgLen);
 static uint8_t Bim_verifyImage(uint32_t eflStartAddr, uint8_t *shaBuffer);
 static uint8_t Bim_verifyImageIntFlash(uint32_t startAddr, uint8_t *shaBuffer);
 static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool isExtFlash);
 
-#endif //#if defined (SECURITY)
+#endif // #if defined (SECURITY)
 
 /*******************************************************************************
  * @fn     Bim_copyImage
@@ -189,26 +195,26 @@ static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool is
  */
 static int8_t Bim_copyImage(uint32_t imgStart, uint32_t imgLen, uint32_t dstAddr)
 {
-    uint_fast16_t page = dstAddr/intFlashPageSize;
+    uint_fast16_t page = dstAddr / intFlashPageSize;
     uint_fast16_t lastPage;
 
-    lastPage = (uint_fast16_t) ((dstAddr + imgLen - 1) / intFlashPageSize);
+    lastPage = (uint_fast16_t)((dstAddr + imgLen - 1) / intFlashPageSize);
 
-    if(dstAddr & 3)
+    if (dstAddr & 3)
     {
         /* Not an aligned address */
-        return(FAIL);
+        return (FAIL);
     }
 
-    if(page > lastPage || lastPage > MAX_ONCHIP_FLASH_PAGES)
+    if (page > lastPage || lastPage > MAX_ONCHIP_FLASH_PAGES)
     {
-        return(FAIL);
+        return (FAIL);
     }
 
     /* Erase the pages needed to be copied */
-    if(Bim_EraseOnchipFlashPages(dstAddr, imgLen, intFlashPageSize) != SUCCESS)
+    if (Bim_EraseOnchipFlashPages(dstAddr, imgLen, intFlashPageSize) != SUCCESS)
     {
-        return(FAIL);
+        return (FAIL);
     }
 
     uint8_t buf[ONCHIP_COPY_CHUNK_SIZE];
@@ -216,23 +222,23 @@ static int8_t Bim_copyImage(uint32_t imgStart, uint32_t imgLen, uint32_t dstAddr
 
     while (imgLen > 0)
     {
-        if(imgLen < byteCnt)
+        if (imgLen < byteCnt)
         {
             byteCnt = imgLen;
         }
 
         /* Read word from external flash */
-        if(!extFlashRead(imgStart, byteCnt, (uint8_t *)&buf))
+        if (!extFlashRead(imgStart, byteCnt, (uint8_t *)&buf))
         {
             /* read failed */
-            return(FAIL);
+            return (FAIL);
         }
 
         /* Write word to internal flash */
-        if(writeFlash(dstAddr, buf, byteCnt) != FLASH_SUCCESS)
+        if (writeFlash(dstAddr, buf, byteCnt) != FLASH_SUCCESS)
         {
             /* Program failed */
-            return(FAIL);
+            return (FAIL);
         }
 
         imgStart += byteCnt;
@@ -240,7 +246,7 @@ static int8_t Bim_copyImage(uint32_t imgStart, uint32_t imgLen, uint32_t dstAddr
         imgLen -= byteCnt;
     }
     /* Do not close external flash driver here just return */
-    return(SUCCESS);
+    return (SUCCESS);
 }
 
 /*******************************************************************************
@@ -263,28 +269,29 @@ static int8_t isLastMetaData(uint8_t flashPageNum)
     uint8_t readNext = true;
     do
     {
-        extFlashRead(EXT_FLASH_ADDRESS(flashPageNum, 0),  OAD_IMG_ID_LEN, (uint8_t *)&imgHdr.imgID[0]);
+        extFlashRead(EXT_FLASH_ADDRESS(flashPageNum, 0), OAD_IMG_ID_LEN, (uint8_t *)&imgHdr.imgID[0]);
 
         /* Check imageID bytes */
-        if(metadataIDCheck(&imgHdr) == true)  /* External flash metadata found */
+        if (metadataIDCheck(&imgHdr) == true) /* External flash metadata found */
         {
-            return(flashPageNum);
+            return (flashPageNum);
         }
-        else if(imgIDCheck(&imgHdr) == true)   /* Image metadata found which indicate end of external flash metadata pages*/
+        else if (imgIDCheck(&imgHdr) == true) /* Image metadata found which indicate end of external flash metadata
+                                                 pages*/
         {
-           return(IMG_HDR_FOUND);
+            return (IMG_HDR_FOUND);
         }
-        flashPageNum +=1;
-        if(flashPageNum >= MAX_OFFCHIP_METADATA_PAGES) /* End of flash reached, Note:practically it would never go till end if there a factory image exits */
+        flashPageNum += 1;
+        if (flashPageNum >= MAX_OFFCHIP_METADATA_PAGES) /* End of flash reached, Note:practically it would never go till
+                                                           end if there a factory image exits */
         {
             readNext = false;
         }
 
-    }while(readNext);
+    } while (readNext);
 
-    return(EMPTY_METADATA);
+    return (EMPTY_METADATA);
 }
-
 
 /*******************************************************************************
  * @fn     Bim_findImageStartAddr
@@ -301,17 +308,17 @@ static int8_t isLastMetaData(uint8_t flashPageNum)
 static uint32_t Bim_findImageStartAddr(uint32_t efImgAddr, uint32_t imgLen)
 {
     uint8_t buff[12];
-    uint32_t startAddr = INVALID_ADDR;
-    uint32_t offset = OAD_IMG_HDR_LEN;
-    uint32_t len = SEG_HDR_LEN;
+    uint32_t startAddr     = INVALID_ADDR;
+    uint32_t offset        = OAD_IMG_HDR_LEN;
+    uint32_t len           = SEG_HDR_LEN;
     uint32_t flashAddrBase = efImgAddr;
     do
     {
         /* Read flash to find segment header of the first segment */
-        if(extFlashRead((flashAddrBase + offset), len, &buff[0]))
+        if (extFlashRead((flashAddrBase + offset), len, &buff[0]))
         {
             /* Check imageID bytes */
-            if(buff[0] == IMG_PAYLOAD_SEG_ID)
+            if (buff[0] == IMG_PAYLOAD_SEG_ID)
             {
                 startAddr = *((uint32_t *)(&buff[8]));
                 break;
@@ -320,7 +327,7 @@ static uint32_t Bim_findImageStartAddr(uint32_t efImgAddr, uint32_t imgLen)
             {
                 /* get segment payload length and keep iterating */
                 uint32_t payloadlen = *((uint32_t *)&buff[4]);
-                if(payloadlen == 0) /* We have problem here break to avoid spinning in loop */
+                if (payloadlen == 0) /* We have problem here break to avoid spinning in loop */
                 {
                     break;
                 }
@@ -334,7 +341,7 @@ static uint32_t Bim_findImageStartAddr(uint32_t efImgAddr, uint32_t imgLen)
         {
             break;
         }
-    }while(offset < imgLen);
+    } while (offset < imgLen);
 
     return startAddr;
 }
@@ -355,18 +362,18 @@ static uint8_t Bim_EraseOnchipFlashPages(uint32_t startAddr, uint32_t imgLen, ui
 {
     int8_t status = SUCCESS;
 
-    uint8_t startPage = startAddr/pageSize;
-    uint8_t numFlashPages = imgLen/pageSize;
-    if(0 != (imgLen % pageSize))
+    uint8_t startPage     = startAddr / pageSize;
+    uint8_t numFlashPages = imgLen / pageSize;
+    if (0 != (imgLen % pageSize))
     {
         numFlashPages += 1;
     }
 
     // Erase the correct amount of pages
-    for(uint8_t page=startPage; page<(startPage + numFlashPages); ++page)
+    for (uint8_t page = startPage; page < (startPage + numFlashPages); ++page)
     {
         uint8_t flashStat = eraseFlashPg(page);
-        if(flashStat == FLASH_FAILURE)
+        if (flashStat == FLASH_FAILURE)
         {
             // If we fail to pre-erase, then halt the OAD process
             status = FAIL;
@@ -400,22 +407,22 @@ static int8_t checkImagesExtFlash(void)
     int8_t securityStatus = FAIL;
 
     /* Initialize external flash driver. */
-    if(!extFlashOpen())
+    if (!extFlashOpen())
     {
-        return(FAIL);
+        return (FAIL);
     }
 
     /* Read flash to find OAD external flash metadata identification value  and check for external
     flash bytes */
-    while((flashPageNum = isLastMetaData(flashPageNum)) > -1)
+    while ((flashPageNum = isLastMetaData(flashPageNum)) > -1)
     {
         /* Read whole metadata header */
         extFlashRead(EXT_FLASH_ADDRESS(flashPageNum, 0), EFL_METADATA_LEN, (uint8_t *)&metadataHdr);
 
         /* check BIM and Metadata version */
-        if((metadataHdr.fixedHdr.imgCpStat != NEED_COPY) ||
-           (metadataHdr.fixedHdr.bimVer != BIM_VER  || metadataHdr.fixedHdr.metaVer != META_VER) ||
-           (metadataHdr.fixedHdr.crcStat == CRC_INVALID))  /* Invalid CRC */
+        if ((metadataHdr.fixedHdr.imgCpStat != NEED_COPY) ||
+            (metadataHdr.fixedHdr.bimVer != BIM_VER || metadataHdr.fixedHdr.metaVer != META_VER) ||
+            (metadataHdr.fixedHdr.crcStat == CRC_INVALID)) /* Invalid CRC */
         {
             flashPageNum += 1; /* increment flash page number */
             continue;          /* Continue search on next flash page */
@@ -440,40 +447,38 @@ static int8_t checkImagesExtFlash(void)
         securityStatus = SUCCESS;
 #endif /* #if defined(SECURITY) */
 
-
-        if((metadataHdr.fixedHdr.imgCpStat == NEED_COPY) && (securityStatus == SUCCESS))
+        if ((metadataHdr.fixedHdr.imgCpStat == NEED_COPY) && (securityStatus == SUCCESS))
         {
             /* On CC26XXR2 platform only stack application needs to be copied
                Do the image copy */
-           status = COPY_DONE;
+            status = COPY_DONE;
 
-           /* Now read image's start address from image stored on external flash */
-           imgFixedHdr_t imgFxdHdr;
+            /* Now read image's start address from image stored on external flash */
+            imgFixedHdr_t imgFxdHdr;
 
-           /* Read whole image header, to find the image start address */
-           extFlashRead(eFlStrAddr, OAD_IMG_HDR_LEN, (uint8_t *)&imgFxdHdr);
+            /* Read whole image header, to find the image start address */
+            extFlashRead(eFlStrAddr, OAD_IMG_HDR_LEN, (uint8_t *)&imgFxdHdr);
 
-           /* Copy image on internal flash after passing certain checks */
+            /* Copy image on internal flash after passing certain checks */
 
-           /* Get image start address from image */
-           uint32_t startAddr = INVALID_ADDR;
-           startAddr = Bim_findImageStartAddr(eFlStrAddr, (uint32_t)imgFxdHdr.len);
+            /* Get image start address from image */
+            uint32_t startAddr = INVALID_ADDR;
+            startAddr          = Bim_findImageStartAddr(eFlStrAddr, (uint32_t)imgFxdHdr.len);
 
-           /* Not a valid image: continue search in the next flash page  */
-           if((startAddr == INVALID_ADDR) ||
-                   (imgFxdHdr.prgEntry < startAddr) ||
-                   (imgFxdHdr.prgEntry > (startAddr + imgFxdHdr.len)))
-           {
-               flashPageNum += 1; /* increment flash page number */
-               continue;          /* Continue search on next flash page */
-           }
+            /* Not a valid image: continue search in the next flash page  */
+            if ((startAddr == INVALID_ADDR) || (imgFxdHdr.prgEntry < startAddr) ||
+                (imgFxdHdr.prgEntry > (startAddr + imgFxdHdr.len)))
+            {
+                flashPageNum += 1; /* increment flash page number */
+                continue;          /* Continue search on next flash page */
+            }
 
-           /*
-            * NOTE: During debugging image length wouldn't available, as it is updated
-            * by python script during post build process, for now this implementation
-            * catering only for contiguous image's, so image length will be calculate
-            * by subtracting the image end address by image start address.
-            */
+            /*
+             * NOTE: During debugging image length wouldn't available, as it is updated
+             * by python script during post build process, for now this implementation
+             * catering only for contiguous image's, so image length will be calculate
+             * by subtracting the image end address by image start address.
+             */
 #ifdef DEBUG_BIM
             imgFxdHdr.len = imgFxdHdr.imgEndAddr - startAddr + 1;
 #endif
@@ -485,23 +490,21 @@ static int8_t checkImagesExtFlash(void)
             extFlashWrite(EXT_FLASH_ADDRESS(flashPageNum, IMG_COPY_STAT_OFFSET), 1, (uint8_t *)&status);
 
             /* If image copy is successful */
-            if(retVal == SUCCESS)
+            if (retVal == SUCCESS)
             {
                 /* update image copy status and calculate the
                 the CRC of the copied
                 and update it's CRC status. CRC_STAT_OFFSET
                 */
                 uint32_t crc32 = CRC32_calc(FLASH_PAGE(startAddr), intFlashPageSize, 0, imgFxdHdr.len, false);
-                if(crc32 == imgFxdHdr.crc32) // if crc matched then update its status in the copied image
+                if (crc32 == imgFxdHdr.crc32) // if crc matched then update its status in the copied image
                 {
                     status = CRC_VALID;
                     /* update status in meta data */
-                    extFlashWrite(FLASH_ADDRESS(flashPageNum, CRC_STAT_OFFSET),
-                                    sizeof(status), &status);
+                    extFlashWrite(FLASH_ADDRESS(flashPageNum, CRC_STAT_OFFSET), sizeof(status), &status);
 
                     /* update status in internal flash */
-                    writeFlashPg(FLASH_PAGE(startAddr), CRC_STAT_OFFSET,
-                                    &status, sizeof(status));
+                    writeFlashPg(FLASH_PAGE(startAddr), CRC_STAT_OFFSET, &status, sizeof(status));
 
 #if (defined(SECURITY))
                     /* check for sign verification on internal flash image */
@@ -512,14 +515,14 @@ static int8_t checkImagesExtFlash(void)
 
                     /* If it is executable Image jump to execute it */
                     if (((imgFxdHdr.imgType == OAD_IMG_TYPE_APP) ||
-                        (imgFxdHdr.imgType == OAD_IMG_TYPE_PERSISTENT_APP) ||
-                        (imgFxdHdr.imgType == OAD_IMG_TYPE_APP_STACK) ||
-                        (imgFxdHdr.imgType == OAD_IMG_TYPE_APPSTACKLIB)) &&
+                         (imgFxdHdr.imgType == OAD_IMG_TYPE_PERSISTENT_APP) ||
+                         (imgFxdHdr.imgType == OAD_IMG_TYPE_APP_STACK) ||
+                         (imgFxdHdr.imgType == OAD_IMG_TYPE_APPSTACKLIB)) &&
                         (securityStatus == SUCCESS))
                     {
                         /* close external Flash gracefully before jumping */
                         extFlashClose();
-                        jumpToPrgEntry((uint32_t*)imgFxdHdr.prgEntry);
+                        jumpToPrgEntry((uint32_t *)imgFxdHdr.prgEntry);
                     }
                 }
                 else /* CRC check failed */
@@ -532,15 +535,15 @@ static int8_t checkImagesExtFlash(void)
                 extFlashWrite((eFlStrAddr + IMG_COPY_STAT_OFFSET), 1, (uint8_t *)&status);
 
             } /* if(retVal == SUCCESS) wrt Bim_copyImage() */
-        }/* if(metadataHdr.fixedHdr.imgCpStat == NEED_COPY) */
+        }     /* if(metadataHdr.fixedHdr.imgCpStat == NEED_COPY) */
 
         /* Unable to find valid executable image, continue to check for a valid image by going to next page */
         flashPageNum += 1;
 
-    }  /* end of  while((retVal = isLastMetaData(flashPageNum)) > -1) */
+    } /* end of  while((retVal = isLastMetaData(flashPageNum)) > -1) */
 
     extFlashClose();
-    return(SUCCESS);
+    return (SUCCESS);
 }
 
 /*******************************************************************************
@@ -568,45 +571,40 @@ static uint8_t checkImagesIntFlash(uint8_t flashPageNum)
         readFlash((uint32_t)startAddr, &imgHdr.imgID[0], OAD_IMG_ID_LEN);
 
         /* Check imageID bytes */
-        if(imgIDCheck(&imgHdr) == true)
+        if (imgIDCheck(&imgHdr) == true)
         {
             /* Read whole image header */
             readFlash((uint32_t)startAddr, (uint8_t *)&imgHdr, OAD_IMG_HDR_LEN);
 
             /* If application is neither executable user application or merged app_stack */
-            if(!(OAD_IMG_TYPE_APP == imgHdr.imgType ||
-                 OAD_IMG_TYPE_APP_STACK == imgHdr.imgType  ||
-                 OAD_IMG_TYPE_APPSTACKLIB == imgHdr.imgType))
+            if (!(OAD_IMG_TYPE_APP == imgHdr.imgType || OAD_IMG_TYPE_APP_STACK == imgHdr.imgType ||
+                  OAD_IMG_TYPE_APPSTACKLIB == imgHdr.imgType))
             {
                 continue;
             }
 
-            if((imgHdr.len == 0) || (imgHdr.len == 0xFFFFFFFF) ||
-               (imgHdr.len > (MAX_ONCHIP_FLASH_PAGES*INTFLASH_PAGE_SIZE)))
+            if ((imgHdr.len == 0) || (imgHdr.len == 0xFFFFFFFF) ||
+                (imgHdr.len > (MAX_ONCHIP_FLASH_PAGES * INTFLASH_PAGE_SIZE)))
             {
                 continue;
             }
 
             /* Not a valid image: continue search in the next flash page  */
-            if((startAddr == INVALID_ADDR) ||
-                    (imgHdr.prgEntry < startAddr) ||
-                    (imgHdr.prgEntry > (startAddr + imgHdr.len)))
+            if ((startAddr == INVALID_ADDR) || (imgHdr.prgEntry < startAddr) ||
+                (imgHdr.prgEntry > (startAddr + imgHdr.len)))
             {
-                continue;          /* Continue search on next flash page */
+                continue; /* Continue search on next flash page */
             }
 
-
             /* Invalid metadata version */
-            if((imgHdr.bimVer != BIM_VER  || imgHdr.metaVer != META_VER) ||
-               /* Invalid CRC */
-               (imgHdr.crcStat == CRC_INVALID))
+            if ((imgHdr.bimVer != BIM_VER || imgHdr.metaVer != META_VER) ||
+                /* Invalid CRC */
+                (imgHdr.crcStat == CRC_INVALID))
             {
                 continue;
             }
-            else if(imgHdr.crcStat == DEFAULT_STATE) /* CRC not calculated */
+            else if (imgHdr.crcStat == DEFAULT_STATE) /* CRC not calculated */
             {
-
-
 
 /* If DEBUG_BIM is enabled, skip the crc checking and updating the crc status.
  * as crc wouldn't have been calculated at the first place. Instead, directly
@@ -614,30 +612,30 @@ static uint8_t checkImagesIntFlash(uint8_t flashPageNum)
  * If DEBUG_BIM is disabled, do crc checks as below, before executing the image.
  */
 #ifndef DEBUG_BIM
-                uint8_t  crcstat = CRC_VALID;
+                uint8_t crcstat = CRC_VALID;
 
                 /* Calculate the CRC over the data buffer and update status */
                 uint32_t crc32 = CRC32_calc(flashPageNum, intFlashPageSize, 0, imgHdr.len, false);
 
                 /* Check if calculated CRC matched with the image header */
-                if(crc32 != imgHdr.crc32)
+                if (crc32 != imgHdr.crc32)
                 {
                     /* Update CRC status */
                     crcstat = CRC_INVALID;
                 }
 
                 writeFlash((uint32_t)FLASH_ADDRESS(flashPageNum, CRC_STAT_OFFSET), (uint8_t *)&crcstat, 1);
-                if(crc32 == imgHdr.crc32)
+                if (crc32 == imgHdr.crc32)
                 {
 #endif
 #if (defined(SECURITY))
-                   // Check the authenticity of the image
-                   if(Bim_authenticateImage((uint32_t)startAddr, imgHdr.len, false) == SUCCESS)
-                   {
+                    // Check the authenticity of the image
+                    if (Bim_authenticateImage((uint32_t)startAddr, imgHdr.len, false) == SUCCESS)
+                    {
 #endif
-                       jumpToPrgEntry((uint32_t*)imgHdr.prgEntry);  /* No return from here */
+                        jumpToPrgEntry((uint32_t *)imgHdr.prgEntry); /* No return from here */
 #if (defined(SECURITY))
-                   }
+                    }
 #endif
 
 #ifndef DEBUG_BIM
@@ -645,14 +643,14 @@ static uint8_t checkImagesIntFlash(uint8_t flashPageNum)
 #endif
 
             } /* if (imgHdr.crcStat == DEFAULT_STATE) */
-            else if(imgHdr.crcStat == CRC_VALID)
+            else if (imgHdr.crcStat == CRC_VALID)
             {
 #if (defined(SECURITY))
                 // Check the authenticity of the image
-                if(Bim_authenticateImage((uint32_t)startAddr, imgHdr.len, false) == SUCCESS)
+                if (Bim_authenticateImage((uint32_t)startAddr, imgHdr.len, false) == SUCCESS)
                 {
 #endif
-                jumpToPrgEntry((uint32_t*)imgHdr.prgEntry);  /* No return from here */
+                    jumpToPrgEntry((uint32_t *)imgHdr.prgEntry); /* No return from here */
 #if (defined(SECURITY))
                 }
 #endif
@@ -660,9 +658,9 @@ static uint8_t checkImagesIntFlash(uint8_t flashPageNum)
 
         } /* if (imgIDCheck(&imgHdr) == true) */
 
-    } while(flashPageNum++ < MAX_ONCHIP_FLASH_SEARCH_PAGE);  /* last flash page contains CCFG */
+    } while (flashPageNum++ < MAX_ONCHIP_FLASH_SEARCH_PAGE); /* last flash page contains CCFG */
 
-    return(0);
+    return (0);
 }
 
 /*******************************************************************************
@@ -680,15 +678,15 @@ static bool Bim_revertFactoryImage(void)
     ExtImageInfo_t metadataHdr;
 
     /* Initialize external flash driver. */
-    if(!extFlashOpen())
+    if (!extFlashOpen())
     {
-        return(false);
+        return (false);
     }
     // Read First metadata page for getting factory image information
     extFlashRead(EFL_ADDR_META_FACT_IMG, EFL_METADATA_LEN, (uint8_t *)&metadataHdr);
 
     /* check BIM and Metadata version */
-    if(metadataHdr.fixedHdr.crcStat != CRC_VALID)  /* Invalid CRC */
+    if (metadataHdr.fixedHdr.crcStat != CRC_VALID) /* Invalid CRC */
     {
         return false;
     }
@@ -706,20 +704,18 @@ static bool Bim_revertFactoryImage(void)
     uint32_t startAddr = Bim_findImageStartAddr(eFlStrAddr, metadataHdr.fixedHdr.len);
 
     /* Not a valid image */
-    if((startAddr == INVALID_ADDR) ||
-           (metadataHdr.fixedHdr.prgEntry < startAddr) ||
-           (metadataHdr.fixedHdr.prgEntry > (startAddr + metadataHdr.fixedHdr.len)))
+    if ((startAddr == INVALID_ADDR) || (metadataHdr.fixedHdr.prgEntry < startAddr) ||
+        (metadataHdr.fixedHdr.prgEntry > (startAddr + metadataHdr.fixedHdr.len)))
     {
-       return false;
+        return false;
     }
 
-
-    if(Bim_copyImage(eFlStrAddr, metadataHdr.fixedHdr.len, startAddr) == SUCCESS)
+    if (Bim_copyImage(eFlStrAddr, metadataHdr.fixedHdr.len, startAddr) == SUCCESS)
     {
         // Calculate the CRC of the copied on-chip image to make sure copy is successful
         uint32_t crc32 = CRC32_calc(FLASH_PAGE(startAddr), intFlashPageSize, 0, metadataHdr.fixedHdr.len, false);
         uint8_t status = CRC_INVALID;
-        if(crc32 == metadataHdr.fixedHdr.crc32) // if crc matched then update its status in the copied image
+        if (crc32 == metadataHdr.fixedHdr.crc32) // if crc matched then update its status in the copied image
         {
             status = CRC_VALID;
 
@@ -728,11 +724,11 @@ static bool Bim_revertFactoryImage(void)
 
             // Also check the authenticity of the image
 #if defined(SECURITY)
-            if(Bim_authenticateImage(startAddr, metadataHdr.fixedHdr.len, false) == SUCCESS)
+            if (Bim_authenticateImage(startAddr, metadataHdr.fixedHdr.len, false) == SUCCESS)
             {
 #endif
-            /* Jump to program entry to execute it */
-            jumpToPrgEntry((uint32_t*)metadataHdr.fixedHdr.prgEntry);
+                /* Jump to program entry to execute it */
+                jumpToPrgEntry((uint32_t *)metadataHdr.fixedHdr.prgEntry);
 #if defined(SECURITY)
             }
 #endif
@@ -773,11 +769,11 @@ static void Bim_checkImages(void)
     int8_t retVal = 0;
 
     /* First try finding a valid image on off-chip flash */
-    if( !(retVal = checkImagesExtFlash() ) )
+    if (!(retVal = checkImagesExtFlash()))
     {
         /* Could not find valid image on off-chip Flash.
          * Try finding application image on on-chip flash and jump to it */
-       checkImagesIntFlash(0);
+        checkImagesIntFlash(0);
     }
 
     /* BIM is not able find any valid application, either on off-chip
@@ -785,14 +781,17 @@ static void Bim_checkImages(void)
     Bim_revertFactoryImage();
 
     /* No Valid image is found on off-chip or on-chip flash */
-    if( retVal == -1)
+    if (retVal == -1)
     {
         /* Light RED LED to indicate an Error */
         powerUpGpio();
         lightRedLed();
 
         /* spin in while loop so that context is preserved for debug */
-        while(1);
+        while (1)
+        {
+            ;
+        }
     }
 
 #endif
@@ -819,83 +818,90 @@ static void Bim_checkImages(void)
  *
  * @return  Zero when successful. Non-zero, otherwise..
  */
-uint8_t Bim_payloadVerify(uint8_t ver, uint32_t cntr, uint32_t payloadlen, uint8_t  *dataPayload, uint8_t *signPayload, ecdsaSigVerifyBuf_t *ecdsaSigVerifyBuf)
+uint8_t Bim_payloadVerify(uint8_t ver,
+                          uint32_t cntr,
+                          uint32_t payloadlen,
+                          uint8_t *dataPayload,
+                          uint8_t *signPayload,
+                          ecdsaSigVerifyBuf_t *ecdsaSigVerifyBuf)
 {
-    signPld_ECDSA_P256_t *signPld = (signPld_ECDSA_P256_t*)signPayload;
+    signPld_ECDSA_P256_t *signPld = (signPld_ECDSA_P256_t *)signPayload;
 
-    uint8_t *sig1 = signPld->signature;
-    uint8_t *sig2 = &signPld->signature[32];
-    uint8_t status = FAIL;
+    uint8_t *sig1        = signPld->signature;
+    uint8_t *sig2        = &signPld->signature[32];
+    uint8_t status       = FAIL;
     uint8_t verifyStatus = FAIL;
-    uint8_t *finalHash = ecdsaSigVerifyBuf->tempWorkzone;
+    uint8_t *finalHash   = ecdsaSigVerifyBuf->tempWorkzone;
 
     memset(ecdsaSigVerifyBuf->tempWorkzone, 0, sizeof(ECDSA_SHA_TEMPWORKZONE_LEN));
 
     if (ver == 1)
     {
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC26X2X7)
+    #if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || \
+        defined(DeviceFamily_CC26X2X7)
         SHA2_open();
         SHA2_addData(dataPayload, payloadlen);
         SHA2_finalize(finalHash);
         SHA2_close();
-#elif defined(DeviceFamily_CC23X0R2)
+    #elif defined(DeviceFamily_CC23X0R2)
         SHA256SW_Object sha256SWObject;
         SHA256SW_Handle sha256SWHandle = &sha256SWObject;
-        SHA256SWHashData(sha256SWHandle, SHA2SW_HASH_TYPE_256, dataPayload, payloadlen, (uint32_t*)finalHash);
-#else
+        SHA256SWHashData(sha256SWHandle, SHA2SW_HASH_TYPE_256, dataPayload, payloadlen, (uint32_t *)finalHash);
+    #else
         SHA256_Workzone sha256_workzone;
         SHA256_init(&sha256_workzone);
         SHA256_full(&sha256_workzone, finalHash, dataPayload, payloadlen);
-#endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
+    #endif /* DeviceFamily_CC26X2 || DeviceFamily_CC13X2 || DeviceFamily_CC13X2X7 || DeviceFamily_CC26X2X7 */
 
         // First verify signerInfo
         verifyStatus = verifyCertElement(signPld->signerInfo);
-        if(verifyStatus != SUCCESS)
+        if (verifyStatus != SUCCESS)
         {
-          return FAIL;
+            return FAIL;
         }
 
         verifyStatus = bimVerifyImage_ecc(_secureCertElement.certPayload.eccKey.pubKeyX,
                                           _secureCertElement.certPayload.eccKey.pubKeyY,
-                                           finalHash, sig1, sig2,
-                                           ecdsaSigVerifyBuf->eccWorkzone,
-                                           (ecdsaSigVerifyBuf->tempWorkzone + ECDSA_KEY_LEN));
-        if(verifyStatus == SECURE_FW_ECC_STATUS_VALID_SIGNATURE)
+                                          finalHash,
+                                          sig1,
+                                          sig2,
+                                          ecdsaSigVerifyBuf->eccWorkzone,
+                                          (ecdsaSigVerifyBuf->tempWorkzone + ECDSA_KEY_LEN));
+        if (verifyStatus == SECURE_FW_ECC_STATUS_VALID_SIGNATURE)
         {
             status = SUCCESS;
         }
     }
     return status;
-}//end of function
+} // end of function
 
 /*******************************************************************************
  * @fn         Bim_checkForSecSegmntIntFlash
-*
-*  @brief      Check for Security Segment. Reads through the headers in the .bin
-*              file. If a security header is found the function checks to see if
-*              the header has a populated segment.
-*
-*  @param       startAddr - The start address in external flash of the binary image
-*  @param       imgLen     - Length of the image
-*
-*  @return      0  - security not found
-*  @return      1  - security found
-*
-*/
+ *
+ *  @brief      Check for Security Segment. Reads through the headers in the .bin
+ *              file. If a security header is found the function checks to see if
+ *              the header has a populated segment.
+ *
+ *  @param       startAddr - The start address in external flash of the binary image
+ *  @param       imgLen     - Length of the image
+ *
+ *  @return      0  - security not found
+ *  @return      1  - security found
+ *
+ */
 static bool Bim_checkForSecSegmntIntFlash(uint32_t startAddr, uint32_t imgLen)
 {
-    bool securityFound = false;
-    uint8_t endOfSegment = 0;
-    uint8_t segmentType = DEFAULT_STATE;
+    bool securityFound     = false;
+    uint8_t endOfSegment   = 0;
+    uint8_t segmentType    = DEFAULT_STATE;
     uint32_t segmentLength = 0;
-    uint32_t searchAddr =  startAddr+OAD_IMG_HDR_LEN;
+    uint32_t searchAddr    = startAddr + OAD_IMG_HDR_LEN;
 
-    while(!endOfSegment)
+    while (!endOfSegment)
     {
         readFlash(searchAddr, &segmentType, 1);
 
-
-        if(segmentType == IMG_SECURITY_SEG_ID)
+        if (segmentType == IMG_SECURITY_SEG_ID)
         {
             /* In this version of BIM, the security header will ALWAYS be present
                But the payload will sometimes not be there. If this finds the
@@ -904,9 +910,9 @@ static bool Bim_checkForSecSegmntIntFlash(uint32_t startAddr, uint32_t imgLen)
             uint32_t sigVal = 0;
             readFlash(searchAddr, (uint8_t *)&sigVal, sizeof(uint32_t));
 
-            if(sigVal != 0) //Indicates the presence of a signature
+            if (sigVal != 0) // Indicates the presence of a signature
             {
-                endOfSegment = 1;
+                endOfSegment  = 1;
                 securityFound = true;
             }
             else
@@ -917,48 +923,48 @@ static bool Bim_checkForSecSegmntIntFlash(uint32_t startAddr, uint32_t imgLen)
         else
         {
             searchAddr += SEG_LEN_OFFSET;
-            if((searchAddr + sizeof(uint32_t)) > (startAddr + imgLen))
+            if ((searchAddr + sizeof(uint32_t)) > (startAddr + imgLen))
             {
                 break;
             }
             readFlash(searchAddr, (uint8_t *)&segmentLength, sizeof(uint32_t));
 
             searchAddr += (segmentLength - SEG_LEN_OFFSET);
-            if((searchAddr) > (startAddr + imgLen))
+            if ((searchAddr) > (startAddr + imgLen))
             {
                 break;
             }
         }
     }
     return securityFound;
-}//end of function
+} // end of function
 
 /*******************************************************************************
  * @fn         Bim_checkForSecSegmnt
-*
-*  @brief      Check for Security Segment. Reads through the headers in the .bin
-*              file. If a security header is found the function checks to see if
-*              the header has a populated segment.
-*
-*  @param       eFlStrAddr - The start address in external flash of the binary image
-*
-*  @return      0  - security not found
-*  @return      1  - security found
-*
-*/
+ *
+ *  @brief      Check for Security Segment. Reads through the headers in the .bin
+ *              file. If a security header is found the function checks to see if
+ *              the header has a populated segment.
+ *
+ *  @param       eFlStrAddr - The start address in external flash of the binary image
+ *
+ *  @return      0  - security not found
+ *  @return      1  - security found
+ *
+ */
 static bool Bim_checkForSecSegmnt(uint32_t eFlStrAddr, uint32_t imgLen)
 {
-    bool securityFound = false;
-    uint8_t endOfSegment = 0;
-    uint8_t segmentType = DEFAULT_STATE;
+    bool securityFound     = false;
+    uint8_t endOfSegment   = 0;
+    uint8_t segmentType    = DEFAULT_STATE;
     uint32_t segmentLength = 0;
-    uint32_t searchAddr =  eFlStrAddr+OAD_IMG_HDR_LEN;
+    uint32_t searchAddr    = eFlStrAddr + OAD_IMG_HDR_LEN;
 
-    while(!endOfSegment)
+    while (!endOfSegment)
     {
         extFlashRead(searchAddr, 1, &segmentType);
 
-        if(segmentType == IMG_SECURITY_SEG_ID)
+        if (segmentType == IMG_SECURITY_SEG_ID)
         {
             /* In this version of BIM, the security header will ALWAYS be present
                But the paylond will sometimes not be there. If this finds the
@@ -966,9 +972,9 @@ static bool Bim_checkForSecSegmnt(uint32_t eFlStrAddr, uint32_t imgLen)
             searchAddr += SIG_OFFSET;
             uint32_t sigVal = 0;
             extFlashRead(searchAddr, sizeof(uint32_t), (uint8_t *)&sigVal);
-            if(sigVal != 0) //Indicates the presence of a signature
+            if (sigVal != 0) // Indicates the presence of a signature
             {
-                endOfSegment = 1;
+                endOfSegment  = 1;
                 securityFound = true;
             }
             else
@@ -979,13 +985,13 @@ static bool Bim_checkForSecSegmnt(uint32_t eFlStrAddr, uint32_t imgLen)
         else
         {
             searchAddr += SEG_LEN_OFFSET;
-            if((searchAddr + sizeof(uint32_t)) > (eFlStrAddr + imgLen))
+            if ((searchAddr + sizeof(uint32_t)) > (eFlStrAddr + imgLen))
             {
                 break;
             }
             extFlashRead(searchAddr, sizeof(uint32_t), (uint8_t *)&segmentLength);
             searchAddr += (segmentLength - SEG_LEN_OFFSET);
-            if((searchAddr) > (eFlStrAddr + imgLen))
+            if ((searchAddr) > (eFlStrAddr + imgLen))
             {
                 break;
             }
@@ -993,7 +999,7 @@ static bool Bim_checkForSecSegmnt(uint32_t eFlStrAddr, uint32_t imgLen)
     }
 
     return securityFound;
-}//end of function
+} // end of function
 
 /*******************************************************************************
  * @fn      Bim_verifyImage
@@ -1017,9 +1023,9 @@ static uint8_t Bim_verifyImage(uint32_t eflStartAddr, uint8_t *shaBuffer)
 
     // First verify signerInfo
     verifyStatus = verifyCertElement(&headerBuf[SEG_SIGERINFO_OFFSET]);
-    if(verifyStatus != SUCCESS)
+    if (verifyStatus != SUCCESS)
     {
-      return verifyStatus;
+        return verifyStatus;
     }
 
     // Get the hash of the image
@@ -1028,7 +1034,7 @@ static uint8_t Bim_verifyImage(uint32_t eflStartAddr, uint8_t *shaBuffer)
     // Verify the hash
     finalHash = computeSha2Hash(eflStartAddr, shaBuffer, SHA_BUF_SZ, true);
 
-    if(!finalHash || (*finalHash == 0x00))
+    if (!finalHash || (*finalHash == 0x00))
     {
         verifyStatus = (uint8_t)FAIL;
         return verifyStatus;
@@ -1040,19 +1046,19 @@ static uint8_t Bim_verifyImage(uint32_t eflStartAddr, uint8_t *shaBuffer)
 
     verifyStatus = bimVerifyImage_ecc(_secureCertElement.certPayload.eccKey.pubKeyX,
                                       _secureCertElement.certPayload.eccKey.pubKeyY,
-                                       finalHash,
-                                       &headerBuf[SEG_SIGNR_OFFSET],
-                                       &headerBuf[SEG_SIGNS_OFFSET],
-                                       eccWorkzone,
-                                       tempWorkzone);
+                                      finalHash,
+                                      &headerBuf[SEG_SIGNR_OFFSET],
+                                      &headerBuf[SEG_SIGNS_OFFSET],
+                                      eccWorkzone,
+                                      tempWorkzone);
 
-    if(verifyStatus == SECURE_FW_ECC_STATUS_VALID_SIGNATURE)
+    if (verifyStatus == SECURE_FW_ECC_STATUS_VALID_SIGNATURE)
     {
-       verifyStatus = SUCCESS;
+        verifyStatus = SUCCESS;
     }
     return verifyStatus;
 
-}//end of function
+} // end of function
 
 /*******************************************************************************
  * @fn      Bim_verifyImageIntFlash
@@ -1073,9 +1079,9 @@ static uint8_t Bim_verifyImageIntFlash(uint32_t startAddr, uint8_t *shaBuffer)
     uint8_t *dataHash;
     dataHash = computeSha2Hash(startAddr, shaBuffer, SHA_BUF_SZ, false);
 
-    if(!dataHash || (*dataHash == 0x00))
+    if (!dataHash || (*dataHash == 0x00))
     {
-      return intFlshSignVrfyStatus;
+        return intFlshSignVrfyStatus;
     }
 
     /* Read in the onchip header to get the image signature */
@@ -1084,21 +1090,21 @@ static uint8_t Bim_verifyImageIntFlash(uint32_t startAddr, uint8_t *shaBuffer)
     /* Verify the image signature using public key, image hash, and signature */
     // Create temp buffer used for ECDSA sign verify, it should 6*ECDSA_KEY_LEN
     uint8_t tempWorkzone[ECDSA_SHA_TEMPWORKZONE_LEN];
-    intFlshSignVrfyStatus = bimVerifyImage_ecc( _secureCertElement.certPayload.eccKey.pubKeyX,
-                                                _secureCertElement.certPayload.eccKey.pubKeyY,
-                                                dataHash,
-                                                &headerBuf[SEG_SIGNR_OFFSET],
-                                                &headerBuf[SEG_SIGNS_OFFSET],
-                                                eccWorkzone,
-                                                tempWorkzone);
-    if(intFlshSignVrfyStatus != SECURE_FW_ECC_STATUS_VALID_SIGNATURE)
+    intFlshSignVrfyStatus = bimVerifyImage_ecc(_secureCertElement.certPayload.eccKey.pubKeyX,
+                                               _secureCertElement.certPayload.eccKey.pubKeyY,
+                                               dataHash,
+                                               &headerBuf[SEG_SIGNR_OFFSET],
+                                               &headerBuf[SEG_SIGNS_OFFSET],
+                                               eccWorkzone,
+                                               tempWorkzone);
+    if (intFlshSignVrfyStatus != SECURE_FW_ECC_STATUS_VALID_SIGNATURE)
     {
         return FAIL;
     }
     return SUCCESS;
 }
 
- /*******************************************************************************
+/*******************************************************************************
  * @fn      Bim_authenticateImage
  *
  * @brief   Verifies  if the image passes authentication using ECDSA-SHA256
@@ -1114,8 +1120,7 @@ static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool is
     int8_t imgSignVrfyStatus = FAIL;
 
     /* Ensure the imgLen is valid */
-    if ((imgLen == 0x00) ||
-        (isExtFlash && (imgLen > EFL_FLASH_SIZE)) ||
+    if ((imgLen == 0x00) || (isExtFlash && (imgLen > EFL_FLASH_SIZE)) ||
         (!isExtFlash && (imgLen > (MAX_ONCHIP_FLASH_PAGES * INTFLASH_PAGE_SIZE))))
     {
         return FAIL;
@@ -1137,14 +1142,13 @@ static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool is
         return FAIL;
     }
 
-
     /* Calculate the SHA256 of the image */
     uint8_t readSecurityByte[SEC_VERIF_STAT_OFFSET + 1];
 
     /* Read in the header to check if the signature has already been denied */
     if (isExtFlash)
     {
-        extFlashRead(flStrAddr,(SEC_VERIF_STAT_OFFSET + 1), readSecurityByte);
+        extFlashRead(flStrAddr, (SEC_VERIF_STAT_OFFSET + 1), readSecurityByte);
         if (readSecurityByte[SEC_VERIF_STAT_OFFSET] != VERIFY_FAIL)
         {
             imgSignVrfyStatus = (int8_t)Bim_verifyImage(flStrAddr, (uint8_t *)shaBuf);
@@ -1153,12 +1157,11 @@ static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool is
             if ((uint8_t)imgSignVrfyStatus != SUCCESS)
             {
                 readSecurityByte[SEC_VERIF_STAT_OFFSET] = VERIFY_FAIL;
-                extFlashWrite((flStrAddr+SEC_VERIF_STAT_OFFSET), 1,
-                               &readSecurityByte[SEC_VERIF_STAT_OFFSET]);
+                extFlashWrite((flStrAddr + SEC_VERIF_STAT_OFFSET), 1, &readSecurityByte[SEC_VERIF_STAT_OFFSET]);
             }
         }
     }
-    else  // on-chip flash
+    else // on-chip flash
     {
         readFlash(flStrAddr, (uint8_t *)&readSecurityByte, (SEC_VERIF_STAT_OFFSET + 1));
         if (readSecurityByte[SEC_VERIF_STAT_OFFSET] != VERIFY_FAIL)
@@ -1169,8 +1172,7 @@ static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool is
             if ((uint8_t)imgSignVrfyStatus != SUCCESS)
             {
                 readSecurityByte[SEC_VERIF_STAT_OFFSET] = VERIFY_FAIL;
-                writeFlash((flStrAddr+SEC_VERIF_STAT_OFFSET),
-                            &readSecurityByte[SEC_VERIF_STAT_OFFSET], 1);
+                writeFlash((flStrAddr + SEC_VERIF_STAT_OFFSET), &readSecurityByte[SEC_VERIF_STAT_OFFSET], 1);
             }
         }
     }
@@ -1196,15 +1198,15 @@ static int8_t Bim_authenticateImage(uint32_t flStrAddr, uint32_t imgLen, bool is
 int main(void)
 {
 #ifdef __IAR_SYSTEMS_ICC__
-  __set_CONTROL(0);
+    __set_CONTROL(0);
 #endif
 
-/* CAUTION: Never enable the macro "FLASH_DEVICE_ERASE" if the device
- * needs to boot to new image after doing a successful OAD.
- * Enabling this macro would mean that the newly downloaded OAD Image
- * will get erased from External Flash and then the BIM will boot to
- * the already existent (older) Internal Flash image.
- */
+    /* CAUTION: Never enable the macro "FLASH_DEVICE_ERASE" if the device
+     * needs to boot to new image after doing a successful OAD.
+     * Enabling this macro would mean that the newly downloaded OAD Image
+     * will get erased from External Flash and then the BIM will boot to
+     * the already existent (older) Internal Flash image.
+     */
 
 #ifdef FLASH_DEVICE_ERASE
     /* It will take a couple of seconds to search through External Flash
@@ -1216,7 +1218,7 @@ int main(void)
     /* Read meta data page to see if it finds any starting from the first one */
     int8_t response = isLastMetaData(0);
 
-    if(response != EMPTY_METADATA)
+    if (response != EMPTY_METADATA)
     {
         /* Erase flash */
         extFlashErase(0, pExtFlashInfo->deviceSize);
@@ -1225,10 +1227,10 @@ int main(void)
         response = isLastMetaData(0);
     }
 
-#ifdef DEBUG_BIM
+    #ifdef DEBUG_BIM
 
     powerUpGpio();
-    if(response != EMPTY_METADATA)
+    if (response != EMPTY_METADATA)
     {
         /* Blink Red LED to indicate flash erase in progress */
         blinkLed(RED_LED, 20, 50);
@@ -1240,7 +1242,7 @@ int main(void)
     }
     powerDownGpio();
 
-#endif /* DEBUG_BIM */
+    #endif /* DEBUG_BIM */
 
     extFlashClose();
 
@@ -1259,8 +1261,8 @@ int main(void)
      */
     setLowPowerMode();
 
-    return(0);
+    return (0);
 }
 
 /**************************************************************************************************
-*/
+ */

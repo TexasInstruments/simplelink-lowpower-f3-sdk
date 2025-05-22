@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -878,8 +878,8 @@ void Power_setPolicy(Power_PolicyFxn policy);
  *  @param[in]  shutdownState    the device-specific shutdown state
  *
  *  @param[in]  shutdownTime    the amount of time (in milliseconds) to keep
- *  the the device in the shutdown state; this parameter is not supported on
- *  all device families.
+ *  the device in the shutdown state; this parameter is not supported on all
+ *  device families.
  *
  *  @retval  #Power_ECHANGE_NOT_ALLOWED if a constraint is prohibiting
  *  shutdown.

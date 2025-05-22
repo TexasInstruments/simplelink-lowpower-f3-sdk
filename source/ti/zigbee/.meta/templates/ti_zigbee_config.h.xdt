@@ -149,6 +149,10 @@ defaultNwkKey += "}";
 #define MAX_CHILDREN             `zigbee.nwkMaxChildren`
 #endif
 
+#ifndef MAX_ED_CAPACITY
+#define MAX_ED_CAPACITY          `zigbee.nwkMaxEDCapacity`
+#endif
+
 #ifndef ED_RX_ALWAYS_ON
 #define ED_RX_ALWAYS_ON         `(zigbee.powerModeOperation === "alwaysOn") ? "ZB_TRUE" : "ZB_FALSE"`
 #endif

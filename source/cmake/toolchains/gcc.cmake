@@ -87,7 +87,10 @@ if(NOT TARGET TOOLCHAIN_gcc)
             -Dgcc
             -ffunction-sections
             -fdata-sections>
-            $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<CONFIG:Release>>:-O3>
+            $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<CONFIG:Release>>:-O3
+            -flto
+            -ffat-lto-objects
+            -fno-builtin>
             $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<CONFIG:Debug>>:-O0>
             $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<BOOL:${TI_CMAKE_COMMON_ENABLE_ALL_WARNINGS}>>:-Wall>
             $<$<AND:$<OR:$<COMPILE_LANGUAGE:C>,$<COMPILE_LANGUAGE:CXX>>,$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>>:-Werror>
@@ -109,6 +112,8 @@ if(NOT TARGET TOOLCHAIN_gcc)
         # with the SPE layouts and prevent proper secure operation
         -Wl,--nmagic
         $<$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>:-Wl,--fatal-warnings>
+        -flto
+        -ffat-lto-objects
         # End of section for TI_LFLAGS_OVERRIDE not defined
         >
         # If TI_CFLAGS_OVERRIDE, use it exclusively

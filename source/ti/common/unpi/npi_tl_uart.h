@@ -48,8 +48,7 @@
 #define NPI_TL_UART_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 //*****************************************************************************
@@ -94,8 +93,7 @@ typedef void (*npiCB_t)(uint16_t rxLen, uint16_t txLen);
 //!
 //! \return     void
 // -----------------------------------------------------------------------------
-extern void NPITLUART_openTransport(uint8_t portID, UART_Params *portParams,
-                             	    npiCB_t npiCBack);
+extern void NPITLUART_openTransport(uint8_t portID, UART_Params *portParams, npiCB_t npiCBack);
 
 // -----------------------------------------------------------------------------
 //! \brief      This routine closes Transport Layer port

@@ -114,8 +114,8 @@ extern "C" {
  * Functions return ECDSA_STATUS_SUCCESS if the function was executed
  * successfully.
  */
-#define ECDSA_STATUS_SUCCESS         (0)
-#define ECDH_STATUS_SUCCESS          (0)
+#define ECDSA_STATUS_SUCCESS (0)
+#define ECDH_STATUS_SUCCESS  (0)
 
 /*!
  * @brief   Generic error status code.
@@ -123,7 +123,7 @@ extern "C" {
  * Functions return ECDSA_STATUS_ERROR if the function was not executed
  * successfully.
  */
-#define ECDSA_STATUS_ERROR           (-1)
+#define ECDSA_STATUS_ERROR (-1)
 
 /*!
  * @brief   An error status code returned if the hardware or software resource
@@ -170,11 +170,11 @@ extern "C" {
 #define ECDSA_STATUS_PUBLIC_KEY_LARGER_THAN_PRIME (-6)
 
 /*!
-  * @brief   The public key of the other party does not lie upon the curve.
-  *
-  * The public key received from the other party does not lie upon the agreed upon
-  * curve.
-  */
+ * @brief   The public key of the other party does not lie upon the curve.
+ *
+ * The public key received from the other party does not lie upon the agreed upon
+ * curve.
+ */
 #define ECDH_STATUS_PUBLIC_KEY_NOT_ON_CURVE (-6)
 
 /*!
@@ -189,15 +189,15 @@ extern "C" {
  */
 #define ECDSA_STATUS_CANCELED (-8)
 
- /*!
-  *  @brief  The provided CryptoKey does not match the expected size
-  *
-  *  The driver expects the private key to have the same length as other curve
-  *  parameters and the public key to have a length of twice that plus one.
-  *  If the provided CryptoKeys for the public and private keys do not match this
-  *  scheme, this error will be returned.
-  */
- #define ECDH_STATUS_INVALID_KEY_SIZE (-9)
+/*!
+ *  @brief  The provided CryptoKey does not match the expected size
+ *
+ *  The driver expects the private key to have the same length as other curve
+ *  parameters and the public key to have a length of twice that plus one.
+ *  If the provided CryptoKeys for the public and private keys do not match this
+ *  scheme, this error will be returned.
+ */
+#define ECDH_STATUS_INVALID_KEY_SIZE (-9)
 
 /*!
  *  @brief  The provided CryptoKey does not match the expected size
@@ -226,7 +226,8 @@ typedef uint32_t ECCParams_CurveType;
  * This structure contains all the information necessary to access keying material stored
  * in plaintext form in flash or RAM.
  */
-typedef struct {
+typedef struct
+{
     uint8_t *keyMaterial;
     uint32_t keyLength;
 } CryptoKey_Plaintext;
@@ -243,15 +244,15 @@ typedef struct {
  */
 typedef struct ECCParams_CurveParams
 {
-    const ECCParams_CurveType   curveType;
-    const uint8_t               *prime;
-    const uint8_t               *a;
-    const uint8_t               *b;
-    const uint8_t               *order;
-    const uint8_t               *generatorX;
-    const uint8_t               *generatorY;
-    const size_t                length;
-    uint8_t                     cofactor;
+    const ECCParams_CurveType curveType;
+    const uint8_t *prime;
+    const uint8_t *a;
+    const uint8_t *b;
+    const uint8_t *order;
+    const uint8_t *generatorX;
+    const uint8_t *generatorY;
+    const size_t length;
+    uint8_t cofactor;
 } ECCParams_CurveParams;
 
 /*!
@@ -273,27 +274,28 @@ extern const ECCParams_CurveParams ECCParams_NISTP256;
 /*!
  *  @brief  Struct containing the parameters required for verifying a message.
  */
-typedef struct {
-    const ECCParams_CurveParams     *curve;             /*!< A pointer to the elliptic curve parameters */
-    const CryptoKey_Plaintext       *theirPublicKey;    /*!< A pointer to the public key of the party
-                                                         *   that signed the hash of the message
-                                                         */
-    const uint8_t                   *hash;              /*!< A pointer to the hash of the message in
-                                                         *   octet string format.
-                                                         *   Must be the same length as the other curve parameters.
-                                                         */
-    const uint8_t                   *r;                 /*!< A pointer to the r component of the received
-                                                         *   signature.
-                                                         *   Formatted in octet string format.
-                                                         *   Must be of the same length
-                                                         *   as other params of the curve used.
-                                                         */
-    const uint8_t                   *s;                 /*!< A pointer to the s component of the received
-                                                         *   signature.
-                                                         *   Formatted in octet string format.
-                                                         *   Must be of the same length
-                                                         *   as other params of the curve used.
-                                                         */
+typedef struct
+{
+    const ECCParams_CurveParams *curve;        /*!< A pointer to the elliptic curve parameters */
+    const CryptoKey_Plaintext *theirPublicKey; /*!< A pointer to the public key of the party
+                                                *   that signed the hash of the message
+                                                */
+    const uint8_t *hash;                       /*!< A pointer to the hash of the message in
+                                                *   octet string format.
+                                                *   Must be the same length as the other curve parameters.
+                                                */
+    const uint8_t *r;                          /*!< A pointer to the r component of the received
+                                                *   signature.
+                                                *   Formatted in octet string format.
+                                                *   Must be of the same length
+                                                *   as other params of the curve used.
+                                                */
+    const uint8_t *s;                          /*!< A pointer to the s component of the received
+                                                *   signature.
+                                                *   Formatted in octet string format.
+                                                *   Must be of the same length
+                                                *   as other params of the curve used.
+                                                */
 } ECDSA_OperationVerify;
 
 /*!
@@ -301,20 +303,20 @@ typedef struct {
  */
 typedef struct
 {
-    const ECCParams_CurveParams *curve;               /*!< A pointer to the elliptic curve parameters for myPrivateKey.
-                                                       *   If ECDH_generateKey() was used, this should be the same private key.
-                                                       */
-    const CryptoKey_Plaintext *myPrivateKey;          /*!< A pointer to the private ECC key which will be used in to
-                                                       *   compute the shared secret.
-                                                       */
-    const CryptoKey_Plaintext *theirPublicKey;        /*!< A pointer to the public key of the party with whom the
-                                                       *   shared secret will be generated.
-                                                       */
-    CryptoKey_Plaintext *sharedSecret;                /*!< A pointer to a CryptoKey which has been initialized blank.
-                                                       *   The shared secret will be placed here.
-                                                       *   The formatting byte will be filled in by the driver if the
-                                                       *   keyMaterialEndianness requires it.
-                                                       */
+    const ECCParams_CurveParams *curve;        /*!< A pointer to the elliptic curve parameters for myPrivateKey.
+                                                *   If ECDH_generateKey() was used, this should be the same private key.
+                                                */
+    const CryptoKey_Plaintext *myPrivateKey;   /*!< A pointer to the private ECC key which will be used in to
+                                                *   compute the shared secret.
+                                                */
+    const CryptoKey_Plaintext *theirPublicKey; /*!< A pointer to the public key of the party with whom the
+                                                *   shared secret will be generated.
+                                                */
+    CryptoKey_Plaintext *sharedSecret;         /*!< A pointer to a CryptoKey which has been initialized blank.
+                                                *   The shared secret will be placed here.
+                                                *   The formatting byte will be filled in by the driver if the
+                                                *   keyMaterialEndianness requires it.
+                                                */
 } ECDH_OperationComputeSharedSecret;
 
 /*!
@@ -343,13 +345,16 @@ void ECDSA_close(void);
  *                                  All struct members must be initialized.
  *
  *  @retval #ECDSA_STATUS_SUCCESS                       The operation succeeded.
- *  @retval #ECDSA_STATUS_ERROR                         The operation failed. This is the return status if the signature did not match.
- *  @retval #ECDSA_STATUS_RESOURCE_UNAVAILABLE          The required hardware resource was not available. Try again later.
+ *  @retval #ECDSA_STATUS_ERROR                         The operation failed. This is the return status if the signature
+ * did not match.
+ *  @retval #ECDSA_STATUS_RESOURCE_UNAVAILABLE          The required hardware resource was not available. Try again
+ * later.
  *  @retval #ECDSA_STATUS_CANCELED                      The operation was canceled.
  *  @retval #ECDSA_STATUS_R_LARGER_THAN_ORDER           The r value passed in is larger than the order of the curve.
  *  @retval #ECDSA_STATUS_S_LARGER_THAN_ORDER           The s value passed in is larger than the order of the curve.
  *  @retval #ECDSA_STATUS_PUBLIC_KEY_NOT_ON_CURVE       The public key of the other party does not lie upon the curve.
- *  @retval #ECDSA_STATUS_PUBLIC_KEY_LARGER_THAN_PRIME  One of the public key coordinates is larger the the curve's prime.
+ *  @retval #ECDSA_STATUS_PUBLIC_KEY_LARGER_THAN_PRIME  One of the public key coordinates is larger the the curve's
+ * prime.
  *  @retval #ECDSA_STATUS_POINT_AT_INFINITY             The public key to verify against is the point at infinity.
  */
 int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation);
@@ -377,9 +382,7 @@ int_fast16_t ECDH_computeSharedSecret(ECDH_OperationComputeSharedSecret *operati
  *  @param [in]     key         Pointer to keying material
  *  @param [in]     keyLength   Length of keying material in bytes
  */
-void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle,
-                                uint8_t *key,
-                                size_t keyLength);
+void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle, uint8_t *key, size_t keyLength);
 
 #ifdef __cplusplus
 }

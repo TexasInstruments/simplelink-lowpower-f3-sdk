@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -107,7 +107,7 @@
 #include <ti/devices/DeviceFamily.h>
 
 #if (TFM_ENABLED == 0) || defined(TFM_BUILD) /* TFM_BUILD indicates this is a TF-M build */
-    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>
         #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto_extra.h>
         #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/private_access.h>
@@ -119,7 +119,8 @@
         #include <third_party/mbedtls/ti/driver/ti_sl_transparent_driver_entrypoints.h>
     #else
         #error "Unsupported DeviceFamily_Parent for CryptoKeyKeyStore_PSA"
-    #endif /* #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
+    #endif /* #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == \
+              DeviceFamily_PARENT_CC35XX)) */
 #else
     #include <third_party/tfm/interface/include/psa/crypto.h>
 #endif /* #if (TFM_ENABLED == 0) || defined(TFM_BUILD) */
@@ -743,7 +744,18 @@ typedef psa_algorithm_t KeyStore_PSA_Algorithm;
 #define KEYSTORE_ECC_CURVE_BRAINPOOL_P256R1 ((KeyStore_PSA_KeyType)PSA_ECC_FAMILY_BRAINPOOL_P_R1)
 #define KEYSTORE_ECC_CURVE_BRAINPOOL_P384R1 ((KeyStore_PSA_KeyType)PSA_ECC_FAMILY_BRAINPOOL_P_R1)
 #define KEYSTORE_ECC_CURVE_BRAINPOOL_P512R1 ((KeyStore_PSA_KeyType)PSA_ECC_FAMILY_BRAINPOOL_P_R1)
-/** Cur KEYSTORE_ECC_CURVE_SECPv((KeyStore_PSA_KeyType)e25519.
+/** Ed25519
+ *
+ * PureEdDSA requires an elliptic curve key on a twisted Edwards curve.
+ * In this specification, the following curves are supported:
+ * - PSA_ECC_FAMILY_TWISTED_EDWARDS, 255-bit: Ed25519 as specified
+ *   in RFC 8032.
+ *   The curve is Edwards25519.
+ *   The hash function used internally is SHA-512.
+ * The algorithm #KEYSTORE_PSA_ALG_PURE_EDDSA performs ed25519 when used with this curve.
+ */
+#define KEYSTORE_PSA_ECC_CURVE_ED25519      ((KeyStore_PSA_KeyType)PSA_ECC_FAMILY_TWISTED_EDWARDS)
+/** Curve25519
  *
  * This is the curve defined in Bernstein et al.,
  * _Curve25519: new Diffie-Hellman speed records_, LNCS 3958, 2006.
@@ -919,7 +931,7 @@ typedef psa_algorithm_t KeyStore_PSA_Algorithm;
 /** The default secure element storage area for persistent keys.
  *
  * This storage location is available on systems that have one or more secure
- * elements that are able to store keys (i.e. CC27XX only)
+ * elements that are able to store keys (i.e. CC27XX and CC35XX)
  *
  * See ::KeyStore_PSA_KeyLocation for more information.
  */
@@ -1815,7 +1827,7 @@ int_fast16_t KeyStore_PSA_purgeKey(KeyStore_PSA_KeyFileId key);
  */
 int_fast16_t KeyStore_PSA_destroyKey(KeyStore_PSA_KeyFileId key);
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 
 /**
  * @brief Make a copy of a key.
@@ -1908,7 +1920,8 @@ int_fast16_t KeyStore_PSA_copyKey(KeyStore_PSA_KeyFileId source_key,
                                   KeyStore_PSA_KeyAttributes *attributes,
                                   KeyStore_PSA_KeyFileId *target_key);
 
-#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) */
+#endif /* #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == \
+          DeviceFamily_PARENT_CC35XX)) */
 #ifdef __cplusplus
 }
 #endif

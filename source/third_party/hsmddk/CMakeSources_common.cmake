@@ -14,6 +14,8 @@ file(GLOB_RECURSE SOURCES_INTEGRATION_ASN1DER "include/Integration/Asn1Der/src/*
 
 file(GLOB_RECURSE SOURCES_INTEGRATION_DRIVER_FRAMEWORK "include/Integration/DriverFramework/src/*.c")
 
+file(GLOB_RECURSE SOURCES_INTEGRATION_ADAPTER_ITS "include/Integration/Adapter_ITS/src/*.c")
+
 set(SOURCES_INTEGRATION_HSMSAL
     include/Integration/HSMSAL/HSMSAL.c
 )

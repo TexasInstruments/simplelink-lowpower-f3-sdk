@@ -65,7 +65,7 @@
 #include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
 #include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.h>
 #endif
 
@@ -91,6 +91,8 @@ extern "C" {
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define AESECBLPF3_SINGLE_BLOCK_AUTOCFG \
         ((uint32_t)AES_AUTOCFG_AESSRC_BUF | (uint32_t)AES_AUTOCFG_TRGAES_WRBUF3S | (uint32_t)AES_AUTOCFG_BUSHALT_EN)
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Not used for CC35XX */
 #else
     #error "Unsupported DeviceFamily_Parent for AESECBLPF3!"
 #endif
@@ -116,7 +118,7 @@ typedef struct
     AESECB_CallbackFxn callbackFxn;
     AESECB_OperationType operationType;
     bool threadSafe;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     const uint8_t *input;
     uint8_t *output;
     size_t inputLength;

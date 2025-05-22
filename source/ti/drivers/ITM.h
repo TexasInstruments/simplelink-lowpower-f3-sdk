@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -124,7 +124,7 @@
  *    - ITM_sendXAtomic - Function that calls ITM_sendXPolling with interrupts
  *                        disabled
  *
- *  It is up the the application writer to understand the tradeoff associated
+ *  It is up to the application writer to understand the tradeoff associated
  *  with each of these and select the correct one.
  *
  *  <h3> DWT Features </h3>

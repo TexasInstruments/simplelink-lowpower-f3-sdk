@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,12 @@
 
 "use strict";
 
+/* get Common /ti/drivers utility functions */
 let Common   = system.getScript("/ti/drivers/Common.js");
-let family   = Common.device2Family(system.deviceData, "TRNG");
+let CryptoCommon = system.getScript("/ti/drivers/CryptoCommon.syscfg.js");
+
+/* get /ti/drivers family name from device object */
+let family   = CryptoCommon.device2Family(system.deviceData, "TRNG");
 
 let config = [];
 
@@ -52,9 +56,17 @@ let deviceId = system.deviceData.deviceId;
 function validate(inst, validation)
 {
     if (system.modules["/ti/utils/TrustZone"]) {
-        if (inst.$module.$instances.length != 2) {
-            validation.logError(`When using Secure/Non-secure features (TrustZone is enabled), the number of Crypto
-                                driver instances are fixed in the TF-M image. Two TRNG instances are supported.`, inst);
+        if (deviceId.match(/CC(13|26).[34]/) && (inst.$module.$instances.length != 2)) {
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, ` +
+                `the number of Crypto driver instances is fixed in the TF-M ` +
+                `image. Two ` + base.displayName + ` instances are supported.`, inst);
+        }
+        else if (deviceId.match(/CC27/) && (inst.$module.$instances.length != 0)) {
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, no ` +
+                base.displayName + ` instances can be added. PSA Crypto APIs must be ` +
+                `used instead.`, inst);
         }
     }
 }
@@ -77,15 +89,15 @@ private or symmetric keys.
 * [Examples][3]
 * [Configuration Options][4]
 
-[1]: /drivers/doxygen/html/_t_r_n_g_8h.html#details "C API reference"
-[2]: /drivers/doxygen/html/_t_r_n_g_8h.html#ti_drivers_TRNG_Synopsis "Basic C usage summary"
-[3]: /drivers/doxygen/html/_t_r_n_g_8h.html#ti_drivers_TRNG_Examples "C usage examples"
+[1]: /secure_drivers/doxygen/html/_t_r_n_g_8h.html#details "C API reference"
+[2]: /secure_drivers/doxygen/html/_t_r_n_g_8h.html#ti_drivers_TRNG_Synopsis "Basic C usage summary"
+[3]: /secure_drivers/doxygen/html/_t_r_n_g_8h.html#ti_drivers_TRNG_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#TRNG_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_TRNG_",
     config              : Common.addNameConfig(config, "/ti/drivers/TRNG", "CONFIG_TRNG_"),
     modules: (inst) => {
-        let forcedModules = ["Board", "Power"];
+        let forcedModules = ["Board", "Power", "CryptoBoard"];
 
         if (deviceId.match(/CC27/)) {
             /* HSM library requires Key Store module */
@@ -96,7 +108,6 @@ private or symmetric keys.
     },
     validate            : validate
 };
-
 
 /* get family-specific TRNG module */
 let devTRNG = system.getScript("/ti/drivers/trng/TRNG" + family);

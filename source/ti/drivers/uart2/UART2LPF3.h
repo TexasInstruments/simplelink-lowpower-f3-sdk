@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,24 +118,26 @@ typedef enum
  *  @code
  *  const UART2LPF3_HWAttrs UART2LPF3_hwAttrs[] = {
  *      {
- *           .baseAddr           = UART0_BASE,
- *           .intNum             = INT_UART0_COMB,
- *           .intPriority        = (~0),
- *           .rxPin              = CONFIG_GPIO_UART2_0_RX,
- *           .txPin              = CONFIG_GPIO_UART2_0_TX,
- *           .ctsPin             = GPIO_INVALID_INDEX,
- *           .rtsPin             = GPIO_INVALID_INDEX,
- *           .flowControl        = UART2_FLOWCTRL_NONE,
- *           .txPinMux           = GPIO_MUX_PORTCFG_PFUNC3,
- *           .rxPinMux           = GPIO_MUX_PORTCFG_PFUNC3,
- *           .ctsPinMux          = GPIO_MUX_GPIO_INTERNAL,
- *           .rtsPinMux          = GPIO_MUX_GPIO_INTERNAL,
- *           .rxChannelMask      = UDMA_CHANNEL_0_M,
- *           .txChannelMask      = UDMA_CHANNEL_1_M,
- *           .rxChannelEvtMux    = EVTSVT_DMACH0SEL_IPID_UART0RXTRG,
- *           .txChannelEvtMux    = EVTSVT_DMACH1SEL_IPID_UART0TXTRG,
- *           .codingScheme       = UART2LPF3_CODING_UART,
- *           .concatenateFIFO    = false,
+ *           .baseAddr              = UART0_BASE,
+ *           .intNum                = INT_UART0_COMB,
+ *           .intPriority           = (~0),
+ *           .rxPin                 = CONFIG_GPIO_UART2_0_RX,
+ *           .txPin                 = CONFIG_GPIO_UART2_0_TX,
+ *           .ctsPin                = GPIO_INVALID_INDEX,
+ *           .rtsPin                = GPIO_INVALID_INDEX,
+ *           .flowControl           = UART2_FLOWCTRL_NONE,
+ *           .txPinMux              = GPIO_MUX_PORTCFG_PFUNC3,
+ *           .rxPinMux              = GPIO_MUX_PORTCFG_PFUNC3,
+ *           .ctsPinMux             = GPIO_MUX_GPIO_INTERNAL,
+ *           .rtsPinMux             = GPIO_MUX_GPIO_INTERNAL,
+ *           .rxChannelMask         = UDMA_CHANNEL_0_M,
+ *           .txChannelMask         = UDMA_CHANNEL_1_M,
+ *           .rxChannelEvtMux       = EVTSVT_DMACH0SEL_IPID_UART0RXTRG,
+ *           .txChannelEvtMux       = EVTSVT_DMACH1SEL_IPID_UART0TXTRG,
+ *           .rxChannelSubscriberId = EVTSVT_DMA_TRIG_UART0RXTRG,
+ *           .txChannelSubscriberId = EVTSVT_DMA_TRIG_UART0TXTRG,
+ *           .codingScheme          = UART2LPF3_CODING_UART,
+ *           .concatenateFIFO       = false,
  *      },
  *  };
  *  @endcode
@@ -158,9 +160,11 @@ typedef struct
     PowerLPF3_Resource powerID;                         /*!< Power driver ID for this UART instance */
     UART2LPF3_CodingScheme codingScheme;                /*!< UART TXD/RXD encoding/decoding scheme */
     uint8_t irLPClkDivider;                             /*!< Clock divider for IR Low-Power mode */
-    uint8_t txChannelEvtMux;                            /*!< DMA Mux ID for this UART TX channel */
-    uint8_t rxChannelEvtMux;                            /*!< DMA Mux ID for this UART RX channel */
-    bool concatenateFIFO;                               /*!< Concatenate RX and TX FIFO if write-only */
+    uint8_t txChannelEvtMux;        /*!< DMA trigger ID for this UART TX channel, as defined in driverlib/evtsvt.h */
+    uint8_t rxChannelEvtMux;        /*!< DMA trigger ID for this UART RX channel, as defined in driverlib/evtsvt.h */
+    bool concatenateFIFO;           /*!< Concatenate RX and TX FIFO if write-only */
+    uint32_t txChannelSubscriberId; /*!< DMA subscriber ID for this UART TX channel, as defined in driverlib/evtsvt.h */
+    uint32_t rxChannelSubscriberId; /*!< DMA subscriber ID for this UART RX channel, as defined in driverlib/evtsvt.h */
 } UART2LPF3_HWAttrs;
 
 /*!

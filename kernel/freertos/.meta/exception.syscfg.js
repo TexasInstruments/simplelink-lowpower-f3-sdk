@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,8 @@
 "use strict";
 
 /* get device specific Settings */
-let Settings = system.getScript("/freertos/Settings.syscfg.js");
+let SettingsScript = system.getScript("/freertos/Settings.syscfg.js");
+let Settings = SettingsScript.getDeviceSettings();
 let GenLibs = system.getScript("/ti/utils/build/GenLibs.syscfg.js");
 
 function getCFiles(kernel)
@@ -129,18 +130,20 @@ extended fault and exception state, calls the hook function, and spins.
     moduleStatic: {
         name: "moduleGlobal",
         moduleInstances: moduleInstancesStatic,
+        validate: validateStatic,
+        dependencies: {
+            modules: {
+                "/ti/utils/TrustZone" : ["secureImage"] /* The freertos/Settings.syscfg.js script depend on TrustZone */
+            },
+            onModuleChanged: onModuleChangedStatic
+        },
         config: [
             {
                 name: "nmiHandler",
                 displayName: "NMI Handler",
                 longDescription: `
 Configure which handler is used when an NMI is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 onChange:(inst, ui) => {
                     ui.nmiHandlerCustomFxn.hidden = inst.nmiHandler !== "Custom";
@@ -159,12 +162,7 @@ Specify which custom fault handler should be called when an NMI triggers.`,
                 displayName: "Hard Fault Handler",
                 longDescription: `
 Configure which handler is used when a hard fault is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 onChange:(inst, ui) => {
                     ui.hardFaultHandlerCustomFxn.hidden = inst.hardFaultHandler !== "Custom";
@@ -183,12 +181,7 @@ Specify which custom fault handler should be called when a hard fault triggers.`
                 displayName: "MPU Fault Handler",
                 longDescription: `
 Configure which handler is used when an MPU fault is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 hidden: GenLibs.getDeviceIsa() === "m0p",
                 onChange:(inst, ui) => {
@@ -208,12 +201,7 @@ Specify which custom fault handler should be called when an MPU fault triggers.`
                 displayName: "BusFault Handler",
                 longDescription: `
 Configure which handler is used when a BusFault is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 hidden: GenLibs.getDeviceIsa() === "m0p",
                 onChange:(inst, ui) => {
@@ -233,12 +221,7 @@ Specify which custom fault handler should be called when a BusFault triggers.`,
                 displayName: "UsageFault Handler",
                 longDescription: `
 Configure which handler is used when a UsageFault is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 hidden: GenLibs.getDeviceIsa() === "m0p",
                 onChange:(inst, ui) => {
@@ -258,12 +241,7 @@ Specify which custom fault handler should be called when a usage fault triggers.
                 displayName: "Secure Fault Handler",
                 longDescription: `
 Configure which handler is used when a secure fault is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 hidden: !(GenLibs.getDeviceIsa().match("m33")),
                 onChange:(inst, ui) => {
@@ -284,13 +262,10 @@ Specify which custom fault handler should be called when a secure fault triggers
                 longDescription: `
 Configure which handler is used when a supervisor call is generated. It is not recommended to change this setting unless
 the application can accomodate FreeRTOS's use of it as well.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: Settings.defaultSvCallHandler },
-                    { name: "Custom" }
-                ],
+                /* The options need to be evaluated at run time since the
+                 * defaultSvCallHandler setting can change during runtime
+                 */
+                options: (inst) => getExceptionOptions("defaultSvCallHandler"),
                 default: Settings.defaultSvCallHandler,
                 onChange:(inst, ui) => {
                     ui.svCallHandlerCustomFxn.hidden = inst.svCallHandler !== "Custom";
@@ -309,13 +284,7 @@ Specify which custom fault handler should be called when an SV call triggers.`,
                 displayName: "Debug Monitor Handler",
                 longDescription: `
 Configure which handler is used when a debug monitor exception is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 hidden: GenLibs.getDeviceIsa() === "m0p",
                 onChange:(inst, ui) => {
@@ -336,13 +305,10 @@ Specify which custom fault handler should be called when a debug monitor excepti
                 longDescription: `
 Configure which handler is used when a PendSV interrupt is generated. It is not recommended to change this setting
 unless the application can accomodate FreeRTOS's use of it as well.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: Settings.defaultPendSvHandler },
-                    { name: "Custom" }
-                ],
+                /* The options need to be evaluated at run time since the
+                 * defaultPendSvHandler setting can change during runtime
+                 */
+                options: (inst) => getExceptionOptions("defaultPendSvHandler"),
                 default: Settings.defaultPendSvHandler,
                 onChange:(inst, ui) => {
                     ui.pendSvFaultHandlerCustomFxn.hidden = inst.pendSvHandler !== "Custom";
@@ -362,13 +328,10 @@ Specify which custom fault handler should be called when a PendSV exception trig
                 longDescription: `
 Configure which handler is used when a SysTick interrupt is generated. It is not recommended to change this setting
 unless the application can accomodate FreeRTOS's use of it as well.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: Settings.defaultSysTickHandler },
-                    { name: "Custom" }
-                ],
+                /* The options need to be evaluated at run time since the
+                 * defaultSysTickHandler setting can change during runtime
+                 */
+                options: (inst) => getExceptionOptions("defaultSysTickHandler"),
                 default: Settings.defaultSysTickHandler,
                 onChange:(inst, ui) => {
                     ui.sysTickHandlerCustomFxn.hidden = inst.sysTickHandler !== "Custom";
@@ -387,12 +350,7 @@ Specify which custom fault handler should be called when a SysTick interrupt tri
                 displayName: "Default Interrupt Handler",
                 longDescription: `
 Configure which default handler is used when a non-Cortex-M interrupt is generated.`,
-                options: [
-                    { name: "Exception_handlerSpin" },
-                    { name: "Exception_handlerMin" },
-                    { name: "Exception_handlerMax" },
-                    { name: "Custom" }
-                ],
+                options: getExceptionOptions(),
                 default: "Exception_handlerSpin",
                 onChange:(inst, ui) => {
                     ui.defaultHandlerCustomFxn.hidden = inst.defaultHandler !== "Custom";
@@ -410,6 +368,111 @@ Specify which custom fault handler should be called when a non-Cortex-M interrup
     },
     getCFiles:getCFiles
 };
+
+/*
+ *  ======== getExceptionOptions ========
+ */
+function getExceptionOptions(deviceSpecificHandler)
+{
+    if (deviceSpecificHandler === undefined || deviceSpecificHandler === "") {
+        return [
+            { name: "Exception_handlerSpin" },
+            { name: "Exception_handlerMin" },
+            { name: "Exception_handlerMax" },
+            { name: "Custom" }
+        ];
+    }
+    else
+    {
+        return [
+            { name: "Exception_handlerSpin" },
+            { name: "Exception_handlerMin" },
+            { name: "Exception_handlerMax" },
+            { name: SettingsScript.getDeviceSettings()[deviceSpecificHandler] },
+            { name: "Custom" }
+        ];
+    }
+}
+
+function isExceptionOptionValid(option, deviceSpecificHandler) {
+    let validOptions = [];
+    for (let optionItem of getExceptionOptions(deviceSpecificHandler)) {
+        validOptions.push(optionItem.name);
+    }
+
+    if (!validOptions.includes(option)) {
+        return false;
+    }
+    return true;
+}
+
+/*
+ *  ======== validateStatic ========
+ */
+function validateStatic(mod, validation)
+{
+    /* Validate svCallHandler */
+    if(!isExceptionOptionValid(mod.svCallHandler, "defaultSvCallHandler"))
+    {
+        validation.logError("Invalid option selected", mod, "svCallHandler");
+    }
+
+    /* Validate pendSvHandler */
+    if (!isExceptionOptionValid(mod.pendSvHandler, "defaultPendSvHandler"))
+    {
+        validation.logError("Invalid option selected", mod, "pendSvHandler");
+    }
+
+    /* Validate sysTickHandler */
+    if (!isExceptionOptionValid(mod.sysTickHandler, "defaultSysTickHandler"))
+    {
+        validation.logError("Invalid option selected", mod, "sysTickHandler");
+    }
+}
+
+/*
+ *  ======== onModuleChangedStatic ========
+ *  onModuleChanged for when dependencies change
+ */
+function onModuleChangedStatic(inst, dependentInst, moduleName, configurables)
+{
+    if (moduleName == "/ti/utils/TrustZone")
+    {
+        let tfmEnabled = false;
+        if(dependentInst !== undefined)
+        {
+            tfmEnabled = true;
+        }
+
+
+        let oldSettings = Settings;
+        Settings = SettingsScript.getDeviceSettings(tfmEnabled);
+
+        /* If the current svCallHandler value is the old default Sv Call handler,
+         * update the value to be the new handler.
+         */
+        if (oldSettings.defaultSvCallHandler == inst.svCallHandler)
+        {
+            inst.svCallHandler = Settings.defaultSvCallHandler;
+        }
+
+        /* If the current pendSvHandler value is the old default PendSV handler,
+         * update the value to be the new handler.
+         */
+        if (oldSettings.defaultPendSvHandler == inst.pendSvHandler)
+        {
+            inst.pendSvHandler = Settings.defaultPendSvHandler;
+        }
+
+        /* If the current sysTickHandler value is the old default SysTick handler,
+         * update the value to be the new handler.
+         */
+        if (oldSettings.defaultSysTickHandler == inst.sysTickHandler)
+        {
+            inst.sysTickHandler = Settings.defaultSysTickHandler;
+        }
+    }
+}
 
 /* export the module */
 exports = base;

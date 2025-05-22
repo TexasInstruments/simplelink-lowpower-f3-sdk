@@ -112,7 +112,6 @@ bool flash_open(void)
     return (isOpen);
 }
 
-
 /*********************************************************************
  * @fn      flash_close
  *
@@ -124,11 +123,11 @@ bool flash_open(void)
  */
 void flash_close(void)
 {
-  if (isOpen)
-  {
-    NVS_close(nvsHandle);
-    isOpen = false;
-  }
+    if (isOpen)
+    {
+        NVS_close(nvsHandle);
+        isOpen = false;
+    }
 }
 
 /*********************************************************************
@@ -142,7 +141,7 @@ void flash_close(void)
  */
 bool hasExternalFlash(void)
 {
-  return (false);
+    return (false);
 }
 
 /*********************************************************************
@@ -159,17 +158,16 @@ bool hasExternalFlash(void)
  */
 uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
-  uint8_t flashStat = FLASH_FAILURE;
+    uint8_t flashStat = FLASH_FAILURE;
 
-  if(isOpen)
-  {
-    if(NVS_read(nvsHandle, (uint32_t)FLASH_ADDRESS(page,offset), pBuf, len)
-                == NVS_STATUS_SUCCESS)
+    if (isOpen)
     {
-        flashStat = FLASH_SUCCESS;
+        if (NVS_read(nvsHandle, (uint32_t)FLASH_ADDRESS(page, offset), pBuf, len) == NVS_STATUS_SUCCESS)
+        {
+            flashStat = FLASH_SUCCESS;
+        }
     }
-  }
-  return (flashStat);
+    return (flashStat);
 }
 
 /*********************************************************************
@@ -185,16 +183,16 @@ uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
  */
 uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
 {
-  uint8_t flashStat = FLASH_FAILURE;
+    uint8_t flashStat = FLASH_FAILURE;
 
-  if(isOpen)
-  {
-    if(NVS_read(nvsHandle, addr, pBuf, len) == NVS_STATUS_SUCCESS)
+    if (isOpen)
     {
-        flashStat = FLASH_SUCCESS;
+        if (NVS_read(nvsHandle, addr, pBuf, len) == NVS_STATUS_SUCCESS)
+        {
+            flashStat = FLASH_SUCCESS;
+        }
     }
-  }
-  return (flashStat);
+    return (flashStat);
 }
 
 /*********************************************************************
@@ -212,18 +210,17 @@ uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  */
 uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
-  uint8_t flashStat = FLASH_FAILURE;
-  if(isOpen)
-  {
-    if(NVS_write(nvsHandle, (uint32_t)FLASH_ADDRESS(page, offset),
-                 pBuf, len, NVS_WRITE_POST_VERIFY) == NVS_STATUS_SUCCESS)
+    uint8_t flashStat = FLASH_FAILURE;
+    if (isOpen)
     {
-        flashStat = FLASH_SUCCESS;
+        if (NVS_write(nvsHandle, (uint32_t)FLASH_ADDRESS(page, offset), pBuf, len, NVS_WRITE_POST_VERIFY) ==
+            NVS_STATUS_SUCCESS)
+        {
+            flashStat = FLASH_SUCCESS;
+        }
     }
-  }
-  return (flashStat);
+    return (flashStat);
 }
-
 
 /*********************************************************************
  * @fn      writeFlash
@@ -240,13 +237,12 @@ uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
 {
     uint8_t flashStat = FLASH_FAILURE;
-    if(isOpen)
+    if (isOpen)
     {
-        if(NVS_write(nvsHandle, addr,  pBuf, len, NVS_WRITE_PRE_VERIFY | NVS_WRITE_POST_VERIFY)
-                 == NVS_STATUS_SUCCESS)
-       {
-           flashStat = FLASH_SUCCESS;
-       }
+        if (NVS_write(nvsHandle, addr, pBuf, len, NVS_WRITE_PRE_VERIFY | NVS_WRITE_POST_VERIFY) == NVS_STATUS_SUCCESS)
+        {
+            flashStat = FLASH_SUCCESS;
+        }
     }
     return (flashStat);
 }
@@ -263,17 +259,14 @@ uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  */
 uint8_t eraseFlashPg(uint8_t page)
 {
-  uint8_t flashStat = FLASH_FAILURE;
-  if(isOpen)
-  {
-      if(NVS_erase(nvsHandle, (uint32_t)FLASH_ADDRESS(page,0), INTFLASH_PAGE_SIZE)
-         == NVS_STATUS_SUCCESS)
-      {
-          flashStat = FLASH_SUCCESS;
-      }
-  }
+    uint8_t flashStat = FLASH_FAILURE;
+    if (isOpen)
+    {
+        if (NVS_erase(nvsHandle, (uint32_t)FLASH_ADDRESS(page, 0), INTFLASH_PAGE_SIZE) == NVS_STATUS_SUCCESS)
+        {
+            flashStat = FLASH_SUCCESS;
+        }
+    }
 
-  return flashStat;
+    return flashStat;
 }
-
-

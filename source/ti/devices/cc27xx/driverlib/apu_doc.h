@@ -1,7 +1,7 @@
 /******************************************************************************
  *  Filename:       apu_doc.h
  *
- *  Copyright (c) 2024 Texas Instruments Incorporated
+ *  Copyright (c) 2024-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -148,7 +148,10 @@
 //! - \ref APUVectorDot()
 //! - \ref APUVectorDotConj()
 //! - \ref APUVectorMult()
+//! - \ref APUVectorMultConj()
+//! - \ref APUVectorScalarMult()
 //! - \ref APUVectorSum()
+//! - \ref APUVectorScalarSum()
 //! - \ref APUVectorCart2Pol()
 //! - \ref APUVectorPol2Cart()
 //! - \ref APUVectorSort()
@@ -157,11 +160,10 @@
 //! - \ref APUMatrixMult()
 //! - \ref APUMatrixMultHerm()
 //! - \ref APUMatrixMultSym()
-//! - \ref APUMatrixSum()
 //! - \ref APUMatrixScalarMult()
+//! - \ref APUMatrixSum()
+//! - \ref APUMatrixScalarSum()
 //! - \ref APUMatrixNorm()
-//! - \ref APUMatrixScalarSum()
-//! - \ref APUMatrixScalarSum()
 //!
 //! Advanced Operations:
 //! - \ref APUSpSmoothCovMatrix()
@@ -171,5 +173,8 @@
 //! - \ref APUComputeFft()
 //! - \ref APUComputeIfft()
 //! - \ref APUUnitCircle()
+//! - \ref APUVectorMaxMin()
+//! - \ref APUVectorR2C()
+//! - \ref APUHermLo()
 //!
 //! @}

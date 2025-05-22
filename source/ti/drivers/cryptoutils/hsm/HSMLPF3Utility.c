@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -333,12 +333,23 @@ void HSMLPF3_asymDHPubKeyFromHW(const uint8_t *const in,
  */
 void HSMLPF3_asymDsaSignatureFromHW(const uint8_t *const in,
                                     const size_t modulusSizeBits,
+                                    HSMLPF3_KeyMaterialEndianness endianness,
                                     uint8_t *out_r,
                                     uint8_t *out_s)
 {
-    /* Convert Signature from HW to application format */
-    HSMLPF3_asymRsaSignatureFromHw(in, modulusSizeBits, out_r);
-    HSMLPF3_asymRsaSignatureFromHw(&in[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)], modulusSizeBits, out_s);
+    if (endianness == HSMLPF3_BIG_ENDIAN_KEY)
+    {
+        /* Convert Signature from HW to application format */
+        HSMLPF3_asymRsaSignatureFromHw(in, modulusSizeBits, out_r);
+        HSMLPF3_asymRsaSignatureFromHw(&in[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)], modulusSizeBits, out_s);
+    }
+    else
+    {
+        uint32_t sizeInBytes = (uint32_t)BITS_TO_BYTES(modulusSizeBits);
+
+        memcpy(out_r, &in[HSM_ASYM_DATA_VHEADER], sizeInBytes);
+        memcpy(out_s, &in[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits) + HSM_ASYM_DATA_VHEADER], sizeInBytes);
+    }
 }
 
 /*
@@ -346,14 +357,42 @@ void HSMLPF3_asymDsaSignatureFromHW(const uint8_t *const in,
  */
 void HSMLPF3_asymDsaSignatureToHW(const uint8_t *const signature_r,
                                   const uint8_t *const signature_s,
+                                  HSMLPF3_KeyMaterialEndianness endianness,
                                   const size_t modulusSizeBits,
                                   uint8_t *const blob)
 {
-    /* Convert Signature from application to HW format */
-    /* - Signature.r */
-    HSMLPF3_asymBigIntToHw(signature_r, modulusSizeBits, 0, 2, blob);
-    /* - Signature.s */
-    HSMLPF3_asymBigIntToHw(signature_s, modulusSizeBits, 1, 2, &blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)]);
+    /* Endianness determines how to copy the signature to the hardware.
+     * The end result should be in little endian format.
+     * For big endian, the signature is copied in reverse order.
+     *  - #HSMLPF3_asymBigIntToHw() is used to convert the signature to HW format as well as create the header.
+     * For little endian, the signature is copied as is.
+     *  - #HSMLPF3_asymVectorHeaderFormat() is used to create the header.
+     *  - The signature is copied as is.
+     */
+    if (endianness == HSMLPF3_BIG_ENDIAN_KEY)
+    {
+        /* Convert Signature from application to HW format */
+        /* - Signature.r */
+        HSMLPF3_asymBigIntToHw(signature_r, modulusSizeBits, 0, 2, blob);
+        /* - Signature.s */
+        HSMLPF3_asymBigIntToHw(signature_s, modulusSizeBits, 1, 2, &blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)]);
+    }
+    else
+    {
+        HSMLPF3_asymVectorHeaderFormat(modulusSizeBits, 2, 0, 0U, (uint32_t *)blob);
+
+        memcpy(&blob[HSM_ASYM_DATA_VHEADER], &signature_r[0], BITS_TO_BYTES(modulusSizeBits));
+
+        HSMLPF3_asymVectorHeaderFormat(modulusSizeBits,
+                                       2,
+                                       1,
+                                       0U,
+                                       (uint32_t *)&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits)]);
+
+        memcpy(&blob[HSM_ASYM_DATA_SIZE_VWB(modulusSizeBits) + HSM_ASYM_DATA_VHEADER],
+               &signature_s[0],
+               BITS_TO_BYTES(modulusSizeBits));
+    }
 }
 
 /*

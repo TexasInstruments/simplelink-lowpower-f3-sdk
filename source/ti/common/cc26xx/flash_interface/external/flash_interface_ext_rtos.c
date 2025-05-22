@@ -89,7 +89,6 @@ bool flash_open(void)
     return (isOpen ? TRUE : FALSE);
 }
 
-
 /*********************************************************************
  * @fn      flash_close
  *
@@ -101,11 +100,11 @@ bool flash_open(void)
  */
 void flash_close(void)
 {
-  if (isOpen)
-  {
-    isOpen = false;
-    ExtFlash_close();
-  }
+    if (isOpen)
+    {
+        isOpen = false;
+        ExtFlash_close();
+    }
 }
 
 /*********************************************************************
@@ -119,7 +118,7 @@ void flash_close(void)
  */
 bool hasExternalFlash(void)
 {
-  return (true);
+    return (true);
 }
 
 /*********************************************************************
@@ -136,18 +135,18 @@ bool hasExternalFlash(void)
  */
 uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
-  uint8_t flashStat = FLASH_SUCCESS;
+    uint8_t flashStat = FLASH_SUCCESS;
 
-  if(isOpen)
-  {
-    ExtFlash_read(FLASH_ADDRESS(page,offset), len, pBuf);
-  }
-  else
-  {
-    flashStat = FLASH_FAILURE;
-  }
+    if (isOpen)
+    {
+        ExtFlash_read(FLASH_ADDRESS(page, offset), len, pBuf);
+    }
+    else
+    {
+        flashStat = FLASH_FAILURE;
+    }
 
-  return (flashStat);
+    return (flashStat);
 }
 
 /*********************************************************************
@@ -163,18 +162,18 @@ uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
  */
 uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
 {
-  uint8_t flashStat = FLASH_SUCCESS;
+    uint8_t flashStat = FLASH_SUCCESS;
 
-  if(isOpen)
-  {
-    ExtFlash_read(addr, len, pBuf);
-  }
-  else
-  {
-    flashStat = FLASH_FAILURE;
-  }
+    if (isOpen)
+    {
+        ExtFlash_read(addr, len, pBuf);
+    }
+    else
+    {
+        flashStat = FLASH_FAILURE;
+    }
 
-  return (flashStat);
+    return (flashStat);
 }
 
 /*********************************************************************
@@ -192,17 +191,17 @@ uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  */
 uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
-  bool flashStat;
-  if(isOpen)
-  {
-    flashStat = ExtFlash_write((uint32_t)FLASH_ADDRESS(page, offset), len, pBuf);
-  }
-  else
-  {
-    flashStat = false;
-  }
+    bool flashStat;
+    if (isOpen)
+    {
+        flashStat = ExtFlash_write((uint32_t)FLASH_ADDRESS(page, offset), len, pBuf);
+    }
+    else
+    {
+        flashStat = false;
+    }
 
-  return (flashStat == true) ? FLASH_SUCCESS : FLASH_FAILURE;
+    return (flashStat == true) ? FLASH_SUCCESS : FLASH_FAILURE;
 }
 
 /*********************************************************************
@@ -219,8 +218,8 @@ uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
  */
 uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
 {
-  // This is unsupported on external flash
-  return (FLASH_FAILURE);
+    // This is unsupported on external flash
+    return (FLASH_FAILURE);
 }
 
 /*********************************************************************
@@ -234,18 +233,16 @@ uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  */
 uint8_t eraseFlash(uint8_t page)
 {
-  bool flashStat;
+    bool flashStat;
 
-  if(isOpen)
-  {
-    flashStat = ExtFlash_erase(FLASH_ADDRESS(page,0), HAL_FLASH_PAGE_SIZE);
-  }
-  else
-  {
-    flashStat = false;
-  }
+    if (isOpen)
+    {
+        flashStat = ExtFlash_erase(FLASH_ADDRESS(page, 0), HAL_FLASH_PAGE_SIZE);
+    }
+    else
+    {
+        flashStat = false;
+    }
 
-  return ((flashStat == true) ? FLASH_SUCCESS : FLASH_FAILURE);
+    return ((flashStat == true) ? FLASH_SUCCESS : FLASH_FAILURE);
 }
-
-

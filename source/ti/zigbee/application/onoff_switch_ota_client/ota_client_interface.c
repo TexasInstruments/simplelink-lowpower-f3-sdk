@@ -154,9 +154,7 @@ zb_uint8_t dl_ota_upgrade_init(zb_uint32_t image_size,
      * We support here trivial OTA file with only single image. We are not
      * interested on OTA header - will skip it.
      */
-    #ifdef OTA_OFFCHIP
     g_dev_ctx.ota_ctx.flash_is_open = zb_osif_ota_open_storage();
-    #endif // OTA_OFFCHIP
 
     g_dev_ctx.ota_ctx.total_image_size = image_size;
     g_dev_ctx.ota_ctx.fw_version = image_version;
@@ -204,17 +202,13 @@ void dl_ota_upgrade_mark_fw_ok(void)
 {
   zb_osif_ota_mark_fw_ready(g_dev_ctx.ota_ctx.flash_dev, g_dev_ctx.ota_ctx.total_image_size, g_dev_ctx.ota_ctx.fw_version);
   zb_osif_ota_close_storage(g_dev_ctx.ota_ctx.flash_dev);
-  #ifdef OTA_OFFCHIP
   g_dev_ctx.ota_ctx.flash_is_open = false;
-  #endif // OTA_OFFCHIP
   g_dev_ctx.ota_ctx.flash_dev = NULL;
 }
 
 void dl_ota_upgrade_abort(void)
 {
   zb_osif_ota_close_storage(g_dev_ctx.ota_ctx.flash_dev);
-  #ifdef OTA_OFFCHIP
   g_dev_ctx.ota_ctx.flash_is_open = false;
-  #endif // OTA_OFFCHIP
   g_dev_ctx.ota_ctx.flash_dev = NULL;
 }

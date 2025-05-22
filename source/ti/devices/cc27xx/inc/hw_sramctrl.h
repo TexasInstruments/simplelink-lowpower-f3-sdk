@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_sramctrl_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -40,8 +40,6 @@
 //
 //*****************************************************************************
 #define SRAMCTRL_O_DESC                                             0x00000000U
-
-#define SRAMCTRL_O_DTB                                              0x00000064U
 
 #define SRAMCTRL_O_CFG                                              0x00000100U
 
@@ -89,18 +87,6 @@
 #define SRAMCTRL_DESC_MINREV_W                                               4U
 #define SRAMCTRL_DESC_MINREV_M                                      0x0000000FU
 #define SRAMCTRL_DESC_MINREV_S                                               0U
-
-//*****************************************************************************
-//
-// Register: SRAMCTRL_O_DTB
-//
-//*****************************************************************************
-// Field:   [1:0] SEL
-//
-// DTB Selection
-#define SRAMCTRL_DTB_SEL_W                                                   2U
-#define SRAMCTRL_DTB_SEL_M                                          0x00000003U
-#define SRAMCTRL_DTB_SEL_S                                                   0U
 
 //*****************************************************************************
 //

@@ -1,5 +1,5 @@
 /******************************************************************************
-*  Copyright (c) 2021-2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2024-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -61,6 +61,8 @@
 /// Size of generalTrims section in FCFG, in number of 32-bit words
 #define FCFG_GENERALTRIMS_SIZE                  ((FLASH_2T_SECTOR_SIZE / 4U) - 128U)
 
+#define INTERNAL_FIELD_0 res0 = {0xFFFFFFFFU, 0xFFFFFFFFU}
+
 // --- Customer Configuration (CCFG) definitions ---
 /*! Macro for default CCFG configuration. All fields can be overwritten by
  *  setting the field to another value further down in the struct definition
@@ -73,8 +75,7 @@
         .pAppVtor = CCFG_BC_PAPP_NONE, \
         .crc32 = 0x0BAD0BAD \
     }, \
-    .hwOpts[0] = 0xFFFFFFFFU, \
-    .hwOpts[1] = 0xFFFFFFFFU, \
+    .INTERNAL_FIELD_0, \
     .permissions = { \
         .allowReturnToFactory   = CCFG_PERMISSION_ALLOW, \
         .allowFakeStby          = CCFG_PERMISSION_ALLOW, \
@@ -90,18 +91,9 @@
         .allowMainAppErase   = CCFG_PERMISSION_ALLOW, \
     }, \
     .flashProt = { \
-        .writeEraseProt = { \
-            .mainSectors0_31    = 0xFFFFFFFFU, \
-            .mainSectors32_255  = 0xFFFFFFFFU, \
-            .mainSectors256_511 = 0xFFFFFFFFU, \
-            .auxSectors         = 0xFFFFFFFFU, \
-        }, \
+        .writeEraseProt = CCFG_DEFAULT_WEPROT_VALUES, \
         .readProt = { 0xFFFFFFFFU }, \
-        .chipEraseRetain = { \
-            .mainSectors0_31    = 0, \
-            .mainSectors32_255  = 0, \
-            .mainSectors256_511 = 0, \
-        }, \
+        .chipEraseRetain = CCFG_DEFAULT_CHIP_ERASE_RETAIN_VALUES, \
     }, \
     .hwInitCopyList = { CPYLST_EOL }, \
     .crc32 = 0x0BAD0BAD, \
@@ -114,12 +106,25 @@
         .crc32 = 0x0BAD0BAD, \
     }
 
+#define CCFG_DEFAULT_WEPROT_VALUES \
+    { \
+        .mainSectors0_31    = 0xFFFFFFFFU, \
+        .mainSectors32_255  = 0xFFFFFFFFU, \
+        .mainSectors256_511 = 0xFFFFFFFFU, \
+        .auxSectors         = 0xFFFFFFFFU, \
+    }
+#define CCFG_DEFAULT_CHIP_ERASE_RETAIN_VALUES \
+    { \
+        .mainSectors0_31    = 0, \
+        .mainSectors32_255  = 0, \
+        .mainSectors256_511 = 0, \
+    }
+
 // --- Security Configuration (SCFG) definitions ---
 /*! Macro for default SCFG configuration. All fields can be overwritten by
  *  setting the field to another value further down in the struct definition
  *  within a C file.
  */
-// Macro for default SCFG configuration.
 #define SCFG_DEFAULT_VALUES \
     .hsmCfg = { \
         .publicKeyHash =   SCFG_UNDEFINED_KEY_HASH , \
@@ -175,24 +180,24 @@
     .crc32 = 0x0BAD0BADU, /* Inserted in build */ \
     .keyRingCfg = { \
         .keyEntries = { \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
-            { SCFG_UNDEFINED_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
+            { SCFG_INVALID_KEY_ENTRY }, \
         }, \
     }
 

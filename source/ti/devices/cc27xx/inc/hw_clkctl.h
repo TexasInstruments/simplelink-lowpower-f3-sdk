@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_clkctl_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -382,17 +382,17 @@
 #define CLKCTL_DESCEX1_MCAN_IP_AVAIL                                0x00000040U
 #define CLKCTL_DESCEX1_MCAN_IP_UNAVAIL                              0x00000000U
 
-// Field:     [5] VCE
+// Field:     [5] APU
 //
 // IP status on device
 // ENUMs:
 // IP_AVAIL                 IP is available
 // IP_UNAVAIL               IP is unavailable
-#define CLKCTL_DESCEX1_VCE                                          0x00000020U
-#define CLKCTL_DESCEX1_VCE_M                                        0x00000020U
-#define CLKCTL_DESCEX1_VCE_S                                                 5U
-#define CLKCTL_DESCEX1_VCE_IP_AVAIL                                 0x00000020U
-#define CLKCTL_DESCEX1_VCE_IP_UNAVAIL                               0x00000000U
+#define CLKCTL_DESCEX1_APU                                          0x00000020U
+#define CLKCTL_DESCEX1_APU_M                                        0x00000020U
+#define CLKCTL_DESCEX1_APU_S                                                 5U
+#define CLKCTL_DESCEX1_APU_IP_AVAIL                                 0x00000020U
+#define CLKCTL_DESCEX1_APU_IP_UNAVAIL                               0x00000000U
 
 // Field:     [4] HSM
 //
@@ -608,17 +608,17 @@
 #define CLKCTL_CLKCFG1_MCAN_CLK_EN                                  0x00000040U
 #define CLKCTL_CLKCFG1_MCAN_CLK_DIS                                 0x00000000U
 
-// Field:     [5] VCE
+// Field:     [5] APU
 //
 // IP clock configuration
 // ENUMs:
 // CLK_EN                   Clock is enabled
 // CLK_DIS                  Clock is disabled
-#define CLKCTL_CLKCFG1_VCE                                          0x00000020U
-#define CLKCTL_CLKCFG1_VCE_M                                        0x00000020U
-#define CLKCTL_CLKCFG1_VCE_S                                                 5U
-#define CLKCTL_CLKCFG1_VCE_CLK_EN                                   0x00000020U
-#define CLKCTL_CLKCFG1_VCE_CLK_DIS                                  0x00000000U
+#define CLKCTL_CLKCFG1_APU                                          0x00000020U
+#define CLKCTL_CLKCFG1_APU_M                                        0x00000020U
+#define CLKCTL_CLKCFG1_APU_S                                                 5U
+#define CLKCTL_CLKCFG1_APU_CLK_EN                                   0x00000020U
+#define CLKCTL_CLKCFG1_APU_CLK_DIS                                  0x00000000U
 
 // Field:     [4] HSM
 //
@@ -834,17 +834,17 @@
 #define CLKCTL_CLKENSET1_MCAN_CLK_SET                               0x00000040U
 #define CLKCTL_CLKENSET1_MCAN_CLK_UNCHGD                            0x00000000U
 
-// Field:     [5] VCE
+// Field:     [5] APU
 //
 // Configure IP clock enable
 // ENUMs:
 // CLK_SET                  Set IP clock enable
 // CLK_UNCHGD               IP clock enable is unchanged
-#define CLKCTL_CLKENSET1_VCE                                        0x00000020U
-#define CLKCTL_CLKENSET1_VCE_M                                      0x00000020U
-#define CLKCTL_CLKENSET1_VCE_S                                               5U
-#define CLKCTL_CLKENSET1_VCE_CLK_SET                                0x00000020U
-#define CLKCTL_CLKENSET1_VCE_CLK_UNCHGD                             0x00000000U
+#define CLKCTL_CLKENSET1_APU                                        0x00000020U
+#define CLKCTL_CLKENSET1_APU_M                                      0x00000020U
+#define CLKCTL_CLKENSET1_APU_S                                               5U
+#define CLKCTL_CLKENSET1_APU_CLK_SET                                0x00000020U
+#define CLKCTL_CLKENSET1_APU_CLK_UNCHGD                             0x00000000U
 
 // Field:     [4] HSM
 //
@@ -1060,17 +1060,17 @@
 #define CLKCTL_CLKENCLR1_MCAN_CLK_CLR                               0x00000040U
 #define CLKCTL_CLKENCLR1_MCAN_CLK_UNCHGD                            0x00000000U
 
-// Field:     [5] VCE
+// Field:     [5] APU
 //
 // Configure IP clock enable
 // ENUMs:
 // CLK_CLR                  Clear IP clock enable
 // CLK_UNCHGD               IP clock enable is unchanged
-#define CLKCTL_CLKENCLR1_VCE                                        0x00000020U
-#define CLKCTL_CLKENCLR1_VCE_M                                      0x00000020U
-#define CLKCTL_CLKENCLR1_VCE_S                                               5U
-#define CLKCTL_CLKENCLR1_VCE_CLK_CLR                                0x00000020U
-#define CLKCTL_CLKENCLR1_VCE_CLK_UNCHGD                             0x00000000U
+#define CLKCTL_CLKENCLR1_APU                                        0x00000020U
+#define CLKCTL_CLKENCLR1_APU_M                                      0x00000020U
+#define CLKCTL_CLKENCLR1_APU_S                                               5U
+#define CLKCTL_CLKENCLR1_APU_CLK_CLR                                0x00000020U
+#define CLKCTL_CLKENCLR1_APU_CLK_UNCHGD                             0x00000000U
 
 // Field:     [4] HSM
 //

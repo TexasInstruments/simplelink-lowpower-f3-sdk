@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,10 @@
 
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
+let CryptoCommon = system.getScript("/ti/drivers/CryptoCommon.syscfg.js");
 
 /* get /ti/drivers family name from device object */
-let family = Common.device2Family(system.deviceData, "AESGCM");
+let family = CryptoCommon.device2Family(system.deviceData, "AESGCM");
 
 let config = [];
 
@@ -55,9 +56,18 @@ let deviceId = system.deviceData.deviceId;
 function validate(inst, validation)
 {
     if (system.modules["/ti/utils/TrustZone"]) {
-        if (inst.$module.$instances.length != 1) {
-            validation.logError(`When using Secure/Non-secure features (TrustZone is enabled), the number of Crypto
-                                driver instances are fixed in the TF-M image. One AESGCM instance is supported.`, inst);
+        if (deviceId.match(/CC(13|26).[34]/) && (inst.$module.$instances.length != 1)) {
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, ` +
+                `the number of Crypto driver instances is fixed in the TF-M ` +
+                `image. Only one ` + base.displayName + ` instance is supported.`, inst);
+        }
+        else if (deviceId.match(/CC27/) && (inst.$module.$instances.length != 0)) {
+            /* No instances are allowed because GCM is not supported for LAES engine */
+            validation.logError(
+                `When TrustZone is enabled for Secure/Non-secure isolation, no ` +
+                base.displayName + ` instances can be added. PSA Crypto APIs must be ` +
+                `used instead.`, inst);
         }
     }
 }
@@ -81,15 +91,15 @@ length and not only multiples of the block cipher block size.
 * [Examples][3]
 * [Configuration Options][4]
 
-[1]: /drivers/doxygen/html/_a_e_s_g_c_m_8h.html#details "C API reference"
-[2]: /drivers/doxygen/html/_a_e_s_g_c_m_8h.html#ti_drivers_AESGCM_Synopsis "Basic C usage summary"
-[3]: /drivers/doxygen/html/_a_e_s_g_c_m_8h.html#ti_drivers_AESGCM_Examples "C usage examples"
+[1]: /secure_drivers/doxygen/html/_a_e_s_g_c_m_8h.html#details "C API reference"
+[2]: /secure_drivers/doxygen/html/_a_e_s_g_c_m_8h.html#ti_drivers_AESGCM_Synopsis "Basic C usage summary"
+[3]: /secure_drivers/doxygen/html/_a_e_s_g_c_m_8h.html#ti_drivers_AESGCM_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#AESGCM_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_AESGCM_",
     config              : Common.addNameConfig(config, "/ti/drivers/AESGCM", "CONFIG_AESGCM_"),
     modules: (inst) => {
-        let forcedModules = ["Board", "Power"];
+        let forcedModules = ["Board", "Power", "CryptoBoard"];
 
         if (deviceId.match(/CC23|CC27/)) {
             /* LAES driver requires DMA module */

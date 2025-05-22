@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2020 Cypress Semiconductor Corporation
- * Copyright (c) 2021 Texas Instruments
+ * Copyright (c) 2021-2025 Texas Instruments
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,7 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/flash.h)
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
 #include DeviceFamily_constructPath(driverlib/vims.h)
 #endif
 
@@ -50,7 +50,7 @@
 
 #define FLASH_BASE_ADDRESS          0
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
 /* Remap driverlib API names that changed only for cc23x0
  */
 #define FlashSectorSizeGet FlashGetSectorSize
@@ -116,7 +116,7 @@
 #endif
 
 #if (MCUBOOT_IMAGE_NUMBER == 2) && \
-    (DeviceFamily_PARENT != DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
+    (DeviceFamily_PARENT != DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
     #error "MCUBOOT_IMAGE_NUMBER == 2 for current device not supported"
 #endif
 
@@ -155,7 +155,7 @@ static const struct flash_area *boot_area_descs[] =
 static bool extFlashStatus = false;
 #endif
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
 /* Prepares system for a write to flash */
 static uint8_t disableCache(void)
 {
@@ -326,7 +326,7 @@ int flash_area_write(const struct flash_area *fa, uint32_t off,
     if (fa->fa_device_id == FLASH_DEVICE_INTERNAL_FLASH)
     {
         uint32_t flashStat;
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
         uint8_t cacheState = disableCache();
 #endif
 
@@ -336,7 +336,7 @@ int flash_area_write(const struct flash_area *fa, uint32_t off,
             rc = 0;
         }
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
         enableCache(cacheState);
 #endif
     }
@@ -384,7 +384,7 @@ int flash_area_erase(const struct flash_area *fa, uint32_t off, uint32_t len)
 
         assert((erase_start_addr % sectorSize) == 0);
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
         uint8_t cacheState = disableCache();
 #endif
 
@@ -393,14 +393,14 @@ int flash_area_erase(const struct flash_area *fa, uint32_t off, uint32_t len)
             flashStat = FlashSectorErase(pageAddr);
             if(flashStat != FAPI_STATUS_SUCCESS)
             {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
                 enableCache(cacheState);
 #endif
                 return rc;
             }
         }
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
         enableCache(cacheState);
 #endif
         rc = 0;
@@ -612,9 +612,9 @@ int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
 
 #ifdef MCUBOOT_HW_ROLLBACK_PROT
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
 
-#define FLASH_WRITE_PROTECT 0
+#define MCUBOOT_FLASH_WRITE_PROTECT 0
 
 /*
  * There is no implementation of FlashProtectionSet() in cc23x0 driverlib.
@@ -652,7 +652,7 @@ void flash_area_lock(const struct flash_area *fa)
 
     if (fa->fa_device_id == FLASH_DEVICE_INTERNAL_FLASH)
     {
-        FlashProtectionSet(addr, FLASH_WRITE_PROTECT);
+        FlashProtectionSet(addr, MCUBOOT_FLASH_WRITE_PROTECT);
     }
 }
 #endif

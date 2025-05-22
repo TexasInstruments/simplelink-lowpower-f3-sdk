@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,8 @@
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include DeviceFamily_constructPath(inc/hw_types.h)
-#include DeviceFamily_constructPath(inc/hw_evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/uart.h)
+#include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/flash.h)
 
 /* Headers required for intrinsics */
@@ -74,12 +74,21 @@
 /* Macro for using the definition of the UART2 Log module */
 Log_MODULE_USE(LogModule_UART2);
 
-/* Options for DMA write and read */
-#define TX_CONTROL_OPTS (UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_NONE | UDMA_ARB_4 | UDMA_MODE_BASIC)
-#define RX_CONTROL_OPTS (UDMA_SIZE_8 | UDMA_SRC_INC_NONE | UDMA_DST_INC_8 | UDMA_ARB_4 | UDMA_MODE_BASIC)
+/* Options for DMA write and read
+ * The TX Arbitration size and the TX FIFO interrupt level is reduced compared to the RX side.
+ * Ref. Errata UDMA_01 for more details.
+ */
+#define TX_CONTROL_OPTS   (UDMA_SIZE_8 | UDMA_SRC_INC_8 | UDMA_DST_INC_NONE | UDMA_ARB_2 | UDMA_MODE_BASIC)
+#define TX_FIFO_INT_LEVEL UART_FIFO_TX2_8
+
+#define RX_CONTROL_OPTS   (UDMA_SIZE_8 | UDMA_SRC_INC_NONE | UDMA_DST_INC_8 | UDMA_ARB_4 | UDMA_MODE_BASIC)
+#define RX_FIFO_INT_LEVEL UART_FIFO_RX6_8
 
 /* Maximum number of bytes that DMA can transfer */
 #define MAX_DMA_SIZE (UDMA_XFER_SIZE_MAX)
+
+/* Default UART2 parameters structure */
+extern const UART2_Params UART2_defaultParams;
 
 /* Static functions */
 static void UART2LPF3_eventCallback(UART2_Handle handle, uint32_t event, uint32_t data, void *userArg);
@@ -169,23 +178,6 @@ static inline size_t UART2LPF3_getRxData(UART2_Handle handle, size_t size)
     }
 
     return consumed;
-}
-
-/*
- *  ======== dmaChannelNum ========
- *  Get the channel number from the channel bit mask
- */
-static inline uint32_t dmaChannelNum(uint32_t x)
-{
-#if defined(__TI_COMPILER_VERSION__)
-    return ((uint32_t)__clz(__rbit(x)));
-#elif defined(__GNUC__)
-    return ((uint32_t)__builtin_ctz(x));
-#elif defined(__IAR_SYSTEMS_ICC__)
-    return ((uint32_t)__CLZ(__RBIT(x)));
-#else
-    #error "Unsupported compiler"
-#endif
 }
 
 /*
@@ -316,6 +308,12 @@ UART2_Handle UART2_open(uint_least8_t index, UART2_Params *params)
     else
     {
         return NULL;
+    }
+
+    /* If params are NULL use defaults */
+    if (params == NULL)
+    {
+        params = (UART2_Params *)&UART2_defaultParams;
     }
 
     /* Check for callback when in UART2_Mode_CALLBACK */
@@ -484,7 +482,7 @@ void UART2Support_dmaStartRx(UART2_Handle handle)
     else if (object->readBuf != NULL)
     {
         /* If there is a user-buffer available, and neither of the cases above are true, then the driver should setup
-         * a DMA transaction into the the user-buffer. Offset the transaction with the number of bytes we already have
+         * a DMA transaction into the user-buffer. Offset the transaction with the number of bytes we already have
          * in the ring buffer. The bytes in the ring buffer will be copied out at a later stage, in UART2_read
          */
         object->rxSize              = object->readCount - RingBuf_getCount(&object->rxBuffer);
@@ -1097,7 +1095,7 @@ static void UART2LPF3_initHw(UART2_Handle handle)
                      UART_INT_CTS | UART_INT_TXDMADONE | UART_INT_RXDMADONE);
 
     /* Set TX interrupt FIFO level and RX interrupt FIFO level */
-    UARTSetFifoLevel(hwAttrs->baseAddr, UART_FIFO_TX4_8, UART_FIFO_RX6_8);
+    UARTSetFifoLevel(hwAttrs->baseAddr, TX_FIFO_INT_LEVEL, RX_FIFO_INT_LEVEL);
 
     /* If Flow Control is enabled, configure hardware flow control for CTS and/or RTS. */
     if (UART2LPF3_isFlowControlEnabled(hwAttrs) && (hwAttrs->ctsPin != GPIO_INVALID_INDEX))
@@ -1154,11 +1152,11 @@ static void UART2LPF3_initHw(UART2_Handle handle)
         UDMALPF3_disableAttribute(hwAttrs->rxChannelMask, UDMA_ATTR_ALTSELECT);
         UDMALPF3_disableAttribute(hwAttrs->txChannelMask, UDMA_ATTR_ALTSELECT);
 
-        /* Mux RX DMA channel to uart peripheral */
-        HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + dmaChannelNum(hwAttrs->rxChannelMask) * sizeof(uint32_t)) = hwAttrs->rxChannelEvtMux;
+        /* Mux RX DMA channel to UART peripheral */
+        EVTSVTConfigureDma(hwAttrs->rxChannelSubscriberId, hwAttrs->rxChannelEvtMux);
 
-        /* Mux RX DMA channel to uart peripheral */
-        HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + dmaChannelNum(hwAttrs->txChannelMask) * sizeof(uint32_t)) = hwAttrs->txChannelEvtMux;
+        /* Mux TX DMA channel to UART peripheral */
+        EVTSVTConfigureDma(hwAttrs->txChannelSubscriberId, hwAttrs->txChannelEvtMux);
     }
 }
 

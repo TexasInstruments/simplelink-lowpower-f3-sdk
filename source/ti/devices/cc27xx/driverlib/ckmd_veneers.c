@@ -3,7 +3,7 @@
  *
  *  Description:    Veneers for accessing CKMD API from non-secure context.
  *
- *  Copyright (c) 2024 Texas Instruments Incorporated
+ *  Copyright (c) 2024-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,16 @@
 #include "ckmd.h"
 
 #include <third_party/tfm/secure_fw/include/security_defs.h> // __tz_c_veneer
-#include <third_party/tfm/secure_fw/spm/include/utilities.h> // tfm_core_panic()
+
+__tz_c_veneer void CKMDEnableHighPerformanceClockBuffer_veneer(void)
+{
+    CKMDEnableHighPerformanceClockBuffer();
+}
+
+__tz_c_veneer void CKMDDisableHighPerformanceClockBuffer_veneer(void)
+{
+    CKMDDisableHighPerformanceClockBuffer();
+}
 
 __tz_c_veneer uint_least16_t CKMDGetLfoscRtnPpm_veneer(void)
 {
@@ -51,4 +60,34 @@ __tz_c_veneer uint_least16_t CKMDGetLfoscMidTempCoefficientPpmPerC_veneer(void)
 __tz_c_veneer uint_least16_t CKMDGetLfoscExtTempCoefficientPpmPerC_veneer(void)
 {
     return CKMDGetLfoscExtTempCoefficientPpmPerC();
+}
+
+__tz_c_veneer void CKMDUnlockWatchdog_veneer(void)
+{
+    CKMDUnlockWatchdog();
+}
+
+__tz_c_veneer void CKMDLockWatchdog_veneer(void)
+{
+    CKMDLockWatchdog();
+}
+
+__tz_c_veneer void CKMDSetWatchdogCounter_veneer(uint32_t value)
+{
+    CKMDSetWatchdogCounter(value);
+}
+
+__tz_c_veneer void CKMDSetWatchdogDebugConfig_veneer(bool stopWhenCpuIsHalted)
+{
+    CKMDSetWatchdogDebugConfig(stopWhenCpuIsHalted);
+}
+
+__tz_c_veneer void CKMDSelectCanClock_veneer(uint32_t source)
+{
+    CKMDSelectCanClock(source);
+}
+
+__tz_c_veneer void CKMDSelectAfclk_veneer(uint32_t source)
+{
+    CKMDSelectAfclk(source);
 }

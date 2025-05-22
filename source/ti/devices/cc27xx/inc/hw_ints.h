@@ -1,7 +1,7 @@
 /******************************************************************************
 *  Filename:       hw_ints_h
 ******************************************************************************
-*  Copyright (c) 2024 Texas Instruments Incorporated. All rights reserved.
+*  Copyright (c) 2023-2025 Texas Instruments Incorporated. All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions are met:
@@ -102,7 +102,7 @@
 #define INT_SPI1_COMB           39 // SPI1 combined interrupt request,
                                    // interrupt flags can be found here
                                    // SPI1:MIS
-#define INT_VCE_IRQ             40 // VCE IRQ
+#define INT_APU_IRQ             40 // APU IRQ
 #define INT_HSM_SEC_IRQ         41 // HSM Secure IRQ
 #define INT_HSM_NONSEC_IRQ      42 // HSM Non-secure IRQ
 #define INT_HSM_OTP_IRQ         43 // HSM OTP IRQ
@@ -128,20 +128,20 @@
 //*****************************************************************************
 #define INT_PRI_LEVEL0          0x00000000 // Priority level 0 value
 #define INT_PRI_LEVEL1          0x00000010 // Priority level 1 value
-#define INT_PRI_LEVEL10         0x000000A0 // Priority level 2 value
-#define INT_PRI_LEVEL11         0x000000B0 // Priority level 3 value
-#define INT_PRI_LEVEL12         0x000000C0 // Priority level 4 value
-#define INT_PRI_LEVEL13         0x000000D0 // Priority level 5 value
-#define INT_PRI_LEVEL14         0x000000E0 // Priority level 6 value
-#define INT_PRI_LEVEL15         0x000000F0 // Priority level 7 value
 #define INT_PRI_LEVEL2          0x00000020 // Priority level 2 value
 #define INT_PRI_LEVEL3          0x00000030 // Priority level 3 value
 #define INT_PRI_LEVEL4          0x00000040 // Priority level 4 value
 #define INT_PRI_LEVEL5          0x00000050 // Priority level 5 value
 #define INT_PRI_LEVEL6          0x00000060 // Priority level 6 value
 #define INT_PRI_LEVEL7          0x00000070 // Priority level 7 value
-#define INT_PRI_LEVEL8          0x00000080 // Priority level 0 value
-#define INT_PRI_LEVEL9          0x00000090 // Priority level 1 value
+#define INT_PRI_LEVEL8          0x00000080 // Priority level 8 value
+#define INT_PRI_LEVEL9          0x00000090 // Priority level 9 value
+#define INT_PRI_LEVEL10         0x000000A0 // Priority level 10 value
+#define INT_PRI_LEVEL11         0x000000B0 // Priority level 11 value
+#define INT_PRI_LEVEL12         0x000000C0 // Priority level 12 value
+#define INT_PRI_LEVEL13         0x000000D0 // Priority level 13 value
+#define INT_PRI_LEVEL14         0x000000E0 // Priority level 14 value
+#define INT_PRI_LEVEL15         0x000000F0 // Priority level 15 value
 #define INT_PRIORITY_MASK       0x000000F0 // Priority level mask
 #define NUM_INTERRUPTS          51 // Number of exceptions
 #define NUM_PRIORITY            16 // Number of exception priority levels

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,9 +63,9 @@ a shared secret which is used as an input for ANSI X9.36 Key Derivation Function
 * [Usage Synopsis][2]
 * [Examples][3]
 
-[1]: /drivers/doxygen/html/_e_c_i_e_s_8h.html#details "C API reference"
-[2]: /drivers/doxygen/html/_e_c_i_e_s_8h.html#ti_drivers_ECIES_Synopsis "Basic C usage summary"
-[3]: /drivers/doxygen/html/_e_c_i_e_s_8h.html#ti_drivers_ECIES_Examples "C usage examples"
+[1]: /secure_drivers/doxygen/html/_e_c_i_e_s_8h.html#details "C API reference"
+[2]: /secure_drivers/doxygen/html/_e_c_i_e_s_8h.html#ti_drivers_ECIES_Synopsis "Basic C usage summary"
+[3]: /secure_drivers/doxygen/html/_e_c_i_e_s_8h.html#ti_drivers_ECIES_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#ECIES_Configuration_Options "Configuration options reference"
 `,
     config              : Common.addNameConfig(config, "/ti/drivers/ecies", "CONFIG_ECIES_"),
@@ -74,7 +74,7 @@ a shared secret which is used as an input for ANSI X9.36 Key Derivation Function
      * the dynamic RNG driver instance created by the ECIES driver.
      */
     modules: (inst) => {
-        let forcedModules = ["Board", "Power", "RNG"];
+        let forcedModules = ["Board", "Power", "RNG", "CryptoBoard"];
 
         if (deviceId.match(/CC23/)) {
             /* LAES driver requires DMA module */
