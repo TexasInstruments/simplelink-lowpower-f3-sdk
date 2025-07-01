@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Copyright (c) 2019 JUUL Labs
+ * Copyright (c) 2025 Texas Instruments Incorporated
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -220,7 +221,16 @@ boot_slots_compatible(struct boot_loader_state *state)
             smaller = 1;
             i++;
         } else {
-            sz1 += boot_img_sector_size(state, BOOT_SECONDARY_SLOT, j);
+            size_t sz = boot_img_sector_size(state, BOOT_SECONDARY_SLOT, j);
+#ifdef MCUBOOT_DECOMPRESS_IMAGES
+            if (sz == 0) {
+                /* The secondary slot can be smaller than the primary slot if
+                 * upgrade from compressed images are supported
+                 */
+                break;
+            }
+#endif
+            sz1 += sz;
             /* Guarantee that multiple sectors of the primary slot
              * fit into the secondary slot.
              */
@@ -247,12 +257,18 @@ boot_slots_compatible(struct boot_loader_state *state)
 #endif
     }
 
+/* TI Compression/Decompression
+ * The primary and secondary slot sizes can be different when compression
+ * is enabled.
+ */
+#ifndef MCUBOOT_DECOMPRESS_IMAGES
     if ((i != num_sectors_primary) ||
         (j != num_sectors_secondary) ||
         (primary_slot_sz != secondary_slot_sz)) {
         BOOT_LOG_WRN("Cannot upgrade: slots are not compatible");
         return 0;
     }
+#endif
 
     return 1;
 }

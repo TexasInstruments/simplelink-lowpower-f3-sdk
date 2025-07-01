@@ -63,61 +63,6 @@ const config = {
             default: rfDesignOptions ? rfDesignOptions[0].name : ""
         },
         {
-            // RF Front End Settings
-            // Note: The use of these values completely depends on how the PCB is laid out.
-            //       Please see Device Package and Evaluation Module (EM) Board below.
-            name: "frontEndMode",
-            displayName: "Front End Mode",
-            default: "RF_FE_DIFFERENTIAL",
-            deprecated: true,
-            options: [
-                {
-                    displayName: "Differential",
-                    name: "RF_FE_DIFFERENTIAL"
-                },
-                {
-                    displayName: "Single Ended RFP",
-                    name: "RF_FE_SINGLE_ENDED_RFP"
-                },
-                {
-                    displayName: "Single Ended RFN",
-                    name: "RF_FE_SINGLE_ENDED_RFN"
-                },
-                {
-                    displayName: "Antenna Diversity RFP First",
-                    name: "RF_FE_ANT_DIVERSITY_RFP_FIRST"
-                },
-                {
-                    displayName: "Antenna Diversity RFN First",
-                    name: "RF_FE_ANT_DIVERSITY_RFN_FIRST"
-                },
-                {
-                    displayName: "Single Ended RFP External Pins",
-                    name: "RF_FE_SINGLE_ENDED_RFP_EXT_PINS"
-                },
-                {
-                    displayName: "Single Ended RFN External Pins",
-                    name: "RF_FE_SINGLE_ENDED_RFN_EXT_PINS"
-                }
-            ]
-        },
-        {
-            name: "biasConfiguration",
-            displayName: "Bias Configuration",
-            default: "RF_FE_INT_BIAS",
-            deprecated: true,
-            options: [
-                {
-                    displayName: "Internal BIAS",
-                    name: "RF_FE_INT_BIAS"
-                },
-                {
-                    displayName: "External BIAS",
-                    name: "RF_FE_EXT_BIAS"
-                }
-            ]
-        },
-        {
             name: "defaultTxPower",
             displayName: "Default Tx Power Value",
             deprecated: true,
@@ -129,23 +74,6 @@ const config = {
             default: "0",
             description: "This is the Tx Power value the BLE stack will use",
             options: (inst) => { return getPaTableValues(inst.rfDesign); }
-        },
-        {
-            name: "thorPg",
-            displayName: "Thor PG version",
-            default: 2,
-            options: [
-                {
-                    displayName: "1",
-                    name: 1
-                },
-                {
-                    displayName: "2",
-                    name: 2
-                }
-            ],
-            description: "Thor pg version",
-            hidden: true
         }
     ]
 }
@@ -161,23 +89,10 @@ const config = {
 function getPaTableValues(rfDesign)
 {
     const frequency = 2400;
-    let currentOptions = [];
-    // Get the device PA table levels
-    const txPowerTableType = Common.getRadioScript(rfDesign,
-                             system.deviceData.deviceId).radioConfigParams.paExport;
-    let isHighPA = txPowerTableType == "combined"? true : false;
 
-    if(isHighPA)
-    {
-        // Get the options list from the rfDesign module
-        currentOptions = RfDesign.getTxPowerOptions(frequency, isHighPA);
-    }
-
-    currentOptions = currentOptions.concat(RfDesign.getTxPowerOptions(frequency, false));
-
-
-    return currentOptions;
+    return RfDesign.getTxPowerOptions(frequency, false);
 }
+
 /*
  * ======== getRfDesignOptions ========
  * Generates an array of SRFStudio compatible rfDesign options based on device
@@ -232,15 +147,19 @@ function getRfDesignOptions(deviceId)
     }
     else if(deviceId === "CC2745P10RHAQ1")
     {
-        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
+        newRfDesignOptions = [{name: "LP_EM_CC2755P10"}]
     }
     else if(deviceId === "CC2755P105RHA")
     {
-        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
+        newRfDesignOptions = [{name: "LP_EM_CC2755P10"}]
     }
     else if(deviceId === "CC2755R105RHA")
     {
         newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
+    }
+    else if(deviceId === "CC2755R105YCJ")
+    {
+        newRfDesignOptions = [{name: "LP_EM_CC2755R10_BG"}]
     }
     else if(deviceId === "CC2745R7RHAQ1")
     {

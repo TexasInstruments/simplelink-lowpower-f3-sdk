@@ -151,11 +151,17 @@ MAIN()
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
   zb_secur_setup_nwk_key(nwk_key, 0);
 #endif //DEFAULT_NWK_KEY
+
+#ifdef ZBOSS_REV23
   zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+#endif //ZBOSS_REV23
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
   zb_set_network_router_role(DEFAULT_CHANLIST);
+
+#ifdef ZBOSS_REV23
   zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+#endif //ZBOSS_REV23
 
   /* Set keepalive mode to mac data poll so sleepy zeds consume less power */
   zb_set_keepalive_mode(MAC_DATA_POLL_KEEPALIVE); 
@@ -202,7 +208,9 @@ MAIN()
     }
 
     zb_osif_led_button_init();
+#ifndef ZB_COORDINATOR_ROLE
     ZB_SCHEDULE_APP_ALARM(off_network_attention, 0, 1 * ZB_TIME_ONE_SECOND);
+#endif /* ZB_COORDINATOR_ROLE */
     
     /* Call the application-specific main loop */
     my_main_loop();
@@ -379,6 +387,11 @@ void zboss_signal_handler(zb_uint8_t param)
           zb_bdb_reset_via_local_action(0);
           perform_factory_reset = ZB_FALSE;
         }
+        else
+        {
+          ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+          zb_osif_led_off(1);
+        }
 #ifdef ZB_USE_BUTTONS
         zb_button_register_handler(0, 0, button_press_handler);
 #endif /* ZB_USE_BUTTONS */
@@ -397,6 +410,9 @@ void zboss_signal_handler(zb_uint8_t param)
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Device (%d) STARTED OK", device_type);
         ZB_SCHEDULE_APP_ALARM(start_finding_binding, 0, 3 * ZB_TIME_ONE_SECOND);
         ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+#ifdef ZB_USE_BUTTONS
+        zb_button_register_handler(0, 0, button_press_handler);
+#endif /* ZB_USE_BUTTONS */
         zb_osif_led_off(1);
         break;
       }

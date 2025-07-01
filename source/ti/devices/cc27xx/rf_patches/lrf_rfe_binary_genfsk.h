@@ -40,7 +40,7 @@
 #include <stdint.h>
 
 /* Length of binary image. */
-#define LRF_RFE_BINARY_GENFSK_LENGTH 861 
+#define LRF_RFE_BINARY_GENFSK_LENGTH 863 
 
 /* Declaration of raw binary. */
 extern const uint32_t LRF_RFE_binary_genfsk[LRF_RFE_BINARY_GENFSK_LENGTH];

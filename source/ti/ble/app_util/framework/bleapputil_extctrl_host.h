@@ -101,6 +101,17 @@ typedef struct
  */
 typedef void (*pfnExtCtrlProcessMsgCb)(DispatcherHostMsg_t *pMsg);
 
+/*
+ * @brief @ref ExtCtrlHost_openHostIf Function parameters
+ */
+typedef struct
+{
+  uint16_t npiTaskStackSize;    //!< Stack size to be set for NPI task
+  uint16_t npiMsgBuffSize;      //!< Buffer size of Tx/Rx Transport layer buffers for NPI task
+  uint32_t uartBaudRate;        //!< Baud rate to be used when initiating the UART driver
+  pfnExtCtrlProcessMsgCb extCtrlProcessMsgCB;   //!< Callback function to handle messages
+} ExtCtrlHost_openHostIfParams_t;
+
 /*********************************************************************
  * GLOBAL VARIABLES
  */
@@ -114,11 +125,11 @@ typedef void (*pfnExtCtrlProcessMsgCb)(DispatcherHostMsg_t *pMsg);
  *
  * @brief   Open Host interfaces
  *
- * @param   none
+ * @param   pParams - pointer to function parameters
  *
  * @return  Status of Host Task_open
  */
-uint8_t ExtCtrlHost_openHostIf(pfnExtCtrlProcessMsgCb ExtCtrlAppCb);
+uint8_t ExtCtrlHost_openHostIf(ExtCtrlHost_openHostIfParams_t *pParams);
 
 
 /*********************************************************************

@@ -9,7 +9,11 @@ import hashlib
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.hashes import SHA256, SHA512, SHA384
+from cryptography.hazmat.primitives.hashes import SHA256, SHA384
+
+''' ROM Secure Boot supports verification of images using ECDSA521 and SHA512 is used to compute the hash.
+    ECDSA521 is not yet supported by MCUboot, so this import must remain in the code until MCUboot supports ECDSA521. '''
+from cryptography.hazmat.primitives.hashes import SHA512
 from .general import KeyClass
 from .privatebytes import PrivateBytesMixin
 
@@ -72,12 +76,12 @@ class ECDSAPrivateKey(PrivateBytesMixin):
         Builds a new DER that only includes the EC private key, removing the
         public key that is added as an "optional" BITSTRING.
         '''
-        print("FORMAT: ", format)
-        # if format == serialization.PrivateFormat.OpenSSH:
-        #     print(os.path.basename(__file__) +
-        #           ': Warning: --minimal is supported only for PKCS8 '
-        #           'or TraditionalOpenSSL formats')
-        #     return bytearray(der)
+
+        if format == serialization.PrivateFormat.OpenSSH:
+            print(os.path.basename(__file__) +
+                  ': Warning: --minimal is supported only for PKCS8 '
+                  'or TraditionalOpenSSL formats')
+            return bytearray(der)
 
         EXCEPTION_TEXT = "Error parsing ecdsa key. Please submit an issue!"
         if format == serialization.PrivateFormat.PKCS8:
@@ -287,12 +291,14 @@ class ECDSA384P1(ECDSAPrivateKey, ECDSA384P1Public):
         else:
             return sig
 
-class ECDSA521P1Public(KeyClass):
+''' ROM Secure Boot supports image verification using ECDSA521. ECDSA521 is not yet supported by MCUboot, so these
+    changes must remain in the code until MCUboot supports ECDSA521. '''
+class ECDSA521P1Public(ECDSAPublicKey):
     def __init__(self, key):
         self.key = key
 
     def shortname(self):
-        return "ecdsa"
+        return "ecdsap521"
 
     def _unsupported(self, name):
         raise ECDSAUsageError("Operation {} requires private key".format(name))

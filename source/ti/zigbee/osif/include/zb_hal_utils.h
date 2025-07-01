@@ -42,6 +42,9 @@
 #ifndef ZB_HAL_UTILS_H
 #define ZB_HAL_UTILS_H 1
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #ifdef ZB_ZGPD_ROLE
 extern void osif_deep_sleep(void);
 extern void zgpd_wait_for_event(void);

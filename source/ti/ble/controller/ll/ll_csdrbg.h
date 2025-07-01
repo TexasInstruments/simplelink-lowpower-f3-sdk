@@ -93,11 +93,11 @@
  */
 typedef struct drbgParams_t
 {
-    uint8 kDrbg[16]; // kDrbg initialized to zero. updated every cs procedure
-    uint8 vDrbg[16]; // vDrbg initialized to zero. updated every cs procedure
+    uint8 kDrbg[16] ALIGNED; // kDrbg initialized to zero. updated every cs procedure
+    uint8 vDrbg[16] ALIGNED; // vDrbg initialized to zero. updated every cs procedure
     uint16 CSStepCounter;     // 16 bits - CS Step Counter = (VDRBG[31:16] +
                               // CSStepCount) mod 2^16
-    uint8 csProcedureCounter; // vDrbg initialized to zero. updated every cs
+    uint16 csProcedureCounter; // vDrbg initialized to zero. updated every cs
                               // procedure
     uint8 TransactionID; //   8 bits - CS TransactionIdentifier = (VDRBG[15:8] +
                          //   CSpTransactionID) mod 2^8

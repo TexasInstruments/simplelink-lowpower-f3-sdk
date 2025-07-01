@@ -295,6 +295,50 @@ bStatus_t gapBondMgr_FindAddr(uint8_t *pDevAddr,
  */
 bStatus_t gapBondMgr_GetParameter(uint16_t param, void *pValue);
 
+
+/**
+ * @brief  Update the Random Address and erase NV if needed
+ *
+ * This function checks whether the GAPBOND_ERASE_BONDS_ON_ADDRESS_CHANGE has
+ * been set to TRUE (Default), if so, it calls GAPBondMgr_checkRandomAddr.
+ * Otherwise, there is nothing to do.
+ *
+ * @param addrMode The address mode to be used. This parameter specifies
+ *                 the type of random address (e.g., GAP_ADDRMODE_PRIVATE_RESOLVABLE,
+ *                 GAP_ADDRMODE_PRIVATE_NONRESOLVABLE, etc.).
+ * @param pRandomAddr Pointer to the new random address to be used. The
+ *                    address should be a 6-byte array in little-endian format.
+ *
+ * @return bStatus_t Returns a status code indicating the success or failure
+ *                   of the operation. Possible values include:
+ *                   - SUCCESS: The random address was successfully updated.
+ *                   - INVALIDPARAMETER: One or more parameters are invalid.
+ *                   - FAILURE: The operation failed due to an internal error.
+ */
+bStatus_t GAPBondMgr_UpdateRandomAddr(GAP_Addr_Modes_t addrMode, uint8_t* pRandomAddr);
+
+/**
+ * @brief   Erase NV if the address mode or Random Address has changed
+ *
+ * This function checks whether the address mode or the random address has
+ * changed since the last time it was set in the NV. If either has changed,
+ * all bonds are erased from NV. New bonds should be formed with the new
+ * random address.
+ *
+ * @param addrMode The address mode to be used. This parameter specifies
+ *                 the type of random address (e.g., GAP_ADDRMODE_PRIVATE_RESOLVABLE,
+ *                 GAP_ADDRMODE_PRIVATE_NONRESOLVABLE, etc.).
+ * @param pRandomAddr Pointer to the new random address to be used. The
+ *                    address should be a 6-byte array in little-endian format.
+ *
+ * @return bStatus_t Returns a status code indicating the success or failure
+ *                   of the operation. Possible values include:
+ *                   - SUCCESS: The random address was successfully updated.
+ *                   - INVALIDPARAMETER: One or more parameters are invalid.
+ *                   - FAILURE: The operation failed due to an internal error.
+ */
+bStatus_t GAPBondMgr_checkRandomAddr(GAP_Addr_Modes_t addrMode, uint8_t* pRandomAddr);
+
 /*********************************************************************
 *********************************************************************/
 

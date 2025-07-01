@@ -115,16 +115,23 @@ static bStatus_t Dispatcher_processEvents(uint8_t *pData, uint16_t dataLen);
  *          the purpose of this function is to initialize and
  *          open the host interface with the needed callback function.
  *
- * @param   None
+ * @param   npiTaskStackSize - Stack size to be set for NPI task
+ *          npiMsgBuffSize   - Buffer size of Tx/Rx Transport layer buffers for NPI task
+ *          uartBaudRate     - Baud rate to be used when initiating the UART driver
  *
  * @return  The Status of starting the External host interface.
  */
-bStatus_t Dispatcher_start(void)
+bStatus_t Dispatcher_start(uint16_t npiTaskStackSize, uint16_t npiMsgBuffSize, uint32_t uartBaudRate)
 {
   bStatus_t status = SUCCESS;
 
   // Initiate the External Host interface.
-  status = ExtCtrlHost_openHostIf(&Dispatcher_processHostMsg); // register to the Host
+  ExtCtrlHost_openHostIfParams_t params;
+  params.npiTaskStackSize = npiTaskStackSize;
+  params.npiMsgBuffSize = npiMsgBuffSize;
+  params.uartBaudRate = uartBaudRate;
+  params.extCtrlProcessMsgCB = &Dispatcher_processHostMsg;
+  status = ExtCtrlHost_openHostIf(&params); // register to the Host
 
   return status;
 }

@@ -834,7 +834,7 @@
 // GAP Config Manager
 #define MAP_gapGetDevAddressMode                                     gapGetDevAddressMode
 #define MAP_gapGetSignCounter                                        gapGetSignCounter
-#define MAP_gapGetState                                              gapGetState
+#define MAP_gapGetInitState                                          gapGetInitState
 #define MAP_gapGetSRK                                                gapGetSRK
 #define MAP_gapHost2CtrlOwnAddrType                                  gapHost2CtrlOwnAddrType
 #define MAP_gapIncSignCounter                                        gapIncSignCounter

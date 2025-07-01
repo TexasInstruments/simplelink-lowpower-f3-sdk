@@ -31,7 +31,7 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import (
     X25519PrivateKey, X25519PublicKey)
 
 from .rsa import RSA, RSAPublic, RSAUsageError, RSA_KEY_SIZES
-from .ecdsa import ECDSA256P1, ECDSA521P1, ECDSA384P1, ECDSA256P1Public, ECDSA521P1Public, ECDSAUsageError
+from .ecdsa import ECDSA256P1, ECDSA521P1, ECDSA384P1, ECDSA384P1Public, ECDSA256P1Public, ECDSA521P1Public, ECDSAUsageError
 from .ed25519 import Ed25519, Ed25519Public, Ed25519UsageError
 from .x25519 import X25519, X25519Public, X25519UsageError
 

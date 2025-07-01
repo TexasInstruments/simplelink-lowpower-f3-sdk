@@ -207,6 +207,12 @@ static uint8_t gapBond_maxCharCfg = 4;
 static uint8_t gapBond_gatt_no_client = 0;
 static uint8_t gapBond_gatt_no_service_changed = 1;
 static uint8_t gapBond_eraseBondInConnFlag = FALSE;
+
+// Flag that indicates if the bonds should be erased when the
+// address type is changed or when the address type is random
+// and the random address itself is changed.
+static uint8_t gapBond_eraseBondOnAddrChange = UTRUE;
+
 // Local OOB parameters
 static uint8_t localOobAvailable = FALSE;
 gapBondOOBData_t gapBond_localOobData;
@@ -497,13 +503,28 @@ void GAPBondMgr_ReadCSRKFromNV( uint8_t* keyBuff )
 }
 
 /*********************************************************************
- * @brief   Updates the random address used by the GAP Bond Manager.
+ * @brief  Update the Random Address and erase NV if needed.
  *
- * Public function defined in gapbondmgr.h.
+ * Public function defined in gapbondmgr_internal.h.
  */
 bStatus_t GAPBondMgr_UpdateRandomAddr(GAP_Addr_Modes_t addrMode, uint8_t* pRandomAddr)
 {
-  bStatus_t stat = SUCCESS;
+  bStatus_t stat = USUCCESS;
+  if (gapBond_eraseBondOnAddrChange == UTRUE)
+  {
+    GAPBondMgr_checkRandomAddr(addrMode, pRandomAddr);
+  }
+  return(stat);
+}
+
+/*********************************************************************
+ * @brief   Erase NV if the address mode or Random Address has changed
+ *
+ * Public function defined in gapbondmgr_internal.h.
+ */
+bStatus_t GAPBondMgr_checkRandomAddr(GAP_Addr_Modes_t addrMode, uint8_t* pRandomAddr)
+{
+  bStatus_t stat = USUCCESS;
   bool eraseNV = FALSE; // Flag to erase NV if needed
 
   // Read last address mode from NV
@@ -1012,6 +1033,18 @@ bStatus_t GAPBondMgr_SetParameter(uint16_t param, uint8_t len, void *pValue)
       }
       break;
 
+    case GAPBOND_ERASE_BONDS_ON_ADDRESS_CHANGE:
+      if(len == sizeof(uint8_t) && ((uint8_t *)pValue != NULL) &&
+         (*((uint8_t *)pValue) <= UTRUE))
+      {
+        gapBond_eraseBondOnAddrChange = *((uint8_t *)pValue);
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;
+
     default:
 
       // The param value isn't part of this profile, try the GAP.
@@ -1135,6 +1168,10 @@ bStatus_t gapBondMgr_GetParameter(uint16_t param, void *pValue)
 
     case GAPBOND_SAME_IRK_OPTION:
       *((uint8_t *)pValue) = gapBond_SamelIrkOption;
+      break;
+
+    case GAPBOND_ERASE_BONDS_ON_ADDRESS_CHANGE:
+      *((uint8_t *)pValue) = gapBond_eraseBondOnAddrChange;
       break;
 
     default:
@@ -4068,12 +4105,15 @@ static void gapBondMgr_ProcessAttErrRsp(uint16_t connHandle,attErrorRsp_t *pRsp)
 
           // RPAO Char not found.
           linkDBItem_t *pItem;
+          linkDBInfo_t linkInfo;
+          linkDB_GetInfo(connHandle, &linkInfo);
 
           pItem = MAP_linkDB_Find(connHandle);
 
           if(pItem)
           {
-            if(gapState == GAP_STATE_IDLE)
+            // check if role is peripheral to workaround connection after bond fails
+            if(gapState == GAP_STATE_IDLE || linkInfo.connRole == GAP_PROFILE_PERIPHERAL)
             {
               MAP_HCI_LE_SetPrivacyModeCmd(pItem->addrType & MASK_ADDRTYPE_ID,
                                            pItem->addr,

@@ -560,8 +560,6 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_CS_SECURITY_ENABLE_COMPLETE_EVENT                    0x2E //!< CS Event  Security Enable Complete
 #define HCI_LE_CS_CONFIG_COMPLETE_EVENT                             0x2F //!< CS event create config complete
 #define HCI_LE_CS_PROCEDURE_ENABLE_COMPLETE_EVENT                   0x30 //!< CS Procedure Enable Complete
-#define HCI_LE_CS_SUBEVENT_RESULT                                   0x31 //!< CS Subevent Result
-#define HCI_LE_CS_SUBEVENT_CONTINUE_RESULT                          0x32 //!< CS Subevent Result
 #define HCI_LE_CS_TEST_END_COMPLETE_EVENT                           0x33 //!< CS Test End Complete
 
 // VS Meta Event Codes - Texas Instruments Inc specific!

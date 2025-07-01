@@ -6657,15 +6657,15 @@ psa_export_key(mbedtls_svc_key_id_t key,
                size_t data_size,
                size_t * data_length)
 {
-    /* VaultIP/EIP-130 is not able to export an Asset according the definition
-     * for this function. Therefor, the function will only export a key that
-     * is in PSA Key Store in plaintext. In all other case, the error
-     * PSA_ERROR_NOT_SUPPORTED will be returned.
-     */
     psa_key_context_t * pKey;
     psa_status_t funcres;
+    psa_key_location_t key_location;
+    psa_key_persistence_t key_persistence;
+    psa_key_usage_t key_usage;
+    size_t CurveBits;
 
     funcres = psaInt_KeyMgmtGetAndLockKey(key, &pKey);
+
     if (PSA_SUCCESS != funcres)
     {
         /* Error return is already set */
@@ -6689,23 +6689,55 @@ psa_export_key(mbedtls_svc_key_id_t key,
     }
     else
     {
-        psa_key_location_t key_location;
-        psa_key_persistence_t key_persistance;
-        psa_key_usage_t key_usage;
-
         key_location = PSA_KEY_LIFETIME_GET_LOCATION(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
-        key_persistance = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
         key_usage = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
         if (PSA_KEY_LOCATION_LOCAL_STORAGE == key_location)
         {
-            if (PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
+            if (NULL != pKey->key)
             {
-                funcres = PSA_ERROR_NOT_SUPPORTED;
+                if ((PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) &&
+                    (PSA_KEY_TYPE_IS_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
+                {
+                    /* This condition is specifically for asymmetric private keys */
+                    CurveBits = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                    *data_length = PSA_ASYM_DATA_SIZE_B2B(CurveBits);
+
+                    if (CurveBits == 255U)
+                    {
+                        /* If Curve25519 is used, the private key should be exported in little-endian format.
+                         * Since all asymmetric private keys are already stored in little-endian for the HSM
+                         * component format, we can just copy the key material directly out. The key material
+                         * is also already pruned.
+                         */
+                        (void)memcpy(data, &pKey->key[PSA_ASYM_DATA_VHEADER], PSA_ASYM_DATA_SIZE_B2B(CurveBits));
+                    }
+                    else
+                    {
+                        /* For Weierstrass curve families, the private key is expected to be output
+                         * in big-endian. Therefore, the key material must be reversed from the
+                         * component format it is stored in.
+                         */
+                        psaInt_ReverseMemCpy(data, &pKey->key[PSA_ASYM_DATA_VHEADER], PSA_ASYM_DATA_SIZE_B2B(CurveBits));
+                    }
+                }
+                else if (PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
+                {
+                    *data_length = pKey->key_size;
+                    (void)memcpy(data, pKey->key, *data_length);
+                }
+                else
+                {
+                    /* TODO: Add support for exporting public keys via psa_export_key(). See HSM_DDK-85. */
+                    funcres = PSA_ERROR_NOT_SUPPORTED;
+                }
             }
-            else if (NULL != pKey->key)
+            else if (PSA_KEY_PERSISTENCE_DEFAULT == key_persistence)
             {
-                *data_length = pKey->key_size;
-                (void)memcpy(data, pKey->key, *data_length);
+                /* TODO: Persistent key material that is not currently cached in RAM cannot be
+                 * exported to the caller. This should be supported - see HSM_DDK-84.
+                 */
+                funcres = PSA_ERROR_NOT_SUPPORTED;
             }
             else
             {
@@ -6717,21 +6749,28 @@ psa_export_key(mbedtls_svc_key_id_t key,
         }
         else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
         {
-            if (PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
+            if ((PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) ||
+                ((PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) &&
+                (PSA_KEY_TYPE_IS_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))))
             {
-                /* Current PSA implementation does not support exporting a symmetrically wrapped asymmetric private/public key. */
-                funcres = PSA_ERROR_NOT_SUPPORTED;
-            }
-            else if (PSA_KEY_TYPE_IS_SYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
-            {
-                /* In the two cases where the key's usage is either encrypt or decrypt, the pKey->key will always have the corresponding key blob. */
-                if (NULL != pKey->key)
+                if (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence)
                 {
+                    /* Exporting a key from HSM Asset Store is not a supported feature. */
+                    funcres = PSA_ERROR_NOT_SUPPORTED;
+                }
+                else if (NULL != pKey->key)
+                {
+                    /* If the key slot is storing a key blob, it can be directly copied out. In the case of symmetric
+                     * keys with symmetric usage, two key blobs will be copied out. The key slot may store the key blob
+                     * for persistent keys as well, so long as they have not been purged from nor replaced in RAM.
+                     */
                     *data_length = (PSA_KEYBLOB_SIZE(pKey->key_size));
 
                     (void)memcpy(data, pKey->key, *data_length);
 
-                    /* In the third and last case where the key's usage is for both encrypt and decrypt, the pKey->key2 will have the second key blob. */
+                    /* In the case where the key's usage is for both encrypt and decrypt, pKey->key2 will
+                     * have the second key blob. This is never the case for asymmetric keys that we support.
+                     */
                     if ((NULL != pKey->key2) && (PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
                         (PSA_KEY_USAGE_DECRYPT == (key_usage & PSA_KEY_USAGE_DECRYPT)))
                     {
@@ -6740,16 +6779,23 @@ psa_export_key(mbedtls_svc_key_id_t key,
                         *data_length += (PSA_KEYBLOB_SIZE(pKey->key_size));
                     }
                 }
-                else if (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistance)
+                else if (PSA_KEY_PERSISTENCE_DEFAULT == key_persistence)
                 {
-                    /* Exporting a symmetric key from HSM Asset Store is not supported feature. */
+                    /* TODO: Persistent key material that is not currently cached in RAM cannot be
+                     * exported to the caller. This should be supported - see HSM_DDK-84.
+                     */
                     funcres = PSA_ERROR_NOT_SUPPORTED;
                 }
                 else
                 {
-                    /* If the asset does not exist in neither KeyStore or the HSM Asset Store, then the arguments passed in are wrong. */
+                    /* If the key does not exist in KeyStore RAM, Flash, or the HSM Asset Store, then the arguments passed in are wrong. */
                     funcres = PSA_ERROR_INVALID_ARGUMENT;
                 }
+            }
+            else
+            {
+                /* TODO: Add support for exporting public keys via psa_export_key(). See HSM_DDK-85. */
+                funcres = PSA_ERROR_NOT_SUPPORTED;
             }
         }
         else

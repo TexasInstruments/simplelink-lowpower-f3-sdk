@@ -1,0 +1,20 @@
+%%{
+/*
+ *  ======== imgtool_args.txt.xdt ========
+ */
+
+    var module = system.modules['/ti/common/mcuboot_application'];
+    var inst = module.$static;
+
+    var dicSizeIntValue = inst.lzmaDicSize.replace("LZMA2_DIC_SIZE_", "")
+%%}
+slot-size=`inst.appSlotSize`
+% if(inst.imageCompression){
+compressed-slot-size=`inst.appSlotSizeCompressed`
+compression=lzma2
+lc=`inst.lzmaLc`
+lp=`inst.lzmaLp`
+pb=`inst.lzmaPb`
+dict-size=`dicSizeIntValue`
+% }
+version=`inst.appVersion`

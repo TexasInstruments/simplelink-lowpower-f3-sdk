@@ -40,6 +40,7 @@ let rclGpio = system.getScript("/ti/drivers/rcl/rclgpio.syscfg.js");
 let RCL = args[0];
 let instances = RCL.$instances;
 const rclStatic = RCL.$static;
+let board = system.deviceData.board;
 
 function findPinMapInfo(pin)
 {
@@ -150,6 +151,18 @@ function findCoexConfig()
 }
 
 %%}
+
+%if (board !== undefined && board.name.match(/CC27..P../)) {
+/*
+ * =============================== RCL Feature Configuration ===============================
+ */
+#include <ti/drivers/rcl/RCL_Feature.h>
+const RCL_FeatureControl rclFeatureControl =
+{
+    .enableTemperatureMonitoring = true,
+    .enablePaEsdProtection = true,
+};
+%}
 
 %if (rclStatic.pbeGpoMask != 0) {
 /*

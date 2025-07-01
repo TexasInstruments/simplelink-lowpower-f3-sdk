@@ -61,9 +61,9 @@ zb_uint8_t zb_erase_fw(zb_uint32_t address, zb_uint32_t pages_count);
 zb_uint8_t zb_write_fw(zb_uint32_t address, zb_uint8_t *buf, zb_uint16_t len);
 void Hash16_Calc(zb_uint32_t pBuffer, zb_uint32_t BufferLength, zb_uint8_t *hash16);
 
-extern const zb_uint32_t _MCUBOOT_MAX_SLOT_SIZE;
 extern const zb_uint32_t _PRIMARY_SLOT_BASE;
-extern const zb_uint32_t _SECONDARY_SLOT_BASE;
+extern const zb_uint32_t _PRIMARY_SLOT_SIZE;
+extern const zb_uint32_t _SECONDARY_SLOT_SIZE;
 
 // OTA Client write states
 #define OTA_CLIENT_HDR_MAGIC_0_STATE        0

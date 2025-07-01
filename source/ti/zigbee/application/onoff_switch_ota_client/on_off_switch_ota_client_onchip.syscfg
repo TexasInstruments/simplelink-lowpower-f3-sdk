@@ -108,10 +108,13 @@ var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
 zigbee.deviceType                    = ["zed"];
 zigbee.deviceTypeReadOnly            = false;
 
-// Suppress warning on RNG module
-const RNG = scripting.addModule("/ti/drivers/RNG", {}, false);
-scripting.suppress("This the default noise conditioning key provided by TI, which is acceptable per NIST SP 800-90B\\. However, TI recommends you change this default value to a custom random value for your product", RNG, "noiseConditioningKeyW3");
-RNG.rngPoolSize = 512;
+if(system.deviceData.deviceId.match(/CC23.*/))
+{
+    // Suppress warning on RNG module
+    const RNG = scripting.addModule("/ti/drivers/RNG", {}, false);
+    scripting.suppress("This the default noise conditioning key provided by TI, which is acceptable per NIST SP 800-90B\\. However, TI recommends you change this default value to a custom random value for your product", RNG, "noiseConditioningKeyW3");
+    RNG.rngPoolSize = 512;
+}
 
 if(system.getRTOS() === "freertos")
 {
@@ -129,12 +132,39 @@ for(var setting in rfDesignSettings)
 {
     rfDesign[setting] = rfDesignSettings[setting];
 }
+if(system.deviceData.deviceId.match(/CC23.*/))
+{
+    /* ======== Internal Flash for Image Slot 2 ======== */
+    const NVS      = scripting.addModule("/ti/drivers/NVS", {}, false);
+    const NVS2       = NVS.addInstance();
+    NVS2.$name                    = "CONFIG_NVSINTERNAL1";
+    NVS2.internalFlash.$name      = "ti_drivers_nvs_NVSLPF30";
+    NVS2.internalFlash.regionType = "Pointer";
+    NVS2.internalFlash.regionBase = 0x4D000;
+    NVS2.internalFlash.regionSize = 0x32000;
 
-/* ======== Internal Flash for Image Slot 2 ======== */
-const NVS      = scripting.addModule("/ti/drivers/NVS", {}, false);
-const NVS2       = NVS.addInstance();
-NVS2.$name                    = "CONFIG_NVSINTERNAL1";
-NVS2.internalFlash.$name      = "ti_drivers_nvs_NVSLPF30";
-NVS2.internalFlash.regionType = "Pointer";
-NVS2.internalFlash.regionBase = 0x41800;
-NVS2.internalFlash.regionSize = 0x3D800;
+    /* ======== MCUBoot App======== */
+    const mcuboot_app  = scripting.addModule("/ti/common/mcuboot_application");
+    mcuboot_app.imageCompression         = true;
+    mcuboot_app.appBase                  = 0x00007000;
+    mcuboot_app.appSlotSize              = 0x00046000;
+    mcuboot_app.appSlotSizeCompressed    = 0x00032000;
+}
+else
+{
+    /* ======== Internal Flash for Image Slot 2 ======== */
+    const NVS      = scripting.addModule("/ti/drivers/NVS", {}, false);
+    const NVS2       = NVS.addInstance();
+    NVS2.$name                    = "CONFIG_NVSINTERNAL1";
+    NVS2.internalFlash.$name      = "ti_drivers_nvs_NVSLPF30";
+    NVS2.internalFlash.regionType = "Pointer";
+    NVS2.internalFlash.regionBase = 0x87000;
+    NVS2.internalFlash.regionSize = 0x60000;
+
+    /* ======== MCUBoot App======== */
+    const mcuboot_app  = scripting.addModule("/ti/common/mcuboot_application");
+    mcuboot_app.imageCompression         = false;
+    mcuboot_app.appBase                  = 0x00004000;
+    mcuboot_app.appSlotSize              = 0x00071000;
+    mcuboot_app.appSlotSizeCompressed    = 0x00071000;
+}

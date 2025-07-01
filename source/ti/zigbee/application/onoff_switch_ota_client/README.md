@@ -6,10 +6,14 @@
     * [Software Overview](#software-overview)
         * [Application Files](#application)
 * [Configuration With SysConfig](#sysconfig)
+    * [OTA Client Image Slot Configuration](#Ota-Client-Slot-Config)
 * [Example Usage](#usage)
     * [Buttons](#usage-buttons)
     * [Commissioning the Device Into the Network](#Commission-Device)
     * [OTA Client Required Images](#Required-Images)
+    * [Flashing Client Image](#Flashing-Client-Image)
+        * [Flashing with Uniflash](#Flash-Uniflash)
+        * [Flashing with CCS](#Flash-CCS)
     * [OTA Client Signing Image for Server](#OTA-Client-Image)
 
 # <a name="intro"></a> Introduction
@@ -70,6 +74,43 @@ Note that some Zigbee settings are stored in non-volatile storage, and Zigbee
 prioritizes stored settings over SysConfig settings. To guarantee SysConfig settings are
 applied, perform a factory reset of the device to  clear non-volatile storage.
 
+## <a name="Ota-Client-Slot-Config"></a> OTA Client Image Slot Configuration
+
+**The MCUBoot settings must match in both MCUBoot example and OTA Client Example.**
+
+### OTA Client Example
+#### OTA Client example -> on_off_switch_ota*.syscfg -> **MCUBoot App**
+
+* The default settings here are to be used as referrences to set MCUBoot seetings.
+* When updating the image slots, you must also update the  on_off_switch_ota*.syscfg -> **TI DRIVERS** -> **STORAGE INTERFACES** -> **NVS**:
+
+    * **CONFIG_NVSINTERNAL1** (on-chip)
+    * **CONFIG_NVSEXTERNAL** (off-chip)
+
+        *The region base/size will need to match the secondary image slot base/size.*
+
+* If using OTA compression, the secondary image slot can be up to **27%** smaller than primary image slot.
+* **NOTE**: When toggling the "enable compression" setting, the slot settings will be changed to high level defaults, which will need to be modified for app function.
+
+### MCUBoot example
+#### MCUBoot example -> mcuboot.syscfg -> **MCUBoot**
+##### MCUBoot Settings:
+* **Upgrade Mode** - Set to Overwrite mode.
+* **Enable Image Compression** - Check this box when using Compression.
+* **Enable External Flash** - Check this box when using External Flash
+* **Bootloader Configurations** -
+    * Base: `0x00000000`
+    * Size: `MCUboot App -> Base Address`
+* **Image 1 -> Primary Image** -
+    * Base Address: `MCUboot App -> Base Address`
+    * Image Size: `MCUboot App -> Slot Size`
+* **Image 1 -> Secondary Image** -
+    * Base Address: `(MCUboot App -> Base Address) + (MCUboot App -> Slot Size)`
+    * Image Size:
+        * **If using Compression**: `MCUboot App -> Compressed Slot Size`
+        * **If NOT using compression**: `MCUboot App -> Slot Size`
+
+
 # <a name="usage"></a> Example Usage
 
 This section describes how to use this sample application.
@@ -86,28 +127,43 @@ Sample App goes into *ZB_BDB_NETWORK_STEERING* mode where it will first send a
 packet to a ZC/ZR. The ZR/ZC then responds and the commissioning process will continue
 until the ZED is joined into the network.
 
+## <a name="Ota-Client-Behavior"></a> OTA Client Behavior
+15s after joining the network, the OTA Client will start its OTA process. It first sends a Match Descriptor Request. If an OTA Server is found, 60s later the OTA Cient will start the upgrade process by sending a Query next Image Request.
+
 ## <a name="Required-Images"></a> OTA Client Required Images
 This OTA Client requires two images to be flash to the device:
 
 1. MCUBoot Image
     * Example: `<SDK_INSTALL_DIR>/examples/nortos/<PLATFORM>/mcuboot/mcuboot`
-        * After importing to CCS, change the following settings in `mcuboot.syscfg`:
-            * **For On-Chip OTA**:
-                1. **Upgrade Mode** - Set to Overwrite mode.
-                3. **Bootloader Configurations** - Base: `0x00000000`, Size: `0x00004000`
-                4. **Image 1 -> Primary Image** - Base Address: `0x00004000`, Image Size: `0x0003D800`
-                5. **Image 1 -> Secondary Image** - Base Address: `0x00041800`, Image Size: `0x0003D800`
-            * **For Off-Chip OTA**:
-                1. **Upgrade Mode** - Set to Overwrite mode.
-                2. **Enable External Flash** - Check this box.
-                3. **Bootloader Configurations** - Base: `0x00000000`, Size: `0x00004000`
-                4. **Image 1 -> Primary Image** - Base Address: `0x00004000`, Image Size: `0x00070000`
-                5. **Image 1 -> Secondary Image** - Base Address: `0x00000000`, Image Size: `0x00070000`
 
-2. Signed on_off_switch_ota_client image
-    This image is created with the post build steps. To modifying the version, slot size, etc, you can update the post build test for `imgtool`.
-    In CCS, right click on the on_off_switch_ota_client example -> Properties -> Build -> Steps.
-    **IMPORTANT:** When calling imgtool, the arg --slot-size must match the defined size in the linker file and in the MCUBoot configuration.
+2. Signed on_off_switch_ota_client image binary. This will be writen into image slot 1 in flash.
+    * This image is created with the post build steps. Look for the file "Project name"_ota_1st_slot.bin.This image will always be uncompressed.
+
+    * The "Project name"_ota_2nd_slot.bin is meant for the secondary slot and may be compressed if enabled. This image is meant to be signed with a Zigbee OTA header and used in the OTA upgrade.
+
+**NOTE:**
+Both ota_\*_slot.bin images will have the same application version. To update the application version, there are two location:
+
+1. OTA Client example -> on_off_switch_ota*.syscfg -> **Image BootLoarders** -> **MCUBoot Application** -> **Version**
+2. on_off_switch_ota_client.c --> **g_dev_ctx.ota_attr.file_version**
+
+## <a name="Flashing-Client-Image"></a> Flashing Client Image
+#### <a name="Flash-Uniflash"></a> Flashing with Uniflash
+1. Connect device
+2. Under Program, first select MCUBoot flash image path.
+3. Then click + to add \<Project name\>_ota_v1.bin path.
+4. Enter Load Addr. This will be the base address of the Primary Image slot.
+5. Click Load Images
+#### <a name="Flash-CCS"></a> Flashing with CCS
+1. With MCUBoot project highlighted, click debug on toolbar (or navigate to Run -> Debug). This will flash MCUBoot.
+2. Once the Deubugger is connected, navigate to Tools -> On-Chip Flash. In the On-Chip Flash window, select Do not erase.
+*NOTE: deselect Do not erase to flash another image (mcuboot or other).*
+3. Now we need to load Image 1 into its slot.
+    1. Navigate to View -> Memory Browser.
+    2. In the Memory Browser window, next to the Save Memory icon, click the down arrow and select Load Memory.
+    3. Set File Type to Binary and file to the path of \<Project name\>_ota_v1.bin. Then click next.
+    4. Set Start Address to the base address of the Primary Image slot. Then click finished.
+
 
 ## <a name="OTA-Client-Image"></a> OTA Client Signing Image for Server
 

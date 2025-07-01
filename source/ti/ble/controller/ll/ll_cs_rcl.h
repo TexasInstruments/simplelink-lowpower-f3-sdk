@@ -135,10 +135,6 @@ typedef struct
 /*******************************************************************************
  * LOCAL VARIABLES
  */
-extern csBuffers_t csBuffers;
-
-extern List_List csStepBufferList;
-
 
 /*******************************************************************************
  * EXTERNS
@@ -188,6 +184,25 @@ extern void llCsSubevent_PostProcess(void);
 extern void llCsError_PostProcess(void);
 
 /*******************************************************************************
+ * @fn          llCsError_SendSubEventResults
+ *
+ * @brief       Send the Error result to the Host
+ *
+ * input parameters
+ *
+ * @param       connId - connection Id
+ * @param       configId - configuration Id
+ * @param       abortReason - abort reason
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void llCsError_SendSubEventResults(uint16_t connId, uint8_t configId, uint16 abortReason);
+
+/*******************************************************************************
  * @fn          llCsSteps_PostProcess
  *
  * @brief       Post Process when a steps buffer was consumed
@@ -206,6 +221,76 @@ extern void llCsError_PostProcess(void);
  * @return      None
  */
 extern void llCsSteps_PostProcess(void);
+
+/*******************************************************************************
+ * @fn          llCsCurrSubEventCont_PostProcess
+ *
+* @brief       This function populates the steps for the CURRENT subevent.
+ * It retrieves a buffer from the csBufferListForCurrentSubEvent, fills it with the steps
+ * required for the current subevent, and enqueues it into the current RCL command.
+ * The csBufferListForCurrentSubEvent temporarily holds buffers after they are completed
+ * by the RCL command, allowing them to be repopulated with new steps and posted back
+ * to the RCL command.
+ * Once the steps are populated, the buffer is returned to the currently running RCL command.
+ * This function is executed in the LL context.
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None
+ */
+void llCsCurrSubEventCont_PostProcess(void);
+
+/*******************************************************************************
+ * @fn          llCsNextSubEvent_PostProcess
+ *
+ * @brief       This function prepares the steps for the NEXT subevent.
+ * It retrieves a buffer from the csBufferListForNextSubEvent, populates it with the steps
+ * required for the next subevent, and then enqueues it into the csStepBufferList.
+ * The csBufferListForNextSubEvent temporarily holds buffers between the completion of one subevent
+ * and the start of the next. Once populated, the buffers are moved to the csStepBufferList,
+ * which holds buffers ready for processing in the next subevent.
+ * This function is executed in the LL context.
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None
+ */
+void llCsNextSubEvent_PostProcess(void);
+
+/*******************************************************************************
+ * @fn          llCsRcl_PrepareNextStepBuffer
+ *
+ * @brief       This function populatקs the steps for the next subEvent.
+ * It populates the steps according to the subEvent type (new or continue) and
+ * to the number of steps for current procedure.
+ * When completed, the function returns the filled buffer.
+ *
+ * input parameters
+ *
+ * @param       connId - connection Id
+ * @param       configId - configuration Id
+ * @param       subEventType
+ * @param       pBuffer
+ *
+ * output parameters
+ *
+ * @param       RCL_MultiBuffer.
+ *
+ * @return      None
+ */
+RCL_MultiBuffer*  llCsRcl_PrepareNextStepBuffer(uint16 connId, uint8 configId, csSubeventType_e subEventType, RCL_MultiBuffer* pBuffer);
 
 /*******************************************************************************
  * @fn          llCsResults_PostProcess
@@ -354,7 +439,7 @@ void llCsProcessResultsCb(uint8_t procedureDoneSt);
  *
  * @return      Status
  */
-csStatus_e llCsFillBuffer(uint16 connId, uint8_t configId, uint8 mode, uint8 numSteps, RCL_CmdBleCs_Step* steps);
+csStatus_e llCsFillBuffer(uint16 connId, uint8_t configId, uint8 mode, uint16 numSteps, RCL_CmdBleCs_Step* steps);
 
 /*******************************************************************************
  * @fn          llCsRclFreeTask
@@ -444,5 +529,23 @@ void llCsClearRclBuffers( void );
  * @return      None
  */
 void llCsFreeCsTask( void );
+
+/*******************************************************************************
+ * @fn          llCsInitStepAndResultBuffers
+ *
+ * @brief       This function initalizes the step buffers
+ * Uses RCL_Multibuffers_init to initialize the step buffers
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return       None
+ * */
+void llCsInitStepAndResultBuffers(void);
 
 #endif

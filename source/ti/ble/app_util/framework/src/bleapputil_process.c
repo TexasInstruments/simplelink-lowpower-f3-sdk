@@ -245,6 +245,15 @@ void BLEAppUtil_processStackEvents(BLEAppUtil_msgHdr_t *pMsg ,BLEAppUtil_eventAn
                                     pMsg,
                                     bleAppUtilEventAndHandle.handlerType);
 
+        // If this is a GATT_MSG_EVENT free the data
+        if(pMsg->event == GATT_MSG_EVENT)
+        {
+            gattMsgEvent_t *pBuf = (gattMsgEvent_t *)pMsg;
+
+            // Free the data
+            GATT_bm_free(&pBuf->msg, pBuf->method);
+        }
+
         // Free the data of a CTRL_TO_HOST_EVENT if exist
         if(pMsg->event == HCI_CTRL_TO_HOST_EVENT)
         {

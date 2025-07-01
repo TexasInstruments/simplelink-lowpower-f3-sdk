@@ -112,20 +112,20 @@ def main():
         print("Start Serving Node")
         # Start Serving Node
         print(pairing_data)
-        
+
         if pairing_data["status"] == 0:
             # In order to trigger GATT car_access, min_gatt_handle and max_gatt_handle should be set to valid gatt handles
             serving_node.handover.start_serving_node(
                 conn_handle=connection_data["connection_handle"],
                 min_gatt_handle=0x0000,
                 max_gatt_handle=0x0000,
-                handover_sn_mode=1
+                handover_sn_mode=1,
             )
 
             handover_data = serving_node.wait_for_event(
                 event_type=HandoverEventType.NWP_HANDOVER_SN_DATA, timeout=60
             )
-            
+
             if handover_data:
                 print(f"connection handle:      {handover_data['connection_handle']}")
                 print(f"status:                 {handover_data['status']}")
@@ -135,13 +135,15 @@ def main():
                 if handover_data["status"] == 0:
                     print("Start Candidate Node")
                     candidate_node.handover.start_candidate_node(
-                        offset=65000, max_err_time=0, max_num_conn_events=6, data=handover_data["data"]
+                        offset=65000,
+                        max_err_time=0,
+                        max_num_conn_events=6,
+                        data=handover_data["data"],
                     )
 
                     # Wait for the candidate node status
                     candidate_node_status = candidate_node.wait_for_event(
-                        event_type=HandoverEventType.NWP_HANDOVER_CN_STATUS,
-                        timeout=30
+                        event_type=HandoverEventType.NWP_HANDOVER_CN_STATUS, timeout=30
                     )
 
                     # Wait for the connection complete event on the candidate side
@@ -152,7 +154,9 @@ def main():
 
                     # Report the candidate car_access status to the serving node
                     if candidate_node_status:
-                        serving_node.handover.close_serving_node(status=candidate_node_status['status'])
+                        serving_node.handover.close_serving_node(
+                            status=candidate_node_status["status"]
+                        )
 
                     # print connection data
                     if connection_data:

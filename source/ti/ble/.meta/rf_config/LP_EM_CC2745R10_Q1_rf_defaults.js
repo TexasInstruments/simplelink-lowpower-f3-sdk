@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== LP_EM_CC2340R5_rf_defaults.js ========
+ *  ======== LP_EM_CC2745R10_Q1_rf_defaults.js ========
  */
 
 "use strict";

@@ -31,8 +31,8 @@
  */
 INCLUDE "ti_utils_build_linker.cmd.genmap"
 
-STACKSIZE = 1024;
-HEAPSIZE = 8196; /* Size of heap buffer used by HeapMem */
+STACKSIZE = 4096;
+HEAPSIZE = 0; /* Size of heap buffer used by HeapMem */
 
 MEMORY
 {

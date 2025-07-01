@@ -107,6 +107,8 @@
 #define CS_MIN_EVENT_INTERVAL                  3
 #define CS_MIN_PROCEDURE_INTERVAL              3
 #define CS_MAX_PROCEDURE_INTERVAL              0xFFFF
+#define CS_MIN_SUBEVENTS_PER_EVENT             1U
+#define CS_MAX_SUBEVENTS_PER_PROCEDURE         32
 
 // Capabilities
 #define CS_MAX_NUM_CONFIG_SUPPORTED            0x04
@@ -140,7 +142,7 @@
 // of this bitwise number.
 #define CS_T_IP1_IP2_CAP          0x0078 // supported: 40, 50, 60, 80us, (145us Mandatory)
 #define CS_T_FCS_CAP              0x01C0 // supported: 80us, 100us, 120us, (150us Mandatory)
-#define CS_T_PM_CAP               0x02   // supported: 20us , (40us Mandatory)
+#define CS_T_PM_CAP               0x00   // supported: 40us Mandatory
 
 #define CS_T_SW_CAP               0x01   // antenna switch period
 
@@ -203,7 +205,8 @@
  * The start of the first CS subevent
  * The min value must be betwen 500us to 4s
  * The actual max value can be up to the connInterval*/
-#define CS_OFFSET_MIN                          900 // this is the minimun we can handle ATM
+#define CS_OFFSET_MIN                          1500    // this is the minimum offset value we can handle
+#define CS_OFFSET_MAX                          4000000 // this is the maximum offset value defined by the spec
 
 // Other Definitions
 #define CS_SEC_NO_OFFSET                       0
@@ -250,6 +253,7 @@
 #define CS_DEFAULT_ENABLE                      CS_DISABLE
 #define CS_DEFAULT_TERMINATE_STATE             CS_TERMINATE_DISABLE
 #define CS_PCT_MASK                            0xFFF
+#define CS_DEFAULT_SUBEVENT_INTERVAL           0U
 
 // CS tx_power range
 #define CS_MAX_TX_POWER_VALUE                  20
@@ -290,9 +294,8 @@ typedef enum csProcedures_e
     CS_CONFIG_PROCEDURE                = 0x04,
     CS_FAE_TABLE_UPDATE_PROCEDURE      = 0x08,
     CS_CHM_UPDATE_PROCEDURE            = 0x10,
-    CS_START_PROCEDURE                 = 0x20,
-    CS_IND                             = 0x40,
-    CS_TERMINATE_PROCEDURE             = 0x80
+    CS_IND                             = 0x20,
+    CS_TERMINATE_PROCEDURE             = 0x40
 } csProcedures_e;
 
 // CS Sub Features
@@ -365,7 +368,22 @@ typedef enum csSubeventType_e
     (llCs[connId].completedProcedures &= flagId)
 #define CS_GET_BIT(val, bitIdx) ((val >> bitIdx) & 1)
 #define CS_SHIFT_RIGHT(val, n) (val >> n)
-#define T625MS2US(x) x * 625
+/* Translate units from 0.625ms into us Done by multiplication by (1000 * 0.625) */
+#define T625MS2US(units_625us) (units_625us * 625)
+
+/* Subevent interval is just the subevent Len and the subevent spacing in 0.625 ms */
+#define CS_SUBEVENT_INTERVAL( subeventLen ) (CONVERT_1US_TO_0_625MS(subeventLen + CS_SUBEVENT_SPACE))
+
+/* Events Per Procedure is the number of whole events that would fit into a CS procedure Len */
+#define CS_EVENTS_PER_PROCEDURE(procedureLen, eventInterval, connInterval) (procedureLen / (eventInterval * connInterval))
+
+/* The Offset_Min value shall be greater than or equal to 500 µs and less than 4 seconds.  */
+#define CS_CALC_OFFSET_MIN(offsetMin) ((offsetMin < CS_OFFSET_MIN) ? CS_OFFSET_MIN : ((offsetMin > CS_OFFSET_MAX) ? CS_OFFSET_MAX : offsetMin))
+
+/* The value shall be greater than or equal to the Offset_Min value and shall be less than the LE connection interval. */
+#define CS_CALC_OFFSET_MAX(offsetMax, offsetMin, connInterval) ((offsetMax < offsetMin) ? offsetMin : ((offsetMax > (T625MS2US(connInterval) - CS_MIN_SUBEVENT_LEN)) ? (T625MS2US(connInterval) - CS_MIN_SUBEVENT_LEN) : offsetMax))
+
+#define CS_CONNEVENT_OFFSET(taskId) ((taskId == LL_TASK_ID_CENTRAL) ? CS_CENT_CONNEVENT_OFFSET : CS_PERI_CONNEVENT_OFFSET)
 
 // This Macro will check if any of channels 0-1, 23-25, 77-78 are used (they
 // shouldn't be)
@@ -384,6 +402,8 @@ typedef enum csSubeventType_e
 #define CS_NUM_BUFF_STEPS(nSteps) ((nSteps > CS_MAX_NUM_STEPS_IN_TX_BUFF) ?            \
                                                 CS_MAX_NUM_STEPS_IN_TX_BUFF : nSteps)
 
+#define CS_IS_SUBEVENT_VALID(subeventLen) ( (subeventLen >= CS_MIN_SUBEVENT_LEN) && \
+                                            (subeventLen <= CS_MAX_SUBEVENT_LEN) )
 /*******************************************************************************
  * EXTERNS
  */
@@ -493,15 +513,15 @@ struct csProcedureEnable_t
     uint8   configId:6;              /* REQ | RSP | IND */
     uint8   rfu:2;                   /* REQ | RSP | IND */
     uint16  connEventCount;          /* REQ | RSP | IND */
-    uint32  offset;                  /*  X  |  X  | IND */
-    uint32  offsetMin;               /* REQ | RSP |  X  */
-    uint32  offsetMax;               /* REQ | RSP |  X  */
-    uint16  maxProcedureDur;         /* REQ |  X  |  X  */
+    uint32  offset;                  /*  X  |  X  | IND */ /* microseconds */
+    uint32  offsetMin;               /* REQ | RSP |  X  */ /* microseconds */
+    uint32  offsetMax;               /* REQ | RSP |  X  */ /* microseconds */
+    uint16  maxProcedureDur;         /* REQ |  X  |  X  */ /* 625 microseconds */
     uint16  eventInterval;           /* REQ | RSP | IND */ /* units of connInt */
     uint8   subEventsPerEvent;       /* REQ | RSP | IND */ /* num of CS SubEvents in a CS Event */
     uint16  subEventInterval;        /* REQ | RSP | IND */ /* units 625 us*/
     uint32  subEventLen;             /* REQ | RSP | IND */ /* units microseconds, range 1250us to 4s */
-    uint16  procedureInterval;       /* REQ |  X  |  X  */
+    uint16  procedureInterval;       /* REQ |  X  |  X  */ /* units of connInt */
     uint16  procedureCount;          /* REQ |  X  |  X  */
     csACI_e ACI;                     /* REQ | RSP | IND */
     uint8   preferredPeerAntenna;    /* REQ |  X  |  X  */
@@ -532,25 +552,15 @@ typedef struct
 
 typedef struct
 {
-    uint8 numSteps;
-    uint8 stepCount;
+    uint16 numSteps;
+    uint16 stepCount;
 } csSubeventInfo_t;
 
 typedef struct
 {
-    union
-    {
-        struct
-        {
-            uint16 counters[CS_PROC_ALL_C];     /* subevent, event, procedure */
-        };
-        struct
-        {
-            uint16 subeventCounter;  /* subevent counter */
-            uint16 eventCounter;     /* event counter */
-            uint16 procedureCounter; /* procedure counter */
-        };
-    };
+    uint16 subeventCounter;  /* subevent counter */
+    uint16 eventCounter;     /* event counter */
+    uint16 procedureCounter; /* procedure counter */
 } csProcCnt_t;
 
 typedef struct
@@ -857,9 +867,9 @@ uint8_t llCsMapAntennaMuxIndex(uint8_t indicesMapping, uint8_t indexToMap);
 uint8 llCsGetAbortReason(uint8 connId);
 
 /*******************************************************************************
- * @fn          llCsDbGetNumStepsInBuffer
+ * @fn          llCsGetRemainingStepsInCurrSubEvent
  *
- * @brief       llCsDbGetNumStepsInBuffer
+ * @brief       llCsGetRemainingStepsInCurrSubEvent
  *
  * input parameters
  *
@@ -871,7 +881,7 @@ uint8 llCsGetAbortReason(uint8 connId);
  *
  * @return      Num Steps in Buffer
  */
-uint8 llCsGetNumStepsInBuffer(uint16 connId);
+uint16 llCsGetRemainingStepsInCurrSubEvent(uint16 connId);
 
 /*******************************************************************************
  * @fn          llCsGetNextLoopValue
@@ -916,6 +926,43 @@ uint8 llCsGetNextLoopValue(uint8 currValue, uint8 minValue, uint8 maxValue);
  *
  * @return      Up-to-date Next connection event
  * */
-uint16_t llCs_getNextConnEvent(llConnState_t *connPtr);
+uint16_t llCs_getNextConnEvent(const llConnState_t *connPtr);
+
+/*******************************************************************************
+ * @fn          llCs_checkProcedureParams
+ *
+ * @brief       Check if the procedure parameters are valid
+ *
+ * input parameters
+ *
+ * @param       csReq - Pointer to LL_CS_REQ
+ * @param       connPtr - Connection Pointer
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      STATUS - Success if the procedure parameters are valid, Fail otherwise
+ * */
+csStatus_e llCs_checkProcedureParams(const csProcedureEnable_t* csReq, const llConnState_t* connPtr);
+
+/*******************************************************************************
+ * @fn          llCsSubeventsPerEvent
+ *
+ * @brief       Calculate How many subevent will fit into 1 event
+ *
+ * input parameters
+ *
+ * @param       connInterval - connection interval
+ * @param       subeventInterval - CS subevent Interval
+ * @param       eventOffset - CS event offset
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      num subevents per event
+ */
+uint8 llCsSubeventsPerEvent(uint16 connInterval, uint16 subEventInterval, uint32 eventOffset);
 
 #endif // LL_CS_COMMON_H

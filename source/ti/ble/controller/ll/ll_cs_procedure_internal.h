@@ -122,23 +122,6 @@
  */
 void llCsShuffleMainModeChannelIndexArray(uint16 connId, const csConfigurationSet_t* csConfig);
 
-/*******************************************************************************
- * @fn          llCsInitStepAndResultBuffers
- *
- * @brief       This function initalizes the step buffers
- * Uses RCL_Multibuffers_init to initialize the step buffers
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       None.
- *
- * @return       None
- * */
-void llCsInitStepAndResultBuffers(void);
 
 /*******************************************************************************
  * @fn          llCsNumStepsPerSubEvent

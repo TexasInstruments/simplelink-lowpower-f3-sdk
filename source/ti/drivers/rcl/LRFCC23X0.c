@@ -53,7 +53,6 @@
 #include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
 #include DeviceFamily_constructPath(inc/rfe_common_ram_regs.h)
 
-
 /* Definitions for trim */
 #define LRF_TRIM_NORMAL_BW    0
 #define LRF_TRIM_HIGH_BW      1                 /* Revision >= 4 only */s
@@ -100,6 +99,12 @@
 /* Only the lower 8-bits of the LRFDPBE_O_GPOCTRL are supported */
 #define LRF_PBE_GPOCTRL_MASK 0xFF
 
+/* Set the LRFDRFE_O_SPARE5[14] bit to enable PA ESD protection */
+#define LRF_CC27XX_RFE_SPARE5_PA_20DBM_ESD_CTRL_SET                      ((uint32_t)(0x1 << 14U))
+#define LRF_CC27XX_PA_ESD_PROTECTION_VDDS_THRESHOLD_MV                   ((uint16_t)3635)
+#define LRF_CC27XX_HIGH_PA_MODE                                          ((uint16_t)0x3)
+#define LRF_CC27XX_RETRIEVE_PA_MODE_FROM_RAW_VALUE(txPowerRawValue)      (((uint16_t)(txPowerRawValue) >> 11) & 0x3)
+
 static uint32_t LRF_findPllMBase(uint32_t frequency);
 static uint32_t countLeadingZeros(uint16_t value);
 static uint32_t LRF_findCalM(uint32_t frequency, uint32_t prediv);
@@ -121,6 +126,9 @@ static void LRF_writeFifoPtr(uint32_t value, uintptr_t regAddr);
 static void LRF_writeFifoPtrs(uint32_t value, uintptr_t regAddr0, uintptr_t regAddr1);
 static void LRF_temperatureNotification(int16_t currentTemperature);
 static void LRF_applyAntennaSelection(void);
+#ifdef DeviceFamily_CC27XX
+static inline bool LRF_requirePaEsdProtection(void);
+#endif
 
 uint32_t swParamList[sizeof(LRF_SwParam)/sizeof(uint32_t)];
 const size_t swParamListSz = sizeof(LRF_SwParam);
@@ -149,7 +157,7 @@ static uint8_t dcdcIpeakRestoreSetting;
 /* Temperature threshold (degrees C) for use by the temperature monitoring. A value of 0 disables the feature. */
 uint16_t rclTemperatureThreshold = 8;
 
-/* Coexistence configuration to use if no other configuration is provided through SysConfig or other file. 
+/* Coexistence configuration to use if no other configuration is provided through SysConfig or other file.
  * This default configuration disables coex. */
 const LRF_CoexConfiguration lrfCoexConfiguration __attribute__((weak)) =
 {
@@ -1688,6 +1696,16 @@ void LRF_programTemperatureCompensatedTxPower(void)
 #endif
         txPowerEntry.value.ib = ib;
     }
+
+#ifdef DeviceFamily_CC27XX
+    if (rclFeatureControl.enablePaEsdProtection && (txPowerEntry.value.mode == LRF_CC27XX_HIGH_PA_MODE))
+    {
+        if (LRF_requirePaEsdProtection())
+        {
+            txPowerEntry.value.pa20dBmEsdCtl = 1;
+        }
+    }
+#endif
     /* Program into RFE shadow register for PA power */
     HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE5) = txPowerEntry.value.rawValue;
 }
@@ -1839,3 +1857,45 @@ static void LRF_applyAntennaSelection(void)
     pbeGpoVal |= (uint32_t)(rclPbeGpoVal & rclPbeGpoMask);
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL) = pbeGpoVal;
 }
+
+#ifdef DeviceFamily_CC27XX
+/*
+ * ======== LRF_requirePaEsdProtection ========
+ */
+static inline bool LRF_requirePaEsdProtection(void)
+{
+    /* To read the VDDS voltage from the BATMON, ensure that BatMonSupportLPF3_init()
+     * has been called beforehand. This is guaranteed by the execution of
+     * hal_temperature_init() during the RCL initialization sequence.
+     */
+    const uint16_t vddsRead = hal_get_vdds_voltage();
+    return (vddsRead >= LRF_CC27XX_PA_ESD_PROTECTION_VDDS_THRESHOLD_MV);
+}
+
+/*
+ * ======== LRF_updatePaEsdProtection ========
+ */
+void LRF_updatePaEsdProtection(void)
+{
+    /* PA ESD protection is only applicable when the 20dBm PA mode is enabled */
+    uint16_t txPowerRawValue = HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE5);
+    if (LRF_CC27XX_RETRIEVE_PA_MODE_FROM_RAW_VALUE(txPowerRawValue) != LRF_CC27XX_HIGH_PA_MODE)
+    {
+        return;
+    }
+
+    bool enabled = LRF_requirePaEsdProtection();
+    if (enabled)
+    {
+        /* The 14th bit (bit position 14) of the LRFDRFE_O_SPARE5 register is used as the shadow bit
+         * for the LRFDRFE:PA0:PA20DBMESDCTL field. This bit is set to 1 to enable the PA ESD protection.
+         */
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE5) = txPowerRawValue | LRF_CC27XX_RFE_SPARE5_PA_20DBM_ESD_CTRL_SET;
+    }
+    else
+    {
+        /* Disable the PA ESD protection by clearing the corresponding bit. */
+        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE5) = txPowerRawValue & ~LRF_CC27XX_RFE_SPARE5_PA_20DBM_ESD_CTRL_SET;
+    }
+}
+#endif

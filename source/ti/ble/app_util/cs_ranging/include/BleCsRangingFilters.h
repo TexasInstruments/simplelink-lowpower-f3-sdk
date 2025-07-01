@@ -75,16 +75,17 @@ typedef struct
  */
 typedef struct
 {
-    uint16_t sizeM; ///< Size of the filter
-    uint16_t sizeN; ///< Size of the effective buffer
-    float *buffer;  ///< Buffer to store previous values
-    uint16_t index; ///< Current index in the buffer
-    uint16_t count; ///< Total number of values passed to buffer
+    uint16_t sizeM;    ///< Size of the filter
+    uint16_t sizeN;    ///< Size of the effective buffer
+    float *buffer;     ///< Buffer to store previous values
+    float *sortBuffer; ///< Buffer to sort the buffer
+    uint16_t index;    ///< Current index in the buffer
+    uint16_t count;    ///< Total number of values passed to buffer
 } BleCsRanging_MovingAverageFilter_t;
 
 /**
  * @brief Filter chain
- * 
+ *
  * This enum defines the different filter chains to be used.
  */
 typedef enum
@@ -93,7 +94,6 @@ typedef enum
     BleCsRanging_FilterChain_Kalman,
     BleCsRanging_FilterChain_AverageKalman
 } BleCsRanging_FilterChain_e;
-
 
 /**
  * @brief Filter all function

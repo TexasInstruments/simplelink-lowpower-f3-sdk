@@ -82,7 +82,7 @@ zb_bool_t zb_osif_ota_open_storage(void)
 zb_bool_t zb_osif_ota_fw_size_ok(zb_uint32_t image_size)
 {
   zb_bool_t ret = ZB_FALSE;
-  if ( image_size <= ((zb_uint32_t) &_MCUBOOT_MAX_SLOT_SIZE + OTA_HDR_SUB_ELE_MAX_SIZE) )
+  if ( image_size <= ((zb_uint32_t) &_SECONDARY_SLOT_SIZE + OTA_HDR_SUB_ELE_MAX_SIZE) )
   {
     ret = ZB_TRUE;
     clientWriteState = OTA_CLIENT_HDR_MAGIC_0_STATE;

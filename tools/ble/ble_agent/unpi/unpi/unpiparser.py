@@ -35,15 +35,40 @@ import inspect
 import logging
 import copy
 
-logger = logging.getLogger('unpiparser')
+logger = logging.getLogger("unpiparser")
 
 from dataclasses import dataclass, field
 from typing import Iterable, Any
 
 import construct
-from construct import Const, Struct, Rebuild, Byte, BitStruct, Nibble, Int8ul, Int16ul, Checksum, RawCopy, Enum, Union, \
-    Switch, len_, this, BitsInteger, ConstError, Tell, StreamError, Rebuffered, ChecksumError, EnumInteger, \
-    EnumIntegerString, GreedyBytes, Container, ListContainer
+from construct import (
+    Const,
+    Struct,
+    Rebuild,
+    Byte,
+    BitStruct,
+    Nibble,
+    Int8ul,
+    Int16ul,
+    Checksum,
+    RawCopy,
+    Enum,
+    Union,
+    Switch,
+    len_,
+    this,
+    BitsInteger,
+    ConstError,
+    Tell,
+    StreamError,
+    Rebuffered,
+    ChecksumError,
+    EnumInteger,
+    EnumIntegerString,
+    GreedyBytes,
+    Container,
+    ListContainer,
+)
 from functools import reduce, singledispatch
 
 import json
@@ -60,7 +85,7 @@ class QMessage:
     item: Any = field(compare=False)
 
     def __repr__(self):
-        return f'QMessage(pri={self.priority}, item={self.item}'
+        return f"QMessage(pri={self.priority}, item={self.item}"
 
 
 class NpiOriginator(enum.IntEnum):
@@ -80,6 +105,7 @@ class NpiSubSystems(enum.IntEnum):
     CM = 0x17
     RTLS = 0x19
     UTIL = 0x07
+
 
 @dataclass
 class UNPIError:
@@ -102,32 +128,63 @@ class UNPIMessage:
     dict: dict = None
 
     @staticmethod
-    def from_construct(frame, originator=NpiOriginator.Ap, node_identifier='unknown', node_name='unknown'):
+    def from_construct(
+        frame,
+        originator=NpiOriginator.Ap,
+        node_identifier="unknown",
+        node_name="unknown",
+    ):
         typ = frame.cmd0.type  # frame.cmd0.type.intvalue
-        subcmd = frame.cmd0.subcmd  # frame.cmd0.subcmd.intvalue if type(frame.cmd0.subcmd) == EnumIntegerString else int(frame.cmd0.subcmd)
-        cmd = frame.cmd1  # frame.cmd1.intvalue if type(frame.cmd1) == EnumIntegerString else int(frame.cmd1)
+        subcmd = (
+            frame.cmd0.subcmd
+        )  # frame.cmd0.subcmd.intvalue if type(frame.cmd0.subcmd) == EnumIntegerString else int(frame.cmd0.subcmd)
+        cmd = (
+            frame.cmd1
+        )  # frame.cmd1.intvalue if type(frame.cmd1) == EnumIntegerString else int(frame.cmd1)
         return UNPIMessage(typ, subcmd, cmd, bytes(frame.data), originator, frame)
 
     def as_construct(self):
-        if self._construct: return self._construct
+        if self._construct:
+            return self._construct
         return None
 
     def as_json(self):
-        return json.dumps(dict(originator=self.originator.name, type=str(self.type), subsystem=self.subsystem, command=self.command, payload=self.payload))
+        return json.dumps(
+            dict(
+                originator=self.originator.name,
+                type=str(self.type),
+                subsystem=self.subsystem,
+                command=self.command,
+                payload=self.payload,
+            )
+        )
 
     @staticmethod
     def from_dict(dct):  # A dict resulting from JSON parsing
-        if dct['type'] not in [item.name for item in UNPITypes]:
-            error = 'Could not find request type %s in available types {%s}' % (dct['type'], [item for item in UNPITypes])
+        if dct["type"] not in [item.name for item in UNPITypes]:
+            error = "Could not find request type %s in available types {%s}" % (
+                dct["type"],
+                [item for item in UNPITypes],
+            )
             logging.error(error)
             return UNPIError(__name__, error)
 
-        if dct['subsystem'] not in [item.name for item in NpiSubSystems]:
-            error = 'Could not find subsystem %s in available {%s}' % (dct['subsystem'], [item for item in NpiSubSystems])
+        if dct["subsystem"] not in [item.name for item in NpiSubSystems]:
+            error = "Could not find subsystem %s in available {%s}" % (
+                dct["subsystem"],
+                [item for item in NpiSubSystems],
+            )
             logging.error(error)
             return UNPIError(__name__, error)
 
-        return UNPIMessage(originator=NpiOriginator.Ap, type=UNPITypes[dct['type']], subsystem=NpiSubSystems[dct['subsystem']], command=dct['command'], data=[], dict=dct['payload'])
+        return UNPIMessage(
+            originator=NpiOriginator.Ap,
+            type=UNPITypes[dct["type"]],
+            subsystem=NpiSubSystems[dct["subsystem"]],
+            command=dct["command"],
+            data=[],
+            dict=dct["payload"],
+        )
 
     @staticmethod
     def from_json(js):
@@ -137,9 +194,13 @@ class UNPIMessage:
         return "UNPIMessage(originator={} type={}, subsystem={}, command={}, data={})".format(
             self.originator.name,
             self.type.name if isinstance(self.type, UNPITypes) else self.type,
-            self.subsystem.name if isinstance(self.subsystem, NpiSubSystems) else self.subsystem,
-            self.command.name if hasattr(self.command, 'name') else self.command,
-            ':'.join(['%02X' % x for x in self.data])
+            (
+                self.subsystem.name
+                if isinstance(self.subsystem, NpiSubSystems)
+                else self.subsystem
+            ),
+            self.command.name if hasattr(self.command, "name") else self.command,
+            ":".join(["%02X" % x for x in self.data]),
         )
 
     @property
@@ -149,7 +210,13 @@ class UNPIMessage:
 
 @to_serializable.register(UNPIMessage)
 def ts_unpimessage(val):
-    return dict(originator=val.originator.name, type=str(val.type), subsystem=val.subsystem, command=val.command, payload=val.payload)
+    return dict(
+        originator=val.originator.name,
+        type=str(val.type),
+        subsystem=val.subsystem,
+        command=val.command,
+        payload=val.payload,
+    )
 
 
 @dataclass
@@ -163,7 +230,9 @@ class UNPIHeader:
         return UNPIHeader(message.type, message.subsystem, message.command)
 
     def as_int(self):
-        return UNPIHeader(UNPITypes(int(self.type)), int(self.subsystem), int(self.command))
+        return UNPIHeader(
+            UNPITypes(int(self.type)), int(self.subsystem), int(self.command)
+        )
 
     def __hash__(self):
         return hash((self.type, self.subsystem, self.command))
@@ -202,15 +271,16 @@ class NpiRequest:
         :return: [Container]
         """
         ret = {}
-        if not hasattr(cls, 'struct'):
+        if not hasattr(cls, "struct"):
             return ret
         try:
             ret = cls.struct.parse(payload)
         except StreamError as e:
-            logging.error("Unexpected payload received for message %s: %s.", cls.__name__, e)
+            logging.error(
+                "Unexpected payload received for message %s: %s.", cls.__name__, e
+            )
         finally:
             return ret
-
 
     @classmethod
     def header(cls):
@@ -234,13 +304,13 @@ class NpiRequest:
 
         if cls.struct:
             # Build a dict of the arg values based on the order of the payload fields
-            arg_names = [x.name for x in cls.struct.subcons][:len(args)]
+            arg_names = [x.name for x in cls.struct.subcons][: len(args)]
             argsdict = {k: v for k, v in zip(arg_names, args)}
             # Build message based on type, ss, command and payload in concrete class
             data = cls.struct.build({**argsdict, **kwargs})
             payload = cls.struct.parse(data)
         else:
-            data = b''
+            data = b""
             payload = None
 
         msg = UNPIMessage(cls.type, cls.subsystem, cls.command, data, payload=payload)
@@ -253,7 +323,9 @@ class SubSysMeta(type):
     """
 
     def __init__(cls, name, bases, dct):
-        if any([b._NpiSubSystem__is_subsystem for b in bases]):  # Then it's a concrete subsystem class
+        if any(
+            [b._NpiSubSystem__is_subsystem for b in bases]
+        ):  # Then it's a concrete subsystem class
             ss_type = cls.type
             commands = cls.responses()
 
@@ -269,16 +341,18 @@ class NpiSubSystem(metaclass=SubSysMeta):
 
     __is_subsystem = True
 
-    defaultParse = Struct(
-        'raw_payload' / NiceBytes(GreedyBytes)
-    )
+    defaultParse = Struct("raw_payload" / NiceBytes(GreedyBytes))
 
     @classmethod
     def responses(cls):
         """
         :return: List of NpiRequest inner classes in the NpiSubSystem class
         """
-        return [attr[1] for attr in inspect.getmembers(cls, inspect.isclass) if issubclass(attr[1], NpiRequest)]
+        return [
+            attr[1]
+            for attr in inspect.getmembers(cls, inspect.isclass)
+            if issubclass(attr[1], NpiRequest)
+        ]
 
     @classmethod
     def parse(cls, msg: UNPIMessage):
@@ -287,14 +361,24 @@ class NpiSubSystem(metaclass=SubSysMeta):
         :param msg: An NPI frame with the payload unparsed (data field exists)
         :return: Parsed payload [class Container from construct]
         """
-        responses = {c.header().as_int(): c for c in cls.responses() if c.originator == NpiOriginator.Nwp}
+        responses = {
+            c.header().as_int(): c
+            for c in cls.responses()
+            if c.originator == NpiOriginator.Nwp
+        }
         parser = responses.get(UNPIHeader.from_message(msg).as_int(), cls.defaultParse)
         parsed = parser.parse(msg.data)
+
         # Delete all underscored things
         # We don't want to pass this on at this point. Why is it even there after parsing is done?
         def delete_io_recursive(container):
-            if hasattr(container, 'keys'):
-                kk = list(filter(lambda x: x[0] == '_', filter(lambda x: x[:2] != '__', container.keys())))
+            if hasattr(container, "keys"):
+                kk = list(
+                    filter(
+                        lambda x: x[0] == "_",
+                        filter(lambda x: x[:2] != "__", container.keys()),
+                    )
+                )
                 for k in kk:
                     container.pop(k)  # delete all "special" keys starting with _Xxx
                 for k, v in container.items():
@@ -303,17 +387,25 @@ class NpiSubSystem(metaclass=SubSysMeta):
                     if type(v) == ListContainer:
                         for item in [x for x in v if type(x) == Container]:
                             delete_io_recursive(item)
+
         delete_io_recursive(parsed)
         return parsed
 
     @classmethod
     def build_from_json(cls, msg: UNPIMessage):
-        responses = {c.header().as_int(): c for c in cls.responses()}  # if c.originator == NpiOriginator.Ap}
+        responses = {
+            c.header().as_int(): c for c in cls.responses()
+        }  # if c.originator == NpiOriginator.Ap}
         # Hacky way of finding the proper Command enum from the string
         try:
-            command = next((v.command for v in responses.values() if v.command.name == msg.command))
+            command = next(
+                (v.command for v in responses.values() if v.command.name == msg.command)
+            )
         except StopIteration:
-            error = "Could not find command %s from available {%s}" % (msg.command, [v.command.name for v in responses.values()])
+            error = "Could not find command %s from available {%s}" % (
+                msg.command,
+                [v.command.name for v in responses.values()],
+            )
             logging.error(error)
             return UNPIError(__name__, error)
         msg.command = command
@@ -324,7 +416,13 @@ class NpiSubSystem(metaclass=SubSysMeta):
 
 
 class UNPIParser:
-    def __init__(self, subsystems_and_commands_dict, types=None, max_pkt_len=2048, only_known_subsys=True):
+    def __init__(
+        self,
+        subsystems_and_commands_dict,
+        types=None,
+        max_pkt_len=4096,
+        only_known_subsys=True,
+    ):
         """
         Constructor for a uNPI parser instance. Need a dictionary of NpiSubSystems enum keys where each value is
         an enum class containing the commands of the subsystem
@@ -340,24 +438,33 @@ class UNPIParser:
         self.maxLen = max_pkt_len
         self.only_known_ss = only_known_subsys
         self.req = Enum(BitsInteger(3), **types)
-        self.cmd_class = Enum(BitsInteger(5), **{ss.name: ss.value for ss in subsystems_and_commands_dict})
+        self.cmd_class = Enum(
+            BitsInteger(5), **{ss.name: ss.value for ss in subsystems_and_commands_dict}
+        )
         # self.command = Enum(Int8ul, **commands)
 
-        commandswitch = Switch(lambda ctx: int(ctx.cmd0.subcmd), {int(ss): Enum(Int8ul, cmds) for ss, cmds in subsystems_and_commands_dict.items()}, default=Int8ul)
+        commandswitch = Switch(
+            lambda ctx: int(ctx.cmd0.subcmd),
+            {
+                int(ss): Enum(Int8ul, cmds)
+                for ss, cmds in subsystems_and_commands_dict.items()
+            },
+            default=Int8ul,
+        )
         self.subsystems_and_commands = subsystems_and_commands_dict
         self.unpi_frame = Struct(
             "sof" / Const(0xFE, Int8ul),
             "length" / Rebuild(Int16ul, len_(this.data)),
-            "cmd0" / BitStruct(
-                "type" / self.req,
-                "subcmd" / self.cmd_class
-            ),
+            "cmd0" / BitStruct("type" / self.req, "subcmd" / self.cmd_class),
             "cmd1" / commandswitch,
             "hdroffset" / Tell,
             "data" / Byte[this.length],
-            "fcs" / Checksum(Byte,
-                             lambda data: reduce((lambda cur, prev: cur ^ prev), data),
-                             self.read_stream_for_fcs(offset=1))
+            "fcs"
+            / Checksum(
+                Byte,
+                lambda data: reduce((lambda cur, prev: cur ^ prev), data),
+                self.read_stream_for_fcs(offset=1),
+            ),
         )
 
     def read_stream_for_fcs(self, offset):
@@ -367,10 +474,13 @@ class UNPIParser:
         :param offset: Where to start reading
         :return: func that returns a byte string that FCS should be calculated on
         """
+
         def read_stream_offset(ctx):
             ctx._io.seek(offset)
-            readLen = ctx.hdroffset + ctx.length  # Don't read more from stream than needed
-            return ctx._io.read(readLen) if ctx._building else ctx._io.read(readLen-1)
+            readLen = (
+                ctx.hdroffset + ctx.length
+            )  # Don't read more from stream than needed
+            return ctx._io.read(readLen) if ctx._building else ctx._io.read(readLen - 1)
 
         return read_stream_offset
 
@@ -393,7 +503,9 @@ class UNPIParser:
         :param data: Anything that can be cast to bytes()
         :return: bytes() serial frame
         """
-        return self.unpi_frame.build(dict(cmd0=dict(type=req_type, subcmd=cmd_type), cmd1=cmd, data=bytes(data)))
+        return self.unpi_frame.build(
+            dict(cmd0=dict(type=req_type, subcmd=cmd_type), cmd1=cmd, data=bytes(data))
+        )
 
     def parse_stream(self, data):
         """
@@ -419,22 +531,30 @@ class UNPIParser:
         while len(temp):
             try:
                 hdr = unpi_header.parse(bytes(temp))
-                if (hdr.length > self.maxLen)\
-                        or (hdr.cmd0 >> 5 not in [1, 2, 3])\
-                        or (self.only_known_ss and (hdr.cmd0 & 0x1f) not in self.subsystems_and_commands.keys()):
+                if (
+                    (hdr.length > self.maxLen)
+                    or (hdr.cmd0 >> 5 not in [1, 2, 3])
+                    or (
+                        self.only_known_ss
+                        and (hdr.cmd0 & 0x1F) not in self.subsystems_and_commands.keys()
+                    )
+                ):
                     temp = temp[1:]
                     continue
 
                 p = self.parse(temp)
                 msg = UNPIMessage.from_construct(p, originator=NpiOriginator.Nwp)
-                temp = temp[p.length + p.hdroffset + 1:]
+                temp = temp[p.length + p.hdroffset + 1 :]
                 return msg, temp
             except ConstError as e:  # Did not find Start-of-frame
                 temp = temp[1:]
                 logging.warning(repr(e))
                 # logging.error("Expected Start-of-Frame character, got something else. Skipping.")
             except StreamError as e:
-                logging.debug(repr(e) + "  -- Likely not enough bytes received in this read, waiting for more.")
+                logging.debug(
+                    repr(e)
+                    + "  -- Likely not enough bytes received in this read, waiting for more."
+                )
                 return None, temp
             except ChecksumError as e:
                 temp = temp[1:]
@@ -446,7 +566,8 @@ class UNPIParser:
         return None, temp
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     class MySubSystems(enum.IntEnum):
         SNP = 0x15
 
@@ -464,11 +585,17 @@ if __name__ == '__main__':
     # print(parser.parse(b'\xfe\x02\x005B\x08\tt'))
 
     print("==== Parsing stream")
-    stream = [0x81, 0x12, 0xC7] + [0xFE, 0x01, 0x00, 0x15 | 0x2 << 5, 0x81, 0xFF, 0x2A] + [0xAB, 0xBA] + [0xFE, 0x01, 0x00, 0x15 | 0x2 << 5] + [0x81, 0xEE, 0x3B]
+    stream = (
+        [0x81, 0x12, 0xC7]
+        + [0xFE, 0x01, 0x00, 0x15 | 0x2 << 5, 0x81, 0xFF, 0x2A]
+        + [0xAB, 0xBA]
+        + [0xFE, 0x01, 0x00, 0x15 | 0x2 << 5]
+        + [0x81, 0xEE, 0x3B]
+    )
     s = stream[:]
 
-    #stream = 'FE:06:00:57:04:01:D9:00:15:DD:0C:49:FE:06:00:57:04:01:C6:97:18:DD:0C:CC'
-    #s = [int(x, 16) for x in stream.split(':')]
+    # stream = 'FE:06:00:57:04:01:D9:00:15:DD:0C:49:FE:06:00:57:04:01:C6:97:18:DD:0C:CC'
+    # s = [int(x, 16) for x in stream.split(':')]
 
     # unpi_header = Struct(
     #     "sof" / Const(0xFE, Int8ul),
@@ -476,10 +603,8 @@ if __name__ == '__main__':
     #     "cmd0" / Int8ul,
     #     "cmd1" / Int8ul,
     # )
-    #hdr = unpi_header.parse(bytes(s))
-    #print(hdr)
-
-
+    # hdr = unpi_header.parse(bytes(s))
+    # print(hdr)
 
     p = None
     while True:
@@ -488,5 +613,3 @@ if __name__ == '__main__':
             break
         g = p
         print(p)
-
-

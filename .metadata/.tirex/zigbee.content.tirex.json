@@ -798,6 +798,74 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_light/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_light",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2755P10_freertos_ticlang.projectspec",
+        "name": "onoff_light",
+        "description": "onoff_light",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_light",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_light/README.html",
         "resourceType": "categoryInfo",
         "name": "onoff_light",
@@ -934,6 +1002,71 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_light/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_light",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_light",
+        "description": "onoff_light",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_light",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_light/README.html",
         "resourceType": "categoryInfo",
         "name": "onoff_light",
@@ -1060,6 +1193,74 @@
             "zigbee",
             "onoff_light",
             "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2755P10_freertos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch",
+            "FreeRTOS",
             "TI Clang Compiler"
         ]
     },
@@ -1200,6 +1401,71 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch/README.html",
         "resourceType": "categoryInfo",
         "name": "onoff_switch",
@@ -1326,6 +1592,74 @@
             "zigbee",
             "onoff_switch",
             "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_offchip",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P10_freertos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_offchip",
+            "FreeRTOS",
             "TI Clang Compiler"
         ]
     },
@@ -1466,6 +1800,71 @@
         ]
     },
     {
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_offchip",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_offchip",
+            "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
         "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/README.html",
         "resourceType": "categoryInfo",
         "name": "onoff_switch_ota_client_offchip",
@@ -1592,6 +1991,74 @@
             "zigbee",
             "onoff_switch_ota_client_offchip",
             "No RTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_onchip",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P10_freertos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_onchip",
+            "FreeRTOS",
             "TI Clang Compiler"
         ]
     },
@@ -1728,6 +2195,71 @@
             "zigbee",
             "onoff_switch_ota_client_onchip",
             "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/README.html",
+        "resourceType": "categoryInfo",
+        "name": "onoff_switch_ota_client_onchip",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "zigbee",
+            "onoff_switch_ota_client_onchip",
+            "No RTOS",
             "TI Clang Compiler"
         ]
     },

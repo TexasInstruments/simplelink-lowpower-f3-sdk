@@ -458,6 +458,15 @@ extern void mac_ti23xx_get_energy_level(uint8_t *energy_level);
 
 #define MAC_Q_ENA_RX() mac_ti23xx_enable_rx()
 
+
+#ifdef ZBOSS_REV22
+/**
+   Get LQI value
+   @param packet - pointer to buffer
+*/
+#define ZB_MAC_GET_LQI(packet) 255* (*((zb_uint8_t*)zb_buf_end(packet) - ZB_MAC_EXTRA_DATA_SIZE) - ZB_LQI_MIN) / (ZB_LQI_MAX - ZB_LQI_MIN)
+#endif // ZBOSS_REV22
+
 #endif // ZB_ZGPD_ROLE
 
 /**

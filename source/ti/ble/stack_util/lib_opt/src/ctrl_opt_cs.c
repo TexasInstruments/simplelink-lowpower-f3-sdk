@@ -220,6 +220,16 @@ void OPT_llCsSteps_PostProcess(void)
     llCsSteps_PostProcess();
 }
 
+void OPT_llCsCurrSubEventCont_PostProcess(void)
+{
+    llCsCurrSubEventCont_PostProcess();
+}
+
+void OPT_llCsNextSubEvent_PostProcess(void)
+{
+    llCsNextSubEvent_PostProcess();
+}
+
 void OPT_llCsResults_PostProcess(void)
 {
     llCsResults_PostProcess();

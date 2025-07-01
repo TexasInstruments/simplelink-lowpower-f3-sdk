@@ -191,11 +191,17 @@ MAIN()
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
   zb_secur_setup_nwk_key(nwk_key, 0);
 #endif //DEFAULT_NWK_KEY
+
+#ifdef ZBOSS_REV23
   zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+#endif //ZBOSS_REV23
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
   zb_set_network_router_role(DEFAULT_CHANLIST);
+
+#ifdef ZBOSS_REV23
   zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+#endif //ZBOSS_REV23
 
 #elif defined ZB_ED_ROLE
   zb_set_network_ed_role(DEFAULT_CHANLIST);
@@ -408,7 +414,7 @@ void zboss_signal_handler(zb_uint8_t param)
         zb_zdo_mgmt_permit_joining_req(buf, permit_joining_cb);
   #ifdef ZB_USE_BUTTONS
         zb_button_register_handler(0, 0, button_press_handler);
-  #endif 
+  #endif
         break;
       case ZB_BDB_SIGNAL_DEVICE_REBOOT:
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Device RESTARTED OK");
@@ -418,25 +424,31 @@ void zboss_signal_handler(zb_uint8_t param)
           zb_bdb_reset_via_local_action(0);
           perform_factory_reset = ZB_FALSE;
         }
-#if defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
-        buf = zb_buf_get_out();
-        if (!buf)
-        {
-          zb_buf_get_out_delayed(dl_ota_start_upgrade);
-        }
         else
         {
-          dl_ota_start_upgrade(buf);
+          ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+          zb_osif_led_off(1);
+
+          buf = zb_buf_get_out();
+          if (!buf)
+          {
+            zb_buf_get_out_delayed(dl_ota_start_upgrade);
+          }
+          else
+          {
+            dl_ota_start_upgrade(buf);
+          }
         }
-#endif
 #ifdef ZB_USE_BUTTONS
       zb_button_register_handler(0, 0, button_press_handler);
-#endif 
+#endif
         break;
 #ifdef ZB_COORDINATOR_ROLE
       case ZB_ZDO_SIGNAL_DEVICE_ANNCE:
 #else
+#ifdef ZBOSS_REV23
       case ZB_SIGNAL_JOIN_DONE:
+#endif // ZBOSS_REV23
       case ZB_BDB_SIGNAL_TC_REJOIN_DONE:
         Log_printf(LogModule_Zigbee_App, Log_INFO, "TC rejoin is completed successfully");
       case ZB_BDB_SIGNAL_STEERING:
@@ -447,6 +459,10 @@ void zboss_signal_handler(zb_uint8_t param)
         ZVUNUSED(device_type);
         Log_printf(LogModule_Zigbee_App, Log_INFO, "Device (%d) STARTED OK", device_type);
         ZB_SCHEDULE_APP_ALARM(start_finding_binding, 0, 3 * ZB_TIME_ONE_SECOND);
+        ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
+#ifdef ZB_USE_BUTTONS
+        zb_button_register_handler(0, 0, button_press_handler);
+#endif /* ZB_USE_BUTTONS */
 
         buf = zb_buf_get_out();
         if (!buf)

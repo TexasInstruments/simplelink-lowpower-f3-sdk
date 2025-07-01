@@ -66,6 +66,21 @@ const deviceGroupMcubootSettings = {
             secondaryBase: 0x0,
             secondarySize: 0x0
         },
+        image1Compressed:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x07000,
+                secondaryBase: 0x4D000,
+            },
+            primarySize: 0x46000,
+            secondarySize: 0x31000
+        },
         antiRollbackProtection: { readOnly: true, hidden: true },
         enableEncryptedImage: { enabled: true },
         bootloader:
@@ -106,6 +121,21 @@ const deviceGroupMcubootSettings = {
             secondaryBase: 0xB1800,
             secondarySize: 0x4E800
         },
+        image1Compressed:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x07000,
+                secondaryBase: 0x4D000,
+            },
+            primarySize: 0x46000,
+            secondarySize: 0x31000
+        },
         antiRollbackProtection: { readOnly: false, hidden: false },
         enableEncryptedImage: { enabled: true },
         bootloader:
@@ -118,7 +148,8 @@ const deviceGroupMcubootSettings = {
             {
                 base: 0x0,
             },
-            size: 0x6000 
+            size: 0x6000,
+            compressionEnabledSize: 0x7000,
         },
         alignment: { flashBoundary: 0x100000, sectorSize : 0x800 }
    },
@@ -147,6 +178,21 @@ const deviceGroupMcubootSettings = {
             secondaryBase: 0x0,
             secondarySize: 0x0
         },
+        image1Compressed:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x07000,
+                secondaryBase: 0x4D000,
+            },
+            primarySize: 0x46000,
+            secondarySize: 0x31000
+        },
         antiRollbackProtection: { readOnly: false, hidden: false, tzConfigurable: false },
         enableEncryptedImage:{ enabled: false },
         bootloader:
@@ -159,7 +205,8 @@ const deviceGroupMcubootSettings = {
             {
                 base: 0x0,
             },
-            size: 0x6000 
+            size: 0x6000,
+            compressionEnabledSize: 0x7000,
         },
         alignment: { flashBoundary: 0x80000, sectorSize : 0x800 }   
    },
@@ -188,6 +235,21 @@ const deviceGroupMcubootSettings = {
             secondaryBase: 0xA5800,
             secondarySize: 0x42000
         },
+        image1Compressed:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x07000,
+                secondaryBase: 0x4D000,
+            },
+            primarySize: 0x46000,
+            secondarySize: 0x31000
+        },
         antiRollbackProtection: { readOnly: false, hidden: false },
         enableEncryptedImage:{ enabled: false },
         bootloader:
@@ -200,7 +262,8 @@ const deviceGroupMcubootSettings = {
             {
                 base: 0x0,
             },
-            size: 0x6000 
+            size: 0x6000,
+            compressionEnabledSize: 0x7000,
         },
         alignment: { flashBoundary: 0xE8000, sectorSize : 0x800 }
    }
@@ -216,7 +279,16 @@ if(system.deviceData.deviceId)
         deviceGroupMcubootSettings[device2DeviceGroup(system.deviceData.deviceId)]);
 }
 
-
+let compressionDicSizeValues = [
+    {name: 'LZMA2_DIC_SIZE_4096', displayName: "4096"},
+    {name: 'LZMA2_DIC_SIZE_6144', displayName: "6144"},
+    {name: 'LZMA2_DIC_SIZE_8192', displayName: "8192"},
+    {name: 'LZMA2_DIC_SIZE_12288', displayName: "12288"},
+    {name: 'LZMA2_DIC_SIZE_16384', displayName: "16384"},
+    {name: 'LZMA2_DIC_SIZE_24576', displayName: "24576"},
+    {name: 'LZMA2_DIC_SIZE_32768', displayName: "32768"},
+    {name: 'LZMA2_DIC_SIZE_49152', displayName: "49152"},
+];
 
 function device2DeviceGroup(deviceId)
 {
@@ -252,5 +324,6 @@ exports = {
     mcubootSettings: mcubootSettings,
     externalFlashSectorSize: externalFlashSectorSize,
     externalFlashSize: externalFlashSize,
-    externalFlashBase: externalFlashBase
+    externalFlashBase: externalFlashBase,
+    compressionDicSizeValues: compressionDicSizeValues,
 };

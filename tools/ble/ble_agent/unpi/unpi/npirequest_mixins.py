@@ -55,4 +55,3 @@ class FromAp:
 
 class FromAny:
     originator = NpiOriginator.Any
-

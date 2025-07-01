@@ -135,6 +135,8 @@ extern "C"
 #define LL_EVT_CS_STEPS_POST_PROCESS                   (LL_EVT_CS | 1 << 2)
 #define LL_EVT_CS_RESULTS_POST_PROCESS                 (LL_EVT_CS | 1 << 3)
 #define LL_EVT_CS_PRECAL_POST_PROCESS                  (LL_EVT_CS | 1 << 4)
+#define LL_EVT_CS_NEXT_SUBEVENT_PROCESS                (LL_EVT_CS | 1 << 5)
+#define LL_EVT_CS_CURRENT_SUBEVENT_CONT_PROCESS        (LL_EVT_CS | 1 << 6)
 
 #define SYS_EVENT_MSG                                  0x80000000u  //!< A message is waiting event
 

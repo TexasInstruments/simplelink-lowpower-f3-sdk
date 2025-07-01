@@ -90,7 +90,7 @@ initialize by copy { readwrite };
  * return address from the initialization code, causing the processor to branch
  * to zero and fault)
  */
-define block CSTACK with alignment = 8, size = 0x400 { section .stack };
+define block CSTACK with alignment = 8, size = 0x1000 { section .stack };
 place at end of RAM_region { block CSTACK };
 do not initialize { section .stack, section .noinit};
 
@@ -98,7 +98,7 @@ do not initialize { section .stack, section .noinit};
 define exported symbol STACK_TOP = RAM_end__ + 1;
 
 /* Primary Heap configuration */
-define symbol HEAPSIZE = 16384;
+define symbol HEAPSIZE = 0;
 define block HEAP with alignment = 8, size = HEAPSIZE { };
 
 /* Place heap just before CSTACK */

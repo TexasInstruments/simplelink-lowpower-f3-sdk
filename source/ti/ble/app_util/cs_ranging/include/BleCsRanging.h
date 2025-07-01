@@ -55,7 +55,6 @@
 #include <stdbool.h>
 #include <float.h>
 
-
 /**
  * Type/Data structure Definitions
  * Utilize RCL as much as possible for type consistency but can be redefined for extension
@@ -133,7 +132,9 @@ typedef struct BleCsRanging_Config_t
     uint16_t maxDistance;                     /*!< Maximum Distance to measure in meter, must less than 150m*/
     uint16_t numAntPath;                      /*!< Number of antenna path, must less than 5*/
     uint16_t numChannels;                     /*!< Number of actual steps, must less than 75*/
-    uint16_t qq3Thresh;                       /*!< Quality Threshold to select algorithm dynamically*/
+    uint16_t qq3Thresh;                       /*!< Quality Threshold to select algorithm dynamically-very good signal*/
+    uint16_t qq3Thresh2;                      /*!< Second Quality Threshold to select algorithm dynamically-very bad signal*/
+    float distanceOffset;                     /*!< Distance Offset from Calibration in meters*/
     BleCsRanging_MAP_e sumAntPath;            /*!< Individutal or Summation before estimating distance*/
     BleCsRanging_GapInterp_e gapInterp;       /*!< Interplation method for gap*/
     BleCsRanging_Algorithm_e algorithm;       /*!< Enum to select the algorithm for distance*/
@@ -155,9 +156,20 @@ typedef enum
 
 typedef struct
 {
-    float distance;   /*!< estimated distance*/
-    float quality;    /* !< quality average*/
-    float confidence; /*!< confidence of the estimation*/
+    float distanceMusic[MAX_NUM_ANTPATH]; /*!< distance MUSIC of each antenna path*/
+    float distanceNN[MAX_NUM_ANTPATH];    /*!< distance NN of each antenna path*/
+    uint16_t numMPC[MAX_NUM_ANTPATH];     /*!< number of multipath-component (MPC) of each antenna path*/
+    float quality[MAX_NUM_ANTPATH];       /*!< quality metric QQ3 of each antenna path*/
+    float confidence[MAX_NUM_ANTPATH];    /*!< confidence of each antenna path*/
+} BleCsRanging_DebugResult_t;
+
+typedef struct
+{
+    float distance;                           /*!< estimated distance*/
+    float quality;                            /*!< quality metric QQ3 of the estimated distance*/
+    float confidence;                         /*!< confidence of the estimation*/
+    uint16_t numMPC;                          /*!< number of multipath-component (MPC) of the estimated distance*/
+    BleCsRanging_DebugResult_t *pDebugResult; /*!< debug result*/
 } BleCsRanging_Result_t;
 
 /***********************************************************************************

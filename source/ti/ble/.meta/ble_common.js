@@ -101,7 +101,8 @@ const deviceToBoard = {
   CC2745R10_Q1: "LP_EM_CC2745R10_Q1",
   CC2674R10RGZ: "LP_CC2674R10_RGZ",
   CC2674P10RGZ: "LP_CC2674P10_RGZ",
-  CC2744R7RHAQ1: "LP_EM_CC2745R10_Q1"
+  CC2744R7RHAQ1: "LP_EM_CC2745R10_Q1",
+  CC2755P105RHA: "LP_EM_CC2755P10"
 };
 
 const deviceToDefines = {
@@ -197,12 +198,14 @@ const CC23XXMigration = [
 // The list of CC27xx LPs and devices that can be migrated to
 const CC27XXMigration = [
   {target: "LP_EM_CC2745R10_Q1"},
+  {target: "LP_EM_CC2755P10"},
+  {target: "LP_EM_CC2755R10_BG"},
   {target: "CC2745R10RHAQ1"},
   {target: "CC2745P10RHAQ1"},
   {target: "CC2755P105RHA"},
   {target: "CC2755R105RHA"},
   {target: "CC2745R7RHAQ1"},
-  {target: "CC2744R7RHAQ1"}
+  {target: "CC2755R105YCJ"}
 ]
 
 const supportedMigrations = {
@@ -216,6 +219,8 @@ const supportedMigrations = {
   LP_EM_CC2340R2:               CC23XXMigration,
   LP_EM_CC2340R22:              CC23XXMigration,
   LP_EM_CC2745R10_Q1:           CC27XXMigration,
+  LP_EM_CC2755P10:              CC27XXMigration,
+  LP_EM_CC2755R10_BG:           CC27XXMigration,
   //Devices
   CC2340R5RKP:    CC23XXMigration,
   CC2340R53RKP:   CC23XXMigration,
@@ -230,7 +235,8 @@ const supportedMigrations = {
   CC2755P105RHA:  CC27XXMigration,
   CC2755R105RHA:  CC27XXMigration,
   CC2745R7RHAQ1:  CC27XXMigration,
-  CC2744R7RHAQ1:  CC27XXMigration
+  CC2744R7RHAQ1:  CC27XXMigration,
+  CC2755R105YCJ:  CC27XXMigration
 };
 
 const boardName = getBoardOrLaunchPadName(true);
@@ -854,6 +860,16 @@ function getRadioScript(rfDesign, deviceId)
         {
             radioSettings = system.getScript("/ti/ble/rf_config/"
             + "LP_EM_CC2745R10_Q1_rf_defaults.js");
+        }
+        else if( rfDesign === "LP_EM_CC2755R10_BG" )
+        {
+            radioSettings = system.getScript("/ti/ble/rf_config/"
+            + "LP_EM_CC2755R10_BG_rf_defaults.js");
+        }
+        else if( rfDesign === "LP_EM_CC2755P10" )
+        {
+            radioSettings = system.getScript("/ti/ble/rf_config/"
+            + "LP_EM_CC2755P10_rf_defaults.js");
         }
     }
 

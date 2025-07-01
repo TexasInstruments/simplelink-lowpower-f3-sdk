@@ -68,10 +68,6 @@
  * CONSTANTS
  */
 
-// NPI Task configuration
-#define NPI_MSG_BUFF_SIZE         1500
-#define NPI_TASK_STACK_SIZE       1024
-
 // NPI Message types
 #define NPI_ASYNC_REQ             ((NPI_MSG_TYPE_ASYNC << 5) ^ RPC_SYS_EXTCTRL)
 #define NPI_ASYNC_RSP             ((NPI_MSG_TYPE_ASYNC << 5) ^ RPC_SYS_EXTCTRL)
@@ -121,22 +117,22 @@ uint8_t ExtCtrlHost_createAndSendNpiMessage(uint8_t cmdId, uint8_t cmdTypeNpi, u
  *
  * @brief   Open NPI interfaces
  *
- * @param   none
+ * @param   pParams - pointer to function parameters
  *
  * @return  Status of NPITask_open
  */
-uint8_t ExtCtrlHost_openHostIf(pfnExtCtrlProcessMsgCb ExtCtrlAppCb)
+uint8_t ExtCtrlHost_openHostIf(ExtCtrlHost_openHostIfParams_t *pParams)
 {
   bStatus_t status = NPI_SUCCESS;
 #ifdef APP_EXTERNAL_CONTROL
   // Initialize NPI Interface
   NPITask_Params_init(NPI_SERIAL_TYPE_UART, &npiPortParams);
 
-  npiPortParams.stackSize = NPI_TASK_STACK_SIZE;
+  npiPortParams.stackSize = pParams->npiTaskStackSize;
   npiPortParams.mrdyGpioIndex = 0 /*MRDY_GPIO*/;
   npiPortParams.srdyGpioIndex = 0 /*SRDY_GPIO*/;
-  npiPortParams.bufSize   = NPI_MSG_BUFF_SIZE;
-  npiPortParams.portParams.uartParams.baudRate = 460800;
+  npiPortParams.bufSize   = pParams->npiMsgBuffSize;
+  npiPortParams.portParams.uartParams.baudRate = pParams->uartBaudRate;
 
   // Kick off NPI task
   status = NPITask_open(&npiPortParams);
@@ -149,7 +145,7 @@ uint8_t ExtCtrlHost_openHostIf(pfnExtCtrlProcessMsgCb ExtCtrlAppCb)
     // Change NPI assert subsystemId and command
     NPITask_chgAssertHdr(RPC_SYS_EXTCTRL + (NPI_MSG_TYPE_ASYNC<<5), EXTCTRL_HOST_EVT_ASSERT);
 
-    gExtCtrlProcessMsgCb = (pfnExtCtrlProcessMsgCb)ExtCtrlAppCb;
+    gExtCtrlProcessMsgCb = (pfnExtCtrlProcessMsgCb)(pParams->extCtrlProcessMsgCB);
 
     if(gExtCtrlProcessMsgCb == NULL)
     {

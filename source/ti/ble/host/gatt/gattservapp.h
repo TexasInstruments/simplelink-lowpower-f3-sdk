@@ -261,7 +261,7 @@ extern "C"
 #define GATT_ATT_UUID_TYPE(type) {ATT_UUID_SIZE,type}
 
 /// @brief GATT BT UUID
-#define GATT_BT_UUID(name, UUID) const uint8 name[ATT_BT_UUID_SIZE] =\
+#define GATT_BT_UUID(name, UUID) uint8 name[ATT_BT_UUID_SIZE] =\
 {\
   LO_UINT16(UUID), HI_UINT16(UUID)\
 }

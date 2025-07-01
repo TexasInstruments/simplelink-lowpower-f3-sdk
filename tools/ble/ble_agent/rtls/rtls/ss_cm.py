@@ -56,15 +56,11 @@ class CM(NpiSubSystem):
     #
     class StartRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.CM_START
-        struct = Struct(
-            "status" / Enum(Int8ul, SUCCESS=0, FAILED=1)
-        )
+        struct = Struct("status" / Enum(Int8ul, SUCCESS=0, FAILED=1))
 
     class StopRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.CM_STOP
-        struct = Struct(
-            "status" / Enum(Int8ul, SUCCESS=0, NOT_FOUND=2)
-        )
+        struct = Struct("status" / Enum(Int8ul, SUCCESS=0, NOT_FOUND=2))
 
     class EndReq(NpiRequest, AsyncReq, FromNwp):
         command = Commands.CM_END
@@ -95,7 +91,9 @@ class CM(NpiSubSystem):
         )
 
     @builder_class(StopReq)
-    def stop(self, sessionId): pass
+    def stop(self, sessionId):
+        pass
 
     @builder_class(StartReq)
-    def start(self, accessAddress, connInterval, hopValue, mSCA, currChan, chanMap): pass
+    def start(self, accessAddress, connInterval, hopValue, mSCA, currChan, chanMap):
+        pass

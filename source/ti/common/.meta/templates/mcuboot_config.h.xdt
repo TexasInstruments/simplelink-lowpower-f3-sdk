@@ -74,6 +74,22 @@
 #define MCUBOOT_WATCHDOG_FEED() { }
 % }
 
+% if(inst.imageCompression){
+/* Enable image compression */
+
+#define MCUBOOT_DECOMPRESS_IMAGES
+
+#define LZMA_LIT_SIZE               0x300
+#define LZMA2_DECOMP_CHUNK_SIZE     256
+#define LZMA2_LC                    `inst.lzmaLc`
+#define LZMA2_LP                    `inst.lzmaLp`
+#define LZMA2_PB                    `inst.lzmaPb`
+#define LZMA2_DIC_SIZE              `inst.lzmaDicSize.replace("LZMA2_DIC_SIZE_", "")`
+#define LZMA2_PROBS_SIZE            (1984 + ((LZMA_LIT_SIZE) << (LZMA2_LCLP_MAX)))
+#define LZMA2_LCLP_MAX              LZMA2_LC + LZMA2_LP
+
+% }
+
 % if(inst.antiRollbackProtection){
 /*
  * Enable security counters for rollback protection.

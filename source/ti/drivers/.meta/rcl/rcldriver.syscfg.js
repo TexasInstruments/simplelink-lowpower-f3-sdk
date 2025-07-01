@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -155,7 +155,17 @@ function sharedModuleInstances(inst){
  */
 function modules(inst) {
 
-    const dependencies = ["Board", "Power", "Temperature"];
+    let dependencies = ["Board", "Power", "Temperature"];
+
+    /* For CC27XX P devices, the PA ESD protection feature requires
+     * reading the VDDS voltage from BATMON. This adds a dependency
+     * on the BATMON driver.
+     */
+    let board = system.deviceData.board;
+    if (board != undefined && board.name.match(/CC27..P../))
+    {
+        dependencies.push("BatteryMonitor");
+    }
 
     return Common.autoForceModules(dependencies)();
 }

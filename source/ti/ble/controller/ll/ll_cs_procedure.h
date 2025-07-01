@@ -560,4 +560,64 @@ uint8 llCsGetNextAntennaPermutation(csACI_e ACI);
 csStatus_e llCsInitChanIdxArr(uint8 configId, uint16 connId,
                               const csConfigurationSet_t* csConfig);
 
+
+/*******************************************************************************
+ * @fn          llCsInitStepAndResultBuffers
+ *
+ * @brief       This function initalizes the step buffers
+ * Uses RCL_Multibuffers_init to initialize the step buffers
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return       None
+ * */
+void llCsInitStepAndResultBuffers(void);
+
+/*******************************************************************************
+ * @fn          llCs_finishAndResetProcedure
+ *
+ * @brief       Finishes and resets the completed procedure
+ * Disables the procedure params, sets the next procedure flag to FALSE,
+ * resets the procedure counter, clears the RCL buffers, and frees the RCL task.
+ * Also, ends the test mode if it was enabled.
+ *
+ * input parameters
+ *
+ * @param       connId  - Connection ID
+ * @param       configId - Configuration ID
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void llCs_finishAndResetProcedure(uint16_t connId, uint8_t configId);
+
+/*******************************************************************************
+ * @fn          llCsProcedureCleanup
+ *
+ * @brief       Clears all CS DB indications related to procedure cleanup.
+ * Might be called as a successful procedure completion, as well as a procedure
+ * failure.
+ *
+ * input parameters
+ *
+ * @param       connId  - Connection ID
+ * @param       configId - Configuration ID
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void llCsProcedureCleanup( uint8 connId, uint8 configId);
+
 #endif // LL_CS_PROCEDURE_H

@@ -12,7 +12,8 @@ from .ble_device import (
     BleDeviceL2CAP,
     BleDeviceCm,
     BleDeviceGATT,
-    BleDeviceCaServer
+    BleDeviceCaServer,
+    BleDeviceRREQ,
 )
 from .ble_device_exception import *
 from .ble_device_enums import *

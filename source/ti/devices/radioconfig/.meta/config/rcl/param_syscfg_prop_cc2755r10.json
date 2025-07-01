@@ -121,7 +121,7 @@
       "name": "rxFixedPayloadLength",
       "displayName": "RX fixed payload length",
       "description": "Maximum payload length in RX if packet length configuration is fixed",
-      "default": 5,
+      "default": 12,
       "hidden": true
     }
   ],

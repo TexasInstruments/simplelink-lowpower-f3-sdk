@@ -464,8 +464,6 @@ extern "C"
 #define HCI_LE_CS_SECURITY_ENABLE_COMPLETE_EVENT_LEN                    4  // Masha: 3 ???
 #define HCI_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE_EVENT_LEN              76
 #define HCI_LE_CS_PROCEDURE_ENABLE_COMPLETE_EVENT_LEN                   22
-#define HCI_LE_CS_SUBEVENT_RESULT_LEN                                   17
-#define HCI_LE_CS_SUBEVENT_CONTINUE_LEN                                 9
 #define HCI_LE_CS_TEST_END_COMPLETE_EVENT_LEN                           2
 #define HCI_CS_SUBEVENT_RESULTS_HDR_LEN                                 16U
 #define HCI_CS_CONT_SUBEVENT_RESULTS_HDR_LEN                            9U

@@ -1,7 +1,7 @@
 {
   "boards": {
     "LP_EM_CC2745R10_Q1": {
-      "description": "+10 dBm output power internal balun for 2.4GHz.",
+      "description": "+10 dBm output power internal balun for 2.4 GHz.",
       "rf_design": "LP-EM-CC2745R10-RHA-6x6-IS24",
       "rf_port": [
         {
@@ -177,7 +177,7 @@
       "options": [
         {
           "name": "LP_EM_CC2745R10_Q1",
-          "description": "+10 dBm output power internal balun for 2.4GHz."
+          "description": "+10 dBm output power internal balun for 2.4 GHz."
         }
       ],
       "default": "LP_EM_CC2745R10_Q1"

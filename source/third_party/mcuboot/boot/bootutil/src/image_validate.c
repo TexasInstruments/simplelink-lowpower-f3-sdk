@@ -4,6 +4,7 @@
  * Copyright (c) 2017-2019 Linaro LTD
  * Copyright (c) 2016-2019 JUUL Labs
  * Copyright (c) 2019-2023 Arm Limited
+ * Copyright (c) 2025 Texas Instruments Incorporated
  *
  * Original license:
  *
@@ -52,6 +53,13 @@
 #if defined(MCUBOOT_ENC_IMAGES) || defined(MCUBOOT_SIGN_RSA) || \
     defined(MCUBOOT_SIGN_EC256)
 #include "mbedtls/asn1.h"
+#endif
+#ifdef MCUBOOT_DECOMPRESS_IMAGES
+/* TI Compression/Decompression
+ * Includes for decompressing LZMA2 compressed images
+ */
+#include "bootutil/compressed.h"
+#include "Lzma2Dec.h"
 #endif
 
 #include "bootutil_priv.h"
@@ -506,6 +514,177 @@ bootutil_img_validate(struct enc_key_data *enc_state, int image_index,
 #endif /* MCUBOOT_HW_ROLLBACK_PROT */
         }
     }
+/* TI Compression/Decompression
+ * Integrity check and signature verification of the decompressed image
+ */
+#ifdef MCUBOOT_DECOMPRESS_IMAGES
+/* After the compressed image has passed integrity and signature validation,
+ * it's time to validate the decompressed image.
+ */
+#ifdef EXPECTED_SIG_TLV
+    if (FIH_NOT_EQ(valid_signature, FIH_SUCCESS)) {
+        /* There is no point going through the decompression dry-run if the
+        compressed image already failed signature validation*/
+        goto out;
+    }
+#endif /* EXPECTED_SIG_TLV */
+    if (!image_hash_valid) {
+        /* Compressed image already failed integrity check, quit now. */
+        goto out;
+    }
+
+    if (MUST_DECOMPRESS(fap, image_index, hdr)) {
+#ifdef EXPECTED_SIG_TLV
+        FIH_SET(valid_signature, FIH_FAILURE);
+#endif /* EXPECTED_SIG_TLV */
+        image_hash_valid = 0;
+        /* Calculate the decompressed hash over the compressed image */
+        rc = bootutil_img_hash_compressed(enc_state, image_index, hdr, fap,
+                                          tmp_buf, tmp_buf_sz, hash, seed,
+                                          seed_len);
+        if (rc) {
+            goto out;
+        }
+
+        rc = bootutil_tlv_iter_begin(&it, hdr, fap, IMAGE_TLV_DECOMP_SHA, true);
+        if (rc) {
+            goto out;
+        }
+
+        if (it.tlv_end > bootutil_max_image_size(fap)) {
+            rc = -1;
+            goto out;
+        }
+
+        /* Find the IMAGE_TLV_DECOMP_SHA value and then check if it matches the
+        calculated hash */
+        while (true) {
+            rc = bootutil_tlv_iter_next(&it, &off, &len, &type);
+            if (rc < 0) {
+                goto out;
+            } else if (rc > 0) {
+                break;
+            }
+
+            if (type == IMAGE_TLV_DECOMP_SHA) {
+                /* Verify the image hash. This must always be present. */
+                if (len != sizeof(hash)) {
+                    rc = -1;
+                    goto out;
+                }
+
+                rc = LOAD_IMAGE_DATA(hdr, fap, off, buf, sizeof(hash));
+                if (rc) {
+                    goto out;
+                }
+
+                FIH_CALL(boot_fih_memequal, fih_rc, hash, buf, sizeof(hash));
+                if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+                    FIH_SET(fih_rc, FIH_FAILURE);
+                    goto out;
+                }
+
+                image_hash_valid = 1;
+            }
+        }
+
+#ifdef EXPECTED_SIG_TLV
+#ifndef MCUBOOT_HW_KEY
+        /* Find the IMAGE_TLV_KEYHASH */
+        rc = bootutil_tlv_iter_begin(&it, hdr, fap, IMAGE_TLV_KEYHASH, false);
+        if (rc) {
+            goto out;
+        }
+
+        while (true) {
+            rc = bootutil_tlv_iter_next(&it, &off, &len, &type);
+            if (rc < 0) {
+                goto out;
+            } else if (rc > 0) {
+                break;
+            }
+
+            if (type == IMAGE_TLV_KEYHASH) {
+                if (len > IMAGE_HASH_SIZE) {
+                    rc = -1;
+                    goto out;
+                }
+                rc = LOAD_IMAGE_DATA(hdr, fap, off, buf, len);
+                if (rc) {
+                    goto out;
+                }
+
+                key_id = bootutil_find_key(buf, len);
+            }
+        }
+#else  /* MCUBOOT_HW_KEY */
+        /* Find the IMAGE_TLV_PUBKEY */
+        rc = bootutil_tlv_iter_begin(&it, hdr, fap, IMAGE_TLV_PUBKEY, false);
+        if (rc) {
+            goto out;
+        }
+
+        while (true) {
+            rc = bootutil_tlv_iter_next(&it, &off, &len, &type);
+            if (rc < 0) {
+                goto out;
+            } else if (rc > 0) {
+                break;
+            }
+
+            if (type == IMAGE_TLV_PUBKEY) {
+                if (len > sizeof(key_buf)) {
+                    rc = -1;
+                    goto out;
+                }
+                rc = LOAD_IMAGE_DATA(hdr, fap, off, key_buf, len);
+                if (rc) {
+                    goto out;
+                }
+
+                key_id = bootutil_find_key(image_index, key_buf, len);
+            }
+        }
+#endif /* MCUBOOT_HW_KEY */
+        /* Find the IMAGE_TLV_DECOMP_SIGNATURE value and check if matches the
+        signature produced using the calculated hash */
+        rc = bootutil_tlv_iter_begin(&it, hdr, fap, IMAGE_TLV_DECOMP_SIGNATURE,
+                                     true);
+        if (rc) {
+            goto out;
+        }
+
+        while (true) {
+            rc = bootutil_tlv_iter_next(&it, &off, &len, &type);
+            if (rc < 0) {
+                goto out;
+            } else if (rc > 0) {
+                break;
+            }
+
+            if (type == IMAGE_TLV_DECOMP_SIGNATURE) {
+                /* Ignore this signature if it is out of bounds. */
+                if (key_id < 0 || key_id >= bootutil_key_cnt) {
+                    key_id = -1;
+                    continue;
+                }
+                if (!EXPECTED_SIG_LEN(len) || len > sizeof(buf)) {
+                    rc = -1;
+                    goto out;
+                }
+                rc = LOAD_IMAGE_DATA(hdr, fap, off, buf, len);
+                if (rc) {
+                    goto out;
+                }
+                FIH_CALL(bootutil_verify_sig, valid_signature, hash,
+                         sizeof(hash), buf, len, key_id);
+                key_id = -1;
+            }
+        }
+
+#endif /* EXPECTED_SIG_TLV */
+    }
+#endif /* MCUBOOT_DECOMPRESS_IMAGES */
 
     rc = !image_hash_valid;
     if (rc) {

@@ -271,12 +271,14 @@ function getLinkerDefs() {
         ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase)
     };
 
-    /* these devices reuse device defs above as they have the same memory map */
+    /* These devices reuse the device definitions above as they have the same
+     * memory map.
+     */
     dev2mem["CC2340R53YBG"] = dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHB"] = dev2mem["CC2340R5RKP"];
     dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
     dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
     dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
-    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105RHA"];
+    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2755R105RHA"];
 
     /* Override FLASH, RAM and S2RRAM base/size if TFM is enabled */
     if (system.modules["/ti/utils/TrustZone"]) {

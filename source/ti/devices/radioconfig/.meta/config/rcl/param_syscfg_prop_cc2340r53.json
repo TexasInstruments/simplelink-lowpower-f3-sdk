@@ -18,6 +18,10 @@
       "description": "Selects the PHY setting",
       "options": [
         {
+          "name": "bmack",
+          "displayName": "Bare-Metal ACK 2 Mbps, 500 kHz dev, GFSK"
+        },
+        {
           "name": "gfsk_2_mbps",
           "displayName": "2 Mbps, 320 kHz dev, GFSK"
         },
@@ -34,7 +38,7 @@
           "displayName": "1 Mbps / 2 Mbps"
         }
       ],
-      "default": "gfsk_2_mbps"
+      "default": "bmack"
     },
     {
       "name": "parent",
@@ -138,12 +142,21 @@
       "name": "rxFixedPayloadLength",
       "displayName": "RX fixed payload length",
       "description": "Maximum payload length in RX if packet length configuration is fixed",
-      "default": 5,
+      "default": 12,
       "hidden": true
     }
   ],
   "phys": {
     "prop2400": [
+      {
+        "file8": "bmack_2m_cc23xx.json",
+        "phy_files": {
+          "cc23xx": "bmack_2m_cc23xx.phy"
+        },
+        "name": "bmack",
+        "label": "Bare-Metal ACK 2 Mbps, 500 kHz dev, GFSK",
+        "protocol": "Proprietary"
+      },
       {
         "file8": "gfsk_2m_cc23xx.json",
         "phy_files": {

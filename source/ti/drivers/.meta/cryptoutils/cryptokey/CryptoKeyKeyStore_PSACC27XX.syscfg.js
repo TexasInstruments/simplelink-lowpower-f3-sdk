@@ -84,6 +84,15 @@ let defaultRamUsage = (defaultTotalSlots * slotMetadataSize) + constantOverheadR
  */
 let defaultVolatileMemoryPoolSize = (keyItemSizeMaxDefault * (defaultPersistentSlots + 1)) + constantOverheadRam;
 
+/* The useable flash size on 1M CC27XX devices is 0xE8000. The default
+ * KeyStore flash size is 8KB, or 0x2000 bytes. The default placement
+ * of KeyStore flash is at the end of flash, the final 8KB starting at
+ * 0xE6000.
+ */
+const defaultFlashOffset = 0xE6000;
+const sectorSize = 0x800;
+const baseAddress = 0x00000000;
+
 /*
  *  ======== getLibs ========
  *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
@@ -340,8 +349,57 @@ let configBase = [
         name              : "flashSize",
         displayName       : "KeyStore Flash Size Value",
         description       : "Amount of flash space occupied by persistent keys and their metadata.",
-        default           : 8192,
-        displayFormat     : "dec",
+        default           : 0x2000,
+        displayFormat     : "hex",
+        hidden            : true
+    },
+    {
+        name              : "flashRegionType",
+        displayName       : "KeyStore Flash Region Type",
+        description       : "Specifies the type of flash region is used with regards to the linker command file.",
+        longDescription:`
+Specifies the type of region used.
+
+* __Generated__ - An internal flash region is automatically generated.
+* __Pointer__ - Provide a pointer to the memory location of a
+predefined internal flash region.
+`,
+        default      : "Pointer",
+        options      : [
+            {
+                name: "Generated",
+                description: "An internal flash region is automatically"
+                    + " generated."
+            },
+            {
+                name: "Pointer",
+                description: "Provide a pointer to the memory location"
+                    + " of a predefined internal flash region."
+            }
+        ],
+        hidden            : false
+    },
+    {
+        name              : "flashOffset",
+        displayName       : "KeyStore Flash Address Offset",
+        description       : "KeyStore flash region offset, from this device's application-accessible base flash address.",
+        longDescription   : "This is the offset from the base application-accessible flash address to the "
+                          + "start of the KeyStore flash region. For example, if the base address of the "
+                          + "application-accessible flash is 0x0021A000, an offset of 0x1000 would place "
+                          + "the start of the KeyStore flash region at 0x0021B000. When changing KeyStore "
+                          + "flash address offset, be sure that the specified flash region will fit in the "
+                          + "device's available application flash and will not collide with vector table.",
+        default           : defaultFlashOffset,
+        onChange          : onChangeUpdateFlash,
+        displayFormat     : "hex",
+        hidden            : false
+    },
+    {
+        name              : "flashAddress",
+        displayName       : "KeyStore Flash Address",
+        description       : "KeyStore flash region address, calculated from offset and base address.",
+        default           : defaultFlashOffset, /* Since CC27XX's base address is 0, the default offset and address are the same */
+        displayFormat     : "hex",
         hidden            : true
     },
     {
@@ -473,19 +531,22 @@ function onChangeUpdateFlash(inst)
     if (inst.flashSizeConfig == "4KB (11 Persistent Keys Max)")
     {
         inst.persistentNumKeys = 11;
-        inst.flashSize = 4096;
+        inst.flashSize = 0x1000;
     }
     else if (inst.flashSizeConfig == "8KB (23 Persistent Keys Max)")
     {
         inst.persistentNumKeys = 23;
-        inst.flashSize = 8192;
+        inst.flashSize = 0x2000;
     }
     else
     {
         /* inst.flashSizeConfig == "10KB (35 Persistent Keys Max)" */
         inst.persistentNumKeys = 35;
-        inst.flashSize = 10240;
+        inst.flashSize = 0x2800;
     }
+
+    /* Update the flash address based on the offset and base address */
+    inst.flashAddress = baseAddress + inst.flashOffset;
 }
 
 /*
@@ -504,6 +565,12 @@ function validate(inst, validation)
             "If different settings are needed, modify tfm_s/cc27xx/production_full/config/config_tfm_project.h " +
             "and rebuild the secure image.", inst);
     }
+
+    if (inst.flashOffset % sectorSize) {
+        let message = "KeyStore flash offset must be aligned on a " + sectorSize
+            + " page boundary.";
+        Common.logError(validation, inst, "flashOffset", message);
+    }
 }
 
 /*
@@ -517,6 +584,8 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
             inst.$uiState.assetStoreSlotCount.hidden = true;
             inst.$uiState.flashSizeConfig.hidden = true;
             inst.$uiState.ramUsage.hidden = true;
+            inst.$uiState.flashRegionType.hidden = true;
+            inst.$uiState.flashOffset.hidden = true;
 
             /* Hide volatile key configs */
             Object.keys(inst.$uiState).forEach(key => {
@@ -530,6 +599,8 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
             inst.$uiState.assetStoreSlotCount.hidden = false;
             inst.$uiState.flashSizeConfig.hidden = false;
             inst.$uiState.ramUsage.hidden = false;
+            inst.$uiState.flashRegionType.hidden = false;
+            inst.$uiState.flashOffset.hidden = false;
 
             /* Display volatile key configs */
             Object.keys(inst.$uiState).forEach(key => {
@@ -588,6 +659,7 @@ function extend(base)
  *  Export device-specific extensions to base exports
  */
 exports = {
+    validate: validate,
     /* required function, called by base CryptoKeyKeyStore_PSA module */
     extend: extend
 };

@@ -19,6 +19,7 @@ from ble_device import (
     ConnectionEventType,
     HandoverEventType,
     AddressType,
+    CmStopReasonType,
     PairingEventType,
     L2CAPEventType,
     CentralEventType,
@@ -27,8 +28,7 @@ from ble_device import (
     CmrConnectionRoleTypes,
     CmConnUpdateType,
     ConnectionEventStatus,
-    CmConnUpdateType
-
+    CmConnUpdateType,
 )
 
 
@@ -55,10 +55,12 @@ def print_connection_data(connection_data):
     print("----------------------------------------------------------------------")
     print(f"Status:                 {connection_data['status']}")
     print(f"Opcode:                 {connection_data['opcode']}")
-    print(f"Address Type:           {AddressType(connection_data['address_type']).name}"
-          )
-    print(f"Device Address:         {':'.join(format(x, '02X') for x in reversed(connection_data['dev_address']))}"
-          )
+    print(
+        f"Address Type:           {AddressType(connection_data['address_type']).name}"
+    )
+    print(
+        f"Device Address:         {':'.join(format(x, '02X') for x in reversed(connection_data['dev_address']))}"
+    )
     print(f"Connection Handle:      {connection_data['connection_handle']}")
     print(f"Connection Role:        {connection_data['connection_role']}")
     print(f"Connection Interval:    {connection_data['connection_interval']}")
@@ -96,10 +98,10 @@ def print_start_event(start_event):
     print("Start Monitoring")
     print(f"Access Address:    {start_event['access_addr']}")
     print(f"Connection Handle: {start_event['connection_handle']}")
-    print(f"Address Type:      {AddressType(start_event['address_type']).name}"
-          )
-    print(f"Device Address:    {':'.join(format(x, '02X') for x in reversed(start_event['dev_address']))}"
-          )
+    print(f"Address Type:      {AddressType(start_event['address_type']).name}")
+    print(
+        f"Device Address:    {':'.join(format(x, '02X') for x in reversed(start_event['dev_address']))}"
+    )
     print("------------------------------------------------------")
 
 
@@ -107,11 +109,11 @@ def print_stop_info(stop_event):
     print("Stop Monitoring")
     print(f"Access Address:    {stop_event['access_addr']}")
     print(f"Connection Handle: {stop_event['connection_handle']}")
-    print(f"Address Type:      {AddressType(stop_event['address_type']).name}"
-          )
-    print(f"Device Address:    {':'.join(format(x, '02X') for x in reversed(stop_event['dev_address']))}"
-          )
-    print(f"Stop Reason:       {stop_event['stop_reason']}")
+    print(f"Address Type:      {AddressType(stop_event['address_type']).name}")
+    print(
+        f"Device Address:    {':'.join(format(x, '02X') for x in reversed(stop_event['dev_address']))}"
+    )
+    print(f"Stop Reason:       {CmStopReasonType(stop_event['stop_reason']).name}")
     print("------------------------------------------------------")
 
 
@@ -128,7 +130,7 @@ def print_report(report):
 
 
 def print_update_event(evt):
-    print(f'Received an update event')
+    print(f"Received an update event")
     print(f"Connection Handle: {evt['connection_handle']}")
     print(f"Access Address:    {evt['access_addr']}")
     print(f"Event Counter:     {evt['event_counter']}")
@@ -144,7 +146,7 @@ def search_peer_name(peer_name, adv_data):
             return False
         field_type = adv_data[i + 1]
         if field_type == 0x09:  # Complete Local Name
-            name = bytes(adv_data[i + 2:i + 1 + length]).decode('utf-8')
+            name = bytes(adv_data[i + 2 : i + 1 + length]).decode("utf-8")
             return name == peer_name
         i += length + 1
 
@@ -153,7 +155,9 @@ def update_connection(conn_node, cm_node):
     # Wait for the connection update event form the connection node
     while True:
         try:
-            evt = conn_node.wait_for_event(event_type=CmEventType.NWP_CM_CONN_UPDATE_EVENT, timeout=200)
+            evt = conn_node.wait_for_event(
+                event_type=CmEventType.NWP_CM_CONN_UPDATE_EVENT, timeout=200
+            )
         except Exception as e:
             # Timeout on the event, keep listening
             continue
@@ -168,25 +172,33 @@ def enable_connection_monitor(car_node, cmr_node, conn_handle, connection_role):
     car_node.cm.start_cm_serving(conn_handle)
 
     # Wait for the connection information event
-    conn_info = car_node.wait_for_event(event_type=CmEventType.NWP_CM_SERVING_DATA, timeout=30)
+    conn_info = car_node.wait_for_event(
+        event_type=CmEventType.NWP_CM_SERVING_DATA, timeout=30
+    )
 
     # Start monitoring
-    cmr_node.cm.start_monitoring(time_delta=50000,
-                                 time_delta_err=0,
-                                 max_num_conn_events=3,
-                                 adjustment_events=4,
-                                 conn_role=connection_role,
-                                 data_len=conn_info["data_len"],
-                                 data=conn_info["data"])
+    cmr_node.cm.start_monitoring(
+        time_delta=50000,
+        time_delta_err=0,
+        max_sync_attempts=3,
+        adjustment_events=4,
+        conn_role=connection_role,
+        data_len=conn_info["data_len"],
+        data=conn_info["data"],
+    )
 
-    start_info = cmr_node.wait_for_event(event_type=CmEventType.NWP_CM_START, timeout=10)
+    start_info = cmr_node.wait_for_event(
+        event_type=CmEventType.NWP_CM_START, timeout=10
+    )
 
     if start_info:
         print_start_event(start_info)
 
     # Wait until receiving 40 report from the connection monitor
     for num_conn_events in range(0, 40):
-        report = cmr_node.wait_for_event(event_type=CmEventType.NWP_CM_REPORT, timeout=10)
+        report = cmr_node.wait_for_event(
+            event_type=CmEventType.NWP_CM_REPORT, timeout=10
+        )
         print_report(report)
 
 
@@ -204,7 +216,7 @@ def main():
         device_comport="COM105",
         logging_file=logging_file,
         logging_level=BleDeviceLoggingLevel.DEBUG,
-        sync_command=False
+        sync_command=False,
     )
 
     if car_node.initialize() and cmr_node.initialize():
@@ -227,7 +239,8 @@ def main():
             print("Start Advertising")
             car_node.peripheral.start_advertising(0, 0, 0)
             car_node.peripheral.wait_for_event(
-                event_type=PeripheralEventType.NWP_ADV_START_AFTER_ENABLE, timeout=30)
+                event_type=PeripheralEventType.NWP_ADV_START_AFTER_ENABLE, timeout=30
+            )
 
         # Start scanning
         print("Start Scanning")
@@ -237,8 +250,12 @@ def main():
         while continue_scan:
             time.sleep(1e-12)
 
-            if car_node.all_event_list.is_event_in_list(CentralEventType.NWP_ADV_REPORT):
-                adv_report = car_node.all_event_list.get_event_from_list(CentralEventType.NWP_ADV_REPORT)
+            if car_node.all_event_list.is_event_in_list(
+                CentralEventType.NWP_ADV_REPORT
+            ):
+                adv_report = car_node.all_event_list.get_event_from_list(
+                    CentralEventType.NWP_ADV_REPORT
+                )
                 if adv_report:
                     # Search the name in the advertising data
                     search_result = search_peer_name(peer_name, adv_report["data"])
@@ -252,16 +269,20 @@ def main():
                         print(f"Create a connection with {peer_address} as a central")
                         car_node.central.connect(peer_addr_type, peer_address, 1, 0)
                         connection_data = car_node.wait_for_event(
-                            event_type=ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT, timeout=30
+                            event_type=ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT,
+                            timeout=30,
                         )
 
-            if car_node.all_event_list.is_event_in_list(ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT):
+            if car_node.all_event_list.is_event_in_list(
+                ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT
+            ):
                 print("Connection created as a peripheral")
                 # Stop the scan
                 car_node.central.stop_scan()
                 continue_scan = 0
                 connection_data = car_node.all_event_list.get_event_from_list(
-                    ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT)
+                    ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT
+                )
 
         # Print connection data
         if connection_data:
@@ -283,7 +304,8 @@ def main():
                     car_node.l2cap.connect_request(0, 1, 1)
 
                     l2cap_conn_event = car_node.wait_for_event(
-                        event_type=L2CAPEventType.NWP_L2CAP_CHANNEL_ESTABLISHED, timeout=30
+                        event_type=L2CAPEventType.NWP_L2CAP_CHANNEL_ESTABLISHED,
+                        timeout=30,
                     )
                     print_l2cap_conn(l2cap_conn_event)
 
@@ -292,11 +314,18 @@ def main():
                 if connection_role == ConnectionRoleType.CENTRAL_ROLE:
                     cm_conn_role = CmrConnectionRoleTypes.CM_CONNECTION_ROLE_CENTRAL
 
-                enable_connection_monitor(car_node, cmr_node, connection_data["connection_handle"], cm_conn_role)
+                enable_connection_monitor(
+                    car_node,
+                    cmr_node,
+                    connection_data["connection_handle"],
+                    cm_conn_role,
+                )
 
             if auto_update == True:
                 # Create a thread to update the connection automaticlly
-                update_thread = threading.Thread(target=update_connection, args=(car_node, cmr_node))
+                update_thread = threading.Thread(
+                    target=update_connection, args=(car_node, cmr_node)
+                )
                 update_thread.start()
                 input("Press any key to finish the example")
 

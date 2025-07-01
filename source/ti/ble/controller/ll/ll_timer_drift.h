@@ -130,6 +130,7 @@ extern "C"
 extern uint16 llCalcScaFactor( uint8 centralSCA );
 extern uint32 llCalcPeriodicScaDriftPerInterval( uint8 perAdvSCA , uint16 periodicInterval);
 uint32_t llScaOrdValueToPPM( uint8_t ordSCA );
+uint32_t llCsCalcTimerDrift(uint32_t offset, uint32_t subeventInterval, uint16_t scaFactor);
 
 #ifdef __cplusplus
 }

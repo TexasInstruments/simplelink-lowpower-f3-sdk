@@ -123,7 +123,7 @@
  *
  * @return      Status - Success or Failure
  */
-csStatus_e llCsSetupCmdStartTime( uint16 connId, uint8_t configId, uint8 role, uint8 subEventCount, RCL_CmdBleCs rclCmd );
+csStatus_e llCsSetupCmdStartTime( uint16 connId, uint8_t configId, uint8 role, uint16 subEventCount, RCL_CmdBleCs rclCmd );
 
 /*******************************************************************************
  * @fn          llCsSetupNextStepBuffer
@@ -244,24 +244,3 @@ void llCsSetupPrecalCmd(RCL_Handle rclHandle);
  */
 uint8_t llCsSetFinalAntennaGpioValues(uint8_t prefAnt, uint8_t antMuxVals,
                                       uint8_t outputGpioVals[CS_ANTENNAS_GPIOS_ARRAY_SIZE]);
-
-/*******************************************************************************
- * @fn          llCs_finishAndResetProcedure
- *
- * @brief       Finishes and resets the completed procedure
- * Disables the procedure params, sets the next procedure flag to FALSE,
- * resets the procedure counter, clears the RCL buffers, and frees the RCL task.
- * Also, ends the test mode if it was enabled.
- *
- * input parameters
- *
- * @param       connId  - Connection ID
- * @param       configId - Configuration ID
- *
- * output parameters
- *
- * @param       None
- *
- * @return      None
- */
-void llCs_finishAndResetProcedure(uint16_t connId, uint8_t configId);

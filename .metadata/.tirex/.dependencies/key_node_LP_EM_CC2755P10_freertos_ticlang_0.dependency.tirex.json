@@ -1,0 +1,37 @@
+[
+    {
+        "files": [
+            "+../../README.html -> README.html",
+            "+../../app/app_main.c -> app/app_main.c",
+            "+../../common/Startup/osal_icall_ble.c -> common/Startup/osal_icall_ble.c",
+            "+../../app/inc/app_main.h -> app/inc/app_main.h",
+            "+../../app/inc/app_key_node.h -> app/inc/app_key_node.h",
+            "+../../app/inc/app_extctrl_common.h -> app/inc/app_extctrl_common.h",
+            "+../../app/inc/app_central_api.h -> app/inc/app_central_api.h",
+            "+../../app/inc/app_peripheral_api.h -> app/inc/app_peripheral_api.h",
+            "+../../app/inc/app_connection_api.h -> app/inc/app_connection_api.h",
+            "+../../app/inc/app_pairing_api.h -> app/inc/app_pairing_api.h",
+            "+../../app/inc/app_handover_api.h -> app/inc/app_handover_api.h",
+            "+../../app/inc/app_gatt_api.h -> app/inc/app_gatt_api.h",
+            "+../../app/inc/app_common_api.h -> app/inc/app_common_api.h",
+            "+../../app/inc/app_l2cap_coc_api.h -> app/inc/app_l2cap_coc_api.h",
+            "+../../app/inc/app_cs_transceiver_api.h -> app/inc/app_cs_transceiver_api.h",
+            "+../../app/inc/app_cs_api.h -> app/inc/app_cs_api.h",
+            "+../../app/app_key_node.c -> app/app_key_node.c",
+            "+../../app/app_ca_client.c -> app/app_ca_client.c",
+            "+../../app/app_central.c -> app/app_central.c",
+            "+../../app/app_peripheral.c -> app/app_peripheral.c",
+            "+../../app/app_connection.c -> app/app_connection.c",
+            "+../../app/app_pairing.c -> app/app_pairing.c",
+            "+../../app/app_handover.c -> app/app_handover.c",
+            "+../../app/app_gatt.c -> app/app_gatt.c",
+            "+../../app/app_common.c -> app/app_common.c",
+            "+../../app/app_l2cap_coc.c -> app/app_l2cap_coc.c",
+            "+../../app/app_cs.c -> app/app_cs.c",
+            "+../../app/app_cs_transceiver.c -> app/app_cs_transceiver.c",
+            "+../key_node.syscfg -> key_node.syscfg",
+            "+../../common/Startup/main_freertos.c -> main_freertos.c",
+            "+cc27xx_freertos.cmd -> cc27xx_freertos.cmd"
+        ]
+    }
+]

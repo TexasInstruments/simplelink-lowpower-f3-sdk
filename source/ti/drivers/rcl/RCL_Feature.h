@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,9 @@
  */
 typedef struct {
     bool enableTemperatureMonitoring;
+#ifdef DeviceFamily_CC27XX
+    bool enablePaEsdProtection;
+#endif
 } RCL_FeatureControl;
 
 extern const RCL_FeatureControl rclFeatureControl;

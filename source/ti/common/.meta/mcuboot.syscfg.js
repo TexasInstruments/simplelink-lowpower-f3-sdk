@@ -41,6 +41,7 @@ const deviceGroup = MCUbootTemplate.deviceGroup;
 const externalFlashSectorSize = MCUbootTemplate.externalFlashSectorSize;
 const externalFlashSize = MCUbootTemplate.externalFlashSize;
 const externalFlashBase = MCUbootTemplate.externalFlashBase;
+const compressionDicSizeValues = MCUbootTemplate.compressionDicSizeValues;
 
 const Common = system.getScript("/ti/drivers/Common.js");
 let logError = Common.logError;
@@ -132,6 +133,14 @@ let base = {
                 onChange    : changeExternalFlash
             },
             {
+                name        : "imageCompression",
+                displayName : "Enable Image Compression",
+                description : "Enable MCUboot to decompress image from secondary slot",
+                default     : false,
+                hidden      : true,
+                onChange    : changeImageCompression
+            },
+            {
                 name        : "enableEncryptedImage",
                 displayName : "Upgrade Using Encrypted Images",
                 description : "Enable Mcuboot to search for valid encrypted images",
@@ -168,6 +177,67 @@ let base = {
                         default     : mcubootSettings["bootloader"]["size"],
                         readOnly    : false,
                         hidden      : false
+                    }
+                ]
+            },
+            {
+                displayName: "LZMA Decoder",
+                description: "LZMA Decoder Configurations",
+                collapsed: true,
+                config  : [
+                    {
+                        name        : "lzmaLc",
+                        displayName : "Literal Context Bits (LC)",
+                        longDescription : "Determines how much of the previous byte's data is used " +
+                                        "as context for encoding/decoding literals. Higher values " +
+                                        "increase the compression ratio but require more memory. " +
+                                        "This value must match the one used during compression." +
+                                        "\n\n **Default:** 0" +
+                                        "\n\n**Range:** 0 - 8",
+                        displayFormat: "dec",
+                        default     : 0,
+                        range       : [0, 8],
+                        readOnly    : false,
+                        hidden      : true
+                    },
+                    {
+                        name        : "lzmaLp",
+                        displayName : "Literal Pos Bits (LP)",
+                        longDescription : "Determines how the position in the decompressed data " +
+                                        "stream affects the decoding of literals. Useful for " +
+                                        "position-dependent data. This must be set " +
+                                        "to the same value used during compression." +
+                                        "\n\n **Default:** 0" +
+                                        "\n\n**Range:** 0 - 4",
+                        displayFormat: "dec",
+                        default     : 0,
+                        range       : [0, 4],
+                        readOnly    : false,
+                        hidden      : true
+                    },
+                    {
+                        name        : "lzmaPb",
+                        displayName : "Pos Bits (PB)",
+                        longDescription : "Defines how many bits of the position are used to select " +
+                                        "the probability model for match distances. Higher values " +
+                                        "are better for larger files with repeated patterns. This " +
+                                        "must be set to the same value used during compression." +
+                                        "\n\n **Default:** 0" +
+                                        "\n\n**Range:** 0 - 4",
+                        displayFormat: "dec",
+                        default     : 0,
+                        range       : [0, 4],
+                        readOnly    : false,
+                        hidden      : true
+                    },
+                    {
+                        name        : "lzmaDicSize",
+                        displayName : "Dictionary Size",
+                        longDescription : "Dictionary size. Must match the one used during compression.",
+                        default     : 'LZMA2_DIC_SIZE_12288',
+                        options     : compressionDicSizeValues,
+                        readOnly    : false,
+                        hidden      : true
                     }
                 ]
             },
@@ -311,9 +381,53 @@ function changeExternalFlash(inst, ui)
     }
 }
 
+function changeImageCompression(inst, ui)
+{
+    if (deviceGroup == "DeviceGroup_CC23X0")
+    {
+        if (inst.imageCompression)
+        {
+            inst.primaryBase1 = mcubootSettings["image1Compressed"]["tzDisabledBase"]["primaryBase"];
+            inst.primarySize1 = mcubootSettings["image1Compressed"]["primarySize"];
+            inst.secondaryBase1 = mcubootSettings["image1Compressed"]["tzDisabledBase"]["secondaryBase"];
+            inst.secondarySize1 = mcubootSettings["image1Compressed"]["secondarySize"];
+            inst.bootloaderSize = mcubootSettings["bootloader"]["compressionEnabledSize"];
+
+            ui.lzmaLc.hidden = false;
+            ui.lzmaLp.hidden = false;
+            ui.lzmaPb.hidden = false;
+            ui.lzmaDicSize.hidden = false;
+        }
+        else
+        {
+            inst.primaryBase1 = mcubootSettings["image1"]["tzDisabledBase"]["primaryBase"];
+            inst.primarySize1 = mcubootSettings["image1"]["primarySize"];
+            inst.secondaryBase1 = mcubootSettings["image1"]["tzDisabledBase"]["secondaryBase"];
+            inst.secondarySize1 = mcubootSettings["image1"]["secondarySize"];
+            inst.bootloaderSize = mcubootSettings["bootloader"]["size"];
+
+            ui.lzmaLc.hidden = true;
+            ui.lzmaLp.hidden = true;
+            ui.lzmaPb.hidden = true;
+            ui.lzmaDicSize.hidden = true;
+        }
+    }
+}
+
 function changeMode(inst, ui)
 {
     ui.externalFlash.hidden = !ui.externalFlash.hidden;
+
+    if(inst.mode === "overwrite" && deviceGroup == "DeviceGroup_CC23X0" )
+    {
+        ui.imageCompression.hidden = false;
+    }
+    else
+    {
+        ui.imageCompression.hidden = true;
+    }
+
+    inst.imageCompression = false;
     inst.externalFlash = false;
 
     if(mcubootSettings["enableEncryptedImage"]["enabled"])
@@ -321,7 +435,6 @@ function changeMode(inst, ui)
         ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
         inst.enableEncryptedImage = false;
     }
-    
 }
 
 function changeTzEnable(inst, ui)
@@ -417,13 +530,27 @@ function validate(inst, validation) {
                  "Value must be 0x800 if Trust Zones are enabled");
     }
 
-    // if size of primary image is not the same as secondary image throw error
-    if(inst.primarySize1 !== inst.secondarySize1 && inst.mode == 'overwrite')
+    // If compression is enabled, the secondary slot must be smaller than or equal to the primary slot
+    if (inst.imageCompression)
     {
-        logError(validation, inst, "primarySize1",
-                 "Primary image must be the same size as secondary image");
-        logError(validation, inst, "secondarySize1",
-                 "Secondary image must be the same size as primary image");
+        if(inst.primarySize1 < inst.secondarySize1)
+        {
+            logError(validation, inst, "primarySize1",
+                    "Primary image size must be larger than or equal to the secondary image");
+            logError(validation, inst, "secondarySize1",
+                    "Secondary image size must be smaller than or equal to the primary image");
+        }
+    }
+    else
+    {
+        // if size of primary image is not the same as secondary image throw error
+        if(inst.primarySize1 !== inst.secondarySize1 && inst.mode == 'overwrite')
+        {
+            logError(validation, inst, "primarySize1",
+                    "Primary image must be the same size as secondary image");
+            logError(validation, inst, "secondarySize1",
+                    "Secondary image must be the same size as primary image");
+        }
     }
 
     // check if flash layout based on device group
@@ -620,12 +747,32 @@ function validate(inst, validation) {
     // check if non secure image sizes and bases are within bounds
     if(inst.tzEnabled === true)
     {
-        if(inst.primarySize2 !== inst.secondarySize2)
+        // If compression is enabled, the secondary slot must be smaller than the primary slot
+        if (inst.imageCompression)
         {
-            logError(validation, inst, "primarySize2",
-                    "Primary image must be the same size as secondary image");
-            logError(validation, inst, "secondarySize2",
-                    "Secondary image must be the same size as primary image");
+            if(inst.mode !== 'overwrite')
+            {
+                logError(validation, inst, "imageCompression",
+                        "Compression is only supported in overwrite mode.");
+            }
+
+            if(inst.primarySize2 < inst.secondarySize2)
+            {
+                logError(validation, inst, "primarySize2",
+                        "Primary image size must be larger than or equal to the secondary image");
+                logError(validation, inst, "secondarySize2",
+                        "Secondary image size must be smaller than or equal to the primary image");
+            }
+        }
+        else
+        {
+            if(inst.primarySize2 !== inst.secondarySize2)
+            {
+                logError(validation, inst, "primarySize2",
+                        "Primary image must be the same size as secondary image");
+                logError(validation, inst, "secondarySize2",
+                        "Secondary image must be the same size as primary image");
+            }
         }
         if( inst.primaryBase2 + inst.primarySize2 + inst.secondarySize1 + inst.secondarySize2 > mcubootSettings["alignment"]["flashBoundary"])
         {

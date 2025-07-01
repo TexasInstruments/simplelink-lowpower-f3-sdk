@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
 #include <ti/drivers/Power.h>
 
 #include <ti/drivers/Temperature.h>
+#include <ti/drivers/BatteryMonitor.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -503,6 +504,12 @@ void hal_temperature_init(void)
 __attribute__((weak)) int16_t hal_get_temperature(void)
 {
     return Temperature_getTemperature();
+}
+
+/* Make function weak to allow tests to override reported VDDS voltage */
+__attribute__((weak)) uint16_t hal_get_vdds_voltage(void)
+{
+    return BatteryMonitor_getVoltage();
 }
 
 uint32_t hal_get_hfxt_ratio(void)

@@ -63,33 +63,30 @@
 
 #if defined(OTA_ONCHIP) || defined(OTA_OFFCHIP)
 
-#if defined(OTA_ONCHIP)
-// The slot size must match in the post build step and in MCUBoot configuration.
-#define MCUBOOT_MAX_SLOT_SIZE   0x0003D800
-#define PRIMARY_SLOT_BASE       0x00004000
-#define SECONDARY_SLOT_BASE     0x00041800
-
-#else // OTA_OFFCHIP
-// The slot size must match in the post build step and in MCUBoot configuration.
-#define MCUBOOT_MAX_SLOT_SIZE   0x00070000
-#define PRIMARY_SLOT_BASE       0x00004000
-#define SECONDARY_SLOT_BASE     0x0
-#endif // OTA_ONCHIP
-
 #define MCUBOOT_IMG_HDR_BASE    PRIMARY_SLOT_BASE
 #define MCUBOOT_IMG_HDR_SIZE    0x100
-#define MCUBOOT_TRAIL_SIZE      0x1000
+#define MCUBOOT_TRAIL_SIZE      0x630
 
-#define FLASH_BASE              MCUBOOT_IMG_HDR_BASE  + MCUBOOT_IMG_HDR_SIZE
-#define FLASH_SIZE              MCUBOOT_MAX_SLOT_SIZE - MCUBOOT_IMG_HDR_SIZE - MCUBOOT_TRAIL_SIZE
+#define FLASH_BASE              ti_utils_build_GenMap_MCUBOOT_APP_BASE + MCUBOOT_IMG_HDR_SIZE
+#define FLASH_SIZE              ti_utils_build_GenMap_MCUBOOT_APP_SLOT_SIZE - MCUBOOT_IMG_HDR_SIZE - MCUBOOT_TRAIL_SIZE
 
-_MCUBOOT_MAX_SLOT_SIZE = MCUBOOT_MAX_SLOT_SIZE;
-_PRIMARY_SLOT_BASE = PRIMARY_SLOT_BASE;
-_SECONDARY_SLOT_BASE = SECONDARY_SLOT_BASE;
+_PRIMARY_SLOT_BASE = FLASH_BASE;
+_PRIMARY_SLOT_SIZE = ti_utils_build_GenMap_MCUBOOT_APP_SLOT_SIZE;
+#if defined(ti_utils_build_GenMap_MCUBOOT_APP_SLOT_SIZE_COMPRESSED)
+_SECONDARY_SLOT_SIZE = ti_utils_build_GenMap_MCUBOOT_APP_SLOT_SIZE_COMPRESSED;
+#else
+_SECONDARY_SLOT_SIZE = ti_utils_build_GenMap_MCUBOOT_APP_SLOT_SIZE;
+#endif
+
 #else
 
 #define FLASH_BASE              ti_utils_build_GenMap_FLASH0_BASE
+#if defined(ti_utils_build_GenMap_HSM_FW_SIZE)
+/* The last part of Flash is reserved for the HSM FW                         */
+#define FLASH_SIZE              (ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_HSM_FW_SIZE - ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_ZB_SIZE)
+#else
 #define FLASH_SIZE              ti_utils_build_GenMap_FLASH0_SIZE - ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_ZB_SIZE
+#endif
 
 #endif // defined(OTA_ONCHIP) || defined(OTA_OFFCHIP)
 

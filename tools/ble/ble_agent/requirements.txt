@@ -10,6 +10,8 @@ wcwidth==0.2.4
 
 websockets==10.4
 
+black==25.1.0
+
 -e unpi
 -e rtls
 -e ble_device

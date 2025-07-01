@@ -195,12 +195,18 @@ MAIN()
   zb_uint8_t nwk_key[16] = DEFAULT_NWK_KEY;
   zb_secur_setup_nwk_key(nwk_key, 0);
 #endif //DEFAULT_NWK_KEY
+
+#ifdef ZBOSS_REV23
   zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+#endif //ZBOSS_REV23
 
 #elif defined ZB_ROUTER_ROLE && !defined ZB_COORDINATOR_ROLE
 
   zb_set_network_router_role(DEFAULT_CHANLIST);
+
+#ifdef ZBOSS_REV23
   zb_nwk_set_max_ed_capacity(MAX_ED_CAPACITY);
+#endif //ZBOSS_REV23
 
 #elif defined ZB_ED_ROLE
   /* Set up defaults for the commissioning */
@@ -262,10 +268,6 @@ MAIN()
     while (1)
     {
       zboss_main_loop_iteration();
-#ifdef SILK_UART_LOGGING
-      // Idle task needs time to execute to flush logs
-      ClockP_usleep(500);
-#endif //SILK_UART_LOGGING
     }
   }
 

@@ -679,6 +679,9 @@ function onChannelSoundingChange(inst, ui) {
     inst.channelSounding ? inst.hideChannelSoundingGroup = false : inst.hideChannelSoundingGroup = true;
     Common.hideGroup(Common.getGroupByName(inst.$module.config, "channelSoundingConfig"), inst.hideChannelSoundingGroup, ui);
 
+    // The ranging client external control mode should be hidden
+    ui.rangingClientExtCtrlMode.hidden = true;
+
     // The antenna max values should always be hidden
     ui.antennasMuxValues.hidden = true;
 

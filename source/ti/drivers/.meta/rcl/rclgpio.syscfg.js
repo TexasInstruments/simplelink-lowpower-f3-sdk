@@ -990,10 +990,21 @@ function sharedModuleInstances(inst){
  */
 function modules(inst) {
 
-    const dependencies = ["Board", "Power", "Temperature"];
+    let dependencies = ["Board", "Power", "Temperature"];
+
+    /* For CC27XX P devices, the PA ESD protection feature requires
+     * reading the VDDS voltage from BATMON. This adds a dependency
+     * on the BATMON driver.
+     */
+    let board = system.deviceData.board;
+    if (board != undefined && board.name.match(/CC27..P../))
+    {
+        dependencies.push("BatteryMonitor");
+    }
 
     return Common.autoForceModules(dependencies)();
 }
+
 /*
  *******************************************************************************
  GenLibs

@@ -192,7 +192,7 @@ function create(phyGroup, phyID, first) {
     // RF properties, indexed by property name
     const RfPropMap = {};
 
-    // Register fields that need dynamic updating
+    // Register fields that need dynamic updating, by full field name and feature name
     const UpdatedRegData = {};
 
     // Functions needed by the common JavaScript utilities
@@ -221,6 +221,75 @@ function create(phyGroup, phyID, first) {
     updateRfParamCache();
 
     /**
+     * Get current feature selector bitmask for the PHY, based on all
+     * feature type PHY properties
+     * @returns bitmask, zero if there are no features
+     */
+    // eslint-disable-next-line no-unused-vars
+    function getFeatureSelector() {
+        let bitmask = 0x0000;
+
+        // For each PHY property category ...
+        for (const category of Common.forceArray(PhyDef.phy_properties)) {
+
+            // For each feature-type PHY property ...
+            for (const prop of Common.forceArray(category.property)) {
+                if (prop.type.startsWith("feature:")) {
+                    
+                    // Find the feature group through the property type
+                    const featureGroupName = prop.type.replace("feature:", "");
+                    for (const featureGroup of Common.forceArray(PhyDef.feature_group)) {
+                        if (featureGroup.name === featureGroupName) {
+                            
+                            // Find the selected feature
+                            const featureName = RfParamCache[prop.name];
+                            for (const feature of featureGroup.feature) {
+                                if (feature.name === featureName) {
+
+                                    // Add to feature selector bit mask 
+                                    bitmask |= feature.bitmask;
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return bitmask;
+    }
+
+    /**
+     * Get tx power from rf parameter cache
+     * @returns txPower from rf parameter cache
+     */
+    // eslint-disable-next-line no-unused-vars
+    function getTxPowerValue() {
+        // Invoked from PHY definition
+        return RfParamCache.txPower;
+    }
+
+    /**
+     * Get test value of property with name
+     * @param name - name of test property
+     * @returns value of test property from rf parameter cache, unless packetcount which is always 100
+     */
+    // eslint-disable-next-line no-unused-vars
+    function getTestProperty(name) {
+        // Invoked from PHY definition
+        if (name === "packetCount") {
+            // Not used by RadioConfig but enforces the same value as SmartRF Studio 8.
+            // (for code comparison purposes)
+            return 100;
+        }
+        if (name in RfParamCache) {
+            return RfParamCache[name];
+        }
+        return "";
+    }
+
+    /**
      *  ======== loadPhyDef ========
      *  Load the PHY definition data
      *
@@ -230,6 +299,31 @@ function create(phyGroup, phyID, first) {
     function loadPhyDef(file) {
         const fileData = system.getScript(ConfigPath + file);
         return _.cloneDeep(fileData.phy_def);
+    }
+
+    function evalPhyDefScript(script) {
+        let scriptCode;
+
+        if ("call" in script) {
+            // Call to function
+            scriptCode = "UtilHandle." + script.call;
+        }
+        else {
+            // In-line script
+            scriptCode = script["#text"];
+        }
+
+        // Remove any double quotes around script dependencies that may return string values
+        scriptCode = scriptCode.replace("\"getPhyProperty()\"", "getPhyProperty()");
+        scriptCode = scriptCode.replace("\"getTestProperty()\"", "getTestProperty()");
+        scriptCode = scriptCode.replace("\"getTxPowerValue()\"", "getTxPowerValue()");
+        scriptCode = scriptCode.replace("\"getFrontEndName()\"", "getFrontEndName()");
+        scriptCode = scriptCode.replace("\"getBoardProperty()\"", "getBoardProperty()");
+        scriptCode = scriptCode.replace("\"getBoardRfDesignNames()\"", "getBoardRfDesignNames()");
+        scriptCode = scriptCode.replace("\"getFeatureSelector()\"", "getFeatureSelector()");
+        scriptCode = scriptCode.replace("\"getMultiPhyEnabledPropertyNameList()\"", "getMultiPhyEnabledPropertyNameList()");
+
+        return eval(scriptCode);
     }
 
     /**
@@ -281,90 +375,12 @@ function create(phyGroup, phyID, first) {
                 if (field.script !== null) {
                     const script = field.script;
                     if (script.role === "update") {
-                        let code;
 
-                        if ("call" in script) {
-                            // Call to function
-                            code = "UtilHandle." + script.call;
-                        }
-                        else {
-                            // In-line script
-                            code = script["#text"];
-                        }
                         // eslint-disable-next-line no-eval
-                        field.value = eval(code);
+                        field.value = evalPhyDefScript(script);
                     }
                 }
             }
-        }
-
-        /**
-         * Get tx power from rf parameter cache
-         * @returns txPower from rf parameter cache
-         */
-        // eslint-disable-next-line no-unused-vars
-        function getTxPowerValue() {
-            // Invoked from PHY definition
-            return RfParamCache.txPower;
-        }
-
-        /**
-         * Get test value of property with name
-         * @param name - name of test property
-         * @returns value of test property from rf parameter cache, unless packetcount which is always 100
-         */
-        // eslint-disable-next-line no-unused-vars
-        function getTestProperty(name) {
-            // Invoked from PHY definition
-            if (name === "packetCount") {
-                // Not used by RadioConfig but enforces the same value as SmartRF Studio 8.
-                // (for code comparison purposes)
-                return 100;
-            }
-            if (name in RfParamCache) {
-                return RfParamCache[name];
-            }
-            return "";
-        }
-
-        /**
-         * Get current feature selector bitmask for the PHY, based on all
-         * feature type PHY properties
-         * @returns bitmask, zero if there are no features
-         */
-        // eslint-disable-next-line no-unused-vars
-        function getFeatureSelector() {
-            let bitmask = 0x0000;
-
-            // For each PHY property category ...
-            for (const category of Common.forceArray(PhyDef.phy_properties)) {
-
-                // For each feature-type PHY property ...
-                for (const prop of Common.forceArray(category.property)) {
-                    if (prop.type.startsWith("feature:")) {
-                        
-                        // Find the feature group through the property type
-                        const featureGroupName = prop.type.replace("feature:", "");
-                        for (const featureGroup of Common.forceArray(PhyDef.feature_group)) {
-                            if (featureGroup.name === featureGroupName) {
-                                
-                                // Find the selected feature
-                                const featureName = RfParamCache[prop.name];
-                                for (const feature of featureGroup.feature) {
-                                    if (feature.name === featureName) {
-
-                                        // Add to feature selector bit mask 
-                                        bitmask |= feature.bitmask;
-                                        break;
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            return bitmask;
         }
     }
 
@@ -588,7 +604,12 @@ function create(phyGroup, phyID, first) {
                     }
                     const fp = fieldPath.toUpperCase();
                     if (fp in UpdatedRegData) {
-                        featureData.value = UpdatedRegData[fp];
+                        if (featureName in UpdatedRegData[fp]) {
+                            featureData.value = UpdatedRegData[fp][featureName];
+                        }
+                        else {
+                            featureData.value = UpdatedRegData[fp]["common"];
+                        }
                     }
 
                     const [modName, regName, fieldName] = fp.split(".");
@@ -1470,14 +1491,30 @@ function create(phyGroup, phyID, first) {
         // Update register fields
         for (const regItem of Common.forceArray(PhyDef.rcl_registers)) {
             if ("rcl_register_field" in regItem) {
-                const regFields = Common.forceArray(regItem.rcl_register_field);
-                for (const data of regFields) {
-                    if ("script" in data) {
-                        const val = eval(data.script["#text"]);
-                        UpdatedRegData[data.name] = val;
+                const rclRegisterFields = Common.forceArray(regItem.rcl_register_field);
+                for (const rclRegisterField of rclRegisterFields) {
+
+                    // Have either value given by update script, or hard-coded
+                    let value;
+                    if ("script" in rclRegisterField) {
+                        value = evalPhyDefScript(rclRegisterField.script);
                     }
-                    else if ("value" in data) {
-                        UpdatedRegData[data.name] = data.value;
+                    else if ("value" in rclRegisterField) {
+                        value = rclRegisterField.value;
+                    }
+
+                    // First time: Add the field entry
+                    if (!(rclRegisterField.name in UpdatedRegData)) {
+                        UpdatedRegData[rclRegisterField.name] = {}
+                    }
+
+                    // Find relevant features, and apply the value to those features
+                    let featureNames = ["common"];
+                    if ("feature_filter" in rclRegisterField) {
+                        featureNames = rclRegisterField.feature_filter.split(",");
+                    }
+                    for (const featureName of featureNames) {
+                        UpdatedRegData[rclRegisterField.name][featureName] = value;
                     }
                 }
             }
@@ -1665,21 +1702,11 @@ function create(phyGroup, phyID, first) {
         const prop = getPhyPropertyByName(rfProp);
         if (prop !== null && "script" in prop) {
             const scripts = Common.forceArray(prop.script);
-            const updScript = scripts[0];
+            const firstScript = scripts[0];
 
-            if (updScript.role.match(/update/)) {
-                let code;
-
-                if ("call" in updScript) {
-                    // Call to function
-                    code = "UtilHandle." + updScript.call;
-                }
-                else {
-                    // In-line script
-                    code = updScript["#text"];
-                }
+            if (firstScript.role.match(/update/)) {
                 // eslint-disable-next-line no-eval
-                let val = eval(code);
+                let val = evalPhyDefScript(firstScript);
                 if (prop.type === "float") {
                     val = parseFloat(val).toFixed(prop.decimals);
                 }
@@ -1746,11 +1773,28 @@ function create(phyGroup, phyID, first) {
      */
     // eslint-disable-next-line no-unused-vars
     function getRclStructFieldArraySize(fieldData) {
+        
+        // Hack: The PA table size depends on the current RF design selection, so re-initialize the
+        // txPowerTable field before calculating the size of that field
+        initPaTable();
+        
         const structData = PhyDef.rcl_structs;
         const [struct, field] = fieldData.split(".");
         const data = structData[struct][field].split(",");
 
         return data.length;
+    }
+    
+    /**
+     *  ======== getBoardRfDesignNames ========
+     *  Get the size of an array in a struct field.
+     *
+     *  @param fieldData - field name (e.g. LRF_shapeBaseGfsk067.coeff)
+     *  @returns the size of the array
+     */
+    // eslint-disable-next-line no-unused-vars
+    function getBoardRfDesignNames() {
+        return RfDesign.getCurrentDesign().rf_design;
     }
 
     /**
@@ -2303,8 +2347,7 @@ ${symNameCode}
                     }
                     else if ("script" in phydefInst) {
                         // Value calculated by script
-                        const jsCode = phydefInst.script["#text"];
-                        value = eval(jsCode);
+                        value = evalPhyDefScript(phydefInst.script);
                     }
 
                     // Convert to HEX if applicable
@@ -2397,27 +2440,32 @@ ${symNameCode}
      *  ======== getRclRegFieldValue ========
      *  Get the value of a RCL register field, filtered by feature group/filter
      *
-     *  @param featureGroup - sub_phy, coded_tx_rate ...
-     *  @param desiredFeatureFilter   - Feature filter, e.g. "1_MBS" or "coded"
-     *  @param fieldName    - Full path of the register field (module.register.field)
+     *  @param featureGroupName - Feature group
+     *  @param featureName - Feature
+     *  @param fieldName - Full path of the register field (module.register.field)
      *
      *  @returns The value of the register or null if not found
      */
-    function getRclRegFieldValue(featureGroup, desiredFeatureFilter, fieldName) {
+    function getRclRegFieldValue(featureGroupName, featureName, fieldName) {
         // Iterate feature groups
         for (const item of Common.forceArray(PhyDef.rcl_registers)) {
-            if (item.feature_group === featureGroup || featureGroup === "Combined") {
+            if (item.feature_group === featureGroupName || featureGroupName === "Combined") {
                 // Iterate fields
                 for (const rfsData of item.rcl_register_field_settings) {
                     // Check if any of the stated feature filters match what we are looking for
-                    if (rfsData.feature_filter === desiredFeatureFilter) {
+                    if (rfsData.feature_filter === featureName) {
                         // Iterate registers
                         for (const data of rfsData.data) {
                             // Iterate register fields
                             for (const [fn, featureData] of Object.entries(data.reg)) {
                                 if (fieldName === fn.toUpperCase()) {
                                     if (fieldName in UpdatedRegData) {
-                                        featureData.value = UpdatedRegData[fieldName];
+                                        if (featureName in UpdatedRegData[fieldName]) {
+                                            featureData.value = UpdatedRegData[fieldName][featureName];
+                                        }
+                                        else if ("common" in UpdatedRegData[fieldName]) {
+                                            featureData.value = UpdatedRegData[fieldName]["common"];
+                                        }
                                     }
                                     return featureData.value;
                                 }
@@ -2832,23 +2880,19 @@ ${symNameCode}
             if (scripts.length > 1) {
                 const valScript = scripts[1];
                 if (valScript.role.match(/validate_error/)) {
-                    if ("call" in valScript) {
-                        // Call to function
-                        const code = "UtilHandle." + valScript.call;
-                        // eslint-disable-next-line no-eval
-                        const val = eval(code);
-                        if (val !== "") {
-                            // Validation failed
-                            const status = {
-                                valid: false,
-                                msg: val,
-                                config: phyProp
-                            };
-                            return status;
-                        }
-                        // Validation passed
-                        return null;
+                    // eslint-disable-next-line no-eval
+                    const errorMsg = evalPhyDefScript(valScript);
+                    if (errorMsg !== "") {
+                        // Validation failed
+                        const status = {
+                            valid: false,
+                            msg: errorMsg,
+                            config: phyProp
+                        };
+                        return status;
                     }
+                    // Validation passed
+                    return null;
                 }
             }
         }

@@ -1,4 +1,4 @@
-# On/Off Server Switch ZED
+# On/Off Cleint Switch ZED
 
 * [Introduction](#intro)
 * [Software Prerequisites](#software-prereqs)
@@ -12,7 +12,7 @@
 
 # <a name="intro"></a> Introduction
 
-This document discusses how to use the On/Off Server Switch ZED Sample App and the different parts that compose it. On/Off Server Switch Sample Application is an
+This document discusses how to use the On/Off Cleint Switch ZED Sample App and the different parts that compose it. On/Off Cleint Switch Sample Application is an
 example that exercises different features of TI Zigbee for a Zigbee End Device (ZED)
 implementation.
 
@@ -36,9 +36,9 @@ This section describes the software components and the corresponding source file
 
 ### <a name="application"></a> Application Files
 
-The On/Off Server Switch ZED Sample App works in conjuction with a Zigbee Coordinator (ZC),
-which is assumed to have formed a Zigbee network that the On/Off Server Switch ZED can
-join. For this, the On/Off Server Output ZC Sample App can be used. Upon startup, On/Off
+The On/Off Cleint Switch ZED Sample App works in conjuction with a Zigbee Coordinator (ZC),
+which is assumed to have formed a Zigbee network that the On/Off Cleint Switch ZED can
+join. For this, the On/Off Cleint Output ZC Sample App can be used. Upon startup, On/Off
 Server Switch ZED sends a commissioning request to attempt to join the network. Once it
 has joined the network successfully, BTN1 on the Launchpad can be pressed to send a Toggle
 command.
@@ -74,7 +74,7 @@ This section describes how to use this sample application.
 
 ## <a name="Commission-Device"></a> Commissioning the device Into the network
 
-Zigbee End Devices can only join networks. At startup, the On/Off Server Switch ZED
+Zigbee End Devices can only join networks. At startup, the On/Off Cleint Switch ZED
 Sample App goes into *ZB_BDB_NETWORK_STEERING* mode where it will first send a
 *Beacon Request*, wait for beacons, and then send a *Network Commissioning Request*
 packet to a ZC/ZR. The ZR/ZC then responds and the commissioning process will continue

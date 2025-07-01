@@ -39,8 +39,8 @@
  
  *****************************************************************************/
 
-#ifndef ZB_VENDOR_H
-#define ZB_VENDOR_H 1
+#ifndef ZB_VENDOR_LPF3_H
+#define ZB_VENDOR_LPF3_H 1
 
 #define DISABLE_AUTO_REBOOT_FOR_NSNG_CI
 #define ZB_BDB_MODE
@@ -100,7 +100,7 @@
 #define ZB_UART_BAUD_RATE 115200
 #endif
 
-#define ZB_MAC_DEFAULT_TX_POWER_24_GHZ        +5
+#define ZB_MAC_DEFAULT_TX_POWER_24_GHZ        0
 
 #define ZB_LITE_NO_ZB_DIRECT
 #define ZB_DISABLE_ZBD_SUPPORT_ON_TC
@@ -110,4 +110,4 @@
 #define ZB_ENABLE_ZGP
 #define ZB_APS_USER_PAYLOAD
 
-#endif /* ZB_VENDOR_H */
+#endif /* ZB_VENDOR_LPF3_H */

@@ -95,8 +95,24 @@ function create(phyGroup) {
         var ib                 = (value >> 2) & 0x3F;
         var gain               = (value >> 8) & 0x07;
         var mode               = (value >> 11) & 0x03;
+        // The pa20dBmEsdCtl field is initialized to zero by default.
+        // RCL dynamically sets this field based on the mode and VDDS values.
         var noIfampRfLdoBypass = (value >> 15) & 0x01;
-        return "{ .power = { .fraction = " + txPowerFract + ", .dBm = " + txPowerInt + " }, .tempCoeff = " + tempCoeff + ", .value = { .ibBoost = " + ibBoost + ", .ib = " + ib + ", .gain = " + gain + ", .mode = " + mode + ", .reserved = 0, .noIfampRfLdoBypass = " + noIfampRfLdoBypass + " } }"
+        return "{ .power = { .fraction = " + txPowerFract +
+               ", .dBm = " + txPowerInt +
+               " }, .tempCoeff = " + tempCoeff +
+               ", .value = { .ibBoost = " + ibBoost +
+               ", .ib = " + ib +
+               ", .gain = " + gain +
+               ", .mode = " + mode +
+               ", .reserved = 0" +
+               ", .pa20dBmEsdCtl = 0" +
+               ", .noIfampRfLdoBypass = " + noIfampRfLdoBypass +
+               " } }";
+    }
+
+    function getFrequencyWithOffset() {
+        return getPpFrequency() + getTestProperty("frequencyOffset");
     }
 
     function getPpFrequencyBle() {
@@ -278,6 +294,7 @@ function create(phyGroup) {
         convIeee802154ChannelToFreq: convIeee802154ChannelToFreq,
         convPaTableSettingToBinary: convPaTableSettingToBinary,
         convPaTableSettingToString: convPaTableSettingToString,
+        getFrequencyWithOffset: getFrequencyWithOffset,
         getPpFrequencyBle: getPpFrequencyBle,
         getPpFrequency154: getPpFrequency154,
         packetTxGenView: packetTxGenView,

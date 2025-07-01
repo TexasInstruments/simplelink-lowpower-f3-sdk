@@ -32,12 +32,34 @@
 
 import enum
 
-from construct import Struct, Enum, Int8ul, Int8sl, Int32ul, Int32sl, Int16ul, Int16sl, Byte, this, Float64l, FlagsEnum, \
-    GreedyRange, CString, Bytes, GreedyBytes
+from construct import (
+    Struct,
+    Enum,
+    Int8ul,
+    Int8sl,
+    Int32ul,
+    Int32sl,
+    Int16ul,
+    Int16sl,
+    Byte,
+    this,
+    Float64l,
+    FlagsEnum,
+    GreedyRange,
+    CString,
+    Bytes,
+    GreedyBytes,
+)
 
 from unpi.npirequest_mixins import AsyncReq, FromNwp, FromAp, SyncRsp, SyncReq
 from unpi.serialnode import builder_class
-from unpi.unpiparser import NpiSubSystem, NpiRequest, NpiSubSystems, NiceBytes, ReverseBytes
+from unpi.unpiparser import (
+    NpiSubSystem,
+    NpiRequest,
+    NpiSubSystems,
+    NiceBytes,
+    ReverseBytes,
+)
 
 
 class Commands(enum.IntEnum):
@@ -49,7 +71,7 @@ class Commands(enum.IntEnum):
     RTLS_CMD_RESERVED0 = 0x06
     RTLS_CMD_RESERVED1 = 0x07
     RTLS_CMD_RESERVED2 = 0x08
-    RTLS_CMD_CREATE_SYNC = 0X09
+    RTLS_CMD_CREATE_SYNC = 0x09
     RTLS_CMD_CREATE_SYNC_CANCEL = 0x0A
     RTLS_CMD_TERMINATE_SYNC = 0x0B
     RTLS_CMD_PERIODIC_RECEIVE_ENABLE = 0x0C
@@ -119,31 +141,35 @@ class Capabilities(enum.IntFlag):
     RTLS_CAP_CS = 65536
     RTLS_CAP_GATT = 131072
     RTLS_CAP_CA_SERVER = 262144
+    RTLS_CAP_RREQ = 524288
 
-RtlsStatus = Enum(Int8ul,
-                  RTLS_SUCCESS=0,
-                  RTLS_FAIL=1,
-                  RTLS_LINK_ESTAB_FAIL=2,
-                  RTLS_LINK_TERMINATED=3,
-                  RTLS_OUT_OF_MEMORY=4,
-                  RTLS_CONFIG_NOT_SUPPORTED=5,
-                  RTLS_ILLEGAL_CMD=6,
-                  RTLS_SYNC_CANCELED_BY_HOST=68,
-                  RTLS_SYNC_FAILED_TO_BE_EST=62
-                  )
 
-AssertCause = Enum(Int8ul,
-                   HAL_ASSERT_CAUSE_FALSE=0,
-                   HAL_ASSERT_CAUSE_TRUE=1,
-                   HAL_ASSERT_CAUSE_INTERNAL_ERROR=2,
-                   HAL_ASSERT_CAUSE_HW_ERROR=3,
-                   HAL_ASSERT_CAUSE_OUT_OF_MEMORY=4,
-                   HAL_ASSERT_CAUSE_ICALL_ABORT=5,
-                   HAL_ASSERT_CAUSE_ICALL_TIMEOUT=6,
-                   HAL_ASSERT_CAUSE_WRONG_API_CALL=7,
-                   HAL_ASSERT_CAUSE_HARDWARE_ERROR=8,
-                   HAL_ASSERT_CAUSE_RF_DRIVER_ERROR=9,
-                   )
+RtlsStatus = Enum(
+    Int8ul,
+    RTLS_SUCCESS=0,
+    RTLS_FAIL=1,
+    RTLS_LINK_ESTAB_FAIL=2,
+    RTLS_LINK_TERMINATED=3,
+    RTLS_OUT_OF_MEMORY=4,
+    RTLS_CONFIG_NOT_SUPPORTED=5,
+    RTLS_ILLEGAL_CMD=6,
+    RTLS_SYNC_CANCELED_BY_HOST=68,
+    RTLS_SYNC_FAILED_TO_BE_EST=62,
+)
+
+AssertCause = Enum(
+    Int8ul,
+    HAL_ASSERT_CAUSE_FALSE=0,
+    HAL_ASSERT_CAUSE_TRUE=1,
+    HAL_ASSERT_CAUSE_INTERNAL_ERROR=2,
+    HAL_ASSERT_CAUSE_HW_ERROR=3,
+    HAL_ASSERT_CAUSE_OUT_OF_MEMORY=4,
+    HAL_ASSERT_CAUSE_ICALL_ABORT=5,
+    HAL_ASSERT_CAUSE_ICALL_TIMEOUT=6,
+    HAL_ASSERT_CAUSE_WRONG_API_CALL=7,
+    HAL_ASSERT_CAUSE_HARDWARE_ERROR=8,
+    HAL_ASSERT_CAUSE_RF_DRIVER_ERROR=9,
+)
 
 
 class AoaRole(enum.IntEnum):
@@ -244,7 +270,7 @@ class RTLS(NpiSubSystem):
             "advSID" / Int8ul,
             "periodicAdvInt" / Int16ul,
             "dataLen" / Int8ul,
-            "data" / NiceBytes(Byte[this.dataLen])
+            "data" / NiceBytes(Byte[this.dataLen]),
         )
 
     class ScanRsp(NpiRequest, SyncRsp, FromNwp):
@@ -312,10 +338,7 @@ class RTLS(NpiSubSystem):
 
     class NwpAsyncRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.NWP
-        struct = Struct(
-            'event_type' / Int16ul,
-            "data" / NiceBytes(GreedyBytes)
-        )
+        struct = Struct("event_type" / Int16ul, "data" / NiceBytes(GreedyBytes))
 
     class AoaResultRaw(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_CMD_AOA_RESULT_RAW
@@ -326,10 +349,13 @@ class RTLS(NpiSubSystem):
             "channel" / Int8ul,
             "offset" / Int16ul,
             "samplesLength" / Int16ul,
-            "samples" / GreedyRange(Struct(
-                "i" / Int16sl,
-                "q" / Int16sl,
-            )),
+            "samples"
+            / GreedyRange(
+                Struct(
+                    "i" / Int16sl,
+                    "q" / Int16sl,
+                )
+            ),
         )
 
     class ClAoaResultRaw(NpiRequest, AsyncReq, FromNwp):
@@ -341,10 +367,13 @@ class RTLS(NpiSubSystem):
             "channel" / Int8ul,
             "offset" / Int16ul,
             "samplesLength" / Int16ul,
-            "samples" / GreedyRange(Struct(
-                "i" / Int16sl,
-                "q" / Int16sl,
-            )),
+            "samples"
+            / GreedyRange(
+                Struct(
+                    "i" / Int16sl,
+                    "q" / Int16sl,
+                )
+            ),
         )
 
     class ConnInfoRsp(NpiRequest, SyncRsp, FromNwp):
@@ -411,10 +440,7 @@ class RTLS(NpiSubSystem):
 
     class ReadAdvListSizeRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_CMD_READ_ADV_LIST_SIZE
-        struct = Struct(
-            "status" / RtlsStatus,
-            "listSize" / Int8ul
-        )
+        struct = Struct("status" / RtlsStatus, "listSize" / Int8ul)
 
     class SyncEstRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_EVT_SYNC_EST
@@ -427,28 +453,20 @@ class RTLS(NpiSubSystem):
             "advAddress" / NiceBytes(ReverseBytes(Byte[6])),
             "advPhy" / Int8ul,
             "periodicAdvInt" / Int16ul,
-            "advClockAccuracy" / Int8ul
+            "advClockAccuracy" / Int8ul,
         )
 
     class SyncLostRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_EVT_SYNC_LOST
-        struct = Struct(
-            "opcode" / Int8ul,
-            "syncHandle" / Int16ul
-        )
+        struct = Struct("opcode" / Int8ul, "syncHandle" / Int16ul)
 
     class TermSyncRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_EVT_TERMINATE_SYNC
-        struct = Struct(
-            "status" / RtlsStatus
-        )
+        struct = Struct("status" / RtlsStatus)
 
     class EnableClAoaRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_EVT_CL_AOA_ENABLE
-        struct = Struct(
-            "status" / RtlsStatus,
-            "syncHandle" / Int16ul
-        )
+        struct = Struct("status" / RtlsStatus, "syncHandle" / Int16ul)
 
     class PeriodicAdvReportRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.RTLS_EVT_PERIODIC_ADV_RPT
@@ -460,14 +478,12 @@ class RTLS(NpiSubSystem):
             "cteType" / Int8ul,
             "dataStatus" / Int8ul,
             "dataLen" / Int8ul,
-            "data" / NiceBytes(Byte[this.dataLen])
+            "data" / NiceBytes(Byte[this.dataLen]),
         )
 
     class ConnectionlessAoaEnableRsp(NpiRequest, SyncRsp, FromNwp):
         command = Commands.RTLS_CMD_CL_AOA_ENABLE
-        struct = Struct(
-            "status" / RtlsStatus
-        )
+        struct = Struct("status" / RtlsStatus)
 
     #
     # Requests
@@ -488,21 +504,21 @@ class RTLS(NpiSubSystem):
     class ConnectReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_CONNECT
         struct = Struct(
-            'addrType' / Enum(Int8ul),
-            'peerAddr' / NiceBytes(ReverseBytes(Byte[6])),
-            'connInterval' / Int16ul,
+            "addrType" / Enum(Int8ul),
+            "peerAddr" / NiceBytes(ReverseBytes(Byte[6])),
+            "connInterval" / Int16ul,
         )
 
     class GetActiveConnInfoReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_GET_ACTIVE_CONN_INFO
         struct = Struct(
-            'connHandle' / Int16ul,
+            "connHandle" / Int16ul,
         )
 
     class TerminateLinkReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_TERMINATE_LINK
         struct = Struct(
-            'connHandle' / Int16ul,
+            "connHandle" / Int16ul,
         )
 
     class AoaStartReq(NpiRequest, SyncReq, FromAp):
@@ -510,20 +526,28 @@ class RTLS(NpiSubSystem):
         struct = Struct(
             "connHandle" / Int16ul,
             "enable" / Int8ul,  # Enable/Disable
-            "cteInterval" / Int16ul,  # 0 = run once, > 0 = sample CTE every cteInterval until told otherwise
+            "cteInterval"
+            / Int16ul,  # 0 = run once, > 0 = sample CTE every cteInterval until told otherwise
             "cteLength" / Int8ul,  # Length of the CTE (2 - 20), used for AoA receiver
         )
 
     class AoaSetParamsReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_AOA_SET_PARAMS
         struct = Struct(
-            "aoaRole" / Enum(Int8ul, AoaRole),  # AOA_COORDINATOR, AOA_RESPONDER, AOA_PASSIVE
-            "aoaResultMode" / Enum(Int8ul, AoaResultMode),  # AOA_MODE_ANGLE, AOA_MODE_PAIR_ANGLES, AOA_MODE_RAW
+            "aoaRole"
+            / Enum(Int8ul, AoaRole),  # AOA_COORDINATOR, AOA_RESPONDER, AOA_PASSIVE
+            "aoaResultMode"
+            / Enum(
+                Int8ul, AoaResultMode
+            ),  # AOA_MODE_ANGLE, AOA_MODE_PAIR_ANGLES, AOA_MODE_RAW
             "connHandle" / Int16ul,
             "slotDurations" / Int8ul,  # 1us/2us sampling slots
-            "sampleRate" / Int8ul,  # 1Mhz (BT5.1 spec), 2Mhz, 3Mhz or 4Mhz - this enables oversampling
-            "sampleSize" / Int8ul,  # 8 bit sample (as defined by BT5.1 spec), 16 bit sample (higher accuracy)
-            "sampleCtrl" / Int8ul,  # sample control flags 0x00-default filtering, 0x01-RAW_RF no filtering
+            "sampleRate"
+            / Int8ul,  # 1Mhz (BT5.1 spec), 2Mhz, 3Mhz or 4Mhz - this enables oversampling
+            "sampleSize"
+            / Int8ul,  # 8 bit sample (as defined by BT5.1 spec), 16 bit sample (higher accuracy)
+            "sampleCtrl"
+            / Int8ul,  # sample control flags 0x00-default filtering, 0x01-RAW_RF no filtering
             "samplingEnable" / Int8ul,
             # 0 = mask CTE even if enabled, 1 = don't mask CTE, even if disabled (support Unrequested CTE)
             "numAnt" / Int8ul,  # Number of antennas in antenna array
@@ -557,7 +581,7 @@ class RTLS(NpiSubSystem):
             "connHandle" / Int16ul,
             "rtlsParamType" / Enum(Int8ul, RtlsParamType),
             "len" / Int8ul,
-            "data" / Byte[this.len]
+            "data" / Byte[this.len],
         )
 
     class CreateSyncReq(NpiRequest, SyncReq, FromAp):
@@ -569,7 +593,7 @@ class RTLS(NpiSubSystem):
             "advAddress" / NiceBytes(ReverseBytes(Byte[6])),
             "skip" / Int16ul,
             "syncTimeout" / Int16ul,
-            "syncCteType" / Int8ul
+            "syncCteType" / Int8ul,
         )
 
     class CreateSyncCancelReq(NpiRequest, SyncReq, FromAp):
@@ -578,9 +602,7 @@ class RTLS(NpiSubSystem):
 
     class TerminateSyncReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_TERMINATE_SYNC
-        struct = Struct(
-            "syncHandle" / Int16ul
-        )
+        struct = Struct("syncHandle" / Int16ul)
 
     class HeapReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_HEAP_SIZE
@@ -588,24 +610,18 @@ class RTLS(NpiSubSystem):
 
     class HeapRsp(NpiRequest, SyncRsp, FromNwp):
         command = Commands.RTLS_CMD_HEAP_SIZE
-        struct = Struct(
-            "totalHeap" / Int32ul,
-            "freeHeap" / Int32ul
-        )
+        struct = Struct("totalHeap" / Int32ul, "freeHeap" / Int32ul)
 
     class PeriodicReceiveEnableReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_PERIODIC_RECEIVE_ENABLE
-        struct = Struct(
-            "syncHandle" / Int16ul,
-            "enable" / Int8ul
-        )
+        struct = Struct("syncHandle" / Int16ul, "enable" / Int8ul)
 
     class AddDeviceToPeriodicAdvListReq(NpiRequest, SyncReq, FromAp):
         command = Commands.RTLS_CMD_ADD_DEVICE_ADV_LIST
         struct = Struct(
             "advAddrType" / Int8ul,
             "advAddress" / NiceBytes(ReverseBytes(Byte[6])),
-            "advSID" / Int8ul
+            "advSID" / Int8ul,
         )
 
     class RemoveDeviceFromPeriodicAdvListReq(NpiRequest, SyncReq, FromAp):
@@ -613,7 +629,7 @@ class RTLS(NpiSubSystem):
         struct = Struct(
             "advAddrType" / Int8ul,
             "advAddress" / NiceBytes(ReverseBytes(Byte[6])),
-            "advSID" / Int8ul
+            "advSID" / Int8ul,
         )
 
     class ConnectionlessAoaEnableReq(NpiRequest, SyncReq, FromAp):
@@ -624,9 +640,12 @@ class RTLS(NpiSubSystem):
             "syncHandle" / Int16ul,
             "enable" / Int8ul,
             "slotDuration" / Int8ul,
-            "sampleRate" / Int8ul,  # 1Mhz (BT5.1 spec), 2Mhz, 3Mhz or 4Mhz - this enables oversampling
-            "sampleSize" / Int8ul,  # 8 bit sample (as defined by BT5.1 spec), 16 bit sample (higher accuracy)
-            "sampleCtrl" / Int8ul,  # sample control flags 0x00-default filtering, 0x01-RAW_RF no filtering
+            "sampleRate"
+            / Int8ul,  # 1Mhz (BT5.1 spec), 2Mhz, 3Mhz or 4Mhz - this enables oversampling
+            "sampleSize"
+            / Int8ul,  # 8 bit sample (as defined by BT5.1 spec), 16 bit sample (higher accuracy)
+            "sampleCtrl"
+            / Int8ul,  # sample control flags 0x00-default filtering, 0x01-RAW_RF no filtering
             "maxSampleCte" / Int8ul,
             "numAnt" / Int8ul,
             "pAntPattern" / Int8ul[this.numAnt],
@@ -645,113 +664,180 @@ class RTLS(NpiSubSystem):
     class NwpSyncReq(NpiRequest, SyncReq, FromAp):
         command = Commands.NWP
         struct = Struct(
-            'appSpecifier' / Int8ul,
-            'cmd' / Int8ul,
+            "appSpecifier" / Int8ul,
+            "cmd" / Int8ul,
             "len" / Int16ul,
-            "data" / Byte[this.len]
+            "data" / Byte[this.len],
         )
 
     class NwpAsyncReq(NpiRequest, AsyncReq, FromAp):
         command = Commands.NWP
         struct = Struct(
-            'appSpecifier' / Int8ul,
-            'cmd' / Int8ul,
+            "appSpecifier" / Int8ul,
+            "cmd" / Int8ul,
             "len" / Int16ul,
-            "data" / Byte[this.len]
+            "data" / Byte[this.len],
         )
 
     @builder_class(NwpSyncReq)
-    def nwpSyncCmdReq(self, appSpecifier, cmd, len, data): pass
+    def nwpSyncCmdReq(self, appSpecifier, cmd, len, data):
+        pass
 
     @builder_class(NwpAsyncReq)
-    def nwpAsyncCmdReq(self, appSpecifier, cmd, len, data): pass
+    def nwpAsyncCmdReq(self, appSpecifier, cmd, len, data):
+        pass
 
     @builder_class(IdentifyReq)
-    def identify(self): pass
+    def identify(self):
+        pass
 
     @builder_class(ScanReq)
-    def scan(self): pass
+    def scan(self):
+        pass
 
     @builder_class(ConnectReq)
-    def connect(self, addrType, peerAddr): pass
+    def connect(self, addrType, peerAddr):
+        pass
 
     @builder_class(TerminateLinkReq)
-    def terminate_link(self, connHandle): pass
+    def terminate_link(self, connHandle):
+        pass
 
     @builder_class(AoaStartReq)
-    def aoa_start(self, connHandle, enable, cteInterval, cteLength): pass
+    def aoa_start(self, connHandle, enable, cteInterval, cteLength):
+        pass
 
     @builder_class(AoaSetParamsReq)
-    def aoa_set_params(self, aoaRole, aoaResultMode, connHandle, slotDurations, sampleRate, sampleSize, sampleCtrl,
-                       samplingEnable, numAnt, antArray): pass
+    def aoa_set_params(
+        self,
+        aoaRole,
+        aoaResultMode,
+        connHandle,
+        slotDurations,
+        sampleRate,
+        sampleSize,
+        sampleCtrl,
+        samplingEnable,
+        numAnt,
+        antArray,
+    ):
+        pass
 
     @builder_class(SetConnInfoReq)
-    def set_ble_conn_info(self, connHandle, accessAddress, connInterval, hopValue, mSCA, currChan, chanMap,
-                          crcInit): pass
+    def set_ble_conn_info(
+        self,
+        connHandle,
+        accessAddress,
+        connInterval,
+        hopValue,
+        mSCA,
+        currChan,
+        chanMap,
+        crcInit,
+    ):
+        pass
 
     @builder_class(ResetDeviceReq)
-    def reset_device(self): pass
+    def reset_device(self):
+        pass
 
     @builder_class(GetConnInfoReq)
-    def get_conn_info(self, connHandle, enable): pass
+    def get_conn_info(self, connHandle, enable):
+        pass
 
     @builder_class(SetRtlsParamReq)
-    def set_rtls_param(self, connHandle, rtlsParamType, len, data): pass
+    def set_rtls_param(self, connHandle, rtlsParamType, len, data):
+        pass
 
     @builder_class(GetActiveConnInfoReq)
-    def get_active_conn_info(self, connHandle): pass
+    def get_active_conn_info(self, connHandle):
+        pass
 
     @builder_class(CreateSyncReq)
-    def create_sync(self, advSID, options, advAddrType, advAddress, skip, syncTimeout, syncCteType): pass
+    def create_sync(
+        self, advSID, options, advAddrType, advAddress, skip, syncTimeout, syncCteType
+    ):
+        pass
 
     @builder_class(CreateSyncCancelReq)
-    def create_sync_cancel(self): pass
+    def create_sync_cancel(self):
+        pass
 
     @builder_class(TerminateSyncReq)
-    def terminate_sync(self, syncHandle): pass
+    def terminate_sync(self, syncHandle):
+        pass
 
     @builder_class(PeriodicReceiveEnableReq)
-    def periodic_receive_enable(self, syncHandle, enable): pass
+    def periodic_receive_enable(self, syncHandle, enable):
+        pass
 
     @builder_class(AddDeviceToPeriodicAdvListReq)
-    def add_device_to_periodic_adv_list(self, advAddrType, advAddress, advSID): pass
+    def add_device_to_periodic_adv_list(self, advAddrType, advAddress, advSID):
+        pass
 
     @builder_class(RemoveDeviceFromPeriodicAdvListReq)
-    def remove_device_from_periodic_adv_list(self, advAddrType, advAddress, advSID): pass
+    def remove_device_from_periodic_adv_list(self, advAddrType, advAddress, advSID):
+        pass
 
     @builder_class(ReadPeriodicAdvListSizeReq)
-    def read_periodic_adv_list_size(self): pass
+    def read_periodic_adv_list_size(self):
+        pass
 
     @builder_class(ClearPeriodicAdvListReq)
-    def clear_periodic_adv_list_size(self): pass
+    def clear_periodic_adv_list_size(self):
+        pass
 
     @builder_class(CreateSyncReq)
-    def create_sync(self, advSID, options, advAddrType, advAddress, skip, syncTimeout, syncCteType): pass
+    def create_sync(
+        self, advSID, options, advAddrType, advAddress, skip, syncTimeout, syncCteType
+    ):
+        pass
 
     @builder_class(CreateSyncCancelReq)
-    def create_sync_cancel(self): pass
+    def create_sync_cancel(self):
+        pass
 
     @builder_class(TerminateSyncReq)
-    def terminate_sync(self, syncHandle): pass
+    def terminate_sync(self, syncHandle):
+        pass
 
     @builder_class(PeriodicReceiveEnableReq)
-    def periodic_receive_enable(self, syncHandle, enable): pass
+    def periodic_receive_enable(self, syncHandle, enable):
+        pass
 
     @builder_class(AddDeviceToPeriodicAdvListReq)
-    def add_device_to_periodic_adv_list(self, advAddrType, advAddress, advSID): pass
+    def add_device_to_periodic_adv_list(self, advAddrType, advAddress, advSID):
+        pass
 
     @builder_class(RemoveDeviceFromPeriodicAdvListReq)
-    def remove_device_from_periodic_adv_list(self, advAddrType, advAddress, advSID): pass
+    def remove_device_from_periodic_adv_list(self, advAddrType, advAddress, advSID):
+        pass
 
     @builder_class(ReadPeriodicAdvListSizeReq)
-    def read_periodic_adv_list_size(self): pass
+    def read_periodic_adv_list_size(self):
+        pass
 
     @builder_class(ClearPeriodicAdvListReq)
-    def clear_periodic_adv_list(self): pass
+    def clear_periodic_adv_list(self):
+        pass
 
     @builder_class(ConnectionlessAoaEnableReq)
-    def connectionless_aoa_enable(self, aoaRole, aoaResultMode, syncHandle, enable, slotDuration, sampleRate,
-                                  sampleSize, sampleCtrl, maxSampleCte, numAnt, pAntPattern): pass
+    def connectionless_aoa_enable(
+        self,
+        aoaRole,
+        aoaResultMode,
+        syncHandle,
+        enable,
+        slotDuration,
+        sampleRate,
+        sampleSize,
+        sampleCtrl,
+        maxSampleCte,
+        numAnt,
+        pAntPattern,
+    ):
+        pass
 
     @builder_class(HeapReq)
-    def heap_req(self): pass
+    def heap_req(self):
+        pass

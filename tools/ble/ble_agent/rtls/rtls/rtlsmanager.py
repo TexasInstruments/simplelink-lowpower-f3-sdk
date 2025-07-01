@@ -290,7 +290,7 @@ class RTLSManager(threading.Thread, UserDict):
             )
         except StopIteration:
             pass
-        
+
         # for n in self.nodes:
         #     print(n.capabilities.keys())
 

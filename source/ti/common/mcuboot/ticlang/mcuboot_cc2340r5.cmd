@@ -32,9 +32,9 @@
 
 #include "ti_utils_build_linker.cmd.genmap"
 
---stack_size=1024   /* C stack is also used for ISR stack */
+--stack_size=4096   /* C stack is also used for ISR stack */
 
---heap_size=8192
+--heap_size=0
 
 /* Retain interrupt vector table variable                                    */
 --retain=resetVectors

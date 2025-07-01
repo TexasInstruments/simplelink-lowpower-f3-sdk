@@ -32,18 +32,39 @@
 
 import enum
 
-from construct import Struct, Enum, Int8ul, Int8sl, Int32ul, Int16ul, Int16sl, Byte, this, Float64l, FlagsEnum, \
-    GreedyRange
+from construct import (
+    Struct,
+    Enum,
+    Int8ul,
+    Int8sl,
+    Int32ul,
+    Int16ul,
+    Int16sl,
+    Byte,
+    this,
+    Float64l,
+    FlagsEnum,
+    GreedyRange,
+)
 
 from unpi.npirequest_mixins import AsyncReq, FromNwp, FromAp, SyncRsp, SyncReq
 from unpi.serialnode import builder_class
-from unpi.unpiparser import NpiSubSystem, NpiRequest, NpiSubSystems, NiceBytes, ReverseBytes
+from unpi.unpiparser import (
+    NpiSubSystem,
+    NpiRequest,
+    NpiSubSystems,
+    NiceBytes,
+    ReverseBytes,
+)
+
 
 class UNPIAsserts(enum.IntEnum):
     OUT_OF_MEMORY = 129
 
+
 class Commands(enum.IntEnum):
     UTIL_NPI_HW_ASSERT = 0x11
+
 
 # noinspection PyPep8Naming
 class UTIL(NpiSubSystem):
@@ -59,6 +80,5 @@ class UTIL(NpiSubSystem):
     class AssertRsp(NpiRequest, AsyncReq, FromNwp):
         command = Commands.UTIL_NPI_HW_ASSERT
         struct = Struct(
-                "subcause" / Enum(Int8ul, UNPIAsserts),
-            )
-
+            "subcause" / Enum(Int8ul, UNPIAsserts),
+        )

@@ -99,6 +99,10 @@ function create(phyGroup) {
         return "{ .power = { .fraction = " + txPowerFract + ", .dBm = " + txPowerInt + " }, .tempCoeff = " + tempCoeff + ", .value = { .reserved = 0, .ib = " + ib + ", .gain = " + gain + ", .mode = " + mode + ", .noIfampRfLdoBypass = " + noIfampRfLdoBypass + " } }"
     }
 
+    function getFrequencyWithOffset() {
+        return getPpFrequency() + getTestProperty("frequencyOffset");
+    }
+
     function getPpFrequencyBle() {
         return convBleChannelToFreq(getPhyProperty("bleChannel"), getPhyProperty("frequency"));
     }
@@ -317,6 +321,7 @@ function create(phyGroup) {
         convIeee802154ChannelToFreq: convIeee802154ChannelToFreq,
         convPaTableSettingToBinary: convPaTableSettingToBinary,
         convPaTableSettingToString: convPaTableSettingToString,
+        getFrequencyWithOffset: getFrequencyWithOffset,
         getPpFrequencyBle: getPpFrequencyBle,
         getPpFrequency154: getPpFrequency154,
         packetTxGenView: packetTxGenView,

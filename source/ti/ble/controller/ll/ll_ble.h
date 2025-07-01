@@ -213,7 +213,7 @@
 #define RAT_TICKS_IN_300US             1200      // T_MAFS (AE)
 #define RAT_TICKS_IN_352US             1408      // CONNECT_IND is 44 bytes
 #define RAT_TICKS_IN_500US             2000      // Periodic Adv addition process command
-#define RAT_TICKS_IN_625US             2500U      // Fundamental BLE Time Slot
+#define RAT_TICKS_IN_625US             2500U     // Fundamental BLE Time Slot
 #define RAT_TICKS_IN_900US             3600      // Additional Rx Synch overhead for Coded S8
 #define RAT_TICKS_IN_1MS               4000      // Multiple of Adv Random Delay
 #define RAT_TICKS_IN_1_006MS           4024      // AUX_CONNECT_REQ in Coded S2

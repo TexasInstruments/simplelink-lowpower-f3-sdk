@@ -106,7 +106,25 @@ const config = {
                 { name: 1, displayName: "Distance + Raw Results" }
             ],
             description: "Determines the results mode for Channel Sounding - raise only distance events or both distance and raw results events",
-        }
+        },
+        {
+            name: "rangingClient",
+            displayName: "Ranging Client (RREQ)",
+            default: false,
+            hidden: true
+        },
+        {
+            name: "rangingClientExtCtrlMode",
+            displayName: "Ranging Client External Control Mode",
+            default: false,
+            hidden: true,
+        },
+        // {
+        //     name: "rangingServer",
+        //     displayName: "Ranging Server (RRSP)",
+        //     default: false,
+        //     hidden: true,
+        // }
     ]
 };
 
@@ -217,6 +235,18 @@ function getOpts(mod)
                 (inst.csMeasureDistance == true) && result.push("-DCS_MEASURE_DISTANCE=0");
             else
                 (inst.csMeasureDistance == true) && result.push("-DCS_MEASURE_DISTANCE=1");
+        }
+
+        if(inst.rangingClient)
+        {
+            // Add the ranging client define
+            result.push("-DRANGING_CLIENT")
+            if(inst.rangingClientExtCtrlMode)
+            {
+                // Add the ranging client external control define
+                // This define is used to enable the external control mode of the ranging client
+                result.push("-DRANGING_CLIENT_EXTCTRL_APP");
+            }
         }
     }
 

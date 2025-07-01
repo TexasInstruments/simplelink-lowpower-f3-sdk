@@ -56,7 +56,8 @@ typedef union
         uint16_t ib: 6;
         uint16_t gain: 3;
         uint16_t mode: 2;
-        uint16_t reserved: 2;
+        uint16_t reserved: 1;
+        uint16_t pa20dBmEsdCtl: 1;
         uint16_t noIfampRfLdoBypass: 1;
     };
     uint16_t rawValue;
@@ -686,6 +687,25 @@ int16_t LRF_getLastTrimTemperature(void);
  *
  */
 void LRF_setAntennaSelection(uint32_t value);
+
+#ifdef DeviceFamily_CC27XX
+/**
+ * @brief Update the PA ESD protection configuration
+ *
+ * This function updates the PA ESD protection configuration by following these
+ * rules:
+ * - Enable the PA ESD protection if the 20dBm mode is enabled and the VDDS
+ *   supply voltage is equal to or greater than 3.635V.
+ * - Otherwise, disable the PA ESD protection.
+ *
+ * The new configuration does not take effect immediately but will be applied
+ * the next time the PA is enabled in the modem.
+ *
+ * @note This function is intended for internal use only.
+ *
+ */
+void LRF_updatePaEsdProtection();
+#endif
 
 /* Temporarily added definitions until https://jira.itg.ti.com/browse/TIDRIVERS-6489 is implemented */
 #ifndef NO_DRIVERS

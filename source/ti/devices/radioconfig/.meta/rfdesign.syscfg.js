@@ -43,6 +43,9 @@
 const Common = system.getScript("/ti/devices/radioconfig/radioconfig_common.js");
 const ConfigPath = Common.isPlatformRFD() ? Common.ConfigPath : Common.ConfigPathRclCommon;
 
+// Load map of SysConfig device IDs to default RF design name
+const SysconfigDeviceDefaultRfDesignMap = system.getScript("/ti/devices/radioconfig/data/sysconfig_device_default_rf_design.json");
+
 // Other dependencies
 const DeviceInfo = Common.getScript("device_info.js");
 const Docs = Common.getScript("radioconfig_docs.js");
@@ -58,27 +61,39 @@ const BoardData = bd.boards;
 let TiBoard = Common.getBoardName();
 let HasTiBoard = TiBoard !== "";
 let CurrentDesign = null;
-let BoardName;
+let DefaultRfDesignName;
 
 // Currently active frequency bands
 let ActiveFreqBands = {};
 
-// If a TI board is selected globally, select it
+// If a TI board is selected globally, use the corresponding RF design
 if (HasTiBoard) {
-    if (TiBoard in BoardData) {
-        CurrentDesign = BoardData[TiBoard];
+    DefaultRfDesignName = TiBoard;
+}
+// Otherwise, a device is selected globally. Use the default RF design for the
+// device, if any, or use the first RF design list entry.
+else {
+    TiBoard = null;
+    DefaultRfDesignName = Config[0].default;
+    if (Common.Device in SysconfigDeviceDefaultRfDesignMap) {
+        let DeviceDefaultRfDesignName = SysconfigDeviceDefaultRfDesignMap[Common.Device];
+        // Only use the device default RF design if it exists in the board
+        // definitions (it might not with unit tests based on archived definitions) 
+        if (DeviceDefaultRfDesignName in BoardData) {
+            DefaultRfDesignName = DeviceDefaultRfDesignName;
+        }
     }
-    else {
-        throw Error("No such RF design: " + TiBoard);
-    }
-    BoardName = TiBoard;
+}
+// Set the current RF design and update the configurable default accordingly
+if (DefaultRfDesignName in BoardData) {
+    CurrentDesign = BoardData[DefaultRfDesignName];
+    Config[0].default = DefaultRfDesignName;
 }
 else {
-    // Custom design, pick the first design from the list
-    TiBoard = null;
-    BoardName = Config[0].default;
-    CurrentDesign = BoardData[BoardName];
+    throw Error("No such RF design: " + DefaultRfDesignName);
 }
+
+
 
 /**
  *  ======== loadBoardFile ========

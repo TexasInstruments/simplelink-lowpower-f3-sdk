@@ -58,6 +58,15 @@
 #define CS_CHM_SIZE                            10U // octets
 #define CS_FAE_TBL_LEN                         72  // octets
 
+/** @defgroup CS_Subevent_Done_Status Channel Sounding Subevent Done Status
+ * @{
+ */
+// Subevent done status
+#define    CS_SUBEVENT_DONE     0x0            //!< All results complete for the CS subevent
+#define    CS_SUBEVENT_ACTIVE   0x1            //!< Partial results with more to follow for the CS subevent
+#define    CS_SUBEVENT_ABORTED  0xF            //!< Current CS subevent aborted
+/** @} */
+
 /** @defgroup CS_Procedure_Done_Status Channel Sounding Procedure Done Status
  * @{
  */
@@ -71,12 +80,21 @@
 /** @defgroup CS_Abort_Reason Channel Sounding Abort Reason
  * @{
  */
-// Abort reason
-#define    CS_NO_ABORT              0x0         //!< No abort
-#define    CS_ABORT_REQUEST         0x1         //!< Abort requested
-#define    CS_ABORT_CHM             0x2         //!< Abort due to channel map
-#define    CS_ABORT_INSTANT_PASSED  0x3         //!< Abort due to instant passed
-#define    CS_ABORT_UNSPECIFIED     0xF         //!< Unspecified abort reason
+// Abort reason bits 0 to 3, Indicates the abort reason when Procedure_Done_Status is set to 0xF
+#define    CS_NO_ABORT              0x0         //!< Report with no abort
+#define    CS_ABORT_REQUEST         0x1         //!< Abort because of local Host or remote request
+#define    CS_ABORT_CHM             0x2         //!< Abort because filtered channel map has less than 15 channels
+#define    CS_ABORT_INSTANT_PASSED  0x3         //!< Abort because the channel map update instant has passed
+#define    CS_ABORT_UNSPECIFIED     0xF         //!< Abort because of unspecified reasons
+
+// Abort reason bits 4 to 7, Indicates the abort reason when Subevent_Done_Status is set to 0xF
+#define    CS_SE_NO_ABORT              (0x0 << 4)         //!< Report with no abort
+#define    CS_SE_ABORT_REQUEST         (0x1 << 4)         //!< Abort because of local Host or remote request
+#define    CS_SE_ABORT_NO_SYNC         (0x2 << 4)         //!< Abort because no CS_SYNC (mode-0) received
+#define    CS_SE_ABORT_SCHED_CONFLITS  (0x3 << 4)         //!< Abort because of scheduling conflicts or limited resources
+#define    CS_SE_ABORT_UNSPECIFIED     (0xF << 4)         //!< Abort because of unspecified reasons
+
+
 /** @} */
 
 /** @defgroup CS_Sync_Phy_Supported Channel Sounding Sync PHY Support
@@ -86,6 +104,16 @@
 #define    CS_LE_1M_SYNC_PHY     0x01     //!< LE 1M PHY for synchronization
 #define    CS_LE_2M_SYNC_PHY     0x02     //!< LE 2M PHY for synchronization
 #define    CS_LE_2M2BT_SYNC_PHY  0x03     //!< LE 2M2BT PHY for synchronization
+/** @} */
+
+/** @defgroup CS_PHY
+ * @{
+ */
+// CS Connection PHY
+#define CS_LE_1M_PHY           0x01      //!< LE 1M PHY
+#define CS_LE_2M_PHY           0x02      //!< LE 2M PHY
+#define CS_LE_PHY_CODED_S8     0x03      //!< LE Coded PHY with S=8 data coding
+#define CS_LE_PHY_CODED_S2     0x04      //!< LE Coded PHY with S=2 data coding
 /** @} */
 
 /** @defgroup CS_RTT_Type Channel Sounding RTT Type
@@ -116,7 +144,7 @@
 #define    CS_MODE_2        2          //!< Mode 2
 #define    CS_MODE_3        3          //!< Mode 3
 #define    CS_NON_MODE_0    4          //!< internal usage
-#define    CS_MODE_UNUSED   0xFFU       //!< used only in submode
+#define    CS_MODE_UNUSED   0xFFU      //!< used only in submode
 /** @} */
 
 /** @defgroup CS_Chan_Sel_Alg Channel Selection Algorithm
@@ -132,17 +160,6 @@
 #define    CS_LE_1M_PHY_SUPPORTED     0x00      //!< LE 1M PHY supported
 #define    CS_LE_2M_PHY_SUPPORTED     0x01      //!< LE 2M PHY supported
 #define    CS_LE_2M2BT_PHY_SUPPORTED  0x02      //!< LE 2M2BT PHY supported
-/** @} */
-
-/** @defgroup CS_Mode_Role Channel Sounding Results Mode
- * @{
- */
-#define    MODE_UNKOWN         0x00
-#define    MODE_0_INITIATOR    0x01
-#define    MODE_0_REFLECTOR    0x02
-#define    MODE_1_INIT_REFL    0x03
-#define    MODE_2_INIT_REFL    0x04
-#define    MODE_3_INIT_REFL    0x05
 /** @} */
 
 /** @defgroup CS_Enable Channel Sounding Procedure Enable/Disable
@@ -166,6 +183,9 @@
 #define CS_RANGING_MAX_PERMUTATION_INDEX      CS_MAX_PERMUTATION_INDEX_4_ANT
 
 #define CS_MAX_NUM_CONFIG_IDS                  4
+
+#define CS_MAX_ANT_PATHS                  4             // Max antenna paths
+#define CS_MAX_MODE_ZERO_PER_PROCEDURE    96            // Max mode-0 steps for a single procedure that runs maximum number of subevents
 
 /*******************************************************************************
  * ENUMS
@@ -277,6 +297,7 @@ typedef struct
   uint8_t  snrCtrlI;                   //!< SNR Control Initiator
   uint8_t  snrCtrlR;                   //!< SNR Control Reflector
   uint8_t  enable;                     //!< is Procedure Enabled
+  bool     status;                     //!< is Procedure Status  true if set, false otherwise
 } csProcedureParams_t;
 
 typedef struct

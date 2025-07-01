@@ -1,7 +1,157 @@
 {
   "boards": {
+    "LP_EM_CC2755P10": {
+      "description": "+20 dBm output power internal balun for 2.4 GHz.",
+      "rf_design": "LP-EM-CC2755P10",
+      "rf_port": [
+        {
+          "name": "tx_rx_2p4_ghz",
+          "enabled": "1",
+          "frontend": "is"
+        }
+      ],
+      "hpa_band": "none",
+      "max_hpa": "none",
+      "freq_range": [
+        {
+          "min_freq": "2360",
+          "max_freq": "2510",
+          "rssi_offset": "0",
+          "pa_table_entry": [
+            {
+              "tx_power": "20",
+              "value": "0x8C1FBF",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "19",
+              "value": "0x501EC6",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "18",
+              "value": "0x281DA3",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "17",
+              "value": "0x241C9F",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "16",
+              "value": "0x281DA1",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "15",
+              "value": "0x141BC2",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "14",
+              "value": "0x191CA1",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "13",
+              "value": "0x121BC5",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "12",
+              "value": "0xF1BB1",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "11",
+              "value": "0x4115BD",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "10",
+              "value": "0x1E14B5",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "9",
+              "value": "0x141489",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "8",
+              "value": "0x813A5",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "7",
+              "value": "0x51389",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "6",
+              "value": "0x61375",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "5",
+              "value": "0xA13D8",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "4",
+              "value": "0x913C0",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "3",
+              "value": "0x913A8",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "2",
+              "value": "0x312C8",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "1",
+              "value": "0x512B4",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            },
+            {
+              "tx_power": "0",
+              "value": "0x512A4",
+              "rf_port": "tx_rx_2p4_ghz",
+              "option_list": "normal_vddr"
+            }
+          ]
+        }
+      ],
+      "fb24g": "fb2400",
+      "fe24g": "IS"
+    },
     "LP_EM_CC2745R10_Q1": {
-      "description": "+10 dBm output power internal balun for 2.4GHz.",
+      "description": "+10 dBm output power internal balun for 2.4 GHz.",
       "rf_design": "LP-EM-CC2745R10-RHA-6x6-IS24",
       "rf_port": [
         {
@@ -176,11 +326,15 @@
       "description": "Select which RF design to use as template.",
       "options": [
         {
+          "name": "LP_EM_CC2755P10",
+          "description": "+20 dBm output power internal balun for 2.4 GHz."
+        },
+        {
           "name": "LP_EM_CC2745R10_Q1",
-          "description": "+10 dBm output power internal balun for 2.4GHz."
+          "description": "+10 dBm output power internal balun for 2.4 GHz."
         }
       ],
-      "default": "LP_EM_CC2745R10_Q1"
+      "default": "LP_EM_CC2755P10"
     },
     {
       "name": "fb24g",

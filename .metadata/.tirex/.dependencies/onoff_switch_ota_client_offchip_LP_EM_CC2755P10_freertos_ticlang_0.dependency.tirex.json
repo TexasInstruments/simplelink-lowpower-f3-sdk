@@ -1,0 +1,16 @@
+[
+    {
+        "files": [
+            "+../../osif/ti_f3_ota.c -> osif/ti_f3_ota.c",
+            "+../../on_off_switch_ota_client.c -> on_off_switch_ota_client.c",
+            "+../../on_off_switch_ota_client.h -> on_off_switch_ota_client.h",
+            "+../../ota_client_interface.c -> ota_client_interface.c",
+            "+../../flash_interface_ext_rtos_NVS.c -> flash_interface_ext_rtos_NVS.c",
+            "+../../on_off_switch_ota_client_offchip.syscfg -> on_off_switch_ota_client_offchip.syscfg",
+            "+../../README.md -> README.md",
+            "+../../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+lpf3_zigbee_freertos.cmd -> lpf3_zigbee_freertos.cmd"
+        ]
+    }
+]

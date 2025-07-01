@@ -42,6 +42,40 @@
 let Common = system.getScript("/ti/drivers/Common.js");
 
 /*
+ *  ======== getLinkerDefs ========
+ */
+function getLinkerDefs()
+{
+    let linkerDefs = [];
+
+    let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
+    if (keystoreModule) {
+        let keystoreInst = keystoreModule.$static;
+        linkerDefs.push(
+            {
+                "name": "KEYSTORE_BASE",
+                "value": keystoreInst.flashAddress
+            },
+            {
+                "name": "KEYSTORE_SIZE",
+                "value": keystoreInst.flashSize
+            }
+        );
+    }
+    else
+    {
+        linkerDefs.push(
+            {
+                "name": "KEYSTORE_BASE",
+                "value": ""
+            },
+        );
+    }
+
+    return linkerDefs;
+}
+
+/*
  *  ======== getLibs ========
  */
 function getLibs(mod)
@@ -167,7 +201,11 @@ and that the secure_drivers library should be loaded.
     templates    : {
         /* Contribute Secure Drivers libraries to linker command file */
         "/ti/utils/build/GenLibs.cmd.xdt"   :
-            {modName: "/ti/drivers/CryptoBoard", getLibs: getLibs}
+            {modName: "/ti/drivers/CryptoBoard", getLibs: getLibs},
+
+        /* Contribute Secure Drivers definitions to linker command file */
+        "/ti/utils/build/GenMap.cmd.xdt"   :
+            {modName: "/ti/drivers/CryptoBoard", getLinkerDefs: getLinkerDefs}
     }
 
 };

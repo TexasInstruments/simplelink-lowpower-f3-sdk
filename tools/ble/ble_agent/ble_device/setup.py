@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ti-simplelink-ble-device",
-    version="0.0.17",
+    version="0.0.25",
     author="Texas Instruments",
     author_email="support@ti.com",
     description="Simple API for BLE device feature",
@@ -19,8 +19,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        "ti-simplelink-unpi",
-        "ti-simplelink-rtls"
-    ],
+    install_requires=["ti-simplelink-unpi", "ti-simplelink-rtls"],
 )

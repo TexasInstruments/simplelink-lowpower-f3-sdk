@@ -4,6 +4,7 @@
  * Copyright (c) 2016-2020 Linaro LTD
  * Copyright (c) 2016-2019 JUUL Labs
  * Copyright (c) 2019-2020 Arm Limited
+ * Copyright (c) 2025 Texas Instruments Incorporated
  *
  * Original license:
  *
@@ -49,6 +50,13 @@
 
 #ifdef MCUBOOT_ENC_IMAGES
 #include "bootutil/enc_key.h"
+#endif
+
+#ifdef MCUBOOT_DECOMPRESS_IMAGES
+/* TI Compression/Decompression
+ * Include for decompressing LZMA2 compressed images
+ */
+#include "bootutil/compressed.h"
 #endif
 
 #include "mcuboot_config.h"
@@ -462,12 +470,17 @@ out:
  * Check that this is a valid header.  Valid means that the magic is
  * correct, and that the sizes/offsets are "sane".  Sane means that
  * there is no overflow on the arithmetic, and that the result fits
- * within the flash area we are in.
+ * within the flash area we are in. Also check the flags in the image
+ * and class the image as invalid if flags for encryption/compression
+ * are present but these features are not enabled.
  */
 static bool
-boot_is_header_valid(const struct image_header *hdr, const struct flash_area *fap)
+boot_is_header_valid(const struct image_header *hdr, const struct flash_area *fap,
+                     struct boot_loader_state *state)
 {
     uint32_t size;
+
+    (void)state;
 
     if (hdr->ih_magic != IMAGE_MAGIC) {
         return false;
@@ -477,9 +490,34 @@ boot_is_header_valid(const struct image_header *hdr, const struct flash_area *fa
         return false;
     }
 
+#ifdef MCUBOOT_DECOMPRESS_IMAGES
+    if (!MUST_DECOMPRESS(fap, BOOT_CURR_IMG(state), hdr)) {
+#else
+    if (1) {
+#endif
+        if (!boot_u32_safe_add(&size, size, hdr->ih_protect_tlv_size)) {
+            return false;
+        }
+    }
+
     if (size >= fap->fa_size) {
         return false;
     }
+
+#if !defined(MCUBOOT_DECOMPRESS_IMAGES)
+    if (IS_COMPRESSED(hdr)) {
+        return false;
+    }
+#else
+    /* TI Compression/Decompression
+     * Validate the header of the compressed image
+     */
+    if (MUST_DECOMPRESS(fap, BOOT_CURR_IMG(state), hdr)) {
+        if (!boot_is_header_valid_compressed(hdr, fap, state)) {
+            return false;
+        }
+    }
+#endif
 
     return true;
 }
@@ -657,7 +695,7 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
 #endif
 
     FIH_CALL(boot_image_check, fih_rc, state, hdr, fap, bs);
-    if (!boot_is_header_valid(hdr, fap) || FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+    if (!boot_is_header_valid(hdr, fap, state) || FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
         if ((slot != BOOT_PRIMARY_SLOT) || ARE_SLOTS_EQUIVALENT()) {
             flash_area_erase(fap, 0, fap->fa_size);
             /* Image is invalid, erase it to prevent further unnecessary
@@ -1048,7 +1086,18 @@ boot_copy_image(struct boot_loader_state *state, struct boot_status *bs)
 
     BOOT_LOG_INF("Image %d copying the secondary slot to the primary slot: 0x%zx bytes",
                  image_index, size);
+
+/* TI Compression/Decompression
+ * Decompress the secondary slot into the primary slot
+ */
+#ifdef MCUBOOT_DECOMPRESS_IMAGES
+    struct image_header *secondary_hdr = boot_img_hdr(state, BOOT_SECONDARY_SLOT);
+    if (MUST_DECOMPRESS(fap_secondary_slot, BOOT_CURR_IMG(state), secondary_hdr)) {
+        rc = boot_copy_region_compressed(state, fap_secondary_slot, fap_primary_slot, 0, 0, size);
+    }
+#else
     rc = boot_copy_region(state, fap_secondary_slot, fap_primary_slot, 0, 0, size);
+#endif
     if (rc != 0) {
         return rc;
     }
@@ -2254,7 +2303,7 @@ boot_get_slot_usage(struct boot_loader_state *state, uint8_t slot_usage[],
     for (slot = 0; slot < slot_cnt; slot++) {
         hdr = boot_img_hdr(state, slot);
 
-        if (boot_is_header_valid(hdr, BOOT_IMG_AREA(state, slot))) {
+        if (boot_is_header_valid(hdr, BOOT_IMG_AREA(state, slot), state)) {
             slot_usage[slot] = 1;
             image_cnt++;
             BOOT_LOG_IMAGE_INFO(slot, hdr);

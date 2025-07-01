@@ -369,11 +369,6 @@ static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount)
     int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
     uint32_t *output    = (uint32_t *)(HSMCRYPTO_BASE);
 
-    /* Turn on the HSM IP and initialize the HSM mailbox */
-    HSMBareMetal_enableClock();
-
-    HSMBareMetal_initMbox();
-
     if (HSMBareMetal_inputToken[0] != HSM_BOOT_TOKEN_WORD0)
     {
         HSMBareMetal_inputToken[1] = HSM_CRYPTO_OFFICER_ID;
@@ -405,9 +400,6 @@ static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount)
 
     HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBCTL) = HSMCRYPTO_MBCTL_MB1OUT_EMTY;
 
-    /* Turn off the HSM IP. */
-    HSMBareMetal_disableClock();
-
     return status;
 }
 
@@ -418,6 +410,11 @@ static int_fast16_t HSMBareMetal_boot(void)
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
     uint32_t delay;
+
+    /* Turn on the HSM IP. */
+    HSMBareMetal_enableClock();
+
+    HSMBareMetal_initMbox();
 
     if (HSMBareMetal_isHSMInFatalStatus())
     {
@@ -452,6 +449,12 @@ static int_fast16_t HSMBareMetal_boot(void)
                         break;
                     }
                 }
+
+                if (delay == 0U)
+                {
+                    /* HSM firmware image is not accepted. */
+                    status = HSMBAREMETAL_STATUS_ERROR;
+                }
             }
         }
     }
@@ -464,19 +467,11 @@ static int_fast16_t HSMBareMetal_boot(void)
  */
 int_fast16_t HSMBareMetal_getHSMFirmwareVersion(HSMBareMetal_systemInfoVersionStruct *firmwareVersionStruct)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    /* Check whether the HSM has been initialized or not. */
-    if (!HSMBareMetal_isInitialized)
+    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        return HSMBAREMETAL_STATUS_HW_ERROR;
+        return status;
     }
 
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_PK_TOKEN_WORD_COUNT);
@@ -508,9 +503,9 @@ int_fast16_t HSMBareMetal_init(void)
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
 
-    if (!HSMBareMetal_isInitialized && !HSMBareMetal_isHSMfirmwareImgAccepted())
+    if (!HSMBareMetal_isInitialized)
     {
-        // /* Initialize HSM clock and mailbox, then boot it */
+        /* Initialize HSM clock and mailbox, then boot it */
         if (HSMBareMetal_boot() == HSMBAREMETAL_STATUS_SUCCESS)
         {
             HSMBareMetal_isInitialized = true;
@@ -520,9 +515,7 @@ int_fast16_t HSMBareMetal_init(void)
     }
     else
     {
-        HSMBareMetal_isInitialized = true;
-
-        status = HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED;
+        status = HSMBAREMETAL_STATUS_SUCCESS;
     }
 
     return status;
@@ -553,26 +546,22 @@ int_fast16_t HSMBareMetal_checkHSMStatus(void)
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED;
 
-    HSMBareMetal_enableClock();
+    if (!HSMBareMetal_isInitialized)
+    {
+        /* Turn on the HSM IP. */
+        HSMBareMetal_enableClock();
 
-    /* Check whether the HSM has been initialized or in fatal error status. */
-    if (HSMBareMetal_isHSMInFatalStatus())
-    {
-        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-        status = HSMBAREMETAL_STATUS_HW_ERROR;
+        /* Check whether the HSM has a fatal error. */
+        if (HSMBareMetal_isHSMInFatalStatus())
+        {
+            /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
+            status = HSMBAREMETAL_STATUS_HW_ERROR;
+        }
+        else
+        {
+            status = HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
+        }
     }
-    else if (!HSMBareMetal_isHSMfirmwareImgAccepted())
-    {
-        /* HSM IP has not been initialized. A call to HSMBareMetal_init() is required before any cryptography operation
-         * is conducted. */
-        status = HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-    }
-    else
-    {
-        HSMBareMetal_isInitialized = true;
-    }
-
-    HSMBareMetal_disableClock();
 
     return status;
 }
@@ -1255,7 +1244,7 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
     if ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB) ||
         (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB))
     {
-        status = HSMBareMetal_freeKeyAsset(&HSMBareMetal_kekAssetId);
+        status |= HSMBareMetal_freeKeyAsset(&HSMBareMetal_kekAssetId);
     }
 
     return status;

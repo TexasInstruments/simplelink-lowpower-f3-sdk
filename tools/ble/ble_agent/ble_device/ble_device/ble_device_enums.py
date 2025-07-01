@@ -38,6 +38,17 @@ class CsCommands(enum.IntEnum):
     CS_CMD_SET_DEFAULT_ANT = 0x0B
 
 
+class RREQStatus(enum.IntEnum):
+    RREQ_STATUS_TIMEOUT = 0x00
+    RREQ_STATUS_ABORTED_SUCCESSFULLY = 0x01
+    RREQ_STATUS_ABORTED_UNSUCCESSFULLY = 0x02
+    RREQ_STATUS_SERVER_BUSY = 0x03
+    RREQ_STATUS_PROCEDURE_NOT_COMPLETED = 0x04
+    RREQ_STATUS_NO_RECORDS = 0x05
+    RREQ_STATUS_DATA_INVALID = 0x06
+    RREQ_STATUS_DATA_OVERWRITTEN = 0x07
+
+
 class ConnectionCommands(enum.IntEnum):
     CONNECTION_CMD_REGISTER_CONN_EVENT = 0x00
     CONNECTION_CMD_UNREGISTER_CONN_EVENT = 0x01
@@ -46,9 +57,12 @@ class ConnectionCommands(enum.IntEnum):
 
 
 class PairingCommands(enum.IntEnum):
-    PAIRING_CMD_GET_MAX_NUM_CHAR_CFG  = 0x00
-    PAIRING_CMD_READ_BOND             = 0x01
-    PAIRING_CMD_WRITE_BOND            = 0x02
+    PAIRING_CMD_GET_MAX_NUM_CHAR_CFG = 0x00
+    PAIRING_CMD_READ_BOND = 0x01
+    PAIRING_CMD_WRITE_BOND = 0x02
+    PAIRING_CMD_SET_OOB_ENABLE = 0x03
+    PAIRING_CMD_SET_REMOTE_OOB_DATA = 0x04
+    PAIRING_CMD_GET_LOCAL_OOB_DATA = 0x05
 
 
 class GATTCommands(enum.IntEnum):
@@ -74,6 +88,13 @@ class CaServerCommands(enum.IntEnum):
     CA_SERVER_CMD_SEND_INDICATION = 0x00
 
 
+class RREQCommands(enum.IntEnum):
+    RREQ_CMD_START = 0x00
+    RREQ_CMD_ENABLE = 0x01
+    RREQ_CMD_DISABLE = 0x02
+    RREQ_CMD_GET_RANGING_DATA = 0x03
+
+
 class AppSpecifier(enum.IntEnum):
     APP_SPECIFIER_CENTRAL = 0x00
     APP_SPECIFIER_PERIPHERAL = 0x01
@@ -86,6 +107,7 @@ class AppSpecifier(enum.IntEnum):
     APP_SPECIFIER_L2CAP = 0x08
     APP_SPECIFIER_GATT = 0x09
     APP_SPECIFIER_CA_SERVER = 0x0A
+    APP_SPECIFIER_RREQ = 0x0B
 
 
 class RtlsCapabilities(enum.IntEnum):
@@ -109,6 +131,7 @@ class RtlsCapabilities(enum.IntEnum):
     RTLS_CAP_CS = 0x00010000
     RTLS_CAP_GATT = 0x00020000
     RTLS_CAP_CA_SERVER = 0x00040000
+    RTLS_CAP_RREQ = 0x00040000
 
 
 class CommonEventType(enum.IntEnum):
@@ -146,10 +169,11 @@ class PairingEventType(enum.IntEnum):
     NWP_PAIRING_MAX_NUM_CHAR_CFG = 0x0090
     NWP_PAIRING_READ_BOND = 0x0091
     NWP_PAIRING_WRITE_BOND = 0x0092
+    NWP_PAIRING_GET_LOCAL_OOB_DATA = 0x0093
 
 
 class GATTEventType(enum.IntEnum):
-    NWP_GATT_MTU_UPDATED_EVENT = 0X0024
+    NWP_GATT_MTU_UPDATED_EVENT = 0x0024
 
 
 class HandoverEventType(enum.IntEnum):
@@ -173,9 +197,14 @@ class L2CAPEventType(enum.IntEnum):
 
 
 class CaServerEventType(enum.IntEnum):
-    NWP_CA_SERVER_CCC_UPDATE        = 0x0080,
-    NWP_CA_SERVER_INDICATION_CNF    = 0x0081,
-    NWP_CA_SERVER_LONG_WRITE_DONE   = 0x0082
+    NWP_CA_SERVER_CCC_UPDATE = (0x0080,)
+    NWP_CA_SERVER_INDICATION_CNF = (0x0081,)
+    NWP_CA_SERVER_LONG_WRITE_DONE = 0x0082
+
+
+class RREQEventType(enum.IntEnum):
+    NWP_RREQ_DATA_READY = 0x00A0
+    NWP_RREQ_STATUS = 0x00A1
 
 
 class CmConnUpdateType(enum.IntEnum):
@@ -193,6 +222,13 @@ class CsEventType(enum.IntEnum):
     NWP_CS_SUBEVENT_RESULTS = 0x0045
     NWP_CS_SUBEVENT_RESULTS_CONTINUE = 0x0046
     NWP_CS_APP_DISTANCE_RESULTS = 0x0060
+    NWP_CS_APP_DISTANCE_EXTENDED_RESULTS = 0x0061
+
+
+class CmStopReasonType(enum.IntEnum):
+    CM_SUPERVISION_TIMEOUT = 0x00
+    CM_USER_TERM = 0x01
+    CM_SYNC_FAILED = 0x02
 
 
 class AddressType(enum.IntEnum):
@@ -268,10 +304,17 @@ class CmrConnectionRoleTypes(enum.IntEnum):
     CM_CONNECTION_ROLE_PERIPHERAL = 0x01
     CM_CONNECTION_ROLE_CENTRAL = 0x02
 
+
 class BondReadTypes(enum.IntEnum):
-    READ_BOND_BY_ADDRESS = 0X00
-    READ_BOND_BY_INDEX = 0X01
+    READ_BOND_BY_ADDRESS = 0x00
+    READ_BOND_BY_INDEX = 0x01
+
 
 class BondAddressTypes(enum.IntEnum):
-    BOND_PEER_ADDRESS_PUBLIC_OR_PUBLIC_ID = 0X00
-    BOND_PEER_ADDRESS_RANDOM_OR_RANDOM_ID = 0X01
+    BOND_PEER_ADDRESS_PUBLIC_OR_PUBLIC_ID = 0x00
+    BOND_PEER_ADDRESS_RANDOM_OR_RANDOM_ID = 0x01
+
+
+class RREQEnableModes(enum.IntEnum):
+    RREQ_ON_DEMAND = 0x01
+    RREQ_REAL_TIME = 0x02

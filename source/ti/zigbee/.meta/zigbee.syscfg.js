@@ -45,6 +45,8 @@
 
 "use strict";
 
+const hsm_fw_size = 0x00018000;
+
 // Get PM Settings script
 const common = system.getScript("/ti/zigbee/zigbee_common.js");
 const pmScript = system.getScript("/ti/zigbee/pm/zigbee_pm.syscfg.js");
@@ -66,6 +68,17 @@ const moduleStatic = {
             hidden : false,
             description: `This setting will enable logging for the Zigbee Stack`,
             default: false
+        },
+        {
+            name: "zigbeeRevision",
+            displayName: "Zigbee Pro 3.0 Revision",
+            hidden : false,
+            description: `The revision of the Zigbee Pro stack to use`,
+            default: "r23",
+            options: [
+                { name: "r22", displayName: "Revision 22" },
+                { name: "r23", displayName: "Revision 23" }
+            ]
         },
         /* Device Type Configurable */
         {
@@ -315,18 +328,22 @@ function moduleInstances(inst)
         }
     });
 
-    let dev2FlashSize = {
+    // TODO: Need a more sustainable solution. Used to get this info from getLinkerDefs
+    // in source/ti/devices/.meta/DriverLib.syscfg.js
+    // But now it's dependent on a module which breaks sysconfigs restrictions
+    const dev2FlashSize = {
         "CC2340R22RKP": 0x00040000,
         "CC2340R2RGE": 0x00040000,
         "CC2340R5RKP": 0x00080000,
         "CC2340R53RKP": 0x00080000,
-        "CC2745R7RHAQ1": 0x000C0000,
-        "CC2755R105RHA": 0x00100000,
+        "CC2745R7RHAQ1": 0x000C0000 - hsm_fw_size,
+        "CC2755R105RHA": 0x00100000 - hsm_fw_size,
+        "CC2745R10RHAQ1": 0x00100000 - hsm_fw_size,
+        "CC2755P105RHA": 0x00100000 - hsm_fw_size,
     };
 
     const flashSize = dev2FlashSize[system.deviceData.deviceId] != undefined ? dev2FlashSize[system.deviceData.deviceId] : 0x00040000;
     const flashBase = 0x00000000;
-
     if (inst.deviceType.includes("gpd"))
     {
         submodules.push({
@@ -411,6 +428,7 @@ function onDeviceTypeChange(inst, ui)
     {
         ui.zgpDirectEnabled.hidden = false;
         ui.preInstalledNwkEnabled.hidden = false;
+        ui.zigbeeRevision.hidden = false;
     }
     else
     {
@@ -419,6 +437,8 @@ function onDeviceTypeChange(inst, ui)
 
         inst.preInstalledNwkEnabled = false;
         ui.preInstalledNwkEnabled.hidden = true;
+
+        ui.zigbeeRevision.hidden = true;
     }
 
     let subsection = null;
@@ -450,6 +470,12 @@ function getLibs(inst)
     {
         let lib_names = [];
         let log_suffix = "";
+        let lib_dir = (inst.$static.zigbeeRevision === "r22") ? "/zboss_stable" : "/zboss_r23";
+        if(inst.$static.deviceType.includes("gpd"))
+        {
+            lib_dir = ""
+        }
+
         if(inst.$static.loggingEnabled)
         {
             log_suffix = "_log";
@@ -465,44 +491,48 @@ function getLibs(inst)
         {
             if(inst.$static.zgpDirectEnabled)
             {
-                lib_names.push("zb_coordinator_router_roles_gp_combo" + pre_installed_nwk_suffix);
+                lib_names.push("zb_core_zc_zr_gp_combo" + pre_installed_nwk_suffix);
             }
             else
             {
-                lib_names.push("zb_coordinator_router_roles"  + pre_installed_nwk_suffix);
+                lib_names.push("zb_core_zc_zr"  + pre_installed_nwk_suffix);
             }
-            lib_names.push("zb_cluster_zc_zr", "zb_zdo_zc_zr" + pre_installed_nwk_suffix, "zb_ti_platform_zc_zr" + log_suffix);
+            lib_names.push("zb_zcl_zc_zr", "zb_zdo_zc_zr" + pre_installed_nwk_suffix, "zb_ti_platform_zc_zr" + log_suffix);
         }
         else if(inst.$static.deviceType.includes("zr"))
         {
             if(inst.$static.zgpDirectEnabled)
             {
-                lib_names.push("zb_router_role_gp_combo"  + pre_installed_nwk_suffix);
+                lib_names.push("zb_core_zr_gp_combo"  + pre_installed_nwk_suffix);
             }
             else
             {
-                lib_names.push("zb_router_role"  + pre_installed_nwk_suffix);
+                lib_names.push("zb_core_zr"  + pre_installed_nwk_suffix);
             }
-            lib_names.push("zb_cluster_zr", "zb_zdo_zr"  + pre_installed_nwk_suffix, "zb_ti_platform_zc_zr" + log_suffix);
+            lib_names.push("zb_zcl_zr", "zb_zdo_zr"  + pre_installed_nwk_suffix, "zb_ti_platform_zc_zr" + log_suffix);
         }
         else if(inst.$static.deviceType.includes("zed"))
         {
             if(inst.$static.zgpDirectEnabled)
             {
-                lib_names.push("zb_ed_role_target_plus" + pre_installed_nwk_suffix);
+                lib_names.push("zb_core_zed_target_plus" + pre_installed_nwk_suffix);
             }
             else
             {
-                lib_names.push("zb_ed_role" + pre_installed_nwk_suffix);
+                lib_names.push("zb_core_zed" + pre_installed_nwk_suffix);
             }
-            lib_names.push("zb_cluster_ed", "zb_zdo_ed"  + pre_installed_nwk_suffix, "zb_ti_platform_zed" + log_suffix);
+            lib_names.push("zb_zcl_zed", "zb_zdo_zed"  + pre_installed_nwk_suffix, "zb_ti_platform_zed" + log_suffix);
         }
         else
         {
-            lib_names.push("zb_gpd_role");
+            lib_names.push("zb_core_gpd");
         }
 
-        lib_names.forEach((lib_name) => libs.push(`third_party/zigbee/libraries/${lib_name}/lib/${toolchain}/m0p/${lib_name}.a`));
+        lib_names.forEach((lib_name) => 
+        {
+            let lib_with_rev = inst.$static.deviceType.includes("gpd") ? lib_name: lib_name.replace("zb_", `zb_${inst.$static.zigbeeRevision}_`) 
+            libs.push(`third_party/zigbee/libraries${lib_dir}/${lib_with_rev}/lib/${toolchain}/${GenLibs.getDeviceIsa()}/${lib_with_rev}.a`)
+        });
     }
 
 
@@ -521,6 +551,40 @@ function getLibs(inst)
  */
 function getOpts(inst) {
     let result = []
+
+    const sysconfig_products = ["simplelink_lowpower_f3_sdk", "TI_ZIGBEE_SDK", "SIMPLELINK_LOWPOWER_F3_TEST_SDK"];
+    let sdkPath = undefined;
+    for(let i = 0; i < sysconfig_products.length; i++)
+    {
+        sdkPath = system.getProducts().find(p => p.name === sysconfig_products[i]);
+        if(sdkPath !== undefined)
+        {
+            // WARNING using system.utils.path.posix breaks the paths on windows
+            sdkPath = system.utils.path.parse(system.utils.path.parse(sdkPath.path).dir).dir;
+            sdkPath = system.utils.path.resolve(sdkPath).replaceAll('\\','/');
+            break;
+        }
+    }
+
+    if((inst.$static.zigbeeRevision === "r22") && !(inst.$static.deviceType.includes("gpd")))
+    {
+        result.push("-DZBOSS_REV22");
+        result.push(`-I${sdkPath}/source/third_party/zigbee/zboss_stable/include`);
+    }
+    else if((inst.$static.zigbeeRevision === "r23") && !(inst.$static.deviceType.includes("gpd")))
+    {
+        
+        result.push("-DZBOSS_REV23");
+        result.push(`-I${sdkPath}/source/third_party/zigbee/zboss_r23/include`);
+        result.push(`-I${sdkPath}/source/third_party/zigbee/zboss_r23/thirdparty/uECC`);
+        result.push(`-I${sdkPath}/source/third_party/zigbee/zboss_r23/thirdparty/emill`);
+        result.push(`-I${sdkPath}/source/third_party/zigbee/zboss_r23/thirdparty/nacl`);
+    }
+
+    if(inst.$static.deviceType.includes("zc") || inst.$static.deviceType.includes("zr") || inst.$static.deviceType.includes("zed"))
+    {
+        result.push("-DZB_DEFAULT_VENDOR");
+    }
 
     if(inst.$static.deviceType.includes("zc"))
     {
@@ -560,6 +624,19 @@ function getOpts(inst) {
 }
 
 
+/*
+ *  ======== getLinkerDefs ========
+ */
+function getLinkerDefs() {
+    var linkDef = []
+    if ("CC2755P105RHA" ==  system.deviceData.deviceId)
+    {
+        linkDef.push({ name: "HSM_FW_SIZE", value: hsm_fw_size })
+    }
+    return linkDef;
+}
+
+
 /* Zigbee module definition */
 const zigbeeModule = {
     displayName: "Zigbee",
@@ -581,7 +658,12 @@ const zigbeeModule = {
         "/ti/utils/build/GenOpts.opt.xdt": {
             modName: "/ti/zigbee/zigbee",
             getOpts: getOpts
-        }
+        },
+        "/ti/utils/build/GenMap.cmd.xdt":
+        {
+            modName: "/ti/zigbee/zigbee",
+            getLinkerDefs: getLinkerDefs
+        },
     },
 
 };

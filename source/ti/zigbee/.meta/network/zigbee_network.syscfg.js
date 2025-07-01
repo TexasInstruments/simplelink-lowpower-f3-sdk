@@ -145,7 +145,7 @@ function onDeviceTypeChange(inst, ui)
         if(inst.deviceType.includes("zc") || inst.deviceType.includes("zr"))
         {
             ui.nwkMaxChildren.hidden = false;
-            ui.nwkMaxEDCapacity.hidden = false;
+            ui.nwkMaxEDCapacity.hidden = (inst.zigbeeRevision === "r22");
         }
         else /* zed */
         {
@@ -160,6 +160,18 @@ function onDeviceTypeChange(inst, ui)
         {
             ui[element.name].hidden = true;
         }
+    }
+}
+
+function onZigbeeRevisionChange(inst, ui)
+{
+    if(inst.zigbeeRevision === "r22")
+    {
+        ui.nwkMaxEDCapacity.hidden = true;
+    }
+    else
+    {
+        ui.nwkMaxEDCapacity.hidden = (inst.deviceType.includes("gpd")) || !(inst.deviceType.includes("zc") || inst.deviceType.includes("zr"));
     }
 }
 

@@ -514,6 +514,24 @@ typedef enum
    */
   GAP_CONFIG_PARAM_SRK,
 
+  /**
+   * @brief Can be used by the application to update the IRK immediately
+   *
+   * It is not necessary to set this parameter. If it is not set, a random IRK
+   * will be generated unless there is a valid IRK in NV.
+   *
+   * @notes
+   *    * This may be called only when device is in idle state
+   *    * Set manually with GapConfig_SetParameter
+   *    * If provided IRK value is all 0xFFs, a new random IRK will be generated
+   *    * Previous bonds are invalidated
+   *
+   * size: 16 bytes
+   *
+   * @note The IRK can be read with @ref GAP_GetIRK
+   */
+  GAP_CONFIG_PARAM_IRK_UPDATE_IMMED,
+
 /// @cond NODOC
   GAP_CONFIG_PARAM_COUNT
 /// @endcond //NODOC
@@ -723,19 +741,19 @@ enum Gap_ParamIDs_t
  * @{
  */
 /// A device that sends advertising events only.
-#define GAP_PROFILE_BROADCASTER   0x01
+#define GAP_PROFILE_BROADCASTER   0x01U
 /// A device that receives advertising events only.
-#define GAP_PROFILE_OBSERVER      0x02
+#define GAP_PROFILE_OBSERVER      0x02U
 /**
  * A device that accepts the establishment of an LE physical link using the
  * establishment procedure.
  */
-#define GAP_PROFILE_PERIPHERAL    0x04
+#define GAP_PROFILE_PERIPHERAL    0x04U
 /**
  * A device that supports the Central role initiates the establishment of a
  * physical connection.
  */
-#define GAP_PROFILE_CENTRAL       0x08
+#define GAP_PROFILE_CENTRAL       0x08U
 /** @} End GAP_Profile_Roles */
 
 /**
@@ -898,10 +916,10 @@ typedef enum
  * @defgroup GAP_State_Flags GAP State Flags
  * @{
  */
-#define GAP_STATE_IDLE                          0x00 //!< Device is idle
-#define GAP_STATE_ADV                           0x01 //!< Device is advertising
-#define GAP_STATE_SCAN                          0x02 //!< Device is scanning
-#define GAP_STATE_INIT                          0x04 //!< Device is establishing a connection
+#define GAP_STATE_IDLE                          0x00U //!< Device is idle
+#define GAP_STATE_ADV                           0x01U //!< Device is advertising
+#define GAP_STATE_SCAN                          0x02U //!< Device is scanning
+#define GAP_STATE_INIT                          0x04U //!< Device is establishing a connection
 /** @} End GAP_State_Flags */
 
 /**
@@ -1644,6 +1662,9 @@ extern bStatus_t Gap_RegisterConnEventCb(pfnGapConnEvtCB_t cb,
  * @param param parameter ID: @ref Gap_configParamIds_t
  * @param pValue pointer to parameter value. Cast based on the type defined in
  *        @ref Gap_configParamIds_t
+ *
+ * @note if param is @ref GAP_CONFIG_PARAM_IRK_UPDATE_IMMED and pValue is set to
+ * all 0xFFs, a new random IRK will be generated.
  *
  * @return @ref SUCCESS
  * @return @ref INVALIDPARAMETER

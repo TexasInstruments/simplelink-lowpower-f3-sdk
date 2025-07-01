@@ -92,6 +92,17 @@
   "prop2400": [
     {
       "file8": {
+        "cc23xx": "bmack_2m_cc23xx.json"
+      },
+      "phy_files": {
+        "cc23xx": "bmack_2m_cc23xx.phy"
+      },
+      "name": "bmack",
+      "label": "Bare-Metal ACK 2 Mbps, 500 kHz dev, GFSK",
+      "protocol": "Proprietary"
+    },
+    {
+      "file8": {
         "cc23xx": "gfsk_2m_cc23xx.json"
       },
       "phy_files": {

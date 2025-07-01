@@ -252,6 +252,13 @@ typedef uint32_t        halDataAlign_t;
  */
 #define st(x)      do { x } while (__LINE__ == -1)
 
+/*
+ * The offsetof macro is a standard macro defined in the C standard library header <stddef.h>
+ * It is used to determine the byte offset of a member within a structure type.
+ */
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
 /*********************************************************************
  * MEMORY ATTRIBUTES
  */

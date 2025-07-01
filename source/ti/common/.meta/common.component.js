@@ -50,7 +50,8 @@ if (deviceId.match(/CC13.[2].[7]|CC26.[2].[7]|CC13.[4]|CC26.[34]|CC23.0|CC27/)) 
             displayName: displayName,
             description: description,
             modules: [
-                "/ti/common/mcuboot"
+                "/ti/common/mcuboot",
+                "/ti/common/mcuboot_application",
             ]
         }
     ];
@@ -64,6 +65,11 @@ if (deviceId.match(/CC13.[2].[7]|CC26.[2].[7]|CC13.[4]|CC26.[34]|CC23.0|CC27/)) 
         {
             name: "/ti/common/templates/mcuboot_config.h.xdt",
             outputPath: "mcuboot_config.h",
+            alwaysRun: false
+        },
+        {
+            name: "/ti/common/templates/imgtool_args.txt.xdt",
+            outputPath: "imgtool_args.txt",
             alwaysRun: false
         }
     ];

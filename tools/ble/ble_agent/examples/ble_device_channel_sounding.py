@@ -123,14 +123,9 @@ def main():
     reflector_node.wait_for_event(
         event_type=PeripheralEventType.NWP_ADV_START_AFTER_ENABLE, timeout=5
     )
-    peri_add = [0x40, 0x40, 0x40, 0x40, 0x40, 0xc0]
+    peri_add = [0x40, 0x40, 0x40, 0x40, 0x40, 0xC0]
     print("***** connection procedure *****")
-    initiator_node.central.connect(
-        address_type=1,
-        address=peri_add,
-        phy=1,
-        timeout=0
-    )
+    initiator_node.central.connect(address_type=1, address=peri_add, phy=1, timeout=0)
     print("***** Waiting for connection *****")
     connection_data = reflector_node.wait_for_event(
         event_type=ConnectionEventType.NWP_LINK_ESTABLISHED_EVENT, timeout=30
@@ -201,14 +196,14 @@ def main():
         )
         if initiator_results:
             print_obj_data("Subevent Results - initiator", initiator_results)
-            initiator_proc_done = initiator_results['procedure_done_status']
+            initiator_proc_done = initiator_results["procedure_done_status"]
 
         reflector_results = reflector_node.wait_for_event(
             event_type=CsEventType.NWP_CS_SUBEVENT_RESULTS, timeout=3
         )
         if reflector_results:
             print_obj_data("Subevent Results - reflector", reflector_results)
-            reflector_proc_done = reflector_results['procedure_done_status']
+            reflector_proc_done = reflector_results["procedure_done_status"]
 
         if initiator_results is None or reflector_results is None:
             break
@@ -218,15 +213,19 @@ def main():
                 initiator_results = initiator_node.wait_for_event(
                     event_type=CsEventType.NWP_CS_SUBEVENT_RESULTS_CONTINUE, timeout=3
                 )
-                print_obj_data("Subevent Results Continue - initiator", initiator_results)
-                initiator_proc_done = initiator_results['procedure_done_status']
+                print_obj_data(
+                    "Subevent Results Continue - initiator", initiator_results
+                )
+                initiator_proc_done = initiator_results["procedure_done_status"]
 
             if reflector_results:
                 reflector_results = reflector_node.wait_for_event(
                     event_type=CsEventType.NWP_CS_SUBEVENT_RESULTS_CONTINUE, timeout=3
                 )
-                print_obj_data("Subevent Results Continue - reflector", reflector_results)
-                reflector_proc_done = reflector_results['procedure_done_status']
+                print_obj_data(
+                    "Subevent Results Continue - reflector", reflector_results
+                )
+                reflector_proc_done = reflector_results["procedure_done_status"]
 
     initiator_node.done()
     reflector_node.done()

@@ -134,7 +134,7 @@ bStatus_t GAP_DeviceInit_validate_params(uint8_t profileRole, uint8_t taskID,
   bStatus_t stat = INVALIDPARAMETER;   // Return status
 
   // Ensure that initialization hasn't occurred
-  if (MAP_gapGetState() == GAP_INITSTATE_READY)
+  if (MAP_gapGetInitState() == GAP_INITSTATE_READY)
   {
     return bleIncorrectMode;
   }

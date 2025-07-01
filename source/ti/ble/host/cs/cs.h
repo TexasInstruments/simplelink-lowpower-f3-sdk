@@ -79,9 +79,7 @@
 /*******************************************************************************
  * MACROS
  */
-#define MODE_0_INIT_STEP_LEN  5U
-#define MODE_0_REFL_STEP_LEN  3U
-#define STEP_HDR_LEN          3U
+#define STEP_HDR_LEN    3U  //!< @ref csSubeventResultsStep_t header length
 
 /*******************************************************************************
  * TYPEDEFS
@@ -358,7 +356,15 @@ typedef struct
     uint8_t stepMode;            //!< Step mode
     uint8_t stepChnl;            //!< Step channel
     uint8_t stepDataLen;         //!< Step data length
-    uint8_t stepData;            //!< Step data
+
+    /* Step data is one of these types:
+     * @ref CS_modeZeroInitStep_t
+     * @ref CS_modeZeroReflStep_t
+     * @ref CS_modeOneStep_t
+     * @ref CS_modeTwoStep_t
+     * @ref CS_modeThreeStep_t
+     */
+    uint8_t stepData;
 } csSubeventResultsStep_t;
 
 PACKED_TYPEDEF_STRUCT
@@ -578,6 +584,58 @@ csStatus_e CS_SetDefaultAntenna(CS_setDefaultAntennaCmdParams_t *pParams);
  * @return  @ref CS_STATUS_UNEXPECTED_PARAMETER if config Id isn't valid
  */
 csStatus_e CS_GetRole(CS_GetRoleCmdParams_t *pParams);
+
+/*******************************************************************************
+ * @fn          CS_GetStepLength
+ *
+ * @brief       This function calculates the length of a step data, depends on
+ *              role, mode, and number of antenna paths.
+ *
+ * @param       mode - Step mode. Should be one of:
+ *                     @ref CS_MODE_0
+ *                     @ref CS_MODE_1
+ *                     @ref CS_MODE_2
+ *                     @ref CS_MODE_3
+ *
+ * @param       role - Role of the device measured the step of types:
+ *                     @ref CS_ROLE_INITIATOR or @ref CS_ROLE_REFLECTOR
+ *
+ * @param       numAntennaPath - Number of antenna paths used in the step
+ *
+ * @return      Length of the relevant step data
+ * @return      0 for one of the following cases:
+ *              - Invalid mode has been given.
+ *              - mode is 0 and role is invalid.
+ */
+uint8_t CS_GetStepLength(uint8_t mode, uint8_t role, uint8_t numAntennaPath);
+
+/*******************************************************************************
+ * @fn          CS_calcNumPaths
+ *
+ * @brief       This function returns number of antenna paths based on a given
+ *              ACI (antenna permutation index).
+ *
+ * @param       aci - antenna permutation index
+ *
+ * @return      Number of antenna paths: 1 - 4
+ * @return      0 If the given parameter is invalid
+ */
+uint8_t CS_calcNumPaths(csACI_e aci);
+
+/*******************************************************************************
+ * @fn          CS_calcNumPathsFromAntennaMask
+ *
+ * @brief       This function returns number of antenna paths based on a given
+ *              antenna paths mask.
+ *
+ * @param       antPathMask - first 4 bits, each one represent an antenna path.
+ *                            Lsb bit represent the first antenna path.
+ *                            Valid values: 0x1, 0x3, 0x7, 0xF
+ *
+ * @return      Number of antenna paths: 1 - 4
+ * @return      0 If the given parameter is invalid
+ */
+uint8_t CS_calcNumPathsFromAntennaMask(uint8_t antPathMask);
 
 /**
  * @fn      CS_RegisterCB

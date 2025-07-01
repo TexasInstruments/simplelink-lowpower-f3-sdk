@@ -340,29 +340,6 @@ void llCsRsp2Data(uint8* data, csProcedureEnable_t* csRsp);
 void llCsInd2Data(uint8* data, csProcedureEnable_t* csInd);
 
 /*******************************************************************************
- * @fn          llCsGetSubeventLen
- *
- * @brief       This function calculates the best possible subevent len
- * The calculation is based on MaxSubeventLen, procedure Len, offset and
- * connection interval
- *
- * input parameters
- *
- * @param       maxSubeventLen - max subevent length
- * @param       offsetMin - minimum offset
- * @param       procLen = procedure length
- * @param       connInterval - connection interval
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      subevent len
- */
-uint32 llCsGetSubeventLen(uint32 maxSubeventLen, uint32 offsetMin, uint16 procLen,
-                      uint16 connInterval);
-
-/*******************************************************************************
  * @fn          llCsSelectACI
  *
  * @brief       This function gets a suggested ACI value and re-suggests
@@ -652,26 +629,6 @@ csStatus_e llCsSetupTerminateReqOrRsp(uint16 connId, uint8* data);
  * @return      None
  */
 void llCsSetupChmInd(uint8* data, uint16 connId);
-
-/*******************************************************************************
- * @fn          llCsSubeventsPerEvent
- *
- * @brief       Calculate How many subevent will fit into 1 event
- *
- * input parameters
- *
- * @param       procedureLen - CS Procedure Length
- * @param       connInterval - connection interval
- * @param       subeventInterval - CS subevent Interval
- *
- * output parameters
- *
- * @param       None
- *
- * @return      num subevents per event
- */
-uint8 llCsSubeventsPerEvent(uint16 procedureLen, uint16 connInterval,
-                            uint16 subEventInterval);
 
 /*******************************************************************************
  * @fn          llCsCtrlProcessTerminateReq

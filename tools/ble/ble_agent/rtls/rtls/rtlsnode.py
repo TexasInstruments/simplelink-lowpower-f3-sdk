@@ -33,7 +33,7 @@
 import asyncio
 import logging
 
-logger = logging.getLogger('rtlsnode')
+logger = logging.getLogger("rtlsnode")
 
 import queue
 import sys
@@ -52,7 +52,13 @@ from .ss_assert import UTIL, Commands as UTILCommands
 import json
 import copy
 
-from unpi.unpiparser import UNPIHeader, NpiSubSystems, UNPIMessage, QMessage, to_serializable
+from unpi.unpiparser import (
+    UNPIHeader,
+    NpiSubSystems,
+    UNPIMessage,
+    QMessage,
+    to_serializable,
+)
 
 
 @dataclass(order=True)
@@ -66,14 +72,17 @@ class NodeMessage:
     @staticmethod
     def from_json(js):
         dct = json.loads(js)
-        return NodeMessage(identifier=dct['identifier'],
-                           message=UNPIMessage.from_dict(dct['message']))
+        return NodeMessage(
+            identifier=dct["identifier"], message=UNPIMessage.from_dict(dct["message"])
+        )
 
     def as_tuple(self) -> Tuple[str, int, UNPIMessage]:
         return self.identifier, self.message.priority, self.message.item
 
     def __repr__(self):
-        return "NodeMessage(identifier={} message={})".format(self.identifier, self.message.item)
+        return "NodeMessage(identifier={} message={})".format(
+            self.identifier, self.message.item
+        )
 
 
 @to_serializable.register(NodeMessage)
@@ -109,7 +118,7 @@ class RTLSNode(threading.Thread):
 
     subsystem_map = {
         NpiSubSystems.RTLS: RTLSCommands,  # Enum(NpiSubSystems): [Enum(Commands)]
-        NpiSubSystems.UTIL: UTILCommands
+        NpiSubSystems.UTIL: UTILCommands,
     }
 
     def __init__(self, port, speed, name=None):
@@ -117,7 +126,9 @@ class RTLSNode(threading.Thread):
         self.name = name
         self.inQueue = PriorityQueue()
         self.outQueue = PriorityQueue()
-        self.serial = SerialNode(port, speed, self.inQueue, self.outQueue, RTLSNode.subsystem_map, name=name)
+        self.serial = SerialNode(
+            port, speed, self.inQueue, self.outQueue, RTLSNode.subsystem_map, name=name
+        )
         self.exception = None
 
         self.stopEvent = threading.Event()
@@ -190,7 +201,8 @@ class RTLSNode(threading.Thread):
                         self.capabilities = msg.payload.capabilities
                         self.devId = msg.payload.devId
                         self.revNum = msg.payload.revNum
-                        if self.manager is not None: self.manager.identify_node(self, self.identifier)
+                        if self.manager is not None:
+                            self.manager.identify_node(self, self.identifier)
 
                         # Calculate round trip time
                         self.rtt = time.perf_counter() - rtt_start
@@ -213,10 +225,14 @@ class RTLSNode(threading.Thread):
                     msg.node_identifier = self.identifier
                     msg.node_name = self.name
                     parsedItem = QMessage(item.priority, msg)
-                    logger.debug("Have %d subscribers for %s" % (len(self.subscribers), msg))
+                    logger.debug(
+                        "Have %d subscribers for %s" % (len(self.subscribers), msg)
+                    )
                     for subscriber in self.subscribers:
                         if subscriber.eventloop:
-                            asyncio.run_coroutine_threadsafe(subscriber.queue.put(parsedItem), subscriber.eventloop)
+                            asyncio.run_coroutine_threadsafe(
+                                subscriber.queue.put(parsedItem), subscriber.eventloop
+                            )
                         else:
                             subscriber.queue.put(parsedItem)
                         if subscriber.transient:
@@ -255,15 +271,20 @@ class RTLSNode(threading.Thread):
         json_item["type"] = "Command"
 
         # Filtering out "originator" and "subsystem" fields
-        new_dict = {k: v for (k, v) in json_item.items() if k != "originator" if k != "subsystem"}
+        new_dict = {
+            k: v
+            for (k, v) in json_item.items()
+            if k != "originator"
+            if k != "subsystem"
+        }
 
-        if self.capabilities.get('RTLS_COORDINATOR', False):
+        if self.capabilities.get("RTLS_COORDINATOR", False):
             role = "COORDINATOR  "
-        elif self.capabilities.get('RTLS_PASSIVE', False):
+        elif self.capabilities.get("RTLS_PASSIVE", False):
             role = "PASSIVE  "
-        elif self.capabilities.get('RTLS_RESPONDER', False):
+        elif self.capabilities.get("RTLS_RESPONDER", False):
             role = "RESPONDER  "
-        elif self.capabilities.get('RTLS_CONNECTION_MONITOR', False):
+        elif self.capabilities.get("RTLS_CONNECTION_MONITOR", False):
             role = "CONNECTION_MONITOR  "
         else:
             role = self.name
@@ -273,7 +294,9 @@ class RTLSNode(threading.Thread):
     def recv(self, block=False, timeout=None):
         logger.debug("Waiting for data")
 
-        sub = Subscriber(queue.PriorityQueue(), interest=None, transient=True, eventloop=None)
+        sub = Subscriber(
+            queue.PriorityQueue(), interest=None, transient=True, eventloop=None
+        )
         self.add_subscriber(sub)
 
         try:

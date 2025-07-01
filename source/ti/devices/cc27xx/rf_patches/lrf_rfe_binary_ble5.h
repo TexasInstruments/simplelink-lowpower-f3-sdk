@@ -40,7 +40,7 @@
 #include <stdint.h>
 
 /* Length of binary image. */
-#define LRF_RFE_BINARY_BLE5_LENGTH 861 
+#define LRF_RFE_BINARY_BLE5_LENGTH 863 
 
 /* Declaration of raw binary. */
 extern const uint32_t LRF_RFE_binary_ble5[LRF_RFE_BINARY_BLE5_LENGTH];

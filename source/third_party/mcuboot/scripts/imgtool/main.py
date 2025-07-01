@@ -2,6 +2,7 @@
 #
 # Copyright 2017-2020 Linaro Limited
 # Copyright 2019-2023 Arm Limited
+# Copyright 2025 Texas Instruments Incorporated
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,6 +23,10 @@ import click
 import getpass
 import imgtool.keys as keys
 import sys
+import struct
+import os
+import lzma
+import hashlib
 import base64
 from imgtool import image, imgtool_version
 from imgtool.version import decode_version
@@ -34,6 +39,37 @@ if sys.version_info < MIN_PYTHON_VERSION:
     sys.exit("Python %s.%s or newer is required by imgtool."
              % MIN_PYTHON_VERSION)
 
+def read_args_file(ctx, param, value):
+    """
+    TI Argument File Input:
+    Custom callback to read arguments from a file if the value starts with '@'.
+    It converts keys from kebab-case to snake_case, and then saves them in the
+    Click's default_map, which is used in the command context. This way, input
+    validation is still done by Click.
+    """
+    args_file = None
+
+    if len(value) > 0:
+        args_file = value[0]
+
+    if args_file and args_file.startswith('@'):
+        args_file = args_file[1:]
+        try:
+            with open(args_file, 'r') as f:
+                content = f.read().strip()
+                args = {}
+                for line in content.splitlines():
+                    if line.strip():
+                        key, val = line.split('=', 1)
+                        key = key.strip().replace('-', '_')
+                        args[key] = val.strip()
+                ctx.default_map = ctx.default_map or {}
+                ctx.default_map.update(args)
+        except FileNotFoundError:
+            raise click.BadParameter(f"Config file {args_file} not found.")
+        except ValueError:
+            raise click.BadParameter(f"Invalid format in config file {args_file}. Use 'key=value' per line.")
+    return value
 
 def gen_rsa2048(keyfile, passwd):
     keys.RSA.generate().export_private(path=keyfile, passwd=passwd)
@@ -48,13 +84,12 @@ def gen_ecdsa_p256(keyfile, passwd):
     keys.ECDSA256P1.generate().export_private(keyfile, passwd=passwd)
 
 
+''' ROM Secure Boot supports verification of images using ECDSA521. ECDSA521 is not yet supported by MCUboot, 
+        so this must remain in the code until MCUboot supports ECDSA521. '''
 def gen_ecdsa_p521(keyfile, passwd):
     keys.ECDSA521P1.generate().export_private(keyfile, passwd=passwd)
 
 
-def gen_ecdsa_p224(keyfile, passwd):
-    print("TODO: p-224 not yet implemented")
-    
 def gen_ecdsa_p384(keyfile, passwd):
     keys.ECDSA384P1.generate().export_private(keyfile, passwd=passwd)
 
@@ -70,17 +105,20 @@ def gen_x25519(keyfile, passwd):
 valid_langs = ['c', 'rust']
 valid_hash_encodings = ['lang-c', 'raw']
 valid_encodings = ['lang-c', 'lang-rust', 'pem', 'raw']
+
+''' ROM Secure Boot supports verification of images using ECDSA521. ECDSA521 is not yet supported by MCUboot, 
+        so this must remain in the code until MCUboot supports ECDSA521. '''
 keygens = {
     'rsa-2048':   gen_rsa2048,
     'rsa-3072':   gen_rsa3072,
     'ecdsa-p256': gen_ecdsa_p256,
-    'ecdsa-p224': gen_ecdsa_p224,
     'ecdsa-p521': gen_ecdsa_p521,
     'ecdsa-p384': gen_ecdsa_p384,
     'ed25519':    gen_ed25519,
     'x25519':     gen_x25519,
 }
 valid_formats = ['openssl', 'pkcs8']
+valid_sha = [ 'auto', '256', '384', '512' ]
 
 
 def load_signature(sigfile):
@@ -218,22 +256,30 @@ def getpriv(key, minimal, format):
         raise click.UsageError(e)
 
 
-@click.argument('imgfile')
+''' ROM Secure Boot supports RSA3072-PKCS signatures, but MCUboot does not. This import must remain until MCUboot supports
+    this signature type. To distinguish between the PKCS and RSS algorithms, imgtool has a flag for rsa_pss to use rsa_pss
+    algorithms '''
 @click.option('--rsa-pss', default=False, is_flag=True,
               help='Use PSS padding for signature verification. Only used with RSA keys.')
+@click.argument('imgfile')
 @click.option('-k', '--key', metavar='filename')
 @click.command(help="Check that signed image can be verified by given key")
 def verify(key, imgfile, rsa_pss):
     key = load_key(key) if key else None
 
+    ''' To distinguish between the PKCS and RSS algorithms, imgtool has a flag for rsa_pss to use rsa_pss
+    algorithms'''
     if rsa_pss and hasattr(key, 'rsa_pss'):
         key.rsa_pss = True
 
-    ret, version, digest = image.Image.verify(imgfile, key)
+    ret, version, digest, signature = image.Image.verify(imgfile, key)
     if ret == image.VerifyResult.OK:
         print("Image was correctly validated")
         print("Image version: {}.{}.{}+{}".format(*version))
-        print("Image digest: {}".format(digest.hex()))
+        if digest:
+            print("Image digest: {}".format(digest.hex()))
+        if signature and digest is None:
+            print("Image signature over image: {}".format(signature.hex()))
         return
     elif ret == image.VerifyResult.INVALID_MAGIC:
         print("Invalid image magic; is this an MCUboot image?")
@@ -243,6 +289,8 @@ def verify(key, imgfile, rsa_pss):
         print("Image has an invalid hash")
     elif ret == image.VerifyResult.INVALID_SIGNATURE:
         print("No signature found for the given key")
+    elif ret == image.VerifyResult.KEY_MISMATCH:
+        print("Key type does not match TLV record")
     else:
         print("Unknown return code: {}".format(ret))
     sys.exit(1)
@@ -257,7 +305,8 @@ def verify(key, imgfile, rsa_pss):
                     'of a signed image')
 def dumpinfo(imgfile, outfile, silent):
     dump_imginfo(imgfile, outfile, silent)
-    print("dumpinfo has run successfully")
+    if not silent:
+        print("dumpinfo has run successfully")
 
 
 def validate_version(ctx, param, value):
@@ -312,6 +361,14 @@ def get_dependencies(ctx, param, value):
         dependencies[image.DEP_VERSIONS_KEY] = versions
         return dependencies
 
+def create_lzma2_header(dictsize, pb, lc, lp):
+    header = bytearray()
+    for i in range(0, 40):
+        if dictsize <= ((2 | ((i) & 1)) << int((i) / 2 + 11)):
+            header.append(i)
+            break
+    header.append( ( pb * 5 + lp) * 9 + lc)
+    return header
 
 class BasedIntParamType(click.ParamType):
     name = 'integer'
@@ -324,11 +381,15 @@ class BasedIntParamType(click.ParamType):
                       'prefixed with 0b/0B, 0o/0O, or 0x/0X as necessary.'
                       % value, param, ctx)
 
-
-@click.argument('outfile')
-@click.argument('infile')
+''' ROM Secure Boot supports RSA3072-PKCS signatures, but MCUboot does not. This must remain until MCUboot supports
+    this signature type. To distinguish between the PKCS and RSS algorithms, imgtool has a flag for rsa_pss to use rsa_pss
+    algorithms '''
 @click.option('--rsa-pss', default=False, is_flag=True,
               help='Use PSS padding when signing. Only used with RSA keys.')
+@click.argument('outfile')
+@click.argument('infile')
+@click.option('--non-bootable', default=False, is_flag=True,
+              help='Mark the image as non-bootable.')
 @click.option('--custom-tlv', required=False, nargs=2, default=[],
               multiple=True, metavar='[tag] [value]',
               help='Custom TLV that will be placed into protected area. '
@@ -355,6 +416,23 @@ class BasedIntParamType(click.ParamType):
               type=click.Choice(['128', '256']),
               help='When encrypting the image using AES, select a 128 bit or '
                    '256 bit key len.')
+@click.option('--compression', default='disabled',
+              type=click.Choice(['disabled', 'lzma2', 'lzma2armthumb']),
+              help='Enable image compression using specified type. '
+                   'Will fall back without image compression automatically '
+                   'if the compression increases the image size.')
+# ''' TI Compression/Decompression - LZMA compression parameters '''
+@click.option('--dict-size', type=int, required=False, default=12288,
+              help='Dictionary size for lzma2 compression')
+@click.option('--pb', type=int, required=False, default=0,
+              help='pb value for lzma2 compression')
+@click.option('--lc', type=int, required=False, default=0,
+              help='lc value for lzma2 compression')
+@click.option('--lp', type=int, required=False, default=0,
+              help='lp value for lzma2 compression')
+@click.option('--preset', type=int, required=False, default=9,
+              help='Preset level for lzma2 compression.')
+# ''' TI Compression/Decompression '''
 @click.option('-c', '--clear', required=False, is_flag=True, default=False,
               help='Output a non-encrypted image with encryption capabilities,'
                    'so it can be installed in the primary slot, and encrypted '
@@ -378,6 +456,10 @@ class BasedIntParamType(click.ParamType):
 @click.option('-S', '--slot-size', type=BasedIntParamType(), required=True,
               help='Size of the slot. If the slots have different sizes, use '
               'the size of the secondary slot.')
+# ''' TI Compression/Decompression - Compressed slot size '''
+@click.option('-C', '--compressed-slot-size', type=BasedIntParamType(),
+              required=False, help='Size of the compressed slot.')
+# ''' TI Compression/Decompression '''
 @click.option('--pad-header', default=False, is_flag=True,
               help='Add --header-size zeroed bytes at the beginning of the '
                    'image')
@@ -394,7 +476,9 @@ class BasedIntParamType(click.ParamType):
               'keyword to automatically generate it from the image version.')
 @click.option('-v', '--version', callback=validate_version,  required=True)
 @click.option('--align', type=click.Choice(['1', '2', '4', '8', '16', '32']),
-              required=True)
+              default='1',
+              required=False,
+              help='Alignment used by swap update modes.')
 @click.option('--max-align', type=click.Choice(['8', '16', '32']),
               required=False,
               help='Maximum flash alignment. Set if flash alignment of the '
@@ -409,22 +493,47 @@ class BasedIntParamType(click.ParamType):
               'the signature calculated using the public key')
 @click.option('--fix-sig-pubkey', metavar='filename',
               help='public key relevant to fixed signature')
+@click.option('--pure', 'is_pure', is_flag=True, default=False, show_default=True,
+              help='Expected Pure variant of signature; the Pure variant is '
+              'expected to be signature done over an image rather than hash of '
+              'that image.')
 @click.option('--sig-out', metavar='filename',
               help='Path to the file to which signature will be written. '
               'The image signature will be encoded as base64 formatted string')
+@click.option('--sha', 'user_sha', type=click.Choice(valid_sha), default='auto',
+              help='selected sha algorithm to use; defaults to "auto" which is 256 if '
+              'no cryptographic signature is used, or default for signature type')
 @click.option('--vector-to-sign', type=click.Choice(['payload', 'digest']),
               help='send to OUTFILE the payload or payload''s digest instead '
               'of complied image. These data can be used for external image '
               'signing')
 @click.command(help='''Create a signed or unsigned image\n
+               ARGS_FILE (optional) is an argument file that contains `sign` command
+               parameters. Contents of this file may be overridden by standard sign
+               command arguments.
+
+               ARGS_FILE example args_file.txt content:\n
+               ```\n
+               header-size=0x80\n
+               slot-size=0x3D000\n
+               version=1.0.0+0\n
+               pad=True\n
+               ```
+               \n\n
+               ARGS_FILE example usage (note: --slot-size in args_file.txt is overridden in this example):\n
+               `python imgtool.py sign @args_file.txt --slot-size 0x20000 infile outfile`\n\n
+
                INFILE and OUTFILE are parsed as Intel HEX if the params have
                .hex extension, otherwise binary format is used''')
-def sign(key, public_key_format, align, version, pad_sig, header_size,
-         pad_header, slot_size, pad, confirm, max_sectors, overwrite_only,
-         endian, encrypt_keylen, encrypt, infile, outfile, dependencies,
-         load_addr, hex_addr, erased_val, save_enctlv, security_counter,
-         boot_record, custom_tlv, rom_fixed, rsa_pss, max_align, clear, fix_sig,
-         fix_sig_pubkey, sig_out, vector_to_sign):
+# ''' TI Argument File Input '''
+@click.argument('args_file', callback=read_args_file, required=False, nargs=-1)
+def sign(rsa_pss, key, public_key_format, align, version, pad_sig, header_size,
+         pad_header, slot_size, compressed_slot_size, pad, confirm, max_sectors,
+         overwrite_only, endian, encrypt_keylen, encrypt, compression, dict_size,
+         pb, lc, lp, preset, infile, outfile, dependencies, load_addr, hex_addr,
+         erased_val, save_enctlv, security_counter, boot_record, custom_tlv,
+         rom_fixed, max_align, clear, fix_sig, fix_sig_pubkey, sig_out, user_sha,
+         is_pure, vector_to_sign, non_bootable, args_file):
 
     if confirm:
         # Confirmed but non-padded images don't make much sense, because
@@ -436,11 +545,15 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
                       max_sectors=max_sectors, overwrite_only=overwrite_only,
                       endian=endian, load_addr=load_addr, rom_fixed=rom_fixed,
                       erased_val=erased_val, save_enctlv=save_enctlv,
-                      security_counter=security_counter, max_align=max_align)
+                      security_counter=security_counter, max_align=max_align,
+                      non_bootable=non_bootable)
+    compression_tlvs = {}
     img.load(infile)
     key = load_key(key) if key else None
     enckey = load_key(encrypt) if encrypt else None
     if enckey and key:
+        ''' ROM Secure Boot supports verification of images using ECDSA521. ECDSA521 is not yet supported by MCUboot, 
+        so this must remain in the code until MCUboot supports ECDSA521. '''
         if ((isinstance(key, keys.ECDSA256P1) and
              not isinstance(enckey, keys.ECDSA256P1Public))
                 or (isinstance(key, keys.ECDSA521P1) and
@@ -456,6 +569,8 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
     if pad_sig and hasattr(key, 'pad_sig'):
         key.pad_sig = True
 
+    '''To distinguish between the PKCS and RSS algorithms, imgtool has a flag for rsa_pss to use rsa_pss
+        algorithms'''
     if rsa_pss and hasattr(key, 'rsa_pss'):
         key.rsa_pss = True
 
@@ -494,11 +609,66 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
             'value': raw_signature
         }
 
-    img.create(key, public_key_format, enckey, dependencies, boot_record,
-               custom_tlvs, int(encrypt_keylen), clear, baked_signature,
-               pub_key, vector_to_sign)
-    img.save(outfile, hex_addr)
+    if is_pure and user_sha != 'auto':
+        raise click.UsageError(
+            'Pure signatures, currently, enforces preferred hash algorithm, '
+            'and forbids sha selection by user.')
 
+    if compression in ["lzma2", "lzma2armthumb"]:
+        img.create(key, public_key_format, enckey, dependencies, boot_record,
+               custom_tlvs, compression_tlvs, None, int(encrypt_keylen), clear,
+               baked_signature, pub_key, vector_to_sign, user_sha=user_sha,
+               is_pure=is_pure, keep_comp_size=False, dont_encrypt=True)
+        compressed_img = image.Image(version=decode_version(version),
+                  header_size=header_size, pad_header=pad_header,
+                  pad=pad, confirm=confirm, align=int(align),
+                  slot_size=compressed_slot_size, max_sectors=max_sectors,
+                  overwrite_only=overwrite_only, endian=endian,
+                  load_addr=load_addr, rom_fixed=rom_fixed,
+                  erased_val=erased_val, save_enctlv=save_enctlv,
+                  security_counter=security_counter, max_align=max_align)
+        compression_filters = [
+            {"id": lzma.FILTER_LZMA2, "preset": preset,
+                "dict_size": dict_size, "lp": lp,
+                "lc": lc}
+        ]
+        if compression == "lzma2armthumb":
+            compression_filters.insert(0, {"id":lzma.FILTER_ARMTHUMB})
+        compressed_data = lzma.compress(img.get_infile_data(),filters=compression_filters,
+            format=lzma.FORMAT_RAW)
+        uncompressed_size = len(img.get_infile_data())
+        compressed_size = len(compressed_data)
+        print(f"compressed image size: {compressed_size} bytes")
+        print(f"original image size: {uncompressed_size} bytes")
+        compression_tlvs["DECOMP_SIZE"] = struct.pack(
+            img.get_struct_endian() + 'L', img.image_size)
+        compression_tlvs["DECOMP_SHA"] = img.image_hash
+        compression_tlvs_size = len(compression_tlvs["DECOMP_SIZE"])
+        compression_tlvs_size += len(compression_tlvs["DECOMP_SHA"])
+        if img.get_signature():
+            compression_tlvs["DECOMP_SIGNATURE"] = img.get_signature()
+            compression_tlvs_size += len(compression_tlvs["DECOMP_SIGNATURE"])
+        if (compressed_size + compression_tlvs_size) < uncompressed_size:
+            compression_header = create_lzma2_header(
+                dictsize = dict_size, pb = pb,
+                lc = lc, lp = lp)
+            compressed_img.load_compressed(compressed_data, compression_header)
+            compressed_img.base_addr = img.base_addr
+            keep_comp_size = False;
+            if enckey:
+                keep_comp_size = True
+            compressed_img.create(key, public_key_format, enckey,
+               dependencies, boot_record, custom_tlvs, compression_tlvs,
+               compression, int(encrypt_keylen), clear, baked_signature,
+               pub_key, vector_to_sign, user_sha=user_sha,
+               is_pure=is_pure, keep_comp_size=keep_comp_size)
+            img = compressed_img
+    else:
+        img.create(key, public_key_format, enckey, dependencies, boot_record,
+               custom_tlvs, compression_tlvs, None, int(encrypt_keylen), clear,
+               baked_signature, pub_key, vector_to_sign, user_sha=user_sha,
+               is_pure=is_pure)
+    img.save(outfile, hex_addr)
     if sig_out is not None:
         new_signature = img.get_signature()
         save_signature(sig_out, new_signature)

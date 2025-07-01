@@ -60,7 +60,7 @@
 /*******************************************************************************
  * CONSTANTS
  */
-#define CM_DEFAULT_MAX_FAILED_CONN_EVENTS  6
+#define CM_DEFAULT_MAX_FAILED_SYNC_TRIES   6
 #define CM_DEFAULT_ADJUSTMENTS_EVT_TRIES   4
 
 /*******************************************************************************
@@ -126,6 +126,7 @@ typedef enum
 {
   CM_SUPERVISION_TIMEOUT       = 0x00,
   CM_USER_TERM                 = 0x01,
+  CM_SYNC_FAILED               = 0x02,
 } cmStopReason_e;
 
 /*
@@ -298,7 +299,9 @@ typedef struct
 {
   uint32_t                timeDeltaInUs;       //!< The time in us it took for the data to be transferred from node to another in the system
   uint32_t                timeDeltaMaxErrInUs; //!< The maximum deviation time in us
-  uint8_t                 maxNumConnEvtTries;  //!< Number of connection events the device will try to follow before determining the monitoring
+  uint32_t                connTimeout;         //!< The supervision connection timeout, 0 - take the supervision connection timeout
+                                               //!< from the monitored link
+  uint8_t                 maxSyncAttempts;     //!< Number of attampts the device will try to follow before determining the monitoring
                                                //!< process failed or not, 0 - try until connection supervision timeout
   uint8_t                 adjustmentEvtTries;  //!< The number of adjustment events to search for the anchor before starting reporting the RSSI.
   uint32_t                cmDataSize;          //!< The stack CM data size

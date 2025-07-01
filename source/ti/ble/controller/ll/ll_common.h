@@ -198,7 +198,7 @@ extern "C"
 #define US_TO_RAT_TICKS( us )              ((us) << 2U)
 #define RAT_TICKS_TO_US( rat )             ((rat) >> 2)
 
-#define CONVERT_1US_TO_0_625MS( us )         ( us / 625 )     //!< Convert US to 0.625 ms
+#define CONVERT_1US_TO_0_625MS( us )         ( (us) / 625 )     //!< Convert US to 0.625 ms
 #define CONVERT_1_25MS_TO_0_625MS( ms )      ( ms << 1 )      //!< Convert 1.25 ms to 0.625 ms
 
 /*******************************************************************************

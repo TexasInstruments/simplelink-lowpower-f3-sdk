@@ -10,7 +10,18 @@ import enum
 
 from logging.handlers import RotatingFileHandler
 from dataclasses import dataclass
-from construct import Struct, Int16sl, Int8ul, Int16ul, Int32ul, this, Array, Byte, Enum, Int8sl
+from construct import (
+    Struct,
+    Int16sl,
+    Int8ul,
+    Int16ul,
+    Int32ul,
+    this,
+    Array,
+    Byte,
+    Enum,
+    Int8sl,
+)
 from unpi.unpiparser import NiceBytes, ReverseBytes
 from rtls import RTLSManager, RTLSNode
 from ble_device.ble_device_enums import (
@@ -24,12 +35,14 @@ from ble_device.ble_device_enums import (
     PairingCommands,
     GATTCommands,
     CaServerCommands,
+    RREQCommands,
     AppSpecifier,
     CentralEventType,
     PeripheralEventType,
     HandoverEventType,
     L2CAPEventType,
     CmEventType,
+    RREQEventType,
     AddressMode,
     ConnectionEventType,
     CsEventType,
@@ -45,7 +58,7 @@ from ble_device.ble_device_enums import (
     CmConnUpdateType,
     GATTEventType,
     CaServerEventType,
-    BondReadTypes
+    BondReadTypes,
 )
 
 from ble_device.ble_device_exception import *
@@ -320,6 +333,7 @@ class BleDevice:
         self.cm: BleDeviceCm | None = None  # Connection Monitor
         self.gatt: BleDeviceGATT | None = None
         self.ca_server: BleDeviceCaServer | None = None
+        self.rreq: BleDeviceRREQ | None = None
 
         self.addr_mode = None
         self.id_addr = None
@@ -505,8 +519,16 @@ class BleDevice:
                     max_event_list_size=self.max_event_list_size,
                 )
 
+            if self.device_node.capabilities.get("RTLS_CAP_RREQ", False):
+                self.rreq = BleDeviceRREQ(
+                    logger=self.logger,
+                    ble_device=self,
+                    sync_command=self.sync_command,
+                    max_event_list_size=self.max_event_list_size,
+                )
+
             return True
-        
+
         except BleDeviceException as ex:
             print(f"Error: {ex}")
             return False
@@ -562,7 +584,8 @@ class BleDevice:
                 CommonEventType,
                 CmEventType,
                 GATTEventType,
-                CaServerEventType
+                CaServerEventType,
+                RREQEventType,
             ]:
                 for member in _enum:
                     if member.value == event_type:
@@ -624,9 +647,7 @@ class BleDevice:
                 ):
                     parsed_data = self.pairing.message_parser(msg)
 
-                elif self.cs and event_type in set(
-                    item.value for item in CsEventType
-                ):
+                elif self.cs and event_type in set(item.value for item in CsEventType):
                     parsed_data = self.cs.message_parser(msg)
 
                 elif self.l2cap and event_type in set(
@@ -639,9 +660,7 @@ class BleDevice:
                 ):
                     parsed_data = self.common.message_parser(msg)
 
-                elif self.cm and event_type in set(
-                    item.value for item in CmEventType
-                ):
+                elif self.cm and event_type in set(item.value for item in CmEventType):
                     parsed_data = self.cm.message_parser(msg)
 
                 elif self.gatt and event_type in set(
@@ -653,6 +672,11 @@ class BleDevice:
                     item.value for item in CaServerEventType
                 ):
                     parsed_data = self.ca_server.message_parser(msg)
+
+                elif self.rreq and event_type in set(
+                    item.value for item in RREQEventType
+                ):
+                    parsed_data = self.rreq.message_parser(msg)
 
                 else:
                     self.unknown_event_list.add_event(event_type, parsed_data)
@@ -696,12 +720,12 @@ class BleDevice:
             _ble_agent_node, failed = self._rtls_manager.wait_identified(
                 is_ble_agent=True
             )
-            
+
             print(_ble_agent_node, failed)
 
             if len(failed) > 0:
                 raise BleDeviceNodesNotIdentifiedException(
-                    "{} nodes not identified at all".format(len(failed)), failed
+                    "{} nodes not identified at all, comport: {}".format(len(failed), device_setting["com_port"]), failed
                 )
             else:
                 pass
@@ -817,7 +841,6 @@ class BleDeviceCommon(BleDeviceBasic):
                 "data_len" / Int16ul,
                 "data" / Array(this.data_len, Int8ul),
             )
-
         elif event_type == CommonEventType.NWP_COMMON_HCI_LE_EVENT:
             data_struct = Struct(
                 "event" / Int16ul,
@@ -837,7 +860,7 @@ class BleDeviceCommon(BleDeviceBasic):
     def get_address(self):
         self.cmd = CommonCommands.COMMON_CMD_GET_DEV_ADDR
         self.send_nwp_cmd(None)
-    
+
     def reset_device(self):
         self.cmd = CommonCommands.COMMON_CMD_RESET_DEVICE
         self.send_nwp_cmd(None)
@@ -956,12 +979,12 @@ class BleDeviceCentral(BleDeviceBasic):
             parsed_data = self._last_scan_reports
 
         elif event_type == CentralEventType.NWP_ADV_REPORT:
-            data_struct =  Struct(
+            data_struct = Struct(
                 "event" / Int16ul,
                 "address_type" / Int8ul,
                 "address" / Array(6, Int8ul),
                 "data_len" / Int16ul,
-                "data" / Array(this.data_len, Int8ul)
+                "data" / Array(this.data_len, Int8ul),
             )
             self._last_scan_reports = self.parse_struct(data_struct, msg)
             parsed_data = self._last_scan_reports
@@ -1090,19 +1113,19 @@ class BleDeviceConnection(BleDeviceBasic):
         elif event_type == ConnectionEventType.NWP_CONN_NOTI_CONN_EVENT:
             self.event_notify_enabled = True
             data_struct = Struct(
-                "event"  / Int16ul,
+                "event" / Int16ul,
                 "status" / Enum(Int8ul, ConnectionEventStatus),
                 "connection_handle" / Int16ul,
                 "channel" / Int8ul,
-                "phy"     / Enum(Int8ul, ConnectionPhy),
+                "phy" / Enum(Int8ul, ConnectionPhy),
                 "last_rssi" / Int8sl,
                 "packets" / Int16ul,
-                "errors"  / Int16ul,
+                "errors" / Int16ul,
                 "next_task_type" / Enum(Int16ul, ConnectionEventTaskType),
                 "next_task_time" / Int32ul,
-                "event_counter"  / Int16ul,
-                "time_stamp"     / Int32ul,
-                "event_type"     / Enum(Int8ul, ConnectionEventNotifyType),
+                "event_counter" / Int16ul,
+                "time_stamp" / Int32ul,
+                "event_type" / Enum(Int8ul, ConnectionEventNotifyType),
             )
 
             event_report = self.parse_struct(data_struct, msg)
@@ -1118,17 +1141,19 @@ class BleDeviceConnection(BleDeviceBasic):
     def get_connections(self):
         return self.connections
 
-    def register_connection_event(self,
-                                  connection_handle=0xFFFD,
-                                  event_type = ConnectionEventNotifyType.CONNECTION_EVENT_ALL,
-                                  report_frequency=0x0A):
-        '''
+    def register_connection_event(
+        self,
+        connection_handle=0xFFFD,
+        event_type=ConnectionEventNotifyType.CONNECTION_EVENT_ALL,
+        report_frequency=0x0A,
+    ):
+        """
         @brief Register for connection event notification.
         @param connection_handle: Connection handle to register for event notification,
                                   use 0xFFFD to register for all connections.
         @param event_type: Type of event to register for notification.
         @param report_frequency: Frequency of event notification in number of connection events.
-        '''
+        """
         self.event_notify_enabled = False
         self.cmd = ConnectionCommands.CONNECTION_CMD_REGISTER_CONN_EVENT
         self.data_struct = Struct(
@@ -1141,13 +1166,15 @@ class BleDeviceConnection(BleDeviceBasic):
             dict(
                 connection_handle=connection_handle,
                 report_frequency=report_frequency,
-                event_type=event_type
+                event_type=event_type,
             )
         )
 
         if self.sync_command:
             true_cond_func = lambda ble_device: ble_device.event_notify_enabled
-            self.ble_device_wait(true_cond_func, self, "event call back notification enabled")
+            self.ble_device_wait(
+                true_cond_func, self, "event call back notification enabled"
+            )
 
     def unregister_connection_event(self):
         self.cmd = ConnectionCommands.CONNECTION_CMD_UNREGISTER_CONN_EVENT
@@ -1155,20 +1182,22 @@ class BleDeviceConnection(BleDeviceBasic):
         self.send_nwp_cmd(None)
         self.event_notify_enabled = False
 
-    def set_connection_phy(self,
-                           connection_handle = 0x00,
-                           phy_opts = ConnectionPhyOpts.CONNECTION_PHY_OPT_NONE,
-                           all_phys = ConnectionPhysPreference.CONNECTION_USE_TX_RX_PHY_PARAM,
-                           tx_phy = ConnectionPhy.CONNECTION_PHY_2M,
-                           rx_phy = ConnectionPhy.CONNECTION_PHY_2M):
-        '''
+    def set_connection_phy(
+        self,
+        connection_handle=0x00,
+        phy_opts=ConnectionPhyOpts.CONNECTION_PHY_OPT_NONE,
+        all_phys=ConnectionPhysPreference.CONNECTION_USE_TX_RX_PHY_PARAM,
+        tx_phy=ConnectionPhy.CONNECTION_PHY_2M,
+        rx_phy=ConnectionPhy.CONNECTION_PHY_2M,
+    ):
+        """
         @brief Set PHY preferences for a connection.
         @param connection_handle: Connection handle to set PHY preferences.
         @param phy_opts: PHY options.
         @param all_phys: Phy prefrences.
         @param tx_phy: Preferred transmit PHY.
         @param rx_phy: Preferred receive PHY.
-        '''
+        """
         self.cmd = ConnectionCommands.CONNECTION_CMD_SET_PHY
         self.data_struct = Struct(
             "connection_handle" / Int16ul,
@@ -1190,13 +1219,9 @@ class BleDeviceConnection(BleDeviceBasic):
 
     def terminate_link(self, connection_handle):
         self.cmd = ConnectionCommands.CONNECTION_CMD_TERMINATE_LINK
-        self.data_struct = Struct(
-            "connection_handle" / Int16ul
-        )
+        self.data_struct = Struct("connection_handle" / Int16ul)
 
-        self.send_nwp_cmd(
-            dict(connection_handle=connection_handle)
-        )
+        self.send_nwp_cmd(dict(connection_handle=connection_handle))
 
 
 class BleDevicePairing(BleDeviceBasic):
@@ -1220,14 +1245,22 @@ class BleDevicePairing(BleDeviceBasic):
         event_type = msg.payload.event_type
         parsed_data = msg.payload.data
         if event_type == PairingEventType.NWP_PAIRING_MAX_NUM_CHAR_CFG:
-            data_struct = Struct(
-                "event" / Int16ul,
-                "max_num_char_cfg" / Int8ul
-            )
+            data_struct = Struct("event" / Int16ul, "max_num_char_cfg" / Int8ul)
             parsed_data = self.parse_struct(data_struct, msg)
-            self.max_num_char_cfg = parsed_data['max_num_char_cfg']
+            self.max_num_char_cfg = parsed_data["max_num_char_cfg"]
 
         if event_type == PairingEventType.NWP_PAIRING_STATE_COMPLETE:
+            data_struct = Struct(
+                "event" / Int16ul,
+                "connection_handle" / Int16ul,
+                "state" / Int8ul,
+                "status" / Int8ul,
+            )
+            self._last_pairing_data = self.parse_struct(data_struct, msg)
+            self.pairing.append(self._last_pairing_data)
+            parsed_data = self._last_pairing_data
+
+        if event_type == PairingEventType.NWP_PAIRING_STATE_BOND_SAVED:
             data_struct = Struct(
                 "event" / Int16ul,
                 "connection_handle" / Int16ul,
@@ -1266,7 +1299,18 @@ class BleDevicePairing(BleDeviceBasic):
                 "irk" / Array(16, Int8ul),
                 "srk" / Array(16, Int8ul),
                 "sign_count" / Int32ul,
-                "char_cfg" / Array(3 * self.max_num_char_cfg, Int8ul)
+                "char_cfg" / Array(3 * self.max_num_char_cfg, Int8ul),
+            )
+            self._last_pairing_data = self.parse_struct(data_struct, msg)
+            self.pairing.append(self._last_pairing_data)
+            parsed_data = self._last_pairing_data
+
+        elif event_type == PairingEventType.NWP_PAIRING_GET_LOCAL_OOB_DATA:
+            data_struct = Struct(
+                "event" / Int16ul,
+                "connection_handle" / Int16ul,
+                "oob_confirm" / Array(16, Int8ul),
+                "oob_random" / Array(16, Int8ul),
             )
             self._last_pairing_data = self.parse_struct(data_struct, msg)
             self.pairing.append(self._last_pairing_data)
@@ -1277,42 +1321,48 @@ class BleDevicePairing(BleDeviceBasic):
         )
         return parsed_data
 
-
     def get_max_num_char_cfg(self):
         self.cmd = PairingCommands.PAIRING_CMD_GET_MAX_NUM_CHAR_CFG
         self.send_nwp_cmd(None)
 
-
-    def read_bond_from_nv(self, mode=BondReadTypes.READ_BOND_BY_INDEX,
-                          peer_address=None, peer_address_type=0x00):
+    def read_bond_from_nv(
+        self,
+        mode=BondReadTypes.READ_BOND_BY_INDEX,
+        peer_address=None,
+        peer_address_type=0x00,
+    ):
         self.cmd = PairingCommands.PAIRING_CMD_READ_BOND
         self.data_struct = Struct(
-            'mode' / Int8ul,
-            'peer_address' / Array(6, Int8ul),
-            'peer_address_type' / Int8ul
+            "mode" / Int8ul,
+            "peer_address" / Array(6, Int8ul),
+            "peer_address_type" / Int8ul,
         )
-        self.send_nwp_cmd(dict(
-            mode=mode,
-            peer_address=peer_address,
-            peer_address_type=peer_address_type
-        ))
+        self.send_nwp_cmd(
+            dict(
+                mode=mode,
+                peer_address=peer_address,
+                peer_address_type=peer_address_type,
+            )
+        )
 
-    def write_bond_to_nv(self,
-                         peer_address=None,
-                         peer_address_type=None,
-                         state_flags=None,
-                         local_ltk=None,
-                         local_div=None,
-                         local_rand=None,
-                         local_key_size=None,
-                         peer_ltk=None,
-                         peer_div=None,
-                         peer_rand=None,
-                         peer_key_size=None,
-                         irk=None,
-                         srk=None,
-                         sign_count=0,
-                         char_cfg=None):
+    def write_bond_to_nv(
+        self,
+        peer_address=None,
+        peer_address_type=None,
+        state_flags=None,
+        local_ltk=None,
+        local_div=None,
+        local_rand=None,
+        local_key_size=None,
+        peer_ltk=None,
+        peer_div=None,
+        peer_rand=None,
+        peer_key_size=None,
+        irk=None,
+        srk=None,
+        sign_count=0,
+        char_cfg=None,
+    ):
         self.cmd = PairingCommands.PAIRING_CMD_WRITE_BOND
         self.data_struct = Struct(
             "peer_address" / Array(6, Int8ul),
@@ -1329,25 +1379,59 @@ class BleDevicePairing(BleDeviceBasic):
             "irk" / Array(16, Int8ul),
             "srk" / Array(16, Int8ul),
             "sign_count" / Int32ul,
-            "char_cfg" / Array(3 * self.max_num_char_cfg, Int8ul)
+            "char_cfg" / Array(3 * self.max_num_char_cfg, Int8ul),
         )
-        self.send_nwp_cmd(dict(
-            peer_address=peer_address,
-            peer_address_type=peer_address_type,
-            state_flags=state_flags,
-            local_ltk=local_ltk,
-            local_div=local_div,
-            local_rand=local_rand,
-            local_key_size=local_key_size,
-            peer_ltk=peer_ltk,
-            peer_div=peer_div,
-            peer_rand=peer_rand,
-            peer_key_size=peer_key_size,
-            irk=irk,
-            srk=srk,
-            sign_count=sign_count,
-            char_cfg=char_cfg
-        ))
+        self.send_nwp_cmd(
+            dict(
+                peer_address=peer_address,
+                peer_address_type=peer_address_type,
+                state_flags=state_flags,
+                local_ltk=local_ltk,
+                local_div=local_div,
+                local_rand=local_rand,
+                local_key_size=local_key_size,
+                peer_ltk=peer_ltk,
+                peer_div=peer_div,
+                peer_rand=peer_rand,
+                peer_key_size=peer_key_size,
+                irk=irk,
+                srk=srk,
+                sign_count=sign_count,
+                char_cfg=char_cfg,
+            )
+        )
+
+    def set_oob_enable(self, conn_handle=0x00, oob_enable=0x00):
+        self.cmd = PairingCommands.PAIRING_CMD_SET_OOB_ENABLE
+        self.data_struct = Struct("conn_handle" / Int16ul, "oob_enable" / Int8ul)
+        self.send_nwp_cmd(dict(conn_handle=conn_handle, oob_enable=oob_enable))
+
+    def set_remote_oob_data(self, conn_handle=0x00, oob_confirm=None, oob_random=None):
+        if oob_random is None:
+            oob_random = [0x00] * 16
+        if oob_confirm is None:
+            oob_confirm = [0x00] * 16
+        self.cmd = PairingCommands.PAIRING_CMD_SET_REMOTE_OOB_DATA
+        self.data_struct = Struct(
+            "conn_handle" / Int16ul,
+            "oob_confirm" / Array(16, Int8ul),
+            "oob_random" / Array(16, Int8ul),
+        )
+        self.send_nwp_cmd(
+            dict(
+                conn_handle=conn_handle, oob_confirm=oob_confirm, oob_random=oob_random
+            )
+        )
+
+    def get_local_oob_data(self, conn_handle=0x00):
+        self.cmd = PairingCommands.PAIRING_CMD_GET_LOCAL_OOB_DATA
+        self.data_struct = Struct("conn_handle" / Int16ul)
+        self.send_nwp_cmd(
+            dict(
+                conn_handle=conn_handle,
+            )
+        )
+
 
 class BleDeviceGATT(BleDeviceBasic):
     def __init__(self, logger, ble_device, sync_command, max_event_list_size):
@@ -1386,13 +1470,15 @@ class BleDeviceGATT(BleDeviceBasic):
     def mtu_exchange(self, conn_handle=0x00, mtu_size=255):
         self.cmd = GATTCommands.GATT_CMD_MTU_EXCHANGE
         self.data_struct = Struct(
-            'conn_handle' / Int16ul,
-            'mtu_size' / Int16ul,
+            "conn_handle" / Int16ul,
+            "mtu_size" / Int16ul,
         )
-        self.send_nwp_cmd(dict(
-            conn_handle=conn_handle,
-            mtu_size=mtu_size,
-        ))
+        self.send_nwp_cmd(
+            dict(
+                conn_handle=conn_handle,
+                mtu_size=mtu_size,
+            )
+        )
 
 
 class BleDeviceHandover(BleDeviceBasic):
@@ -1413,7 +1499,11 @@ class BleDeviceHandover(BleDeviceBasic):
         self.app_specifier = AppSpecifier.APP_SPECIFIER_HANDOVER
 
     def start_serving_node(
-        self, conn_handle=0x00, min_gatt_handle=0x0000, max_gatt_handle=0x0000, handover_sn_mode=0
+        self,
+        conn_handle=0x00,
+        min_gatt_handle=0x0000,
+        max_gatt_handle=0x0000,
+        handover_sn_mode=0,
     ):
         self.cmd = HandoverCommands.HANDOVER_CMD_START_SN
         self.data_struct = Struct(
@@ -1434,15 +1524,19 @@ class BleDeviceHandover(BleDeviceBasic):
     def close_serving_node(self, conn_handle=0x00, status=0):
         self.cmd = HandoverCommands.HANDOVER_CMD_CLOSE_SN
         self.data_struct = Struct(
-            'conn_handle' / Int16ul,
-            'status' / Int32ul,
+            "conn_handle" / Int16ul,
+            "status" / Int32ul,
         )
-        self.send_nwp_cmd(dict(
-            conn_handle=conn_handle,
-            status=status,
-        ))
+        self.send_nwp_cmd(
+            dict(
+                conn_handle=conn_handle,
+                status=status,
+            )
+        )
 
-    def start_candidate_node(self, offset, max_err_time=0, max_num_conn_events=6, tx_burst_ratio=30, data=[]):
+    def start_candidate_node(
+        self, offset, max_err_time=0, max_num_conn_events=6, tx_burst_ratio=30, data=[]
+    ):
         self.cmd = HandoverCommands.HANDOVER_CMD_START_CN
         self.data_struct = Struct(
             "offset" / Int32ul,
@@ -1451,13 +1545,15 @@ class BleDeviceHandover(BleDeviceBasic):
             "tx_burst_ratio" / Int32ul,
             "data" / Array(len(data), Int8ul),
         )
-        self.send_nwp_cmd(dict(
-            offset=offset,
-            max_err_time=max_err_time,
-            max_num_conn_events=max_num_conn_events,
-            tx_burst_ratio=tx_burst_ratio,
-            data=data
-        ))
+        self.send_nwp_cmd(
+            dict(
+                offset=offset,
+                max_err_time=max_err_time,
+                max_num_conn_events=max_num_conn_events,
+                tx_burst_ratio=tx_burst_ratio,
+                data=data,
+            )
+        )
 
     def message_parser(self, msg):
         event_type = msg.payload.event_type
@@ -1478,9 +1574,9 @@ class BleDeviceHandover(BleDeviceBasic):
             )
         elif event_type == HandoverEventType.NWP_HANDOVER_CN_STATUS:
             data_struct = Struct(
-                'event' / Int16ul,
-                'connection_handle' / Int16ul,
-                'status' / Int32ul,
+                "event" / Int16ul,
+                "connection_handle" / Int16ul,
+                "status" / Int32ul,
             )
             self._last_handover_data = self.parse_struct(data_struct, msg)
             self.handover.append(self._last_handover_data)
@@ -1515,13 +1611,9 @@ class BleDeviceCs(BleDeviceBasic):
 
     def read_remote_supported_capabilities(self, conn_handle=0):
         self.cmd = CsCommands.CS_CMD_READ_REMOTE_CAP
-        self.data_struct = Struct(
-            "conn_handle" / Int16ul
-        )
+        self.data_struct = Struct("conn_handle" / Int16ul)
 
-        self.send_nwp_cmd(
-            dict(conn_handle=conn_handle)
-        )
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
 
     def set_default_antenna(self, default_antenna_index=0):
         """
@@ -1533,14 +1625,10 @@ class BleDeviceCs(BleDeviceBasic):
             None
         """
         self.cmd = CsCommands.CS_CMD_SET_DEFAULT_ANT
-        self.data_struct = Struct(
-            "default_antenna_index" / Int8ul
-        )
+        self.data_struct = Struct("default_antenna_index" / Int8ul)
 
-        self.send_nwp_cmd(
-            dict(default_antenna_index=default_antenna_index)
-        )
-    
+        self.send_nwp_cmd(dict(default_antenna_index=default_antenna_index))
+
     def create_config(self, param_dict):
         self.cmd = CsCommands.CS_CMD_CREATE_CONFIG
         self.data_struct = Struct(
@@ -1560,46 +1648,44 @@ class BleDeviceCs(BleDeviceBasic):
             "channel_map_repetition" / Int8ul,
             "ch_sel" / Int8ul,
             "ch3c_shape" / Int8ul,
-            "ch3C_jump" / Int8ul
+            "ch3C_jump" / Int8ul,
         )
 
         self.send_nwp_cmd(param_dict)
 
     def security_enable(self, conn_handle=0):
         self.cmd = CsCommands.CS_CMD_SECURITY_ENABLE
-        self.data_struct = Struct(
-            "conn_handle" / Int16ul
-        )
+        self.data_struct = Struct("conn_handle" / Int16ul)
 
-        self.send_nwp_cmd(
-            dict(conn_handle=conn_handle)
-        )
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
 
-    def set_default_settings(self, conn_handle=0, role_enable=3, sync_anthenna_selection=1, max_tx_power=0):
+    def set_default_settings(
+        self, conn_handle=0, role_enable=3, sync_anthenna_selection=1, max_tx_power=0
+    ):
         self.cmd = CsCommands.CS_CMD_SET_DEFAULT_SETTINGS
         self.data_struct = Struct(
             "conn_handle" / Int16ul,
             "role_enable" / Int8ul,
             "sync_anthenna_selection" / Int8ul,
-            "max_tx_power" / Int8ul
+            "max_tx_power" / Int8ul,
         )
 
         self.send_nwp_cmd(
-            dict(conn_handle=conn_handle, role_enable=role_enable, sync_anthenna_selection=sync_anthenna_selection,
-                 max_tx_power=max_tx_power)
+            dict(
+                conn_handle=conn_handle,
+                role_enable=role_enable,
+                sync_anthenna_selection=sync_anthenna_selection,
+                max_tx_power=max_tx_power,
+            )
         )
 
     def read_remote_fae_table(self, conn_handle=0):
         self.cmd = CsCommands.CS_CMD_READ_FAE_TABLE
-        self.data_struct = Struct(
-            "conn_handle" / Int16ul
-        )
+        self.data_struct = Struct("conn_handle" / Int16ul)
 
-        self.send_nwp_cmd(
-            dict(conn_handle=conn_handle)
-        )
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
 
-    def write_remote_fae_table(self, conn_handle=0, reflector_table=[0]*72):
+    def write_remote_fae_table(self, conn_handle=0, reflector_table=[0] * 72):
         self.cmd = CsCommands.CS_CMD_WRITE_FAE_TABLE
         self.data_struct = Struct(
             "conn_handle" / Int16ul,
@@ -1612,26 +1698,17 @@ class BleDeviceCs(BleDeviceBasic):
 
     def remove_config(self, conn_handle=0, config_id=0):
         self.cmd = CsCommands.CS_CMD_REMOVE_CONFIG
-        self.data_struct = Struct(
-            "conn_handle" / Int16ul,
-            "config_id" / Int8ul
-        )
+        self.data_struct = Struct("conn_handle" / Int16ul, "config_id" / Int8ul)
 
-        self.send_nwp_cmd(
-            dict(conn_handle=conn_handle, config_id=config_id)
-        )
+        self.send_nwp_cmd(dict(conn_handle=conn_handle, config_id=config_id))
 
     def set_channel_classification(self, chnl_class=None):
         if chnl_class is None:
-            chnl_class = [0x00]*10
+            chnl_class = [0x00] * 10
         self.cmd = CsCommands.CS_CMD_SET_CHNL_CLASS
-        self.data_struct = Struct(
-            "chnl_class" / Array(10, Int8ul)
-        )
+        self.data_struct = Struct("chnl_class" / Array(10, Int8ul))
 
-        self.send_nwp_cmd(
-            dict(chnl_class=chnl_class)
-        )
+        self.send_nwp_cmd(dict(chnl_class=chnl_class))
 
     def set_procedure_params(self, param_dict):
         self.cmd = CsCommands.CS_CMD_SET_PROCEDURE_PARAMS
@@ -1658,9 +1735,7 @@ class BleDeviceCs(BleDeviceBasic):
     def procedure_enable(self, conn_handle=0, config_id=0, enable=1):
         self.cmd = CsCommands.CS_CMD_PROCEDURE_ENABLE
         self.data_struct = Struct(
-            "conn_handle" / Int16ul,
-            "config_id" / Int8ul,
-            "enable" / Int8ul
+            "conn_handle" / Int16ul, "config_id" / Int8ul, "enable" / Int8ul
         )
 
         self.send_nwp_cmd(
@@ -1700,7 +1775,7 @@ class BleDeviceCs(BleDeviceBasic):
                 "t_sw_cap" / Int8ul,
                 "snr_tx_cap" / Int8ul,
             )
-        
+
         elif event_type == CsEventType.NWP_CS_CONFIG_COMPLETE:
             data_struct = Struct(
                 "event" / Int16ul,
@@ -1759,7 +1834,7 @@ class BleDeviceCs(BleDeviceBasic):
                 "sub_event_interval" / Int16ul,
                 "event_interval" / Int16ul,
                 "procedure_interval" / Int16ul,
-                "procedure_count" / Int16ul
+                "procedure_count" / Int16ul,
             )
 
         elif event_type == CsEventType.NWP_CS_SUBEVENT_RESULTS:
@@ -1800,6 +1875,30 @@ class BleDeviceCs(BleDeviceBasic):
                 "distance" / Int32ul,
                 "quality" / Int32ul,
                 "confidence" / Int32ul,
+            )
+
+        elif event_type == CsEventType.NWP_CS_APP_DISTANCE_EXTENDED_RESULTS:
+            # Assuming CS_MAX_ANT_PATHS = 4, CS_MAX_MODE_ZERO_PER_PROCEDURE = 8, adjust if needed
+            data_struct = Struct(
+                "event" / Int16ul,
+                "status" / Int8ul,
+                "distance" / Int32ul,
+                "quality" / Int32ul,
+                "confidence" / Int32ul,
+                "numMpc" / Int16ul,
+                "distanceMusic" / Array(4, Int32ul),
+                "distanceNN" / Array(4, Int32ul),
+                "numMpcPaths" / Array(4, Int16ul),
+                "qualityPaths" / Array(4, Int32ul),
+                "confidencePaths" / Array(4, Int32ul),
+                "modeZeroStepsInit"
+                / (Byte[96 * 5]),  # 96 elements of 5 bytes each for initiator
+                "modeZeroStepsRef"
+                / (Byte[96 * 3]),  # 96 elements of 3 bytes each for reflector
+                "permutationIndexLocal" / Array(75, Int8ul),
+                "stepsDataLocal" / (Byte[300 * 4]),  # 300 elements of 4 bytes each
+                "permutationIndexRemote" / Array(75, Int8ul),
+                "stepsDataRemote" / (Byte[300 * 4]),  # 300 elements of 4 bytes each
             )
 
         if data_struct is not None:
@@ -1851,7 +1950,14 @@ class BleDeviceL2CAP(BleDeviceBasic):
             "payload" / Array(this.data_len, Int8ul),
         )
 
-        self.send_nwp_cmd(dict(conn_handle=conn_handle, CID=channel_id, data_len=len(data), payload=data))
+        self.send_nwp_cmd(
+            dict(
+                conn_handle=conn_handle,
+                CID=channel_id,
+                data_len=len(data),
+                payload=data,
+            )
+        )
 
     def connect_request(self, conn_handle, psm, peer_psm):
         self.cmd = L2CAPCommands.L2CAP_CMD_CONNECT_REQ
@@ -1933,9 +2039,7 @@ class BleDeviceCm(BleDeviceBasic):
 
         self.app_specifier = AppSpecifier.APP_SPECIFIER_CM
 
-    def start_cm_serving(
-        self, conn_handle=0x00
-        ):
+    def start_cm_serving(self, conn_handle=0x00):
         self.cmd = CmCommands.CM_CMD_START_SERVING
         self.data_struct = Struct(
             "conn_handle" / Int16ul,
@@ -1946,53 +2050,69 @@ class BleDeviceCm(BleDeviceBasic):
             )
         )
 
-    def start_monitoring(self, time_delta=0, time_delta_err=0, max_num_conn_events=6, adjustment_events=4, conn_role=0, data_len=0, data=[]):
+    def start_monitoring(
+        self,
+        time_delta=0,
+        time_delta_err=0,
+        conn_timeout=5000,
+        max_sync_attempts=6,
+        adjustment_events=4,
+        conn_role=0,
+        data_len=0,
+        data=[],
+    ):
         self.cmd = CmCommands.CM_CMD_START_MONITORING
         self.data_struct = Struct(
-            'time_delta' / Int32ul,
-            'time_delta_err' / Int32ul,
-            'max_num_conn_events' / Int8ul,
-            'adjustment_events' /  Int8ul,
-            'conn_role' / Int8ul,
-            'data_len' / Int16ul,
-            'data' / Array(this.data_len, Int8ul)
+            "time_delta" / Int32ul,
+            "time_delta_err" / Int32ul,
+            "conn_timeout" / Int32ul,
+            "max_sync_attempts" / Int8ul,
+            "adjustment_events" / Int8ul,
+            "conn_role" / Int8ul,
+            "data_len" / Int16ul,
+            "data" / Array(this.data_len, Int8ul),
         )
-        self.send_nwp_cmd(dict(
-            time_delta=time_delta,
-            time_delta_err=time_delta_err,
-            max_num_conn_events=max_num_conn_events,
-            adjustment_events=adjustment_events,
-            conn_role=conn_role,
-            data_len=data_len,
-            data=data
-        ))
+        self.send_nwp_cmd(
+            dict(
+                time_delta=time_delta,
+                time_delta_err=time_delta_err,
+                conn_timeout=conn_timeout,
+                max_sync_attempts=max_sync_attempts,
+                adjustment_events=adjustment_events,
+                conn_role=conn_role,
+                data_len=data_len,
+                data=data,
+            )
+        )
 
     def stop_monitoring(self, conn_handle=0):
         self.cmd = CmCommands.CM_CMD_STOP_MONITORING
         self.data_struct = Struct(
             "conn_handle" / Int16ul,
         )
-        self.send_nwp_cmd(dict(
-            conn_handle=conn_handle,
-        ))
-    
+        self.send_nwp_cmd(
+            dict(
+                conn_handle=conn_handle,
+            )
+        )
+
     def update_conn(self, event):
         data_to_send = dict()
         self.data_struct = Struct(
-            'access_addr' / Int32ul,
-            'event_counter' / Int16ul,
-            'update_type' / Int8ul,
-            'data_len' / Int8ul,
-            'data' / Array(this.data_len, Int8ul)
+            "access_addr" / Int32ul,
+            "event_counter" / Int16ul,
+            "update_type" / Int8ul,
+            "data_len" / Int8ul,
+            "data" / Array(this.data_len, Int8ul),
         )
         data_to_send = dict(
-            access_addr=event['access_addr'],
-            event_counter=event['event_counter'],
-            update_type=event['update_type'],
-            data_len=event['data_len'],
-            data=event['data']
+            access_addr=event["access_addr"],
+            event_counter=event["event_counter"],
+            update_type=event["update_type"],
+            data_len=event["data_len"],
+            data=event["data"],
         )
-        
+
         self.cmd = CmCommands.CM_CMD_UPDATE_CONN
         self.send_nwp_cmd(data_to_send)
 
@@ -2007,42 +2127,42 @@ class BleDeviceCm(BleDeviceBasic):
             )
         elif event_type == CmEventType.NWP_CM_REPORT:
             data_struct = Struct(
-                'event' / Int16ul,
-                'connection_handle' / Int16ul,
-                'packet_len' / Int16ul,
-                'status' / Int8ul,
-                'conn_role' / Int8ul,
-                'rssi' / Int8sl,
-                'channel' / Int8ul,
-                'sn' / Int8ul,
-                'nesn' / Int8ul
+                "event" / Int16ul,
+                "connection_handle" / Int16ul,
+                "packet_len" / Int16ul,
+                "status" / Int8ul,
+                "conn_role" / Int8ul,
+                "rssi" / Int8sl,
+                "channel" / Int8ul,
+                "sn" / Int8ul,
+                "nesn" / Int8ul,
             )
         elif event_type == CmEventType.NWP_CM_START:
             data_struct = Struct(
-                'event' / Int16ul,
-                'access_addr' / Int32ul,
-                'connection_handle' / Int16ul,
-                'address_type' / Int8ul,
-                'dev_address' / Array(6, Int8ul),
+                "event" / Int16ul,
+                "access_addr" / Int32ul,
+                "connection_handle" / Int16ul,
+                "address_type" / Int8ul,
+                "dev_address" / Array(6, Int8ul),
             )
         elif event_type == CmEventType.NWP_CM_STOP:
             data_struct = Struct(
-                'event' / Int16ul,
-                'access_addr' / Int32ul,
-                'connection_handle' / Int16ul,
-                'address_type' / Int8ul,
-                'dev_address' / Array(6, Int8ul),
-                'stop_reason' / Int8ul
+                "event" / Int16ul,
+                "access_addr" / Int32ul,
+                "connection_handle" / Int16ul,
+                "address_type" / Int8ul,
+                "dev_address" / Array(6, Int8ul),
+                "stop_reason" / Int8ul,
             )
         elif event_type == CmEventType.NWP_CM_CONN_UPDATE_EVENT:
             data_struct = Struct(
-                'event' / Int16ul,
-                'connection_handle' / Int16ul,
-                'access_addr' / Int32ul,
-                'event_counter' / Int16ul,
-                'update_type' / Int8ul,
-                'data_len' / Int8ul,
-                'data' / Array(this.data_len, Int8ul)
+                "event" / Int16ul,
+                "connection_handle" / Int16ul,
+                "access_addr" / Int32ul,
+                "event_counter" / Int16ul,
+                "update_type" / Int8ul,
+                "data_len" / Int8ul,
+                "data" / Array(this.data_len, Int8ul),
             )
 
         self._last_cm_data = self.parse_struct(data_struct, msg)
@@ -2072,14 +2192,8 @@ class BleDeviceCaServer(BleDeviceBasic):
 
     def send_indication(self, conn_handle=0x00):
         self.cmd = CaServerCommands.CA_SERVER_CMD_SEND_INDICATION
-        self.data_struct = Struct(
-            "conn_handle" / Int16ul
-        )
-        self.send_nwp_cmd(
-            dict(
-                conn_handle=conn_handle
-            )
-        )
+        self.data_struct = Struct("conn_handle" / Int16ul)
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
 
     def message_parser(self, msg):
         event_type = msg.payload.event_type
@@ -2087,26 +2201,80 @@ class BleDeviceCaServer(BleDeviceBasic):
         if event_type == CaServerEventType.NWP_CA_SERVER_LONG_WRITE_DONE:
             data_struct = Struct(
                 "event" / Int16ul,
-                'connection_handle' / Int16ul,
+                "connection_handle" / Int16ul,
                 "data_len" / Int16ul,
                 "data" / Array(this.data_len, Int8ul),
             )
         elif event_type == CaServerEventType.NWP_CA_SERVER_CCC_UPDATE:
             data_struct = Struct(
-                'event' / Int16ul,
-                'connection_handle' / Int16ul,
-                'ccc_value' / Int16ul
+                "event" / Int16ul, "connection_handle" / Int16ul, "ccc_value" / Int16ul
             )
         elif event_type == CaServerEventType.NWP_CA_SERVER_INDICATION_CNF:
             data_struct = Struct(
-                'event' / Int16ul,
-                'connection_handle' / Int16ul,
-                'status' / Int8ul
+                "event" / Int16ul, "connection_handle" / Int16ul, "status" / Int8ul
             )
 
         self._last_ca_server_data = self.parse_struct(data_struct, msg)
         self.ca_server.append(self._last_ca_server_data)
         parsed_data = self._last_ca_server_data
+        self.events_counter.increment_event(
+            event_value=event_type, data_from_event=parsed_data
+        )
+
+        return parsed_data
+
+
+class BleDeviceRREQ(BleDeviceBasic):
+    def __init__(self, logger, ble_device, sync_command, max_event_list_size):
+        BleDeviceBasic.__init__(
+            self,
+            logger,
+            event_type_class=RREQEventType,
+            max_event_list_size=max_event_list_size,
+        )
+
+        self.ble_device = ble_device
+        self.sync_command = sync_command
+        self.app_specifier = AppSpecifier.APP_SPECIFIER_RREQ
+
+    def start(self):
+        self.cmd = RREQCommands.RREQ_CMD_START
+        self.send_nwp_cmd(None)
+
+    def enable(self, conn_handle=0x00, enable_mode=0x00):
+        self.cmd = RREQCommands.RREQ_CMD_ENABLE
+        self.data_struct = Struct("conn_handle" / Int16ul, "enable_mode" / Int8ul)
+        self.send_nwp_cmd(dict(conn_handle=conn_handle, enable_mode=enable_mode))
+
+    def disable(self, conn_handle=0x00):
+        self.cmd = RREQCommands.RREQ_CMD_DISABLE
+        self.data_struct = Struct("conn_handle" / Int16ul)
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
+
+    def get_ranging_data(self, conn_handle=0x00, ranging_counter=0x00):
+        self.cmd = RREQCommands.RREQ_CMD_GET_RANGING_DATA
+        self.data_struct = Struct("conn_handle" / Int16ul, "ranging_counter" / Int16ul)
+        self.send_nwp_cmd(
+            dict(conn_handle=conn_handle, ranging_counter=ranging_counter)
+        )
+
+    def message_parser(self, msg):
+        event_type = msg.payload.event_type
+        parsed_data = msg.payload.data
+        if event_type == RREQEventType.NWP_RREQ_DATA_READY:
+            data_struct = Struct(
+                "event" / Int16ul, "conn_handle" / Int16ul, "ranging_counter" / Int16ul
+            )
+        elif event_type == RREQEventType.NWP_RREQ_STATUS:
+            data_struct = Struct(
+                "event" / Int16ul,
+                "conn_handle" / Int16ul,
+                "status" / Int8ul,
+                "statusDataLen" / Int8ul,
+                "statusData" / Array(this.statusDataLen, Int8ul),
+            )
+
+        parsed_data = self.parse_struct(data_struct, msg)
         self.events_counter.increment_event(
             event_value=event_type, data_from_event=parsed_data
         )

@@ -781,6 +781,42 @@ void llCsDbSetProcedureParams(uint16 connId, uint8 configId,
                               const csProcedureParams_t* pProcParams);
 
 /*******************************************************************************
+ * @fn          llCsDbGetProcedureParamStatus
+ *
+ * @brief       Get Procedure Params Status
+ *
+ * input parameters
+ *
+ * @param       connId - connection Id
+ * @param       configId - CS configuration Id
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      Success - if procedure params were previously set
+ *              Failure - if procedure params were not set
+ */
+bool llCsDbGetProcedureParamStatus(uint16 connId, uint8 configId);
+
+/*******************************************************************************
+ * @fn          llCsDbSetProcedureParamStatus
+ *
+ * @brief       Set Procedure Parameters status
+ *
+ * input parameters
+ *
+ * @param       connId - connection Id
+ * @param       configId - CS configuration Id
+ * @param       status - procedure parameters status
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void llCsDbSetProcedureParamStatus(uint16 connId, uint8 configId, bool status);
+
+/*******************************************************************************
  * @fn          llCsDbGetProcedureParams
  *
  * @brief       Gets CS Procedure Parameters by configuration Id
@@ -1184,7 +1220,7 @@ uint8 llCsDbCompareProcedureData(uint16 connId, uint8 configId,
  *
  * @return      ACL Counter
  */
-uint8 llCsDbGetAclCounter(uint16 connId, uint8 configId);
+uint16 llCsDbGetAclCounter(uint16 connId, uint8 configId);
 
 /*******************************************************************************
  * @fn          llCsDbSetNextProcedureConnEvent
@@ -1205,7 +1241,7 @@ uint8 llCsDbGetAclCounter(uint16 connId, uint8 configId);
  * @return      None
  */
 void llCsDbSetNextProcedureConnEvent(uint16 connId, uint8 configId,
-                                     uint8 connEvtCount);
+                                     uint16 connEvtCount);
 
 /*******************************************************************************
  * @fn          llCsDbSetProcedureEnableIndData
@@ -1715,12 +1751,12 @@ uint16 llCsDbGetRemainingMmSteps(uint16 connId, uint8 configId);
  *
  * @return      numSteps or stepCount per type
  */
-uint8 llCsDbGetSubeventInfo(uint16 connId, csSubeventInfo_e type);
+uint16 llCsDbGetSubeventInfo(uint16 connId, csSubeventInfo_e type);
 
 /*******************************************************************************
- * @fn          llCsDbGetSubeventInfo
+ * @fn          llCsDbSetSubeventCount
  *
- * @brief       Get Subevent info from the DB
+ * @brief       Set Subevent info into the DB
  *
  * @design      BLE_LOKI-506
  *
@@ -1736,7 +1772,7 @@ uint8 llCsDbGetSubeventInfo(uint16 connId, csSubeventInfo_e type);
  *
  * @return      None.
  */
-void llCsDbSetSubeventCount(uint16 connId, csSubeventInfo_e type, uint8 count);
+void llCsDbSetSubeventCount(uint16 connId, csSubeventInfo_e type, uint16 count);
 
 /*******************************************************************************
  * @fn          llCsDbIncrementSubeventInfoCounter
@@ -1758,7 +1794,7 @@ void llCsDbSetSubeventCount(uint16 connId, csSubeventInfo_e type, uint8 count);
  * @return      None.
  */
 void llCsDbIncrementSubeventInfoCounter(uint16 connId, csSubeventInfo_e type,
-                                        uint8 incVal);
+                                        uint16 incVal);
 
 /*******************************************************************************
  * @fn          llCsDbIncrementProcCounter

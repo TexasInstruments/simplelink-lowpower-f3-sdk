@@ -65,6 +65,7 @@ void hal_disable_all_command_radio_interrupts(void);
 void hal_disable_all_dispatch_radio_interrupts(void);
 void hal_temperature_init(void);
 int16_t hal_get_temperature(void);
+uint16_t hal_get_vdds_voltage(void);
 uint32_t hal_get_hfxt_ratio(void);
 uint32_t hal_get_hfxt_ratio_default(void);
 

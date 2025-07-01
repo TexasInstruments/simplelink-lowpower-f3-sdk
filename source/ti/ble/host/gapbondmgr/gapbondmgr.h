@@ -435,6 +435,17 @@ extern "C"
  */
 #define GAPBOND_SAME_IRK_OPTION       0x41C
 
+/**
+ * Erase Bonds when address mode or random address changes
+ *
+ * size: uint8_t
+ *
+ * default: TRUE
+ *
+ * range: TRUE (erase) or FALSE (do not erase)
+ */
+#define GAPBOND_ERASE_BONDS_ON_ADDRESS_CHANGE 0x41D
+
 /** @} End GAPBondMgr_Params */
 
 /**
@@ -943,29 +954,6 @@ void GAPBondMgr_ReadIRKFromNV( uint8_t* keyBuff );
  *                The buffer must be large enough to hold the CSRK.
  */
 void GAPBondMgr_ReadCSRKFromNV( uint8_t* keyBuff );
-
-/**
- * @brief Updates the random address used by the GAP Bond Manager.
- *
- * This function allows the application to update the random address
- * used in the GAP layer when the device is operating in a mode that
- * requires a random address (e.g., private resolvable or non-resolvable
- * address modes). The updated address will be used for subsequent
- * operations requiring a random address.
- *
- * @param addrMode The address mode to be used. This parameter specifies
- *                 the type of random address (e.g., GAP_ADDRMODE_PRIVATE_RESOLVABLE,
- *                 GAP_ADDRMODE_PRIVATE_NONRESOLVABLE, etc.).
- * @param pRandomAddr Pointer to the new random address to be used. The
- *                    address should be a 6-byte array in little-endian format.
- *
- * @return bStatus_t Returns a status code indicating the success or failure
- *                   of the operation. Possible values include:
- *                   - SUCCESS: The random address was successfully updated.
- *                   - INVALIDPARAMETER: One or more parameters are invalid.
- *                   - FAILURE: The operation failed due to an internal error.
- */
-bStatus_t GAPBondMgr_UpdateRandomAddr(GAP_Addr_Modes_t addrMode, uint8_t* pRandomAddr);
 
 /**
  * Set a GAP Bond Manager parameter.

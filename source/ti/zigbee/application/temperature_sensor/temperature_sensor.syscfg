@@ -109,10 +109,13 @@ zigbee.deviceType                    = ["zed"];
 zigbee.primaryChannels            = [11,15,20,25];
 zigbee.deviceTypeReadOnly            = false;
 
-// Suppress warning on RNG module
-const RNG = scripting.addModule("/ti/drivers/RNG", {}, false);
-scripting.suppress("This the default noise conditioning key provided by TI, which is acceptable per NIST SP 800-90B\\. However, TI recommends you change this default value to a custom random value for your product", RNG, "noiseConditioningKeyW3");
-RNG.rngPoolSize = 512;
+if(system.deviceData.deviceId.match(/CC23.*/))
+{
+    // Suppress warning on RNG module
+    const RNG = scripting.addModule("/ti/drivers/RNG", {}, false);
+    scripting.suppress("This the default noise conditioning key provided by TI, which is acceptable per NIST SP 800-90B\\. However, TI recommends you change this default value to a custom random value for your product", RNG, "noiseConditioningKeyW3");
+    RNG.rngPoolSize = 512;
+}
 
 if(system.getRTOS() === "freertos")
 {

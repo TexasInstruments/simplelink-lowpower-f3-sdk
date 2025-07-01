@@ -36,11 +36,12 @@ from serial import Serial, SerialException
 from .unpiparser import UNPIParser, UNPIMessage, QMessage
 import threading
 import logging
-logger = logging.getLogger('serialnode')
+
+logger = logging.getLogger("serialnode")
 
 
 def b2ascii(b):
-    return ':'.join(["%02X" % y for y in b])
+    return ":".join(["%02X" % y for y in b])
 
 
 def builder_class(builderclass):
@@ -50,12 +51,22 @@ def builder_class(builderclass):
 
         def wrapper(self, *args, **kwargs):
             return call_builder(self, *args, **kwargs)
+
         return wrapper
+
     return builder_dec
 
 
 class SerialNode(threading.Thread):
-    def __init__(self, port, speed: int, inQ: PriorityQueue, outQ: PriorityQueue, ss_commands_dict, name=None):
+    def __init__(
+        self,
+        port,
+        speed: int,
+        inQ: PriorityQueue,
+        outQ: PriorityQueue,
+        ss_commands_dict,
+        name=None,
+    ):
         super(SerialNode, self).__init__(name=name)
         self.ser = None
         self.exception = None
@@ -86,7 +97,9 @@ class SerialNode(threading.Thread):
                     m = outMsg
                     if type(outMsg) is QMessage:
                         m = outMsg.item
-                    outframe = self.parser.build(m.type, m.subsystem, m.command, data=bytes(m.data))
+                    outframe = self.parser.build(
+                        m.type, m.subsystem, m.command, data=bytes(m.data)
+                    )
                     # print(">> " + ':'.join(['%02X' % x for x in outframe]))
                     logger.debug("[{}] >>> {}".format(self.port, m))
                     logger.debug("[{}] >>> ".format(self.port) + b2ascii(outframe))
@@ -103,17 +116,19 @@ class SerialNode(threading.Thread):
                     logger.debug("<<< " + b2ascii(self.inBuffer))
                     while True:
                         p, self.inBuffer = self.parser.parse_stream(self.inBuffer)
-                        logger.debug("[{}] <<< ".format(self.port) + b2ascii(self.inBuffer))
+                        logger.debug(
+                            "[{}] <<< ".format(self.port) + b2ascii(self.inBuffer)
+                        )
                         if p is None:
                             break
                         logger.debug("[{}] <<< {}".format(self.port, p))
                         self.inQ.put(QMessage(1, p), block=True)
 
                         if self.outQ.qsize() > 0:
-                            logger.debug(f"&&& {self.port} We found something in outQ while we parsing input messages, we will break and return")
+                            logger.debug(
+                                f"&&& {self.port} We found something in outQ while we parsing input messages, we will break and return"
+                            )
                             break
-
-
 
         except SerialException as e:
             self.exception = e
@@ -125,16 +140,18 @@ class SerialNode(threading.Thread):
             self.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cmd_types = dict(SNP=0x15)
-    commands = dict(DEVICE_POWERUP=0x1, GAP_START_ADV=0x42, GAP_STOP_ADV=0x44, GATT_ADD_SERVICE=0x81)
+    commands = dict(
+        DEVICE_POWERUP=0x1, GAP_START_ADV=0x42, GAP_STOP_ADV=0x44, GATT_ADD_SERVICE=0x81
+    )
 
     inQueue = PriorityQueue()
     outQueue = PriorityQueue()
 
     hciReset = QMessage(1, UNPIMessage(1, 0x15, 4, bytes([0x1D, 0xFC, 0x01])))
 
-    node = SerialNode('COM48', 115200, inQueue, outQueue, cmd_types, commands)
+    node = SerialNode("COM48", 115200, inQueue, outQueue, cmd_types, commands)
     node.start()
 
     # inQueue.get(block=True)
