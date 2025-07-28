@@ -91,7 +91,7 @@ key exchange protocol.
 [1]: /secure_drivers/doxygen/html/_e_c_d_h_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_e_c_d_h_8h.html#ti_drivers_ECDH_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_e_c_d_h_8h.html#ti_drivers_ECDH_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#ECDH_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#ECDH_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_ECDH_",
     config              : Common.addNameConfig(config, "/ti/drivers/ECDH", "CONFIG_ECDH_"),

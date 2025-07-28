@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +59,7 @@
 #endif
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0)
-    #include <ti/drivers/aesctr/AESCTRLPF3.h>
+    #include <ti/drivers/aesctr/AESCTRXXF3.h>
 #else
     #include <ti/drivers/aesctr/AESCTRCC26XX.h>
 #endif

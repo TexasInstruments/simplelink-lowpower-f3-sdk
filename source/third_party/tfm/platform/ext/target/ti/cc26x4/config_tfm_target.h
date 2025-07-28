@@ -8,8 +8,9 @@
 #ifndef __CONFIG_TFM_TARGET_H__
 #define __CONFIG_TFM_TARGET_H__
 
+/* Conditional to avoid config_crypto_check.h error: "Invalid config: NOT CRYPTO_NV_SEED AND NOT CRYPTO_HW_ACCELERATOR!" */
+#if (TEST_S != ON)  
 /* Use stored NV seed to provide entropy */
-#if (TEST_S != ON)
 #define CRYPTO_NV_SEED                         0
 #endif
 

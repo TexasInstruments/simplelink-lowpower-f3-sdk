@@ -120,6 +120,7 @@ extern RCL_Callback LL_GetRfCentralCallback(void);
 extern void LL_InitiatorReadSupportedStates(uint8_t* states);
 extern uint8_t LL_PRIV_ValidatePeerAddress(uint8_t* peerAddr, uint8_t peerAddrType, uint8_t peerRLIndex);
 
+
 // Wrapper functions for the feature implementations
 void OPT_llProcessCentralConnectionCreated(void);
 void OPT_llProcessCentralControlPacket(llConnState_t* connPtr, uint8_t* pPkt);

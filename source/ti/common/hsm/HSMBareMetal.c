@@ -1517,6 +1517,12 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
     if ((operationStruct->operationMode == HSMBareMetal_MAC_MODE_CMAC) ||
         (operationStruct->operationMode == HSMBareMetal_MAC_MODE_CBC_MAC))
     {
+        /* Check for acceptable mac length*/
+        if((operationStruct->macLength > 16) || (operationStruct->macLength == 0) || (operationStruct->macLength % 2 != 0))
+        {
+            return HSMBAREMETAL_STATUS_INVALID_MAC_LENGTH;
+        }
+
         /* Determine the number of padding bytes and a bytes aligned input data length. */
         inputDataLength = (inputDataLength + AES_BLOCK_SIZE - 1U) & ~(AES_BLOCK_SIZE - 1U);
         if ((inputDataLength == 0U) && (operationStruct->operationMode == HSMBareMetal_MAC_MODE_CMAC))
@@ -1588,6 +1594,7 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
 {
     int_fast16_t status   = HSMBareMetal_checkHSMStatus();
     uint32_t digestLength = 0U;
+    uint16_t blockAlign = 0U;
 
     if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
     {
@@ -1602,13 +1609,25 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
         case HSMBareMetal_HASH_MODE_SHA2_224:
         case HSMBareMetal_HASH_MODE_SHA2_256:
             digestLength = HSM_HASH_DIGEST_LENGTH_256;
+            blockAlign = 64U;
             break;
         case HSMBareMetal_HASH_MODE_SHA2_384:
         case HSMBareMetal_HASH_MODE_SHA2_512:
             digestLength = HSM_HASH_DIGEST_LENGTH_512;
+            blockAlign = 128U;
             break;
         default:
             return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    /* Check if the input data for a non final hash is block aligned */
+    if (operationStruct->operationType == HSMBareMetal_HASH_TYPE_INIT_TO_CONT ||
+        operationStruct->operationType == HSMBareMetal_HASH_TYPE_CONT_TO_CONT)
+    {
+        if (operationStruct->inputLength % blockAlign != 0U)
+        {
+            return HSMBAREMETAL_STATUS_INVALID_INPUT_DATA_LENGTH;
+        }
     }
 
     (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HASH_TOKEN_WORD_COUNT);

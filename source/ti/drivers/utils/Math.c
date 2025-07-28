@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,11 @@
  */
 uint32_t Math_divideBy1000(uint32_t dividend)
 {
-    uint32_t p1 = (dividend >> 16) * (0x83126E98 >> 16);
-    uint32_t p2 = (dividend & 0xFFFF) * (0x83126E98 >> 16);
-    p2 += (dividend >> 16) * (0x83126E98 & 0xFFFF);
-    p2 >>= 7;
-    p2 += 222;
-    p1 += p2 >> 9;
-    return p1 >> 9;
+    uint32_t p1 = (dividend >> 16U) * (0x83126E98U >> 16U);
+    uint32_t p2 = (dividend & 0xFFFFU) * (0x83126E98U >> 16U);
+    p2 += (dividend >> 16U) * (0x83126E98U & 0xFFFFU);
+    p2 >>= 7U;
+    p2 += 222U;
+    p1 += p2 >> 9U;
+    return p1 >> 9U;
 }

@@ -49,7 +49,7 @@
 #include <stdint.h>
 
 #include <ti/drivers/Power.h>
-#ifdef DeviceFamily_CC27XX
+#ifdef DeviceFamily_CC27XXX10
 #include <ti/drivers/power/PowerCC27XX.h>
 #else
 #include <ti/drivers/power/PowerCC23X0.h>

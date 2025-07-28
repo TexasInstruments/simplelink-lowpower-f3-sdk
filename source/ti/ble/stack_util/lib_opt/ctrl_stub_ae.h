@@ -112,6 +112,7 @@ extern bool llAE_NextAdvIsExtended(void);
 extern uint8 LL_AE_GetNextChannel(void);
 extern void LL_AE_GetTxUsageParams(llTxUsageParams_t* pExtAdvTxParams);
 
+
 // Wrapper functions for the feature implementations
 llStatus_t OPT_llSetExtendedAdvParams(advSet_t* pAdvSet, aeSetParamCmd_t* pCmdParams);
 uint8_t OPT_llParseExtAdvPduInfo(llAdvPDUInfo* pAdvInfo, RCL_Buffer_DataEntry* const pDataEntry);

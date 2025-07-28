@@ -84,7 +84,7 @@ typedef enum
 
 typedef struct
 {
-    uint8_t panNo;                              /*!< PAN number to update (only 0 supported in this version) */
+    uint8_t panNo;                              /*!< PAN number to update  */
     uint8_t index;                              /*!< Index into source matching table to update */
     RCL_IEEE_SourceMatchingOperation operation; /*!< Operation to perform on entry */
 } RCL_IEEE_SourceMatchingUpdate;
@@ -133,7 +133,6 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeeeRxTx *c
  *  @param  newAddr             If entry is changed: Pointer to the new address to set
  *
  * @return                      Result telling if update was successful
- * @note                        Not supported in this version
  *
  */
 RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_IEEE_SourceMatchingUpdate description, const uint64_t *newAddr);

@@ -65,15 +65,15 @@ static RCL_StopType rclSchedulerSetNewStopTime(RCL_SchedulerStopInfo *stopInfo, 
 static RCL_StopType rclSchedulerCancelStopTime(RCL_SchedulerStopInfo *stopInfo, bool sched);
 
 /*
- *  ======== RCL_Scheduler_findStopStatus ========
+ *  ======== RCL_Scheduler_updateStopStatus ========
  */
-RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
+RCL_CommandStatus RCL_Scheduler_updateStopStatus(RCL_StopType stopType, RCL_SchedulerStopReason stopReason)
 {
     RCL_CommandStatus status;
     switch (stopType)
     {
         case RCL_StopType_DescheduleOnly:
-            switch (rclSchedulerState.descheduleReason)
+            switch (stopReason)
             {
                 case RCL_SchedulerStopReason_Scheduling:
                     status = RCL_CommandStatus_DescheduledScheduling;
@@ -88,7 +88,7 @@ RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
             }
             break;
         case RCL_StopType_Graceful:
-            switch (rclSchedulerState.gracefulStopInfo.stopReason)
+            switch (stopReason)
             {
                 case RCL_SchedulerStopReason_Timeout:
                     status = RCL_CommandStatus_GracefulStopTimeout;
@@ -106,7 +106,7 @@ RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
             }
             break;
         case RCL_StopType_Hard:
-            switch (rclSchedulerState.hardStopInfo.stopReason)
+            switch (stopReason)
             {
                 case RCL_SchedulerStopReason_Timeout:
                     status = RCL_CommandStatus_HardStopTimeout;
@@ -131,6 +131,29 @@ RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
     RCL_Debug_assert(status < RCL_CommandStatus_Error);
 
     return status;
+}
+
+/*
+ *  ======== RCL_Scheduler_findStopStatus ========
+ */
+RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
+{
+    RCL_SchedulerStopReason stopReason;
+    switch (stopType)
+    {
+        case RCL_StopType_Graceful:
+            stopReason = rclSchedulerState.gracefulStopInfo.stopReason;
+            break;
+        case RCL_StopType_Hard:
+            stopReason = rclSchedulerState.hardStopInfo.stopReason;
+            break;
+        case RCL_StopType_DescheduleOnly:
+        default:
+            stopReason = rclSchedulerState.descheduleReason;
+            break;
+    }
+
+    return RCL_Scheduler_updateStopStatus(stopType, stopReason);
 }
 
 /*

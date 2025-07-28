@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2019, Arm Limited. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -8,7 +9,8 @@
 #include "platform/include/tfm_platform_system.h"
 #include "cmsis.h"
 
-#include "ti/devices/cc27xx/driverlib/hapi.h"
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/hapi.h)
 
 void tfm_platform_hal_system_reset(void)
 {
@@ -27,4 +29,3 @@ enum tfm_platform_err_t tfm_platform_hal_ioctl(tfm_platform_ioctl_req_t request,
     /* Not needed for this platform */
     return TFM_PLATFORM_ERR_NOT_SUPPORTED;
 }
-

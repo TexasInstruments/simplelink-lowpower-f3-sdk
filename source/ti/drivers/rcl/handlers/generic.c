@@ -100,7 +100,7 @@ struct
             uint32_t        longNokCount;
             uint16_t        demc1be1;
             uint16_t        demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             uint16_t        demc1be12;
 #endif
             bool            restoreThresh;
@@ -114,7 +114,7 @@ struct
             uint32_t        longRxBufFullCount;
             uint16_t        demc1be1;
             uint16_t        demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             uint16_t        demc1be12;
 #endif
             bool            restoreThresh;
@@ -941,20 +941,20 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
             {
                 uint16_t demc1be1 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1);
                 uint16_t demc1be2 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 uint16_t demc1be12 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12);
 #endif
                 genericHandlerState.rx.restoreThresh = true;
                 genericHandlerState.rx.demc1be1 = demc1be1;
                 genericHandlerState.rx.demc1be2 = demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 genericHandlerState.rx.demc1be12 = demc1be12;
 #endif
                 if (rxCmd->config.disableSyncA != 0)
                 {
                     demc1be1 = (demc1be1 & ~LRFDMDM_DEMC1BE1_THRESHOLDA_M) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDA_S);
                     demc1be2 = (demc1be2 & ~LRFDMDM_DEMC1BE2_THRESHOLDC_M) | (0x7F << LRFDMDM_DEMC1BE2_THRESHOLDC_S);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                     demc1be12 = (demc1be12 & ~LRFDMDM_DEMC1BE12_THRESHOLDG_M) | (0x7F << LRFDMDM_DEMC1BE12_THRESHOLDG_S);
 #endif
                 }
@@ -964,7 +964,7 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
                 }
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = demc1be12;
 #endif
             }
@@ -1125,7 +1125,7 @@ RCL_Events RCL_Handler_Generic_Rx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         {
             HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = genericHandlerState.rx.demc1be1;
             HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = genericHandlerState.rx.demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = genericHandlerState.rx.demc1be12;
 #endif
         }
@@ -1694,7 +1694,7 @@ RCL_Events RCL_Handler_Nesb_Prx(RCL_Command *cmd, LRF_Events lrfEvents,  RCL_Eve
     {
         if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0 || lrfEvents.rxIgnored != 0 || lrfEvents.rxBufFull != 0)
         {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             if (rclFeatureControl.enablePaEsdProtection)
             {
                 LRF_updatePaEsdProtection();

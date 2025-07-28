@@ -2343,10 +2343,15 @@
 /** The maximum value for a key identifier chosen by the implementation.
  */
 #define PSA_KEY_ID_VENDOR_MAX                   ((psa_key_id_t)0x7fffffffU)
-
+/** Key identifier for HSM Hardware Unique Key (HUK)
+ */
 #define PSA_KEY_ID_HSM_HUK                      ((psa_key_id_t)(PSA_KEY_ID_USER_MAX))
-
+/** Key identifier for HSM Trusted Key Derivation Key (TKDK)
+ */
 #define PSA_KEY_ID_HSM_TKDK                     ((psa_key_id_t)(PSA_KEY_ID_USER_MAX - 1))
+/** Key identifier for Initial Attestation Key (IAK)
+ */
+#define PSA_KEY_ID_IAK                          ((psa_key_id_t) 0x7fff815dU)
 
 /** Range of volatile key identifiers.
  *

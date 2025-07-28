@@ -376,6 +376,7 @@ extern "C"
 #include "ti/ble/stack_util/health_toolkit/assert.h"
 #include "ti/ble/controller/ll/ll_tx_power.h"
 #include "ti/ble/controller/hci/hci_supported_cmd.h"
+#include "ti/ble/controller/ll/ll_pawr_scan.h"
 
 /*
  * MACROS
@@ -3019,6 +3020,60 @@ extern hciStatus_t HCI_LE_PeriodicAdvCreateSyncCmd( uint8  options,
                                                     uint16 syncTimeout,
                                                     uint8  syncCteType );
 
+/*******************************************************************************
+ * @fn          HCI_LE_SetPeriodicSyncSubeventCmd
+ *
+ * @brief       This function used by the Host to set the subevents it want to
+ *              sync with.
+ *
+ * input parameters
+ *
+ * @param       syncHandle      - Handle identifying the periodic advertising train
+ * @param       perAdvProps     - Properties for the Response data header
+ * @param       numSubevents    - Number of subevents to be set
+ * @param       subEvents       - Pointer to the array of subevents to be set
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      status of the command
+ *              HCI_SUCCESS - Command was successful
+ *              LL_STATUS_ERROR_COMMAND_DISALLOWED - Command disallowed
+ *              LL_STATUS_ERROR_BAD_PARAMETER - Invalid parameters were passed
+ *              LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED - Invalid parameters were passed
+ *              HCI_ERROR_CODE_MEM_CAP_EXCEEDED - Memory capacity exceeded
+ */
+extern hciStatus_t HCI_LE_SetPeriodicSyncSubeventCmd(uint16_t syncHandle,
+                                                     uint16_t perAdvProps,
+                                                     uint8_t  numSubevents,
+                                                     uint8_t* subEvents);
+
+/*******************************************************************************
+ * @fn         HCI_LE_SetPeriodicAdvResponseDataCmd
+ *
+ * @brief      Used by the Host to set the periodic advertising response parameters
+ *             and data.
+ *
+ * input parameters
+ *
+ * @param     syncHandle - Handle identifying the periodic advertising train
+ * @param     pRspParams - Pointer to the periodic advertising response parameters
+ *                         and data.
+ *
+ * output parameters
+ *
+ * @param     None.
+ *
+ * @return    status of the command
+ *            HCI_SUCCESS - Command was successful
+ *            LL_STATUS_ERROR_COMMAND_DISALLOWED - Command disallowed
+ *            LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER - Unknown advertising identifier
+ *            LL_STATUS_ERROR_BAD_PARAMETER - Invalid parameters were passed
+ *            HCI_ERROR_CODE_MEM_CAP_EXCEEDED - Memory capacity exceeded
+*/
+extern hciStatus_t HCI_LE_SetPeriodicAdvResponseDataCmd(uint16 syncHandle,
+                                                        uint8_t* pRspParams);
 /**
  * HCI_LE_PeriodicAdvCreateSyncCancelCmd
  *
@@ -4464,6 +4519,164 @@ hciStatus_t HCI_EXT_RssiMon_GetConfigCmd(void);
  */
 hciStatus_t HCI_EXT_RssiMon_GetRssiStatCmd(uint16_t connHandle);
 
+/*******************************************************************************
+ * @fn          HCI_LE_PAdvSetInfoTransferCmd
+ *
+ * @brief       Periodic advertising sync transfer command is used to instruct
+ *              the controller to send synchronization information about the
+ *              periodic advertising in an advertising set to a connected
+ *              device
+ *
+ * @Design      BLE_LOKI-2753
+ *
+ * input parameters
+ *
+ * @param       connHandle  - Connection handle.
+ * @param       serviceData - Value provided by the host for use by the Host
+ *                            of the peer device.
+ * @param       advHandle   - Advertising set of the periodic advertising.
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      HCI_SUCCESS when success.
+ *              Otherwise:
+ *              HCI_ERROR_CODE_UNKNOWN_ADVERTISING_IDENTIFIER
+ *              HCI_ERROR_CODE_UNKNOWN_CONN_ID
+ *              HCI_ERROR_CODE_UNSUPPORTED_FEATURE_PARAM_VALUE
+ */
+hciStatus_t HCI_LE_PAdvSetInfoTransferCmd( uint16_t  connHandle,
+                                           uint16_t  serviceData,
+                                           uint8_t   advHandle);
+
+/*******************************************************************************
+ * @fn          HCI_LE_PAdvSyncTransferCmd
+ *
+ * @brief       Periodic advertising sync transfer command is used to instruct
+ *              the controller to send synchronization information about the
+ *              periodic advertising train identified by the Sync_Handle parameter
+ *              to a connected device
+ *
+ * @Design      BLE_LOKI-2753
+ *
+ * input parameters
+ *
+ * @param       connHandle  - Connection handle.
+ * @param       serviceData - Value provided by the host for use by the Host
+ *                            of the peer device.
+ * @param       syncHandle  - Sync handle of the periodic advertising train.
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      HCI_SUCCESS when success.
+ *              Otherwise:
+ *              HCI_ERROR_CODE_UNKNOWN_ADVERTISING_IDENTIFIER
+ *              HCI_ERROR_CODE_UNKNOWN_CONN_ID
+ *              HCI_ERROR_CODE_UNSUPPORTED_FEATURE_PARAM_VALUE
+ */
+hciStatus_t HCI_LE_PAdvSyncTransferCmd( uint16_t  connHandle,
+                                        uint16_t  serviceData,
+                                        uint16_t  syncHandle );
+
+/*******************************************************************************
+ * @fn          HCI_LE_SetPASTParamCmd
+ *
+ * @brief       Periodic advertising sync transfer parameters command is used to
+ *              specify how the controller will process periodic advertising
+ *              synchronization information (syncInfo) received from the device
+ *              identified by the Connection_Handle parameter.
+ *
+ * @Design      BLE_LOKI-2753
+ *
+ * input parameters
+ *
+ * @param       connHandle    - Connection handle.
+ * @param       mode          - Action to be taken when periodic advertising
+ *                              synchronization information is received:
+ *                              0x00 - No attempt is made to synchronize to the periodic
+ *                                     advertising and no event is sent to host
+ *                              0x01 - Attempt to synchronize to periodic advertising,
+ *                                     Event is raised if we succeed to sync or not to the host
+ *                                     Periodic advertisements reports will not raised to the host
+ *                              0x02 - Attempt to synchronize to periodic advertising,
+ *                                     Event is raised to if we succeed to sync or not
+ *                                     Periodic advertisements reports will be raised to the host
+ *                                     with duplicate filtering is disabled
+ *                              0x03 - Attempt to synchronize to periodic advertising,
+ *                                     Event is raised to if we succeed to sync or not
+ *                                     Periodic advertisements reports will be raised to the host
+ *                                     with duplicate filtering is enabled
+ * @param       skip          - Number of consecutive periodic advertising packets
+ *                              the device may skip after successfully receiving
+ *                              a periodic advertising packet
+ * @param       syncTimeout  - Maximum permitted time between successful receives
+ * @param       cteType      - Whether to only synchronize to periodic advertising
+ *                             with certain types of Constant Tone Extension
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      HCI_SUCCESS when success.
+ *              Otherwise:
+ *              HCI_ERROR_CODE_UNSUPPORTED_FEATURE_PARAM_VALUE
+ *              HCI_ERROR_CODE_UNKNOWN_CONN_ID
+ *              HCI_ERROR_CODE_CMD_DISALLOWED
+ */
+hciStatus_t HCI_LE_SetPASTParamCmd( uint16_t  connHandle,
+                                    uint8_t   mode,
+                                    uint16_t  skip,
+                                    uint16_t  syncTimeout,
+                                    uint8_t   cteType );
+
+/*******************************************************************************
+ * @fn          HCI_LE_SetDefaultPASTParamCmd
+ *
+ * @brief       Periodic advertising sync transfer set default parameters command
+ *              is used to specify the initial value for the periodic advertising
+ *              sync transfer parameters
+ *
+ * @Design      BLE_LOKI-2753
+ *
+ * input parameters
+ *
+ * @param       mode          - Action to be taken when periodic advertising
+ *                              synchronization information is received:
+ *                              0x00 - No attempt is made to synchronize to the periodic
+ *                                     advertising and no event is sent to host
+ *                              0x01 - Attempt to synchronize to periodic advertising,
+ *                                     Event is raised if we succeed to sync or not to the host
+ *                                     Periodic advertisements reports will not raised to the host
+ *                              0x02 - Attempt to synchronize to periodic advertising,
+ *                                     Event is raised to if we succeed to sync or not
+ *                                     Periodic advertisements reports will be raised to the host
+ *                                     with duplicate filtering is disabled
+ *                              0x03 - Attempt to synchronize to periodic advertising,
+ *                                     Event is raised to if we succeed to sync or not
+ *                                     Periodic advertisements reports will be raised to the host
+ * @param       skip          - Number of consecutive periodic advertising packets
+ *                              the device may skip after successfully receiving
+ *                              a periodic advertising packet
+ * @param       syncTimeout  - Maximum permitted time between successful receives
+ * @param       cteType      - Whether to only synchronize to periodic advertising
+ *                             with certain types of Constant Tone Extension
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return @ref HCI_SUCCESS when success.
+ *              Otherwise:
+ *              HCI_ERROR_CODE_UNSUPPORTED_FEATURE_PARAM_VALUE
+ *              HCI_ERROR_CODE_CMD_DISALLOWED
+ */
+hciStatus_t HCI_LE_SetDefaultPASTParamCmd( uint8_t   mode,
+                                           uint16_t  skip,
+                                           uint16_t  syncTimeout,
+                                           uint8_t   cteType );
 #ifdef __cplusplus
 }
 #endif

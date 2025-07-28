@@ -93,17 +93,66 @@ const txPowerHdrLen = 1;
 // Dictionary mapping a device name to default LaunchPad; used to discover the
 // appropriate RF settings when a device is being used without a LaunchPad
 const deviceToBoard = {
-  CC2340R5: "LP_EM_CC2340R5",
-  CC2340R53: "LP_EM_CC2340R53",
-  CC2340R5_Q1: "LP_EM_CC2340R5_Q1",
-  CC2340R22: "LP_EM_CC2340R22",
-  CC2340R2: "LP_EM_CC2340R2",
-  CC2745R10_Q1: "LP_EM_CC2745R10_Q1",
-  CC2674R10RGZ: "LP_CC2674R10_RGZ",
-  CC2674P10RGZ: "LP_CC2674P10_RGZ",
-  CC2744R7RHAQ1: "LP_EM_CC2745R10_Q1",
-  CC2755P105RHA: "LP_EM_CC2755P10"
+    CC2340R22RKP:   "LP_EM_CC2340R5",
+    CC2340R2RGE:    "LP_EM_CC2340R5_RGE_4X4_IS24",
+    CC2340R5RKP:    "LP_EM_CC2340R5",
+    CC2340R5RHB:    "LP_EM_CC2340R5_Q1",
+    CC2340R5RGE:    "LP_EM_CC2340R5_RGE_4X4_IS24",
+    CC2340R53YBG:   "LP_EM_CC2340R53_WCSP",
+    CC2340R53RKP:   "LP_EM_CC2340R5",
+    CC2340R53RHBQ1: "LP_EM_CC2340R53_Q1",
+    CC2744R7RHAQ1:  "LP_EM_CC2745R10_Q1",
+    CC2745R7RHAQ1:  "LP_EM_CC2745R10_Q1",
+    CC2745P10RHAQ1: "LP_EM_CC2755P10",
+    CC2745R10RHAQ1: "LP_EM_CC2745R10_Q1",
+    CC2755P105RHA:  "LP_EM_CC2755P10",
+    CC2755R105YCJ:  "LP_EM_CC2755R10_BG",
+    CC2755R105RHA:  "LP_EM_CC2745R10_Q1"
 };
+
+const deviceToBondNVBaseAddress = {
+/* 256KB devices */
+  CC2340R22RKP:   0x3D000,
+  CC2340R2RGE:    0x3D000,
+/* 512KB devices */
+  CC2340R5RKP:    0x7D000,
+  CC2340R5RHB:    0x7D000,
+  CC2340R5RGE:    0x7D000,
+  CC2340R53YBG:   0x7D000,
+  CC2340R53RKP:   0x7D000,
+  CC2340R53RHBQ1: 0x7D000,
+/* 786KB devices + HSM */
+  CC2744R7RHAQ1:  0xA5000,
+  CC2745R7RHAQ1:  0xA5000,
+/* 1MB devices + HSM */
+  CC2745P10RHAQ1: 0xE5000,
+  CC2745R10RHAQ1: 0xE5000,
+  CC2755P105RHA:  0xE5000,
+  CC2755R105YCJ:  0xE5000,
+  CC2755R105RHA:  0xE5000
+};
+
+const deviceToHeapSize = {
+  /* 256KB devices */
+    CC2340R22RKP:   0x3D000,
+    CC2340R2RGE:    0x3D000,
+  /* 512KB devices */
+    CC2340R5RKP:    0x7D000,
+    CC2340R5RHB:    0x7D000,
+    CC2340R5RGE:    0x7D000,
+    CC2340R53YBG:   0x7D000,
+    CC2340R53RKP:   0x7D000,
+    CC2340R53RHBQ1: 0x7D000,
+  /* 786KB devices + HSM */
+    CC2744R7RHAQ1:  0xA5000,
+    CC2745R7RHAQ1:  0xA5000,
+  /* 1MB devices + HSM */
+    CC2745P10RHAQ1: 0xE5000,
+    CC2745R10RHAQ1: 0xE5000,
+    CC2755P105RHA:  0xE5000,
+    CC2755R105YCJ:  0xE5000,
+    CC2755R105RHA:  0xE5000
+  };
 
 const deviceToDefines = {
   "LP_CC2340R2": ["-DCC23X0"],
@@ -167,6 +216,8 @@ const bleCentralCCFGSettings = {
   LP_CC2674P10_RGZ_CCFG_SETTINGS: {}
 };
 
+const ranging_service_uuid = 0x185B;
+
 const profiles_list = [
     { displayName: "Simple Gatt",    name: "65520"  },
     { displayName: "CGM",    name: "6175" },
@@ -187,8 +238,8 @@ const CC23XXMigration = [
   {target: "LP_EM_CC2340R22"},
   {target: "CC2340R5RKP"},
   {target: "CC2340R53RKP"},
-  {target: "CC2340R53RHBQ1"},
   {target: "CC2340R53YBG"},
+  {target: "CC2340R53RHBQ1"},
   {target: "CC2340R5RGE"},
   {target: "CC2340R5RHB"},
   {target: "CC2340R2RGE"},
@@ -214,8 +265,8 @@ const supportedMigrations = {
   LP_EM_CC2340R53:              CC23XXMigration,
   LP_EM_CC2340R53_WCSP_SOCKET:  CC23XXMigration,
   LP_EM_CC2340R53_WCSP:         CC23XXMigration,
-  LP_EM_CC2340R5_Q1:            CC23XXMigration,
   LP_EM_CC2340R53_Q1:           CC23XXMigration,
+  LP_EM_CC2340R5_Q1:            CC23XXMigration,
   LP_EM_CC2340R2:               CC23XXMigration,
   LP_EM_CC2340R22:              CC23XXMigration,
   LP_EM_CC2745R10_Q1:           CC27XXMigration,
@@ -239,7 +290,7 @@ const supportedMigrations = {
   CC2755R105YCJ:  CC27XXMigration
 };
 
-const boardName = getBoardOrLaunchPadName(true);
+const boardName = getLaunchPadName();
 const centralRoleCcfgSettings = bleCentralCCFGSettings[boardName + "_CCFG_SETTINGS"];
 
 /*
@@ -751,7 +802,7 @@ function device2DeviceFamily(deviceId)
     }
     else if(deviceId.match(/CC27../))
     {
-        driverString = "DeviceFamily_CC27XX";
+        driverString = "DeviceFamily_CC27XXX10";
     }
     else if(deviceId.match(/CC23.0R22/))
     {
@@ -763,6 +814,33 @@ function device2DeviceFamily(deviceId)
     }
 
     return(driverString);
+}
+
+/*!
+ *  ======== getBondNVBaseAddress ========
+ *  Returns the base address in non-volatile (NV) memory where bond data
+ *  is stored for the given device type.
+ *  The default size of the bond NV is 6 pages,
+ *  with each page size 0x800, resulting in a total size of 0x3000.
+ *  For devices without HSM, the address is located at the end of the memory.
+ *  For devices with HSM, the address is located before the HSM memory region.
+ *
+ *  @returns Number - The base NV memory address for bond data storage.
+ */
+function getBondNVBaseAddress()
+{
+  return(deviceToBondNVBaseAddress[system.deviceData.board.device]);
+}
+
+/*!
+ *  ======== getLaunchPadName ========
+ *  Get the name of LaunchPad
+ *
+ *  @returns String - Name of the LaunchPad
+ */
+function getLaunchPadName()
+{
+  return deviceToBoard[system.deviceData.board.device];
 }
 
 /*!
@@ -823,54 +901,21 @@ function getBoardOrLaunchPadName(convertToBoard)
 function getRadioScript(rfDesign, deviceId)
 {
     let radioSettings = null;
-
-    if(rfDesign !== null)
-    {
-        if(rfDesign === "LP_EM_CC2340R5_RGE_4X4_IS24")
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-                + "LP_EM_CC2340R2_rf_defaults.js");
-        }
-        else if(rfDesign === "LP_EM_CC2340R5")
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-                + "LP_EM_CC2340R5_rf_defaults.js");
-        }
-        else if(rfDesign === "LP_EM_CC2340R53")
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-                + "LP_EM_CC2340R5_rf_defaults.js");
-        }
-        else if(rfDesign === "LP_EM_CC2340R53_Q1")
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-                + "LP_EM_CC2340R5_Q1_rf_defaults.js");
-        }
-        else if(rfDesign === "LP_EM_CC2340R5_Q1")
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-                + "LP_EM_CC2340R5_Q1_rf_defaults.js");
-        }
-        else if(rfDesign === "LP_EM_CC2340R53_WCSP")
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-                + "LP_EM_CC2340R5_rf_defaults.js");
-        }
-        else if( rfDesign === "LP_EM_CC2745R10_Q1" )
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-            + "LP_EM_CC2745R10_Q1_rf_defaults.js");
-        }
-        else if( rfDesign === "LP_EM_CC2755R10_BG" )
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-            + "LP_EM_CC2755R10_BG_rf_defaults.js");
-        }
-        else if( rfDesign === "LP_EM_CC2755P10" )
-        {
-            radioSettings = system.getScript("/ti/ble/rf_config/"
-            + "LP_EM_CC2755P10_rf_defaults.js");
-        }
+    const radioConfigParams = {};
+    const rfDesignParams = {};
+    const adcNoiseParams = {
+        symGenMethod: "Custom",
+        phyAbbr: true
+    };
+    const bleCsHpParams = {
+        symGenMethod: "Custom",
+        phyAbbr: true
+    };
+    radioSettings = {
+      radioConfigParams,
+      rfDesignParams,
+      adcNoiseParams,
+      bleCsHpParams
     }
 
     return(radioSettings);
@@ -1012,7 +1057,7 @@ function defaultBondValue()
         (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
         (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
         (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
-        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XXX10") )
     {
         return 5;
     }
@@ -1078,6 +1123,8 @@ exports = {
     advDataHexValues: advDataHexValues,
     listOfHexValues: listOfHexValues,
     getBoardOrLaunchPadName: getBoardOrLaunchPadName,
+    getBondNVBaseAddress: getBondNVBaseAddress,
+    getLaunchPadName: getLaunchPadName,
     device2DeviceFamily: device2DeviceFamily,
     getRadioScript: getRadioScript,
     hideGroup: hideGroup,
@@ -1089,5 +1136,6 @@ exports = {
     defaultBondValue: defaultBondValue,
     getPeripheralConnIntervalRange: getPeripheralConnIntervalRange,
     isChannelSoundingSupported: isChannelSoundingSupported,
+    ranging_service_uuid: ranging_service_uuid,
     profiles_list: profiles_list
 };

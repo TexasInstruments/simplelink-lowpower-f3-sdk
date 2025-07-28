@@ -91,7 +91,7 @@ signatures.
 [1]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#ECDSA_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#ECDSA_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_ECDSA_",
     config              : Common.addNameConfig(config, "/ti/drivers/ECDSA", "CONFIG_ECDSA_"),

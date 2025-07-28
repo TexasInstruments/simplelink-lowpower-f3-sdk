@@ -36,12 +36,12 @@
 #include <string.h>
 
 #include <ti/drivers/aesgcm/AESGCMLPF3.h>
-#include <ti/drivers/aesecb/AESECBLPF3.h>
-#include <ti/drivers/aesctr/AESCTRLPF3.h>
+#include <ti/drivers/aesecb/AESECBXXF3.h>
+#include <ti/drivers/aesctr/AESCTRXXF3.h>
 #include <ti/drivers/AESCommon.h>
-#include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
+#include <ti/drivers/cryptoutils/aes/AESCommonXXF3.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
-#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
+#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceXXF3.h>
 #include <ti/drivers/cryptoutils/utils/CryptoUtils.h>
 
 #include <ti/drivers/dpl/DebugP.h>
@@ -106,7 +106,7 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
                                                 AESGCM_OperationType operationType);
 static int_fast16_t AESGCMLPF3_startOperation(AESGCM_Handle handle, bool isOneStepOrFinalOperation);
 static int_fast16_t AESGCMLPF3_waitForResult(AESGCM_Handle handle);
-static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object,
+static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonXXF3_Object *object,
                                                     const uint32_t *input,
                                                     uint32_t *output);
 static void AESGCMLPF3_computeGHASH(void *outputBlock, const void *input, int32_t len);
@@ -133,7 +133,7 @@ static inline AESGCMLPF3_Object *AESGCMLPF3_getObject(AESGCM_Handle handle)
  */
 void AESGCM_init(void)
 {
-    AESCommonLPF3_init();
+    AESCommonXXF3_init();
 }
 
 /*
@@ -159,7 +159,7 @@ AESGCM_Handle AESGCM_construct(AESGCM_Config *config, const AESGCM_Params *param
         return NULL;
     }
 
-    status = AESCommonLPF3_construct(&object->common, (AES_ReturnBehavior)params->returnBehavior, params->timeout);
+    status = AESCommonXXF3_construct(&object->common, (AES_ReturnBehavior)params->returnBehavior, params->timeout);
 
     if (status != AES_STATUS_SUCCESS)
     {
@@ -178,7 +178,7 @@ void AESGCM_close(AESGCM_Handle handle)
 
     AESGCMLPF3_Object *object = AESGCMLPF3_getObject(handle);
 
-    AESCommonLPF3_close(&object->common);
+    AESCommonXXF3_close(&object->common);
 }
 
 /*
@@ -214,7 +214,7 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
     int_fast16_t status;
     uint32_t ivBits;
 
-#if (AESCommonLPF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
+#if (AESCommonXXF3_UNALIGNED_IO_SUPPORT_ENABLE == 0)
     /* Check word-alignment of input & output pointers */
     if (!IS_WORD_ALIGNED(operation->input) || !IS_WORD_ALIGNED(operation->output))
     {
@@ -231,16 +231,16 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
     /* Check if there is no operation already in progress for this driver
      * instance, and then mark the current operation to be in progress.
      */
-    status = AESCommonLPF3_setOperationInProgress(&object->common);
+    status = AESCommonXXF3_setOperationInProgress(&object->common);
 
     if (status != AESGCM_STATUS_SUCCESS)
     {
         return status;
     }
 
-    if (!CryptoResourceLPF3_acquireLock(object->common.semaphoreTimeout))
+    if (!CryptoResourceXXF3_acquireLock(object->common.semaphoreTimeout))
     {
-        AESCommonLPF3_clearOperationInProgress(&object->common);
+        AESCommonXXF3_clearOperationInProgress(&object->common);
         return AESGCM_STATUS_RESOURCE_UNAVAILABLE;
     }
 
@@ -339,8 +339,8 @@ static int_fast16_t AESGCMLPF3_oneStepOperation(AESGCM_Handle handle,
         }
         else
         {
-            CryptoResourceLPF3_releaseLock();
-            AESCommonLPF3_clearOperationInProgress(&object->common);
+            CryptoResourceXXF3_releaseLock();
+            AESCommonXXF3_clearOperationInProgress(&object->common);
             status = AESGCM_STATUS_MAC_INVALID;
         }
     }
@@ -407,12 +407,12 @@ static void AESGCMLPF3_computeTag(AESGCM_Handle handle, size_t aadLength, size_t
  *  ======== AESGCMLPF3_encryptOneAlignedAESBlockECB ========
  *  Encrypts a single word-aligned block in polling mode.
  */
-static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonLPF3_Object *object,
+static void AESGCMLPF3_encryptOneAlignedAESBlockECB(AESCommonXXF3_Object *object,
                                                     const uint32_t *input,
                                                     uint32_t *output)
 {
     /* Set up the key and AES engine to begin an operation */
-    AESCommonLPF3_setupOperation(&object->key, AESECBLPF3_SINGLE_BLOCK_AUTOCFG);
+    AESCommonXXF3_setupOperation(&object->key, AESECBXXF3_SINGLE_BLOCK_AUTOCFG);
 
     /* Process the single block with CPU R/W */
     AESProcessAlignedBlocksECB(input, output, (uint32_t)AES_GET_NUM_BLOCKS(AES_BLOCK_SIZE));
@@ -427,14 +427,14 @@ static int_fast16_t AESGCMLPF3_startOperation(AESGCM_Handle handle, bool isOneSt
     int_fast16_t status       = AESGCM_STATUS_SUCCESS;
 
     /* Set up the key and AES engine to begin an operation */
-    AESCommonLPF3_setupOperation(&object->common.key, AESGCMLPF3_DEFAULT_AUTOCFG);
+    AESCommonXXF3_setupOperation(&object->common.key, AESGCMLPF3_DEFAULT_AUTOCFG);
 
     /* Process all data as a polling mode operation */
     /* Write the counter value to the AES engine to trigger first encryption */
-    AESCTRLPF3_writeCounter(object->counter);
+    AESCTRXXF3_writeCounter(object->counter);
 
     /* Process all blocks with CPU R/W */
-    AESCTRLPF3_processData(object->input, object->output, object->inputLength, isOneStepOrFinalOperation);
+    AESCTRXXF3_processData(object->input, object->output, object->inputLength, isOneStepOrFinalOperation);
 
     status = AESGCMLPF3_waitForResult(handle);
 
@@ -450,7 +450,7 @@ static int_fast16_t AESGCMLPF3_waitForResult(AESGCM_Handle handle)
     int_fast16_t status       = AESGCM_STATUS_ERROR;
 
     /* Save the last counter value from the AES engine */
-    AESCTRLPF3_readCounter(object->counter);
+    AESCTRXXF3_readCounter(object->counter);
 
     /* Save the object's returnStatus before clearing operationInProgress or
      * posting the access semaphore in case it is overwritten.
@@ -458,9 +458,9 @@ static int_fast16_t AESGCMLPF3_waitForResult(AESGCM_Handle handle)
     status = object->common.returnStatus;
 
     /* One-step or finalization operation is complete */
-    AESCommonLPF3_clearOperationInProgress(&object->common);
+    AESCommonXXF3_clearOperationInProgress(&object->common);
 
-    AESCommonLPF3_cleanup(&object->common);
+    AESCommonXXF3_cleanup(&object->common);
 
     return status;
 }

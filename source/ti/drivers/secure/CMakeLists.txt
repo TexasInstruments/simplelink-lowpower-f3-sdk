@@ -53,6 +53,57 @@ string(REGEX MATCHALL "${LPF2_REGEX}" LPF2_PLATFORMS "${SUPPORTED_PLATFORMS}")
 string(REGEX MATCHALL "${LPF3_REGEX}" LPF3_PLATFORMS "${SUPPORTED_PLATFORMS}")
 string(REGEX MATCHALL "${WFF3_REGEX}" WFF3_PLATFORMS "${SUPPORTED_PLATFORMS}")
 
+################################################################################
+# Note: Local packages which are dependencies for other packages must be defined
+# before they are used to avoid slow cmake generation due to package not being
+# found.
+################################################################################
+
+#
+# A couple of simple utilities used by the drivers to portably export compile options
+#
+ti_init_package(NAMESPACE SecureDriversUtils)
+
+ti_add_library(secure_key_storage_enabled INTERFACE ARCH all)
+target_compile_definitions(secure_key_storage_enabled INTERFACE $<$<COMPILE_LANGUAGE:C>:ENABLE_KEY_STORAGE=1>)
+
+ti_export_package()
+
+#
+# Targets for TrustZone support
+#
+ti_init_package(NAMESPACE TrustZone)
+
+ti_add_library(tfm_dependencies_cc26x4 INTERFACE ARCH all)
+
+target_include_directories(
+    tfm_dependencies_cc26x4
+    INTERFACE ${TFM_INSTALL_DIR}/source/
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
+              ${TFM_INSTALL_DIR}/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc
+              ${MBEDTLS_INSTALL_DIR}/source
+              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
+              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti
+)
+
+ti_add_library(tfm_dependencies_cc27xx INTERFACE ARCH all)
+
+target_include_directories(
+    tfm_dependencies_cc27xx
+    INTERFACE ${TFM_INSTALL_DIR}/source/
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/ext/driver
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/partitions/internal_trusted_storage
+              ${TFM_INSTALL_DIR}/tfm_s/build/cc27xx/production_full/Release/export/tfm/inc
+)
+
+ti_export_package()
+
 #
 # Create LPF2 package
 #
@@ -135,6 +186,7 @@ if(LPF3_PLATFORMS)
             SecureDriversUtils
             TrustZone
             ThirdPartyEccLib
+            ThirdPartyHSMDDKLibLPF3
             TiUtils
             TiUtilsJson
     )
@@ -157,9 +209,13 @@ if(LPF3_PLATFORMS)
             )
             add_dependencies(secure_drivers_${TI_PLATFORM} ecc_deploy)
 
-        elseif(${TI_PLATFORM} STREQUAL "cc27xx")
-            ti_add_package_dependency(DriverlibCC27XX)
-            ti_add_package_dependency(ThirdPartyHSMDDKLibCC27XX)
+        elseif(${TI_PLATFORM} MATCHES "cc27xxx")
+            if(${TI_PLATFORM} STREQUAL "cc27xxx10")
+                ti_add_package_dependency(DriverlibCC27XXX10)
+            elseif(${TI_PLATFORM} STREQUAL "cc27xxx20")
+                ti_add_package_dependency(DriverlibCC27XXX20)
+            endif()
+
             ti_add_library(
                 secure_drivers_${TI_PLATFORM}
                 SOURCES ${SOURCES_SEC_ONLY_CC27XX}
@@ -190,6 +246,11 @@ if(LPF3_PLATFORMS)
                     TrustZone::tfm_dependencies_cc27xx
             )
             add_dependencies(secure_drivers_${TI_PLATFORM}_ns ecc_deploy)
+
+            target_compile_definitions(
+                secure_drivers_${TI_PLATFORM}_ns PRIVATE CONFIG_TFM_CRYPTO_API_RENAME PLATFORM_DEFAULT_CRYPTO_KEYS
+                                                         TI_PSA_CRYPTO_NS_CLIENT
+            )
         endif()
     endforeach()
 
@@ -210,13 +271,13 @@ if(WFF3_PLATFORMS)
             SecureDriversUtils
             TrustZone
             ThirdPartyEccLib
+            ThirdPartyHSMDDKLibWFF3
             TiUtils
             TiUtilsJson
     )
     foreach(TI_PLATFORM ${WFF3_PLATFORMS})
         if(${TI_PLATFORM} MATCHES "cc35")
             ti_add_package_dependency(DriverlibCC35XX)
-            ti_add_package_dependency(ThirdPartyHSMDDKLibCC35XX)
 
             ti_add_library(
                 secure_drivers_${TI_PLATFORM}
@@ -232,48 +293,3 @@ if(WFF3_PLATFORMS)
 
     ti_export_package()
 endif() # if(WFF3_PLATFORMS)
-
-#
-# A couple of simple utilities used by the drivers to portably export compile options
-#
-ti_init_package(NAMESPACE SecureDriversUtils)
-
-ti_add_library(secure_key_storage_enabled INTERFACE ARCH all)
-target_compile_definitions(secure_key_storage_enabled INTERFACE $<$<COMPILE_LANGUAGE:C>:ENABLE_KEY_STORAGE=1>)
-
-ti_export_package()
-
-#
-# Targets for TrustZone support
-#
-ti_init_package(NAMESPACE TrustZone)
-
-ti_add_library(tfm_dependencies_cc26x4 INTERFACE ARCH all)
-
-target_include_directories(
-    tfm_dependencies_cc26x4
-    INTERFACE ${TFM_INSTALL_DIR}/source/
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
-              ${TFM_INSTALL_DIR}/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc
-              ${MBEDTLS_INSTALL_DIR}/source
-              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
-              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti
-)
-
-ti_add_library(tfm_dependencies_cc27xx INTERFACE ARCH all)
-
-target_include_directories(
-    tfm_dependencies_cc27xx
-    INTERFACE ${TFM_INSTALL_DIR}/source/
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/ext/driver
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/partitions/internal_trusted_storage
-              ${TFM_INSTALL_DIR}/tfm_s/build/cc27xx/production_full/Release/export/tfm/inc
-)
-
-ti_export_package()

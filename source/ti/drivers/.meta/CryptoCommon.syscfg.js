@@ -110,12 +110,17 @@ function device2Family(device, mod)
      * contain all CC23X0 specific modules
      */
     let cc23x0Mods = {
+        "AESCBC":        "XXF3",
+        "AESCCM":        "XXF3",
+        "AESCMAC":       "XXF3",
+        "AESCTR":        "XXF3",
+        "AESECB":        "XXF3",
         "Board" :        "CC23X0",
         "CAN" :          "CC23X0",
-        "SHA2" :         "LPF3SW",
         "ECDH" :         "LPF3SW",
         "ECDSA" :        "LPF3SW",
-        "RNG"  :         "LPF3RF"
+        "RNG"  :         "LPF3RF",
+        "SHA2" :         "LPF3SW"
     };
 
     /* CC27XX specific module delegates
@@ -123,15 +128,20 @@ function device2Family(device, mod)
      * contain all CC27XX specific modules
      */
     let cc27xxMods = {
+        "AESCBC":          "XXF3",
+        "AESCCM":          "XXF3",
+        "AESCMAC":         "XXF3",
+        "AESCTR":          "XXF3",
+        "AESECB":          "XXF3",
+        "AESGCM":          "XXF3HSM",
         "Board" :          "CC27XX",
         "CAN" :            "CC27XX",
-        "ECDH" :           "LPF3HSM",
-        "ECDSA" :          "LPF3HSM",
-        "EDDSA":           "LPF3HSM",
-        "SHA2" :           "LPF3HSM",
-        "TRNG":            "LPF3HSM",
-        "RNG"  :           "LPF3HSM",
-        "AESGCM":          "LPF3HSM",
+        "ECDH" :           "XXF3HSM",
+        "ECDSA" :          "XXF3HSM",
+        "EDDSA":           "XXF3HSM",
+        "RNG"  :           "XXF3HSM",
+        "SHA2" :           "XXF3HSM",
+        "TRNG":            "XXF3HSM",
         "CryptoKeyKeyStore_PSA" : "CC27XX"
     };
 
@@ -140,18 +150,18 @@ function device2Family(device, mod)
      * contain all CC35XX specific modules
      */
     let cc35xxMods = {
-        "AESGCM":          "LPF3HSM",
-        "AESECB":          "LPF3",
-        "AESCBC":          "LPF3",
-        "AESCCM":          "LPF3",
-        "AESCMAC":         "LPF3",
-        "AESCTR":          "LPF3",
+        "AESGCM":          "XXF3HSM",
+        "AESECB":          "XXF3",
+        "AESCBC":          "XXF3",
+        "AESCCM":          "XXF3",
+        "AESCMAC":         "XXF3",
+        "AESCTR":          "XXF3",
         "CryptoKeyKeyStore_PSA": "CC35XX",
-        "ECDH":            "LPF3HSM",
-        "ECDSA" :          "LPF3HSM",
-        "RNG"  :           "LPF3HSM",
-        "SHA2":            "LPF3HSM",
-        "TRNG":            "LPF3HSM"
+        "ECDH":            "XXF3HSM",
+        "ECDSA" :          "XXF3HSM",
+        "RNG"  :           "XXF3HSM",
+        "SHA2":            "XXF3HSM",
+        "TRNG":            "XXF3HSM"
     };
 
     /* deviceId is the directory name within the pinmux/deviceData */

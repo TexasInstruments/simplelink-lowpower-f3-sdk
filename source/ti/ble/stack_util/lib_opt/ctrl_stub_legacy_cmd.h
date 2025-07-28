@@ -88,6 +88,7 @@ extern hciStatus_t hciCmdParserLegacy(uint8_t* pData, uint16_t cmdOpCode);
 extern uint8_t processLegacyExtraHCICmd(hciPacket_t* pMsg);
 extern uint8_t HCI_TL_legacyProcessHCICmd(hciPacket_t* pMsg);
 
+
 // Wrapper functions for the feature implementations
 uint8_t OPT_checkLegacyHCICmdStatus(uint16_t opcode);
 hciStatus_t OPT_hciCmdParserLegacy(uint8_t* pData, uint16_t cmdOpCode);

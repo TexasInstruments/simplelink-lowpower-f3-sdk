@@ -66,6 +66,20 @@ psa_status_t tfm_psa_call_veneer(psa_handle_t handle,
  */
 void tfm_psa_close_veneer(psa_handle_t handle);
 
+
+/* TI-TFM: Added tfm_get_version_veneer() */
+/**
+ * \brief Retrieve the version string of the TF-M image.
+ *
+ * \param[in] buf               Pointer to output buffer to write version string.
+ * \param[in,out] size          Size of the output buffer. Updated with actual size written.
+ *
+ * \retval 0                    Operation succeeded.
+ * \retval -1                   The buffer is not in NSPE with R/W access.
+ *
+ */
+int32_t tfm_get_version_veneer(void *buf, size_t *size);
+
 /***************** End Secure function declarations ***************************/
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -8,199 +8,254 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include "config_tfm.h"
 #include "tfm_attest_hal.h"
 #include "tfm_plat_boot_seed.h"
 #include "tfm_plat_device_id.h"
+#include "tfm_strnlen.h"
+#include "utilities.h"
 
-/*
- * TI-TFM: Alternate implementation to read attestation claims from attest_region_t
- * This enables Attestation partition to read security_lifecycle, implementation_id,
- * hw_version, and verification_service_url from dedicated Flash region
- */
-#define USE_FLASH_DATA
+/* TI CC27xx SDK include(s) */
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_dbgss.h)
+#include DeviceFamily_constructPath(inc/hw_dcb.h)
+#include DeviceFamily_constructPath(inc/hw_fcfg.h)
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_scfg.h)
+#include DeviceFamily_constructPath(inc/hw_types.h)     /* HWREG() for verified_reg_write() */
 
-#ifdef USE_FLASH_DATA
+#define CCFG_FIELD(f) (((volatile const ccfg_t *)CCFG_BASE)->f)
+#define SCFG_FIELD(f) (((volatile const scfg_t *)SCFG_BASE)->f)
 
-typedef struct
-{
-     /* Initialized to 0xFFFF_FFFF, write zeroes to progress state */
-     uint32_t security_lifecycle;
-     /* Immutable params */
-     uint8_t implementation_id_length;
-     uint8_t implementation_id[IMPLEMENTATION_ID_MAX_SIZE];
-     uint8_t hw_version_length;
-     uint8_t hw_version[HW_VERSION_MAX_SIZE];
-     uint8_t verification_service_url_length;
-     uint8_t verification_service_url[64];
-} attest_region_t;
+#define SCFG_BOOT_SEED_MAX_OFFSET 13
+#define CBOR_HEADER_SIZE          8
 
-#define ATTEST_REGION_FLASH_ADDR  0x700
-
-static attest_region_t *attest_region = (attest_region_t *)ATTEST_REGION_FLASH_ADDR;
-
-#else
-
-/* Example verification service URL for initial attestation token */
-static const char verification_service_url[] = "www.trustedfirmware.org";
-
-
-static const uint8_t implementation_id[] = {
-    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-    0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
-    0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
-    0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD,
-};
-
-static const uint8_t example_ean_13[] = "060456527282910010";
-
+#if ATTEST_TOKEN_PROFILE_PSA_2_0_0
+    #error "ATTEST_TOKEN_PROFILE_PSA_2_0_0 is not supported on this platform"
+#elif ATTEST_TOKEN_PROFILE_ARM_CCA
+    #error "ATTEST_TOKEN_PROFILE_ARM_CCA is not supported on this platform"
 #endif
 
-/*!
- * \def BOOT_SEED
- *
- * \brief Fixed value for boot seed used for test.
- */
-#define BOOT_SEED   0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, \
-                    0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, \
-                    0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, \
-                    0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF
+/* Verification service URL for initial attestation token */
+static const char verification_service_url[] = "www.psacertified.org";
 
-static const uint8_t boot_seed[BOOT_SEED_SIZE] = {BOOT_SEED};
-
-
-/* Example profile definition document for initial attestation token */
+/* Profile definition document for initial attestation token */
 static const char attestation_profile_definition[] = "PSA_IOT_PROFILE_1";
 
+#if ATTEST_INCLUDE_OPTIONAL_CLAIMS
+/* Certification reference for "PSA_IOT_PROFILE_1" is EAN-13 (format [0-9]{13}) per
+ * https://www.ietf.org/archive/id/draft-tschofenig-rats-psa-token-07.html#name-certification-reference;
+ * however, www.psacertified.org is issuing certification numbers with format '[0-9]{13}-[0-9]{5}'.
+ * which matches "http://arm.com/psa/2.0.0" profile per
+ * https://www.ietf.org/archive/id/draft-tschofenig-rats-psa-token-09.html#name-certification-reference
+ * The latter format is used although it does not adhere to the spec for PSA_IOT_PROFILE_1
+ * since the value is provided by the certification authority.
+ */
+#warning "cert_ref must be updated with certification number of format '[0-9]{13}-[0-9]{5}' provided by the certification authority"
+
+static const char cert_ref[CERTIFICATION_REF_MAX_SIZE] = "0011223344556-77889";
+#endif /* ATTEST_INCLUDE_OPTIONAL_CLAIMS */
 
 enum tfm_security_lifecycle_t tfm_attest_hal_get_security_lifecycle(void)
 {
-#ifdef USE_FLASH_DATA
-    /* TI-TFM: Obtain security lifecycle from Flash */
-    switch(attest_region->security_lifecycle)
-    {
-        case 0xFFFFFF00:
-            return TFM_SLC_PSA_ROT_PROVISIONING;
-        case 0xFFFF0000:
-            return TFM_SLC_SECURED;
-        case 0xFF000000:
-            return TFM_SLC_DECOMMISSIONED;
-        default:
-            return TFM_SLC_UNKNOWN;
-    }
-#else
-    return TFM_SLC_SECURED;
-#endif
-}
+    enum tfm_security_lifecycle_t slc = TFM_SLC_UNKNOWN;
+    uint32_t ccfg_debug_cfg;
+    uint32_t dbgss_app_auth;
 
-const char *
-tfm_attest_hal_get_verification_service(uint32_t *size)
-{
-#ifdef USE_FLASH_DATA
-    /* TI-TFM: Obtain verification service URL from Flash */
-    *size = attest_region->verification_service_url_length;
+    /* The only valid Security Life Cycles (SLCs) to report via attestation are:
+     * - "Secured"
+     * - "Non-PRoT Debug"
+     * - "PRoT Debug"
+     *
+     * The manufacturer must ensure that the device has debug authorization
+     * enabled before shipping the device to the customer since secure
+     * flash could be read or written while in secure debug state which would
+     * compromise sensitive data and render it untrustworthy after debug.
+     *
+     * The TF-M will fail to boot if PRoT provisioning fails or the device is
+     * decommissioned. Thus, it is not possible to request attestation while
+     * in any of the following SLCs:
+     * - "Device Assembly & Test"
+     * - "PRoT Provisioning"
+     * - "Decommissioned"
+     */
 
-    /* Check if the size of URL - 1 (for null terminator) matches the length of URL */
-    if ((*size - 1) != strlen((char *)attest_region->verification_service_url))
+    /* Secure boot must be enabled in order to report a valid SLC */
+    if ((SCFG_FIELD(secBootCfg.policyCfg.authMethod) == SCFG_POLICY_SIGNATURE) ||
+        (SCFG_FIELD(secBootCfg.policyCfg.authMethod) == SCFG_POLICY_HASH_LOCK))
     {
-        return NULL;
+        ccfg_debug_cfg = CCFG_FIELD(debugCfg.authorization);
+
+        if (ccfg_debug_cfg == CCFG_DBGAUTH_DBGOPEN)
+        {
+            slc = TFM_SLC_UNKNOWN;
+        }
+        else if (ccfg_debug_cfg == CCFG_DBGAUTH_DBGFORBID)
+        {
+            slc = TFM_SLC_SECURED;
+        }
+        else if (ccfg_debug_cfg == CCFG_DBGAUTH_ONLY_NON_INVASIVE)
+        {
+            slc = TFM_SLC_SECURED;
+        }
+        else if (ccfg_debug_cfg == CCFG_DBGAUTH_REQAUTH)
+        {
+            /* Read the current debug authorization privileges */
+            dbgss_app_auth = HWREG(DBGSS_BASE + DBGSS_O_APP_AUTH);
+
+            /* If all debug authorization privileges are disabled, SLC is "Secured" */
+            if (dbgss_app_auth == 0)
+            {
+                slc = TFM_SLC_SECURED;
+            }
+            else if (dbgss_app_auth == DBGSS_APP_AUTH_NIDEN_EN)
+            {
+                /* If debug authorization is configured for non-invasive debug enable,
+                * SLC is "Non-PRoT Debug".
+                */
+                slc = TFM_SLC_NON_PSA_ROT_DEBUG;
+            }
+            else if (dbgss_app_auth == (DBGSS_APP_AUTH_NIDEN_EN | DBGSS_APP_AUTH_DBGEN_EN))
+            {
+                /* If debug authorization is configured for invasive non-secure
+                * debug enable, SLC is "Non-PRoT Debug".
+                */
+                slc = TFM_SLC_NON_PSA_ROT_DEBUG;
+            }
+            else if (dbgss_app_auth == (DBGSS_APP_AUTH_SPNIDEN_EN | DBGSS_APP_AUTH_SPIDEN_EN |
+                                        DBGSS_APP_AUTH_NIDEN_EN | DBGSS_APP_AUTH_DBGEN_EN))
+            {
+                /* If debug authorization is configured for invasive secure debug,
+                * the SLC is "PRoT Debug". This lifecycle is considered recoverable
+                * since it shall be protected using public key based authentication.
+                * Only trusted users will have access to the required private key
+                * needed to successfully complete the challenge response sequence
+                * to enter secure debug.
+                */
+                slc = TFM_SLC_RECOVERABLE_PSA_ROT_DEBUG;
+            }
+            else
+            {
+                slc = TFM_SLC_UNKNOWN;
+            }
+        }
+        else
+        {
+            slc = TFM_SLC_UNKNOWN;
+        }
     }
     else
     {
-        return (const char *)attest_region->verification_service_url;
+        slc = TFM_SLC_UNKNOWN;
     }
-#else
-    *size = sizeof(verification_service_url) - 1;
 
-    return verification_service_url;
-#endif
+    return slc;
 }
 
-const char *
-tfm_attest_hal_get_profile_definition(uint32_t *size)
+enum tfm_plat_err_t
+tfm_attest_hal_get_verification_service(uint32_t *size, uint8_t *buf)
 {
-    *size = sizeof(attestation_profile_definition) - 1;
+    size_t copy_size;
 
-    return attestation_profile_definition;
+    /* String length excluding null terminator up to provided size */
+    copy_size = tfm_strnlen(verification_service_url, *size);
+
+    (void)spm_memcpy(buf, verification_service_url, copy_size);
+
+    *size = copy_size;
+
+    return TFM_PLAT_ERR_SUCCESS;
 }
 
-/**
- * \brief Copy data in source buffer to the destination buffer
- *
- * \param[out]  p_dst  Pointer to destation buffer
- * \param[in]   p_src  Pointer to source buffer
- * \param[in]   size   Length of data to be copied
- */
-static inline void copy_buf(uint8_t *p_dst, const uint8_t *p_src, size_t size)
+enum tfm_plat_err_t
+tfm_attest_hal_get_profile_definition(uint32_t *size, uint8_t *buf)
 {
-    uint32_t i;
+    size_t copy_size;
 
-    for (i = size; i > 0; i--) {
-        *p_dst = *p_src;
-        p_src++;
-        p_dst++;
-    }
+    /* String length excluding null terminator up to provided size */
+    copy_size = tfm_strnlen(attestation_profile_definition, *size);
+
+    (void)spm_memcpy(buf, attestation_profile_definition, copy_size);
+
+    *size = copy_size;
+
+    return TFM_PLAT_ERR_SUCCESS;
 }
 
 enum tfm_plat_err_t tfm_plat_get_boot_seed(uint32_t size, uint8_t *buf)
 {
-    /* FixMe: - This getter function must be ported per target platform.
-     *        - Platform service shall provide an API to further interact this
-     *          getter function to retrieve the boot seed.
+    uint8_t bootSeedOffset;
+    enum tfm_plat_err_t err = TFM_PLAT_ERR_UNSUPPORTED;
+
+    /* ROM code writes a random 32-byte boot seed prefixed with a 8-byte CBOR
+     * header to: Secure RAM start addr + (scfg.bootSeedOffset * 16).
      */
+    bootSeedOffset = SCFG_FIELD(bootSeedOffset);
 
-    uint8_t *p_dst = buf;
-    const uint8_t *p_src = boot_seed;
+    if (bootSeedOffset <= SCFG_BOOT_SEED_MAX_OFFSET)
+    {
+        /* Offset is in multiples of 16-bytes */
+        bootSeedOffset *= 16;
+        /* Skip CBOR header */
+        bootSeedOffset += CBOR_HEADER_SIZE;
 
-    if (size != BOOT_SEED_SIZE) {
-        return TFM_PLAT_ERR_SYSTEM_ERR;
+        (void)spm_memcpy(buf, (void *)(SRAM_S_BASE + bootSeedOffset), size);
+
+        err = TFM_PLAT_ERR_SUCCESS;
+    }
+    else
+    {
+        /* Secure boot is not enabled. This is not a valid production
+         * configuration but for testing purposes, return zeros for the boot
+         * seed.
+         */
+        (void)spm_memcpy(buf, 0, size);
+
+        err = TFM_PLAT_ERR_SUCCESS;
     }
 
-    copy_buf(p_dst, p_src, size);
-
-    return TFM_PLAT_ERR_SUCCESS;
+    return err;
 }
 
 enum tfm_plat_err_t tfm_plat_get_implementation_id(uint32_t *size,
                                                    uint8_t  *buf)
 {
+    size_t copy_size;
+    uint8_t id[32] = {0};
 
-    uint32_t impl_id_size;
-#ifdef USE_FLASH_DATA
-    /* TI-TFM: Obtain implementation id from Flash */
-    const uint8_t *p_impl_id = attest_region->implementation_id;
-    impl_id_size = attest_region->implementation_id_length;
-#else
-    const uint8_t *p_impl_id = implementation_id;
-    impl_id_size = sizeof(implementation_id);
-#endif
-    if (*size < impl_id_size) {
-        return TFM_PLAT_ERR_SYSTEM_ERR;
-    }
+    /* FCFG data will be used to generate the 32-byte Implementation ID:
+     *  - Die ID (FCFG.deviceInfo.dieId) will be first 16-bytes
+     *  - MAC BLE (FCFG.deviceInfo.bleAddr) will be next 8-bytes
+     *  - MAC 15.4 (FCFG.deviceInfo.macAddr) will be last 8-bytes
+     */
+    (void)spm_memcpy(&id[0], &fcfg->deviceInfo.dieId[0], 16);
+    (void)spm_memcpy(&id[16], &fcfg->deviceInfo.bleAddr[0], 8);
+    (void)spm_memcpy(&id[24], &fcfg->deviceInfo.macAddr[0], 8);
 
-    copy_buf(buf, p_impl_id, impl_id_size);
-    *size = impl_id_size;
+    /* Copy size is the smaller of provided size or actual size */
+    copy_size = *size < sizeof(id) ? *size : sizeof(id);
+
+    (void)spm_memcpy(buf, id, copy_size);
+
+    *size = copy_size;
 
     return TFM_PLAT_ERR_SUCCESS;
 }
 
-enum tfm_plat_err_t tfm_plat_get_hw_version(uint32_t *size, uint8_t *buf)
+#if ATTEST_INCLUDE_OPTIONAL_CLAIMS
+
+enum tfm_plat_err_t tfm_plat_get_cert_ref(uint32_t *size, uint8_t *buf)
 {
-    uint32_t hw_version_size;
-#ifdef USE_FLASH_DATA
-    /* TI-TFM: Obtain hardware version from Flash */
-    const uint8_t *p_hw_version = attest_region->hw_version;
-    hw_version_size = attest_region->hw_version_length - 1;
-#else
-    const uint8_t *p_hw_version = example_ean_13;
-    hw_version_size = sizeof(example_ean_13) - 1;
-#endif
+    size_t copy_size;
 
-    if (*size < hw_version_size) {
-        return TFM_PLAT_ERR_SYSTEM_ERR;
-    }
+    /* String length excluding null terminator up to provided size */
+    copy_size = tfm_strnlen(cert_ref, *size);
 
-    copy_buf(buf, p_hw_version, hw_version_size);
-    *size = hw_version_size;
+    (void)spm_memcpy(buf, cert_ref, copy_size);
+
+    *size = copy_size;
 
     return TFM_PLAT_ERR_SUCCESS;
 }
+
+#endif /* ATTEST_INCLUDE_OPTIONAL_CLAIMS */

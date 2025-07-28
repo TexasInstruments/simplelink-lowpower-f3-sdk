@@ -53,7 +53,7 @@ extern "C" {
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
 
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     #include DeviceFamily_constructPath(driverlib/ioc.h)
 #endif
 #include DeviceFamily_constructPath(driverlib/gpio.h)
@@ -63,7 +63,7 @@ extern "C" {
  */
 
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     // Board LED defines
     #define BSP_IOID_LED_1 IOID_6
     #define BSP_IOID_LED_2 IOID_7
@@ -120,7 +120,7 @@ extern "C" {
     #define BSP_SPI_MISO      21
     #define BSP_SPI_CLK_FLASH 24
 
-#elif defined(DeviceFamily_CC27XX)
+#elif defined(DeviceFamily_PARENT_CC27XX)
 
     #define BSP_IOID_FLASH_CS 19
     #define BSP_SPI_MOSI      5

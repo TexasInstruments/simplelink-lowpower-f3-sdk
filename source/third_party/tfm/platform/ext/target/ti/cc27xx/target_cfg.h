@@ -27,6 +27,9 @@
 #define TFM_DRIVER_STDIO    Driver_USART0
 #define NS_DRIVER_STDIO     Driver_USART0
 
+/* Non-secure memory address space bit */
+#define NS_ADDR_SPACE_BIT28 (0x1U << 28U)
+
 /**
  * \brief Store the addresses of memory regions
  */

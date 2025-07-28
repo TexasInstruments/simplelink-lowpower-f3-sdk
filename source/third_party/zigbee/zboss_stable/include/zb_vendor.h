@@ -50,6 +50,14 @@
 #define ZB_LIMIT_VISIBILITY
 #endif
 
+#elif defined(ZB_MAC_ONLY_VENDOR)
+
+#include "zb_vendor_lpf3_mac_only.h"
+
+#elif defined(ZB_MAC_SOC_VENDOR)
+
+#include "zb_vendor_lpf3_macsplit.h"
+
 #endif 
 
 #endif /* ZB_VENDOR_H */

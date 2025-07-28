@@ -202,10 +202,10 @@ MAIN()
   zb_set_rx_on_when_idle(ED_RX_ALWAYS_ON);
 #if ( ED_RX_ALWAYS_ON == ZB_FALSE )
   zb_set_keepalive_timeout(ZB_MILLISECONDS_TO_BEACON_INTERVAL(ED_POLL_RATE));
+  zb_zdo_pim_set_long_poll_interval(ED_POLL_RATE);
 #ifdef DISABLE_TURBO_POLL
   // Disable turbo poll feature
   zb_zdo_pim_permit_turbo_poll(ZB_FALSE);
-  zb_zdo_pim_set_long_poll_interval(ED_POLL_RATE);
 #endif // DISABLE_TURBO_POLL
 #endif //ED_RX_ALWAYS_ON
 #endif //ZB_ED_ROLE
@@ -429,6 +429,7 @@ void zboss_signal_handler(zb_uint8_t param)
 #ifdef TEST_USE_INSTALLCODE
         zb_secur_ic_str_add(g_ed_addr, g_installcode, NULL);
 #endif
+        zb_set_tx_power(DEFAULT_TX_PWR);
         zboss_start_continue();
         break;
 
@@ -450,6 +451,7 @@ void zboss_signal_handler(zb_uint8_t param)
           ZB_SCHEDULE_APP_ALARM_CANCEL(off_network_attention, ZB_ALARM_ANY_PARAM);
           zb_osif_led_off(1);
         }
+        zb_set_tx_power(DEFAULT_TX_PWR);
         bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
 
 #ifdef ZB_USE_BUTTONS

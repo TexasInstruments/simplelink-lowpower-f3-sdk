@@ -183,11 +183,11 @@ STRUCT_PACKED image_tlv {
 #define IS_ENCRYPTED(hdr) (((hdr)->ih_flags & IMAGE_F_ENCRYPTED_AES128) \
                         || ((hdr)->ih_flags & IMAGE_F_ENCRYPTED_AES256))
 #define MUST_DECRYPT(fap, idx, hdr) \
-    (fap->fa_id == FLASH_AREA_IMAGE_SECONDARY(idx) && IS_ENCRYPTED(hdr))
+    (flash_area_get_id(fap)== FLASH_AREA_IMAGE_SECONDARY(idx) && IS_ENCRYPTED(hdr))
 #define COMPRESSIONFLAGS (IMAGE_F_COMPRESSED_LZMA2)
 #define IS_COMPRESSED(hdr) ((hdr)->ih_flags & COMPRESSIONFLAGS)
 #define MUST_DECOMPRESS(fap, idx, hdr) \
-    (fap->fa_id == FLASH_AREA_IMAGE_SECONDARY(idx) && IS_COMPRESSED(hdr))
+    (flash_area_get_id(fap) == FLASH_AREA_IMAGE_SECONDARY(idx) && IS_COMPRESSED(hdr))
 
 _Static_assert(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
                "struct image_header not required size");

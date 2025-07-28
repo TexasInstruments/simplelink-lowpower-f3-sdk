@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2024, Texas Instruments Incorporated
+ * Copyright (c) 2017-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -445,7 +445,7 @@
  *
  *  // You will also need to populate the mac in handle->object->mac because HSM needs the mac to construct each
  *  // segmented token.
- *  encryptionResult = AESCCMLPF3HSM_setMac(handle, &mac[0], 8);
+ *  encryptionResult = AESCCMXXF3HSM_setMac(handle, &mac[0], 8);
  *  if (encryptionResult != AESCCM_STATUS_SUCCESS) {
  *      // handle error
  *  }

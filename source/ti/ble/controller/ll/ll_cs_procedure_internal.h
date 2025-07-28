@@ -135,7 +135,7 @@ void llCsShuffleMainModeChannelIndexArray(uint16 connId, const csConfigurationSe
  * input parameters
  *
  * @param       config - pointer to config
- * @param       procParams - pointer to params
+ * @param       uint32 - subEventLen
  *
  * output parameters
  *
@@ -144,7 +144,7 @@ void llCsShuffleMainModeChannelIndexArray(uint16 connId, const csConfigurationSe
  * @return      number of steps per subevent
  */
 uint8 llCsNumStepsPerSubEvent(const csConfigurationSet_t* config,
-                              csProcedureEnable_t* procParams);
+                              uint32  subEventLen);
 
 /*******************************************************************************
  * @fn          llCsMainModeDur
@@ -212,7 +212,7 @@ csStatus_e llCsSetupStep(uint8 stepMode, uint16 connId,
  *
  * @return      None
  */
-void llCsSetupStep0(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
+void llCsSetupStep0(uint16 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
 
 /*******************************************************************************
  * @fn          llCsSetupStep1
@@ -231,7 +231,7 @@ void llCsSetupStep0(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_Cmd
  *
  * @return      None
  */
-void llCsSetupStep1(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
+void llCsSetupStep1(uint16 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
 
 /*******************************************************************************
  * @fn          llCsSetupStep2
@@ -250,7 +250,7 @@ void llCsSetupStep1(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_Cmd
  *
  * @return      None
  */
-void llCsSetupStep2(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
+void llCsSetupStep2(uint16 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
 
 /*******************************************************************************
  * @fn          llCsSetupStep3
@@ -269,7 +269,7 @@ void llCsSetupStep2(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_Cmd
  *
  * @return      None
  */
-void llCsSetupStep3(uint8 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
+void llCsSetupStep3(uint16 connId, const csConfigurationSet_t* csConfig,  RCL_CmdBleCs_Step* stepData);
 
 /*******************************************************************************
  * @fn          llCsConvertRttType
@@ -469,3 +469,20 @@ uint16 llCsMode2Duration(const csConfigurationSet_t* pConfig, uint8 nPath, uint1
  * @return      Duration for Mode 3
  */
 uint16 llCsMode3Duration(const csConfigurationSet_t* pConfig, uint8 nPath, uint16 tSw);
+
+/*******************************************************************************
+ * @fn          llCsClearStepBuffers
+ *
+ * @brief       Clear the internal buffers
+ *
+ * input parameters
+ *
+ * @param       connId   - connection ID
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return
+ */
+void llCsClearStepBuffers();

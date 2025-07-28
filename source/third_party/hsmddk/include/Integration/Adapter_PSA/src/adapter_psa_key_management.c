@@ -146,9 +146,9 @@ static uint8_t KeyDataBuffer[PSA_KEYBLOB_ADDITIONAL_BYTES + (2U * (PSA_ASYM_DATA
 static uint8_t KeyDataBuffer2[PSA_KEYBLOB_ADDITIONAL_BYTES + 32];
 
 /* vendor_ok is only true for key IDs assigned by the implementation -
- * i.e. volatile keys. Keys with persistence HSM_ASSET_STORE will have the
- * same acceptable key ID range as persistent keys. The TKDK and HUK
- * occupy the highest two key IDs, so those IDs are only valid in the
+ * i.e. volatile or preprovisioned keys. Keys with persistence HSM_ASSET_STORE
+ * will have the same acceptable key ID range as persistent keys. The TKDK
+ * and HUK occupy the highest two key IDs, so those IDs are only valid in the
  * context of key derivation, which does not use this API.
  */
 static inline int psa_is_valid_key_id(psa_key_id_t key_id, int vendor_ok)
@@ -3552,6 +3552,7 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
     psa_key_context_t * pEntry;
     uint32_t entryIdx;
     psa_key_id_t id;
+    bool iakIsPreProvisioned = false;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
     id = key.MBEDTLS_PRIVATE(key_id);
 #else
@@ -3590,67 +3591,99 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
             /* MISRA - Intentially empty */
         }
     }
-    else if (psa_is_valid_key_id(id, 0))
+    else if ((psa_is_valid_key_id(id, 0)) || (id == PSA_KEY_ID_IAK))
     {
-        /* Persistent keys and asset store keys share the same valid key ID ranges, so we must check the full array
-         * besides the region containing only volatile keys.
-         */
-        for (entryIdx = 0U; entryIdx < (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT); entryIdx++)
+        if (id == PSA_KEY_ID_IAK)
         {
-            pEntry = &gl_PSA_Key[entryIdx];
-#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-            if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
-#else
-            if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
-#endif
-            {
-                break;
-            }
-        }
-
-        if (entryIdx >= (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT))
-        {
-            /* If we've not found the given key ID in the array, check if that ID is associated with a key
-             * in persistent storage.
+            /* We must first check if the IAK is preprovisioned, if it is being requested.
+             * If it is not preprovisioned, then we will attempt to retrieve it
+             * from KeyStore cache space, as we would for any other persistent key.
              */
-            if (psa_is_key_present_in_storage(key))
+            funcres = KeyMgmt_getPreProvisionedKey(key, &pEntry);
+
+            if (funcres == PSA_ERROR_INVALID_HANDLE)
             {
-                /* Get free entry pointer for pEntry, that will evict an entry of another persistent key
-                 * if necessary.
+                /* If PSA_ERROR_INVALID_HANDLE, then the IAK does not exist as
+                 * a preprovisioned key. Continue on to see if it was imported
+                 * as a persistent key instead.
                  */
-                funcres = local_GetFreeKeyEntry(&entryIdx, PSA_KEY_PERSISTENCE_DEFAULT);
-
-                if (funcres == PSA_SUCCESS)
-                {
-                    pEntry = &gl_PSA_Key[entryIdx];
-
-                    /* Load persistent key material along with its attributes directly into the global array entry */
-                    funcres = psa_load_persistent_key_into_slot(key, pEntry);
-
-                    if (funcres == PSA_SUCCESS)
-                    {
-                        /* When key blobs are stored to NVM, the key_size is stored as the length of the wrapped key material. This is
-                         * necessary to store and load the correct data lengths to ITS. However, when we read from ITS, we want key_size
-                         * to reflect the size of the key material without the wrapping. This is because the Asset Create token expects
-                         * the length of the actual asset key material, ignoring extra bytes from a key blob wrapping.
-                         */
-                        psa_key_location_t key_location = PSA_KEY_LIFETIME_GET_LOCATION(pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
-                        pEntry->key_size = (key_location == PSA_KEY_LOCATION_LOCAL_STORAGE) ? pEntry->key_size : PSA_KEYMATERIAL_SIZE(pEntry->key_size);
-                    }
-                }
             }
             else
             {
-                funcres = PSA_ERROR_INVALID_HANDLE;
+                /* In this case, we have either successfully retrieved the IAK
+                 * from the preprovisioned key space, or there was some other
+                 * failure unrelated to the IAK not existing in that space.
+                 * There is no need to check the KeyStore cache for the key in
+                 * either of these cases.
+                 */
+                iakIsPreProvisioned = true;
             }
         }
-        else if (0U == pEntry->fAllocated)
+
+        if (!iakIsPreProvisioned)
         {
-            funcres = PSA_ERROR_INVALID_HANDLE;
-        }
-        else
-        {
-            /* MISRA - Intentially empty */
+            /* Persistent keys and asset store keys share the same valid key ID ranges, so we must check the full array
+             * besides the region containing only volatile keys.
+             */
+            for (entryIdx = 0U; entryIdx < (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT); entryIdx++)
+            {
+                pEntry = &gl_PSA_Key[entryIdx];
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+                if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
+#else
+                if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
+#endif
+                {
+                    /* Key ID was found in the cache */
+                    funcres = PSA_SUCCESS;
+                    break;
+                }
+            }
+
+            if (entryIdx >= (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT))
+            {
+                /* If we've not found the given key ID in the array, check if that ID is associated with a key
+                 * in persistent storage.
+                 */
+                if (psa_is_key_present_in_storage(key))
+                {
+                    /* Get free entry pointer for pEntry, that will evict an entry of another persistent key
+                     * if necessary.
+                     */
+                    funcres = local_GetFreeKeyEntry(&entryIdx, PSA_KEY_PERSISTENCE_DEFAULT);
+
+                    if (funcres == PSA_SUCCESS)
+                    {
+                        pEntry = &gl_PSA_Key[entryIdx];
+
+                        /* Load persistent key material along with its attributes directly into the global array entry */
+                        funcres = psa_load_persistent_key_into_slot(key, pEntry);
+
+                        if (funcres == PSA_SUCCESS)
+                        {
+                            /* When key blobs are stored to NVM, the key_size is stored as the length of the wrapped key material. This is
+                             * necessary to store and load the correct data lengths to ITS. However, when we read from ITS, we want key_size
+                             * to reflect the size of the key material without the wrapping. This is because the Asset Create token expects
+                             * the length of the actual asset key material, ignoring extra bytes from a key blob wrapping.
+                             */
+                            psa_key_location_t key_location = PSA_KEY_LIFETIME_GET_LOCATION(pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+                            pEntry->key_size = (key_location == PSA_KEY_LOCATION_LOCAL_STORAGE) ? pEntry->key_size : PSA_KEYMATERIAL_SIZE(pEntry->key_size);
+                        }
+                    }
+                }
+                else
+                {
+                    funcres = PSA_ERROR_INVALID_HANDLE;
+                }
+            }
+            else if (0U == pEntry->fAllocated)
+            {
+                funcres = PSA_ERROR_INVALID_HANDLE;
+            }
+            else
+            {
+                /* MISRA - Intentionally empty */
+            }
         }
     }
     else if (psa_is_preprovisioned_key_id(id))
@@ -4858,7 +4891,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
 
         if (PSA_KEY_ID_NULL != attributesID)
         {
-            if (!psa_is_valid_key_id(attributesID, 0))
+            if ((!psa_is_valid_key_id(attributesID, 0)) && (attributesID != PSA_KEY_ID_IAK))
             {
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
@@ -5968,7 +6001,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
     {
         funcres = PSA_SUCCESS;
     }
-    else if (!psa_is_valid_key_id(id, 0))
+    else if ((!psa_is_valid_key_id(id, 0)) && (id != PSA_KEY_ID_IAK))
     {
         funcres = PSA_ERROR_INVALID_HANDLE;
     }

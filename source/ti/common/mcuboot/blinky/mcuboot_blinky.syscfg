@@ -37,6 +37,7 @@
 
 const Board = scripting.addModule("/ti/drivers/Board");
 const Power = scripting.addModule("/ti/drivers/Power");
+const CCFG = scripting.addModule("/ti/devices/CCFG");
 
 // Disable generation of ti_devices_config.c and its CCFG struct
 scripting.excludeFromBuild("ti_devices_config.c");

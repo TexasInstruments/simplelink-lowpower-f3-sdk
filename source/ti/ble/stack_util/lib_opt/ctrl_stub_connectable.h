@@ -114,6 +114,7 @@ extern void llsdaaDisableConnTXData(uint16_t connId);
 extern void llConnSetRejectIndExt(llConnState_t * connPtr, uint8 rejectOpcode, uint8 errorCode);
 extern void LL_GetConnTxUsageParams(llTxUsageParams_t* pConnTxParams);
 
+
 // Wrapper functions for the feature implementations
 llStatus_t OPT_LL_ConnActive(uint16_t connId);
 uint8_t OPT_llGetNextConn(void);

@@ -88,22 +88,23 @@
 extern csStatus_e LL_CS_Test(csTestParams_t* pParams);
 extern csStatus_e LL_CS_TestEnd(void);
 extern void HCI_CS_TestEndCompleteCback(uint8_t status);
-extern uint8_t llCsInitChanIdxArrWrapper(uint8_t configId, uint16_t connId, const uint8_t* pCsConfig);
+extern uint8_t llCsInitChanIdxArrWrapper(uint16_t connId, uint8_t configId, const uint8_t* pCsConfig);
 extern uint8_t llCsSelectStepChanWrapper(uint8_t stepMode, uint16_t connId, const uint8_t* pCsConfig);
-extern uint8_t llCsGetNextAntennaPermutationWrapper(csACI_e ACI);
-extern void llCsSelectAAWrapper(uint8_t csRole, uint32_t* aaRx, uint32_t* aaTx);
-extern void llCsGetRandomSequenceWrapper(uint8_t csRole, uint32_t* pTx, uint32_t* pRx, uint8_t plLen);
-extern uint8_t llCsGetToneExtentionWrapper(void);
+extern uint8_t llCsGetNextAntennaPermutationWrapper(uint16_t connId, csACI_e ACI);
+extern void llCsSelectAAWrapper(uint16_t connId, uint8_t csRole, uint32_t* aaRx, uint32_t* aaTx);
+extern void llCsGetRandomSequenceWrapper(uint16_t connId, uint8_t csRole, uint32_t* pTx, uint32_t* pRx, uint8_t plLen);
+extern uint8_t llCsGetToneExtentionWrapper(uint16_t connId);
+
 
 // Wrapper functions for the feature implementations
 csStatus_e OPT_LL_CS_Test(csTestParams_t* pParams);
 csStatus_e OPT_LL_CS_TestEnd(void);
 void OPT_HCI_CS_TestEndCompleteCback(uint8_t status);
-uint8_t OPT_llCsInitChanIdxArrWrapper(uint8_t configId, uint16_t connId, const uint8_t* pCsConfig);
+uint8_t OPT_llCsInitChanIdxArrWrapper(uint16_t connId, uint8_t configId, const uint8_t* pCsConfig);
 uint8_t OPT_llCsSelectStepChanWrapper(uint8_t stepMode, uint16_t connId, const uint8_t* pCsConfig);
-uint8_t OPT_llCsGetNextAntennaPermutationWrapper(csACI_e ACI);
-void OPT_llCsSelectAAWrapper(uint8_t csRole, uint32_t* aaRx, uint32_t* aaTx);
-void OPT_llCsGetRandomSequenceWrapper(uint8_t csRole, uint32_t* pTx, uint32_t* pRx, uint8_t plLen);
-uint8_t OPT_llCsGetToneExtentionWrapper(void);
+uint8_t OPT_llCsGetNextAntennaPermutationWrapper(uint16_t connId, csACI_e ACI);
+void OPT_llCsSelectAAWrapper(uint16_t connId, uint8_t csRole, uint32_t* aaRx, uint32_t* aaTx);
+void OPT_llCsGetRandomSequenceWrapper(uint16_t connId, uint8_t csRole, uint32_t* pTx, uint32_t* pRx, uint8_t plLen);
+uint8_t OPT_llCsGetToneExtentionWrapper(uint16_t connId);
 
 #endif /* CTRL_CS_TEST_H_ */

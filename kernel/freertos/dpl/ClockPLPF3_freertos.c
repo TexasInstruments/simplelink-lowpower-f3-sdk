@@ -58,6 +58,8 @@
     #define CLOCK_FREQUENCY_DIVIDER (48000000U / configCPU_CLOCK_HZ)
 #elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
     #define CLOCK_FREQUENCY_DIVIDER (96000000U / configCPU_CLOCK_HZ)
+#else
+    #error Invalid Device Family defined
 #endif
 
 /** Max number of ClockP ticks into the future supported by this ClockP

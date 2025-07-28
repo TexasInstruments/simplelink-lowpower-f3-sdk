@@ -85,6 +85,8 @@
  *          - INIT_TO_CONT (once)
  *          - CONT_TO_CONT (as many times as necessary)
  *          - CONT_TO_FINAL (once)
+ *      * Performing a CONT_TO_CONT or CONT_TO_FINAL hash operation before an INIT_TO_CONT hash operation will result 
+ *      * unexpected outputs. 
  *      * Multi-step hash operations are supported for all digest lengths and sha2 algorithms.
  *  - HSM Support for RNG Operations:
  *      * Size must be 0 < x < (2^16 Bytes).
@@ -122,7 +124,7 @@
  *      * Initialization Vector (IV) for (CCM, CBC, CTR) length IS EXACTLY 16 Bytes.
  *      * Tag length for AES-CCM shall be a multiple of 2 Bytes, [4, 6, 8, 10, 12, 14, 16].
  *      * Tag for AES-GCM length should be the following [4, 8, 12, 13, 14, 15, 16] Bytes.
- *      * MAC for (128-bit CMAC, 128-bit CBC-MAC) length IS EXACTLY 16 Bytes.
+ *      * MAC length (128-bit CMAC, 128-bit CBC-MAC) should be the following [2, 4, 6, 8, 10, 12, 14, 16] Bytes.
  *      * For ECC operations:
  *          - ECDSA sign and verify operations do not support curve type: CURVE25519.
  *          - All input keys must be supplied in plaintext.
@@ -348,6 +350,16 @@ extern "C" {
  *  @brief   The combination of parameters passed filtered to a feature that exists but is not supported yet.
  */
 #define HSMBAREMETAL_STATUS_FEATURE_NOT_SUPPORTED ((int_fast16_t)-13)
+
+/*!
+ *  @brief   The input data length is not block aligned.
+ */
+#define HSMBAREMETAL_STATUS_INVALID_INPUT_DATA_LENGTH ((int_fast16_t)-14)
+ 
+/*! 
+ *  @brief   The mac length is invalid.
+ */
+#define HSMBAREMETAL_STATUS_INVALID_MAC_LENGTH ((int_fast16_t)-15)
 
 /*!
  *  @brief    Wait forever for a result token define.

@@ -323,7 +323,7 @@ extern "C"
 #define LL_MIN_USED_CHANNELS_IND_LEN                   3
 #define LL_CTE_REQ_PAYLOAD_LEN                         2
 #define LL_CTE_RSP_PAYLOAD_LEN                         1
-#define LL_PERIODIC_SYNC_IND_PAYLOAD_LEN               LL_CTRL_PAYLOAD_LEN_UNDEFIEND
+#define LL_PERIODIC_SYNC_IND_PAYLOAD_LEN               35
 #define LL_CLOCK_ACCURACY_REQ_PAYLOAD_LEN              LL_CTRL_PAYLOAD_LEN_UNDEFIEND
 #define LL_CLOCK_ACCURACY_RSP_PAYLOAD_LEN              LL_CTRL_PAYLOAD_LEN_UNDEFIEND
 #define LL_CIS_REQ_PAYLOAD_LEN                         LL_CTRL_PAYLOAD_LEN_UNDEFIEND
@@ -337,7 +337,7 @@ extern "C"
 #define LL_SUBRATE_IND_PAYLOAD_LEN                     LL_CTRL_PAYLOAD_LEN_UNDEFIEND
 #define LL_CHANNEL_REPORTING_IND_PAYLOAD_LEN           LL_CTRL_PAYLOAD_LEN_UNDEFIEND
 #define LL_CHANNEL_STATUS_IND_PAYLOAD_LEN              LL_CTRL_PAYLOAD_LEN_UNDEFIEND
-#define LL_PERIODIC_SYNC_WR_IND_PAYLOAD_LEN            LL_CTRL_PAYLOAD_LEN_UNDEFIEND
+#define LL_PERIODIC_SYNC_WR_IND_PAYLOAD_LEN            43
 #define LL_FEATURE_EXT_REQ_PAYLOAD_LEN                 LL_CTRL_PAYLOAD_LEN_UNDEFIEND
 #define LL_FEATURE_EXT_RSP_PAYLOAD_LEN                 LL_CTRL_PAYLOAD_LEN_UNDEFIEND
 #define LL_CS_CHANNEL_MAP_IND_PL_LEN                   11
@@ -477,7 +477,7 @@ extern "C"
 #define LL_CTRL_MIN_USED_CHANNELS_IND                 0x19 //  , P
 #define LL_CTRL_CTE_REQ                               0x1A // C, P
 #define LL_CTRL_CTE_RSP                               0x1B // C, P
-#define LL_CTRL_PERIODIC_SYNC_IND                     0x1C // Unsupported yet
+#define LL_CTRL_PERIODIC_SYNC_IND                     0x1C // C, P
 #define LL_CTRL_CLOCK_ACCURACY_REQ                    0x1D // Unsupported yet
 #define LL_CTRL_CLOCK_ACCURACY_RSP                    0x1E // Unsupported yet
 #define LL_CTRL_CIS_REQ                               0x1F // Unsupported yet
@@ -491,7 +491,7 @@ extern "C"
 #define LL_CTRL_SUBRATE_IND                           0x27 // Unsupported yet
 #define LL_CTRL_CHANNEL_REPORTING_IND                 0x28 // Unsupported yet
 #define LL_CTRL_CHANNEL_STATUS_IND                    0x29 // Unsupported yet
-#define LL_CTRL_PERIODIC_SYNC_WR_IND                  0x2A // Unsupported yet
+#define LL_CTRL_PERIODIC_SYNC_WR_IND                  0x2A // C, P
 #define LL_CTRL_FEATURE_EXT_REQ                       0x2B // Unsupported yet
 #define LL_CTRL_FEATURE_EXT_RSP                       0x2C // Unsupported yet
 #define LL_CTRL_CS_SEC_RSP                            0x2DU //  , P
@@ -738,7 +738,7 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_FEATURE_RESERVED1                           0x02
 #define LL_FEATURE_RESERVED2                           0x04
 #define LL_FEATURE_RESERVED3                           0x08
-#define LL_FEATURE_RESERVED4                           0x10
+#define LL_FEATURE_PAWR_SCANNER                        0x10
 #define LL_FEATURE_RESERVED5                           0x20
 #define LL_FEATURE_CS                                  0x40
 #define LL_FEATURE_CS_HOST                             0x80
@@ -1013,6 +1013,9 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_RCL_DUPLICATE_FL_ADD              2U
 #define LL_RCL_DUPLICATE_FL_IGNORE           3U
 
+#define LL_CONN_MISS_COUNT_MARGIN            1U
+#define LL_CS_CONN_MISS_COUNT_MARGIN         5U
+
 // Optional status for update RCL filter list
 typedef enum {
     LL_RCL_UPDATE_ENTRY_SUCCESS   = 0, // Filter list Entry update was successful
@@ -1121,6 +1124,29 @@ typedef struct
   uint16 comId;                                      // company identifier
   uint16 subverNum;                                  // implementation version
 } verInfo_t;
+
+typedef struct
+{
+  uint32                            packetOffset;          // Time from a reference point to the start of the AUX_SYNC_IND in usec
+  uint32                            accessAddr;            // access address
+  uint16                            eventCounter;          // AUX_SYNC_IND counter in sync info
+  uint8                             offsetUnit;            // packet offset unit - 0 = 30 usec; 1 = 300 usec
+  uint8                             crcInit[LL_PKT_CRC_LEN];// CRC init value
+  uint8                             sca;                   // worst case sleep clock accuracy
+} llPeriodicAdvSyncInfo_t;
+
+typedef struct
+{
+  uint8                             bitmap[LL_NUM_BYTES_FOR_CHAN_MAP];     // channel map bits
+  uint8                             numUsedChans;                          // count of the number of usable data channels
+} llPeriodicChanMap_t;
+
+typedef struct
+{
+  llPeriodicChanMap_t               current;               // current channel map
+  llPeriodicChanMap_t               next;                  // new channel map
+  uint8                             updated;               // channel map was updated
+} llPeriodicAdvChanMap_t;
 
 /*
 ** Connection Data
@@ -1849,6 +1875,7 @@ void                 llSecTaskInitiatorHandle( taskInfo_t* secTask, RCL_Command*
 void                 llUpdateTimeGapForInitiator( uint32_t* timeGap );
 void                 llUpdateTimeGapForScanWindow( taskInfo_t* secTask, llConnState_t* nextConnPtr, RCL_Command* secCmd, uint32_t* timeGap, uint32_t curTime );
 void                 LL_GetConnTxUsageParams( llTxUsageParams_t *pConnTxParams );
+uint32_t             llConnCalculatePacketTime( const llConnState_t *connPtr, uint16_t octets );
 
 // Access Address
 uint32               llGenerateValidAccessAddr( void );
@@ -2029,6 +2056,12 @@ void llConnEndTxBurst(llConnState_t *connPtr);
 uint8_t LL_GetLtk(uint16_t connHandle, uint8_t *pLtk);
 
 void llConnSetRejectIndExt(llConnState_t *connPtr, uint8 rejectOpcode, uint8 errorCode);
+
+// Set Connection priority
+void llConnSetConnPriority(uint16 connId, uint8 connPriority);
+
+// Set Connection Event Miss Count Margin
+uint16 llConnGetMissCountMargin();
 
 #ifdef __cplusplus
 }

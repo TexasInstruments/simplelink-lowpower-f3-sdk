@@ -281,12 +281,12 @@
     "ieee_15_4": {},
     "prop": {
       "swConfig": "LRF_swConfig",
+      "txPowerTable": "LRF_txPowerTable",
       "config": "LRF_config",
       "cfg_segment_list": "LRF_regConfigList",
-      "txPowerTable": "LRF_txPowerTable",
       "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
-      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
-      "shapeBaseGfsk20": "LRF_shapeBaseGfsk20"
+      "shapeBaseGfsk20": "LRF_shapeBaseGfsk20",
+      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067"
     }
   }
 }

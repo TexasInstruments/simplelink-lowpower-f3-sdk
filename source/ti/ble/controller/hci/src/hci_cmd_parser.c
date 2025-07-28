@@ -159,6 +159,8 @@ static inline hciStatus_t hciCmdParserSetPhy( uint8 *pData );
 static inline hciStatus_t hciCmdParserPeriodicAdvCreateSync( uint8 *pData );
 static inline hciStatus_t hciCmdParserAddDeviceToPeriodicAdvList( uint8 *pData );
 static inline hciStatus_t hciCmdParserRemoveDeviceFromPeriodicAdvList( uint8 *pData );
+static inline hciStatus_t hciCmdParserSetPeriodicSyncSubevent( uint8 *pData );
+static inline hciStatus_t hciCmdParserSetPeriodicAdvResponseData( uint8 *pData );
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -728,6 +730,41 @@ hciStatus_t hciCmdParserConnection( uint8 *pData, uint16 cmdOpCode )
       status = HCI_LE_ReadLocalP256PublicKeyCmd( );
       break;
     }
+    case HCI_LE_PADV_SYNC_TRANSFER_CMD:
+    {
+      // Function input: uint16 connHandle, uint16 serviceData, uint16 syncHandle
+      status = HCI_LE_PAdvSyncTransferCmd( BUILD_UINT16( pData[0], pData[1] ),
+                                           BUILD_UINT16( pData[2], pData[3] ),
+                                           BUILD_UINT16( pData[4], pData[5] ) );
+      break;
+    }
+    case HCI_LE_PADV_SET_INFO_TRANSFER_CMD:
+    {
+      // Function input: uint16 connHandle, uint16 serviceData, uint8 advHandle
+      status = HCI_LE_PAdvSetInfoTransferCmd( BUILD_UINT16( pData[0], pData[1] ),
+                                              BUILD_UINT16( pData[2], pData[3] ),
+                                              pData[4] );
+      break;
+    }
+    case HCI_LE_SET_PADV_SYNC_TRANSFER_PARAMS_CMD:
+    {
+      // Function input: uint16 connHandle, uint8 mode, uint16 skip, uint16 syncTimeout, uint8 cteType
+      status = HCI_LE_SetPASTParamCmd( BUILD_UINT16( pData[0], pData[1] ),
+                                       pData[2],
+                                       BUILD_UINT16( pData[3], pData[4] ),
+                                       BUILD_UINT16( pData[5], pData[6] ),
+                                       pData[7] );
+      break;
+    }
+    case HCI_LE_SET_DEFAULT_PADV_SYNC_TRANSFER_PARAMS_CMD:
+    {
+      // Function input: uint8 mode, uint16 skip, uint16 syncTimeout, uint8 cteType
+      status = HCI_LE_SetDefaultPASTParamCmd( pData[0],
+                                              BUILD_UINT16( pData[1], pData[2] ),
+                                              BUILD_UINT16( pData[3], pData[4] ),
+                                              pData[5] );
+      break;
+    }
     default:
     {
       status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
@@ -913,6 +950,16 @@ hciStatus_t hciCmdParserPeriodicScan( uint8 *pData, uint16 cmdOpCode )
       // Function input: uint16 syncHandle, uint8 enable
       status = HCI_LE_SetPeriodicAdvReceiveEnableCmd( BUILD_UINT16( pData[0], pData[1] ),
                                                       pData[2] );
+      break;
+    }
+    case HCI_LE_SET_PERIODIC_SYNC_SUBEVENT:
+    {
+      status = hciCmdParserSetPeriodicSyncSubevent(pData);
+      break;
+    }
+    case HCI_LE_SET_PERIODIC_ADV_RESPONSE_DATA:
+    {
+      status = hciCmdParserSetPeriodicAdvResponseData(pData);
       break;
     }
     default:
@@ -1946,6 +1993,69 @@ static inline hciStatus_t hciCmdParserPeriodicAdvCreateSync( uint8 *pData )
 
   return HCI_LE_PeriodicAdvCreateSyncCmd( options, advSID, advAddrType, advAddress, skip,
                                           syncTimeout, syncCteType );
+}
+
+/*******************************************************************************
+ * @fn          hciCmdParserSetPeriodicAdvResponseData
+ *
+ * @brief       This function used for parsing the pData and parsing it to
+ *              HCI_LE_SetPeriodicAdvResponseDataCmd input arguments.
+ *
+ * input parameters
+ *
+ * @param       pData - Pointer to packet's data.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      LL_STATUS_SUCCESS,
+ *              LL_STATUS_ERROR_BAD_PARAMETER,
+ *              LL_STATUS_ERROR_COMMAND_DISALLOWED,
+ *              LL_STATUS_ERROR_UNEXPECTED_STATE_ROLE,
+ *              LL_STATUS_ERROR_MEM_CAPACITY_EXCEEDED
+ *
+ */
+static inline hciStatus_t hciCmdParserSetPeriodicAdvResponseData( uint8 *pData )
+{
+
+  uint16_t syncHandle = BUILD_UINT16( pData[0], pData[1] );
+
+  return HCI_LE_SetPeriodicAdvResponseDataCmd(syncHandle, &pData[2]);
+}
+
+/*******************************************************************************
+ * @fn          hciCmdParserSetPeriodicSyncSubevent
+ *
+ * @brief       This function used for parsing the pData and parsing it to
+ *              HCI_LE_SetPeriodicSyncSubeventCmd input arguments.
+ *
+ * input parameters
+ *
+ * @param       pData - Pointer to packet's data.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      LL_STATUS_SUCCESS,
+ *              LL_STATUS_ERROR_BAD_PARAMETER,
+ *              LL_STATUS_ERROR_COMMAND_DISALLOWED,
+ *              LL_STATUS_ERROR_MEM_CAPACITY_EXCEEDED,
+ *
+ */
+static inline hciStatus_t hciCmdParserSetPeriodicSyncSubevent( uint8 *pData )
+{
+
+  uint16_t syncHandle = BUILD_UINT16( pData[0], pData[1] );
+  uint8 perAdvProps = BUILD_UINT16( pData[2], pData[3] );
+  uint8 numSubevents = pData[4];
+  uint8 *subEvents = &pData[5];
+
+  return HCI_LE_SetPeriodicSyncSubeventCmd(syncHandle,
+                                           perAdvProps,
+                                           numSubevents,
+                                           subEvents);
 }
 
 /*******************************************************************************

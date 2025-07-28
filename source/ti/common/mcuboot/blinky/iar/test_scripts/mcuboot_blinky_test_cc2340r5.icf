@@ -43,10 +43,17 @@ if (XIP_SECONDARY == 1) {
     define symbol FLASH_end__  = 0x0007FFFF;
     define exported symbol MCUBOOT_HDR_BASE = 0x00043000;
 } else {
-    define symbol __intvec_start__ = 0x00006080; 
-    define symbol FLASH_start__ = 0x00006080;
-    define symbol FLASH_end__  = 0x00042FFF;
-    define exported symbol MCUBOOT_HDR_BASE = 0x00006000;
+    if (IMAGE_COMPRESSION == 1) {
+        define symbol __intvec_start__ = 0x00007080; 
+        define symbol FLASH_start__ = 0x0007080;
+        define symbol FLASH_end__  = 0x00042FFF;
+        define exported symbol MCUBOOT_HDR_BASE = 0x00007000;
+    } else {
+        define symbol __intvec_start__ = 0x00006080; 
+        define symbol FLASH_start__ = 0x00006080;
+        define symbol FLASH_end__  = 0x00042FFF;
+        define exported symbol MCUBOOT_HDR_BASE = 0x00006000;
+    }
 }
 
 /* Define a memory region that covers the entire 4 GB addressable space */

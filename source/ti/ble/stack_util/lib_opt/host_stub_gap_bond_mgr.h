@@ -107,6 +107,7 @@ extern bStatus_t gapBondMgr_SCGetLocalOOBParameters(gapBondOOBData_t* localOobDa
 extern uint8_t HCI_TL_EXT_gapBondSetParam(uint8_t* pBuf);
 extern bStatus_t gapBondMgr_GetParameter(uint16_t param, void* pValue);
 
+
 // Wrapper functions for the feature implementations
 bStatus_t OPT_GAPBondMgr_ReadLocalLTK(GAP_Peer_Addr_Types_t addrType, uint8_t* pDevAddr, gapBondLTK_t* pLocalLtk);
 uint8_t OPT_gapSafeToDealloc(uint8_t status, uint8_t* safeToDealloc);

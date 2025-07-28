@@ -41,8 +41,8 @@ MEMORY
      * Customer Configuration Area and Bootloader Backdoor configuration in
      * flash, up to 512 bytes
      */
-    FLASH_CCFG (RX) : ORIGIN = 0x4E020000, LENGTH = 0x00000800
-    SRAM (RWX)      : ORIGIN = 0x20000000, LENGTH = 0x00009000
+    FLASH_CCFG (RX) : ORIGIN = ti_utils_build_GenMap_CCFG_BASE, LENGTH = ti_utils_build_GenMap_CCFG_SIZE
+    SRAM (RWX)      : ORIGIN = ti_utils_build_GenMap_RAM0_BASE, LENGTH = ti_utils_build_GenMap_RAM0_SIZE
     /* Explicitly placed off target for the storage of logging data.
      * The data placed here is NOT loaded onto the target device.
      * This is part of 1 GB of external memory from 0x60000000 - 0x9FFFFFFF.

@@ -34,6 +34,7 @@
 #define __TI_CRYPTO_H__
 
 #include <stddef.h>
+#include <ti/devices/DeviceFamily.h>
 
   /*********************************************************************
  * GLOBAL VARIABLES
@@ -67,7 +68,7 @@ extern uint32_t NIST_Curve_P256_Gy;
 /* Device family macros*/
 #if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
 #define IS_CC23XX
-#elif defined(DeviceFamily_CC27XX)
+#elif defined(DeviceFamily_PARENT_CC27XX)
 #define IS_CC27XX
 #elif defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
 #define IS_CC13X2_CC26X2

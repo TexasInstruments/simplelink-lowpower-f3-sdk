@@ -159,6 +159,10 @@ defaultNwkKey += "}";
 #define ED_RX_ALWAYS_ON         `(zigbee.powerModeOperation === "alwaysOn") ? "ZB_TRUE" : "ZB_FALSE"`
 #endif
 
+#ifndef DEFAULT_TX_PWR
+#define DEFAULT_TX_PWR         `zigbee.txPower`
+#endif
+
 /* The number of milliseconds to wait between data request polls to the coordinator. */
 #ifndef ED_POLL_RATE
 #define ED_POLL_RATE             `zigbee.pollPeriod`

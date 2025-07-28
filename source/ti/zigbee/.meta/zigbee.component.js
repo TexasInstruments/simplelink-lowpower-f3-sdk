@@ -50,7 +50,7 @@ const displayName = "Zigbee";
 let topModules = [];
 let templates = [];
 
-if(deviceId.match(/CC2[37].*/))
+if(deviceId.match(/CC2[37](?!.*[Qq]).*/))
 {
     topModules = [
         {

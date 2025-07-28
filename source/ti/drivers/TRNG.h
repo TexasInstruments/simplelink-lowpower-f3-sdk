@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@
  *  writes random bytes from the entropy source to a buffer/array.
  *
  *  For CC27XX, the CRNG is the default configuration for the NRBG engine.
- *  Use TRNGLPF3HSM_switchNrbgMode() to switch between CRNG and TRNG configurations.
+ *  Use TRNGXXF3HSM_switchNrbgMode() to switch between CRNG and TRNG configurations.
  *
  *  For CC27XX devices only, the TRNG driver accepts two types of cryptoKey encoding:
  *      - CryptoKey_BLANK_PLAINTEXT
@@ -168,7 +168,7 @@
  *      while(1);
  *  }
  *
- *  result = TRNGLPF3HSM_reseedHSM(handle);
+ *  result = TRNGXXF3HSM_reseedHSM(handle);
  *
  *  if (result != TRNG_STATUS_SUCCESS) {
  *      // Handle error
@@ -220,7 +220,7 @@
  *      while(1);
  *  }
  *
- *  result = TRNGLPF3HSM_switchNrbgMode(handle, TRNG_MODE_TRNG);
+ *  result = TRNGXXF3HSM_switchNrbgMode(handle, TRNG_MODE_TRNG);
  *
  *  if (result != TRNG_STATUS_SUCCESS) {
  *      // Handle error

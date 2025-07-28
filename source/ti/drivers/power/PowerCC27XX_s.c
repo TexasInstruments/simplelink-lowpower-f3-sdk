@@ -95,7 +95,6 @@ typedef enum
 } PowerCC27XX_LfclkTdcTrigSrc;
 
 /* Forward declarations */
-psa_flih_result_t cpuirq3_irqn_flih(void);
 static int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
 static int_fast16_t PowerCC27XX_notify_s(uint_fast16_t eventType);
 static int_fast16_t PowerCC27XX_notify_ns(uint_fast16_t eventType);
@@ -160,6 +159,11 @@ extern const uint_least8_t GPIO_pinUpperBound;
  * subscribers on the non-secure side.
  */
 #define SYNCHRONOUS_NS_EVENTS (PowerLPF3_ENTERING_STANDBY | PowerLPF3_AWAKE_STANDBY | PowerLPF3_ENTERING_SHUTDOWN)
+
+/* Value to be written to the SCB.AIRCR.VECTKEY when writing to the SCB.AIRCR
+ * register for the write to take effect.
+ */
+#define SCB_AIRCR_VECTKEY (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
 
 /* Static Globals */
 
@@ -226,16 +230,6 @@ static SecureCallback_Handle notifySecureCallbackHandle = NULL;
 /* Non-static Globals */
 
 /* ****************** Power APIs ******************** */
-
-/*
- *  ======== cpuirq3_irqn_flih ========
- */
-psa_flih_result_t cpuirq3_irqn_flih(void)
-{
-    HwiP_dispatchInterrupt(INT_CPUIRQ3);
-
-    return PSA_FLIH_NO_SIGNAL;
-}
 
 /*
  *  ======== Power_init ========
@@ -941,9 +935,11 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
 int_fast16_t Power_sleep(uint_fast16_t sleepState)
 {
     int_fast16_t status = Power_SOK;
-    uint32_t SysTick_NS_CSR;
-    uint32_t SysTick_NS_RVR;
-    uint32_t ICB_NS_ACTLR;
+    uint32_t sysTickCsrNs;
+    uint32_t sysTickRvrNs;
+    uint32_t icbActlrNs;
+    uint32_t scbAircrS;
+    uint32_t scbAircrNs;
 
     (void)sleepState;
 
@@ -966,11 +962,22 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
          */
 
         /* Store ICB_NS.ACTLR. Add 0x20000 to access NS ICB */
-        ICB_NS_ACTLR = HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR);
+        icbActlrNs = HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR);
 
         /* Store SysTick_NS.CSR/RVR */
-        SysTick_NS_CSR = SysTick_NS->CTRL;
-        SysTick_NS_RVR = SysTick_NS->LOAD;
+        sysTickCsrNs = SysTick_NS->CTRL;
+        sysTickRvrNs = SysTick_NS->LOAD;
+
+        /* Due to a bug in the ROM code, the SCB.AIRCR registers are not
+         * restored correctly so we need to store and restore the state here
+         * instead.
+         */
+
+        /* Read S and NS AIRCR registers, and store them with the required
+         * VECTKEY value so the write when restoring the values will be applied.
+         */
+        scbAircrS  = (SCB->AIRCR & ((uint32_t)~SCB_AIRCR_VECTKEY_Msk)) | SCB_AIRCR_VECTKEY;
+        scbAircrNs = (SCB_NS->AIRCR & ((uint32_t)~SCB_AIRCR_VECTKEY_Msk)) | SCB_AIRCR_VECTKEY;
 
         /* Call wrapper function to ensure that R0-R3 are saved and restored before
          * and after this function call. Otherwise, compilers will attempt to stash
@@ -980,12 +987,18 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
          */
         PowerCC27XX_enterStandby();
 
+        /* Restore S and NS AIRCR registers. The stored register values already
+         * have the correct VECTKEY value.
+         */
+        SCB_NS->AIRCR = scbAircrNs;
+        SCB->AIRCR    = scbAircrS;
+
         /* Restore ICB_NS.ACTLR. Add 0x20000 to access NS ICB */
-        HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR) = ICB_NS_ACTLR;
+        HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR) = icbActlrNs;
 
         /* Restore SysTick_NS.CSR/RVR */
-        SysTick_NS->CTRL = SysTick_NS_CSR;
-        SysTick_NS->LOAD = SysTick_NS_RVR;
+        SysTick_NS->CTRL = sysTickCsrNs;
+        SysTick_NS->LOAD = sysTickRvrNs;
 
         /* Now that we have returned and are executing code from flash again, start
          * up the HFXT. The HFXT might already have been enabled automatically by
@@ -1876,6 +1889,20 @@ int_fast16_t PowerLPF3_sleep(uint32_t nextEventTimeUs)
     standbyAllowed = (constraints & ((uint32_t)1U << PowerLPF3_DISALLOW_STANDBY)) == 0U;
     idleAllowed    = (constraints & ((uint32_t)1U << PowerLPF3_DISALLOW_IDLE)) == 0U;
 
+    /* Do not attempt to enter standby if there is a pending interrupt.
+     * This is not trying to guarantee that standby will not be entered with a
+     * pending interrupt, since an interrupt can always become pending after
+     * checking the pending status. Instead this is to catch the cases where a
+     * S interrupt might have caused a NS interrupt to become pending while NS
+     * interrupts are disabled but before S interrupts get disabled. In this
+     * case, the NS interrupt will not be serviced if the device enters standby.
+     */
+    if (((SCB->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U)
+    {
+        standbyAllowed = false;
+        idleAllowed    = false;
+    }
+
     /* If we are using LFOSC, it has been observed a brief period of ~15us
      * occurring ~130us after starting HFXT where FLTSETTLED pulses high. If the
      * idle loop attempts to enter standby while FLTSETTLED pulses high, it may
@@ -2057,8 +2084,7 @@ void PowerCC27XX_doWFI(void)
 {
     uint32_t constraints;
     bool idleAllowed;
-    bool pendingNsInt;
-    bool pendingSInt;
+    bool pendingInt;
     uint32_t nsKey;
 
     /* Disallow NS interrupts while looping */
@@ -2079,16 +2105,9 @@ void PowerCC27XX_doWFI(void)
         {
             __WFI();
         }
-        /* Determine if there are any pending NS interrupts */
-        pendingNsInt = ((SCB_NS->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U;
-
-        /* Determine if there are any pending S interrupts. If there is a
-         * pending S interrupt, it means that something prevents the CPU from
-         * vectoring to it. For example, S interrupts could be disabled.
-         * Exit the loop if that is the case.
-         */
-        pendingSInt = ((SCB->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U;
-    } while ((pendingNsInt == false) && (pendingSInt == false));
+        /* Determine if there are any pending interrupts. */
+        pendingInt = ((SCB->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U;
+    } while (pendingInt == false);
 
     /* Restore NS interrupts */
     __TZ_set_PRIMASK_NS(nsKey);

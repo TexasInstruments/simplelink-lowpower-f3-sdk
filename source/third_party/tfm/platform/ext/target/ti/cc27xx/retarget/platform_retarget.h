@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,9 @@
 
 #include "cmsis.h"
 #include "flash_layout.h"
-/* TI CC27xx SDK include(s) */
-#include "ti/devices/cc27xx/inc/hw_memmap.h"
+/* TI CC27xxx10 SDK include(s) */
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
 
 /* ======= Defines peripherals memory map addresses ======= */
 /* Non-secure memory map addresses */

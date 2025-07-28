@@ -43,12 +43,8 @@ if (isdefinedsymbol(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE)) {
     define symbol ROM_end__      = ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE - 1;
 } else {
     define symbol ROM_start__    = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE;
-    if (isdefinedsymbol(ti_utils_build_GenMap_HSM_FW_SIZE)) {
-        /* The last part of Flash is reserved for the HSM FW */
-        define symbol ROM_end__      = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE + ti_utils_build_GenMap_MCUBOOT_FLASH_BASE - ti_utils_build_GenMap_HSM_FW_SIZE - 1;
-    } else {
-        define symbol ROM_end__      = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE + ti_utils_build_GenMap_MCUBOOT_FLASH_BASE - 1;
-    }
+    /* The last part of Flash is reserved for the HSM FW, already resevered by MCUboot*/
+    define symbol ROM_end__      = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE + ti_utils_build_GenMap_MCUBOOT_FLASH_SIZE - 1;
 }
 
 if (isdefinedsymbol(ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE)) {

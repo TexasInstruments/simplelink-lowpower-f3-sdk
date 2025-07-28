@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -105,7 +105,16 @@ let devSpecific = {
             options: [
                 { name: "INT_CPUIRQ0" },
                 { name: "INT_CPUIRQ2" }
-            ]
+            ],
+            getDisabledOptions: (inst) => {
+                let disabledOptions = [];
+                let batMonSupport = system.modules["/ti/drivers/batterymonitor/BatMonSupportLPF3"];
+                if (batMonSupport)
+                {
+                    disabledOptions.push({ name: batMonSupport.$static.interruptNumber, reason: "Used by the " + batMonSupport.displayName + " module" });
+                }
+                return disabledOptions;
+            }
         }
     ],
 
@@ -120,7 +129,9 @@ let devSpecific = {
     _getPinResources: _getPinResources,
 
     /* PIN instances */
-    moduleInstances: moduleInstances
+    moduleInstances: moduleInstances,
+
+    validate: validate
 
 };
 
@@ -259,6 +270,26 @@ function moduleInstances(inst)
     }
 
     return (pinInstances);
+}
+
+
+/*
+ *  ======== validate ========
+ *  Validate an instance's configuration
+ *
+ *  param inst       - The instance to be validate
+ *  param validation - object to hold detected validation issues
+ *
+ */
+function validate(inst, validation)
+{
+    let batMonSupport = system.modules["/ti/drivers/batterymonitor/BatMonSupportLPF3"];
+    if (batMonSupport && (batMonSupport.$static.interruptNumber == inst.interruptNumber))
+    {
+        let errorMsg = "The interrupt number used by " + inst.$name + " cannot be the same as the interrupt number used by " + batMonSupport.displayName;
+        Common.logError(validation, inst, "interruptNumber", errorMsg);
+        Common.logError(validation, batMonSupport.$static, "interruptNumber", errorMsg);
+    }
 }
 
 /*

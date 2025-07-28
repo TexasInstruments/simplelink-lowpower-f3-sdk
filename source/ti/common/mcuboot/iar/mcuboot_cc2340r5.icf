@@ -35,10 +35,10 @@ define symbol __intvec_start__ = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE;
 /*-Memory Regions-*/
 define symbol FLASH_start__ = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE;
 define symbol FLASH_end__   = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE + ti_utils_build_GenMap_MCUBOOT_FLASH_SIZE - 1;
-define symbol RAM_start__ = 0x20000000;
-define symbol RAM_end__   = 0x20008FFF;
-define symbol CCFG_START__ = 0x4E020000;
-define symbol CCFG_END__   = 0x4E0207FF;
+define symbol RAM_start__ = ti_utils_build_GenMap_RAM0_BASE;
+define symbol RAM_end__   = ti_utils_build_GenMap_RAM0_BASE + ti_utils_build_GenMap_RAM0_SIZE - 1;
+define symbol CCFG_START__ = ti_utils_build_GenMap_CCFG_BASE;
+define symbol CCFG_END__   = ti_utils_build_GenMap_CCFG_BASE + ti_utils_build_GenMap_CCFG_SIZE -1;
 
 /* Define a memory region that covers the entire 4 GB addressable space */
 define memory mem with size = 4G;

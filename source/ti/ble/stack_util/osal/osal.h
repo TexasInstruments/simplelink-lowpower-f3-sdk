@@ -105,7 +105,6 @@ extern "C"
 #define LL_EVT_EXT_SCAN_TIMEOUT                        0x00000020u
 #define LL_EVT_EXT_ADV_TIMEOUT                         0x00000040u
 #define LL_EVT_INIT_LAST_CMD_DONE_CONNECT              0x00000080u
-#define LL_EVT_PERIODIC_SCAN_CANCELLED                 0x00000100u
 #define LL_EVT_RESET_SYSTEM_HARD                       0x00000200u
 #define LL_EVT_RESET_SYSTEM_SOFT                       0x00000400u
 #define LL_EVT_CONN_DISCONNECTED_IMMED                 0x00000800u
@@ -117,8 +116,14 @@ extern "C"
 #define LL_EVT_SCAN_LAST_CMD_DONE                      0x00020000u
 #define LL_EVT_CONNECTION_LAST_CMD_DONE                0x00040000u
 #define LL_EVT_SCAN_RX_AVAIL                           0x00080000u
-#define LL_EVT_PERIODIC_SCAN_LAST_CMD_DONE             0x00100000u
-#define LL_EVT_PERIODIC_SCAN_RX_AVAIL                  0x00200000u
+
+// Periodic Scanner + PAwR events family
+#define LL_EVT_PERIODIC_SCANNER                        0x00100000u
+#define LL_EVT_PERIODIC_SCAN_LAST_CMD_DONE             (LL_EVT_PERIODIC_SCANNER | 1 << 0)
+#define LL_EVT_PERIODIC_SCAN_RX_AVAIL                  (LL_EVT_PERIODIC_SCANNER | 1 << 1)
+#define LL_EVT_PAWR_RSP_DATA_LAST_CMD_DONE             (LL_EVT_PERIODIC_SCANNER | 1 << 2)
+#define LL_EVT_PERIODIC_SCAN_CANCELLED                 (LL_EVT_PERIODIC_SCANNER | 1 << 3)
+
 #define LL_EVT_RESCHEDULE                              0x00400000u
 #define LL_EVT_CMD_STARTED                             0x00800000u
 #define LL_EVT_PERIODIC_ADV_LAST_CMD_DONE              0x01000000u
@@ -127,6 +132,7 @@ extern "C"
 #define LL_EVT_ADV_RX_AVAIL                            0x08000000u
 #define LL_EVT_ADV_TX_BUFF_FINISHED                    0x10000000u
 #define LL_EVT_INIT_RX_ENTRY_DONE                      0x20000000u
+
 // CS Events Family. It is assumed that those events can be received ONLY when CS is active,
 // and all the LL events were already processed.
 #define LL_EVT_CS                                      0x40000000u

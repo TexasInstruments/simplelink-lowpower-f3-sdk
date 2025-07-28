@@ -48,8 +48,9 @@
 // Get RF command handler
 const CmdHandler = system.getScript("/ti/devices/radioconfig/cmd_handler.js");
 
-// Get RF design functions
-const RfDesign = system.getScript("/ti/devices/radioconfig/rfdesign");
+// RadioConfig module scripts
+const CommonRadioConfig = system.getScript("/ti/devices/radioconfig/radioconfig_common.js");
+const RfDesign = CommonRadioConfig.getScript("rfdesign");
 
 // Get radio config module functions
 const RadioConfig = system.getScript(
@@ -91,24 +92,6 @@ const channelOptions = [
     {name: 26, displayName: "26 - 2480 MHz"}
 ];
 
-/* TX Power options */
-const powerOptions = [
-    {name: 8, displayName: "8"},
-    {name: 7, displayName: "7"},
-    {name: 6, displayName: "6"},
-    {name: 5, displayName: "5"},
-    {name: 4, displayName: "4"},
-    {name: 3, displayName: "3"},
-    {name: 2, displayName: "2"},
-    {name: 1, displayName: "1"},
-    {name: 0, displayName: "0"},
-    {name: -4, displayName: "-4"},
-    {name: -8, displayName: "-8"},
-    {name: -12, displayName: "-12"},
-    {name: -16, displayName: "-16"},
-    {name: -20, displayName: "-20"},
-];
-
 const gpdRfModule = {
     config: [
         {
@@ -125,11 +108,26 @@ const gpdRfModule = {
             displayName: "Transmit Power",
             description: txpowerDescription,
             longDescription: txpowerLongDescription,
-            options: powerOptions,
-            default: 0
+            default: "0",
+            options: (inst) => { return getPaTableValues(inst.rfDesign); }
         }
     ],
 };
+
+/*
+ * ======== getPaTableValues ========
+ * Returns the tx power values options for the current device
+ *
+ * @param rfDesign - the selected device
+ *
+ * @returns - a list with the valid pa levels from the tableOptions
+ */
+function getPaTableValues(rfDesign)
+{
+    const frequency = 2400;
+
+    return RfDesign.getTxPowerOptions(frequency, false);
+}
 
 
 exports = gpdRfModule;

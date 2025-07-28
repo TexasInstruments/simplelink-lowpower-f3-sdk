@@ -205,13 +205,14 @@ struct RCL_CONN_PARAMS_t {
  */
 struct RCL_CMD_BLE5_ADV_t {
     RCL_Command  common;
-    uint8_t chanMap;              /*!< Channel map. Bit positions 0-2 correspond to channels 37-39; a 1 means channel enabled */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint8_t order;                /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
-    uint8_t highDuty;             /*!< High duty-cycle advertising (directed advertising only) 0: Disabled. 1 Enabled */
-    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND or AUX_CONNECT_REQ packet is returned if connection is formed */
-    RCL_CtxAdvertiser *ctx;       /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+    uint8_t chanMap;                     /*!< Channel map. Bit positions 0-2 correspond to channels 37-39; a 1 means channel enabled */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint8_t order;                       /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
+    uint8_t highDuty;                    /*!< High duty-cycle advertising (directed advertising only) 0: Disabled. 1 Enabled */
+    uint32_t connectPktTime;             /*!< Time of received CONNECT_IND or AUX_CONNECT_REQ packet is returned if connection is formed */
+    RCL_CtxAdvertiser *ctx;              /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdBle5Advertiser_Default()                         \
@@ -220,6 +221,7 @@ struct RCL_CMD_BLE5_ADV_t {
                                   RCL_Handler_BLE5_adv),        \
     .chanMap = 0x7,                                             \
     .txPower = {.dBm = 0, .fraction = 0},                       \
+    .coexControl = {.value =  0},                               \
     .order = 0,                                                 \
     .highDuty = 0,                                              \
     .connectPktTime = 0,                                        \
@@ -235,11 +237,12 @@ struct RCL_CMD_BLE5_ADV_t {
  */
 struct RCL_CMD_BLE5_AUX_ADV_t {
     RCL_Command  common;
-    RCL_Ble5Channel channel;      /*!< Channel index */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND packet is returned if connection is formed - Not supported in this release. */
-    RCL_CtxAdvertiser *ctx;       /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint32_t connectPktTime;             /*!< Time of received CONNECT_IND packet is returned if connection is formed - Not supported in this release. */
+    RCL_CtxAdvertiser *ctx;              /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdBle5AuxAdvertiser_Default()                      \
@@ -248,6 +251,7 @@ struct RCL_CMD_BLE5_AUX_ADV_t {
                                   RCL_Handler_BLE5_aux_adv),    \
     .channel = 0,                                               \
     .txPower = {.dBm = 0, .fraction = 0},                       \
+    .coexControl = {.value =  0},                               \
     .ctx = NULL,                                                \
     .stats = NULL,                                              \
 }
@@ -338,15 +342,16 @@ struct RCL_CTX_PER_ADVERTISER_t {
  */
 struct RCL_CMD_BLE5_INITIATOR_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;      /*!< Channel index */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint16_t maxAuxPtrWaitTime;   /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
-    bool dynamicWinOffset;        /*!< Window offset processing. 0: Fixed. 1: Dynamic */
-    bool acceptLegacy : 1;        /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
-    bool acceptExtended : 1;      /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
-    uint32_t connectTime;         /*!< For dynamic window offset, wanted connect time is given as input. In all cases, actual connect time is returned. */
-    RCL_CtxScanInit *ctx;         /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint16_t maxAuxPtrWaitTime;          /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    bool dynamicWinOffset;               /*!< Window offset processing. 0: Fixed. 1: Dynamic */
+    bool acceptLegacy : 1;               /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
+    bool acceptExtended : 1;             /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
+    uint32_t connectTime;                /*!< For dynamic window offset, wanted connect time is given as input. In all cases, actual connect time is returned. */
+    RCL_CtxScanInit *ctx;                /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdInitiator_Default()                                  \
@@ -355,6 +360,7 @@ struct RCL_CMD_BLE5_INITIATOR_t {
                                   RCL_Handler_BLE5_scan_init),      \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .maxAuxPtrWaitTime = 30000,                                     \
     .dynamicWinOffset = 0,                                          \
     .acceptLegacy = 1,                                              \
@@ -372,14 +378,15 @@ struct RCL_CMD_BLE5_INITIATOR_t {
  */
 struct RCL_CMD_BLE5_SCANNER_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;       /*!< Channel index */
-    RCL_Command_TxPower txPower;   /*!< Transmit power */
-    uint16_t maxAuxPtrWaitTime;    /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
-    bool activeScan;               /*!< Scan type. 0: Passive. 1: Active */
-    bool acceptLegacy : 1;         /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
-    bool acceptExtended : 1;       /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
-    RCL_CtxScanInit *ctx;          /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;   /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint16_t maxAuxPtrWaitTime;          /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    bool activeScan;                     /*!< Scan type. 0: Passive. 1: Active */
+    bool acceptLegacy : 1;               /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
+    bool acceptExtended : 1;             /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
+    RCL_CtxScanInit *ctx;                /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdScanner_Default()                                    \
@@ -388,6 +395,7 @@ struct RCL_CMD_BLE5_SCANNER_t {
                                   RCL_Handler_BLE5_scan_init),      \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .maxAuxPtrWaitTime = 20000,                                     \
     .activeScan = 0,                                                \
     .acceptLegacy = 1,                                              \

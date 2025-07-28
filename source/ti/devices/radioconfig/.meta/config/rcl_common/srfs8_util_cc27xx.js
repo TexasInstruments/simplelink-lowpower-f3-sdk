@@ -144,11 +144,20 @@ function create(phyGroup) {
         sections[n++] = "Extended header;" + byteString(packetData.slice(2, 2 + 1)) + ";" + byteString(packetData.slice(3, 3 + 1)) + ";" +
                         byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
 
+        // Constrain displayed payload to 100 bytes
+        var payloadSuffix = "";
+        var maxPayloadLength = 100;
+        var payloadLength = packetData.length;
+        if (payloadLength > maxPayloadLength) {
+            payloadSuffix = " + " + (payloadLength - maxPayloadLength) + " byte(s)"
+            payloadLength = maxPayloadLength;
+        }
+
         // Add payload
         if (getTestProperty("seqNumberEnable") == 0) {
-            sections[n++] = "Advertising data;%" + byteString(packetData.slice(12));
+            sections[n++] = "Advertising data;%" + byteString(packetData.slice(12, payloadLength)) + payloadSuffix;
         } else {
-            sections[n++] = "Advertising data;Seq.;%" + byteString(packetData.slice(14));
+            sections[n++] = "Advertising data;Seq.;%" + byteString(packetData.slice(14, payloadLength)) + payloadSuffix;
         }
 
         // Add CRC
@@ -239,6 +248,45 @@ function create(phyGroup) {
         return sections;
     }
 
+    function packetTxGenView() {
+        var sections = [];
+
+        // Add header
+        var n = 0;
+        sections[n++] = "Transmitted packet";
+
+        // Add preamble
+        sections[n++] = "Preamble;010101...";
+
+        // Add synchronization word
+        sections[n++] = "Address (sync. word);" + byteString(valueToBytesBe(getPhyProperty("syncWord"), 4));
+
+        // Add header
+        var packetData = [getDataArray()];
+        sections[n++] = "wBMS header;" + byteString(packetData.slice(0, 0 + 3));
+
+        // Constrain displayed payload to 100 bytes
+        var payloadSuffix = "";
+        var maxPayloadLength = 100;
+        var payloadLength = packetData.length - 3;
+        if (payloadLength > maxPayloadLength) {
+            payloadSuffix = " + " + (payloadLength - maxPayloadLength) + " byte(s)"
+            payloadLength = maxPayloadLength;
+        }
+
+        // Add payload
+        if (getTestProperty("seqNumberEnable") == 0) {
+            sections[n++] = "Payload;%" + byteString(packetData.slice(3, 3 + payloadLength)) + payloadSuffix;
+        } else {
+            sections[n++] = "Payload;Seq.;%" + byteString(packetData.slice(5, 5 + payloadLength)) + payloadSuffix;
+        }
+
+        // Add CRC
+        sections[n++] = genCrcSection(32);
+
+        return sections;
+    }
+
     function zeroPadStart(valueString, width) {
         while (valueString.length < width) {
             valueString = "0" + valueString;
@@ -297,6 +345,7 @@ function create(phyGroup) {
         getFrequencyWithOffset: getFrequencyWithOffset,
         getPpFrequencyBle: getPpFrequencyBle,
         getPpFrequency154: getPpFrequency154,
+        packetTxGenView: packetTxGenView,
         packetTxGenView: packetTxGenView,
         packetTxGenView: packetTxGenView,
         packetTxGenView: packetTxGenView,

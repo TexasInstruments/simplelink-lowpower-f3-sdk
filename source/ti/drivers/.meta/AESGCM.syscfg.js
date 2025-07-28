@@ -94,7 +94,7 @@ length and not only multiples of the block cipher block size.
 [1]: /secure_drivers/doxygen/html/_a_e_s_g_c_m_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_a_e_s_g_c_m_8h.html#ti_drivers_AESGCM_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_a_e_s_g_c_m_8h.html#ti_drivers_AESGCM_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#AESGCM_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#AESGCM_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_AESGCM_",
     config              : Common.addNameConfig(config, "/ti/drivers/AESGCM", "CONFIG_AESGCM_"),

@@ -1001,8 +1001,8 @@ static void rreq_handleRspCode(uint16_t connHandle, uint8_t rspValue)
  * that no critical data is missing or corrupted.
  *
  * @return Returns a boolean value:
- *         - true: If the data is complete and valid.
- *         - false: If the data is incomplete or invalid.
+ *         - TRUE: If the data is complete and valid.
+ *         - FALSE: If the data is incomplete or invalid.
  */
 static uint8_t rreq_CheckDataComplete(uint16_t connHandle)
 {

@@ -42,8 +42,8 @@
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/platform.h>
-    #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
-    #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
+    #include <ti/drivers/cryptoutils/hsm/HSMXXF3.h>
+    #include <ti/drivers/cryptoutils/hsm/HSMXXF3Utility.h>
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     #include <third_party/tfm/secure_fw/partitions/internal_trusted_storage/tfm_internal_trusted_storage.h> /* tfm_its_init() */
     #include <third_party/mbedtls/include/mbedtls/memory_buffer_alloc.h>
@@ -193,9 +193,9 @@ int_fast16_t KeyStore_PSA_init(void)
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         int_fast16_t hsmStatus;
 
-        hsmStatus = HSMLPF3_init();
+        hsmStatus = HSMXXF3_init();
 
-        if (hsmStatus != HSMLPF3_STATUS_SUCCESS)
+        if (hsmStatus != HSMXXF3_STATUS_SUCCESS)
         {
             return status;
         }
@@ -203,16 +203,16 @@ int_fast16_t KeyStore_PSA_init(void)
         /* CC27XX and CC35XX require the HSM lock before calling psa_crypto_init() because
          * that function call requires a token submission.
          */
-        HSMLPF3_constructRTOSObjects();
+        HSMXXF3_constructRTOSObjects();
 
-        if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)NULL))
+        if (!HSMXXF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)NULL))
         {
             return KEYSTORE_PSA_STATUS_RESOURCE_UNAVAILABLE;
         }
 
         status = KeyMgmt_psa_crypto_init();
 
-        HSMLPF3_releaseLock();
+        HSMXXF3_releaseLock();
 
 #else
         mbedtls_memory_buffer_alloc_init(allocBuffer, sizeof(allocBuffer));

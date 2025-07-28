@@ -384,6 +384,11 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_READ_REMOTE_TRANSMIT_POWER_LEVEL           0x2077    //!< opcode of @ref HCI_LE_ReadRemoteTransmitPowerLevelCmd
 #define HCI_LE_SET_TRANSMIT_POWER_REPORTING_ENABLE        0x207A    //!< opcode of @ref HCI_LE_SetTransmitPowerReportingEnableCmd
 
+/* Periodic Advertising with responses */
+
+#define HCI_LE_SET_PERIODIC_ADV_RESPONSE_DATA             0x2083    //!< opcode of @ref HCI_LE_SetPeriodicAdvResponseDataCmd
+#define HCI_LE_SET_PERIODIC_SYNC_SUBEVENT                 0x2084    //!< opcode of @ref HCI_LE_SetPeriodicSyncSubeventCmd
+
 // V5.1
 // @cond NODOC
 #define HCI_LE_ENHANCED_CTE_RECEIVER_TEST                 0x204F    //!< opcode of @ref HCI_LE_EnhancedCteRxTestCmd
@@ -397,6 +402,13 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_SET_CONNECTION_CTE_RESPONSE_ENABLE         0x2057    //!< opcode of @ref HCI_LE_SetConnectionCteResponseEnable
 #define HCI_LE_READ_ANTENNA_INFORMATION                   0x2058    //!< opcode of @ref HCI_LE_ReadAntennaInformation
 #define HCI_LE_SET_PERIODIC_ADV_RECEIVE_ENABLE            0x2059    //!< opcode of @ref HCI_LE_SetPeriodicAdvReceiveEnableCmd
+
+// Periodic advertise Vendor Specific commands opcode
+#define HCI_LE_PADV_SYNC_TRANSFER_CMD                     0x205A    //!< opcode of @ref HCI_LE_PAdvSyncTransferCmd
+#define HCI_LE_PADV_SET_INFO_TRANSFER_CMD                 0x205B    //!< opcode of @ref HCI_LE_PAdvSetInfoTransferCmd
+#define HCI_LE_SET_PADV_SYNC_TRANSFER_PARAMS_CMD          0x205C    //!< opcode of @ref HCI_LE_SetPASTParamsCmd
+#define HCI_LE_SET_DEFAULT_PADV_SYNC_TRANSFER_PARAMS_CMD  0x205D    //!< opcode of @ref HCI_LE_SetDefaultPASTParamCmd
+
 // @endcond // NODOC
 // V5.2
 #define HCI_LE_GENERATE_DHKEY_V2                          0x205E    //!< opcode of @ref HCI_LE_GenerateDHKeyCmd_V2
@@ -536,8 +548,10 @@ extern uint8 hciSmpTaskID;
 
 /// @cond NODOC
 #define HCI_BLE_EXTENDED_ADV_REPORT_EVENT                 0x0D      //!< Extended Adv Report
-#define HCI_BLE_PERIODIC_ADV_SYNCH_ESTABLISHED_EVENT      0x0E      //!< Periodic Adv Synch Established
-#define HCI_BLE_PERIODIC_ADV_REPORT_EVENT                 0x0F      //!< Periodic Adv Report
+#define HCI_BLE_PADV_SYNC_ESTAB_V1_EVENT                  0x0E      //!< Periodic Adv Sync Established V1 Event ( device doesn't support PAwR )
+#define HCI_BLE_PADV_SYNC_ESTAB_V2_EVENT                  0x24      //!< Periodic Adv Sync Established V2 Event ( device support PAwR )
+#define HCI_BLE_PADV_REPORT_V1_EVENT                      0x0F      //!< Periodic Adv Report Event V1( device doesn't support PAwR )
+#define HCI_BLE_PADV_REPORT_V2_EVENT                      0x25      //!< Periodic Adv Report Event V2( device support PAwR )
 #define HCI_BLE_PERIODIC_ADV_SYNCH_LOST_EVENT             0x10      //!< Periodic Adv Synch Lost
 /// @endcond //NODOC
 #define HCI_BLE_SCAN_TIMEOUT_EVENT                        0x11      //!< Scan Timeout
@@ -547,12 +561,14 @@ extern uint8 hciSmpTaskID;
 #define HCI_BLE_CONNECTIONLESS_IQ_REPORT_EVENT            0x15      //!< CTE sample connectionless report
 #define HCI_BLE_CONNECTION_IQ_REPORT_EVENT                0x16      //!< CTE sample connection report
 #define HCI_BLE_CTE_REQUEST_FAILED_EVENT                  0x17      //!< CTE sample failed
+#define HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V1      0x18      //!< Periodic Adv Sync transfer received v1
 
 /* Powe Control events
 ** Taken from BLE Core Specification Core_v6.0, Vol 4, Part E:
 ** Section 7.8.1
 */
 #define HCI_BLE_TRANSMIT_POWER_REPORTING_EVENT            0x21      //!< Power Control report event (sub event value)
+#define HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V2      0x26      //!< Periodic Adv Sync transfer received v2
 
 // CS events
 #define HCI_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_EVENT 0x2C //!< CS event Remote capabilities complete

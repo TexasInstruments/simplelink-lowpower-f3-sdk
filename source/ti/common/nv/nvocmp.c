@@ -203,7 +203,7 @@ Requires API's in a crc.h to implement CRC functionality.
     /* CC23X0 and CC27XX does not support GPRAM,
      * so VIMS access is not needed */
     #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-        !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+        !defined(DeviceFamily_CC23X0R22) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
         #include DeviceFamily_constructPath(driverlib/vims.h)
     #endif
 
@@ -402,7 +402,7 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
 //*****************************************************************************
 #if defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || defined(DeviceFamily_CC26X3) ||        \
     defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
-    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+    defined(DeviceFamily_CC23X0R22) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     // CC26x4/CC13x4/CC23x0/cc27xx devices flash page size is (1 << 11) or 0x800
     #define PAGE_SIZE_LSHIFT 11
 #else
@@ -425,7 +425,7 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
 
 #ifndef NVOCMP_NO_RAM_OPTIMIZATION
     #if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
-        defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+        defined(DeviceFamily_CC23X0R22) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         #define NVOCMP_RAM_OPTIMIZATION
     #endif
 #endif
@@ -434,7 +434,7 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
     // Compact Memory
     #if !defined(NV_LINUX) && !defined(DeviceFamily_CC13X4) && !defined(DeviceFamily_CC26X4) &&                 \
         !defined(DeviceFamily_CC26X3) && !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && \
-        !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+        !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
         #define NVOCMP_GPRAM
     #endif
 

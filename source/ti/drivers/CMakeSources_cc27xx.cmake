@@ -8,8 +8,6 @@ set(SOURCES_CC27XX
     ADCBuf.c
     adcbuf/ADCBufLPF3.c
     apu/APULPF3.c
-    batterymonitor/BatteryMonitorLPF3.c
-    batterymonitor/BatMonSupportLPF3.c
     CAN.c
     can/CANCC27XX.c
     can/common/CANMCAN.c
@@ -30,6 +28,7 @@ set(SOURCES_CC27XX
     NVS.c
     nvs/NVSRAM.c
     nvs/NVSSPI25X.c
+    nvs/NVSLPF3.c
     PWM.c
     pwm/PWMTimerLPF3.c
     SD.c
@@ -38,7 +37,6 @@ set(SOURCES_CC27XX
     SPI.c
     spi/SPILPF3DMA.c
     Temperature.c
-    temperature/TemperatureLPF3.c
     timer/LGPTimerLPF3.c
     UART2.c
     uart2/UART2LPF3.c
@@ -47,13 +45,15 @@ set(SOURCES_CC27XX
 )
 
 set(SOURCES_SEC_ONLY_CC27XX
-    ${SOURCES_CC27XX} nvs/NVSLPF3.c power/PowerCC27XX.c power/PowerCC27XX_lfoscCompensation.c
-    # power/PowerCC26X2_calibrateRCOSC_helpers.c
-    # power/PowerCC26X2_helpers.c
+    ${SOURCES_CC27XX}
+    batterymonitor/BatteryMonitorLPF3.c
+    batterymonitor/BatMonSupportLPF3.c
+    nvs/NVSLPF3.c
+    power/PowerCC27XX.c
+    power/PowerCC27XX_lfoscCompensation.c
+    temperature/TemperatureLPF3.c
 )
 
-set(SOURCES_NONSEC_CC27XX
-    ${SOURCES_CC27XX}
-    # nvs/flash/FlashCC26X4_ns.c
-    power/PowerCC27XX_ns.c tfm/SecureCallback.c
+set(SOURCES_NONSEC_CC27XX ${SOURCES_CC27XX} batterymonitor/BatteryMonitorLPF3_ns.c power/PowerCC27XX_ns.c
+                          temperature/TemperatureLPF3_ns.c tfm/SecureCallback.c
 )

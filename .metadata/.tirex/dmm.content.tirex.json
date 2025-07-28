@@ -1,1 +1,70 @@
-[]
+[
+    {
+        "location": "../../examples/rtos/LP_EM_CC2755P10/dmm/mac_sensor_ble_basic/README.html",
+        "resourceType": "categoryInfo",
+        "name": "mac_sensor_ble_basic",
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Dynamic Multi-protocol Manager (DMM)"
+        ],
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/dmm/mac_sensor_ble_basic/freertos/ticlang/mac_sensor_ble_basic_LP_EM_CC2755P10_freertos_ticlang.projectspec",
+        "name": "mac_sensor_ble_basic",
+        "description": "mac_sensor_ble_basic",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Dynamic Multi-protocol Manager (DMM)",
+            "mac_sensor_ble_basic",
+            "FreeRTOS",
+            "TI Clang Compiler"
+        ]
+    }
+]

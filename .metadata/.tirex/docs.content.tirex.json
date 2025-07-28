@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_11_00_18.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_20_00_07_ea.html",
         "devices": [
             "CC2340R5"
         ],
@@ -386,7 +386,7 @@
     {
         "name": "Core SDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_11_00_06.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_20_00_05_ea.html",
         "devices": [
             "CC2340R5"
         ],
@@ -406,9 +406,9 @@
         ]
     },
     {
-        "name": "SimpleLink Common Components Module (SCCM) Release Notes",
+        "name": "RCL Release Notes",
         "resourceType": "file",
-        "location": "../../docs/sccm/release_notes_sccm_9_11_00.html",
+        "location": "../../docs/rcl/rcl_release_notes.html",
         "devices": [
             "CC2340R5"
         ],
@@ -421,7 +421,7 @@
             ]
         ],
         "subCategories": [
-            "Common Components"
+            "RCL"
         ],
         "resourceClass": [
             "document"
@@ -450,9 +450,9 @@
         ]
     },
     {
-        "name": "RCL Release Notes",
+        "name": "Zigbee Release Notes",
         "resourceType": "file",
-        "location": "../../docs/rcl/rcl_release_notes.html",
+        "location": "../../docs/zigbee/release_notes_zigbee_1_00_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -465,7 +465,7 @@
             ]
         ],
         "subCategories": [
-            "RCL"
+            "Zigbee"
         ],
         "resourceClass": [
             "document"
@@ -516,9 +516,9 @@
         ]
     },
     {
-        "name": "Zigbee Release Notes",
+        "name": "SimpleLink Common Components Module (SCCM) Release Notes",
         "resourceType": "file",
-        "location": "../../docs/zigbee/release_notes_zigbee_1_00_00.html",
+        "location": "../../docs/sccm/release_notes_sccm_9_11_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -531,7 +531,7 @@
             ]
         ],
         "subCategories": [
-            "Zigbee"
+            "Common Components"
         ],
         "resourceClass": [
             "document"

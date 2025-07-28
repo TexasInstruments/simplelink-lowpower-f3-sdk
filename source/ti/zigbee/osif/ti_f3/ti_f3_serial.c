@@ -189,6 +189,13 @@ static void uart_write_callback(UART2_Handle handle, void *ptr, size_t size, voi
   }
 }
 
+#ifdef ZB_MACSPLIT_TRANSPORT_SERIAL
+void zb_osif_serial_transport_put_bytes(zb_uint8_t *buf, zb_short_t len)
+{
+  zb_osif_serial_put_bytes(buf, len);
+}
+#endif /* ZB_MACSPLIT_TRANSPORT_SERIAL */
+
 #ifdef SYNC_WRITE
 void zb_osif_serial_put_bytes(const zb_uint8_t *buf, zb_short_t len)
 {
@@ -198,13 +205,6 @@ void zb_osif_serial_put_bytes(const zb_uint8_t *buf, zb_short_t len)
   }
 }
 #else // !SYNC_WRITE
-
-#ifdef ZB_MACSPLIT_TRANSPORT_SERIAL
-void zb_osif_serial_transport_put_bytes(zb_uint8_t *buf, zb_short_t len)
-{
-  zb_osif_serial_put_bytes(buf, len);
-}
-#endif /* ZB_MACSPLIT_TRANSPORT_SERIAL */
 
 void zb_osif_serial_put_bytes(const zb_uint8_t *buf, zb_short_t len)
 {

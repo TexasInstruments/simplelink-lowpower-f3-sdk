@@ -86,13 +86,13 @@
  */
 typedef enum
 {
-  CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_EVENT , //!< CS event Remote capabilities complete @ref CS_readRemoteCapabEvt_t
-  CS_READ_REMOTE_FAE_TABLE_COMPLETE_EVENT,               //!< CS event Read Remote FAE Table Complete @ref CS_readRemFAECompleteEvt_t
-  CS_SECURITY_ENABLE_COMPLETE_EVENT,                     //!< CS Event Security Enable Complete @ref CS_securityEnableCompleteEvt_t
-  CS_CONFIG_COMPLETE_EVENT,                              //!< CS event create config complete @ref CS_configCompleteEvt_t
-  CS_PROCEDURE_ENABLE_COMPLETE_EVENT,                    //!< CS Procedure Enable Complete @ref CS_procEnableCompleteEvt_t
-  CS_SUBEVENT_RESULT,                                    //!< CS Subevent Result @ref CS_subeventResultsEvt_t
-  CS_SUBEVENT_CONTINUE_RESULT,                           //!< CS Subevent continue Result @ref CS_subeventResultsContinueEvt_t
+  CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_EVENT ,  //!< CS event Remote capabilities complete @ref CS_readRemoteCapabEvt_t
+  CS_READ_REMOTE_FAE_TABLE_COMPLETE_EVENT              ,  //!< CS event Read Remote FAE Table Complete @ref CS_readRemFAECompleteEvt_t
+  CS_SECURITY_ENABLE_COMPLETE_EVENT                    ,  //!< CS Event Security Enable Complete @ref CS_securityEnableCompleteEvt_t
+  CS_CONFIG_COMPLETE_EVENT                             ,  //!< CS event create config complete @ref CS_configCompleteEvt_t
+  CS_PROCEDURE_ENABLE_COMPLETE_EVENT                   ,  //!< CS Procedure Enable Complete @ref CS_procEnableCompleteEvt_t
+  CS_SUBEVENT_RESULT                                   ,  //!< CS Subevent Result @ref CS_subeventResultsEvt_t
+  CS_SUBEVENT_CONTINUE_RESULT                          ,  //!< CS Subevent continue Result @ref CS_subeventResultsContinueEvt_t
 } csEventOpcodes_e;
 
 /**
@@ -204,7 +204,7 @@ typedef struct
   uint8_t          configId;           //!< configuration ID
   uint8_t          enable;             //!< enable/disable @ref CS_Enable
   csACI_e          ACI;                //!< Antenna Config Index @ref csACI_e
-  uint8_t          pwrDelta;           //!< Tx Power Delta, in signed dB
+  int8_t           selectedTxPower;    //!< Transmit power level used for CS procedure. Units: dBm
   uint32_t         subEventLen;        //!< sub-event length in microseconds, range 1250us to 4s
   uint8_t          subEventsPerEvent;  //!< number of CS SubEvents in a CS Event
   uint16_t         subEventInterval;   //!< sub-event interval in units of 625 us
@@ -636,6 +636,18 @@ uint8_t CS_calcNumPaths(csACI_e aci);
  * @return      0 If the given parameter is invalid
  */
 uint8_t CS_calcNumPathsFromAntennaMask(uint8_t antPathMask);
+
+/*******************************************************************************
+ * @fn          CS_calcAntPathsMask
+ *
+ * @brief       This function returns the antenna paths mask based on a given
+ *              ACI (antenna permutation index).
+ *
+ * @param       aci - antenna permutation index
+ *
+ * @return      Antenna paths mask
+ */
+uint8_t CS_calcAntPathsMask(csACI_e aci);
 
 /**
  * @fn      CS_RegisterCB

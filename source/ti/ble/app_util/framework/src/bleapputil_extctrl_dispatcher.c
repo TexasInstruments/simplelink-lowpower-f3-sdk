@@ -70,7 +70,7 @@ Target Device: cc23xx
 #define MSG_DATA_LEN_HI              3          //!< Host msg app data len second offset
 #define MSG_PAYLOAD                  4          //!< Host msg app payload offset
 
-#define NUM_APPLICATION              12         //!< The number of supported applications
+#define NUM_APPLICATION              13         //!< The number of supported applications
 #define EXTCTRL_HOST_CTRL_REV        3
 /*********************************************************************
 * TYPEDEFS
@@ -291,7 +291,7 @@ ExtCtrlHost_eventHandler_t Dispatcher_registerMsgHandler(uint8_t appSpecifier, M
   bStatus_t status = FAILURE;
 
   // Check if the appSpecifier in the range of the configured gDispatcherAppLookup array.
-  if (appSpecifier > NUM_APPLICATION)
+  if (appSpecifier >= NUM_APPLICATION)
   {
     status = FAILURE;
   }

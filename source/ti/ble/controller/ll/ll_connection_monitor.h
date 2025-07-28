@@ -139,6 +139,7 @@ typedef struct
   uint8_t                isCentralPktValid;
   uint8_t                adjustEvtNum;                //! The number of events left to create adjusment to the connection
   uint8_t                adjusted;                    //! Flag that indicates that that the connection adjusted
+  uint8_t                maxSyncAttempts;             //! The maximum number of attempts to sync configured by the user
   uint8_t                syncAttemptsLeft;            //! The number of attempts left trying to find the first packet before stopping the session,
                                                       //! once synced this varibale is not relevant.
   cmConnectionMaskRole_e connRoleMask;                //! Mask of the connection role to report.

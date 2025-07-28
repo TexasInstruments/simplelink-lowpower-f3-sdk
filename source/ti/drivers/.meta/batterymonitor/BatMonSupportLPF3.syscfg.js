@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,6 +57,36 @@ let config = [
     }
 ];
 
+
+/*
+ *  ======== onModuleChanged ========
+ *  onModuleChanged for when dependencies change
+ */
+function onModuleChanged(inst, dependentInst, moduleName, configurables)
+{
+    if (moduleName == "/ti/utils/TrustZone")
+    {
+        if (dependentInst != undefined)
+        {
+            /* The TrustZone module is added. The following configs are fixed
+             * by the secure image:
+             *  - Interrupt Number
+             *
+             * Set the value of these configs to the value fixed in the secure
+             * image, and make them read only.
+             */
+
+            inst.interruptNumber = "INT_CPUIRQ2";
+            inst.$uiState.interruptNumber.readOnly = "When TrustZone is enabled, the interrupt number is locked to INT_CPUIRQ2";
+        }
+        else
+        {
+            /* TrustZone module is not enabled, allow modifications. */
+            inst.$uiState.interruptNumber.readOnly = false;
+        }
+    }
+}
+
 /*
  *  ======== base ========
  *  Define the base BatteryMonitor properties and methods
@@ -68,7 +98,13 @@ let base = {
     maxInstances        : 1,
     initPriority        : -1, /* lower numbers initialize earlier */
     moduleStatic: {
-        config: config
+        config: config,
+        dependencies: {
+            modules: {
+                "/ti/utils/TrustZone" : ["secureImage"]
+            },
+            onModuleChanged: onModuleChanged
+        }
     },
     templates: {
         boardc: "/ti/drivers/batterymonitor/BatMonSupportLPF3.Board.c.xdt"

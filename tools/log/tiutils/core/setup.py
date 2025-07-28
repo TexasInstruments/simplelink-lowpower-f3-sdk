@@ -47,7 +47,7 @@ setuptools.setup(
         "construct==2.10.70",
         "appdirs==1.4.4",
         "watchdog==6.0.0",
-        "typer==0.15.1",
+        "typer==0.16.0",
         "colorama==0.4.6",
         "coloredlogs",
     ],

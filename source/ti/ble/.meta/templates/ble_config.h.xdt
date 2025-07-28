@@ -228,7 +228,22 @@ extern void setBondManagerParameters();
 // request is enabled
 #define DEFAULT_DESIRED_CONN_TIMEOUT           `(ble.connUpdateParamsPeripheral.reqConnTo)/10`
 %}
+%}
+% else{
+// Minimum connection interval (units of 1.25ms) if automatic parameter update
+// request is enabled
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL      `400`
 
+// Maximum connection interval (units of 1.25ms) if automatic parameter update
+// request is enabled
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL      `800`
+
+// Peripheral latency to use if automatic parameter update request is enabled
+#define DEFAULT_DESIRED_PERIPHERAL_LATENCY     `0`
+
+// Supervision timeout value (units of 10ms) if automatic parameter update
+// request is enabled
+#define DEFAULT_DESIRED_CONN_TIMEOUT           `600`
 %}
 %
 % if (ble.hideBroadcasterGroup == false){

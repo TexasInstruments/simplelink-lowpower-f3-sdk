@@ -42,6 +42,26 @@ let instances = RCL.$instances;
 const rclStatic = RCL.$static;
 let board = system.deviceData.board;
 
+/*
+ *  ======== isBle ========
+ *  Check if BLE phy has been selected
+ */
+function isBle()
+{
+    let status = false;
+    var radioconfig = system.modules["/ti/devices/radioconfig/custom"];
+    if (radioconfig)
+    {
+        var radioconfig_inst = radioconfig.$static;
+
+        if (radioconfig_inst.ble.length > 0) {
+            status = true;
+        }
+    }
+
+    return status;
+}
+
 function findPinMapInfo(pin)
 {
     const pinMapInfo = {
@@ -146,6 +166,12 @@ function findCoexConfig()
     }
     coexConfig.ieeeTSync = rclStatic.ieeeTSync;
     coexConfig.ieeeCorrMask = (1 << rclStatic.coexPinRequestIeeeNumCorr) - 1;
+
+    if (isBle())
+    {
+        coexConfig.T1 = Math.round(coexConfig.T1 / 4) * 4;
+        coexConfig.T2 = Math.round(coexConfig.T2 / 4) * 4;
+    }
 
     return coexConfig;
 }

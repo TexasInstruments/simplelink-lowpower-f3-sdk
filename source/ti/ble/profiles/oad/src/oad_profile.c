@@ -57,7 +57,7 @@
 #include "ti/ble/app_util/common/util.h"
 
 #ifdef SECURE_BOOT
-#include <ti/devices/cc27xx/driverlib/hapi.h>
+#include DeviceFamily_constructPath(driverlib/hapi.h)
 #endif
 #ifdef OAD_APP_ONCHIP
 #include "ti/ble/services/oad/oad_reset_service.h"

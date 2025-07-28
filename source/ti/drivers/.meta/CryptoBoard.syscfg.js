@@ -41,35 +41,47 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
+/* get device ID */
+let deviceId = system.deviceData.deviceId;
+
 /*
  *  ======== getLinkerDefs ========
  */
 function getLinkerDefs()
 {
+    /* Get device ID to select appropriate libs */
+    let devId = system.deviceData.deviceId;
     let linkerDefs = [];
+    var DriverLib = system.getScript("/ti/devices/DriverLib");
+    let family = DriverLib.getAttrs(devId).libName;
 
-    let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
-    if (keystoreModule) {
-        let keystoreInst = keystoreModule.$static;
-        linkerDefs.push(
-            {
-                "name": "KEYSTORE_BASE",
-                "value": keystoreInst.flashAddress
-            },
-            {
-                "name": "KEYSTORE_SIZE",
-                "value": keystoreInst.flashSize
-            }
-        );
-    }
-    else
-    {
-        linkerDefs.push(
-            {
-                "name": "KEYSTORE_BASE",
-                "value": ""
-            },
-        );
+    /* Create linker definitions for CC27XX only, as CC35XX KeyStore location
+     * is not yet configurable.
+     */
+    if (family.match(/CC27/i)) {
+        let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
+        if (keystoreModule) {
+            let keystoreInst = keystoreModule.$static;
+            linkerDefs.push(
+                {
+                    "name": "KEYSTORE_BASE",
+                    "value": keystoreInst.flashAddress
+                },
+                {
+                    "name": "KEYSTORE_SIZE",
+                    "value": keystoreInst.flashSize
+                }
+            );
+        }
+        else
+        {
+            linkerDefs.push(
+                {
+                    "name": "KEYSTORE_BASE",
+                    "value": ""
+                },
+            );
+        }
     }
 
     return linkerDefs;
@@ -124,9 +136,18 @@ function getLibs(mod)
     let libs = [];
 
     if (family != "") {
-        /* Add dependency on PSA Crypto library if KeyStore module is present. */
+        /* Add dependency on PSA Crypto library if KeyStore module is present */
         if (system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
-            libs.push(libPath("third_party/psa_crypto", "psa_crypto_" + family + ".a"));
+            /* Added 'i' flag for case insensitivity */
+            if (family.match(/CC27/i)) {
+                if (!system.modules["/ti/utils/TrustZone"]){
+                    /* PSA Crypto library for CC27XX is only linked when TrustZone is not present */
+                    libs.push(libPath("third_party/psa_crypto", "psa_crypto_cc27xx.a"));
+                }
+            }
+            else {
+                libs.push(libPath("third_party/psa_crypto", "psa_crypto_" + family + ".a"));
+            }
         }
 
         /* secure_drivers must be ahead of regular drivers to satisfy the dependency */
@@ -160,20 +181,7 @@ function getLibs(mod)
         }
     }
 
-    if (system.modules["/ti/drivers/AESCCM"] ||
-        system.modules["/ti/drivers/AESCMAC"] ||
-        system.modules["/ti/drivers/SHA2"] ||
-        system.modules["/ti/drivers/AESECB"] ||
-        system.modules["/ti/drivers/AESCTR"] ||
-        system.modules["/ti/drivers/AESCTRDRBG"] ||
-        system.modules["/ti/drivers/AESGCM"] ||
-        system.modules["/ti/drivers/AESCBC"] ||
-        system.modules["/ti/drivers/ECDH"] ||
-        system.modules["/ti/drivers/ECDSA"] ||
-        system.modules["/ti/drivers/EDDSA"] ||
-        system.modules["/ti/drivers/TRNG"] ||
-        system.modules["/ti/drivers/RNG"] ||
-        system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
+    if (system.modules["/ti/drivers/CryptoBoard"]) {
         /* Add dependency on HSMDDK library for CC27XX and CC35XX */
         if (family.match(/cc27/) || family.match(/cc35/)) {
             linkOpts.deps.push("/third_party/hsmddk");
@@ -181,6 +189,19 @@ function getLibs(mod)
     }
 
     return (linkOpts);
+}
+
+/*
+ *  ======== addStaticModules ========
+ */
+function addStaticModules(inst)
+{
+    let forcedModules = [];
+    if (deviceId.match(/CC27/) || deviceId.match(/CC23/)) {
+        /* LAES engine requires AES CommonXXF3 module */
+        forcedModules.push(["cryptoutils/aes/AESCommonXXF3"]);
+    }
+    return Common.autoForceModules(forcedModules)();
 }
 
 let base = {
@@ -196,6 +217,10 @@ and that the secure_drivers library should be loaded.
     modules: (inst) => {
         let forcedModules = ["Board"];
         return Common.autoForceModules(forcedModules)();
+    },
+
+    moduleStatic: {
+        modules: addStaticModules
     },
 
     templates    : {

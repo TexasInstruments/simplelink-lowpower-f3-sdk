@@ -40,6 +40,8 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
+let deviceId = system.deviceData.deviceId;
+
 /* Amount of bytes necessary to store a key's metadata in KeyStore. Keys of
  * every type require a slot, each with a constant size.
  */
@@ -110,7 +112,11 @@ function getLibs(mod)
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        if (deviceId.match(/CC27.{3}1/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx10_its.a"));
+        } else if (deviceId.match(/CC27.{3}2/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx20_its.a"));
+        }
     }
 
     return (libGroup);
@@ -409,6 +415,13 @@ predefined internal flash region.
         default       : 23,
         displayFormat : "dec",
         hidden        : true
+    },
+    {
+        name          : "isTrustZoneEnabled",
+        description   : "Tracks whether TrustZone is enabled - KeyStore SysConfig should not define content "
+                        + "for the secure build if so.",
+        default       : false,
+        hidden        : true
     }
 ];
 
@@ -593,6 +606,12 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
                     inst.$uiState[key].hidden = true;
                 }
             });
+
+            /* If TrustZone is enabled, we must prevent definition of
+             * SysConfig-generated content that the secure build defines
+             * for itself.
+             */
+            inst.isTrustZoneEnabled = true;
         }
         else {
             /* Display base config */
@@ -608,6 +627,8 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
                     inst.$uiState[key].hidden = false;
                 }
             });
+
+            inst.isTrustZoneEnabled = false;
         }
     }
 }

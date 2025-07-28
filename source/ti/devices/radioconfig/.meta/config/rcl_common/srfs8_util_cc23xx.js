@@ -132,11 +132,20 @@ function create(phyGroup) {
         sections[n++] = "Extended header;" + byteString(packetData.slice(2, 2 + 1)) + ";" + byteString(packetData.slice(3, 3 + 1)) + ";" +
                         byteString(packetData.slice(4, 4 + 6)) + ";" + byteString(packetData.slice(10, 10 + 2));
 
+        // Constrain displayed payload to 100 bytes
+        var payloadSuffix = "";
+        var maxPayloadLength = 100;
+        var payloadLength = packetData.length;
+        if (payloadLength > maxPayloadLength) {
+            payloadSuffix = " + " + (payloadLength - maxPayloadLength) + " byte(s)"
+            payloadLength = maxPayloadLength;
+        }
+
         // Add payload
         if (getTestProperty("seqNumberEnable") == 0) {
-            sections[n++] = "Advertising data;%" + byteString(packetData.slice(12));
+            sections[n++] = "Advertising data;%" + byteString(packetData.slice(12, payloadLength)) + payloadSuffix;
         } else {
-            sections[n++] = "Advertising data;Seq.;%" + byteString(packetData.slice(14));
+            sections[n++] = "Advertising data;Seq.;%" + byteString(packetData.slice(14, payloadLength)) + payloadSuffix;
         }
 
         // Add CRC

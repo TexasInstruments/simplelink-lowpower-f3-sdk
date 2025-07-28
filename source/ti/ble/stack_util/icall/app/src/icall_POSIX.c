@@ -1610,7 +1610,7 @@ uint8 ICall_IsQueueEmpty()
 {
   TaskP_Handle taskhandle = ICall_taskSelf();
   ICall_TaskEntry *taskentry = ICall_searchTask(taskhandle);
-  if(taskentry->queue == NULL)
+  if( (taskentry == NULL) || (taskentry->queue == NULL))
       return true;
   else
       return false;
@@ -1990,7 +1990,7 @@ ICall_pwrDispense(ICall_PwrBitmap_t bitmap)
 bool
 ICall_pwrIsStableXOSCHF(void)
 {
-  ICall_GetBoolArgs args;
+  ICall_GetBoolArgs args = {0};
   (void) ICallPlatform_pwrIsStableXOSCHF(&args);
   return (args.value);
 }
@@ -2016,7 +2016,7 @@ ICall_pwrSwitchXOSCHF(void)
 uint32_t
 ICall_pwrGetXOSCStartupTime(uint_fast32_t timeUntilWakeupInMs)
 {
-  ICall_PwrGetXOSCStartupTimeArgs args;
+  ICall_PwrGetXOSCStartupTimeArgs args = {0};
   args.timeUntilWakeupInMs = timeUntilWakeupInMs;
   (void) ICallPlatform_pwrGetXOSCStartupTime(&args);
   return (args.value);

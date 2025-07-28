@@ -55,8 +55,8 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
 #include <ti/drivers/utils/Random.h>
 
-#include <ti/drivers/aesccm/AESCCMLPF3.h>
-#include <ti/drivers/aesecb/AESECBLPF3.h>
+#include <ti/drivers/aesccm/AESCCMXXF3.h>
+#include <ti/drivers/aesecb/AESECBXXF3.h>
 #include <ti/drivers/RNG.h>
 
 #if defined( HOST_CONFIG ) && ( HOST_CONFIG & ( CENTRAL_CFG | PERIPHERAL_CFG ) )

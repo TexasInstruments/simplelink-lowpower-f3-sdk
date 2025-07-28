@@ -102,6 +102,9 @@
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_power_control.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_rssi_monitor.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_connection_handover.h"
+#include "ti/ble/stack_util/lib_opt/ctrl_stub_past_sender.h"
+#include "ti/ble/stack_util/lib_opt/ctrl_stub_past_receiver.h"
+#include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_scan.h"
 
 /*******************************************************************************
  * MACROS
@@ -2797,6 +2800,130 @@ hciStatus_t HCI_LE_SetPeriodicAdvEnableCmd( uint8 enable, uint8 advHandle )
 }
 
 /*******************************************************************************
+ * Used to instruct the controller to send synchronization information about
+ * the periodic advertising in an advertising set to a connected device.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_LE_PAdvSetInfoTransferCmd( uint16_t connHandle,
+                                           uint16_t serviceData,
+                                           uint8_t  advHandle )
+{
+  // 0  : Status
+  // 1-2: connection handle
+  uint8_t returnParam[3];
+  hciStatus_t status = HCI_SUCCESS;
+
+  // Execute command
+  status = OPT_LE_PAdvSetInfoTransfer( connHandle, serviceData, advHandle );
+
+  // 0  : Status
+  returnParam[0] = status;
+  // 1-2: connection handle
+  returnParam[1] = LO_UINT16(connHandle);
+  returnParam[2] = HI_UINT16(connHandle);
+
+  // Send Command Complete Event including the status and connection handle
+  MAP_HCI_CommandCompleteEvent( HCI_LE_PADV_SET_INFO_TRANSFER_CMD,
+                                sizeof ( returnParam ),
+                                returnParam );
+
+  return ( status );
+}
+
+/*******************************************************************************
+ * Used to instruct the controller to send synchronization information about the
+ * periodic advertising train identified by the Sync_Handle parameter to a
+ * connected device.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_LE_PAdvSyncTransferCmd( uint16_t connHandle,
+                                        uint16_t serviceData,
+                                        uint16_t syncHandle )
+{
+  // 0  : Status
+  // 1-2: connection handle
+  uint8_t returnParam[3];
+  hciStatus_t status = HCI_SUCCESS;
+
+  // Execute command
+  status = OPT_LE_PAdvSyncTransfer( connHandle, serviceData, syncHandle );
+
+  // 0  : Status
+  returnParam[0] = status;
+  // 1-2: connection handle
+  returnParam[1] = LO_UINT16(connHandle);
+  returnParam[2] = HI_UINT16(connHandle);
+
+  // Send Command Complete Event including the status and connection handle
+  MAP_HCI_CommandCompleteEvent( HCI_LE_PADV_SYNC_TRANSFER_CMD, sizeof ( returnParam ),
+                                returnParam );
+
+  return ( status );
+}
+
+/*******************************************************************************
+ * Used to specify how the controller will process periodic advertising sync
+ * information (syncInfo) received from the device identified by the
+ * connection handle parameter.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_LE_SetPASTParamCmd( uint16_t  connHandle,
+                                    uint8_t   mode,
+                                    uint16_t  skip,
+                                    uint16_t  syncTimeout,
+                                    uint8_t   cteType )
+{
+  // 0  : Status
+  // 1-2: connection handle
+  uint8_t returnParam[3];
+  hciStatus_t status = HCI_SUCCESS;
+
+  // Execute command
+  status = OPT_LE_SetPASTParam( connHandle, mode, skip, syncTimeout, cteType );
+
+  // 0  : Status
+  returnParam[0] = status;
+  // 1-2: connection handle
+  returnParam[1] = LO_UINT16(connHandle);
+  returnParam[2] = HI_UINT16(connHandle);
+
+  // Send Command Complete Event including the status and connection handle
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PADV_SYNC_TRANSFER_PARAMS_CMD,
+                                sizeof ( returnParam ),
+                                returnParam );
+
+  return ( status );
+}
+
+/*******************************************************************************
+ * Used to specify the initial value for the mode, skip, timeout, and Constant
+ * Tone Extension type to be used for all subsequent connections over the LE
+ * transport.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_LE_SetDefaultPASTParamCmd( uint8_t   mode,
+                                           uint16_t  skip,
+                                           uint16_t  syncTimeout,
+                                           uint8_t   cteType )
+{
+  hciStatus_t status = HCI_SUCCESS;
+
+  // Execute command
+  status = OPT_LE_SetDefaultPASTParam( mode, skip, syncTimeout, cteType );
+
+  // Send Command Complete Event including the status
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_DEFAULT_PADV_SYNC_TRANSFER_PARAMS_CMD,
+                                sizeof ( status ),
+                                &status );
+
+  return ( status );
+}
+
+/*******************************************************************************
  * Used by the Host to set the type, length, and antenna switching pattern
  * for the transmission of Constant Tone Extensions in any periodic advertising.
  *
@@ -2853,11 +2980,78 @@ hciStatus_t HCI_LE_PeriodicAdvCreateSyncCmd( uint8 options, uint8 advSID,
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_PeriodicAdvCreateSync( options, advSID, advAddrType, advAddress, skip,
+  status = OPT_LE_PeriodicAdvCreateSync( options, advSID, advAddrType, advAddress, skip,
                                          syncTimeout, syncCteType );
 
   MAP_HCI_CommandStatusEvent( status, HCI_LE_PERIODIC_ADV_CREATE_SYNC );
 
+  return ( status );
+}
+
+/*******************************************************************************
+ * Used a PAwR scanner to synchronize with a periodic advertising train
+ * to set of subevents.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_LE_SetPeriodicSyncSubeventCmd(uint16_t syncHandle,
+                                              uint16_t perAdvProps,
+                                              uint8_t  numSubevents,
+                                              uint8_t* subEvents)
+{
+  uint8_t returnParam[3];
+  hciStatus_t status = LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER;
+
+  llPeriodicScanSet_t* pPeriodicScan = OPT_LL_PadvS_GetSetByHandle(syncHandle);
+
+  if(pPeriodicScan != NULL)
+  {
+      status = OPT_LE_SetPeriodicSyncSubevent(pPeriodicScan->pPAwRParams,
+                                              perAdvProps,
+                                              numSubevents,
+                                              subEvents);
+  }
+
+  returnParam[0] = status;
+  returnParam[1] = LO_UINT16(syncHandle);
+  returnParam[2] = HI_UINT16(syncHandle);
+
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_SYNC_SUBEVENT,
+                                sizeof ( returnParam ),
+                                returnParam );
+
+  return ( status );
+}
+
+/*******************************************************************************
+ * Used by a PAwR scanner to send response data packets on requested subevents.
+ *
+ * Public function defined in hci.h.
+ */
+hciStatus_t HCI_LE_SetPeriodicAdvResponseDataCmd(uint16_t syncHandle,
+                                                 uint8_t* pRspParams)
+{
+  uint8_t returnParam[3];
+  hciStatus_t status = LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER;
+
+  // Retrieve pointer to the relavant periodic
+  llPeriodicScanSet_t* pPeriodicScan = OPT_LL_PadvS_GetSetByHandle(syncHandle);
+
+  if(pPeriodicScan != NULL)
+  {
+      // Send the PAwR module the input / output parametes
+      status = OPT_LE_SetPeriodicAdvResponseData(pPeriodicScan->eventCounter, &pPeriodicScan->chanMap.current,
+                                                 pPeriodicScan->syncInfo.accessAddr, pPeriodicScan->interval,
+                                                 pPeriodicScan->pPAwRParams, pRspParams, &pPeriodicScan->rfCmd);
+  }
+
+  returnParam[0] = status;
+  returnParam[1] = LO_UINT16(syncHandle);
+  returnParam[2] = HI_UINT16(syncHandle);
+
+  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_RESPONSE_DATA,
+                                sizeof ( returnParam ),
+                                returnParam );
   return ( status );
 }
 
@@ -2871,7 +3065,7 @@ hciStatus_t HCI_LE_PeriodicAdvCreateSyncCancelCmd( void )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_PeriodicAdvCreateSyncCancel();
+  status = OPT_LE_PeriodicAdvCreateSyncCancel();
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_PERIODIC_ADV_CREATE_SYNC_CANCEL, sizeof ( status ),
                                 &status );
@@ -2889,7 +3083,7 @@ hciStatus_t HCI_LE_PeriodicAdvTerminateSyncCmd( uint16 syncHandle )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_PeriodicAdvTerminateSync( syncHandle );
+  status = OPT_LE_PeriodicAdvTerminateSync( syncHandle );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_PERIODIC_ADV_TERMINATE_SYNC, sizeof ( status ),
                                 &status );
@@ -2908,7 +3102,7 @@ hciStatus_t HCI_LE_AddDeviceToPeriodicAdvListCmd( uint8 advAddrType, uint8 *advA
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_AddDeviceToPeriodicAdvList( advAddrType, advAddress, advSID );
+  status = OPT_LE_AddDeviceToPeriodicAdvList( advAddrType, advAddress, advSID );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_ADD_DEVICE_TO_PERIODIC_ADV_LIST, sizeof ( status ),
                                 &status );
@@ -2927,7 +3121,7 @@ hciStatus_t HCI_LE_RemoveDeviceFromPeriodicAdvListCmd( uint8 advAddrType,
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_RemoveDeviceFromPeriodicAdvList( advAddrType, advAddress, advSID );
+  status = OPT_LE_RemoveDeviceFromPeriodicAdvList( advAddrType, advAddress, advSID );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_REMOVE_DEVICE_FROM_PERIODIC_ADV_LIST,
                                 sizeof ( status ), &status );
@@ -2945,7 +3139,7 @@ hciStatus_t HCI_LE_ClearPeriodicAdvListCmd( void )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_ClearPeriodicAdvList( );
+  status = OPT_LE_ClearPeriodicAdvList( );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_CLEAR_PERIODIC_ADV_LIST, sizeof ( status ),
                                 &status );
@@ -2966,7 +3160,7 @@ hciStatus_t HCI_LE_ReadPeriodicAdvListSizeCmd( void )
   // 1: List Size
   uint8 rtnParam[2];
 
-  status = LE_ReadPeriodicAdvListSize( &rtnParam[1] );
+  status = OPT_LE_ReadPeriodicAdvListSize( &rtnParam[1] );
 
   rtnParam[0] = status;
 
@@ -2986,7 +3180,7 @@ hciStatus_t HCI_LE_SetPeriodicAdvReceiveEnableCmd( uint16 syncHandle, uint8 enab
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  status = LE_SetPeriodicAdvReceiveEnable( syncHandle, enable );
+  status = OPT_LE_SetPeriodicAdvReceiveEnable( syncHandle, enable );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_RECEIVE_ENABLE, sizeof ( status ),
                                 &status );
@@ -4953,7 +5147,7 @@ hciStatus_t HCI_LE_CS_ReadLocalSupportedCapabilities(void)
     // 0: Status
     // 1-28: CS Capabilities
     uint8  rtnParam[HCI_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_COMPLETE_EVENT_LEN];
-    llCsCapabilities_t localCsCapabilities;
+    llCsCapabilities_t localCsCapabilities = {0};
     // status
     rtnParam[0] = (uint8)OPT_LL_CS_ReadLocalSupportedCapabilites(&localCsCapabilities);
     rtnParam[1] = localCsCapabilities.numConfig;

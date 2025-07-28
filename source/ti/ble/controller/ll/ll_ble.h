@@ -232,6 +232,7 @@
 #define RAT_TICKS_IN_20MS              80000
 #define RAT_TICKS_IN_100MS             400000    // Refers to the minimum observation period
 #define RAT_TICKS_IN_1S                4000000
+#define RAT_TICKS_IN_5S                20000000
 #define RAT_TICKS_IN_1_28S             5120000   // Directed Advertising Timeout
 #define RAT_TICKS_IN_32S               128000000 // Max LSTO
 //

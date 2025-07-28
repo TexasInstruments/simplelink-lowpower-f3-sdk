@@ -69,6 +69,15 @@
 
 #define MCUBOOT_OVERWRITE_ONLY
 
+
+/*software based downgrade prevention the image version numbers are compared */
+#define MCUBOOT_DOWNGRADE_PREVENTION
+#define MCUBOOT_WATCHDOG_FEED() { }
+% }
+% else if(inst.mode === 'swapUsingMove'){
+/* Enable the overwrite using move code path. */
+#define MCUBOOT_SWAP_USING_MOVE 1
+
 /*software based downgrade prevention the image version numbers are compared */
 #define MCUBOOT_DOWNGRADE_PREVENTION
 #define MCUBOOT_WATCHDOG_FEED() { }
@@ -96,6 +105,10 @@
  */
 
 #define MCUBOOT_HW_ROLLBACK_PROT
+#define MCUBOOT_DOWNGRADE_PREVENTION_SECURITY_COUNTER 1
+% }
+% else{
+#define MCUBOOT_DOWNGRADE_PREVENTION_SECURITY_COUNTER 0
 % }
 
 % if(!inst.tzEnabled){

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -15,6 +16,15 @@
 #include "psa/crypto.h"
 #include "psa/error.h"
 #include "crypto_library.h"
+
+/* TI-TFM: Custom include(s) and define(s) for TI's PSA Crypto API implementation */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+
+#include "psa/crypto_client_struct.h"
+
+#define MBEDTLS_PRIVATE(member) member
+
+#else
 
 /**
  * \brief This include is required to get the underlying platform function
@@ -65,6 +75,8 @@ static char mbedtls_version_full[18];
 #include "config_engine_buf.h"
 static uint8_t mbedtls_mem_buf[CRYPTO_ENGINE_BUF_SIZE] = {0};
 
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
+
 /*!
  * \defgroup tfm_crypto_library Set of functions implementing the abstractions of the underlying cryptographic
  *                              library that implements the PSA Crypto APIs to provide the PSA Crypto core
@@ -74,8 +86,16 @@ static uint8_t mbedtls_mem_buf[CRYPTO_ENGINE_BUF_SIZE] = {0};
 /*!@{*/
 tfm_crypto_library_key_id_t tfm_crypto_library_key_id_init(int32_t owner, psa_key_id_t key_id)
 {
+/* TI-TFM: PSA Crypto API wrapper requires a key ID which does not encode the owner */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+    return key_id;
+#else
     return mbedtls_svc_key_id_make(owner, key_id);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 }
+
+/* TI-TFM: These functions are not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 
 char *tfm_crypto_library_get_info(void)
 {
@@ -98,6 +118,8 @@ psa_status_t tfm_crypto_core_library_init(void)
 
     return PSA_SUCCESS;
 }
+
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 psa_status_t tfm_crypto_core_library_key_attributes_from_client(
                     const struct psa_client_key_attributes_s *client_key_attr,
@@ -153,6 +175,8 @@ psa_status_t tfm_crypto_core_library_key_attributes_to_client(
     return PSA_SUCCESS;
 }
 
+/* TI-TFM: This functions is not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 /**
  * \brief This function is required by mbed TLS to enable support for
  *        platform builtin keys in the PSA Crypto core layer implemented
@@ -181,4 +205,5 @@ psa_status_t mbedtls_psa_platform_get_builtin_key(
 
     return PSA_ERROR_DOES_NOT_EXIST;
 }
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 /*!@}*/

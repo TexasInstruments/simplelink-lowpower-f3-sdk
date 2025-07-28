@@ -1,8 +1,10 @@
 # SimpleLink™ Low Power F3 SDK
 
-This repository redistributes TI's [SimpleLink Low Power F3 Software Development
+** Not suitable for production/release!**
+
+This Early Access (EA) repository redistributes TI's [SimpleLink Low Power F3 Software Development
 Kit](https://www.ti.com/tool/download/SIMPLELINK-LOWPOWER-F3-SDK) (LPF3 SDK), a
-comprehensive software package for developing 2.4 GHz applications. The LPF3 SDK
+comprehensive software package for developing Matter applications. The LPF3 SDK
 is one of many within the [SimpleLink Low Power
 ecosystem](https://www.ti.com/tool/SIMPLELINK-LOWPOWER-SDK).
 
@@ -19,18 +21,16 @@ users by packaging essential software components, such as:
 
 ## What's New
 
-This is version 9.11.00.18 of the LPF3 SDK. This release includes:
+This is version 9.20.00.07 EA of the LPF3 SDK. This release includes:
 
-* Production-ready release for CC2745R10-Q1 E1, CC2744R7-Q1, CC2755R10, and
-  CC2340R53-Q1 including finalized characterized RF settings.
-* Bluetooth LE Channel Sounding preview.
-* RAS/RAP client preview for Channel Sounding data transfer.
-* MCUboot supports compressed image.
-* OTA compression enabled for Zigbee.
-* Zigbee support added for CC27xx.
+* RCL, BLE Initial Dynamic Multi-Protocol Manager (DMM) support for
+  CC23xx/CC27xx
+* Support for IEEE 3-wire coexistence
 
-More details, including supported devices, IDEs, and toolchains are provided in
-the [LPF3 9.11.00.18 SDK release notes][sdk release notes].
+Note that the release notes and documentation within the LPF3 SDK has _not_ been
+updated for this 9.20.00.07 EA release. This SDK is only to be used in the
+context of Matter-related evaluation, so please refer to the documentation
+provided there.
 
 ## About this Repository
 
@@ -51,7 +51,7 @@ it available as a Git repository to cater to various use cases:
 * **Simplified workflow for rebasing**: Git makes it simpler for you to rebase
   your changes to new releases.
 
-One temporary, notable difference in this LPF3 9.11.00.18 SDK GitHub
+One temporary, notable difference in this LPF3 GitHub
 distribution when compared to the classic installer above, is the exclusion of
 the **tools/ble/ble_agent/ble_toolbox/** directory. This has been temporarily
 done as the ble_toolbox executable currently exceeds GitHub's file size limit.

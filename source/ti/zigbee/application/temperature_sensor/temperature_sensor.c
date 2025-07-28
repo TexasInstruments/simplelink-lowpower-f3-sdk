@@ -406,6 +406,7 @@ void zboss_signal_handler(zb_uint8_t param)
 #ifdef TEST_USE_INSTALLCODE
         zb_secur_ic_str_add(g_ed_addr, g_installcode, NULL);
 #endif
+        zb_set_tx_power(DEFAULT_TX_PWR);
         zboss_start_continue();
         break;
 
@@ -422,6 +423,7 @@ void zboss_signal_handler(zb_uint8_t param)
           zb_bdb_reset_via_local_action(0);
           perform_factory_reset = ZB_FALSE;
         }
+        zb_set_tx_power(DEFAULT_TX_PWR);
         bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
         break;
       }

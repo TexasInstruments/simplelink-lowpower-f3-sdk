@@ -32,15 +32,8 @@ cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources.cmake)
 
 project(psa_crypto LANGUAGES C ASM)
-ti_init_package(
-    NAMESPACE ThirdPartyPsaCryptoLib
-              DEPENDS_ON
-              Drivers
-              SecureDrivers
-              DriversUtils
-              SecureDriversUtils
-              TrustZone
-)
+
+ti_init_package(NAMESPACE ThirdPartyPsaCryptoLib DEPENDS_ON DriversUtils SecureDriversUtils TrustZone)
 
 # Pull "all supported architectures" from cmake-common
 foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
@@ -60,13 +53,13 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
         )
     endif()
 
-    if(${TI_PLATFORM} MATCHES "cc27")
+    if(${TI_PLATFORM} MATCHES "cc27xxx10")
         ti_add_package_dependency(DriversLPF3)
         ti_add_package_dependency(SecureDriversLPF3)
 
         # Secure-only PSA Crypto library
         ti_add_library(
-            psa_crypto_${TI_PLATFORM}
+            psa_crypto_cc27xx
             SOURCES ${SOURCES}
             LINK_PUBLIC
                 CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} SecureDrivers::secure_drivers_${TI_PLATFORM}

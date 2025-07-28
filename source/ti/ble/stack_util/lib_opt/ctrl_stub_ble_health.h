@@ -94,6 +94,7 @@ extern int32_t DbgInf_clear(uint16_t domainBitmap);
 extern uint16_t DbgInf_get(uint8_t* const pBuf, uint16_t len, uint16_t reqDomainBitmap);
 extern int32_t DbgInf_halt(void);
 
+
 // Wrapper functions for the feature implementations
 uint8_t OPT_llDbgInf_addSchedRec(taskInfo_t* const llTask);
 uint8_t OPT_DbgInf_addSchedRec(DbgInf_schedNewRec_t* const newRec);

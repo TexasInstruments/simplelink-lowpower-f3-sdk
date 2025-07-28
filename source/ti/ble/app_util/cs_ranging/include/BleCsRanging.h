@@ -65,6 +65,8 @@
 
 typedef uint16_t BleCsRanging_Return_t;
 
+typedef int8_t BleCsRanging_PathLoss_t;
+
 /**
  *
  */
@@ -114,7 +116,7 @@ typedef enum BleCsRanging_DistanceFusion_e
 typedef enum BleCsRanging_GapInterp_e
 {
     BleCsRanging_GapInterp_Linear,
-    BleCsRanging_GapInterp_Spline,
+    BleCsRanging_GapInterp_Spline, /*!< Not implemented! */
     BleCsRanging_GapInterp_OMP
 } BleCsRanging_GapInterp_e;
 
@@ -134,6 +136,7 @@ typedef struct BleCsRanging_Config_t
     uint16_t numChannels;                     /*!< Number of actual steps, must less than 75*/
     uint16_t qq3Thresh;                       /*!< Quality Threshold to select algorithm dynamically-very good signal*/
     uint16_t qq3Thresh2;                      /*!< Second Quality Threshold to select algorithm dynamically-very bad signal*/
+    int8_t NnPathLossThres;                   /*!< When PathLoss = txPower - RSSI < NnPathLossThres, select NN optimized for close range (0-3 meters) */
     float distanceOffset;                     /*!< Distance Offset from Calibration in meters*/
     BleCsRanging_MAP_e sumAntPath;            /*!< Individutal or Summation before estimating distance*/
     BleCsRanging_GapInterp_e gapInterp;       /*!< Interplation method for gap*/
@@ -148,10 +151,11 @@ typedef struct BleCsRanging_Config_t
  */
 typedef enum
 {
-    BleCsRanging_Status_Success,       /*!< BleCsRanging_AlgorithmStatus_Success */
-    BleCsRanging_Status_InvalidInput,  /*!< BleCsRanging_AlgorithmStatus_InvalidInput */
-    BleCsRanging_Status_InvalidOutput, /*!< BleCsRanging_AlgorithmStatus_InvalidOutput */
-    BleCsRanging_Status_APUFail        /*!< BleCsRanging_AlgorithmStatus_APUFail */
+    BleCsRanging_Status_Success,       /*!< Success */
+    BleCsRanging_Status_InvalidInput,  /*!< Invalid Input */
+    BleCsRanging_Status_InvalidOutput, /*!< Invalid Output */
+    BleCsRanging_Status_APUFail,       /*!< APU Failed */
+    BleCsRanging_Status_Undefined      /*!< Undefined, used as uninitialized value, application should never see this. */
 } BleCsRanging_Status_e;
 
 typedef struct
@@ -172,6 +176,8 @@ typedef struct
     BleCsRanging_DebugResult_t *pDebugResult; /*!< debug result*/
 } BleCsRanging_Result_t;
 
+
+
 /***********************************************************************************
  * Functions/APIs definitions
  **********************************************************************************/
@@ -180,11 +186,19 @@ typedef struct
  * NOTE: Current version assumed input is stored as
  *  [tone_ant0[PCT_LEN], tone_ant1[PCT_LEN], tone_ant2[PCT_LEN], tone_ant3[PCT_LEN]]
  * Future version will relax this assumption
+ * 
+ * @param pResult Result struct
+ * @param pTone_i Tone with TQI from Initiator
+ * @param pTone_r Tone with TQI from Reflector
+ * @param pathLoss pathLoss = txPower-RSSI for each pConfig.numAntPath, set to null to disable NN selection based on pConfig.NnPathLossThres
+ * @param pConfig General config
  */
+
 BleCsRanging_Status_e BleCsRanging_estimatePbr(BleCsRanging_Result_t *pResult,
-                                               BleCsRanging_Tone_t *pTone_i,  // Tone with TQI from Initiator
-                                               BleCsRanging_Tone_t *pTone_r,  // Tone with TQI from Reflector
-                                               BleCsRanging_Config_t *pConfig // General config
+                                               BleCsRanging_Tone_t *pTone_i,
+                                               BleCsRanging_Tone_t *pTone_r,
+                                               BleCsRanging_PathLoss_t *pathLoss,
+                                               BleCsRanging_Config_t *pConfig
 );
 
 /**

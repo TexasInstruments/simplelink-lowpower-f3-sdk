@@ -118,7 +118,7 @@ int BLEAppUtil_createBLEAppUtilTask(void)
     retVal |= pthread_attr_setstack(&param_attribute, appTaskStack, BLEAppUtilLocal_GeneralParams->taskStackSize);
     retVal |= pthread_attr_setdetachstate(&param_attribute, PTHREAD_CREATE_DETACHED);
 
-    retVal |= pthread_create(&BLEAppUtil_theardEntity.threadId,
+    retVal |= pthread_create(&BLEAppUtil_threadEntity.threadId,
                              &param_attribute,
                              &BLEAppUtil_Task,
                              NULL);
@@ -142,7 +142,7 @@ status_t BLEAppUtil_enqueueMsg(uint8_t event, void *pData)
     BLEAppUtil_appEvt_t msg;
 
     // Check if the queue is valid
-    if (BLEAppUtil_theardEntity.queueHandle == (mqd_t)-1)
+    if (BLEAppUtil_threadEntity.queueHandle == (mqd_t)-1)
     {
         return(bleNotReady);
     }
@@ -151,7 +151,7 @@ status_t BLEAppUtil_enqueueMsg(uint8_t event, void *pData)
     msg.pData = pData;
 
     // Send the msg to the application queue
-    status = mq_send(BLEAppUtil_theardEntity.queueHandle,(char*)&msg,sizeof(msg),1);
+    status = mq_send(BLEAppUtil_threadEntity.queueHandle,(char*)&msg,sizeof(msg),1);
 
     return status;
 }
@@ -183,7 +183,7 @@ void *BLEAppUtil_Task(void *arg)
         BLEAppUtil_appEvt_t pAppEvt;
 
         // wait until receive queue message
-        if (mq_receive(BLEAppUtil_theardEntity.queueHandle, (char*)&pAppEvt, sizeof(pAppEvt), NULL) > 0)
+        if (mq_receive(BLEAppUtil_threadEntity.queueHandle, (char*)&pAppEvt, sizeof(pAppEvt), NULL) > 0)
         {
             BLEAppUtil_msgHdr_t *pMsgData = (BLEAppUtil_msgHdr_t *)pAppEvt.pData;
             bool freeMsg = FALSE;

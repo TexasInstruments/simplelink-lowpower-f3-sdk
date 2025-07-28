@@ -244,7 +244,11 @@ function moduleInstances(inst)
                 name       : "uart",
                 displayName: displayName,
                 moduleName : moduleName,
-                hardware   : inst.$hardware
+                hardware   : inst.$hardware,
+                requiredArgs : {
+                    enableNonblocking : false,
+                    dataDirection : "Send Only"
+                }
             }
         ]);
     }

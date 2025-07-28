@@ -95,6 +95,7 @@ extern uint8_t llHandoverGetRxBlockValue(uint16_t connHandle);
 extern void LL_Handover_SetRxBlockValue(uint16_t connHandle, uint8_t block);
 extern uint8_t LL_Handover_BlockTxRxQueuesAllowed(llConnState_t* connPtr);
 
+
 // Wrapper functions for the feature implementations
 uint8_t OPT_llHandoverTriggerDataTransfer(void);
 void OPT_llRemoveHandoverConn(uint8_t* activeConnsArray, uint8_t numActiveConns);

@@ -63,7 +63,7 @@ info. See ANSI X9.63-2011 standard for more information.
 [1]: /secure_drivers/doxygen/html/_a_n_s_i_x936_k_d_f_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_a_n_s_i_x936_k_d_f_8h.html#ti_drivers_ANSIX936KDF_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_a_n_s_i_x936_k_d_f_8h.html#ti_drivers_ANSIX936KDF_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#ANSIX936KDF_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#ANSIX936KDF_Configuration_Options "Configuration options reference"
 `,
     config              : Common.addNameConfig(config, "/ti/drivers/ansix936kdf", "CONFIG_ANSIX936KDF_"),
     defaultInstanceName : "CONFIG_ANSIX936KDF_"

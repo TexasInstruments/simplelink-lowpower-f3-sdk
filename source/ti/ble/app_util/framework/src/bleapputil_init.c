@@ -72,7 +72,7 @@ typedef void (*bleStk_pfnGapScanCB_t) (uint32_t event,
 /*********************************************************************
 * GLOBAL VARIABLES
 */
-BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
+BLEAppUtil_ThreadEntity_t BLEAppUtil_threadEntity;
 
 /*********************************************************************
 * LOCAL VARIABLES
@@ -441,6 +441,7 @@ void BLEAppUtil_stackInit(void)
         // TODO: Call Error Handler
     }
 
+#if defined( HOST_CONFIG ) && ( HOST_CONFIG & ( CENTRAL_CFG | PERIPHERAL_CFG ) )
     // Init GATT
     status = BLEAppUtil_initGatt(BLEAppUtilLocal_GeneralParams->profileRole,
                                  BLEAppUtilSelfEntity,
@@ -449,6 +450,7 @@ void BLEAppUtil_stackInit(void)
     {
         // TODO: Call Error Handler
     }
+#endif //( CENTRAL_CFG | PERIPHERAL_CFG )
 
     // Initialize GAP layer to receive GAP events
     status = GAP_DeviceInit(BLEAppUtilLocal_GeneralParams->profileRole,
@@ -491,9 +493,9 @@ static bStatus_t BLEAppUtil_createQueue(void)
      attr.mq_msgsize = sizeof(BLEAppUtil_appEvt_t);
 
      /* Create the message queue */
-     BLEAppUtil_theardEntity.queueHandle = mq_open("BLEAppUtil_theardQueue", O_CREAT , 0, &attr);
+     BLEAppUtil_threadEntity.queueHandle = mq_open("BLEAppUtil_threadQueue", O_CREAT , 0, &attr);
 
-     if (BLEAppUtil_theardEntity.queueHandle == (mqd_t)-1)
+     if (BLEAppUtil_threadEntity.queueHandle == (mqd_t)-1)
      {
          return FAILURE;
      }
@@ -585,7 +587,7 @@ bStatus_t BLEAppUtil_initGap(uint8_t role,
 
   // Register with GAP for HCI/Host messages. This is needed to receive HCI
   // events. For more information, see the HCI section in the User's Guide:
-  // http://software-dl.ti.com/lprf/ble5stack-latest/
+  // All the documentation and collateral applicable can be found on TI Developer Zone - https://dev.ti.com/
   GAP_RegisterForMsgs(appSelfEntity);
 
   return status;
@@ -675,7 +677,7 @@ bStatus_t BLEAppUtil_initGatt(uint8_t role, ICall_EntityID appSelfEntity, uint8_
 
   // Set the Device Name characteristic in the GAP GATT Service
   // For more information, see the section in the User's Guide:
-  // http://software-dl.ti.com/lprf/ble5stack-latest/
+  // All the documentation and collateral applicable can be found on TI Developer Zone - https://dev.ti.com/
     status = GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, (void *)pAttDeviceName);
     if (status != SUCCESS)
     {
@@ -699,7 +701,7 @@ bStatus_t BLEAppUtil_initGatt(uint8_t role, ICall_EntityID appSelfEntity, uint8_
 
     // This API is documented in hci.h
     // See the LE Data Length Extension section in the BLE5-Stack User's Guide for information on using this command:
-    // http://software-dl.ti.com/lprf/ble5stack-latest/
+    // All the documentation and collateral applicable can be found on TI Developer Zone - https://dev.ti.com/
     HCI_LE_WriteSuggestedDefaultDataLenCmd(BLEAPP_SUGGESTED_PDU_SIZE, BLEAPP_SUGGESTED_TX_TIME);
   }
   if (role & (GAP_PROFILE_CENTRAL | GAP_PROFILE_OBSERVER))
@@ -715,7 +717,7 @@ bStatus_t BLEAppUtil_initGatt(uint8_t role, ICall_EntityID appSelfEntity, uint8_
 
     //This API is documented in hci.h
     //See the LE Data Length Extension section in the BLE5-Stack User's Guide for information on using this command:
-    //http://software-dl.ti.com/lprf/ble5stack-latest/
+    //All the documentation and collateral applicable can be found on TI Developer Zone - https://dev.ti.com/
     HCI_EXT_SetMaxDataLenCmd(APP_SUGGESTED_TX_PDU_SIZE, APP_SUGGESTED_TX_TIME, APP_SUGGESTED_RX_PDU_SIZE, APP_SUGGESTED_RX_TIME);
   }
 
@@ -944,7 +946,7 @@ bStatus_t BLEAppUtil_setConnPhy(BLEAppUtil_ConnPhyParams_t *phyParams)
 {
     // Set Phy Preference on the current connection. Apply the same value
     // for RX and TX. For more information, see the LE 2M PHY section in the User's Guide:
-    // http://software-dl.ti.com/lprf/ble5stack-latest/
+    // All the documentation and collateral applicable can be found on TI Developer Zone - https://dev.ti.com/
     return HCI_LE_SetPhyCmd(phyParams->connHandle, phyParams->allPhys, phyParams->txPhy, phyParams->rxPhy, phyParams->phyOpts);
 }
 

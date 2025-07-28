@@ -54,6 +54,14 @@ ifneq ($(wildcard build/gcc),)
 endif
 	@ $(RMDIR) build
 
+# If TFM building is enabled, it must be built before libraries that use it
+ifeq ($(ENABLE_TFM_BUILD), 1)
+build-ticlang build-gcc build-iar: build-sdk-specific
+endif
+
+# TODO: remove explicit HSMDDK_INSTALL_DIR assignment when
+# tfm_s/util/makefile_common.mak provides SDK_INSTALL_DIR as a default
+build-sdk-specific: export HSMDDK_INSTALL_DIR=$(CURDIR)
 build-sdk-specific:
 ifeq ($(ENABLE_TFM_BUILD), 1)
 	@$(MAKE) -C tfm_s/cc27xx

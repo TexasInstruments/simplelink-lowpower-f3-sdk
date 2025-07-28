@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1407,13 +1407,13 @@ void MCAN_clearNewDataStatus(const MCAN_RxNewDataStatus *newDataStatus);
 /*!
  *  @brief   Reads received message from message RAM.
  *
- *  This function uses the MCAN_RxBufElementNoCpy structure element which has
- *  data as pointer instead of an array. Note that as the data is a pointer here
- *  hence corruption of data is possible when the payload size is exceeded.
+ *  This function uses the MCAN_RxBufElementNoCpy structure element which defines
+ *  \c data as a pointer instead of an array. The data buffer which is pointed to
+ *  must be sufficiently large for the payload size to avoid memory corruption.
  *
- *  @param   memType         Part of message ram to which given message to write.
+ *  @param   memType         MCAN Message RAM type (buffer or FIFO).
  *                           Refer enum MCAN_MemType.
- *  @param   num             Buffer number or FIFO number from where message is to read.
+ *  @param   num             Buffer number or FIFO number to read message from.
  *                           Refer enum MCAN_RxFifoNum if FIFO number. Must be valid per
  *                           the message RAM configuration.
  *  @param   elem            Pointer to Rx element.
@@ -1430,9 +1430,9 @@ void MCAN_readRxMsgNoCpy(MCAN_MemType memType, uint32_t num, MCAN_RxBufElementNo
 /*!
  *  @brief   Reads received message from message RAM.
  *
- *  @param   memType         Part of message ram to which given message to write.
+ *  @param   memType         MCAN Message RAM type (buffer or FIFO).
  *                           Refer enum MCAN_MemType.
- *  @param   num             Buffer number or FIFO number from where message is to read.
+ *  @param   num             Buffer number or FIFO number to read message from.
  *                           Refer enum MCAN_RxFifoNum if FIFO number. Must be valid per
  *                           the message RAM configuration.
  *  @param   elem            Pointer to Rx element.

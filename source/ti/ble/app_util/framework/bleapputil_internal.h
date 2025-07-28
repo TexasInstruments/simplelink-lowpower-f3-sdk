@@ -99,7 +99,7 @@ typedef struct
 {
     pthread_t threadId;
     mqd_t     queueHandle;
-} BLEAppUtil_TheardEntity_t;
+} BLEAppUtil_ThreadEntity_t;
 
 /** @internal data structure for callback context switch*/
 typedef struct
@@ -155,7 +155,7 @@ extern StackInitDone_t appInitDoneHandler;
 extern BLEAppUtil_EventHandlersList_t *BLEAppUtilEventHandlersHead;
 
 extern pthread_mutex_t mutex;
-extern BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
+extern BLEAppUtil_ThreadEntity_t BLEAppUtil_threadEntity;
 
 /*********************************************************************
  * FUNCTIONS

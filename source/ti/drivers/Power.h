@@ -945,8 +945,12 @@ void Power_unregisterNotify(Power_NotifyObj *pNotifyObj);
     #include <ti/drivers/power/PowerCC23X0.h>
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include <ti/drivers/power/PowerCC27XX.h>
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC283X)
+    #include <ti/drivers/power/PowerCC283X.h>
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #include <ti/drivers/power/PowerWFF3.h>
+#else
+    #error The Power driver does not support the selected device family
 #endif
 
 #endif /* ti_drivers_Power__include */

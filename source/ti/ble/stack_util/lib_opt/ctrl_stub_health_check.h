@@ -90,6 +90,7 @@ extern void llHealthSetThreshold(uint32_t connTime, uint32_t scanTime, uint32_t 
 extern void llHealthSetAESThreshold(uint32_t aesThreshold);
 extern bool ll_healthCheckIsEnable(void);
 
+
 // Wrapper functions for the feature implementations
 int8_t OPT_llHealthCheck(void);
 void OPT_llHealthUpdate(uint8_t state);

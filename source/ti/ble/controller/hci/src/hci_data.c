@@ -164,11 +164,11 @@ void LL_RxDataCompleteCback( uint16 connHandle,
   // unused input parameter; PC-Lint error 715.
   (void)rssi;
 
-  // check if Controller to Host flow control is enabled
-  if ( ctrlToHostEnable == TRUE )
+  // check if Controller to Host flow control is enabled and the buffer not empty
+  if ( (ctrlToHostEnable == UTRUE) && (numHostBufs > 0U) )
   {
     // decrement the number of available Host buffers, and check if exhausted
-    if ( --numHostBufs == 0 )
+    if ( --numHostBufs == 0U )
     {
       // enable LL Rx flow control
       MAP_LL_CtrlToHostFlowControl( LL_ENABLE_RX_FLOW_CONTROL );
@@ -176,7 +176,7 @@ void LL_RxDataCompleteCback( uint16 connHandle,
   }
 
   // check if this is for the Host
-  if ( hciL2capTaskID != 0 )
+  if ( hciL2capTaskID != 0U )
   {
     hciDataEvent_t *msg;
 

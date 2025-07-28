@@ -42,5 +42,5 @@ setuptools.setup(
             "wireshark = tilogger_wireshark.main:output_factory_cli",
         ],
     },
-    install_requires=["pywin32==308", "typer==0.15.1", "colorama==0.4.6"],
+    install_requires=["pywin32==308", "typer==0.16.0", "colorama==0.4.6"],
 )

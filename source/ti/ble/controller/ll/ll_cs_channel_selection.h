@@ -70,7 +70,8 @@
  
  
  *****************************************************************************/
-
+#ifndef LL_CS_CHANNEL_SELECTION_H
+#define LL_CS_CHANNEL_SELECTION_H
 /*******************************************************************************
  * INCLUDES
  */
@@ -115,6 +116,7 @@
  *
  * input parameters
  *
+ * @param       connId - connection ID
  * @param       pShuffledChannelArray  - shuffled channel array
  * @param       pFilteredArr           - Filtered (non shuffled channel array)
  * @param       nChannels              - num channels (array size)
@@ -130,5 +132,7 @@
  *                                       in pBitMapArrayOfChannels
  *              CS_STATUS_SUCCESS
  */
-csStatus_e llCsChSel3aAnd3b(uint8* pShuffledChannelArray, uint8* pFilteredArr,
+csStatus_e llCsChSel3aAnd3b(uint16 connId, uint8* pShuffledChannelArray, uint8* pFilteredArr,
                           uint8 nChannels, csTransactionId_e trId);
+
+#endif //LL_CS_CHANNEL_SELECTION_H

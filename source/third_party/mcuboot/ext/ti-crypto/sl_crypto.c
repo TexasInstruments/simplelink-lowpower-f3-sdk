@@ -35,7 +35,7 @@
 #include "mcuboot_config.h"
 #include "string.h"
 
-#if defined(IS_CC13XX_CC26XX)
+#if defined(IS_CC13XX_CC26XX) || defined(IS_CC13X2X7_CC13X4_CC26X4)
 #include "ti/common/cc26xx/sha2/sha2_driverlib.h"
 #include "ti/common/cc26xx/ecc/ECDSACC26X4_driverlib.h"
 #include "ti/common/cc26xx/ecc/AESCTRCC26X4_driverlib.h"

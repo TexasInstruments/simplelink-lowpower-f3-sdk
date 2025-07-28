@@ -48,7 +48,7 @@ extern const LRF_Config LRF_configAdcNoise;
 /* Callback function type */
 typedef void (*applicationCallback_t)(uint32_t* buffer, uint32_t numWords, int_fast16_t status);
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /* Place the necessary RCL structs in SYSRAM instead of BUFRAM. For CC27XX devices, it's not safe to use BUFRAM to save bytes.
  * See RCL-429 and RCL-957.
  */
@@ -111,7 +111,7 @@ static void adcNoiseCallback(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events 
 /*
  *  ======== RCL_AdcNoise_get_samples_blocking ========
  */
-int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWords)
+__attribute__((weak)) int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWords)
 {
     RCL_CommandStatus status;
     RCL_CmdAdcNoiseGet *adcNoiseCmd = RCL_ADC_NOISE_CMD_PTR;
@@ -159,7 +159,7 @@ int_fast16_t RCL_AdcNoise_get_samples_blocking(uint32_t* buffer, uint32_t numWor
  *
  *  NOTE: This function must be called from a task context, with interrupts enabled
  */
-int_fast16_t RCL_AdcNoise_get_samples_callback(uint32_t* buffer, uint32_t numWords, applicationCallback_t callback)
+__attribute__((weak)) int_fast16_t RCL_AdcNoise_get_samples_callback(uint32_t* buffer, uint32_t numWords, applicationCallback_t callback)
 {
     RCL_CommandStatus status;
     RCL_CmdAdcNoiseGet *adcNoiseCmd = RCL_ADC_NOISE_CMD_PTR;

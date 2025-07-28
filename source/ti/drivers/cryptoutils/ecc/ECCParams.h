@@ -47,7 +47,7 @@
 #include <ti/devices/DeviceFamily.h>
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    #include <ti/drivers/cryptoutils/ecc/ECCParamsLPF3HSM.h>
+    #include <ti/drivers/cryptoutils/ecc/ECCParamsXXF3HSM.h>
 #endif
 
 #ifdef __cplusplus
@@ -113,7 +113,7 @@ typedef enum
 {
     /*
      * WARNING: Do not alter the order or contents of this enum without updating
-     * the corresponding curveParamTable array in ECCParamCC26X4_s.c
+     * the corresponding curveParamTable array in ECCParam<Device_Family>_s.c
      */
     ECCParams_SecureCurve_NISTP224 = 0,
     ECCParams_SecureCurve_NISTP256,
@@ -124,7 +124,9 @@ typedef enum
     ECCParams_SecureCurve_BrainpoolP512R1,
     ECCParams_SecureCurve_Curve25519,
     ECCParams_SecureCurve_Ed25519,
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     ECCParams_SecureCurve_Wei25519,
+#endif
     ECCParams_SecureCurve_COUNT /* This element denotes the max enum value and is not a valid curve */
 } ECCParams_SecureCurve;
 

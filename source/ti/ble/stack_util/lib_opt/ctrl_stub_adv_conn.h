@@ -107,6 +107,7 @@ extern llStatus_t LE_checkAdvConnStatus(advSet_t* pAdvSet, aeEnableCmd_t* pCmdPa
 extern bool ll_AdvConnIsEnable(void);
 extern void llCmdAdvStartedEventHandle(void);
 
+
 // Wrapper functions for the feature implementations
 void OPT_llProcessPeripheralConnectionCreated(void);
 void OPT_llProcessPeripheralControlPacket(llConnState_t* connPtr, uint8_t* pPkt);

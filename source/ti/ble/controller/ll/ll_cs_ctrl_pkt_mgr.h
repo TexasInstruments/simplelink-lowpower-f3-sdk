@@ -73,6 +73,8 @@
  
  
  *****************************************************************************/
+#ifndef LL_CS_CTRL_PKT_MGR_H
+#define LL_CS_CTRL_PKT_MGR_H
 /*******************************************************************************
  * INCLUDES
  */
@@ -87,6 +89,8 @@
  */
 #define CS_CENT_CONNEVENT_OFFSET       3 /* The central connEvent offset to start the CS procedure */
 #define CS_PERI_CONNEVENT_OFFSET       2 /* The peripheral connEvent offset to start the CS procedure */
+#define CS_MIN_CONNEVENT_OFFSET        1 /* The minimum connEvent offset to start the CS procedure after the Indication received */
+
 #define CS_T_MES_MIN                   150 /* The minimum subevent space. Units: us */
 #define CS_SUBEVENT_SPACE              CS_T_MES_MIN + 2000  /* Additional 2000us for post processing */
 
@@ -107,7 +111,7 @@
  */
 
 /*******************************************************************************
- * @fn          llCsProcessCsControlPacket
+ * @fn          llCsReceiveCsControlPacket
  *
  * @brief       This API is used to handle the reception of a CS packet.
  * Once a Rx interrupt occurs, the BLE module is called and in case it's a
@@ -143,14 +147,15 @@
  * @note it is assumed that this API is used only when ctrlType is a CS ctrl
  * opcode.
  */
-csStatus_e llCsProcessCsControlPacket(uint8 ctrlType, llConnState_t* connPtr,
+csStatus_e llCsReceiveCsControlPacket(uint8 ctrlType, llConnState_t* connPtr,
                                     uint8* pBuf);
 
+
 /*******************************************************************************
- * @fn          llCsProcessCsCtrlProcedures
+ * @fn          llCsTransmitCsCtrlProcedure
  *
  * @brief       Process CS Control Procedure Depending on type.
- * This processes the packets to be transmitted.
+ *              This processes the packets to be transmitted.
  *
  * @design      BLE_LOKI-506
  *
@@ -170,4 +175,44 @@ csStatus_e llCsProcessCsControlPacket(uint8 ctrlType, llConnState_t* connPtr,
  * @note it is assumed that this API is used only when ctrlType is a CS ctrl
  * opcode.
  */
-uint8 llCsProcessCsCtrlProcedures(llConnState_t* connPtr, uint8 ctrlPkt);
+uint8 llCsTransmitCsCtrlProcedure(llConnState_t* connPtr, uint8 ctrlPkt);
+
+
+/*******************************************************************************
+ * @fn          llCsSetupCapabilities
+ *
+ * @brief       Build the CS Capabilities packet data
+ *
+ * input parameters
+ *
+ * @param       data - data pointer
+ *
+ * @design      BLE_LOKI-506
+ * output parameters
+ *
+ * @param       data - updated with the CS capabilities
+ *
+ * @return      None
+ */
+void llCsSetupCapabilities(uint8* data);
+
+/*******************************************************************************
+ * @fn          llCsCalcSubEventParams
+ *
+ * @brief       Calculate the parameters related to subEventLen and update in
+ *              the csProcedureEnable_t parameter.
+ *
+ * input parameters
+ *
+ * @param       connPtr      - Pointer to connection
+ * @param       pCsReq       - Pointer to ProcedureEnable parameter.
+ *
+ * output parameters
+ *
+ * @param       pCsReq       - Pointer to ProcedureEnable parameter.
+ *
+ * @return      None
+ */
+void llCsCalcSubEventParams(const llConnState_t* connPtr, csProcedureEnable_t *pCsReq);
+
+#endif //LL_CS_CTRL_PKT_MGR_H

@@ -181,6 +181,11 @@ Log_MODULE_DEFINE_WEAK(LogModule_Power, {0});
 
 #define SYSTIMER_CHANNEL_COUNT (5U)
 
+/* Value to be written to the SCB.AIRCR.VECTKEY when writing to the SCB.AIRCR
+ * register for the write to take effect.
+ */
+#define SCB_AIRCR_VECTKEY (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
+
 /* Static Globals */
 
 /*! Temperature notification to compensate the HFXT */
@@ -839,6 +844,7 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
 int_fast16_t Power_sleep(uint_fast16_t sleepState)
 {
     int_fast16_t status = Power_SOK;
+    uint32_t scbAircr;
 
     /* Signal all clients registered for pre standby wakeup notification */
     status = PowerCC27XX_notify(PowerLPF3_ENTERING_STANDBY);
@@ -875,6 +881,15 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      */
     PowerCC27XX_stopContHfxtAmpMeasurements();
 
+    /* Due to a bug in the ROM code, the SCB.AIRCR registers are not restored
+     * correctly so we need to store and restore the state here instead.
+     */
+
+    /* Read AIRCR register, and store it with the required VECTKEY value so the
+     * write when restoring the values will be applied.
+     */
+    scbAircr = (SCB->AIRCR & ((uint32_t)~SCB_AIRCR_VECTKEY_Msk)) | SCB_AIRCR_VECTKEY;
+
     /* Call wrapper function to ensure that R0-R3 are saved and restored before
      * and after this function call. Otherwise, compilers will attempt to stash
      * values on the stack while on the PSP and then restore them just after
@@ -882,6 +897,11 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      * behaviour.
      */
     PowerCC27XX_enterStandby();
+
+    /* Restore the AIRCR register. The stored register value already has
+     * the correct VECTKEY value.
+     */
+    SCB->AIRCR = scbAircr;
 
     /* Now that we have returned and are executing code from flash again, start
      * up the HFXT. The HFXT might already have been enabled automatically by

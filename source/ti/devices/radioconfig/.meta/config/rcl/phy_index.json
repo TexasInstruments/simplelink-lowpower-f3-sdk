@@ -148,6 +148,18 @@
       "label": "1 Mbps / 2 Mbps",
       "protocol": "NESB",
       "usage": "stack"
+    },
+    {
+      "file8": {
+        "cc27xx": "wbms_1m_2m_cc27xx.json"
+      },
+      "phy_files": {
+        "cc27xx": "wbms_1m_2m_cc27xx.phy"
+      },
+      "name": "wbms",
+      "label": "wBMS, 1 Mbps / 2 Mbps, GFSK",
+      "protocol": "Proprietary",
+      "usage": "stack"
     }
   ]
 }

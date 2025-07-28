@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,8 @@
  */
 
 /* !!!!!!!!!!!!! WARNING !!!!!!!!!!!!!
- * For CC27XX implementation, please refer to SHA2LPF3HSM.c instead
+ * This file is a SW implementation for SHA2 operations for CC23XX devices.
+ * For CC27XX implementation, please refer to SHA2XXF3HSM.c
  */
 
 #include <stdint.h>

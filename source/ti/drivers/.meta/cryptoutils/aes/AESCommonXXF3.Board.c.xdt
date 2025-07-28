@@ -1,0 +1,65 @@
+%%{
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/*
+ *  ======== AESCommonXXF3.Board.c.xdt ========
+ */
+    let AESCommonXXF3 = args[0].$static;
+
+%%}
+/*
+ *  =============================== AESCommonXXF3 ===============================
+ */
+%   let devId = system.deviceData.deviceId;
+
+% if (devId.match(/CC23|CC27/))
+% {
+#include <ti/drivers/dma/UDMALPF3.h>
+
+/*
+ *  ======== AES DMA Channel configuration ========
+ */
+%   /* For LAES, DMA channel A and B are fixed. So, it will be the same for each instances. */
+%    let dmaChANumber = AESCommonXXF3.laes.dataLaesChannelA.$solution.devicePinName.replace("DMA_CH", "");
+%    let dmaChBNumber = AESCommonXXF3.laes.dataLaesChannelB.$solution.devicePinName.replace("DMA_CH", "");
+
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaChANumber`ControlTableEntry, `dmaChANumber`);
+ALLOCATE_CONTROL_TABLE_ENTRY(dmaChannel`dmaChBNumber`ControlTableEntry, `dmaChBNumber`);
+
+volatile uDMAControlTableEntry *AESCommonXXF3_dmaPriControlTableEntryChA = &dmaChannel`dmaChANumber`ControlTableEntry;
+volatile uDMAControlTableEntry *AESCommonXXF3_dmaPriControlTableEntryChB = &dmaChannel`dmaChBNumber`ControlTableEntry;
+uint32_t AESCommonXXF3_dmaChannelMaskChA = (uint32_t)0x01UL << `dmaChANumber`;
+uint32_t AESCommonXXF3_dmaChannelMaskChB = (uint32_t)0x01UL << `dmaChBNumber`;
+
+% }

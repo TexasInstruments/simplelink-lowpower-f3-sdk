@@ -230,8 +230,8 @@ void llCsTestGetPayload(uint32_t* pPayloadDst, uint8 plPtrn);
  *
  * input parameters
  *
- * @param       configId - Configuration Id
  * @param       connId - Connection Id
+ * @param       configId - Configuration Id
  * @param       csConfig - Pointer to CS config
  *
  * output parameters
@@ -240,7 +240,7 @@ void llCsTestGetPayload(uint32_t* pPayloadDst, uint8 plPtrn);
  *
  * @return      Status
  */
-uint8 llCsInitChanIdxArrWrapper(uint8 configId, uint16 connId, const uint8* csConfig);
+uint8 llCsInitChanIdxArrWrapper(uint16 connId, uint8 configId, const uint8* csConfig);
 
 /*******************************************************************************
  * @fn          llCsSelectStepChanWrapper
@@ -273,6 +273,7 @@ uint8 llCsSelectStepChanWrapper(uint8 stepMode, uint16 connId, const uint8* conf
  *
  * input parameters
  *
+ * @param       connId - Connection Id
  * @param       csRole - CS Role
  * @param       aaRx - Pointer to Rx AA
  * @param       aaTx - Pointer to Tx AA
@@ -284,7 +285,7 @@ uint8 llCsSelectStepChanWrapper(uint8 stepMode, uint16 connId, const uint8* conf
  *
  * @return      None
  */
-void llCsSelectAAWrapper(uint8 csRole, uint32_t* aaRx, uint32_t* aaTx);
+void llCsSelectAAWrapper(uint16 connId, uint8 csRole, uint32_t* aaRx, uint32_t* aaTx);
 
 /*******************************************************************************
  * @fn          llCsAAOverride
@@ -317,6 +318,7 @@ uint8 llCsAAOverride(uint8 csRole, uint32_t* aaRx, uint32_t* aaTx);
  * Otherwise, the original Payload selection function is called
  * input parameters
  *
+ * @param       connId - Connection Id
  * @param       csRole - CS Role
  * @param       pTx - Pointer to Tx Payload
  * @param       pRx - Pointer to Rx Payload
@@ -329,7 +331,7 @@ uint8 llCsAAOverride(uint8 csRole, uint32_t* aaRx, uint32_t* aaTx);
  *
  * @return      None
  */
-void llCsGetRandomSequenceWrapper(uint8 csRole, uint32_t* pTx, uint32_t* pRx, uint8 plLen);
+void llCsGetRandomSequenceWrapper(uint16 connId, uint8 csRole, uint32_t* pTx, uint32_t* pRx, uint8 plLen);
 
 /*******************************************************************************
  * @fn          llCsPayloadOverride
@@ -360,7 +362,7 @@ uint8 llCsPayloadOverride(uint8 csRole, uint32_t* pTx, uint32_t* pRx);
  *
  * input parameters
  *
- * @param       None
+ * @param       connId - Connection Id
  *
  * output parameters
  *
@@ -368,7 +370,7 @@ uint8 llCsPayloadOverride(uint8 csRole, uint32_t* pTx, uint32_t* pRx);
  *
  * @return      Tone Extension
  */
-uint8 llCsGetToneExtentionWrapper(void);
+uint8 llCsGetToneExtentionWrapper(uint16 connId);
 
 /*******************************************************************************
  * @fn          llCsToneExtentionOverride

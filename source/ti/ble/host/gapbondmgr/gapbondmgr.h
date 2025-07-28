@@ -110,6 +110,10 @@ extern "C"
 #endif // CC23X0
 #endif
 
+#if GAP_BONDINGS_MAX < 1
+#error "GAP_BONDINGS_MAX must be greater than 0"
+#endif
+
 
 #if !defined ( GAP_CHAR_CFG_MAX )
 /// Maximum number of characteristic configuration that can be saved in NV.

@@ -139,19 +139,19 @@ void hal_init_fsm(void (*dispatchFsmCb)(void), void (*schedFsmCb)(void),
 {
     HwiP_Params hp;
     HwiP_Params_init(&hp);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     hp.priority = INT_PRI_LEVEL4;
 #else
     hp.priority = INT_PRI_LEVEL2;
 #endif
     HwiP_construct(&schedHwi, INT_CPUIRQ4, RF_schedHwi, &hp);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     hp.priority = INT_PRI_LEVEL2;
 #else
     hp.priority = INT_PRI_LEVEL1;
 #endif
     HwiP_construct(&dispatchHwi, INT_LRFD_IRQ1, RF_dispatchHwi,  &hp);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     hp.priority = INT_PRI_LEVEL1;
 #else
     hp.priority = INT_PRI_LEVEL0;
@@ -519,7 +519,7 @@ uint32_t hal_get_hfxt_ratio(void)
 
 uint32_t hal_get_hfxt_ratio_default(void)
 {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     return 0x00200000U;
 #else
     return RCL_DEFAULT_HFTRACKCTL_RATIO;

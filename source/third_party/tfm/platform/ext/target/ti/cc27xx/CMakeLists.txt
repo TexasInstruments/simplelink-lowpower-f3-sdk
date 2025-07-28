@@ -31,7 +31,7 @@ target_add_scatter_file(tfm_s
 )
 
 if(BL2)
-    message(FATAL_ERROR "BL2 build is not suppported.")
+    message(FATAL_ERROR "BL2 build is not supported.")
 endif()
 
 #========================= Platform Secure ====================================#
@@ -54,6 +54,8 @@ target_include_directories(platform_s
 
 target_sources(platform_s
     PRIVATE
+        $<$<NOT:$<BOOL:${PLATFORM_DEFAULT_OTP}>>:${CMAKE_CURRENT_SOURCE_DIR}/otp_flash.c>
+        $<$<NOT:$<BOOL:${PLATFORM_DEFAULT_PROVISIONING}>>:${CMAKE_CURRENT_SOURCE_DIR}/provisioning.c>
         $<$<AND:$<BOOL:${TFM_PARTITION_INITIAL_ATTESTATION}>,$<NOT:$<BOOL:${PLATFORM_DEFAULT_ATTEST_HAL}>>>:
             ${CMAKE_CURRENT_SOURCE_DIR}/attest_hal.c>
         $<$<BOOL:${TI_CRYPTO_ITS_INTEGRATION}>:${CMAKE_SOURCE_DIR}/platform/ext/common/tfm_hal_its.c>
@@ -71,12 +73,15 @@ target_sources(platform_s
         ${SECURE_DRIVERS_INSTALL_DIR}/kernel/tfm/dpl/HwiP_tfm.c
 )
 
-# Link driverlib for flash functions
 target_link_libraries(platform_s
     PRIVATE
-        $<$<C_COMPILER_ID:ARMClang>:${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/driverlib/lib/ticlang/driverlib.a>
-        $<$<C_COMPILER_ID:GNU>:${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/driverlib/lib/gcc/driverlib.a>
-        $<$<C_COMPILER_ID:IAR>:${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/driverlib/lib/iar/driverlib.a>
+        # Link driverlib for flash functions
+        $<$<C_COMPILER_ID:ARMClang>:${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/driverlib/lib/ticlang/driverlib.a>
+        $<$<C_COMPILER_ID:GNU>:${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/driverlib/lib/gcc/driverlib.a>
+        $<$<C_COMPILER_ID:IAR>:${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/driverlib/lib/iar/driverlib.a>
+
+        # Add support library for tfm_strnlen().
+        $<$<BOOL:${TFM_PARTITION_INITIAL_ATTESTATION}>:tfm_sprt>
 )
 
 target_compile_options(platform_s
@@ -108,7 +113,7 @@ install(FILES       ${PLATFORM_DIR}/ext/common/test_interrupt.c
 
 # Copy required driverlib source to populate CCFG and SCFG
 install(FILES       ${TARGET_PLATFORM_PATH}/ccfg/ccfg.c  # Local copy of driverlib ccfg.c with custom appVtor
-                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/startup_files/scfg.c
+                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/startup_files/scfg.c
         DESTINATION ${INSTALL_PLATFORM_NS_DIR}/driverlib)
 
 
@@ -136,12 +141,12 @@ install(FILES       ${TARGET_PLATFORM_PATH}/partition/region_defs.h
         DESTINATION ${INSTALL_PLATFORM_NS_DIR}/include)
 
 # Copy required driverlib headers to populate CCFG and SCFG
-install(FILES       ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/inc/hw_ccfg.h
-                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/inc/hw_device.h
-                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/inc/hw_memmap.h
-                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/inc/hw_platform.h
-                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/inc/hw_pmctl.h
-                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xx/inc/hw_scfg.h
+install(FILES       ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/inc/hw_ccfg.h
+                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/inc/hw_device.h
+                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/inc/hw_memmap.h
+                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/inc/hw_platform.h
+                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/inc/hw_pmctl.h
+                    ${DRIVERLIB_SOURCE_DIR}/ti/devices/cc27xxx10/inc/hw_scfg.h
         DESTINATION ${INSTALL_PLATFORM_NS_DIR}/driverlib/inc)
 
 install(FILES       ${TARGET_PLATFORM_PATH}/linker_files/gcc/tfm_common_ns.ld

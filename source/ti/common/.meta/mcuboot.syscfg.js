@@ -95,7 +95,7 @@ let base = {
             {
                 name        : "tzEnabled",
                 displayName : "Enable TrustZone",
-                description : "Enable Mcuboot to store 2 images - secure and non secure image.",
+                description : "Enable MCUboot to store 2 images - secure and non secure image.",
                 default     : false,
                 readOnly    : mcubootSettings["tzEnabled"]["readOnly"],
                 hidden      : mcubootSettings["tzEnabled"]["hidden"],
@@ -112,13 +112,18 @@ let base = {
                     {
                         name: "overwrite",
                         displayName : "Overwrite",
-                        longDescription: "Mcuboot only runs an image from the primary slot. " +
-                                     "Mcuboot will copy the image from the secondary to the primary slot and erase the secondary slot afterwards."
+                        longDescription: "MCUboot only runs an image from the primary slot. " +
+                                     "MCUboot will copy the image from the secondary to the primary slot and erase the secondary slot afterwards."
                     },
                     {
                         name: "xip",
                         displayName : "XIP",
-                        longDescription: "Mcuboot runs an image directly from either the primary or the secondary slot, without moving and or copying it into the primary slot."
+                        longDescription: "MCUboot runs an image directly from either the primary or the secondary slot, without moving and or copying it into the primary slot."
+                    },
+                    {
+                        name: "swapUsingMove",
+                        displayName : "Swap (using Move)",
+                        longDescription: "MCUboot will perform a swap between the images in the primary and secondary slot. An extra sector for swapping is located at the end of the primary sector"
                     }
                 ],
                 readOnly: false,
@@ -127,7 +132,7 @@ let base = {
             {
                 name        : "externalFlash",
                 displayName : "Enable External Flash",
-                description : "Enable Mcuboot to search for valid images in external Flash",
+                description : "Enable MCUboot to search for valid images in external Flash",
                 default     : false,
                 hidden      : true,
                 onChange    : changeExternalFlash
@@ -143,7 +148,7 @@ let base = {
             {
                 name        : "enableEncryptedImage",
                 displayName : "Upgrade Using Encrypted Images",
-                description : "Enable Mcuboot to search for valid encrypted images",
+                description : "Enable MCUboot to search for valid encrypted images",
                 default     : false,
                 hidden      : true
             },
@@ -163,7 +168,7 @@ let base = {
                     {
                         name        : "bootloaderBaseAddress",
                         displayName : "Base",
-                        description : "Base Address of Mcuboot",
+                        description : "Base Address of MCUboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default     : mcubootSettings["bootloader"]["tzDisabledBase"]["base"],
                         readOnly    : false,
@@ -172,7 +177,7 @@ let base = {
                     {
                         name        : "bootloaderSize",
                         displayName : "Size",
-                        description : "Size of Mcuboot",
+                        description : "Size of MCUboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default     : mcubootSettings["bootloader"]["size"],
                         readOnly    : false,
@@ -416,25 +421,41 @@ function changeImageCompression(inst, ui)
 
 function changeMode(inst, ui)
 {
-    ui.externalFlash.hidden = !ui.externalFlash.hidden;
-
-    if(inst.mode === "overwrite" && deviceGroup == "DeviceGroup_CC23X0" )
+    if(inst.mode === "overwrite")
     {
-        ui.imageCompression.hidden = false;
+        ui.externalFlash.hidden = false;
+        if(mcubootSettings["enableEncryptedImage"]["enabled"])
+        {
+            ui.enableEncryptedImage.hidden = false;
+        }
+        else
+        {
+            ui.enableEncryptedImage.hidden = true;   
+        }
+        if(deviceGroup == "DeviceGroup_CC23X0") /* enable for compression */
+        {
+            ui.imageCompression.hidden = false;
+        }
+        else
+        {
+            ui.imageCompression.hidden = true;
+        }
     }
-    else
+    else if(inst.mode === "xip")
     {
-        ui.imageCompression.hidden = true;
+        ui.externalFlash.hidden = true;
+        ui.enableEncryptedImage.hidden = true;
+    }
+    else if(inst.mode === "swapUsingMove")
+    {
+        ui.externalFlash.hidden = false;
+        ui.enableEncryptedImage.hidden = true;
     }
 
-    inst.imageCompression = false;
+    // set default value to false when changing modes
     inst.externalFlash = false;
-
-    if(mcubootSettings["enableEncryptedImage"]["enabled"])
-    {
-        ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
-        inst.enableEncryptedImage = false;
-    }
+    inst.imageCompression = false;
+    inst.enableEncryptedImage = false;
 }
 
 function changeTzEnable(inst, ui)
@@ -551,6 +572,18 @@ function validate(inst, validation) {
             logError(validation, inst, "secondarySize1",
                     "Secondary image must be the same size as primary image");
         }
+    }
+
+    // if size of primary image is not the same as secondary image or if the size 
+    // of the primary image is not 1 sector greater than secondary image throw error
+    if((inst.primarySize1 != inst.secondarySize1) && 
+        (inst.primarySize1 - inst.secondarySize1 !== mcubootSettings["alignment"]["sectorSize"]) && 
+        inst.mode == 'swapUsingMove')
+    {
+        logError(validation, inst, "primarySize1",
+                 "Primary image must be the same size or 1 sector larger than the secondary image");
+        logError(validation, inst, "secondarySize1",
+                 "Secondary image must be the same size or 1 sector larger than the primary image");
     }
 
     // check if flash layout based on device group

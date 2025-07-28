@@ -95,6 +95,7 @@ extern void llCmsConnUpdateInd(llConnState_t* connPtr, uint8_t updateType);
 extern void llSetTaskCm(uint8_t connId, void* nextConnCmd);
 extern void llCmUpdateScanDuration(llConnState_t* connPtr);
 
+
 // Wrapper functions for the feature implementations
 void OPT_llCmUpdateRclCmdPhyFeatures(uint8_t connId, uint16_t phyFeatures);
 void OPT_llCmUpdateRclCmdChannel(llConnState_t* connPtr, uint8_t channel);

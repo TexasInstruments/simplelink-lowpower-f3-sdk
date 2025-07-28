@@ -257,13 +257,10 @@ const config = {
         {
             name: "fltMinRssi",
             displayName: "Filter Minimum RSSI Values",
-            default: "SCAN_FLT_RSSI_ALL",
+            default: "-128",
             hidden: true,
-            longDescription: Docs.fltMinRssiLongDescription,
-            options: [
-                { displayName: "All", name: "SCAN_FLT_RSSI_ALL" },
-                { displayName: "None", name: "SCAN_FLT_RSSI_NONE"  }
-            ]
+            longDescription: Docs.fltMinRssiLongDescription + "\n__Range__: -128 to 127",
+            description: "Only packets received with the specified RSSI or above will be reported."
         },
         {
             name: "fltDiscMode",
@@ -374,6 +371,14 @@ function validate(inst, validation)
     if(inst.maxNumAdvReport < 0 || inst.maxNumAdvReport > 255)
     {
         validation.logError("Maximum number of advertising reports range is 0 to 255", inst, "maxNumAdvReport");
+    }
+    // Ensure fltMinRssi is an integer between -128 and 127
+    const rssiVal = Number(inst.fltMinRssi);
+    if (!Number.isInteger(rssiVal)) {
+        validation.logError("Filter Minimum RSSI Values must be an integer.", inst, "fltMinRssi");
+    }
+    if (rssiVal < -128 || rssiVal > 127) {
+        validation.logError("Filter Minimum RSSI Values must be between -128 and 127", inst, "fltMinRssi");
     }
 }
 

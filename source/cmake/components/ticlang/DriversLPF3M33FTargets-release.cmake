@@ -5,45 +5,85 @@
 # Commands may need to know the format version.
 set(CMAKE_IMPORT_FILE_VERSION 1)
 
-# Import target "Drivers::drivers_cc27xx" for configuration "Release"
-set_property(TARGET Drivers::drivers_cc27xx APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
-set_target_properties(Drivers::drivers_cc27xx PROPERTIES
+# Import target "Drivers::drivers_cc27xxx10" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx10 APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx10 PROPERTIES
   IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx.a"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10.a"
   )
 
-list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xx )
-list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xx "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx.a" )
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx10 )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx10 "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10.a" )
 
-# Import target "Drivers::drivers_cc27xx_log" for configuration "Release"
-set_property(TARGET Drivers::drivers_cc27xx_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
-set_target_properties(Drivers::drivers_cc27xx_log PROPERTIES
+# Import target "Drivers::drivers_cc27xxx10_log" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx10_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx10_log PROPERTIES
   IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_log.a"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10_log.a"
   )
 
-list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xx_log )
-list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xx_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_log.a" )
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx10_log )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx10_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10_log.a" )
 
-# Import target "Drivers::drivers_cc27xx_ns" for configuration "Release"
-set_property(TARGET Drivers::drivers_cc27xx_ns APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
-set_target_properties(Drivers::drivers_cc27xx_ns PROPERTIES
+# Import target "Drivers::drivers_cc27xxx10_ns" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx10_ns APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx10_ns PROPERTIES
   IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_ns.a"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10_ns.a"
   )
 
-list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xx_ns )
-list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xx_ns "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_ns.a" )
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx10_ns )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx10_ns "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10_ns.a" )
 
-# Import target "Drivers::drivers_cc27xx_ns_log" for configuration "Release"
-set_property(TARGET Drivers::drivers_cc27xx_ns_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
-set_target_properties(Drivers::drivers_cc27xx_ns_log PROPERTIES
+# Import target "Drivers::drivers_cc27xxx10_ns_log" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx10_ns_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx10_ns_log PROPERTIES
   IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
-  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_ns_log.a"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10_ns_log.a"
   )
 
-list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xx_ns_log )
-list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xx_ns_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xx_ns_log.a" )
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx10_ns_log )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx10_ns_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx10_ns_log.a" )
+
+# Import target "Drivers::drivers_cc27xxx20" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx20 APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx20 PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx20 )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx20 "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20.a" )
+
+# Import target "Drivers::drivers_cc27xxx20_log" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx20_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx20_log PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20_log.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx20_log )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx20_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20_log.a" )
+
+# Import target "Drivers::drivers_cc27xxx20_ns" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx20_ns APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx20_ns PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20_ns.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx20_ns )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx20_ns "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20_ns.a" )
+
+# Import target "Drivers::drivers_cc27xxx20_ns_log" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc27xxx20_ns_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc27xxx20_ns_log PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20_ns_log.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc27xxx20_ns_log )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc27xxx20_ns_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/ticlang/m33f/drivers_cc27xxx20_ns_log.a" )
 
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

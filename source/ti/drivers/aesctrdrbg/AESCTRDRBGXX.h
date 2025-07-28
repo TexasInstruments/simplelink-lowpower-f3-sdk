@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2023, Texas Instruments Incorporated
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@
 #include DeviceFamily_constructPath(driverlib/aes.h)
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    #include <ti/drivers/aesctr/AESCTRLPF3.h>
+    #include <ti/drivers/aesctr/AESCTRXXF3.h>
 #else
     #include <ti/drivers/aesctr/AESCTRCC26XX.h>
 #endif
@@ -108,7 +108,7 @@ typedef struct
      * Priority in HWAttrs will be passed to AESCTR instance upon construct
      */
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    AESCTRLPF3_HWAttrs aesctrHWAttrs;
+    AESCTRXXF3_HWAttrs aesctrHWAttrs;
 #else
     AESCTRCC26XX_HWAttrs aesctrHWAttrs;
 #endif
@@ -124,7 +124,7 @@ typedef struct
     uint8_t keyingMaterial[AESCTRDRBG_AES_KEY_LENGTH_256];
     uint8_t counter[AESCTRDRBG_AES_BLOCK_SIZE_BYTES];
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    AESCTRLPF3_Object aesctrObject;
+    AESCTRXXF3_Object aesctrObject;
 #else
     AESCTRCC26XX_Object aesctrObject;
 #endif

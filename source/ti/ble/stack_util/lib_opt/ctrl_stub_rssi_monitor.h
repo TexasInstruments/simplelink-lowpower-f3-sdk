@@ -101,6 +101,7 @@ extern hciStatus_t hci_ext_RssiMon_SetConfigCmd(int8_t incomeRssiWeight, uint8_t
 extern hciStatus_t hci_ext_RssiMon_GetConfigCmd(void);
 extern hciStatus_t hci_ext_RssiMon_GetRssiStatCmd(uint16_t connHandle);
 
+
 // Wrapper functions for the feature implementations
 llStatus_t OPT_LL_RssiMon_Open(void);
 llStatus_t OPT_LL_RssiMon_Close(void);

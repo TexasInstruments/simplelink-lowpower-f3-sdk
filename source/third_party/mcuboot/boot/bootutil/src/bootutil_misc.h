@@ -28,7 +28,7 @@ boot_magic_decode(const uint8_t *magic)
 static inline uint32_t
 boot_magic_off(const struct flash_area *fap)
 {
-    return fap->fa_size - BOOT_MAGIC_SZ;
+    return flash_area_get_size(fap) - BOOT_MAGIC_SZ;
 }
 
 static inline uint32_t

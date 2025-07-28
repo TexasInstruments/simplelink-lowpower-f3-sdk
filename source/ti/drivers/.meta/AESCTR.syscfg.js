@@ -86,7 +86,7 @@ entire message when the message is larger than one block.
 [1]: /secure_drivers/doxygen/html/_a_e_s_c_t_r_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_a_e_s_c_t_r_8h.html#ti_drivers_AESCTR_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_a_e_s_c_t_r_8h.html#ti_drivers_AESCTR_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#AESCTR_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#AESCTR_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_AESCTR_",
     config              : Common.addNameConfig(config, "/ti/drivers/AESCTR", "CONFIG_AESCTR_"),

@@ -45,6 +45,10 @@
 
 "use strict";
 
+// RadioConfig module scripts
+const CommonRadioConfig = system.getScript("/ti/devices/radioconfig/radioconfig_common.js");
+const RfDesign = CommonRadioConfig.getScript("rfdesign");
+
 /* Description text for configurables */
 const primaryChannelsLongDescription = `The primary IEEE 802.15.4 frequency \
 channels to use in network formation or joining.
@@ -60,6 +64,12 @@ Guide.
 **Default:** Channel 11
 
 **Range:** Any combination of channels 11-26`;
+
+const txpowerDescription = `The default transmit power in dBm`;
+
+const txpowerLongDescription = `The default transmit power in dBm
+
+**Default Power:** 0`;
 
 /* Frequency channel options for enumeration configurables */
 const channelOptions = [
@@ -95,7 +105,30 @@ const config = {
             options: channelOptions,
             minSelections: 0
         },
+        {
+            name: "txPower",
+            displayName: "Transmit Power",
+            description: txpowerDescription,
+            longDescription: txpowerLongDescription,
+            default: "0",
+            options: (inst) => { return getPaTableValues(inst.rfDesign); }
+        }
     ]
+}
+
+/*
+ * ======== getPaTableValues ========
+ * Returns the tx power values options for the current device
+ *
+ * @param rfDesign - the selected device
+ *
+ * @returns - a list with the valid pa levels from the tableOptions
+ */
+function getPaTableValues(rfDesign)
+{
+    const frequency = 2400;
+
+    return RfDesign.getTxPowerOptions(frequency, false);
 }
 
 /* Function to handle changes in deviceType configurable */

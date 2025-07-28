@@ -184,25 +184,6 @@ extern void llCsSubevent_PostProcess(void);
 extern void llCsError_PostProcess(void);
 
 /*******************************************************************************
- * @fn          llCsError_SendSubEventResults
- *
- * @brief       Send the Error result to the Host
- *
- * input parameters
- *
- * @param       connId - connection Id
- * @param       configId - configuration Id
- * @param       abortReason - abort reason
- *
- * output parameters
- *
- * @param       None
- *
- * @return      None
- */
-void llCsError_SendSubEventResults(uint16_t connId, uint8_t configId, uint16 abortReason);
-
-/*******************************************************************************
  * @fn          llCsSteps_PostProcess
  *
  * @brief       Post Process when a steps buffer was consumed
@@ -405,23 +386,6 @@ void llCsRclCallback(RCL_Command* cmd, LRF_Events lrfEvents,
                      RCL_Events rclEvents);
 
 /*******************************************************************************
- * @fn          llCsProcessResultsCb
- *
- * @brief       Process results callback
- *
- * input parameters
- *
- * @param       procedureDoneSt - procedure done status
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsProcessResultsCb(uint8_t procedureDoneSt);
-
-/*******************************************************************************
  * @fn          llCsFillBuffer
  *
  * @brief       Fill CS Buffer with step details
@@ -442,26 +406,6 @@ void llCsProcessResultsCb(uint8_t procedureDoneSt);
 csStatus_e llCsFillBuffer(uint16 connId, uint8_t configId, uint8 mode, uint16 numSteps, RCL_CmdBleCs_Step* steps);
 
 /*******************************************************************************
- * @fn          llCsRclFreeTask
- *
- * @brief       Free CS Task
- * Free Steps and Steps results buffers.
- * Clear procedure flags.
- * Free the CS Task
- *
- * input parameters
- *
- * @param       connHandle - connection handle aka id
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsRclFreeTask(uint16 connHandle);
-
-/*******************************************************************************
  * @fn          llCsRclAbort
  *
  * @brief       Abort the ongoing RCL command
@@ -479,24 +423,6 @@ void llCsRclFreeTask(uint16 connHandle);
 void llCsRclAbort(void);
 
 /*******************************************************************************
- * @fn          llCsRcl_handleCsSubmitError
- *
- * @brief       Handle CS command Submit error
- *
- * input parameters
- *
- * @param       taskID - task ID
- * @param       cmd - pointer to command
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsRcl_handleCsSubmitError(uint16_t taskID, RCL_Command *cmd);
-
-/*******************************************************************************
  * @fn          llCsClearRclBuffers
  *
  * @brief       Clear Rcl command buffers when done
@@ -512,6 +438,24 @@ void llCsRcl_handleCsSubmitError(uint16_t taskID, RCL_Command *cmd);
  * @return      None
  */
 void llCsClearRclBuffers( void );
+
+
+/*******************************************************************************
+ * @fn          llCsAllocCsTask
+ *
+ * @brief       Allocate the CS Task
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      csStatus_e
+ */
+csStatus_e llCsAllocCsTask( void );
 
 /*******************************************************************************
  * @fn          llCsFreeCsTask

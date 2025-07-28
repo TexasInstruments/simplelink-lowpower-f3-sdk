@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2024, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,8 +32,9 @@
 #ifndef ti_safe__include
 #define ti_safe__include
 
-#include "ti/devices/cc27xx/inc/hw_types.h"
-#include "ti/devices/cc27xx/driverlib/hapi.h"
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_types.h)
+#include DeviceFamily_constructPath(driverlib/hapi.h)
 
 /* Macro that implements a double check of condition being true ['c' must be volatile to avoid optimizations] */
 #define SAFE_IF(c) if ((c) && !!(c))

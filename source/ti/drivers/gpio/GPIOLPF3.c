@@ -160,7 +160,7 @@ void GPIO_init()
 
     Power_setDependency(PowerLPF3_PERIPH_GPIO);
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* Enable pad power to use GPIOs by setting VDDIOPGIO. This is only done
      * for CC27XX to support split rails.
      */

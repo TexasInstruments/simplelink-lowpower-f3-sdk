@@ -83,7 +83,7 @@
 
 #if defined(USE_PERIODIC_SCAN)
 
-#if !defined(CTRL_SCANNER_CFG)
+#if !defined(CTRL_SCANNER_CFG) && !defined(USE_AE)
 #error "One or more dependencies are missing! Please add them."
 #endif
 
@@ -97,59 +97,54 @@ taskInfo_t * OPT_llSelectTaskPeriodicScan(uint8_t secTaskID, uint32_t timeGap)
     return llSelectTaskPeriodicScan(secTaskID, timeGap);
 }
 
-bool OPT_llCheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo)
+bool OPT_LL_PadvA_CheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo)
 {
-    return llCheckSyncInfoCriteria(pAdvPDUInfo);
+    return LL_PadvA_CheckSyncInfoCriteria(pAdvPDUInfo);
 }
 
-void OPT_llProcessPeriodicScanSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp)
+void OPT_LL_PadvS_ProcessPeriodicSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp)
 {
-    llProcessPeriodicScanSyncInfo(pExtAdvInfo, advEvent, timeStamp);
+    LL_PadvS_ProcessPeriodicSyncInfo(pExtAdvInfo, advEvent, timeStamp);
 }
 
-void OPT_llEndPeriodicScanTask(llPeriodicScanSet_t* pPeriodicScan)
+void OPT_LL_PadvS_PostProcess(void)
 {
-    llEndPeriodicScanTask(pPeriodicScan);
+    LL_PadvS_PostProcess();
 }
 
-void OPT_llPeriodicScan_PostProcess(void)
+void OPT_LL_PadvS_ProcessRxFIFO(void)
 {
-    llPeriodicScan_PostProcess();
+    LL_PadvS_ProcessRxFIFO();
 }
 
-void OPT_llProcessPeriodicScanRxFIFO(void)
+void * OPT_LL_PadvS_FindNextSet(uint16_t scanMaxNumMiss)
 {
-    llProcessPeriodicScanRxFIFO();
+    return LL_PadvS_FindNextSet(scanMaxNumMiss);
 }
 
-void * OPT_llFindNextPeriodicScan(void)
+void OPT_LL_PadvS_Terminate(void)
 {
-    return llFindNextPeriodicScan();
+    LL_PadvS_Terminate();
 }
 
-void OPT_llTerminatePeriodicScan(void)
+llPeriodicScanSet_t* OPT_LL_PadvS_GetCurrent(uint8_t state)
 {
-    llTerminatePeriodicScan();
+    return LL_PadvS_GetCurrent(state);
 }
 
-llPeriodicScanSet_t* OPT_llGetCurrentPeriodicScan(uint8_t state)
+llPeriodicScanSet_t* OPT_LL_PadvS_GetSetByHandle(uint16 handle)
 {
-    return llGetCurrentPeriodicScan(state);
+    return LL_PadvS_GetSetByHandle(handle);
 }
 
-llPeriodicScanSet_t* OPT_llGetPeriodicScan(uint16_t handle)
+void OPT_LL_PadvS_ClearSets(void)
 {
-    return llGetPeriodicScan(handle);
+    LL_PadvS_ClearSets();
 }
 
-void OPT_llClearPeriodicScanSets(void)
+void OPT_LL_PadvS_UpdateCmdParams(void)
 {
-    llClearPeriodicScanSets();
-}
-
-void OPT_llUpdatePADVBParamsInScanCmd(void)
-{
-    llUpdatePADVBParamsInScanCmd();
+    LL_PadvS_UpdateCmdParams();
 }
 
 hciStatus_t OPT_hciCmdParserPeriodicScan(uint8_t * pData, uint16_t cmdOpCode)
@@ -157,19 +152,19 @@ hciStatus_t OPT_hciCmdParserPeriodicScan(uint8_t * pData, uint16_t cmdOpCode)
     return hciCmdParserPeriodicScan(pData, cmdOpCode);
 }
 
-uint32_t OPT_llReturnCurrentPeriodicStartTime(void)
+uint32_t OPT_LL_PadvS_ReturnCurrentSetStartTime(void)
 {
-    return llReturnCurrentPeriodicStartTime();
+    return LL_PadvS_ReturnCurrentSetStartTime();
 }
 
-uint8_t OPT_llCheckPeriodicScanPriority(uint16_t taskID, uint8_t connPriority)
+uint8_t OPT_LL_PadvS_CheckPriority(uint16_t taskID, uint8_t connPriority)
 {
-    return llCheckPeriodicScanPriority(taskID, connPriority);
+    return LL_PadvS_CheckPriority(taskID, connPriority);
 }
 
-bool OPT_LL_PeriodicScanIsEnable(void)
+bool OPT_LL_PadvS_IsEnable(void)
 {
-    return LL_PeriodicScanIsEnable();
+    return LL_PadvS_IsEnable();
 }
 
 taskInfo_t * OPT_llSelectTaskPeriodicScanHandle(uint32_t* timeGap, uint16_t* secTaskID)
@@ -180,6 +175,61 @@ taskInfo_t * OPT_llSelectTaskPeriodicScanHandle(uint32_t* timeGap, uint16_t* sec
 void OPT_llUpdatePeriodicScanTimeGap(uint16_t taskID, uint32_t* timeGap)
 {
     llUpdatePeriodicScanTimeGap(taskID, timeGap);
+}
+
+llStatus_t OPT_LE_PeriodicAdvCreateSync(uint8 options, uint8 advSID, uint8 advAddrType, uint8* advAddress, uint16 skip, uint16 syncTimeout, uint8 syncCteType)
+{
+    return LE_PeriodicAdvCreateSync(options, advSID, advAddrType, advAddress, skip, syncTimeout, syncCteType);
+}
+
+llStatus_t OPT_LE_PeriodicAdvCreateSyncCancel(void)
+{
+    return LE_PeriodicAdvCreateSyncCancel();
+}
+
+llStatus_t OPT_LE_PeriodicAdvTerminateSync(uint16 syncHandle)
+{
+    return LE_PeriodicAdvTerminateSync(syncHandle);
+}
+
+llStatus_t OPT_LE_AddDeviceToPeriodicAdvList(uint8 advAddrType, uint8* advAddress, uint8 advSID)
+{
+    return LE_AddDeviceToPeriodicAdvList(advAddrType, advAddress, advSID);
+}
+
+llStatus_t OPT_LE_RemoveDeviceFromPeriodicAdvList(uint8 advAddrType, uint8* advAddress, uint8 advSID)
+{
+    return LE_RemoveDeviceFromPeriodicAdvList(advAddrType, advAddress, advSID);
+}
+
+llStatus_t OPT_LE_ClearPeriodicAdvList(void)
+{
+    return LE_ClearPeriodicAdvList();
+}
+
+llStatus_t OPT_LE_ReadPeriodicAdvListSize(uint8* listSize)
+{
+    return LE_ReadPeriodicAdvListSize(listSize);
+}
+
+llStatus_t OPT_LE_SetPeriodicAdvReceiveEnable(uint16 syncHandle, uint8 enable)
+{
+    return LE_SetPeriodicAdvReceiveEnable(syncHandle, enable);
+}
+
+List_List* OPT_LL_PadvS_GetRxBuffers(void)
+{
+    return LL_PadvS_GetRxBuffers();
+}
+
+llPeriodicAdvSetType_e OPT_LL_PadvS_GetPerodicTypeBySyncHandle(uint16_t syncHandle)
+{
+    return LL_PadvS_GetPerodicTypeBySyncHandle(syncHandle);
+}
+
+llStatus_t OPT_LL_PadvS_GetPerodicSyncTransferInfo(uint16_t syncHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData)
+{
+    return LL_PadvS_GetPerodicSyncTransferInfo(syncHandle, pPeriodicSyncTransferData);
 }
 
 #endif /* defined(USE_PERIODIC_SCAN) */

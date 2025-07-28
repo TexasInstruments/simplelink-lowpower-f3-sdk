@@ -42,5 +42,5 @@ setuptools.setup(
             "stdout = tilogger_stdout.main:output_factory_cli",
         ],
     },
-    install_requires=["typer==0.15.1"],
+    install_requires=["typer==0.16.0"],
 )

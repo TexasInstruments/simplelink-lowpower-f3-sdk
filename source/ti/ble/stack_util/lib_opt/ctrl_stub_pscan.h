@@ -83,48 +83,70 @@
 #include "ti/ble/controller/hci/hci.h"
 #include "ti/ble/controller/ll/ll_scheduler.h"
 #include "ti/ble/controller/ll/ll_ae.h"
+#include "ti/ble/controller/ll/ll_padv_scan.h"
 #include "ti/ble/controller/ll/ll.h"
 
 // Function prototypes for the actual implementations
 extern void llSetTaskPeriodicScan(void);
 extern taskInfo_t * llSelectTaskPeriodicScan(uint8_t secTaskID, uint32_t timeGap);
-extern bool llCheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo);
-extern void llProcessPeriodicScanSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
-extern void llEndPeriodicScanTask(llPeriodicScanSet_t* pPeriodicScan);
-extern void llPeriodicScan_PostProcess(void);
-extern void llProcessPeriodicScanRxFIFO(void);
-extern void * llFindNextPeriodicScan(void);
-extern void llTerminatePeriodicScan(void);
-extern llPeriodicScanSet_t* llGetCurrentPeriodicScan(uint8_t state);
-extern llPeriodicScanSet_t* llGetPeriodicScan(uint16_t handle);
-extern void llClearPeriodicScanSets(void);
-extern void llUpdatePADVBParamsInScanCmd(void);
+extern bool LL_PadvA_CheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo);
+extern void LL_PadvS_ProcessPeriodicSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
+extern void LL_PadvS_PostProcess(void);
+extern void LL_PadvS_ProcessRxFIFO(void);
+extern void * LL_PadvS_FindNextSet(uint16_t scanMaxNumMiss);
+extern void LL_PadvS_Terminate(void);
+extern llPeriodicScanSet_t* LL_PadvS_GetCurrent(uint8_t state);
+extern llPeriodicScanSet_t* LL_PadvS_GetSetByHandle(uint16 handle);
+extern void LL_PadvS_ClearSets(void);
+extern void LL_PadvS_UpdateCmdParams(void);
 extern hciStatus_t hciCmdParserPeriodicScan(uint8_t * pData, uint16_t cmdOpCode);
-extern uint32_t llReturnCurrentPeriodicStartTime(void);
-extern uint8_t llCheckPeriodicScanPriority(uint16_t taskID, uint8_t connPriority);
-extern bool LL_PeriodicScanIsEnable(void);
+extern uint32_t LL_PadvS_ReturnCurrentSetStartTime(void);
+extern uint8_t LL_PadvS_CheckPriority(uint16_t taskID, uint8_t connPriority);
+extern bool LL_PadvS_IsEnable(void);
 extern taskInfo_t * llSelectTaskPeriodicScanHandle(uint32_t* timeGap, uint16_t* secTaskID);
 extern void llUpdatePeriodicScanTimeGap(uint16_t taskID, uint32_t* timeGap);
+extern llStatus_t LE_PeriodicAdvCreateSync(uint8 options, uint8 advSID, uint8 advAddrType, uint8* advAddress, uint16 skip, uint16 syncTimeout, uint8 syncCteType);
+extern llStatus_t LE_PeriodicAdvCreateSyncCancel(void);
+extern llStatus_t LE_PeriodicAdvTerminateSync(uint16 syncHandle);
+extern llStatus_t LE_AddDeviceToPeriodicAdvList(uint8 advAddrType, uint8* advAddress, uint8 advSID);
+extern llStatus_t LE_RemoveDeviceFromPeriodicAdvList(uint8 advAddrType, uint8* advAddress, uint8 advSID);
+extern llStatus_t LE_ClearPeriodicAdvList(void);
+extern llStatus_t LE_ReadPeriodicAdvListSize(uint8* listSize);
+extern llStatus_t LE_SetPeriodicAdvReceiveEnable(uint16 syncHandle, uint8 enable);
+extern List_List* LL_PadvS_GetRxBuffers(void);
+extern llPeriodicAdvSetType_e LL_PadvS_GetPerodicTypeBySyncHandle(uint16_t syncHandle);
+extern llStatus_t LL_PadvS_GetPerodicSyncTransferInfo(uint16_t syncHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
+
 
 // Wrapper functions for the feature implementations
 void OPT_llSetTaskPeriodicScan(void);
 taskInfo_t * OPT_llSelectTaskPeriodicScan(uint8_t secTaskID, uint32_t timeGap);
-bool OPT_llCheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo);
-void OPT_llProcessPeriodicScanSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
-void OPT_llEndPeriodicScanTask(llPeriodicScanSet_t* pPeriodicScan);
-void OPT_llPeriodicScan_PostProcess(void);
-void OPT_llProcessPeriodicScanRxFIFO(void);
-void * OPT_llFindNextPeriodicScan(void);
-void OPT_llTerminatePeriodicScan(void);
-llPeriodicScanSet_t* OPT_llGetCurrentPeriodicScan(uint8_t state);
-llPeriodicScanSet_t* OPT_llGetPeriodicScan(uint16_t handle);
-void OPT_llClearPeriodicScanSets(void);
-void OPT_llUpdatePADVBParamsInScanCmd(void);
+bool OPT_LL_PadvA_CheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo);
+void OPT_LL_PadvS_ProcessPeriodicSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
+void OPT_LL_PadvS_PostProcess(void);
+void OPT_LL_PadvS_ProcessRxFIFO(void);
+void * OPT_LL_PadvS_FindNextSet(uint16_t scanMaxNumMiss);
+void OPT_LL_PadvS_Terminate(void);
+llPeriodicScanSet_t* OPT_LL_PadvS_GetCurrent(uint8_t state);
+llPeriodicScanSet_t* OPT_LL_PadvS_GetSetByHandle(uint16 handle);
+void OPT_LL_PadvS_ClearSets(void);
+void OPT_LL_PadvS_UpdateCmdParams(void);
 hciStatus_t OPT_hciCmdParserPeriodicScan(uint8_t * pData, uint16_t cmdOpCode);
-uint32_t OPT_llReturnCurrentPeriodicStartTime(void);
-uint8_t OPT_llCheckPeriodicScanPriority(uint16_t taskID, uint8_t connPriority);
-bool OPT_LL_PeriodicScanIsEnable(void);
+uint32_t OPT_LL_PadvS_ReturnCurrentSetStartTime(void);
+uint8_t OPT_LL_PadvS_CheckPriority(uint16_t taskID, uint8_t connPriority);
+bool OPT_LL_PadvS_IsEnable(void);
 taskInfo_t * OPT_llSelectTaskPeriodicScanHandle(uint32_t* timeGap, uint16_t* secTaskID);
 void OPT_llUpdatePeriodicScanTimeGap(uint16_t taskID, uint32_t* timeGap);
+llStatus_t OPT_LE_PeriodicAdvCreateSync(uint8 options, uint8 advSID, uint8 advAddrType, uint8* advAddress, uint16 skip, uint16 syncTimeout, uint8 syncCteType);
+llStatus_t OPT_LE_PeriodicAdvCreateSyncCancel(void);
+llStatus_t OPT_LE_PeriodicAdvTerminateSync(uint16 syncHandle);
+llStatus_t OPT_LE_AddDeviceToPeriodicAdvList(uint8 advAddrType, uint8* advAddress, uint8 advSID);
+llStatus_t OPT_LE_RemoveDeviceFromPeriodicAdvList(uint8 advAddrType, uint8* advAddress, uint8 advSID);
+llStatus_t OPT_LE_ClearPeriodicAdvList(void);
+llStatus_t OPT_LE_ReadPeriodicAdvListSize(uint8* listSize);
+llStatus_t OPT_LE_SetPeriodicAdvReceiveEnable(uint16 syncHandle, uint8 enable);
+List_List* OPT_LL_PadvS_GetRxBuffers(void);
+llPeriodicAdvSetType_e OPT_LL_PadvS_GetPerodicTypeBySyncHandle(uint16_t syncHandle);
+llStatus_t OPT_LL_PadvS_GetPerodicSyncTransferInfo(uint16_t syncHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
 
 #endif /* CTRL_PSCAN_H_ */

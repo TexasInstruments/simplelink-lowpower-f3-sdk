@@ -34,5 +34,6 @@ endmacro()
 
 include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartyFatFsM0PTargets.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartyFatFsM33FTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartyFatFsM3Targets.cmake")
 
 check_required_components(ThirdPartyFatFs)

@@ -498,20 +498,20 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                     },
                     {
                         name: "writeEraseProt_ccfgSector",
-                        displayName: "Write/Erase Protection, CCFG Sector",
-                        description: "Sets write/erase protection for CCFG sector",
+                        displayName: "Write/Erase Protection, CCFG",
+                        description: "Sets write/erase protection for the CCFG sector",
                         default: true
                     },
                     {
                         name: "writeEraseProt_fcfgSector",
-                        displayName: "Write/Erase Protection, FCFG Sector",
-                        description: "Sets write/erase protection for FCFG sector",
+                        displayName: "Write/Erase Protection, FCFG",
+                        description: "Sets write/erase protection for the FCFG sector",
                         default: true
                     },
                     {
                         name: "writeEraseProt_engrSector",
-                        displayName: "Write/Erase Protection, ENGR Sector",
-                        description: "Sets write/erase protection for ENGR sector",
+                        displayName: "Write/Erase Protection, ENGR",
+                        description: "Sets write/erase protection for the ENGR sector",
                         default: true
                     },
                     {

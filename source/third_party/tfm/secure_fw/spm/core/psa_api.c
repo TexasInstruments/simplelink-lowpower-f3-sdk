@@ -183,6 +183,33 @@ psa_status_t tfm_spm_partition_psa_get(psa_signal_t signal, psa_msg_t *msg)
 }
 #endif
 
+static void update_caller_outvec_len(struct connection_t *handle)
+{
+    uint32_t i;
+
+#if PSA_FRAMEWORK_HAS_MM_IOVEC
+    /*
+     * Any output vectors that are still mapped will report that
+     * zero bytes have been written.
+     */
+    for (int i = OUTVEC_IDX_BASE; i < PSA_MAX_IOVEC * 2; i++) {
+        if (IOVEC_IS_MAPPED(handle, i) && (!IOVEC_IS_UNMAPPED(handle, i))) {
+            handle->outvec_written[i - OUTVEC_IDX_BASE] = 0;
+        }
+    }
+#endif
+
+    for (i = 0; i < PSA_MAX_IOVEC; i++) {
+        if (handle->msg.out_size[i] == 0) {
+            continue;
+        }
+
+        SPM_ASSERT(handle->caller_outvec[i].base == handle->outvec_base[i]);
+
+        handle->caller_outvec[i].len = handle->outvec_written[i];
+    }
+}
+
 psa_status_t tfm_spm_partition_psa_reply(psa_handle_t msg_handle,
                                          psa_status_t status)
 {
@@ -238,18 +265,6 @@ psa_status_t tfm_spm_partition_psa_reply(psa_handle_t msg_handle,
         break;
     default:
         if (handle->msg.type >= PSA_IPC_CALL) {
-
-#if PSA_FRAMEWORK_HAS_MM_IOVEC
-            /*
-             * Any output vectors that are still mapped will report that
-             * zero bytes have been written.
-             */
-            for (int i = OUTVEC_IDX_BASE; i < PSA_MAX_IOVEC * 2; i++) {
-                if (IOVEC_IS_MAPPED(handle, i) && (!IOVEC_IS_UNMAPPED(handle, i))) {
-                    handle->outvec_written[i - OUTVEC_IDX_BASE] = 0;
-                }
-            }
-#endif
             /* Reply to a request message. Return values are based on status */
             ret = status;
             /*

@@ -18,12 +18,12 @@
 # will build using each non-empty *_ARMCOMPILER cgtool.
 #
 
-SYSCONFIG_TOOL         ?= /home/username/ti/ccs2010/ccs/utils/sysconfig_1.23.2/sysconfig_cli.sh
+SYSCONFIG_TOOL         ?= /home/username/ti/ccs2010/ccs/utils/sysconfig_1.23.1/sysconfig_cli.sh
 
 CMAKE                  ?= /home/username/cmake-3.21.3/bin/cmake
 PYTHON                 ?= python3
 
-TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs2010/ccs/tools/compiler/ti-cgt-armllvm_4.0.2.LTS
+TICLANG_ARMCOMPILER    ?= /home/username/ti/ccs2010/ccs/tools/compiler/ti-cgt-armllvm_4.0.3.LTS
 GCC_ARMCOMPILER        ?= /home/username/arm-none-eabi-gcc/12.3.Rel1-0
 IAR_ARMCOMPILER        ?= /home/username/iar9.60.3
 

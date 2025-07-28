@@ -111,6 +111,9 @@ extern uint32_t llHandlePeriodicAdvEvents(uint32_t events);
 extern bool LL_PeriodicAdvIsEnable(void);
 extern advSet_t* LL_AE_GetNextAdvSet(void);
 extern void LL_GetPeriodicTxUsageParams(llTxUsageParams_t* pPeriodicTxParams);
+extern llPeriodicAdvSetType_e LL_GetPerodicTypeByAdvHandle(uint8_t advHandle);
+extern llStatus_t LL_GetPerodicSyncTransferInfoByAdvHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
+
 
 // Wrapper functions for the feature implementations
 void OPT_llSetTaskPeriodicAdv(void);
@@ -138,5 +141,7 @@ uint32_t OPT_llHandlePeriodicAdvEvents(uint32_t events);
 bool OPT_LL_PeriodicAdvIsEnable(void);
 advSet_t* OPT_LL_AE_GetNextAdvSet(void);
 void OPT_LL_GetPeriodicTxUsageParams(llTxUsageParams_t* pPeriodicTxParams);
+llPeriodicAdvSetType_e OPT_LL_GetPerodicTypeByAdvHandle(uint8_t advHandle);
+llStatus_t OPT_LL_GetPerodicSyncTransferInfoByAdvHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
 
 #endif /* CTRL_PADV_H_ */

@@ -38,6 +38,7 @@
 
 #include <ti/drivers/rcl/RCL_Command.h>
 #include <ti/drivers/rcl/hal/hal.h>
+#include <ti/drivers/rcl/LRF.h>
 
 /**
  *  Number of ticks in the given number of microseconds
@@ -57,9 +58,9 @@
 #define RCL_SCHEDULER_MARGIN_LOAD        RCL_SCHEDULER_SYSTIM_US(460U) /*!< Time to load TOPsm images */
 #define RCL_SCHEDULER_SLEEP_CUTOFF       RCL_SCHEDULER_SYSTIM_MS(5U)  /*!< Time margin when not to arm LRF immediately */
 #define RCL_SCHEDULER_TRIG_NOW_DELAY     RCL_SCHEDULER_SYSTIM_US(50U)  /*!< Delay to add to current time to allow start to be in the future */
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC2340R53)
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC23X0)
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(390U) /*!< Wakeup margin to allow for varying command and setup time */
-#elif defined(DeviceFamily_CC27XX)
+#elif (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX)
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(150U) /*!< Wakeup margin to allow for varying command and setup time */
 #else
 #define RCL_SCHEDULER_WAKEUP_MARGIN      RCL_SCHEDULER_SYSTIM_US(1000U)/*!< Wakeup margin to allow for varying command and setup time */
@@ -89,6 +90,7 @@ typedef struct RCL_SchedulerStopInfo_s {
 
 typedef struct RCL_SchedulerState_s {
     RCL_Command  *currCmd;
+    RCL_Command  *stopCmd;
     uint32_t nextWantsStop                      : 1;
     RCL_SchedulerStopTimeState stopTimeState    : 2;
     RCL_SchedulerStopReason descheduleReason    : 2;
@@ -119,6 +121,20 @@ extern RCL_SchedulerState rclSchedulerState;
  *  @return Command status that should be produced
  */
 RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType);
+
+/**
+ *  @brief  Update relevant status when a command was stopped
+ *
+ *  Returns the status to be set for a command that was stopped with the given stop source,
+ *  depending on what caused the stop
+ *
+ *  @note This function is intended as internal to RCL and its handlers
+ *
+ *  @param  stopType Stop type observed
+ *
+ *  @return Command status that should be produced
+ */
+RCL_CommandStatus RCL_Scheduler_updateStopStatus(RCL_StopType stopType, RCL_SchedulerStopReason stopReason);
 
 /**
  *  @brief  Set start and stop time for LRF based on command

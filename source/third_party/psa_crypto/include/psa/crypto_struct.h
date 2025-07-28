@@ -60,6 +60,7 @@
  *
  *  Modified by Texas Instruments to:
  *  - Support SimpleLink device crypto hardware drivers.
+ *  - Support key derivation using HSM DDK.
  *  - Change mbedtls_svc_key_id_t input params to psa_key_id_t.
  *  - Remove MBEDTLS_PSA_KA_xxxx defines.
  *  - Remove MBEDTLS_PSA_CRYPTO_SE_C specific code.
@@ -69,6 +70,8 @@
 #define PSA_CRYPTO_STRUCT_H
 
 /* clang-format off */
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Include the Mbed TLS configuration file if defined */
 #if defined(MBEDTLS_CONFIG_FILE)
@@ -83,10 +86,7 @@
 #include <ti/drivers/AESCCM.h>
 #include <ti/drivers/AESGCM.h>
 
-#ifdef TFM_BUILD
-    /* Include for TFM builds */
-    #include <third_party/tfm/secure_fw/partitions/crypto/tfm_crypto_api.h> /* For tfm_crypto_get_caller_id */
-#elif (TFM_ENABLED == 1)
+#if (TFM_ENABLED == 1) && !defined(TFM_BUILD)
     /* Includes for NS library build */
     #include <third_party/tfm/interface/include/psa/crypto_client_struct.h>
 #endif
@@ -186,6 +186,9 @@ struct psa_key_attributes_s
     }
 
 #if (TFM_ENABLED == 0) || defined(TFM_BUILD)
+
+extern psa_status_t tfm_crypto_get_caller_id(int32_t *id);
+
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
 static inline void mbedtls_set_key_owner_id(psa_key_attributes_t *attributes,
                                             mbedtls_key_owner_id_t owner)
@@ -204,6 +207,12 @@ static inline psa_key_attributes_t psa_key_attributes_init(void)
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || \
      (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
 
+/* The ECDSA driver only supports sign and verify of a hash.  When a message
+ * needs to be signed/verified, the hash must be calculated first. The ECDSA
+ * driver always specifies the PSA_KEY_USAGE_SIGN_MESSAGE or
+ * PSA_KEY_USAGE_VERIFY_MESSAGE flag when retrieving a key, thus we must extend
+ * hash usage flags to allow ECDSA to be used for both cases.
+ */
 static inline void psa_extend_key_usage_flags(psa_key_usage_t *usage_flags)
 {
     if (*usage_flags & PSA_KEY_USAGE_SIGN_HASH) {
@@ -287,9 +296,9 @@ static inline psa_algorithm_t psa_get_key_algorithm(
 /* This function is declared in crypto_extra.h, which comes after this
  * header file, but we need the function here, so repeat the declaration. */
 extern psa_status_t KeyMgmt_psa_set_key_domain_parameters(psa_key_attributes_t *attributes,
-                                                      psa_key_type_t type,
-                                                      const uint8_t *data,
-                                                      size_t data_length);
+                                                          psa_key_type_t type,
+                                                          const uint8_t *data,
+                                                          size_t data_length);
 
 static inline void psa_set_key_type(psa_key_attributes_t *attributes,
                                     psa_key_type_t type)
@@ -527,7 +536,7 @@ static inline size_t psa_get_key_bits(const psa_key_attributes_t *attributes)
 
 #error "Device not supported"
 
-#endif /* DeviceFamily_CC27XX || DeviceFamily_PARENT_CC35XX*/
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) */
 
 /* ############################################################################### */
 
@@ -540,14 +549,9 @@ struct psa_hash_operation_s
      * ID value zero means the context is not valid or not assigned to
      * any driver (i.e. the driver context is not active, in use). */
 
-    /* this is not used as only one driver is needed */
     unsigned int id;
-    /* alg identirifer */
+    /* alg identifier */
     psa_algorithm_t alg;
-    /* added this to prevent out of sequence operations */
-    size_t hashSize;
-    /* operations set */
-    bool hashIsSet;
 };
 
 #define PSA_HASH_OPERATION_INIT \
@@ -574,24 +578,27 @@ struct psa_cipher_operation_s
     unsigned int iv_set:1;
     unsigned int is_encrypt:1;
     unsigned int in_error_state:1;
-    uint8_t default_iv_length;
-
-    /* passed in length */
-    uint8_t iv_length;
-    /* length used by PSA algorithm */
-    uint8_t block_length;
+    size_t default_iv_length;
     psa_algorithm_t alg;
 
-    /** Number of Bytes that have not been processed yet. */
+    /** Number of bytes that have not been processed yet */
     size_t unprocessed_len;
 
-    /* buffer for data that has not been processed yet */
-    uint8_t unprocessed_data[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE];
+    /* Buffer for data that has not been processed yet. Word-aligned for max
+     * performance and in case any drivers require aligned input buffer.
+     * Double-buffer is used when PSA crypto is built into the TFM to prevent
+     * corruption before the data can be consumed since the underlying crypto
+     * drivers are used in callback mode. */
+#ifdef TFM_BUILD
+    uint8_t unprocessed_data[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE * 2] __attribute__((aligned(4)));
+#else
+    uint8_t unprocessed_data[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE] __attribute__((aligned(4)));
+#endif /* TFM_BUILD */
+
+    /* Pointer to the current unprocessed data */
+    uint8_t *curr_unprocessed_data;
 
     CryptoKey cryptoKey;
-
-    /** IV size in Bytes, for ciphers with variable-length IVs. */
-    size_t iv_size;
 };
 
 #define PSA_CIPHER_OPERATION_INIT \
@@ -614,14 +621,26 @@ struct psa_mac_operation_s
      * ID value zero means the context is not valid or not assigned to
      * any driver (i.e. none of the driver contexts are active). */
     unsigned int id;
-    uint8_t mac_size;
-    unsigned int is_sign:1;
+    size_t mac_size;
     psa_algorithm_t alg;
     size_t unprocessed_len;
-    uint8_t unprocessedData[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE];
+
+    /* Buffer for data that has not been processed yet. Word-aligned for max
+     * performance and in case any drivers require aligned input buffer.
+     * Double-buffer is used when PSA crypto is built into the TFM to prevent
+     * corruption before the data can be consumed since the underlying crypto
+     * drivers are used in callback mode. */
+#ifdef TFM_BUILD
+    uint8_t unprocessedData[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE * 2] __attribute__((aligned(4)));
+#else
+    uint8_t unprocessedData[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE] __attribute__((aligned(4)));
+#endif /* TFM_BUILD */
+
+    /* Pointer to the current unprocessed data */
+    uint8_t *curr_unprocessed_data;
+
     CryptoKey cryptoKey;
-    bool lastBlockSet;
-    size_t fullMacSize;
+    bool is_sign;
 };
 
 #define PSA_MAC_OPERATION_INIT \
@@ -645,21 +664,33 @@ struct psa_aead_operation_s
      * any driver (i.e. none of the driver contexts are active). */
     unsigned int id;
     psa_algorithm_t alg;
-    unsigned int key_set:1;
     unsigned int iv_set:1;
-    uint8_t done_updating_ad;
-    uint8_t length_set;
-    unsigned int adLength;
-    unsigned int plaintextLength;
-    unsigned int runningADLength;
-    unsigned int runningPlaintextLength;
-    uint8_t iv_size;
-    uint8_t in_error_state;
-    uint8_t tagSize;
-    uint8_t block_size;
-    uint8_t unprocessedData[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE];
-    CryptoKey cryptoKey;
+    unsigned int in_error_state:1;
+    size_t adLength;
+    size_t plaintextLength;
+    size_t runningADLength;
+    size_t runningPlaintextLength;
+    size_t tagSize;
+
+    /* Buffer for data that has not been processed yet. Word-aligned for max
+     * performance and in case any drivers require aligned input buffer.
+     * Double-buffer is used when PSA crypto is built into the TFM to prevent
+     * corruption before the data can be consumed since the underlying crypto
+     * drivers are used in callback mode. */
+#ifdef TFM_BUILD
+    uint8_t unprocessedData[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE * 2] __attribute__((aligned(4)));
+#else
+    uint8_t unprocessedData[PSA_BLOCK_CIPHER_BLOCK_MAX_SIZE] __attribute__((aligned(4)));
+#endif /* TFM_BUILD */
+
+    /* Pointer to the current unprocessed data */
+    uint8_t *curr_unprocessed_data;
+
     size_t unprocessed_len;
+
+    CryptoKey cryptoKey;
+    bool done_updating_ad;
+    bool length_set;
 };
 
 #define PSA_AEAD_OPERATION_INIT \
@@ -730,6 +761,8 @@ typedef struct psa_tls12_prf_key_derivation_s
 } psa_tls12_prf_key_derivation_t;
 #endif /* MBEDTLS_PSA_BUILTIN_ALG_TLS12_PRF) || \
         * MBEDTLS_PSA_BUILTIN_ALG_TLS12_PSK_TO_MS */
+
+/* Note: The following key derivation define, struct, and function are copied from the HSM DDK */
 
 /** The maximum length of the label used in the Key Derivation Function (KDF). */
 #ifndef PSA_KDF_LABEL_MAX_SIZE

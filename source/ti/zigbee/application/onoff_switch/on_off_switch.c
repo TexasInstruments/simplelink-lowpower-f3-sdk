@@ -174,10 +174,10 @@ MAIN()
   zb_set_rx_on_when_idle(ED_RX_ALWAYS_ON);
 #if ( ED_RX_ALWAYS_ON == ZB_FALSE )
   zb_set_keepalive_timeout(ZB_MILLISECONDS_TO_BEACON_INTERVAL(ED_POLL_RATE));
+  zb_zdo_pim_set_long_poll_interval(ED_POLL_RATE);
 #ifdef DISABLE_TURBO_POLL
   // Disable turbo poll feature
   zb_zdo_pim_permit_turbo_poll(ZB_FALSE);
-  zb_zdo_pim_set_long_poll_interval(ED_POLL_RATE);
 #endif // DISABLE_TURBO_POLL
 #endif // ED_RX_ALWAYS_ON
 #endif //ZB_ED_ROLE
@@ -340,6 +340,7 @@ void zboss_signal_handler(zb_uint8_t param)
       case ZB_ZDO_SIGNAL_SKIP_STARTUP:
 #ifndef ZB_MACSPLIT_HOST
         Log_printf(LogModule_Zigbee_App, Log_INFO, "ZB_ZDO_SIGNAL_SKIP_STARTUP: boot, not started yet");
+        zb_set_tx_power(DEFAULT_TX_PWR);
         zboss_start_continue();
 #endif /* ZB_MACSPLIT_HOST */
         break;
@@ -347,6 +348,7 @@ void zboss_signal_handler(zb_uint8_t param)
 #ifdef ZB_MACSPLIT_HOST
       case ZB_MACSPLIT_DEVICE_BOOT:
         Log_printf(LogModule_Zigbee_App, Log_INFO, "ZB_MACSPLIT_DEVICE_BOOT: boot, not started yet");
+        zb_set_tx_power(DEFAULT_TX_PWR);
         zboss_start_continue();
         break;
 #endif /* ZB_MACSPLIT_HOST */
@@ -358,6 +360,7 @@ void zboss_signal_handler(zb_uint8_t param)
           zb_bdb_reset_via_local_action(0);
           perform_factory_reset = ZB_FALSE;
         }
+        zb_set_tx_power(DEFAULT_TX_PWR);
         bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
 
         buf = zb_buf_get_out();

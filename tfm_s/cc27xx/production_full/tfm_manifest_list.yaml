@@ -1,0 +1,55 @@
+#-------------------------------------------------------------------------------
+# Copyright (c) 2024, Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+#-------------------------------------------------------------------------------
+
+{
+    "name": "TF-M secure partition manifests",
+    "type": "manifest_list",
+    "version_major": 0,
+    "version_minor": 1,
+    "manifest_list": [
+        {
+            "description": "TI Crypto Service",
+            "manifest": "crypto_sp/crypto_sp.yaml",
+            "output_path": "secure_fw/partitions/ti_crypto",
+            "version_major": 0,
+            "version_minor": 1,
+            "pid": 301,
+            "linker_pattern": {
+                "library_list": [
+                    "*ti_*partition_crypto.*",
+                    "ti_tfm_crypto_its.*"
+                ]
+            }
+        },
+        {
+            "description": "TI Internal Storage Service",
+            "manifest": "internal_storage_sp/internal_storage_sp.yaml",
+            "output_path": "secure_fw/partitions/ti_internal_storage",
+            "version_major": 0,
+            "version_minor": 1,
+            "pid": 300,
+            "linker_pattern": {
+                "library_list": [
+                    "*ti_*partition_internal_storage.*"
+                ]
+            },
+        },
+        {
+            "description": "TI System Service",
+            "manifest": "system_sp/system_sp.yaml",
+            "output_path": "secure_fw/partitions/ti_system",
+            "version_major": 0,
+            "version_minor": 1,
+            "pid": 302,
+            "linker_pattern": {
+                "library_list": [
+                    "*ti_*partition_system.*"
+                ]
+            }
+        }
+    ]
+}

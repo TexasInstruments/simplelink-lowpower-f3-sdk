@@ -140,7 +140,7 @@ static int extFlashWaitPowerDown(void);
 static void extFlashSelect(void)
 {
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     GPIO_clearDio(BSP_IOID_FLASH_CS);
 #else
     bspGpioWrite(BSP_IOID_FLASH_CS, 0);
@@ -159,7 +159,7 @@ static void extFlashSelect(void)
 static void extFlashDeselect(void)
 {
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     GPIO_setDio(BSP_IOID_FLASH_CS);
 #else
     bspGpioWrite(BSP_IOID_FLASH_CS, 1);
@@ -381,7 +381,7 @@ bool extFlashOpen(void)
 
     /* GPIO pin configuration */
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     IOCPinTypeGpioOutput(BSP_IOID_FLASH_CS);
 #else
     bspGpioSetConfig(BSP_IOID_FLASH_CS, SPI_CS_STD_OUT);

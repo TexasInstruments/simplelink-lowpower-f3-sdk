@@ -130,10 +130,15 @@ function getAttrs(deviceId, part) {
         result.deviceDefine = "DeviceFamily_CC23X0R5";
         result.libName = "cc23x0r5";
     }
-    else if (deviceId.match(/CC27/)) {
-        result.deviceDir = "cc27xx";
-        result.deviceDefine = "DeviceFamily_CC27XX";
-        result.libName = "cc27xx";
+    else if (deviceId.match(/CC27..(R|P)(10|7)/)) {
+        result.deviceDir = "cc27xxx10";
+        result.deviceDefine = "DeviceFamily_CC27XXX10";
+        result.libName = "cc27xxx10";
+    }
+    else if (deviceId.match(/CC27..(R|P)(20|15)/)) {
+        result.deviceDir = "cc27xxx20";
+        result.deviceDefine = "DeviceFamily_CC27XXX20";
+        result.libName = "cc27xxx20";
     }
     else if (deviceId.match(/CC35/)) {
         result.deviceDir = "cc35xx";
@@ -268,17 +273,19 @@ function getLinkerDefs() {
         "CC2755R105RHA": [
             { name: "FLASH0_SIZE", value: 0x00100000 },
             { name: "RAM0_SIZE",   value: 0x00028800 }
+        ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase),
+        "CC2755P207RHA": [
+            { name: "FLASH0_SIZE", value: 0x00200000 },
+            { name: "RAM0_SIZE",   value: 0x00048000 }
         ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase)
     };
 
-    /* These devices reuse the device definitions above as they have the same
-     * memory map.
-     */
+    /* these devices reuse device defs above as they have the same memory map */
     dev2mem["CC2340R53YBG"] = dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHB"] = dev2mem["CC2340R5RKP"];
     dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
     dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
-    dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
-    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2755R105RHA"];
+    dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] = dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105RHA"];
+    dev2mem["CC2755P207RSL"] = dev2mem["CC2755P207RHA"];
 
     /* Override FLASH, RAM and S2RRAM base/size if TFM is enabled */
     if (system.modules["/ti/utils/TrustZone"]) {

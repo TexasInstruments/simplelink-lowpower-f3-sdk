@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,6 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
@@ -47,7 +46,25 @@
 #include <ti/drivers/nvs/NVSLPF3.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/flash.h)
+
+/*
+ *  If TFM_ENABLED is defined, use the Secure Flash Client Interface to
+ *  access the Flash driver. In a Secure-Only environment use driverlib
+ *  flash.h (which calls ROM HAPI) directly to access Flash driver.
+ *
+ *  When TFM_ENABLED is defined, the Flash API symbols are only defined
+ *  by FlashTFM_ns.h, therefore there is no overlap of symbols.
+ */
+#if TFM_ENABLED
+    #include <ti/drivers/nvs/flash/FlashTFM_ns.h>
+
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) /* Remap to prototypes defined in FlashTFM_ns.h */
+        #define FlashGetSectorSize FlashSectorSizeGet
+        #define FlashEraseSector   FlashSectorErase
+    #endif
+#else
+    #include DeviceFamily_constructPath(driverlib/flash.h)
+#endif
 
 /* max number of bytes to write at a time to minimize interrupt latency */
 #define MAX_WRITE_INCREMENT 8
@@ -137,6 +154,9 @@ void NVSLPF3_getAttrs(NVS_Handle handle, NVS_Attrs *attrs)
 void NVSLPF3_init(void)
 {
     unsigned int key;
+#if TFM_ENABLED
+    FlashOpen();
+#endif
 
     /* initialize energy saving variables */
     sectorSize     = FlashGetSectorSize();

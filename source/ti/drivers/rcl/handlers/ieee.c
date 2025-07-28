@@ -83,7 +83,7 @@
 #define IEEE_MAC_CRC_LEN                        2
 
 /* Time from start of preamble to SYSTIM capture at sync found */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 #define IEEE_TIMESTAMP_ADJUST 742U /* CC27XX: Sync found strobe comes 185.5 us after start of preamble */
 #else
 #define IEEE_TIMESTAMP_ADJUST 697U /* CC23XX: Sync found strobe comes 174.25 us after start of preamble */
@@ -199,9 +199,12 @@ static struct
             bool            coexPriorityChange;
             bool            coexRestart;
             RCL_IEEE_SourceMatchingUpdate srcMatchUpdateDesc;
-            RCL_CmdIeee_PanIdAddr srcMatchNewPanIdAddr;
+            union {
+                RCL_CmdIeee_PanIdAddr newPanIdAddr;
+                uint64_t newExtAddr;
+            } newSrcMatch;
             bool (*srcMatchUpdateFun)(RCL_CmdIeeeRxTx *ieeeCmd);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             uint16_t        demc1be10;
             uint16_t        demc1be12;
 #else
@@ -237,8 +240,12 @@ static void RCL_Handler_Ieee_updateStats(RCL_StatsIeee *stats, uint32_t startTim
 static bool RCL_Handler_Ieee_initStats(RCL_StatsIeee *stats, uint32_t startTime);
 static bool RCL_Handler_Ieee_setCustomEventTime(uint32_t eventTime, uint32_t timeMargin, bool hardStop);
 static bool RCL_Handler_Ieee_restoreStopTime(void);
+static RCL_IEEE_UpdateResult RCL_Handler_Ieee_processSourceMatchingOperation(RCL_IEEE_SourceMatchingUpdate description,
+    uint16_t *entryEnable, uint16_t *framePending);
 static bool RCL_Handler_Ieee_updateSrcMatchTableShort(RCL_CmdIeeeRxTx *ieeeCmd);
-static uint32_t RCL_Handler_IEEE_findNumExtraBytes(uint32_t fifoCfg);
+static bool RCL_Handler_Ieee_updateSrcMatchTableExt(RCL_CmdIeeeRxTx *ieeeCmd);
+static void RCL_Handler_Ieee_updateSrcMatchTable(uint16_t *entryEnable, uint16_t *framePending, RCL_CmdIeee_PanIdAddr *shortEntry, uint64_t *extEntry);
+static uint32_t RCL_Handler_Ieee_findNumExtraBytes(uint32_t fifoCfg);
 static void RCL_Handler_Ieee_setCoexEndMode(void);
 static void RCL_Handler_Ieee_setCoexPriority(bool tx);
 static void RCL_Handler_Ieee_processCoexTxPriority(RCL_CmdIeee_TxAction *txAction);
@@ -1354,7 +1361,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
 
         if ((lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0 || lrfEvents.rxIgnored != 0) && ieeeCmd->rxAction != NULL)
         {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             if (rclFeatureControl.enablePaEsdProtection)
             {
                 LRF_updatePaEsdProtection();
@@ -1599,7 +1606,7 @@ RCL_Events RCL_Handler_Ieee_RxTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
         /* Restore changed thresholds */
         if (ieeeHandlerState.rxTx.restoreThresh)
         {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE10) = ieeeHandlerState.rxTx.demc1be10;
             HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = ieeeHandlerState.rxTx.demc1be12;
 #else
@@ -2046,52 +2053,20 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeeeRxTx *c
     {
         /* Check that table and index is valid */
         RCL_CmdIeee_SourceMatchingTableShort *table = cmd->rxAction->panConfig[description.panNo].sourceMatchingTableShort;
-        uint32_t index = description.index;
-        if (table == NULL || index >= table->numEntries)
+        if (table == NULL || description.index >= table->numEntries)
         {
             result = RCL_IEEE_UpdateIndexError;
         }
         else if (cmd->common.status != RCL_CommandStatus_Active)
         {
             /* Command is not running, so no need to wait */
-            uint32_t bitMaskIndex = index / 16;
-            uint16_t bitMask = 1U << (index & 0x0F);
-            /* Result unless failure in the switch */
-            result = RCL_IEEE_UpdateDone;
-            switch (description.operation)
+            result = RCL_Handler_Ieee_processSourceMatchingOperation(description, table->entryEnable, table->framePending);
+            if (result == RCL_IEEE_UpdatePending)
             {
-                case RCL_IEEE_DisableEntry:
-                    /* Disable the entry */
-                    table->entryEnable[bitMaskIndex] &= ~bitMask;
-                    break;
-                case RCL_IEEE_EnableEntry:
-                    /* Enable the entry */
-                    table->entryEnable[bitMaskIndex] |= bitMask;
-                    break;
-                case RCL_IEEE_FrameNotPending:
-                    /* Set frame not pending */
-                    table->framePending[bitMaskIndex] &= ~bitMask;
-                    break;
-                case RCL_IEEE_FramePending:
-                    /* Set frame pending */
-                    table->framePending[bitMaskIndex] |= bitMask;
-                    break;
-                case RCL_IEEE_NewAddrFrameNotPending:
-                    /* Enable and set frame not pending */
-                    table->framePending[bitMaskIndex] &= ~bitMask;
-                    table->shortEntry[index] = newPanIdAddr;
-                    table->entryEnable[bitMaskIndex] |= bitMask;
-                    break;
-                case RCL_IEEE_NewAddrFramePending:
-                    /* Enable and set frame pending */
-                    table->framePending[bitMaskIndex] |= bitMask;
-                    table->shortEntry[index] = newPanIdAddr;
-                    table->entryEnable[bitMaskIndex] |= bitMask;
-                    break;
-                default:
-                    /* Error */
-                    result = RCL_IEEE_UpdateParamError;
-                    break;
+                /* Update address */
+                table->shortEntry[description.index] = newPanIdAddr;
+                /* Update is done; indicate in result */
+                result = RCL_IEEE_UpdateDone;
             }
         }
         else if (ieeeHandlerState.rxTx.rxActionUpdate || ieeeHandlerState.rxTx.srcMatchUpdatePhase != noSrcMatchUpdate)
@@ -2103,9 +2078,73 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeeeRxTx *c
         {
             /* Inform handler */
             ieeeHandlerState.rxTx.srcMatchUpdateDesc = description;
-            ieeeHandlerState.rxTx.srcMatchNewPanIdAddr = newPanIdAddr;
+            ieeeHandlerState.rxTx.newSrcMatch.newPanIdAddr = newPanIdAddr;
             ieeeHandlerState.rxTx.srcMatchUpdatePhase = srcMatchUpdateStart;
             ieeeHandlerState.rxTx.srcMatchUpdateFun = RCL_Handler_Ieee_updateSrcMatchTableShort;
+            RCL_Scheduler_postEvent(&cmd->common, RCL_EventHandlerCmdUpdate);
+            /* Report success */
+            result = RCL_IEEE_UpdatePending;
+        }
+    }
+    HwiP_restore(key);
+    return result;
+}
+
+/*
+ *  ======== RCL_IEEE_updateSourceMatchingTableExt ========
+ */
+RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_IEEE_SourceMatchingUpdate description,
+                                                            const uint64_t *newAddr)
+{
+    if (cmd == NULL || cmd->common.cmdId != RCL_CMDID_IEEE_RX_TX)
+    {
+        return RCL_IEEE_UpdateCmdError;
+    }
+
+    RCL_IEEE_UpdateResult result;
+    uintptr_t key = HwiP_disable();
+    if (cmd->rxAction == NULL)
+    {
+        /* Error: Command has no RX */
+        result = RCL_IEEE_UpdateCmdError;
+    }
+    else if (description.panNo >= cmd->rxAction->numPan)
+    {
+        /* Error: PAN number is out of range */
+        result = RCL_IEEE_UpdateIndexError;
+    }
+    else
+    {
+        /* Check that table and index is valid */
+        RCL_CmdIeee_SourceMatchingTableExt *table = cmd->rxAction->panConfig[description.panNo].sourceMatchingTableExt;
+        if (table == NULL || description.index >= table->numEntries)
+        {
+            result = RCL_IEEE_UpdateIndexError;
+        }
+        else if (cmd->common.status != RCL_CommandStatus_Active)
+        {
+            /* Command is not running, so no need to wait */
+            result = RCL_Handler_Ieee_processSourceMatchingOperation(description, table->entryEnable, table->framePending);
+            if (result == RCL_IEEE_UpdatePending)
+            {
+                /* Update address */
+                table->extEntry[description.index] = *newAddr;
+                /* Update is done; indicate in result */
+                result = RCL_IEEE_UpdateDone;
+            }
+        }
+        else if (ieeeHandlerState.rxTx.rxActionUpdate || ieeeHandlerState.rxTx.srcMatchUpdatePhase != noSrcMatchUpdate)
+        {
+            /* Update is already running */
+            result = RCL_IEEE_UpdateCmdError;
+        }
+        else
+        {
+            /* Inform handler */
+            ieeeHandlerState.rxTx.srcMatchUpdateDesc = description;
+            ieeeHandlerState.rxTx.newSrcMatch.newExtAddr = *newAddr;
+            ieeeHandlerState.rxTx.srcMatchUpdatePhase = srcMatchUpdateStart;
+            ieeeHandlerState.rxTx.srcMatchUpdateFun = RCL_Handler_Ieee_updateSrcMatchTableExt;
             RCL_Scheduler_postEvent(&cmd->common, RCL_EventHandlerCmdUpdate);
             /* Report success */
             result = RCL_IEEE_UpdatePending;
@@ -2175,7 +2214,7 @@ static RCL_CommandStatus RCL_Handler_Ieee_processRxAction(const RCL_CmdIeee_RxAc
     /* Turn off sync search if requested */
     if (rxAction->disableSync && !ieeeHandlerState.rxTx.restoreThresh)
     {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         uint16_t demc1be10 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE10);
         uint16_t demc1be12 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12);
 
@@ -2205,7 +2244,7 @@ static RCL_CommandStatus RCL_Handler_Ieee_processRxAction(const RCL_CmdIeee_RxAc
     /* Restore correlation threshold if sync is re-enabled */
     if (!rxAction->disableSync && ieeeHandlerState.rxTx.restoreThresh)
     {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE10) = ieeeHandlerState.rxTx.demc1be10;
         HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = ieeeHandlerState.rxTx.demc1be12;
 #else
@@ -2272,20 +2311,61 @@ static RCL_CommandStatus RCL_Handler_Ieee_processRxAction(const RCL_CmdIeee_RxAc
             providedAckFrameEnabled = true;
         }
 
-        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_FFOPT0) = frameFilteringOption;
-
         /* Set up source matching */
+        uint32_t maxNumShortEntries;
+        uint32_t numExtEntries = 0;
         if (panConfig->sourceMatchingTableExt != NULL)
         {
-            /* Extended source matching: Not yet supported */
-            return RCL_CommandStatus_Error_Param;
+            RCL_CmdIeee_SourceMatchingTableExt *sourceMatchingTable = panConfig->sourceMatchingTableExt;
+            numExtEntries = sourceMatchingTable->numEntries;
+            if (numExtEntries > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_MAX_LEN)
+            {
+                return RCL_CommandStatus_Error_Param;
+            }
+
+            if (numExtEntries > 0)
+            {
+                /* Write source matching table to bufram for use by the PBE */
+                /* Write entry enable and frame pending bits for the entries given to bufram */
+                /* If the table has fewer entries than the maximum, set the corresponding bits to 0 */
+                uint16_t mask = 0xFFFF;
+                mask >>= (16 - numExtEntries);
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE02) =
+                    sourceMatchingTable->entryEnable[0] & mask;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_FRAMEPENDING02) =
+                    sourceMatchingTable->framePending[0] & mask;
+
+                /* Set remaining enable and frame pending words to 0 */
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE03) = 0;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_FRAMEPENDING03) = 0;
+                /* Write entries to bufram */
+                for (uint32_t entryNo = 0; entryNo < numExtEntries; entryNo++)
+                {
+                    HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchTableOffset + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_EXT_START + (entryNo << 3)) =
+                        (uint32_t) sourceMatchingTable->extEntry[entryNo];
+                    HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchTableOffset + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_EXT_START + (entryNo << 3) + 4) =
+                        (uint32_t) (sourceMatchingTable->extEntry[entryNo] >> 32ULL);
+                }
+            }
         }
+
+        if (numExtEntries == 0)
+        {
+            frameFilteringOption = (frameFilteringOption & ~PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_M) | PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_SHORTONLY;
+            maxNumShortEntries = RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN;
+        }
+        else
+        {
+            frameFilteringOption = (frameFilteringOption & ~PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_M) | PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_MIX;
+            maxNumShortEntries = RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_WITH_EXT_MAX_LEN;
+        }
+
         if (panConfig->sourceMatchingTableShort != NULL)
         {
             /* Write source matching table to bufram for use by the PBE */
             RCL_CmdIeee_SourceMatchingTableShort *sourceMatchingTable = panConfig->sourceMatchingTableShort;
             uint32_t numEntries = sourceMatchingTable->numEntries;
-            if (numEntries > RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN)
+            if (numEntries > maxNumShortEntries)
             {
                 return RCL_CommandStatus_Error_Param;
             }
@@ -2308,11 +2388,12 @@ static RCL_CommandStatus RCL_Handler_Ieee_processRxAction(const RCL_CmdIeee_RxAc
                 entryNo += 16;
             }
             /* Set remaining enable and frame pending words to 0 (if any) */
-            while (index < RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS)
+            while (entryNo < maxNumShortEntries)
             {
-                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_ENTRYENABLE00 + (index << 1)) = 0;
-                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FRAMEPENDING00 + (index << 1)) = 0;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE00 + (index << 1)) = 0;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_FRAMEPENDING00 + (index << 1)) = 0;
                 index++;
+                entryNo += 16;
             }
             /* Write entries (Pan ID and address) to bufram */
             for (entryNo = 0; entryNo < numEntries; entryNo++)
@@ -2323,12 +2404,15 @@ static RCL_CommandStatus RCL_Handler_Ieee_processRxAction(const RCL_CmdIeee_RxAc
         }
         else
         {
+            uint32_t index = 0;
             /* If no table is provided, set all entry enble words to 0 */
-            for (int i = 0; i < RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS; i++)
+            for (uint32_t entryNo = 0; entryNo < maxNumShortEntries; entryNo += 16)
             {
-                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE00 + (i << 1)) = 0;
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + sourceMatchHeaderOffset + PBE_IEEE_RAM_O_ENTRYENABLE00 + (index << 1)) = 0;
+                index++;
             }
         }
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + panRegOffset + PBE_IEEE_RAM_O_FFOPT0) = frameFilteringOption;
 
         panRegOffset += PBE_IEEE_RAM_O_PANID1 - PBE_IEEE_RAM_O_PANID0;
         sourceMatchHeaderOffset += PBE_IEEE_RAM_O_ENTRYENABLE10 - PBE_IEEE_RAM_O_ENTRYENABLE00;
@@ -2598,6 +2682,9 @@ static bool RCL_Handler_Ieee_initStats(RCL_StatsIeee *stats, uint32_t startTime)
     }
 }
 
+/*
+ *  ======== RCL_Handler_Ieee_setCustomEventTime ========
+ */
 static bool RCL_Handler_Ieee_setCustomEventTime(uint32_t eventTime, uint32_t timeMargin, bool hardStop)
 {
     bool setCustomEventTime = true;
@@ -2654,6 +2741,9 @@ static bool RCL_Handler_Ieee_setCustomEventTime(uint32_t eventTime, uint32_t tim
     return setCustomEventTime;
 }
 
+/*
+ *  ======== RCL_Handler_Ieee_restoreStopTime ========
+ */
 static bool RCL_Handler_Ieee_restoreStopTime(void)
 {
     if (ieeeHandlerState.common.eventTimeType != noEvent)
@@ -2685,162 +2775,284 @@ static bool RCL_Handler_Ieee_restoreStopTime(void)
     return false;
 }
 
+/*
+ *  ======== RCL_Handler_Ieee_processSourceMatchingOperation ========
+ */
+static RCL_IEEE_UpdateResult RCL_Handler_Ieee_processSourceMatchingOperation(RCL_IEEE_SourceMatchingUpdate description,
+        uint16_t *entryEnable, uint16_t *framePending)
+{
+    uint32_t index = description.index;
+
+    uint32_t bitMaskIndex = index / 16;
+    uint16_t bitMask = 1U << (index & 0x0F);
+    /* Default result */
+    RCL_IEEE_UpdateResult result = RCL_IEEE_UpdateDone;
+    switch (description.operation)
+    {
+        case RCL_IEEE_DisableEntry:
+            /* Disable the entry */
+            entryEnable[bitMaskIndex] &= ~bitMask;
+            break;
+        case RCL_IEEE_EnableEntry:
+            /* Enable the entry */
+            entryEnable[bitMaskIndex] |= bitMask;
+            break;
+        case RCL_IEEE_FrameNotPending:
+            /* Set frame not pending */
+            framePending[bitMaskIndex] &= ~bitMask;
+            break;
+        case RCL_IEEE_FramePending:
+            /* Set frame pending */
+            framePending[bitMaskIndex] |= bitMask;
+            break;
+        case RCL_IEEE_NewAddrFrameNotPending:
+            /* Enable and set frame not pending */
+            framePending[bitMaskIndex] &= ~bitMask;
+            entryEnable[bitMaskIndex] |= bitMask;
+            /* Inform caller to update address */
+            result = RCL_IEEE_UpdatePending;
+            break;
+        case RCL_IEEE_NewAddrFramePending:
+            /* Enable and set frame pending */
+            framePending[bitMaskIndex] |= bitMask;
+            entryEnable[bitMaskIndex] |= bitMask;
+            /* Inform caller to update address */
+            result = RCL_IEEE_UpdatePending;
+            break;
+        default:
+            /* Error */
+            result = RCL_IEEE_UpdateParamError;
+            break;
+    }
+    return result;
+}
+
+/*
+ * ======== RCL_Handler_Ieee_updateSrcMatchTableShort ========
+ */
 static bool RCL_Handler_Ieee_updateSrcMatchTableShort(RCL_CmdIeeeRxTx *ieeeCmd)
 {
-    RCL_Handler_Ieee_SourceMatchUpdatePhase currentPhase = ieeeHandlerState.rxTx.srcMatchUpdatePhase;
     uint32_t panNo = ieeeHandlerState.rxTx.srcMatchUpdateDesc.panNo;
+    uint32_t index = ieeeHandlerState.rxTx.srcMatchUpdateDesc.index;
     if (ieeeCmd->rxAction == NULL || panNo >= ieeeHandlerState.rxTx.numPan)
     {
         /* No RX action or pan number out of range - give up */
-        currentPhase = noSrcMatchUpdate;
+        ieeeHandlerState.rxTx.srcMatchUpdatePhase = noSrcMatchUpdate;
     }
     else
     {
         RCL_CmdIeee_SourceMatchingTableShort *table = ieeeCmd->rxAction->panConfig[panNo].sourceMatchingTableShort;
-        uint32_t index = ieeeHandlerState.rxTx.srcMatchUpdateDesc.index;
-        RCL_IEEE_SourceMatchingOperation operation = ieeeHandlerState.rxTx.srcMatchUpdateDesc.operation;
         if (table == NULL || index >= table->numEntries)
         {
             /* Index out of range - give up */
-            currentPhase = noSrcMatchUpdate;
+            ieeeHandlerState.rxTx.srcMatchUpdatePhase = noSrcMatchUpdate;
         }
         else
         {
-            uint32_t bitMaskIndex = index / 16;
-            uint16_t bitMask = 1U << (index & 0x0F);
-            uint16_t newValue;
-            if (currentPhase == srcMatchUpdateStart)
+            RCL_Handler_Ieee_updateSrcMatchTable(
+                table->entryEnable,
+                table->framePending,
+                &table->shortEntry[index],
+                NULL);
+        }
+    }
+    return (ieeeHandlerState.rxTx.srcMatchUpdatePhase == noSrcMatchUpdate);
+}
+
+/*
+ * ======== RCL_Handler_Ieee_updateSrcMatchTableExt ========
+ */
+static bool RCL_Handler_Ieee_updateSrcMatchTableExt(RCL_CmdIeeeRxTx *ieeeCmd)
+{
+    uint32_t panNo = ieeeHandlerState.rxTx.srcMatchUpdateDesc.panNo;
+    uint32_t index = ieeeHandlerState.rxTx.srcMatchUpdateDesc.index;
+    if (ieeeCmd->rxAction == NULL || panNo >= ieeeHandlerState.rxTx.numPan)
+    {
+        /* No RX action or pan number out of range - give up */
+        ieeeHandlerState.rxTx.srcMatchUpdatePhase = noSrcMatchUpdate;
+    }
+    else
+    {
+        RCL_CmdIeee_SourceMatchingTableExt *table = ieeeCmd->rxAction->panConfig[panNo].sourceMatchingTableExt;
+        if (table == NULL || index >= table->numEntries)
+        {
+            /* Index out of range - give up */
+            ieeeHandlerState.rxTx.srcMatchUpdatePhase = noSrcMatchUpdate;
+        }
+        else
+        {
+            RCL_Handler_Ieee_updateSrcMatchTable(
+                table->entryEnable,
+                table->framePending,
+                NULL,
+                &table->extEntry[index]);
+        }
+    }
+    return (ieeeHandlerState.rxTx.srcMatchUpdatePhase == noSrcMatchUpdate);
+}
+
+/*
+ * ======== RCL_Handler_Ieee_updateSrcMatchTable ========
+ */
+static void RCL_Handler_Ieee_updateSrcMatchTable(uint16_t *entryEnable, uint16_t *framePending, RCL_CmdIeee_PanIdAddr *shortEntry, uint64_t *extEntry)
+{
+    RCL_Handler_Ieee_SourceMatchUpdatePhase currentPhase = ieeeHandlerState.rxTx.srcMatchUpdatePhase;
+    uint32_t index = ieeeHandlerState.rxTx.srcMatchUpdateDesc.index;
+    uint32_t panNo = ieeeHandlerState.rxTx.srcMatchUpdateDesc.panNo;
+    RCL_IEEE_SourceMatchingOperation operation = ieeeHandlerState.rxTx.srcMatchUpdateDesc.operation;
+
+    uint32_t bitMaskIndex = index / 16;
+    uint32_t ramRegOffset = ((extEntry != NULL) ? 4 : 0) + panNo * (PBE_IEEE_RAM_O_ENTRYENABLE10 - PBE_IEEE_RAM_O_ENTRYENABLE00);
+    uint32_t tableOffset = panNo * (PBE_IEEE_RAM_O_PAN1_SRC_MATCH_SHORT_START - PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START);
+    uint16_t bitMask = 1U << (index & 0x0F);
+    uint16_t newValue;
+    if (currentPhase == srcMatchUpdateStart)
+    {
+        if (operation == RCL_IEEE_FrameNotPending || operation == RCL_IEEE_FramePending)
+        {
+            if (operation == RCL_IEEE_FrameNotPending)
             {
-                if (operation == RCL_IEEE_FrameNotPending || operation == RCL_IEEE_FramePending)
+                /* Set frame not pending */
+                newValue = framePending[bitMaskIndex] & ~bitMask;
+            }
+            else
+            {
+                /* Set frame pending */
+                newValue = framePending[bitMaskIndex] | bitMask;
+            }
+            uintptr_t key = HwiP_disable();
+            if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_SRCMATCHIDX) != IEEE_SOURCE_MATCHING_BUSY)
+            {
+                /* Value can be updated */
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FRAMEPENDING00 + ramRegOffset + (bitMaskIndex << 1)) = newValue;
+                HwiP_restore(key);
+                /* Done - update table and end */
+                framePending[bitMaskIndex] = newValue;
+                currentPhase = noSrcMatchUpdate;
+                LRF_disableHwInterrupt(LRF_EventRxCtrl.value);
+            }
+            else
+            {
+                HwiP_restore(key);
+                /* Entry can't be udated now. Wait for frame filtering done */
+                LRF_enableHwInterrupt(LRF_EventRxCtrl.value);
+            }
+        }
+        else
+        {
+            if (operation == RCL_IEEE_EnableEntry)
+            {
+                /* Enable the entry */
+                newValue = entryEnable[bitMaskIndex] | bitMask;
+            }
+            else
+            {
+                /* Disable the entry. This is also done when changing address. */
+                newValue = entryEnable[bitMaskIndex] & ~bitMask;
+            }
+            uintptr_t key = HwiP_disable();
+            if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_SRCMATCHIDX) != IEEE_SOURCE_MATCHING_BUSY)
+            {
+                /* Value can be updated */
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_ENTRYENABLE00 + ramRegOffset + (bitMaskIndex << 1)) = newValue;
+                HwiP_restore(key);
+                if (operation <= RCL_IEEE_EnableEntry)
                 {
-                    if (operation == RCL_IEEE_FrameNotPending)
+                    /* Done - update table and end */
+                    entryEnable[bitMaskIndex] = newValue;
+                    currentPhase = noSrcMatchUpdate;
+                }
+                else
+                {
+                    /* Set new frame pending value and address */
+                    if (operation == RCL_IEEE_NewAddrFrameNotPending)
                     {
                         /* Set frame not pending */
-                        newValue = table->framePending[bitMaskIndex] & ~bitMask;
+                        newValue = framePending[bitMaskIndex] & ~bitMask;
                     }
                     else
                     {
                         /* Set frame pending */
-                        newValue = table->framePending[bitMaskIndex] | bitMask;
+                        newValue = framePending[bitMaskIndex] | bitMask;
                     }
-                    uintptr_t key = HwiP_disable();
-                    if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_SRCMATCHIDX) != IEEE_SOURCE_MATCHING_BUSY)
+                    /* Set new values in BUFRAM; update table when change is done.
+                    The change is safe to do now, since the entry has been disabled. */
+                    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FRAMEPENDING00 + ramRegOffset + (bitMaskIndex << 1)) = newValue;
+                    if (extEntry != NULL)
                     {
-                        /* Value can be updated */
-                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FRAMEPENDING00 + (bitMaskIndex << 1)) = newValue;
-                        HwiP_restore(key);
-                        /* Done - update table and end */
-                        table->framePending[bitMaskIndex] = newValue;
-                        currentPhase = noSrcMatchUpdate;
-                        LRF_disableHwInterrupt(LRF_EventRxCtrl.value);
+                        HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + tableOffset + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_EXT_START + (index << 3)) =
+                            (uint32_t) ieeeHandlerState.rxTx.newSrcMatch.newExtAddr;
+                        HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + tableOffset + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_EXT_START + (index << 3) + 4) =
+                            (uint32_t) (ieeeHandlerState.rxTx.newSrcMatch.newExtAddr >> 32ULL);
                     }
                     else
                     {
-                        HwiP_restore(key);
-                        /* Entry can't be udated now. Wait for frame filtering done */
-                        LRF_enableHwInterrupt(LRF_EventRxCtrl.value);
+                        HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + tableOffset + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START + (index << 2)) =
+                            ieeeHandlerState.rxTx.newSrcMatch.newPanIdAddr.combined;
                     }
+                    currentPhase = srcMatchUpdateFinish;
+                }
+                LRF_disableHwInterrupt(LRF_EventRxCtrl.value);
+            }
+            else
+            {
+                HwiP_restore(key);
+                /* Entry can't be udated now. Wait for frame filtering done */
+                LRF_enableHwInterrupt(LRF_EventRxCtrl.value);
+            }
+        }
+    }
+    if (currentPhase == srcMatchUpdateFinish)
+    {
+        if (operation == RCL_IEEE_NewAddrFrameNotPending || operation == RCL_IEEE_NewAddrFramePending)
+        {
+            /* Enable the entry */
+            newValue = entryEnable[bitMaskIndex] | bitMask;
+            uintptr_t key = HwiP_disable();
+            if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_SRCMATCHIDX) != IEEE_SOURCE_MATCHING_BUSY)
+            {
+                /* Value can be updated */
+                HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_ENTRYENABLE00 + ramRegOffset + (bitMaskIndex << 1)) = newValue;
+                HwiP_restore(key);
+                /* Done - update table and end */
+                if (extEntry != NULL)
+                {
+                    *extEntry = ieeeHandlerState.rxTx.newSrcMatch.newExtAddr;
                 }
                 else
                 {
-                    if (operation == RCL_IEEE_EnableEntry)
-                    {
-                        /* Enable the entry */
-                        newValue = table->entryEnable[bitMaskIndex] | bitMask;
-                    }
-                    else
-                    {
-                        /* Disable the entry. This is also done when changing address. */
-                        newValue = table->entryEnable[bitMaskIndex] & ~bitMask;
-                    }
-                    uintptr_t key = HwiP_disable();
-                    if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_SRCMATCHIDX) != IEEE_SOURCE_MATCHING_BUSY)
-                    {
-                        /* Value can be updated */
-                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_ENTRYENABLE00 + (bitMaskIndex << 1)) = newValue;
-                        HwiP_restore(key);
-                        if (operation <= RCL_IEEE_EnableEntry)
-                        {
-                            /* Done - update table and end */
-                            table->entryEnable[bitMaskIndex] = newValue;
-                            currentPhase = noSrcMatchUpdate;
-                        }
-                        else
-                        {
-                            /* Set new frame pending value and address */
-                            if (operation == RCL_IEEE_NewAddrFrameNotPending)
-                            {
-                                /* Set frame not pending */
-                                newValue = table->framePending[bitMaskIndex] & ~bitMask;
-                            }
-                            else
-                            {
-                                /* Set frame pending */
-                                newValue = table->framePending[bitMaskIndex] | bitMask;
-                            }
-                            /* Set new values in BUFRAM; update table when change is done.
-                               The change is safe to do now, since the entry has been disabled. */
-                            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_FRAMEPENDING00 + (bitMaskIndex << 1)) = newValue;
-                            HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START + (index << 2)) =
-                                ieeeHandlerState.rxTx.srcMatchNewPanIdAddr.combined;
-                            currentPhase = srcMatchUpdateFinish;
-                        }
-                        LRF_disableHwInterrupt(LRF_EventRxCtrl.value);
-                    }
-                    else
-                    {
-                        HwiP_restore(key);
-                        /* Entry can't be udated now. Wait for frame filtering done */
-                        LRF_enableHwInterrupt(LRF_EventRxCtrl.value);
-                    }
+                    *shortEntry = ieeeHandlerState.rxTx.newSrcMatch.newPanIdAddr;
                 }
-            }
-            if (currentPhase == srcMatchUpdateFinish)
-            {
-                if (operation == RCL_IEEE_NewAddrFrameNotPending || operation == RCL_IEEE_NewAddrFramePending)
+                if (operation == RCL_IEEE_NewAddrFrameNotPending)
                 {
-                    /* Enable the entry */
-                    newValue = table->entryEnable[bitMaskIndex] | bitMask;
-                    uintptr_t key = HwiP_disable();
-                    if (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_SRCMATCHIDX) != IEEE_SOURCE_MATCHING_BUSY)
-                    {
-                        /* Value can be updated */
-                        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_IEEE_RAM_O_ENTRYENABLE00 + (bitMaskIndex << 1)) = newValue;
-                        HwiP_restore(key);
-                        /* Done - update table and end */
-                        table->shortEntry[index] = ieeeHandlerState.rxTx.srcMatchNewPanIdAddr;
-                        if (operation == RCL_IEEE_NewAddrFrameNotPending)
-                        {
-                            /* Set frame not pending to match what was previously done in BUFRAM */
-                            table->framePending[bitMaskIndex] &= ~bitMask;
-                        }
-                        else
-                        {
-                            /* Set frame pending to match what was previously done in BUFRAM */
-                            table->framePending[bitMaskIndex] |= bitMask;
-                        }
-                        table->entryEnable[bitMaskIndex] = newValue;
-                        currentPhase = noSrcMatchUpdate;
-                        LRF_disableHwInterrupt(LRF_EventRxCtrl.value);
-                    }
-                    else
-                    {
-                        HwiP_restore(key);
-                        /* Entry can't be updated now. Wait for frame filtering done */
-                        LRF_enableHwInterrupt(LRF_EventRxCtrl.value);
-                    }
+                    /* Set frame not pending to match what was previously done in BUFRAM */
+                    framePending[bitMaskIndex] &= ~bitMask;
                 }
+                else
+                {
+                    /* Set frame pending to match what was previously done in BUFRAM */
+                    framePending[bitMaskIndex] |= bitMask;
+                }
+                entryEnable[bitMaskIndex] = newValue;
+                currentPhase = noSrcMatchUpdate;
+                LRF_disableHwInterrupt(LRF_EventRxCtrl.value);
+            }
+            else
+            {
+                HwiP_restore(key);
+                /* Entry can't be updated now. Wait for frame filtering done */
+                LRF_enableHwInterrupt(LRF_EventRxCtrl.value);
             }
         }
     }
     ieeeHandlerState.rxTx.srcMatchUpdatePhase = currentPhase;
-    return (currentPhase == noSrcMatchUpdate);
 }
 
+
 /*
- *  ======== RCL_Handler_IEEE_findNumExtraBytes ========
+ *  ======== RCL_Handler_Ieee_findNumExtraBytes ========
  */
-static uint32_t RCL_Handler_IEEE_findNumExtraBytes(uint32_t fifoCfg)
+static uint32_t RCL_Handler_Ieee_findNumExtraBytes(uint32_t fifoCfg)
 {
     uint32_t numExtraBytes = 0;
     if (fifoCfg & PBE_IEEE_RAM_FIFOCFG_APPENDCRC_M)
@@ -2877,7 +3089,7 @@ int8_t RCL_IEEE_getRxRssi(const RCL_Buffer_DataEntry *rxEntry)
     if ((fifoCfg & PBE_IEEE_RAM_FIFOCFG_APPENDRSSI_M) != 0)
     {
         /* Find number of bytes in RSSI and the appended bytes after that */
-        uint32_t positionFromEnd = RCL_Handler_IEEE_findNumExtraBytes(fifoCfg &
+        uint32_t positionFromEnd = RCL_Handler_Ieee_findNumExtraBytes(fifoCfg &
                                                                      (PBE_IEEE_RAM_FIFOCFG_APPENDRSSI_M |
                                                                       PBE_IEEE_RAM_FIFOCFG_APPENDTIMESTAMP_M));
         int32_t offset = rxEntry->length - sizeof(rxEntry->numPad) - sizeof(rxEntry->pad0) - positionFromEnd;
@@ -2909,7 +3121,7 @@ uint8_t RCL_IEEE_getRxLqi(const RCL_Buffer_DataEntry *rxEntry)
     if ((fifoCfg & PBE_IEEE_RAM_FIFOCFG_APPENDLQI_M) != 0)
     {
         /* Find number of bytes in LQI and the appended bytes after that */
-        uint32_t positionFromEnd = RCL_Handler_IEEE_findNumExtraBytes(fifoCfg &
+        uint32_t positionFromEnd = RCL_Handler_Ieee_findNumExtraBytes(fifoCfg &
                                                                      (PBE_IEEE_RAM_FIFOCFG_APPENDLQI_M |
                                                                       PBE_IEEE_RAM_FIFOCFG_APPENDRSSI_M |
                                                                       PBE_IEEE_RAM_FIFOCFG_APPENDTIMESTAMP_M));
@@ -2949,7 +3161,7 @@ uint32_t RCL_IEEE_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry)
         }
         else
         {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             const uint32_t *dataPtr = (uint32_t *) (rxEntry->data + offset);
             timestamp = *dataPtr;
 #else
@@ -2965,6 +3177,9 @@ uint32_t RCL_IEEE_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry)
     }
 }
 
+/*
+ * ======== RCL_Handler_Ieee_setCoexEndMode ========
+ */
 static void RCL_Handler_Ieee_setCoexEndMode(void)
 {
     /* Configure PBE to keep REQUEST asserted if coex is enabled, REQUEST was already asserted,
@@ -2987,6 +3202,9 @@ static void RCL_Handler_Ieee_setCoexEndMode(void)
     }
 }
 
+/*
+ * ======== RCL_Handler_Ieee_setCoexPriority ========
+ */
 static void RCL_Handler_Ieee_setCoexPriority(bool tx)
 {
     /* Set the coex priority to use next, and turn off RETAINREQ to allow PBE to deassert REQUEST
@@ -3016,6 +3234,9 @@ static void RCL_Handler_Ieee_setCoexPriority(bool tx)
     }
 }
 
+/*
+ * ======== RCL_Handler_Ieee_processCoexTxPriority ========
+ */
 static void RCL_Handler_Ieee_processCoexTxPriority(RCL_CmdIeee_TxAction *txAction)
 {
     if (COEX_REQUEST_GLOBAL_ENABLE(lrfCoexConfiguration))

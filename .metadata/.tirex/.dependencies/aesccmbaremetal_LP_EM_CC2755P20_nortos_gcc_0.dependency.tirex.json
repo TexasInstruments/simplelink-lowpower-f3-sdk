@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../aesccmBareMetal.syscfg -> aesccmBareMetal.syscfg",
+            "+../HSMBareMetal.c -> HSMBareMetal.c",
+            "+../aesccmBareMetal.c -> aesccmBareMetal.c",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../../../../../../source/ti/common/hsm/aesccmBareMetal/README.md -> README.md",
+            "+../lpf3_cc27xx_nortos.lds -> lpf3_cc27xx_nortos.lds"
+        ]
+    }
+]

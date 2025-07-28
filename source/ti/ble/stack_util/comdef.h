@@ -104,8 +104,15 @@ extern "C"
 #define UFALSE 0U
 #endif
 
-#ifndef NULL
-#define NULL 0L
+// Fix to stdint.h definitions
+#ifdef UINT8_MAX
+#undef UINT8_MAX
+#define UINT8_MAX 255U
+#endif
+
+#ifdef UINT16_MAX
+#undef UINT16_MAX
+#define UINT16_MAX 65535U
 #endif
 
 /// @endcond // NODOC

@@ -50,8 +50,10 @@ const deviceTypeOptions = [
     {name: "zr", displayName: "ZigBee Router"},
     {name: "zed", displayName: "ZigBee End Device"},
     {name: "gpd", displayName: "Green Power Device"},
+    {name: "mac", displayName: "MAC Only Device"},
 ];
 const defaultDeviceType = 'zc';
+const defaultDeviceTypeIsMAC = (defaultDeviceType === 'mac');
 const defaultDeviceTypeIsFFD = (defaultDeviceType === 'zc' || defaultDeviceType === 'zr');
 const defaultDeviceTypeIsRFD = (defaultDeviceType === 'zed');
 const defaultDeviceTypeIsGPD = (defaultDeviceType === 'gpd');
@@ -104,6 +106,7 @@ exports = {
     NWK_KEY_LEN: NWK_KEY_LEN,
     deviceTypeOptions: deviceTypeOptions,
     defaultDeviceType: defaultDeviceType,
+    defaultDeviceTypeIsMAC: defaultDeviceTypeIsMAC,
     defaultDeviceTypeIsFFD: defaultDeviceTypeIsFFD,
     defaultDeviceTypeIsRFD: defaultDeviceTypeIsRFD,
     defaultDeviceTypeIsGPD: defaultDeviceTypeIsGPD

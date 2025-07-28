@@ -155,12 +155,9 @@ typedef struct
  */
 typedef struct
 {
-  drbgParams_t llcsDrbgParams;          /* Parameters for the DRBG. */
   llCs_t       llCs;                    /* CS state information. */
                                         /* For future optimizations:
-                                           - remove filteredChanIdx array
-                                           - remove procedureEnableData
-                                           - remove csTerminateInfo_t */
+                                           - remove filteredChanIdx array */
 
   uint8_t      validCsConfigsBitmap;       /* Number of valid CS configurations */
   llCSHandoverRuntimeAllocParamsSizes_t csRuntimeAllocInfo;  /* Run-time allocation information for the CS. */

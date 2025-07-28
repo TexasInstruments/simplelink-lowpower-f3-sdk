@@ -49,6 +49,7 @@
  */
 
 #include "ti/ble/stack_util/osal/osal_list.h"
+#include <stddef.h>
 
 /*
  *  ======== osal_list_clearList ========

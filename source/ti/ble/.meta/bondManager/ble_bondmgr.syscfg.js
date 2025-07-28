@@ -288,9 +288,9 @@ const config = {
  */
 function validate(inst, validation)
 {
-    if ((inst.maxBonds < 0) || (inst.maxBonds > 50))
+    if ((inst.maxBonds < 1) || (inst.maxBonds > 50))
     {
-        validation.logError("The Max number of allowed bonds range is 0 to 50", inst, "maxBonds");
+        validation.logError("The Max number of allowed bonds range is 1 to 50", inst, "maxBonds");
     }
     if ( inst.bondManager && ( inst.maxBonds > inst.maxRLSize ) )
     {

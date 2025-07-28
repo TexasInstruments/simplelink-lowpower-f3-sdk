@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(driverlib/setup.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
-#include DeviceFamily_constructPath(cmsis/cc27xx.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 #include DeviceFamily_constructPath(cmsis/core/core_cm33.h)
 
 //*****************************************************************************

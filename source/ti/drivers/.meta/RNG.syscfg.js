@@ -91,7 +91,7 @@ random data such as keying material for private or symmetric keys.
 [1]: /secure_drivers/doxygen/html/_r_n_g_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_r_n_g_8h.html#ti_drivers_RNG_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_r_n_g_8h.html#ti_drivers_RNG_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#RNG_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#RNG_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_RNG_",
     config              : Common.addNameConfig(config, "/ti/drivers/RNG", "CONFIG_RNG_"),

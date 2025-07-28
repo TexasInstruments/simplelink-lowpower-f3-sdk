@@ -103,6 +103,7 @@ extern hciStatus_t hci_le_SetTransmitPowerReportingEnableCmd(uint16_t connHandle
 extern hciStatus_t hci_le_EnhancedReadTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy);
 extern hciStatus_t hci_le_ReadRemoteTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy);
 
+
 // Wrapper functions for the feature implementations
 void OPT_LL_PwrCtrl_Close(void);
 void OPT_LL_PwrCtrl_CloseConn(uint8_t connId);

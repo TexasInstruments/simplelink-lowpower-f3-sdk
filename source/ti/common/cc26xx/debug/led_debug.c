@@ -37,7 +37,7 @@
 
 #include <ti/devices/DeviceFamily.h>
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     #include DeviceFamily_constructPath(driverlib/prcm.h)
     #include DeviceFamily_constructPath(driverlib/ioc.h)
 #endif
@@ -45,12 +45,19 @@
 #include "led_debug.h"
 
 #if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
-    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_PARENT_CC27XX)
     /* Remap driverlib API names that changed only for cc23x0
      */
     #define GPIO_setDio             GPIOSetDio
     #define GPIO_clearDio           GPIOClearDio
     #define GPIO_setOutputEnableDio GPIOSetOutputEnableDio
+#endif
+
+/* by experimentation, this is in ms (approx) */
+#if defined(DeviceFamily_PARENT_CC27XX)
+uint16_t delayConstant = 8020U;
+#else
+uint16_t delayConstant = 4010U;
 #endif
 
 /*******************************************************************************
@@ -125,9 +132,7 @@ void lightGreenLed(void)
 void delay(uint32_t delayMs)
 {
     uint32_t j;
-
-    /* by experimentation, this is in ms (approx) */
-    for (j = 0; j < 4290U * delayMs; j++)
+    for (j = 0; j < delayConstant * delayMs; j++)
     {
 #if defined(__IAR_SYSTEMS_ICC__)
         asm(" NOP");
@@ -149,7 +154,7 @@ void delay(uint32_t delayMs)
 void powerUpGpio(void)
 {
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     /* GPIO power up*/
     PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
     while (PRCMPowerDomainsAllOn(PRCM_DOMAIN_PERIPH) != PRCM_DOMAIN_POWER_ON)
@@ -183,7 +188,7 @@ void powerUpGpio(void)
 void powerDownGpio(void)
 {
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_PARENT_CC27XX)
     /* GPIO power down */
     PRCMPeripheralRunDisable(PRCM_PERIPH_GPIO);
     PRCMLoadSet();

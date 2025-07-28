@@ -72,6 +72,8 @@
  
  *****************************************************************************/
 
+#ifndef LL_CSSEC_H
+#define LL_CSSEC_H
 /*******************************************************************************
  * INCLUDES
  */
@@ -201,119 +203,11 @@ uint8 llCsSecGenRandomBits(uint8 transactionId, uint8* rndBits);
  *
  * output parameters
  *
- * @param       rndBits.
+ * @param       None.
  *
  * @return      status
  */
 csStatus_e llCsProcedureInitDrbg(uint16 connId, uint8 configId);
-
-/*******************************************************************************
- * @fn          llCsSecIncreaseStepCount
- *
- * @brief       Increase the step counter
- *
- * @design      BLE_LOKI-506
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       rndBits.
- *
- * @return      None
- */
-void llCsSecIncreaseStepCount(void);
-
-/*******************************************************************************
- * @fn          llCsSecGetStepCount
- *
- * @brief       Get DRBG param step count
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      DRBG num steps
- */
-uint16 llCsSecGetStepCount(void);
-
-/*******************************************************************************
- * @fn          llCsSecGetProcedureCount
- *
- * @brief       Get DRBG param procedure count
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      DRBG num procedures
- */
-uint16 llCsSecGetProcedureCount(void);
-
-/*******************************************************************************
- * @fn          llCsSecSetProcedureCount
- *
- * @brief       Set DRBG param procedure count
- * This API shall be used only in case of CS Procedure Termination when CS
- * Procedure Count in the CS_TERMINATE_RSP is larger than that of the
- * CS_TERMINATE_REQ. In these case we must use the larger value to keep the
- * Link Layers sychronized.
- *
- * input parameters
- *
- * @param       procCnt - Procedure Count
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsSecSetProcedureCount(uint16 procCnt);
-
-/*******************************************************************************
- * @fn          llCsSecResetStepCount
- *
- * @brief       Reset step counter
- *
- * input parameters
- *
- * @param       None.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsSecResetStepCount(void);
-
-/*******************************************************************************
- * @fn          llCsSecIncProcCounter
- *
- * @brief       Increment CS procedure counter
- *
- * input parameters
- *
- * @param       None.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsSecIncProcCounter(void);
 
 /*******************************************************************************
  * @fn          hr1
@@ -325,6 +219,7 @@ void llCsSecIncProcCounter(void);
  * @design      BLE_LOKI-506
  * input parameters
  *
+ * @param       connId - connection Id
  * @param       r - arbitrary range 0 to R-1 from which a random number is to be
  *              generated
  * @param       tId - transactionID
@@ -335,7 +230,7 @@ void llCsSecIncProcCounter(void);
  *
  * @return      Rout - random number
  */
-uint8 hr1(uint8 r, csTransactionId_e tId);
+uint8 hr1(uint16 connId, uint8 r, csTransactionId_e tId);
 
 /*******************************************************************************
  * @fn          csDrbg
@@ -350,6 +245,7 @@ uint8 hr1(uint8 r, csTransactionId_e tId);
  * @design      BLE_LOKI-506
  * input parameters
  *
+ * @param       connId - connection Id
  * @param       randomBitsRequired - num of required bits
  * @param       pRndBits - random bits result
  * @param       transactionId - the CS transaction Id
@@ -358,9 +254,9 @@ uint8 hr1(uint8 r, csTransactionId_e tId);
  *
  * @param       pRndBits - pointer to random bits
  *
- * @return      None
+ * @return      status
  */
-void csDrbg(uint8 randomBitsRequired, uint8* pRndBits, csTransactionId_e transactionId);
+llStatus_t csDrbg(uint16 connId, uint8 randomBitsRequired, uint8* pRndBits, csTransactionId_e transactionId);
 
 /*******************************************************************************
  * @fn          cr1
@@ -375,6 +271,7 @@ void csDrbg(uint8 randomBitsRequired, uint8* pRndBits, csTransactionId_e transac
  *
  * input parameters
  *
+ * @param       connId - connection Id
  * @param       pChannelArray - output array
  * @param       filterdArr    - input array
  * @param       nChannels     - size of array (number of channels)
@@ -386,13 +283,13 @@ void csDrbg(uint8 randomBitsRequired, uint8* pRndBits, csTransactionId_e transac
  *
  * @return      None.
  */
-void cr1(uint8* pChannelArray, uint8* filterdArr, uint8 nChannels,
+void cr1(uint16 connId, uint8* pChannelArray, uint8* filterdArr, uint8 nChannels,
          csTransactionId_e trId);
 
 /*******************************************************************************
  * @fn          llCsSecIsTestMode
  *
- * @brief       Check if Test Mode is enabled and overrdie the DRBG Nonce
+ * @brief       Check if Test Mode is enabled
  *
  * input parameters
  *
@@ -406,3 +303,59 @@ void cr1(uint8* pChannelArray, uint8* filterdArr, uint8 nChannels,
  *              FALSE - otherwise
  */
 uint8 llCsSecIsTestMode(void);
+
+
+/*******************************************************************************
+ * @fn          llCsSecSetSecurityVectors
+ *
+ * @brief       Sets Security Vectors.
+ * This API is used by the CS Security Module after it generates the CS
+ * Security Vectors. The security vectors come in two parts, a central and a
+ * peripheral. When both parts of the vectors are available locally after the
+ * security procedure is complete, the vectors are combined such
+ * that:
+ *     The central's part starts from: 0
+ *     central part starts from: VECTOR_SIZE/2
+ * After that, the whole vector is used to create the DRBG seed for the connection.
+ *
+ *
+ * @design      BLE_LOKI-506
+ *
+ * input parameters
+ *
+ * @param       connId - connection Id
+ * @param       pSecurityVectors - Pointer to Security Vectors.
+ * @param       offset - true or false indication, if the security vectors should be saved with offset
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None
+ */
+void llCsSecSetSecurityVectors(uint16 connId, const csSecVectors_t* pSecurityVectors,
+                              bool offset);
+
+
+/*******************************************************************************
+ * @fn          llCsSecGetSecurityVectors
+ *
+ * @brief       Gets Security Vectors in CS Database.
+ * The CS DRBG uses this API to get the security vectors and use them.
+ *
+ * @design      BLE_LOKI-506
+ *
+ * input parameters
+ *
+ * @param       connId - connection Id
+ * @param       pSecurityVectors - Pointer to Security Vectors
+ *
+ * output parameters
+ *
+ * @param       pSecurityVectors
+ *
+ * @return      None
+ */
+void llCsSecGetSecurityVectors(uint16 connId, csSecVectors_t* pSecurityVectors);
+
+#endif //LL_CSSEC_H

@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <ti/devices/DeviceFamily.h>
 
 /**
  * @brief Configuration structure to be set at build time to control features
@@ -43,7 +44,7 @@
  */
 typedef struct {
     bool enableTemperatureMonitoring;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     bool enablePaEsdProtection;
 #endif
 } RCL_FeatureControl;

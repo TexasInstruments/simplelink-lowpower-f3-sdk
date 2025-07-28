@@ -61,10 +61,10 @@
 /* must be located at the beginning of the application.                      */
 #define FLASH_BASE              ti_utils_build_GenMap_MCUBOOT_FLASH_BASE
 #define FLASH_SIZE              ti_utils_build_GenMap_MCUBOOT_FLASH_SIZE
-#define RAM_BASE                0x20000000
-#define RAM_SIZE                0x9000
-#define CCFG_BASE               0x4E020000
-#define CCFG_SIZE               0x800
+#define RAM_BASE                ti_utils_build_GenMap_RAM0_BASE
+#define RAM_SIZE                ti_utils_build_GenMap_RAM0_SIZE
+#define CCFG_BASE               ti_utils_build_GenMap_CCFG_BASE
+#define CCFG_SIZE               ti_utils_build_GenMap_CCFG_SIZE
 
 
 /* System memory map */

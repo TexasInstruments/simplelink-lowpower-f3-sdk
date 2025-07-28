@@ -38,7 +38,7 @@
 "use strict";
 
 const docs = system.getScript("/ti/dmm/dmm_docs.js");
-const propRfUtil = system.getScript("/ti/prop_rf/prop_rf_common.js");
+const Common = system.getScript("/ti/common/lprf_common.js");
 
 // Max number of application states
 const maxAppStatesSupported = 32;
@@ -51,7 +51,7 @@ const maxDMMPoliciesSupported = 32;
 const maxCustomActivitiesSupported = 32;
 
 // Max number of stack roles
-const maxStackRoles = 2;
+const maxStackRoles = 4;
 
 // Function argument options labeled for readability
 const options = {
@@ -67,6 +67,8 @@ const stackDisplayNames = {
     blePeripheral: "BLE Peripheral",
     custom1: "Custom 1",
     custom2: "Custom 2",
+    custom3: "Custom 4",
+    custom4: "Custom 4",
     rxAlwaysOn: "RX Always On",
     wsnNode: "WSN Node",
     zigbeeEndDevice: "Zigbee End Device",
@@ -90,8 +92,8 @@ const dmmCCFGSettings = {
     LP_CC1312R7_CCFG_SETTINGS: {},
     LP_CC2652R7_CCFG_SETTINGS: {}
 };
+const currBoardName = Common.getDeviceOrLaunchPadName(true);
 
-const currBoardName = propRfUtil.getDeviceOrLaunchPadName(true);
 const ccfgSettings = dmmCCFGSettings[currBoardName + "_CCFG_SETTINGS"];
 
 // Dictionary mapping current device/board name regex to supported target
@@ -166,6 +168,14 @@ function stackRoles(isHidden)
             displayName: stackDisplayNames.custom2
         },
         {
+            name: "custom3",
+            displayName: stackDisplayNames.custom3
+        },
+        {
+            name: "custom4",
+            displayName: stackDisplayNames.custom4
+        },
+        {
             name: "rxAlwaysOn",
             displayName: stackDisplayNames.rxAlwaysOn
         },
@@ -210,7 +220,7 @@ function stackRoleOnChange(inst, ui)
 {
     if(inst.stackRoles != undefined)
     {
-        if (inst.stackRoles.includes("custom1") || inst.stackRoles.includes("custom2"))
+        if (inst.stackRoles.includes("custom1") || inst.stackRoles.includes("custom2") || inst.stackRoles.includes("custom3") || inst.stackRoles.includes("custom4"))
         {
             if (ui.numCustomActivities != undefined)
             {

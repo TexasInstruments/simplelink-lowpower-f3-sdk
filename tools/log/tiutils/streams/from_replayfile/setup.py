@@ -42,5 +42,5 @@ setuptools.setup(
             "from-replayfile = tilogger_from_replayfile.main:transport_factory_cli",
         ],
     },
-    install_requires=["typer==0.15.1"],
+    install_requires=["typer==0.16.0"],
 )

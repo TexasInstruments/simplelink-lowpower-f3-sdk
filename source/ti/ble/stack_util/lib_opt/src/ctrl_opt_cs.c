@@ -150,19 +150,14 @@ csStatus_e OPT_LL_CS_ProcedureEnable(uint16_t connId, uint8_t configId, uint8_t 
     return LL_CS_ProcedureEnable(connId, configId, enable);
 }
 
-void OPT_HCI_CS_SubeventResultContinueCback(void* hdr, const void* data, uint16_t dataLength)
+csStatus_e OPT_llCsReceiveCsControlPacket(uint8_t ctrlType, llConnState_t* connPtr, uint8_t* pBuf)
 {
-    HCI_CS_SubeventResultContinueCback(hdr, data, dataLength);
+    return llCsReceiveCsControlPacket(ctrlType, connPtr, pBuf);
 }
 
-csStatus_e OPT_llCsProcessCsControlPacket(uint8_t ctrlType, llConnState_t* connPtr, uint8_t* pBuf)
+uint8_t OPT_llCsTransmitCsCtrlProcedure(llConnState_t* connPtr, uint8_t ctrlPkt)
 {
-    return llCsProcessCsControlPacket(ctrlType, connPtr, pBuf);
-}
-
-uint8_t OPT_llCsProcessCsCtrlProcedures(llConnState_t* connPtr, uint8_t ctrlPkt)
-{
-    return llCsProcessCsCtrlProcedures(connPtr, ctrlPkt);
+    return llCsTransmitCsCtrlProcedure(connPtr, ctrlPkt);
 }
 
 uint8_t OPT_llCsInit(void)
@@ -173,11 +168,6 @@ uint8_t OPT_llCsInit(void)
 uint8_t OPT_llCsDbIsCsCtrlProcedureInProgress(uint16_t connId)
 {
     return llCsDbIsCsCtrlProcedureInProgress(connId);
-}
-
-uint8_t OPT_llCsDbGetProcedureDoneStatus(uint16_t connId)
-{
-    return llCsDbGetProcedureDoneStatus(connId);
 }
 
 uint8_t OPT_llCsInitDb(void)
@@ -200,14 +190,9 @@ void OPT_llCsSetFeatureBit(void)
     llCsSetFeatureBit();
 }
 
-csStatus_e OPT_llCsStartProcedure(llConnState_t* connPtr)
+void OPT_llCsStartProcedure(llConnState_t* connPtr)
 {
-    return llCsStartProcedure(connPtr);
-}
-
-uint8_t OPT_llCsStartStepListGen(uint16_t connId)
-{
-    return llCsStartStepListGen(connId);
+    llCsStartProcedure(connPtr);
 }
 
 void OPT_llCsSubevent_PostProcess(void)
@@ -260,11 +245,6 @@ RCL_Handle OPT_llScheduler_getHandle(uint16_t taskID)
     return llScheduler_getHandle(taskID);
 }
 
-void OPT_llCsRcl_handleCsSubmitError(uint16_t taskID, RCL_Command * cmd)
-{
-    llCsRcl_handleCsSubmitError(taskID, cmd);
-}
-
 void OPT_llCsPrecal_postProcess(void)
 {
     llCsPrecal_postProcess();
@@ -278,6 +258,11 @@ csStatus_e OPT_LL_CS_Handover_CnParseCnData(uint16 connHandle, const uint8_t * p
 void OPT_LL_CS_Handover_SnPopulateSnData(uint16 connHandle, uint8_t * pParams)
 {
     LL_CS_Handover_SnPopulateSnData(connHandle, pParams);
+}
+
+uint16 OPT_llConnGetMissCountMargin(void)
+{
+    return llConnGetMissCountMargin();
 }
 
 #endif /* defined(CHANNEL_SOUNDING) */

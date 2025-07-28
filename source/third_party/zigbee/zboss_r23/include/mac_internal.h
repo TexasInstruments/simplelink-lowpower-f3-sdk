@@ -73,7 +73,7 @@ So, it is in our intermal time units
 #define ZB_MAC_TRANSACTION_PERSISTENCE_TIME 0x01f4U
 
 #define ZB_MAC_SECURITY_LEVEL 5U
-#define ZB_MAC_KEY_ID_MODE    1U
+#define ZB_MAC_KEY_ID_MODE    3U
 
 
 /**

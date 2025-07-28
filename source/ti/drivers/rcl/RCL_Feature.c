@@ -36,7 +36,7 @@
 const RCL_FeatureControl rclFeatureControl __attribute__((weak)) =
 {
     .enableTemperatureMonitoring = true,
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     .enablePaEsdProtection = false,
 #endif
 };

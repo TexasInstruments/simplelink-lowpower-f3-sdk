@@ -47,9 +47,6 @@ const Common = system.getScript("/ti/ble/ble_common.js");
 const CommonRadioConfig = system.getScript("/ti/devices/radioconfig/radioconfig_common.js");
 const RfDesign = CommonRadioConfig.getScript("rfdesign");
 
-// Get the rfDesign options according to the device
-const rfDesignOptions = getRfDesignOptions(system.deviceData.deviceId);
-
 const config = {
     name: "bleRadioConfig",
     displayName: "Radio",
@@ -59,8 +56,7 @@ const config = {
             name: "rfDesign",
             displayName: "Based On RF Design",
             description: "Select which RF Design to use as a template",
-            options: rfDesignOptions,
-            default: rfDesignOptions ? rfDesignOptions[0].name : ""
+            default: Common.getLaunchPadName(),
         },
         {
             name: "defaultTxPower",
@@ -91,81 +87,6 @@ function getPaTableValues(rfDesign)
     const frequency = 2400;
 
     return RfDesign.getTxPowerOptions(frequency, false);
-}
-
-/*
- * ======== getRfDesignOptions ========
- * Generates an array of SRFStudio compatible rfDesign options based on device
- *
- * @param deviceId - device being used
- *
- * @returns Array - Array of rfDesign options, if the device isn't supported,
- *                  returns null
- */
-function getRfDesignOptions(deviceId)
-{
-    let newRfDesignOptions = null;
-    if(deviceId === "CC2340R2RGE")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R5_RGE_4X4_IS24"}]
-    }
-    else if(deviceId === "CC2340R5RKP")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R5"}];
-    }
-    else if(deviceId === "CC2340R53RKP")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R5"}];
-    }
-    else if(deviceId === "CC2340R53RHBQ1")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R53_Q1"}];
-    }
-    else if(deviceId === "CC2340R53YBG")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R53_WCSP"}];
-    }
-    else if(deviceId === "CC2340R5RGE")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R5"}]
-    }
-    else if(deviceId === "CC2340R22RKP")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R5"}]
-    }
-    else if(deviceId === "CC2340R5RHB")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2340R5_Q1"}]
-    }
-    else if(deviceId === "CC2745R10RHAQ1")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
-    }
-    else if(deviceId === "CC2744R7RHAQ1")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
-    }
-    else if(deviceId === "CC2745P10RHAQ1")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2755P10"}]
-    }
-    else if(deviceId === "CC2755P105RHA")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2755P10"}]
-    }
-    else if(deviceId === "CC2755R105RHA")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
-    }
-    else if(deviceId === "CC2755R105YCJ")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2755R10_BG"}]
-    }
-    else if(deviceId === "CC2745R7RHAQ1")
-    {
-        newRfDesignOptions = [{name: "LP_EM_CC2745R10_Q1"}]
-    }
-    return(newRfDesignOptions);
 }
 
 /*
@@ -217,9 +138,16 @@ function moduleInstances(inst)
     let bleCsHpArgs;
 
     // Get the board default rf settings
-    const radioSettings = Common.getRadioScript(inst.rfDesign,system.deviceData.deviceId).radioConfigParams;
-    const adcNoiseSettings = Common.getRadioScript(inst.rfDesign,system.deviceData.deviceId).adcNoiseParams;
-    const bleCsHpSettings = Common.getRadioScript(inst.rfDesign,system.deviceData.deviceId).bleCsHpParams;
+    const radioSettings = {};
+    const adcNoiseSettings = {
+        symGenMethod: "Custom",
+        phyAbbr: true
+    };
+    const bleCsHpSettings = {
+
+        symGenMethod: "Custom",
+        phyAbbr: true
+    };
     const csSupported = Common.isChannelSoundingSupported();
 
     modulePath = "/ti/devices/radioconfig/phy_groups/ble";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,4 +43,6 @@
     #define ClockP_CPU_FREQ 48000000U
 #elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
     #define ClockP_CPU_FREQ 96000000U
+#else
+    #error Invalid Device Family defined
 #endif

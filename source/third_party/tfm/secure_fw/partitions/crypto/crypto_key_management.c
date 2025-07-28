@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -57,6 +58,8 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         *key_id = CRYPTO_LIBRARY_GET_KEY_ID(library_key);
     }
     break;
+/* TI-TFM: These deprecated APIs are not supported by TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
     case TFM_CRYPTO_OPEN_KEY_SID:
     {
         psa_key_id_t *key_id = out_vec[0].base;
@@ -70,6 +73,7 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         status = psa_close_key(library_key);
     }
     break;
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     case TFM_CRYPTO_DESTROY_KEY_SID:
     {
         status = psa_destroy_key(library_key);

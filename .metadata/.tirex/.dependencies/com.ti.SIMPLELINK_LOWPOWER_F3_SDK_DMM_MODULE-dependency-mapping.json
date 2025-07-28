@@ -1,1 +1,3 @@
-{}
+{
+    "../../../examples/rtos/LP_EM_CC2755P10/dmm/mac_sensor_ble_basic/freertos/ticlang/mac_sensor_ble_basic_LP_EM_CC2755P10_freertos_ticlang.projectspec": "mac_sensor_ble_basic_LP_EM_CC2755P10_freertos_ticlang_0.dependency.tirex.json"
+}

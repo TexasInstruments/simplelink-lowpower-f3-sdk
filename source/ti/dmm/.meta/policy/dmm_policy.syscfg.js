@@ -80,16 +80,8 @@ const dmmPolicyConfig = [
                 displayName: "Dynamic"
             },
             {
-                name: "timeBm1OnMin",
-                displayName: "Min Time Window - High Priority"
-            },
-            {
-                name: "timeBm1OffMax",
-                displayName: "Max Time Window - Low Priority"
-            },
-            {
                 name: "timeBm1MinMax",
-                displayName: "Min/Max Time Windows"
+                displayName: "Min Time Window - High Priority, Max Time Window - Low Priority"
             }],
         onChange: onBalancedModeChange,
         hidden: false

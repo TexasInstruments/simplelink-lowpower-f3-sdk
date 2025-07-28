@@ -27,6 +27,8 @@
 #include <ti/drivers/ECDH.h>
 #include <ti/drivers/ECDSA.h>
 
+#include <ti/devices/DeviceFamily.h>
+
 /* Error mapping functions. These functions take as input SimpleLink driver
  * error codes and maps them to nearest PSA error code.
  */
@@ -42,7 +44,7 @@ psa_status_t map_TRNG_status(int_fast16_t status);
 psa_key_id_t toKeyID(mbedtls_svc_key_id_t keystoreKeyID);
 mbedtls_svc_key_id_t toKeyStoreKeyID(psa_key_id_t keyID);
 
-#if (defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC35XX))
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || defined(DeviceFamily_CC35XX))
 /* Maps PSA ECC key types to their corresponding ECDSA Curve Type for HSM.
  * Assumes that the keyType is some form of ECC key type. Returns 0 if could not
  * find a mapping.

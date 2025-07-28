@@ -211,11 +211,65 @@ typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
 /*! Resource ID: MCAN */
 #define PowerLPF3_PERIPH_MCAN (PowerCC27XX_PERIPH_GROUP_CLKCTL1 | CLKCTL_DESCEX1_MCAN_S)
 
+/*! @brief Resource ID: LRFD
+ *
+ *  This can used to enable the clock for LRFD, without having to the clock for
+ *  any of the sub-clocks in LRFD.
+ *
+ *  To enable specific sub-clocks in LRFD, sub-clock specific resource IDs can
+ *  be used. Using those resource IDs will automatically enable the main LRFD
+ *  clock, so this resource ID (#PowerLPF3_PERIPH_LRFD) is not necessary.
+ *  The sub-clock resource IDs are:
+ *  - #PowerLPF3_PERIPH_LRFD_PBE
+ *  - #PowerLPF3_PERIPH_LRFD_MDM
+ *  - #PowerLPF3_PERIPH_LRFD_RFE
+ *  - #PowerLPF3_PERIPH_LRFD_S2R
+ *  - #PowerLPF3_PERIPH_LRFD_TRC
+ *  - #PowerLPF3_PERIPH_LRFD_PBERAM
+ *  - #PowerLPF3_PERIPH_LRFD_MCERAM
+ *  - #PowerLPF3_PERIPH_LRFD_RFERAM
+ *  - #PowerLPF3_PERIPH_LRFD_DSBRAM
+ *  - #PowerLPF3_PERIPH_LRFD_BUFRAM
+ *  - #PowerLPF3_PERIPH_LRFD_S2RRAM
+ *  - #PowerLPF3_PERIPH_LRFD_IQRAM
+ */
+#define PowerLPF3_PERIPH_LRFD (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_BRIDGE_S)
+
+/*! Resource ID: LRFD PBE */
+#define PowerLPF3_PERIPH_LRFD_PBE (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_PBE_S)
+
+/*! Resource ID: LRFD Modem */
+#define PowerLPF3_PERIPH_LRFD_MDM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_MDM_S)
+
+/*! Resource ID: LRFD RFE */
+#define PowerLPF3_PERIPH_LRFD_RFE (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_RFE_S)
+
+/*! Resource ID: LRFD Samples2RAM */
+#define PowerLPF3_PERIPH_LRFD_S2R (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2R_S)
+
 /*! Resource ID: LRFD Tracer */
-#define PowerLPF3_PERIPH_LFRD_TRC (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
+#define PowerLPF3_PERIPH_LRFD_TRC (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
+
+/*! Resource ID: LRFD PBE RAM */
+#define PowerLPF3_PERIPH_LRFD_PBERAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_PBERAM_S)
+
+/*! Resource ID: LRFD MCE RAM */
+#define PowerLPF3_PERIPH_LRFD_MCERAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_MCERAM_S)
+
+/*! Resource ID: LRFD RFE RAM */
+#define PowerLPF3_PERIPH_LRFD_RFERAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_RFERAM_S)
+
+/*! Resource ID: LRFD DSB RAM */
+#define PowerLPF3_PERIPH_LRFD_DSBRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_DSBRAM_S)
+
+/*! Resource ID: LRFD BUFRAM */
+#define PowerLPF3_PERIPH_LRFD_BUFRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_BUFRAM_S)
 
 /*! Resource ID: LRFD S2R RAM */
-#define PowerLPF3_PERIPH_LFRD_S2RRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
+#define PowerLPF3_PERIPH_LRFD_S2RRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
+
+/*! Resource ID: LRFD IQRAM */
+#define PowerLPF3_PERIPH_LRFD_IQRAM (PowerCC27XX_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_IQRAM_S)
 
 /* \cond */
 /* Number of resources in the different resource groups. This is possibly larger
@@ -225,7 +279,7 @@ typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
  */
 #define PowerCC27XX_NUMRESOURCES_CLKCTL0 (31U)
 #define PowerCC27XX_NUMRESOURCES_CLKCTL1 (7U)
-#define PowerCC27XX_NUMRESOURCES_LRFD    (12U)
+#define PowerCC27XX_NUMRESOURCES_LRFD    (15U)
 
 /* \endcond */
 

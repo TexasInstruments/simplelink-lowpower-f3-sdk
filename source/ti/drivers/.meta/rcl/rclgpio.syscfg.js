@@ -437,13 +437,54 @@ function filterHardware(component) {
 }
 
 /*
+ *  ======== isIeee ========
+ *  Check if IEEE phy has been selected
+ */
+function isIeee()
+{
+    let status = false;
+    var radioconfig = system.modules["/ti/devices/radioconfig/custom"];
+    if (radioconfig)
+    {
+        var radioconfig_inst = radioconfig.$static;
+
+        if (radioconfig_inst.ieee.length > 0) {
+            status = true;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== isBle ========
+ *  Check if BLE phy has been selected
+ */
+function isBle()
+{
+    let status = false;
+    var radioconfig = system.modules["/ti/devices/radioconfig/custom"];
+    if (radioconfig)
+    {
+        var radioconfig_inst = radioconfig.$static;
+
+        if (radioconfig_inst.ble.length > 0) {
+            status = true;
+        }
+    }
+
+    return status;
+}
+
+/*
  *  ======== resetDefaultValue ========
  *  Set specified configuration option to its default value
  *
  *  @param inst     - Module instance object containing the config
  *  @param config   - Config option to reset
  */
-function resetDefaultValue(inst, config){
+function resetDefaultValue(inst, config)
+{
     if(config in inst)
     {
         if (config in inst.$module.$configByName)
@@ -1067,6 +1108,14 @@ function validate(inst, validation)
             }
         });
     }
+
+    if (inst.coexEnabled && !isBle() && !isIeee())
+    {
+        Common.logWarning(validation, inst, "coexEnabled",
+            "This feature will need either a BLE or IEEE 802.15.4 PHY to be selected.");
+    }
+
+
     let coexSignalList = getCoexPinInfo(inst);
 
     let coexSignalError = false;
@@ -1092,6 +1141,18 @@ function validate(inst, validation)
     {
         Common.logError(validation, inst, "coexPinRequestRfActivityLatencyTime",
             "RF Activity Latency Time must be between 90 and 150 µs");
+    }
+    if (inst.coexEnabled && isBle())
+    {
+        if (inst.coexPinPriorityIndicationTime % 4 !== 0) {
+            Common.logWarning(validation, inst, "coexPinPriorityIndicationTime",
+                "Priority Indication Time should be a multiple of 4 µs for BLE");
+        }
+        if (inst.coexPinRequestRfActivityLatencyTime % 4 !== 0) {
+            Common.logWarning(validation, inst, "coexPinRequestRfActivityLatencyTime",
+                "RF Activity Latency Time should be a multiple of 4 µs for BLE");
+        }
+
     }
 }
 

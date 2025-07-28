@@ -696,9 +696,9 @@ zb_ushort_t zb_mac_get_beacon_payload_offset(zb_uint8_t *beacon);
 
 /* MAC security */
 #ifdef ZB_MAC_SECURITY
-#define MAC_SECUR_LEV5_KEYID1_AUX_HDR_SIZE 6U
+#define MAC_SECUR_LEV5_KEYID3_AUX_HDR_SIZE 14U
 #else
-#define MAC_SECUR_LEV5_KEYID1_AUX_HDR_SIZE 0U
+#define MAC_SECUR_LEV5_KEYID3_AUX_HDR_SIZE 0U
 #endif
 
 #if defined ZB_MAC_TESTING_MODE || defined DOXYGEN
@@ -728,7 +728,7 @@ zb_ushort_t zb_mac_get_beacon_payload_offset(zb_uint8_t *beacon);
       ZB_FCF_GET_DST_ADDRESSING_MODE(mac_hdr),                          \
                                        ZB_U2B(ZB_FCF_GET_PANID_COMPRESSION_BIT(mac_hdr)));         \
     _ptr = zb_buf_cut_left(                                                                        \
-        _packet, hlen + MAC_SECUR_LEV5_KEYID1_AUX_HDR_SIZE * ZB_FCF_GET_SECURITY_BIT(mac_hdr));    \
+        _packet, hlen + MAC_SECUR_LEV5_KEYID3_AUX_HDR_SIZE * ZB_FCF_GET_SECURITY_BIT(mac_hdr));    \
                                                                         \
                                                                         \
   } while (ZB_FALSE)
@@ -741,7 +741,7 @@ zb_ushort_t zb_mac_get_beacon_payload_offset(zb_uint8_t *beacon);
   ( zb_mac_calculate_mhr_length(ZB_FCF_GET_SRC_ADDRESSING_MODE( _mac_hdr ), \
                                 ZB_FCF_GET_DST_ADDRESSING_MODE( _mac_hdr ), \
                                ZB_U2B(ZB_FCF_GET_PANID_COMPRESSION_BIT(_mac_hdr)))                 \
-    + MAC_SECUR_LEV5_KEYID1_AUX_HDR_SIZE * ZB_FCF_GET_SECURITY_BIT( _mac_hdr ) )
+    + MAC_SECUR_LEV5_KEYID3_AUX_HDR_SIZE * ZB_FCF_GET_SECURITY_BIT( _mac_hdr ) )
 
 /**
    Holds status of purge operation.
@@ -1188,7 +1188,7 @@ zb_mac_beacon_payload_t;
    @param p_sfs - pointer to 16bit SFS field.
 */
 
-#define ZB_MAC_GET_BEACON_ORDER( p_sfs ) ((zb_uint_t)((((zb_uint8_t*)(p_sfs))[ZB_PKT_16B_ZERO_BYTE]) & 0x07U))
+#define ZB_MAC_GET_BEACON_ORDER( p_sfs ) ((zb_uint_t)((((zb_uint8_t*)(p_sfs))[ZB_PKT_16B_ZERO_BYTE]) & 0xFU))
 
 /**
    Gets Association Permit subfield in Superframe Specification field ( SFS )

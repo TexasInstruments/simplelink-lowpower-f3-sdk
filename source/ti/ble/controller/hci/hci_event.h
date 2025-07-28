@@ -300,9 +300,10 @@ extern "C"
 #define LE_EVT_MASK_CONNECTIONLESS_IQ_REPORT                           0x10
 #define LE_EVT_MASK_CONNECTION_IQ_REPORT                               0x20
 #define LE_EVT_MASK_CTE_REQUEST_FAILED                                 0x40
-#define LE_EVT_MASK_RESERVED04                                         0x80
+#define LE_EVT_MASK_PADV_SYNC_TRANSFER_RECEIVED_V1                     0x80
 // Byte 4
 #define LE_EVT_MASK_TRANS_POWER_REPORT                                 0x01
+#define LE_EVT_MASK_PADV_SYNC_TRANSFER_RECEIVED_V2                     0x20
 // Byte 3, 5-7
 #define LE_EVT_MASK_RESERVED05                                         0x01
 #define LE_EVT_MASK_RESERVED06                                         0x02
@@ -375,8 +376,10 @@ extern "C"
 #define LE_EVT_CONNECTIONLESS_IQ_REPORT_BIT                          20
 #define LE_EVT_CONNECTION_IQ_REPORT_BIT                              21
 #define LE_EVT_CTE_REQUEST_FAILED_BIT                                22
+#define LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V1                    23
 //
 #define LE_EVT_TRANS_POWER_REPORT_BIT                                32
+#define LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V2                    37
 
 // Bluetooth LE Event Mask Default Values
 #define LE_EVT_MASK_BYTE0   (LE_EVT_MASK_CONN_COMPLETE             |     \
@@ -403,9 +406,11 @@ extern "C"
                              LE_EVT_MASK_CHANNEL_SELECTION_ALGORITHM        |\
                              LE_EVT_MASK_CONNECTIONLESS_IQ_REPORT           |\
                              LE_EVT_MASK_CONNECTION_IQ_REPORT               |\
-                             LE_EVT_MASK_CTE_REQUEST_FAILED)
+                             LE_EVT_MASK_CTE_REQUEST_FAILED                 |\
+                             LE_EVT_MASK_PADV_SYNC_TRANSFER_RECEIVED_V1)
 
-#define LE_EVT_MASK_BYTE4  (LE_EVT_MASK_TRANS_POWER_REPORT)
+#define LE_EVT_MASK_BYTE4  (LE_EVT_MASK_TRANS_POWER_REPORT                  |\
+                            LE_EVT_MASK_PADV_SYNC_TRANSFER_RECEIVED_V2)
 
 // LE Event Lengths
 #define HCI_CMD_COMPLETE_EVENT_LEN                                     3
@@ -438,9 +443,15 @@ extern "C"
 #define HCI_CONNECTION_IQ_REPORT_EVENT_LEN                             14
 #define HCI_CTE_REQUEST_FAILED_EVENT_LEN                               4
 #define HCI_CONNECTIONLESS_IQ_REPORT_EVENT_LEN                         13
-#define HCI_PERIODIC_ADV_SYNCH_ESTABLISHED_EVENT_LEN                   16
-#define HCI_PERIODIC_ADV_REPORT_EVENT_LEN                              8
+#define HCI_PADV_SYNC_ESTAB_EVENT_V1_LEN                               16
+#define HCI_PADV_SYNC_ESTAB_EVENT_V2_LEN                               20
+#define HCI_PADV_REPORT_EVENT_V1_LEN                                   8
+#define HCI_PADV_REPORT_EVENT_V2_LEN                                   11
+#define HCI_PADV_REPORT_EVENT_V1_PARAMS_LEN                            5
+#define HCI_PADV_REPORT_EVENT_V2_PARAMS_LEN                            8
 #define HCI_PERIODIC_ADV_SYNCH_LOST_EVENT_LEN                          3
+#define HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V1                         20
+#define HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V2                         24
 #define HCI_HARDWARE_ERROR_EVENT_LEN                                   1
 #define HCI_DIRECT_TEST_END_LEN                                        3
 // Vendor Specific LE Events
@@ -465,8 +476,6 @@ extern "C"
 #define HCI_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE_EVENT_LEN              76
 #define HCI_LE_CS_PROCEDURE_ENABLE_COMPLETE_EVENT_LEN                   22
 #define HCI_LE_CS_TEST_END_COMPLETE_EVENT_LEN                           2
-#define HCI_CS_SUBEVENT_RESULTS_HDR_LEN                                 16U
-#define HCI_CS_CONT_SUBEVENT_RESULTS_HDR_LEN                            9U
 
 /* Power control feature event
 ** Taken from BLE Core Specification Core_v6.0, Vol 4, Part E:

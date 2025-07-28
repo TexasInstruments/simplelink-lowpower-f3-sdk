@@ -55,10 +55,10 @@
 #include <ti/drivers/AESCCM.h>
 #include <ti/drivers/AESECB.h>
 
-#include <ti/drivers/aesccm/AESCCMLPF3.h>
-#include <ti/drivers/aesecb/AESECBLPF3.h>
+#include <ti/drivers/aesccm/AESCCMXXF3.h>
+#include <ti/drivers/aesecb/AESECBXXF3.h>
 #include <ti/drivers/ecdh/ECDHLPF3SW.h>
-#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
+#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceXXF3.h>
 #include <ti/drivers/RNG.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
 

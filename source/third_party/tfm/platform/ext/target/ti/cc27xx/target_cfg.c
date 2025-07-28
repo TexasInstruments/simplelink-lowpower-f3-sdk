@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017-2022, ARM Limited. All rights reserved.
- * Copyright (c) 2024, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,14 @@
 #include "ti_safe.h"
 
 /* TI CC27xx SDK include(s) */
-//#include "ti/devices/cc27xx/driverlib/aon_rtc.h"
-#include "ti/devices/cc27xx/driverlib/setup.h"   /* SetupTrimDevice() */
-#include "ti/devices/cc27xx/driverlib/hapi.h"
-#include "ti/devices/cc27xx/inc/hw_memmap.h"
-#include "ti/devices/cc27xx/inc/hw_tcm.h"
-#include "ti/devices/cc27xx/inc/hw_types.h"      /* HWREG() for verified_reg_write() */
-#include "ti/devices/cc27xx/inc/hw_vims.h"
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/setup.h)   /* SetupTrimDevice() */
+#include DeviceFamily_constructPath(driverlib/hapi.h)
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_sys0.h)
+#include DeviceFamily_constructPath(inc/hw_tcm.h)
+#include DeviceFamily_constructPath(inc/hw_types.h)      /* HWREG() for verified_reg_write() */
+#include DeviceFamily_constructPath(inc/hw_vims.h)
 
 /* The section names come from the scatter file */
 REGION_DECLARE(Load$$LR$$, LR_NS_PARTITION, $$Base);
@@ -107,22 +108,14 @@ enum tfm_plat_err_t system_reset_cfg(void)
     reg_value |= (uint32_t)(SCB_AIRCR_WRITE_MASK | SCB_AIRCR_SYSRESETREQS_Msk);
     SCB->AIRCR = reg_value;
 
+    /* Reset device if the device lifecycle is not in Production Development mode */
+    SAFE_IF(HWREG(SYS0_BASE + SYS0_O_LIFECYC) != SYS0_LIFECYC_VAL_LCYCLE_PRODDEV)
+    {
+        HapiResetDevice();
+    }
+
     /* Setup final trim of the device */
     SetupTrimDevice();
-
-#if 0  // TODO: Enable these functions once driverlib support is added if not already handled by the system partition
-    /* Disable RTC timer */
-    AONRTCDisable();
-
-    /* Reset RTC timer */
-    AONRTCReset();
-
-    /* Sync AON interface */
-    SysCtrlAonUpdate();
-
-    /* Start RTC timer */
-    AONRTCEnable();
-#endif
 
     /* Ensure pre-provisioned data in flash cannot be written or erased */
     we_protect_preprovisioned_data();
@@ -190,9 +183,6 @@ static uint32_t tcm_reg_parity(uint32_t val)
     return regVal;
 }
 
-/* Non-secure memory address space bit */
-#define NS_ADDR_SPACE_BIT28 (0x1U << 28U)
-
 #if ((NS_ROM_ALIAS_BASE & 0x1FFF) != 0)
     #error "NS ROM base must be 8KB aligned for TCM Flash watermark resolution"
 #elif ((NS_ROM_ALIAS_BASE & NS_ADDR_SPACE_BIT28) == 0)
@@ -209,12 +199,65 @@ static uint32_t tcm_reg_parity(uint32_t val)
     #error "NS RAM limit must have bit 28 set"
 #endif
 
-/* Gasket configuration for TFM wave 1 */
-#define GASKET_ENABLE_0  0x00080000U /* All non-secure except EVTSVT */
-#define GASKET_ENABLE_1  0x00000030U /* All non-secure except CKMD and PMCTL */
-/* Planned final gasket configuration. */
-// #define GASKET_ENABLE_0  0x00E80084U /* CLKCTRL, MICPGA, MICADC, EVTSVT, AFA, HSM secure */
-// #define GASKET_ENABLE_1  0x0001FF7EU /* All secure except LGPT and IOC */
+/* Gasket configuration.
+ *
+ * GASKET_ENABLE_0:
+ * - Initiators:
+ *   - Bit set: Can only make non-secure transactions (bit set)
+ *     - DMA and I2S
+ *   - Bit cleared: Can make both secure and non-secure transactions:
+ *     - HSM
+ * - Targets:
+ *   - Bit set: Secure, meaning only secure transactions are allowed:
+ *     - CLKCTL
+ *     - MICPGA
+ *     - MICADC
+ *     - EVTSVT
+ *     - AFA
+ *   - Bit cleared: Non-secure, meaning both secure and non-secure transactions
+ *     are allowed:
+ *     - Radio
+ *     - AES
+ *     - I2S
+ *     - PDM
+ *     - DMA
+ *     - CANFD
+ *     - APU
+ *     - APURAM
+ *     - GPIO
+ *     - SYSTIMER
+ *     - UART0
+ *     - UART1
+ *     - SPI0
+ *     - SPI1
+ *     - I2C0
+ *     - ADC
+ *
+ * GASKET_ENABLE_1:
+ * - Targets:
+ *   - Bit set: Secure, meaning only secure transactions are allowed:
+ *     - FLASH
+ *     - VIMS
+ *     - HSM
+ *     - PMCTL
+ *     - CKMD
+ *     - RTC
+ *     - SYS0
+ *     - EVTULL
+ *     - PMUD
+ *     - DBGSS
+ *     - HSM mailbox 1
+ *     - HSM mailbox 2
+ *     - HSM mailbox 3
+ *     - HSM mailbox 4
+ *     - HSM config
+ *   - Bit cleared: Non-secure, meaning both secure and non-secure transactions
+ *     are allowed:
+ *     - LGPT
+ *     - IOC
+ */
+#define GASKET_ENABLE_0  0x00E80083U
+#define GASKET_ENABLE_1  0x0001FF7EU
 
 /*------------------- SAU/IDAU configuration functions -----------------------*/
 FIH_RET_TYPE(int32_t) sau_and_idau_cfg(void)

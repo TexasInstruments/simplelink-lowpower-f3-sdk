@@ -154,13 +154,7 @@ Truncated only | Mutually exclusive with Complete only
 Complete only | Mutually exclusive with Truncated only`
 
 // Long description for the fltMinRssi configuration parameter
-const fltMinRssiLongDescription = `Filter by RSSI values. \n
-Only packets received with the specified RSSI or above will be reported.\n
-__Default__: All \n
-Options | Minimum RSSI Value
---- | ---
-All | -128
-None | 127`
+const fltMinRssiLongDescription = `Filter by RSSI values.\n\nOnly packets received with the specified RSSI or above will be reported.\n\n__Default__: -128\n\n__Range__: -128 to 127\n\n- Set to '-128' to accept all packets (no RSSI filtering).\n- Set to 127 to reject all packets (no packets will be reported).\n- Any value in between will filter out packets with RSSI below the specified value.`
 
 // Long description for the fltDiscMode configuration parameter
 const fltDiscModeLongDescription = `Choose the GAP scanner discoverable mode filter\n

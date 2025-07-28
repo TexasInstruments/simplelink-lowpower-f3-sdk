@@ -112,6 +112,7 @@ extern void llCalculateAdvTimeGap(uint32_t* timeGap);
 extern void hci_tl_ClearAdvSet(void);
 extern uint8_t processAdvExtraHCICmd(hciPacket_t* pMsg);
 
+
 // Wrapper functions for the feature implementations
 void OPT_llProcessAdvAddrResolutionTimeout(void);
 void OPT_llSetTaskAdv(uint8_t startType, void* nextSecCmd);

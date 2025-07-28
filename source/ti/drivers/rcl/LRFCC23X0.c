@@ -126,7 +126,7 @@ static void LRF_writeFifoPtr(uint32_t value, uintptr_t regAddr);
 static void LRF_writeFifoPtrs(uint32_t value, uintptr_t regAddr0, uintptr_t regAddr1);
 static void LRF_temperatureNotification(int16_t currentTemperature);
 static void LRF_applyAntennaSelection(void);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 static inline bool LRF_requirePaEsdProtection(void);
 #endif
 
@@ -149,7 +149,7 @@ static struct {
 /* Status to tell if the RX FIFO is already in a deallocated state (SRP and RP being the same) */
 static bool rxFifoDeallocated = true;
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /* Stores the previous DCDC IPEAK setting to be set after RF activity */
 static uint8_t dcdcIpeakRestoreSetting;
 #endif
@@ -294,7 +294,7 @@ static void LRF_applyTrim(const LRF_TrimDef *trimDef, const LRF_SwConfig *swConf
 
     if (trimDef != NULL)
     {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM01) = trimDef->trim0.pa2trim01;
         HWREGH_WRITE_LRF(LRFD_RFERAM_BASE + RFE_COMMON_RAM_O_PATRIM23) = trimDef->trim4.pa2trim23;
 #else
@@ -797,7 +797,7 @@ void LRF_enable(void)
 {
     /* Set MSGBOX register to 0 */
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_COMMON_RAM_O_MSGBOX) = 0;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     dcdcIpeakRestoreSetting = hal_set_dcdc_ipeak_setting(LRF_DCDC_IPEAK_RF_ACTIVITY);
 #endif
 
@@ -820,7 +820,7 @@ void LRF_enable(void)
 
 void LRF_disable(void)
 {
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     hal_set_dcdc_ipeak_setting(dcdcIpeakRestoreSetting);
 #endif
 
@@ -994,9 +994,9 @@ void LRF_readRxFifoWords(uint32_t *data32, uint32_t wordLength)
     volatile uint32_t *fifoReadPtr = (volatile uint32_t *) (RXF_UNWRAPPED_BASE_ADDR + fifoStart + readPointer);
 
     /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
     for (uint32_t i = 0; i < wordLength; i++) {
         *data32++ = *fifoReadPtr++;
     }
@@ -1021,9 +1021,9 @@ void LRF_writeTxFifoWords(const uint32_t *data32, uint32_t wordLength)
     volatile uint32_t *fifoWritePtr = (volatile uint32_t *) (TXF_UNWRAPPED_BASE_ADDR + fifoStart + writePointer);
 
     /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
     for (uint32_t i = 0; i < wordLength; i++) {
         *fifoWritePtr++ = *data32++;
     }
@@ -1084,9 +1084,9 @@ void LRF_peekRxFifoWords(uint32_t *data32, uint32_t wordLength, uint32_t startRp
 {
     uint32_t fifoStart = ((HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG3) & LRFDPBE_FCFG3_RXSTRT_M) >> LRFDPBE_FCFG3_RXSTRT_S) << 2;
     uint32_t *dataEntry = (uint32_t *) (RXF_UNWRAPPED_BASE_ADDR + fifoStart + startRp);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
     for (uint32_t i = 0; i < wordLength; i++)
     {
         *data32++ = *dataEntry++;
@@ -1276,9 +1276,9 @@ static void LRF_programShape(const LRF_TxShape *txShape, uint32_t deviation, uin
         }
 
         /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
         for (int i = 0; i <  NUM_TX_FILTER_TAPS / 4; i++)
         {
             *((unsigned long*) (LRFDRFE32_BASE + LRFDRFE32_O_DTX1_DTX0) + i) = filterCoeff.w[i];
@@ -1399,7 +1399,7 @@ static uint32_t LRF_programPQ(uint32_t pllMBase)
         Log_printf(LogModule_RCL, Log_VERBOSE, "LRF_programPQ: PLLM base rounded from %08X to %08X to fit in fractional resampler", pllMBase, pllMBaseRounded);
     }
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* Check if shadow register for downsampler coefficient P is in use */
     if ((HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_BAUDCOMP) & LRFDMDM_BAUDCOMP_FRAC_SHADOW) != 0)
     {
@@ -1407,7 +1407,7 @@ static uint32_t LRF_programPQ(uint32_t pllMBase)
         HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMCOHR3) = demFracP & 0x0000FFFFU;
         HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMCOHR4) = demFracP >> 16;
     }
-#endif /* DeviceFamily_CC27XX */
+#endif
 
     HWREG_WRITE_LRF(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC1_DEMFRAC0) = demFracP;
     HWREG_WRITE_LRF(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC3_DEMFRAC2) = demFracQ;
@@ -1450,7 +1450,7 @@ static void LRF_programCMixN(int32_t rxIntFrequency, uint32_t invSynthFreq)
     {
         signedCMixN = cMixN;
     }
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         /* Workaround (RCL-489): Invert RX frequency programmed to account for swapped I and Q signals in CC27xx PG1.0
          * TODO: May be swapped back for later PGs
          */
@@ -1682,7 +1682,7 @@ void LRF_programTemperatureCompensatedTxPower(void)
         {
             ib = RFE_PA0_IB_MIN_USED;
         }
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         /* TODO: See RCL-444. Use LRFDRFE_PA1_IB_MAX for CC27XX. */
         if (ib > (int32_t) (LRFDRFE_PA1_IB_MAX >> LRFDRFE_PA1_IB_S))
         {
@@ -1697,7 +1697,7 @@ void LRF_programTemperatureCompensatedTxPower(void)
         txPowerEntry.value.ib = ib;
     }
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     if (rclFeatureControl.enablePaEsdProtection && (txPowerEntry.value.mode == LRF_CC27XX_HIGH_PA_MODE))
     {
         if (LRF_requirePaEsdProtection())
@@ -1858,7 +1858,7 @@ static void LRF_applyAntennaSelection(void)
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_GPOCTRL) = pbeGpoVal;
 }
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 /*
  * ======== LRF_requirePaEsdProtection ========
  */

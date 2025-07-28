@@ -408,6 +408,11 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
     status = psa_crypto_storage_store(attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id),
                                       storage_data, storage_data_length);
 
+    /* Free the storage_data from the cache now to limit fragmentation */
+    memset(storage_data, 0, storage_data_length);
+
+    psaInt_mbedtls_free(storage_data);
+
     /* After storing to persistent storage, also save the key and its attributes in
      * the cache
      */
@@ -440,10 +445,6 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
             }
         }
     }
-
-    memset(storage_data, 0, storage_data_length);
-
-    psaInt_mbedtls_free(storage_data);
 
     return status;
 }

@@ -134,7 +134,7 @@ const config = {
 /* Function to handle changes in deviceType configurable */
 function onDeviceTypeChange(inst, ui)
 {
-    if(!inst.deviceType.includes("gpd"))
+    if(!inst.deviceType.includes("gpd") && !inst.deviceType.includes("mac"))
     {
         let element = null;
         for(element of config.config)

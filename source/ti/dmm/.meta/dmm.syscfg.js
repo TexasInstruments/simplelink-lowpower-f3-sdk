@@ -39,7 +39,8 @@
 
 const docs = system.getScript("/ti/dmm/dmm_docs.js");
 const commonConfig = system.getScript("/ti/dmm/dmm_common.js");
-const propRfUtil = system.getScript("/ti/prop_rf/prop_rf_common.js");
+const Common = system.getScript("/ti/common/lprf_common.js");
+
 const genLibs = system.getScript("/ti/utils/build/GenLibs.syscfg.js");
 
 const stackDisplayNameMap = {
@@ -289,6 +290,13 @@ const dmmConfig = [
         description: docs.genLibs.description,
         default: true,
         hidden: true
+    },
+    {
+        name: "enableLogs",
+        displayName: "enableLogs",
+        description: "Enable SILK Logging for DMM Policy Manager and Scheduler",
+        default: false,
+        hidden: true
     }
 ];
 
@@ -407,9 +415,9 @@ function validate(inst, validation)
         }
     }
 
-    if(inst.stackRoles.length !== commonConfig.maxStackRoles)
+    if(inst.stackRoles.length > commonConfig.maxStackRoles)
     {
-        validation.logError("Number of Stack Roles must be 2", inst,
+        validation.logError("Number of Stack Roles must less than 4", inst,
             "stackRoles");
     }
 
@@ -494,49 +502,34 @@ function validateProjectStacks(inst, validation)
 
 function getLibs(mod) {
     let result = {
-        name: "/ti/dmm/dmm",    // products that use NDK reference this
-                                // "group" name in their deps
-        libs: [],               // libraries that are needed by the current
-                                // configuration
-        deps: []                // our libs require TI-DRIVERS libraries
+        name: "/ti/dmm/dmm",
+        libs: [],
+        deps: []
+    };
+
+    if (mod.$static.genLibs === true) {
+        const compiler = system.compiler; // e.g., "gcc", "ticlang"
+        const boardName = Common.getDeviceOrLaunchPadName(true); // e.g., "LP_EM_CC2340R53"
+        const loggingEnabled = mod.$static.enableLogs === true;
+
+        let target = "";
+        if (boardName.match(/CC234/)) {
+            target = "m0p";
+        } else if (boardName.match(/CC27/)) {
+            target = "m33f";
+        }
+
+        const basePath = "ti/dmm/libraries";
+        const loggingPath = loggingEnabled ? "logging" : "default";
+        const libName = loggingEnabled ? "dmm_library_log.a" : "dmm_library.a";
+
+        const libPath = `${basePath}/${loggingPath}/lib/${compiler}/${target}/${libName}`;
+        result.libs.push(libPath);
     }
 
-    if (mod.$static.genLibs == true) {
-        const boardName = propRfUtil.getDeviceOrLaunchPadName(true);
-
-        /* Get current RTOS configuration information */
-        const rtos = system.getRTOS();
-        let rtosSuffix = "";
-        let lib = "ti/dmm/lib/";
-
-        if (rtos === "freertos")
-        {
-            rtosSuffix ="_freertos";
-        }
-
-        let compiler = system.compiler;
-
-	if (boardName.match(/1354|2674/))
-        {
-            lib += compiler + "/m33f/";
-        }
-        else
-        {
-            lib += compiler + "/m4f/";
-        }
-
-        if (compiler == "gcc")
-        {
-            lib += "libdmmlib" +  rtosSuffix + ".a";
-        }
-        else
-        {
-            lib += "dmmlib" + rtosSuffix + ".a";
-        }
-        result.libs.push(lib);
-    }
     return result;
 }
+
 
 /*
  *  ======== exports ========

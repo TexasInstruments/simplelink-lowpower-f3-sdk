@@ -60,11 +60,29 @@
 #include DeviceFamily_constructPath(inc/hw_lrfdrfe.h)
 #include DeviceFamily_constructPath(inc/pbe_ble5_ram_regs.h)
 #include DeviceFamily_constructPath(inc/pbe_common_ram_regs.h)
+#include DeviceFamily_constructPath(inc/rfe_common_ram_regs.h)
 #include DeviceFamily_constructPath(inc/pbe_ble5_regdef_regs.h)
 
 #define RCL_HANDLER_BLE5_RESTORE_NONE           0x0000
 #define RCL_HANDLER_BLE5_RESTORE_MODCTRL        0x0001
 #define RCL_HANDLER_BLE5_RESTORE_WHITEN_POLY    0x0002
+
+/* T1 and T2 are given in 4us steps. coexConfig. T1/T2 are given in 0.25 us steps.
+Also 56 us needs to be removed from T1 to compensate for PBE delay */
+#define SHIFT_TICKS_TO_4US_STEPS 4
+#define COEX_PBE_DELAY_IN_4US_STEPS 14
+#define COEX_T1   ((lrfCoexConfiguration.T1 >> SHIFT_TICKS_TO_4US_STEPS) - COEX_PBE_DELAY_IN_4US_STEPS)
+#define COEX_T2   (lrfCoexConfiguration.T2 >> 4)
+#define PRIO_REQ  ((COEX_T2 > 0) ? 1 : 0) // Enable/disable priority during T2
+
+/* Check for global coex grant enable */
+#define COEX_GRANT_GLOBAL_ENABLE(coexConfig) (coexConfig.grantPin != (RFE_COMMON_RAM_GRANTPIN_CFG_DIS >> RFE_COMMON_RAM_GRANTPIN_CFG_S))
+
+/* Check for global coex request (+ priority) enable */
+#define COEX_REQUEST_GLOBAL_ENABLE(coexConfig) (coexConfig.T1 != 0)
+
+/* Access coex configuration for reading */
+extern const LRF_CoexConfiguration lrfCoexConfiguration;
 
 typedef struct
 {
@@ -109,6 +127,7 @@ struct
         RCL_FilterList   *updatableFilterList;
         RCL_AuxPtrInfo    auxPtrInfo;
         RCL_TxBufferInfo  txBufferInfo;
+        bool              coexNoGrant;
     } common;
     union {
         struct {
@@ -160,7 +179,7 @@ struct
             uint16_t      demc1be0;
             uint16_t      demc1be1;
             uint16_t      demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             uint16_t      demc1be12;
 #endif
             bool          restoreThresh;
@@ -211,7 +230,7 @@ static bool RCL_Handler_BLE5_updateAuxPtr(RCL_AuxPtrInfo *auxPtr, uint32_t packe
 static void RCL_Handler_BLE5_readAuxPtrFromRxBuffer(uint32_t *data32, RCL_AuxPtrInfo *auxPtrInfo);
 static void RCL_Handler_BLE5_updateBackoffParams(RCL_CtxScanInit * ctx, uint16_t endCause);
 static int8_t RCL_Handler_BLE5_checkExtHdrField(uint8_t extHdrFlags, uint8_t fieldMask);
-
+static void RCL_Handler_BLE5_setCoexRegister(bool requestPriorityEnable, bool isNextOperationTx);
 
 
 /* First BLE data channel number */
@@ -244,7 +263,7 @@ static int8_t RCL_Handler_BLE5_checkExtHdrField(uint8_t extHdrFlags, uint8_t fie
 #define EXT_ADV_INTERVAL_US 330U
 /* Transmit delay associated with phy switching */
 #define EXT_ADV_PHY_SWITCHING_DELAY_US 120U
-/* See RCL-513.To be characterized */
+/* See RCL-513. To be characterized */
 #define RX_START_OVERHEAD      240U
 #define RX_SYNC_OVERHEAD_1MBPS 164U
 #define RX_SYNC_OVERHEAD_2MBPS 120U
@@ -1053,7 +1072,8 @@ RCL_Events RCL_Handler_BLE5_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
                     {
                         LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
                     }
-
+                    /* For coex, the PBE needs to know the RF operation before the command is posted */
+                    RCL_Handler_BLE5_setCoexRegister(advCmd->coexControl.requestPriorityEnable, true);
                     /* Post cmd */
                     Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_BLE5_adv: Starting advertiser on channel %1d", curChannel);
 
@@ -1416,7 +1436,8 @@ RCL_Events RCL_Handler_BLE5_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Even
                         }
 
                         LRF_waitForTopsmReady();
-
+                        /* For coex, the PBE needs to know the RF operation before the command is posted */
+                        RCL_Handler_BLE5_setCoexRegister(advCmd->coexControl.requestPriorityEnable, true);
                         /* Post cmd */
                         Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_BLE5_adv: Starting extended advertiser on channel %1d", channel);
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_ADV;
@@ -1489,6 +1510,10 @@ RCL_Events RCL_Handler_BLE5_aux_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_
         ble5HandlerState.common.fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_FIFOCFG);
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_EXTRABYTES) = RCL_Handler_BLE5_findNumExtraBytes(ble5HandlerState.common.fifoCfg);
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_SEQSTAT) = 0;
+
+
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
 
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
@@ -1944,7 +1969,8 @@ RCL_Events RCL_Handler_BLE5_aux_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_
                     {
                         LRF_enableHwInterrupt(LRF_EventOpDone.value | LRF_EventOpError.value);
                     }
-
+                    /* For coex, the PBE needs to know the RF operation before the command is posted */
+                    RCL_Handler_BLE5_setCoexRegister(auxAdvCmd->coexControl.requestPriorityEnable, true);
                     /* Post cmd */
                     Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_BLE5_aux_adv: Starting extended advertiser on channel %1d", channel);
 
@@ -2075,7 +2101,8 @@ RCL_Events RCL_Handler_BLE5_aux_adv(RCL_Command *cmd, LRF_Events lrfEvents, RCL_
 
                         /* Deallocate TX FIFO. Writing to FCMD is safe because PBE is finished, ref. RCL-367 */
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_TXFIFO_DEALLOC >> LRFDPBE_FCMD_DATA_S);
-
+                        /* For coex, the PBE needs to know the RF operation before the command is posted */
+                        RCL_Handler_BLE5_setCoexRegister(auxAdvCmd->coexControl.requestPriorityEnable, true);
                         /* Post cmd */
                         Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_BLE5_aux_adv: Starting extended advertiser on channel %1d", channel);
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_ADV;
@@ -2146,6 +2173,9 @@ RCL_Events RCL_Handler_BLE5_periodicAdv(RCL_Command *cmd, LRF_Events lrfEvents, 
         ble5HandlerState.common.fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_FIFOCFG);
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_EXTRABYTES) = RCL_Handler_BLE5_findNumExtraBytes(ble5HandlerState.common.fifoCfg);
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_SEQSTAT) = 0;
+
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
 
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
@@ -2531,6 +2561,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
         RCL_Command_TxPower txPower;
         bool acceptLegacy;
         bool acceptExtended;
+        bool grantEnable;
 
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
@@ -2551,6 +2582,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
 
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
+        ble5HandlerState.common.coexNoGrant = false;
 
         if (cmd->cmdId == RCL_CMDID_BLE5_INITIATOR)
         {
@@ -2559,6 +2591,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
             txPower = initCmd->txPower;
             acceptLegacy = initCmd->acceptLegacy;
             acceptExtended = initCmd->acceptExtended;
+            grantEnable = initCmd->coexControl.grantEnable;
         }
         else
         {
@@ -2567,6 +2600,15 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
             txPower = scanCmd->txPower;
             acceptLegacy = scanCmd->acceptLegacy;
             acceptExtended = scanCmd->acceptExtended;
+            grantEnable = scanCmd->coexControl.grantEnable;
+        }
+
+        if (COEX_GRANT_GLOBAL_ENABLE(lrfCoexConfiguration) && grantEnable)
+        {
+            LRF_enableCoexGrant();
+            /* Clear and enable canceled grant interrupt */
+            LRF_clearHwInterrupt(LRF_EventRfesoft1.value);
+            LRF_enableHwInterrupt(LRF_EventRfesoft1.value);
         }
         ble5HandlerState.scanInit.dynamicWinOffset = false; /* Default */
         ble5HandlerState.scanInit.gracefulStopDisabled = false; /* Default */
@@ -2902,6 +2944,8 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                         Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_BLE5_scan_init: Starting initiator");
                         LRF_waitForTopsmReady();
                         RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
+                        /* For coex, the PBE needs to know the RF operation before the command is posted */
+                        RCL_Handler_BLE5_setCoexRegister(initCmd->coexControl.requestPriorityEnable, false);
                         /* Post cmd */
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_INITIATOR;
 
@@ -2942,6 +2986,8 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                         Log_printf(LogModule_RCL, Log_VERBOSE, "RCL_Handler_BLE5_scan_init: Starting scanner");
                         LRF_waitForTopsmReady();
                         RCL_Profiling_eventHook(RCL_ProfilingEvent_PreprocStop);
+                        /* For coex, the PBE needs to know the RF operation before the command is posted */
+                        RCL_Handler_BLE5_setCoexRegister(scanCmd->coexControl.requestPriorityEnable, false);
                         /* Post cmd */
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_SCAN;
                     }
@@ -2960,6 +3006,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
         bool updateStats = false;
         if (lrfEvents.rxOk != 0 || lrfEvents.rxNok != 0 || lrfEvents.rxIgnored != 0 || lrfEvents.rxBufFull != 0)
         {
+            RCL_Profiling_eventHook(RCL_ProfilingEvent_CommitPktStart);
             /* Copy received packet from PBE FIFO to buffer */
             /* First, check that there is actually a buffer available */
             while (HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) >= 4)
@@ -3053,6 +3100,8 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                         ctx = (ble5HandlerState.scanInit.initiator) ? initCmd->ctx : scanCmd->ctx;
                         RCL_Handler_BLE5_updateRxCurBufferAndFifo(&ctx->rxBuffers);
                         rclEventsIn.rxBufferUpdate = 0;
+                        RCL_Profiling_eventHook(RCL_ProfilingEvent_CommitPktEnd);
+                        RCL_Profiling_eventHook(RCL_ProfilingEvent_ProcessAuxPtrStart);
                     }
                 }
             }
@@ -3064,6 +3113,12 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
         if (rclEventsIn.timerStart != 0)
         {
             rclEvents.cmdStarted = 1;
+        }
+        if (COEX_GRANT_GLOBAL_ENABLE(lrfCoexConfiguration) && lrfEvents.rfesoft1 != 0)
+        {
+            /* Send abort and set flag */
+            LRF_sendHardStop();
+            ble5HandlerState.common.coexNoGrant = true;
         }
 
         if (lrfEvents.opDone != 0 || lrfEvents.opError != 0)
@@ -3099,6 +3154,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                                 rclSchedulerState.requestedPhyFeatures = ble5HandlerState.common.auxPtrInfo.auxPhy | (cmd->phyFeatures & 0x04);
                                 rclEvents.partialSetup = 1;
                                 followAuxPtr = false;
+                                RCL_Profiling_eventHook(RCL_ProfilingEvent_PhySwitchStart);
                             }
                             else
                             {
@@ -3147,6 +3203,8 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                                 /* Reset TXFIFO - needed due to LPRF_PHY-511 */
                                 /* Writing to FCMD is safe because PBE is finished, ref. RCL-367 */
                                 HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = (LRFDPBE_FCMD_DATA_TXFIFO_RESET >> LRFDPBE_FCMD_DATA_S);
+                                /* For coex, the PBE needs to know the RF operation before the command is posted */
+                                RCL_Handler_BLE5_setCoexRegister(scanCmd->coexControl.requestPriorityEnable, false);
                                 /* Post cmd */
                                 HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_SCAN;
                                 if (ble5HandlerState.common.activeUpdate)
@@ -3292,7 +3350,13 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
             else
             {
                 RCL_CommandStatus endStatus = ble5HandlerState.common.endStatus;
-                if (lrfEvents.opError != 0 && endStatus == RCL_CommandStatus_Finished)
+                if (ble5HandlerState.common.coexNoGrant)
+                {
+                    endStatus = RCL_CommandStatus_CoexNoGrant;
+                    followAuxPtr = false;
+                    rclEvents.lastCmdDone = 1;
+                }
+                else if (lrfEvents.opError != 0 && endStatus == RCL_CommandStatus_Finished)
                 {
                     endStatus = RCL_Handler_BLE5_findPbeErrorEndStatus(endCause);
                     followAuxPtr = false;
@@ -3322,6 +3386,10 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 }
                 cmd->status = endStatus;
             }
+
+            /* Clear no grant flag and interrupt in all cases */
+            ble5HandlerState.common.coexNoGrant = false;
+            LRF_clearHwInterrupt(LRF_EventRfesoft1.value);
         }
         else
         {
@@ -3362,6 +3430,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
             {
                 /* PHY change concluded successfully. Proceed with the scanner restart */
                 followAuxPtr = true;
+                RCL_Profiling_eventHook(RCL_ProfilingEvent_PhySwitchEnd);
             }
             else
             {
@@ -3474,7 +3543,7 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
                 uint16_t endTime = RCL_SCHEDULER_SYSTIM_US(ble5HandlerState.common.auxPtrInfo.offsetUnits ? BLE_AUX_OFFSET_300_US : BLE_AUX_OFFSET_30_US);
                 uint16_t timeout = windowWidening + endTime + windowWidening;
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 startTime -= RCL_SCHEDULER_SYSTIM_US(100);
                 timeout += RCL_SCHEDULER_SYSTIM_US(200);
 #endif
@@ -3535,11 +3604,16 @@ RCL_Events RCL_Handler_BLE5_scan_init(RCL_Command *cmd, LRF_Events lrfEvents, RC
 
                     if (!ble5HandlerState.scanInit.initiator) /* Scanner */
                     {
+                        /* For coex, the PBE needs to know the RF operation before the command is posted */
+                        RCL_Handler_BLE5_setCoexRegister(scanCmd->coexControl.requestPriorityEnable, false);
                         /* Post cmd */
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_SCAN;
+                        RCL_Profiling_eventHook(RCL_ProfilingEvent_ProcessAuxPtrEnd);
                     }
                     else /* Initiator */
                     {
+                        /* For coex, the PBE needs to know the RF operation before the command is posted */
+                        RCL_Handler_BLE5_setCoexRegister(initCmd->coexControl.requestPriorityEnable, false);
                         /* Post cmd */
                         HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_API) = PBE_BLE5_REGDEF_API_OP_INITIATOR;
 
@@ -3621,6 +3695,9 @@ RCL_Events RCL_Handler_BLE5_periodicScan(RCL_Command *cmd, LRF_Events lrfEvents,
         ble5HandlerState.common.fifoCfg = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_FIFOCFG);
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_EXTRABYTES) = RCL_Handler_BLE5_findNumExtraBytes(ble5HandlerState.common.fifoCfg);
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_SEQSTAT) = 0;
+
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
 
         ble5HandlerState.common.auxPtrInfo = (RCL_AuxPtrInfo) { 0 }; /* Default */
 
@@ -4092,7 +4169,7 @@ RCL_Events RCL_Handler_BLE5_periodicScan(RCL_Command *cmd, LRF_Events lrfEvents,
                 uint16_t endTime = RCL_SCHEDULER_SYSTIM_US(ble5HandlerState.common.auxPtrInfo.offsetUnits ? BLE_AUX_OFFSET_300_US : BLE_AUX_OFFSET_30_US);
                 uint16_t timeout = windowWidening + endTime + windowWidening;
 
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 startTime -= RCL_SCHEDULER_SYSTIM_US(100);
                 timeout += RCL_SCHEDULER_SYSTIM_US(200);
 #endif
@@ -4199,6 +4276,9 @@ RCL_Events RCL_Handler_BLE5_conn(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Eve
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_MDCFG) = 0;
 
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_SEQSTAT) = ctx->seqStat;
+
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
 
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
@@ -4540,6 +4620,9 @@ RCL_Events RCL_Handler_BLE5_dtmTx(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Ev
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_RFINTERVAL) = txCmd->periodUs;
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_NTXTARGET) = txCmd->numPackets;
 
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
+
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
 
@@ -4786,6 +4869,9 @@ RCL_Events RCL_Handler_BLE5_genericRx(RCL_Command *cmd, LRF_Events lrfEvents, RC
         ble5HandlerState.genericRx.nPackets = 0;
         ble5HandlerState.genericRx.allPacketsReceived = false;
 
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
+
         channel = rxCmd->channel;
 
         RCL_CommandStatus status = RCL_Handler_BLE5_setPhy(cmd->phyFeatures);
@@ -5011,6 +5097,9 @@ RCL_Events RCL_Handler_BLE5_ChannelAssessment(RCL_Command *cmd, LRF_Events lrfEv
         /* Make sure SWTCXO does not adjust clock while radio is running */
         hal_power_set_swtcxo_update_constraint();
 
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
+
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
 
@@ -5183,6 +5272,9 @@ RCL_Events RCL_Handler_BLE5_genericTx(RCL_Command *cmd, LRF_Events lrfEvents, RC
         /* 32-bit access to also write CRCINITH */
         HWREG_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_CRCINITL) = crcInit << 8;
 
+        /* Disable coex. TODO: Add support for coex (RCL-104) */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
+
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
 
@@ -5310,6 +5402,9 @@ RCL_Events RCL_Handler_Ble5_txTest(RCL_Command *cmd, LRF_Events lrfEvents, RCL_E
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_OPCFG) = PBE_BLE5_RAM_OPCFG_TXPATTERN_M;
         /* Make sure SWTCXO does not adjust clock while radio is running */
         hal_power_set_swtcxo_update_constraint();
+
+        /* Disable coex */
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
 
         /* Default end status */
         ble5HandlerState.common.endStatus = RCL_CommandStatus_Finished;
@@ -5975,26 +6070,26 @@ static void RCL_Handler_BLE5_disableSync(void)
                 uint16_t demc1be0 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE0);
                 uint16_t demc1be1 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1);
                 uint16_t demc1be2 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 uint16_t demc1be12 = HWREG_READ_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12);
 #endif
                 ble5HandlerState.genericRx.restoreThresh = true;
                 ble5HandlerState.genericRx.demc1be0 = demc1be0;
                 ble5HandlerState.genericRx.demc1be1 = demc1be1;
                 ble5HandlerState.genericRx.demc1be2 = demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 ble5HandlerState.genericRx.demc1be12 = demc1be12;
 #endif
                 demc1be0 |= LRFDMDM_DEMC1BE0_MASKA_M | LRFDMDM_DEMC1BE0_MASKB_M;
                 demc1be1 = (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDA_S) | (0x7F << LRFDMDM_DEMC1BE1_THRESHOLDB_S);
                 demc1be2 = (demc1be2 & ~LRFDMDM_DEMC1BE2_THRESHOLDC_M) | (0x7F << LRFDMDM_DEMC1BE2_THRESHOLDC_S);
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 demc1be12 = (demc1be12 & ~LRFDMDM_DEMC1BE12_THRESHOLDG_M) | (0x7F << LRFDMDM_DEMC1BE12_THRESHOLDG_S);
 #endif
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE0) = demc1be0;
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = demc1be1;
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
                 HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = demc1be12;
 #endif
 }
@@ -6004,7 +6099,7 @@ static void RCL_Handler_BLE5_restoreSync(void)
     HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE0) = ble5HandlerState.genericRx.demc1be0;
     HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE1) = ble5HandlerState.genericRx.demc1be1;
     HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE2) = ble5HandlerState.genericRx.demc1be2;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMC1BE12) = ble5HandlerState.genericRx.demc1be12;
 #endif
 }
@@ -6311,9 +6406,9 @@ static void RCL_Handler_BLE5_InitializeFilterList(RCL_FilterList *filterList, ui
         }
 
         /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
 
         /* Set info of unused entries to be ignored */
         for (int i = 0; i < numEntries; i++)
@@ -6327,9 +6422,9 @@ static void RCL_Handler_BLE5_InitializeFilterList(RCL_FilterList *filterList, ui
     }
 
         /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
 
     /* Set info of unused entries to be ignored */
     for (int i = numEntries; i < PBE_NUM_FILTER_ENTRIES; i++)
@@ -6351,9 +6446,9 @@ static void RCL_Handler_BLE5_updateFilterListEntry(RCL_FilterList *filterList, u
         volatile uint32_t *targetPtr = pbeFilterList + 2 * index;
 
         /* [RCL-515 WORKAROUND]: Protect the first memory write on BLE High PG1.x due to the hardware bugs */
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif
 
         /* Disable given entry and remove any match if set up */
         targetPtr[0] = invertMask;
@@ -6827,4 +6922,24 @@ static bool RCL_Handler_BLE5_updateAuxPtr(RCL_AuxPtrInfo *auxPtr, uint32_t packe
     *auxPtr->auxOffsetHighFifoPtr = auxOffsetHigh | (auxPtr->auxPhy << 5);
 
     return status;
+}
+
+/*
+ *  ======== RCL_Handler_BLE5_set_coex_register ========
+ */
+static void RCL_Handler_BLE5_setCoexRegister(bool requestPriorityEnable, bool isNextOperationTx)
+{
+    if (COEX_REQUEST_GLOBAL_ENABLE(lrfCoexConfiguration) && requestPriorityEnable)
+    {
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) =
+        (isNextOperationTx ? 1 : 0) << PBE_BLE5_RAM_COEX_TXRX_S | /* Inform the PBE about the coming radio operation */
+        (PRIO_REQ << PBE_BLE5_RAM_COEX_DEFPRIORITY_S) |
+        (COEX_T2 << PBE_BLE5_RAM_COEX_T2_S) |
+        (COEX_T1 << PBE_BLE5_RAM_COEX_T1_S);
+    }
+    else
+    {
+        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE5_RAM_O_COEX) = 0;
+    }
+
 }

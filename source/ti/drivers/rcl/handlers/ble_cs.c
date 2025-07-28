@@ -1249,7 +1249,7 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     }
 
     /* MAFC gain */
-    #ifdef DeviceFamily_CC27XX
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         /* Workaround for IQ swap */
         HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMMISC2) = config->demmisc2 | LRFDMDM_DEMMISC2_PDIFIQCONJEN;
     #else
@@ -1601,7 +1601,7 @@ static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, uint8_t mode, i
 
     if (corrBefore != corrAfter)
     {
-        #ifdef DeviceFamily_CC27XX
+        #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             /* Due to missing HW on the CC27xx device, the LRF returns with constant value of 64.
                We approximate the true peak from the before/after values: peak = 64 - 0.5x abs(before - after) */
             if (corrAfter < corrBefore) corrPeak -= ((corrBefore - corrAfter) >> 1);
@@ -1752,7 +1752,7 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
 static uint32_t RCL_Handler_BLE_CS_convertPct(int16_t pct_i, int16_t pct_q, uint8_t channelIdx, uint8_t rplScaler)
 {
     /* Calibrate via the t_picosec parameter against a calibrated instrument */
-    #ifdef DeviceFamily_CC27XX
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         #define t_picosec   (uint64_t)(1100)
     #else
         #define t_picosec   (uint64_t)(1500)

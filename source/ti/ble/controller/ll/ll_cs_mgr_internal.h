@@ -69,6 +69,8 @@
  
  
  *****************************************************************************/
+#ifndef LL_CS_MGR_INTERNAL_H
+#define LL_CS_MGR_INTERNAL_H
 
 /*******************************************************************************
  * INCLUDES
@@ -139,3 +141,5 @@ void llCsSelectTimeConfig(uint16 connId, uint8 configId);
  * @return      Best Time Config
  */
 uint8 llCsGetBestTime(uint16_t timeCapability, uint8 type);
+
+#endif // LL_CS_MGR_INTERNAL_H

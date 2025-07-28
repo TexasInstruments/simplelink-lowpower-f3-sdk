@@ -679,6 +679,9 @@ function onChannelSoundingChange(inst, ui) {
     inst.channelSounding ? inst.hideChannelSoundingGroup = false : inst.hideChannelSoundingGroup = true;
     Common.hideGroup(Common.getGroupByName(inst.$module.config, "channelSoundingConfig"), inst.hideChannelSoundingGroup, ui);
 
+    // The ranging server external control mode should be hidden
+    ui.rangingServerExtCtrlMode.hidden = true;
+
     // The ranging client external control mode should be hidden
     ui.rangingClientExtCtrlMode.hidden = true;
 
@@ -793,7 +796,7 @@ function getLibs(inst)
             basePath = `ti/ble/lib/CC2340R5/StackWrapper/lib/${toolchain}/m0p`
             libs.push(basePath + "/StackWrapper.a");
         }
-        else if(devFamily == "DeviceFamily_CC27XX")
+        else if(devFamily == "DeviceFamily_CC27XXX10")
         {
             // Add OneLib library
             basePath = `ti/ble/lib/CC27XXX10/OneLib/lib/${toolchain}/m33f`

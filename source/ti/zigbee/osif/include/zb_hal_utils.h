@@ -67,10 +67,11 @@ extern void zb_memmove(void *dst, const void *src, size_t len);
 
 #if defined(ZB_MULTI_TEST) || defined(ZB_MAC_TESTING_MODE)
 #define MAIN() zb_bool_t zb_ti_f3_main(void)
+#define MAIN_RETURN(v) return ((zb_bool_t)v)
 #else
 #define MAIN() void zb_ti_f3_main(void)
-#endif
 #define MAIN_RETURN(v) return
+#endif
 #define FAKE_ARGV
 #define ZVUNUSED(v) (void)v
 #define ARGV_UNUSED char **argv = NULL; ZVUNUSED(argv)

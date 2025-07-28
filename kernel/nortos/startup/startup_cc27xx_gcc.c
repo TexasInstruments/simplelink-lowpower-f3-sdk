@@ -45,7 +45,7 @@
 #include DeviceFamily_constructPath(driverlib/setup.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
-#include DeviceFamily_constructPath(cmsis/cc27xx.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 #include DeviceFamily_constructPath(cmsis/core/core_cm33.h)
 
 //*****************************************************************************

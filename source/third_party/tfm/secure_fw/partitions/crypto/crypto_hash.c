@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -124,7 +125,10 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
 
         status = psa_hash_finish(operation, hash, hash_size, &out_vec[1].len);
         if (status == PSA_SUCCESS) {
+/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
             goto release_operation_and_return;
+#endif
         } else {
             out_vec[1].len = 0;
         }
@@ -136,9 +140,12 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
         size_t hash_length = in_vec[1].len;
 
         status = psa_hash_verify(operation, hash, hash_length);
+/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
         if (status == PSA_SUCCESS) {
             goto release_operation_and_return;
         }
+#endif
     }
     break;
     case TFM_CRYPTO_HASH_ABORT_SID:

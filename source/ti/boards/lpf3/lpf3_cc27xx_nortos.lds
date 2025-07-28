@@ -39,7 +39,7 @@ MEMORY
 {
     /* If secure boot is enabled, set FLASH region origin and size as defined by secure boot.
      * If HSM FW is used and overlapping the user-accessible flash, reserve space for it.
-     * The multiple ternary operators for the length are hard to understand, 
+     * The multiple ternary operators for the length are hard to understand,
      * this is the logic implemented by them:
      * if (DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE)) {
      *   // Use secure boot defined flash size
@@ -257,6 +257,10 @@ SECTIONS {
 
     .nvs (NOLOAD) : ALIGN(0x2000) {
         *(.nvs)
+    } > REGION_TEXT
+
+    .keystore (NOLOAD) : ALIGN(0x800) {
+        *(.keystore)
     } > REGION_TEXT
 
     .ccfg : {

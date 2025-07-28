@@ -11,6 +11,22 @@
 #include "psa_manifest/sid.h"
 #include "tfm_attest_defs.h"
 
+/* TI-TFM: Use custom dispatch function for psa_call() to support PSA
+ * Attestation when built into the Non-Secure driver library.
+ */
+#ifdef TI_PSA_CRYPTO_NS_CLIENT
+
+#define psa_call CryptoTFM_ns_dispatch
+
+extern psa_status_t CryptoTFM_ns_dispatch(psa_handle_t handle,
+                                          int32_t type,
+                                          psa_invec *invecs,
+                                          size_t numInvecs,
+                                          psa_outvec *outvecs,
+                                          size_t numOutvecs);
+
+#endif /* TI_PSA_CRYPTO_NS_CLIENT */
+
 psa_status_t
 psa_initial_attest_get_token(const uint8_t *auth_challenge,
                              size_t         challenge_size,

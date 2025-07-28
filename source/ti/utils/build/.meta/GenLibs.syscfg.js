@@ -414,6 +414,7 @@ function getDeviceIsa(devId = null)
             isa = "m4";
             break;
         case /CC(?:13|26).0/.test(devId):
+        case /CC283/.test(devId):
             isa = "m3";
             break;
         case /CC(?:13|26).2/.test(devId):

@@ -14,9 +14,14 @@
 #include "tfm_hal_isolation.h"
 #include "tfm_hal_platform.h"
 #include "tfm_spm_log.h"
+
 #include "tfm_version.h"
 #include "tfm_plat_otp.h"
 #include "tfm_plat_provisioning.h"
+
+/* TI-TFM: Added headers tfm_get_version() */
+#include "cmse.h"
+#include "tfm_strnlen.h"
 
 #ifdef CONFIG_TFM_ENABLE_PROFILING
 #include "prof_intf_s.h"
@@ -127,4 +132,32 @@ int main(void)
     tfm_core_handler_mode();
 
     return 0;
+}
+
+/* TI-TFM: Added tfm_get_version_veneer() */
+__tz_c_veneer int32_t tfm_get_version_veneer(void *buf, size_t *size)
+{
+    int32_t ret = -1;
+    size_t copy_size;
+
+    /* Verify the buffer is in NSPE with R/W access */
+    if (cmse_has_unpriv_nonsecure_rw_access(buf, *size) != NULL)
+    {
+        /* Determine the size to copy, ensuring it does not exceed provided size */
+        copy_size = tfm_strnlen(VERSION_FULLSTR, *size);
+
+        (void)spm_memcpy(buf, VERSION_FULLSTR, copy_size);
+
+        /* Write version string length excluding null terminator */
+        *size = copy_size;
+
+        ret = 0;
+    }
+    else
+    {
+        /* Buffer is not in NSPE with R/W access */
+        *size = 0;
+    }
+
+    return ret;
 }

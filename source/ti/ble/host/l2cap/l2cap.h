@@ -169,14 +169,14 @@ extern "C"
  * @{
  */
 // Supported
-#define L2CAP_CMD_REJECT                   0x01 //!< Command Reject Response
-#define L2CAP_DISCONNECT_REQ               0x06 //!< Disconnection Request
-#define L2CAP_DISCONNECT_RSP               0x07 //!< Disconnection Response
-#define L2CAP_PARAM_UPDATE_REQ             0x12 //!< Connection Parameter Update Request
-#define L2CAP_PARAM_UPDATE_RSP             0x13 //!< Connection Parameter Update Response
-#define L2CAP_CONNECT_IND                  0x14 //!< LE Credit Based Connection Indication
-#define L2CAP_CONNECT_RSP                  0x15 //!< LE Credit Based Connection Response
-#define L2CAP_FLOW_CTRL_CREDIT             0x16 //!< LE Flow Control Credit
+#define L2CAP_CMD_REJECT                      0x01 //!< Command Reject Response
+#define L2CAP_DISCONNECT_REQ                  0x06 //!< Disconnection Request
+#define L2CAP_DISCONNECT_RSP                  0x07 //!< Disconnection Response
+#define L2CAP_CONNECTION_PARAMETER_UPDATE_REQ 0x12 //!< Connection Parameter Update Request
+#define L2CAP_PARAM_UPDATE_RSP                0x13 //!< Connection Parameter Update Response
+#define L2CAP_CONNECT_IND                     0x14 //!< LE Credit Based Connection Indication
+#define L2CAP_CONNECT_RSP                     0x15 //!< LE Credit Based Connection Response
+#define L2CAP_FLOW_CTRL_CREDIT                0x16 //!< LE Flow Control Credit
 
 // Not supported
 #define L2CAP_CONNECTION_REQ               0x02 //!< Connection Request

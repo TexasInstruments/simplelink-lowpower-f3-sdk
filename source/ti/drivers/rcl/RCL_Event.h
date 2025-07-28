@@ -61,6 +61,8 @@
 #define RCL_EventSilentlyRestartRadio  ((RCL_Events){ .value = (1 << 22)})  /*!< Restart radio to perform updates, to be detailed by handler */
 #define RCL_EventCmdUpdateDone         ((RCL_Events){ .value = (1 << 23)})  /*!< An update of the running command is finished */
 #define RCL_EventCoexNoTx              ((RCL_Events){ .value = (1 << 24)})  /*!< A transmission was refused or aborted by coexistence procedure; command continues */
+#define RCL_EventCmdScheduleDone       ((RCL_Events){ .value = (1 << 25)})  /*!< Queued command has been scheduled  */
+#define RCL_EventCmdStopDone           ((RCL_Events){ .value = (1 << 26)})  /*!< Queued command has been scheduled  */
 
 union RCL_Events_u {
     struct {
@@ -89,6 +91,8 @@ union RCL_Events_u {
         uint32_t silentlyRestartRadio: 1; /*!< Restart radio to perform updates, to be detailed by handler */
         uint32_t cmdUpdateDone       : 1; /*!< An update of the running command is finished */
         uint32_t coexNoTx            : 1; /*!< A transmission was refused or aborted by coexistence procedure; command continues */
+        uint32_t cmdScheduleDone     : 1; /*!< Queued command has been scheduled */
+        uint32_t cmdStopDone         : 1; /*!< Scheduled command has been stopped */
     };
     uint32_t value;
 };

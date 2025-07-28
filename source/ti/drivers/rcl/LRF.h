@@ -37,9 +37,20 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <ti/drivers/rcl/hal/hal.h>
+#include <ti/devices/DeviceFamily.h>
 
-#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC2340R53)
-#  include <ti/devices/DeviceFamily.h>
+#define DeviceFamily_PARENT_CC130x 98
+#define DeviceFamily_PARENT_CC140x 99
+
+#if defined(DeviceFamily_CC1308)
+#define DeviceFamily_LRF_PARENT DeviceFamily_PARENT_CC130x
+#elif defined(DeviceFamily_CC1404_CC1407)
+#define DeviceFamily_LRF_PARENT DeviceFamily_PARENT_CC140x
+#else
+#define DeviceFamily_LRF_PARENT DeviceFamily_PARENT
+#endif
+
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX)
 #  include DeviceFamily_constructPath(inc/hw_types.h)
 #  include DeviceFamily_constructPath(inc/hw_lrfdpbe.h)
 #  include <ti/drivers/rcl/LRFCC23X0.h>

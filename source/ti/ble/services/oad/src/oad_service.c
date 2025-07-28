@@ -238,12 +238,9 @@ bStatus_t OAD_AddService(oadServiceCB_t pfnOadServiceCB)
         oadExtCtrlConfig = oadCCCDTable + 2*linkDBNumConns;
 
         // Initialize Client Characteristic Configuration attributes.
-        for(uint8 conn_index = 0; conn_index<linkDBNumConns;conn_index++)
-        {
-            GATTServApp_InitCharCfg(LINKDB_CONNHANDLE_INVALID, oadImgIdentifyConfig + conn_index);
-            GATTServApp_InitCharCfg(LINKDB_CONNHANDLE_INVALID, oadImgBlockConfig + conn_index);
-            GATTServApp_InitCharCfg(LINKDB_CONNHANDLE_INVALID, oadExtCtrlConfig + conn_index);
-        }
+        GATTServApp_InitCharCfg(LINKDB_CONNHANDLE_INVALID, oadImgIdentifyConfig);
+        GATTServApp_InitCharCfg(LINKDB_CONNHANDLE_INVALID, oadImgBlockConfig);
+        GATTServApp_InitCharCfg(LINKDB_CONNHANDLE_INVALID, oadExtCtrlConfig);
 
         // Register a write callback function.
         oadWriteCB = pfnOadServiceCB;
