@@ -555,14 +555,14 @@ extern "C"
 #define LL_MAX_EXT_DATA_LEN                            254
 
 //
-#define LL_MIN_LINK_DATA_LEN                           27    // in bytes
-#define LL_MIN_LINK_DATA_TIME                          328   // in us
+#define LL_MIN_LINK_DATA_LEN                           27U    // in bytes
+#define LL_MIN_LINK_DATA_TIME                          328U   // in us
 #define LL_MIN_LINK_DATA_TIME_CODED                    2704  // in us
 
-#define LL_MAX_LINK_DATA_LEN                           251   // in bytes
+#define LL_MAX_LINK_DATA_LEN                           251U   // in bytes
 #define LL_MAX_LINK_DATA_TIME_UNCODED                  2120  // in us
 
-#define LL_MAX_LINK_DATA_TIME_CODED                    17040 // in us
+#define LL_MAX_LINK_DATA_TIME_CODED                    17040U // in us
 
 #define LL_MAX_LINK_DATA_TIME                          LL_MAX_LINK_DATA_TIME_CODED // Coded is the maximum
 

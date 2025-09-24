@@ -2685,7 +2685,7 @@ static uint8_t processExtMsgL2CAP(uint8_t cmdID, hciExtCmd_t *pCmd, uint8_t *pRs
       break;
 #endif //(BLE_V41_FEATURES & L2CAP_COC_CFG)
 
-    case L2CAP_PARAM_UPDATE_REQ:
+    case L2CAP_CONNECTION_PARAMETER_UPDATE_REQ:
       stat = L2CAP_ParseParamUpdateReq(&cmd, &pBuf[2], pCmd->len-2);
       if (stat == SUCCESS)
       {

@@ -256,6 +256,7 @@
 #define MAP_llEqSynchWord                                            llEqSynchWord
 #define MAP_llEqualBytes                                             llEqualBytes
 #define MAP_llEventDelta                                             llEventDelta
+#define MAP_llEventCmp                                               llEventCmp
 #define MAP_llEventInRange                                           llEventInRange
 #define MAP_llFindNextSecCmd                                         llFindNextSecCmd
 #define MAP_llFindNextSecTask                                        llFindNextSecTask

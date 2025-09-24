@@ -142,6 +142,7 @@ class Capabilities(enum.IntFlag):
     RTLS_CAP_GATT = 131072
     RTLS_CAP_CA_SERVER = 262144
     RTLS_CAP_RREQ = 524288
+    RTLS_CAP_RRSP = 1048576
 
 
 RtlsStatus = Enum(

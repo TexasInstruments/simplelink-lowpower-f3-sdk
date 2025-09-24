@@ -77,6 +77,7 @@
 #include "ti/ble/stack_util/bcomdef.h"
 #include "ti/ble/controller/ll/ll_common.h"
 #include "ti/ble/stack_util/cs_types.h"
+#include "ti/ble/controller/ll/ll_csdrbg.h"
 
 #include <ti/drivers/rcl/commands/ble_cs.h>
 #include <ti/drivers/rcl/handlers/ble_cs.h>
@@ -109,6 +110,7 @@
 #define CS_MAX_PROCEDURE_INTERVAL              0xFFFF
 #define CS_MIN_SUBEVENTS_PER_EVENT             1U
 #define CS_MAX_SUBEVENTS_PER_PROCEDURE         32
+#define CS_INFINITE_PROCEDURE_REPETITIONS      0
 
 // Capabilities
 #define CS_MAX_NUM_CONFIG_SUPPORTED            0x04
@@ -240,24 +242,13 @@
 #define CS_RESET_CONFIG_FLAG                   0x3B
 
 // Default Procedure Params
-#define CS_DEFAULT_PROCEDURE_DUR               CS_MAX_PROCEDURE_LEN
-#define CS_DEFAULT_MIN_PROC_INTERVAL           1
-#define CS_DEFAULT_MAX_PROC_INTERVAL           3
 #define CS_DEFAULT_MAX_PROC_COUNT              0xFFFF
 #define CS_DEFAULT_MIN_SUBEVENT_LEN            0x4E2U    // 1250 us
 #define CS_DEFAULT_MAX_SUBEVENT_LEN            0x3D0900U //us = 4s
-#define CS_DEFAULT_TONE_ANTENNA_CFG            1
-#define CS_DEFAULT_PHY                         1
-#define CS_DEFAULT_TX_PWR_DELTA                0
-#define CS_DEFAULT_PEER_ANTENNA                1
-#define CS_DEFAULT_ENABLE                      CS_DISABLE
-#define CS_DEFAULT_TERMINATE_STATE             CS_TERMINATE_DISABLE
-#define CS_PCT_MASK                            0xFFF
 #define CS_DEFAULT_SUBEVENT_INTERVAL           0U
 
 // CS tx_power range
-#define CS_MAX_TX_POWER_VALUE                  20
-#define CS_MIN_TX_POWER_VALUE                  -127
+#define CS_DEFAULT_TX_POWER                    0
 
 /* Number of max elements (steps) in a Tx buffer */
 /* ------------------------------------------*/
@@ -269,14 +260,6 @@
 /*******************************************************************************
  * ENUMS
  */
-
-// Flag that indicate that the procedure state should be
-// updated to CS_DISABLE at the end of the current procedure
-typedef enum csTerminateState_e
-{
-    CS_TERMINATE_DISABLE = 0U,       /* Indicate that the enable field shouldn't be changed*/
-    CS_TERMINATE_RECEIVED = 1U
-} csTerminateState_e;
 
 // CS Role Mask
 typedef enum csRoleMask_e
@@ -294,7 +277,7 @@ typedef enum csProcedures_e
     CS_CONFIG_PROCEDURE                = 0x04,
     CS_FAE_TABLE_UPDATE_PROCEDURE      = 0x08,
     CS_CHM_UPDATE_PROCEDURE            = 0x10,
-    CS_IND                             = 0x20,
+    CS_START_PROCEDURE                 = 0x20,
     CS_TERMINATE_PROCEDURE             = 0x40
 } csProcedures_e;
 
@@ -327,13 +310,6 @@ typedef enum csChannelIndexArray_e
     CS_NON_MODE_0_CHANNEL_INDX_ARR,
 } csChannelIndexArray_e;
 
-typedef enum csBleRole_e
-{
-    CS_BLE_ROLE_NOT_SET,
-    CS_BLE_ROLE_CENTRAL,
-    CS_BLE_ROLE_PERIPHERAL
-} csBleRole;
-
 typedef enum csSubeventInfo_e
 {
     CS_SE_INFO_NUM_STEPS, /* Total Number of steps in subevent */
@@ -344,15 +320,9 @@ typedef enum csProcedureCounter_e
 {
     CS_PROC_INFO_SUBEVENT_C,
     CS_PROC_INFO_EVENT_C,
-    CS_PROC_C,
+    CS_PROC_REPETITIONS_C,
     CS_PROC_ALL_C
 } csProcedureCounter_e;
-
-typedef enum csNextSubevent_e
-{
-    CS_PREP_CURR_SUBEVENT,
-    CS_PREP_NEXT_SUBEVENT,
-} csNextSubevent_e;
 
 typedef enum csSubeventType_e
 {
@@ -364,8 +334,6 @@ typedef enum csSubeventType_e
  * MACROS
  */
 
-#define RESET_CS_FLAG(connId, flagId)                                          \
-    (llCs[connId].completedProcedures &= flagId)
 #define CS_GET_BIT(val, bitIdx) ((val >> bitIdx) & 1)
 #define CS_SHIFT_RIGHT(val, n) (val >> n)
 /* Translate units from 0.625ms into us Done by multiplication by (1000 * 0.625) */
@@ -376,9 +344,6 @@ typedef enum csSubeventType_e
 
 /* Events Per Procedure is the number of whole events that would fit into a CS procedure Len */
 #define CS_EVENTS_PER_PROCEDURE(procedureLen, eventInterval, connInterval) (procedureLen / (eventInterval * connInterval))
-
-/* The Offset_Min value shall be greater than or equal to 500 µs and less than 4 seconds.  */
-#define CS_CALC_OFFSET_MIN(offsetMin) ((offsetMin < CS_OFFSET_MIN) ? CS_OFFSET_MIN : ((offsetMin > CS_OFFSET_MAX) ? CS_OFFSET_MAX : offsetMin))
 
 /* The value shall be greater than or equal to the Offset_Min value and shall be less than the LE connection interval. */
 #define CS_CALC_OFFSET_MAX(offsetMax, offsetMin, connInterval) ((offsetMax < offsetMin) ? offsetMin : ((offsetMax > (T625MS2US(connInterval) - CS_MIN_SUBEVENT_LEN)) ? (T625MS2US(connInterval) - CS_MIN_SUBEVENT_LEN) : offsetMax))
@@ -391,9 +356,6 @@ typedef enum csSubeventType_e
     (channelMap[0] & 0x03 || channelMap[2] & 0x80 || channelMap[3] & 0x03 ||   \
      channelMap[9] & 0xE0)
 
-#define GET_MAX_STEP_DATA_LEN(numAntPaths)                                     \
-    (SIZE_MODE_3_INIT_REFL + (numAntPaths + 1) * 4)
-
 /* Tone Extension Bits are used in their reversed order */
 #define CS_REVERSE_TONE_EXTENSION_BITS(bits)                                   \
     ((((bits & 0x01U) << 1U) | ((bits & 0x02U) >> 1U)) & 0x3U)
@@ -404,6 +366,9 @@ typedef enum csSubeventType_e
 
 #define CS_IS_SUBEVENT_VALID(subeventLen) ( (subeventLen >= CS_MIN_SUBEVENT_LEN) && \
                                             (subeventLen <= CS_MAX_SUBEVENT_LEN) )
+
+#define CS_IS_CONFIG_ID_VALID(configId)   ((configId < CS_MAX_NUM_CONFIG_IDS) ? true : false)
+
 /*******************************************************************************
  * EXTERNS
  */
@@ -505,24 +470,35 @@ typedef struct
     int8  maxTxPower;
 } csDefaultSettings_t;
 
+/* This structure stores the parameters received from the Host, as some params can be re-negotiated during Enable procedure.*/
+typedef struct
+{
+  uint32_t minSubEventLen;             //!< Min SubEvent Len in microseconds, range 1250us to 4s
+  uint32_t maxSubEventLen;             //!< Max SubEvent Len in microseconds, range 1250us to 4s
+  csACI_e  aci;                        //!< Antenna Config Index
+} csHostProcedureParams_t;
+
 /* CS Procedure Enable */
 /* This struct is based on the PDU CS_REQ/RSP/IND in the SPEC Core_v6.0 */
 /* Therefore, shall not be changed unless there is an update to the PDU */
 struct csProcedureEnable_t
 {
+    csHostProcedureParams_t hostProcedureParams;    /* DO NOT CHANGE THE ORDER - this must be the first element *//* Parameters received from the Host, used for CS_REQ */
     uint8   configId:6;              /* REQ | RSP | IND */
     uint8   rfu:2;                   /* REQ | RSP | IND */
     uint16  connEventCount;          /* REQ | RSP | IND */
+    uint16  repeatConnEvent;         /* NOT used for control procedures */ /*The connection event on which we need to start the repeated procedure */
     uint32  offset;                  /*  X  |  X  | IND */ /* microseconds */
     uint32  offsetMin;               /* REQ | RSP |  X  */ /* microseconds */
     uint32  offsetMax;               /* REQ | RSP |  X  */ /* microseconds */
-    uint16  maxProcedureDur;         /* REQ |  X  |  X  */ /* 625 microseconds */
-    uint16  eventInterval;           /* REQ | RSP | IND */ /* units of connInt */
-    uint8   subEventsPerEvent;       /* REQ | RSP | IND */ /* num of CS SubEvents in a CS Event */
-    uint16  subEventInterval;        /* REQ | RSP | IND */ /* units 625 us*/
-    uint32  subEventLen;             /* REQ | RSP | IND */ /* units microseconds, range 1250us to 4s */
+    uint16  maxProcedureDur;         /* REQ |  X  |  X  */ /* Maximum duration for each CS procedure. Range: 0x0001 to 0xFFFF. Time = N × 0.625 ms. Time range: 0.625 ms to 40.959375 s */
+    uint16  eventInterval;           /* REQ | RSP | IND */ /* Number of ACL connection events between consecutive CS event anchor points */
+    uint8   subEventsPerEvent;       /* REQ | RSP | IND */ /* nNumber of CS subevents anchored off the same ACL connection event */
+    uint16  subEventInterval;        /* REQ | RSP | IND */ /* Time between consecutive CS subevents anchored off the same ACL connection event. units 625 us*/
+    uint32  subEventLen;             /* REQ | RSP | IND */ /* Duration for each CS subevent in microseconds, range 1250us to 4s */
     uint16  procedureInterval;       /* REQ |  X  |  X  */ /* units of connInt */
-    uint16  procedureCount;          /* REQ |  X  |  X  */
+    uint16  procedureCount;          /* REQ |  X  |  X  */ /* 0x0000 - CS procedures to continue until disabled.
+                                                              0x0001 to 0xFFFF - Number of CS procedures to be scheduled*/
     csACI_e ACI;                     /* REQ | RSP | IND */
     uint8   preferredPeerAntenna;    /* REQ |  X  |  X  */
     uint8   phy;                     /* REQ | RSP | IND */
@@ -560,12 +536,19 @@ typedef struct
 {
     uint16 subeventCounter;  /* subevent counter */
     uint16 eventCounter;     /* event counter */
-    uint16 procedureCounter; /* procedure counter */
+    uint16 repetitionsCounter; /* procedure counter */
 } csProcCnt_t;
+
+typedef struct csDoneInfo
+{
+    uint8 errorCode;      /* The reason the CS procedure will be terminated */
+    uint8 doneStatus;     /* The subEvent reason for the CS procedure will be terminated */
+} csDoneInfo_t;
 
 typedef struct
 {
     csProcCnt_t counters;
+    csSubeventInfo_t subEventInfo;                   /* Subevent Info */
     uint16_t    mMStepsRemain;      /* Number of main mode steps remain to be done. When this reaches 0, the procedure ends. */
     uint16_t    eventsPerProcedure; /* MAX_PROC_LEN / (EVENT_INTERVAL) * connEvent */
     uint32_t    eventAnchorPoint;   /* The time from which consecutive subevents are anchored. */
@@ -582,33 +565,28 @@ typedef struct
      */
     uint8_t     antIndicesRCLMapping;
 
-    uint8_t     nextProcedure;      /* Marks if a procedure is done and we need to prepare another */
-    csNextSubevent_e nextSubevent;  /* Marks if a subevent is submitted and we need to prepare another. */
-    uint8_t procedureDoneStatus;    /* Marks whether a procedure is done for reporting */
+    uint8_t     nextProcedure;          /* Marks if a procedure is done and we need to prepare another */
+    csDoneInfo_t     procedure;    /* Marks the DoneInfo of the procedure */
+    csDoneInfo_t     subEvent;     /* Marks the DoneInfo of the subEvent */
 } csProcedureInfo_t;
-
-typedef struct csTerminateInfo
-{
-    csTerminateState_e terminateState; /* Flag indicating whether to terminate the upcoming CS Procedure */
-    uint8 errorCode;       /* The reason the CS procedure will be terminated */
-} csTerminateInfo_t;
 
 typedef struct
 {
+    csConfigurationSet_t configSet;                  /* CS config */
+    csProcedureEnable_t procedureEnableData;         /* Procedure Enable */
+    csChanInfo_t filteredChanIdx;                    /* Channel Index Array */
+} llCsConfig_t;
+typedef struct
+{
+    drbgParams_t csDrbgParams;                                      /* CS DRBG Parameters */
     uint8 completedProcedures;                                      /* Bitmap of completed procedures*/
     uint8 activeCsCtrlProcedure;                                    /* Active CS Ctrl Procedure */
     uint8 currentConfigId;                                          /* Current Config ID */
     csFaeTbl_t* peerFaeTbl;                                         /* Peer FAE table */
-    csSecVectors_t securityVectors;                                 /* Security vectors */
     llCsCapabilities_t peerCapabilities;                            /* Peer capabilities */
     csDefaultSettings_t defaultSettings;                            /* CS Default Settings */
-    csConfigurationSet_t configSet[CS_MAX_NUM_CONFIG_IDS];          /* CS config */
-    csProcedureParams_t procedureParams[CS_MAX_NUM_CONFIG_IDS];     /* Procedure Params */
-    csProcedureEnable_t procedureEnableData[CS_MAX_NUM_CONFIG_IDS]; /* Procedure Enable */
-    csChanInfo_t filteredChanIdx[CS_MAX_NUM_CONFIG_IDS];            /* Channel Index Array */
-    csSubeventInfo_t subEventInfo;                                  /* Subevent Info */
     csProcedureInfo_t procedureInfo;                                /* Procedure Info */
-    csTerminateInfo_t terminateInfo;                                /* Procedure Termination Info */
+    llCsConfig_t config[CS_MAX_NUM_CONFIG_IDS];                     /* CS Config */
 } llCs_t;
 
 /*******************************************************************************
@@ -874,6 +852,7 @@ uint8 llCsGetAbortReason(uint8 connId);
  * input parameters
  *
  * @param       connId - Connection Identifier
+ * @param       configId - CS config ID
  *
  * output parameters
  *
@@ -881,7 +860,7 @@ uint8 llCsGetAbortReason(uint8 connId);
  *
  * @return      Num Steps in Buffer
  */
-uint16 llCsGetRemainingStepsInCurrSubEvent(uint16 connId);
+uint16 llCsGetRemainingStepsInCurrSubEvent(uint16 connId, uint8 configId);
 
 /*******************************************************************************
  * @fn          llCsGetNextLoopValue
@@ -910,7 +889,7 @@ uint8 llCsGetNextLoopValue(uint8 currValue, uint8 minValue, uint8 maxValue);
 
 
 /*******************************************************************************
- * @fn          llCs_getNextConnEvent
+ * @fn          llCsGetNextConnEvent
  *
  * @brief       Get next connection event
  * This function calculates the actual next connection event based on current
@@ -926,10 +905,48 @@ uint8 llCsGetNextLoopValue(uint8 currValue, uint8 minValue, uint8 maxValue);
  *
  * @return      Up-to-date Next connection event
  * */
-uint16_t llCs_getNextConnEvent(const llConnState_t *connPtr);
+uint16_t llCsGetCurrentConnEvent(const llConnState_t *connPtr);
 
 /*******************************************************************************
- * @fn          llCs_checkProcedureParams
+ * @fn          llCsGetSelectedTxPowerRaw
+ *
+ * @brief       Get selected TX Power to be used by the local device for CS procedures.
+ *              The returned value is the raw value of the TX Power, before any adjustments
+ *              based on the local device power table.
+ *
+ * input parameters
+ *
+ * @param       connHandle - Connection handle
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      Raw value of Selected TX Power
+ * */
+int8_t llCsGetSelectedTxPowerRaw(uint16_t connHandle);
+
+/*******************************************************************************
+ * @fn          llCsGetSelectedTxPower
+ *
+ * @brief       Get selected TX Power to be used by the local device for CS procedures.
+ *              The returned value is the actual TX Power value that will be used by the radio,
+ *              based on the power table.
+ *
+ * input parameters
+ *
+ * @param       connHandle - Connection handle
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      Selected TX Power
+ * */
+int8_t llCsGetSelectedTxPower(uint16_t connHandle);
+
+/*******************************************************************************
+ * @fn          llCsCheckProcedureEnableParams
  *
  * @brief       Check if the procedure parameters are valid
  *
@@ -944,7 +961,7 @@ uint16_t llCs_getNextConnEvent(const llConnState_t *connPtr);
  *
  * @return      STATUS - Success if the procedure parameters are valid, Fail otherwise
  * */
-csStatus_e llCs_checkProcedureParams(const csProcedureEnable_t* csReq, const llConnState_t* connPtr);
+csStatus_e llCsCheckProcedureEnableParams(const csProcedureEnable_t* csReq, const llConnState_t* connPtr);
 
 /*******************************************************************************
  * @fn          llCsSubeventsPerEvent

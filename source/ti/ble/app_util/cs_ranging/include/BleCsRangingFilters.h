@@ -75,25 +75,13 @@ typedef struct
  */
 typedef struct
 {
-    uint16_t sizeM;    ///< Size of the filter
-    uint16_t sizeN;    ///< Size of the effective buffer
-    float *buffer;     ///< Buffer to store previous values
-    float *sortBuffer; ///< Buffer to sort the buffer
-    uint16_t index;    ///< Current index in the buffer
-    uint16_t count;    ///< Total number of values passed to buffer
+    uint16_t sizeM;      ///< Size of the filter
+    uint16_t sizeN;      ///< Size of the effective buffer
+    float *buffer;       ///< Pointer to buffer to store previous values
+    float *sortBuffer;   ///< Pointer to buffer to sort the buffer
+    uint16_t index;      ///< Current index in the buffer
+    uint16_t count;      ///< Total number of values passed to buffer
 } BleCsRanging_MovingAverageFilter_t;
-
-/**
- * @brief Filter chain
- *
- * This enum defines the different filter chains to be used.
- */
-typedef enum
-{
-    BleCsRanging_FilterChain_Average,
-    BleCsRanging_FilterChain_Kalman,
-    BleCsRanging_FilterChain_AverageKalman
-} BleCsRanging_FilterChain_e;
 
 /**
  * @brief Filter all function
@@ -103,7 +91,8 @@ typedef enum
  * @param maf Pointer to the Moving Average filter structure
  * @param kf Pointer to the Kalman filter structure
  * @param filterChain The filter chain to use
- * @param d_est Estimated distance in meters
+ * @param d_est Estimated distance (in meters)
+ * @param r_n Estimated distance error variance (in meters^2), for Kalman filter. Proposed value: 4.0f.
  * @param ts Time in seconds
  * @return The filtered distance
  */
@@ -111,6 +100,7 @@ float BleCsRanging_filterAll(BleCsRanging_MovingAverageFilter_t *maf, //
                              BleCsRanging_KalmanFilter_t *kf,         //
                              BleCsRanging_FilterChain_e filterChain,
                              float d_est, //
+                             float r_n,   //
                              float ts);
 
 /**
@@ -149,7 +139,7 @@ void BleCsRanging_predictKalmanFilter(BleCsRanging_KalmanFilter_t *kf, float t_c
  *
  * @param kf Pointer to the Kalman filter structure
  * @param z_n Measurement
- * @param r_n Measurement noise
+ * @param r_n Measurement noise variance of \p z_n measurement
  */
 void BleCsRanging_updateKalmanFilter(BleCsRanging_KalmanFilter_t *kf, float z_n, float r_n);
 
@@ -190,8 +180,8 @@ void freeMovingAverageFilter(BleCsRanging_MovingAverageFilter_t *maf);
  * @param kf Pointer to the Kalman filter structure
  * @param t_cur_second Current time in seconds
  * @param d_est_t Estimated distance measurement (in meters)
- * @return The estimated state (x_est) of the Kalman filter (in meters)
+ * @param r_n Estimated distance error variance (in meters^2)
+ * @return The estimated state (x_est) of the Kalman filter (in meters). Proposed value: 4.0f.
  */
-float BleCsRanging_computeKalman(BleCsRanging_KalmanFilter_t *kf, float t_cur_second, float d_est_t);
-
+float BleCsRanging_computeKalman(BleCsRanging_KalmanFilter_t *kf, float t_cur_second, float d_est_t, float r_n);
 #endif //_BLECSRANGINGFILTERS_H_

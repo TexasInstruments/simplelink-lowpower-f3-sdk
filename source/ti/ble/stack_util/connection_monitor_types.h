@@ -92,6 +92,7 @@ typedef enum
   CM_PHY_UPDATE_EVT      = 0x00,  //!< Phy update event @ref cmPhyUpdateEvt_t
   CM_CHAN_MAP_UPDATE_EVT = 0x01,  //!< Channel map update event @ref cmChanMapUpdateEvt_t
   CM_PARAM_UPDATE_EVT    = 0x02,  //!< Parameter update event @ref cmParamUpdateEvt_t
+  CM_INVALID_UPDATE      = 0xFF,  //!< Invalid update event
 } cmConnUpdateEvtType_e;
 
 /*
@@ -127,6 +128,7 @@ typedef enum
   CM_SUPERVISION_TIMEOUT       = 0x00,
   CM_USER_TERM                 = 0x01,
   CM_SYNC_FAILED               = 0x02,
+  CM_BAD_UPDATE_EVENT          = 0x03,
 } cmStopReason_e;
 
 /*
@@ -298,12 +300,12 @@ typedef struct
 typedef struct
 {
   uint32_t                timeDeltaInUs;       //!< The time in us it took for the data to be transferred from node to another in the system
-  uint32_t                timeDeltaMaxErrInUs; //!< The maximum deviation time in us
-  uint32_t                connTimeout;         //!< The supervision connection timeout, 0 - take the supervision connection timeout
+  uint32_t                timeDeltaMaxErrInUs; //!< The maximum deviation time in us - Not yet implemented and will not affect functionality
+  uint32_t                connTimeout;         //!< The supervision connection timeout in ms ; if 0 given - take the supervision connection timeout
                                                //!< from the monitored link
-  uint8_t                 maxSyncAttempts;     //!< Number of attampts the device will try to follow before determining the monitoring
+  uint8_t                 maxSyncAttempts;     //!< Number of attempts the device will try to follow before determining the monitoring
                                                //!< process failed or not, 0 - try until connection supervision timeout
-  uint8_t                 adjustmentEvtTries;  //!< The number of adjustment events to search for the anchor before starting reporting the RSSI.
+  uint8_t                 adjustmentEvtTries;  //!< The number of adjustment events to search for the anchor before starting reporting the RSSI
   uint32_t                cmDataSize;          //!< The stack CM data size
   cmConnectionMaskRole_e  connRole;            //!< Which connection role to report  @ref cmConnectionMaskRole_e
   uint8_t                 *pCmData;            //!< Pointer to the buffer the application allocated

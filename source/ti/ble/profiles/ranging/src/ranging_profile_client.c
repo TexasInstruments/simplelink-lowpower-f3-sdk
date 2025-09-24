@@ -889,7 +889,7 @@ static void rreq_procedureDone(void)
     uint8_t* data = NULL;
     uint16_t datalen = 0;
     // Notify APP ( Data Complete )
-    if((gRREQControlBlock.callbacks != NULL) || (gRREQControlBlock.callbacks->pDataCompleteEventCallback != NULL))
+    if((gRREQControlBlock.callbacks != NULL) && (gRREQControlBlock.callbacks->pDataCompleteEventCallback != NULL))
     {
         // Check if the data is complete using the bitmask
         uint8_t status = rreq_CheckDataComplete(gRREQControlBlock.procedureAttr.connHandle);
@@ -899,14 +899,15 @@ static void rreq_procedureDone(void)
             // Get the data from the database
             data = RangingDBClient_getData(gRREQControlBlock.procedureAttr.connHandle);
             datalen = gRREQControlBlock.connInfo[gRREQControlBlock.procedureAttr.connHandle].segmentMgr.totalDataLen;
-        }
 
-        // Call the data complete callback function
+        }
+        // Call the data complete callback when the procedure is done in any case, to notify the end of the current procedure.
+        // In case the rreq_CheckDataComplete has returned error status, the range will not be calculated.
         gRREQControlBlock.callbacks->pDataCompleteEventCallback(gRREQControlBlock.procedureAttr.connHandle,
-                                                    gRREQControlBlock.procedureAttr.rangingCounter,
-                                                    status,
-                                                    datalen,
-                                                    data);
+                                                gRREQControlBlock.procedureAttr.rangingCounter,
+                                                status,
+                                                datalen,
+                                                data);
     }
 
     // Reset Procedure Attributes
@@ -1001,8 +1002,8 @@ static void rreq_handleRspCode(uint16_t connHandle, uint8_t rspValue)
  * that no critical data is missing or corrupted.
  *
  * @return Returns a boolean value:
- *         - true: If the data is complete and valid.
- *         - false: If the data is incomplete or invalid.
+ *         - TRUE: If the data is complete and valid.
+ *         - FALSE: If the data is incomplete or invalid.
  */
 static uint8_t rreq_CheckDataComplete(uint16_t connHandle)
 {
@@ -1038,12 +1039,12 @@ static void rreq_parseSegmentReceived(uint16_t connHandle, attHandleValueNoti_t 
     // split data to segment (1 byte) and the rest of the data
     uint8_t *pData = handleValueNoti->pValue;
     uint8_t segmentNum = RAS_LAST_6_BITS_LSB(pData[0]); // Extract the last 6 bits (LSB)
-    uint8_t lastSegmentFlag = RAS_FIRST_2_BITS_LSB(pData[0]); // Extract the first 2 bits (LSB)
+    uint8_t segmentFlag = RAS_FIRST_2_BITS_LSB(pData[0]); // Extract the first 2 bits (LSB)
     uint16_t dataLen = handleValueNoti->len - 1; // Exclude the segment byte
     uint64_t segmentBitMask = 1;// Bit mask for the segment
 
     // Check if the segment is the first one
-    if( (lastSegmentFlag & RAS_FIRST_SEGMENT_BIT_MASK) != 0 )
+    if( (segmentFlag & RAS_FIRST_SEGMENT_BIT_MASK) != 0 )
     {
         // Clear the procedure DB
         RangingDBClient_clearProcedure(connHandle);
@@ -1053,7 +1054,7 @@ static void rreq_parseSegmentReceived(uint16_t connHandle, attHandleValueNoti_t 
     }
 
     // Check if the segment is the last one
-    if( (lastSegmentFlag & RAS_LAST_SEGMENT_BIT_MASK) != 0 )
+    if( (segmentFlag & RAS_LAST_SEGMENT_BIT_MASK) != 0 )
     {
         gRREQControlBlock.connInfo[connHandle].segmentMgr.lastSegmentFlag = TRUE;
         gRREQControlBlock.connInfo[connHandle].segmentMgr.lastSegmentValue = segmentNum;

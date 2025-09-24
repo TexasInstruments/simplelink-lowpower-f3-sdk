@@ -605,6 +605,13 @@ const uint16_t payloadLut[RCL_CmdBleCs_Payload_Length] = {
     /*128 bits =*/ RCL_BLE_CS_US_TO_MCE_TIMER(128)
 };
 
+/* PCT compensation table for antenna/front-end delay */
+extern const RCL_CmdBleCs_PctCompTable RCL_bleCsPctCompTable;
+
+/* Default PCT compensation -- can be overloaded by application */
+__attribute__((weak)) const RCL_CmdBleCs_PctCompTable RCL_bleCsPctCompTable = RCL_CmdBleCs_PctCompTable_Default();
+
+
 /* Forward declarations */
 static RCL_MultiBuffer* RCL_Handler_BLE_CS_findBufferFitNumberOfBytes(List_List *pHead, uint16_t numBytes);
 static void RCL_Handler_BLE_CS_configureTxRxFifo(RCL_CmdBleCs* pCmd);
@@ -621,7 +628,7 @@ static void RCL_Handler_BLE_CS_preprocessStep(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_S
 static RCL_CmdBleCs_StepResult_Internal* RCL_Handler_BLE_CS_fetchNextStepResult(RCL_CmdBleCs *pCmd);
 static int16_t RCL_Handler_BLE_CS_convertFreqOffset(int16_t foffMeasured, bool ceil);
 static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, uint8_t mode, int8_t channel, uint8_t payload, bool secondToneExtensionSlot, int32_t toAD, uint16_t corrBefore, uint16_t corrPeak, uint16_t corrAfter);
-static uint32_t RCL_Handler_BLE_CS_convertPct(int16_t pct_i, int16_t pct_q, uint8_t channelIdx, uint8_t rplScaler);
+static uint32_t RCL_Handler_BLE_CS_convertPct(const RCL_CmdBleCs_IQSample *pPct, const uint8_t channelIdx, const uint8_t rplScaler);
 static uint8_t RCL_Handler_BLE_CS_calcQ3(uint16_t qMin, uint16_t qMax, uint16_t qAvg);
 static uint8_t RCL_Handler_BLE_CS_convertPctQuality(uint16_t qMin, uint16_t qMax, uint16_t qAvg, bool toneExtensionSlot, bool toneExpected, bool toneQualityOverride);
 static uint16_t RCL_Handler_BLE_CS_estimateStepResultLength(RCL_CmdBleCs *pCmd,RCL_CmdBleCs_StepResult_Internal* src);
@@ -1749,25 +1756,110 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
 /*
  *  ======== RCL_Handler_BLE_CS_convertPct ========
  */
-static uint32_t RCL_Handler_BLE_CS_convertPct(int16_t pct_i, int16_t pct_q, uint8_t channelIdx, uint8_t rplScaler)
+static uint32_t RCL_Handler_BLE_CS_convertPct(const RCL_CmdBleCs_IQSample *pPct, const uint8_t channelIdx,
+                                              const uint8_t rplScaler)
 {
-    /* Calibrate via the t_picosec parameter against a calibrated instrument */
-    #ifdef DeviceFamily_CC27XX
-        #define t_picosec   (uint64_t)(1100)
-    #else
-        #define t_picosec   (uint64_t)(1500)
-    #endif
+    /* Use the linked PCT compensation table */
+    const RCL_CmdBleCs_PctCompTable *pTable = (const RCL_CmdBleCs_PctCompTable *) &RCL_bleCsPctCompTable;
 
-    #define t_const         (uint64_t)((t_picosec << 31) / 1e6)
-    #define t_scaler        (15)
-    #define CALC_ANGLE(ch)  ((int16_t)((((uint64_t)ch) * t_const) >> t_scaler))
+    if (pPct == NULL)
+    {
+        return 0;
+    }
 
-    /* Adjust the phase to the signal on the antenna (group delay and layout) */
-    RCL_Handler_BLE_CS_rotateVector(&pct_i, &pct_q, CALC_ANGLE(channelIdx));
+    const uint32_t DELAY_FRAC_BITS = 4;
+    const uint32_t THETA_SCALE_BITS = 21;
 
-    /* Compress PCTs to 24bit */
-    uint32_t pct = (((pct_q >> rplScaler) & 0x0FFF) << 12)
-                 | ( (pct_i >> rplScaler) & 0x0FFF);
+    const uint32_t MAGN_FRAC_BITS = 6;
+    const uint32_t MAGN_K_SCALE_BITS = 7;           // k = magnCoeff / 127
+    uint32_t iqDownscaleBits = rplScaler;
+
+    int16_t pct_i = pPct->i;
+    int16_t pct_q = pPct->q;
+
+    if ((pTable->enPhaseComp || pTable->enMagnComp) && (pTable->firstChannelIdx <= channelIdx))
+    {
+        /* Compensate PCT to remove antenna/front-end delay and gain imbalance */
+        uint8_t baseOffset = (channelIdx - pTable->firstChannelIdx);
+        uint8_t leftIdx = baseOffset / pTable->chSpacing;
+        uint8_t leftOffset = baseOffset - (leftIdx * pTable->chSpacing);
+        uint8_t rightIdx = leftIdx + ((leftOffset > 0) ? 1 : 0);
+
+        if (rightIdx < pTable->numEntries)
+        {
+            if (pTable->enPhaseComp)
+            {
+                /* Linear interpolate phaseDelay from LUT */
+
+                /* Convert phaseDelay lsbit unit from [32 ps] to [1/2^INTPOL_FRAC_BITS ps] */
+                uint32_t phaseDelay0 = pTable->entries[leftIdx].phaseDelay << (5+DELAY_FRAC_BITS);
+                uint32_t phaseDelay1 = pTable->entries[rightIdx].phaseDelay << (5+DELAY_FRAC_BITS);
+                uint32_t phaseDelay = phaseDelay0;
+                if (leftOffset > 0)
+                {
+                    phaseDelay += ((phaseDelay1 - phaseDelay0) * leftOffset) / pTable->chSpacing;
+                }
+                /*
+                * For given channel, calc phase angle theta in units of 2*pi/2^16
+                * theta = 2*pi*f*t * 2^16/(2*pi) = f*t*2^16 = f_MHz * t_picosec * 1e-6 * 2^16
+                *       = f_MHz * t_picosec * (2^THETA_SCALE_BITS * 2^16 / 1e6) / 2^THETA_SCALE_BITS
+                *       = f_MHz * t_picosec * SCALE_CONST / 2^THETA_SCALE_BITS
+                *       = f_Mhz * (t_picosec * 2^DELAY_FRAC_BITS) * SCALE_CONST / 2^(THETA_SCALE_BITS + DELAY_FRAC_BITS)
+                */
+                const uint32_t SCALE_CONST = (uint32_t) ((1ULL << THETA_SCALE_BITS) * (1ULL << 16) / 1e6);
+                const uint32_t THETA_ROUND = (1UL << (THETA_SCALE_BITS + DELAY_FRAC_BITS)) / 2;
+                uint64_t theta_product = (uint64_t)channelIdx * phaseDelay * SCALE_CONST;
+                int16_t theta = (int16_t) ((theta_product + THETA_ROUND) >> (THETA_SCALE_BITS + DELAY_FRAC_BITS));
+
+                /* Adjust the phase to the signal on the antenna (group delay and layout) */
+                RCL_Handler_BLE_CS_rotateVector(&pct_i, &pct_q, theta);
+            }
+            if (pTable->enMagnComp)
+            {
+                /* Linear interpolate magnCoeff from LUT */
+                uint32_t magnCoeff0 = pTable->entries[leftIdx].magnCoeff << MAGN_FRAC_BITS;
+                uint32_t magnCoeff1 = pTable->entries[rightIdx].magnCoeff << MAGN_FRAC_BITS;
+                uint32_t magnCoeff = magnCoeff0;
+                if (leftOffset > 0)
+                {
+                    magnCoeff += ((magnCoeff1 - magnCoeff0) * leftOffset) / pTable->chSpacing;
+                }
+                /* Scale I/Q magnitudes with k = magnCoeff/128 , and adjust for RPL scaling*/
+                iqDownscaleBits += (MAGN_FRAC_BITS + MAGN_K_SCALE_BITS);
+                pct_i = (int16_t)(((int32_t)pct_i * magnCoeff) >> iqDownscaleBits);
+                pct_q = (int16_t)(((int32_t)pct_q * magnCoeff) >> iqDownscaleBits);
+                iqDownscaleBits = 0;    /* No further downscaling needed (rplScaler already handled) */
+
+                /*
+                 * Magnitude compensation can scale with k_max = 255/128 = ca 2.
+                 * Will need saturation check to avoid overflow of signed 12-bit I and Q
+                 * */
+                const int16_t IQ_MAX_VAL = 2047;
+                const int16_t IQ_MIN_VAL = -2048;
+                if (pct_i > IQ_MAX_VAL)
+                {
+                    pct_i = IQ_MAX_VAL;
+                }
+                else if (pct_i < IQ_MIN_VAL)
+                {
+                    pct_i = IQ_MIN_VAL;
+                }
+
+                if (pct_q > IQ_MAX_VAL)
+                {
+                    pct_q = IQ_MAX_VAL;
+                }
+                else if (pct_q < IQ_MIN_VAL)
+                {
+                    pct_q = IQ_MIN_VAL;
+                }
+            }
+        }
+    }
+
+    /* Scale by rplScaler (unless already handled in magnitude compensation), compress PCTs to 24bit */
+    uint32_t pct = (((pct_q >> iqDownscaleBits) & 0x0FFF) << 12)
+                 | ( (pct_i >> iqDownscaleBits) & 0x0FFF);
 
     return (pct);
 }
@@ -1799,24 +1891,23 @@ static uint8_t RCL_Handler_BLE_CS_calcQ3(uint16_t qMin, uint16_t qMax, uint16_t 
  */
 static uint8_t RCL_Handler_BLE_CS_convertPctQuality(uint16_t qMin, uint16_t qMax, uint16_t qAvg, bool toneExtensionSlot, bool toneExpected, bool toneQualityOverride)
 {
-    /* Calculate Q3 scale. Avoid zero division. */
-    uint16_t Q3 = (qAvg)
-                ? (100 * (qMax - qMin)/qAvg)
-                : (100);
+    /* Calculate Q3 linear scale. */
+    uint8_t Q3 = RCL_Handler_BLE_CS_calcQ3(qMin, qMax, qAvg);
 
-    /* Classify based on threshold. */
+    /* Classify based on threshold. The lower the better. */
     uint8_t tnQ = (Q3 < BLE_CS_TONE_QUALITY_HIGH_THR)
                 ? (RCL_CmdBleCs_ToneQuality_High)
                 : (RCL_CmdBleCs_ToneQuality_Low);
 
-    /* Override to unavailable for initiator mode-3 w/o tone extension */
+    /* Override the value to unavailable for initiator mode-3 w/o second tone extension */
     if (toneQualityOverride)
     {
         tnQ = RCL_CmdBleCs_ToneQuality_Unavailable;
     }
-    else if (toneExtensionSlot)
-    {
+
     /* Add additional flag for the tone extension slot */
+    if (toneExtensionSlot)
+    {
         uint8_t toneExtensionFlag = (toneExpected)
                                   ? (RCL_CmdBleCs_ToneExtensionSlot_Enabled_ToneExpected)
                                   : (RCL_CmdBleCs_ToneExtensionSlot_Enabled_NoToneExpected);
@@ -1943,10 +2034,7 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
         for (uint8_t j = 0; j < numTone; j++)
         {
             /* Compress PCT to 24bits */
-            int16_t i = src->pct[j].i;
-            int16_t q = src->pct[j].q;
-
-            uint32_t pct = RCL_Handler_BLE_CS_convertPct(i, q, channel, rplScaler);
+            uint32_t pct = RCL_Handler_BLE_CS_convertPct(&src->pct[j], channel, rplScaler);
             *dst++       = (uint8_t)((pct) & 0xFF);
             *dst++       = (uint8_t)((pct >> 8) & 0xFF);
             *dst++       = (uint8_t)((pct >> 16) & 0xFF);
@@ -1997,10 +2085,7 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
         for (uint8_t j = 0; j < numTone; j++)
         {
             /* Compress PCT to 24bits */
-            int16_t i = src->pct[j].i;
-            int16_t q = src->pct[j].q;
-
-            uint32_t pct = RCL_Handler_BLE_CS_convertPct(i, q, channel, rplScaler);
+            uint32_t pct = RCL_Handler_BLE_CS_convertPct(&src->pct[j], channel, rplScaler);
             *dst++       = (uint8_t)((pct) & 0xFF);
             *dst++       = (uint8_t)((pct >> 8) & 0xFF);
             *dst++       = (uint8_t)((pct >> 16) & 0xFF);
@@ -2419,3 +2504,4 @@ void RCL_Handler_BLE_CS_PrecalDefaultCallback(RCL_CmdBleCs_PrecalTable *table, u
         }
     }
 }
+

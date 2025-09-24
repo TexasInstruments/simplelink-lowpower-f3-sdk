@@ -126,11 +126,9 @@ extern uint8_t zb_mac_default_tx_power;
 
 #define ZB_MAC_SYNC_RSSI
 
-#if !defined ZB_BOOTLOADER && defined DEBUG
 #define ZB_USE_BUTTONS
 #define ZB_N_LEDS 2U
 #define ZB_N_BUTTONS 2U
-#endif /* !ZB_BOOTLOADER && DEBUG */
 
 #define ZB_MAC_PENDING_BIT_SOURCE_MATCHING
 #define ZB_MAC_HARDWARE_PB_MATCHING

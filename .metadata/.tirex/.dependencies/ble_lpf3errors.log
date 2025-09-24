@@ -2062,156 +2062,6 @@ In project: examples/rtos/LP_EM_CC2340R5/ble/host_test/freertos/ticlang/host_tes
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/boards/LP_EM_CC2340R5/Board.html
 In project: examples/rtos/LP_EM_CC2340R5/ble/host_test/freertos/ticlang/host_test_LP_EM_CC2340R5_freertos_ticlang.projectspec
 
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/bleapputil_api.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/bleapputil_timers.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_task.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_init.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_process.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_stack_callbacks.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_timers.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/rom_init.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_padv.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_pscan.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_cs.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_cs_test.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_initiator.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_connectable.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_scanner.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_cm.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_power_control.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_rssi_monitor.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_connection_handover.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_legacy_cmd.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_health_check.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_adv_conn.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_adv_nconn.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_ae.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_adaptivity.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/ctrl_opt_ble_health.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/lib_opt/src/host_opt_gap_bond_mgr.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/crc.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvocmp.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/common/nv/nvintf.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_addrs.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/src/icall_cc23x0.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_platform.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/src/icall_user_config.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_user_config.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/config/src/ble_user_config.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/config/ble_user_config.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/config/src/hci_supported_cmd.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/controller/hci/hci_supported_cmd.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_ble_apimsg.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/util.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/health_toolkit/debugInfo.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/health_toolkit/debugInfo_errno.h
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/health_toolkit/src/debugInfo.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/src/icall_POSIX.c
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/boards/LP_EM_CC2340R5/Board.html
-In project: examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec
-
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/dev_info/dev_info_service.h
 In project: examples/rtos/LP_EM_CC2340R53/ble/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2340R53_freertos_ticlang.projectspec
 
@@ -3982,7 +3832,25 @@ In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_extctrl_host_npi.c
 In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
 
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging.h
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_types.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_profile.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_profile.c
+In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_db_server.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_db_server.c
+In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_server.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/src/ranging_server.c
 In project: examples/rtos/LP_EM_CC2340R53/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c
@@ -4619,6 +4487,24 @@ File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/c
 In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_ble_apimsg.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_profile.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_profile.c
+In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_db_server.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_db_server.c
+In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_server.h
+In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/src/ranging_server.c
 In project: examples/rtos/LP_EM_CC2340R53/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R53_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c
@@ -6046,7 +5932,25 @@ In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_n
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_extctrl_host_npi.c
 In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
 
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging.h
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_types.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_profile.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_profile.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_db_server.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_db_server.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_server.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/src/ranging_server.c
 In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c
@@ -6683,6 +6587,24 @@ File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/c
 In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_ble_apimsg.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_profile.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_profile.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_db_server.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_db_server.c
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_server.h
+In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/src/ranging_server.c
 In project: examples/rtos/LP_EM_CC2745R10_Q1/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2745R10_Q1_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c
@@ -8110,7 +8032,25 @@ In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/framework/src/bleapputil_extctrl_host_npi.c
 In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
 
-File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging.h
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_types.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_profile.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_profile.c
+In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_db_server.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_db_server.c
+In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_server.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/src/ranging_server.c
 In project: examples/rtos/LP_EM_CC2755P10/ble/car_node/freertos/ticlang/car_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c
@@ -8747,6 +8687,24 @@ File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/c
 In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/stack_util/icall/app/icall_ble_apimsg.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_profile.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_profile.c
+In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/ranging_db_server.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/profiles/ranging/src/ranging_db_server.c
+In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/ranging_server.h
+In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/services/ranging/src/ranging_server.c
 In project: examples/rtos/LP_EM_CC2755P10/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2755P10_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/ble/app_util/common/src/util.c

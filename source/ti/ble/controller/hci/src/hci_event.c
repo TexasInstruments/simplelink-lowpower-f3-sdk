@@ -86,14 +86,13 @@
 #include "ti/ble/controller/ll/ll_cs_common.h"
 #include "ti/ble/controller/ll/ll_cs_procedure.h"
 #include "ti/ble/host/cs/cs.h"
+#include <ti/log/Log.h>
 
 extern uint8 hciPTMenabled;
 
 /*
 ** Prototypes
 */
-void hciCsSubeventResultProcess(RCL_CmdBleCs_SubeventResults *subeventRes, uint16 dataLength);
-void hciCsSubeventResultContProcess(RCL_CmdBleCs_SubeventResultsContinue *subeventRes, uint16 dataLength);
 
 /*
 ** HCI Events
@@ -357,7 +356,7 @@ void HCI_HardwareErrorEvent( uint8 hwErrorCode )
  */
 void HCI_CS_ReadRemoteSupportedCapabilitiesCback(uint8 status,
                                                  uint16 connHandle,
-                                                 llCsCapabilities_t* peerCapabilities)
+                                                 const llCsCapabilities_t* peerCapabilities)
 {
   uint16_t dataLen = sizeof(CS_readRemoteCapabEvt_t);
 
@@ -564,6 +563,8 @@ void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
   CS_procEnableCompleteEvt_t *pMsg = (CS_procEnableCompleteEvt_t *)
                                       MAP_osal_mem_alloc(dataLen);
 
+  Log_printf(BLE_CS, Log_VERBOSE, "Send HCI Procedure Enable Event, status = 0x%x, connHandle = %d, enable = %d", status, connHandle, enable);
+
   if (pMsg != NULL)
   {
     // Fill message
@@ -573,7 +574,7 @@ void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
     pMsg->enable               = enable;
     pMsg->configId             = enableData->configId;
     pMsg->ACI                  = enableData->ACI;
-    pMsg->pwrDelta             = enableData->pwrDelta;
+    pMsg->selectedTxPower      = llCsGetSelectedTxPower(connHandle); // Get the selected Tx Power for this connection
     pMsg->subEventLen          = enableData->subEventLen;
     pMsg->subEventsPerEvent    = enableData->subEventsPerEvent;
     pMsg->eventInterval        = enableData->eventInterval;
@@ -589,7 +590,7 @@ void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
 }
 
 /*******************************************************************************
- * @fn    hciCsSubeventResultProcess
+ * @fn    HCI_CS_SubeventResultsProcess
  *
  * @brief Processes the HCI CS Subevent Result event.
  *
@@ -602,11 +603,11 @@ void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
  *
  * @return None
  */
-void hciCsSubeventResultProcess(RCL_CmdBleCs_SubeventResults *subeventRes, uint16 dataLength)
+void HCI_CS_SubeventResultsProcess(const RCL_CmdBleCs_SubeventResults *subeventRes, uint16_t dataLength)
 {
-  if( subeventRes != NULL && dataLength >= HCI_CS_SUBEVENT_RESULTS_HDR_LEN )
+  if( (subeventRes != NULL) && (dataLength >= sizeof(RCL_CmdBleCs_SubeventResults)) )
   {
-    uint16_t resultsLen = dataLength - HCI_CS_SUBEVENT_RESULTS_HDR_LEN;
+    uint16_t resultsLen = dataLength - sizeof(RCL_CmdBleCs_SubeventResults);
     uint16_t msgLen = sizeof(CS_subeventResultsEvt_t) + resultsLen;
 
     CS_subeventResultsEvt_t *pMsg =
@@ -628,7 +629,7 @@ void hciCsSubeventResultProcess(RCL_CmdBleCs_SubeventResults *subeventRes, uint1
       pMsg->numAntennaPath          = subeventRes->numAntennaPath;
       pMsg->numStepsReported        = subeventRes->numStepsReported;
 
-      osal_memcpy(pMsg->data, subeventRes->data, resultsLen);
+      memcpy(pMsg->data, subeventRes->data, resultsLen);
 
       /* We are directly addressing the CS host module via HCI. This is done
       because the CS controller module directly calls HCI callbacks, otherwise,
@@ -639,7 +640,7 @@ void hciCsSubeventResultProcess(RCL_CmdBleCs_SubeventResults *subeventRes, uint1
 }
 
 /*******************************************************************************
- * @fn    hciCsSubeventResultContProcess
+ * @fn    HCI_CS_SubeventContResultsProcess
  *
  * @brief Processes the HCI CS Subevent Result Continue event.
  *
@@ -652,11 +653,11 @@ void hciCsSubeventResultProcess(RCL_CmdBleCs_SubeventResults *subeventRes, uint1
  *
  * @return None
  */
-void hciCsSubeventResultContProcess(RCL_CmdBleCs_SubeventResultsContinue *subeventRes, uint16 dataLength)
+void HCI_CS_SubeventContResultsProcess(const RCL_CmdBleCs_SubeventResultsContinue *subeventRes, uint16_t dataLength)
 {
-  if( subeventRes != NULL && dataLength >= HCI_CS_CONT_SUBEVENT_RESULTS_HDR_LEN )
+  if( (subeventRes != NULL) && (dataLength >= sizeof(RCL_CmdBleCs_SubeventResultsContinue)) )
   {
-    uint16_t resultsLen = dataLength - HCI_CS_CONT_SUBEVENT_RESULTS_HDR_LEN;
+    uint16_t resultsLen = dataLength - sizeof(RCL_CmdBleCs_SubeventResultsContinue);
     uint16_t msgLen = sizeof(CS_subeventResultsContinueEvt_t) + resultsLen;
 
     CS_subeventResultsContinueEvt_t *pMsg =
@@ -674,50 +675,12 @@ void hciCsSubeventResultContProcess(RCL_CmdBleCs_SubeventResultsContinue *subeve
       pMsg->numAntennaPath      = subeventRes->numAntennaPath;
       pMsg->numStepsReported    = subeventRes->numStepsReported;
 
-      osal_memcpy((uint8_t *)pMsg->data, subeventRes->data, resultsLen);
+      memcpy((uint8_t *)pMsg->data, subeventRes->data, resultsLen);
 
       /* We are directly addressing the CS host module via HCI. This is done
       because the CS controller module directly calls HCI callbacks, otherwise,
       it would make sense to register the callbacks from host to controller directly */
       CS_ProcessEvent((csEvtHdr_t *) pMsg);
-    }
-  }
-}
-
-/*******************************************************************************
- * @fn          HCI_CS_SubeventResultCback
- *
- * @brief       Subevent results callback
- *
- * input parameters
- *
- * @param       pRes - pointer to results data
- * @param       dataLength - length of data
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void HCI_CS_SubeventResultCback(void* pRes, uint16 dataLength)
-{
-  if (pRes != NULL)
-  {
-    // Extract opcode that indicates if its a continue event or not
-    uint8_t opcode = ((csEvtHdr_t *) pRes)->opcode;
-
-    if (opcode == CS_SUBEVENT_RESULT_OPCODE)
-    {
-      hciCsSubeventResultProcess((RCL_CmdBleCs_SubeventResults *) pRes, dataLength);
-    }
-    else if (opcode == CS_CONTINUE_SUBEVENT_RESULT_OPCODE)
-    {
-      hciCsSubeventResultContProcess((RCL_CmdBleCs_SubeventResultsContinue *) pRes, dataLength);
-    }
-    else
-    {
-        // Handle invalid opcode
     }
   }
 }

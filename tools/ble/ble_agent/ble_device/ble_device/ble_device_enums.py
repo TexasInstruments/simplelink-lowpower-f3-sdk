@@ -63,6 +63,7 @@ class PairingCommands(enum.IntEnum):
     PAIRING_CMD_SET_OOB_ENABLE = 0x03
     PAIRING_CMD_SET_REMOTE_OOB_DATA = 0x04
     PAIRING_CMD_GET_LOCAL_OOB_DATA = 0x05
+    PAIRING_CMD_GENERATE_ECC_KEYS = 0x06
 
 
 class GATTCommands(enum.IntEnum):
@@ -93,6 +94,13 @@ class RREQCommands(enum.IntEnum):
     RREQ_CMD_ENABLE = 0x01
     RREQ_CMD_DISABLE = 0x02
     RREQ_CMD_GET_RANGING_DATA = 0x03
+    RREQ_CMD_ABORT = 0x04
+
+
+class RRSPCommands(enum.IntEnum):
+    RRSP_CMD_SEND_CS_ENABLE_EVENT = 0x01
+    RRSP_CMD_SEND_CS_EVENT = 0x02
+    RRSP_CMD_SEND_CS_EVENT_CONT = 0x03
 
 
 class AppSpecifier(enum.IntEnum):
@@ -108,6 +116,7 @@ class AppSpecifier(enum.IntEnum):
     APP_SPECIFIER_GATT = 0x09
     APP_SPECIFIER_CA_SERVER = 0x0A
     APP_SPECIFIER_RREQ = 0x0B
+    APP_SPECIFIER_RRSP = 0x0C
 
 
 class RtlsCapabilities(enum.IntEnum):
@@ -131,7 +140,8 @@ class RtlsCapabilities(enum.IntEnum):
     RTLS_CAP_CS = 0x00010000
     RTLS_CAP_GATT = 0x00020000
     RTLS_CAP_CA_SERVER = 0x00040000
-    RTLS_CAP_RREQ = 0x00040000
+    RTLS_CAP_RREQ = 0x00080000
+    RTLS_CAP_RRSP = 0x00100000
 
 
 class CommonEventType(enum.IntEnum):
@@ -207,6 +217,10 @@ class RREQEventType(enum.IntEnum):
     NWP_RREQ_STATUS = 0x00A1
 
 
+class RRSPEventType(enum.IntEnum):
+    NWP_RRSP_STATUS = 0x00A2
+
+
 class CmConnUpdateType(enum.IntEnum):
     CM_PHY_UPDATE_EVT = 0x00
     CM_CHAN_MAP_UPDATE_EVT = 0x01
@@ -223,6 +237,18 @@ class CsEventType(enum.IntEnum):
     NWP_CS_SUBEVENT_RESULTS_CONTINUE = 0x0046
     NWP_CS_APP_DISTANCE_RESULTS = 0x0060
     NWP_CS_APP_DISTANCE_EXTENDED_RESULTS = 0x0061
+
+
+class CsProcedureDoneStatusType(enum.IntEnum):
+    NWP_CS_PROCEDURE_DONE = 0x00
+    NWP_CS_PROCEDURE_ACTIVE = 0x01
+    NWP_CS_PROCEDURE_ABORTED = 0x0F
+
+
+class CsSubeventDoneStatusType(enum.IntEnum):
+    NWP_CS_SUBEVENT_DONE = 0x00
+    NWP_CS_SUBEVENT_ACTIVE = 0x01
+    NWP_CS_SUBEVENT_ABORTED = 0x0F
 
 
 class CmStopReasonType(enum.IntEnum):

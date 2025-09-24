@@ -7,7 +7,7 @@ with open(path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="ti-simplelink-rtls",
-    version="2.0.3",
+    version="2.0.4",
     description="Wrapper for the uNPI RTLS subsystem",
     long_description=long_description,
     long_description_content_type="text/markdown",

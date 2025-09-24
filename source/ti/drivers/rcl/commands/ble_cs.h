@@ -54,6 +54,9 @@ typedef struct RCL_CMD_BLE_CS_PRECAL_t                    RCL_CmdBleCs_Precal;
 typedef struct RCL_CMD_BLE_CS_PRECAL_TABLE_t              RCL_CmdBleCs_PrecalTable;
 typedef struct RCL_CMD_BLE_CS_PRECAL_ENTRY_t              RCL_CmdBleCs_PrecalEntry;
 
+typedef struct RCL_CMD_BLE_CS_PCT_COMP_TABLE_t            RCL_CmdBleCs_PctCompTable;
+typedef struct RCL_CMD_BLE_CS_PCT_COMP_ENTRY_t            RCL_CmdBleCs_PctCompEntry;
+
 typedef struct RCL_CMD_BLE_CS_STEP_RESULTS_TONE_t         RCL_CmdBleCs_Tone;
 typedef struct RCL_CMD_BLE_CS_STEP_RESULTS_t              RCL_CmdBleCs_Result;
 typedef struct RCL_CMD_BLE_CS_STEP_RESULTS_I0_t           RCL_CmdBleCs_ResultI0;
@@ -90,6 +93,7 @@ typedef enum   RCL_CMD_BLE_CS_Nadm_e                      RCL_CmdBleCs_Nadm;
 #define RCL_BLE_CS_MCE_TIMER_TO_US(x)           ((x)/48)
 #define RCL_BLE_CS_PBE_TIMER_TO_US(x)           ((x)/12)
 #define RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(x)    ((x)/4)
+#define RCL_BLE_CS_DELAY_PS_TO_LUT(x)           (((x)+16)/32)
 
 /* Helper macros for constants */
 #define RCL_BLE_CS_MAX_NUM_ANT                  4
@@ -574,6 +578,69 @@ struct RCL_CMD_BLE_CS_PRECAL_t {
     .table  = pTable                                           \
 }
 #define RCL_CmdBleCs_Precal_DefaultRuntime(pTable) (RCL_CmdBleCs_Precal) RCL_CmdBleCs_Precal_Default(pTable)
+
+/*****************************************************
+    PCT compensation for antenna/front-end delay
+*****************************************************/
+
+/**
+ *  @brief Channel entry for PCT compensation for antenna/front-end delay
+ *
+ *  Data structure for PCT compensation for antenna delay (phase) and magnitude.
+ */
+struct RCL_CMD_BLE_CS_PCT_COMP_ENTRY_t {
+    uint8_t phaseDelay;                 /*!< Phase delay to subtract, in multiple of 32 picoseconds (i.e. max compensation is 255*32=8.16ns)*/
+    uint8_t magnCoeff;                  /*!< Linear magnitude compensation coefficient of I/Q of PCT, k = magnCoeff/128 */
+};
+
+/**
+ *  @brief PCT compensation table for antenna/front-end delay
+ *
+ *  Data describing the magnitude/phase compensation to adjust PCT due to antenna/fronte-end.
+ */
+struct RCL_CMD_BLE_CS_PCT_COMP_TABLE_t {
+    uint8_t firstChannelIdx;            /*!< Integer channel index (0: 2402MHz) for first entry */
+    uint8_t chSpacing          : 7;     /*!< Channel spacing between entries in the table, assuming uniform spacing */
+    uint8_t enPhaseComp        : 1;     /*!< Enable phase compensation */
+    uint8_t enMagnComp         : 1;     /*!< Enable magnitude compensation */
+    uint8_t numEntries         : 7;     /*!< Number of channel entries per antenna */
+    RCL_CmdBleCs_PctCompEntry entries[];
+};
+
+
+/* Adjust RCL_BLE_CS_PHASE_DELAY_PS for linear PCT phase compensation due to antenna/front-end design,
+ * or adjust RCL_CmdBleCs_PctCompTable bleCsPctCompTable, using a calibrated instrument */
+#ifndef RCL_BLE_CS_PHASE_DELAY_PS
+#ifdef DeviceFamily_CC27XX
+    /* Example: LP-EM-CC2745R10-Q1 Launchpad development kit, SMA port */
+    #define RCL_BLE_CS_PHASE_DELAY_PS  (1100UL)
+#else
+    /* Example: LP-EM-CC2340R5 Launchpad development kit, SMA port */
+    #define RCL_BLE_CS_PHASE_DELAY_PS  (1500UL)
+#endif
+#endif
+
+/* Default PCT compensation table: Only phase comp. Channels: 2402, 2402+n*8, ..., 2402+(11-1)*8 = 2482MHz */
+#define RCL_CmdBleCs_PctCompTable_Default()                                                     \
+{                                                                                               \
+    .firstChannelIdx = 0,                                                                       \
+    .chSpacing       = 8,                                                                       \
+    .enPhaseComp     = 1,                                                                       \
+    .enMagnComp      = 0,                                                                       \
+    .numEntries      = 11,                                                                      \
+    .entries         = {{.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)},  \
+                        {.phaseDelay = RCL_BLE_CS_DELAY_PS_TO_LUT(RCL_BLE_CS_PHASE_DELAY_PS)}}, \
+}
+
 
 /*****************************************************
     HCI interface

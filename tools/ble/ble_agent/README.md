@@ -1,4 +1,4 @@
-# BLE Agent
+# BLE Agent 0.1.28.ga
 
 BLE Agent folder contains custom python package (rtls, unpi and ble_device) and example to present capability of BLE 
 Device.

@@ -65,6 +65,16 @@ const config = [
         name: "extAdv",
         default: false,
         hidden: true
+    },
+    {
+        name: "channelSounding",
+        default: false,
+        hidden: true
+    },
+    {
+        name: "rangingServer",
+        default: false,
+        hidden: true
     }
 ];
 /*
@@ -80,6 +90,7 @@ function moduleInstances(inst)
     let advParams_args;
     let advData_args;
     let scanResData_args;
+
     if(inst.numOfAdvSet == 1 && inst.basicBLE)
     {
         advParams_args = {
@@ -137,6 +148,10 @@ function moduleInstances(inst)
             hideAdvFlags: true
         }
     }
+
+    // Set the channel sounding and ranging server values
+    advData_args.channelSounding = inst.channelSounding;
+    advData_args.rangingServer = inst.rangingServer;
 
     dependencyModule.push({
         name: "advParam" + inst.numOfAdvSet,

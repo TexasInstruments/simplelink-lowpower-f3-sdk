@@ -1013,6 +1013,9 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_RCL_DUPLICATE_FL_ADD              2U
 #define LL_RCL_DUPLICATE_FL_IGNORE           3U
 
+#define LL_CONN_MISS_COUNT_MARGIN            1U
+#define LL_CS_CONN_MISS_COUNT_MARGIN         5U
+
 // Optional status for update RCL filter list
 typedef enum {
     LL_RCL_UPDATE_ENTRY_SUCCESS   = 0, // Filter list Entry update was successful
@@ -1841,6 +1844,7 @@ uint8                llConnExists( uint8 *, uint8 );
 uint32               llGenerateCRC( void );
 uint8                llEventInRange( uint16 , uint16 , uint16  );
 uint16               llEventDelta( uint16 , uint16  );
+bool                 llEventCmp(uint16_t , uint16_t );
 void                 llConvertLstoToEvent( llConnState_t *, connParam_t * );
 uint8                llAdjustForMissedEvent( llConnState_t *, uint32  );
 void                 llAlignToNextEvent( llConnState_t *connPtr );
@@ -2029,6 +2033,12 @@ void llConnEndTxBurst(llConnState_t *connPtr);
 uint8_t LL_GetLtk(uint16_t connHandle, uint8_t *pLtk);
 
 void llConnSetRejectIndExt(llConnState_t *connPtr, uint8 rejectOpcode, uint8 errorCode);
+
+// Set Connection priority
+void llConnSetConnPriority(uint16 connId, uint8 connPriority);
+
+// Set Connection Event Miss Count Margin
+uint16 llConnGetMissCountMargin();
 
 #ifdef __cplusplus
 }

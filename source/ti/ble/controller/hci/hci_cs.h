@@ -259,7 +259,7 @@ uint8_t HCI_LE_CS_TestEnd(void);
  */
 extern void
 HCI_CS_ReadRemoteSupportedCapabilitiesCback(uint8 status, uint16 connHandle,
-                                            llCsCapabilities_t* peerCapabilities);
+                                            const llCsCapabilities_t* peerCapabilities);
 
 /*******************************************************************************
  * @fn          HCI_CS_ConfigCompleteCback
@@ -345,7 +345,7 @@ HCI_CS_ProcedureEnableCompleteCback(uint8 status, uint16 connHandle,
                                     csProcedureEnable_t* enableData);
 
 /*******************************************************************************
- * @fn          HCI_CS_SubeventResultCback
+ * @fn          HCI_CS_SubeventResultsProcess
  *
  * @brief       Subevent results callback
  *
@@ -360,28 +360,25 @@ HCI_CS_ProcedureEnableCompleteCback(uint8 status, uint16 connHandle,
  *
  * @return      None
  */
-extern void HCI_CS_SubeventResultCback(void* pRes, uint16 dataLength);
+void HCI_CS_SubeventResultsProcess(const RCL_CmdBleCs_SubeventResults *subeventRes, uint16_t dataLength);
 
 /*******************************************************************************
- * @fn          HCI_CS_SubeventResultContinueCback
+ * @fn          HCI_CS_SubeventContResultsProcess
  *
- * @brief       Subevent result continue callback
- *
- * @design      BLE_LOKI-506
+ * @brief       Subevent cont results callback
  *
  * input parameters
  *
- * @param       hdr - pointer to results header
- * @param       data - pointer to results data
+ * @param       pRes - pointer to cont results data
  * @param       dataLength - length of data
  *
  * output parameters
  *
  * @param       None.
  *
- * @return      None.
+ * @return      None
  */
-void HCI_CS_SubeventResultContinueCback(void* hdr, const void* data, uint16 dataLength);
+void HCI_CS_SubeventContResultsProcess(const RCL_CmdBleCs_SubeventResultsContinue *subeventRes, uint16_t dataLength);
 
 /*******************************************************************************
  * @fn          HCI_CS_TestEndCompleteCback

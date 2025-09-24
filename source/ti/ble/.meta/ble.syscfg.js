@@ -679,6 +679,9 @@ function onChannelSoundingChange(inst, ui) {
     inst.channelSounding ? inst.hideChannelSoundingGroup = false : inst.hideChannelSoundingGroup = true;
     Common.hideGroup(Common.getGroupByName(inst.$module.config, "channelSoundingConfig"), inst.hideChannelSoundingGroup, ui);
 
+    // The ranging server external control mode should be hidden
+    ui.rangingServerExtCtrlMode.hidden = true;
+
     // The ranging client external control mode should be hidden
     ui.rangingClientExtCtrlMode.hidden = true;
 
@@ -806,11 +809,15 @@ function getLibs(inst)
 
     // Add the Channel Sounding related libs
     let csLibs = csScript.getLibs(inst)
-    if(csLibs.length > 0)
+    if(csLibs.length == 1)
     {
         libs.push(csLibs);
     }
-
+    if(csLibs.length == 2)
+    {
+        libs.push(csLibs[0]);
+        libs.push(csLibs[1]);
+    }
     // Create a GenLibs input argument
     const linkOpts = {
         name: "/ti/ble",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,6 +69,9 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
             /* Check if the image is 128-bit aligned, and if not, read out 32-bit word(s) */
             while ((((uintptr_t) topsmSourcePointer) & 0x0F) != 0)
             {
+#ifdef DeviceFamily_CC27XX
+                ASM_4_NOPS();
+#endif //DeviceFamily_CC27XX
                 *ram++ = *topsmSourcePointer++;
                 i++;
             }
@@ -90,6 +93,35 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
                 topsmSourcePointer += 4;
                 ram += 4;
 #else
+#ifdef DeviceFamily_CC27XX
+                __asm volatile(
+                    "LDMIA %0!, {r4, r5, r6, r7} \n"
+                    /* Split the the quad write into four individual writes with dummy operations between each write. Ref. RCL-1063 */
+                    "STMIA %1!, {r4} \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "STMIA %1!, {r5} \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "STMIA %1!, {r6} \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "STMIA %1!, {r7} \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    "MOV r8, r8 \n"
+                    : "+r" (topsmSourcePointer),
+                      "+r" (ram) :
+                    : "r4", "r5", "r6", "r7"
+                );
+#else
                 __asm(
                     "LDMIA %0!, {r4, r5, r6, r7} \n"
                     "STMIA %1!, {r4, r5, r6, r7} \n"
@@ -97,6 +129,7 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
                       "+r" (ram) :
                     : "r4", "r5", "r6", "r7"
                 );
+#endif
 #endif
                 i += 4;
             }

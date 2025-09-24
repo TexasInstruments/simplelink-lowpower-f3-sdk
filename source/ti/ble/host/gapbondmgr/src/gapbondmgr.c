@@ -2860,25 +2860,6 @@ uint8_t GapBondMgr_writeBondToNv(gapBondRec_t *pBondRec,
   {
     // Find an empty slot
     bondIdx = gapBondMgrFindEmpty();
-
-    // If an empty slot was found
-    if (bondIdx < gapBond_maxBonds)
-    {
-      snvErrorCode = gapBondMgrSaveBond(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK,
-                                        signCount, TRUE);
-
-      // If available, save the connected device's GATT configurations
-      if (charCfg)
-      {
-        snvErrorCode |=  osal_snv_write(GATT_CFG_NV_ID(bondIdx),
-                            sizeof(gapBondCharCfg_t) * gapBond_maxCharCfg,
-                            charCfg);
-      }
-    }
-    else
-    {
-      return (bleNoResources);
-    }
   }
   else if(pIRK != NULL)
   {
@@ -2900,12 +2881,32 @@ uint8_t GapBondMgr_writeBondToNv(gapBondRec_t *pBondRec,
     }
   }
 
+  // If an empty slot was found
+  if (bondIdx < gapBond_maxBonds)
+  {
+    snvErrorCode = gapBondMgrSaveBond(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK,
+                                      signCount, TRUE);
+
+    // If available, save the connected device's GATT configurations
+    if (charCfg)
+    {
+      snvErrorCode |=  osal_snv_write(GATT_CFG_NV_ID(bondIdx),
+                          sizeof(gapBondCharCfg_t) * gapBond_maxCharCfg,
+                          charCfg);
+    }
+  }
+  else
+  {
+    return (bleNoResources);
+  }
+
   // Check for there was an error when writing to the NV area
   if (snvErrorCode != SUCCESS)
   {
     gapBondMgrEraseBonding(bondIdx);
     gapBondMgrReadBonds();
   }
+
   return (snvErrorCode);
 }
 

@@ -58,6 +58,8 @@ static void APULPF3_loadFW();
 static bool APULPF3_inAPU(void *ptr);
 static void APULPF3_copyBack();
 static void APULPF3_hwiIntFxn(uintptr_t arg);
+static void APULPF3_initHw(void);
+static int APULPF3_postNotifyFxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg);
 
 /*
  *  APU object structure
@@ -79,6 +81,8 @@ typedef struct
     uint16_t resultSize; /* APU result size */
 
     bool isInitialized; /* Has open() been called */
+
+    Power_NotifyObj postNotify; /* For restoring register state after standby */
 
 } APULPF3_Object;
 
@@ -151,14 +155,60 @@ static void APULPF3_copyBack()
 }
 
 /*
+ *  ======== APULPF3_initHw ========
+ * Initialize the APU hardware registers
+ */
+static void APULPF3_initHw(void)
+{
+    /* Configure APU and wait for the configuration to complete. */
+    APUSetConfig(APU_LSECTL_MEMORY_MIRRORED);
+    APUWaitOnIrq();
+
+    HWREG(APU_BASE + APU_O_IMASK) = APU_IMASK_API;
+}
+
+/*
+ *  ======== APULPF3_postNotifyFxn ========
+ *  Called by Power module when waking up from standby
+ */
+static int APULPF3_postNotifyFxn(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
+{
+    (void)eventArg;
+    (void)clientArg;
+    /* Reconfigure the hardware if returning from sleep */
+    if (eventType == PowerLPF3_AWAKE_STANDBY)
+    {
+        /* Restore the SVT (nonretained) portions of the peripheral
+         * The APU FW is stored in retained memory (ULL) so it doesn't need to
+         * be reloaded after standby.
+         */
+        APULPF3_initHw();
+    }
+
+    return Power_NOTIFYDONE;
+}
+
+/*
  *  ======== APULPF3_init ========
  */
 void APULPF3_init(void)
 {
     HwiP_Params hwiParams;
+    uintptr_t key;
 
-    if (!object.isInitialized)
+    key = HwiP_disable();
+
+    if (object.isInitialized)
     {
+        HwiP_restore(key);
+        return;
+    }
+    else
+    {
+
+        object.isInitialized = true;
+        HwiP_restore(key);
+
         APULPF3_HWAttrs *hwAttrs = (APULPF3_HWAttrs *)apuHwAttrs;
 
         /* Clock the APU Peripheral. */
@@ -167,16 +217,8 @@ void APULPF3_init(void)
         /* Load firmware into TOPSM memory. */
         APULPF3_loadFW();
 
-        /* Configure APU and wait for the configuration to complete. */
-        APUSetConfig(0);
-        APUWaitOnIrq();
-
-        /* Create Hwi object for this APU peripheral. */
-        HwiP_Params_init(&hwiParams);
-        hwiParams.priority = hwAttrs->intPriority;
-        HwiP_construct(&(object.hwi), INT_APU_IRQ, APULPF3_hwiIntFxn, &hwiParams);
-
-        HWREG(APU_BASE + APU_O_IMSET) = APU_IMASK_API;
+        /* Set up APU peripheral */
+        APULPF3_initHw();
 
         /*
          * One semaphore to control when an API call has finished, and one to
@@ -184,6 +226,14 @@ void APULPF3_init(void)
          */
         SemaphoreP_constructBinary(&(apuSem), 0);
         SemaphoreP_constructBinary(&(apuAccessSem), 1);
+
+        /* Need to restore APU registers in SVT-domain after standby */
+        Power_registerNotify(&(object.postNotify), PowerLPF3_AWAKE_STANDBY, APULPF3_postNotifyFxn, (uintptr_t)NULL);
+
+        /* Create Hwi object for this APU peripheral. */
+        HwiP_Params_init(&hwiParams);
+        hwiParams.priority = hwAttrs->intPriority;
+        HwiP_construct(&(object.hwi), INT_APU_IRQ, APULPF3_hwiIntFxn, &hwiParams);
 
         object.isInitialized = true;
     }

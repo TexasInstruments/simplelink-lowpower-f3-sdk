@@ -167,6 +167,8 @@ const bleCentralCCFGSettings = {
   LP_CC2674P10_RGZ_CCFG_SETTINGS: {}
 };
 
+const ranging_service_uuid = 0x185B;
+
 const profiles_list = [
     { displayName: "Simple Gatt",    name: "65520"  },
     { displayName: "CGM",    name: "6175" },
@@ -205,7 +207,8 @@ const CC27XXMigration = [
   {target: "CC2755P105RHA"},
   {target: "CC2755R105RHA"},
   {target: "CC2745R7RHAQ1"},
-  {target: "CC2755R105YCJ"}
+  {target: "CC2755R105YCJ"},
+  {target: "CC2744R7RHAQ1"}
 ]
 
 const supportedMigrations = {
@@ -1089,5 +1092,6 @@ exports = {
     defaultBondValue: defaultBondValue,
     getPeripheralConnIntervalRange: getPeripheralConnIntervalRange,
     isChannelSoundingSupported: isChannelSoundingSupported,
+    ranging_service_uuid: ranging_service_uuid,
     profiles_list: profiles_list
 };

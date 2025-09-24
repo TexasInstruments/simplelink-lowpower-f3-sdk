@@ -51,18 +51,10 @@
  /*********************************************************************
   * MACROS
   */
-#define MAX_NUM_PROCEDURES 1        // Maximum number of procedures supported
-#define MAX_PROCEDURE_SIZE 0x1400   // Maximum size of a procedure in bytes
 
  /*********************************************************************
   * TYPEDEFS
   */
- // Structure to hold the ranging procedure data for each connection handle.
-typedef struct
-{
-    uint8_t   procedureData[MAX_PROCEDURE_SIZE]; // Buffer to hold the procedure data.
-    uint16_t  connHandle;                        // Connection handle.
-} RangingDB_procedureData_t;
 
  /*********************************************************************
   * Profile Callback
@@ -131,7 +123,7 @@ uint8_t RangingDBClient_procedureClose(uint16_t connHandle);
 /*********************************************************************
  * @fn      RangingDBClient_addData
  *
- * @brief   This function Add raw Data to the Ranging DB.
+ * @brief   This function add raw data to the Ranging DB.
  *
  * input parameters
  *

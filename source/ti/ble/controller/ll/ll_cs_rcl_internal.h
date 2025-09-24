@@ -69,6 +69,8 @@
  
  
  *****************************************************************************/
+#ifndef LL_CS_RCL_INTERNAL_H
+#define LL_CS_RCL_INTERNAL_H
 
 /*******************************************************************************
  * INCLUDES
@@ -112,7 +114,8 @@
  * input parameters
  *
  * @param       connId - Connection Id
- * @param       configId - Configuration Id
+ * @param       offset - offet for the procedure
+ * @param       subEventInterval - subEventInterval for the procedure
  * @param       role - CS Role, initiator or reflector
  * @param       subeventCount - CS subevent counter
  * @param       rclCmd - CS RCL command
@@ -123,7 +126,7 @@
  *
  * @return      Status - Success or Failure
  */
-csStatus_e llCsSetupCmdStartTime( uint16 connId, uint8_t configId, uint8 role, uint16 subEventCount, RCL_CmdBleCs rclCmd );
+csStatus_e llCsSetupCmdStartTime( uint16 connId, uint32_t offset, uint16 subEventInterval, uint8 role, uint16 subEventCount);
 
 /*******************************************************************************
  * @fn          llCsSetupNextStepBuffer
@@ -170,7 +173,7 @@ void llCsRclScheduleNextSubevent(void);
  *
  * input parameters
  *
- * @param       None
+ * @param       txPower - Tx Power value to be converted
  *
  * output parameters
  *
@@ -178,7 +181,7 @@ void llCsRclScheduleNextSubevent(void);
  *
  * @return      txPower
  */
-RCL_Command_TxPower llCsRclGetTxPower(int8 maxTxPower);
+RCL_Command_TxPower llCsRclGetTxPower(int8 txPower);
 
 /*******************************************************************************
  * @fn          llCsRClBufferSetup
@@ -244,3 +247,61 @@ void llCsSetupPrecalCmd(RCL_Handle rclHandle);
  */
 uint8_t llCsSetFinalAntennaGpioValues(uint8_t prefAnt, uint8_t antMuxVals,
                                       uint8_t outputGpioVals[CS_ANTENNAS_GPIOS_ARRAY_SIZE]);
+
+/*******************************************************************************
+ * @fn          llCsSendSubEventResults
+ *
+ * @brief       Send the result to the Host
+ *
+ * input parameters
+ *
+ * @param       pResults - Procedure results
+ * @param       dataLength - length of data
+ * @param       procedureDoneStatus - Procedure Done status
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void llCsSendSubEventResults(RCL_CmdBleCs_SubeventResults* pResults, uint16_t dataLength, uint8_t procedureDoneStatus);
+
+/*******************************************************************************
+ * @fn          llCsSendSubEventContResults
+ *
+ * @brief       Send the result continue to the Host
+ *
+ * input parameters
+ *
+ * @param       pResults - Procedure results
+ * @param       dataLength - length of data
+ * @param       procedureDoneStatus - Procedure Done status
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void llCsSendSubEventContResults(RCL_CmdBleCs_SubeventResultsContinue* pResults, uint16_t dataLength,  uint8_t procedureDoneStatus);
+
+/*******************************************************************************
+ * @fn          llCsProcessResultsIsModeZeroValid
+ *
+ * @brief       Verify that the Mode-0 steps are valid for a given subEvent.
+ *
+ * input parameters
+ *
+ * @param       connId - Connection Id
+ * @param       pBuffer - Buffer with subEvent step results
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      true in case at least one of the mode-0 steps is valid. false otherwise.
+ */
+bool llCsProcessResultsIsModeZeroValid(uint16 connId, const RCL_CmdBleCs_SubeventResults *pBuffer);
+
+#endif //LL_CS_RCL_INTERNAL_H

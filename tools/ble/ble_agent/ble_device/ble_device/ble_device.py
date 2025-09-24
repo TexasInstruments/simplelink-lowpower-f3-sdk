@@ -36,6 +36,7 @@ from ble_device.ble_device_enums import (
     GATTCommands,
     CaServerCommands,
     RREQCommands,
+    RRSPCommands,
     AppSpecifier,
     CentralEventType,
     PeripheralEventType,
@@ -43,6 +44,7 @@ from ble_device.ble_device_enums import (
     L2CAPEventType,
     CmEventType,
     RREQEventType,
+    RRSPEventType,
     AddressMode,
     ConnectionEventType,
     CsEventType,
@@ -334,6 +336,7 @@ class BleDevice:
         self.gatt: BleDeviceGATT | None = None
         self.ca_server: BleDeviceCaServer | None = None
         self.rreq: BleDeviceRREQ | None = None
+        self.rrsp: BleDeviceRRSP | None = None
 
         self.addr_mode = None
         self.id_addr = None
@@ -527,6 +530,14 @@ class BleDevice:
                     max_event_list_size=self.max_event_list_size,
                 )
 
+            if self.device_node.capabilities.get("RTLS_CAP_RRSP", False):
+                self.rrsp = BleDeviceRRSP(
+                    logger=self.logger,
+                    ble_device=self,
+                    sync_command=self.sync_command,
+                    max_event_list_size=self.max_event_list_size,
+                )
+
             return True
 
         except BleDeviceException as ex:
@@ -678,6 +689,11 @@ class BleDevice:
                 ):
                     parsed_data = self.rreq.message_parser(msg)
 
+                elif self.rrsp and event_type in set(
+                    item.value for item in RRSPEventType
+                ):
+                    parsed_data = self.rrsp.message_parser(msg)
+
                 else:
                     self.unknown_event_list.add_event(event_type, parsed_data)
 
@@ -725,7 +741,10 @@ class BleDevice:
 
             if len(failed) > 0:
                 raise BleDeviceNodesNotIdentifiedException(
-                    "{} nodes not identified at all, comport: {}".format(len(failed), device_setting["com_port"]), failed
+                    "{} nodes not identified at all, comport: {}".format(
+                        len(failed), device_setting["com_port"]
+                    ),
+                    failed,
                 )
             else:
                 pass
@@ -1308,7 +1327,6 @@ class BleDevicePairing(BleDeviceBasic):
         elif event_type == PairingEventType.NWP_PAIRING_GET_LOCAL_OOB_DATA:
             data_struct = Struct(
                 "event" / Int16ul,
-                "connection_handle" / Int16ul,
                 "oob_confirm" / Array(16, Int8ul),
                 "oob_random" / Array(16, Int8ul),
             )
@@ -1401,36 +1419,32 @@ class BleDevicePairing(BleDeviceBasic):
             )
         )
 
-    def set_oob_enable(self, conn_handle=0x00, oob_enable=0x00):
+    def set_oob_enable(self, oob_enable=0x01):
         self.cmd = PairingCommands.PAIRING_CMD_SET_OOB_ENABLE
-        self.data_struct = Struct("conn_handle" / Int16ul, "oob_enable" / Int8ul)
-        self.send_nwp_cmd(dict(conn_handle=conn_handle, oob_enable=oob_enable))
+        self.data_struct = Struct("oob_enable" / Int8ul)
+        self.send_nwp_cmd(dict(oob_enable=oob_enable))
 
-    def set_remote_oob_data(self, conn_handle=0x00, oob_confirm=None, oob_random=None):
+    def set_remote_oob_data(self, oob_confirm=None, oob_random=None):
         if oob_random is None:
             oob_random = [0x00] * 16
         if oob_confirm is None:
             oob_confirm = [0x00] * 16
         self.cmd = PairingCommands.PAIRING_CMD_SET_REMOTE_OOB_DATA
         self.data_struct = Struct(
-            "conn_handle" / Int16ul,
             "oob_confirm" / Array(16, Int8ul),
             "oob_random" / Array(16, Int8ul),
         )
-        self.send_nwp_cmd(
-            dict(
-                conn_handle=conn_handle, oob_confirm=oob_confirm, oob_random=oob_random
-            )
-        )
+        self.send_nwp_cmd(dict(oob_confirm=oob_confirm, oob_random=oob_random))
 
-    def get_local_oob_data(self, conn_handle=0x00):
+    def get_local_oob_data(self):
         self.cmd = PairingCommands.PAIRING_CMD_GET_LOCAL_OOB_DATA
-        self.data_struct = Struct("conn_handle" / Int16ul)
-        self.send_nwp_cmd(
-            dict(
-                conn_handle=conn_handle,
-            )
-        )
+        self.data_struct = Struct()
+        self.send_nwp_cmd(dict())
+
+    def generate_ecc_keys(self):
+        self.cmd = PairingCommands.PAIRING_CMD_GENERATE_ECC_KEYS
+        self.data_struct = Struct()
+        self.send_nwp_cmd(dict())
 
 
 class BleDeviceGATT(BleDeviceBasic):
@@ -1872,6 +1886,8 @@ class BleDeviceCs(BleDeviceBasic):
         elif event_type == CsEventType.NWP_CS_APP_DISTANCE_RESULTS:
             data_struct = Struct(
                 "event" / Int16ul,
+                "status" / Int8ul,
+                "connHandle" / Int16ul,
                 "distance" / Int32ul,
                 "quality" / Int32ul,
                 "confidence" / Int32ul,
@@ -1882,6 +1898,7 @@ class BleDeviceCs(BleDeviceBasic):
             data_struct = Struct(
                 "event" / Int16ul,
                 "status" / Int8ul,
+                "connHandle" / Int16ul,
                 "distance" / Int32ul,
                 "quality" / Int32ul,
                 "confidence" / Int32ul,
@@ -1891,6 +1908,8 @@ class BleDeviceCs(BleDeviceBasic):
                 "numMpcPaths" / Array(4, Int16ul),
                 "qualityPaths" / Array(4, Int32ul),
                 "confidencePaths" / Array(4, Int32ul),
+                "localRpl" / Array(32, Int8sl),
+                "remoteRpl" / Array(32, Int8sl),
                 "modeZeroStepsInit"
                 / (Byte[96 * 5]),  # 96 elements of 5 bytes each for initiator
                 "modeZeroStepsRef"
@@ -2258,6 +2277,11 @@ class BleDeviceRREQ(BleDeviceBasic):
             dict(conn_handle=conn_handle, ranging_counter=ranging_counter)
         )
 
+    def abort(self, conn_handle=0x00):
+        self.cmd = RREQCommands.RREQ_CMD_ABORT
+        self.data_struct = Struct("conn_handle" / Int16ul)
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
+
     def message_parser(self, msg):
         event_type = msg.payload.event_type
         parsed_data = msg.payload.data
@@ -2280,3 +2304,119 @@ class BleDeviceRREQ(BleDeviceBasic):
         )
 
         return parsed_data
+
+
+class BleDeviceRRSP(BleDeviceBasic):
+    def __init__(self, logger, ble_device, sync_command, max_event_list_size):
+        BleDeviceBasic.__init__(
+            self,
+            logger,
+            event_type_class=RRSPEventType,
+            max_event_list_size=max_event_list_size,
+        )
+
+        self.ble_device = ble_device
+        self.sync_command = sync_command
+        self.app_specifier = AppSpecifier.APP_SPECIFIER_RRSP
+
+    def send_cs_enable_event(self, conn_handle=0x00):
+        self.cmd = RRSPCommands.RRSP_CMD_SEND_CS_ENABLE_EVENT
+        self.data_struct = Struct("conn_handle" / Int16ul)
+        self.send_nwp_cmd(dict(conn_handle=conn_handle))
+
+    def send_cs_event(
+        self,
+        csEvtOpcode,
+        connHandle,
+        configID,
+        startAclConnectionEvent,
+        procedureCounter,
+        frequencyCompensation,
+        referencePowerLevel,
+        procedureDoneStatus,
+        subeventDoneStatus,
+        abortReason,
+        numAntennaPath,
+        numStepsReported,
+        dataLen,
+        data,
+    ):
+        self.cmd = RRSPCommands.RRSP_CMD_SEND_CS_EVENT
+        self.data_struct = Struct(
+            "csEvtOpcode" / Int8ul,
+            "connHandle" / Int16ul,
+            "configID" / Int8ul,
+            "startAclConnectionEvent" / Int16ul,
+            "procedureCounter" / Int16ul,
+            "frequencyCompensation" / Int16sl,
+            "referencePowerLevel" / Int8sl,
+            "procedureDoneStatus" / Int8ul,
+            "subeventDoneStatus" / Int8ul,
+            "abortReason" / Int8ul,
+            "numAntennaPath" / Int8ul,
+            "numStepsReported" / Int8ul,
+            "dataLen" / Int16ul,
+            "data" / Array(dataLen, Int8ul),
+        )
+        self.send_nwp_cmd(
+            dict(
+                csEvtOpcode=csEvtOpcode,
+                connHandle=connHandle,
+                configID=configID,
+                startAclConnectionEvent=startAclConnectionEvent,
+                procedureCounter=procedureCounter,
+                frequencyCompensation=frequencyCompensation,
+                referencePowerLevel=referencePowerLevel,
+                procedureDoneStatus=procedureDoneStatus,
+                subeventDoneStatus=subeventDoneStatus,
+                abortReason=abortReason,
+                numAntennaPath=numAntennaPath,
+                numStepsReported=numStepsReported,
+                dataLen=dataLen,
+                data=data,
+            )
+        )
+
+    def send_cs_cont_event(
+        self,
+        csEvtOpcode,
+        connHandle,
+        configID,
+        procedureDoneStatus,
+        subeventDoneStatus,
+        abortReason,
+        numAntennaPath,
+        numStepsReported,
+        dataLen,
+        data,
+    ):
+        self.cmd = RRSPCommands.RRSP_CMD_SEND_CS_EVENT_CONT
+        self.data_struct = Struct(
+            "csEvtOpcode" / Int8ul,
+            "connHandle" / Int16ul,
+            "configID" / Int8ul,
+            "procedureDoneStatus" / Int8ul,
+            "subeventDoneStatus" / Int8ul,
+            "abortReason" / Int8ul,
+            "numAntennaPath" / Int8ul,
+            "numStepsReported" / Int8ul,
+            "dataLen" / Int16ul,
+            "data" / Array(dataLen, Int8ul),
+        )
+        self.send_nwp_cmd(
+            dict(
+                csEvtOpcode=csEvtOpcode,
+                connHandle=connHandle,
+                configID=configID,
+                procedureDoneStatus=procedureDoneStatus,
+                subeventDoneStatus=subeventDoneStatus,
+                abortReason=abortReason,
+                numAntennaPath=numAntennaPath,
+                numStepsReported=numStepsReported,
+                dataLen=dataLen,
+                data=data,
+            )
+        )
+
+    def message_parser(self, msg):
+        return None

@@ -70,6 +70,8 @@
  
  
  *****************************************************************************/
+#ifndef LL_CS_CTRL_PKT_INTERNAL_H
+#define LL_CS_CTRL_PKT_INTERNAL_H
 /*******************************************************************************
  * INCLUDES
  */
@@ -451,24 +453,6 @@ void llCsParseCsReqData(csProcedureEnable_t* csReq, uint8* pBuf);
 csStatus_e llCsSetupCtrlPkt(llConnState_t* connPtr, uint8 ctrlType, uint8 ctrlLen);
 
 /*******************************************************************************
- * @fn          llCsSetupCapabilities
- *
- * @brief       Build the CS Capabilities packet data
- *
- * input parameters
- *
- * @param       data - data pointer
- *
- * @design      BLE_LOKI-506
- * output parameters
- *
- * @param       data - updated with the CS capabilities
- *
- * @return      None
- */
-void llCsSetupCapabilities(uint8* data);
-
-/*******************************************************************************
  * @fn          llCsSetupConfigData
  *
  * @brief       Build the CS Config packet data
@@ -630,38 +614,4 @@ csStatus_e llCsSetupTerminateReqOrRsp(uint16 connId, uint8* data);
  */
 void llCsSetupChmInd(uint8* data, uint16 connId);
 
-/*******************************************************************************
- * @fn          llCsCtrlProcessTerminateReq
- *
- * @brief       Process received LL_CTRL_CS_TERMINATE_REQ
- *
- * input parameters
- *
- * @param       connId - Connection Identifier
- * @param       pBuf   - Pointer to data buffer
- *
- * output parameters
- *
- * @param       None
- *
- * @return      Status
- */
-csStatus_e llCsCtrlProcessTerminateReq(uint16 connId, const uint8* pBuf);
-
-/*******************************************************************************
- * @fn          llCsCtrlProcessTerminateRsp
- *
- * @brief       Process received LL_CTRL_CS_TERMINATE_RSP
- *
- * input parameters
- *
- * @param       connId - Connection Id
- * @param       pBuf   - Pointer to data buffer
- *
- * output parameters
- *
- * @param       None
- *
- * @return      Status
- */
-csStatus_e llCsCtrlProcessTerminateRsp(uint16 connId, const uint8* pBuf);
+#endif //LL_CS_CTRL_PKT_INTERNAL_H

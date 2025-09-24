@@ -57,7 +57,7 @@ extern "C"
  * INCLUDES
  */
 #include "ti/ble/stack_util/bcomdef.h"
-#include "ti/ble/services/ranging/ranging.h"
+#include "ti/ble/services/ranging/ranging_types.h"
 
 /*********************************************************************
 *  EXTERNAL VARIABLES

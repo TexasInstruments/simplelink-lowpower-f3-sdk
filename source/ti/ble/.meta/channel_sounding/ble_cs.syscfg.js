@@ -108,6 +108,18 @@ const config = {
             description: "Determines the results mode for Channel Sounding - raise only distance events or both distance and raw results events",
         },
         {
+            name: "rangingServer",
+            displayName: "Ranging Server (RRSP)",
+            default: false,
+            hidden: true
+        },
+        {
+            name: "rangingServerExtCtrlMode",
+            displayName: "Ranging Server External Control Mode",
+            default: false,
+            hidden: true,
+        },
+        {
             name: "rangingClient",
             displayName: "Ranging Client (RREQ)",
             default: false,
@@ -119,12 +131,6 @@ const config = {
             default: false,
             hidden: true,
         },
-        // {
-        //     name: "rangingServer",
-        //     displayName: "Ranging Server (RRSP)",
-        //     default: false,
-        //     hidden: true,
-        // }
     ]
 };
 
@@ -237,14 +243,28 @@ function getOpts(mod)
                 (inst.csMeasureDistance == true) && result.push("-DCS_MEASURE_DISTANCE=1");
         }
 
+        if(inst.rangingServer)
+        {
+            // Add the ranging server define
+            result.push("-DRANGING_SERVER")
+
+            if(inst.rangingServerExtCtrlMode)
+            {
+                // Add the ranging Server external control define
+                // This define is used to enable the external control mode of the ranging client and server
+                result.push("-DRANGING_SERVER_EXTCTRL_APP");
+            }
+        }
+
         if(inst.rangingClient)
         {
             // Add the ranging client define
             result.push("-DRANGING_CLIENT")
+
             if(inst.rangingClientExtCtrlMode)
             {
-                // Add the ranging client external control define
-                // This define is used to enable the external control mode of the ranging client
+                // Add the ranging Server external control define
+                // This define is used to enable the external control mode of the ranging client and server
                 result.push("-DRANGING_CLIENT_EXTCTRL_APP");
             }
         }
@@ -276,6 +296,14 @@ function getLibs(inst)
         if(devFamily == "DeviceFamily_CC27XX")
         {
             libs.push(`ti/ble/app_util/cs_ranging/lib/${toolchain}/m33f/blecsranging_cc27xx.a`);
+            if(toolchain == "iar")
+            {
+              libs.push(`ti/ble/app_util/cs_ranging/lib/ticlang/m33f/cmsis_dsp_cc27xx.a`);
+            }
+            else
+            {
+              libs.push(`ti/ble/app_util/cs_ranging/lib/${toolchain}/m33f/cmsis_dsp_cc27xx.a`);
+            }
         }
     }
 

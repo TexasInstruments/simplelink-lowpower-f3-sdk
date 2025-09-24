@@ -91,6 +91,9 @@ class RTLSManager(threading.Thread, UserDict):
                 port=websocket_port,
                 node_comport=nodes[0].port if len(nodes) > 0 else None,
             )
+            logger.debug(
+                f"RTLS Manager: Created websocket server on port {websocket_port}"
+            )
         self.input_queues = []  # Websocket queues
         self.on_ws_connect = None
         self.on_ws_disconnect = None

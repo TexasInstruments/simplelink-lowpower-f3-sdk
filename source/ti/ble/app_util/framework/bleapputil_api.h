@@ -373,6 +373,7 @@ typedef enum
   APP_SPECIFIER_GATT          = 0x09,
   APP_SPECIFIER_CA_SERVER     = 0x0A,
   APP_SPECIFIER_RREQ          = 0x0B,
+  APP_SPECIFIER_RRSP          = 0x0C,
 } BLEAppUtil_AppSpecifier_e;
 
 /// @brief Enumeration for External Application Control Capabilities
@@ -390,6 +391,7 @@ typedef enum
   APP_CAP_GATT                 = 0x00020000,
   APP_CAP_CA_SERVER            = 0x00040000,
   APP_CAP_RREQ                 = 0x00080000,
+  APP_CAP_RRSP                 = 0x00100000,
 } BLEAppUtil_AppCapabilities_e;
 
 /** @} End BLEAppUtil_Enumerators_Typedefs */

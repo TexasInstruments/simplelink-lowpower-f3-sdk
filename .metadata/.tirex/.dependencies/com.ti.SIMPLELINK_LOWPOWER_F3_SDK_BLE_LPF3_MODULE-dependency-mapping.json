@@ -21,8 +21,6 @@
     "../../../examples/rtos/LP_EM_CC2340R5/ble/data_stream/freertos/ticlang/data_stream_LP_EM_CC2340R5_freertos_ticlang.projectspec": "data_stream_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R5/ble/host_test/freertos/iar/host_test_LP_EM_CC2340R5_freertos_iar.ipcf": "host_test_LP_EM_CC2340R5_freertos_iar_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R5/ble/host_test/freertos/ticlang/host_test_LP_EM_CC2340R5_freertos_ticlang.projectspec": "host_test_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/iar/key_node_LP_EM_CC2340R5_freertos_iar.ipcf": "key_node_LP_EM_CC2340R5_freertos_iar_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2340R5/ble/key_node/freertos/ticlang/key_node_LP_EM_CC2340R5_freertos_ticlang.projectspec": "key_node_LP_EM_CC2340R5_freertos_ticlang_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R53/ble/basic_ble/freertos/iar/basic_ble_LP_EM_CC2340R53_freertos_iar.ipcf": "basic_ble_LP_EM_CC2340R53_freertos_iar_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R53/ble/basic_ble/freertos/ticlang/basic_ble_LP_EM_CC2340R53_freertos_ticlang.projectspec": "basic_ble_LP_EM_CC2340R53_freertos_ticlang_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2340R53/ble/basic_ble_extctrl/freertos/iar/basic_ble_extctrl_LP_EM_CC2340R53_freertos_iar.ipcf": "basic_ble_extctrl_LP_EM_CC2340R53_freertos_iar_0.dependency.tirex.json",

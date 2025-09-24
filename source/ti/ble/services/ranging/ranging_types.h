@@ -1,6 +1,6 @@
 /*****************************************************************************
 
- @file  ranging.h
+ @file  ranging_types.h
 
  @brief This file contains the ranging service definitions and prototypes.
 
@@ -88,31 +88,33 @@ extern "C"
  ************ RAS lengths ***********
  ************************************/
 
-#define RAS_FEAT_LEN               4
-#define RAS_READY_LEN              2
-#define RAS_OVERWRITTEN_LEN        2
-#define RAS_CP_RSP_MAX_LEN         5
-#define RAS_CP_COMMANDS_MAX_LEN    5
-#define RAS_CP_COMMANDS_MIN_LEN    1
-#define RAS_CP_GET_DATA_CMD_LEN    3
-#define RAS_CP_ACK_DATA_CMD_LEN    3
-#define RAS_CP_RETRIEVE_CMD_LEN    5
-#define RAS_CP_ABORT_CMD_LEN       1
+#define RAS_FEAT_LEN                               4U // Length of the Ranging Feature
+#define RAS_DATA_READY_LEN                         2U // Length of the Ranging Data Ready
+#define RAS_OVERWRITTEN_LEN                        2U // Length of the Ranging Data Overwritten
+#define RAS_CP_RSP_MAX_LEN                         5U // Maximum length of the Control Point Response
+#define RAS_CP_COMMANDS_MAX_LEN                    5U // Maximum length of the Control Point Commands
+#define RAS_CP_COMMANDS_MIN_LEN                    1U // Minimum length of the Control Point Commands
+#define RAS_CP_GET_DATA_CMD_LEN                    3U // Length of the Get Ranging Data Command
+#define RAS_CP_ACK_DATA_CMD_LEN                    3U // Length of the Acknowledge Ranging Data Command
+#define RAS_CP_RETRIEVE_CMD_LEN                    5U // Length of the Retrieve Lost Segments Command
+#define RAS_CP_ABORT_CMD_LEN                       1U // Length of the Abort Command
+#define RAS_RANGING_HEADER_LEN                     4U // Length of the Ranging Header
+#define RAS_CP_RSP_COMPLETE_DATA_RSP_LEN           3U // Length of the Complete Data Response
+#define RAS_CP_RSP_COMPLETE_LOST_DATA_SEG_RSP_LEN  5U // Length of the Complete Lost Data Segment Response
+#define RAS_CP_RSP_CODE_LEN                        2U // Length of the Response Code
+#define RAS_STEP_HDR_LEN                           1U // @ref Ranging_subEventResultsStep_t header length
 
-#define RAS_CP_RSP_COMPLETE_DATA_RSP_LEN           2 // Length of the Complete Data Response
-#define RAS_CP_RSP_COMPLETE_LOST_DATA_SEG_RSP_LEN  3 // Length of the Complete Lost Data Segment Response
-#define RAS_CP_RSP_CODE_LEN                        2 // Length of the Response Code
-
-#define RAS_STEP_HDR_LEN    1U // @ref Ranging_subEventResultsStep_t header length
-
-// RAS Features for the RAS Features Characteristic
-// The RAS Features Characteristic is a 32-bit bitmask that indicates the features
-// supported by the RAS server. The bitmask is defined as follows:
-// Bit 0: Real Time Ranging Data
-// Bit 1: Retrieve Lost Segments
-// Bit 2: Abort Operation
-// Bit 3: Filter Data
-// Bit 4-31: RFU
+/************************************
+ *** RAS Features Characteristic ****
+ ************************************/
+/* RAS Features for the RAS Features Characteristic
+The RAS Features Characteristic is a 32-bit bitmask that indicates the features
+supported by the RAS server. The bitmask is defined as follows:
+Bit 0: Real Time Ranging Data
+Bit 1: Retrieve Lost Segments
+Bit 2: Abort Operation
+Bit 3: Filter Data
+ Bit 4-31: RFU */
 typedef enum
 {
   RAS_FEATURES_REAL_TIME          = (uint32_t) BV(0),

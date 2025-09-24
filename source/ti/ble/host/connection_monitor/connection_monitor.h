@@ -106,7 +106,13 @@
 /************************************
  * Connecetion Monitor Serving APIs *
  ************************************/
-
+/* How to use the Connection Monitor Serving APIs:
+ * 1. Register the callback functions using CMS_RegisterCBs
+ * 2. Initialize the connection data parameters using CMS_InitConnDataParams
+ * 3. Get the connection data size using CMS_GetConnDataSize
+ * 4. Get the connection data using CMS_GetConnData
+ * 5. Send the event to the upper layer which will forward it to the CM node
+ */
 /*******************************************************************************
  * @fn      CMS_RegisterCBs
  *
@@ -115,6 +121,9 @@
  * @param   pCBs - pointer to the callback functions
  *
  * @return  CM_SUCCESS, CM_INVALID_PARAMS, CM_UNSUPPORTED @ref cmErrorCodes_e
+ *
+ * @note    When the callback is called it is called from the context of the BLE stack
+ *          The application must release the context as fast as it can
  */
 cmErrorCodes_e CMS_RegisterCBs(const cmsCBs_t *pCBs);
 
@@ -122,7 +131,7 @@ cmErrorCodes_e CMS_RegisterCBs(const cmsCBs_t *pCBs);
  * @fn      CMS_GetConnDataSize
  *
  * @brief   Request the controller data size and returns the sum of
- *          the controller and host data size
+ *          the controller and host data size which should be allocated by the application
  *
  * @return  The connection data size
  */
@@ -143,7 +152,7 @@ cmErrorCodes_e CMS_InitConnDataParams(cmsConnDataParams_t *pParams);
 /*******************************************************************************
  * @fn      CMS_GetConnData
  *
- * @brief   Get the connection data
+ * @brief   Get the connection data which will be monitored. 
  *
  * @param   connHandle - the connection handle
  * @param   pData - pointer to the data buffer
@@ -157,6 +166,14 @@ cmErrorCodes_e CMS_GetConnData(uint16_t connHandle, cmsConnDataParams_t *pParams
 /************************************
  *     Connection Monitor APIs      *
  ************************************/
+/* How to use the Connection Monitor APIs:
+ * 1. Register the callback functions using CM_RegisterCBs
+ * 2. Initialize the start monitor parameters using CM_InitStartMonitorParams
+ * 3. Start monitoring a connection using CM_StartMonitor with the data received
+ *    from the CM Serving node
+ * 4. Stop monitoring a connection using CM_StopMonitor
+ * 5. Update the monitored connection using data from CM Serving node using CM_UpdateConn
+ */
 
 /*******************************************************************************
  * @fn      CM_RegisterCBs
@@ -166,6 +183,9 @@ cmErrorCodes_e CMS_GetConnData(uint16_t connHandle, cmsConnDataParams_t *pParams
  * @param   pCBs - pointer to the callback functions
  *
  * @return  CM_SUCCESS, CM_INVALID_PARAMS, CM_UNSUPPORTED @ref cmErrorCodes_e
+ *
+ * @note    When the callback is called it is called from the context of the BLE stack
+ *          The application must release the context as fast as it can
  */
 cmErrorCodes_e CM_RegisterCBs(const cmCBs_t *pCBs);
 
@@ -183,13 +203,20 @@ cmErrorCodes_e CM_InitStartMonitorParams(cmStartMonitorParams_t *pParams);
 /*******************************************************************************
  * @fn      CM_StartMonitor
  *
- * @brief   Starts the connection monitoring process.
+ * @brief   Starts the connection monitoring process with the connection data given.
  *
  * @param   pParams - Pointer to the monitor parameters
  *
  * @return  CM_SUCCESS, CM_NOT_CONNECTED, CM_ALREADY_REQUESTED,
  *          CM_INVALID_PARAMS, CM_NO_RESOURCE,
  *          CM_CONNECTION_LIMIT_EXCEEDED, CM_UNSUPPORTED @ref cmErrorCodes_e
+ * 
+ * @output  This function will send a @ref CM_TRACKING_START_EVT event to the registered
+ *          callback @ref pfnCmConnStatusEvtCB in case of a successful monitoring start,
+ *          otherwise it will send a @ref CM_TRACKING_STOP_EVT event.
+ * 
+ * @note    After a successful monitoring start, the application should expect
+ *          @ref cmReportEvt_t event with the RSSI by calling @ref pfnCmReportEvtCB.
  */
 cmErrorCodes_e CM_StartMonitor(cmStartMonitorParams_t *pParams);
 
@@ -201,6 +228,9 @@ cmErrorCodes_e CM_StartMonitor(cmStartMonitorParams_t *pParams);
  * @param   connHandle - the connection handle
  *
  * @return  CM_SUCCESS, CM_NOT_CONNECTED, CM_UNSUPPORTED @ref cmErrorCodes_e
+ * 
+ * @output This function will send a @ref CM_TRACKING_STOP_EVT event to the registered
+ *         callback @ref pfnCmConnStatusEvtCB.
  */
 cmErrorCodes_e CM_StopMonitor(uint16_t connHandle);
 
@@ -213,7 +243,12 @@ cmErrorCodes_e CM_StopMonitor(uint16_t connHandle);
  * @param   pConnUpdateEvt - pointer to the update event
  *
  * @return  CM_SUCCESS, CM_NOT_CONNECTED, CM_ALREADY_REQUESTED,
- *          CM_INVALID_PARAMS,CM_UNSUPPORTED @ref cmErrorCodes_e
+ *          CM_INVALID_PARAMS,CM_UNSUPPORTED,CM_FAILURE @ref cmErrorCodes_e
+ * 
+ * @output  This function will adjust the monitored connection with the update event.
+ *          If the update event can't be applied with return code @ref CM_FAILURE,
+ *          it will terminate the monitored connection with @ref CM_TRACKING_STOP_EVT and
+ *          reason @ref CM_BAD_UPDATE_EVENT
  */
 cmErrorCodes_e CM_UpdateConn(cmConnUpdateEvt_t *pConnUpdateEvt);
 

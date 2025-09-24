@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ti-simplelink-ble-device",
-    version="0.0.25",
+    version="0.0.30",
     author="Texas Instruments",
     author_email="support@ti.com",
     description="Simple API for BLE device feature",

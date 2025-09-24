@@ -106,6 +106,8 @@ function moduleInstances(inst)
             const args = {
                 numOfAdvSet: i,
                 deviceRole: inst.deviceRole,
+                channelSounding: inst.channelSounding,
+                rangingServer: inst.rangingServer,
                 basicBLE: inst.basicBLE,
                 profiles: inst.profiles,
                 extAdv: inst.extAdv

@@ -58,17 +58,28 @@
  * MACROS
  */
 // Invalid index
-#define INVALID_INDEX 0xFF
+#define RANGING_DB_CLIENT_INVALID_INDEX 0xFF
+// Maximum number of procedures supported
+#define RANGING_DB_CLIENT_MAX_NUM_PROC  1
+// Maximum size of a procedure in bytes
+#define RANGING_DB_CLIENT_MAX_PROC_SIZE 0x1400
 
 /*********************************************************************
  * TYPEDEFS
  */
 
+ // Structure to hold the ranging procedure data for each connection handle.
+typedef struct
+{
+    uint8_t   procedureData[RANGING_DB_CLIENT_MAX_PROC_SIZE]; // Buffer to hold the procedure data.
+    uint16_t  connHandle;                                     // Connection handle.
+} RangingDBClient_procedureData_t;
+
 /*********************************************************************
  * LOCAL VARIABLES
  */
-// Ranging Profile Data base, each entry represent different connection handle
-static RangingDB_procedureData_t gRangingProcedureDB[MAX_NUM_PROCEDURES];
+// Ranging Profile DB, each entry represent different connection handle
+static RangingDBClient_procedureData_t gRangingProcedureDB[RANGING_DB_CLIENT_MAX_NUM_PROC];
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -86,7 +97,7 @@ static uint8_t rangingDBClient_GetIndex( uint16_t connHandle );
 /*********************************************************************
  * @fn      RangingDBClient_initDB
  *
- * @brief   This function initializes the ranging procedure data base
+ * @brief   This function initializes the ranging procedure DB
  *          variables and array.
  *
  * input parameters
@@ -102,7 +113,7 @@ static uint8_t rangingDBClient_GetIndex( uint16_t connHandle );
 uint8_t RangingDBClient_initDB(void)
 {
   // Initialize the ranging procedure database
-  for (uint8_t i = 0; i < MAX_NUM_PROCEDURES; i++)
+  for (uint8_t i = 0; i < RANGING_DB_CLIENT_MAX_NUM_PROC; i++)
   {
     gRangingProcedureDB[i].connHandle = LINKDB_CONNHANDLE_INVALID;
   }
@@ -112,7 +123,7 @@ uint8_t RangingDBClient_initDB(void)
 /*********************************************************************
  * @fn      RangingDBClient_procedureOpen
  *
- * @brief   This function open the ranging procedure data base
+ * @brief   This function open the ranging procedure DB
  *          variables and array per connection handle.
  *
  * input parameters
@@ -130,7 +141,7 @@ uint8_t RangingDBClient_initDB(void)
 uint8_t RangingDBClient_procedureOpen(uint16_t connHandle)
 {
     // Initialize the index to an invalid value
-    uint8_t index = INVALID_INDEX;
+    uint8_t index = RANGING_DB_CLIENT_INVALID_INDEX ;
 
     // Check if the connection handle is valid
     if (connHandle == LINKDB_CONNHANDLE_INVALID)
@@ -140,7 +151,7 @@ uint8_t RangingDBClient_procedureOpen(uint16_t connHandle)
 
     // Check if connHandle exist in the DB
     index = rangingDBClient_GetIndex(connHandle);
-    if (index != INVALID_INDEX)
+    if (index != RANGING_DB_CLIENT_INVALID_INDEX )
     {
         // If connHandle exist return success
         // and do not assign it again
@@ -149,7 +160,7 @@ uint8_t RangingDBClient_procedureOpen(uint16_t connHandle)
 
     // Found an empty entry, assign the connection handle
     index = rangingDBClient_GetIndex(LINKDB_CONNHANDLE_INVALID);
-    if (index != INVALID_INDEX)
+    if (index != RANGING_DB_CLIENT_INVALID_INDEX )
     {
         // Assign the connection handle to the empty entry
         gRangingProcedureDB[index].connHandle = connHandle;
@@ -163,7 +174,7 @@ uint8_t RangingDBClient_procedureOpen(uint16_t connHandle)
 /*********************************************************************
  * @fn      RangingDBClient_procedureClose
  *
- * @brief   This function closes the ranging procedure data base.
+ * @brief   This function closes the ranging procedure DB.
  *
  * input parameters
  *
@@ -182,7 +193,7 @@ uint8_t RangingDBClient_procedureClose(uint16_t connHandle)
 
     // Get the index of the connection handle
     uint8_t index = rangingDBClient_GetIndex(connHandle);
-    if(index != INVALID_INDEX)
+    if(index != RANGING_DB_CLIENT_INVALID_INDEX )
     {
         // Clear the connection handle
         gRangingProcedureDB[index].connHandle = LINKDB_CONNHANDLE_INVALID;
@@ -217,9 +228,9 @@ uint8_t RangingDBClient_addData(uint16_t connHandle, uint16_t offset ,uint16_t d
     uint8_t index = rangingDBClient_GetIndex(connHandle);
 
     // Check if the connection handle, data length and offset are valid.
-    if( (pData != NULL) ||
-        (index != INVALID_INDEX) ||
-        ((datalen + offset) < MAX_PROCEDURE_SIZE) )
+    if( (pData != NULL) &&
+        (index != RANGING_DB_CLIENT_INVALID_INDEX ) &&
+        ((datalen + offset) < RANGING_DB_CLIENT_MAX_PROC_SIZE) )
     {
         // Add the data to the procedure DB
         memcpy(&gRangingProcedureDB[index].procedureData[offset], pData, datalen);
@@ -254,7 +265,7 @@ uint8_t* RangingDBClient_getData(uint16_t connHandle)
     // Get the index of the connection handle
     uint8_t index = rangingDBClient_GetIndex(connHandle);
 
-    if(index == INVALID_INDEX)
+    if(index == RANGING_DB_CLIENT_INVALID_INDEX )
     {
         // Invalid parameters or no data available
         return NULL;
@@ -289,10 +300,10 @@ uint8_t RangingDBClient_clearProcedure(uint16_t connHandle)
     // Get the index of the connection handle
     uint8_t index = rangingDBClient_GetIndex(connHandle);
 
-    if(index != INVALID_INDEX)
+    if(index != RANGING_DB_CLIENT_INVALID_INDEX )
     {
         // Clear the procedure DB for the given connection handle
-        memset(&gRangingProcedureDB[index], 0, MAX_PROCEDURE_SIZE);
+        memset(gRangingProcedureDB[index].procedureData, 0, sizeof(gRangingProcedureDB[index].procedureData));
         status = SUCCESS;
     }
 
@@ -318,14 +329,14 @@ uint8_t RangingDBClient_clearProcedure(uint16_t connHandle)
  * @param   None
  *
  * @return  Index of the ranging procedure DB,
- *          INVALID_INDEX - if the connection handle is not found.
+ *          RANGING_DB_CLIENT_INVALID_INDEX  - if the connection handle is not found.
  */
 static uint8_t rangingDBClient_GetIndex(uint16_t connHandle)
 {
-    uint8_t index = INVALID_INDEX;
+    uint8_t index = RANGING_DB_CLIENT_INVALID_INDEX ;
 
     // Loop through the ranging procedure database to find the connection handle
-    for(uint8_t i = 0; i < MAX_NUM_PROCEDURES; i++)
+    for(uint8_t i = 0; i < RANGING_DB_CLIENT_MAX_NUM_PROC; i++)
     {
         if(gRangingProcedureDB[i].connHandle == connHandle)
         {

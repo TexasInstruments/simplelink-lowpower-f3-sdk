@@ -110,7 +110,6 @@ typedef struct
   uint8_t  nextChan;                               // The unmapped channel for the next active connection event
   uint8_t  currentChan;                            // the current unmapped channel for the completed connection event
   uint8_t  currentMappedChan;                      // Currently used mapped channel
-  uint8_t  numUsedChans;                           // count of the number of usable data channels
   uint8_t  hopLength;                              // used for finding next data channel at next connection event
   uint8_t  chanMap[ LL_NUM_BYTES_FOR_CHAN_MAP ];   // bit map corresponding to the data channels 0..39 //5 Bytes
   /* Peer Address Information */
@@ -122,6 +121,8 @@ typedef struct
   uint8_t  chanSelAlgo;                            // Channel selection algorithm
   /* Central Contribution */
   uint16_t mstSCA;                                 // Central's portion of connection SCA
+  /* If there any pending update*/
+  cmConnUpdateEvt_t pendingUpdateEvt;              // Connection update event data
 } llCmDataFull_t;
 
 // The controller's Connection Monitor data structure
@@ -139,6 +140,7 @@ typedef struct
   uint8_t                isCentralPktValid;
   uint8_t                adjustEvtNum;                //! The number of events left to create adjusment to the connection
   uint8_t                adjusted;                    //! Flag that indicates that that the connection adjusted
+  uint8_t                maxSyncAttempts;             //! The maximum number of attempts to sync configured by the user
   uint8_t                syncAttemptsLeft;            //! The number of attempts left trying to find the first packet before stopping the session,
                                                       //! once synced this varibale is not relevant.
   cmConnectionMaskRole_e connRoleMask;                //! Mask of the connection role to report.

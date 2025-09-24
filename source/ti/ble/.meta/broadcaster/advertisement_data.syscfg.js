@@ -1050,6 +1050,18 @@ const config = [
         longDescription: Docs.additionalDataLongDescription,
         default: "0x00",
         hidden: true
+    },
+    {
+        name: "channelSounding",
+        default: false,
+        onChange: onRangingDataChange,
+        hidden: true
+    },
+    {
+        name: "rangingServer",
+        default: false,
+        onChange: onRangingDataChange,
+        hidden: true
     }
 ];
 
@@ -1485,6 +1497,156 @@ function onNumOfUUIDs128SDChange(inst,instUIState)
     changeUUIDState(inst.numOfUUIDs128SD,instUIState,"128SDData", 10);
 }
 /******************************************************************/
+
+/*
+ * ======== onRangingDataChange ========
+ * Handles changes to the ranging data configuration.
+ * If channel sounding and ranging server are enabled,
+ * it adds the Ranging Service UUID to the advertisement data
+ * if it does not already exist.
+ *
+ * @param inst - Advertisement Data instance to be modified
+ * @param instUIState - object to hold UI state changes
+ *
+ * @return void
+ */
+function onRangingDataChange(inst,instUIState){
+    // If channel sounding and ranging server are enabled,
+    // add the Ranging Service UUID to the advertisement data
+    // if it does not already exist
+    if(inst.channelSounding == true &&
+       inst.rangingServer == true &&
+       isRangingServiceExist(inst) == false)
+    {
+        // If GAP_ADTYPE_16BIT_MORE is true, add the Ranging Service UUID
+        // to the advertisement data as a 16-bit UUID
+        if(inst.GAP_ADTYPE_16BIT_MORE == true)
+        {
+            if(inst.numOfUUIDs16More < 10)
+            {
+                let indexName = "UUID"+inst.numOfUUIDs16More+"16More";
+                inst.numOfUUIDs16More += 1;
+                inst[indexName] = Common.ranging_service_uuid;
+                onMore16bitUUIDsChange(inst, instUIState);
+            }
+        }
+        // If GAP_ADTYPE_16BIT_COMPLETE is true, add the Ranging Service UUID
+        // to the advertisement data as a 16-bit complete UUID
+        else if(inst.GAP_ADTYPE_16BIT_COMPLETE == true)
+        {
+            if(inst.numOfUUIDs16Complete < 10)
+            {
+                let indexName = "UUID"+inst.numOfUUIDs16More+"16Complete";
+                inst.numOfUUIDs16Complete += 1;
+                inst[indexName] = Common.ranging_service_uuid;
+                onComplete16bitUUIDsChange(inst, instUIState);
+            }
+        }
+        // If non of the above is true, add the Ranging Service UUID
+        // to the advertisement data as a 16-bit more UUID
+        else
+        {
+            inst.GAP_ADTYPE_16BIT_MORE = true;
+            inst.numOfUUIDs16More = 1;
+            inst.UUID016More = Common.ranging_service_uuid;
+            onMore16bitUUIDsChange(inst, instUIState);
+        }
+    }
+    else if(inst.channelSounding == false ||
+            inst.rangingServer == false)
+    {
+        // If channel sounding or ranging server is disabled,
+        // remove the Ranging Service UUID from the advertisement data
+        removeRangingServiceUUID(inst, instUIState);
+    }
+}
+
+/*
+ * ======== removeRangingServiceUUID ========
+ * Removes the Ranging Service UUID from the advertisement data if present.
+ *
+ * @param inst - Advertisement Data instance to be modified
+ * @param instUIState - object to hold UI state changes
+ *
+ * @return void
+ */
+function removeRangingServiceUUID(inst, instUIState) {
+    // Remove from 16-bit MORE UUIDs
+    if (inst.GAP_ADTYPE_16BIT_MORE && inst.numOfUUIDs16More > 0) {
+        let newIdx = 0;
+        for (let i = 0; i < inst.numOfUUIDs16More; i++) {
+            if (inst["UUID" + i + "16More"] != Common.ranging_service_uuid) {
+                inst["UUID" + newIdx + "16More"] = inst["UUID" + i + "16More"];
+                newIdx++;
+            }
+        }
+        // Clear remaining slots
+        for (let i = newIdx; i < inst.numOfUUIDs16More; i++) {
+            inst["UUID" + i + "16More"] = 0x0;
+        }
+        inst.numOfUUIDs16More = newIdx;
+        if (newIdx === 0) {
+            inst.GAP_ADTYPE_16BIT_MORE = false;
+        }
+        onMore16bitUUIDsChange(inst, instUIState);
+    }
+
+    // Remove from 16-bit COMPLETE UUIDs
+    if (inst.GAP_ADTYPE_16BIT_COMPLETE && inst.numOfUUIDs16Complete > 0) {
+        let newIdx = 0;
+        for (let i = 0; i < inst.numOfUUIDs16Complete; i++) {
+            if (inst["UUID" + i + "16Complete"] != Common.ranging_service_uuid) {
+                inst["UUID" + newIdx + "16Complete"] = inst["UUID" + i + "16Complete"];
+                newIdx++;
+            }
+        }
+        // Clear remaining slots
+        for (let i = newIdx; i < inst.numOfUUIDs16Complete; i++) {
+            inst["UUID" + i + "16Complete"] = 0x0;
+        }
+        inst.numOfUUIDs16Complete = newIdx;
+        if (newIdx === 0) {
+            inst.GAP_ADTYPE_16BIT_COMPLETE = false;
+        }
+        onComplete16bitUUIDsChange(inst, instUIState);
+    }
+}
+
+/*
+ * ======== isRangingServiceExist ========
+ * Checks if the Ranging Service UUID is already in the advertisement data
+ *
+ * @param inst - Advertisement Data instance to be checked
+ *
+ * @returns true if the Ranging Service UUID is found, false otherwise
+ */
+function isRangingServiceExist(inst)
+{
+    if(inst.GAP_ADTYPE_16BIT_MORE && inst.numOfUUIDs16More > 0)
+    {
+        for(let i = 0; i < inst.numOfUUIDs16More; i++)
+        {
+            if(inst["UUID"+i+"16More"] == Common.ranging_service_uuid)
+            {
+                return true;
+            }
+        }
+    }
+    else if(inst.GAP_ADTYPE_16BIT_COMPLETE && inst.numOfUUIDs16Complete > 0)
+    {
+        for(let i = 0; i < inst.numOfUUIDs16Complete; i++)
+        {
+            if(inst["UUID"+i+"16Complete"] == Common.ranging_service_uuid)
+            {
+                return true;
+            }
+        }
+    }
+
+    // If the Ranging Service UUID is not found in either 16-bit UUIDs,
+    // return false
+    return false;
+}
 
 /*
  * ======== changeUUIDState ========

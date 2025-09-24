@@ -465,8 +465,6 @@ extern "C"
 #define HCI_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE_EVENT_LEN              76
 #define HCI_LE_CS_PROCEDURE_ENABLE_COMPLETE_EVENT_LEN                   22
 #define HCI_LE_CS_TEST_END_COMPLETE_EVENT_LEN                           2
-#define HCI_CS_SUBEVENT_RESULTS_HDR_LEN                                 16U
-#define HCI_CS_CONT_SUBEVENT_RESULTS_HDR_LEN                            9U
 
 /* Power control feature event
 ** Taken from BLE Core Specification Core_v6.0, Vol 4, Part E:

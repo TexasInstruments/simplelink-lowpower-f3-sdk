@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_11_00_18.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_11_01_19.html",
         "devices": [
             "CC2340R5"
         ],
@@ -386,7 +386,7 @@
     {
         "name": "Core SDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_11_00_06.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_11_02_02.html",
         "devices": [
             "CC2340R5"
         ],
@@ -400,50 +400,6 @@
         ],
         "subCategories": [
             "Core SDK"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "name": "SimpleLink Common Components Module (SCCM) Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/sccm/release_notes_sccm_9_11_00.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Documents"
-            ]
-        ],
-        "subCategories": [
-            "Common Components"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "name": "radioconfig8 Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/radioconfig8/radioconfig8_release_notes.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Documents"
-            ]
-        ],
-        "subCategories": [
-            "radioconfig8"
         ],
         "resourceClass": [
             "document"
@@ -472,9 +428,9 @@
         ]
     },
     {
-        "name": "TI BLE Stack Release Notes",
+        "name": "radioconfig8 Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble_9_11_00.html",
+        "location": "../../docs/radioconfig8/radioconfig8_release_notes.html",
         "devices": [
             "CC2340R5"
         ],
@@ -487,29 +443,7 @@
             ]
         ],
         "subCategories": [
-            "BLE Stack"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "name": "TI Proprietary RF Release Notes",
-        "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_11_00.html",
-        "devices": [
-            "CC2340R5"
-        ],
-        "devtools": [
-            "LP-EM-CC2340R5"
-        ],
-        "mainCategories": [
-            [
-                "Documents"
-            ]
-        ],
-        "subCategories": [
-            "Proprietary RF"
+            "radioconfig8"
         ],
         "resourceClass": [
             "document"
@@ -532,6 +466,72 @@
         ],
         "subCategories": [
             "Zigbee"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "TI BLE Stack Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/release_notes_ble_9_11_01.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "BLE Stack"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "TI Proprietary RF Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_12_00.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Proprietary RF"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "SimpleLink Common Components Module (SCCM) Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/sccm/release_notes_sccm_9_11_00.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Common Components"
         ],
         "resourceClass": [
             "document"

@@ -981,7 +981,7 @@ void HCI_AeScanCback( uint8 event, void *pData )
  */
 WEAK_FUNC void HCI_CS_ReadRemoteSupportedCapabilitiesCback(uint8 status,
                                                            uint16 connHandle,
-                                                           llCsCapabilities_t* peerCapabilities)
+                                                           const llCsCapabilities_t* peerCapabilities)
 {
   uint8* pEvt;
   // Pointer to data inside pEvt, that pointer point next slot to be filled
@@ -991,7 +991,7 @@ WEAK_FUNC void HCI_CS_ReadRemoteSupportedCapabilitiesCback(uint8 status,
     &pData, HCI_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_EVENT,
     HCI_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE_EVENT_LEN);
 
-  if (pEvt)
+  if (NULL != pEvt)
   {
     *pData++ = status;                // status
     *pData++ = LO_UINT16(connHandle); // connection handle (LSB)
@@ -1060,7 +1060,7 @@ WEAK_FUNC void HCI_CS_ConfigCompleteCback(uint8 status,
   pEvt = hciAllocAndPrepHciLeEvtPkt(&pData, HCI_LE_CS_CONFIG_COMPLETE_EVENT,
                                     HCI_LE_CS_CONFIG_COMPLETE_EVENT_LEN);
 
-  if (pEvt)
+  if (NULL != pEvt)
   {
     *pData++ = status;                // status
     *pData++ = LO_UINT16(connHandle); // connection handle (LSB)
@@ -1122,12 +1122,12 @@ WEAK_FUNC void HCI_CS_ReadRemoteFAETableCompleteCback(uint8 status,
   pEvt = hciAllocAndPrepHciLeEvtPkt(
     &pData, HCI_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE_EVENT, eventLen);
 
-  if (pEvt)
+  if (NULL != pEvt)
   {
     *pData++ = LO_UINT16(connHandle); // connection handle (LSB)
     *pData++ = HI_UINT16(connHandle); // connection handle (MSB)
     *pData++ = status;                // status
-    if (faeTable)
+    if (NULL != faeTable)
     {
       for (uint8 i = 0; i <= (eventLen - 4); i++)
       {
@@ -1166,7 +1166,7 @@ WEAK_FUNC void HCI_CS_SecurityEnableCompleteCback(uint8 status, uint16 connHandl
     hciAllocAndPrepHciLeEvtPkt(&pData, HCI_LE_CS_SECURITY_ENABLE_COMPLETE_EVENT,
                                HCI_LE_CS_SECURITY_ENABLE_COMPLETE_EVENT_LEN);
 
-  if (pEvt)
+  if (NULL != pEvt)
   {
     *pData++ = status;                // status
     *pData++ = LO_UINT16(connHandle); // connection handle (LSB)
@@ -1208,7 +1208,7 @@ WEAK_FUNC void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
     &pData, HCI_LE_CS_PROCEDURE_ENABLE_COMPLETE_EVENT,
     HCI_LE_CS_PROCEDURE_ENABLE_COMPLETE_EVENT_LEN);
 
-  if (pEvt)
+  if (NULL != pEvt)
   {
     *pData++ = status;
     *pData++ = LO_UINT16(connHandle); // connection handle (LSB)
@@ -1241,7 +1241,7 @@ WEAK_FUNC void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
 }
 
 /*******************************************************************************
- * @fn          HCI_CS_SubeventResultCback
+ * @fn          HCI_CS_SubeventResultsProcess
  *
  * @brief       Subevent results callback
  *
@@ -1256,9 +1256,9 @@ WEAK_FUNC void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
  *
  * @return      None
  */
-WEAK_FUNC void HCI_CS_SubeventResultCback(void* pRes, uint16 dataLength)
+WEAK_FUNC void HCI_CS_SubeventResultsProcess(const RCL_CmdBleCs_SubeventResults *subeventRes, uint16_t dataLength)
 {
-  if (pRes)
+  if (subeventRes)
   {
     uint8* pEvt;
     // Pointer to data inside pEvt, that pointer point next slot to be filled
@@ -1266,12 +1266,54 @@ WEAK_FUNC void HCI_CS_SubeventResultCback(void* pRes, uint16 dataLength)
 
     pEvt = hciAllocAndPrepHciEvtPkt(&pData, HCI_LE_EVENT_CODE, dataLength);
 
-    if (pEvt)
+    if (NULL != pEvt)
     {
-      if (pData)
+      if (NULL != pData)
       {
         // Copy results into pData
-        MAP_osal_memcpy(pData, pRes, dataLength);
+        MAP_osal_memcpy(pData, (void *)subeventRes, dataLength);
+      }
+
+      // send the message
+      HCI_SendEventToHost(pEvt);
+    }
+  }
+}
+
+/*******************************************************************************
+ * @fn          HCI_CS_SubeventContResultsProcess
+ *
+ * @brief       Subevent results callback
+ *
+ * input parameters
+ *
+ * @param       pRes - pointer to cont results data
+ * @param       dataLength - length of data
+
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None
+ */
+
+WEAK_FUNC void HCI_CS_SubeventContResultsProcess(const RCL_CmdBleCs_SubeventResultsContinue* subeventRes, uint16_t dataLength)
+{
+  if (subeventRes)
+  {
+    uint8* pEvt;
+    // Pointer to data inside pEvt, that pointer point next slot to be filled
+    uint8* pData;
+
+    pEvt = hciAllocAndPrepHciEvtPkt(&pData, HCI_LE_EVENT_CODE, dataLength);
+
+    if (NULL != pEvt)
+    {
+      if (NULL != pData)
+      {
+        // Copy results into pData
+        MAP_osal_memcpy(pData, (void *)subeventRes, dataLength);
       }
 
       // send the message
@@ -1305,7 +1347,7 @@ void HCI_CS_TestEndCompleteCback(uint8 status)
                                      HCI_LE_CS_TEST_END_COMPLETE_EVENT,
                                      HCI_LE_CS_TEST_END_COMPLETE_EVENT_LEN);
 
-  if (pEvt)
+  if (NULL != pEvt)
   {
     *pData++ = status;
 
