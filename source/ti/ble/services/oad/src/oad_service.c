@@ -44,8 +44,6 @@
  
  *****************************************************************************/
 
-#if defined(OAD_CFG) && !defined(OAD_APP_ONCHIP)
-
 /*********************************************************************
  * INCLUDES
  */
@@ -86,13 +84,13 @@ const uint8 oadServUUID[ATT_UUID_SIZE] =
 const uint8 oadCharUUID[OAD_CHAR_CNT][ATT_UUID_SIZE] =
 {
     // OAD Image Identify UUID
-    { TI_BASE_UUID_128(OAD_IMG_IDENTIFY_UUID) },
+    TI_BASE_UUID_128(OAD_IMG_IDENTIFY_UUID),
 
     // OAD Image Block Request/Response UUID
-    { TI_BASE_UUID_128(OAD_IMG_BLOCK_UUID) },
+    TI_BASE_UUID_128(OAD_IMG_BLOCK_UUID),
 
     // OAD Extended Control UUID
-    { TI_BASE_UUID_128(OAD_EXT_CTRL_UUID) }
+    TI_BASE_UUID_128(OAD_EXT_CTRL_UUID)
 };
 
 // OAD Service attribute
@@ -486,5 +484,3 @@ static bStatus_t OadWriteAttrCB(uint16 connHandle, gattAttribute_t *pAttr,
 
 /*********************************************************************
 *********************************************************************/
-
-#endif // defined(OAD_CFG) && !defined(OAD_APP_ONCHIP)

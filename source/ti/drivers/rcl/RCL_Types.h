@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_rcl_RCL_Types__include
-#define ti_drivers_rcl_RCL_Types__include
+#ifndef ti_drivers_RCL_Types_h__include
+#define ti_drivers_RCL_Types_h__include
 
 typedef void * RCL_Command_Handle;
 typedef struct RCL_Command_s RCL_Command;
@@ -47,5 +47,4 @@ typedef union LRF_Events_u LRF_Events;
 
 typedef struct LRF_TOPsmImage_s LRF_TOPsmImage;
 typedef struct LRF_RegConfigList_s LRF_RegConfigList;
-
-#endif /* ti_drivers_rcl_RCL_Types__include */
+#endif

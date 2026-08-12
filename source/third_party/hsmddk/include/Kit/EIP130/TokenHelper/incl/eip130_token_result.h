@@ -90,7 +90,7 @@
 #define EIP130TOKEN_RESULT_INVALID_STATE        (-19)   /** Invalid state */
 #define EIP130TOKEN_RESULT_OTP_WRITE_ERROR      (-20)   /** OTP write error */
 #define EIP130TOKEN_RESULT_ASSET_EXPIRED        (-21)   /** Asset Lifetime has expired */
-#define EIP130TOKEN_RESULT_COPROCESSOR_IF_ERROR (-22)   /** Coprocessor interface error */
+#define EIP130TOKEN_RESULT_COPROCESSOR_IF_ERROR (-22)   /** Co-Processor interface error */
 #define EIP130TOKEN_RESULT_PANIC_ERROR          (-31)   /** Panic error */
 
 /** DMA related errors are bus related [-32 ... -63]: Bus specific error */

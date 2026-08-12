@@ -20,59 +20,34 @@
  ******************************************************************************/
 
 #include <third_party/psa_crypto/include/psa/crypto.h>
-#ifdef TFM_BUILD
-    #include "config_tfm.h"
-#else
-    #include <third_party/psa_crypto/crypto_config.h>
-#endif
+#include <third_party/psa_crypto/crypto_config.h>
 #include <third_party/psa_crypto/crypto_helper.h>
 
 #include <ti/drivers/AESCommon.h>
 #include <ti/drivers/ECDH.h>
 #include <ti/drivers/ECDSA.h>
-#include <ti/drivers/EDDSA.h>
 #include <ti/drivers/RNG.h>
 #include <ti/drivers/SHA2.h>
 #include <ti/drivers/TRNG.h>
 
-#include <ti/drivers/cryptoutils/ecc/ECCParams.h>
-
 #include <ti/devices/DeviceFamily.h>
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+    #include <ti/drivers/EDDSA.h>
+#endif
+
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    #include <ti/drivers/ecdh/ECDHXXF3HSM.h>
-    #include <ti/drivers/ecdsa/ECDSAXXF3HSM.h>
-    #include <ti/drivers/eddsa/EDDSAXXF3HSM.h>
-    #include <ti/drivers/rng/RNGXXF3HSM.h>
-    #include <ti/drivers/trng/TRNGXXF3HSM.h>
+    #include <ti/drivers/ecdh/ECDHLPF3HSM.h>
+    #include <ti/drivers/ecdsa/ECDSALPF3HSM.h>
+    #include <ti/drivers/rng/RNGLPF3HSM.h>
+    #include <ti/drivers/trng/TRNGLPF3HSM.h>
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+        #include <ti/drivers/eddsa/EDDSALPF3HSM.h>
+    #endif
 #endif
 
 #ifdef TFM_BUILD
     #include <third_party/tfm/secure_fw/partitions/crypto/tfm_crypto_api.h> /* For tfm_crypto_get_caller_id */
-#endif
-
-#ifdef TFM_BUILD
-    #define ECCParams_BrainpoolP256R1 ECCParams_s_BrainpoolP256R1
-    #define ECCParams_BrainpoolP384R1 ECCParams_s_BrainpoolP384R1
-    #define ECCParams_BrainpoolP512R1 ECCParams_s_BrainpoolP512R1
-    #define ECCParams_NISTP192        ECCParams_s_NISTP192
-    #define ECCParams_NISTP224        ECCParams_s_NISTP224
-    #define ECCParams_NISTP256        ECCParams_s_NISTP256
-    #define ECCParams_NISTP384        ECCParams_s_NISTP384
-    #define ECCParams_NISTP521        ECCParams_s_NISTP521
-    #define ECCParams_Curve25519      ECCParams_s_Curve25519
-    #define ECCParams_Ed25519         ECCParams_s_Ed25519
-
-extern const ECCParams_CurveParams ECCParams_s_BrainpoolP256R1;
-extern const ECCParams_CurveParams ECCParams_s_BrainpoolP384R1;
-extern const ECCParams_CurveParams ECCParams_s_BrainpoolP512R1;
-extern const ECCParams_CurveParams ECCParams_s_NISTP192;
-extern const ECCParams_CurveParams ECCParams_s_NISTP224;
-extern const ECCParams_CurveParams ECCParams_s_NISTP256;
-extern const ECCParams_CurveParams ECCParams_s_NISTP384;
-extern const ECCParams_CurveParams ECCParams_s_NISTP521;
-extern const ECCParams_CurveParams ECCParams_s_Curve25519;
-extern const ECCParams_CurveParams ECCParams_s_Ed25519;
 #endif
 
 /*
@@ -163,12 +138,12 @@ psa_status_t map_ECDSA_status(int_fast16_t status, bool isVerifyOp)
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 
-        case ECDSAXXF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED:
-        case ECDSAXXF3HSM_STATUS_INVALID_KEY_ENCODING:
+        case ECDSALPF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED:
+        case ECDSALPF3HSM_STATUS_INVALID_KEY_ENCODING:
             psaStatus = PSA_ERROR_INVALID_ARGUMENT;
             break;
 
-        case ECDSAXXF3HSM_STATUS_HARDWARE_ERROR:
+        case ECDSALPF3HSM_STATUS_HARDWARE_ERROR:
             psaStatus = PSA_ERROR_HARDWARE_FAILURE;
             break;
 
@@ -282,18 +257,18 @@ psa_status_t map_ECDH_status(int_fast16_t status)
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
 
-        case ECDHXXF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED:
-        case ECDHXXF3HSM_STATUS_INVALID_PRIVATE_KEY_ENCODING:
-        case ECDHXXF3HSM_STATUS_INVALID_PUBLIC_KEY_ENCODING:
-        case ECDHXXF3HSM_STATUS_INVALID_SHARED_SECRET_KEY_ENCODING:
-        case ECDHXXF3HSM_STATUS_INVALID_PRIVATE_KEY_SIZE:
-        case ECDHXXF3HSM_STATUS_INVALID_PUBLIC_KEY_SIZE:
-        case ECDHXXF3HSM_STATUS_INVALID_SHARED_SECRET_KEY_SIZE:
-        case ECDHXXF3HSM_STATUS_INVALID_ECC_KEYS:
+        case ECDHLPF3HSM_STATUS_NO_VALID_CURVE_TYPE_PROVIDED:
+        case ECDHLPF3HSM_STATUS_INVALID_PRIVATE_KEY_ENCODING:
+        case ECDHLPF3HSM_STATUS_INVALID_PUBLIC_KEY_ENCODING:
+        case ECDHLPF3HSM_STATUS_INVALID_SHARED_SECRET_KEY_ENCODING:
+        case ECDHLPF3HSM_STATUS_INVALID_PRIVATE_KEY_SIZE:
+        case ECDHLPF3HSM_STATUS_INVALID_PUBLIC_KEY_SIZE:
+        case ECDHLPF3HSM_STATUS_INVALID_SHARED_SECRET_KEY_SIZE:
+        case ECDHLPF3HSM_STATUS_INVALID_ECC_KEYS:
             psaStatus = PSA_ERROR_INVALID_ARGUMENT;
             break;
 
-        case ECDHXXF3HSM_STATUS_HARDWARE_ERROR:
+        case ECDHLPF3HSM_STATUS_HARDWARE_ERROR:
             psaStatus = PSA_ERROR_HARDWARE_FAILURE;
             break;
 
@@ -456,7 +431,7 @@ psa_status_t map_AES_status(int_fast16_t status)
     return psaStatus;
 }
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || defined(DeviceFamily_CC35XX))
+#if (defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC35XX))
 /*
  *  ======== map_keyTypeToECDSACurveTypeHSM ========
  */
@@ -584,7 +559,7 @@ ECDH_CurveType map_keyTypeToECDHCurveTypeHSM(psa_key_type_t keyType, size_t keyB
     return curveType;
 }
 
-#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || defined(DeviceFamily_CC35XX) */
+#endif /* defined(DeviceFamily_CC27XX) || defined(DeviceFamily_CC35XX) */
 
 /*
  *  ======== map_keyTypeToECCParams ========
@@ -616,12 +591,6 @@ const ECCParams_CurveParams *map_keyTypeToECCParams(psa_key_type_t keyType, size
         case PSA_ECC_FAMILY_SECP_R1:
             switch (keyBits)
             {
-#if ((DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX))
-                /* NIST P192 is not supported by HSM driver at this time */
-                case 192:
-                    curveParams = &ECCParams_NISTP192;
-                    break;
-#endif
                 case 224:
                     curveParams = &ECCParams_NISTP224;
                     break;
@@ -646,12 +615,15 @@ const ECCParams_CurveParams *map_keyTypeToECCParams(psa_key_type_t keyType, size
             }
             break;
 
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
+     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4))
         case PSA_ECC_FAMILY_TWISTED_EDWARDS:
             if (keyBits == 255)
             {
                 curveParams = &ECCParams_Ed25519;
             }
             break;
+#endif
 
         default:
             break;
@@ -672,7 +644,7 @@ mbedtls_svc_key_id_t toKeyStoreKeyID(psa_key_id_t keyID)
 
     #ifdef TFM_BUILD
     /* tfm_crypto_get_caller_id always returns PSA_SUCCESS */
-    (void)tfm_crypto_get_caller_id(&keystoreKeyID.owner);
+    (void)tfm_crypto_get_caller_id(keystoreKeyID.owner);
     #else
     keystoreKeyID.owner = PSA_CRYPTO_KEY_ID_DEFAULT_OWNER;
     #endif /* TFM_BUILD */

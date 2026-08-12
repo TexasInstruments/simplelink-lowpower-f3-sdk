@@ -30,6 +30,8 @@ endmacro()
 
 ####################################################################################
 
+find_package("Drivers" REQUIRED)
+find_package("SecureDrivers" REQUIRED)
 find_package("DriversUtils" REQUIRED)
 find_package("SecureDriversUtils" REQUIRED)
 find_package("TrustZone" REQUIRED)

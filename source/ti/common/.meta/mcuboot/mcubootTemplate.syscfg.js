@@ -194,7 +194,7 @@ const deviceGroupMcubootSettings = {
             secondarySize: 0x31000
         },
         antiRollbackProtection: { readOnly: false, hidden: false, tzConfigurable: false },
-        enableEncryptedImage:{ enabled: true },
+        enableEncryptedImage:{ enabled: false },
         bootloader:
         { 
             tzEnabledBase:
@@ -251,7 +251,7 @@ const deviceGroupMcubootSettings = {
             secondarySize: 0x31000
         },
         antiRollbackProtection: { readOnly: false, hidden: false },
-        enableEncryptedImage:{ enabled: true },
+        enableEncryptedImage:{ enabled: false },
         bootloader:
         { 
             tzEnabledBase:

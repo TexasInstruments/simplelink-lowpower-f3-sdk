@@ -121,7 +121,7 @@ static uint8_t rangingDBClient_getNBytes(RangingDBClient_procedureSegmentsReader
 static uint16_t rangingDBClient_getSubeventDataSize(RangingDBClient_procedureSegmentsReader_t segmentsReader, uint8_t numStepsReported,
                                                     uint8_t numAntPath, uint8_t role);
 static uint8_t rangingDBClient_getSubeventData(RangingDBClient_procedureSegmentsReader_t* segmentsReader, uint8_t numStepsReported,
-                                               uint8_t numAntPath, uint8_t role, uint8_t** subeventDataOut, uint32_t* subeventDataSizeOut);
+                                               uint8_t numAntPath, uint8_t role, uint8_t** subeventDataOut);
 
 /*********************************************************************
  * PUBLIC FUNCTIONS
@@ -178,21 +178,6 @@ uint8_t RangingDBClient_procedureClose(uint8_t handle)
     if (status == SUCCESS)
     {
         rangingDBClient_clearIndex(handle);
-    }
-
-    return status;
-}
-
-/*******************************************************************************
- * Public function defined in ranging_db_client.h.
- */
-uint8_t RangingDBClient_isAvailableSlot(void)
-{
-    uint8_t status = FAILURE;
-
-    if ( rangingDBClient_getEmptyIndex() != RANGING_DB_CLIENT_INVALID_HANDLE )
-    {
-        status = SUCCESS;
     }
 
     return status;
@@ -457,14 +442,13 @@ uint8_t RangingDBClient_getRangingHeader(RangingDBClient_procedureSegmentsReader
  *                            Memory for this pointer is allocated within the
  *                            function and should be freed by the caller.
  *                            If NULL, the function will return @ref bleMemAllocError
- * @param   subeventDataSizeOut - Pointer to store the size of the retrieved subevent data.
  *
  * @return  SUCCESS - if the subevent header and data was successfully retrieved.
  *          FAILURE - if there was an error during parsing the data or invalid parameters.
  *          bleMemAllocError - if memory allocation failed.
  */
 uint8_t RangingDBClient_getNextSubevent(RangingDBClient_procedureSegmentsReader_t* segmentsReader, uint8_t numAntPath, uint8_t role,
-                                        Ranging_subEventHeader_t* subeventHeaderOut, uint8_t** subeventDataOut, uint32_t* subeventDataSizeOut)
+                                        Ranging_subEventHeader_t* subeventHeaderOut, uint8_t** subeventDataOut)
 {
     uint8_t status = SUCCESS;
 
@@ -496,7 +480,7 @@ uint8_t RangingDBClient_getNextSubevent(RangingDBClient_procedureSegmentsReader_
     if (status == SUCCESS)
     {
         // Get the subevent data
-        status = rangingDBClient_getSubeventData(&segmentsReaderCopy, subeventHeader.numStepsReported, numAntPath, role, &subeventData, subeventDataSizeOut);
+        status = rangingDBClient_getSubeventData(&segmentsReaderCopy, subeventHeader.numStepsReported, numAntPath, role, &subeventData);
     }
 
     if (status == SUCCESS)
@@ -916,15 +900,13 @@ static uint16_t rangingDBClient_getSubeventDataSize(RangingDBClient_procedureSeg
  *                            Memory is allocated within the function and should
  *                            be freed by the caller. If NULL, the function will
  *                            return @ref bleMemAllocError
- * @param  subeventDataSizeOut - Pointer to store the size of the retrieved subevent
- *                               data in bytes. If NULL, would be ignored.
  *
  * @return  SUCCESS - if the subevent data was successfully retrieved.
  *          FAILURE - if there was an error during parsing the data or invalid parameters.
  *          bleMemAllocError - if memory allocation failed.
  */
 static uint8_t rangingDBClient_getSubeventData(RangingDBClient_procedureSegmentsReader_t* segmentsReader, uint8_t numStepsReported,
-                                               uint8_t numAntPath, uint8_t role, uint8_t** subeventDataOut, uint32_t* subeventDataSizeOut)
+                                               uint8_t numAntPath, uint8_t role, uint8_t** subeventDataOut)
 {
     uint8_t status = SUCCESS;
     uint8_t* subeventData = NULL;
@@ -939,6 +921,7 @@ static uint8_t rangingDBClient_getSubeventData(RangingDBClient_procedureSegments
     {
         // Get the subevent data size
         subeventSize = rangingDBClient_getSubeventDataSize(*segmentsReader, numStepsReported, numAntPath, role);
+
         if (subeventSize == 0)
         {
             status = FAILURE;
@@ -972,12 +955,10 @@ static uint8_t rangingDBClient_getSubeventData(RangingDBClient_procedureSegments
     }
     else
     {
-        // Output the results
-        *subeventDataOut = subeventData;
-
-        if (subeventDataSizeOut != NULL)
+        if (subeventDataOut != NULL)
         {
-            *subeventDataSizeOut = subeventSize;
+            // Output the results
+            *subeventDataOut = subeventData;
         }
     }
 

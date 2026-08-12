@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2026 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,14 +39,11 @@
 
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
-let logError = Common.logError;
-let deviceId = system.deviceData.deviceId;
 
 /* Amount of bytes necessary to store a key's metadata in KeyStore. Keys of
- * every type require a slot, each with a constant size. This value is equivalent
- * to sizeof(psa_key_context_t) from adapter_psa_key_management.h in the DDK.
+ * every type require a slot, each with a constant size.
  */
-const slotMetadataSize = 57;
+const slotMetadataSize = 83;
 
 /* The largest key that can be stored is an encrypted AES256 key.
  * The breakdown is as follows: For each key, there is 32 bytes of data.
@@ -68,17 +65,6 @@ const constantOverheadRam = 40;
 
 const defaultAssetStoreSlots = 3;
 
-/* With the smallest key size, only 66 keys can fit in asset store. We reserve
- * at least 11 assets for crypto drivers to use internally. The remainder is the
- * max number of slots allowed.
- */
-const maxAssetStoreSlots = 55;
-
-/* The number of persistent key slots, used to cache persistent keys in RAM.
- * Due to the current implementation of KeyStore, to retrieve persistent keys
- * from flash for usage in an operation, there must be at least 1 slot available
- * to load the key into.
- */
 const defaultPersistentSlots = 3;
 
 const defaultVolatileSlots = 0;
@@ -124,11 +110,7 @@ function getLibs(mod)
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        if (deviceId.match(/CC27..(R|P)(10|7)/)) {
-            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx10_its.a"));
-        } else if (deviceId.match(/CC27..(R|P)(20|15)/)) {
-            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx20_its.a"));
-        }
+        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
     }
 
     return (libGroup);
@@ -295,6 +277,13 @@ let configBase = [
                         + "There is a limit of 5, since some space in HSM dynamic RAM must be reserved "
                         + "for crypto drivers to make use of.",
         default       : defaultAssetStoreSlots,
+        options       : [
+            { name: 1 },
+            { name: 2 },
+            { name: 3 },
+            { name: 4 },
+            { name: 5 }
+        ],
         onChange      : onChangeUpdateSlotCountAndSize,
         displayFormat : "dec"
     },
@@ -420,21 +409,6 @@ predefined internal flash region.
         default       : 23,
         displayFormat : "dec",
         hidden        : true
-    },
-    {
-        name          : "isTrustZoneEnabled",
-        description   : "Tracks whether TrustZone is enabled - KeyStore SysConfig should not define content "
-                        + "for the secure build if so.",
-        default       : false,
-        hidden        : true
-    },
-    {
-        name          : "useSWCrypto",
-        displayName   : "Use MbedTLS SW Crypto",
-        description   : "Allows MbedTLS SW Crypto implementations to be used for select crypto operations "
-                        + "that the HSM doesn't support.",
-        default: false,
-        hidden: false
     }
 ];
 
@@ -595,18 +569,7 @@ function validate(inst, validation)
     if (inst.flashOffset % sectorSize) {
         let message = "KeyStore flash offset must be aligned on a " + sectorSize
             + " page boundary.";
-        logError(validation, inst, "flashOffset", message);
-    }
-
-    if (inst.assetStoreSlotCount > maxAssetStoreSlots)
-    {
-        let message = "Asset store slot count must be " + maxAssetStoreSlots + " or less.";
-        logError(validation, inst, "assetStoreSlotCount", message);
-    }
-    else if (inst.assetStoreSlotCount < 1)
-    {
-        let message = "You must reserve at least 1 asset store slot.";
-        logError(validation, inst, "assetStoreSlotCount", message);
+        Common.logError(validation, inst, "flashOffset", message);
     }
 }
 
@@ -623,9 +586,6 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
             inst.$uiState.ramUsage.hidden = true;
             inst.$uiState.flashRegionType.hidden = true;
             inst.$uiState.flashOffset.hidden = true;
-            inst.$uiState.useSWCrypto.hidden = true;
-            /* mbedTLS SW Crypto is not supported (yet) in TrustZone builds */
-            inst.useSWCrypto = false;
 
             /* Hide volatile key configs */
             Object.keys(inst.$uiState).forEach(key => {
@@ -633,12 +593,6 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
                     inst.$uiState[key].hidden = true;
                 }
             });
-
-            /* If TrustZone is enabled, we must prevent definition of
-             * SysConfig-generated content that the secure build defines
-             * for itself.
-             */
-            inst.isTrustZoneEnabled = true;
         }
         else {
             /* Display base config */
@@ -647,7 +601,6 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
             inst.$uiState.ramUsage.hidden = false;
             inst.$uiState.flashRegionType.hidden = false;
             inst.$uiState.flashOffset.hidden = false;
-            inst.$uiState.useSWCrypto.hidden = false;
 
             /* Display volatile key configs */
             Object.keys(inst.$uiState).forEach(key => {
@@ -655,8 +608,6 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
                     inst.$uiState[key].hidden = false;
                 }
             });
-
-            inst.isTrustZoneEnabled = false;
         }
     }
 }

@@ -43,138 +43,115 @@ const Docs = system.getScript("/ti/ble/channel_sounding/ble_cs_docs.js");
 // Get common Script
 const Common = system.getScript("/ti/ble/ble_common.js");
 
-// Stack items (controller-level): antenna configuration and CS test mode
-const csStackConfigItems = [
-    {
-        name: "hideChannelSoundingGroup",
-        default: true,
-        hidden: true
-    },
-    {
-        name: "numAntennas",
-        displayName: "Number of Antennas",
-        default: 1,
-        hidden: true,
-        description: "Set the number of antennas",
-        longDescription: "This setting allows you to specify the number of antennas of the device.",
-        options: [
-            { name: 1, displayName: "1 Antenna" },
-            { name: 2, displayName: "2 Antennas" },
-            { name: 3, displayName: "3 Antennas" },
-            { name: 4, displayName: "4 Antennas" }
-        ],
-        onChange: onNumAntennasChange,
-    },
-    {
-        name: "antennasMuxValues",
-        displayName: "Antennas Muxing Bitmap",
-        displayFormat: "hex",
-        default: 0x0,
-        hidden: true,
-        description: "Set the antennas muxing bitmap",
-        longDescription: Docs.antennasMuxValuesLongDescription
-    },
-];
-
-// CS Test Mode: controller/host only — not exposed in the full BLE module
-const csTestConfigItem = {
-    name: "csTest",
-    displayName: "CS Test Mode",
-    default: false,
-    hidden: true,
-    description: "Enable Channel Sounding Test Mode"
-};
-
-// Controller-facing config: stack items + CS test mode
-const csControllerConfigItems = [...csStackConfigItems, csTestConfigItem];
-
-// App items (host-level): ranging configuration
-const csAppConfigItems = [
-    {
-        name: "csStepsResultsFormat",
-        displayName: "CS Steps Results Format",
-        default: 1,
-        hidden: true,
-        options: [
-            { name: 0, displayName: "HCI" },
-            { name: 1, displayName: "Custom" }
-        ],
-        description: "Format for Channel Sounding steps results",
-    },
-    {
-        name: "csMeasureDistance",
-        displayName: "Channel Sounding Measure Distance",
-        hidden: true,
-        default: false,
-        description: "Enable Channel Sounding Measure Distance feature",
-        onChange: onCsMeasureDistanceChange,
-    },
-    {
-        name: "csMeasureResultsMode",
-        displayName: "Channel Sounding Results Mode",
-        default: 0,
-        hidden: true,
-        options: [
-            { name: 0, displayName: "Distance" },
-            { name: 1, displayName: "Distance + Raw Results" }
-        ],
-        description: "Determines the results mode for Channel Sounding - raise only distance events or both distance and raw results events",
-    },
-    {
-        name: "rangingServer",
-        displayName: "Ranging Server (RRSP)",
-        default: false,
-        hidden: true,
-        onChange: onRRSPChange
-    },
-    {
-        name: "rangingServerRealTimeFeature",
-        displayName: "Ranging Server Real Time",
-        default: false,
-        hidden: true,
-        description: "Enable Ranging Server Real Time feature",
-    },
-    {
-        name: "rangingServerExtCtrlMode",
-        displayName: "Ranging Server External Control Mode",
-        default: false,
-        hidden: true,
-    },
-    {
-        name: "rangingClient",
-        displayName: "Ranging Client (RREQ)",
-        default: false,
-        hidden: true,
-        onChange: onRREQChange,
-    },
-    {
-        name: "rangingClientMode",
-        displayName: "Ranging Client Data Exchange Mode",
-        default: 1,
-        hidden: true,
-        options: [
-            { name: 1, displayName: "On-Demand" },
-            { name: 2, displayName: "Real-Time" }
-        ],
-        description: "Specifies the mode to be used for ranging data exchange with the Ranging Server",
-        longDescription: Docs.rangingClientModeLongDescription
-    },
-    {
-        name: "rangingClientExtCtrlMode",
-        displayName: "Ranging Client External Control Mode",
-        default: false,
-        hidden: true,
-    },
-];
-
-// Full config: Stack (controller-level) + App (host-level) sub-groups
 const config = {
     name: "channelSoundingConfig",
     displayName: "Channel Sounding Configuration",
     description: "Configure BLE Channel Sounding Settings",
     config: [
-        { displayName: "Stack Configuration", config: csStackConfigItems },
-        { displayName: "App Configuration",   config: csAppConfigItems }
+        {
+            name: "hideChannelSoundingGroup",
+            default: true,
+            hidden: true
+        },
+        {
+            name: "numAntennas",
+            displayName: "Number of Antennas",
+            default: 1,
+            hidden: true,
+            description: "Set the number of antennas",
+            longDescription: "This setting allows you to specify the number of antennas of the device.",
+            options: [
+                { name: 1, displayName: "1 Antenna" },
+                { name: 2, displayName: "2 Antennas" },
+                { name: 3, displayName: "3 Antennas" },
+                { name: 4, displayName: "4 Antennas" }
+            ],
+            onChange: onNumAntennasChange,
+        },
+        {
+            name: "antennasMuxValues",
+            displayName: "Antennas Muxing Bitmap",
+            displayFormat: "hex",
+            default: 0x0,
+            hidden: true,
+            description: "Set the antennas muxing bitmap",
+            longDescription: Docs.antennasMuxValuesLongDescription
+        },
+        {
+            name: "csStepsResultsFormat",
+            displayName: "CS Steps Results Format",
+            default: 1,
+            hidden: true,
+            options: [
+                { name: 0, displayName: "HCI" },
+                { name: 1, displayName: "Custom" }
+            ],
+            description: "Format for Channel Sounding steps results",
+        },
+        {
+            name: "csMeasureDistance",
+            displayName: "Channel Sounding Measure Distance",
+            hidden: true,
+            default: false,
+            description: "Enable Channel Sounding Measure Distance feature",
+            onChange: onCsMeasureDistanceChange,
+        },
+        {
+            name: "csMeasureResultsMode",
+            displayName: "Channel Sounding Results Mode",
+            default: 0,
+            hidden: true,
+            options: [
+                { name: 0, displayName: "Distance" },
+                { name: 1, displayName: "Distance + Raw Results" }
+            ],
+            description: "Determines the results mode for Channel Sounding - raise only distance events or both distance and raw results events",
+        },
+        {
+            name: "rangingServer",
+            displayName: "Ranging Server (RRSP)",
+            default: false,
+            hidden: true,
+            onChange: onRRSPChange
+        },
+        {
+            name: "rangingServerRealTimeFeature",
+            displayName: "Ranging Server Real Time",
+            default: false,
+            hidden: true,
+            description: "Enable Ranging Server Real Time feature",
+        },
+        {
+            name: "rangingServerExtCtrlMode",
+            displayName: "Ranging Server External Control Mode",
+            default: false,
+            hidden: true,
+        },
+        {
+            name: "rangingClient",
+            displayName: "Ranging Client (RREQ)",
+            default: false,
+            hidden: true,
+            onChange: onRREQChange,
+        },
+        {
+            name: "rangingClientMode",
+            displayName: "Ranging Client Data Exchange Mode",
+            default: 1,
+            hidden: true,
+            options: [
+                { name: 1, displayName: "On-Demand" },
+                { name: 2, displayName: "Real-Time" }
+            ],
+            description: "Specifies the mode to be used for ranging data exchange with the Ranging Server",
+            longDescription: Docs.rangingClientModeLongDescription
+        },
+        {
+            name: "rangingClientExtCtrlMode",
+            displayName: "Ranging Client External Control Mode",
+            default: false,
+            hidden: true,
+        },
     ]
 };
 
@@ -222,7 +199,6 @@ function onRREQChange(inst, ui)
     // Show the Ranging Client Mode option only when the Ranging Client is enabled
     ui.rangingClientMode.hidden = inst.rangingClient === false;
 }
-
 /*
  *  ======== onRRSPChange ========
  * Handles the change of Ranging Server (RRSP) checkbox
@@ -247,13 +223,9 @@ function onRRSPChange(inst, ui)
  */
 function validate(inst, validation)
 {
-    if(inst.channelSounding && inst.numAntennas > 1)
+    if(inst.numAntennas > 1)
     {
-        // CS EVM has PBEGPO2/PBEGPO3 pre-configured; no user action needed
-        if(Common.getLaunchPadName() !== "CC2745R10_CS_EVM")
-        {
-            validation.logWarning("In order to enable multiple antennas, please make sure to enable PBEGPO2 and PBEGPO3 inside TI Drivers -> RCL Observables -> signals", inst, "numAntennas");
-        }
+        validation.logWarning("In order to enable multiple antennas, please make sure to enable PBEGPO2 and PBEGPO3 inside TI Drivers -> RCL Observables -> signals", inst, "numAntennas");
 
         // Throw an error if antennas muxing values has been set to 0xFF (0xFF means no configuration)
         if(inst.antennasMuxValues < 0x0 || inst.antennasMuxValues >= 0xFF)
@@ -293,39 +265,19 @@ function moduleInstances(inst)
 }
 
 /*
- *  ======== getStackOpts ========
- * Returns compiler defines for CS Stack (controller-level) features:
- * antenna configuration and CS test mode.
- * Used by standalone ble_controller and ble_host modules.
- */
-function getStackOpts(mod)
-{
-    let inst = mod.$static;
-    let result = [];
-
-    if (inst.channelSounding)
-    {
-        inst.numAntennas && result.push("-DNUM_ANTENNAS="+inst.numAntennas);
-        (inst.numAntennas > 1) && (inst.antennasMuxValues >= 0) && result.push("-DANT_MUX_VALUES=0x" + inst.antennasMuxValues.toString(16).toUpperCase());
-        inst.csTest && result.push("-DCS_TEST");
-    }
-
-    return result;
-}
-
-/*
  *  ======== getOpts ========
- * Returns compiler defines for all CS features (Stack + App).
- * Used by the full ble module.
  */
 function getOpts(mod)
 {
     let inst = mod.$static;
-    let result = [...getStackOpts(mod)];
+    let result = [];
 
+    // Add csMeasureDistance related defines only if channelSounding is enabled
+    // and csMeasureDistance is enabled
     if (inst.channelSounding)
     {
-        result.push(`-DCS_STEPS_RESULTS_FORMAT=${inst.csStepsResultsFormat}`);
+        inst.numAntennas && result.push("-DNUM_ANTENNAS="+inst.numAntennas);
+        (inst.numAntennas > 1) && (inst.antennasMuxValues >= 0) && result.push("-DANT_MUX_VALUES=0x" + inst.antennasMuxValues.toString(16).toUpperCase());
 
         if(inst.csMeasureDistance)
         {
@@ -337,13 +289,17 @@ function getOpts(mod)
 
         if(inst.rangingServer)
         {
-            result.push("-DRANGING_SERVER");
+            // Add the ranging server define
+            result.push("-DRANGING_SERVER")
 
             if(inst.rangingServerExtCtrlMode)
             {
+                // Add the ranging Server external control define
+                // This define is used to enable the external control mode of the ranging client and server
                 result.push("-DRANGING_SERVER_EXTCTRL_APP");
             }
 
+            // Add the real time feature if enabled
             if(inst.rangingServerRealTimeFeature == true)
             {
                 result.push(`-DRANGING_SERVER_REAL_TIME`);
@@ -352,10 +308,13 @@ function getOpts(mod)
 
         if(inst.rangingClient)
         {
-            result.push("-DRANGING_CLIENT");
+            // Add the ranging client define
+            result.push("-DRANGING_CLIENT")
 
             if(inst.rangingClientExtCtrlMode)
             {
+                // Add the ranging Server external control define
+                // This define is used to enable the external control mode of the ranging client and server
                 result.push("-DRANGING_CLIENT_EXTCTRL_APP");
             }
 
@@ -384,13 +343,11 @@ function getLibs(inst)
     {
         let GenLibs = system.getScript("/ti/utils/build/GenLibs.syscfg.js");
         let toolchain = GenLibs.getToolchainDir();
+        const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
 
-        if(system.deviceData.deviceId.match(/CC27/))
+        if(devFamily == "DeviceFamily_CC27XX")
         {
-            const rangingLib = system.deviceData.deviceId.match(/CC2755P20/)
-                ? `ti/ble/app_util/cs_ranging/lib/${toolchain}/m33f/blecsranging_cc27xxx20.a`
-                : `ti/ble/app_util/cs_ranging/lib/${toolchain}/m33f/blecsranging_cc27xxx10.a`;
-            libs.push(rangingLib);
+            libs.push(`ti/ble/app_util/cs_ranging/lib/${toolchain}/m33f/blecsranging_cc27xx.a`);
         }
     }
 
@@ -403,12 +360,8 @@ function getLibs(inst)
  */
 exports = {
     config: config,
-    csStackConfigItems: csStackConfigItems,
-    csControllerConfigItems: csControllerConfigItems,
-    csAppConfigItems: csAppConfigItems,
     validate: validate,
     moduleInstances: moduleInstances,
-    getStackOpts: getStackOpts,
     getOpts: getOpts,
     getLibs: getLibs
 };

@@ -82,8 +82,6 @@
 #include "ti/ble/stack_util/lib_opt/map_direct.h"
 // Stub headers
 #include "ti/ble/stack_util/lib_opt/host_stub_gap_bond_mgr.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_scan.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_advertiser.h"
 
 /*********************************************************************
  * MACROS
@@ -114,19 +112,6 @@ uint8 gapEndAppTaskID = INVALID_TASK_ID; // end application task ID to send even
 /*********************************************************************
  * LOCAL VARIABLES
  */
-uint8_t gapDefaultLeEvtMask[B_EVENT_MASK_LEN] = {
-  LE_EVT_MASK_BYTE0,  // byte 0
-  LE_EVT_MASK_BYTE1,  // byte 1
-  LE_EVT_MASK_BYTE2,  // byte 2
-  LE_EVT_MASK_NONE,   // byte 3
-  LE_EVT_MASK_BYTE4,  // byte 4
-  LE_EVT_MASK_NONE,   // byte 5
-  LE_EVT_MASK_NONE,   // byte 6
-  LE_EVT_MASK_NONE    // byte 7
-};
-
-#define BYTE_4        4
-#define BYTE_5        5
 
 /*********************************************************************
  * LOCAL FUNCTION PROTOTYPES
@@ -172,14 +157,12 @@ bStatus_t GAP_DeviceInit_validate_params(uint8_t profileRole, uint8_t taskID,
      // If all bits excluding the 2 MSBs are all 0's...
      ((MAP_osal_isbufset(pRandomAddr, 0x00, B_ADDR_LEN - 1) &&
       ((pRandomAddr[B_ADDR_LEN - 1] & 0x3F) == 0)) ||
-      // Or all bytes are 1's
+      // Or all bites are 1's
       MAP_osal_isbufset(pRandomAddr, 0xFF, B_ADDR_LEN) ||
-      // Address must be random static, or NRPA when using ADDRMODE_RP_WITH_RANDOM_ID
-      // (PTS GAP/BROB/BCST tests configure NRPA via addrMode=ADDRMODE_RP_WITH_RANDOM_ID)
-      !(GAP_IS_ADDR_RS(pRandomAddr) ||
-        (addrMode == ADDRMODE_RP_WITH_RANDOM_ID && GAP_IS_ADDR_RPN(pRandomAddr)))))
+      // Or the 2 MSBs are not 11b
+      !(GAP_IS_ADDR_RS(pRandomAddr))))
   {
-    // This is an invalid random address
+    // This is an invalid ramdom static address
     return( INVALIDPARAMETER );
   }
 
@@ -276,49 +259,23 @@ bStatus_t GAP_DeviceInit(uint8_t profileRole, uint8_t taskID,
 
   if (stat == SUCCESS)
   {
-    // ADDRMODE_RP_WITH_RANDOM_ID + NRPA input: treat as ADDRMODE_RANDOM and
-    // generate a fresh NRPA so every power-up starts with a new address.
-    // Subsequent rotations are driven by the TGAP(private_addr_int) timer.
-    uint8 isNrpaBootstrap = (addrMode == ADDRMODE_RP_WITH_RANDOM_ID) &&
-                            (pRandomAddr != NULL) && GAP_IS_ADDR_RPN(pRandomAddr);
-    GAP_Addr_Modes_t effectiveMode = isNrpaBootstrap ? ADDRMODE_RANDOM : addrMode;
-    uint8 freshNrpa[B_ADDR_LEN];
-    uint8 *pAddrToUse = pRandomAddr;
-    if (isNrpaBootstrap)
-    {
-      gapGenerateNRPA(freshNrpa);
-      pAddrToUse = freshNrpa;
-    }
 
-    stat = OPT_GAPBondMgr_UpdateRandomAddr( effectiveMode, pAddrToUse );
+    stat = OPT_GAPBondMgr_UpdateRandomAddr( addrMode, pRandomAddr );
     if(stat != SUCCESS)
     {
       return (bleInternalError);
     }
 
     // Set the internal GAP address mode
-    gapDeviceAddrMode = effectiveMode;
-
-    if (isNrpaBootstrap)
-    {
-      // Arm NRPA rotation timer - device-wide per TGAP(private_addr_int).
-      uint16 intervalMin = MAP_GAP_GetParamValue(GAP_PARAM_PRIVATE_ADDR_INT);
-      (void)MAP_osal_stop_timerEx(gapTaskID, GAP_CHANGE_NON_RESOLVABLE_PRIVATE_ADDR_EVT);
-      if (intervalMin > 0)
-      {
-        (void)MAP_osal_start_timerEx(gapTaskID,
-                                     GAP_CHANGE_NON_RESOLVABLE_PRIVATE_ADDR_EVT,
-                                     (uint32)intervalMin * GAP_PRIVATE_ADDR_CHANGE_RESOLUTION);
-      }
-    }
+    gapDeviceAddrMode = addrMode;
 
     // If own address type is random static or RPA with random static...
     if(gapDeviceAddrMode == ADDRMODE_RANDOM
        || gapDeviceAddrMode == ADDRMODE_RP_WITH_RANDOM_ID
       )
     {
-      // Put the random address to the controller
-      MAP_LL_SetRandomAddress(pAddrToUse);
+      // If valid random static address, put it to the controller
+      MAP_LL_SetRandomAddress(pRandomAddr);
     }
 
     // Set the task ID to receive GAP events.
@@ -374,26 +331,6 @@ bStatus_t GAP_DeviceInit(uint8_t profileRole, uint8_t taskID,
 
       // Init GAP security, privacy, advertising and scan per role
       GAP_DeviceInit_per_role(profileRole);
-    }
-
-    // Enable controller events to be sent to the host according to enabled flags
-
-    if( OPT_LL_PAwRA_IsEnable() == TRUE )
-    {
-      // Enable PAwR advertiser events (subevent data request + response report)
-      gapDefaultLeEvtMask[BYTE_4] |= ( GAP_EVT_MASK_BYTE4_PADVA_SUBEVENT_DATA_REQ | GAP_EVT_MASK_BYTE4_PADVA_RESPONSE_REPORT );
-    }
-
-    if ( OPT_LL_PAwRS_IsEnable() == TRUE )
-    {
-      // Enable PAwR scanner events (sync established V2, report V2, enhanced connection complete V2) 
-      gapDefaultLeEvtMask[BYTE_4] |= ( GAP_EVT_MASK_BYTE4_PADV_SYNC_ESTABLISHED_V2 | GAP_EVT_MASK_BYTE4_PADV_REPORT_V2 );
-      gapDefaultLeEvtMask[BYTE_5] |=   GAP_EVT_MASK_BYTE5_ENH_CONN_COMPLETE_V2;
-    }
-
-    if ( OPT_LL_PAwRA_IsEnable() == TRUE || OPT_LL_PAwRS_IsEnable() == TRUE )
-    {
-      stat = HCI_LE_SetEventMaskCmd(gapDefaultLeEvtMask);
     }
   }
 

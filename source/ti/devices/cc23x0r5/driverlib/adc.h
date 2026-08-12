@@ -266,9 +266,6 @@ extern "C" {
 //! \brief Conversion overflow
 #define ADC_INT_OVIFG ADC_IMASK0_OVIFG
 
-//! \brief Max comparator settling time
-#define ADC_DEBUG1_CTRL_MAX_COMP_SETTLE_TIME (0x3 << 9)
-
 //*****************************************************************************
 //
 // API Functions and prototypes
@@ -777,25 +774,6 @@ __STATIC_INLINE void ADCClearInterrupt(uint32_t intFlags)
 {
     // Clear the requested interrupt sources
     HWREG(ADC_BASE + ADC_O_ICLR0) = intFlags;
-}
-
-//*****************************************************************************
-//
-//! \brief Increase settling time for comparator output.
-//!
-//! Set bits 9-10 in ADC:DEBUG1:CTRL to increase settling time for the
-//! comparator output. This will reduce the error rate of ADC conversions.
-//! This is a workaround for the ADC errata: 'ADC_09', documented at:
-//! https://www.ti.com/lit/er/swrz134e/swrz134e.pdf or
-//! https://www.ti.com/lit/er/swrz161a/swrz161a.pdf
-//!
-//! \return None
-//
-//*****************************************************************************
-__STATIC_INLINE void ADCIncreaseComparatorSettlingTime(void)
-{
-    /* It is sufficient to use the OR operator since the complete field will be set. */
-    HWREG(ADC_BASE + ADC_O_DEBUG1) |= ADC_DEBUG1_CTRL_MAX_COMP_SETTLE_TIME;
 }
 
 //*****************************************************************************

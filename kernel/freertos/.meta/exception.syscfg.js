@@ -205,7 +205,7 @@ Configure which handler is used when a BusFault is generated.`,
                 default: "Exception_handlerSpin",
                 hidden: GenLibs.getDeviceIsa() === "m0p",
                 onChange:(inst, ui) => {
-                    ui.busFaultHandlerCustomFxn.hidden = inst.busFaultHandler !== "Custom";
+                    ui.busFaultHandlerCustomFxn.hidden = inst.mpuFaultHandlerCustomFxn !== "Custom";
                 }
             },
             {
@@ -225,7 +225,7 @@ Configure which handler is used when a UsageFault is generated.`,
                 default: "Exception_handlerSpin",
                 hidden: GenLibs.getDeviceIsa() === "m0p",
                 onChange:(inst, ui) => {
-                    ui.usageFaultHandlerCustomFxn.hidden = inst.usageFaultHandler !== "Custom";
+                    ui.usageFaultHandlerCustomFxn.hidden = inst.busFaultHandlerCustomFxn !== "Custom";
                 }
             },
             {
@@ -384,26 +384,13 @@ function getExceptionOptions(deviceSpecificHandler)
     }
     else
     {
-        let deviceSpecificHandlerValue = SettingsScript.getDeviceSettings()[deviceSpecificHandler];
-
-        const handlerNames = [
-            "Exception_handlerSpin",
-            "Exception_handlerMin",
-            "Exception_handlerMax"
+        return [
+            { name: "Exception_handlerSpin" },
+            { name: "Exception_handlerMin" },
+            { name: "Exception_handlerMax" },
+            { name: SettingsScript.getDeviceSettings()[deviceSpecificHandler] },
+            { name: "Custom" }
         ];
-
-        if (!handlerNames.includes(deviceSpecificHandlerValue)) {
-            /* Add the device specific handler value to the list of options if
-             * it is not already present.
-             */
-            handlerNames.push(deviceSpecificHandlerValue);
-        }
-
-        /* Add the "Custom" option to the end of the list of options. */
-        handlerNames.push("Custom");
-
-        /* Convert array of handler names to array of objects with name property. */
-        return handlerNames.map((handlerName) => ({ name: handlerName }));
     }
 }
 

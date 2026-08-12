@@ -329,4 +329,6 @@ struct connection_t *handle_to_connection(psa_handle_t handle);
  */
 void tfm_core_handler_mode(void);
 
+void update_caller_outvec_len(struct connection_t *handle);
+
 #endif /* __SPM_H__ */

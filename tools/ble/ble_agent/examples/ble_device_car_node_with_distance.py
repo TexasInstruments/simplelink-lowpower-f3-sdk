@@ -18,7 +18,7 @@ Main Features:
 
 3. **CS Procedure Execution**:
    - Initiates CS procedures to collect distance measurements and/or raw channel data.
-   - Supports repeated measurements.
+   - Supports repeated measurements and extended results.
    - Allows configuration of which events/results to wait for (distance, raw subevents, remote results, etc.).
 
 How to Use:
@@ -376,7 +376,6 @@ def cs_proc_enable(
     extended_results=False,
     wait_for_raw_events=False,
     auto_config=False,
-    ras_profile=False,
 ):
     """
     Enables the procedure for the given car node and handles subsequent events.
@@ -389,8 +388,6 @@ def cs_proc_enable(
             Defaults to True.
         wait_for_distance (bool, optional): Indicates whether to wait for distance
             events. defaults to True.
-        extended_results (bool, optional): Indicates whether to wait for extended
-            results events. Defaults to False.
         wait_for_raw_events (bool, optional): Indicates whether to wait for raw results
             events. Defaults to False.
         auto_config (bool, optional): Indicates whether embedded Auto CS Configuration
@@ -428,10 +425,11 @@ def cs_proc_enable(
             for i in range(repeat):
                 if wait_for_raw_events:
                     # Expect raw results events
-                    wait_results_subevents(car_node, wait_for_remote, ras_profile)
+                    wait_results_subevents(car_node, wait_for_remote)
                     if wait_for_distance:
                         # Expect also distance results event
                         wait_distance(car_node, extended_results)
+
                 elif wait_for_distance:
                     # Expect only distance results event (need to disable 'Measure Distance' in sysconfig for this)
                     wait_distance(car_node, extended_results)
@@ -439,23 +437,129 @@ def cs_proc_enable(
                     break
 
 
+def to_signed12(val: int) -> int:
+    """Convert unsigned short to signed int12."""
+    return val - 4096 if val >= 2048 else val
+
+
+def to_signed8(val: int) -> int:
+    """Convert unsigned byte to signed int8."""
+    return val - 256 if val >= 128 else val
+
+
+def parse_mode_zero_steps(role: int, data: bytes, num_steps: int):
+    # Ensure input is 480 bytes
+    numBytes = 5  # number of bytes for each step in case the role is initiator
+    if role == 1:
+        numBytes = 3  # number of bytes for each step in case the role is reflector
+
+    result = []
+    for i in range(0, num_steps * numBytes, numBytes):
+        packetQuality = data[i]
+        packetRssi = to_signed8(data[i + 1])
+        packetAntenna = data[i + 2]
+        entry = {
+            "packetQuality": packetQuality,
+            "packetRssi": packetRssi,
+            "packetAntenna": packetAntenna,
+        }
+        if role == 0:  # for initiator, add also frequency offset parameter
+            measuredFreqOffset = data[i + 3] | (data[i + 4] << 8)  # little endian
+            entry["measuredFreqOffset"] = measuredFreqOffset
+        result.append(entry)
+    return result
+
+
+def parse_mode_two_steps(data: bytes, num_steps: int, num_paths):
+    # Ensure input is 480 bytes
+
+    results = []
+    for path in range(0, num_paths):
+        pathOffset = path * num_steps * 4
+        pathResults = []
+        for step in range(0, num_steps):
+            stepOffset = (step * 4) + pathOffset
+
+            i = data[stepOffset] | ((data[stepOffset + 1] & 0x0F) << 8)
+            q = ((data[stepOffset + 1] & 0xF0) | (data[stepOffset + 2] << 8)) >> 4
+            tqi = data[stepOffset + 3]
+
+            stepResultsEntry = {"i": to_signed12(i), "q": to_signed12(q), "tqi": tqi}
+            pathResults.append(stepResultsEntry)
+        results.append(pathResults)
+    return results
+
+
 def wait_distance_extended_results_event(car_node):
     """
     Wait for the NWP_CS_APP_DISTANCE_EXTENDED_RESULTS event and print the results.
-    All fields are integer values; float-derived fields are scaled x100 (e.g. 123 = 1.23 m).
+    Parse and print the event data
     """
     print("Waiting for NWP_CS_APP_DISTANCE_EXTENDED_RESULTS")
-    distance_extended_results = car_node.wait_for_event(
+    initiator_distance_extended_results = car_node.wait_for_event(
         event_type=CsEventType.NWP_CS_APP_DISTANCE_EXTENDED_RESULTS, timeout=3
     )
-    if distance_extended_results:
-        print("Distance Extended Results")
+    if initiator_distance_extended_results:
+        print("Distance Extended Results - initiator")
         print("----------------------------------------------------------------------")
-        for key, value in distance_extended_results.items():
+        # Fields to print as decimal
+        decimals_fields_lists = {
+            "distanceMusic",
+            "distanceNN",
+            "numMpcPaths",
+            "qualityPaths",
+            "confidencePaths",
+            "localRpl",
+            "remoteRpl",
+            "permutationIndexLocal",
+            "permutationIndexRemote",
+        }
+        decimal_fields = {
+            "status",
+            "connHandle",
+            "distance",
+            "quality",
+            "confidence",
+            "numMpc",
+        }.union(decimals_fields_lists)
+        for key, value in initiator_distance_extended_results.items():
             if isinstance(value, list):
-                print(f"{key}: [{', '.join(str(v) for v in value)}]")
+                # For arrays, print each element in hex, unless key is in decimal_fields
+                if key in decimals_fields_lists:
+                    # Print as decimal
+                    print(f"{key}: [{', '.join(str(v) for v in value)}]")
+                else:
+                    if key in {"modeZeroStepsInit"}:
+                        parsed_data = parse_mode_zero_steps(
+                            role=0, data=value, num_steps=96
+                        )
+                        print(f"Initiator Mode0 Steps: {parsed_data}")
+                    elif key in {"modeZeroStepsRef"}:
+                        parsed_data = parse_mode_zero_steps(
+                            role=1, data=value, num_steps=96
+                        )
+                        print(f"Reflector Mode0 Steps: {parsed_data}")
+                    elif key in {"stepsDataLocal"}:
+                        parsed_data = parse_mode_two_steps(
+                            data=value, num_steps=75, num_paths=4
+                        )
+                        print(f"Local Mode2 Steps Results: {parsed_data}")
+                    elif key in {"stepsDataRemote"}:
+                        parsed_data = parse_mode_two_steps(
+                            data=value, num_steps=75, num_paths=4
+                        )
+                        print(f"Remote Mode2 Steps Results: {parsed_data}")
+                    else:
+                        print(
+                            f"{key}: [{', '.join(hex(v) if isinstance(v, int) else str(v) for v in value)}]"
+                        )
             else:
-                print(f"{key}: {value}")
+                if key in decimal_fields:
+                    print(f"{key}: {value}")
+                elif isinstance(value, int):
+                    print(f"{key}: {hex(value)}")
+                else:
+                    print(f"{key}: {value}")
         print("----------------------------------------------------------------------")
     else:
         print("No NWP_CS_APP_DISTANCE_EXTENDED_RESULTS event received")
@@ -465,22 +569,11 @@ def wait_distance_extended_results_event(car_node):
 def wait_distance_event(car_node):
     print("Waiting for NWP_CS_APP_DISTANCE_RESULTS")
     # print the distance
-    distance_results = car_node.wait_for_event(
+    initiator_distance_results = car_node.wait_for_event(
         event_type=CsEventType.NWP_CS_APP_DISTANCE_RESULTS, timeout=3
     )
-    if distance_results:
-        print_obj_data("Distance Results", distance_results)
-
-def wait_results_subevents(car_node, wait_for_remote, ras_profile=False):
-    print("**** Waiting for Local Results ****")
-    wait_results_subevents_data(car_node)
-
-    if wait_for_remote:
-        print("**** Waiting for Remote Results ****")
-        if ras_profile:
-            wait_ras_subevent_results_event(car_node)
-        else:
-            wait_results_subevents_data(car_node)
+    if initiator_distance_results:
+        print_obj_data("Distance Results - initiator", initiator_distance_results)
 
 
 def wait_distance(car_node, extended_results=False):
@@ -489,6 +582,15 @@ def wait_distance(car_node, extended_results=False):
         wait_distance_extended_results_event(car_node)
     else:
         wait_distance_event(car_node)
+
+
+def wait_results_subevents(car_node, wait_for_remote):
+    print("**** Waiting for Local Results ****")
+    wait_results_subevents_data(car_node)
+
+    if wait_for_remote:
+        print("**** Waiting for Remote Results ****")
+        wait_results_subevents_data(car_node)
 
 
 def wait_results_subevents_data(car_node):
@@ -531,60 +633,6 @@ def wait_results_subevents_data(car_node):
                 return
 
 
-def wait_ras_subevent_results_event(car_node):
-    """
-    Wait for the NWP_CS_APP_RAS_SUBEVENT_RESULTS event and print the results.
-    Repeats while: ranging_done_status=0x1, subevent_done_status not in (0x0, 0xF),
-    ranging_abort_reason=0x0, subevent_abort_reason=0x0.
-    """
-    print("Waiting for NWP_CS_APP_RAS_SUBEVENT_RESULTS")
-    decimal_fields = {
-        "status",
-        "conn_handle",
-        "start_acl_connection_event",
-        "frequency_compensation",
-        "ranging_done_status",
-        "subevent_done_status",
-        "ranging_abort_reason",
-        "subevent_abort_reason",
-        "reference_power_level",
-        "num_steps_reported",
-        "data_len",
-    }
-    all_results = []
-    keep_looping = True
-    while keep_looping:
-        ras_subevent_results = car_node.wait_for_event(
-            event_type=CsEventType.NWP_CS_APP_RAS_SUBEVENT_RESULTS, timeout=3)
-        if ras_subevent_results:
-            print("RAS Subevent Results")
-            print("----------------------------------------------------------------------")
-            for key, value in ras_subevent_results.items():
-                if key == "data":
-                    print(f"data: {value}")
-                elif key in decimal_fields:
-                    print(f"{key}: {value}")
-                elif isinstance(value, int):
-                    print(f"{key}: {hex(value)}")
-                else:
-                    print(f"{key}: {value}")
-            print("----------------------------------------------------------------------")
-            all_results.append(ras_subevent_results)
-            ranging_done_status = ras_subevent_results.get("ranging_done_status")
-
-            # For debugging purposes
-            # subevent_done_status = ras_subevent_results.get("subevent_done_status")
-            # ranging_abort_reason = ras_subevent_results.get("ranging_abort_reason")
-            # subevent_abort_reason = ras_subevent_results.get("subevent_abort_reason")
-
-            # Received partial results with more reports to follow for the CS procedure
-            keep_looping = (ranging_done_status == 0x1)
-        else:
-            print("Error: No NWP_CS_APP_RAS_SUBEVENT_RESULTS event received")
-            return None  
-    return all_results
-
-
 def main():
     logging_file = get_logging_file_path()
     print(f"Logging to file: {logging_file}")
@@ -606,13 +654,12 @@ def main():
 
         # CS Features
         # Change these parameters to configure which events to wait for.
-        # The events will be raised depends on the embedded configuration of the car node example.
+        # The events will be raised depneds on the embedded configuration of the car node example.
         cs_wait_for_distance = True  # Wait for distance results
         cs_extended_results = False  # While waiting for distance, expect for extended results event (need to enable cs_wait_for_distance)
         cs_wait_for_raw_events = False  # Wait for subevent results raw data
         cs_wait_for_remote = True  # While waiting for raw events - also wait for remote device results (need to enable cs_wait_for_raw_events)
         cs_auto_config = False  # Let the device do the CS procedures on its own without sending commands to it
-        cs_ras_profile = False # Whether the RAS subevent results are for the RAS profile
 
         # Set default antenna for non-CS BLE communications
         car_node.cs.set_default_antenna(0)
@@ -664,7 +711,6 @@ def main():
                     extended_results=cs_extended_results,
                     wait_for_raw_events=cs_wait_for_raw_events,
                     auto_config=cs_auto_config,
-                    ras_profile=cs_ras_profile,
                 )
 
     car_node.done()

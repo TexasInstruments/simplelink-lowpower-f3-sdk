@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2026, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,9 +39,8 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/DebugP.h>
-#ifndef __ZEPHYR__
-    #include <ti/drivers/ITM.h>
-#endif
+
+#include <ti/drivers/ITM.h>
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC27XX.h>
 #include <ti/drivers/Temperature.h>
@@ -50,11 +49,6 @@
 #include <ti/drivers/utils/Math.h>
 
 #include <ti/log/Log.h>
-
-/* Needed for the power driver to be aware of Zephyr power constraints */
-#ifdef __ZEPHYR__
-    #include <zephyr/pm/policy.h>
-#endif
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -75,9 +69,7 @@
 #include DeviceFamily_constructPath(driverlib/lrfd.h)
 #include DeviceFamily_constructPath(driverlib/pmctl.h)
 #include DeviceFamily_constructPath(driverlib/systick.h)
-#include DeviceFamily_constructPath(driverlib/systimer.h)
 #include DeviceFamily_constructPath(driverlib/ull.h)
-#include DeviceFamily_constructPath(driverlib/clkctl.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 
 /* Type definitions */
@@ -116,9 +108,7 @@ typedef enum
 /* Forward declarations */
 int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
 static void PowerCC27XX_oscillatorISR(uintptr_t arg);
-#ifndef __ZEPHYR__
 static void PowerCC27XX_rtcISR(uintptr_t arg);
-#endif
 static void PowerCC27XX_enterStandby(void);
 static void PowerCC27XX_setDependencyCount(Power_Resource resourceId, uint8_t count);
 bool PowerCC27XX_isValidResourceId(Power_Resource resourceId);
@@ -152,7 +142,7 @@ extern const uint_least8_t PowerLPF3_extlfPin;
 extern const uint_least8_t PowerLPF3_extlfPinMux;
 
 /* Macro for weak definition of the Power Log module */
-Log_MODULE_DEFINE_WEAK(LogModule_Power, Log_MODULE_INIT_SINK_DUMMY);
+Log_MODULE_DEFINE_WEAK(LogModule_Power, {0});
 
 /* Function Macros */
 #define IOC_ADDR(index) (IOC_BASE + IOC_O_IOC0 + (sizeof(uint32_t) * (index)))
@@ -189,10 +179,7 @@ Log_MODULE_DEFINE_WEAK(LogModule_Power, Log_MODULE_INIT_SINK_DUMMY);
  */
 #define LFINCCTL_INT_START_VALUE (0x1E8480U)
 
-/* Value to be written to the SCB.AIRCR.VECTKEY when writing to the SCB.AIRCR
- * register for the write to take effect.
- */
-#define SCB_AIRCR_VECTKEY (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
+#define SYSTIMER_CHANNEL_COUNT (5U)
 
 /* Static Globals */
 
@@ -318,17 +305,6 @@ HwiP_Struct clockHwi;
  */
 int_fast16_t Power_init(void)
 {
-#ifdef __ZEPHYR__
-    /* When using MCUBoot with Zephyr, the system is already initialized before
-     * jumping to the application. When the HFXT is started the oscillatorISR
-     * gets triggered, which cancels the timer and sets the callback to NULL
-     * before ClockP_start() is called. As a result, ClockP dereferences a NULL
-     * pointer when the timer expires and then we hit a fault. To fix, this
-     * function is placed in a critical section.
-     */
-    uintptr_t hwiKey = HwiP_disable();
-#endif
-
     /* If this function has already been called, just return */
     if (isInitialized)
     {
@@ -369,20 +345,14 @@ int_fast16_t Power_init(void)
 
     HwiP_enableInterrupt(INT_CPUIRQ3);
 
-#ifndef __ZEPHYR__
     /* Construct the ClockP hwi responsible for timing service events.
      * This Hwi is time multiplexed between the SysTimer and the RTC for use
      * by the ClockP and Power policy respectively.
      * Since there is no dedicated RTC or SysTimer interrupt line, we need to
      * mux one of the configurable lines to the CKM.
      * CPUIRQ16 is dedicated to this purpose.
-     *
-     * In Zephyr, the timer driver takes this IRQ before this function is called
-     * which mean that this muxing will prevent the timer interrupt, causing
-     * the kernel not to tick.
      */
     HwiP_construct(&clockHwi, INT_CPUIRQ16, PowerCC27XX_rtcISR, NULL);
-#endif
 
     /* Use RTC channel 0 in compare mode. Channel 1 could be used for other
      * purposes.
@@ -419,13 +389,13 @@ int_fast16_t Power_init(void)
                      HFXT_AMP_COMP_START_TIMEOUT_US / ClockP_getSystemTickPeriod(),
                      NULL);
 
-    /* Start HFXT. */
+    /* Start HFXT */
     PowerCC27XX_startHFXT();
 
     /* Start timeout clock.
-     * Note, if interrupts are not disabled during Power_init(),
-     * there is a risk of the AMPSETTLED callback stopping the clock before
-     * it is started.
+     * Note, interrupts are guaranteed to be disabled during Power_init(), so
+     * there is no risk of the AMPSETTLED callback stopping the clock before it
+     * is started.
      */
     ClockP_start(&hfxtAmpCompClock);
 
@@ -439,10 +409,6 @@ int_fast16_t Power_init(void)
 
     /* Enable RTC as a standby wakeup source */
     HWREG(EVTULL_BASE + EVTULL_O_WKUPMASK) = EVTULL_WKUPMASK_AON_RTC_COMB_M;
-
-#ifdef __ZEPHYR__
-    HwiP_restore(hwiKey);
-#endif
 
     return Power_SOK;
 }
@@ -663,21 +629,6 @@ int_fast16_t Power_setConstraint(uint_fast16_t constraintId)
 
     DebugP_assert(constraintId < PowerCC27XX_NUMCONSTRAINTS);
 
-#ifdef __ZEPHYR__
-    /* Forward constraint set to Zephyr */
-    switch (constraintId)
-    {
-        case PowerLPF3_DISALLOW_STANDBY:
-            pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-            break;
-        case PowerLPF3_DISALLOW_IDLE:
-            pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
-            break;
-        default:
-            break;
-    }
-#endif
-
     key = HwiP_disable();
 
     /* Set the specified constraint in the constraintMask for faster access */
@@ -704,21 +655,6 @@ int_fast16_t Power_releaseConstraint(uint_fast16_t constraintId)
     key = HwiP_disable();
 
     DebugP_assert(constraintCounts[constraintId] != 0U);
-
-#ifdef __ZEPHYR__
-    /* Forward constraint release to Zephyr */
-    switch (constraintId)
-    {
-        case PowerLPF3_DISALLOW_STANDBY:
-            pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
-            break;
-        case PowerLPF3_DISALLOW_IDLE:
-            pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
-            break;
-        default:
-            break;
-    }
-#endif
 
     constraintCounts[constraintId]--;
 
@@ -875,7 +811,7 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
         uint32_t ioShutdownConfig = HWREG(IOC_ADDR(i)) & IOC_IOC0_WUCFGSD_M;
 
         if (((ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_HIGH) || (ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_LOW)) &&
-            (GPIOGetEventDio(i, false) != 0U))
+            (GPIOGetEventDio(i) != 0U))
         {
             ioPending = true;
         }
@@ -903,7 +839,6 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
 int_fast16_t Power_sleep(uint_fast16_t sleepState)
 {
     int_fast16_t status = Power_SOK;
-    uint32_t scbAircr;
 
     /* Signal all clients registered for pre standby wakeup notification */
     status = PowerCC27XX_notify(PowerLPF3_ENTERING_STANDBY);
@@ -940,15 +875,6 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      */
     PowerCC27XX_stopContHfxtAmpMeasurements();
 
-    /* Due to a bug in the ROM code, the SCB.AIRCR registers are not restored
-     * correctly so we need to store and restore the state here instead.
-     */
-
-    /* Read AIRCR register, and store it with the required VECTKEY value so the
-     * write when restoring the values will be applied.
-     */
-    scbAircr = (SCB->AIRCR & ((uint32_t)~SCB_AIRCR_VECTKEY_Msk)) | SCB_AIRCR_VECTKEY;
-
     /* Call wrapper function to ensure that R0-R3 are saved and restored before
      * and after this function call. Otherwise, compilers will attempt to stash
      * values on the stack while on the PSP and then restore them just after
@@ -956,11 +882,6 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
      * behaviour.
      */
     PowerCC27XX_enterStandby();
-
-    /* Restore the AIRCR register. The stored register value already has
-     * the correct VECTKEY value.
-     */
-    SCB->AIRCR = scbAircr;
 
     /* Now that we have returned and are executing code from flash again, start
      * up the HFXT. The HFXT might already have been enabled automatically by
@@ -989,45 +910,21 @@ void Power_reset(void)
 void PowerCC27XX_doWFI(void)
 {
     uint32_t constraints;
-    uintptr_t hwiKey;
     bool idleAllowed;
-    bool flashNotNeeded;
 
-    constraints    = Power_getConstraintMask();
-    idleAllowed    = (constraints & (1 << PowerLPF3_DISALLOW_IDLE)) == 0U;
-    flashNotNeeded = (constraints & (1 << PowerLPF3_NEED_FLASH_IN_IDLE)) == 0U;
+    constraints = Power_getConstraintMask();
+    idleAllowed = (constraints & (1 << PowerLPF3_DISALLOW_IDLE)) == 0;
 
     if (idleAllowed)
     {
-        /* Disable interrupts while flushing the ITM */
-        hwiKey = __get_PRIMASK();
-        __set_PRIMASK(1);
-
-        /* Configure device to turn on/off flash LDO when in idle */
-        if (flashNotNeeded)
-        {
-            /* FlashLdo can be turned off when in IDLE */
-            CLKCTLEnableFlashLdoOffInIdle();
-        }
-        else
-        {
-            /* FlashLdo cannot be turned off when in IDLE */
-            CLKCTLDisableFlashLdoOffInIdle();
-        }
-
-        /* ITM is not supported yet on Zephyr */
-#ifndef __ZEPHYR__
         /* Flush any remaining log messages in the ITM */
         ITM_flush();
-#endif
+
         /* Enter idle */
         __WFI();
-#ifndef __ZEPHYR__
+
         /* Restore ITM settings */
         ITM_restore();
-#endif
-
-        __set_PRIMASK(hwiKey);
     }
 }
 
@@ -1344,15 +1241,14 @@ static bool PowerCC27XX_lfxtQual(uint32_t maskedStatus)
             int32_t edgeOffset = (int32_t)edges - 1500000;
 
             /* For LFXT the clock is considered good if the frequency is
-             * within 32.768 kHz +/-500 ppm, and the frequency is within
+             * within 32.768 kHz +/-100 ppm, and the frequency is within
              * +/-100 ppm of the last measurement.
              *
              * The expected number of edges is (96 MHz/32.768 kHz)*512 =
              * 1500000.
-             * 100 ppm of 1500000 edges is 150 edges, and 500 ppm of 1500000
-             * edges is 750 edges
+             * 100 ppm of 1500000 edges is 150 edges.
              */
-            isClockGood = (Math_ABS(lastOffset) < 750) && (Math_ABS(edgeOffset) < 750) &&
+            isClockGood = (Math_ABS(lastOffset) < 150) && (Math_ABS(edgeOffset) < 150) &&
                           (Math_ABS(edgeDeltaLast) < 150);
         }
 
@@ -1754,7 +1650,6 @@ static void PowerCC27XX_oscillatorISR(uintptr_t arg)
 /*
  *  ======== PowerCC27XX_rtcISR ========
  */
-#ifndef __ZEPHYR__
 static void PowerCC27XX_rtcISR(uintptr_t arg)
 {
     /* We should never get here since we will just use the interrupt to wake
@@ -1763,7 +1658,6 @@ static void PowerCC27XX_rtcISR(uintptr_t arg)
      */
     HWREG(RTC_BASE + RTC_O_ICLR) = HWREG(RTC_BASE + RTC_O_MIS);
 }
-#endif
 
 /*
  *  ======== PowerCC27XX_startHFXT ========

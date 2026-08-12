@@ -82,14 +82,10 @@
  * CONSTANTS
  */
 
-// Power control PHY types defines for HCI layer
+// Power control phy types defines for coded S2 and coded S8 for hci and
+// controller layer
 #define PHY_CODED_S8_HCI_DEFINE         0x3U
 #define PHY_CODED_S2_HCI_DEFINE         0x4U
-
-// Power control PHY types defines for controller layer
-#define PHY_INVALID_CONTROLLER_DEFINE   0x0U
-#define PHY_1M_CONTROLLER_DEFINE        0x1U
-#define PHY_2M_CONTROLLER_DEFINE        0x2U
 #define PHY_CODED_S8_CONTROLLER_DEFINE  0x4U
 #define PHY_CODED_S2_CONTROLLER_DEFINE  0x8U
 
@@ -115,9 +111,6 @@
 #define MIN_TXPOWER_REACHED             0x1U
 #define MAX_TXPOWER_REACHED             0x2U
 #define MIN_OR_MAX_CALC_LOCAL           0x3U
-
-// Sentinel for LL_EXT_PwrCtrl_SetRange to leave a bound unchanged
-#define PCL_RANGE_NO_CHANGE             ((int8_t)0x80)
 
 /*******************************************************************************
  * MACROS
@@ -162,7 +155,6 @@ typedef struct
   uint8_t                      powerControlConfig; // Bitmask of configurations set for this connection
   uint8_t                      powerControlStates; // Bitmask of states set for this connection
   int8_t                       txPowerLevelDbm;    // The power level on the current phy, range defined by RCL, default value by user in dBm from global txPower
-  uint8_t                      pendingPwrCtrlReqDueToCs;  // Flag to indicate there is a pending power control request due to CS procedure
 } powerControlInfo_t;
 
 /*******************************************************************************
@@ -456,91 +448,6 @@ llStatus_t LL_PwrCtrl_SetTransPwrRptEnableCmd( uint16_t connHandle,
                                                uint8_t  localEnable,
                                                uint8_t  remoteEnable );
 
- /*******************************************************************************
-   * @fn          LL_PwrCtrl_CheckAndSendPendingRequest
-   *
-   * @brief       Check if there's a pending Power Control Request due to CS,
-   *              and send it if CS has completed.
-   *
-   * input parameters
-   *
-   * @param       connHandle - Connection ID
-   *
-   * output parameters
-   *
-   * @param       None
-   *
-   * @return      None
-   */
-  void LL_PwrCtrl_CheckAndSendPendingRequest(uint16_t connHandle);
-
-/*******************************************************************************
- * @fn          LL_PwrCtrl_IsProcedureInProgress
- *
- * @brief       Check if a Power Control procedure is currently in progress
- *              (i.e., waiting for a response from the peer device)
- *
- * input parameters
- *
- * @param       connHandle - Connection ID
- *
- * output parameters
- *
- * @param       None
- *
- * @return      TRUE  - Power Control procedure is in progress
- *              FALSE - No Power Control procedure is active
- */
-bool LL_PwrCtrl_IsProcedureInProgress(uint16_t connHandle);
-
-/*******************************************************************************
- * @fn          LL_PwrCtrl_IsPhyManaged
- *
- * @brief       Check if a specific PHY is managed (i.e., is the active
- *              connection PHY) for power control purposes
- *
- * input parameters
- *
- * @param       connHandle - Connection ID
- * @param       phy        - PHY to check
- *                           Valid values: PHY_1M_CONTROLLER_DEFINE,
- *                                         PHY_2M_CONTROLLER_DEFINE,
- *                                         PHY_CODED_S8_CONTROLLER_DEFINE,
- *                                         PHY_CODED_S2_CONTROLLER_DEFINE
- *
- * output parameters
- *
- * @param       None
- *
- * @return      LL_STATUS_SUCCESS                       - PHY is managed (active connection PHY)
- *              TXPOWER_NOT_MANAGED_ON_PHY (0x7E/126)   - PHY is supported but not managed
- *              LL_STATUS_ERROR_UNSUPPORTED_PARAM_VAL   - PHY is not supported
- *              LL_STATUS_ERROR_INACTIVE_CONNECTION     - Invalid connection handle
- */
-llStatus_t LL_PwrCtrl_IsPhyManaged(uint16_t connHandle, uint8_t phy);
-
-/*******************************************************************************
- * @fn          LL_PwrCtrl_ConvertRclPhyToPowerControlPhy
- *
- * @brief       Convert RCL_Ble5_RxPhy enum to power control PHY define
- *
- * input parameters
- *
- * @param       rclPhy - RCL PHY type (RCL_Ble5_RxPhy)
- *
- * output parameters
- *
- * @param       None
- *
- * @return      Power control PHY define:
- *              PHY_1M_CONTROLLER_DEFINE (0x1U)
- *              PHY_2M_CONTROLLER_DEFINE (0x2U)
- *              PHY_CODED_S8_CONTROLLER_DEFINE (0x4U)
- *              PHY_CODED_S2_CONTROLLER_DEFINE (0x8U)
- *              PHY_INVALID_CONTROLLER_DEFINE (0x0U) if invalid PHY
- */
-uint8_t LL_PwrCtrl_ConvertRclPhyToPowerControlPhy(RCL_Ble5_RxPhy rclPhy);
-
 /*******************************************************************************
  * @fn          LL_EXT_PwrCtrl_SendPwrCtrlReqCmd
  *
@@ -567,52 +474,5 @@ llStatus_t LL_EXT_PwrCtrl_SendPwrCtrlReqCmd( uint16_t connHandle,
                                              uint8_t  txPhy,
                                              int8_t   deltaPowerDb,
                                              uint8_t  enableApr );
-
-/*******************************************************************************
- * @fn          LL_EXT_PwrCtrl_SetRange
- *
- * @brief       Set the user-defined TX power range for power control procedures.
- *              Pass PCL_RANGE_NO_CHANGE for either parameter to leave
- *              that bound unchanged.
- *
- * @Design      BLE_LOKI-4240
- *
- * input parameters
- *
- * @param       minDbm  - Minimum TX power in dBm. Must be within hardware range.
- *                        Pass PCL_RANGE_NO_CHANGE to leave unchanged.
- * @param       maxDbm  - Maximum TX power in dBm. Must be within hardware range.
- *                        Pass PCL_RANGE_NO_CHANGE to leave unchanged.
- *
- * output parameters
- *
- * @param       None
- *
- * @return      LL_STATUS_SUCCESS
- *              LL_STATUS_ERROR_BAD_PARAMETER - the requested range is out of hardware limits or min > max
- *              LL_STATUS_ERROR_UNACCEPTABLE_CONN_PARAMETERS - An active connection TX power violates the new range.
- */
-llStatus_t LL_EXT_PwrCtrl_SetRange( int8_t minDbm, int8_t maxDbm );
-
-/*******************************************************************************
- * @fn          LL_EXT_PwrCtrl_GetRange
- *
- * @brief       Get the current user-defined TX power range limits.
- *
- * @Design      BLE_LOKI-4240
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       minDbm  - Pointer to receive the current min limit.
- * @param       maxDbm  - Pointer to receive the current max limit.
- *
- * @return      LL_STATUS_SUCCESS
- *              LL_STATUS_ERROR_BAD_PARAMETER - minDbm or maxDbm is NULL.
- */
-llStatus_t LL_EXT_PwrCtrl_GetRange( int8_t *minDbm, int8_t *maxDbm );
 
 #endif // LL_POWER_CONTROL_H

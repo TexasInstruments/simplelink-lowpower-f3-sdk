@@ -5,15 +5,14 @@
             "+../../config.h -> config.h",
             "+../../menu.c -> menu.c",
             "+../../menu.h -> menu.h",
-            "+../../README.md -> README.md",
-            "+../../README.html -> README.html",
             "+../../rfPacketErrorRate.c -> rfPacketErrorRate.c",
             "+../../rx.c -> rx.c",
             "+../../tx.c -> tx.c",
-            "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.md -> README.md",
             "+../rfPacketErrorRate.syscfg -> rfPacketErrorRate.syscfg",
             "+../main_freertos.c -> main_freertos.c",
-            "+cc23x0r5.cmd -> cc23x0r5.cmd"
+            "+../../overview.rov.json -> overview.rov.json",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
         ]
     }
 ]

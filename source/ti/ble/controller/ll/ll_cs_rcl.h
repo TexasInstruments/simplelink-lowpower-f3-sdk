@@ -85,7 +85,7 @@
 
 /* Number of Buffers of step type (TX) */
 /* ------------------------------------*/
-#define CS_STEP_TX_BUFF_NUM                    3U
+#define CS_STEP_TX_BUFF_NUM                    2U
 
 /* Number of Buffers of result type (RX) */
 /* ------------------------------------*/
@@ -343,24 +343,6 @@ csStatus_e llCsSetupRcl(uint16 connId, uint8_t configId);
 void llCsSetRclNsteps(uint8_t nSteps);
 
 /*******************************************************************************
- * @fn          llCsSetRclPolicy
- *
- * @brief       Set the policy of the RCL based on the subevent counter.
- *
- *
- * input parameters
- *
- * @param       None.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsSetRclPolicy(void);
-
-/*******************************************************************************
  * @fn          llCsInitRclCmd
  *
  * @brief       Initialize CS RCL command
@@ -434,23 +416,6 @@ void llCsRclCallback(RCL_Command* cmd, LRF_Events lrfEvents,
  * @return      None
  */
 void llCsRclAbort(void);
-
-/*******************************************************************************
- * @fn          llCsRclReset
- *
- * @brief       Reset the RCL module (halt any ongoing command).
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void llCsRclReset(void);
 
 /*******************************************************************************
  * @fn          llCsClearRclBuffers

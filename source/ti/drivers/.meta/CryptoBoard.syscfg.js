@@ -41,47 +41,35 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 
-/* get device ID */
-let deviceId = system.deviceData.deviceId;
-
 /*
  *  ======== getLinkerDefs ========
  */
 function getLinkerDefs()
 {
-    /* Get device ID to select appropriate libs */
-    let devId = system.deviceData.deviceId;
     let linkerDefs = [];
-    var DriverLib = system.getScript("/ti/devices/DriverLib");
-    let family = DriverLib.getAttrs(devId).libName;
 
-    /* Create linker definitions for CC27XX only, as CC35XX KeyStore location
-     * is not yet configurable.
-     */
-    if (family.match(/CC27/i)) {
-        let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
-        if (keystoreModule) {
-            let keystoreInst = keystoreModule.$static;
-            linkerDefs.push(
-                {
-                    "name": "KEYSTORE_BASE",
-                    "value": keystoreInst.flashAddress
-                },
-                {
-                    "name": "KEYSTORE_SIZE",
-                    "value": keystoreInst.flashSize
-                }
-            );
-        }
-        else
-        {
-            linkerDefs.push(
-                {
-                    "name": "KEYSTORE_BASE",
-                    "value": ""
-                },
-            );
-        }
+    let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
+    if (keystoreModule) {
+        let keystoreInst = keystoreModule.$static;
+        linkerDefs.push(
+            {
+                "name": "KEYSTORE_BASE",
+                "value": keystoreInst.flashAddress
+            },
+            {
+                "name": "KEYSTORE_SIZE",
+                "value": keystoreInst.flashSize
+            }
+        );
+    }
+    else
+    {
+        linkerDefs.push(
+            {
+                "name": "KEYSTORE_BASE",
+                "value": ""
+            },
+        );
     }
 
     return linkerDefs;
@@ -135,37 +123,19 @@ function getLibs(mod)
     let libPath = GenLibs.libPath;
     let libs = [];
 
-    var mbedtls_crypto_suffix = "";
-    if (family.match(/cc27/) || family.match(/cc35/)) {
-        if (system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
-            let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
-            let inst = keystoreModule.$static;
-
-            if (inst.useSWCrypto) {
-                if (!system.modules["/ti/utils/TrustZone"]) {
-                    /* If the CryptoKeyKeyStore_PSA module is present, but TrustZone is not,
-                    * then we must check which secure_drivers library to use. There is one
-                    * that will make use of SW Crypto from mbedTLS, and one that will not.
-                    * When TrustZone is enabled, there is only a single secure_drivers library
-                    * because SW Crypto from mbedTLS is always unsupported in such applications.
-                    */
-                    mbedtls_crypto_suffix = "_mbedtls";
-                }
-            }
-        }
-    }
-
-    /* Note that mbedtls_crypto_suffix will always be an empty string for a TFM-enabled build. */
-    var lib_suffix = mbedtls_crypto_suffix + log_suffix;
-
     if (family != "") {
+        /* Add dependency on PSA Crypto library if KeyStore module is present. */
+        if (system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
+            libs.push(libPath("third_party/psa_crypto", "psa_crypto_" + family + ".a"));
+        }
+
         /* secure_drivers must be ahead of regular drivers to satisfy the dependency */
         if (system.modules["/ti/drivers/CryptoBoard"]) {
             if (system.modules["/ti/utils/TrustZone"]) {
-                libs.push(libPath("ti/drivers/secure","secure_drivers_" + family + "_ns" + lib_suffix +".a"));
+                libs.push(libPath("ti/drivers/secure","secure_drivers_" + family + "_ns" + log_suffix +".a"));
             }
             else {
-                libs.push(libPath("ti/drivers/secure","secure_drivers_" + family + lib_suffix +".a"));
+                libs.push(libPath("ti/drivers/secure","secure_drivers_" + family + log_suffix +".a"));
             }
         }
     }
@@ -190,48 +160,27 @@ function getLibs(mod)
         }
     }
 
-    if (system.modules["/ti/drivers/CryptoBoard"]) {
+    if (system.modules["/ti/drivers/AESCCM"] ||
+        system.modules["/ti/drivers/AESCMAC"] ||
+        system.modules["/ti/drivers/SHA2"] ||
+        system.modules["/ti/drivers/AESECB"] ||
+        system.modules["/ti/drivers/AESCTR"] ||
+        system.modules["/ti/drivers/AESCTRDRBG"] ||
+        system.modules["/ti/drivers/AESGCM"] ||
+        system.modules["/ti/drivers/AESCBC"] ||
+        system.modules["/ti/drivers/ECDH"] ||
+        system.modules["/ti/drivers/ECDSA"] ||
+        system.modules["/ti/drivers/EDDSA"] ||
+        system.modules["/ti/drivers/TRNG"] ||
+        system.modules["/ti/drivers/RNG"] ||
+        system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]) {
         /* Add dependency on HSMDDK library for CC27XX and CC35XX */
         if (family.match(/cc27/) || family.match(/cc35/)) {
             linkOpts.deps.push("/third_party/hsmddk");
         }
     }
 
-    /* For HSM-enabled devices, determine which mbedTLS library to use for PSA implementation. */
-    if (family.match(/cc27/) || family.match(/cc35/)) {
-        /* Add PSA implementation only if PSA/KeyStore module is present */
-        if (system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"]){
-            let keystoreModule = system.modules["/ti/drivers/CryptoKeyKeyStore_PSA"];
-            let inst = keystoreModule.$static;
-            /* If SW Crypto is enabled, then add the mbedTLS library. Note that
-             * SW Crypto cannot be enabled when TrustZone is enabled.
-             */
-            if (inst.useSWCrypto && !system.modules["/ti/utils/TrustZone"]) {
-                libs.push(libPath("third_party/mbedtls/ti", "mbedtls.a"));
-            }
-        }
-    }
-    else {
-        /* For non-HSM devices with the KeyStore module, add dependency on PSA Crypto library */
-        if (system.modules["ti/drivers/CryptoKeyKeyStore_PSA"]) {
-            libs.push(libPath("third_party/psa_crypto", "psa_crypto_" + family + ".a"));
-        }
-    }
-
     return (linkOpts);
-}
-
-/*
- *  ======== addStaticModules ========
- */
-function addStaticModules(inst)
-{
-    let forcedModules = [];
-    if (deviceId.match(/CC27/) || deviceId.match(/CC23/)) {
-        /* LAES engine requires AES CommonXXF3 module */
-        forcedModules.push(["cryptoutils/aes/AESCommonXXF3"]);
-    }
-    return Common.autoForceModules(forcedModules)();
 }
 
 let base = {
@@ -247,10 +196,6 @@ and that the secure_drivers library should be loaded.
     modules: (inst) => {
         let forcedModules = ["Board"];
         return Common.autoForceModules(forcedModules)();
-    },
-
-    moduleStatic: {
-        modules: addStaticModules
     },
 
     templates    : {

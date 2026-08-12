@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2026, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,9 @@
 #include <ti/drivers/CAN.h>
 #include <ti/drivers/dpl/HwiP.h>
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    #include <third_party/dcan/DCAN.h>
-#else
-    #include <third_party/mcan/MCAN.h>
-#endif /* ( DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX ) */
+#include <third_party/mcan/MCAN.h>
+
+#include <ti/devices/DeviceFamily.h>
 
 /* Externally defined device-specific functions */
 extern int_fast16_t CAN_initDevice(uint_least8_t index, CAN_Params *params);
@@ -109,17 +107,14 @@ CAN_Handle CAN_open(uint_least8_t index, CAN_Params *params)
         object->userArg   = params->userArg;
     }
 
-    /* Initialize the RX and TX ring buffers */
-
     StructRingBuf_construct(&object->rxStructRingBuf,
                             hwAttrs->rxRingBufPtr,
                             hwAttrs->rxRingBufSize,
-                            sizeof(CAN_RxBufElement));
-
+                            sizeof(MCAN_RxBufElement));
     StructRingBuf_construct(&object->txStructRingBuf,
                             hwAttrs->txRingBufPtr,
                             hwAttrs->txRingBufSize,
-                            sizeof(CAN_TxBufElement));
+                            sizeof(MCAN_TxBufElement));
 
     if (CAN_initDevice(index, params) == CAN_STATUS_SUCCESS)
     {
@@ -127,10 +122,6 @@ CAN_Handle CAN_open(uint_least8_t index, CAN_Params *params)
     }
     else
     {
-        /* Note: There is no StructRingBuf_destruct() function. It is not
-         * necessary to clean up the ring buffers in case of initialization
-         * failure.
-         */
         object->isOpen = false;
     }
 
@@ -140,8 +131,7 @@ CAN_Handle CAN_open(uint_least8_t index, CAN_Params *params)
 /*
  *  ======== CAN_read ========
  */
-
-int_fast16_t CAN_read(CAN_Handle handle, CAN_RxBufElement *buf)
+int_fast16_t CAN_read(CAN_Handle handle, MCAN_RxBufElement *buf)
 {
     CAN_Object *object  = handle->object;
     int_fast16_t status = CAN_STATUS_NO_RX_MSG_AVAIL;
@@ -154,19 +144,16 @@ int_fast16_t CAN_read(CAN_Handle handle, CAN_RxBufElement *buf)
     return status;
 }
 
-/* CC27XXX10 devices have their own implementation of CAN_write() and CAN_writeBuffer() */
-#ifndef DeviceFamily_CC27XXX10
+/* CC27XX devices have their own implementation of CAN_write() and CAN_writeBuffer() */
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
 /*
  *  ======== CAN_write ========
  */
-
-int_fast16_t CAN_write(CAN_Handle handle, const CAN_TxBufElement *elem)
+int_fast16_t CAN_write(CAN_Handle handle, const MCAN_TxBufElement *elem)
 {
-    CAN_Object *object  = handle->object;
-    int_fast16_t status = CAN_STATUS_ERROR;
-
-    CAN_TxFifoQStatus fifoQStatus = {0};
-
+    CAN_Object *object             = handle->object;
+    int_fast16_t status            = CAN_STATUS_ERROR;
+    MCAN_TxFifoQStatus fifoQStatus = {0};
     uintptr_t hwiKey;
 
     if (object->txFifoQNum != 0U)
@@ -174,22 +161,13 @@ int_fast16_t CAN_write(CAN_Handle handle, const CAN_TxBufElement *elem)
         /* Disable interrupts as the ISR may call CAN_write */
         hwiKey = HwiP_disable();
 
-    #ifdef CAN_SUPPORTS_DCAN
-        DCAN_getTxFifoQStatus(&fifoQStatus);
-    #else
         MCAN_getTxFifoQStatus(&fifoQStatus);
-    #endif /* CAN_SUPPORTS_DCAN */
 
         if (fifoQStatus.fifoFull == 0U)
         {
-    #ifdef CAN_SUPPORTS_DCAN
-            DCAN_writeTxMsg(fifoQStatus.putIdx, elem);
-            DCAN_setTxBufAddReq(fifoQStatus.putIdx);
-    #else
             MCAN_writeTxMsg(fifoQStatus.putIdx, elem);
-            MCAN_setTxBufAddReq(fifoQStatus.putIdx);
-    #endif /* CAN_SUPPORTS_DCAN */
 
+            MCAN_setTxBufAddReq(fifoQStatus.putIdx);
             status = CAN_STATUS_SUCCESS;
         }
         else
@@ -213,8 +191,7 @@ int_fast16_t CAN_write(CAN_Handle handle, const CAN_TxBufElement *elem)
 /*
  *  ======== CAN_writeBuffer ========
  */
-
-int_fast16_t CAN_writeBuffer(CAN_Handle handle, uint32_t bufIdx, const CAN_TxBufElement *elem)
+int_fast16_t CAN_writeBuffer(CAN_Handle handle, uint32_t bufIdx, const MCAN_TxBufElement *elem)
 {
     CAN_Object *object  = handle->object;
     int_fast16_t status = CAN_STATUS_ERROR;
@@ -222,18 +199,6 @@ int_fast16_t CAN_writeBuffer(CAN_Handle handle, uint32_t bufIdx, const CAN_TxBuf
 
     if (bufIdx < object->txBufNum)
     {
-    #ifdef CAN_SUPPORTS_DCAN
-        pendingTx = DCAN_getTxBufReqPend();
-
-        if ((((uint32_t)1U << bufIdx) & pendingTx) == 0U)
-        {
-            DCAN_writeTxMsg(bufIdx, elem);
-
-            DCAN_setTxBufAddReq(bufIdx);
-
-            status = CAN_STATUS_SUCCESS;
-        }
-    #else
         pendingTx = MCAN_getTxBufReqPend();
 
         if ((((uint32_t)1U << bufIdx) & pendingTx) == 0U)
@@ -244,7 +209,6 @@ int_fast16_t CAN_writeBuffer(CAN_Handle handle, uint32_t bufIdx, const CAN_TxBuf
 
             status = CAN_STATUS_SUCCESS;
         }
-    #endif /* CAN_SUPPORTS_DCAN */
     }
 
     return status;
@@ -261,17 +225,10 @@ int_fast16_t CAN_readTxEvent(CAN_Handle handle, CAN_TxEventElement *elem)
 
     if (object->txEventFifoNum != 0U)
     {
-#ifdef CAN_SUPPORTS_DCAN
-        if (DCAN_readTxEventFifo(elem) == DCAN_STATUS_SUCCESS)
-        {
-            status = CAN_STATUS_SUCCESS;
-        }
-#else
         if (MCAN_readTxEventFifo(elem) == MCAN_STATUS_SUCCESS)
         {
             status = CAN_STATUS_SUCCESS;
         }
-#endif /* CAN_SUPPORTS_DCAN */
         else
         {
             status = CAN_STATUS_NO_TX_EVENT_AVAIL;

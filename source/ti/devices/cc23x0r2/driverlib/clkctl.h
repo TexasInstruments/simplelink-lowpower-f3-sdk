@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the CLKCTL module.
  *
- *  Copyright (c) 2025-2026 Texas Instruments Incorporated
+ *  Copyright (c) 2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -58,118 +58,9 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../inc/hw_ints.h"
-#include "../inc/hw_memmap.h"
 #include "../inc/hw_types.h"
+#include "../inc/hw_memmap.h"
 #include "../inc/hw_clkctl.h"
-#include "debug.h"
-#include "interrupt.h"
-
-//*****************************************************************************
-//
-// Values that can be passed to CLKCTLEnable() and CLKCTLDisable().
-//
-//*****************************************************************************
-
-#define CLKCTL_LGPT1 CLKCTL_CLKENSET0_LGPT1 //!< Configure LGPT1 clock enable
-#define CLKCTL_LGPT0 CLKCTL_CLKENSET0_LGPT0 //!< Configure LGPT0 clock enable
-#define CLKCTL_DMA   CLKCTL_CLKENSET0_DMA   //!< Configure DMA clock enable
-#define CLKCTL_LAES  CLKCTL_CLKENSET0_LAES  //!< Configure LAES clock enable
-#define CLKCTL_ADC0  CLKCTL_CLKENSET0_ADC0  //!< Configure ADC0 clock enable
-#define CLKCTL_SPI0  CLKCTL_CLKENSET0_SPI0  //!< Configure SPI0 clock enable
-#define CLKCTL_I2C0  CLKCTL_CLKENSET0_I2C0  //!< Configure I2C0 clock enable
-#define CLKCTL_UART0 CLKCTL_CLKENSET0_UART0 //!< Configure UART0 clock enable
-#define CLKCTL_LRFD  CLKCTL_CLKENSET0_LRFD  //!< Configure LRFD clock enable
-#define CLKCTL_GPIO  CLKCTL_CLKENSET0_GPIO  //!< Configure GPIO clock enable
-
-//*****************************************************************************
-//
-// API Functions and prototypes.
-//
-//*****************************************************************************
-
-#ifdef DRIVERLIB_DEBUG
-//*****************************************************************************
-//
-//! \internal
-//!
-//! \brief Checks clock control base address.
-//!
-//! This function determines if a clock controle base address is valid.
-//!
-//! \param base specifies the clock control base address.
-//!
-//! \return Returns \c true if the base address is valid and \c false
-//! otherwise.
-//
-//*****************************************************************************
-static bool CLKCTLBaseValid(uint32_t base)
-{
-    return (base == CLKCTL_BASE);
-}
-#endif
-
-//*****************************************************************************
-//
-//! \brief Enables the clock for a peripheral.
-//!
-//! This function enables the clock for a peripheral.
-//!
-//! \param base specifies the clock control base address.
-//! \param peripheral specifies the peripheral.
-//! The parameter can be one of the following values:
-//! - \ref CLKCTL_LGPT0
-//! - \ref CLKCTL_DMA
-//! - \ref CLKCTL_LAES
-//! - \ref CLKCTL_ADC0
-//! - \ref CLKCTL_SPI0
-//! - \ref CLKCTL_I2C0
-//! - \ref CLKCTL_UART0
-//! - \ref CLKCTL_LRFD
-//! - \ref CLKCTL_GPIO
-//!
-//! \return None
-//
-//*****************************************************************************
-__STATIC_INLINE void CLKCTLEnable(uint32_t base, uint32_t peripheral)
-{
-    // Check the arguments
-    ASSERT(CLKCTLBaseValid(base));
-
-    // Write the set bit
-    HWREG(base + CLKCTL_O_CLKENSET0) = peripheral;
-}
-
-//*****************************************************************************
-//
-//! \brief Disables the clock for a peripheral.
-//!
-//! This function disables the clock for a peripheral.
-//!
-//! \param base specifies the clock control base address.
-//! \param peripheral specifies the peripheral.
-//! The parameter can be one of the following values:
-//! - \ref CLKCTL_LGPT0
-//! - \ref CLKCTL_DMA
-//! - \ref CLKCTL_LAES
-//! - \ref CLKCTL_ADC0
-//! - \ref CLKCTL_SPI0
-//! - \ref CLKCTL_I2C0
-//! - \ref CLKCTL_UART0
-//! - \ref CLKCTL_LRFD
-//! - \ref CLKCTL_GPIO
-//!
-//! \return None
-//
-//*****************************************************************************
-__STATIC_INLINE void CLKCTLDisable(uint32_t base, uint32_t peripheral)
-{
-    // Check the arguments
-    ASSERT(CLKCTLBaseValid(base));
-
-    // Write the clear bit
-    HWREG(base + CLKCTL_O_CLKENCLR0) = peripheral;
-}
 
 //*****************************************************************************
 //
@@ -182,7 +73,7 @@ __STATIC_INLINE void CLKCTLDisable(uint32_t base, uint32_t peripheral)
 __STATIC_INLINE void CLKCTLEnableLrfdClock(void)
 {
     // Enable LRFD module clock
-    HWREG(CLKCTL_BASE + CLKCTL_O_CLKENSET0) = CLKCTL_CLKENSET0_LRFD;
+    HWREG( CLKCTL_BASE + CLKCTL_O_CLKENSET0 ) = CLKCTL_CLKENSET0_LRFD;
 
     // Wait for LRFD clock to be enabled. It is not expected that the LRFD clock
     // will ever be disabled, but this will add sufficient delay before
@@ -200,27 +91,7 @@ __STATIC_INLINE void CLKCTLEnableLrfdClock(void)
 //*****************************************************************************
 __STATIC_INLINE void CLKCTLDisableLrfdClock(void)
 {
-    HWREG(CLKCTL_BASE + CLKCTL_O_CLKENCLR0) = CLKCTL_CLKENCLR0_LRFD;
-}
-
-//*****************************************************************************
-//
-//! \brief Enable Flash LDO to be off in IDLE
-//
-//*****************************************************************************
-__STATIC_INLINE void CLKCTLEnableFlashLdoOffInIdle(void)
-{
-    HWREG( CLKCTL_BASE + CLKCTL_O_IDLECFG ) = CLKCTL_IDLECFG_MODE_LDO_OFF;
-}
-
-//*****************************************************************************
-//
-//! \brief Disable Flash LDO to be off in IDLE
-//
-//*****************************************************************************
-__STATIC_INLINE void CLKCTLDisableFlashLdoOffInIdle(void)
-{
-    HWREG( CLKCTL_BASE + CLKCTL_O_IDLECFG ) = CLKCTL_IDLECFG_MODE_LDO_ON;
+    HWREG( CLKCTL_BASE + CLKCTL_O_CLKENCLR0 ) = CLKCTL_CLKENCLR0_LRFD;
 }
 
 //*****************************************************************************

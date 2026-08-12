@@ -7,27 +7,27 @@ set(SOURCES_CC23X0_COMMON
     ../../../third_party/bearssl/src/i32_reduce.c
     ../../../third_party/bearssl/src/i32_sub.c
     ../AESCBC.c
-    ../aescbc/AESCBCXXF3.c
+    ../aescbc/AESCBCLPF3.c
     ../AESCCM.c
-    ../aesccm/AESCCMXXF3.c
+    ../aesccm/AESCCMLPF3.c
     ../AESCMAC.c
-    ../aescmac/AESCMACXXF3.c
+    ../aescmac/AESCMACLPF3.c
     ../AESCTR.c
-    ../aesctr/AESCTRXXF3.c
+    ../aesctr/AESCTRLPF3.c
     ../AESCTRDRBG.c
     ../aesctrdrbg/AESCTRDRBGXX.c
     ../AESECB.c
-    ../aesecb/AESECBXXF3.c
+    ../aesecb/AESECBLPF3.c
     ../AESGCM.c
     ../aesgcm/AESGCMLPF3.c
     ../ANSIX936KDF.c
     ../ansix936kdf/ANSIX936KDFXX.c
-    ../cryptoutils/aes/AESCommonXXF3.c
+    ../cryptoutils/aes/AESCommonLPF3.c
     ../cryptoutils/cryptokey/CryptoKey.c
     ../cryptoutils/cryptokey/CryptoKeyPlaintext.c
     ../cryptoutils/ecc/ECCInitLPF3SW.c
     ../cryptoutils/ecc/ECCParamsLPF3SW.c
-    ../cryptoutils/sharedresources/CryptoResourceXXF3.c
+    ../cryptoutils/sharedresources/CryptoResourceLPF3.c
     ../cryptoutils/utils/CryptoUtils.c
     ../ECDH.c
     ../ecdh/ECDHLPF3SW.c

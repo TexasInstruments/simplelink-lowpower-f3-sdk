@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2026, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -179,7 +179,7 @@ function pinmuxRequirements(inst)
             legacyNames: ["misoPin"],
             displayName: "POCI Pin",
             description: "Peripheral Output Controller Input pin",
-            interfaceNames: ["MISO", "POCI"]}); /* as defined in device metadata */
+            interfaceNames: ["MISO"]}); /* as defined in device metadata */
     }
 
     if (picoRequired) {
@@ -188,7 +188,7 @@ function pinmuxRequirements(inst)
             legacyNames: ["mosiPin"],
             displayName: "PICO Pin",
             description: "Peripheral Input Controller Output pin",
-            interfaceNames: ["MOSI", "PICO"]}); /* as defined in device metadata */
+            interfaceNames: ["MOSI"]}); /* as defined in device metadata */
     }
 
     /* add CS pin if one of the four pin modes is selected */
@@ -233,7 +233,8 @@ function moduleInstances(inst)
             },
             args: {
                 $name: "CONFIG_GPIO_" + shortName + "_SCLK",
-                mode: "Input",
+                initialOutputState: "Low",
+                mode: "Output",
                 pull: "None"
             }
         }
@@ -273,7 +274,8 @@ function moduleInstances(inst)
             },
             args: {
                 $name: "CONFIG_GPIO_" + shortName + "_PICO",
-                mode: "Input",
+                initialOutputState: "Low",
+                mode: "Output",
                 pull: "None"
             }
         }
@@ -293,7 +295,8 @@ function moduleInstances(inst)
                 },
                 args: {
                     $name: "CONFIG_GPIO_" + shortName + "_CSN",
-                    mode: "Input",
+                    initialOutputState: inst.mode.match("high") ? "Low" : "High",
+                    mode: "Output",
                     pull: "None"
                 }
             }

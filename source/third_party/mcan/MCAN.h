@@ -408,9 +408,6 @@ typedef uint32_t MCAN_ErrCode;
  */
 /* @} */
 
-/** Converts a prescaler value to the corresponding MCAN register value */
-#define MCAN_PRESCALER(val) ((val)-1U)
-
 /*!
  *  @brief  Structure for MCAN Transmitter Delay Compensation parameters.
  */

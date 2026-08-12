@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2018-2022, Arm Limited. All rights reserved.
- * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -17,7 +16,6 @@
 #include "tfm_crypto_defs.h"
 
 #include "crypto_library.h"
-#include "ti_psa_crypto.h"
 
 /*!
  * \addtogroup tfm_crypto_api_shim_layer
@@ -46,13 +44,9 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         uint8_t *output = out_vec[0].base;
         size_t output_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_encrypt(library_key, iov->alg, input, input_length,
-                                       output, output_size, &out_vec[0].len);
-#else
+
         status = psa_cipher_encrypt(library_key, iov->alg, input, input_length,
                                     output, output_size, &out_vec[0].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -68,13 +62,9 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         uint8_t *output = out_vec[0].base;
         size_t output_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_decrypt(library_key, iov->alg, input, input_length,
-                                       output, output_size, &out_vec[0].len);
-#else
+
         status = psa_cipher_decrypt(library_key, iov->alg, input, input_length,
                                     output, output_size, &out_vec[0].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -126,11 +116,8 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
     {
         unsigned char *iv = out_vec[0].base;
         size_t iv_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_generate_iv(operation, iv, iv_size, &out_vec[0].len);
-#else
+
         status = psa_cipher_generate_iv(operation, iv, iv_size, &out_vec[0].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -140,19 +127,12 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
     {
         const unsigned char *iv = in_vec[1].base;
         size_t iv_length = in_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_cipher_set_iv(operation, iv, iv_length);
-#else
+
         return psa_cipher_set_iv(operation, iv, iv_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_CIPHER_ENCRYPT_SETUP_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_encrypt_setup(operation, library_key, iov->alg);
-#else
         status = psa_cipher_encrypt_setup(operation, library_key, iov->alg);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -160,11 +140,7 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
     break;
     case TFM_CRYPTO_CIPHER_DECRYPT_SETUP_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_decrypt_setup(operation, library_key, iov->alg);
-#else
         status = psa_cipher_decrypt_setup(operation, library_key, iov->alg);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -176,13 +152,9 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         unsigned char *output = out_vec[0].base;
         size_t output_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_update(operation, input, input_length,
-                                      output, output_size, &out_vec[0].len);
-#else
+
         status = psa_cipher_update(operation, input, input_length,
                                    output, output_size, &out_vec[0].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -192,18 +164,12 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
     {
         uint8_t *output = out_vec[1].base;
         size_t output_size = out_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_finish(operation, output, output_size, &out_vec[1].len);
-#else
+
         status = psa_cipher_finish(operation,
                                    output, output_size, &out_vec[1].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status == PSA_SUCCESS) {
-/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
-#ifndef TI_PSA_CRYPTO_API_WRAPPER
             /* In case of success automatically release the operation */
             goto release_operation_and_return;
-#endif
         } else {
             out_vec[1].len = 0;
         }
@@ -211,11 +177,7 @@ psa_status_t tfm_crypto_cipher_interface(psa_invec in_vec[],
     break;
     case TFM_CRYPTO_CIPHER_ABORT_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_cipher_abort(operation);
-#else
         status = psa_cipher_abort(operation);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         goto release_operation_and_return;
     }
     default:

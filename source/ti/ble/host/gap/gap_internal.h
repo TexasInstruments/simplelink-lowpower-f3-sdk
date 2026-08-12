@@ -114,11 +114,10 @@ extern "C"
 // GAP OSAL Events
 #define GAP_OSAL_TIMER_INITIATING_TIMEOUT_EVT   0x0001
 #define GAP_END_ADVERTISING_EVT                 0x0002
-#define GAP_CHANGE_NON_RESOLVABLE_PRIVATE_ADDR_EVT  0x0004
+#define GAP_CHANGE_RESOLVABLE_PRIVATE_ADDR_EVT  0x0004
 #define GAP_CONN_PARAM_TIMEOUT_EVT              0x0008
 
 #define GAP_PRIVATE_ADDR_CHANGE_RESOLUTION      0xEA60 // Timer resolution is 1 minute
-#define GAP_PRIVATE_ADDR_INT_MAX                690 // Max GAP_PRIVATE_ADDR_INT in minutes. Mirrors MAX_RPA_TIMEOUT (41400 s)
 
 #define ADV_TOKEN_HDR                           2
 
@@ -154,13 +153,6 @@ extern "C"
 #define GAP_LIMITED_ADV_MAX_DURATION_SEC        180
 // Max value of advertising delay in ms
 #define GAP_MAX_ADV_DELAY_MS                    10
-
-/// Periodic Advertising - CTE Type Values
-/// Reserved
-#define SCAN_PERIODIC_RESERVED                  8
-
-/// Periodic Advertisng with Reponses
-#define PAWR_RSP_HDR_SIZE                       6
 
 /*********************************************************************
  * TYPEDEFS
@@ -198,20 +190,6 @@ typedef struct
   smIdentityInfo_t     *pIdentityInfo;    // BOUND - identity information
   smSigningInfo_t      *pSigningInfo;     // Signing information
 } gapAuthStateParams_t;
-
-// Periodic advertising response struct
-typedef struct
-{
-  osal_event_hdr_t hdr;                   //!< OSAL Event Header
-  uint8_t opcode;                         //!< GAP type of command
-  int8_t  txPower;                        //!< TxPower value of the response report (signed)
-  int8_t  rssi;                           //!< RSSI level for the response report (signed)
-  uint8_t cteType;                        //!< CTE type (0x00=AoA, 0x01=AoD 1us, 0x02=AoD 2us, 0xFF=No CTE)
-  uint8_t responseSlot;                   //!< Report response slot
-  uint8_t dataStatus;                     //!< Data status of the event - received or not
-  uint8_t dataLen;                        //!< Length of data
-  uint8_t *data;                          //!< Data of the response
-} GapAdv_PeriodicAdvResponse_t;
 
 // Callback when a connection-related event has been received on the Central.
 typedef uint8(*gapProcessConnEvt_t)( uint16 cmdOpcode, hciEvt_CommandStatus_t *pMsg );
@@ -268,7 +246,6 @@ extern uint8 gapProcessCommandStatusEvt( hciEvt_CommandStatus_t *pMsg );
 extern uint8 gapProcessConnEvt( uint16 connHandle, uint16 cmdOpcode, hciEvt_CommandStatus_t *pMsg );
 extern uint8 gapProcessHCICmdCompleteEvt( hciEvt_CmdComplete_t *pMsg );
 extern uint8 gapProcessOSALMsg( osal_event_hdr_t *pMsg );
-extern void gapGenerateNRPA( uint8 *pNrpa );
 uint8_t gapSafeToDealloc( uint8_t status, uint8_t* safeToDealloc );
 
 /*********************************************************************
@@ -281,7 +258,7 @@ extern void gapPairingCompleteCB( uint8 status, uint8 initiatorRole, uint16 conn
                                   smSecurityInfo_t *pEncParams, smSecurityInfo_t *pDevEncParams,
                                   smIdentityInfo_t *pIdInfo, smSigningInfo_t  *pSigningInfo );
 extern void gapPasskeyNeededCB( uint16 connectionHandle, uint8 type, uint32 numComparison );
-extern void gapProcessConnectionCompleteEvt( uint8_t eventCode, hciEvt_BLEConnComplete_u *pPkt );
+extern void gapProcessConnectionCompleteEvt( uint8 eventCode, hciEvt_BLEConnComplete_u *pPkt );
 extern void gapProcessDisconnectCompleteEvt( hciEvt_DisconnComplete_t *pPkt );
 extern void gapProcessRemoteConnParamReqEvt( hciEvt_BLERemoteConnParamReq_t *pPkt, uint8 accepted );
 extern void gapRegisterCentralConn( gapCentralConnCBs_t *pfnCBs);
@@ -297,13 +274,9 @@ extern void gapSendSignUpdateEvent( uint8 taskID, uint8 addrType, uint8 *pDevAdd
 extern void gapSendPeripheralSecurityReqEvent( uint8 taskID, uint16 connHandle, uint8 *pDevAddr, uint8 authReq );
 extern void gapUpdateConnSignCounter( uint16 connHandle, uint32 newSignCounter );
 extern void sendAuthEvent( uint8 status, uint16 connectionHandle, uint8 authState, smSecurityInfo_t *pDevEncParams );
-extern void sendEstLinkEvent( uint8_t status, uint8_t taskID, uint8_t devAddrType, uint8_t *pDevAddr,
-                              uint16_t connectionHandle, uint8_t connRole, uint16_t connInterval,
-                              uint16_t connLatency, uint16_t connTimeout, uint16_t clockAccuracy );
-extern void sendEstLinkEventV2( uint8_t status, uint8_t taskID, uint8_t devAddrType, uint8_t *pDevAddr,
-                                uint16_t connectionHandle, uint8_t connRole, uint16_t connInterval,
-                                uint16_t connLatency, uint16_t connTimeout, uint16_t clockAccuracy,
-                                uint8_t advHandle, uint16_t syncHandle );
+extern void sendEstLinkEvent( uint8 status, uint8 taskID, uint8 devAddrType, uint8 *pDevAddr,
+                              uint16 connectionHandle, uint8 connRole, uint16 connInterval,
+                              uint16 connLatency, uint16 connTimeout, uint16 clockAccuracy );
 extern void sendTerminateEvent( uint8 status, uint8 taskID, uint16 connectionHandle, uint8 reason );
 extern void gapConnEvtNoticeCB( Gap_ConnEventRpt_t *pReport );
 extern void gapSendBondLostEvent( uint16 connHandle, uint8 *pDevAddr );

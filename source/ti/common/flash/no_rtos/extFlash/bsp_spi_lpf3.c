@@ -36,7 +36,7 @@
 #include DeviceFamily_constructPath(inc/hw_pmctl.h)
 #include DeviceFamily_constructPath(inc/hw_pmud.h)
 #include DeviceFamily_constructPath(driverlib/gpio.h)
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0 || DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#if defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC27XX)
 
 #include DeviceFamily_constructPath(driverlib/spi.h)
 #else
@@ -83,7 +83,7 @@
     #define MISO_PINMUX GPIO_MUX_PORTCFG_PFUNC_4
     #define MOSI_PINMUX GPIO_MUX_PORTCFG_PFUNC_2
     #define CLK_PINMUX  GPIO_MUX_PORTCFG_PFUNC_1
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(DeviceFamily_CC27XX)
     #define MISO_PINMUX GPIO_MUX_PORTCFG_PFUNC_2
     #define MOSI_PINMUX GPIO_MUX_PORTCFG_PFUNC_2
     #define CLK_PINMUX  GPIO_MUX_PORTCFG_PFUNC_1

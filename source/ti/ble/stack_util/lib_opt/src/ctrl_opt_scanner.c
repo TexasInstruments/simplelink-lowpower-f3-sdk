@@ -160,9 +160,29 @@ void OPT_llUpdateScannSecTaskTimeGap(uint32_t* timeGap)
     llUpdateScannSecTaskTimeGap(timeGap);
 }
 
-void OPT_llAdjustScanStartTimeForConnWindow(taskInfo_t* secTask, llConnState_t* nextConnPtr, RCL_Command* secCmd, uint32_t* timeGap, uint32_t curTime)
+void OPT_llUpdateTimeGapForScanWindow(taskInfo_t* secTask, llConnState_t* nextConnPtr, RCL_Command* secCmd, uint32_t* timeGap, uint32_t curTime)
 {
-    llAdjustScanStartTimeForConnWindow(secTask, nextConnPtr, secCmd, timeGap, curTime);
+    llUpdateTimeGapForScanWindow(secTask, nextConnPtr, secCmd, timeGap, curTime);
+}
+
+llStatus_t OPT_HCI_TL_set_scan_param(uint16_t opcode, uint8_t* pHciParams, aeSetScanParamCmd_t* hci_tl_cmdScanParams)
+{
+    return HCI_TL_set_scan_param(opcode, pHciParams, hci_tl_cmdScanParams);
+}
+
+llStatus_t OPT_HCI_TL_set_ext_scan_param(uint16_t opcode, uint8_t* pHciParams, aeSetScanParamCmd_t* hci_tl_cmdScanParams)
+{
+    return HCI_TL_set_ext_scan_param(opcode, pHciParams, hci_tl_cmdScanParams);
+}
+
+llStatus_t OPT_HCI_TL_set_ext_scan_enable(uint16_t opcode, uint8_t* pHciParams, aeEnableScanCmd_t* hci_tl_cmdScanEnable, aeSetScanParamCmd_t* hci_tl_cmdScanParams)
+{
+    return HCI_TL_set_ext_scan_enable(opcode, pHciParams, hci_tl_cmdScanEnable, hci_tl_cmdScanParams);
+}
+
+llStatus_t OPT_HCI_TL_set_scan_enable(uint16_t opcode, uint8_t* pHciParams, aeEnableScanCmd_t* hci_tl_cmdScanEnable, aeSetScanParamCmd_t* hci_tl_cmdScanParams)
+{
+    return HCI_TL_set_scan_enable(opcode, pHciParams, hci_tl_cmdScanEnable, hci_tl_cmdScanParams);
 }
 
 void OPT_llStopCurrentScan(void)
@@ -173,36 +193,6 @@ void OPT_llStopCurrentScan(void)
 void OPT_llCmdScanStartedEventHandle(void)
 {
     llCmdScanStartedEventHandle();
-}
-
-void OPT_HCI_InitScanCallbacks(void)
-{
-    HCI_InitScanCallbacks();
-}
-
-hciStatus_t OPT_hciCmdParserLegacyScanner(uint8_t* pData, uint16_t cmdOpCode)
-{
-    return hciCmdParserLegacyScanner(pData, cmdOpCode);
-}
-
-hciStatus_t OPT_hciCmdParserScanner(uint8_t* pData, uint16_t cmdOpCode)
-{
-    return hciCmdParserScanner(pData, cmdOpCode);
-}
-
-uint8_t OPT_llIsScanWindowActive(uint32_t time)
-{
-    return llIsScanWindowActive(time);
-}
-
-void OPT_llScanSetTaskAnchorScanWindow(uint32_t absStartTime)
-{
-    llScanSetTaskAnchorScanWindow(absStartTime);
-}
-
-void OPT_llScanSetRclScanWindow(uint32_t absStartTime)
-{
-    llScanSetRclScanWindow(absStartTime);
 }
 
 #endif /* defined(CTRL_SCANNER_CFG) */

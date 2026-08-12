@@ -19,11 +19,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -42,14 +45,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "gpd_attr_reporting",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "gpd_attr_reporting",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -58,37 +62,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "gpd_attr_reporting"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "gpd_attr_reporting",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -111,11 +87,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -134,14 +113,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "gpd_attr_reporting",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "gpd_attr_reporting",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -150,37 +130,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "gpd_attr_reporting"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/freertos/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "gpd_attr_reporting",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -203,7 +155,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpd_attr_reporting",
+        "description": "gpd_attr_reporting",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "gpd_attr_reporting",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -226,7 +220,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_attr_reporting/ticlang/gpd_attr_reporting_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "gpd_attr_reporting",
+        "description": "gpd_attr_reporting",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "gpd_attr_reporting",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -249,11 +285,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -272,14 +311,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "gpd_bidir_attr_read_write",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "gpd_bidir_attr_read_write",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -288,37 +328,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "gpd_bidir_attr_read_write"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "gpd_bidir_attr_read_write",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -341,11 +353,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -364,14 +379,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "gpd_bidir_attr_read_write",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "gpd_bidir_attr_read_write",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -380,37 +396,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "gpd_bidir_attr_read_write"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/freertos/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "gpd_bidir_attr_read_write",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -433,7 +421,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpd_bidir_attr_read_write",
+        "description": "gpd_bidir_attr_read_write",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "gpd_bidir_attr_read_write",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -456,7 +486,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_bidir_attr_read_write/ticlang/gpd_bidir_attr_read_write_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "gpd_bidir_attr_read_write",
+        "description": "gpd_bidir_attr_read_write",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "gpd_bidir_attr_read_write",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -479,11 +551,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -502,14 +577,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "gpd_switch",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "gpd_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -518,37 +594,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "gpd_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "gpd_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -571,11 +619,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -594,14 +645,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "gpd_switch",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "gpd_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -610,37 +662,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "gpd_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/gpd_switch/freertos/ticlang/gpd_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "gpd_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -663,7 +687,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "gpd_switch",
+        "description": "gpd_switch",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "gpd_switch",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -686,34 +752,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/mac_sensor/README.html",
-        "resourceType": "categoryInfo",
-        "name": "mac_sensor",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -724,16 +770,20 @@
             "example.general"
         ],
         "devices": [
-            "CC2755R10"
+            "CC2340R53"
         ],
         "coreTypes": [
-            "Cortex M.CC2755R10"
+            "Cortex M.CC2340R53"
         ],
         "devtools": [
-            "LP-EM-CC2755R10-BG"
+            "LP-EM-CC2340R53"
         ],
-        "name": "mac_sensor",
-        "description": "mac_sensor",
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/gpd_switch/ticlang/gpd_switch_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "gpd_switch",
+        "description": "gpd_switch",
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -742,95 +792,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "mac_sensor"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/mac_sensor/README.html",
-        "resourceType": "categoryInfo",
-        "name": "mac_sensor",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755P20"
-        ],
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "name": "mac_sensor",
-        "description": "mac_sensor",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "mac_sensor"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2755P20_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            }
+            "gpd_switch",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -853,11 +817,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -876,8 +843,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "mac_sensor",
         "description": "mac_sensor",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -886,23 +860,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "mac_sensor"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            }
+            "mac_sensor",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -925,11 +885,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -948,8 +911,15 @@
         "devtools": [
             "LP-EM-CC2755P10"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2755P10_freertos_ticlang.projectspec",
         "name": "mac_sensor",
         "description": "mac_sensor",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -958,23 +928,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "mac_sensor"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2755P10_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            }
+            "mac_sensor",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -997,11 +953,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1020,8 +979,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "mac_sensor",
         "description": "mac_sensor",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -1030,207 +996,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "mac_sensor"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/mac_sensor/freertos/ticlang/mac_sensor_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_light/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_light",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755R10"
-        ],
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "name": "onoff_light",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_light",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "onoff_light"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_light/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_light",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755P20"
-        ],
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "name": "onoff_light",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_light",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "onoff_light"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2755P20_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2755P20_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "mac_sensor",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1253,11 +1021,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1276,14 +1047,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "onoff_light",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_light",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -1292,37 +1064,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_light"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_light",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1345,11 +1089,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1368,14 +1115,15 @@
         "devtools": [
             "LP-EM-CC2755P10"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2755P10_freertos_ticlang.projectspec",
         "name": "onoff_light",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_light",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -1384,37 +1132,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_light"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2755P10_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2755P10_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_light",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1437,11 +1157,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1460,14 +1183,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "onoff_light",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_light",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -1476,83 +1200,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_light"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_light/freertos/ticlang/onoff_light_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_light/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_light",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_light/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_light",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
+            "onoff_light",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1575,7 +1225,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "onoff_light",
+        "description": "onoff_light",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_light",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1598,7 +1290,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_light",
+        "description": "onoff_light",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_light",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1621,34 +1355,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_switch/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1659,22 +1373,20 @@
             "example.general"
         ],
         "devices": [
-            "CC2755R10"
+            "CC2340R53"
         ],
         "coreTypes": [
-            "Cortex M.CC2755R10"
+            "Cortex M.CC2340R53"
         ],
         "devtools": [
-            "LP-EM-CC2755R10-BG"
+            "LP-EM-CC2340R53"
         ],
-        "name": "onoff_switch",
-        "technologies": [
-            "zigbee"
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_light/ticlang/onoff_light_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "onoff_light",
+        "description": "onoff_light",
+        "compiler": [
+            "ticlang"
         ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_switch",
         "mainCategories": [
             [
                 "Examples",
@@ -1683,129 +1395,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755P20"
-        ],
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "name": "onoff_switch",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_switch",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "onoff_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2755P20_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2755P20_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_light",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1828,11 +1420,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1851,14 +1446,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "onoff_switch",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -1867,37 +1463,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -1920,11 +1488,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -1943,14 +1514,15 @@
         "devtools": [
             "LP-EM-CC2755P10"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2755P10_freertos_ticlang.projectspec",
         "name": "onoff_switch",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -1959,37 +1531,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2755P10_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2755P10_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2012,11 +1556,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -2035,14 +1582,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "onoff_switch",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -2051,83 +1599,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch/freertos/ticlang/onoff_switch_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_switch/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_switch/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
+            "onoff_switch",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2150,7 +1624,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_switch",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2173,7 +1689,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_switch",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2196,34 +1754,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_offchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_offchip",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -2234,22 +1772,20 @@
             "example.general"
         ],
         "devices": [
-            "CC2755R10"
+            "CC2340R53"
         ],
         "coreTypes": [
-            "Cortex M.CC2755R10"
+            "Cortex M.CC2340R53"
         ],
         "devtools": [
-            "LP-EM-CC2755R10-BG"
+            "LP-EM-CC2340R53"
         ],
-        "name": "onoff_switch_ota_client_offchip",
-        "technologies": [
-            "zigbee"
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch/ticlang/onoff_switch_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "onoff_switch",
+        "description": "onoff_switch",
+        "compiler": [
+            "ticlang"
         ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_switch_ota_client_offchip",
         "mainCategories": [
             [
                 "Examples",
@@ -2258,129 +1794,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_offchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_offchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_offchip",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755P20"
-        ],
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "name": "onoff_switch_ota_client_offchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_switch_ota_client_offchip",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "onoff_switch_ota_client_offchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P20_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P20_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2403,11 +1819,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -2426,14 +1845,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "onoff_switch_ota_client_offchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch_ota_client_offchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -2442,37 +1862,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_offchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch_ota_client_offchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2495,11 +1887,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -2518,14 +1913,15 @@
         "devtools": [
             "LP-EM-CC2755P10"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P10_freertos_ticlang.projectspec",
         "name": "onoff_switch_ota_client_offchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch_ota_client_offchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -2534,37 +1930,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_offchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P10_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P10_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch_ota_client_offchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2587,11 +1955,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -2610,14 +1981,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "onoff_switch_ota_client_offchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch_ota_client_offchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -2626,83 +1998,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_offchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/freertos/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_offchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_offchip",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_offchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_offchip",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
+            "onoff_switch_ota_client_offchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2725,7 +2023,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_switch_ota_client_offchip",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2748,7 +2088,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_switch_ota_client_offchip",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2771,34 +2153,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_onchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_onchip",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -2809,22 +2171,20 @@
             "example.general"
         ],
         "devices": [
-            "CC2755R10"
+            "CC2340R53"
         ],
         "coreTypes": [
-            "Cortex M.CC2755R10"
+            "Cortex M.CC2340R53"
         ],
         "devtools": [
-            "LP-EM-CC2755R10-BG"
+            "LP-EM-CC2340R53"
         ],
-        "name": "onoff_switch_ota_client_onchip",
-        "technologies": [
-            "zigbee"
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_offchip/ticlang/onoff_switch_ota_client_offchip_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_offchip",
+        "description": "onoff_switch_ota_client_offchip",
+        "compiler": [
+            "ticlang"
         ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_switch_ota_client_onchip",
         "mainCategories": [
             [
                 "Examples",
@@ -2833,129 +2193,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_onchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_onchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_onchip",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755P20"
-        ],
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "name": "onoff_switch_ota_client_onchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
-        "description": "onoff_switch_ota_client_onchip",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "onoff_switch_ota_client_onchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P20_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P20_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch_ota_client_offchip",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -2978,11 +2218,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3001,14 +2244,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "onoff_switch_ota_client_onchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch_ota_client_onchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3017,37 +2261,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_onchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch_ota_client_onchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3070,11 +2286,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3093,14 +2312,15 @@
         "devtools": [
             "LP-EM-CC2755P10"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P10_freertos_ticlang.projectspec",
         "name": "onoff_switch_ota_client_onchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch_ota_client_onchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3109,37 +2329,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_onchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P10_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P10_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch_ota_client_onchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3162,11 +2354,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3185,14 +2380,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "onoff_switch_ota_client_onchip",
-        "technologies": [
-            "zigbee"
-        ],
-        "endEquipment": [
-            "general"
-        ],
         "description": "onoff_switch_ota_client_onchip",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3201,83 +2397,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "onoff_switch_ota_client_onchip"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/onoff_switch_ota_client_onchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_onchip",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/onoff_switch_ota_client_onchip/README.html",
-        "resourceType": "categoryInfo",
-        "name": "onoff_switch_ota_client_onchip",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
+            "onoff_switch_ota_client_onchip",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3300,7 +2422,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_switch_ota_client_onchip",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3323,7 +2487,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "onoff_switch_ota_client_onchip",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3346,34 +2552,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/rf_test/README.html",
-        "resourceType": "categoryInfo",
-        "name": "rf_test",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3384,16 +2570,20 @@
             "example.general"
         ],
         "devices": [
-            "CC2755R10"
+            "CC2340R53"
         ],
         "coreTypes": [
-            "Cortex M.CC2755R10"
+            "Cortex M.CC2340R53"
         ],
         "devtools": [
-            "LP-EM-CC2755R10-BG"
+            "LP-EM-CC2340R53"
         ],
-        "name": "rf_test",
-        "description": "rf_test",
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/onoff_switch_ota_client_onchip/ticlang/onoff_switch_ota_client_onchip_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "onoff_switch_ota_client_onchip",
+        "description": "onoff_switch_ota_client_onchip",
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3402,123 +2592,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "rf_test"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/rf_test/README.html",
-        "resourceType": "categoryInfo",
-        "name": "rf_test",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "resourceType": "project.group",
-        "advanced": {
-            "overrideProjectSpecDeviceId": true
-        },
-        "resourceClass": [
-            "example"
-        ],
-        "resourceSubClass": [
-            "example.general"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "coreTypes": [
-            "Cortex M.CC2755P20"
-        ],
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "name": "rf_test",
-        "description": "rf_test",
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee",
-            "rf_test"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P20/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755P20_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755P20_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "onoff_switch_ota_client_onchip",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3541,11 +2617,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3564,8 +2643,15 @@
         "devtools": [
             "LP-EM-CC2340R5"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2340R5_freertos_ticlang.projectspec",
         "name": "rf_test",
         "description": "rf_test",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3574,37 +2660,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "rf_test"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R5/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2340R5_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2340R5_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "rf_test",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3627,11 +2685,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3650,8 +2711,15 @@
         "devtools": [
             "LP-EM-CC2755P10"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755P10_freertos_ticlang.projectspec",
         "name": "rf_test",
         "description": "rf_test",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3660,37 +2728,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "rf_test"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2755P10/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755P10_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755P10_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
+            "rf_test",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3713,11 +2753,14 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
         ]
     },
     {
-        "resourceType": "project.group",
+        "resourceType": "project.ccs",
         "advanced": {
             "overrideProjectSpecDeviceId": true
         },
@@ -3736,8 +2779,15 @@
         "devtools": [
             "LP-EM-CC2340R53"
         ],
+        "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2340R53_freertos_ticlang.projectspec",
         "name": "rf_test",
         "description": "rf_test",
+        "kernel": [
+            "freertos"
+        ],
+        "compiler": [
+            "ticlang"
+        ],
         "mainCategories": [
             [
                 "Examples",
@@ -3746,83 +2796,9 @@
         ],
         "subCategories": [
             "Zigbee",
-            "rf_test"
-        ],
-        "variants": [
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/rtos/LP_EM_CC2340R53/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2340R53_freertos_ticlang.projectspec",
-                "kernel": "freertos",
-                "compiler": "ticlang"
-            },
-            {
-                "dependencies": [
-                    {
-                        "packageId": "ti_cgt_tiarmclang"
-                    },
-                    {
-                        "packageId": "sysconfig"
-                    }
-                ],
-                "ide": "ccs",
-                "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2340R53_nortos_ticlang.projectspec",
-                "kernel": "nortos",
-                "compiler": "ticlang"
-            }
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755R10_BG/zigbee/rf_test/README.html",
-        "resourceType": "categoryInfo",
-        "name": "rf_test",
-        "devtools": [
-            "LP-EM-CC2755R10-BG"
-        ],
-        "devices": [
-            "CC2755R10"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
-        ]
-    },
-    {
-        "location": "../../examples/nortos/LP_EM_CC2755P20/zigbee/rf_test/README.html",
-        "resourceType": "categoryInfo",
-        "name": "rf_test",
-        "devtools": [
-            "LP-EM-CC2755P20"
-        ],
-        "devices": [
-            "CC2755P20"
-        ],
-        "mainCategories": [
-            [
-                "Examples",
-                "Development Tools"
-            ]
-        ],
-        "subCategories": [
-            "Zigbee"
-        ],
-        "resourceClass": [
-            "document"
+            "rf_test",
+            "FreeRTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3845,7 +2821,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R5"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R5/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2340R5_nortos_ticlang.projectspec",
+        "name": "rf_test",
+        "description": "rf_test",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "rf_test",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3868,7 +2886,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755P10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755P10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755P10"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2755P10/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755P10_nortos_ticlang.projectspec",
+        "name": "rf_test",
+        "description": "rf_test",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "rf_test",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     },
     {
@@ -3891,7 +2951,49 @@
             "Zigbee"
         ],
         "resourceClass": [
-            "document"
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ]
+    },
+    {
+        "resourceType": "project.ccs",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2340R53"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2340R53"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R53"
+        ],
+        "location": "../../examples/nortos/LP_EM_CC2340R53/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2340R53_nortos_ticlang.projectspec",
+        "name": "rf_test",
+        "description": "rf_test",
+        "compiler": [
+            "ticlang"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Zigbee",
+            "rf_test",
+            "No RTOS",
+            "TI Clang Compiler"
         ]
     }
 ]

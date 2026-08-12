@@ -105,8 +105,6 @@
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_past_sender.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_past_receiver.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_scan.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_advertiser.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_legacy_cmd.h"
 
 /*******************************************************************************
  * MACROS
@@ -117,17 +115,17 @@
  */
 
 // HCI Version and Revision
-#define HCI_VERSION                                  0x10    // BT Core Specification V6.2
+#define HCI_VERSION                                  0x0E    // BT Core Specification V6.0
 
 // Major Version (8 bits) . Minor Version (4 bits) . SubMinor Version (4 bits)
-#define HCI_REVISION                                 0x0350  // HCI Version BLE5 3.5.0
+#define HCI_REVISION                                 0x0340  // HCI Version BLE5 3.4.0
 
 // SDK Version Associated with HCI Version
 // Major Version (8 bits) . Minor Version (4 bits). SubMinor Version (4 bits)
 // The direct conversion is as follows:
 // SDK Major Version = HCI Minor Version + 5
 // SDK SubMinor Version = HCI SubMinor Version
-#define HCI_SDK_REVISION_NUM                         0x0920  // SDK Version 9.20.00
+#define HCI_SDK_REVISION_NUM                         0x0914  // SDK Version 9.14.00
 
 // Internal Only Status Values
 #define HCI_STATUS_WARNING_FLAG_UNCHANGED            LL_STATUS_WARNING_FLAG_UNCHANGED
@@ -161,33 +159,6 @@
 uint8  hciPTMenabled  = FALSE;
 uint8  ctrlToHostEnable = FALSE;
 uint16 numHostBufs = 0;
-
-/*******************************************************************************
- * SCAN CALLBACK REGISTRATION
- */
-
-// Number of scan callbacks to register
-#define NUM_SCAN_CALLBACKS                       2
-
-// Scan callbacks types
-#define SCAN_CALLBACKS_TYPE_NONE                 0  //!< No scan callbacks registered
-#define SCAN_CALLBACKS_TYPE_LEGACY               1  //!< Legacy BT4.x scan callbacks
-#define SCAN_CALLBACKS_TYPE_EXTENDED             2  //!< Extended BT5+ scan callbacks
-
-// Scan callback IDs that will be registered with the LL
-static uint8 HCI_scanCBackIds[NUM_SCAN_CALLBACKS] = {
-  LL_CBACK_EXT_ADV_REPORT,
-  LL_CBACK_EXT_SCAN_TIMEOUT
-};
-
-// Extended scanning callback args (points to HCI event generation functions)
-static void *HCI_scanCBackArgsExt[NUM_SCAN_CALLBACKS];
-
-// Legacy scanning callback args (points to transport layer legacy conversion)
-static void *HCI_scanCBackArgsLegacy[NUM_SCAN_CALLBACKS];
-
-// Current scan callback type (tracks which callbacks are registered)
-static uint8 HCI_scanCbacksType = SCAN_CALLBACKS_TYPE_NONE;
 
 /*******************************************************************************
  * HCI API
@@ -414,12 +385,6 @@ hciStatus_t HCI_ResetCmd( void )
 
   // reset the Bluetooth and the BLE event mask bits
   MAP_HCI_InitEventMasks();
-
-  // reset scan callback type tracking
-  HCI_scanCbacksType = SCAN_CALLBACKS_TYPE_NONE;
-
-  // reset legacy command mode tracking
-  OPT_HCI_LegacyCmd_Reset();
 
   // initialize Controller to Host flow control flag and counter
   ctrlToHostEnable = FALSE;
@@ -1069,260 +1034,29 @@ hciStatus_t HCI_LE_ReadAdvChanTxPowerCmd( void )
 }
 
 /*******************************************************************************
- * This LE API is used to read the maximum advertising data length.
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_ReadMaxAdvDataLenCmd( void )
-{
-  // 0: Status
-  // 1-2: Max Advertising Data Length (uint16)
-  uint8 rtnParam[3];
-  uint16 maxAdvDataLen;
-
-  maxAdvDataLen = LE_ReadMaxAdvDataLen();
-
-  // status
-  rtnParam[0] = HCI_SUCCESS;
-  rtnParam[1] = LO_UINT16(maxAdvDataLen);
-  rtnParam[2] = HI_UINT16(maxAdvDataLen);
-
-  MAP_HCI_CommandCompleteEvent( HCI_LE_READ_MAX_ADV_DATA_LENGTH, sizeof ( rtnParam ),
-                                rtnParam );
-
-  return ( rtnParam[0] );
-}
-
-/*******************************************************************************
- * This LE API is used to read the number of supported advertising sets.
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_ReadNumSupportedAdvSetsCmd( void )
-{
-  // 0: Status
-  // 1: Num Supported Advertising Sets (uint8)
-  uint8 rtnParam[2];
-
-  // status
-  rtnParam[0] = HCI_SUCCESS;
-  rtnParam[1] = MAP_LE_ReadNumSupportedAdvSets();
-
-  MAP_HCI_CommandCompleteEvent( HCI_LE_READ_NUM_SUPPORTED_ADV_SETS, sizeof ( rtnParam ),
-                                rtnParam );
-
-  return ( rtnParam[0] );
-}
-
-/*******************************************************************************
  * This LE API is used to set the Scan parameters.
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetScanParamCmd( uint8 *pData )
+hciStatus_t HCI_LE_SetScanParamCmd( uint8  scanType,
+                                    uint16 scanInterval,
+                                    uint16 scanWindow,
+                                    uint8  ownAddrType,
+                                    uint8  filterPolicy )
 {
-  aeSetScanParamCmd_t scanParam;  // Local variable, will be copied by LL with memcpy
-  llStatus_t status;
-
-  // Parameter validation
-  // Note: Size validation (7 bytes) is performed by the HCI transport layer
-  // before calling this function. This check protects against NULL pointer.
-  if ( pData == NULL )
-  {
-    return ( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS );
-  }
-
-  // Translate legacy API parameters (7 bytes) to extended scan parameter structure
-  scanParam.scanPhys                     = LL_PHY_1_MBPS;  // Legacy command uses 1M PHY only
-  scanParam.extScanParam[0].scanType     = pData[0];
-  scanParam.extScanParam[0].scanInterval = BUILD_UINT16(pData[1], pData[2]);
-  scanParam.extScanParam[0].scanWindow   = BUILD_UINT16(pData[3], pData[4]);
-  scanParam.ownAddrType                  = pData[5];
-  scanParam.scanFilterPolicy             = pData[6];
-
-  // Call LE_SetExtScanParams
-  status = MAP_LE_SetExtScanParams(&scanParam);
-
-  // Send Command Complete Event
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_SCAN_PARAM, sizeof(status), &status );
-
-  return ( status );
+  return( LL_STATUS_ERROR_COMMAND_DISALLOWED );
 }
 
 
 /*******************************************************************************
- * This LE API is used to turn legacy scanning on or off (BT4.x command).
+ * This LE API is used to turn Scanning on or off.
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetScanEnableCmd( uint8 *pData )
+hciStatus_t HCI_LE_SetScanEnableCmd( uint8 scanEnable,
+                                     uint8 filterDuplicates )
 {
-  aeEnableScanCmd_t scanEnable;  // Local variable, will be copied by LL with memcpy
-  llStatus_t status;
-
-  // Parameter validation
-  // Note: Size validation (2 bytes) is performed by the HCI transport layer
-  // before calling this function. This check protects against NULL pointer.
-  if ( pData == NULL )
-  {
-    return ( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS );
-  }
-
-  // Parse legacy scan enable parameters (2 bytes)
-  scanEnable.enable       = pData[0];
-  scanEnable.dupFiltering = pData[1];
-  scanEnable.duration     = 0;  // Legacy command has no duration
-  scanEnable.period       = 0;  // Legacy command has no period
-
-  // Register legacy scanning callbacks
-  status = HCI_RegisterScanCallbacks(SCAN_CALLBACKS_TYPE_LEGACY);
-
-  // Check if the registration was successful
-  if (status != LL_STATUS_SUCCESS)
-  {
-    status = LL_STATUS_ERROR_BAD_PARAMETER;
-    MAP_HCI_CommandCompleteEvent(HCI_LE_SET_SCAN_ENABLE, sizeof(status), &status);
-    return (status);
-  }
-
-  // Send the command to LL
-  // Note: Random address validation is performed in LE_SetExtScanEnable
-  status = MAP_LE_SetExtScanEnable(&scanEnable);
-
-  // Send Command Complete Event
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_SCAN_ENABLE, sizeof(status), &status );
-
-  return ( status );
-}
-
-/*******************************************************************************
- * This LE API is used to turn extended scanning on or off (BT5+ command).
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_SetExtScanEnableCmd( uint8 *pData )
-{
-  aeEnableScanCmd_t scanEnable;  // Local variable, will be copied by LL with memcpy
-  llStatus_t status;
-
-  // Parameter validation
-  // Note: Size validation is performed by the HCI transport layer
-  // before calling this function. This check protects against NULL pointer.
-  if ( pData == NULL )
-  {
-    return ( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS );
-  }
-
-  // Copy parameters safely to avoid unaligned access fault on Cortex-M0+
-  memcpy(&scanEnable, pData, sizeof(aeEnableScanCmd_t));
-
-  // Register extended scanning callbacks
-  status = HCI_RegisterScanCallbacks(SCAN_CALLBACKS_TYPE_EXTENDED);
-
-  // Check if the registration was successful
-  if (status != LL_STATUS_SUCCESS)
-  {
-    status = LL_STATUS_ERROR_BAD_PARAMETER;
-    MAP_HCI_CommandCompleteEvent(HCI_LE_SET_EXT_SCAN_ENABLE, sizeof(status), &status);
-    return (status);
-  }
-
-  // Send the command to LL
-  // Note: Random address validation is performed in LE_SetExtScanEnable
-  status = MAP_LE_SetExtScanEnable(&scanEnable);
-
-  // Send Command Complete Event
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_EXT_SCAN_ENABLE, sizeof(status), &status );
-
-  return ( status );
-}
-
-/*******************************************************************************
- * This LE API is used to create a connection (legacy command).
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_CreateConnCmd( uint8 *pData )
-{
-  aeCreateConnCmd_t createConnParam;  // Local variable, will be copied by LL with memcpy
-  llStatus_t status;
-
-  // The caller (hci_cmd_parser) is expected to validate the command parameters
-  // before calling this function. This check protects against NULL pointer.
-  if ( pData == NULL )
-  {
-    return ( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS );
-  }
-
-  // Translate legacy API parameters to extended create connection structure
-  createConnParam.initFilterPolicy = pData[4];
-  createConnParam.ownAddrType      = pData[12];
-  createConnParam.peerAddrType     = pData[5];
-  memcpy(createConnParam.peerAddr, &pData[6], B_ADDR_LEN);
-  createConnParam.initPhys         = LL_PHY_1_MBPS;  // Legacy command uses 1M PHY only
-
-  // Unpack scan parameters
-  createConnParam.extInitParam[0].scanInterval = BUILD_UINT16(pData[0], pData[1]);
-  createConnParam.extInitParam[0].scanWindow   = BUILD_UINT16(pData[2], pData[3]);
-
-  // Unpack connection parameters
-  createConnParam.extInitParam[0].connIntMin   = BUILD_UINT16(pData[13], pData[14]);
-  createConnParam.extInitParam[0].connIntMax   = BUILD_UINT16(pData[15], pData[16]);
-  createConnParam.extInitParam[0].connLatency  = BUILD_UINT16(pData[17], pData[18]);
-  createConnParam.extInitParam[0].connTimeout  = BUILD_UINT16(pData[19], pData[20]);
-  createConnParam.extInitParam[0].minLength    = BUILD_UINT16(pData[21], pData[22]);
-  createConnParam.extInitParam[0].maxLength    = BUILD_UINT16(pData[23], pData[24]);
-
-  // Call LE_ExtCreateConn
-  status = MAP_LE_ExtCreateConn(&createConnParam);
-
-  // Send Command Status Event (async command)
-  MAP_HCI_CommandStatusEvent(status, HCI_LE_CREATE_CONNECTION);
-
-  return ( status );
-}
-
-/*******************************************************************************
- * @fn          HCI_LE_ExtCreateConnCmd
- *
- * @brief       This function is used to create an ACL connection to a connectable
- *              advertiser using extended connection parameters (BT5). This version
- *              supports multiple PHYs (1M, 2M, Coded).
- *
- * input parameters
- *
- * @param       pData - Pointer to extended connection parameters
- *                      (aeCreateConnCmd_t structure)
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      hciStatus_t
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_ExtCreateConnCmd( uint8 *pData )
-{
-  aeCreateConnCmd_t createConnParam;  // Local variable, will be copied by LL with memcpy
-  llStatus_t status;
-
-  // Parameter validation
-  if ( pData == NULL )
-  {
-    return ( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS );
-  }
-
-  // Copy parameters safely to avoid unaligned access fault on Cortex-M0+
-  memcpy(&createConnParam, pData, sizeof(aeCreateConnCmd_t));
-
-  // Call LE_ExtCreateConn
-  status = MAP_LE_ExtCreateConn(&createConnParam);
-
-  // Send Command Status Event (async command)
-  MAP_HCI_CommandStatusEvent(status, HCI_LE_EXT_CREATE_CONN);
-
-  return ( status );
+  return( LL_STATUS_ERROR_COMMAND_DISALLOWED );
 }
 
 /*******************************************************************************
@@ -1336,45 +1070,11 @@ hciStatus_t HCI_LE_CreateConnCancelCmd( void )
 
   status = OPT_LL_CreateConnCancel();
 
-  HCI_CommandCompleteEvent( HCI_LE_CREATE_CONNECTION_CANCEL,
+  MAP_HCI_CommandCompleteEvent( HCI_LE_CREATE_CONNECTION_CANCEL,
                                 sizeof(status),
                                 &status );
 
   return( status );
-}
-
-/*******************************************************************************
- * This LE API is used to set the extended scan parameters.
- *
- * Note: This is a BT5 extended command that directly uses the
- *       aeSetScanParamCmd_t structure. The scan parameters are stored
- *       statically for later use by scan enable.
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_SetExtScanParamCmd( uint8 *pData )
-{
-  aeSetScanParamCmd_t scanParam;  // Local variable, will be copied by LL with memcpy
-  llStatus_t status;
-
-  // Parameter validation
-  // Note: Size validation is performed by the HCI transport layer
-  // before calling this function. This check protects against NULL pointer.
-  if ( pData == NULL )
-  {
-    return ( HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS );
-  }
-
-  // Copy parameters safely to avoid unaligned access fault on Cortex-M0+
-  memcpy(&scanParam, pData, sizeof(aeSetScanParamCmd_t));
-
-  // Call LE_SetExtScanParams
-  status = MAP_LE_SetExtScanParams(&scanParam);
-
-  // Send Command Complete Event
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_EXT_SCAN_PARAMETERS, sizeof(status), &status );
-
-  return ( status );
 }
 
 /*******************************************************************************
@@ -2793,68 +2493,6 @@ hciStatus_t HCI_LE_TestEndCmd( void )
 }
 
 /*******************************************************************************
- * This LE API is used for Direct Test Mode transmission with TX Power control
- * (Enhanced CTE Transmitter Test V4).
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_EnhancedCteTxTestV4Cmd( uint8 txChan,
-                                           uint8 payloadLen,
-                                           uint8 payloadType,
-                                           uint8 txPhy,
-                                           uint8 cteLength,
-                                           uint8 cteType,
-                                           uint8 switchingPatternLength,
-                                           uint8 *pAntenna,
-                                           int8 txPowerLevel )
-{
-  // MISRA-C requires void definition for unused parameters when CTE not supported
-  VOID cteType;
-  VOID switchingPatternLength;
-  VOID *pAntenna;
-
-  hciStatus_t status;
-
-  // Validate CTE parameters - controller does not support CTE features
-  if ( cteLength != 0 )
-  {
-    // CTE not supported - return Command Disallowed per BLE spec
-    status = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-    MAP_HCI_CommandCompleteEvent( HCI_LE_ENHANCED_TRANSMITTER_TEST_V4,
-                                  sizeof(status),
-                                  &status );
-    return HCI_SUCCESS;
-  }
-
-  // Handle TX Power Level parameter
-  // 0x7E = minimum power supported by controller
-  // 0x7F = maximum power supported by controller
-  // Other values: -127 to +20 dBm (will be validated/clamped by LL_EXT_SetMaxDtmTxPowerDbm)
-
-  // Set TX power for this DTM test (updates global maxTxPwrForDTM variable)
-  // Note: pass txPowerLevel directly; it can be -127 to +20 dBm, 0x7E, or 0x7F
-  status = MAP_LL_EXT_SetMaxDtmTxPowerDbm( txPowerLevel, 0, true );
-
-  if ( status != HCI_SUCCESS )
-  {
-    // Power validation failed - return error to host
-    MAP_HCI_CommandCompleteEvent( HCI_LE_ENHANCED_TRANSMITTER_TEST_V4,
-                                  sizeof(status),
-                                  &status );
-    return HCI_SUCCESS;
-  }
-
-  // Call DTM TX test - will use the power level set via maxTxPwrForDTM
-  status = MAP_LL_DirectTestTxTest( txChan, payloadLen, payloadType, txPhy );
-
-  MAP_HCI_CommandCompleteEvent( HCI_LE_ENHANCED_TRANSMITTER_TEST_V4,
-                                sizeof(status),
-                                &status );
-
-  return HCI_SUCCESS;
-}
-
-/*******************************************************************************
  * This LE API is used to read the min/max Tx power.
  *
  * Public function defined in hci.h.
@@ -3109,59 +2747,18 @@ hciStatus_t HCI_LE_ReadAntennaInformationCmd( void )
  *
  * Public function defined in hci.h.
  */
-hciStatus_t HCI_LE_SetPeriodicAdvParamsV1Cmd( uint8 advHandle,
+hciStatus_t HCI_LE_SetPeriodicAdvParamsCmd( uint8 advHandle,
                                             uint16 periodicAdvIntervalMin,
                                             uint16 periodicAdvIntervalMax,
                                             uint16 periodicAdvProp )
 {
   hciStatus_t status = HCI_SUCCESS;
 
-  // Call the function with NULL as PAwR is not supported in this command (V1)
   status = OPT_LE_SetPeriodicAdvParams( advHandle, periodicAdvIntervalMin,
-                                        periodicAdvIntervalMax, periodicAdvProp, NULL);
+                                        periodicAdvIntervalMax, periodicAdvProp );
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_PARAMETERS, sizeof(status),
                                 &status );
-
-  return ( status );
-}
-
-/*******************************************************************************
- * Used by the Host to set the advertiser parameters for periodic advertising.
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_SetPeriodicAdvParamsV2Cmd( uint8  advHandle,
-                                              uint16 periodicAdvIntervalMin,
-                                              uint16 periodicAdvIntervalMax,
-                                              uint16 periodicAdvProp,
-                                              uint8* pPAwRParams )
-{
-  uint8_t returnParam[3];
-  hciStatus_t status = HCI_SUCCESS;
-
-  // Check if subevent number is zero
-  if(pPAwRParams[0] == 0)
-  {
-    // If User set subevent number to zero, PAwR won't be used in this Set, so set PAwR
-    // parameters to NULL
-    status = OPT_LE_SetPeriodicAdvParams( advHandle, periodicAdvIntervalMin,
-                                          periodicAdvIntervalMax, periodicAdvProp, NULL);
-  }
-  else
-  {
-    // Call function with PAwR parameters
-    status = OPT_LE_SetPeriodicAdvParams( advHandle, periodicAdvIntervalMin,
-                                          periodicAdvIntervalMax, periodicAdvProp, pPAwRParams);
-  }
-
-  returnParam[0] = status;
-  returnParam[1] = LO_UINT16(advHandle);
-  returnParam[2] = HI_UINT16(advHandle);
-
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_PARAMETERS_V2,
-                                sizeof ( returnParam ),
-                                returnParam );
 
   return ( status );
 }
@@ -3198,46 +2795,6 @@ hciStatus_t HCI_LE_SetPeriodicAdvEnableCmd( uint8 enable, uint8 advHandle )
 
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_ENABLE, sizeof ( status ),
                                 &status );
-
-  return ( status );
-}
-
-hciStatus_t HCI_LE_SetPeriodicAdvSubeventDataCmd( uint8_t advHandle, uint8_t numOfSubevents, uint8_t* pSubeventList)
-{
-  hciStatus_t status = HCI_SUCCESS;
-  uint8_t returnParam[3];
-
-  if (advHandle > ADV_HANDLE_MAX)
-  {
-    status = LL_STATUS_ERROR_BAD_PARAMETER;
-  }
-  else if (OPT_LL_PAwRA_IsActive() == FALSE)
-  {
-    status = LL_STATUS_ERROR_COMMAND_DISALLOWED;
-  }
-  else
-  {
-    llPeriodicAdvSet_t* pPeriodicAdv = OPT_LL_PadvA_GetSetByHandle(advHandle);
-
-    if (pPeriodicAdv != NULL)
-    {
-      status = OPT_LE_SetPeriodicAdvSubeventData( pPeriodicAdv->pPAwRParams, &pPeriodicAdv->pRfCmds->perAdvCmd,
-                                                  pPeriodicAdv->paramsCmd.props,
-                                                  numOfSubevents, pSubeventList );
-    }
-    else
-    {
-      status = LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER;
-    }
-  }
-
-  returnParam[0] = status;
-  returnParam[1] = LO_UINT16(advHandle);
-  returnParam[2] = HI_UINT16(advHandle);
-
-  MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_SUBEVENT_DATA,
-                                sizeof ( returnParam ),
-                                returnParam );
 
   return ( status );
 }
@@ -3445,22 +3002,14 @@ hciStatus_t HCI_LE_SetPeriodicSyncSubeventCmd(uint16_t syncHandle,
   uint8_t returnParam[3];
   hciStatus_t status = LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER;
 
-  // If synchandle is out of range return bad parameter status
-  if (syncHandle > PERIODIC_SCAN_MAX_HANDLES)
-  {
-      status = LL_STATUS_ERROR_BAD_PARAMETER;
-  }
-  else
-  {
-      llPeriodicScanSet_t* pPeriodicScan = OPT_LL_PadvS_GetSetByHandle(syncHandle);
+  llPeriodicScanSet_t* pPeriodicScan = OPT_LL_PadvS_GetSetByHandle(syncHandle);
 
-      if (pPeriodicScan != NULL)
-      {
-          status = OPT_LE_SetPeriodicSyncSubevent(pPeriodicScan->pPAwRParams,
-                                                  perAdvProps,
-                                                  numSubevents,
-                                                  subEvents);
-      }
+  if(pPeriodicScan != NULL)
+  {
+      status = OPT_LE_SetPeriodicSyncSubevent(pPeriodicScan->pPAwRParams,
+                                              perAdvProps,
+                                              numSubevents,
+                                              subEvents);
   }
 
   returnParam[0] = status;
@@ -3485,23 +3034,15 @@ hciStatus_t HCI_LE_SetPeriodicAdvResponseDataCmd(uint16_t syncHandle,
   uint8_t returnParam[3];
   hciStatus_t status = LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER;
 
-  // If synchandle is out of range return bad parameter status
-  if (syncHandle > PERIODIC_SCAN_MAX_HANDLES)
-  {
-      status = LL_STATUS_ERROR_BAD_PARAMETER;
-  }
-  else
-  {
-      // Retrieve pointer to the relavant periodic
-      llPeriodicScanSet_t* pPeriodicScan = OPT_LL_PadvS_GetSetByHandle(syncHandle);
+  // Retrieve pointer to the relavant periodic
+  llPeriodicScanSet_t* pPeriodicScan = OPT_LL_PadvS_GetSetByHandle(syncHandle);
 
-      if (pPeriodicScan != NULL)
-      {
-          // Send the PAwR module the input / output parametes
-          status = OPT_LE_SetPeriodicAdvResponseData(pPeriodicScan->eventCounter, &pPeriodicScan->chanMap.current,
-                                                     pPeriodicScan->syncInfo.accessAddr, pPeriodicScan->interval,
-                                                     pPeriodicScan->pPAwRParams, pRspParams, &pPeriodicScan->rfCmd);
-      }
+  if(pPeriodicScan != NULL)
+  {
+      // Send the PAwR module the input / output parametes
+      status = OPT_LE_SetPeriodicAdvResponseData(pPeriodicScan->eventCounter, &pPeriodicScan->chanMap.current,
+                                                 pPeriodicScan->syncInfo.accessAddr, pPeriodicScan->interval,
+                                                 pPeriodicScan->pPAwRParams, pRspParams, &pPeriodicScan->rfCmd);
   }
 
   returnParam[0] = status;
@@ -3511,60 +3052,6 @@ hciStatus_t HCI_LE_SetPeriodicAdvResponseDataCmd(uint16_t syncHandle,
   MAP_HCI_CommandCompleteEvent( HCI_LE_SET_PERIODIC_ADV_RESPONSE_DATA,
                                 sizeof ( returnParam ),
                                 returnParam );
-  return ( status );
-}
-
-/*******************************************************************************
- * This LE API is used to create a connection to a connectable advertiser.
- * This is the V2 version that supports PAwR connection creation.
- *
- * Public function defined in hci.h.
- */
-hciStatus_t HCI_LE_ExtCreateConnV2( uint8_t           advHandle,
-                                    uint8_t           subevent,
-                                    uint8_t           *pCreateConnParams )
-{
-  hciStatus_t status;
-
-  // If advHandle and subevent are both 0xFF, use standard extended create connection
-  if ( (advHandle == LL_ENHANCED_CONN_NO_ADV_HANDLE) &&
-       (subevent == LL_PAWR_INVALID_SUBEVENT) )
-  {
-    // Standard extended create connection behavior
-    status = LE_ExtCreateConn( (aeCreateConnCmd_t*)pCreateConnParams );
-  }
-  else if ( advHandle == LL_ENHANCED_CONN_NO_ADV_HANDLE )
-  {
-    // advHandle is invalid but subevent is specified
-    status = HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
-  }
-  else
-  {
-    // PAwR connection creation
-    // Get pointer to periodic advertising set
-    llPeriodicAdvSet_t* pPeriodicAdv = OPT_LL_PadvA_GetSetByHandle( advHandle );
-
-    // Check if periodic advertising set exists for the given handle
-    if ( pPeriodicAdv != NULL )
-    {
-      status = OPT_LL_PAwRA_CreateConn( subevent,
-                                        advHandle,
-                                        pPeriodicAdv->phy,
-                                        pPeriodicAdv->pPAwRParams,
-                                        (aeCreateConnCmd_t*) pCreateConnParams,
-                                        &pPeriodicAdv->pRfCmds->perAdvCmd,
-                                        &pPeriodicAdv->pRfCmds->perAdvParam );
-    }
-    else
-    {
-      // If no periodic advertising set exists for the given handle, return error
-      status = LL_STATUS_ERROR_UNKNOWN_ADVERTISING_IDENTIFIER;
-    }
-  }
-
-  // Send Command Status Event
-  MAP_HCI_CommandStatusEvent( status, HCI_LE_EXT_CREATE_CONNECTION_V2 );
-
   return ( status );
 }
 
@@ -3839,8 +3326,11 @@ hciStatus_t HCI_EXT_OnePktPerEvtCmd( uint8 control )
 
   rtnParam[0] = LO_UINT16( HCI_EXT_ONE_PKT_PER_EVT_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_ONE_PKT_PER_EVT_EVENT );
+#ifdef CC23X0
   rtnParam[2] = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-  //rtnParam[2] = MAP_LL_EXT_OnePacketPerEvent( control );
+#else
+  rtnParam[2] = MAP_LL_EXT_OnePacketPerEvent( control );
+#endif
 
   // check if LL indicates the internal state of this feature is not being
   // changed by this command
@@ -3875,9 +3365,11 @@ hciStatus_t HCI_EXT_ClkDivOnHaltCmd( uint8 control )
 
   rtnParam[0] = LO_UINT16( HCI_EXT_CLK_DIVIDE_ON_HALT_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_CLK_DIVIDE_ON_HALT_EVENT );
+#ifdef CC23X0
   rtnParam[2] = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-  //rtnParam[2] = MAP_LL_EXT_ClkDivOnHalt( control );
-
+#else
+  rtnParam[2] = MAP_LL_EXT_ClkDivOnHalt( control );
+#endif
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_CLK_DIVIDE_ON_HALT,
                                              sizeof(rtnParam),
                                              rtnParam );
@@ -3901,8 +3393,11 @@ hciStatus_t HCI_EXT_DeclareNvUsageCmd( uint8 mode )
 
   rtnParam[0] = LO_UINT16( HCI_EXT_DECLARE_NV_USAGE_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_DECLARE_NV_USAGE_EVENT );
+#ifdef CC23X0
   rtnParam[2] = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-  //rtnParam[2] = MAP_LL_EXT_DeclareNvUsage( mode );
+#else
+  rtnParam[2] = MAP_LL_EXT_DeclareNvUsage( mode );
+#endif
   MAP_HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_DECLARE_NV_USAGE,
                                              sizeof(rtnParam),
                                              rtnParam );
@@ -4183,6 +3678,7 @@ hciStatus_t HCI_EXT_EnhancedModemTestTxCmd( uint8 cwMode,
   // 2: Status
   uint8 rtnParam[3];
 
+  // continuous transmitter modem test is currently not supported for CC23X0 and CC33xx
   status = MAP_LL_EXT_EnhancedModemTestTx( cwMode, rfPhy, rfChan );
 
   rtnParam[0] = LO_UINT16( HCI_EXT_ENHANCED_MODEM_TEST_TX_EVENT );
@@ -4496,9 +3992,7 @@ hciStatus_t HCI_EXT_SetMaxDtmTxPowerDbmCmd( int8   txPowerDbm,
   // 2: Status
   uint8 rtnParam[3];
 
-  // The parameter returnBoundaryOnOutOfRange is set to false since out of range values are not
-  // permitted for this API and will result in the error status LL_STATUS_ERROR_BAD_PARAMETER
-  status = MAP_LL_EXT_SetMaxDtmTxPowerDbm( txPowerDbm, fraction, false );
+  status = MAP_LL_EXT_SetMaxDtmTxPowerDbm( txPowerDbm, fraction );
 
   rtnParam[0] = LO_UINT16( HCI_EXT_SET_MAX_DTM_TX_POWER_EVENT );
   rtnParam[1] = HI_UINT16( HCI_EXT_SET_MAX_DTM_TX_POWER_EVENT );
@@ -5732,7 +5226,7 @@ hciStatus_t HCI_LE_CS_WriteCachedRemoteSupportedCapabilities(uint16 connHandle, 
 {
   hciStatus_t status;
   llCsCapabilities_t pRemoteCapabilities = {0};
-
+  
   if (NULL == pRemoteCapabilitiesRaw)
   {
       return HCI_ERROR_CODE_INVALID_HCI_CMD_PARAMS;
@@ -5908,6 +5402,8 @@ hciStatus_t HCI_LE_CS_CreateConfig( uint16 connHandle,
   csConfig.chSel = pBufConfig->chSel;
   csConfig.ch3cShape = pBufConfig->ch3cShape;
   csConfig.ch3CJump = pBufConfig->ch3CJump;
+  csConfig.rfu0 = CS_RFU;
+  csConfig.rfu1 = CS_RFU;
 
   status = (hciStatus_t)OPT_LL_CS_CreateConfig(connHandle, &csConfig, createContext);
 
@@ -5975,7 +5471,7 @@ hciStatus_t HCI_LE_CS_SetProcedureParameters( uint16 connHandle,
 
   csProcedureParams.aci = (csACI_e)pParams[14];                      /* Antenna Config Index */
   csProcedureParams.phy = pParams[15];                        /* PHY */
-  csProcedureParams.txPwrDelta = (int8_t)pParams[16];         /* Tx Power Delta, in signed dB */
+  csProcedureParams.txPwrDelta = pParams[16];                 /* Tx Power Delta, in signed dB */
   csProcedureParams.preferredPeerAntenna = pParams[17];       /* Preferred peer Antenna */
   csProcedureParams.snrCtrlI = pParams[18];                   /* SNR Control Initiator */
   csProcedureParams.snrCtrlR = pParams[19];                   /* SNR Control Reflector */
@@ -6370,80 +5866,6 @@ hciStatus_t hci_ext_SendPowerControlRequestCmd( uint16_t connHandle,
   return(status);
 }
 
-hciStatus_t HCI_EXT_SetPowerCtrlRangeCmd( int8_t minTxPower, int8_t maxTxPower )
-{
-  return ( OPT_hci_ext_SetPowerCtrlRangeCmd( minTxPower, maxTxPower ) );
-}
-
-hciStatus_t HCI_EXT_GetPowerCtrlRangeCmd( int8_t *minTxPower, int8_t *maxTxPower )
-{
-  return ( OPT_hci_ext_GetPowerCtrlRangeCmd( minTxPower, maxTxPower ) );
-}
-
-/*******************************************************************************
- * This internal function sets the user TX power range limits used by the
- * power control procedures and emits a Vendor Specific Command Complete event
- * carrying the resulting status.
- *
- * This function is used to opt in or out the HCI command.
- */
-hciStatus_t hci_ext_SetPowerCtrlRangeCmd( int8_t minTxPower, int8_t maxTxPower )
-{
-  // 0-1: Event opcode
-  // 2:   Status
-  uint8_t rtnParam[3];
-  hciStatus_t status = LL_EXT_PwrCtrl_SetRange( minTxPower, maxTxPower );
-
-  rtnParam[0] = LO_UINT16( HCI_EXT_SET_POWER_CTRL_RANGE_EVENT );
-  rtnParam[1] = HI_UINT16( HCI_EXT_SET_POWER_CTRL_RANGE_EVENT );
-  rtnParam[2] = status;
-
-  HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_SET_POWER_CTRL_RANGE,
-                                         sizeof(rtnParam),
-                                         rtnParam );
-  return status;
-}
-
-/*******************************************************************************
- * This internal function reads the current user TX power range limits and
- * emits a Vendor Specific Command Complete event carrying the values.
- * The values are also written through the caller's pointers so direct callers
- * can read them synchronously.
- *
- * This function is used to opt in or out the HCI command.
- */
-hciStatus_t hci_ext_GetPowerCtrlRangeCmd( int8_t *minTxPower, int8_t *maxTxPower )
-{
-  // 0-1: Event opcode
-  // 2:   Status
-  // 3:   Min TX power (dBm)
-  // 4:   Max TX power (dBm)
-  uint8_t rtnParam[5];
-  int8_t  tempMin = 0;
-  int8_t  tempMax = 0;
-  hciStatus_t status = LL_EXT_PwrCtrl_GetRange( &tempMin, &tempMax );
-
-  if ( minTxPower != NULL )
-  {
-    *minTxPower = tempMin;
-  }
-  if ( maxTxPower != NULL )
-  {
-    *maxTxPower = tempMax;
-  }
-
-  rtnParam[0] = LO_UINT16( HCI_EXT_GET_POWER_CTRL_RANGE_EVENT );
-  rtnParam[1] = HI_UINT16( HCI_EXT_GET_POWER_CTRL_RANGE_EVENT );
-  rtnParam[2] = status;
-  rtnParam[3] = (uint8_t)tempMin;
-  rtnParam[4] = (uint8_t)tempMax;
-
-  HCI_VendorSpecifcCommandCompleteEvent( HCI_EXT_GET_POWER_CTRL_RANGE,
-                                         sizeof(rtnParam),
-                                         rtnParam );
-  return status;
-}
-
 /*******************************************************************************
  * This Vendor Specific API registers an RSSI monitoring command for a specific
  * connection. It allows the App/Host to set low and high RSSI thresholds and
@@ -6666,86 +6088,6 @@ hciStatus_t hci_ext_RssiMon_GetRssiStatCmd(uint16_t connHandle)
                                         rtnParam );
 
   return(retVal);
-}
-
-/*******************************************************************************
- * @fn      HCI_InitScanCallbacks
- *
- * @brief   Initialize the scan callback arrays to point to appropriate
- *          callback functions for extended and legacy scanning.
- *          Called during HCI layer initialization.
- *
- *          Legacy scan events are automatically converted to legacy format
- *          by the HCI layer using HCI_LegacyScanCback().
- *
- * @return  none
- */
-void HCI_InitScanCallbacks(void)
-{
-  // Init extended scanning callbacks args to point to HCI event generator
-  for (int i = 0; i < NUM_SCAN_CALLBACKS; i++)
-  {
-    HCI_scanCBackArgsExt[i] = (void *)MAP_HCI_AeScanCback;
-  }
-
-  // Init legacy scanning callbacks args
-  HCI_scanCBackArgsLegacy[0] = (void *)HCI_LegacyScanCback;
-  HCI_scanCBackArgsLegacy[1] = (void *)NULL;  // Timeout uses same callback
-}
-
-/*******************************************************************************
- * @fn      HCI_RegisterScanCallbacks
- *
- * @brief   Registers the scan callback functions with the Link Layer.
- *          This function should be called before starting scan operations
- *          to ensure proper event routing.
- *
- * @param   callBacksType - Type of scan callbacks to register:
- *                          SCAN_CALLBACKS_TYPE_LEGACY (1) for BT4.x scanning
- *                          SCAN_CALLBACKS_TYPE_EXTENDED (2) for BT5+ scanning
- *
- * @return  llStatus_t - LL_STATUS_SUCCESS if registration successful
- *                       LL_STATUS_ERROR_UNEXPECTED_PARAMETER for invalid type
- */
-llStatus_t HCI_RegisterScanCallbacks(uint8 callBacksType)
-{
-  llStatus_t regStatus = LL_STATUS_SUCCESS;
-  void *cBackArgs = NULL;
-
-  // Select the appropriate callback array based on scan type
-  if (callBacksType == SCAN_CALLBACKS_TYPE_EXTENDED)
-  {
-    // Register Extended Scan Callbacks
-    cBackArgs = HCI_scanCBackArgsExt;
-  }
-  else if (callBacksType == SCAN_CALLBACKS_TYPE_LEGACY)
-  {
-    // Register Legacy Scan Callbacks
-    cBackArgs = HCI_scanCBackArgsLegacy;
-  }
-
-  // Register the callback functions only if type changed
-  if ((callBacksType == SCAN_CALLBACKS_TYPE_LEGACY) ||
-      (callBacksType == SCAN_CALLBACKS_TYPE_EXTENDED))
-  {
-    if (HCI_scanCbacksType != callBacksType)
-    {
-      // Update scan callback type
-      HCI_scanCbacksType = callBacksType;
-
-      // Register the callback functions with the Link Layer
-      regStatus = LL_AE_RegMultipleCBacks(NUM_SCAN_CALLBACKS,
-                                               HCI_scanCBackIds,
-                                               cBackArgs,
-                                               NULL);
-    }
-  }
-  else
-  {
-    regStatus = LL_STATUS_ERROR_UNEXPECTED_PARAMETER;
-  }
-
-  return (regStatus);
 }
 
 /***************************************************************************************************

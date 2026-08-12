@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2019-2022, Arm Limited. All rights reserved.
- * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -45,13 +44,9 @@ psa_status_t tfm_crypto_mac_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         uint8_t *mac = out_vec[0].base;
         size_t mac_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_mac_compute(library_key, iov->alg, input, input_length,
-                                    mac, mac_size, &out_vec[0].len);
-#else
+
         status = psa_mac_compute(library_key, iov->alg, input, input_length,
                                  mac, mac_size, &out_vec[0].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -67,13 +62,9 @@ psa_status_t tfm_crypto_mac_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         const uint8_t *mac = in_vec[2].base;
         size_t mac_length = in_vec[2].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_mac_verify(library_key, iov->alg, input, input_length,
-                                 mac, mac_length);
-#else
+
         return psa_mac_verify(library_key, iov->alg, input, input_length,
                               mac, mac_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 #endif
     }
 
@@ -120,11 +111,7 @@ psa_status_t tfm_crypto_mac_interface(psa_invec in_vec[],
     switch (sid) {
     case TFM_CRYPTO_MAC_SIGN_SETUP_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_mac_sign_setup(operation, library_key, iov->alg);
-#else
         status = psa_mac_sign_setup(operation, library_key, iov->alg);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -132,11 +119,7 @@ psa_status_t tfm_crypto_mac_interface(psa_invec in_vec[],
     break;
     case TFM_CRYPTO_MAC_VERIFY_SETUP_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_mac_verify_setup(operation, library_key, iov->alg);
-#else
         status = psa_mac_verify_setup(operation, library_key, iov->alg);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -146,27 +129,18 @@ psa_status_t tfm_crypto_mac_interface(psa_invec in_vec[],
     {
         const uint8_t *input = in_vec[1].base;
         size_t input_length = in_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_mac_update(operation, input, input_length);
-#else
+
         return psa_mac_update(operation, input, input_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_MAC_SIGN_FINISH_SID:
     {
         uint8_t *mac = out_vec[1].base;
         size_t mac_size = out_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_mac_sign_finish(operation, mac, mac_size, &out_vec[1].len);
-#else
+
         status = psa_mac_sign_finish(operation, mac, mac_size, &out_vec[1].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status == PSA_SUCCESS) {
-/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
-#ifndef TI_PSA_CRYPTO_API_WRAPPER
             /* In case of success automatically release the operation */
             goto release_operation_and_return;
-#endif
         } else {
             out_vec[1].len = 0;
         }
@@ -176,26 +150,16 @@ psa_status_t tfm_crypto_mac_interface(psa_invec in_vec[],
     {
         const uint8_t *mac = in_vec[1].base;
         size_t mac_length = in_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_mac_verify_finish(operation, mac, mac_length);
-#else
+
         status = psa_mac_verify_finish(operation, mac, mac_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
-/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
-#ifndef TI_PSA_CRYPTO_API_WRAPPER
         if (status == PSA_SUCCESS) {
             goto release_operation_and_return;
         }
-#endif
     }
     break;
     case TFM_CRYPTO_MAC_ABORT_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_mac_abort(operation);
-#else
         status = psa_mac_abort(operation);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         goto release_operation_and_return;
     }
     default:

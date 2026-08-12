@@ -85,24 +85,24 @@
 
 
 
+uint8_t OPT_checkLegacyHCICmdStatus(uint16_t opcode)
+{
+    return checkLegacyHCICmdStatus(opcode);
+}
+
 hciStatus_t OPT_hciCmdParserLegacy(uint8_t* pData, uint16_t cmdOpCode)
 {
     return hciCmdParserLegacy(pData, cmdOpCode);
 }
 
-hciStatus_t OPT_HCI_LegacyCmd_PreCheck(uint16_t cmdOpCode)
+uint8_t OPT_processLegacyExtraHCICmd(hciPacket_t* pMsg)
 {
-    return HCI_LegacyCmd_PreCheck(cmdOpCode);
+    return processLegacyExtraHCICmd(pMsg);
 }
 
-void OPT_HCI_LegacyCmd_Reset(void)
+uint8_t OPT_HCI_TL_legacyProcessHCICmd(hciPacket_t* pMsg)
 {
-    HCI_LegacyCmd_Reset();
-}
-
-uint8_t OPT_processLegacyAdvCmd(uint8_t* param, uint16_t cmdOpCode)
-{
-    return processLegacyAdvCmd(param, cmdOpCode);
+    return HCI_TL_legacyProcessHCICmd(pMsg);
 }
 
 #endif /* defined(LEGACY_CMD) */

@@ -87,7 +87,7 @@ Unlike ECB, it guarantees confidentiality of the entire message.
 [1]: /secure_drivers/doxygen/html/_a_e_s_c_b_c_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_a_e_s_c_b_c_8h.html#ti_drivers_AESCBC_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_a_e_s_c_b_c_8h.html#ti_drivers_AESCBC_Examples "C usage examples"
-[4]: /secure_drivers/syscfg/html/ConfigDoc.html#AESCBC_Configuration_Options "Configuration options reference"
+[4]: /drivers/syscfg/html/ConfigDoc.html#AESCBC_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_AESCBC_",
     config              : Common.addNameConfig(config, "/ti/drivers/AESCBC", "CONFIG_AESCBC_"),
@@ -99,7 +99,7 @@ Unlike ECB, it guarantees confidentiality of the entire message.
             forcedModules.push("DMA");
         }
 
-        if (deviceId.match(/CC27/) || deviceId.match(/CC35/)) {
+        if (deviceId.match(/CC27/)) {
             /* HSM library requires Key Store module */
             forcedModules.push("CryptoKeyKeyStore_PSA");
         }

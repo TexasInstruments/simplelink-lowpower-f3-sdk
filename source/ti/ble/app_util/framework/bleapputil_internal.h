@@ -67,10 +67,6 @@ extern "C"
  */
 typedef ICall_Hdr   BLEAppUtil_msgHdt_t;
 
-// Queue configuration
-#define BLEAPPUTIL_QUEUE_SIZE             16
-#define BLEAPPUTIL_QUEUE_DROP_THRESHOLD   ((BLEAPPUTIL_QUEUE_SIZE * 7) / 10)  // 70% threshold
-
 /*********************************************************************
  * TYPEDEFS
  */

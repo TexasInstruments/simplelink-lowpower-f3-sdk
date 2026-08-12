@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2026, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,10 @@
  */
 /*!*****************************************************************************
  *  @file       APULPF3.h
- *  @brief      APU driver interface
+ *  @brief      <b>PRELIMINARY</b> APU driver interface
+ *
+ *  <b>WARNING</b> These APIs are <b>PRELIMINARY</b>, and subject to
+ *  change in the next few months.
  *
  *  @anchor ti_drivers_APU_Overview
  *  # Overview
@@ -54,7 +57,7 @@
  *  ## Data management
  *  All the vector/matrix operations can accept input and output pointers that
  *  are inside or outside APU RAM. If all pointers provided to an operation are
- *  inside APU RAM, the APU will operate in <b> scratchpad mode </b>.
+ *  inside APU RAM, the APU will operate in <b>scratchpad mode</b>.
  *  This means the driver will assume that, given the current pointers, the
  *  input is already in APU memory and that input and result will not overlap
  *  each other. Therefore, no data will be copied, and the function output will
@@ -66,20 +69,24 @@
  *  overhead.
  *
  *  If any of the pointers are outside APU memory, the driver will copy input
- *  data to the start of its memory, place the result immediately following,
- *  and then copy the output back to the provided pointer. This may overwrite
- *  data that was already in this location.
+ *  data to the start of its memory, place the result immediately following, and
+ *  then copy the output back to the provided pointer. This may overwrite data
+ *  that was already in this location.
+ *
+ *  The APU driver uses uDMA for data transfers involving the APU data memory.
+ *  More specifically, channel 8 is used.
  *
  *  @warning Due to errata SYS_211, the APU memory has strict access rules. Use
  *  the provided APU functions to move data safely.
  *  To load data into APU memory: #APULPF3_loadArgMirrored() or
  *  #APULPF3_loadTriangular().
- *  To directly perform a memory access: #APULPF3_dataMemTransfer(). Copying
- *  data back from APU memory is automatically handled by the driver, and
- *  happens in an interrupt when the result pointer is outside APU memory.
+ *  To directly perform a memory access: #APULPF3_dataMemTransfer().
+ *  Copying data back from APU memory is automatically handled by the
+ *  driver, and happens in an interrupt when the result pointer is
+ *  outside APU memory.
  *
- *  @warning Due to errata SYS_211, no other SW DMA transactions can occur while
- *  the APU is being used.
+ *  @warning Due to errata SYS_211, no other SW DMA transactions can occur
+ *  while the APU is being used.
  *
  *  @warning Due to errata SYS_211, the APU cannot be used at the same time as
  *  I2S.
@@ -132,7 +139,6 @@
 #include <stdbool.h>
 #include <complex.h>
 
-#include <ti/drivers/Power.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 
@@ -279,15 +285,8 @@ typedef struct
 
     APULPF3_SchedulingMode schedulingMode;
 
-} APULPF3_HWAttrs;
-
-/*!
- *  @brief  APUCC27XXX10 global configuration
- */
-typedef struct
-{
     /*! uDMA control table entry allocated using ALLOCATE_CONTROL_TABLE_ENTRY
-     *  for DMA channel corresponding to #APUCC27XXX10_Config.dmaChannelMask.
+     *  for DMA channel corresponding to #APULPF3_HWAttrs.dmaChannelMask.
      */
     volatile uDMAControlTableEntry *dmaTableEntry;
 
@@ -296,46 +295,7 @@ typedef struct
      */
     uint32_t dmaChannelMask;
 
-} APUCC27XXX10_Config;
-
-/*!
- *  @brief  APULPF3 Object
- *
- *  These fields are used by the driver to store and modify APU configuration
- *  during run-time.
- *  The application must not edit any member variables of this structure.
- *  Applications should also not access member variables of this structure as
- *  backwards compatibility is not guaranteed.
- */
-typedef struct
-{
-    HwiP_Struct hwi;
-
-    /*! Temporary result pointer, in APU memory */
-    float complex *result;
-
-    /*! Argument pointer, in APU memory */
-    float complex *argA;
-
-    /*! Argument pointer, in APU memory */
-    float complex *argB;
-
-    /*! Final result pointer, may be in APU memory */
-    float complex *resultBuffer;
-
-    /*! Whether or not to copy to/from APU memory */
-    bool scratchpad;
-
-    /*! APU result size */
-    uint16_t resultSize;
-
-    /*! Has open() been called */
-    bool isInitialized;
-
-    /*! For restoring register state after standby */
-    Power_NotifyObj postNotify;
-
-} APULPF3_Object;
+} APULPF3_HWAttrs;
 
 /** @addtogroup APULPF3_STATUS
  *  @{
@@ -429,8 +389,6 @@ void APULPF3_stopOperationSequence();
  * @endcode
  * in which, A, B are complex vectors and c is a complex scalar.
  *
- * @note This function can only be called from a task context.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vecA a pointer to input vector A
@@ -452,13 +410,13 @@ int_fast16_t APULPF3_dotProduct(APULPF3_ComplexVector *vecA,
                                 float complex *result);
 
 /*!
- * @brief APU function for calculating the element-wise product of two vectors,
- * with the option to perform the complex conjugate on the second vector first.
+ * @brief APU function for calculating the element-wise product of two vectors, with the
+ * option to perform the complex conjugate on the second vector first.
  *
- * If both arguments and the result pointer are already within APU memory, the
- * function will be executed in scratchpad mode. This means that it will assume
- * pointers are placed so each of the input and result vectors lie after each
- * other in memory.
+ * If both arguments and the result pointer are already within APU memory,
+ * the function will be executed in scratchpad mode. This means that it will assume
+ * pointers are placed so each of the input and result vectors lie after aeach other
+ * in memory.
  *
  * Defined as:
  * @code
@@ -470,11 +428,6 @@ int_fast16_t APULPF3_dotProduct(APULPF3_ComplexVector *vecA,
  * @endcode
  * in which, A, B and C are complex vectors.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vecA a pointer to input vector A
@@ -484,6 +437,8 @@ int_fast16_t APULPF3_dotProduct(APULPF3_ComplexVector *vecA,
  * @param[in] conjugate whether or not to conjugate @p vecB
  *
  * @param [out] result a pointer to a vector where the result will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -504,11 +459,6 @@ int_fast16_t APULPF3_vectorMult(APULPF3_ComplexVector *vecA,
  * @endcode
  * in which, A and C are complex vectors and b is a complex scalar.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vecA a pointer to input vector A
@@ -516,6 +466,8 @@ int_fast16_t APULPF3_vectorMult(APULPF3_ComplexVector *vecA,
  * @param[in] scalar a pointer to a complex scalar
  *
  * @param [out] result a pointer to a vector where the result will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -537,11 +489,6 @@ int_fast16_t APULPF3_vectorScalarMult(APULPF3_ComplexVector *vecA,
  *  C = A - b = [A[0] - b, A[1] - b, .., A[N-1] - b]
  * in which, A and C are complex vectors and b is a complex scalar.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vecA a pointer to input vector A
@@ -551,6 +498,8 @@ int_fast16_t APULPF3_vectorScalarMult(APULPF3_ComplexVector *vecA,
  * @param[in] subtraction subtraction if true, otherwise addition
  *
  * @param [out] result a pointer to a vector where the result will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -574,11 +523,6 @@ int_fast16_t APULPF3_vectorScalarSum(APULPF3_ComplexVector *vecA,
  * @endcode
  * in which, A, B and C are complex vectors.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vecA a pointer to input vector A
@@ -589,6 +533,8 @@ int_fast16_t APULPF3_vectorScalarSum(APULPF3_ComplexVector *vecA,
  *
  * @param [out] result a pointer to a vector where the output will be placed.
  *                     Its size must be the same as that of the inputs.
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -608,8 +554,6 @@ int_fast16_t APULPF3_vectorSum(APULPF3_ComplexVector *vecA,
  *  Y = R2C(A, B) = [R2C(A[i], B[i])] for i = 1:N
  * @endcode
  * in which, A, B, and Y are N-length complex vectors.
- *
- * @note This function can only be called from a task context.
  *
  * @pre    #APULPF3_init() has to be called first.
  *
@@ -640,17 +584,14 @@ int_fast16_t APULPF3_vectorR2C(APULPF3_ComplexVector *vecA,
 /*!
  * @brief APU function for converting a complex vector in cartesian format to polar format.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vec a pointer to an input vector in cartesian format
  *
  * @param [out] result a pointer to the vector where the output will be placed.
  *              Its size must be the same as that of the inputs.
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -660,11 +601,6 @@ int_fast16_t APULPF3_cartesianToPolarVector(APULPF3_ComplexVector *vec, APULPF3_
 
 /*!
  * @brief APU function for converting a complex vector in polar format to cartesian format.
- *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
  *
  * @pre    #APULPF3_init() has to be called first.
  *
@@ -676,6 +612,8 @@ int_fast16_t APULPF3_cartesianToPolarVector(APULPF3_ComplexVector *vec, APULPF3_
  *
  * @param [out] result a pointer to a vector where the output will be placed.
  *              Its size must be the same as that of the inputs.
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -691,17 +629,14 @@ int_fast16_t APULPF3_polarToCartesianVector(APULPF3_ComplexVector *vec,
  * the complex parts of each element and makes no guarantees to their contents after the operation
  * is complete.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vec a pointer to an input vector to be sorted
  *
  * @param [out] result a pointer to a vector where the output will be placed.
  *               Its size must be the same as that of the inputs.
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -721,12 +656,6 @@ int_fast16_t APULPF3_sortVector(APULPF3_ComplexVector *vec, APULPF3_ComplexVecto
  * @endcode
  * Where R is the spacially smoother matrix and J is the exchange matrix.
  * R' signifies the conjugate transpose of R.
- *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vec a pointer to an input vector
@@ -737,6 +666,8 @@ int_fast16_t APULPF3_sortVector(APULPF3_ComplexVector *vec, APULPF3_ComplexVecto
  * @param[in] fbAveraging whether or not to perform forward-backwards averaging
  *
  * @param [out] result a pointer to a upper triangle matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -752,11 +683,6 @@ int_fast16_t APULPF3_covMatrixSpatialSmoothing(APULPF3_ComplexVector *vec,
  *  using the Fast Fourier Transform (FFT) algorithm. Optionally, the Inverse DFT can be computed.
  *  Combines two APU operations; first configuring the APU for a fourier transform, then actually computing it.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vec a pointer to an input vector. The vector needs to have a size equal to a power of two.
@@ -764,6 +690,8 @@ int_fast16_t APULPF3_covMatrixSpatialSmoothing(APULPF3_ComplexVector *vec,
  * @param[in] inverse whether or not to perform IFFT instead of DFT
  *
  * @param [out] result a pointer to a vector where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -785,11 +713,6 @@ int_fast16_t APULPF3_computeFFT(APULPF3_ComplexVector *vec, bool inverse, APULPF
  * @endcode
  * in which, X and Y is the N-length complex vector, and scalarThreshold is a real scalar.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] vec a pointer to an input vector
@@ -800,6 +723,8 @@ int_fast16_t APULPF3_computeFFT(APULPF3_ComplexVector *vec, bool inverse, APULPF
  *
  * @param [out] result a pointer to the vector where the output will be placed.
  *              Its size must be the same as that of the inputs.
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -827,11 +752,6 @@ int_fast16_t APULPF3_vectorMaxMin(APULPF3_ComplexVector *vec,
  * @endcode
  * in which A, B, and C are complex matrices with size [MxP], [MxN], and [NxP] respectively.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] matA a pointer to input matrix A
@@ -839,6 +759,8 @@ int_fast16_t APULPF3_vectorMaxMin(APULPF3_ComplexVector *vec,
  * @param[in] matB a pointer to input matrix B
  *
  * @param [out] result a pointer to a matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -859,11 +781,6 @@ int_fast16_t APULPF3_matrixMult(APULPF3_ComplexMatrix *matA,
  * @endcode
  * in which A, B, and C are complex matrices with size [MxN].
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] matA a pointer to input matrix A
@@ -871,6 +788,8 @@ int_fast16_t APULPF3_matrixMult(APULPF3_ComplexMatrix *matA,
  * @param[in] matB a pointer to input matrix B
  *
  * @param [out] result a pointer to a matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -889,11 +808,6 @@ int_fast16_t APULPF3_matrixSum(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatri
  * @endcode
  * in which _a_ is a scalar and B, and C are complex matrices with size [MxN].
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] mat a pointer to input matrix A
@@ -901,6 +815,8 @@ int_fast16_t APULPF3_matrixSum(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMatri
  * @param[in] scalar a pointer to a scalar
  *
  * @param [out] result a pointer to a matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -917,11 +833,6 @@ int_fast16_t APULPF3_matrixScalarSum(APULPF3_ComplexMatrix *mat, float complex *
  * @endcode
  * in which _a_ is a scalar and B, and C are complex matrices with size [MxN].
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] mat a pointer to input matrix A
@@ -929,6 +840,8 @@ int_fast16_t APULPF3_matrixScalarSum(APULPF3_ComplexMatrix *mat, float complex *
  * @param[in] scalar a pointer to a scalar
  *
  * @param [out] result a pointer to a matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -945,14 +858,11 @@ int_fast16_t APULPF3_matrixScalarMult(APULPF3_ComplexMatrix *mat, float complex 
  * @endcode
  * in which, X[MxN] is the input matrix and _c_ is the Frobenius norm.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @param[in] mat the input matrix
  *
  * @param [out] result a pointer where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -987,11 +897,6 @@ int_fast16_t APULPF3_matrixNorm(APULPF3_ComplexMatrix *mat, float complex *resul
  * this function will return a Vector whose data contains the data of both the eigenvalue triangular matrix and the
  * eigenvalue full matrix. The eigenvector data begins at an offset of (L*L + L)/2.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @pre    #APULPF3_init() has to be called first.
  *
  * @param[in] mat the input matrix
@@ -1006,6 +911,8 @@ int_fast16_t APULPF3_matrixNorm(APULPF3_ComplexMatrix *mat, float complex *resul
  * @param [out] result a pointer to a vector where the output will be placed. If not in scratchpad mode,
  *              this vector will contain both the eigenvalues and the eigenvectors.
  *              Otherwise it will contain only the eigenvectors.
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -1029,16 +936,13 @@ int_fast16_t APULPF3_jacobiEVD(APULPF3_ComplexTriangleMatrix *mat,
  * in which, A[MxN] is the input matrix and C[MxN] is the output matrix in reduced echelon form
  * (in other words, C[M,1:M] is the identity matrix).
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @param[in] mat the input matrix
  *
  * @param[in] zeroThreshold matrix values are considered zero if they are smaller than this value
  *
  * @param [out] result a pointer to a matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -1062,11 +966,6 @@ int_fast16_t APULPF3_gaussJordanElim(APULPF3_ComplexMatrix *mat, float zeroThres
  * - phase = 10-bit constant
  * - conjugate = 0 or 1
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @param[in] numPoints the number of points to generate (k)
  *
  * @param[in] constant a 10-bit constant (M)
@@ -1076,6 +975,8 @@ int_fast16_t APULPF3_gaussJordanElim(APULPF3_ComplexMatrix *mat, float zeroThres
  * @param[in] conjugate whether or not to conjugate the output
  *
  * @param [out] result a pointer to a vector where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -1094,14 +995,11 @@ int_fast16_t APULPF3_unitCircle(uint16_t numPoints,
  * To save memory, APU stores only upper-triangular elements of Hermitian matrix in column-major order.
  * This function converts this format to lower-triangular, column-major order Hermitian.
  *
- * @note This function can only be called from a task context.
- *
- * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU
- * memory management.
- *
  * @param[in] mat the input matrix
  *
  * @param [out] result a pointer to a matrix where the output will be placed
+ *
+ * @note See @ref ti_drivers_APU_DataManagement for directions on efficient APU memory management.
  *
  * @return A status code indicating whether the APU operation was a success.
  *
@@ -1114,8 +1012,6 @@ int_fast16_t APULPF3_HermLo(APULPF3_ComplexTriangleMatrix *mat, APULPF3_ComplexT
 /*!
  * @brief Configure the APU pointers for temporary (in APU memory) and final results for a APU operation.
  *        This function is intended to be used inside APU operations, such as dot product.
- *
- * @note This function can only be called from a task context.
  *
  * @param[in] resultSize the size of an operation result
  *
@@ -1136,8 +1032,6 @@ void APULPF3_prepareResult(uint16_t resultSize, uint16_t inputSize, complex floa
  * @brief Configure the APU for vector operation inputs. If not in scratchpad mode, the vectors
  *        are loaded one after the other into the start of APU memory.
  *
- * @note This function can only be called from a task context.
- *
  * @param[in] vecA an input vector
  *
  * @param[in] vecB an input vector, potentially the same as @p vecA
@@ -1151,8 +1045,6 @@ uint16_t APULPF3_prepareVectors(APULPF3_ComplexVector *vecA, APULPF3_ComplexVect
  * @brief Configure the APU for matrix operation inputs. If not in scratchpad mode, the matrices
  *        are loaded one after the other into the start of APU memory.
  *
- * @note This function can only be called from a task context.
- *
  * @param[in] matA a pointer to an input matrix
  *
  * @param[in] matB a pointer to an input matrix, potentially the same as @p matA
@@ -1164,8 +1056,6 @@ uint16_t APULPF3_prepareMatrices(APULPF3_ComplexMatrix *matA, APULPF3_ComplexMat
 
 /*!
  * @brief Loads the upper triangular part of a full matrix into APU memory.
- *
- * @note This function can only be called from a task context.
  *
  * @param[in] mat a pointer to a source matrix
  *
@@ -1179,8 +1069,6 @@ void *APULPF3_loadTriangular(APULPF3_ComplexMatrix *mat, uint16_t offset);
  * @brief Load operation arguments into APU memory, assuming the APU is
  *        in mirrored mode. This means memory is viewed as one block that
  *        can fit 1024 complex numbers.
- *
- * @note This function can only be called from a task context.
  *
  * @param[in] argSize how many complex numbers to load
  *
@@ -1202,16 +1090,14 @@ void *APULPF3_loadArgMirrored(uint16_t argSize, uint16_t offset, float complex *
  * approximately 24 us to complete. Note that while a block is being transferred
  * all interrupts are disabled, therefore, no other tasks will be able to run.
  *
- * @note This function can only be called from a task context.
- *
  * @param[in] src data source pointer
  *
  * @param[in] dst data destination pointer
  *
- * @param[in] numElements number of elements to transfer (each element must be 4 bytes)
+ * @param[in] length number of elements to transfer (each element must be 4 bytes)
  *
  */
-void APULPF3_dataMemTransfer(const float *src, float *dst, size_t numElements);
+void APULPF3_dataMemTransfer(const float *src, float *dst, size_t length);
 
 #ifdef __cplusplus
 }

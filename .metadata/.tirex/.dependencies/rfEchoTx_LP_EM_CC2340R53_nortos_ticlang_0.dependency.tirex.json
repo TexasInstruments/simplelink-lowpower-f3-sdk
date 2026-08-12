@@ -1,16 +1,15 @@
 [
     {
         "files": [
-            "+../README.md -> README.md",
-            "+../README.html -> README.html",
             "+../rfEchoTx.c -> rfEchoTx.c",
-            "+../images/rfEcho_ErrorTxRx.png -> images/rfEcho_ErrorTxRx.png",
-            "+../images/rfEcho_MissedFirstPacket.png -> images/rfEcho_MissedFirstPacket.png",
-            "+../images/rfEcho_MissingFirstCouplePackets.png -> images/rfEcho_MissingFirstCouplePackets.png",
-            "+../images/rfEcho_PerfectEcho.png -> images/rfEcho_PerfectEcho.png",
+            "+../README.md -> README.md",
+            "+../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
+            "+../rfEcho_MissedFirstPacket.png -> rfEcho_MissedFirstPacket.png",
+            "+../rfEcho_MissingFirstCouplePackets.png -> rfEcho_MissingFirstCouplePackets.png",
+            "+../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
             "+../rfEchoTx.syscfg -> rfEchoTx.syscfg",
             "+../main_nortos.c -> main_nortos.c",
-            "+cc23x0r5.cmd -> cc23x0r5.cmd"
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
         ]
     }
 ]

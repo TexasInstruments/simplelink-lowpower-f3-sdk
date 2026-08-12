@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2026, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -108,9 +108,9 @@
 
 #if (TFM_ENABLED == 0) || defined(TFM_BUILD) /* TFM_BUILD indicates this is a TF-M build */
     #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-        #include <third_party/mbedtls/include/psa/crypto.h>
-        #include <third_party/mbedtls/include/psa/crypto_extra.h>
-        #include <third_party/mbedtls/include/mbedtls/private_access.h>
+        #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>
+        #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto_extra.h>
+        #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/private_access.h>
     #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
         #include <third_party/mbedtls/include/psa/crypto.h>
         #include <third_party/mbedtls/include/psa/crypto_extra.h>
@@ -1000,17 +1000,6 @@ typedef psa_algorithm_t KeyStore_PSA_Algorithm;
  */
 #define KEYSTORE_PSA_KEY_USAGE_COPY ((KeyStore_PSA_KeyUsage)PSA_KEY_USAGE_COPY)
 
-/** Whether the key may be cached.
- *
- * This flag allows the implementation to make additional copies of the key
- * material that are not in storage and not for the purpose of an ongoing
- * operation. Applications can use it as a hint to keep the key around
- * for repeated access.
- * An application can request that cached key material is removed
- * from memory by calling psa_purge_key().
- */
-#define KEYSTORE_PSA_KEY_USAGE_CACHE ((KeyStore_PSA_KeyUsage)PSA_KEY_USAGE_CACHE)
-
 /** Whether the key may be used to encrypt a message.
  *
  * This flag allows the key to be used for a symmetric encryption operation,
@@ -1074,18 +1063,6 @@ typedef psa_algorithm_t KeyStore_PSA_Algorithm;
 /** Whether the key may be used to derive other keys.
  */
 #define KEYSTORE_PSA_KEY_USAGE_DERIVE ((KeyStore_PSA_KeyUsage)PSA_KEY_USAGE_DERIVE)
-
-/** Whether the key may be used with an external cryptographic coprocessor.
- *
- * This flag allows a key stored within a secure element to be securely loaded
- * into a cryptographic coprocessor external to the secure element. Typically,
- * the key is stored in a wrapped format and must be unwrapped by the secure
- * element before being sent to the coprocessor for use. For persistent keys,
- * the #KEYSTORE_PSA_KEY_USAGE_CACHE flag may also be set to reduce overhead for faster
- * subsequent loading into the coprocessor.
- */
-#define KEYSTORE_PSA_KEY_USAGE_COPROCESSOR ((KeyStore_PSA_KeyUsage)PSA_KEY_USAGE_COPROCESSOR)
-
 /**@}*/
 
 /** \defgroup attributes Key attributes
@@ -1199,9 +1176,8 @@ typedef psa_key_attributes_t KeyStore_PSA_KeyAttributes;
 /* A key owner is a PSA partition identifier. */
 typedef mbedtls_key_owner_id_t KeyStore_PSA_key_owner_id_t;
 
-    #endif /* defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER) */
-
 typedef psa_key_id_t KeyStore_PSA_keyID;
+    #endif /* defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER) */
 
 typedef mbedtls_svc_key_id_t KeyStore_PSA_KeyFileId;
 

@@ -78,22 +78,18 @@
 #include "ti/ble/controller/hci/hci_event.h"
 #include "ti/ble/controller/hci/hci_event_internal.h"
 #include "ti/ble/controller/ll/ll_ble.h"
-#include "ti/ble/controller/ll/ll_pawr_advertiser.h"
 #include "ti/ble/stack_util/lib_opt/map_direct.h"
 // Stub headers
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_connectable.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_ble_health.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_scan.h"
 
+#include "ti/ble/controller/ll/ll_cs_common.h"
+#include "ti/ble/controller/ll/ll_cs_procedure.h"
 #include "ti/ble/controller/ll/ll_cs_db.h"
 #include "ti/ble/host/cs/cs.h"
 #include <ti/log/Log.h>
-#include <stddef.h>
 
 extern uint8 hciPTMenabled;
-
-// Size of response header fields + 1 byte for cteType (not in responseReport_t struct)
-#define RESPONSE_REPORT_HEADER_SIZE  (offsetof(responseReport_t, data) + 1)
 
 /*
 ** Prototypes
@@ -455,7 +451,7 @@ void HCI_CS_ConfigCompleteCback(uint16 connHandle, uint8 configId, uint8 status)
       pMsg->chSel              = csConfig->chSel;
       pMsg->ch3cShape          = csConfig->ch3cShape;
       pMsg->ch3CJump           = csConfig->ch3CJump;
-      pMsg->rfu0               = 0;
+      pMsg->rfu0               = csConfig->rfu0;
 
       if (status == CS_STATUS_SUCCESS)
       {
@@ -472,7 +468,7 @@ void HCI_CS_ConfigCompleteCback(uint16 connHandle, uint8 configId, uint8 status)
         pMsg->tPM              = llCsDbGetTpm(0);
       }
 
-      pMsg->rfu1               = 0;
+      pMsg->rfu1               = csConfig->rfu1;
       osal_memcpy(&pMsg->channelMap, &csConfig->channelMap, CS_CHM_SIZE);
     }
     /* We are directly addressing the CS host module via HCI. This is done
@@ -576,10 +572,10 @@ void HCI_CS_SecurityEnableCompleteCback(uint8 status, uint16 connHandle)
  *
  * @return      None
  */
-void HCI_CS_ProcedureEnableCompleteCback(uint16 connHandle,
-                                         uint8_t configId,
+void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
+                                         uint16 connHandle,
                                          uint8 enable,
-                                         uint8 status)
+                                         csProcedureEnable_t* enableData)
 {
   uint16_t dataLen = sizeof(CS_procEnableCompleteEvt_t);
 
@@ -590,24 +586,20 @@ void HCI_CS_ProcedureEnableCompleteCback(uint16 connHandle,
 
   if (pMsg != NULL)
   {
-    memset(pMsg, 0, dataLen);
-
-    const csEnableProcedureCtrlData_t *pEnable = llCsDbGetProcedureData();
-
     // Fill message
     pMsg->csEvtOpcode          = CS_PROCEDURE_ENABLE_COMPLETE_EVENT;
     pMsg->connHandle           = connHandle;
     pMsg->csStatus             = status;
     pMsg->enable               = enable;
-    pMsg->configId             = configId;
-    pMsg->ACI                  = pEnable->ACI;
+    pMsg->configId             = enableData->configId;
+    pMsg->ACI                  = enableData->ACI;
     pMsg->selectedTxPower      = llCsGetSelectedTxPower(connHandle); // Get the selected Tx Power for this connection
-    pMsg->subEventLen          = pEnable->subEventLen;
-    pMsg->subEventsPerEvent    = pEnable->subEventsPerEvent;
-    pMsg->eventInterval        = pEnable->eventInterval;
-    pMsg->subEventInterval     = pEnable->subEventInterval;
-    pMsg->procedureInterval    = pEnable->procedureInterval;
-    pMsg->procedureCount       = pEnable->procedureCount;
+    pMsg->subEventLen          = enableData->subEventLen;
+    pMsg->subEventsPerEvent    = enableData->subEventsPerEvent;
+    pMsg->eventInterval        = enableData->eventInterval;
+    pMsg->subEventInterval     = enableData->subEventInterval;
+    pMsg->procedureInterval    = enableData->procedureInterval;
+    pMsg->procedureCount       = enableData->procedureCount;
 
     /* We are directly addressing the CS host module via HCI. This is done
     because the CS controller module directly calls HCI callbacks, otherwise,
@@ -1119,30 +1111,24 @@ void LL_GenerateDHKeyCompleteEventCback( uint8  status,
  *
  * @return      None.
  */
-void LL_EnhancedConnectionCompleteCback( uint8_t   reasonCode,
-                                         uint16_t  connHandle,
-                                         uint8_t   role,
-                                         uint8_t   peerAddrType,
-                                         uint8_t  *peerAddr,
-                                         uint8_t  *localRPA,
-                                         uint8_t  *peerRPA,
-                                         uint16_t  connInterval,
-                                         uint16_t  peripheralLatency,
-                                         uint16_t  connTimeout,
-                                         uint8_t   clockAccuracy,
-                                         uint8_t   advHandle,
-                                         uint16_t  syncHandle)
+void LL_EnhancedConnectionCompleteCback( uint8   reasonCode,
+                                         uint16  connHandle,
+                                         uint8   role,
+                                         uint8   peerAddrType,
+                                         uint8  *peerAddr,
+                                         uint8  *localRPA,
+                                         uint8  *peerRPA,
+                                         uint16  connInterval,
+                                         uint16  peripheralLatency,
+                                         uint16  connTimeout,
+                                         uint8   clockAccuracy,
+                                         uint8   advHandle,
+                                         uint16  syncHandle)
 {
-  uint8_t enhanceConn = FALSE;
-  uint8_t hciEvtType;
+  uint8 enhanceConn = FALSE;
+  uint8 hciEvtType;
 
-  if ((OPT_LL_PAwRS_IsEnable() == UTRUE) &&
-    (HCI_CheckEventMaskLe( LE_EVT_ENH_CONN_COMPLETE_BIT_V2 ) == UTRUE))
-  {
-    hciEvtType = HCI_BLE_ENHANCED_CONNECTION_COMPLETE_EVENT_V2;
-    enhanceConn = TRUE;
-  }
-  else if(MAP_HCI_CheckEventMaskLe(LE_EVT_ENH_CONN_COMPLETE_BIT_V1))
+  if(MAP_HCI_CheckEventMaskLe(LE_EVT_ENH_CONN_COMPLETE_BIT))
   {
     hciEvtType = HCI_BLE_ENHANCED_CONNECTION_COMPLETE_EVENT_V1;
     enhanceConn = TRUE;
@@ -1158,9 +1144,9 @@ void LL_EnhancedConnectionCompleteCback( uint8_t   reasonCode,
 
   if(hciEvtType != FALSE)
   {
-    hciEvt_BLEEnhConnCompleteV2_t *pkt;
+    hciEvt_BLEEnhConnComplete_t *pkt;
 
-    pkt = (hciEvt_BLEEnhConnCompleteV2_t *)osal_msg_allocate( sizeof(hciEvt_BLEEnhConnCompleteV2_t) );
+    pkt = (hciEvt_BLEEnhConnComplete_t *)MAP_osal_msg_allocate( sizeof(hciEvt_BLEEnhConnComplete_t) );
 
     if ( pkt )
     {
@@ -1170,49 +1156,38 @@ void LL_EnhancedConnectionCompleteCback( uint8_t   reasonCode,
       if ( reasonCode == LL_STATUS_SUCCESS )
       {
         pkt->status = HCI_SUCCESS;
-        (void)osal_memcpy( pkt->peerAddr, peerAddr, B_ADDR_LEN );
+        (void)MAP_osal_memcpy( pkt->peerAddr, peerAddr, B_ADDR_LEN );
       }
       else if ( reasonCode == LL_STATUS_ESTABLISH_WITH_HANDOVER )
       {
         // Successful connection was formed using connection handover
         pkt->status = HCI_STATUS_ESTABLISH_WITH_HANDOVER;
-        (void)osal_memcpy( pkt->peerAddr, peerAddr, B_ADDR_LEN );
+        (void)MAP_osal_memcpy( pkt->peerAddr, peerAddr, B_ADDR_LEN );
       }
       else
       {
         // An error occurred - connection wasn't formed
         pkt->status = bleGAPConnNotAcceptable;
-        (void)osal_memset( pkt->peerAddr, 0, B_ADDR_LEN );
+        (void)MAP_osal_memset( pkt->peerAddr, 0, B_ADDR_LEN );
       }
       pkt->BLEEventCode = hciEvtType;
 
       if ( enhanceConn )
       {
         // local and peer RPA
-        (localRPA != NULL) ? osal_memcpy( pkt->localRPA, localRPA, B_ADDR_LEN ) :
-                             osal_memset( pkt->localRPA, 0, B_ADDR_LEN );
+        (localRPA != NULL) ? MAP_osal_memcpy( pkt->localRPA, localRPA, B_ADDR_LEN ) :
+                             MAP_osal_memset( pkt->localRPA, 0, B_ADDR_LEN );
 
-        (peerRPA != NULL)  ? osal_memcpy( pkt->peerRPA, peerRPA, B_ADDR_LEN ) :
-                             osal_memset( pkt->peerRPA, 0, B_ADDR_LEN );
+        (peerRPA != NULL)  ? MAP_osal_memcpy( pkt->peerRPA, peerRPA, B_ADDR_LEN ) :
+                             MAP_osal_memset( pkt->peerRPA, 0, B_ADDR_LEN );
 
         pkt->peerAddrType = peerAddrType;
       }
       else // LE_EVT_MASK_CONN_COMPLETE
       {
-        osal_memset( pkt->localRPA, 0, B_ADDR_LEN );
-        osal_memset( pkt->peerRPA, 0, B_ADDR_LEN );
+        MAP_osal_memset( pkt->localRPA, 0, B_ADDR_LEN );
+        MAP_osal_memset( pkt->peerRPA, 0, B_ADDR_LEN );
         pkt->peerAddrType = peerAddrType & LL_DEV_ADDR_TYPE_MASK;
-      }
-
-      if ( hciEvtType == HCI_BLE_ENHANCED_CONNECTION_COMPLETE_EVENT_V2 )
-      {
-        pkt->advHandle  = advHandle;
-        pkt->syncHandle = syncHandle;
-      }
-      else
-      {
-        pkt->advHandle  = LL_ENHANCED_CONN_NO_ADV_HANDLE;
-        pkt->syncHandle = LL_ENHANCED_CONN_NO_SYNC_HANDLE;
       }
 
       pkt->connectionHandle = connHandle;
@@ -1222,7 +1197,7 @@ void LL_EnhancedConnectionCompleteCback( uint8_t   reasonCode,
       pkt->connTimeout      = connTimeout;
       pkt->clockAccuracy    = clockAccuracy;
 
-      (void)osal_msg_send( hciGapTaskID, (uint8 *)pkt );
+      (void)MAP_osal_msg_send( hciGapTaskID, (uint8 *)pkt );
     }
   }
 
@@ -1784,31 +1759,31 @@ void HCI_EXT_RssiMon_ReportCB(uint8_t handle, int8_t threshPass)
  */
 void HCI_PadvSyncEstabEventV1( uint8 status, uint8_t* llPadvSEstEventParams)
 {
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if (HCI_CheckEventMaskLe(LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT_V1))
+  // check if LE Meta-Events are enabled and this event is enabled
+  if (HCI_CheckEventMaskLe(LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT))
   {
-    hciEvt_BLEPeriodicAdvSyncEstablishedV1_t *msg =
-      (hciEvt_BLEPeriodicAdvSyncEstablishedV1_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvSyncEstablishedV1_t ));
+    hciEvt_BLEPeriodicAdvSyncEstablished_t *msg =
+      (hciEvt_BLEPeriodicAdvSyncEstablished_t *)MAP_osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvSyncEstablished_t ));
 
     if ( msg )
     {
-      // Message header
+      // message header
       msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-      msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
+      msg->hdr.status = HCI_LE_EVENT_CODE; // use status field to pass the HCI Event code
 
-      // Event packet
-      msg->BLEEventCode   = HCI_BLE_PADV_SYNC_ESTAB_EVENT_V1;
+      // event packet
+      msg->BLEEventCode   = HCI_BLE_PADV_SYNC_ESTAB_V1_EVENT;
       msg->status         = status;
-      osal_memcpy( &msg->syncHandle,  llPadvSEstEventParams, sizeof( msg->syncHandle ));
+      MAP_osal_memcpy( &msg->syncHandle,  llPadvSEstEventParams, 2);
       msg->sid            = llPadvSEstEventParams[2];
       msg->addrType       = llPadvSEstEventParams[3];
-      osal_memcpy( msg->address, &llPadvSEstEventParams[4], B_ADDR_LEN);
+      MAP_osal_memcpy( msg->address, &llPadvSEstEventParams[4], B_ADDR_LEN);
       msg->phy            = llPadvSEstEventParams[10];
-      osal_memcpy( &msg->periodicInterval,  &llPadvSEstEventParams[11], sizeof( msg->periodicInterval ));
+      MAP_osal_memcpy( &msg->periodicInterval,  &llPadvSEstEventParams[11], 2);
       msg->clockAccuracy  = llPadvSEstEventParams[13];
 
-      // Send the message
-      (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
+      // send the message
+      (void)MAP_osal_msg_send( hciGapTaskID, (uint8 *)msg );
     }
   }
 }
@@ -1818,37 +1793,8 @@ void HCI_PadvSyncEstabEventV1( uint8 status, uint8_t* llPadvSEstEventParams)
  */
 void HCI_PadvSyncEstabEventV2( uint8 status, uint8_t* llPadvSEstEventParams)
 {
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if (HCI_CheckEventMaskLe(LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT_V2))
-  {
-    hciEvt_BLEPeriodicAdvSyncEstablishedV2_t *msg =
-      (hciEvt_BLEPeriodicAdvSyncEstablishedV2_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvSyncEstablishedV2_t ));
-
-    if ( msg )
-    {
-      // Message header
-      msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-      msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
-
-      // Event packet
-      msg->BLEEventCode   = HCI_BLE_PADV_SYNC_ESTAB_EVENT_V2;
-      msg->status         = status;
-      osal_memcpy( &msg->syncHandle,  llPadvSEstEventParams, sizeof( msg->syncHandle ));
-      msg->sid            = llPadvSEstEventParams[2];
-      msg->addrType       = llPadvSEstEventParams[3];
-      osal_memcpy( msg->address, &llPadvSEstEventParams[4], B_ADDR_LEN);
-      msg->phy            = llPadvSEstEventParams[10];
-      osal_memcpy( &msg->periodicInterval,  &llPadvSEstEventParams[11], sizeof( msg->periodicInterval ));
-      msg->clockAccuracy  = llPadvSEstEventParams[13];
-      msg->numSubevents   = llPadvSEstEventParams[14];
-      msg->subeventInterval = llPadvSEstEventParams[15];
-      msg->responseSlotDelay = llPadvSEstEventParams[17];
-      msg->responseSlotSpacing = llPadvSEstEventParams[18];
-
-      // Send the message
-      (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
-    }
-  }
+    // Currently no support for PAwR host
+    return;
 }
 
 /*******************************************************************************
@@ -1856,21 +1802,21 @@ void HCI_PadvSyncEstabEventV2( uint8 status, uint8_t* llPadvSEstEventParams)
  */
 void HCI_PeriodicAdvReportEventV1( uint8_t* periodicEvtParams, uint8_t dataStatus, uint8 dataLen, uint8 *data )
 {
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if (HCI_CheckEventMaskLe(LE_EVT_PERIODIC_ADV_REPORT_BIT_V1))
+  // check if LE Meta-Events are enabled and this event is enabled
+  if (HCI_CheckEventMaskLe(LE_EVT_PERIODIC_ADV_REPORT_BIT))
   {
-    hciEvt_BLEPeriodicAdvReportV1_t *msg =
-      (hciEvt_BLEPeriodicAdvReportV1_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvReportV1_t ) + dataLen);
+    hciEvt_BLEPeriodicAdvReport_t *msg =
+      (hciEvt_BLEPeriodicAdvReport_t *)MAP_osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvReport_t ) + dataLen);
 
     if( msg )
     {
-      // Message header
+      // message header
       msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-      msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
+      msg->hdr.status = HCI_LE_EVENT_CODE; // use status field to pass the HCI Event code
 
-      // Event packet
-      msg->BLEEventCode = HCI_BLE_PADV_REPORT_EVENT_V1;
-      osal_memcpy( &msg->syncHandle,  periodicEvtParams, sizeof( msg->syncHandle ));
+      // event packet
+      msg->BLEEventCode = HCI_BLE_PADV_REPORT_V1_EVENT;
+      MAP_osal_memcpy( &msg->syncHandle,  periodicEvtParams, 2);
       msg->txPower                  = periodicEvtParams[2];
       msg->rssi                     = periodicEvtParams[3];
       msg->cteType                  = periodicEvtParams[4];
@@ -1879,12 +1825,12 @@ void HCI_PeriodicAdvReportEventV1( uint8_t* periodicEvtParams, uint8_t dataStatu
 
       if ((data != NULL) && (dataLen > 0))
       {
-        msg->data = ((uint8 *)(msg)) + sizeof( hciEvt_BLEPeriodicAdvReportV1_t );
-        osal_memcpy( msg->data, data, dataLen );
+        msg->data = ((uint8 *)(msg)) + sizeof( hciEvt_BLEPeriodicAdvReport_t );
+        MAP_osal_memcpy( msg->data, data, dataLen );
       }
 
-      // Send the message
-      (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
+      // send the message
+      (void)MAP_osal_msg_send( hciGapTaskID, (uint8 *)msg );
     }
   }
 }
@@ -1894,39 +1840,8 @@ void HCI_PeriodicAdvReportEventV1( uint8_t* periodicEvtParams, uint8_t dataStatu
  */
 void HCI_PeriodicAdvReportEventV2( uint8_t* periodicEvtParams, uint8_t dataStatus, uint8 dataLen, uint8 *data )
 {
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if (HCI_CheckEventMaskLe(LE_EVT_PERIODIC_ADV_REPORT_BIT_V2))
-  {
-    hciEvt_BLEPeriodicAdvReportV2_t *msg =
-        (hciEvt_BLEPeriodicAdvReportV2_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvReportV2_t ) + dataLen);
-
-    if( msg )
-    {
-      // Message header
-      msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-      msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
-
-      // Event packet
-      msg->BLEEventCode = HCI_BLE_PADV_REPORT_EVENT_V2;
-      osal_memcpy( &msg->syncHandle,  periodicEvtParams, sizeof( msg->syncHandle ));
-      msg->txPower                  = periodicEvtParams[2];
-      msg->rssi                     = periodicEvtParams[3];
-      msg->cteType                  = periodicEvtParams[4];
-      osal_memcpy( &msg->periodicEventCounter,  &periodicEvtParams[5], sizeof( msg->periodicEventCounter ));
-      msg->subEvent                 = periodicEvtParams[7];
-      msg->dataStatus               = dataStatus;
-      msg->dataLen                  = dataLen;
-
-      if ((data != NULL) && (dataLen > 0))
-      {
-        msg->data = ((uint8 *)(msg)) + sizeof( hciEvt_BLEPeriodicAdvReportV2_t );
-        osal_memcpy( msg->data, data, dataLen );
-      }
-
-      // Send the message
-      (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
-    }
-  }
+  // Currently no support for PAwR host
+  return;
 }
 /*********************************************************************
  * @fn      HCI_PeriodicAdvSyncLostEvent
@@ -1964,184 +1879,3 @@ void HCI_PeriodicAdvSyncLostEvent( uint16 syncHandle )
     }
   }
 }
-
-/*******************************************************************************
- * Public function defined in ll.h
- */
-void HCI_PASTReceivedEventV1( uint8_t status, uint8_t* pPASTReceivedInfo )
-{
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if (HCI_CheckEventMaskLe(LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V1))
-  {
-      hciEvt_BLEPeriodicAdvSyncTransRcvV1_t *msg =
-     (hciEvt_BLEPeriodicAdvSyncTransRcvV1_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvSyncTransRcvV1_t ));
-
-     if( msg )
-     {
-       // Message header
-       msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-       msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
-
-       // Event packet
-       msg->BLEEventCode = HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V1;
-       osal_memcpy( &msg->connHandle, pPASTReceivedInfo, 2);
-       osal_memcpy( &msg->serviceData, &pPASTReceivedInfo[2], 2);
-       osal_memcpy( &msg->syncHandle, &pPASTReceivedInfo[4], 2);
-       msg->sid                 = pPASTReceivedInfo[6];
-       msg->addrType            = pPASTReceivedInfo[7];
-       osal_memcpy( msg->address, &pPASTReceivedInfo[8], B_ADDR_LEN);
-       msg->phy                 = pPASTReceivedInfo[14];
-       osal_memcpy( &msg->periodicInterval, &pPASTReceivedInfo[15], 2);
-       msg->clockAccuracy       = pPASTReceivedInfo[17];
-
-       // Send the message
-       (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
-     }
-  }
-}
-
-/*******************************************************************************
- * Public function defined in ll.h
- */
-void HCI_PASTReceivedEventV2( uint8_t status, uint8_t* pPASTReceivedInfo )
-{
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if (HCI_CheckEventMaskLe(LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V2))
-  {
-      hciEvt_BLEPeriodicAdvSyncTransRcvV2_t *msg =
-     (hciEvt_BLEPeriodicAdvSyncTransRcvV2_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvSyncTransRcvV2_t ));
-
-     if( msg )
-     {
-       // Message header
-       msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-       msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
-
-       // Event packet
-       msg->BLEEventCode = HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V2;
-       osal_memcpy( &msg->connHandle, pPASTReceivedInfo, 2);
-       osal_memcpy( &msg->serviceData, &pPASTReceivedInfo[2], 2);
-       osal_memcpy( &msg->syncHandle, &pPASTReceivedInfo[4], 2);
-       msg->sid                 = pPASTReceivedInfo[6];
-       msg->addrType            = pPASTReceivedInfo[7];
-       osal_memcpy( msg->address, &pPASTReceivedInfo[8], B_ADDR_LEN);
-       msg->phy                 = pPASTReceivedInfo[14];
-       osal_memcpy( &msg->periodicInterval, &pPASTReceivedInfo[15], 2);
-       msg->clockAccuracy       = pPASTReceivedInfo[17];
-       msg->numSubevents = pPASTReceivedInfo[18];
-       msg->subeventInterval    = pPASTReceivedInfo[19];
-       msg->responseSlotDelay   = pPASTReceivedInfo[20];
-       msg->responseSlotSpacing = pPASTReceivedInfo[21];
-       // Send the message
-       (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
-     }
-  }
-}
-
-/*******************************************************************************
- * @fn          HCI_PadvASubeventDataRequestEvent
- *
- * @brief       Sends a request to the host for subevent data.
- *
- * input parameters
- *
- * @param      advHandle - The advertiser handle.
- * @param      subeventStart - The starting subevent.
- * @param      subeventCount - The number of subevents to request.
- *
- * output parameters
- *
- * @param      None.
- *
- * @return     None.
-*/
-void HCI_PadvASubeventDataRequestEvent(uint8_t advHandle, uint8_t subeventStart, uint8_t subeventCount)
-{
-  if ( HCI_CheckEventMaskLe( LE_EVT_PADVA_SUBEVENT_DATA_REQUEST_EVENT_BIT ) )
-  {
-     hciEvt_BLEPeriodicAdvASubeventDataRequest_t *msg =
-    (hciEvt_BLEPeriodicAdvASubeventDataRequest_t *)osal_msg_allocate(sizeof( hciEvt_BLEPeriodicAdvASubeventDataRequest_t ));
-
-    if( msg )
-    {
-      // Message header
-      msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-      msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
-
-      // Event packet
-      msg->BLEEventCode     = HCI_BLE_PADVA_SUBEVENT_DATA_REQUEST_EVENT;
-      msg->advHandle        = advHandle;
-      msg->subeventStart    = subeventStart;
-      msg->subeventCount    = subeventCount;
-
-      // Send the message
-      (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
-    }
-  }
-}
-
-/*******************************************************************************
- * @fn          HCI_PadvAResponseReportEvent
- *
- * @brief       Sends a periodic advertising response report to the host.
- *
- * input parameters
- *
- * @param      advHandle    - The advertiser handle.
- * @param      subevent     - The subevent number for which responses are reported.
- * @param      txStatus     - 0x00: AUX_SYNC_SUBEVENT_IND was transmitted,
- *                            0x01: AUX_SYNC_SUBEVENT_IND was not transmitted.
- * @param      numResponses - Number of response reports.
- * @param      pResponses   - Pointer to array of response reports (responseReport_t).
- *
- * output parameters
- *
- * @param      None.
- *
- * @return     None.
-*/
-void HCI_PadvAResponseReportEvent(uint8_t advHandle,
-                                  uint8_t subevent,
-                                  uint8_t txStatus,
-                                  uint8_t numResponses,
-                                  void   *pResponses)
-{
-  if ( HCI_CheckEventMaskLe( LE_EVT_PADVA_RESPONSE_REPORT_EVENT_BIT ) )
-  {
-      responseReport_t *pReports = (responseReport_t *)pResponses;
-      uint16_t totalSize = sizeof(hciEvt_BLEPeriodicAdvAResponseReport_t);
-
-      // Calculate total size: header bytes + data per response
-      for (uint8_t i = 0; i < numResponses; i++)
-      {
-        totalSize += RESPONSE_REPORT_HEADER_SIZE + pReports[i].dataLen;
-      }
-
-      hciEvt_BLEPeriodicAdvAResponseReport_t *msg =
-      (hciEvt_BLEPeriodicAdvAResponseReport_t *)osal_msg_allocate(totalSize);
-
-      if( msg )
-      {
-        // Message header
-        msg->hdr.event  = HCI_GAP_EVENT_EVENT;
-        msg->hdr.status = HCI_LE_EVENT_CODE; // Use status field to pass the HCI Event code
-
-        // Event packet
-        msg->BLEEventCode     = HCI_BLE_PADVA_RESPONSE_REPORT_EVENT;
-        msg->advHandle        = advHandle;
-        msg->subevent         = subevent;
-        msg->txStatus         = txStatus;
-        msg->numResponses     = numResponses;
-        msg->responses        = (uint8_t *)(msg + 1);
-
-        // Pack each response into contiguous buffer
-        LL_PAwRA_PackResponseReports(msg->responses, pReports, numResponses);
-
-        // Send the message
-        (void)osal_msg_send( hciGapTaskID, (uint8 *)msg );
-      }
-    }
-}
-
-/*******************************************************************************
- */

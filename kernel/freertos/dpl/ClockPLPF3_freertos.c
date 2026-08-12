@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2026, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,6 @@
  */
 
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/HwiP.h>
@@ -45,7 +44,7 @@
 
 #include <FreeRTOS.h>
 
-/* Driverlib includes */
+/* Driverlib includes*/
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
@@ -53,15 +52,12 @@
 #include DeviceFamily_constructPath(inc/hw_systim.h)
 #include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
-#include DeviceFamily_constructPath(driverlib/systimer.h)
 
 /* Defines */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
     #define CLOCK_FREQUENCY_DIVIDER (48000000U / configCPU_CLOCK_HZ)
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC283X)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
     #define CLOCK_FREQUENCY_DIVIDER (96000000U / configCPU_CLOCK_HZ)
-#else
-    #error "Invalid Device Family defined"
 #endif
 
 /** Max number of ClockP ticks into the future supported by this ClockP
@@ -71,16 +67,13 @@
  * the compare value is less than 2^22 systimer ticks in the past
  * (4.194sec at 1us resolution). Therefore, the max number of SysTimer ticks you
  * can schedule into the future is 2^32 - 2^22 - 1 ticks (~= 4290 sec at 1us
- * resolution).
- */
-#define ClockP_PERIOD_MAX (SYSTIMER_MAX_DELTA / ClockP_TICK_PERIOD)
-
+ * resolution). */
+#define ClockP_PERIOD_MAX     (0xFFBFFFFFU / ClockP_TICK_PERIOD)
 /** Max number of seconds into the future supported by this ClockP
  * implementation.
  *
- * This limit affects ClockP_sleep()
- */
-#define ClockP_PERIOD_MAX_SEC (SYSTIMER_MAX_DELTA / 1000000)
+ * This limit affects ClockP_sleep() */
+#define ClockP_PERIOD_MAX_SEC 4290U
 
 /* Processing overhead.
  *
@@ -90,20 +83,8 @@
  */
 #define ClockP_PROC_OVERHEAD_US (99U * CLOCK_FREQUENCY_DIVIDER)
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1) || \
-    (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-    #define ClockP_EVTSVT_SUB_CPUIRQ (EVTSVT_SUB_CPUIRQ16)
-    #define ClockP_INT_CPUIRQ        (INT_CPUIRQ16)
-    #define ClockP_SYSTIM_CHANNEL    (0)
-    #define ClockP_EVTSVT_PUB_SYSTIM (EVTSVT_PUB_SYSTIM0)
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC283X)
-    #define ClockP_EVTSVT_SUB_CPUIRQ (EVTSVT_SUB_CPUIRQ5)
-    #define ClockP_INT_CPUIRQ        (INT_CPUIRQ5)
-    #define ClockP_SYSTIM_CHANNEL    (1)
-    #define ClockP_EVTSVT_PUB_SYSTIM (EVTSVT_PUB_SYSTIM1)
-#else
-    #error "Invalid Device Family defined"
-#endif
+/* Get the current ClockP tick value */
+#define getClockPTick() (HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U) / ClockP_TICK_PERIOD)
 
 /* The name of this struct and the names of its members are used by ROV */
 typedef struct ClockP_Obj
@@ -118,20 +99,18 @@ typedef struct ClockP_Obj
 } ClockP_Obj;
 
 /* Shared variables */
-/* ClockP and Power policy share interrupt ClockP_INT_CPUIRQ, and therefore Hwi object. */
+/* ClockP and Power policy share interrupt CPUIRQ16, and therefore Hwi object. */
 extern HwiP_Struct clockHwi;
 
 /* Local variables */
 /* The names of these variables are used by ROV */
 static bool ClockP_initialized = false;
 
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC283X)
 /* Upper 32 bits of the 64-bit SysTickCount */
 static uint32_t upperSystemTicks64 = 0;
-#endif
 
 /* The existence of a variable with this name is the signal to ROV
- * that it is used on an LPF3 device
+ * that it is used on a CC23XX/CC27XX device
  */
 static List_List ClockP_list;
 static volatile uint32_t ClockP_ticks;
@@ -151,11 +130,8 @@ static void sleepTicks(uint32_t ticks);
 static void sleepClkFxn(uintptr_t arg0);
 static void ClockP_scheduleNextTick(uint32_t absTick);
 
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC283X)
 /* Callback function to increment 64-bit counter on 32-bit counter overflow */
 static void systemTicks64Callback(uintptr_t arg);
-#endif
-
 /*
  *  ======== ClockP_Params_init ========
  */
@@ -176,37 +152,31 @@ void ClockP_startup(void)
         intptr_t key;
 
         /* Get current value as early as possible */
-        nowTick = ClockP_getSystemTicks();
+        nowTick = getClockPTick();
 
-        /* Clear any pending interrupts on the ClockP SysTimer channel */
-        SysTimerClearInterrupt(ClockP_SYSTIM_CHANNEL);
+        /* Clear any pending interrupts on SysTimer channel 0 */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_EV0_CLR;
 
-        /* Configure the ClockP SysTimer channel to compare mode with timer
-         * resolution of 1 us. Note, idle mode must be used here, and the
-         * channel will switch to compare mode when a compare value is written
-         * to it.
+        /* Configure SysTimer channel 0 to compare mode with timer resolution of
+         * 1 us.
          */
-        SysTimerSetChannelConfig(ClockP_SYSTIM_CHANNEL, SYSTIMER_CONFIG_MODE_IDLE | SYSTIMER_CONFIG_RESOLUTION_1US);
+        HWREG(SYSTIM_BASE + SYSTIM_O_CH0CFG) = 0;
 
         /* Make SysTimer halt on CPU debug halt */
-        SysTimerSetDebugConfig(SYSTIMER_DEBUG_CONFIG_HALT_STOP);
+        HWREG(SYSTIM_BASE + SYSTIM_O_EMU) = SYSTIM_EMU_HALT_STOP;
 
         /* HWI clockHwi is owned by the Power driver, but multiplexed between
          * ClockP and the Power policy (this is handled by the Power driver).
          * All ClockP must do is to set the callback function and mux the
-         * ClockP SysTimer channel signal to ClockP_INT_CPUIRQ.
+         * SysTimer channel 0 signal to CPUIRQ16.
          */
         HwiP_setFunc(&clockHwi, ClockP_hwiCallback, (uintptr_t)NULL);
+        EVTSVTConfigureEvent(EVTSVT_SUB_CPUIRQ16, EVTSVT_PUB_SYSTIM0);
 
-        /* Mux the SysTimer event for SysTimer channel ClockP_SYSTIM_CHANNEL to
-         * interrupt line ClockP_INT_CPUIRQ.
+        /* Set IMASK for channel 0. IMASK is used by the power driver to know
+         * which systimer channels are active.
          */
-        EVTSVTConfigureEvent(ClockP_EVTSVT_SUB_CPUIRQ, ClockP_EVTSVT_PUB_SYSTIM);
-
-        /* Set IMASK for channel ClockP_SYSTIM_CHANNEL. IMASK is used by the
-         * power driver to know which systimer channels are active.
-         */
-        SysTimerEnableInterrupt(ClockP_SYSTIM_CHANNEL);
+        HWREG(SYSTIM_BASE + SYSTIM_O_IMSET) = SYSTIM_IMSET_EV0_SET;
 
         /* Initialize ClockP variables */
         List_clearList(&ClockP_list);
@@ -231,7 +201,7 @@ uint32_t ClockP_getTicksUntilInterrupt(void)
 {
     uint32_t ticks;
 
-    ticks = ClockP_nextScheduledTick - ClockP_getSystemTicks();
+    ticks = ClockP_nextScheduledTick - getClockPTick();
 
     /* Clamp value to zero if nextScheduledTick is less than current */
     if (ticks > ClockP_PERIOD_MAX)
@@ -268,30 +238,23 @@ void ClockP_scheduleNextTick(uint32_t absTick)
      * to be for the new compare value.
      */
 
-    /* Un-arm the ClockP SysTimer channel. The channel is no longer in compare
-     * mode after this.
+    /* Un-arm SysTimer channel 0. The channel is no longer in compare mode after
+     * this.
      */
-    SysTimerDisarmChannel(ClockP_SYSTIM_CHANNEL);
+    HWREG(SYSTIM_BASE + SYSTIM_O_ARMCLR) = SYSTIM_ARMCLR_CH0_CLR;
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* Read the capture/compare value. This will clear the event, if set, since
      * the channel is not in compare mode.
      */
-    HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC + (ClockP_SYSTIM_CHANNEL * sizeof(uint32_t)));
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC283X)
-    /* Read the capture/compare value. This will clear the event, if set, since
-     * the channel is not in compare mode.
-     */
-    HWREG(SYSTIM_BASE + SYSTIM_O_C0CC + (ClockP_SYSTIM_CHANNEL * sizeof(uint32_t)));
-#endif
+    HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC);
 
     /* Clear pending interrupt. */
-    HwiP_clearInterrupt(ClockP_INT_CPUIRQ);
+    HwiP_clearInterrupt(INT_CPUIRQ16);
 
     /* Write new compare value. This will also re-arm the channel, and put the
      * channel in compare mode.
      */
-    SysTimerSetCompareValue(ClockP_SYSTIM_CHANNEL, newSystim);
+    HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = newSystim;
 
     /* Remember this */
     ClockP_nextScheduledTick = absTick;
@@ -346,7 +309,7 @@ uint32_t ClockP_walkQueueDynamic(bool service, uint32_t thisTick)
                     else
                     {
                         /* Periodic: Refresh timeout */
-                        obj->currTimeout += period;
+                        obj->currTimeout += (period / CLOCK_FREQUENCY_DIVIDER);
                     }
 
                     /* Call handler */
@@ -404,7 +367,7 @@ void ClockP_workFuncDynamic(uintptr_t arg)
     hwiKey = HwiP_disable();
 
     /* Get current tick count. */
-    nowTick = ClockP_getSystemTicks();
+    nowTick = getClockPTick();
 
     /* Set flags while actively servicing queue */
     ClockP_inWorkFunc                = true;
@@ -479,11 +442,11 @@ void ClockP_workFuncDynamic(uintptr_t arg)
  */
 void ClockP_hwiCallback(uintptr_t arg)
 {
-    /* ClockP is using dedicated SysTimer channel event. Clearing the flag
-     * for the combined interrupt is strictly not necessary, but doing it here
-     * to avoid confusion for anyone using the SysTimer combined event.
+    /* ClockP is using raw SysTimer channel 0 interrupt. Clearing the channel 0
+     * flag is strictly not necessary, but doing it here to avoid confusion for
+     * anyone using the SysTimer combined event.
      */
-    SysTimerClearInterrupt(ClockP_SYSTIM_CHANNEL);
+    HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_EV0_CLR;
 
     /* Run worker function */
     ClockP_workFuncDynamic(arg);
@@ -599,7 +562,7 @@ void ClockP_start(ClockP_Handle handle)
     {
 
         /* get current tick count */
-        nowTick = ClockP_getSystemTicks();
+        nowTick = getClockPTick();
 
         nowDelta       = nowTick - ClockP_ticks;
         scheduledTick  = ClockP_nextScheduledTick;
@@ -611,13 +574,13 @@ void ClockP_start(ClockP_Handle handle)
             objectServiced = true;
 
             /* Start new Clock object */
-            obj->currTimeout = nowTick + obj->timeout;
+            obj->currTimeout = nowTick + (obj->timeout / CLOCK_FREQUENCY_DIVIDER);
             obj->active      = true;
 
             /* How many ticks until scheduled tick? */
             remainingTicks = scheduledTick - nowTick;
 
-            if (obj->timeout < remainingTicks)
+            if ((obj->timeout / CLOCK_FREQUENCY_DIVIDER) < remainingTicks)
             {
                 ClockP_scheduleNextTick(obj->currTimeout);
             }
@@ -627,10 +590,10 @@ void ClockP_start(ClockP_Handle handle)
     if (objectServiced == false)
     {
         /* Get current tick count */
-        nowTick = ClockP_getSystemTicks();
+        nowTick = getClockPTick();
 
         /* Start new Clock object */
-        obj->currTimeout = nowTick + obj->timeout;
+        obj->currTimeout = nowTick + (obj->timeout / CLOCK_FREQUENCY_DIVIDER);
         obj->active      = true;
 
         if (ClockP_inWorkFunc == true)
@@ -672,7 +635,7 @@ void ClockP_stop(ClockP_Handle handle)
         if (obj->currTimeout == ClockP_nextScheduledTick)
         {
             /* Get current tick count */
-            nowTick = ClockP_getSystemTicks();
+            nowTick = getClockPTick();
 
             nowDelta       = nowTick - ClockP_ticks;
             scheduledTick  = ClockP_nextScheduledTick;
@@ -751,7 +714,7 @@ uint32_t ClockP_getTimeout(ClockP_Handle handle)
 
     if (obj->active == true)
     {
-        currentTime = ClockP_getSystemTicks();
+        currentTime = getClockPTick();
         return (obj->currTimeout - currentTime);
     }
     else
@@ -784,7 +747,7 @@ void ClockP_getCpuFreq(ClockP_FreqHz *freq)
  */
 uint32_t ClockP_getSystemTickPeriod(void)
 {
-    return (ClockP_TICK_PERIOD * CLOCK_FREQUENCY_DIVIDER);
+    return (ClockP_TICK_PERIOD);
 }
 
 /*
@@ -792,23 +755,10 @@ uint32_t ClockP_getSystemTickPeriod(void)
  */
 uint32_t ClockP_getSystemTicks(void)
 {
-    /* SysTimer is always running.
-     * This function needs to convert the SysTimer ticks into ClockP ticks.
-     * The ClockP tick period is ClockP_TICK_PERIOD us * CLOCK_FREQUENCY_DIVIDER.
-     * The SysTimer tick period is 1 us * CLOCK_FREQUENCY_DIVIDER when using
-     * the SysTimerGetTime1Us() API.
-     * So the ratio between the SysTimer tick period and the ClockP tick period
-     * is (1 us * CLOCK_FREQUENCY_DIVIDER) / (ClockP_TICK_PERIOD us * CLOCK_FREQUENCY_DIVIDER)
-     * The two CLOCK_FREQUENCY_DIVIDER cancel out, leaving us with the ratio of
-     * (1 / ClockP_TICK_PERIOD). This ratio must be multiplied with the SysTimer
-     * tick count to get the ClockP tick count. This it implemented by just
-     * dividing the SysTimer tick count by ClockP_TICK_PERIOD, which is
-     * equivalent to multiplying it with (1 / ClockP_TICK_PERIOD).
-     */
-    return (SysTimerGetTime1Us() / ClockP_TICK_PERIOD);
+    /* SysTimer is always running */
+    return (getClockPTick());
 }
 
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC283X)
 /*
  *  ======== systemTicks64Callback ========
  */
@@ -817,14 +767,14 @@ static void systemTicks64Callback(uintptr_t arg)
     /* Disable interrupts while updating upper global upperSystemTicks64 */
     uintptr_t key = HwiP_disable();
 
-    /* Update upper 32 bits of 64 bit system ticks if wrap around has occurred */
-    if (SysTimerGetWrapAroundStatus1Us() == true)
+    /* Update upper 32 bits of 64 bit system ticks if overflow has occurred */
+    if (HWREG(SYSTIM_BASE + SYSTIM_O_RIS) & SYSTIM_RIS_OVFL_M)
     {
         /* Update upper 32 bits of 64 bit system ticks */
         upperSystemTicks64++;
 
-        /* Clear wrap around status */
-        SysTimerClearWrapAroundStatus1Us();
+        /* Clear overflow flag */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_OVFL_CLR;
     }
 
     HwiP_restore(key);
@@ -849,8 +799,8 @@ uint64_t ClockP_getSystemTicks64(void)
      */
     if (!systemTicks64Initialised)
     {
-        /* Clear wrap around status in case it is already set */
-        SysTimerClearWrapAroundStatus1Us();
+        /* Clear overflow flag in case it is already set */
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_OVFL_CLR;
 
         ClockP_Params_init(&params);
 
@@ -859,8 +809,8 @@ uint64_t ClockP_getSystemTicks64(void)
         /* The clock should ideally trigger with same frequency as 32-bit
          * overflow, but that would require a period longer than
          * ClockP_PERIOD_MAX. So we use double the frequency and only update
-         * upperSystemTicks64 in the callback function if the 1Us time slice has
-         * wrapped around.
+         * upperSystemTicks64 in the callback function if the overflow (OVFL)
+         * interrupt flag is set.
          */
         params.period    = ((uint64_t)UINT32_MAX + 1) / 2;
 
@@ -887,22 +837,22 @@ uint64_t ClockP_getSystemTicks64(void)
 
     lowerSystemTicks64 = ClockP_getSystemTicks();
 
-    /* If the 1Us time slice has recently wrapped around, but the upper 32 bits
+    /* If the lower 32 bits have recently overflowed, but the upper 32 bits
      * have not yet been incremented (i.e. systemTicks64Callback() has not yet
      * executed) then increment the upper 32 bits here.
      */
-    if (SysTimerGetWrapAroundStatus1Us() == true)
+    if (HWREG(SYSTIM_BASE + SYSTIM_O_RIS) & SYSTIM_RIS_OVFL_M)
     {
         /* Update upper 32 bits of 64 bit system ticks */
         upperSystemTicks64++;
 
-        /* Clear wrap around status, to prevent upper 32 bits from also being
+        /* Clear overflow flag, to prevent upper 32 bits from also being
          * incremented in systemTicks64Callback()
          */
-        SysTimerClearWrapAroundStatus1Us();
+        HWREG(SYSTIM_BASE + SYSTIM_O_ICLR) = SYSTIM_ICLR_OVFL_CLR;
 
-        /* Read the lower 32 bits again since the wrap around might have
-         * happened after the last read.
+        /* Read the lower 32 bits again since the overflow might have happened
+         * after the last read
          */
         lowerSystemTicks64 = ClockP_getSystemTicks();
     }
@@ -914,7 +864,6 @@ uint64_t ClockP_getSystemTicks64(void)
 
     return tickValue;
 }
-#endif
 
 /*
  *  ======== ClockP_sleep ========
@@ -928,7 +877,7 @@ void ClockP_sleep(uint32_t sec)
         sec = ClockP_PERIOD_MAX_SEC;
     }
     /* Convert from seconds to number of ticks */
-    ticksToSleep = (sec * 1000000U) / ClockP_getSystemTickPeriod();
+    ticksToSleep = (sec * 1000000U) / ClockP_TICK_PERIOD;
     sleepTicks(ticksToSleep);
 }
 
@@ -942,23 +891,23 @@ void ClockP_usleep(uint32_t usec)
     uint32_t ticksToSleep;
 
     /* Systimer is always running, get tick as soon as possible */
-    currTick = ClockP_getSystemTicks();
+    currTick = getClockPTick();
 
     /* Make sure we sleep at least one tick if usec > 0 */
-    endTick = currTick + ((usec + ClockP_TICK_PERIOD - 1) / (ClockP_getSystemTickPeriod()));
+    endTick = currTick + ((usec + ClockP_TICK_PERIOD - 1) / (ClockP_TICK_PERIOD * CLOCK_FREQUENCY_DIVIDER));
 
     /* If usec large enough, sleep for the appropriate number of clock ticks. */
     if (usec > ClockP_PROC_OVERHEAD_US)
     {
         ClockP_startup();
-        ticksToSleep = (usec - ClockP_PROC_OVERHEAD_US) / ClockP_getSystemTickPeriod();
+        ticksToSleep = (usec - ClockP_PROC_OVERHEAD_US) / ClockP_TICK_PERIOD;
         sleepTicks(ticksToSleep);
     }
 
     /* Spin remaining time */
     do
     {
-        currTick = ClockP_getSystemTicks();
+        currTick = getClockPTick();
     } while (currTick < endTick);
 }
 

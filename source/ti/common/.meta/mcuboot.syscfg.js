@@ -95,7 +95,7 @@ let base = {
             {
                 name        : "tzEnabled",
                 displayName : "Enable TrustZone",
-                description : "Enable MCUboot to store 2 images - secure and non secure image.",
+                description : "Enable Mcuboot to store 2 images - secure and non secure image.",
                 default     : false,
                 readOnly    : mcubootSettings["tzEnabled"]["readOnly"],
                 hidden      : mcubootSettings["tzEnabled"]["hidden"],
@@ -112,18 +112,13 @@ let base = {
                     {
                         name: "overwrite",
                         displayName : "Overwrite",
-                        longDescription: "MCUboot only runs an image from the primary slot. " +
-                                     "MCUboot will copy the image from the secondary to the primary slot and erase the secondary slot afterwards."
+                        longDescription: "Mcuboot only runs an image from the primary slot. " +
+                                     "Mcuboot will copy the image from the secondary to the primary slot and erase the secondary slot afterwards."
                     },
                     {
                         name: "xip",
                         displayName : "XIP",
-                        longDescription: "MCUboot runs an image directly from either the primary or the secondary slot, without moving and or copying it into the primary slot."
-                    },
-                    {
-                        name: "swapUsingMove",
-                        displayName : "Swap (using Move)",
-                        longDescription: "MCUboot will perform a swap between the images in the primary and secondary slot. An extra sector for swapping is located at the end of the primary sector"
+                        longDescription: "Mcuboot runs an image directly from either the primary or the secondary slot, without moving and or copying it into the primary slot."
                     }
                 ],
                 readOnly: false,
@@ -132,7 +127,7 @@ let base = {
             {
                 name        : "externalFlash",
                 displayName : "Enable External Flash",
-                description : "Enable MCUboot to search for valid images in external Flash",
+                description : "Enable Mcuboot to search for valid images in external Flash",
                 default     : false,
                 hidden      : true,
                 onChange    : changeExternalFlash
@@ -148,7 +143,7 @@ let base = {
             {
                 name        : "enableEncryptedImage",
                 displayName : "Upgrade Using Encrypted Images",
-                description : "Enable MCUboot to search for valid encrypted images",
+                description : "Enable Mcuboot to search for valid encrypted images",
                 default     : false,
                 hidden      : true
             },
@@ -161,14 +156,6 @@ let base = {
                 hidden      : mcubootSettings["antiRollbackProtection"]["hidden"]
             },
             {
-                name        : "watchdogTimeoutMs",
-                displayName : "Watchdog Timeout (ms)",
-                description : "Watchdog timeout to recover from a bad image during OAD",
-                displayFormat: "dec",
-                default     : 60000,
-                hidden      : true
-            },
-            {
                 displayName: "Bootloader",
                 description: "Bootloader Configurations",
                 collapsed: true,
@@ -176,7 +163,7 @@ let base = {
                     {
                         name        : "bootloaderBaseAddress",
                         displayName : "Base",
-                        description : "Base Address of MCUboot",
+                        description : "Base Address of Mcuboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default     : mcubootSettings["bootloader"]["tzDisabledBase"]["base"],
                         readOnly    : false,
@@ -185,7 +172,7 @@ let base = {
                     {
                         name        : "bootloaderSize",
                         displayName : "Size",
-                        description : "Size of MCUboot",
+                        description : "Size of Mcuboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default     : mcubootSettings["bootloader"]["size"],
                         readOnly    : false,
@@ -429,68 +416,38 @@ function changeImageCompression(inst, ui)
 
 function changeMode(inst, ui)
 {
-    if(inst.mode === "overwrite")
+    ui.externalFlash.hidden = !ui.externalFlash.hidden;
+
+    if(inst.mode === "overwrite" && deviceGroup == "DeviceGroup_CC23X0" )
     {
-        ui.externalFlash.hidden = false;
-        if(mcubootSettings["enableEncryptedImage"]["enabled"])
-        {
-            ui.enableEncryptedImage.hidden = false;
-        }
-        else
-        {
-            ui.enableEncryptedImage.hidden = true;   
-        }
-        if(deviceGroup == "DeviceGroup_CC23X0") /* enable for compression */
-        {
-            ui.imageCompression.hidden = false;
-        }
-        else
-        {
-            ui.imageCompression.hidden = true;
-        }
+        ui.imageCompression.hidden = false;
     }
-    else if(inst.mode === "xip")
+    else
     {
-        ui.externalFlash.hidden = true;
-        ui.enableEncryptedImage.hidden = true;
-    }
-    else if(inst.mode === "swapUsingMove")
-    {
-        ui.externalFlash.hidden = false;
-        if(mcubootSettings["enableEncryptedImage"]["enabled"])
-        {
-            ui.enableEncryptedImage.hidden = false;
-        }
-        else
-        {
-            ui.enableEncryptedImage.hidden = true;   
-        }
         ui.imageCompression.hidden = true;
-        ui.watchdogTimeoutMs.hidden = false;
     }
 
-    if(inst.mode !== "swapUsingMove")
-    {
-        ui.watchdogTimeoutMs.hidden = true;
-    }
-
-    // set default value to false when changing modes
-    inst.externalFlash = false;
     inst.imageCompression = false;
-    inst.enableEncryptedImage = false;
+    inst.externalFlash = false;
+
+    if(mcubootSettings["enableEncryptedImage"]["enabled"])
+    {
+        ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
+        inst.enableEncryptedImage = false;
+    }
 }
 
 function changeTzEnable(inst, ui)
 {
     // change mode to overwrite
     inst.mode = 'overwrite';
-    ui.mode.readOnly = true;
+    ui.mode.readOnly = !ui.mode.readOnly;
     ui.externalFlash.hidden = false;
 
     //change anti rollback protection settings
     inst.antiRollbackProtection = false;
-    ui.antiRollbackProtection.readOnly = true;
-    ui.antiRollbackProtection.hidden = true;
+    ui.antiRollbackProtection.readOnly = !ui.antiRollbackProtection.readOnly;
+    ui.antiRollbackProtection.hidden = !ui.antiRollbackProtection.hidden;
 
     // set hidden properties for second image slots
     ui.primaryBase2.hidden = !ui.primaryBase2.hidden;
@@ -515,7 +472,7 @@ function changeTzEnable(inst, ui)
     /* If encrypted images are enabled then update the instance and ui.*/
     if(mcubootSettings["enableEncryptedImage"]["enabled"])
     {
-        ui.enableEncryptedImage.hidden = false;
+        ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
         inst.enableEncryptedImage = false;
     }
 
@@ -566,18 +523,6 @@ function validate(inst, validation) {
                  "Default Bootloader size may need to be increased if Encrypted Images are enabled ");
     }
 
-    if(inst.mode === "swapUsingMove")
-    {
-        logWarning(validation, inst, "watchdogTimeoutMs",
-                 "The hardware watchdog is owned by MCUboot during boot. The application can take ownership by initializing the Watchdog via TI Drivers.");
-    }
-
-    if(inst.enableEncryptedImage === true && inst.imageCompression === true)
-    {
-        logError(validation, inst, "imageCompression",
-                 "Image compression can not be enabled if encrypted image updates are enabled.");
-    }
-
     // if instance of external flash is true, flash base must be 0x800
     if(inst.tzEnabled && inst.bootloaderBaseAddress != 0x800 )
     {
@@ -606,18 +551,6 @@ function validate(inst, validation) {
             logError(validation, inst, "secondarySize1",
                     "Secondary image must be the same size as primary image");
         }
-    }
-
-    // if size of primary image is not the same as secondary image or if the size 
-    // of the primary image is not 1 sector greater than secondary image throw error
-    if((inst.primarySize1 != inst.secondarySize1) && 
-        (inst.primarySize1 - inst.secondarySize1 !== mcubootSettings["alignment"]["sectorSize"]) && 
-        inst.mode == 'swapUsingMove')
-    {
-        logError(validation, inst, "primarySize1",
-                 "Primary image must be the same size or 1 sector larger than the secondary image");
-        logError(validation, inst, "secondarySize1",
-                 "Secondary image must be the same size or 1 sector larger than the primary image");
     }
 
     // check if flash layout based on device group

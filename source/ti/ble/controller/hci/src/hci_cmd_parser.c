@@ -81,7 +81,6 @@
 // Stub headers
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_cs.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_padv.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_scanner.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_initiator.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_connectable.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_pscan.h"
@@ -99,11 +98,9 @@
 #define HCI_CMD_PACKET_TYPE_OFFSET    0
 #define HCI_CMD_OPCODE_LO_OFFSET      1
 #define HCI_CMD_OPCODE_HI_OFFSET      2
-#define HCI_CMD_DATA_OFFSET           4    // Standard command: 1-byte length field
-#define HCI_EXTENDED_CMD_DATA_OFFSET  5    // Extended command: 2-byte length field
-#define HCI_CMD_NUM_OF_PARSERS        13
+#define HCI_CMD_DATA_OFFSET           4
+#define HCI_CMD_NUM_OF_PARSERS        12
 #define HCI_EXT_VS_CMD_NUM_OF_PARSERS 5
-#define HCI_LEGACY_CMD_NUM_OF_PARSERS 3
 
 /*******************************************************************************
  * MACROS
@@ -123,19 +120,10 @@ hciStatus_t hciCmdParserLegacy( uint8_t *pData, uint16_t cmdOpCode );
 hciStatus_t hciCmdParserCommon( uint8 *pData, uint16 cmdOpCode );
 
 /**************************************************************
- *         Parsers function for legacy commands               *
- **************************************************************/
-hciStatus_t hciCmdParserLegacyScanner( uint8 *pData, uint16 cmdOpCode );
-hciStatus_t hciCmdParserLegacyInitiator( uint8 *pData, uint16 cmdOpCode );
-hciStatus_t hciCmdParserLegacyAdvertiser( uint8 *pData, uint16 cmdOpCode );
-
-
-/**************************************************************
  *         Parsers function for specific role/feature         *
  **************************************************************/
 hciStatus_t hciCmdParserConnection( uint8 *pData, uint16 cmdOpCode );
 hciStatus_t hciCmdParserAdvertiser( uint8 *pData, uint16 cmdOpCode );
-hciStatus_t hciCmdParserScanner( uint8 *pData, uint16 cmdOpCode );
 hciStatus_t hciCmdParserInitiator( uint8 *pData, uint16 cmdOpCode );
 hciStatus_t hciCmdParserPeripheral( uint8 *pData, uint16 cmdOpCode );
 hciStatus_t hciCmdParserPeriodicAdv( uint8_t *pData, uint16_t cmdOpCode );
@@ -178,7 +166,6 @@ static inline hciStatus_t hciCmdParserAddDeviceToPeriodicAdvList( uint8 *pData )
 static inline hciStatus_t hciCmdParserRemoveDeviceFromPeriodicAdvList( uint8 *pData );
 static inline hciStatus_t hciCmdParserSetPeriodicSyncSubevent( uint8 *pData );
 static inline hciStatus_t hciCmdParserSetPeriodicAdvResponseData( uint8 *pData );
-static inline hciStatus_t hciCmdParserExtCreateConnection_V2( uint8 *pData );
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -194,7 +181,6 @@ hciCmdParsers hciCmdParsersArray[HCI_CMD_NUM_OF_PARSERS] = { OPT_hciCmdParserLeg
                                                              hciCmdParserCommon,
                                                              OPT_hciCmdParserConnection,
                                                              OPT_hciCmdParserAdvertiser,
-                                                             OPT_hciCmdParserScanner,
                                                              OPT_hciCmdParserInitiator,
                                                              OPT_hciCmdParserPeripheral,
                                                              OPT_hciCmdParserPeriodicAdv,
@@ -202,7 +188,7 @@ hciCmdParsers hciCmdParsersArray[HCI_CMD_NUM_OF_PARSERS] = { OPT_hciCmdParserLeg
                                                              hciCmdParserCte,
                                                              OPT_hciCmdParserChannelSounding,
                                                              OPT_hciCmdParserVendorSpecific,
-                                                             OPT_hciCmdParserExtendedVendorSpecific
+                                                             OPT_hciCmdParserExtendedVendorSpecific,
 };
 
 /*
@@ -215,18 +201,7 @@ hciCmdParsers hciExtVSCmdParsersArray[HCI_EXT_VS_CMD_NUM_OF_PARSERS] = { OPT_hci
                                                                          OPT_hciCmdParserExtVendorSpecificInitiator,
                                                                          OPT_hciCmdParserExtVendorSpecificPeripheral,
                                                                          OPT_hciCmdParserExtVendorSpecificBroadcaster,
-                                                                         OPT_hciCmdParserExtVendorSpecificCommon
-};
-
-/*
- This array holds pointers to functions responsible for parsing
- legacy HCI commands (BT4 compatibility). Each entry corresponds
- to a specific command parser implementation for legacy commands
- that require special handling.
- */
-hciCmdParsers hciLegacyCmdParsersArray[HCI_LEGACY_CMD_NUM_OF_PARSERS] = { OPT_hciCmdParserLegacyScanner,
-                                                                          OPT_hciCmdParserLegacyInitiator,
-                                                                          OPT_hciCmdParserLegacyAdvertiser
+                                                                         OPT_hciCmdParserExtVendorSpecificCommon,
 };
 
 /*******************************************************************************
@@ -264,24 +239,14 @@ hciStatus_t HCI_CMD_Parser( uint8 *pData )
   // Retrieve packet type
   packetType = pData[0];
 
-  // Sanity check - handle both standard and extended command packets
-  if ( ( packetType == HCI_CMD_PACKET ) || ( packetType == HCI_EXTENDED_CMD_PACKET ) )
+  // Sanity check
+  if ( packetType == HCI_CMD_PACKET )
   {
-    // Retrieve command opcode (same position for both packet types)
+    // Retrieve command opcode
     cmdOpCode = BUILD_UINT16( pData[HCI_CMD_OPCODE_LO_OFFSET],
                               pData[HCI_CMD_OPCODE_HI_OFFSET] );
 
-    // Adjust pointer to parameters based on packet type
-    if ( packetType == HCI_EXTENDED_CMD_PACKET )
-    {
-      // Skip 5 bytes (type + opcode + 2-byte length)
-      pData += HCI_EXTENDED_CMD_DATA_OFFSET;
-    }
-    else
-    {
-      // Skip 4 bytes (type + opcode + 1-byte length)
-      pData += HCI_CMD_DATA_OFFSET;
-    }
+    pData += HCI_CMD_DATA_OFFSET;
 
     for ( uint8 i = 0; i < (uint8)HCI_CMD_NUM_OF_PARSERS; i++ )
     {
@@ -401,11 +366,11 @@ hciStatus_t hciCmdParserVendorSpecific( uint8 *pData, uint16 cmdOpCode )
  * @fn          hciCmdParserLegacy
  *
  * @brief       This CMD parser function is called first. If LEGACY_CMD is
- *              enabled, it calls HCI_LegacyCmd_PreCheck() to check if the
- *              opcode is allowed in Legacy mode. If the opcode is not allowed,
- *              it will return HCI_ERROR_CODE_CMD_DISALLOWED. Otherwise, it
- *              will return HCI_ERROR_CODE_UNKNOWN_HCI_CMD for further handling
- *              in the next parser function.
+ *              enabled, the service API OPT_checkLegacyHCICmdStatus() is called
+ *              to check if the opcode is allowed in Legacy mode. If the opcode
+ *              is not allowed, it will return HCI_ERROR_CODE_CMD_DISALLOWED.
+ *              Otherwise, it will return HCI_ERROR_CODE_UNKNOWN_HCI_CMD for
+ *              further handling in the next parser function.
  *
  * input parameters
  *
@@ -416,183 +381,19 @@ hciStatus_t hciCmdParserVendorSpecific( uint8 *pData, uint16 cmdOpCode )
  *
  * @param       None.
  *
- * @return      HCI_ERROR_CODE_CMD_DISALLOWED if the command is not allowed in 
- *              the current legacy mode, HCI_ERROR_CODE_UNKNOWN_HCI_CMD if the 
- *              command is allowed and should be processed by the next parser,
- *              or the specific HCI status code returned by hciLegacyCmdParsersArray 
- *              if the command is handled by one of the legacy command parsers.
+ * @return      HCI_ERROR_CODE_CMD_DISALLOWED,
+ *              HCI_ERROR_CODE_UNKNOWN_HCI_CMD.
  *
  */
 hciStatus_t hciCmdParserLegacy( uint8_t *pData, uint16_t cmdOpCode )
 {
   hciStatus_t status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-  hciStatus_t legacyPreCheckStatus;
 
   // Check if a legacy/extended command mixing is allowed
-  legacyPreCheckStatus = OPT_HCI_LegacyCmd_PreCheck( cmdOpCode );
-  if ( legacyPreCheckStatus != HCI_SUCCESS )
+  if ( OPT_checkLegacyHCICmdStatus( cmdOpCode ) == FAILURE )
   {
-    // Command disallowed due to BT4/BT5 mode mixing
-    // Async commands need Command Status, sync commands need Command Complete
-    if ( (cmdOpCode == HCI_LE_CREATE_CONNECTION) ||
-         (cmdOpCode == HCI_LE_EXT_CREATE_CONN) )
-    {
-      // Async command - send Command Status
-      MAP_HCI_CommandStatusEvent( legacyPreCheckStatus, cmdOpCode );
-    }
-    else
-    {
-      // Sync command - send Command Complete
-      HCI_CommandCompleteEvent( cmdOpCode, sizeof ( legacyPreCheckStatus ),
-                                &legacyPreCheckStatus );
-    }
-
-    // Return disallowed status to prevent further handling of the command
-    return HCI_ERROR_CODE_CMD_DISALLOWED;
-  }
-
-  // Iterate through legacy command parsers to find a match
-  for ( uint8 i = 0; i < (uint8)HCI_LEGACY_CMD_NUM_OF_PARSERS; i++ )
-  {
-    status = hciLegacyCmdParsersArray[i](pData, cmdOpCode);
-
-    if ( status != (hciStatus_t)HCI_ERROR_CODE_UNKNOWN_HCI_CMD )
-    {
-      // Found match!
-      break;
-    }
-  }
-
-  return status;
-}
-
-/*******************************************************************************
- * @fn          hciCmdParserLegacyScanner
- *
- * @brief       This CMD parser function handles legacy scanner commands
- *              such as HCI_LE_SET_SCAN_PARAM and HCI_LE_SET_SCAN_ENABLE.
- *
- * input parameters
- *
- * @param       pData     - Pointer to packet's data.
- *              cmdOpCode - Packet's HCI command opcode
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      HCI/LL status
- *              HCI_ERROR_CODE_UNKNOWN_HCI_CMD.
- *
- */
-hciStatus_t hciCmdParserLegacyScanner( uint8 *pData, uint16 cmdOpCode )
-{
-  hciStatus_t status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-
-  switch ( cmdOpCode )
-  {
-    case HCI_LE_SET_SCAN_PARAM:
-    {
-      // Legacy scan parameter command (BT4)
-      // HCI_LE_SetScanParamCmd will send Command Complete Event
-      status = HCI_LE_SetScanParamCmd( pData );
-      break;
-    }
-    case HCI_LE_SET_SCAN_ENABLE:
-    {
-      // Legacy scan enable command (BT4)
-      // HCI_LE_SetScanEnableCmd will send Command Complete Event
-      status = HCI_LE_SetScanEnableCmd( pData );
-      break;
-    }
-    default:
-    {
-      status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-      break;
-    }
-  }
-
-  return status;
-}
-
-/*******************************************************************************
- * @fn          hciCmdParserLegacyInitiator
- *
- * @brief       This CMD parser function handles legacy initiator commands
- *              such as HCI_LE_CREATE_CONNECTION.
- *
- * input parameters
- *
- * @param       pData     - Pointer to packet's data.
- *              cmdOpCode - Packet's HCI command opcode
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      HCI/LL status
- *              HCI_ERROR_CODE_UNKNOWN_HCI_CMD.
- *
- */
-hciStatus_t hciCmdParserLegacyInitiator( uint8 *pData, uint16 cmdOpCode )
-{
-  hciStatus_t status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-
-  switch ( cmdOpCode )
-  {
-    case HCI_LE_CREATE_CONNECTION:
-    {
-      // Legacy create connection command
-      // HCI_LE_CreateConnCmd will send Command Status Event
-      status = HCI_LE_CreateConnCmd( pData );
-      break;
-    }
-    default:
-    {
-      status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-      break;
-    }
-  }
-
-  return status;
-}
-
-/*******************************************************************************
- * @fn          hciCmdParserLegacyAdvertiser
- *
- * @brief       This CMD parser function handles legacy advertiser commands
- *              such as HCI_LE_READ_ADV_CHANNEL_TX_POWER.
- *
- * input parameters
- *
- * @param       pData     - Pointer to packet's data.
- *              cmdOpCode - Packet's HCI command opcode
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      HCI/LL status
- *              HCI_ERROR_CODE_UNKNOWN_HCI_CMD.
- *
- */
-hciStatus_t hciCmdParserLegacyAdvertiser( uint8 *pData, uint16 cmdOpCode )
-{
-  hciStatus_t status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-
-  switch ( cmdOpCode )
-  {
-    case HCI_LE_READ_ADV_CHANNEL_TX_POWER:
-    {
-      // Legacy read advertising channel Tx power command (BT4)
-      status = HCI_LE_ReadAdvChanTxPowerCmd( );
-      break;
-    }
-    default:
-    {
-      status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-      break;
-    }
+    status = HCI_ERROR_CODE_CMD_DISALLOWED;
+    HCI_CommandCompleteEvent( cmdOpCode, sizeof ( status ), &status );
   }
 
   return status;
@@ -627,6 +428,11 @@ hciStatus_t hciCmdParserCommon( uint8 *pData, uint16 cmdOpCode )
     {
       // Function input: uint8 *pMask
       status = HCI_SetEventMaskCmd( pData );
+      break;
+    }
+    case HCI_RESET:
+    {
+      status = HCI_ResetCmd( );
       break;
     }
     case HCI_SET_EVENT_MASK_PAGE_2:
@@ -813,6 +619,20 @@ hciStatus_t hciCmdParserCommon( uint8 *pData, uint16 cmdOpCode )
       status = HCI_LE_SetHostFeature( pData[0], pData[1] );
       break;
     }
+    case HCI_WRITE_LOCAL_NAME:
+    case HCI_READ_SCAN_ENABLE:
+    case HCI_WRITE_SCAN_ENABLE:
+    case HCI_LE_SET_ADV_PARAM:
+    case HCI_LE_SET_ADV_DATA:
+    case HCI_LE_SET_SCAN_RSP_DATA:
+    case HCI_LE_SET_ADV_ENABLE:
+    case HCI_LE_SET_SCAN_PARAM:
+    case HCI_LE_SET_SCAN_ENABLE:
+    case HCI_LE_CREATE_CONNECTION:
+    {
+      status = HCI_ERROR_CODE_CMD_DISALLOWED;
+      break;
+    }
     default:
     {
       status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
@@ -985,34 +805,6 @@ hciStatus_t hciCmdParserConnection( uint8 *pData, uint16 cmdOpCode )
       status = HCI_LE_EnhancedTxTestCmd( pData[0], pData[1], pData[2], pData[3] );
       break;
     }
-    case HCI_LE_ENHANCED_TRANSMITTER_TEST_V4:
-    {
-      // Parse variable-length antenna array
-      // Offset 0: txChan
-      // Offset 1: payloadLen
-      // Offset 2: payloadType
-      // Offset 3: txPhy
-      // Offset 4: cteLength
-      // Offset 5: cteType
-      // Offset 6: switchingPatternLength
-      // Offset 7...(7+switchingPatternLength-1): pAntenna[]
-      // Offset (7+switchingPatternLength): txPowerLevel
-      uint8 txChan = pData[0];
-      uint8 payloadLen = pData[1];
-      uint8 payloadType = pData[2];
-      uint8 txPhy = pData[3];
-      uint8 cteLength = pData[4];
-      uint8 cteType = pData[5];
-      uint8 switchingPatternLength = pData[6];
-      uint8 *pAntenna = &pData[7];
-      int8 txPowerLevel = (int8)pData[7 + switchingPatternLength];
-
-      status = HCI_LE_EnhancedCteTxTestV4Cmd( txChan, payloadLen, payloadType, txPhy,
-                                              cteLength, cteType,
-                                              switchingPatternLength, pAntenna,
-                                              txPowerLevel );
-      break;
-    }
     case HCI_LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL:
     {
       // Function input: uint16 connHandle, uint8 txPhy
@@ -1100,72 +892,9 @@ hciStatus_t hciCmdParserAdvertiser( uint8 *pData, uint16 cmdOpCode )
 {
   hciStatus_t status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
 
-  switch ( cmdOpCode )
+  if ( cmdOpCode == (uint16)HCI_LE_READ_ADV_CHANNEL_TX_POWER )
   {
-    case HCI_LE_READ_MAX_ADV_DATA_LENGTH:
-    {
-      status = HCI_LE_ReadMaxAdvDataLenCmd( );
-      break;
-    }
-    case HCI_LE_READ_NUM_SUPPORTED_ADV_SETS:
-    {
-      status = HCI_LE_ReadNumSupportedAdvSetsCmd( );
-      break;
-    }
-    default:
-    {
-      status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-      break;
-    }
-  }
-
-  return status;
-}
-
-/*******************************************************************************
- * @fn          hciCmdParserScanner
- *
- * @brief       This CMD parser function handles extended scanner commands
- *              such as HCI_LE_SET_EXT_SCAN_PARAMETERS.
- *
- * input parameters
- *
- * @param       pData     - Pointer to packet's data.
- *              cmdOpCode - Packet's HCI command opcode
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      HCI/LL status
- *              HCI_ERROR_CODE_UNKNOWN_HCI_CMD.
- *
- */
-hciStatus_t hciCmdParserScanner( uint8 *pData, uint16 cmdOpCode )
-{
-  hciStatus_t status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-
-  switch ( cmdOpCode )
-  {
-    case HCI_LE_SET_EXT_SCAN_PARAMETERS:
-    {
-      // Extended scan parameter command (BT5)
-      // HCI_LE_SetExtScanParamCmd will send Command Complete Event
-      status = HCI_LE_SetExtScanParamCmd( pData );
-      break;
-    }
-    case HCI_LE_SET_EXT_SCAN_ENABLE:
-    {
-      // Extended scan enable command (BT5)
-      // HCI_LE_SetExtScanEnableCmd will send Command Complete Event
-      status = HCI_LE_SetExtScanEnableCmd( pData );
-      break;
-    }
-    default:
-    {
-      status = HCI_ERROR_CODE_UNKNOWN_HCI_CMD;
-      break;
-    }
+    status = HCI_LE_ReadAdvChanTxPowerCmd( );
   }
 
   return status;
@@ -1185,12 +914,6 @@ hciStatus_t hciCmdParserInitiator( uint8 *pData, uint16 cmdOpCode )
       status = HCI_LE_CreateConnCancelCmd( );
       break;
     }
-    case HCI_LE_EXT_CREATE_CONN:
-    {
-      // Extended create connection command (BT5)
-      status = HCI_LE_ExtCreateConnCmd( pData );
-      break;
-    }
     case HCI_LE_SET_HOST_CHANNEL_CLASSIFICATION:
     {
       // Function input: uint8 *chanMap
@@ -1201,11 +924,6 @@ hciStatus_t hciCmdParserInitiator( uint8 *pData, uint16 cmdOpCode )
     {
       // Call for dedicated parser function
       status = hciCmdParserStartEncypt( pData );
-      break;
-    }
-    case HCI_LE_EXT_CREATE_CONNECTION_V2:
-    {
-      status = hciCmdParserExtCreateConnection_V2(pData);
       break;
     }
     default:
@@ -1261,19 +979,10 @@ hciStatus_t hciCmdParserPeriodicAdv( uint8_t *pData, uint16_t cmdOpCode )
     case HCI_LE_SET_PERIODIC_ADV_PARAMETERS:
     {
       // Function input: uint8 advHandle, uint16 periodicAdvIntervalMin, uint16 periodicAdvIntervalMax, uint16 periodicAdvProp
-      status = HCI_LE_SetPeriodicAdvParamsV1Cmd( pData[0],
+      status = HCI_LE_SetPeriodicAdvParamsCmd( pData[0],
                                                BUILD_UINT16( pData[1], pData[2] ),
                                                BUILD_UINT16( pData[3], pData[4] ),
                                                BUILD_UINT16( pData[5], pData[6] ) );
-      break;
-    }
-    case HCI_LE_SET_PERIODIC_ADV_PARAMETERS_V2:
-    {
-      status = HCI_LE_SetPeriodicAdvParamsV2Cmd( pData[0],
-                                                 BUILD_UINT16( pData[1], pData[2] ),
-                                                 BUILD_UINT16( pData[3], pData[4] ),
-                                                 BUILD_UINT16( pData[5], pData[6] ),
-                                                 &pData[7]);
       break;
     }
     case HCI_LE_SET_PERIODIC_ADV_DATA:
@@ -1286,11 +995,6 @@ hciStatus_t hciCmdParserPeriodicAdv( uint8_t *pData, uint16_t cmdOpCode )
     {
       // Function input: uint8 enable, uint8 advHandle
       status = HCI_LE_SetPeriodicAdvEnableCmd( pData[0], pData[1] );
-      break;
-    }
-    case HCI_LE_SET_PERIODIC_ADV_SUBEVENT_DATA:
-    {
-      status = HCI_LE_SetPeriodicAdvSubeventDataCmd(pData[0], pData[1], &pData[2]);
       break;
     }
     default:
@@ -1672,16 +1376,6 @@ hciStatus_t hciCmdParserExtVendorSpecificCommon( uint8 *pData, uint16 cmdOpCode 
     {
         status = HCI_EXT_EnhancedModemHopTestTxCmd( pData[0], pData[1], pData[2] );
         break;
-    }
-    case HCI_EXT_SET_POWER_CTRL_RANGE:
-    {
-      status = HCI_EXT_SetPowerCtrlRangeCmd( (int8_t)pData[0], (int8_t)pData[1] );
-      break;
-    }
-    case HCI_EXT_GET_POWER_CTRL_RANGE:
-    {
-      status = HCI_EXT_GetPowerCtrlRangeCmd( (int8_t *)&pData[0], (int8_t *)&pData[1] );
-      break;
     }
     case HCI_EXT_SET_DEFAULT_ANTENNA:
     {
@@ -2530,33 +2224,5 @@ static inline hciStatus_t hciCmdParserRemoveDeviceFromPeriodicAdvList( uint8 *pD
 
   return HCI_LE_RemoveDeviceFromPeriodicAdvListCmd( advAddrType, advAddress, advSID );
 }
-
-/*******************************************************************************
- * @fn          hciCmdParserExtCreateConnection_V2
- *
- * @brief       This function parses the pData for the HCI LE Extended Create
- *              Connection V2 command input Arguments.
- *
- * input parameters
- *
- * @param       pData - Pointer to packet's data.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      HCI/LL status
- *
- */
-static inline hciStatus_t hciCmdParserExtCreateConnection_V2( uint8 *pData )
-{
-  uint8_t advHandle = pData[0];
-  uint8_t subevent = pData[1];
-  uint8_t *pCreateConnCmd = &pData[2];
-
-  // Call the HCI function for Extended Create Connection V2
-  return HCI_LE_ExtCreateConnV2( advHandle, subevent, pCreateConnCmd );
-}
-
 /***************************************************************************************************
  */

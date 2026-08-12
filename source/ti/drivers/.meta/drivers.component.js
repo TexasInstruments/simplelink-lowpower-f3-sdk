@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2026 Texas Instruments Incorporated
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - https://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -276,65 +276,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
             ]
         }
     ];
-} else if (deviceId.match(/CC23.1/)) {
-    /* CC23X0 */
-    topModules = [
-        {
-            displayName: displayName,
-            description: description,
-            modules: [
-                "/ti/display/Display",
-                "/ti/drivers/BatteryMonitor",
-                "/ti/drivers/Board",
-                "/ti/drivers/DMA",
-                "/ti/drivers/GPIO",
-                "/ti/drivers/LGPTimer",
-                "/ti/drivers/Power",
-                "/ti/drivers/PWM",
-                "/ti/drivers/Temperature",
-                "/ti/drivers/Watchdog"
-            ],
-            "categories": [
-                {
-                    "displayName": "Serial Interfaces",
-                    "description": "Data Transmission on a Wire",
-                    "modules": [
-                        "/ti/drivers/CAN",
-                        "/ti/drivers/I2C",
-                        "/ti/drivers/I2CTarget",
-                        "/ti/drivers/I2S",
-                        "/ti/drivers/SPI",
-                        "/ti/drivers/UART2"
-                    ]
-                },
-                {
-                    "displayName": "Analog/Digital Conversion",
-                    "description": "Signal Transformation",
-                    "modules": [
-                        "/ti/drivers/ADC",
-                        "/ti/drivers/ADCBuf",
-                        "/ti/drivers/Comparator"
-                    ]
-                },
-                {
-                    "displayName": "Storage Interfaces",
-                    "description": "Permanent Data Storage",
-                    "modules": [
-                        "/ti/drivers/NVS",
-                        "/ti/drivers/SD"
-                    ]
-                },
-                {
-                    "displayName": "TI Driver Apps",
-                    "description": "TI Drivers Apps Configuration",
-                    "modules": [
-                        "/ti/drivers/apps/Button",
-                        "/ti/drivers/apps/LED"
-                    ]
-                }
-            ]
-        }
-    ];
 } else if (deviceId.match(/CC27/)) {
     /* CC27XX */
     topModules = [
@@ -359,8 +300,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "displayName": "Serial Interfaces",
                     "description": "Data Transmission on a Wire",
                     "modules": [
-                        /* Only CC2745 & CC2744 devices have CAN peripheral */
-                        ...(deviceId.match(/CC274[4-5]/) ? ["/ti/drivers/CAN"] : []),
+                        /* Only CC2745 devices have CAN peripheral */
+                        ...(deviceId.match(/CC2745/) ? ["/ti/drivers/CAN"] : []),
                         "/ti/drivers/I2C",
                         "/ti/drivers/I2CTarget",
                         "/ti/drivers/I2S",
@@ -397,49 +338,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
             ]
         }
     ];
-} else if (deviceId.match(/CC283/)) {
-    /* CC283X */
-    topModules = [
-        {
-            displayName: displayName,
-            description: description,
-            modules: [
-                "/ti/display/Display",
-                "/ti/drivers/Board",
-                "/ti/drivers/DMA",
-                "/ti/drivers/GPIO",
-                "/ti/drivers/Power"
-            ],
-            "categories": [
-                {
-                    "displayName": "Serial Interfaces",
-                    "description": "Data Transmission on a Wire",
-                    "modules": [
-                        "/ti/drivers/UART2"
-                    ]
-                },
-                {
-                    "displayName": "Analog/Digital Conversion",
-                    "description": "Signal Transformation",
-                    "modules": [
-                    ]
-                },
-                {
-                    "displayName": "Storage Interfaces",
-                    "description": "Permanent Data Storage",
-                    "modules": [
-                    ]
-                },
-                {
-                    "displayName": "TI Driver Apps",
-                    "description": "TI Drivers Apps Configuration",
-                    "modules": [
-                        "/ti/drivers/apps/Button"
-                    ]
-                }
-            ]
-        }
-    ];
 } else if (deviceId.match(/CC35.*/)) {
     /* CC35XX */
     topModules = [
@@ -447,7 +345,7 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
             displayName: displayName,
             description: description,
             modules: [
-                "/ti/display/Display",
+                // "/ti/display/Display",
                 "/ti/drivers/Board",
                 // "/ti/drivers/Capture",
                 "/ti/drivers/DMA",
@@ -463,11 +361,10 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "description": "Data Transmission on a Wire",
                     "modules": [
                         "/ti/drivers/I2C",
-                        "/ti/drivers/I2S",
-                        "/ti/drivers/ITM",
+                        // "/ti/drivers/I2S",
+                        // "/ti/drivers/ITM",
                         "/ti/drivers/SPI",
                         "/ti/drivers/UART2",
-                        "/ti/drivers/CAN",
                         "/ti/drivers/SDIO"
                     ]
                 },
@@ -482,7 +379,7 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                     "displayName": "Storage Interfaces",
                     "description": "Permanent Data Storage",
                     "modules": [
-                        "/ti/drivers/SD"
+                        //"/ti/drivers/SD"
                     ]
                 },
                 {

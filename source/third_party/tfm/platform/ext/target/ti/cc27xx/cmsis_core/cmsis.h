@@ -18,11 +18,12 @@
 #ifndef __CMSIS_H__
 #define __CMSIS_H__
 
-/* IRQn + Cortex-M33 processor and core peripheral configuration */
-#include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(cmsis/device.h)
+/* CC27xx IRQn + Cortex-M33 processor and core peripheral configuration */
+#include <ti/devices/cc27xx/cmsis/cc27xx.h>
 
 #include "platform_irq.h"
 #include "system_core_init.h"
+
+#include <ti/devices/cc27xx/cmsis/core/core_cm33.h> /*!< Arm Cortex-M33 processor and core peripherals */
 
 #endif /*__CMSIS_H__ */

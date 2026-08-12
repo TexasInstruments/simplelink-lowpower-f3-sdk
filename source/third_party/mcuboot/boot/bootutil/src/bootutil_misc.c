@@ -135,16 +135,30 @@ boot_trailer_sz(uint32_t min_write_sz)
     return boot_status_sz(min_write_sz) + boot_trailer_info_sz();
 }
 
+#if MCUBOOT_SWAP_USING_SCRATCH
+/*
+ * Similar to `boot_trailer_sz` but this function returns the space used to
+ * store status in the scratch partition. The scratch partition only stores
+ * status during the swap of the last sector from primary/secondary (which
+ * is the first swap operation) and thus only requires space for one swap.
+ */
+static uint32_t
+boot_scratch_trailer_sz(uint32_t min_write_sz)
+{
+    return boot_status_entry_sz(min_write_sz) + boot_trailer_info_sz();
+}
+#endif
+
 int
 boot_status_entries(int image_index, const struct flash_area *fap)
 {
 #if MCUBOOT_SWAP_USING_SCRATCH
-    if (flash_area_get_id(fap) == FLASH_AREA_IMAGE_SCRATCH) {
+    if (fap->fa_id == FLASH_AREA_IMAGE_SCRATCH) {
         return BOOT_STATUS_STATE_COUNT;
     } else
 #endif
-    if (flash_area_get_id(fap) == FLASH_AREA_IMAGE_PRIMARY(image_index) ||
-        flash_area_get_id(fap) == FLASH_AREA_IMAGE_SECONDARY(image_index)) {
+    if (fap->fa_id == FLASH_AREA_IMAGE_PRIMARY(image_index) ||
+        fap->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index)) {
         return BOOT_STATUS_STATE_COUNT * BOOT_STATUS_MAX_ENTRIES;
     }
     return -1;
@@ -159,7 +173,7 @@ boot_status_off(const struct flash_area *fap)
     elem_sz = flash_area_align(fap);
 
 #if MCUBOOT_SWAP_USING_SCRATCH
-    if (flash_area_get_id(fap) == FLASH_AREA_IMAGE_SCRATCH) {
+    if (fap->fa_id == FLASH_AREA_IMAGE_SCRATCH) {
         off_from_end = boot_scratch_trailer_sz(elem_sz);
     } else {
 #endif
@@ -168,8 +182,8 @@ boot_status_off(const struct flash_area *fap)
     }
 #endif
 
-    assert(off_from_end <= flash_area_get_size(fap));
-    return flash_area_get_size(fap) - off_from_end;
+    assert(off_from_end <= fap->fa_size);
+    return fap->fa_size - off_from_end;
 }
 
 #ifdef MCUBOOT_ENC_IMAGES
@@ -254,7 +268,7 @@ boot_read_enc_key(const struct flash_area *fap, uint8_t slot, struct boot_status
 {
     uint32_t off;
 #if MCUBOOT_SWAP_SAVE_ENCTLV
-    uint32_t i;
+    int i;
 #endif
     int rc;
 
@@ -281,14 +295,26 @@ boot_read_enc_key(const struct flash_area *fap, uint8_t slot, struct boot_status
 #endif
 
 int
+boot_write_copy_done(const struct flash_area *fap)
+{
+    uint32_t off;
+
+    off = boot_copy_done_off(fap);
+    BOOT_LOG_DBG("writing copy_done; fa_id=%d off=0x%lx (0x%lx)",
+                 fap->fa_id, (unsigned long)off,
+                 (unsigned long)(fap->fa_off + off));
+    return boot_write_trailer_flag(fap, off, BOOT_FLAG_SET);
+}
+
+int
 boot_write_swap_size(const struct flash_area *fap, uint32_t swap_size)
 {
     uint32_t off;
 
     off = boot_swap_size_off(fap);
     BOOT_LOG_DBG("writing swap_size; fa_id=%d off=0x%lx (0x%lx)",
-                 flash_area_get_id(fap), (unsigned long)off,
-                 (unsigned long)flash_area_get_off(fap) + off);
+                 fap->fa_id, (unsigned long)off,
+                 (unsigned long)fap->fa_off + off);
     return boot_write_trailer(fap, off, (const uint8_t *) &swap_size, 4);
 }
 
@@ -302,8 +328,8 @@ boot_write_enc_key(const struct flash_area *fap, uint8_t slot,
 
     off = boot_enc_key_off(fap, slot);
     BOOT_LOG_DBG("writing enc_key; fa_id=%d off=0x%lx (0x%lx)",
-                 flash_area_get_id(fap), (unsigned long)off,
-                 (unsigned long)flash_area_get_off(fap) + off);
+                 fap->fa_id, (unsigned long)off,
+                 (unsigned long)fap->fa_off + off);
 #if MCUBOOT_SWAP_SAVE_ENCTLV
     rc = flash_area_write(fap, off, bs->enctlv[slot], BOOT_ENC_TLV_ALIGN_SIZE);
 #else
@@ -317,164 +343,28 @@ boot_write_enc_key(const struct flash_area *fap, uint8_t slot,
 }
 #endif
 
-#ifdef MCUBOOT_SWAP_USING_SCRATCH
-size_t
-boot_get_first_trailer_sector(struct boot_loader_state *state, size_t slot, size_t trailer_sz)
-{
-    size_t first_trailer_sector = boot_img_num_sectors(state, slot) - 1;
-    size_t sector_sz = boot_img_sector_size(state, slot, first_trailer_sector);
-    size_t trailer_sector_sz = sector_sz;
-
-    while (trailer_sector_sz < trailer_sz) {
-        /* Consider that the image trailer may span across sectors of different sizes */
-        --first_trailer_sector;
-        sector_sz = boot_img_sector_size(state, slot, first_trailer_sector);
-
-        trailer_sector_sz += sector_sz;
-    }
-
-    return first_trailer_sector;
-}
-
-/**
- * Returns the offset to the end of the first sector of a given slot that holds image trailer data.
- *
- * @param state      Current bootloader's state.
- * @param slot       The index of the slot to consider.
- * @param trailer_sz The size of the trailer, in bytes.
- *
- * @return The offset to the end of the first sector of the slot that holds image trailer data.
- */
-static uint32_t
-get_first_trailer_sector_end_off(struct boot_loader_state *state, size_t slot, size_t trailer_sz)
-{
-    size_t first_trailer_sector = boot_get_first_trailer_sector(state, slot, trailer_sz);
-
-    return boot_img_sector_off(state, slot, first_trailer_sector) +
-           boot_img_sector_size(state, slot, first_trailer_sector);
-}
-#endif /* MCUBOOT_SWAP_USING_SCRATCH */
-
 uint32_t bootutil_max_image_size(const struct flash_area *fap)
 {
-    struct boot_loader_state *state = NULL;
-#if defined(MCUBOOT_SINGLE_APPLICATION_SLOT) ||      \
-    defined(MCUBOOT_FIRMWARE_LOADER) ||              \
-    defined(MCUBOOT_SINGLE_APPLICATION_SLOT_RAM_LOAD)
-    (void) state;
+#if defined(MCUBOOT_SWAP_USING_SCRATCH) || defined(MCUBOOT_SINGLE_APPLICATION_SLOT)
     return boot_status_off(fap);
-#elif defined(MCUBOOT_SWAP_USING_SCRATCH)
-    size_t slot_trailer_sz = boot_trailer_sz(BOOT_WRITE_SZ(state));
-    size_t slot_trailer_off = flash_area_get_size(fap) - slot_trailer_sz;
-
-    /* If the trailer doesn't fit in the last sector of the primary or secondary slot, some padding
-     * might have to be inserted between the end of the firmware image and the beginning of the
-     * trailer to ensure there is enough space for the trailer in the scratch area when the last
-     * sector of the secondary will be copied to the scratch area.
-     *
-     * The value of the padding depends on the amount of trailer data that is contained in the first
-     * trailer containing part of the trailer in the primary and secondary slot.
-     */
-    size_t trailer_sector_primary_end_off =
-        get_first_trailer_sector_end_off(state, BOOT_PRIMARY_SLOT, slot_trailer_sz);
-    size_t trailer_sector_secondary_end_off =
-        get_first_trailer_sector_end_off(state, BOOT_SECONDARY_SLOT, slot_trailer_sz);
-
-    size_t trailer_sz_in_first_sector;
-
-    if (trailer_sector_primary_end_off > trailer_sector_secondary_end_off) {
-        trailer_sz_in_first_sector = trailer_sector_primary_end_off - slot_trailer_off;
-    } else {
-        trailer_sz_in_first_sector = trailer_sector_secondary_end_off - slot_trailer_off;
-    }
-
-    size_t trailer_padding = 0;
-    size_t scratch_trailer_sz = boot_scratch_trailer_sz(BOOT_WRITE_SZ(state));
-
-    if (scratch_trailer_sz > trailer_sz_in_first_sector) {
-        trailer_padding = scratch_trailer_sz - trailer_sz_in_first_sector;
-    }
-
-    return slot_trailer_off - trailer_padding;
-#elif defined(MCUBOOT_SWAP_USING_MOVE) || defined(MCUBOOT_SWAP_USING_OFFSET)
-    (void) state;
-
+#elif defined(MCUBOOT_SWAP_USING_MOVE)
     struct flash_sector sector;
     /* get the last sector offset */
-    int rc = flash_area_get_sector(fap, boot_status_off(fap), &sector);
+    #ifdef MCUBOOT_USE_FLASH_AREA_GET_SECTORS
+    int rc = flash_area_get_sectors(boot_status_off(fap), &sector, fap);
+    #endif
     if (rc) {
         BOOT_LOG_ERR("Unable to determine flash sector of the image trailer");
         return 0; /* Returning of zero here should cause any check which uses
                    * this value to fail.
                    */
     }
-    return flash_sector_get_off(&sector);
+    return fs->fs_off;
 #elif defined(MCUBOOT_OVERWRITE_ONLY)
-    (void) state;
     return boot_swap_info_off(fap);
 #elif defined(MCUBOOT_DIRECT_XIP)
-    (void) state;
     return boot_swap_info_off(fap);
 #elif defined(MCUBOOT_RAM_LOAD)
-    (void) state;
     return boot_swap_info_off(fap);
 #endif
 }
-
-/*
- * Compute the total size of the given image.  Includes the size of
- * the TLVs.
- */
-#if !defined(MCUBOOT_DIRECT_XIP) && \
-    !defined(MCUBOOT_SWAP_USING_OFFSET) && \
-    (!defined(MCUBOOT_OVERWRITE_ONLY) || \
-    defined(MCUBOOT_OVERWRITE_ONLY_FAST))
-int
-boot_read_image_size(struct boot_loader_state *state, int slot, uint32_t *size)
-{
-    const struct flash_area *fap;
-    struct image_tlv_info info;
-    uint32_t off;
-    uint32_t protect_tlv_size;
-    int rc;
-
-    assert(slot == BOOT_PRIMARY_SLOT || slot == BOOT_SECONDARY_SLOT);
-
-    fap = BOOT_IMG_AREA(state, slot);
-    assert(fap != NULL);
-
-    off = BOOT_TLV_OFF(boot_img_hdr(state, slot));
-
-    if (flash_area_read(fap, off, &info, sizeof(info))) {
-        rc = BOOT_EFLASH;
-        goto done;
-    }
-
-    protect_tlv_size = boot_img_hdr(state, slot)->ih_protect_tlv_size;
-    if (info.it_magic == IMAGE_TLV_PROT_INFO_MAGIC) {
-        if (protect_tlv_size != info.it_tlv_tot) {
-            rc = BOOT_EBADIMAGE;
-            goto done;
-        }
-
-        if (flash_area_read(fap, off + info.it_tlv_tot, &info, sizeof(info))) {
-            rc = BOOT_EFLASH;
-            goto done;
-        }
-    } else if (protect_tlv_size != 0) {
-        rc = BOOT_EBADIMAGE;
-        goto done;
-    }
-
-    if (info.it_magic != IMAGE_TLV_INFO_MAGIC) {
-        rc = BOOT_EBADIMAGE;
-        goto done;
-    }
-
-    *size = off + protect_tlv_size + info.it_tlv_tot;
-    rc = 0;
-
-done:
-    return rc;
-}
-#endif /* !MCUBOOT_OVERWRITE_ONLY */

@@ -47,14 +47,16 @@
 #include <ti/drivers/UART2.h>
 #include <ti/drivers/SHA2.h>
 #include "HSMBareMetal.h"
+#include "HSMBareMetalECCUtility.h"
 
 /* Driver configuration */
 #include "ti_drivers_config.h"
 
 /* Defines */
 #define PRIVATE_KEY_LENGTH          32
-#define PUBLIC_KEY_LENGTH           65
-#define ECDSA_SIGNATURE_LENGTH      64
+#define PRIVATE_KEY_BLOB_LENGTH     HSMBAREMETAL_GET_PRIVATE_KEY_KEYBLOB_BUF_SIZE(PRIVATE_KEY_LENGTH)
+#define PUBLIC_KEY_LENGTH           HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG + (2 * PRIVATE_KEY_LENGTH)
+#define ECDSA_SIGNATURE_LENGTH      2 * PRIVATE_KEY_LENGTH
 #define ECDSA_SIGNATURE_COMP_LENGTH PRIVATE_KEY_LENGTH
 #define MSG_MAX_LENGTH              512
 #define DIGEST_MAX_LENGTH           PRIVATE_KEY_LENGTH
@@ -71,17 +73,92 @@ static const char promptFail[]             = "\n\n\r****FAILURE!!!!!****";
 /* Message buffers */
 UART2_Handle uart2Handle;
 
-static uint8_t privateKeyMaterial[PRIVATE_KEY_LENGTH] = {0};
-static uint8_t publicKeyMaterial[PUBLIC_KEY_LENGTH]   = {0};
-static uint8_t ecdsaSignature[ECDSA_SIGNATURE_LENGTH] = {0};
+static uint8_t privateKeyMaterial[PRIVATE_KEY_LENGTH]   = {0};
+static uint8_t privateKeyBlob1[PRIVATE_KEY_BLOB_LENGTH] = {0};
+static uint8_t privateKeyBlob2[PRIVATE_KEY_BLOB_LENGTH] = {0};
+static uint8_t publicKeyMaterial[PUBLIC_KEY_LENGTH]     = {0};
+static uint8_t ecdsaSignature[ECDSA_SIGNATURE_LENGTH]   = {0};
 static char inputMessage[MSG_MAX_LENGTH];
 static uint8_t inputMessageDigest[DIGEST_MAX_LENGTH] = {0};
 
+static uint8_t otherPublicKeyMaterial[PUBLIC_KEY_LENGTH] = {0x04,
+                                                            /* X */
+                                                            0x83,
+                                                            0xA0,
+                                                            0x1A,
+                                                            0x93,
+                                                            0x78,
+                                                            0x39,
+                                                            0x5B,
+                                                            0xAB,
+                                                            0x9B,
+                                                            0xCD,
+                                                            0x6A,
+                                                            0x0A,
+                                                            0xD0,
+                                                            0x3C,
+                                                            0xC5,
+                                                            0x6D,
+                                                            0x56,
+                                                            0xE6,
+                                                            0xB1,
+                                                            0x92,
+                                                            0x50,
+                                                            0x46,
+                                                            0x5A,
+                                                            0x94,
+                                                            0xA2,
+                                                            0x34,
+                                                            0xDC,
+                                                            0x4C,
+                                                            0x6B,
+                                                            0x28,
+                                                            0xDA,
+                                                            0x9A,
+                                                            /* Y */
+                                                            0x89,
+                                                            0x1B,
+                                                            0x64,
+                                                            0x91,
+                                                            0x1D,
+                                                            0x08,
+                                                            0xCD,
+                                                            0xCC,
+                                                            0x51,
+                                                            0x95,
+                                                            0xA1,
+                                                            0x46,
+                                                            0x29,
+                                                            0xED,
+                                                            0x48,
+                                                            0xA3,
+                                                            0x60,
+                                                            0xDD,
+                                                            0xFD,
+                                                            0x45,
+                                                            0x96,
+                                                            0xDC,
+                                                            0x0A,
+                                                            0xB0,
+                                                            0x07,
+                                                            0xDB,
+                                                            0xF5,
+                                                            0x55,
+                                                            0x79,
+                                                            0x09,
+                                                            0xBF,
+                                                            0x47};
+
 static uint16_t inputMessageLength = 0;
+
+static uint32_t privateKeyAssetId = 0U;
+static uint32_t publicKeyAssetId  = 0U;
+HSMBareMetal_AssetPairStruct keyAssetIdPair;
 
 /* Static API forward declarations */
 static void generatePrivateKey(void);
 static void generatePublicKey(void);
+static void generateSharedSecret(void);
 static void hashInputMessage(void);
 static void ecdsaSignUserMessage(void);
 static void ecdsaVerifyUserMessage(void);
@@ -205,6 +282,9 @@ void *mainThread(void *arg0)
         displayFailureToUser(uart2Handle);
     }
 
+    keyAssetIdPair.privateKeyAssetID = &privateKeyAssetId;
+    keyAssetIdPair.publicKeyAssetID  = &publicKeyAssetId;
+
     result = HSMBareMetal_init();
 
     if (result != HSMBAREMETAL_STATUS_SUCCESS)
@@ -218,9 +298,26 @@ void *mainThread(void *arg0)
         displayFailureToUser(uart2Handle);
     }
 
+    result = HSMBareMetal_provisionHUK();
+
+    if (result == HSMBAREMETAL_STATUS_ERROR)
+    {
+        /* Print Failure
+         * HSMBareMetal_provisionHUK() failed.
+         * Toggle LED0 in an infinite loop.
+         */
+        displayFailureToUser(uart2Handle);
+    }
+    else if (result == HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED)
+    {
+        /* This means the device has already been provisioned with an HUK. */
+    }
+
     generatePrivateKey();
 
     generatePublicKey();
+
+    generateSharedSecret();
 
     /* Prompt startup message */
     printPrompt(uart2Handle, promptStartup, strlen(promptStartup));
@@ -286,6 +383,7 @@ static void generatePrivateKey(void)
 {
     int_fast16_t retval = HSMBAREMETAL_STATUS_ERROR;
     HSMBareMetal_RNGOperationStruct rngOperationStruct;
+    HSMBareMetal_AssetOperationStruct assetOperationStruct;
 
     retval = HSMBareMetal_RNGSwitchNRBGMode(NRBG_TYPE_TRNG);
 
@@ -306,6 +404,58 @@ static void generatePrivateKey(void)
     {
         displayFailureToUser(uart2Handle);
     }
+
+    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
+
+    assetOperationStruct.key              = privateKeyMaterial;
+    assetOperationStruct.keyblob          = privateKeyBlob1;
+    assetOperationStruct.keyLength        = PRIVATE_KEY_LENGTH;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_ECC;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB;
+    assetOperationStruct.eccOperationMode = HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY;
+    assetOperationStruct.eccCurveType     = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+    assetOperationStruct.eccKeyType       = HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY;
+
+    retval = HSMBareMetal_AssetOperation(&assetOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    retval = HSMBareMetal_freeKeyAsset(&privateKeyAssetId);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
+
+    assetOperationStruct.key              = privateKeyMaterial;
+    assetOperationStruct.keyblob          = privateKeyBlob2;
+    assetOperationStruct.keyLength        = PRIVATE_KEY_LENGTH;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_ECC;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB;
+    assetOperationStruct.eccOperationMode = HSMBareMetal_PK_MODE_ECDSA_SIGN;
+    assetOperationStruct.eccCurveType     = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+    assetOperationStruct.eccKeyType       = HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY;
+
+    retval = HSMBareMetal_AssetOperation(&assetOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    retval = HSMBareMetal_freeKeyAsset(&privateKeyAssetId);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
 }
 
 /*
@@ -317,8 +467,27 @@ static void generatePublicKey(void)
     HSMBareMetal_CryptoKeyStruct privateKey;
     HSMBareMetal_CryptoKeyStruct publicKey;
     HSMBareMetal_ECCOperationStruct eccOperationStruct;
+    HSMBareMetal_AssetOperationStruct assetOperationStruct;
 
-    HSMBareMetal_CryptoKeyPlaintext_initKey(&privateKey, privateKeyMaterial, PRIVATE_KEY_LENGTH);
+    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
+
+    assetOperationStruct.keyblob          = privateKeyBlob1;
+    assetOperationStruct.keyLength        = PRIVATE_KEY_LENGTH;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_ECC;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
+    assetOperationStruct.eccOperationMode = HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY;
+    assetOperationStruct.eccCurveType     = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+    assetOperationStruct.eccKeyType       = HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY;
+
+    retval = HSMBareMetal_AssetOperation(&assetOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    HSMBareMetal_CryptoKeyAssetStore_initKey(&privateKey, &privateKeyAssetId, PRIVATE_KEY_LENGTH);
 
     HSMBareMetal_CryptoKeyPlaintext_initKey(&publicKey, publicKeyMaterial, PUBLIC_KEY_LENGTH);
 
@@ -330,6 +499,72 @@ static void generatePublicKey(void)
     eccOperationStruct.operationCurveType = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
 
     retval = HSMBareMetal_ECCOperation(&eccOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    retval = HSMBareMetal_freeKeyAsset(&privateKeyAssetId);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+}
+
+/*
+ *  ======== generateSharedSecret ========
+ */
+static void generateSharedSecret(void)
+{
+    int_fast16_t retval = HSMBAREMETAL_STATUS_ERROR;
+    HSMBareMetal_CryptoKeyStruct privateKey;
+    HSMBareMetal_CryptoKeyStruct publicKey;
+    HSMBareMetal_CryptoKeyStruct sharedSecretKey;
+    HSMBareMetal_ECCOperationStruct eccOperationStruct;
+    HSMBareMetal_AssetOperationStruct assetOperationStruct;
+
+    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
+
+    assetOperationStruct.keyblob          = privateKeyBlob1;
+    assetOperationStruct.keyLength        = PRIVATE_KEY_LENGTH;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_ECC;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
+    assetOperationStruct.eccOperationMode = HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT;
+    assetOperationStruct.eccCurveType     = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+    assetOperationStruct.eccKeyType       = HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY;
+
+    retval = HSMBareMetal_AssetOperation(&assetOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    HSMBareMetal_CryptoKeyAssetStore_initKey(&privateKey, &privateKeyAssetId, PRIVATE_KEY_LENGTH);
+
+    HSMBareMetal_CryptoKeyPlaintext_initKey(&publicKey, publicKeyMaterial, PUBLIC_KEY_LENGTH);
+
+    HSMBareMetal_CryptoKeyPlaintext_initKey(&sharedSecretKey, otherPublicKeyMaterial, PUBLIC_KEY_LENGTH);
+
+    HSMBareMetal_ECCOperation_init(&eccOperationStruct);
+
+    eccOperationStruct.privateKey         = &privateKey;
+    eccOperationStruct.publicKey          = &publicKey;
+    eccOperationStruct.sharedSecret       = &sharedSecretKey;
+    eccOperationStruct.operationMode      = HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT;
+    eccOperationStruct.operationCurveType = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+
+    retval = HSMBareMetal_ECCOperation(&eccOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    retval = HSMBareMetal_freeKeyAsset(&privateKeyAssetId);
 
     if (retval != HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -368,8 +603,27 @@ static void ecdsaSignUserMessage(void)
     int_fast16_t retval = HSMBAREMETAL_STATUS_ERROR;
     HSMBareMetal_CryptoKeyStruct privateKey;
     HSMBareMetal_ECCOperationStruct eccOperationStruct;
+    HSMBareMetal_AssetOperationStruct assetOperationStruct;
 
-    HSMBareMetal_CryptoKeyPlaintext_initKey(&privateKey, privateKeyMaterial, PRIVATE_KEY_LENGTH);
+    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
+
+    assetOperationStruct.keyblob          = privateKeyBlob2;
+    assetOperationStruct.keyLength        = PRIVATE_KEY_LENGTH;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_ECC;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
+    assetOperationStruct.eccOperationMode = HSMBareMetal_PK_MODE_ECDSA_SIGN;
+    assetOperationStruct.eccCurveType     = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+    assetOperationStruct.eccKeyType       = HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY;
+
+    retval = HSMBareMetal_AssetOperation(&assetOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    HSMBareMetal_CryptoKeyAssetStore_initKey(&privateKey, &privateKeyAssetId, PRIVATE_KEY_LENGTH);
 
     HSMBareMetal_ECCOperation_init(&eccOperationStruct);
 
@@ -386,6 +640,13 @@ static void ecdsaSignUserMessage(void)
     {
         displayFailureToUser(uart2Handle);
     }
+
+    retval = HSMBareMetal_freeKeyAsset(&privateKeyAssetId);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
 }
 
 /*
@@ -396,8 +657,27 @@ static void ecdsaVerifyUserMessage(void)
     int_fast16_t retval = HSMBAREMETAL_STATUS_ERROR;
     HSMBareMetal_CryptoKeyStruct publicKey;
     HSMBareMetal_ECCOperationStruct eccOperationStruct;
+    HSMBareMetal_AssetOperationStruct assetOperationStruct;
 
-    HSMBareMetal_CryptoKeyPlaintext_initKey(&publicKey, publicKeyMaterial, PUBLIC_KEY_LENGTH);
+    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
+
+    assetOperationStruct.key              = publicKeyMaterial;
+    assetOperationStruct.keyLength        = PUBLIC_KEY_LENGTH;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_ECC;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_PLAINTEXT;
+    assetOperationStruct.eccOperationMode = HSMBareMetal_PK_MODE_ECDSA_VERIFY;
+    assetOperationStruct.eccCurveType     = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
+    assetOperationStruct.eccKeyType       = HSMBareMetal_ECC_ASSET_TYPE_PUBLIC_KEY;
+
+    retval = HSMBareMetal_AssetOperation(&assetOperationStruct);
+
+    if (retval != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        displayFailureToUser(uart2Handle);
+    }
+
+    HSMBareMetal_CryptoKeyAssetStore_initKey(&publicKey, &publicKeyAssetId, PUBLIC_KEY_LENGTH);
 
     HSMBareMetal_ECCOperation_init(&eccOperationStruct);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2020-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,12 +45,6 @@ let family   = Common.device2Family(system.deviceData, "ITM");
 let powerFamily = Common.device2Family(system.deviceData, "Power");
 let Power = system.getScript("/ti/drivers/power/Power" + powerFamily);
 let clockSpeed = Power.getClockFrequencies();
-
-/* CC35XX TPIU clock is not same as system clock */
-if(powerFamily=="WFF3"){
-    clockSpeed /= 4;
-}
-
 const MAXBAUDRATE = 12e6; /* Maximum Baud rate */
 const DEFAULTBAUDRATE = MAXBAUDRATE;
 const BITSPERPACKET = 32; /* Number of bits in a word */
@@ -223,9 +217,6 @@ if(family === "CC26XX" || family === "CC26X2") {
     devITM = system.getScript("/ti/drivers/itm/ITM" + family);
 }
 else if(family === "LPF3") {
-    devITM = system.getScript("/ti/drivers/itm/ITM" + family);
-}
-else if(family === "WFF3"){
     devITM = system.getScript("/ti/drivers/itm/ITM" + family);
 }
 else{

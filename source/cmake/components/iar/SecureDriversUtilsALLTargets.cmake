@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget SecureDriversUtils::secure_key_storage_enabled SecureDriversUtils::mbedtls_dependencies_hsm SecureDriversUtils::mbedtls_sw_dependencies_hsm)
+foreach(_expectedTarget SecureDriversUtils::secure_key_storage_enabled)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -56,22 +56,6 @@ add_library(SecureDriversUtils::secure_key_storage_enabled INTERFACE IMPORTED)
 
 set_target_properties(SecureDriversUtils::secure_key_storage_enabled PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "\$<\$<COMPILE_LANGUAGE:C>:ENABLE_KEY_STORAGE=1>"
-)
-
-# Create imported target SecureDriversUtils::mbedtls_dependencies_hsm
-add_library(SecureDriversUtils::mbedtls_dependencies_hsm INTERFACE IMPORTED)
-
-set_target_properties(SecureDriversUtils::mbedtls_dependencies_hsm PROPERTIES
-  INTERFACE_COMPILE_DEFINITIONS "\$<\$<COMPILE_LANGUAGE:C>:MBEDTLS_CONFIG_FILE=\"third_party/mbedtls/ti/configs/config-hsm.h\">;\$<\$<COMPILE_LANGUAGE:C>:MBEDTLS_PSA_CRYPTO_CONFIG_FILE=\"third_party/mbedtls/ti/configs/config-psa-crypto-hsm.h\">;\$<\$<COMPILE_LANGUAGE:C>:TI_SW_CRYPTO_ENABLED=0>"
-  INTERFACE_INCLUDE_DIRECTORIES "/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source;/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source/third_party/mbedtls/include;/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source/third_party/mbedtls/ti/port;/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source/ti/posix/iar"
-)
-
-# Create imported target SecureDriversUtils::mbedtls_sw_dependencies_hsm
-add_library(SecureDriversUtils::mbedtls_sw_dependencies_hsm INTERFACE IMPORTED)
-
-set_target_properties(SecureDriversUtils::mbedtls_sw_dependencies_hsm PROPERTIES
-  INTERFACE_COMPILE_DEFINITIONS "\$<\$<COMPILE_LANGUAGE:C>:MBEDTLS_CONFIG_FILE=\"third_party/mbedtls/ti/configs/config-hsm.h\">;\$<\$<COMPILE_LANGUAGE:C>:MBEDTLS_PSA_CRYPTO_CONFIG_FILE=\"third_party/mbedtls/ti/configs/config-psa-crypto-hsm.h\">;\$<\$<COMPILE_LANGUAGE:C>:TI_SW_CRYPTO_ENABLED=1>"
-  INTERFACE_INCLUDE_DIRECTORIES "/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source;/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source/third_party/mbedtls/include;/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source/third_party/mbedtls/ti/port;/home/developer/.conan/data/coresdk_lpf3/9.21.01.13/library-sb/ga/build/82b71d33cf9150c29d43e3f8729e690a6627d201/exports/coresdk_lpf3_9_21_01_13/source/ti/drivers/secure/../../../..//source/ti/posix/iar"
 )
 
 if(CMAKE_VERSION VERSION_LESS 3.0.0)

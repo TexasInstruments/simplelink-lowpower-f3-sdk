@@ -278,6 +278,8 @@ bool llCsProcessResultsIsModeZeroValid(uint16 connId, const RCL_CmdBleCs_Subeven
  *
  * input parameters
  *
+ * @param       connId - Connection Id
+ * @param       configId - configuration Id
  * @param       pBuffer - Buffer with subEvent step results
  *
  * output parameters
@@ -286,7 +288,7 @@ bool llCsProcessResultsIsModeZeroValid(uint16 connId, const RCL_CmdBleCs_Subeven
  *
  * @return      CS_PROCEDURE_DONE if procedure is complete, CS_PROCEDURE_ACTIVE otherwise
  */
-uint8_t llCsRetrieveProcedureCompletionStatus(RCL_MultiBuffer* pBuffer);
+uint8_t llCsRetrieveProcedureCompletionStatus(uint16 connId, uint8 configId, RCL_MultiBuffer* pBuffer);
 
 /*******************************************************************************
  * @fn          llCsSetupRclRelativeOffset
@@ -299,6 +301,7 @@ uint8_t llCsRetrieveProcedureCompletionStatus(RCL_MultiBuffer* pBuffer);
  * input parameters
  *
  * @param       connId - connection Id
+ * @param       configId - configuration Id
  *
  * output parameters
  *
@@ -306,7 +309,7 @@ uint8_t llCsRetrieveProcedureCompletionStatus(RCL_MultiBuffer* pBuffer);
  *
  * @return      Calculated relative offset in microseconds
  */
-uint32_t llCsSetupRclRelativeOffset(uint16 connId);
+uint32_t llCsSetupRclRelativeOffset(uint16 connId, uint8_t configId);
 
 /*******************************************************************************
  * @fn          llCsSetupRclAnchorPoint
@@ -319,6 +322,7 @@ uint32_t llCsSetupRclRelativeOffset(uint16 connId);
  * input parameters
  *
  * @param       connId - connection Id
+ * @param       configId - configuration Id
  *
  * output parameters
  *
@@ -326,7 +330,7 @@ uint32_t llCsSetupRclRelativeOffset(uint16 connId);
  *
  * @return      Anchor point timestamp in microseconds
  */
-uint32_t llCsSetupRclAnchorPoint(uint16 connId);
+uint32_t llCsSetupRclAnchorPoint(uint16 connId, uint8_t configId);
 
 /*******************************************************************************
  * @fn          llCsSetupRclTimerDrift
@@ -339,6 +343,7 @@ uint32_t llCsSetupRclAnchorPoint(uint16 connId);
  * input parameters
  *
  * @param       connId - connection Id
+ * @param       configId - configuration Id
  *
  * output parameters
  *
@@ -346,7 +351,7 @@ uint32_t llCsSetupRclAnchorPoint(uint16 connId);
  *
  * @return      Calculated timer drift in microseconds
  */
-uint32_t llCsSetupRclTimerDrift(uint16 connId);
+uint32_t llCsSetupRclTimerDrift(uint16 connId, uint8_t configId);
 
 /*******************************************************************************
  * @fn          llCsSetupRclRxWidening
@@ -383,11 +388,11 @@ uint16_t llCsSetupRclRxWidening(uint16 connId, uint32_t timerDrift);
  *
  * output parameters
  *
- * @param       csRole - CS Initiator or CS Reflector.
+ * @param       None.
  *
  * @return      TRUE if delay is allowed, FALSE otherwise
  */
-bool llCsSetupRclAllowDelay(uint8_t csRole);
+bool llCsSetupRclAllowDelay(void);
 
 /*******************************************************************************
  * @fn          llCsGetScaFactor
@@ -409,48 +414,6 @@ bool llCsSetupRclAllowDelay(uint8_t csRole);
  * @return      SCA factor value used in timing calculations
  */
 uint16_t llCsGetScaFactor(uint16 connId);
-
-/*******************************************************************************
- * @fn          llCsGetMaxSubEventsPerProcedure
- *
- * @brief       Get the maximum number of subevents per CS procedure
- *
- * @details     Returns CS_MAX_SUBEVENTS_PER_PROCEDURE, or the configured
- *              subevents-per-event value when in test mode with a zero
- *              subevent interval.
- *
- * input parameters
- *
- * @param       None.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      Maximum number of subevents per procedure
- */
-uint8_t llCsGetMaxSubEventsPerProcedure(void);
-
-/*******************************************************************************
- * @fn          llCsGetRclSubEventDoneStatus
- *
- * @brief       Get the subevent done status from an RCL result buffer
- *
- * @details     Reads the subeventDoneStatus field directly from the RCL-written
- *              result buffer, allowing the subevent completion state to be
- *              determined independently of the last-command-done event.
- *
- * input parameters
- *
- * @param       pBuffer - Buffer containing subevent results
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      CS_SUBEVENT_DONE or CS_SUBEVENT_CONTINUE
- */
-uint8_t llCsGetRclSubEventDoneStatus(RCL_MultiBuffer* pBuffer);
 
 #endif //LL_CS_RCL_INTERNAL_H
 

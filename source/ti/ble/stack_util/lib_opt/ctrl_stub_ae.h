@@ -97,7 +97,7 @@ extern void llSetExtHdrFlags(aeSetDataCmd_t* pCmdParams);
 extern void LL_rclAdvTxFinished(void);
 extern llStatus_t llValidateAEAdvDataLength(aeSetDataCmd_t* pCmdParams, advSet_t* pAdvSet);
 extern void llAdvProcessExtendedAdv(advSet_t* pAdvSet);
-extern void llAEProcessAuxAdvInd(advSet_t* pAdvSet);
+extern void llAEProcessAuxAdvInd(advSet_t* pAdvSet, uint8_t numActiveAdvSets);
 extern void llupdateAuxAdvHeader(sortedAdv_t* pNextAdvSet);
 extern bool LL_AeEnable(void);
 extern uint16_t llCalculateTotalExtAdvTime(sortedAdv_t* aeNode);
@@ -112,7 +112,6 @@ extern bool llAE_NextAdvIsExtended(void);
 extern uint8 LL_AE_GetNextChannel(void);
 extern void LL_AE_GetTxUsageParams(llTxUsageParams_t* pExtAdvTxParams);
 extern void setAeBleUserConfig(void);
-extern advSet_t* LL_AE_GetNextAdvSet(void);
 
 
 // Wrapper functions for the feature implementations
@@ -130,7 +129,7 @@ void OPT_llSetExtHdrFlags(aeSetDataCmd_t* pCmdParams);
 void OPT_LL_rclAdvTxFinished(void);
 llStatus_t OPT_llValidateAEAdvDataLength(aeSetDataCmd_t* pCmdParams, advSet_t* pAdvSet);
 void OPT_llAdvProcessExtendedAdv(advSet_t* pAdvSet);
-void OPT_llAEProcessAuxAdvInd(advSet_t* pAdvSet);
+void OPT_llAEProcessAuxAdvInd(advSet_t* pAdvSet, uint8_t numActiveAdvSets);
 void OPT_llupdateAuxAdvHeader(sortedAdv_t* pNextAdvSet);
 bool OPT_LL_AeEnable(void);
 uint16_t OPT_llCalculateTotalExtAdvTime(sortedAdv_t* aeNode);
@@ -145,6 +144,5 @@ bool OPT_llAE_NextAdvIsExtended(void);
 uint8 OPT_LL_AE_GetNextChannel(void);
 void OPT_LL_AE_GetTxUsageParams(llTxUsageParams_t* pExtAdvTxParams);
 void OPT_setAeBleUserConfig(void);
-advSet_t* OPT_LL_AE_GetNextAdvSet(void);
 
 #endif /* CTRL_AE_H_ */

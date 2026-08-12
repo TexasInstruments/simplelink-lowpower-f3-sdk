@@ -32,6 +32,7 @@
 /*
  *  ======== RCL_Buffer.c ========
  */
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -59,7 +60,7 @@ void RCL_TxBuffer_put(List_List *list, RCL_Buffer_TxBuffer *elem)
 
     List_put(list, (List_Elem *)elem);
     /* Notify running command */
-    (void) RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventTxBufferUpdate);
+    RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventTxBufferUpdate);
 }
 
 /*
@@ -75,20 +76,20 @@ uint8_t *RCL_TxBuffer_init(RCL_Buffer_TxBuffer *buffer, uint32_t numPad, uint32_
     else
     {
         buffer->state = RCL_BufferStatePending;
-        buffer->length = (uint16_t) (sizeof(buffer->numPad) + numPad + hdrLen + dataLen);
-        buffer->numPad = (uint8_t) numPad;
+        buffer->length = sizeof(buffer->numPad) + numPad + hdrLen + dataLen;
+        buffer->numPad = numPad;
         /* Start writing at pad0, then continue into data field */
         uint8_t *data = &buffer->pad0;
-        if (numPad > 0U)
+        if (numPad > 0)
         {
             --numPad;
-            *data = (uint8_t) numPad;
+            *data = numPad;
             data = buffer->data;
         }
-        while (numPad > 0U)
+        while (numPad > 0)
         {
             --numPad;
-            *data++ = (uint8_t) numPad;
+            *data++ = numPad;
         }
         return data;
     }
@@ -110,8 +111,8 @@ void RCL_MultiBuffer_clear(RCL_MultiBuffer *buffer)
 void RCL_MultiBuffer_init(RCL_MultiBuffer *buffer, size_t size)
 {
     size -= offsetof(RCL_MultiBuffer, data);
-    RCL_Debug_assert(size > 0U && size <= 0xFFFFU);
-    buffer->length = (uint16_t) size;
+    RCL_Debug_assert(size > 0 && size <= 0xFFFF);
+    buffer->length = size;
     RCL_MultiBuffer_clear(buffer);
 
 }
@@ -123,8 +124,7 @@ void RCL_MultiBuffer_put(List_List *list, RCL_MultiBuffer *elem)
 {
     List_put(list, (List_Elem *)elem);
     /* Notify running command */
-    (void) RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventRxBufferUpdate);
-
+    RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventRxBufferUpdate);
 }
 
 /*
@@ -136,8 +136,8 @@ RCL_Buffer_DataEntry *RCL_MultiBuffer_RxEntry_get(List_List *list, List_List *co
     RCL_MultiBuffer *multiBuffer = (RCL_MultiBuffer *)list->head;
     if (multiBuffer != NULL)
     {
-        uint32_t headIndex = (uint32_t) multiBuffer->headIndex;
-        uint32_t tailIndex = (uint32_t) multiBuffer->tailIndex;
+        int32_t headIndex = multiBuffer->headIndex;
+        int32_t tailIndex = multiBuffer->tailIndex;
 
         RCL_Debug_assert(headIndex <= tailIndex);
 
@@ -149,7 +149,7 @@ RCL_Buffer_DataEntry *RCL_MultiBuffer_RxEntry_get(List_List *list, List_List *co
                 multiBuffer = (RCL_MultiBuffer *) List_head(list);
                 headIndex = 0;
                 tailIndex = multiBuffer->tailIndex;
-                RCL_Debug_assert(multiBuffer->headIndex == 0U);
+                RCL_Debug_assert(multiBuffer->headIndex == 0);
 
             }
         }
@@ -159,7 +159,7 @@ RCL_Buffer_DataEntry *RCL_MultiBuffer_RxEntry_get(List_List *list, List_List *co
             rxEntry = (RCL_Buffer_DataEntry *) &multiBuffer->data[headIndex];
             headIndex += RCL_Buffer_DataEntry_paddedLen(rxEntry->length);
             RCL_Debug_assert(headIndex <= tailIndex);
-            multiBuffer->headIndex = (uint16_t) headIndex;
+            multiBuffer->headIndex = headIndex;
             if (headIndex >= tailIndex)
             {
                 if (multiBuffer->state == RCL_BufferStateFinished)
@@ -196,20 +196,18 @@ void RCL_MultiBuffer_ListInfo_init(RCL_MultiBuffer_ListInfo *listInfo, List_List
     RCL_Debug_assert(listInfo != NULL);
     RCL_Debug_assert(list != NULL);
 
-    if (listInfo != NULL && list != NULL)
+    listInfo->multiBuffers = list;
+    listInfo->nextBuffer = (RCL_MultiBuffer *) List_head(list);
+    if (listInfo->nextBuffer != NULL)
     {
-        listInfo->multiBuffers = list;
-        listInfo->nextBuffer = (RCL_MultiBuffer *) List_head(list);
-        if (listInfo->nextBuffer != NULL)
-        {
-            listInfo->nextIndex = listInfo->nextBuffer->headIndex;
-        }
-        else
-        {
-            listInfo->nextIndex = 0;
-        }
+        listInfo->nextIndex = listInfo->nextBuffer->headIndex;
+    }
+    else
+    {
+        listInfo->nextIndex = 0;
     }
 }
+
 /*
  *  ======== RCL_MultiBuffer_RxEntry_next ========
  */
@@ -218,55 +216,46 @@ RCL_Buffer_DataEntry *RCL_MultiBuffer_RxEntry_next(RCL_MultiBuffer_ListInfo *lis
     RCL_Buffer_DataEntry *rxEntry = NULL;
 
     RCL_Debug_assert(listInfo != NULL);
-    if (listInfo != NULL)
-    {
-        RCL_MultiBuffer *nextBuffer = listInfo->nextBuffer;
+    RCL_MultiBuffer *nextBuffer = listInfo->nextBuffer;
 
-        if (nextBuffer == NULL && listInfo->multiBuffers != NULL)
+    if (nextBuffer == NULL)
+    {
+        RCL_Debug_assert(listInfo->multiBuffers != NULL);
+        nextBuffer = RCL_MultiBuffer_head(listInfo->multiBuffers);
+    }
+
+    if (nextBuffer != NULL)
+    {
+        int32_t nextIndex = listInfo->nextIndex;
+        int32_t tailIndex = nextBuffer->tailIndex;
+        if (nextIndex >= tailIndex)
         {
-            RCL_Debug_assert(listInfo->multiBuffers != NULL);
-            nextBuffer = RCL_MultiBuffer_head(listInfo->multiBuffers);
+            if (nextBuffer->state == RCL_BufferStateFinished)
+            {
+                nextBuffer = (RCL_MultiBuffer *) List_next((List_Elem *) nextBuffer);
+                nextIndex = 0;
+                tailIndex = nextBuffer->tailIndex;
+            }
         }
 
-        if (nextBuffer != NULL)
+        if (nextIndex < tailIndex)
         {
-            uint32_t nextIndex = (uint32_t) listInfo->nextIndex;
-            uint32_t tailIndex = (uint32_t) nextBuffer->tailIndex;
+            rxEntry = (RCL_Buffer_DataEntry *) &nextBuffer->data[nextIndex];
+            nextIndex += RCL_Buffer_DataEntry_paddedLen(rxEntry->length);
+            RCL_Debug_assert(nextIndex <= tailIndex);
             if (nextIndex >= tailIndex)
             {
                 if (nextBuffer->state == RCL_BufferStateFinished)
                 {
                     nextBuffer = (RCL_MultiBuffer *) List_next((List_Elem *) nextBuffer);
                     nextIndex = 0;
-                    tailIndex = (uint32_t) nextBuffer->tailIndex;
                 }
             }
-
-            if (nextIndex < tailIndex)
-            {
-                rxEntry = (RCL_Buffer_DataEntry *) &nextBuffer->data[nextIndex];
-                nextIndex += RCL_Buffer_DataEntry_paddedLen(rxEntry->length);
-                RCL_Debug_assert(nextIndex <= tailIndex);
-                if (nextIndex >= tailIndex)
-                {
-                    if (nextBuffer->state == RCL_BufferStateFinished)
-                    {
-                        nextBuffer = (RCL_MultiBuffer *) List_next((List_Elem *) nextBuffer);
-                        nextIndex = 0;
-                    }
-                }
-            }
-            listInfo->nextBuffer = nextBuffer;
-            listInfo->nextIndex = (uint16_t) nextIndex;
         }
-        return rxEntry;
+        listInfo->nextBuffer = nextBuffer;
+        listInfo->nextIndex = nextIndex;
     }
-    else
-    {
-        /* If listInfo is NULL we cannot advance. Return NULL to indicate “no entry”. */
-        return NULL;
-    }
-
+    return rxEntry;
 }
 
 /*
@@ -276,30 +265,15 @@ bool RCL_MultiBuffer_RxEntry_isLast(RCL_MultiBuffer_ListInfo *listInfo)
 {
     RCL_Debug_assert(listInfo != NULL);
 
-    if (listInfo != NULL)
-    {
-        RCL_MultiBuffer *nextBuffer = listInfo->nextBuffer;
+    RCL_MultiBuffer *nextBuffer = listInfo->nextBuffer;
 
-        if (nextBuffer != NULL)
-        {
-            return RxEntry_isAtEnd(nextBuffer, listInfo->nextIndex);
-        }
-        else
-        {
-            RCL_Debug_assert(listInfo->multiBuffers != NULL);
-            if (listInfo->multiBuffers != NULL)
-            {
-                return RxEntry_isAtEnd((RCL_MultiBuffer *)List_head(listInfo->multiBuffers), 0);
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
-    else
+    if (nextBuffer != NULL)
     {
-        return false;
+        return RxEntry_isAtEnd(nextBuffer, listInfo->nextIndex);
+    }
+    else {
+        RCL_Debug_assert(listInfo->multiBuffers != NULL);
+        return RxEntry_isAtEnd((RCL_MultiBuffer *)List_head(listInfo->multiBuffers), 0);
     }
 }
 
@@ -328,7 +302,7 @@ size_t RCL_Buffer_readPartialRxBuffer(RCL_Buffer_DataEntry *dataEntry, size_t en
         {
             LRF_peekRxFifoWords((uint32_t *)dataEntry, numWords, rp);
             /* Write actual number of available bytes in length field */
-            dataEntry->length = (uint16_t) (numBytesAvailable - sizeof(dataEntry->length));
+            dataEntry->length = numBytesAvailable - sizeof(dataEntry->length);
         }
         HwiP_restore(key);
     }
@@ -369,7 +343,7 @@ RCL_MultiBuffer *RCL_MultiBuffer_getBuffer(RCL_MultiBuffer *curBuffer,
         if (minLength + curBuffer->tailIndex > curBuffer->length)
         {
             /* Not room in this buffer. Need to go to next buffer - unless buffer is empty */
-            if (curBuffer->tailIndex == 0U)
+            if (curBuffer->tailIndex == 0)
             {
                 /* New buffer already - give up, as buffer is too small */
                 curBuffer = NULL;
@@ -455,7 +429,7 @@ static bool RxEntry_isAtEnd(RCL_MultiBuffer *multiBuffer, uint16_t curIndex)
             {
                 /* Look in next MultiBuffer to see if there is data there */
                 multiBuffer = (RCL_MultiBuffer *) List_next((List_Elem *)multiBuffer);
-                if (multiBuffer != NULL && multiBuffer->tailIndex > 0U)
+                if (multiBuffer != NULL && multiBuffer->tailIndex > 0)
                 {
                     isAtEnd = false;
                 }
@@ -478,3 +452,4 @@ static void List_consumeAndStore(List_List *list, List_List *consumedBuffers)
         List_put(consumedBuffers, consumedBuffer);
     }
 }
+

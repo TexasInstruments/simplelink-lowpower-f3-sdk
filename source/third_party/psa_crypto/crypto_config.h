@@ -18,9 +18,59 @@
 #ifndef CRYPTO_CONFIG_H
 #define CRYPTO_CONFIG_H
 
-#include <ti/devices/DeviceFamily.h>
+#ifdef TFM_BUILD
+    /* Enable crypto drivers based on SysConfig */
+    #include "ti_drivers_config.h" /* SysConfig generated driver config */
 
-#ifndef TFM_BUILD
+    #ifdef CONFIG_TI_DRIVERS_AESCBC_COUNT
+        #define ENABLE_TI_CRYPTO_AESCBC
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_AESCCM_COUNT
+        #define ENABLE_TI_CRYPTO_AESCCM
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_AESCMAC_COUNT
+        /* Two AESCMAC drivers instances are req'd to support both CMAC and CBCMAC */
+        #if (CONFIG_TI_DRIVERS_AESCMAC_COUNT < 2)
+            #error "At least 2 AES CMAC driver instances are required"
+        #endif
+        #define ENABLE_TI_CRYPTO_AESCMAC
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_AESCTR_COUNT
+        #define ENABLE_TI_CRYPTO_AESCTR
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_AESECB_COUNT
+        #define ENABLE_TI_CRYPTO_AESECB
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_AESGCM_COUNT
+        #define ENABLE_TI_CRYPTO_AESGCM
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_ECDH_COUNT
+        #define ENABLE_TI_CRYPTO_ECDH
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_ECDSA_COUNT
+        #define ENABLE_TI_CRYPTO_ECDSA
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_EDDSA_COUNT
+        #define ENABLE_TI_CRYPTO_EDDSA
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_SHA2_COUNT
+        #define ENABLE_TI_CRYPTO_SHA2
+    #endif
+
+    #ifdef CONFIG_TI_DRIVERS_RNG_COUNT
+        #define ENABLE_TI_CRYPTO_TRNG
+    #endif
+
+#else
     /* Secure only configuration */
 
     #define ENABLE_TI_CRYPTO_AESCBC
@@ -39,13 +89,16 @@
 
     #define ENABLE_TI_CRYPTO_ECDSA
 
-    #define ENABLE_TI_CRYPTO_EDDSA
-
-    /* Devices with HSM use RNG driver for random number operations */
-    #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
         #define ENABLE_TI_CRYPTO_RNG
     #else
         #define ENABLE_TI_CRYPTO_TRNG
+    #endif
+
+    #if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+
+        #define ENABLE_TI_CRYPTO_EDDSA
+
     #endif
 
     #define ENABLE_TI_CRYPTO_SHA2

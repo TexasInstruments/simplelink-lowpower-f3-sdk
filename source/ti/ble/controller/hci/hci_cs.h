@@ -324,7 +324,7 @@ extern void HCI_CS_ReadRemoteFAETableCompleteCback(uint8 status,
  * input parameters
  *
  * @param       status     - event status
- * @param       connHandle - connection identifier
+ * @param       connHanlde - connection identifier
  *
  * output parameters
  *
@@ -341,10 +341,10 @@ extern void HCI_CS_SecurityEnableCompleteCback(uint8 status, uint16 connHandle);
  *
  * input parameters
  *
- * @param       connHandle - connection identifier
- * @param       configId   - CS configuration ID
- * @param       enable     - indicates enable or disable
  * @param       status     - event status
+ * @param       connHanlde - connection identifier
+ * @param       enable     - indicates enable or disable
+ * @param       enableData - enable data
  *
  * output parameters
  *
@@ -353,8 +353,9 @@ extern void HCI_CS_SecurityEnableCompleteCback(uint8 status, uint16 connHandle);
  * @return      None
  */
 extern void
-HCI_CS_ProcedureEnableCompleteCback(uint16 connHandle, uint8_t configId,
-                                    uint8 enable, uint8 status);
+HCI_CS_ProcedureEnableCompleteCback(uint8 status, uint16 connHandle,
+                                    uint8 enable,
+                                    csProcedureEnable_t* enableData);
 
 /*******************************************************************************
  * @fn          HCI_CS_SubeventResultsProcess

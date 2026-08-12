@@ -32,11 +32,8 @@ psa_status_t tfm_crypto_random_interface(psa_invec in_vec[],
 #else
     uint8_t *output = out_vec[0].base;
     size_t output_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-    return ti_psa_generate_random(output, output_size);
-#else
+
     return psa_generate_random(output, output_size);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 #endif
 }
 /*!@}*/

@@ -888,66 +888,43 @@ typedef uint8 hciStatus_t;
 /// @brief LE Connection Complete Event
 typedef struct
 {
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint8_t  status;                  //!< Status of event
-  uint16_t connectionHandle;        //!< Connection handle
-  uint8_t  role;                    //!< Role of connection
-  uint8_t  peerAddrType;            //!< Peer address type
-  uint8_t  peerAddr[B_ADDR_LEN];    //!< Peer address
-  uint16_t connInterval;            //!< Connection interval
-  uint16_t connLatency;             //!< Connection latency
-  uint16_t connTimeout;             //!< Connection supervision timeout
-  uint8_t  clockAccuracy;           //!< Connection clock accuracy
+  event_hdr_t  hdr;               //!< osal event header
+  uint8  BLEEventCode;            //!< BLE Event Code
+  uint8  status;                  //!< status of event
+  uint16 connectionHandle;        //!< connection handle
+  uint8  role;                    //!< role of connection
+  uint8  peerAddrType;            //!< peer address type
+  uint8  peerAddr[B_ADDR_LEN];    //!< peer address
+  uint16 connInterval;            //!< connection interval
+  uint16 connLatency;             //!< connection latency
+  uint16 connTimeout;             //!< connection supervision timeout
+  uint8  clockAccuracy;           //!< connection clock accuracy
 } hciEvt_BLEConnComplete_t;
 
-/// @brief LE Enhanced Connection Complete V1 Event
+/// @brief LE Enhanced Connection Complete Event
 typedef struct
 {
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint8_t  status;                  //!< Status of event
-  uint16_t connectionHandle;        //!< Connection handle
-  uint8_t  role;                    //!< Role of connection
-  uint8_t  peerAddrType;            //!< Peer address type
-  uint8_t  peerAddr[B_ADDR_LEN];    //!< Peer address
-  uint16_t connInterval;            //!< Connection interval
-  uint16_t connLatency;             //!< Connection latency
-  uint16_t connTimeout;             //!< Connection  supervision timeout
-  uint8_t  clockAccuracy;           //!< Connection clock accuracy
+  event_hdr_t  hdr;               //!< osal event header
+  uint8  BLEEventCode;            //!< BLE Event Code
+  uint8  status;                  //!< status of event
+  uint16 connectionHandle;        //!< connection handle
+  uint8  role;                    //!< role of connection
+  uint8  peerAddrType;            //!< peer address type
+  uint8  peerAddr[B_ADDR_LEN];    //!< peer address
+  uint16 connInterval;            //!< connection interval
+  uint16 connLatency;             //!< connection latency
+  uint16 connTimeout;             //!< connection supervision timeout
+  uint8  clockAccuracy;           //!< connection clock accuracy
   // Note: These fields normally follow peerAddr. Put here for Host optimization.
-  uint8_t  localRPA[B_ADDR_LEN];    //!< Local resolvable private address
-  uint8_t  peerRPA[B_ADDR_LEN];     //!< Peer resolvable private address
-} hciEvt_BLEEnhConnCompleteV1_t;
-
-/// @brief LE Enhanced Connection Complete V2 Event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint8_t  status;                  //!< Status of event
-  uint16_t connectionHandle;        //!< Connection handle
-  uint8_t  role;                    //!< Role of connection
-  uint8_t  peerAddrType;            //!< Peer address type
-  uint8_t  peerAddr[B_ADDR_LEN];    //!< Peer address
-  uint16_t connInterval;            //!< Connection interval
-  uint16_t connLatency;             //!< Connection latency
-  uint16_t connTimeout;             //!< Connection  supervision timeout
-  uint8_t  clockAccuracy;           //!< Connection clock accuracy
-  // Note: These fields normally follow peerAddr. Put here for Host optimization.
-  uint8_t  localRPA[B_ADDR_LEN];    //!< Local resolvable private address
-  uint8_t  peerRPA[B_ADDR_LEN];     //!< Peer resolvable private address
-  // The follwing fields belong to version 2 of this event.
-  uint8_t  advHandle;               //!< Used to identify an advertising set
-  uint16_t syncHandle;              //!< Identifying the periodic advertising train
-} hciEvt_BLEEnhConnCompleteV2_t;
+  uint8  localRPA[B_ADDR_LEN];    //!< local resolvable private address
+  uint8  peerRPA[B_ADDR_LEN];     //!< peer resolvable private address
+} hciEvt_BLEEnhConnComplete_t;
 
 /// @brief LE Connection Complete Event
 typedef union _hciEvt_BLEConnComplete_u_
 {
-  hciEvt_BLEConnComplete_t        legEvt;     //!< Connection complete event
-  hciEvt_BLEEnhConnCompleteV1_t   enhEvtV1;   //!< Enhanced connection complete V1 event
-  hciEvt_BLEEnhConnCompleteV2_t   enhEvtV2;   //!< Enhanced connection complete V2 event
+  hciEvt_BLEConnComplete_t      legEvt;   //!< connection complete event
+  hciEvt_BLEEnhConnComplete_t   enhEvt;   //!< enhanced connection complete event
 } hciEvt_BLEConnComplete_u;
 
 /// @brief LE Advertising Report Event
@@ -1274,69 +1251,34 @@ typedef struct
   void   *iqSamples;              //!< list of interleaved I/Q samples (list size is dataLen*2)
 } hciEvt_BLEExtCteConnectionlessIqReport_t;
 
-/// @brief LE Periodic Advertising Sync Established V1 event
+/// @brief LE Periodic Advertising Sync Established event
 typedef struct
 {
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint8_t  status;                  //!< Status of event
-  uint16_t syncHandle;              //!< Sync handle
-  uint8_t  sid;                     //!< Peer SID
-  uint8_t  addrType;                //!< Peer address type
-  uint8_t  address[B_ADDR_LEN];     //!< Peer address
-  uint8_t  phy;                     //!< Peer PHY
-  uint16_t periodicInterval;        //!< Periodic interval
-  uint8_t  clockAccuracy;           //!< Peer Clock Accuracy
-} hciEvt_BLEPeriodicAdvSyncEstablishedV1_t;
+  event_hdr_t  hdr;               //!< osal event header
+  uint8  BLEEventCode;            //!< BLE Event Code
+  uint8  status;                  //!< status of event
+  uint16 syncHandle;              //!< sync handle
+  uint8  sid;                     //!< Peer SID
+  uint8  addrType;                //!< Peer address type
+  uint8  address[B_ADDR_LEN];     //!< Peer address
+  uint8  phy;                     //!< Peer PHY
+  uint16 periodicInterval;        //!< Periodic interval
+  uint8  clockAccuracy;           //!< Peer Clock Accuracy
+} hciEvt_BLEPeriodicAdvSyncEstablished_t;
 
-/// @brief LE Periodic Advertising Sync Established V2 event
+/// @brief LE Periodic Advertising Report event
 typedef struct
 {
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint8_t  status;                  //!< Status of event
-  uint16_t syncHandle;              //!< Sync handle
-  uint8_t  sid;                     //!< Peer SID
-  uint8_t  addrType;                //!< Peer address type
-  uint8_t  address[B_ADDR_LEN];     //!< Peer address
-  uint8_t  phy;                     //!< Peer PHY
-  uint16_t periodicInterval;        //!< Periodic interval
-  uint8_t  clockAccuracy;           //!< Peer Clock Accuracy
-  uint8_t  numSubevents;            //!< Number of Subevents
-  uint8_t  subeventInterval;        //!< Subevent interval
-  uint8_t  responseSlotDelay;       //!< Response slot delay
-  uint8_t  responseSlotSpacing;     //!< Response slot spacing
-} hciEvt_BLEPeriodicAdvSyncEstablishedV2_t;
-
-/// @brief LE Periodic Advertising Report V1 event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint16_t syncHandle;              //!< Sync handle
-  int8_t   txPower;                 //!< Tx Power information
-  int8_t   rssi;                    //!< RSSI of the received packet
-  uint8_t  cteType;                 //!< CTE type received
-  uint8_t  dataStatus;              //!< Periodic data status
-  uint8_t  dataLen;                 //!< Periodic data length
-  uint8_t  *data;                   //!< Periodic data received from peer
-} hciEvt_BLEPeriodicAdvReportV1_t;
-
-/// @brief LE Periodic Advertising Report V2 event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint16_t syncHandle;              //!< Sync handle
-  int8_t   txPower;                 //!< Tx Power information
-  int8_t   rssi;                    //!< RSSI of the received packet
-  uint8_t  cteType;                 //!< CTE type received
-  uint16_t periodicEventCounter;    //!< The value of paEventCounter of the reported packet
-  uint8_t  subEvent;                //!< The subevent number
-  uint8_t  dataStatus;              //!< Periodic data status
-  uint8_t  dataLen;                 //!< Periodic data length
-  uint8_t  *data;                   //!< Periodic data received from peer
-} hciEvt_BLEPeriodicAdvReportV2_t;
+  event_hdr_t  hdr;               //!< osal event header
+  uint8  BLEEventCode;            //!< BLE Event Code
+  uint16 syncHandle;              //!< sync handle
+  int8   txPower;                 //!< Tx Power information
+  int8   rssi;                    //!< RSSI of the received packet
+  uint8  cteType;                 //!< CTE type received
+  uint8  dataStatus;              //!< Periodic data status
+  uint8  dataLen;                 //!< Periodic data length
+  uint8  *data;                   //!< Periodic data received from peer
+} hciEvt_BLEPeriodicAdvReport_t;
 
 /// @brief Periodic Advertising Sync Lost Event
 typedef struct
@@ -1346,63 +1288,6 @@ typedef struct
   uint16 syncHandle;              //!< sync handle
 } hciEvt_BLEPeriodicAdvSyncLost_t;
 
-/// @brief Periodic Advertising Sync Transfer Received V2 Event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint16_t connHandle;              //!< sync handle
-  uint16_t serviceData;             //!< service data
-  uint16_t syncHandle;              //!< Sync handle
-  uint8_t  sid;                     //!< Peer SID
-  uint8_t  addrType;                //!< Peer address type
-  uint8_t  address[B_ADDR_LEN];     //!< Peer address
-  uint8_t  phy;                     //!< Peer PHY
-  uint16_t periodicInterval;        //!< Periodic interval
-  uint8_t  clockAccuracy;           //!< Peer Clock Accuracy
-} hciEvt_BLEPeriodicAdvSyncTransRcvV1_t;
-
-/// @brief Periodic Advertising Sync Transfer Received V2 Event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< osal event header
-  uint8_t  BLEEventCode;            //!< BLE Event Code
-  uint16_t connHandle;              //!< sync handle
-  uint16_t serviceData;             //!< service data
-  uint16_t syncHandle;              //!< Sync handle
-  uint8_t  sid;                     //!< Peer SID
-  uint8_t  addrType;                //!< Peer address type
-  uint8_t  address[B_ADDR_LEN];     //!< Peer address
-  uint8_t  phy;                     //!< Peer PHY
-  uint16_t periodicInterval;        //!< Periodic interval
-  uint8_t  clockAccuracy;           //!< Peer Clock Accuracy
-  uint8_t  numSubevents;            //!< Number of Subevents
-  uint8_t  subeventInterval;        //!< Subevent interval
-  uint8_t  responseSlotDelay;       //!< Response slot delay
-  uint8_t  responseSlotSpacing;     //!< Response slot spacing
-} hciEvt_BLEPeriodicAdvSyncTransRcvV2_t;
-
-/// @brief Periodic Advertising Advertiser Subevent Data Request Event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;          //!< BLE Event Code
-  uint8_t  advHandle;             //!< Advertising handle
-  uint8_t  subeventStart;         //!< Starting subevent index
-  uint8_t  subeventCount;         //!< Number of subevents requested
-}hciEvt_BLEPeriodicAdvASubeventDataRequest_t;
-
-/// @brief Periodic Advertising Advertiser Response Report Event
-typedef struct
-{
-  event_hdr_t  hdr;               //!< Osal event header
-  uint8_t  BLEEventCode;          //!< BLE Event Code
-  uint8_t  advHandle;             //!< Advertising handle
-  uint8_t  subevent;              //!< Subevent number
-  uint8_t  txStatus;              //!< 0x00=AUX_SYNC_SUBEVENT_IND transmitted, 0x01=not transmitted
-  uint8_t  numResponses;          //!< Number of response reports
-  uint8_t *responses;             //!< Array of response reports
-}hciEvt_BLEPeriodicAdvAResponseReport_t;
 
 /// @brief Data structure for HCI Command Complete Event Return Parameter
 typedef struct
@@ -2029,128 +1914,41 @@ extern hciStatus_t HCI_LE_SetAdvEnableCmd( uint8 advEnable );
 extern hciStatus_t HCI_LE_ReadAdvChanTxPowerCmd( void );
 
 /**
- * Read the maximum advertising data length.
+ * Set the Scan parameters.
  *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_READ_MAX_ADV_DATA_LENGTH
- *
- * @return @ref HCI_SUCCESS
- */
-hciStatus_t HCI_LE_ReadMaxAdvDataLenCmd( void );
-
-/**
- * Read the number of supported advertising sets.
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_READ_NUM_SUPPORTED_ADV_SETS
- *
- * @return @ref HCI_SUCCESS
- */
-hciStatus_t HCI_LE_ReadNumSupportedAdvSetsCmd( void );
-
-/**
- * Set the Scan parameters (legacy command).
- *
- * @note This is a legacy BT4 command that internally translates to the
- *       extended scan parameters API.
+ * @note When the scanWindow equals the scanInterval then scanning is continuous.
  *
  * @par Corresponding Events
  * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_SET_SCAN_PARAM
  *
- * @param pData Pointer to scan parameters (7 bytes)
+ * @param scanType@ref Scan_types
+ * @param scanInterval Time between scan events.
+ * @param scanWindow Time of scan before scan event ends.
+ * @param ownAddrType This device's address.
+ * @param filterPolicy @ref Scan_types
  *
- * @return @ref HCI_SUCCESS or error code
+ * @return @ref HCI_SUCCESS
  */
-hciStatus_t HCI_LE_SetScanParamCmd( uint8 *pData );
+extern hciStatus_t HCI_LE_SetScanParamCmd( uint8  scanType,
+                                           uint16 scanInterval,
+                                           uint16 scanWindow,
+                                           uint8  ownAddrType,
+                                           uint8  filterPolicy );
 
 /**
- * Set the extended Scan parameters (BT5 command).
- *
- * @note This is a BT5 extended command that uses the full extended
- *       scan parameter structure.
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_SET_EXT_SCAN_PARAMETERS
- *
- * @param pData Pointer to extended scan parameters (aeSetScanParamCmd_t structure)
- *
- * @return @ref HCI_SUCCESS or error code
- */
-hciStatus_t HCI_LE_SetExtScanParamCmd( uint8 *pData );
-
-/**
- * Create a connection (legacy command).
- *
- * @par Corresponding Events
- * @ref hciEvt_BLEConnComplete_t with cmdOpcode @ref HCI_LE_CREATE_CONNECTION
- *
- * @param pData Pointer to connection parameters (25 bytes)
- *
- * @return @ref HCI_SUCCESS or error code
- */
-hciStatus_t HCI_LE_CreateConnCmd( uint8 *pData );
-
-/**
- * @brief Extended Create Connection Command (BT5)
- *
- * This command is used to create an ACL connection to a connectable advertiser
- * using extended connection parameters. This is the BT5 version that supports
- * multiple PHYs (1M, 2M, Coded).
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdStatus_t with cmdOpcode @ref HCI_LE_EXT_CREATE_CONN
- * @ref hciEvt_BLEConnComplete_t
- *
- * @param pData Pointer to extended connection parameters
- *
- * @return @ref HCI_SUCCESS or error code
- */
-hciStatus_t HCI_LE_ExtCreateConnCmd( uint8 *pData );
-
-/**
- * Turn legacy scanning on or off (BT4.x command).
+ * Turn Scanning on or off.
  *
  * @par Corresponding Events
  * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_SET_SCAN_ENABLE
  * @ref hciEvt_DevInfo_t
  *
- * @param pData Pointer to HCI command parameters (2 bytes: scanEnable, filterDuplicates)
+ * @param scanEnable @ref Scan_commands
+ * @param filterDuplicates @ref Scan_filtering
  *
- * @return @ref HCI_SUCCESS or error code
+ * @return @ref HCI_SUCCESS
  */
-hciStatus_t HCI_LE_SetScanEnableCmd( uint8 *pData );
-
-/**
- * Turn extended scanning on or off (BT5+ command).
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_SET_EXT_SCAN_ENABLE
- *
- * @param pData Pointer to HCI command parameters (aeEnableScanCmd_t structure)
- *
- * @return @ref HCI_SUCCESS or error code
- */
-hciStatus_t HCI_LE_SetExtScanEnableCmd( uint8 *pData );
-
-/**
- * Initialize scan callback arrays for legacy and extended scanning.
- * Called during HCI layer initialization.
- *
- * @note Legacy scan events are now converted to legacy format automatically
- *       by the HCI layer via HCI_LegacyScanCback().
- *
- * @return none
- */
-void HCI_InitScanCallbacks(void);
-
-/**
- * Register scan callbacks with the Link Layer.
- *
- * @param callBacksType Type of callbacks (SCAN_CALLBACKS_TYPE_LEGACY or SCAN_CALLBACKS_TYPE_EXTENDED)
- *
- * @return @ref LL_STATUS_SUCCESS or error code
- */
-llStatus_t HCI_RegisterScanCallbacks(uint8 callBacksType);
+extern hciStatus_t HCI_LE_SetScanEnableCmd( uint8 scanEnable,
+                                            uint8 filterDuplicates );
 
 /**
  * Cancel connection.
@@ -2945,35 +2743,6 @@ extern hciStatus_t HCI_LE_EnhancedCteTxTestCmd( uint8 txChan,
                                                 uint8 cteType,
                                                 uint8 length,
                                                 uint8 *pAntenna);
-
-/**
- * HCI LE Transmitter Test V4 - Direct Test Mode transmitter with TX Power control.
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode @ref HCI_LE_ENHANCED_TRANSMITTER_TEST_V4
- *
- * @param txChan - Transmit channel (0x00-0x27).
- * @param payloadLen - Test data packet length (0x00-0xFF).
- * @param payloadType - Packet payload type (0x00-0x07; all other values reserved for future use).
- * @param txPhy - TX PHY (0x01: 1M; 0x02: 2M; 0x03: Coded S8; 0x04: Coded S2).
- * @param cteLength - CTE length in 8μs units (0x00 = no CTE, 0x02-0x14 = CTE length; controller does not support CTE).
- * @param cteType - CTE type (0x00-0x02; ignored when cteLength=0).
- * @param switchingPatternLength - Number of antenna IDs (0x02-0x4B; ignored when cteLength=0).
- * @param pAntenna - Antenna ID pattern array (ignored when cteLength=0).
- * @param txPowerLevel - TX power in dBm (-127 to +20, 0x7E=min, 0x7F=max).
- *
- * @return @ref HCI_SUCCESS
- */
-extern hciStatus_t HCI_LE_EnhancedCteTxTestV4Cmd( uint8 txChan,
-                                                  uint8 payloadLen,
-                                                  uint8 payloadType,
-                                                  uint8 txPhy,
-                                                  uint8 cteLength,
-                                                  uint8 cteType,
-                                                  uint8 switchingPatternLength,
-                                                  uint8 *pAntenna,
-                                                  int8 txPowerLevel );
-
 /**
  * Read the minimum and maximum supported Tx Power.
  *
@@ -3124,35 +2893,11 @@ extern hciStatus_t HCI_LE_ReadAntennaInformationCmd( void );
  *
  * @return  HCI status
  */
-extern hciStatus_t HCI_LE_SetPeriodicAdvParamsV1Cmd( uint8 advHandle,
+extern hciStatus_t HCI_LE_SetPeriodicAdvParamsCmd( uint8 advHandle,
                                                    uint16 periodicAdvIntervalMin,
                                                    uint16 periodicAdvIntervalMax,
                                                    uint16 periodicAdvProp );
 
-/**
- * Used by the Host to set the advertiser parameters for periodic advertising
- *
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode HCI_LE_SET_PERIODIC_ADV_PARAMETERS
- *
- * @param advHandle - Used to identify a periodic advertising train
- *                  Created by LE Set Extended Advertising Parameters command
- * @param periodicAdvIntervalMin - Minimum advertising interval for periodic advertising
- *                  Range: 0x0006 to 0xFFFF Time = N * 1.25 ms Time Range: 7.5ms to 81.91875 s
- * @param periodicAdvIntervalMax - Maximum advertising interval for periodic advertising
- *                  Range: 0x0006 to 0xFFFF Time = N * 1.25 ms Time Range: 7.5ms to 81.91875 s
- * @param periodicAdvProp - Periodic advertising properties
- *                  Set bit 6 for include TxPower in the advertising PDU
- * @param pPAwRParams - Pointer to PAwR parameters structure
- *
- * @return  HCI status, advHandle
- */
-extern hciStatus_t HCI_LE_SetPeriodicAdvParamsV2Cmd( uint8 advHandle,
-                                                   uint16 periodicAdvIntervalMin,
-                                                   uint16 periodicAdvIntervalMax,
-                                                   uint16 periodicAdvProp,
-                                                   uint8* pPAwRParams );
 
 /**
  *
@@ -3198,22 +2943,6 @@ extern hciStatus_t HCI_LE_SetPeriodicAdvDataCmd( uint8 advHandle,
  */
 extern hciStatus_t HCI_LE_SetPeriodicAdvEnableCmd( uint8 enable,
                                                    uint8 advHandle );
-
-/**
- * Used by the Host to send data for subevents in periodic advertising.
- *
- * @par Corresponding Events
- * @ref hciEvt_CmdComplete_t with cmdOpcode HCI_LE_SET_PERIODIC_ADV_SUBEVENT_DATA
- *
- * @param advHandle      - Used to identify a periodic advertising train.
- *                         Created by LE Set Extended Advertising Parameters command.
- * @param numOfSubevents - Number of subevents to be set.
- * @param pSubeventList  - Pointer to the array of subevents to be set.
- *
- * @return  HCI status, advHandle
- */
-hciStatus_t HCI_LE_SetPeriodicAdvSubeventDataCmd( uint8_t advHandle,
-                                                  uint8_t numOfSubevents, uint8_t* pSubeventList);
 
 /**
  * @brief   Used by the Host to set the type, length, and antenna switching pattern
@@ -3347,41 +3076,6 @@ extern hciStatus_t HCI_LE_SetPeriodicSyncSubeventCmd(uint16_t syncHandle,
 */
 extern hciStatus_t HCI_LE_SetPeriodicAdvResponseDataCmd(uint16 syncHandle,
                                                         uint8_t* pRspParams);
-
-/*******************************************************************************
- * @fn          HCI_LE_ExtCreateConnV2
- *
- * @brief       This function is used to create a connection to a connectable
- *              advertiser. This is the V2 version that supports PAwR connection
- *              creation per BLE Core Spec 6.0, Section 7.8.66.
- *
- *              If advHandle and subevent are both 0xFF, this command behaves
- *              like the standard LE Extended Create Connection command.
- *              Otherwise, it initiates a connection to a device advertising
- *              on a specific PAwR subevent.
- *
- * input parameters
- *
- * @param       advHandle - Advertising handle identifying the periodic
- *                          advertising train (0x00-0xEF), or 0xFF for standard
- *                          extended create connection behavior.
- * @param       subevent  - Subevent where the connection will be initiated
- *                          (0x00-0x7F), or 0xFF for standard behavior.
- * @param       pCreateConnParams - Pointer to connection parameters.
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      HCI_SUCCESS
- *              LL_STATUS_ERROR_BAD_PARAMETER
- *              LL_STATUS_ERROR_COMMAND_DISALLOWED
- *              LL_STATUS_ERROR_FEATURE_NOT_SUPPORTED
- */
-hciStatus_t HCI_LE_ExtCreateConnV2( uint8_t           advHandle,
-                                    uint8_t           subevent,
-                                    uint8_t           *pCreateConnParams );
-
 /**
  * HCI_LE_PeriodicAdvCreateSyncCancelCmd
  *
@@ -3544,7 +3238,7 @@ extern hciStatus_t HCI_EXT_SetRxGainCmd( uint8 rxGain );
  *                at which the transmitter is operating. @ref TX_Power_Index
  *
  * @param fraction  If set to 1, raises the requested power level by 0.5 dB @ref LRF_TxPowerTable_Index
- *                  In lpf3 devices, the fraction is currently not used (i.e. should be set to 0).
+ *                  In CC23xx Family devices, the fraction is currently not used (i.e. should be set to 0).
  *
  * @note This function will have no impact on the txPower used for DTM test functions.
  *
@@ -3963,7 +3657,7 @@ extern hciStatus_t HCI_EXT_EnablePTMCmd( void );
  *                at which the transmitter is operating. @ref TX_Power_Index
  *
  * @param fraction  If set to 1, raises the requested power level by 0.5 dB @ref LRF_TxPowerTable_Index
- *                  In lpf3 devices, the fraction is currently not used (i.e. should be set to 0).
+ *                  In CC23xx Family devices, the fraction is currently not used (i.e. should be set to 0).
  *
  * @note This function will have no impact on the txPower used for
  *       non-DTM functionality such as advertising, connections, etc.
@@ -4700,51 +4394,6 @@ hciStatus_t HCI_EXT_SendPowerControlRequestCmd( uint16_t connHandle,
                                                 uint8_t  txPhy,
                                                 int8_t   deltaPowerDb,
                                                 uint8_t  aprEnalbe );
-
-/*******************************************************************************
- * @fn          HCI_EXT_SetPowerCtrlRangeCmd
- *
- * @brief       Set the TX power range used during power control procedures.
- *              Pass 0x80 for to leave either bound unchanged.
- *
- * @Design      BLE_LOKI-4240
- *
- * input parameters
- *
- * @param       minTxPower - Minimum TX power in dBm. Must be within hardware range.
- *                           Pass 0x80 to leave unchanged.
- * @param       maxTxPower - Maximum TX power in dBm. Must be within hardware range.
- *                           Pass 0x80 to leave unchanged.
- *
- * output parameters
- *
- * @param       None
- *
-* @return      HCI_SUCCESS
-*              HCI_STATUS_ERROR_BAD_PARAMETER - the requested range is out of hardware limits, or min > max
-*              HCI_STATUS_ERROR_UNACCEPTABLE_CONN_PARAMETERS - An active connection TX power violates the new range.
- */
-hciStatus_t HCI_EXT_SetPowerCtrlRangeCmd( int8_t minTxPower, int8_t maxTxPower );
-
-/*******************************************************************************
- * @fn          HCI_EXT_GetPowerCtrlRangeCmd
- *
- * @brief       Get the current user-configured TX power range limits.
- *
- * @Design      BLE_LOKI-4240
- *
- * input parameters
- *
- * @param       None
- *
- * output parameters
- *
- * @param       minTxPower - Pointer to receive current min limit.
- * @param       maxTxPower - Pointer to receive current max limit.
- *
- * @return      @ref HCI_SUCCESS or @ref HCI_STATUS_ERROR_BAD_PARAMETER - minTxPower or maxTxPower is NULL.
- */
-hciStatus_t HCI_EXT_GetPowerCtrlRangeCmd( int8_t *minTxPower, int8_t *maxTxPower );
 
 /*******************************************************************************
  * @fn          HCI_EXT_SetDefaultAntenna

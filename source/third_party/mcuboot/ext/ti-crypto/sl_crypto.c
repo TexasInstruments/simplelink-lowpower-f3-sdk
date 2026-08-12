@@ -34,43 +34,34 @@
 #include "mcuboot_config/mcuboot_logging.h"
 #include "mcuboot_config.h"
 #include "string.h"
-#include <ti/devices/DeviceFamily.h>
 
-#if defined(IS_CC13X2X7_CC13X4_CC26X4)
+#if defined(IS_CC13XX_CC26XX)
 #include "ti/common/cc26xx/sha2/sha2_driverlib.h"
 #include "ti/common/cc26xx/ecc/ECDSACC26X4_driverlib.h"
 #include "ti/common/cc26xx/ecc/AESCTRCC26X4_driverlib.h"
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
 #include "ti/common/hsm/HSMBareMetal.h"
 #include "ti/common/hsm/HSMBareMetalECCUtility.h"
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#elif defined(IS_CC23XX)
+#include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 #include "ti/common/ecdsa_lpf3/ecdsa_lpf3.h"
-#include "ti/common/aes_lpf3/aes_lpf3.h"
 #endif
 
 /* define macros */
 #if defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
 #define ECDSA_PUB_KEY_SIZE 64
 #endif
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#if defined(IS_CC27XX)
 #define DIGEST_MAX_LENGTH 32U
 #define BUFFER_MAX_LENGTH 256U
-#define KEY_MAX_LENGTH 128U
-#define MAC_BUFFER_MAX_LENGTH 64U
 #endif
 
 /* global variables */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if defined(IS_CC23XX)
 static SHA256SW_Object sha256SWObject;
 static SHA256SW_Handle sha256SWHandle = &sha256SWObject;
-
-static AESCTR_OneStepOperation operation_g;
-static CryptoKey_Plaintext aesKey_g;
-
-static uint8_t k0ipad[SHA2_BLOCK_SIZE_BYTES_256];
-static uint8_t k0opad[SHA2_BLOCK_SIZE_BYTES_256];
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
 /* sl_crypto handle for CC27XX */
 typedef struct
 {
@@ -82,28 +73,10 @@ typedef struct
     bool     sha256HSMInitial;
 } SHA256_Handle;
 
-typedef struct
-{
-    uint8_t buffer[MAC_BUFFER_MAX_LENGTH];
-    uint32_t bufferLength;
-    uint8_t key[KEY_MAX_LENGTH];
-    uint8_t keyLength;
-} HMAC_SHA256_Handle;
-
-typedef struct
-{
-    uint8_t buffer[MAC_BUFFER_MAX_LENGTH];
-    uint32_t bufferLength;
-    uint8_t keyingMaterial[KEY_MAX_LENGTH];
-    uint8_t keyMaterialLength;
-} AES_CTR_Handle;
-
 
 static HSMBareMetal_CryptoKeyStruct publicKey;
 static HSMBareMetal_ECCOperationStruct ecdsaHSMObject;
 static SHA256_Handle sha256SlCryptoHandle;
-static HMAC_SHA256_Handle hmacsha256SlCryptoHandle;
-static AES_CTR_Handle aesctrCryptoHandle;
 #endif
 
 #if defined(IS_CC13X2_CC26X2)
@@ -193,14 +166,14 @@ void SlCrypto_sha256_init(void)
 {
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SHA2_open();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
     memset(&sha256SlCryptoHandle, 0x00, sizeof(SHA256_Handle));
     HSMBareMetal_init();
     /* Init the SHA256 sl_crypto handle*/
     sha256SlCryptoHandle.blockSize = 64U;
     sha256SlCryptoHandle.remainingBufferSize = 0U;
     sha256SlCryptoHandle.sha256HSMInitial = true;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#elif defined(IS_CC23XX)
     HapiSha256SwStart(sha256SWHandle);
 #endif
 }
@@ -210,10 +183,8 @@ void SlCrypto_sha256_drop(void)
 {
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SHA2_close();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
     HSMBareMetal_deInit();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    (void)0U; // no need to do anything for CC23xx
 #endif
 }
 int SlCrypto_sha256_update(const void *data,
@@ -223,7 +194,7 @@ int SlCrypto_sha256_update(const void *data,
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
     SHA2_open();
     rtn = SHA2_addData(data, data_len);
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
 
     uint8_t inputData[BUFFER_MAX_LENGTH];
     uint8_t inputDataLen = 0U;
@@ -335,7 +306,7 @@ int SlCrypto_sha256_update(const void *data,
         sha256SlCryptoHandle.remainingBufferSize += data_len;
         rtn = 0U;
     }
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#elif defined(IS_CC23XX)
     rtn = HapiSha256SwAddData(sha256SWHandle, data, data_len);
 #endif
     return rtn;
@@ -348,7 +319,7 @@ int SlCrypto_sha256_final(uint8_t *output)
     SlCrypto_sha256_init();
     rtn = SHA2_finalize(output);
     SHA2_close();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
 
     uint8_t inputData[BUFFER_MAX_LENGTH];
     uint8_t digest[DIGEST_MAX_LENGTH] = {0U};
@@ -383,104 +354,25 @@ int SlCrypto_sha256_final(uint8_t *output)
     /* copy final digest */
     (void)memcpy((void *)output, (void *)sha256HSMObject.digest, (DIGEST_MAX_LENGTH));
     
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#elif defined(IS_CC23XX)
     rtn = HapiSha256SwFinalize(sha256SWHandle, (uint32_t*)output);
 #endif
 
     return rtn;
 }
 
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-int SlCrypto_sha256_updateHmac(const void *data, uint32_t data_len) {
-    memcpy(hmacsha256SlCryptoHandle.buffer + hmacsha256SlCryptoHandle.bufferLength, data, data_len);
-    hmacsha256SlCryptoHandle.bufferLength += data_len;
-    return 0U;
-}
-#endif
-
 int SlCrypto_sha256_setupHmac(const uint8_t *key, unsigned int key_size) {
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
     return (SHA2_setupHmac(key, key_size));
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    if (key_size > sizeof(hmacsha256SlCryptoHandle.key)) {
-        return -1; /* key too large */
-    }
-    memset(&hmacsha256SlCryptoHandle, 0x00, sizeof(HMAC_SHA256_Handle));
-    HSMBareMetal_init();
-    /* Init the SHA256_hmac sl_crypto handle*/
-    hmacsha256SlCryptoHandle.bufferLength = 0U;
-    memcpy(hmacsha256SlCryptoHandle.key, key, key_size);
-    hmacsha256SlCryptoHandle.keyLength = key_size;
-    return 0U;
-
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    if (key_size > SHA2_BLOCK_SIZE_BYTES_256) {
-        return -1; /* key too large */
-    }
-    uint8_t xorBuffer[SHA2_BLOCK_SIZE_BYTES_256];
-    memset(xorBuffer, 0x00, SHA2_BLOCK_SIZE_BYTES_256);
-    memcpy(xorBuffer, key, key_size);
-    SHA2_xorBufferWithByte(xorBuffer, SHA2_BLOCK_SIZE_BYTES_256, HMAC_IPAD_BYTE);
-    memcpy(k0ipad, xorBuffer,SHA2_BLOCK_SIZE_BYTES_256);
-    SHA2_xorBufferWithByte(xorBuffer, SHA2_BLOCK_SIZE_BYTES_256, HMAC_IPAD_BYTE);
-    SHA2_xorBufferWithByte(xorBuffer, SHA2_BLOCK_SIZE_BYTES_256, HMAC_OPAD_BYTE);
-    memcpy(k0opad, xorBuffer,SHA2_BLOCK_SIZE_BYTES_256);
-    HapiSha256SwAddData(sha256SWHandle, (uint32_t*)k0ipad, SHA2_BLOCK_SIZE_BYTES_256);
-    return 0U;
-#else
-    return -1;
 #endif
+    return 0U;
 }
 
 int SlCrypto_sha256_finalizeHmac(uint8_t *tag) {
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
     return (SHA2_finalizeHmac(tag));
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    int status;
-    HSMBareMetal_AssetPairStruct assetPair;
-    HSMBareMetal_AssetOperationStruct assetOperationStruct;
-
-    uint32_t encGenKeyAssetId  = 0U;
-    uint32_t decVrfyKeyAssetId = 0U;
-
-    assetPair.encGenKeyAssetID  = &encGenKeyAssetId;
-    assetPair.decVrfyKeyAssetID = &decVrfyKeyAssetId;
-
-    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
-
-    assetOperationStruct.keyAssetIDs      = assetPair;
-    assetOperationStruct.key              = (uint8_t *)hmacsha256SlCryptoHandle.key;
-    assetOperationStruct.keyLength        = hmacsha256SlCryptoHandle.keyLength;
-    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_MAC;
-    assetOperationStruct.macOperationMode = HSMBareMetal_MAC_MODE_HMAC_256;
-    status = HSMBareMetal_AssetOperation(&assetOperationStruct);
-
-    HSMBareMetal_MACOperationStruct MACOperationStruct;
-    HSMBareMetal_MACOperation_init(&MACOperationStruct);
-    MACOperationStruct.keyAssetID = encGenKeyAssetId;
-    MACOperationStruct.keyLength          = hmacsha256SlCryptoHandle.keyLength;
-    MACOperationStruct.input              = (uint8_t *) hmacsha256SlCryptoHandle.buffer;
-    MACOperationStruct.inputLength        = hmacsha256SlCryptoHandle.bufferLength;
-    MACOperationStruct.mac                = tag;
-    MACOperationStruct.macLength          = 32U;
-    MACOperationStruct.operationMode      = HSMBareMetal_MAC_MODE_HMAC_256,
-    MACOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_ENC_GEN;
-
-    status = HSMBareMetal_MACOperation(&MACOperationStruct);
-    status = HSMBareMetal_freeAssetPair(assetPair);
-
-    return status;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    uint8_t tmpDigest[SHA2_DIGEST_LENGTH_BYTES_256];
-    HapiSha256SwFinalize(sha256SWHandle, (uint32_t*)tmpDigest);
-    HapiSha256SwStart(sha256SWHandle);
-    HapiSha256SwAddData(sha256SWHandle, (uint32_t*)k0opad, SHA2_BLOCK_SIZE_BYTES_256);
-    HapiSha256SwAddData(sha256SWHandle, (uint32_t*)tmpDigest, SHA2_DIGEST_LENGTH_BYTES_256);
-    HapiSha256SwFinalize(sha256SWHandle, (uint32_t*)tag);
-    return 0U;
-#else
-    return -1;
 #endif
+    return 0U;
 }
 
 
@@ -502,26 +394,26 @@ void SlCrypto_ecdsa_p256_init(void)
 
     /* Initialize window size */
     eccRom_windowSize = SECURE_FW_ECC_WINDOW_SIZE;
-#elif defined(IS_CC13X2X7_CC13X4_CC26X4)
+
+#endif
+
+#if defined(IS_CC13X2X7_CC13X4_CC26X4)
     ECDSA_open();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#endif
+#if defined(IS_CC27XX)
     HSMBareMetal_init();
     HSMBareMetal_ECCOperation_init(&ecdsaHSMObject);
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    (void)0U; //no need to do anything for CC23xx
 #endif
 }
 
 void SlCrypto_ecdsa_p256_drop(void)
 {
 #if defined(IS_CC13X2_CC26X2)
-    return 0U;
+    return;
 #elif defined(IS_CC13X2X7_CC13X4_CC26X4)
     ECDSA_close();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
     HSMBareMetal_deInit();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    (void)0U; //no need to do anything for CC23xx
 #endif
 }
 
@@ -619,8 +511,8 @@ int SlCrypto_ecdsa_p256_verify(const uint8_t *pk, const uint8_t *hash, const uin
         return -1;
     }
 
-    return 0U;
-#elif defined(IS_CC13X2X7_CC13X4_CC26X4) || DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+    return 0;
+#elif defined(IS_CC13X2X7_CC13X4_CC26X4) || defined(IS_CC23XX)
     CryptoKey_Plaintext publicKey;
     ECDSA_OperationVerify operationVerify;
     int_fast16_t operationResult;
@@ -653,7 +545,7 @@ int SlCrypto_ecdsa_p256_verify(const uint8_t *pk, const uint8_t *hash, const uin
         return -1;
     }
     return 0;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif defined(IS_CC27XX)
     uint8_t newpk[65] = {0};
     newpk[0] = 0x04;
     memcpy(&newpk[1], pk, 64);
@@ -706,60 +598,8 @@ int SlCrypto_ecdh_p256_computeSharedSecret(const uint8_t *pk, const uint8_t *sk,
     operation.theirPublicKey = &publicKey;
     operation.sharedSecret = &SharedKey;
     return ECDH_computeSharedSecret(&operation);
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    int status = -1;
-    HSMBareMetal_ECCOperationStruct ECDHOperationStruct;
-    HSMBareMetal_CryptoKeyStruct privateKey;
-    HSMBareMetal_CryptoKeyStruct publicKey;
-    HSMBareMetal_CryptoKeyStruct sharedSecret;
-
-    HSMBareMetal_CryptoKeyPlaintext_initKey(&privateKey, (uint8_t *)sk, BITS_TO_BYTES(HSMBareMetal_PK_CURVE_LENGTH_256));
-
-    HSMBareMetal_CryptoKeyPlaintext_initKey(&publicKey, (uint8_t *)pk, 2 * BITS_TO_BYTES(HSMBareMetal_PK_CURVE_LENGTH_256) + 1);
-    HSMBareMetal_CryptoKeyPlaintext_initKey(&sharedSecret, z, 2 * BITS_TO_BYTES(HSMBareMetal_PK_CURVE_LENGTH_256) + 1);
-
-    HSMBareMetal_ECCOperation_init(&ECDHOperationStruct);
-    ECDHOperationStruct.privateKey         = &privateKey;
-    ECDHOperationStruct.publicKey          = &publicKey;
-    ECDHOperationStruct.sharedSecret       = &sharedSecret;
-    ECDHOperationStruct.operationMode      = HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT;
-    ECDHOperationStruct.operationCurveType = HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1;
-
-    status = HSMBareMetal_ECCOperation(&ECDHOperationStruct);
-    return status;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    ECDH_computeSharedSecretStruct operation;
-    CryptoKey_Plaintext privateKey;
-    CryptoKey_Plaintext publicKey;
-    CryptoKey_Plaintext SharedKey;
-
-    uint8_t privateKeyingMaterial[SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES] =  {0};
-
-    // set the size to be SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES for little endian
-    uint8_t publicKeyingMaterial[2* SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES+ 1] =  {0};
-
-    memcpy(privateKeyingMaterial, sk, SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES);
-    CryptoKeyPlaintext_initKey(&privateKey,
-                               privateKeyingMaterial,
-                               sizeof(privateKeyingMaterial));
-
-    // set the size to be SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES for little endian
-    memcpy(publicKeyingMaterial, pk, 2*SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES+1);
-    CryptoKeyPlaintext_initKey(&publicKey,
-                               publicKeyingMaterial,
-                               sizeof(publicKeyingMaterial));
-
-    // set the size to be SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES for little endian
-    CryptoKeyPlaintext_initKey(&SharedKey, z,
-                               2*SECURE_FW_ECC_NIST_P256_KEY_LEN_IN_BYTES+1);
-    
-    operation.privateKey = &privateKey;
-    operation.publicKey = &publicKey;
-    operation.sharedSecret = &SharedKey;
-    return ECDH_computeSharedSecret(&operation);
-#else
-    return -1;
 #endif
+    return -1;
 }
 
 /*
@@ -770,21 +610,12 @@ void SlCrypto_aesctr_init(void)
 {
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
     AES_open();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    HSMBareMetal_init();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    AES_open();
 #endif
 }
 
 void SlCrypto_aesctr_drop(void)
 {
 #if defined(IS_CC13X2X7_CC13X4_CC26X4)
-    AES_close();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    HSMBareMetal_deInit();
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    AES_cancel();
     AES_close();
 #endif
 }
@@ -805,27 +636,9 @@ int SlCrypto_aesctr_setKey(const uint8_t *keyingMaterial)
     /* Get the key */
     operation_g.key = &aesKey_g;
 
-    return 0U;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    memset(&aesctrCryptoHandle, 0x00, sizeof(AES_CTR_Handle));
-    /* Init the SHA256_hmac sl_crypto handle*/
-    memcpy(aesctrCryptoHandle.keyingMaterial, keyingMaterial, AES_CTR_KEY_SIZE);
-    aesctrCryptoHandle.keyMaterialLength = AES_CTR_KEY_SIZE;
-
-    return 0U;
-    
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    /* init operation */
-    memset(&operation_g, 0x00, sizeof(AESCTR_OneStepOperation));
-
-    CryptoKeyPlaintext_initKey(&aesKey_g, (uint8_t *) keyingMaterial, AES_CTR_KEY_SIZE);
-
-    /* Get the key */
-    operation_g.key = &aesKey_g;
-    return 0U;
-#else
-    return -1;
+    return 0;
 #endif
+    return 0U;
 }
 
 int SlCrypto_aesctr_encrypt(uint8_t *counter, const uint8_t *m, uint32_t mlen, size_t blk_off, uint8_t *c)
@@ -840,31 +653,8 @@ int SlCrypto_aesctr_encrypt(uint8_t *counter, const uint8_t *m, uint32_t mlen, s
     operation_g.output            = c;
 
     return AESCTR_oneStepEncrypt (&operation_g);
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    int status = -1;
-    HSMBareMetal_AESOperationStruct AESOperationStruct;
-    HSMBareMetal_AESOperation_init(&AESOperationStruct);
-    AESOperationStruct.key                = (uint8_t *)aesctrCryptoHandle.keyingMaterial;
-    AESOperationStruct.keyLength          = aesctrCryptoHandle.keyMaterialLength;
-    AESOperationStruct.isKeyInAssetStore  = HSMBareMetal_KEY_INPUT_PLAINTEXT;
-    AESOperationStruct.input              = (uint8_t *) (m + blk_off);
-    AESOperationStruct.inputLength        = mlen;
-    AESOperationStruct.iv                 = (uint8_t *)counter;
-    AESOperationStruct.ivLength           = 16U;
-    AESOperationStruct.output             = c;
-    AESOperationStruct.operationMode      = HSMBareMetal_AES_MODE_CTR;
-    AESOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_ENC_GEN;
-    status = HSMBareMetal_AESOperation(&AESOperationStruct);
-    return status;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    operation_g.input             = m;
-    operation_g.inputLength       = mlen;
-    operation_g.initialCounter    = counter;
-    operation_g.output            = c;
-    return AESCTR_processData(&operation_g);
-#else
-    return -1;
 #endif
+    return 0U;
 }
 
 int SlCrypto_aesctr_decrypt(uint8_t *counter, const uint8_t *c, uint32_t clen, size_t blk_off, uint8_t *m)
@@ -879,30 +669,6 @@ int SlCrypto_aesctr_decrypt(uint8_t *counter, const uint8_t *c, uint32_t clen, s
     operation_g.output            = m;
 
     return AESCTR_oneStepDecrypt(&operation_g);
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    int status = -1;
-    HSMBareMetal_AESOperationStruct AESOperationStruct;
-    HSMBareMetal_AESOperation_init(&AESOperationStruct);
-    AESOperationStruct.key                = (uint8_t *)aesctrCryptoHandle.keyingMaterial;
-    AESOperationStruct.keyLength          = aesctrCryptoHandle.keyMaterialLength;
-    AESOperationStruct.isKeyInAssetStore  = HSMBareMetal_KEY_INPUT_PLAINTEXT;
-    AESOperationStruct.input              = (uint8_t *) (c + blk_off);
-    AESOperationStruct.inputLength        = clen;
-    AESOperationStruct.iv                 = (uint8_t *)counter;
-    AESOperationStruct.ivLength           = 16U;
-    AESOperationStruct.output             = m;
-    AESOperationStruct.operationMode      = HSMBareMetal_AES_MODE_CTR;
-    AESOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_DEC_VRFY;
-    status = HSMBareMetal_AESOperation(&AESOperationStruct);
-    return status;
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
-    operation_g.input             = c;
-    operation_g.inputLength       = clen;
-    operation_g.initialCounter    = counter;
-    operation_g.output            = m;
-    
-    return AESCTR_processData(&operation_g);
-#else
-    return -1;
 #endif
+    return 0U;
 }

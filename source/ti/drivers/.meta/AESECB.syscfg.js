@@ -87,7 +87,7 @@ input blocks using AES.
 [1]: /secure_drivers/doxygen/html/_a_e_s_e_c_b_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_a_e_s_e_c_b_8h.html#ti_drivers_AESECB_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_a_e_s_e_c_b_8h.html#ti_drivers_AESECB_Examples "C usage examples"
-[4]: /secure_drivers/syscfg/html/ConfigDoc.html#AESECB_Configuration_Options "Configuration options reference"
+[4]: /drivers/syscfg/html/ConfigDoc.html#AESECB_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_AESECB_",
     config              : Common.addNameConfig(config, "/ti/drivers/AESECB", "CONFIG_AESECB_"),
@@ -99,7 +99,7 @@ input blocks using AES.
             forcedModules.push("DMA");
         }
 
-        if (deviceId.match(/CC27/) || deviceId.match(/CC35/)) {
+        if (deviceId.match(/CC27/)) {
             /* HSM library requires Key Store module */
             forcedModules.push("CryptoKeyKeyStore_PSA");
         }

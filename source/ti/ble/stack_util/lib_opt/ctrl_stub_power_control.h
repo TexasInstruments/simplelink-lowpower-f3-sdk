@@ -96,17 +96,12 @@ extern void LL_PwrCtrl_HandleRxPackets(llConnState_t* connPtr, const uint8_t* pC
 extern llStatus_t LL_PwrCtrl_ReadRemoteTransPwrLevelCmd(uint16_t connHandle, uint8_t txPhy);
 extern llStatus_t LL_PwrCtrl_EnhancedReadTransPwrLevelCmd(uint16_t connHandle, uint8_t txPhy, int8_t* pCurrentTxPower, int8_t* pMaxTxPower);
 extern llStatus_t LL_PwrCtrl_SetTransPwrRptEnableCmd(uint16_t connHandle, uint8_t localEnable, uint8_t remoteEnable);
-extern void LL_PwrCtrl_CheckAndSendPendingRequest(uint16_t connHandle);
-extern bool LL_PwrCtrl_IsProcedureInProgress(uint16_t connHandle);
-extern llStatus_t LL_PwrCtrl_IsPhyManaged(uint16_t connHandle, uint8_t phy);
 extern llStatus_t LL_EXT_PwrCtrl_SendPwrCtrlReqCmd(uint16_t connHandle, uint8_t txPhy, int8_t deltaPowerDb, uint8_t aprEnable);
 extern void HCI_TransPwrRptCB(uint8_t status, uint8_t connHandle, uint8_t reason, uint8_t txPhy, int8_t txPowerLevel, uint8_t txPowerMaxMinReached, int8_t delta);
 extern hciStatus_t hci_ext_SendPowerControlRequestCmd(uint16_t connHandle, uint8_t txPhy, int8_t deltaPowerDb, uint8_t aprEnable);
 extern hciStatus_t hci_le_SetTransmitPowerReportingEnableCmd(uint16_t connHandle, uint8_t localEnable, uint8_t remoteEnable);
 extern hciStatus_t hci_le_EnhancedReadTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy);
 extern hciStatus_t hci_le_ReadRemoteTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy);
-extern hciStatus_t hci_ext_SetPowerCtrlRangeCmd(int8_t minTxPower, int8_t maxTxPower);
-extern hciStatus_t hci_ext_GetPowerCtrlRangeCmd(int8_t* minTxPower, int8_t* maxTxPower);
 
 
 // Wrapper functions for the feature implementations
@@ -123,16 +118,11 @@ void OPT_LL_PwrCtrl_HandleRxPackets(llConnState_t* connPtr, const uint8_t* pCtrl
 llStatus_t OPT_LL_PwrCtrl_ReadRemoteTransPwrLevelCmd(uint16_t connHandle, uint8_t txPhy);
 llStatus_t OPT_LL_PwrCtrl_EnhancedReadTransPwrLevelCmd(uint16_t connHandle, uint8_t txPhy, int8_t* pCurrentTxPower, int8_t* pMaxTxPower);
 llStatus_t OPT_LL_PwrCtrl_SetTransPwrRptEnableCmd(uint16_t connHandle, uint8_t localEnable, uint8_t remoteEnable);
-void OPT_LL_PwrCtrl_CheckAndSendPendingRequest(uint16_t connHandle);
-bool OPT_LL_PwrCtrl_IsProcedureInProgress(uint16_t connHandle);
-llStatus_t OPT_LL_PwrCtrl_IsPhyManaged(uint16_t connHandle, uint8_t phy);
 llStatus_t OPT_LL_EXT_PwrCtrl_SendPwrCtrlReqCmd(uint16_t connHandle, uint8_t txPhy, int8_t deltaPowerDb, uint8_t aprEnable);
 void OPT_HCI_TransPwrRptCB(uint8_t status, uint8_t connHandle, uint8_t reason, uint8_t txPhy, int8_t txPowerLevel, uint8_t txPowerMaxMinReached, int8_t delta);
 hciStatus_t OPT_hci_ext_SendPowerControlRequestCmd(uint16_t connHandle, uint8_t txPhy, int8_t deltaPowerDb, uint8_t aprEnable);
 hciStatus_t OPT_hci_le_SetTransmitPowerReportingEnableCmd(uint16_t connHandle, uint8_t localEnable, uint8_t remoteEnable);
 hciStatus_t OPT_hci_le_EnhancedReadTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy);
 hciStatus_t OPT_hci_le_ReadRemoteTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy);
-hciStatus_t OPT_hci_ext_SetPowerCtrlRangeCmd(int8_t minTxPower, int8_t maxTxPower);
-hciStatus_t OPT_hci_ext_GetPowerCtrlRangeCmd(int8_t* minTxPower, int8_t* maxTxPower);
 
 #endif /* CTRL_POWER_CONTROL_H_ */

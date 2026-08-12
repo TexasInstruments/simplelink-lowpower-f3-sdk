@@ -40,7 +40,12 @@
 
 /* Driverlib includes */
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(cmsis/device.h)
+#ifdef DeviceFamily_CC23X0R2
+    #include DeviceFamily_constructPath(cmsis/cc23x0r2.h)
+#else
+    #include DeviceFamily_constructPath(cmsis/cc23x0r5.h)
+#endif
+#include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 
@@ -56,32 +61,7 @@ typedef struct _HwiP_Obj
 
 static HwiP_Obj *HwiP_dispatchTable[NUM_INTERRUPTS] __attribute__((used)) = {0};
 
-/*
- *  ======== HwiP_enable ========
- */
-void HwiP_enable(void)
-{
-    IntEnableMaster();
-}
-
-/*
- *  ======== HwiP_disable ========
- */
-uintptr_t HwiP_disable(void)
-{
-    return (IntDisableMaster());
-}
-
-/*
- *  ======== HwiP_restore ========
- */
-void HwiP_restore(uintptr_t key)
-{
-    if (!key)
-    {
-        IntEnableMaster();
-    }
-}
+void HwiP_dispatch(void);
 
 /*
  *  ======== HwiP_clearInterrupt ========
@@ -89,64 +69,6 @@ void HwiP_restore(uintptr_t key)
 void HwiP_clearInterrupt(int interruptNum)
 {
     IntClearPend((uint32_t)interruptNum);
-}
-
-/*
- *  ======== HwiP_destruct ========
- */
-void HwiP_destruct(HwiP_Struct *handle)
-{
-    HwiP_Obj *obj = (HwiP_Obj *)handle;
-
-    IntDisable(obj->intNum);
-    IntUnregister(obj->intNum);
-}
-
-/*
- *  ======== HwiP_delete ========
- */
-void HwiP_delete(HwiP_Handle handle)
-{
-    HwiP_destruct((HwiP_Struct *)handle);
-
-    free(handle);
-}
-
-/*
- *  ======== HwiP_disableInterrupt ========
- */
-void HwiP_disableInterrupt(int interruptNum)
-{
-    IntDisable((uint32_t)interruptNum);
-}
-
-/*
- *  ======== HwiP_dispatch ========
- */
-static void HwiP_dispatch(void)
-{
-    uint32_t intNum = (SCB->ICSR & 0x000000ff);
-    HwiP_Obj *obj   = HwiP_dispatchTable[intNum];
-    if (obj)
-    {
-        (obj->fxn)(obj->arg);
-    }
-}
-
-/*
- *  ======== HwiP_enableInterrupt ========
- */
-void HwiP_enableInterrupt(int interruptNum)
-{
-    IntEnable(interruptNum);
-}
-
-/*
- *  ======== HwiP_interruptsEnabled ========
- */
-bool HwiP_interruptsEnabled(void)
-{
-    return (__get_PRIMASK() == 0L);
 }
 
 /*
@@ -174,7 +96,7 @@ HwiP_Handle HwiP_construct(HwiP_Struct *handle, int interruptNum, HwiP_Fxn hwiFx
             params->priority = INT_PRI_LEVEL2;
         }
 
-        if ((interruptNum != HwiP_swiPIntNum) && (params->priority == INT_PRI_LEVEL3))
+        if (interruptNum != HwiP_swiPIntNum && params->priority == INT_PRI_LEVEL3)
         {
             handle = NULL;
         }
@@ -228,47 +150,77 @@ HwiP_Handle HwiP_create(int interruptNum, HwiP_Fxn hwiFxn, HwiP_Params *params)
 }
 
 /*
- *  ======== HwiP_Params_init ========
+ *  ======== HwiP_delete ========
  */
-void HwiP_Params_init(HwiP_Params *params)
+void HwiP_delete(HwiP_Handle handle)
 {
-    if (params != NULL)
+    HwiP_destruct((HwiP_Struct *)handle);
+
+    free(handle);
+}
+
+/*
+ *  ======== HwiP_destruct ========
+ */
+void HwiP_destruct(HwiP_Struct *handle)
+{
+    HwiP_Obj *obj = (HwiP_Obj *)handle;
+
+    IntDisable(obj->intNum);
+    IntUnregister(obj->intNum);
+}
+
+/*
+ *  ======== HwiP_disable ========
+ */
+uintptr_t HwiP_disable(void)
+{
+    return (IntDisableMaster());
+}
+
+/*
+ *  ======== HwiP_disableInterrupt ========
+ */
+void HwiP_disableInterrupt(int interruptNum)
+{
+    IntDisable((uint32_t)interruptNum);
+}
+
+/*
+ *  ======== HwiP_dispatch ========
+ */
+void HwiP_dispatch(void)
+{
+    uint32_t intNum = (SCB->ICSR & 0x000000ff);
+    HwiP_Obj *obj   = HwiP_dispatchTable[intNum];
+    if (obj)
     {
-        params->arg       = 0;
-        params->priority  = (~0);
-        params->enableInt = true;
+        (obj->fxn)(obj->arg);
     }
 }
 
 /*
- *  ======== HwiP_plug ========
+ *  ======== HwiP_enable ========
  */
-void HwiP_plug(int interruptNum, void *fxn)
+void HwiP_enable(void)
 {
-    IntRegister((uint32_t)interruptNum, (void (*)(void))fxn);
+    IntEnableMaster();
 }
 
 /*
- *  ======== HwiP_setFunc ========
+ *  ======== HwiP_enableInterrupt ========
  */
-void HwiP_setFunc(HwiP_Handle hwiP, HwiP_Fxn fxn, uintptr_t arg)
+void HwiP_enableInterrupt(int interruptNum)
 {
-    HwiP_Obj *obj = (HwiP_Obj *)hwiP;
-
-    uintptr_t key = HwiP_disable();
-
-    obj->fxn = fxn;
-    obj->arg = arg;
-
-    HwiP_restore(key);
+    IntEnable(interruptNum);
 }
 
 /*
- *  ======== HwiP_post ========
+ *  ======== HwiP_interruptsEnabled ========
  */
-void HwiP_post(int interruptNum)
+bool HwiP_interruptsEnabled(void)
 {
-    IntSetPend(interruptNum);
+    return (__get_PRIMASK() == 0L);
 }
 
 /*
@@ -304,6 +256,61 @@ bool HwiP_inSwi(void)
     }
 
     return (false);
+}
+
+/*
+ *  ======== HwiP_Params_init ========
+ */
+void HwiP_Params_init(HwiP_Params *params)
+{
+    if (params != NULL)
+    {
+        params->arg       = 0;
+        params->priority  = (~0);
+        params->enableInt = true;
+    }
+}
+
+/*
+ *  ======== HwiP_plug ========
+ */
+void HwiP_plug(int interruptNum, void *fxn)
+{
+    IntRegister((uint32_t)interruptNum, (void (*)(void))fxn);
+}
+
+/*
+ *  ======== HwiP_post ========
+ */
+void HwiP_post(int interruptNum)
+{
+    IntSetPend(interruptNum);
+}
+
+/*
+ *  ======== HwiP_restore ========
+ */
+void HwiP_restore(uintptr_t key)
+{
+    if (!key)
+    {
+        IntEnableMaster();
+    }
+}
+
+/*
+ *  ======== HwiP_setFunc ========
+ */
+void HwiP_setFunc(HwiP_Handle hwiP, HwiP_Fxn fxn, uintptr_t arg)
+{
+    HwiP_Obj *obj = (HwiP_Obj *)hwiP;
+
+    uintptr_t key = HwiP_disable();
+
+    obj->fxn = fxn;
+    obj->arg = arg;
+
+    HwiP_restore(key);
 }
 
 /*

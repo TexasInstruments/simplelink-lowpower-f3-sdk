@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 
 #include <ti/drivers/dpl/HwiP.h>
 
-#include <ti/drivers/rcl/hal/RCL_Hal.h>
+#include <ti/drivers/rcl/hal/hal.h>
 #include <ti/drivers/rcl/RCL_Command.h>
 #include <ti/drivers/rcl/RCL_Scheduler.h>
 #include <ti/drivers/rcl/RCL_Debug.h>
@@ -65,15 +65,15 @@ static RCL_StopType rclSchedulerSetNewStopTime(RCL_SchedulerStopInfo *stopInfo, 
 static RCL_StopType rclSchedulerCancelStopTime(RCL_SchedulerStopInfo *stopInfo, bool sched);
 
 /*
- *  ======== RCL_Scheduler_updateStopStatus ========
+ *  ======== RCL_Scheduler_findStopStatus ========
  */
-RCL_CommandStatus RCL_Scheduler_updateStopStatus(RCL_StopType stopType, RCL_SchedulerStopReason stopReason)
+RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
 {
     RCL_CommandStatus status;
     switch (stopType)
     {
         case RCL_StopType_DescheduleOnly:
-            switch (stopReason)
+            switch (rclSchedulerState.descheduleReason)
             {
                 case RCL_SchedulerStopReason_Scheduling:
                     status = RCL_CommandStatus_DescheduledScheduling;
@@ -88,7 +88,7 @@ RCL_CommandStatus RCL_Scheduler_updateStopStatus(RCL_StopType stopType, RCL_Sche
             }
             break;
         case RCL_StopType_Graceful:
-            switch (stopReason)
+            switch (rclSchedulerState.gracefulStopInfo.stopReason)
             {
                 case RCL_SchedulerStopReason_Timeout:
                     status = RCL_CommandStatus_GracefulStopTimeout;
@@ -106,7 +106,7 @@ RCL_CommandStatus RCL_Scheduler_updateStopStatus(RCL_StopType stopType, RCL_Sche
             }
             break;
         case RCL_StopType_Hard:
-            switch (stopReason)
+            switch (rclSchedulerState.hardStopInfo.stopReason)
             {
                 case RCL_SchedulerStopReason_Timeout:
                     status = RCL_CommandStatus_HardStopTimeout;
@@ -134,29 +134,6 @@ RCL_CommandStatus RCL_Scheduler_updateStopStatus(RCL_StopType stopType, RCL_Sche
 }
 
 /*
- *  ======== RCL_Scheduler_findStopStatus ========
- */
-RCL_CommandStatus RCL_Scheduler_findStopStatus(RCL_StopType stopType)
-{
-    RCL_SchedulerStopReason stopReason;
-    switch (stopType)
-    {
-        case RCL_StopType_Graceful:
-            stopReason = rclSchedulerState.gracefulStopInfo.stopReason;
-            break;
-        case RCL_StopType_Hard:
-            stopReason = rclSchedulerState.hardStopInfo.stopReason;
-            break;
-        case RCL_StopType_DescheduleOnly:
-        default:
-            stopReason = rclSchedulerState.descheduleReason;
-            break;
-    }
-
-    return RCL_Scheduler_updateStopStatus(stopType, stopReason);
-}
-
-/*
  *  ======== RCL_Scheduler_setStartStopTime ========
  */
 RCL_CommandStatus RCL_Scheduler_setStartStopTime(const RCL_Command *cmd)
@@ -165,26 +142,20 @@ RCL_CommandStatus RCL_Scheduler_setStartStopTime(const RCL_Command *cmd)
     SchedulerStartType startType;
 
     RCL_Debug_assert(cmd != NULL);
-    if (cmd != NULL)
-    {
-        if (cmd->scheduling == RCL_Schedule_AbsTime)
-        {
-            startType = cmd->allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
-            startTime = cmd->timing.absStartTime;
-        }
-        else
-        {
-            /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
-            startType = SchedulerStartNow;
-            startTime = 0;
-        }
 
-        return rclSchedulerProcessCmdStartStopTime(&cmd->timing, startTime, startType);
+    if (cmd->scheduling == RCL_Schedule_AbsTime)
+    {
+        startType = cmd->allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
+        startTime = cmd->timing.absStartTime;
     }
     else
     {
-        return RCL_CommandStatus_Error;
+        /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
+        startType = SchedulerStartNow;
+        startTime = 0;
     }
+
+    return rclSchedulerProcessCmdStartStopTime(&cmd->timing, startTime, startType);
 }
 
 /*
@@ -196,39 +167,33 @@ RCL_CommandStatus RCL_Scheduler_setStartStopTimeEarliestStart(const RCL_Command 
     SchedulerStartType startType;
 
     RCL_Debug_assert(cmd != NULL);
-    if (cmd != NULL)
+
+    if (cmd->scheduling == RCL_Schedule_AbsTime)
     {
-        if (cmd->scheduling == RCL_Schedule_AbsTime)
+        startType = cmd->allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
+        startTime = cmd->timing.absStartTime;
+        if (!RCL_Scheduler_isLater(earliestStartTime, startTime))
         {
-            startType = cmd->allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
-            startTime = cmd->timing.absStartTime;
-            if (!RCL_Scheduler_isLater(earliestStartTime, startTime))
+            /* Start time is earlier than indicated - delay start if allowed */
+            if (startType == SchedulerStartAbsTimeNoDelay)
             {
-                /* Start time is earlier than indicated - delay start if allowed */
-                if (startType == SchedulerStartAbsTimeNoDelay)
-                {
-                    /* Delay not allowed */
-                    return RCL_CommandStatus_Error_StartTooLate;
-                }
-                else
-                {
-                    startTime = earliestStartTime;
-                }
+                /* Delay not allowed */
+                return RCL_CommandStatus_Error_StartTooLate;
+            }
+            else
+            {
+                startTime = earliestStartTime;
             }
         }
-        else
-        {
-            /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
-            startType = SchedulerStartAbsTimeAllowDelay;
-            startTime = earliestStartTime;
-        }
-
-        return rclSchedulerProcessCmdStartStopTime(&cmd->timing, startTime, startType);
     }
     else
     {
-        return RCL_CommandStatus_Error;
+        /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
+        startType = SchedulerStartAbsTimeAllowDelay;
+        startTime = earliestStartTime;
     }
+
+    return rclSchedulerProcessCmdStartStopTime(&cmd->timing, startTime, startType);
 }
 
 /*
@@ -240,26 +205,20 @@ RCL_CommandStatus RCL_Scheduler_setCustomStartStopTime(const RCL_CommandTiming *
     SchedulerStartType startType;
 
     RCL_Debug_assert(timing != NULL);
-    if (timing != NULL)
-    {
-        if (scheduling == RCL_Schedule_AbsTime)
-        {
-            startType = allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
-            startTime = timing->absStartTime;
-        }
-        else
-        {
-            /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
-            startType = SchedulerStartNow;
-            startTime = 0;
-        }
 
-        return rclSchedulerProcessCmdStartStopTime(timing, startTime, startType);
+    if (scheduling == RCL_Schedule_AbsTime)
+    {
+        startType = allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
+        startTime = timing->absStartTime;
     }
     else
     {
-        return RCL_CommandStatus_Error;
+        /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
+        startType = SchedulerStartNow;
+        startTime = 0;
     }
+
+    return rclSchedulerProcessCmdStartStopTime(timing, startTime, startType);
 }
 
 /*
@@ -271,40 +230,33 @@ RCL_CommandStatus RCL_Scheduler_setCustomStartStopTimeEarliestStart(const RCL_Co
     SchedulerStartType startType;
 
     RCL_Debug_assert(timing != NULL);
-    if (timing != NULL)
+
+    if (scheduling == RCL_Schedule_AbsTime)
     {
-        if (scheduling == RCL_Schedule_AbsTime)
+        startType = allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
+        startTime = timing->absStartTime;
+        if (!RCL_Scheduler_isLater(earliestStartTime, startTime))
         {
-            startType = allowDelay ? SchedulerStartAbsTimeAllowDelay : SchedulerStartAbsTimeNoDelay;
-            startTime = timing->absStartTime;
-            if (!RCL_Scheduler_isLater(earliestStartTime, startTime))
+            /* Start time is earlier than indicated - delay start if allowed */
+            if (startType == SchedulerStartAbsTimeNoDelay)
             {
-                /* Start time is earlier than indicated - delay start if allowed */
-                if (startType == SchedulerStartAbsTimeNoDelay)
-                {
-                    /* Delay not allowed */
-                    return RCL_CommandStatus_Error_StartTooLate;
-                }
-                else
-                {
-                    startTime = earliestStartTime;
-                }
+                /* Delay not allowed */
+                return RCL_CommandStatus_Error_StartTooLate;
+            }
+            else
+            {
+                startTime = earliestStartTime;
             }
         }
-        else
-        {
-            /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
-            startType = SchedulerStartAbsTimeAllowDelay;
-            startTime = earliestStartTime;
-        }
-
-        return rclSchedulerProcessCmdStartStopTime(timing, startTime, startType);
     }
     else
     {
-        return RCL_CommandStatus_Error;
+        /* For schedule now, we don't need to check allowDelay here, as delays at this stage will be small */
+        startType = SchedulerStartAbsTimeAllowDelay;
+        startTime = earliestStartTime;
     }
 
+    return rclSchedulerProcessCmdStartStopTime(timing, startTime, startType);
 }
 
 /*
@@ -358,20 +310,20 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
 
     if (startType == SchedulerNoStart)
     {
-        programmedStartTime = RCL_Hal_getCurrentTime();
+        programmedStartTime = hal_get_current_time();
         actualStartTime = programmedStartTime;
     }
     else if (startType == SchedulerStartNow)
     {
         /* Find start time to trig now; add a delay to allow trigger to be in the future */
-        programmedStartTime = RCL_Hal_getCurrentTime() + RCL_SCHEDULER_TRIG_NOW_DELAY;
+        programmedStartTime = hal_get_current_time() + RCL_SCHEDULER_TRIG_NOW_DELAY;
         actualStartTime = programmedStartTime;
     }
     else
     {
         actualStartTime = programmedStartTime;
         /* Check if there is enough time for start */
-        currentTime = RCL_Hal_getCurrentTime();
+        currentTime = hal_get_current_time();
         if (!RCL_Scheduler_isLater(currentTime + RCL_SCHEDULER_TRIG_NOW_DELAY, startTime))
         {
             if (startType == SchedulerStartAbsTimeAllowDelay)
@@ -389,7 +341,7 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
     rclSchedulerState.actualStartTime = actualStartTime;
     if (startType != SchedulerNoStart)
     {
-        RCL_Hal_setupStartTime(actualStartTime);
+        hal_setup_start_time(actualStartTime);
         /* Due to protected area and added delay, the programmed start time is not expected to be in the future. */
         RCL_Debug_assert(RCL_Scheduler_isLater(RCL_Scheduler_getCurrentTime(), actualStartTime));
     }
@@ -399,45 +351,26 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
     {
         uint32_t relHardStopTime = timing->relHardStopTime;
         int32_t relGracefulStopTime = timing->relGracefulStopTime;
-        /* When needed, rely on unsigned version of relGracefulStopTime for MISRA C compliance */
-        uint32_t relGracefulStopTimeU;
-        if (relHardStopTime != 0U)
+        if (relHardStopTime != 0)
         {
             rclSchedulerState.hardStopInfo.cmdStopTime = programmedStartTime + relHardStopTime;
-            rclSchedulerState.hardStopInfo.cmdStopEnabled = 1U;
+            rclSchedulerState.hardStopInfo.cmdStopEnabled = true;
         }
 
-        if (relGracefulStopTime < 0)
+        if (relGracefulStopTime < 0 && relHardStopTime != 0)
         {
-            if (relHardStopTime != 0U)
+            /* Graceful stop time relative to hard stop time */
+            relGracefulStopTime += relHardStopTime;
+            if (relGracefulStopTime <= 0)
             {
-                uint32_t negRelGracefulStopTimeU = (uint32_t)(-relGracefulStopTime);
-                /* Graceful stop time relative to hard stop time */
-                if (relHardStopTime > negRelGracefulStopTimeU)
-                {
-                    /* Stop immediately */
-                    relGracefulStopTimeU = 1;
-                }
-                else
-                {
-                    relGracefulStopTimeU = relHardStopTime - negRelGracefulStopTimeU;
-                }
-            }
-            else
-            {
-                /* Ignore relative stop time */
-                relGracefulStopTimeU = 0;
+                /* Stop immediately */
+                relGracefulStopTime = 1;
             }
         }
-        else
+        if (relGracefulStopTime > 0)
         {
-            relGracefulStopTimeU = (uint32_t)relGracefulStopTime;
-        }
-
-        if (relGracefulStopTimeU != 0U)
-        {
-            rclSchedulerState.gracefulStopInfo.cmdStopTime = programmedStartTime + relGracefulStopTimeU;
-            rclSchedulerState.gracefulStopInfo.cmdStopEnabled = 1U;
+            rclSchedulerState.gracefulStopInfo.cmdStopTime = programmedStartTime + relGracefulStopTime;
+            rclSchedulerState.gracefulStopInfo.cmdStopEnabled = true;
         }
 
         /* Find earliest stop times */
@@ -448,7 +381,7 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
     }
 
     /* Check if stop has been requested; at this time, radio may not have started */
-    if (rclSchedulerState.hardStopInfo.apiStopEnabled != 0U)
+    if (rclSchedulerState.hardStopInfo.apiStopEnabled)
     {
         /* Hard stop before modem start */
         HwiP_restore(key);
@@ -466,12 +399,8 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
             return RCL_Scheduler_findStopStatus(RCL_StopType_Hard);
         }
     }
-    else
-    {
-        /* Do nothing */
-    }
 
-    if (rclSchedulerState.gracefulStopInfo.apiStopEnabled != 0U)
+    if (rclSchedulerState.gracefulStopInfo.apiStopEnabled)
     {
         /* Graceful stop before modem start */
         HwiP_restore(key);
@@ -488,10 +417,6 @@ static RCL_CommandStatus rclSchedulerProcessCmdStartStopTime(const RCL_CommandTi
             HwiP_restore(key);
             return RCL_Scheduler_findStopStatus(RCL_StopType_Graceful);
         }
-    }
-    else
-    {
-        /* Do nothing */
     }
 
     HwiP_restore(key);
@@ -520,12 +445,12 @@ RCL_StopType RCL_Scheduler_setStopTimes(void)
             uint32_t stopTime = (rclSchedulerState.hardStopInfo.stopReason == RCL_SchedulerStopReason_Timeout) ?
                 rclSchedulerState.hardStopInfo.cmdStopTime : rclSchedulerState.hardStopInfo.schedStopTime;
 
-            RCL_Hal_setupHardStopTime(stopTime);
+            hal_setup_hard_stop_time(stopTime);
 
             if (!RCL_Scheduler_isLater(RCL_Scheduler_getCurrentTime(), stopTime))
             {
                 /* Hard stop already occurred */
-                RCL_Hal_cancelHardStopTime();
+                hal_cancel_hard_stop_time();
                 stopType = RCL_StopType_Hard;
             }
         }
@@ -535,12 +460,12 @@ RCL_StopType RCL_Scheduler_setStopTimes(void)
             uint32_t stopTime = (rclSchedulerState.gracefulStopInfo.stopReason == RCL_SchedulerStopReason_Timeout) ?
                 rclSchedulerState.gracefulStopInfo.cmdStopTime : rclSchedulerState.gracefulStopInfo.schedStopTime;
 
-            RCL_Hal_setupGracefulStopTime(stopTime);
+            hal_setup_graceful_stop_time(stopTime);
 
             if (!RCL_Scheduler_isLater(RCL_Scheduler_getCurrentTime(), stopTime))
             {
                 /* Graceful stop already occurred */
-                RCL_Hal_cancelGracefulStopTime();
+                hal_cancel_graceful_stop_time();
                 stopType = RCL_StopType_Graceful;
             }
         }
@@ -558,7 +483,7 @@ RCL_StopType RCL_Scheduler_setStopTimes(void)
 bool RCL_Scheduler_isLater(uint32_t refTime, uint32_t chkTime)
 {
     uint32_t timediff = refTime - chkTime;
-    if (timediff >= 0x20000000U)
+    if (timediff >= 0x20000000)
     {
         /* chkTime is later than refTime */
         return true;
@@ -576,7 +501,7 @@ bool RCL_Scheduler_isLater(uint32_t refTime, uint32_t chkTime)
 int32_t RCL_Scheduler_delta(uint32_t refTime, uint32_t chkTime)
 {
     uint32_t timediff = refTime - chkTime;
-    if (timediff >= 0x20000000U)
+    if (timediff >= 0x20000000)
     {
         /* chkTime is later than refTime. Get difference as a positive number */
         timediff = chkTime - refTime;
@@ -594,7 +519,7 @@ int32_t RCL_Scheduler_delta(uint32_t refTime, uint32_t chkTime)
     else
     {
         /* chkTime is earlier than or same time as refTime. Return negative result or 0 */
-        return -(int32_t)(timediff);
+        return (int32_t)(-timediff);
     }
 }
 
@@ -637,7 +562,7 @@ static RCL_StopType rclSchedulerSetNewStopTime(RCL_SchedulerStopInfo *stopInfo, 
     /* Store current state of the stop info */
     RCL_SchedulerStopReason oldStopReason = stopInfo->stopReason;
     uint32_t oldStopTime;
-    switch (oldStopReason)
+    switch (stopInfo->stopReason)
     {
         case RCL_SchedulerStopReason_Timeout:
             oldStopTime = stopInfo->cmdStopTime;
@@ -679,7 +604,7 @@ static RCL_StopType rclSchedulerSetNewStopTime(RCL_SchedulerStopInfo *stopInfo, 
             /* Modify stop time and see if immediate stop is needed */
             immediateStop = RCL_Scheduler_setStopTimes();
             /* Notify handler that stop time has been changed */
-            (void) RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventStopTimesUpdated);
+            RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventStopTimesUpdated);
         }
     }
 
@@ -693,7 +618,7 @@ static RCL_StopType rclSchedulerCancelStopTime(RCL_SchedulerStopInfo *stopInfo, 
     /* Store current state of the stop info */
     RCL_SchedulerStopReason oldStopReason = stopInfo->stopReason;
     uint32_t oldStopTime;
-    switch (oldStopReason)
+    switch (stopInfo->stopReason)
     {
         case RCL_SchedulerStopReason_Timeout:
             oldStopTime = stopInfo->cmdStopTime;
@@ -726,11 +651,11 @@ static RCL_StopType rclSchedulerCancelStopTime(RCL_SchedulerStopInfo *stopInfo, 
             /* Cancel stop time */
             if (stopInfo == &rclSchedulerState.hardStopInfo)
             {
-                RCL_Hal_cancelHardStopTime();
+                hal_cancel_hard_stop_time();
             }
             else
             {
-                RCL_Hal_cancelGracefulStopTime();
+                hal_cancel_graceful_stop_time();
             }
         }
     }
@@ -748,7 +673,7 @@ static RCL_StopType rclSchedulerCancelStopTime(RCL_SchedulerStopInfo *stopInfo, 
                 /* Modify stop time and see if immediate stop is needed */
                 immediateStop = RCL_Scheduler_setStopTimes();
                 /* Notify handler that stop time has been changed */
-                (void) RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventStopTimesUpdated);
+                RCL_Scheduler_postEvent(rclSchedulerState.currCmd, RCL_EventStopTimesUpdated);
             }
         }
     }
@@ -762,9 +687,9 @@ static RCL_StopType rclSchedulerCancelStopTime(RCL_SchedulerStopInfo *stopInfo, 
 static void rclSchedulerFindEarliestStopTime(RCL_SchedulerStopInfo *stopInfo)
 {
     /* Find which stop time comes first */
-    if (stopInfo->cmdStopEnabled != 0U)
+    if (stopInfo->cmdStopEnabled)
     {
-        if (stopInfo->schedStopEnabled != 0U)
+        if (stopInfo->schedStopEnabled)
         {
             uint32_t currentTime = RCL_Scheduler_getCurrentTime();
             if (RCL_Scheduler_isLater(currentTime, stopInfo->cmdStopTime))
@@ -803,7 +728,7 @@ static void rclSchedulerFindEarliestStopTime(RCL_SchedulerStopInfo *stopInfo)
             stopInfo->stopReason = RCL_SchedulerStopReason_Timeout;
         }
     }
-    else if (stopInfo->schedStopEnabled != 0U)
+    else if (stopInfo->schedStopEnabled)
     {
         /* Scheduler stop time is the only one */
         stopInfo->stopReason = RCL_SchedulerStopReason_Scheduling;
@@ -827,7 +752,7 @@ bool RCL_Scheduler_postEvent(RCL_Command_Handle c, RCL_Events e)
         if (cmd->status > RCL_CommandStatus_Queued && cmd->status < RCL_CommandStatus_Finished)
         {
             rclSchedulerState.postedRclEvents.value |= e.value | RCL_EventSoftwareTriggered.value;
-            RCL_Hal_triggerCommandFsm();
+            hal_trigger_command_fsm();
             result = true;
         }
         HwiP_restore(key);

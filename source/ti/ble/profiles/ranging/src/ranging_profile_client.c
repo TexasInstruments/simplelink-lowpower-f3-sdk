@@ -54,7 +54,6 @@ Target Device: cc23xx
 #include "ti/ble/app_util/framework/bleapputil_api.h"
 #include "ti/ble/app_util/framework/bleapputil_timers.h"
 #include "ti/ble/profiles/ranging/ranging_profile_client.h"
-#include "ti/ble/stack_util/icall/app/icall_ble_api.h"
 #include "app_gatt_api.h"
 
 //*****************************************************************************
@@ -271,7 +270,6 @@ static bStatus_t rreq_registerCharacteristic(uint8_t index, uint16_t charUUID, R
 static bStatus_t rreq_unregisterCharacteristic(uint8_t index, uint16_t charUUID);
 static bStatus_t rreq_enableNotification(uint8_t index, RREQConfigSubType_e mode, uint16_t attHandle);
 static bStatus_t rreq_sendControlPointWriteCmd(uint8_t index, uint8_t cmd, uint16_t rangingCounter, uint8_t len);
-static bStatus_t rreq_clearAllConnectionData(uint8_t index);
 
 /* Internal DB functions */
 static uint8_t rreq_getIndexByConnHandle(uint16_t connHandle);
@@ -287,8 +285,7 @@ static void rreq_clearCurrentConfiguredCharInfo(uint8_t index);
 static bool rreq_isInitDone(uint8_t index);
 static void rreq_setProcedureState(uint8_t index, RREQProcedureStates_e stateToSet);
 static void rreq_setInitStateCompleted(uint8_t index, RREQProcedureStates_e state);
-static bStatus_t rreq_parseSegmentReceived(uint8_t index, attHandleValueNoti_t *handleValueNoti);
-static void rreq_handleRealTimeFailure(uint8_t index);
+static void rreq_parseSegmentReceived(uint8_t index, attHandleValueNoti_t *handleValueNoti);
 static void rreq_clearData(uint8_t index);
 static void rreq_clearLastSegmentFlag(uint8_t index);
 
@@ -427,7 +424,7 @@ uint8_t RREQ_Enable(uint16_t connHandle, RREQEnableModeType_e enableMode)
     uint8_t index;
     uint8_t rangingDbHandle = RANGING_DB_CLIENT_INVALID_HANDLE;
 
-    if (connHandle == LINKDB_CONNHANDLE_INVALID ||
+    if (connHandle >= RREQ_MAX_CONN ||
         (enableMode != RREQ_MODE_ON_DEMAND && enableMode != RREQ_MODE_REAL_TIME))
     {
         // Invalid connection handle or enable mode
@@ -519,33 +516,47 @@ uint8_t RREQ_Enable(uint16_t connHandle, RREQEnableModeType_e enableMode)
 uint8_t RREQ_Disable(uint16_t connHandle)
 {
     uint8_t status = SUCCESS;
+    uint8_t registrationStatus = SUCCESS;
     uint8_t index = RREQ_INVALID_INDEX;
-    linkDBInfo_t linkInfo;
 
-    // Index must exist for this connection handle
-    if (connHandle == LINKDB_CONNHANDLE_INVALID ||
+    // Check connection handle and get index if exists
+    if (connHandle >= RREQ_MAX_CONN ||
         (index = rreq_getIndexByConnHandle(connHandle)) == RREQ_INVALID_INDEX)
     {
-        return INVALIDPARAMETER;
+        status = INVALIDPARAMETER;
     }
 
-    if (linkDB_GetInfo(connHandle, &linkInfo) == SUCCESS)
+    // Unregister On-Demand or Real-Time characteristics if connected and registered
+    if (status == SUCCESS)
     {
-        // Link is up - unregister notifications/indications before clearing
         if (rreq_checkRegistration(gRREQControlBlock.connInfo[index].subscribeBitMap, RAS_ON_DEMAND_UUID))
         {
-            status = rreq_configureCharRegistration(index, RAS_ON_DEMAND_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
+            registrationStatus = rreq_configureCharRegistration(index, RAS_ON_DEMAND_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
         }
         else if (rreq_checkRegistration(gRREQControlBlock.connInfo[index].subscribeBitMap, RAS_REAL_TIME_UUID))
         {
-            status = rreq_configureCharRegistration(index, RAS_REAL_TIME_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
+            registrationStatus = rreq_configureCharRegistration(index, RAS_REAL_TIME_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
+        }
+
+        // If connected - take the status returned from @ref rreq_configureCharRegistration.
+        // If not connected - no need to unregister, success will be returned.
+        if (registrationStatus != bleNotConnected)
+        {
+            status = registrationStatus;
         }
     }
 
     // Clear all data related to this connection handle
     if (status == SUCCESS)
     {
-        status = rreq_clearAllConnectionData(index);
+        // Stop the timer in case it's running
+        rreq_stopTimer(index);
+
+        // Close the ranging client DB (must be done before rreq_clearData which invalidates the handle)
+        RangingDBClient_procedureClose(gRREQControlBlock.connInfo[index].rangingDbHandle);
+
+        // Clear all index saved data
+        rreq_clearData(index);
     }
 
     return status;
@@ -560,7 +571,7 @@ uint8_t RREQ_ConfigureCharRegistration(uint16_t connHandle, uint16_t charUUID, R
     uint8_t index;
 
     // Check connection handle and subType
-    if (connHandle == LINKDB_CONNHANDLE_INVALID || subType >= RREQ_SUBTYPE_INVALID ||
+    if (connHandle >= RREQ_MAX_CONN || subType >= RREQ_SUBTYPE_INVALID ||
         (index = rreq_getIndexByConnHandle(connHandle)) == RREQ_INVALID_INDEX)
     {
         status = INVALIDPARAMETER;
@@ -622,7 +633,7 @@ uint8_t RREQ_GetRangingData(uint16_t connHandle, uint16_t rangingCount)
 
     // Check if the connection handle is valid, the configuration is not NULL,
     // there is an active procedure, and that the enabled mode is On-Demand
-    if ((connHandle == LINKDB_CONNHANDLE_INVALID) || (gRREQControlBlock.config == NULL) ||
+    if ((connHandle >= RREQ_MAX_CONN) || (gRREQControlBlock.config == NULL) ||
         (index = rreq_getIndexByConnHandle(connHandle)) == RREQ_INVALID_INDEX ||
         (gRREQControlBlock.connInfo[index].enableMode != RREQ_MODE_ON_DEMAND))
     {
@@ -666,7 +677,7 @@ uint8_t RREQ_Abort(uint16_t connHandle)
     uint8_t index;
 
     // Check if the connection handle is valid
-    if (connHandle == LINKDB_CONNHANDLE_INVALID ||
+    if (connHandle >= RREQ_MAX_CONN ||
         (index = rreq_getIndexByConnHandle(connHandle)) == RREQ_INVALID_INDEX)
     {
         status = INVALIDPARAMETER;
@@ -713,7 +724,7 @@ uint8_t RREQ_ProcedureStarted(uint16_t connHandle, uint16_t procedureCounter)
     uint8_t index;
 
     // Ensure the connection handle is valid
-    if (connHandle == LINKDB_CONNHANDLE_INVALID ||
+    if (connHandle >= RREQ_MAX_CONN ||
         (index = rreq_getIndexByConnHandle(connHandle)) == RREQ_INVALID_INDEX)
     {
         return INVALIDPARAMETER;
@@ -757,114 +768,6 @@ uint8_t RREQ_ProcedureStarted(uint16_t connHandle, uint16_t procedureCounter)
     return SUCCESS;
 }
 
-/*******************************************************************************
- * Public function defined in ranging_profile_client.h.
- */
-uint32_t RREQ_getConnInfoSize(uint16_t connHandle)
-{
-    uint32_t size = 0;
-    uint8_t index = rreq_getIndexByConnHandle(connHandle);
-
-    if (index != RREQ_INVALID_INDEX)
-    {
-        size = sizeof(RREQ_ConnInfo_t);
-    }
-
-    return size;
-}
-
-/*******************************************************************************
- * Public function defined in ranging_profile_client.h.
- */
-uint8_t RREQ_getConnInfoData(uint16_t connHandle, uint8_t *pData)
-{
-    uint8_t status = INVALIDPARAMETER;
-    uint8_t index;
-
-    index = rreq_getIndexByConnHandle(connHandle);
-    if ( index != RREQ_INVALID_INDEX &&
-         pData != NULL )
-    {
-        // Copy the connection info data to pData buffer
-        memcpy(pData, &gRREQControlBlock.connInfo[index], sizeof(RREQ_ConnInfo_t));
-        status = SUCCESS;
-    }
-
-    return status;
-}
-
-/*******************************************************************************
- * Public function defined in ranging_profile_client.h.
- */
-uint8_t RREQ_isAvailableSlot()
-{
-    uint8_t status = RangingDBClient_isAvailableSlot();
-
-    if ( rreq_getEmptyIndex() == RREQ_INVALID_INDEX )
-    {
-        status = FAILURE;
-    }
-
-    return status;
-}
-
-/*******************************************************************************
- * Public function defined in ranging_profile_client.h.
- */
-uint8_t RREQ_populateConnInfoData(uint16_t connHandle, uint8_t* pData, uint32_t length)
-{
-    uint8_t index;
-    uint8_t handle = RANGING_DB_CLIENT_INVALID_HANDLE;
-
-    // Validate input parameters
-    if ( pData == NULL ||
-         connHandle == LINKDB_CONNHANDLE_INVALID ||
-         length != sizeof(RREQ_ConnInfo_t) )
-    {
-        return INVALIDPARAMETER;
-    }
-
-    // Get an empty index for the new connection
-    index = rreq_getEmptyIndex();
-    if ( index == RREQ_INVALID_INDEX )
-    {
-        return bleNoResources;
-    }
-
-    // Open procedure for the new client
-    handle = RangingDBClient_procedureOpen();
-    if ( handle == RANGING_DB_CLIENT_INVALID_HANDLE )
-    {
-        return bleNoResources;
-    }
-
-    // Copy provided data to the connection info
-    memcpy(&gRREQControlBlock.connInfo[index], pData, length);
-
-    // Update connection-specific fields for the new node
-    gRREQControlBlock.connInfo[index].rangingDbHandle = handle;
-    gRREQControlBlock.connInfo[index].connHandle = connHandle;
-    gRREQControlBlock.connInfo[index].timeoutHandle = BLEAPPUTIL_TIMER_INVALID_HANDLE;
-
-    return SUCCESS;
-}
-
-/*******************************************************************************
- * Public function defined in ranging_profile_client.h.
- */
-uint8_t RREQ_localDisable(uint16_t connHandle)
-{
-    uint8_t index = rreq_getIndexByConnHandle(connHandle);
-    uint8_t status = INVALIDPARAMETER;
-
-    if ( index != RREQ_INVALID_INDEX )
-    {
-        status = rreq_clearAllConnectionData(index);
-    }
-
-    return status;
-}
-
  /*********************************************************************
  * LOCAL FUNCTIONS
  */
@@ -893,7 +796,7 @@ static void RREQ_GATTEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData)
     uint8_t index;
 
     // Check if there is an active RREQ procedure for this connection handle
-    if (gattMsg->connHandle == LINKDB_CONNHANDLE_INVALID ||
+    if (gattMsg->connHandle >= RREQ_MAX_CONN ||
         (index = rreq_getIndexByConnHandle(gattMsg->connHandle)) == RREQ_INVALID_INDEX )
     {
         return;
@@ -1437,9 +1340,9 @@ static bool rreq_checkRegistration(uint8_t subscribeBitMap, uint16_t uuid)
  */
 static bool rreq_checkConfigRegistration(uint8_t index, uint16_t uuid, RREQConfigSubType_e configSubType)
 {
-    if(index < RANGING_DB_CLIENT_MAX_NUM_PROC &&
-       uuid >= RAS_REAL_TIME_UUID &&
-       uuid <= RAS_DATA_OVERWRITTEN_UUID)
+    if(index < RANGING_DB_CLIENT_MAX_NUM_PROC ||
+       uuid < RAS_REAL_TIME_UUID ||
+       uuid > RAS_DATA_OVERWRITTEN_UUID)
     {
         if (configSubType == RREQ_PREFER_NOTIFY ||
             configSubType == RREQ_INDICATE)
@@ -2169,6 +2072,7 @@ static void rreq_handleDataReady(uint8_t index, attHandleValueNoti_t *handleValu
  */
 static void rreq_procedureDone(uint8_t index)
 {
+    bStatus_t status = SUCCESS;
     RangingDBClient_procedureSegmentsReader_t segmentsReader;
     uint16_t rangingCounterTemp;
     uint8_t lastSegmentFlagTemp;
@@ -2195,22 +2099,41 @@ static void rreq_procedureDone(uint8_t index)
     rreq_setProcedureState(index, RREQ_STATE_READY);
 
     // Notify APP ( Data Complete )
-    if((gRREQControlBlock.callbacks != NULL) &&
-       (gRREQControlBlock.callbacks->pDataCompleteEventCallback != NULL) &&
-       (lastSegmentFlagTemp == TRUE))
+    if((gRREQControlBlock.callbacks != NULL) && (gRREQControlBlock.callbacks->pDataCompleteEventCallback != NULL))
     {
-	    bStatus_t status = SUCCESS;
+        // Check if we received the last segment
+        if (lastSegmentFlagTemp != TRUE)
+        {
+            status = RREQ_DATA_INVALID;
+        }
 
-        // Get the data from the database
-        status = RangingDBClient_getData(gRREQControlBlock.connInfo[index].rangingDbHandle, &segmentsReader);
+        if(status == SUCCESS)
+        {
+            // Get the data from the database
+            status = RangingDBClient_getData(gRREQControlBlock.connInfo[index].rangingDbHandle, &segmentsReader);
+        }
+
+        // If status is not SUCCESS, the data was not retrieved from the DB (ownership not transferred),
+        // so we need to clear the DB to avoid memory leak
+        if (status != SUCCESS)
+        {
+            RangingDBClient_clearProcedure(gRREQControlBlock.connInfo[index].rangingDbHandle);
+        }
 
         // Call the data complete callback when the procedure is done in any case, to notify the end of the current procedure.
         // Note: Callback is called last to ensure all internal cleanup is done before notifying the application.
         gRREQControlBlock.callbacks->pDataCompleteEventCallback(RREQ_INDEX_CONN_HANDLE(index), rangingCounterTemp, status, segmentsReader);
+
+        // If status is not SUCCESS, the data was not retrieved from the DB (ownership not transferred),
+        // so we need to clear the DB to avoid memory leak
+        if (status != SUCCESS)
+        {
+            RangingDBClient_clearProcedure(gRREQControlBlock.connInfo[index].rangingDbHandle);
+        }
     }
     else
     {
-        // Clear any partial segment data from the DB to avoid memory leak
+        // If there is no callback - clear the data from the database
         RangingDBClient_clearProcedure(gRREQControlBlock.connInfo[index].rangingDbHandle);
     }
 }
@@ -2308,7 +2231,8 @@ static void rreq_sendAck(uint8_t index)
  */
 static void rreq_sendStatusCB(uint16_t connHandle, RREQClientStatus_e statusCode, uint8_t statusDataLen, uint8_t* statusData)
 {
-    if(gRREQControlBlock.callbacks != NULL &&
+    if(connHandle < RREQ_MAX_CONN &&
+       gRREQControlBlock.callbacks != NULL &&
        gRREQControlBlock.callbacks->pStatusCallback != NULL)
     {
         // send status to App
@@ -2421,25 +2345,20 @@ static void rreq_handleRspCode(uint8_t index, uint8_t rspValue)
 /*********************************************************************
  * @fn      rreq_parseSegmentReceived
  *
- * @brief   Parses and stores a received segment notification into the procedure DB.
- *          Failure handling (procedure teardown) is the caller's responsibility.
+ * @brief Handles the "on-demand" notification.
  *
  * @param index - The index associated with the connection handle of the
  *                received segment.
  * @param handleValueNoti - Pointer to the handle value notification structure.
  *
- * @return SUCCESS if the segment was stored successfully.
- * @return FAILURE if parameters are invalid or the segment failed to be added
- *         (duplicate, invalid, or overflow).
+ * @return None.
  */
-static bStatus_t rreq_parseSegmentReceived(uint8_t index, attHandleValueNoti_t *handleValueNoti)
+static void rreq_parseSegmentReceived(uint8_t index, attHandleValueNoti_t *handleValueNoti)
 {
-    uint8_t status = SUCCESS;
-
     if (index >= RANGING_DB_CLIENT_MAX_NUM_PROC ||
         handleValueNoti == NULL)
     {
-        return FAILURE;
+        return;
     }
 
     // split data to segment (1 byte) and the rest of the data
@@ -2465,9 +2384,7 @@ static bStatus_t rreq_parseSegmentReceived(uint8_t index, attHandleValueNoti_t *
     }
 
     // Add the data to the procedure DB
-    status = RangingDBClient_addData(gRREQControlBlock.connInfo[index].rangingDbHandle, segmentNum, dataLen, &pData[1]);
-
-    return status;
+    RangingDBClient_addData(gRREQControlBlock.connInfo[index].rangingDbHandle, segmentNum, dataLen, &pData[1]);
 }
 
 /*********************************************************************
@@ -2536,30 +2453,6 @@ static bStatus_t rreq_sendControlPointWriteCmd(uint8_t index, uint8_t cmd, uint1
     }
 
     return status;
-}
-
-/*********************************************************************
- * @fn      rreq_clearAllConnectionData
- *
- * @brief Clear all RREQ data related to the connection.
- *
- * @param index          - The index associated with the connection handle for
- *                         the RAS client.
- *
- * @return SUCCESS
- */
-bStatus_t rreq_clearAllConnectionData(uint8_t index)
-{
-    // Stop the timer in case it's running
-    rreq_stopTimer(index);
-
-    // Close the ranging client DB (must be done before rreq_clearData which invalidates the handle)
-    RangingDBClient_procedureClose(gRREQControlBlock.connInfo[index].rangingDbHandle);
-
-    // Clear all index saved data
-    rreq_clearData(index);
-
-    return SUCCESS;
 }
 
 /*********************************************************************
@@ -2819,7 +2712,7 @@ static uint8_t rreq_getIndexByConnHandle(uint16_t connHandle)
 {
     uint8_t index = RREQ_INVALID_INDEX;
 
-    if (connHandle != LINKDB_CONNHANDLE_INVALID)
+    if (connHandle < RREQ_MAX_CONN && connHandle != LINKDB_CONNHANDLE_INVALID)
     {
         for (uint8_t i = 0; i < RANGING_DB_CLIENT_MAX_NUM_PROC; i++)
         {
@@ -3153,11 +3046,8 @@ static void rreq_handleOnDemandSegmentReceived(uint8_t index, attHandleValueNoti
             // Start the timer for timeout
             rreq_startTimer(gRREQControlBlock.config->timeoutConfig.timeOutNextSegment, index);
 
-            // Handle the segment received; on failure end the procedure (state returns to READY)
-            if (rreq_parseSegmentReceived(index, handleValueNoti) != SUCCESS)
-            {
-                rreq_procedureDone(index);
-            }
+            // Handle the segment received
+            rreq_parseSegmentReceived(index, handleValueNoti);
             break;
         }
         case RREQ_STATE_WAIT_FOR_NEXT_SEGMENT:
@@ -3165,11 +3055,8 @@ static void rreq_handleOnDemandSegmentReceived(uint8_t index, attHandleValueNoti
             // Start the timer for timeout
             rreq_startTimer(gRREQControlBlock.config->timeoutConfig.timeOutNextSegment, index);
 
-            // Handle the segment received; on failure end the procedure (state returns to READY)
-            if (rreq_parseSegmentReceived(index, handleValueNoti) != SUCCESS)
-            {
-                rreq_procedureDone(index);
-            }
+            // Handle the segment received
+            rreq_parseSegmentReceived(index, handleValueNoti);
             break;
         }
 
@@ -3177,41 +3064,6 @@ static void rreq_handleOnDemandSegmentReceived(uint8_t index, attHandleValueNoti
             // Unknown state, do nothing
             break;
     }
-}
-
-/*********************************************************************
- * @fn      rreq_handleRealTimeFailure
- *
- * @brief   Handles a Real-Time procedure failure by cleaning up the current
- *          procedure, transitioning to IDLE, de-registering the Real-Time
- *          characteristic, and notifying the application.
- *          The application will receive a RREQ_CHAR_CONFIGURATION_DONE event
- *          when de-registration completes.
- *
- * @param   index - The index associated with the connection handle.
- *
- * @return  None.
- */
-static void rreq_handleRealTimeFailure(uint8_t index)
-{
-    // Save ranging counter before rreq_procedureDone resets it to 0xFFFF
-    uint16_t rangingCounterTemp = gRREQControlBlock.connInfo[index].procedureAttr.rangingCounter;
-
-    // Clean up the current procedure and reset state to READY
-    rreq_procedureDone(index);
-
-    // Transition to IDLE and initiate de-registration
-    rreq_setProcedureState(index, RREQ_STATE_IDLE);
-
-    // TODO: Handle failure of this function
-    // Unregister Real-Time characteristic
-    RREQ_ConfigureCharRegistration(RREQ_INDEX_CONN_HANDLE(index), RAS_REAL_TIME_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
-
-    // Notify the application about the data invalidity
-    rreq_sendStatusCB(RREQ_INDEX_CONN_HANDLE(index),
-                      RREQ_DATA_INVALID,
-                      RANGING_COUNTER_LEN,
-                      (uint8_t*)&rangingCounterTemp);
 }
 
 /*********************************************************************
@@ -3270,18 +3122,14 @@ static void rreq_handleRealTimeSegmentReceived(uint8_t index, attHandleValueNoti
                     rreq_startTimer(gRREQControlBlock.config->timeoutConfig.timeOutNextSegment, index);
                 }
 
-                // Handle the segment received; on failure apply RT teardown
-                if (rreq_parseSegmentReceived(index, handleValueNoti) != SUCCESS)
-                {
-                    rreq_handleRealTimeFailure(index);
-                    status = FAILURE;
-                }
+                // Handle the segment received
+                rreq_parseSegmentReceived(index, handleValueNoti);
             }
             else
             {
                 // Lost first segment, consider as failure
                 status = FAILURE;
-                rreq_handleRealTimeFailure(index);
+                rreq_procedureDone(index);
             }
 
             break;
@@ -3296,29 +3144,14 @@ static void rreq_handleRealTimeSegmentReceived(uint8_t index, attHandleValueNoti
                 // stop the timer
                 rreq_stopTimer(index);
             }
-            else if ((segmentFlag & RAS_FIRST_SEGMENT_BIT_MASK) != 0)
-            {
-                // First segment, out-of-order
-                rreq_handleRealTimeFailure(index);
-                status = FAILURE;
-            }
             else
             {
                 // This is not the last segment - start the timer for the next one
                 rreq_startTimer(gRREQControlBlock.config->timeoutConfig.timeOutNextSegment, index);
             }
 
-            // Guard with status check to avoid double teardown on the out-of-order path above.
-            if (status == SUCCESS)
-            {
-                // Handle the received segment; skip and apply RT teardown on failure.
-                status = rreq_parseSegmentReceived(index, handleValueNoti);
-                if (status != SUCCESS)
-                {
-                    rreq_handleRealTimeFailure(index);
-                    status = FAILURE;
-                }
-            }
+            // Handle the received segment
+            rreq_parseSegmentReceived(index, handleValueNoti);
 
             break;
         }
@@ -3430,11 +3263,11 @@ static void rreq_handleTimeoutRealTime(uint8_t index)
 
             // TODO: Handle failure of this function
             // Unregister Real-Time characteristic.
-            RREQ_ConfigureCharRegistration(RREQ_INDEX_CONN_HANDLE(index), RAS_REAL_TIME_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
+            RREQ_ConfigureCharRegistration(index, RAS_REAL_TIME_UUID, RREQ_DISABLE_NOTIFY_INDICATE);
 
             // Notify the application about the timeout
             rreq_sendStatusCB(RREQ_INDEX_CONN_HANDLE(index),
-                              RREQ_TIMEOUT_SEGMENTS_RT,
+                              RREQ_TIMEOUT_SEGMENTS,
                               RANGING_COUNTER_LEN,
                               (uint8_t*)&gRREQControlBlock.connInfo[index].procedureAttr.rangingCounter);
             break;

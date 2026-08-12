@@ -1,12 +1,11 @@
 [
     {
         "files": [
-            "+../README.md -> README.md",
-            "+../README.html -> README.html",
             "+../rfPacketRx.c -> rfPacketRx.c",
+            "+../README.md -> README.md",
             "+../rfPacketRx.syscfg -> rfPacketRx.syscfg",
             "+../main_nortos.c -> main_nortos.c",
-            "+cc23x0r5.cmd -> cc23x0r5.cmd"
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
         ]
     }
 ]

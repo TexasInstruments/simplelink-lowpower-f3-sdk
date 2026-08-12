@@ -60,606 +60,600 @@
 // 
 #define PBE_BLE5_RAM_O_RECALTIMEOUT                                  0x0000002CU
 
-// Address filtering mode.
+// Scanner and Intor use both. Advertiser uses only ADRMODE_PEERADR, it shall be unaffected by  ADRMODE_OWNADR.
 #define PBE_BLE5_RAM_O_ADRMODE                                       0x0000002EU
 
-// Configure address acceptance behavior for connection packets
+// Configure acceptance of unknown addresses for connectable advertising packets in initiators and advertisers 
 #define PBE_BLE5_RAM_O_RPACONNECT                                    0x00000030U
 
-// Configure RX FIFO packet metadata appending and auto-flush behavior
+// Configure FIFO usage
 #define PBE_BLE5_RAM_O_FIFOCFG                                       0x00000032U
 
-// Packet status byte appended to RX FIFO when FIFOCFG.APPENDSTATUS is enabled
+// Status for the received packet, appended in the RX FIFO depending on FIFOCFG.
 #define PBE_BLE5_RAM_O_STATUSBYTE                                    0x00000034U
 
 // 
 #define PBE_BLE5_RAM_O_NAKHUB                                        0x00000036U
 
-// Data whitening initialization value. Set to 0 to disable whitening.
+// Initialization for the whitener, if 0 the whitener is not used
 #define PBE_BLE5_RAM_O_WHITEINIT                                     0x00000038U
 
-// Space reserved after PDU for metadata (timestamp, RSSI, etc.). Must be ≥ total size of enabled FIFOCFG append fields.
+// Indicates how many bytes that are required after the PDU to hold the statuses configured in FIFOCFG. It has to be equal or greater.
 #define PBE_BLE5_RAM_O_EXTRABYTES                                    0x0000003AU
 
-// COEX T1 timing extension. Total T1 = COEXT1 + SYNTHCALTIMEOUT + overhead(~80 µs)
-#define PBE_BLE5_RAM_O_COEXT1                                        0x0000003CU
+// CRC initialization value Random by Link Layer for Data PDU, 0x555555 for Adv PDU.
+#define PBE_BLE5_RAM_O_CRCINITL                                      0x0000003CU
 
-// COEX arbitration configuration for sharing antenna/spectrum with other radios
-#define PBE_BLE5_RAM_O_COEXCFG                                       0x0000003EU
+// CRC initialization value Random by Link Layer for Data PDU, 0x555555 for Adv PDU.
+#define PBE_BLE5_RAM_O_CRCINITH                                      0x0000003EU
 
-// CRC-24 initialization value, lower 16 bits. Random for Data PDU, 0x555555 for Advertising PDU.
-#define PBE_BLE5_RAM_O_CRCINITL                                      0x00000040U
+// Sequencing status
+#define PBE_BLE5_RAM_O_SEQSTAT                                       0x00000040U
 
-// CRC-24 initialization value, upper 8 bits. Random for Data PDU, 0x555555 for Advertising PDU.
-#define PBE_BLE5_RAM_O_CRCINITH                                      0x00000042U
+// Back off count
+#define PBE_BLE5_RAM_O_BACKOFFCNT                                    0x00000042U
 
-// Connection sequencing status for sequence number tracking and control packet state
-#define PBE_BLE5_RAM_O_SEQSTAT                                       0x00000044U
+// Configure scanner
+#define PBE_BLE5_RAM_O_SCANCFG                                       0x00000044U
 
-// Scanner backoff counter for managing scan request rate limiting
-#define PBE_BLE5_RAM_O_BACKOFFCNT                                    0x00000046U
+// Extended advertising configuration
+#define PBE_BLE5_RAM_O_AECFG                                         0x00000046U
 
-// Scanner operation configuration
-#define PBE_BLE5_RAM_O_SCANCFG                                       0x00000048U
+// Temporary storage for AE flags
+#define PBE_BLE5_RAM_O_AETMP                                         0x00000048U
 
-// Extended advertising configuration and mode filtering
-#define PBE_BLE5_RAM_O_AECFG                                         0x0000004AU
+// Temporary storage for RT7_EXT_LENGTH
+#define PBE_BLE5_RAM_O_EXTLENTMP                                     0x0000004AU
 
-// Temporary storage for extended advertising PDU field presence flags
-#define PBE_BLE5_RAM_O_AETMP                                         0x0000004CU
+// WinOffset parameter to divide by 4 and write in CONNECT_IND message. This value will be decremented at each systimer event x until transmission of a CONNECT_REQ has started. If the value is decremented from 4, it is set to WINMOD.
+#define PBE_BLE5_RAM_O_WINOFFSET                                     0x0000004CU
 
-// Temporary storage for extended header length field
-#define PBE_BLE5_RAM_O_EXTLENTMP                                     0x0000004EU
-
-// Dynamic transmitWindowOffset for CONNECT_IND/AUX_CONNECT_REQ. Decremented by PBE until CONNECT_REQ TX, wraps at WINMOD.
-#define PBE_BLE5_RAM_O_WINOFFSET                                     0x00000050U
-
 // 
-#define PBE_BLE5_RAM_O_WINMOD                                        0x00000052U
+#define PBE_BLE5_RAM_O_WINMOD                                        0x0000004EU
 
-// Maximum allowed PDU payload length in bytes for TX_RAW and RX_RAW operations
-#define PBE_BLE5_RAM_O_MAXLEN                                        0x00000054U
+// Maximum number of payload bytes in a packet. Checked in OP_BLE_TX_RAW and OP_BLE_RX_RAW. PDU TYPE specific lengths are confirmed in addition.
+#define PBE_BLE5_RAM_O_MAXLEN                                        0x00000050U
 
-// BLE address filtering policies for different roles (Advertiser, Scanner, Initiator)
-#define PBE_BLE5_RAM_O_FILTPOLICY                                    0x00000056U
+// Filter policies
+#define PBE_BLE5_RAM_O_FILTPOLICY                                    0x00000052U
 
-// Own device address type
-#define PBE_BLE5_RAM_O_OWNADRTYPE                                    0x00000058U
+// Address modes
+#define PBE_BLE5_RAM_O_OWNADRTYPE                                    0x00000054U
 
-// Scanner address type for AUX_CONNECT_REQ
-#define PBE_BLE5_RAM_O_SCANATYPE                                     0x0000005AU
+// Address mode for the ScanA in AUX_CONNECT_REQ
+#define PBE_BLE5_RAM_O_SCANATYPE                                     0x00000056U
 
-// Peer device address type
-#define PBE_BLE5_RAM_O_PEERADRTYPE                                   0x0000005CU
+// Address modes
+#define PBE_BLE5_RAM_O_PEERADRTYPE                                   0x00000058U
 
-// Own device address, bits 15:0 (LSB). 48-bit BLE address stored across OWNADRL/M/H.
-#define PBE_BLE5_RAM_O_OWNADRL                                       0x0000005EU
+// Low part of own address, 16 bits
+#define PBE_BLE5_RAM_O_OWNADRL                                       0x0000005AU
 
-// Own device address, bits 31:16 (middle). 48-bit BLE address stored across OWNADRL/M/H.
-#define PBE_BLE5_RAM_O_OWNADRM                                       0x00000060U
+// Middle part of own address, 16 bits
+#define PBE_BLE5_RAM_O_OWNADRM                                       0x0000005CU
 
-// Own device address, bits 47:32 (MSB). 48-bit BLE address stored across OWNADRL/M/H.
-#define PBE_BLE5_RAM_O_OWNADRH                                       0x00000062U
+// High part of own address, 16 bits
+#define PBE_BLE5_RAM_O_OWNADRH                                       0x0000005EU
 
-// Scanner address for AUX_CONNECT_REQ, bits 15:0 (LSB)
-#define PBE_BLE5_RAM_O_SCANADRL                                      0x00000064U
+// Low part of scan address
+#define PBE_BLE5_RAM_O_SCANADRL                                      0x00000060U
 
-// Scanner address for AUX_CONNECT_REQ, bits 31:16 (middle)
-#define PBE_BLE5_RAM_O_SCANADRM                                      0x00000066U
+// Middle part of scan address
+#define PBE_BLE5_RAM_O_SCANADRM                                      0x00000062U
 
-// Scanner address for AUX_CONNECT_REQ, bits 47:32 (MSB)
-#define PBE_BLE5_RAM_O_SCANADRH                                      0x00000068U
+// High part of scan address
+#define PBE_BLE5_RAM_O_SCANADRH                                      0x00000064U
 
 // 
-#define PBE_BLE5_RAM_O_TMPADRL                                       0x0000006AU
+#define PBE_BLE5_RAM_O_TMPADRL                                       0x00000066U
 
 // 
-#define PBE_BLE5_RAM_O_TMPADRM                                       0x0000006CU
+#define PBE_BLE5_RAM_O_TMPADRM                                       0x00000068U
 
 // 
-#define PBE_BLE5_RAM_O_TMPADRH                                       0x0000006EU
+#define PBE_BLE5_RAM_O_TMPADRH                                       0x0000006AU
 
-// Peer device address (target), bits 15:0 (LSB)
-#define PBE_BLE5_RAM_O_PEERADRL                                      0x00000070U
+// Low part of peer address
+#define PBE_BLE5_RAM_O_PEERADRL                                      0x0000006CU
 
-// Peer device address (target), bits 31:16 (middle)
-#define PBE_BLE5_RAM_O_PEERADRM                                      0x00000072U
+// Middle part of peer address
+#define PBE_BLE5_RAM_O_PEERADRM                                      0x0000006EU
 
-// Peer device address (target), bits 47:32 (MSB)
-#define PBE_BLE5_RAM_O_PEERADRH                                      0x00000074U
+// High part of peer address
+#define PBE_BLE5_RAM_O_PEERADRH                                      0x00000070U
 
-// Connection statistics counter
-#define PBE_BLE5_RAM_O_NTXDONE                                       0x00000076U
+// 
+#define PBE_BLE5_RAM_O_NTXDONE                                       0x00000072U
 
-// Connection statistics counter
-#define PBE_BLE5_RAM_O_NTXACK                                        0x00000078U
+// 
+#define PBE_BLE5_RAM_O_NTXACK                                        0x00000074U
 
-// Connection statistics counter
-#define PBE_BLE5_RAM_O_NTXCTLACK                                     0x0000007AU
+// 
+#define PBE_BLE5_RAM_O_NTXCTLACK                                     0x00000076U
 
-// Connection statistics counter
-#define PBE_BLE5_RAM_O_NTXCTL                                        0x0000007CU
+// 
+#define PBE_BLE5_RAM_O_NTXCTL                                        0x00000078U
 
-// Connection statistics counter
-#define PBE_BLE5_RAM_O_NTXRETRANS                                    0x0000007EU
+// 
+#define PBE_BLE5_RAM_O_NTXRETRANS                                    0x0000007AU
 
-// Reception statistics counter
-#define PBE_BLE5_RAM_O_NRXNOK                                        0x00000080U
+// 
+#define PBE_BLE5_RAM_O_NRXNOK                                        0x0000007CU
 
-// Reception statistics counter
-#define PBE_BLE5_RAM_O_NRXIGNORED                                    0x00000082U
+// 
+#define PBE_BLE5_RAM_O_NRXIGNORED                                    0x0000007EU
 
-// Reception statistics counter
-#define PBE_BLE5_RAM_O_NRXEMPTY                                      0x00000084U
+// 
+#define PBE_BLE5_RAM_O_NRXEMPTY                                      0x00000080U
 
-// Reception statistics counter
-#define PBE_BLE5_RAM_O_NRXFIFOFULL                                   0x00000086U
+// 
+#define PBE_BLE5_RAM_O_NRXFIFOFULL                                   0x00000082U
 
-// Reception statistics counter
-#define PBE_BLE5_RAM_O_NRXOK                                         0x00000088U
+// 
+#define PBE_BLE5_RAM_O_NRXOK                                         0x00000084U
 
-// Transmission statistics counter
-#define PBE_BLE5_RAM_O_NTX                                           0x0000008AU
+// 
+#define PBE_BLE5_RAM_O_NTX                                           0x00000086U
 
-// Reception statistics counter
-#define PBE_BLE5_RAM_O_NRXCTL                                        0x0000008CU
+// 
+#define PBE_BLE5_RAM_O_NRXCTL                                        0x00000088U
 
-// Transmission statistics counter
-#define PBE_BLE5_RAM_O_NRXCTLACK                                     0x0000008EU
+// 
+#define PBE_BLE5_RAM_O_NRXCTLACK                                     0x0000008AU
 
-// Signal strength measurement
-#define PBE_BLE5_RAM_O_LASTRSSI                                      0x00000090U
+// 
+#define PBE_BLE5_RAM_O_LASTRSSI                                      0x0000008CU
 
 // 
-#define PBE_BLE5_RAM_O_FIRSTRXTIMEOUT                                0x00000092U
+#define PBE_BLE5_RAM_O_FIRSTRXTIMEOUT                                0x0000008EU
 
 // 
-#define PBE_BLE5_RAM_O_LASTTIMESTAMPL                                0x00000094U
+#define PBE_BLE5_RAM_O_LASTTIMESTAMPL                                0x00000090U
 
 // 
-#define PBE_BLE5_RAM_O_LASTTIMESTAMPH                                0x00000096U
+#define PBE_BLE5_RAM_O_LASTTIMESTAMPH                                0x00000092U
 
 // 
-#define PBE_BLE5_RAM_O_MDCFG                                         0x00000098U
+#define PBE_BLE5_RAM_O_MDCFG                                         0x00000094U
 
-// Advertiser operation configuration. Determines OP_BLE_ADV behavior. Multiple bits may be set.
-#define PBE_BLE5_RAM_O_ADVCFG                                        0x0000009AU
+// Configure Advertiser Task Behavior. This configuration determines the control flow of the advertiser command(OP_BLE_ADV) on the PBE_API. More than one bit may be high at the same time.
+#define PBE_BLE5_RAM_O_ADVCFG                                        0x00000096U
 
-// Temporary RSSI storage for internal processing
-#define PBE_BLE5_RAM_O_TMPRSSI                                       0x0000009CU
+// Temporary register for storing RSSI
+#define PBE_BLE5_RAM_O_TMPRSSI                                       0x00000098U
 
-// General-purpose temporary register for internal processing
-#define PBE_BLE5_RAM_O_TMPREG                                        0x0000009EU
+// Temporary register
+#define PBE_BLE5_RAM_O_TMPREG                                        0x0000009AU
 
 // 
-#define PBE_BLE5_RAM_O_FIRSTTIMESTAMPL                               0x000000A0U
+#define PBE_BLE5_RAM_O_FIRSTTIMESTAMPL                               0x0000009CU
 
 // 
-#define PBE_BLE5_RAM_O_FIRSTTIMESTAMPH                               0x000000A2U
+#define PBE_BLE5_RAM_O_FIRSTTIMESTAMPH                               0x0000009EU
 
 // 
-#define PBE_BLE5_RAM_O_FL1RESULT                                     0x000000A4U
+#define PBE_BLE5_RAM_O_FL1RESULT                                     0x000000A0U
 
 // 
-#define PBE_BLE5_RAM_O_FL1MASK                                       0x000000A6U
+#define PBE_BLE5_RAM_O_FL1MASK                                       0x000000A2U
 
 // 
-#define PBE_BLE5_RAM_O_FL2RESULT                                     0x000000A8U
+#define PBE_BLE5_RAM_O_FL2RESULT                                     0x000000A4U
 
 // 
-#define PBE_BLE5_RAM_O_FL2MASK                                       0x000000AAU
+#define PBE_BLE5_RAM_O_FL2MASK                                       0x000000A6U
 
 // 
-#define PBE_BLE5_RAM_O_FLSTAT                                        0x000000ACU
+#define PBE_BLE5_RAM_O_FLSTAT                                        0x000000A8U
 
 // 
-#define PBE_BLE5_RAM_O_TMPATYPE                                      0x000000AEU
+#define PBE_BLE5_RAM_O_TMPATYPE                                      0x000000AAU
 
-// TX_RAW test pattern data
-#define PBE_BLE5_RAM_O_PATTERN                                       0x000000B0U
+// 
+#define PBE_BLE5_RAM_O_PATTERN                                       0x000000ACU
 
-// TX_RAW packet interval timing
-#define PBE_BLE5_RAM_O_RFINTERVAL                                    0x000000B2U
+// 
+#define PBE_BLE5_RAM_O_RFINTERVAL                                    0x000000AEU
 
-// TX_RAW packet count target
-#define PBE_BLE5_RAM_O_NTXTARGET                                     0x000000B4U
+// 
+#define PBE_BLE5_RAM_O_NTXTARGET                                     0x000000B0U
 
-// RAW operation configuration (TX_RAW/RX_RAW/FS modes)
-#define PBE_BLE5_RAM_O_OPCFG                                         0x000000B6U
+// combined tx/rx/fs configuration
+#define PBE_BLE5_RAM_O_OPCFG                                         0x000000B2U
 
 // 
-#define PBE_BLE5_RAM_O_OPDIR                                         0x000000B8U
+#define PBE_BLE5_RAM_O_OPDIR                                         0x000000B4U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO0                                      0x000000BCU
+#define PBE_BLE5_RAM_O_FL1INFO0                                      0x000000B8U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL0                                      0x000000BEU
+#define PBE_BLE5_RAM_O_FL1ADRL0                                      0x000000BAU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM0                                      0x000000C0U
+#define PBE_BLE5_RAM_O_FL1ADRM0                                      0x000000BCU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH0                                      0x000000C2U
+#define PBE_BLE5_RAM_O_FL1ADRH0                                      0x000000BEU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO1                                      0x000000C4U
+#define PBE_BLE5_RAM_O_FL1INFO1                                      0x000000C0U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL1                                      0x000000C6U
+#define PBE_BLE5_RAM_O_FL1ADRL1                                      0x000000C2U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM1                                      0x000000C8U
+#define PBE_BLE5_RAM_O_FL1ADRM1                                      0x000000C4U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH1                                      0x000000CAU
+#define PBE_BLE5_RAM_O_FL1ADRH1                                      0x000000C6U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO2                                      0x000000CCU
+#define PBE_BLE5_RAM_O_FL1INFO2                                      0x000000C8U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL2                                      0x000000CEU
+#define PBE_BLE5_RAM_O_FL1ADRL2                                      0x000000CAU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM2                                      0x000000D0U
+#define PBE_BLE5_RAM_O_FL1ADRM2                                      0x000000CCU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH2                                      0x000000D2U
+#define PBE_BLE5_RAM_O_FL1ADRH2                                      0x000000CEU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO3                                      0x000000D4U
+#define PBE_BLE5_RAM_O_FL1INFO3                                      0x000000D0U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL3                                      0x000000D6U
+#define PBE_BLE5_RAM_O_FL1ADRL3                                      0x000000D2U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM3                                      0x000000D8U
+#define PBE_BLE5_RAM_O_FL1ADRM3                                      0x000000D4U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH3                                      0x000000DAU
+#define PBE_BLE5_RAM_O_FL1ADRH3                                      0x000000D6U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO4                                      0x000000DCU
+#define PBE_BLE5_RAM_O_FL1INFO4                                      0x000000D8U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL4                                      0x000000DEU
+#define PBE_BLE5_RAM_O_FL1ADRL4                                      0x000000DAU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM4                                      0x000000E0U
+#define PBE_BLE5_RAM_O_FL1ADRM4                                      0x000000DCU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH4                                      0x000000E2U
+#define PBE_BLE5_RAM_O_FL1ADRH4                                      0x000000DEU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO5                                      0x000000E4U
+#define PBE_BLE5_RAM_O_FL1INFO5                                      0x000000E0U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL5                                      0x000000E6U
+#define PBE_BLE5_RAM_O_FL1ADRL5                                      0x000000E2U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM5                                      0x000000E8U
+#define PBE_BLE5_RAM_O_FL1ADRM5                                      0x000000E4U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH5                                      0x000000EAU
+#define PBE_BLE5_RAM_O_FL1ADRH5                                      0x000000E6U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO6                                      0x000000ECU
+#define PBE_BLE5_RAM_O_FL1INFO6                                      0x000000E8U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL6                                      0x000000EEU
+#define PBE_BLE5_RAM_O_FL1ADRL6                                      0x000000EAU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM6                                      0x000000F0U
+#define PBE_BLE5_RAM_O_FL1ADRM6                                      0x000000ECU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH6                                      0x000000F2U
+#define PBE_BLE5_RAM_O_FL1ADRH6                                      0x000000EEU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO7                                      0x000000F4U
+#define PBE_BLE5_RAM_O_FL1INFO7                                      0x000000F0U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL7                                      0x000000F6U
+#define PBE_BLE5_RAM_O_FL1ADRL7                                      0x000000F2U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM7                                      0x000000F8U
+#define PBE_BLE5_RAM_O_FL1ADRM7                                      0x000000F4U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH7                                      0x000000FAU
+#define PBE_BLE5_RAM_O_FL1ADRH7                                      0x000000F6U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO8                                      0x000000FCU
+#define PBE_BLE5_RAM_O_FL1INFO8                                      0x000000F8U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL8                                      0x000000FEU
+#define PBE_BLE5_RAM_O_FL1ADRL8                                      0x000000FAU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM8                                      0x00000100U
+#define PBE_BLE5_RAM_O_FL1ADRM8                                      0x000000FCU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH8                                      0x00000102U
+#define PBE_BLE5_RAM_O_FL1ADRH8                                      0x000000FEU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO9                                      0x00000104U
+#define PBE_BLE5_RAM_O_FL1INFO9                                      0x00000100U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL9                                      0x00000106U
+#define PBE_BLE5_RAM_O_FL1ADRL9                                      0x00000102U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM9                                      0x00000108U
+#define PBE_BLE5_RAM_O_FL1ADRM9                                      0x00000104U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH9                                      0x0000010AU
+#define PBE_BLE5_RAM_O_FL1ADRH9                                      0x00000106U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO10                                     0x0000010CU
+#define PBE_BLE5_RAM_O_FL1INFO10                                     0x00000108U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL10                                     0x0000010EU
+#define PBE_BLE5_RAM_O_FL1ADRL10                                     0x0000010AU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM10                                     0x00000110U
+#define PBE_BLE5_RAM_O_FL1ADRM10                                     0x0000010CU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH10                                     0x00000112U
+#define PBE_BLE5_RAM_O_FL1ADRH10                                     0x0000010EU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO11                                     0x00000114U
+#define PBE_BLE5_RAM_O_FL1INFO11                                     0x00000110U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL11                                     0x00000116U
+#define PBE_BLE5_RAM_O_FL1ADRL11                                     0x00000112U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM11                                     0x00000118U
+#define PBE_BLE5_RAM_O_FL1ADRM11                                     0x00000114U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH11                                     0x0000011AU
+#define PBE_BLE5_RAM_O_FL1ADRH11                                     0x00000116U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO12                                     0x0000011CU
+#define PBE_BLE5_RAM_O_FL1INFO12                                     0x00000118U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL12                                     0x0000011EU
+#define PBE_BLE5_RAM_O_FL1ADRL12                                     0x0000011AU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM12                                     0x00000120U
+#define PBE_BLE5_RAM_O_FL1ADRM12                                     0x0000011CU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH12                                     0x00000122U
+#define PBE_BLE5_RAM_O_FL1ADRH12                                     0x0000011EU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO13                                     0x00000124U
+#define PBE_BLE5_RAM_O_FL1INFO13                                     0x00000120U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL13                                     0x00000126U
+#define PBE_BLE5_RAM_O_FL1ADRL13                                     0x00000122U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM13                                     0x00000128U
+#define PBE_BLE5_RAM_O_FL1ADRM13                                     0x00000124U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH13                                     0x0000012AU
+#define PBE_BLE5_RAM_O_FL1ADRH13                                     0x00000126U
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO14                                     0x0000012CU
+#define PBE_BLE5_RAM_O_FL1INFO14                                     0x00000128U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL14                                     0x0000012EU
+#define PBE_BLE5_RAM_O_FL1ADRL14                                     0x0000012AU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM14                                     0x00000130U
+#define PBE_BLE5_RAM_O_FL1ADRM14                                     0x0000012CU
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH14                                     0x00000132U
+#define PBE_BLE5_RAM_O_FL1ADRH14                                     0x0000012EU
 
 // 
-#define PBE_BLE5_RAM_O_FL1INFO15                                     0x00000134U
+#define PBE_BLE5_RAM_O_FL1INFO15                                     0x00000130U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRL15                                     0x00000136U
+#define PBE_BLE5_RAM_O_FL1ADRL15                                     0x00000132U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRM15                                     0x00000138U
+#define PBE_BLE5_RAM_O_FL1ADRM15                                     0x00000134U
 
 // 
-#define PBE_BLE5_RAM_O_FL1ADRH15                                     0x0000013AU
+#define PBE_BLE5_RAM_O_FL1ADRH15                                     0x00000136U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO0                                      0x0000013CU
+#define PBE_BLE5_RAM_O_FL2INFO0                                      0x00000138U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL0                                      0x0000013EU
+#define PBE_BLE5_RAM_O_FL2ADRL0                                      0x0000013AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM0                                      0x00000140U
+#define PBE_BLE5_RAM_O_FL2ADRM0                                      0x0000013CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH0                                      0x00000142U
+#define PBE_BLE5_RAM_O_FL2ADRH0                                      0x0000013EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO1                                      0x00000144U
+#define PBE_BLE5_RAM_O_FL2INFO1                                      0x00000140U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL1                                      0x00000146U
+#define PBE_BLE5_RAM_O_FL2ADRL1                                      0x00000142U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM1                                      0x00000148U
+#define PBE_BLE5_RAM_O_FL2ADRM1                                      0x00000144U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH1                                      0x0000014AU
+#define PBE_BLE5_RAM_O_FL2ADRH1                                      0x00000146U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO2                                      0x0000014CU
+#define PBE_BLE5_RAM_O_FL2INFO2                                      0x00000148U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL2                                      0x0000014EU
+#define PBE_BLE5_RAM_O_FL2ADRL2                                      0x0000014AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM2                                      0x00000150U
+#define PBE_BLE5_RAM_O_FL2ADRM2                                      0x0000014CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH2                                      0x00000152U
+#define PBE_BLE5_RAM_O_FL2ADRH2                                      0x0000014EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO3                                      0x00000154U
+#define PBE_BLE5_RAM_O_FL2INFO3                                      0x00000150U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL3                                      0x00000156U
+#define PBE_BLE5_RAM_O_FL2ADRL3                                      0x00000152U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM3                                      0x00000158U
+#define PBE_BLE5_RAM_O_FL2ADRM3                                      0x00000154U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH3                                      0x0000015AU
+#define PBE_BLE5_RAM_O_FL2ADRH3                                      0x00000156U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO4                                      0x0000015CU
+#define PBE_BLE5_RAM_O_FL2INFO4                                      0x00000158U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL4                                      0x0000015EU
+#define PBE_BLE5_RAM_O_FL2ADRL4                                      0x0000015AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM4                                      0x00000160U
+#define PBE_BLE5_RAM_O_FL2ADRM4                                      0x0000015CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH4                                      0x00000162U
+#define PBE_BLE5_RAM_O_FL2ADRH4                                      0x0000015EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO5                                      0x00000164U
+#define PBE_BLE5_RAM_O_FL2INFO5                                      0x00000160U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL5                                      0x00000166U
+#define PBE_BLE5_RAM_O_FL2ADRL5                                      0x00000162U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM5                                      0x00000168U
+#define PBE_BLE5_RAM_O_FL2ADRM5                                      0x00000164U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH5                                      0x0000016AU
+#define PBE_BLE5_RAM_O_FL2ADRH5                                      0x00000166U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO6                                      0x0000016CU
+#define PBE_BLE5_RAM_O_FL2INFO6                                      0x00000168U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL6                                      0x0000016EU
+#define PBE_BLE5_RAM_O_FL2ADRL6                                      0x0000016AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM6                                      0x00000170U
+#define PBE_BLE5_RAM_O_FL2ADRM6                                      0x0000016CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH6                                      0x00000172U
+#define PBE_BLE5_RAM_O_FL2ADRH6                                      0x0000016EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO7                                      0x00000174U
+#define PBE_BLE5_RAM_O_FL2INFO7                                      0x00000170U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL7                                      0x00000176U
+#define PBE_BLE5_RAM_O_FL2ADRL7                                      0x00000172U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM7                                      0x00000178U
+#define PBE_BLE5_RAM_O_FL2ADRM7                                      0x00000174U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH7                                      0x0000017AU
+#define PBE_BLE5_RAM_O_FL2ADRH7                                      0x00000176U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO8                                      0x0000017CU
+#define PBE_BLE5_RAM_O_FL2INFO8                                      0x00000178U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL8                                      0x0000017EU
+#define PBE_BLE5_RAM_O_FL2ADRL8                                      0x0000017AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM8                                      0x00000180U
+#define PBE_BLE5_RAM_O_FL2ADRM8                                      0x0000017CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH8                                      0x00000182U
+#define PBE_BLE5_RAM_O_FL2ADRH8                                      0x0000017EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO9                                      0x00000184U
+#define PBE_BLE5_RAM_O_FL2INFO9                                      0x00000180U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL9                                      0x00000186U
+#define PBE_BLE5_RAM_O_FL2ADRL9                                      0x00000182U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM9                                      0x00000188U
+#define PBE_BLE5_RAM_O_FL2ADRM9                                      0x00000184U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH9                                      0x0000018AU
+#define PBE_BLE5_RAM_O_FL2ADRH9                                      0x00000186U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO10                                     0x0000018CU
+#define PBE_BLE5_RAM_O_FL2INFO10                                     0x00000188U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL10                                     0x0000018EU
+#define PBE_BLE5_RAM_O_FL2ADRL10                                     0x0000018AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM10                                     0x00000190U
+#define PBE_BLE5_RAM_O_FL2ADRM10                                     0x0000018CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH10                                     0x00000192U
+#define PBE_BLE5_RAM_O_FL2ADRH10                                     0x0000018EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO11                                     0x00000194U
+#define PBE_BLE5_RAM_O_FL2INFO11                                     0x00000190U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL11                                     0x00000196U
+#define PBE_BLE5_RAM_O_FL2ADRL11                                     0x00000192U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM11                                     0x00000198U
+#define PBE_BLE5_RAM_O_FL2ADRM11                                     0x00000194U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH11                                     0x0000019AU
+#define PBE_BLE5_RAM_O_FL2ADRH11                                     0x00000196U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO12                                     0x0000019CU
+#define PBE_BLE5_RAM_O_FL2INFO12                                     0x00000198U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL12                                     0x0000019EU
+#define PBE_BLE5_RAM_O_FL2ADRL12                                     0x0000019AU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM12                                     0x000001A0U
+#define PBE_BLE5_RAM_O_FL2ADRM12                                     0x0000019CU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH12                                     0x000001A2U
+#define PBE_BLE5_RAM_O_FL2ADRH12                                     0x0000019EU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO13                                     0x000001A4U
+#define PBE_BLE5_RAM_O_FL2INFO13                                     0x000001A0U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL13                                     0x000001A6U
+#define PBE_BLE5_RAM_O_FL2ADRL13                                     0x000001A2U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM13                                     0x000001A8U
+#define PBE_BLE5_RAM_O_FL2ADRM13                                     0x000001A4U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH13                                     0x000001AAU
+#define PBE_BLE5_RAM_O_FL2ADRH13                                     0x000001A6U
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO14                                     0x000001ACU
+#define PBE_BLE5_RAM_O_FL2INFO14                                     0x000001A8U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL14                                     0x000001AEU
+#define PBE_BLE5_RAM_O_FL2ADRL14                                     0x000001AAU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM14                                     0x000001B0U
+#define PBE_BLE5_RAM_O_FL2ADRM14                                     0x000001ACU
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH14                                     0x000001B2U
+#define PBE_BLE5_RAM_O_FL2ADRH14                                     0x000001AEU
 
 // 
-#define PBE_BLE5_RAM_O_FL2INFO15                                     0x000001B4U
+#define PBE_BLE5_RAM_O_FL2INFO15                                     0x000001B0U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRL15                                     0x000001B6U
+#define PBE_BLE5_RAM_O_FL2ADRL15                                     0x000001B2U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRM15                                     0x000001B8U
+#define PBE_BLE5_RAM_O_FL2ADRM15                                     0x000001B4U
 
 // 
-#define PBE_BLE5_RAM_O_FL2ADRH15                                     0x000001BAU
+#define PBE_BLE5_RAM_O_FL2ADRH15                                     0x000001B6U
 
 //******************************************************************************
 // Register: PHY
 //******************************************************************************
 // Field: [1:0] sel
 //
-// PHY selection for current operation. Sets data rate and coding scheme.
+// Used to pass on the value of the Coding Indicator,
 #define PBE_BLE5_RAM_PHY_SEL_W                                                2U
 #define PBE_BLE5_RAM_PHY_SEL_M                                           0x0003U
 #define PBE_BLE5_RAM_PHY_SEL_S                                                0U
@@ -673,7 +667,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Pre-TX inter-frame spacing for 500 kbps Coded PHY. Timer value loaded after RX to schedule TX, meeting T_IFS (150 µs) requirement. Value in 0.25 µs steps.
+// For bluetooth long range (BLR) and the 500k data rate only. Base value used after RX to set timer0 for when to start Transmission.
 #define PBE_BLE5_RAM_PRETXIFS500K_VAL_W                                      16U
 #define PBE_BLE5_RAM_PRETXIFS500K_VAL_M                                  0xFFFFU
 #define PBE_BLE5_RAM_PRETXIFS500K_VAL_S                                       0U
@@ -683,7 +677,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Pre-TX inter-frame spacing for 1M and 2M PHYs. Timer value loaded after RX to schedule TX, meeting T_IFS (150 µs) requirement. Value in 0.25 µs steps.
+// Base value used after RX to set timer0 for when to start Transmission.
 #define PBE_BLE5_RAM_PRETXIFS_VAL_W                                          16U
 #define PBE_BLE5_RAM_PRETXIFS_VAL_M                                      0xFFFFU
 #define PBE_BLE5_RAM_PRETXIFS_VAL_S                                           0U
@@ -693,7 +687,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Pre-RX inter-frame spacing. Timer value loaded after TX to schedule RX transition, meeting T_IFS (150 µs) requirement. Value in 0.25 µs steps.
+// Base value used after TX to set timer0 for when to start Receiving.
 #define PBE_BLE5_RAM_PRERXIFS_VAL_W                                          16U
 #define PBE_BLE5_RAM_PRERXIFS_VAL_M                                      0xFFFFU
 #define PBE_BLE5_RAM_PRERXIFS_VAL_S                                           0U
@@ -703,7 +697,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// RX timeout for T_IFS scenarios. Max time searching for sync before aborting sync search. VAL = 0 disables timeout. Value in 0.25 µs steps.
+// Time to stay in RX before giving up sync search. Only used in T_IFS scenarios. If VAL = 0 then the PBE waits forever or until the CM0 manually interrupts.
 #define PBE_BLE5_RAM_RXTIMEOUT_VAL_W                                         16U
 #define PBE_BLE5_RAM_RXTIMEOUT_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_RXTIMEOUT_VAL_S                                          0U
@@ -713,7 +707,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Synth calibration timeout. Max time for RFE initial frequency calibration at operation start. Value in 0.25 µs steps.
+// How many µs the PBE shall set its local timer to wait for the RFE synth calibration.
 #define PBE_BLE5_RAM_SYNTHCALTIMEOUT_VAL_W                                   16U
 #define PBE_BLE5_RAM_SYNTHCALTIMEOUT_VAL_M                               0xFFFFU
 #define PBE_BLE5_RAM_SYNTHCALTIMEOUT_VAL_S                                    0U
@@ -723,7 +717,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Synth re-calibration timeout. Max time for RFE frequency re-cal during operation (e.g., channel hopping). Value in 0.25 µs steps.
+// How many µs the PBE shall set its local timer to wait for the RFE synth re-calibration.
 #define PBE_BLE5_RAM_RECALTIMEOUT_VAL_W                                      16U
 #define PBE_BLE5_RAM_RECALTIMEOUT_VAL_M                                  0xFFFFU
 #define PBE_BLE5_RAM_RECALTIMEOUT_VAL_S                                       0U
@@ -733,7 +727,7 @@
 //******************************************************************************
 // Field: [2:2] peeradr
 //
-// Peer (transmitter) address filtering behavior when Filter Accept List check fails
+// Filtering of peer (transmitter) address, may use the Filter Accept List
 #define PBE_BLE5_RAM_ADRMODE_PEERADR                                     0x0004U
 #define PBE_BLE5_RAM_ADRMODE_PEERADR_M                                   0x0004U
 #define PBE_BLE5_RAM_ADRMODE_PEERADR_S                                        2U
@@ -741,55 +735,33 @@
 //******************************************************************************
 // Register: RPACONNECT
 //******************************************************************************
-// Field: [15:4] reserved
-//
-// Reserved for future use
-#define PBE_BLE5_RAM_RPACONNECT_RESERVED_W                                   12U
-#define PBE_BLE5_RAM_RPACONNECT_RESERVED_M                               0xFFF0U
-#define PBE_BLE5_RAM_RPACONNECT_RESERVED_S                                    4U
-
-// Field: [3:3] endadva
-//
-// Initiator: bypass AdvA address check in AUX_CONNECT_RSP
-#define PBE_BLE5_RAM_RPACONNECT_ENDADVA                                  0x0008U
-#define PBE_BLE5_RAM_RPACONNECT_ENDADVA_M                                0x0008U
-#define PBE_BLE5_RAM_RPACONNECT_ENDADVA_S                                     3U
-#define PBE_BLE5_RAM_RPACONNECT_ENDADVA_ENFORCE_ADVA                     0x0000U
-#define PBE_BLE5_RAM_RPACONNECT_ENDADVA_BYPASS_ADVA                      0x0008U
-
 // Field: [2:2] noreplace
 //
-// Advertiser: TargetA field handling in AUX_CONNECT_RSP
+// Replacement mode for TargetA in AUX_CONNECT_RSP
 #define PBE_BLE5_RAM_RPACONNECT_NOREPLACE                                0x0004U
 #define PBE_BLE5_RAM_RPACONNECT_NOREPLACE_M                              0x0004U
 #define PBE_BLE5_RAM_RPACONNECT_NOREPLACE_S                                   2U
-#define PBE_BLE5_RAM_RPACONNECT_NOREPLACE_REPLACE_TARGETA                0x0000U
-#define PBE_BLE5_RAM_RPACONNECT_NOREPLACE_KEEP_TARGETA                   0x0004U
 
 // Field: [1:1] endintor
 //
-// Initiator: bypass TargetA address check in AUX_CONNECT_RSP
+// Configure Initiator ENDCAUSE status
 #define PBE_BLE5_RAM_RPACONNECT_ENDINTOR                                 0x0002U
 #define PBE_BLE5_RAM_RPACONNECT_ENDINTOR_M                               0x0002U
 #define PBE_BLE5_RAM_RPACONNECT_ENDINTOR_S                                    1U
-#define PBE_BLE5_RAM_RPACONNECT_ENDINTOR_ENFORCE_TARGETA                 0x0000U
-#define PBE_BLE5_RAM_RPACONNECT_ENDINTOR_BYPASS_TARGETA                  0x0002U
 
 // Field: [0:0] endadv
 //
-// Advertiser: ENDCAUSE completion status for unknown address in CONNECT_IND/AUX_CONNECT_REQ
+// Configure Advertiser ENDCAUSE status.
 #define PBE_BLE5_RAM_RPACONNECT_ENDADV                                   0x0001U
 #define PBE_BLE5_RAM_RPACONNECT_ENDADV_M                                 0x0001U
 #define PBE_BLE5_RAM_RPACONNECT_ENDADV_S                                      0U
-#define PBE_BLE5_RAM_RPACONNECT_ENDADV_ENDOK                             0x0000U
-#define PBE_BLE5_RAM_RPACONNECT_ENDADV_CONNECT                           0x0001U
 
 //******************************************************************************
 // Register: FIFOCFG
 //******************************************************************************
 // Field: [8:8] appendtimestamp
 //
-// Append timestamp to received packets
+// 
 #define PBE_BLE5_RAM_FIFOCFG_APPENDTIMESTAMP                             0x0100U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDTIMESTAMP_M                           0x0100U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDTIMESTAMP_S                                8U
@@ -798,42 +770,42 @@
 
 // Field: [7:7] appendrssi
 //
-// Append RSSI (Received Signal Strength Indicator) to packets
+// 
 #define PBE_BLE5_RAM_FIFOCFG_APPENDRSSI                                  0x0080U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDRSSI_M                                0x0080U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDRSSI_S                                     7U
 
 // Field: [6:6] appendfreqest
 //
-// Append frequency estimate to packets
+// 
 #define PBE_BLE5_RAM_FIFOCFG_APPENDFREQEST                               0x0040U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDFREQEST_M                             0x0040U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDFREQEST_S                                  6U
 
 // Field: [5:5] appendlqi
 //
-// Append LQI (Link Quality Indicator) to packets
+// 
 #define PBE_BLE5_RAM_FIFOCFG_APPENDLQI                                   0x0020U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDLQI_M                                 0x0020U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDLQI_S                                      5U
 
 // Field: [4:4] appendstatus
 //
-// Append status byte (CRC result, ignore flag, PHY/code rate)
+// CRCOK, Ignore, Code rate
 #define PBE_BLE5_RAM_FIFOCFG_APPENDSTATUS                                0x0010U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDSTATUS_M                              0x0010U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDSTATUS_S                                   4U
 
 // Field: [3:3] appendcrc
 //
-// Append raw CRC bytes received from packet
+// Append all received crc bits
 #define PBE_BLE5_RAM_FIFOCFG_APPENDCRC                                   0x0008U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDCRC_M                                 0x0008U
 #define PBE_BLE5_RAM_FIFOCFG_APPENDCRC_S                                      3U
 
 // Field: [2:2] autoflushempty
 //
-// Auto-flush zero-length packets
+// 
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHEMPTY                              0x0004U
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHEMPTY_M                            0x0004U
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHEMPTY_S                                 2U
@@ -842,7 +814,7 @@
 
 // Field: [1:1] autoflushign
 //
-// Auto-flush packets marked for MCU to ignore
+// 
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHIGN                                0x0002U
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHIGN_M                              0x0002U
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHIGN_S                                   1U
@@ -851,7 +823,7 @@
 
 // Field: [0:0] autoflushcrc
 //
-// Auto-flush packets with CRC errors
+// 
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHCRC                                0x0001U
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHCRC_M                              0x0001U
 #define PBE_BLE5_RAM_FIFOCFG_AUTOFLUSHCRC_S                                   0U
@@ -863,42 +835,42 @@
 //******************************************************************************
 // Field: [15:6] reserved
 //
-// Reserved for future use
+// Flags
 #define PBE_BLE5_RAM_STATUSBYTE_RESERVED_W                                   10U
 #define PBE_BLE5_RAM_STATUSBYTE_RESERVED_M                               0xFFC0U
 #define PBE_BLE5_RAM_STATUSBYTE_RESERVED_S                                    6U
 
 // Field: [5:5] syncinfoonly
 //
-// Packet ignored by address filter but contains valid SyncInfo field
+// Ignored due to addrerss filtering result, but contains SyncInfo
 #define PBE_BLE5_RAM_STATUSBYTE_SYNCINFOONLY                             0x0020U
 #define PBE_BLE5_RAM_STATUSBYTE_SYNCINFOONLY_M                           0x0020U
 #define PBE_BLE5_RAM_STATUSBYTE_SYNCINFOONLY_S                                5U
 
 // Field: [4:4] adrignored
 //
-// Packet ignored due to unknown/unresolved address
+// Ignored due to an unknown address.
 #define PBE_BLE5_RAM_STATUSBYTE_ADRIGNORED                               0x0010U
 #define PBE_BLE5_RAM_STATUSBYTE_ADRIGNORED_M                             0x0010U
 #define PBE_BLE5_RAM_STATUSBYTE_ADRIGNORED_S                                  4U
 
 // Field: [3:3] ignored
 //
-// Packet ignored due to sequence number (PID) or address filtering
+// Ignored due to PID or address.
 #define PBE_BLE5_RAM_STATUSBYTE_IGNORED                                  0x0008U
 #define PBE_BLE5_RAM_STATUSBYTE_IGNORED_M                                0x0008U
 #define PBE_BLE5_RAM_STATUSBYTE_IGNORED_S                                     3U
 
 // Field: [2:2] crcerror
 //
-// CRC validation failed
+// CRC check with PHA failed.
 #define PBE_BLE5_RAM_STATUSBYTE_CRCERROR                                 0x0004U
 #define PBE_BLE5_RAM_STATUSBYTE_CRCERROR_M                               0x0004U
 #define PBE_BLE5_RAM_STATUSBYTE_CRCERROR_S                                    2U
 
 // Field: [1:0] phy
 //
-// PHY used for packet reception (Rate Indicator)
+// aka Rate Indicator.
 #define PBE_BLE5_RAM_STATUSBYTE_PHY_W                                         2U
 #define PBE_BLE5_RAM_STATUSBYTE_PHY_M                                    0x0003U
 #define PBE_BLE5_RAM_STATUSBYTE_PHY_S                                         0U
@@ -912,14 +884,14 @@
 //******************************************************************************
 // Field: [5:3] nrnaks
 //
-// Count of consecutive NAKs received
+// How many consecutive NAKS has been received
 #define PBE_BLE5_RAM_NAKHUB_NRNAKS_W                                          3U
 #define PBE_BLE5_RAM_NAKHUB_NRNAKS_M                                     0x0038U
 #define PBE_BLE5_RAM_NAKHUB_NRNAKS_S                                          3U
 
 // Field: [2:0] maxnak
 //
-// Max consecutive NAKs before ending connection task (prevents livelock). Both devices NAK when buffers full. 0 = disabled (no NAK limit).
+// Maximum number of packets received without a new value of NESN in the same task before the task ends. If both devices find themselves with full RX FIFO or no RX buffer available, they will request the peer to retransmit by transmitting a NAK. This is a sort of livelock loop. If it's 0, do not end the task based on this.
 #define PBE_BLE5_RAM_NAKHUB_MAXNAK_W                                          3U
 #define PBE_BLE5_RAM_NAKHUB_MAXNAK_M                                     0x0007U
 #define PBE_BLE5_RAM_NAKHUB_MAXNAK_S                                          0U
@@ -929,7 +901,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Whitening LFSR seed value. Derived from channel index per BLE spec.
+// Whitener initialization value
 #define PBE_BLE5_RAM_WHITEINIT_VAL_W                                         16U
 #define PBE_BLE5_RAM_WHITEINIT_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_WHITEINIT_VAL_S                                          0U
@@ -939,44 +911,17 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of bytes reserved for appended metadata
+// The number of bytes required.
 #define PBE_BLE5_RAM_EXTRABYTES_VAL_W                                        16U
 #define PBE_BLE5_RAM_EXTRABYTES_VAL_M                                    0xFFFFU
 #define PBE_BLE5_RAM_EXTRABYTES_VAL_S                                         0U
-
-//******************************************************************************
-// Register: COEXT1
-//******************************************************************************
-// Field: [15:0] val
-//
-// Additional delay for COEX arbitration before TX start. Value in 0.25 µs steps.
-#define PBE_BLE5_RAM_COEXT1_VAL_W                                            16U
-#define PBE_BLE5_RAM_COEXT1_VAL_M                                        0xFFFFU
-#define PBE_BLE5_RAM_COEXT1_VAL_S                                             0U
-
-//******************************************************************************
-// Register: COEXCFG
-//******************************************************************************
-// Field: [8:8] defpriority
-//
-// Priority level to assert during T2 period
-#define PBE_BLE5_RAM_COEXCFG_DEFPRIORITY                                 0x0100U
-#define PBE_BLE5_RAM_COEXCFG_DEFPRIORITY_M                               0x0100U
-#define PBE_BLE5_RAM_COEXCFG_DEFPRIORITY_S                                    8U
-
-// Field: [7:0] t2
-//
-// T2 period - how long the PRIORITY signal holds the priority value. After T2 PRIORITY indicates direction. Value in 0.25 µs steps.
-#define PBE_BLE5_RAM_COEXCFG_T2_W                                             8U
-#define PBE_BLE5_RAM_COEXCFG_T2_M                                        0x00FFU
-#define PBE_BLE5_RAM_COEXCFG_T2_S                                             0U
 
 //******************************************************************************
 // Register: CRCINITL
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Bits 15:0 of 24-bit CRC init value
+// 
 #define PBE_BLE5_RAM_CRCINITL_VALLSB_W                                       16U
 #define PBE_BLE5_RAM_CRCINITL_VALLSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_CRCINITL_VALLSB_S                                        0U
@@ -986,7 +931,7 @@
 //******************************************************************************
 // Field: [15:0] valmsb
 //
-// Bits 23:16 of 24-bit CRC init value (only lower 8 bits used)
+// 
 #define PBE_BLE5_RAM_CRCINITH_VALMSB_W                                       16U
 #define PBE_BLE5_RAM_CRCINITH_VALMSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_CRCINITH_VALMSB_S                                        0U
@@ -996,7 +941,7 @@
 //******************************************************************************
 // Field: [7:7] ctlackpend
 //
-// Last RX packet was LL control PDU awaiting ACK
+// The last successfully received packet was an LL control packet which has not yet been ACK'ed
 #define PBE_BLE5_RAM_SEQSTAT_CTLACKPEND                                  0x0080U
 #define PBE_BLE5_RAM_SEQSTAT_CTLACKPEND_M                                0x0080U
 #define PBE_BLE5_RAM_SEQSTAT_CTLACKPEND_S                                     7U
@@ -1005,7 +950,7 @@
 
 // Field: [6:6] ctlack
 //
-// Last RX packet acknowledged a transmitted LL control PDU
+// The last received packet was the ACK of an LL control packet
 #define PBE_BLE5_RAM_SEQSTAT_CTLACK                                      0x0040U
 #define PBE_BLE5_RAM_SEQSTAT_CTLACK_M                                    0x0040U
 #define PBE_BLE5_RAM_SEQSTAT_CTLACK_S                                         6U
@@ -1014,7 +959,7 @@
 
 // Field: [5:5] ctltx
 //
-// Last TX packet was an LL control PDU (LLID = 11b)
+// The last transmitted packet was an LL control packet (LLID = 11)
 #define PBE_BLE5_RAM_SEQSTAT_CTLTX                                       0x0020U
 #define PBE_BLE5_RAM_SEQSTAT_CTLTX_M                                     0x0020U
 #define PBE_BLE5_RAM_SEQSTAT_CTLTX_S                                          5U
@@ -1023,14 +968,14 @@
 
 // Field: [4:4] empty
 //
-// Last TX packet was auto-generated empty PDU
+// The last transmitted packet was an auto-empty packet.
 #define PBE_BLE5_RAM_SEQSTAT_EMPTY                                       0x0010U
 #define PBE_BLE5_RAM_SEQSTAT_EMPTY_M                                     0x0010U
 #define PBE_BLE5_RAM_SEQSTAT_EMPTY_S                                          4U
 
 // Field: [3:3] firstpkt
 //
-// Connection initialization state
+// Has there been any packets transmitted on this connection
 #define PBE_BLE5_RAM_SEQSTAT_FIRSTPKT                                    0x0008U
 #define PBE_BLE5_RAM_SEQSTAT_FIRSTPKT_M                                  0x0008U
 #define PBE_BLE5_RAM_SEQSTAT_FIRSTPKT_S                                       3U
@@ -1039,21 +984,21 @@
 
 // Field: [2:2] nexttxsn
 //
-// Sequence Number for next packet to transmit (0 or 1)
+// SN in the next message to transmit.
 #define PBE_BLE5_RAM_SEQSTAT_NEXTTXSN                                    0x0004U
 #define PBE_BLE5_RAM_SEQSTAT_NEXTTXSN_M                                  0x0004U
 #define PBE_BLE5_RAM_SEQSTAT_NEXTTXSN_S                                       2U
 
 // Field: [1:1] lasttxsn
 //
-// Sequence Number of last transmitted packet (0 or 1)
+// SN in the last message transmitted.
 #define PBE_BLE5_RAM_SEQSTAT_LASTTXSN                                    0x0002U
 #define PBE_BLE5_RAM_SEQSTAT_LASTTXSN_M                                  0x0002U
 #define PBE_BLE5_RAM_SEQSTAT_LASTTXSN_S                                       1U
 
 // Field: [0:0] lastrxsn
 //
-// Sequence Number of last successfully received packet with CRC OK (0 or 1)
+// SN in the last message received with CRC OK.
 #define PBE_BLE5_RAM_SEQSTAT_LASTRXSN                                    0x0001U
 #define PBE_BLE5_RAM_SEQSTAT_LASTRXSN_M                                  0x0001U
 #define PBE_BLE5_RAM_SEQSTAT_LASTRXSN_S                                       0U
@@ -1063,7 +1008,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Backoff count value. MCU writes initial value (1-256), PBE decrements on each scannable ADV packet received, writes back at task end. When reaches 0, SCAN_REQ can be sent. Read values: 0-256.
+// MCU writes new value of back-off count for first scanner task after transmission of SCAN_REQ and subsequent reception or attempted reception of SCAN_RSP, or returned value from last scanner task. PBE decrements the back-off count on every correctly received advertising packet that will generate a SCAN_RSP and writes it back at the end of the task. Allowed values: write from MCU: 1–256. Read from MCU: 0–256.
 #define PBE_BLE5_RAM_BACKOFFCNT_VAL_W                                        16U
 #define PBE_BLE5_RAM_BACKOFFCNT_VAL_M                                    0xFFFFU
 #define PBE_BLE5_RAM_BACKOFFCNT_VAL_S                                         0U
@@ -1073,7 +1018,7 @@
 //******************************************************************************
 // Field: [1:1] pawr
 //
-// Periodic Advertising with Responses (PAwR) mode
+// PAwR features
 #define PBE_BLE5_RAM_SCANCFG_PAWR                                        0x0002U
 #define PBE_BLE5_RAM_SCANCFG_PAWR_M                                      0x0002U
 #define PBE_BLE5_RAM_SCANCFG_PAWR_S                                           1U
@@ -1082,7 +1027,7 @@
 
 // Field: [0:0] actpass
 //
-// Scan type selection
+// Configure scan type
 #define PBE_BLE5_RAM_SCANCFG_ACTPASS                                     0x0001U
 #define PBE_BLE5_RAM_SCANCFG_ACTPASS_M                                   0x0001U
 #define PBE_BLE5_RAM_SCANCFG_ACTPASS_S                                        0U
@@ -1094,7 +1039,7 @@
 //******************************************************************************
 // Field: [5:5] advmode2
 //
-// Filter for extended advertising packets with ADV_MODE=2 (non-connectable, non-scannable)
+// Accept extended advertising packets with ADV_MODE=2
 #define PBE_BLE5_RAM_AECFG_ADVMODE2                                      0x0020U
 #define PBE_BLE5_RAM_AECFG_ADVMODE2_M                                    0x0020U
 #define PBE_BLE5_RAM_AECFG_ADVMODE2_S                                         5U
@@ -1103,7 +1048,7 @@
 
 // Field: [4:4] advmode1
 //
-// Filter for extended advertising packets with ADV_MODE=1 (connectable, non-scannable)
+// Accept extended advertising packets with ADV_MODE=1
 #define PBE_BLE5_RAM_AECFG_ADVMODE1                                      0x0010U
 #define PBE_BLE5_RAM_AECFG_ADVMODE1_M                                    0x0010U
 #define PBE_BLE5_RAM_AECFG_ADVMODE1_S                                         4U
@@ -1112,7 +1057,7 @@
 
 // Field: [3:3] advmode0
 //
-// Filter for extended advertising packets with ADV_MODE=0 (connectable and scannable)
+// Accept extended advertising packets with ADV_MODE=0
 #define PBE_BLE5_RAM_AECFG_ADVMODE0                                      0x0008U
 #define PBE_BLE5_RAM_AECFG_ADVMODE0_M                                    0x0008U
 #define PBE_BLE5_RAM_AECFG_ADVMODE0_S                                         3U
@@ -1121,7 +1066,7 @@
 
 // Field: [2:2] chnl
 //
-// Current channel type indicator
+// Current channel type
 #define PBE_BLE5_RAM_AECFG_CHNL                                          0x0004U
 #define PBE_BLE5_RAM_AECFG_CHNL_M                                        0x0004U
 #define PBE_BLE5_RAM_AECFG_CHNL_S                                             2U
@@ -1130,7 +1075,7 @@
 
 // Field: [1:1] extended
 //
-// Extended advertising PDU format support
+// Extended advertisement enabled
 #define PBE_BLE5_RAM_AECFG_EXTENDED                                      0x0002U
 #define PBE_BLE5_RAM_AECFG_EXTENDED_M                                    0x0002U
 #define PBE_BLE5_RAM_AECFG_EXTENDED_S                                         1U
@@ -1139,7 +1084,7 @@
 
 // Field: [0:0] legacy
 //
-// Legacy advertising PDU format support
+// Legacy advertisement enabled
 #define PBE_BLE5_RAM_AECFG_LEGACY                                        0x0001U
 #define PBE_BLE5_RAM_AECFG_LEGACY_M                                      0x0001U
 #define PBE_BLE5_RAM_AECFG_LEGACY_S                                           0U
@@ -1151,70 +1096,70 @@
 //******************************************************************************
 // Field: [9:9] scannable
 //
-// Scannable flag from extended ADV PDU header
+// 
 #define PBE_BLE5_RAM_AETMP_SCANNABLE                                     0x0200U
 #define PBE_BLE5_RAM_AETMP_SCANNABLE_M                                   0x0200U
 #define PBE_BLE5_RAM_AETMP_SCANNABLE_S                                        9U
 
 // Field: [8:8] connectable
 //
-// Connectable flag from extended ADV PDU header
+// 
 #define PBE_BLE5_RAM_AETMP_CONNECTABLE                                   0x0100U
 #define PBE_BLE5_RAM_AETMP_CONNECTABLE_M                                 0x0100U
 #define PBE_BLE5_RAM_AETMP_CONNECTABLE_S                                      8U
 
 // Field: [7:7] res
 //
-// Reserved bit
+// 
 #define PBE_BLE5_RAM_AETMP_RES                                           0x0080U
 #define PBE_BLE5_RAM_AETMP_RES_M                                         0x0080U
 #define PBE_BLE5_RAM_AETMP_RES_S                                              7U
 
 // Field: [6:6] txpower
 //
-// TxPower field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_TXPOWER                                       0x0040U
 #define PBE_BLE5_RAM_AETMP_TXPOWER_M                                     0x0040U
 #define PBE_BLE5_RAM_AETMP_TXPOWER_S                                          6U
 
 // Field: [5:5] syncinfo
 //
-// SyncInfo field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_SYNCINFO                                      0x0020U
 #define PBE_BLE5_RAM_AETMP_SYNCINFO_M                                    0x0020U
 #define PBE_BLE5_RAM_AETMP_SYNCINFO_S                                         5U
 
 // Field: [4:4] auxptr
 //
-// AuxPtr field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_AUXPTR                                        0x0010U
 #define PBE_BLE5_RAM_AETMP_AUXPTR_M                                      0x0010U
 #define PBE_BLE5_RAM_AETMP_AUXPTR_S                                           4U
 
 // Field: [3:3] adi
 //
-// AdvDataInfo (ADI) field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_ADI                                           0x0008U
 #define PBE_BLE5_RAM_AETMP_ADI_M                                         0x0008U
 #define PBE_BLE5_RAM_AETMP_ADI_S                                              3U
 
 // Field: [2:2] cteinfo
 //
-// CTEInfo field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_CTEINFO                                       0x0004U
 #define PBE_BLE5_RAM_AETMP_CTEINFO_M                                     0x0004U
 #define PBE_BLE5_RAM_AETMP_CTEINFO_S                                          2U
 
 // Field: [1:1] targeta
 //
-// TargetA address field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_TARGETA                                       0x0002U
 #define PBE_BLE5_RAM_AETMP_TARGETA_M                                     0x0002U
 #define PBE_BLE5_RAM_AETMP_TARGETA_S                                          1U
 
 // Field: [0:0] adva
 //
-// AdvA address field present in ADV data
+// 
 #define PBE_BLE5_RAM_AETMP_ADVA                                          0x0001U
 #define PBE_BLE5_RAM_AETMP_ADVA_M                                        0x0001U
 #define PBE_BLE5_RAM_AETMP_ADVA_S                                             0U
@@ -1224,7 +1169,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Stores extended header length during processing
+// 
 #define PBE_BLE5_RAM_EXTLENTMP_VAL_W                                         16U
 #define PBE_BLE5_RAM_EXTLENTMP_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_EXTLENTMP_VAL_S                                          0U
@@ -1234,7 +1179,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Offset in 1.25 ms units (value/4 written to packet). RCL initializes to 4-WINMOD range. Auto-decremented on systimer events.
+// The RCL intializes this to the range 4-WINMOD at the start of the intiator operation.
 #define PBE_BLE5_RAM_WINOFFSET_VAL_W                                         16U
 #define PBE_BLE5_RAM_WINOFFSET_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_WINOFFSET_VAL_S                                          0U
@@ -1244,7 +1189,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Connection interval modulo for window offset calculation. Value in 312.5 µs units (4× connInterval). 0 = dynamic window offset disabled.
+// The amount of 312.5 us periods in the connection interval (four times the number given by the BLE LL). A value of 0 means that dynamic window offset is disabled.
 #define PBE_BLE5_RAM_WINMOD_VAL_W                                            16U
 #define PBE_BLE5_RAM_WINMOD_VAL_M                                        0xFFFFU
 #define PBE_BLE5_RAM_WINMOD_VAL_S                                             0U
@@ -1254,7 +1199,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Max payload bytes. PDU-type specific limits also enforced.
+// 
 #define PBE_BLE5_RAM_MAXLEN_VAL_W                                            16U
 #define PBE_BLE5_RAM_MAXLEN_VAL_M                                        0xFFFFU
 #define PBE_BLE5_RAM_MAXLEN_VAL_S                                             0U
@@ -1264,7 +1209,7 @@
 //******************************************************************************
 // Field: [5:5] syncinfo
 //
-// Periodic advertising: preserve packets with SyncInfo despite address filtering failure
+// Keep packets with SyncInfo even if address check fails
 #define PBE_BLE5_RAM_FILTPOLICY_SYNCINFO                                 0x0020U
 #define PBE_BLE5_RAM_FILTPOLICY_SYNCINFO_M                               0x0020U
 #define PBE_BLE5_RAM_FILTPOLICY_SYNCINFO_S                                    5U
@@ -1273,7 +1218,7 @@
 
 // Field: [4:4] intor
 //
-// Initiator filter policy for connection target selection
+// Initiator's filter policy
 #define PBE_BLE5_RAM_FILTPOLICY_INTOR                                    0x0010U
 #define PBE_BLE5_RAM_FILTPOLICY_INTOR_M                                  0x0010U
 #define PBE_BLE5_RAM_FILTPOLICY_INTOR_S                                       4U
@@ -1282,7 +1227,7 @@
 
 // Field: [3:3] extscanner
 //
-// Extended scanner directed advertising policy
+// Extended scanner filter policy.
 #define PBE_BLE5_RAM_FILTPOLICY_EXTSCANNER                               0x0008U
 #define PBE_BLE5_RAM_FILTPOLICY_EXTSCANNER_M                             0x0008U
 #define PBE_BLE5_RAM_FILTPOLICY_EXTSCANNER_S                                  3U
@@ -1291,7 +1236,7 @@
 
 // Field: [2:2] scanner
 //
-// Scanner filter policy for advertiser selection
+// Scanner's filter policy
 #define PBE_BLE5_RAM_FILTPOLICY_SCANNER                                  0x0004U
 #define PBE_BLE5_RAM_FILTPOLICY_SCANNER_M                                0x0004U
 #define PBE_BLE5_RAM_FILTPOLICY_SCANNER_S                                     2U
@@ -1300,7 +1245,7 @@
 
 // Field: [1:0] adv
 //
-// Advertiser filter policy (SCAN_REQ/CONNECT_IND acceptance). Ignored for directed advertising.
+// Advertiser's filter policy. Note: The Advertiser's filter policy is ignored during all directed advertiser events, all combinations.
 #define PBE_BLE5_RAM_FILTPOLICY_ADV_W                                         2U
 #define PBE_BLE5_RAM_FILTPOLICY_ADV_M                                    0x0003U
 #define PBE_BLE5_RAM_FILTPOLICY_ADV_S                                         0U
@@ -1314,7 +1259,7 @@
 //******************************************************************************
 // Field: [0:0] type
 //
-// Type of address stored in OWNADR register
+// Address in OWNADR
 #define PBE_BLE5_RAM_OWNADRTYPE_TYPE                                     0x0001U
 #define PBE_BLE5_RAM_OWNADRTYPE_TYPE_M                                   0x0001U
 #define PBE_BLE5_RAM_OWNADRTYPE_TYPE_S                                        0U
@@ -1326,7 +1271,7 @@
 //******************************************************************************
 // Field: [0:0] type
 //
-// Type of address stored in SCANADR register (used in ScanA field)
+// Address in SCANADR
 #define PBE_BLE5_RAM_SCANATYPE_TYPE                                      0x0001U
 #define PBE_BLE5_RAM_SCANATYPE_TYPE_M                                    0x0001U
 #define PBE_BLE5_RAM_SCANATYPE_TYPE_S                                         0U
@@ -1338,7 +1283,7 @@
 //******************************************************************************
 // Field: [0:0] type
 //
-// Type of address stored in PEERADR register (target device)
+// Address in PEERADR
 #define PBE_BLE5_RAM_PEERADRTYPE_TYPE                                    0x0001U
 #define PBE_BLE5_RAM_PEERADRTYPE_TYPE_M                                  0x0001U
 #define PBE_BLE5_RAM_PEERADRTYPE_TYPE_S                                       0U
@@ -1350,7 +1295,7 @@
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Lower 16 bits of own address
+// 
 #define PBE_BLE5_RAM_OWNADRL_VALLSB_W                                        16U
 #define PBE_BLE5_RAM_OWNADRL_VALLSB_M                                    0xFFFFU
 #define PBE_BLE5_RAM_OWNADRL_VALLSB_S                                         0U
@@ -1360,7 +1305,7 @@
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Middle 16 bits of own address
+// 
 #define PBE_BLE5_RAM_OWNADRM_VALLSB_W                                        16U
 #define PBE_BLE5_RAM_OWNADRM_VALLSB_M                                    0xFFFFU
 #define PBE_BLE5_RAM_OWNADRM_VALLSB_S                                         0U
@@ -1370,7 +1315,7 @@
 //******************************************************************************
 // Field: [15:0] valmsb
 //
-// Upper 16 bits of own address
+// 
 #define PBE_BLE5_RAM_OWNADRH_VALMSB_W                                        16U
 #define PBE_BLE5_RAM_OWNADRH_VALMSB_M                                    0xFFFFU
 #define PBE_BLE5_RAM_OWNADRH_VALMSB_S                                         0U
@@ -1380,7 +1325,7 @@
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Lower 16 bits of scanner address
+// 
 #define PBE_BLE5_RAM_SCANADRL_VALLSB_W                                       16U
 #define PBE_BLE5_RAM_SCANADRL_VALLSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_SCANADRL_VALLSB_S                                        0U
@@ -1390,7 +1335,7 @@
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Middle 16 bits of scanner address
+// 
 #define PBE_BLE5_RAM_SCANADRM_VALLSB_W                                       16U
 #define PBE_BLE5_RAM_SCANADRM_VALLSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_SCANADRM_VALLSB_S                                        0U
@@ -1400,7 +1345,7 @@
 //******************************************************************************
 // Field: [15:0] valmsb
 //
-// Upper 16 bits of scanner address
+// 
 #define PBE_BLE5_RAM_SCANADRH_VALMSB_W                                       16U
 #define PBE_BLE5_RAM_SCANADRH_VALMSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_SCANADRH_VALMSB_S                                        0U
@@ -1410,7 +1355,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Temporary address storage, bits 15:0. Used for internal address processing.
+// bits 15:0 of temporary address
 #define PBE_BLE5_RAM_TMPADRL_VAL_W                                           16U
 #define PBE_BLE5_RAM_TMPADRL_VAL_M                                       0xFFFFU
 #define PBE_BLE5_RAM_TMPADRL_VAL_S                                            0U
@@ -1420,7 +1365,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Temporary address storage, bits 31:16. Used for internal address processing.
+// bits 31:16 of temporary address
 #define PBE_BLE5_RAM_TMPADRM_VAL_W                                           16U
 #define PBE_BLE5_RAM_TMPADRM_VAL_M                                       0xFFFFU
 #define PBE_BLE5_RAM_TMPADRM_VAL_S                                            0U
@@ -1430,7 +1375,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Temporary address storage, bits 47:32. Used for internal address processing.
+// bits 47:32 of temporary address
 #define PBE_BLE5_RAM_TMPADRH_VAL_W                                           16U
 #define PBE_BLE5_RAM_TMPADRH_VAL_M                                       0xFFFFU
 #define PBE_BLE5_RAM_TMPADRH_VAL_S                                            0U
@@ -1440,7 +1385,7 @@
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Lower 16 bits of peer address
+// 
 #define PBE_BLE5_RAM_PEERADRL_VALLSB_W                                       16U
 #define PBE_BLE5_RAM_PEERADRL_VALLSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_PEERADRL_VALLSB_S                                        0U
@@ -1450,7 +1395,7 @@
 //******************************************************************************
 // Field: [15:0] vallsb
 //
-// Middle 16 bits of peer address
+// 
 #define PBE_BLE5_RAM_PEERADRM_VALLSB_W                                       16U
 #define PBE_BLE5_RAM_PEERADRM_VALLSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_PEERADRM_VALLSB_S                                        0U
@@ -1460,7 +1405,7 @@
 //******************************************************************************
 // Field: [15:0] valmsb
 //
-// Upper 16 bits of peer address
+// 
 #define PBE_BLE5_RAM_PEERADRH_VALMSB_W                                       16U
 #define PBE_BLE5_RAM_PEERADRH_VALMSB_M                                   0xFFFFU
 #define PBE_BLE5_RAM_PEERADRH_VALMSB_S                                        0U
@@ -1470,7 +1415,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of TX FIFO packets successfully acknowledged (NESN toggled)
+// Number of acknowledgements received on packets from the Tx FIFO
 #define PBE_BLE5_RAM_NTXDONE_VAL_W                                           16U
 #define PBE_BLE5_RAM_NTXDONE_VAL_M                                       0xFFFFU
 #define PBE_BLE5_RAM_NTXDONE_VAL_S                                            0U
@@ -1480,7 +1425,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Total acknowledgments received on transmitted packets (includes retransmissions)
+// Total number of acknowledgement received on transmitted packets
 #define PBE_BLE5_RAM_NTXACK_VAL_W                                            16U
 #define PBE_BLE5_RAM_NTXACK_VAL_M                                        0xFFFFU
 #define PBE_BLE5_RAM_NTXACK_VAL_S                                             0U
@@ -1490,7 +1435,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of acknowledgments received on transmitted LL control packets
+// Number of acknowledgements received on transmitted LL control packets
 #define PBE_BLE5_RAM_NTXCTLACK_VAL_W                                         16U
 #define PBE_BLE5_RAM_NTXCTLACK_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_NTXCTLACK_VAL_S                                          0U
@@ -1500,7 +1445,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of unique LL control packets transmitted
+// Number of unique LL control packets transmitted 
 #define PBE_BLE5_RAM_NTXCTL_VAL_W                                            16U
 #define PBE_BLE5_RAM_NTXCTL_VAL_M                                        0xFFFFU
 #define PBE_BLE5_RAM_NTXCTL_VAL_S                                             0U
@@ -1510,7 +1455,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of packet retransmissions (same packet as previous TX)
+// Number of packets transmitted being the same as the previously transmitted packet.
 #define PBE_BLE5_RAM_NTXRETRANS_VAL_W                                        16U
 #define PBE_BLE5_RAM_NTXRETRANS_VAL_M                                    0xFFFFU
 #define PBE_BLE5_RAM_NTXRETRANS_VAL_S                                         0U
@@ -1530,7 +1475,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of packets with CRC OK but marked to be ignored by MCU (e.g., sequence/address mismatch)
+// Number of packets received with CRC OK, but to be ignored by the MCU
 #define PBE_BLE5_RAM_NRXIGNORED_VAL_W                                        16U
 #define PBE_BLE5_RAM_NRXIGNORED_VAL_M                                    0xFFFFU
 #define PBE_BLE5_RAM_NRXIGNORED_VAL_S                                         0U
@@ -1540,7 +1485,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of zero-length packets received with CRC OK
+// Number of packets received with CRC OK and length zero
 #define PBE_BLE5_RAM_NRXEMPTY_VAL_W                                          16U
 #define PBE_BLE5_RAM_NRXEMPTY_VAL_M                                      0xFFFFU
 #define PBE_BLE5_RAM_NRXEMPTY_VAL_S                                           0U
@@ -1550,7 +1495,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of received packets discarded due to RX FIFO full condition
+// Number of received packets discarded because the Rx FIFO was full
 #define PBE_BLE5_RAM_NRXFIFOFULL_VAL_W                                       16U
 #define PBE_BLE5_RAM_NRXFIFOFULL_VAL_M                                   0xFFFFU
 #define PBE_BLE5_RAM_NRXFIFOFULL_VAL_S                                        0U
@@ -1560,7 +1505,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of non-empty packets received with CRC OK and not ignored by MCU
+// Number of non-empty packets received with CRC OK and not  to be ignored by the MCU
 #define PBE_BLE5_RAM_NRXOK_VAL_W                                             16U
 #define PBE_BLE5_RAM_NRXOK_VAL_M                                         0xFFFFU
 #define PBE_BLE5_RAM_NRXOK_VAL_S                                              0U
@@ -1570,7 +1515,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Total number of packets transmitted in current task
+// Total number of packets transmitted in the task
 #define PBE_BLE5_RAM_NTX_VAL_W                                               16U
 #define PBE_BLE5_RAM_NTX_VAL_M                                           0xFFFFU
 #define PBE_BLE5_RAM_NTX_VAL_S                                                0U
@@ -1580,7 +1525,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Number of LL control packets correctly received (subset of NRXOK)
+// Number of LL control packets correctly received (also included in NRXOK)
 #define PBE_BLE5_RAM_NRXCTL_VAL_W                                            16U
 #define PBE_BLE5_RAM_NRXCTL_VAL_M                                        0xFFFFU
 #define PBE_BLE5_RAM_NRXCTL_VAL_S                                             0U
@@ -1590,7 +1535,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Total number of acknowledgments transmitted for received LL control packets
+// Total number of acknowledgement transmitted on received LL control packets.
 #define PBE_BLE5_RAM_NRXCTLACK_VAL_W                                         16U
 #define PBE_BLE5_RAM_NRXCTLACK_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_NRXCTLACK_VAL_S                                          0U
@@ -1600,7 +1545,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// RSSI of last packet received in task (signed value, dBm)
+// RSSI of last packet received in task
 #define PBE_BLE5_RAM_LASTRSSI_VAL_W                                          16U
 #define PBE_BLE5_RAM_LASTRSSI_VAL_M                                      0xFFFFU
 #define PBE_BLE5_RAM_LASTRSSI_VAL_S                                           0U
@@ -1610,7 +1555,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// First packet RX timeout (Peripheral only). Max time from anchor point to wait for Central's first packet. Accounts for clock drift. Min: 128 (if enabled), Max: 32000. VAL = 0 disables. Value in 1 µs steps.
+// For peripheral tasks, the timeout in µs from SYSTCMP0 event to giving up listening for the first packet. Must be at least 128 µs if non-zero. Can be up to 32000 µs based on supervision timeout, window widening.
 #define PBE_BLE5_RAM_FIRSTRXTIMEOUT_VAL_W                                    16U
 #define PBE_BLE5_RAM_FIRSTRXTIMEOUT_VAL_M                                0xFFFFU
 #define PBE_BLE5_RAM_FIRSTRXTIMEOUT_VAL_S                                     0U
@@ -1620,7 +1565,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Last packet timestamp, lower 16 bits. 32-bit timestamp value across LASTTIMESTAMPL/H.
+// Lower part of timestamp.
 #define PBE_BLE5_RAM_LASTTIMESTAMPL_VAL_W                                    16U
 #define PBE_BLE5_RAM_LASTTIMESTAMPL_VAL_M                                0xFFFFU
 #define PBE_BLE5_RAM_LASTTIMESTAMPL_VAL_S                                     0U
@@ -1630,7 +1575,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Last packet timestamp, upper 16 bits. 32-bit timestamp value across LASTTIMESTAMPL/H.
+// Upper part of timestamp.
 #define PBE_BLE5_RAM_LASTTIMESTAMPH_VAL_W                                    16U
 #define PBE_BLE5_RAM_LASTTIMESTAMPH_VAL_M                                0xFFFFU
 #define PBE_BLE5_RAM_LASTTIMESTAMPH_VAL_S                                     0U
@@ -1640,7 +1585,7 @@
 //******************************************************************************
 // Field: [1:0] force
 //
-// More Data (MD) bit control for connection packets
+// 
 #define PBE_BLE5_RAM_MDCFG_FORCE_W                                            2U
 #define PBE_BLE5_RAM_MDCFG_FORCE_M                                       0x0003U
 #define PBE_BLE5_RAM_MDCFG_FORCE_S                                            0U
@@ -1652,28 +1597,28 @@
 //******************************************************************************
 // Field: [3:3] extended
 //
-// Extended advertising PDU format
+// 
 #define PBE_BLE5_RAM_ADVCFG_EXTENDED                                     0x0008U
 #define PBE_BLE5_RAM_ADVCFG_EXTENDED_M                                   0x0008U
 #define PBE_BLE5_RAM_ADVCFG_EXTENDED_S                                        3U
 
 // Field: [2:2] directed
 //
-// Directed advertising mode
+// 
 #define PBE_BLE5_RAM_ADVCFG_DIRECTED                                     0x0004U
 #define PBE_BLE5_RAM_ADVCFG_DIRECTED_M                                   0x0004U
 #define PBE_BLE5_RAM_ADVCFG_DIRECTED_S                                        2U
 
 // Field: [1:1] scannable
 //
-// Scannable advertising mode
+// 
 #define PBE_BLE5_RAM_ADVCFG_SCANNABLE                                    0x0002U
 #define PBE_BLE5_RAM_ADVCFG_SCANNABLE_M                                  0x0002U
 #define PBE_BLE5_RAM_ADVCFG_SCANNABLE_S                                       1U
 
 // Field: [0:0] connectable
 //
-// Connectable advertising mode
+// 
 #define PBE_BLE5_RAM_ADVCFG_CONNECTABLE                                  0x0001U
 #define PBE_BLE5_RAM_ADVCFG_CONNECTABLE_M                                0x0001U
 #define PBE_BLE5_RAM_ADVCFG_CONNECTABLE_S                                     0U
@@ -1683,7 +1628,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// RSSI value (signed, dBm)
+// RSSI
 #define PBE_BLE5_RAM_TMPRSSI_VAL_W                                           16U
 #define PBE_BLE5_RAM_TMPRSSI_VAL_M                                       0xFFFFU
 #define PBE_BLE5_RAM_TMPRSSI_VAL_S                                            0U
@@ -1693,7 +1638,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Temporary value storage
+// VAL
 #define PBE_BLE5_RAM_TMPREG_VAL_W                                            16U
 #define PBE_BLE5_RAM_TMPREG_VAL_M                                        0xFFFFU
 #define PBE_BLE5_RAM_TMPREG_VAL_S                                             0U
@@ -1703,7 +1648,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// First packet timestamp, lower 16 bits (Peripheral only). Timestamp of first RX packet regardless of CRC. Used for timing synchronization.
+// Peripheral only.
 #define PBE_BLE5_RAM_FIRSTTIMESTAMPL_VAL_W                                   16U
 #define PBE_BLE5_RAM_FIRSTTIMESTAMPL_VAL_M                               0xFFFFU
 #define PBE_BLE5_RAM_FIRSTTIMESTAMPL_VAL_S                                    0U
@@ -1713,7 +1658,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// First packet timestamp, upper 16 bits (Peripheral only). Timestamp of first RX packet regardless of CRC. Used for timing synchronization.
+// Peripheral only.
 #define PBE_BLE5_RAM_FIRSTTIMESTAMPH_VAL_W                                   16U
 #define PBE_BLE5_RAM_FIRSTTIMESTAMPH_VAL_M                               0xFFFFU
 #define PBE_BLE5_RAM_FIRSTTIMESTAMPH_VAL_S                                    0U
@@ -1723,7 +1668,7 @@
 //******************************************************************************
 // Field: [3:0] index
 //
-// Filter List 1 match result. Index (0-15) of matching entry. Valid when FL1MASK.MATCH is set.
+// Which entry in the address table matched
 #define PBE_BLE5_RAM_FL1RESULT_INDEX_W                                        4U
 #define PBE_BLE5_RAM_FL1RESULT_INDEX_M                                   0x000FU
 #define PBE_BLE5_RAM_FL1RESULT_INDEX_S                                        0U
@@ -1733,7 +1678,7 @@
 //******************************************************************************
 // Field: [15:15] match
 //
-// Filter List 1 global control and match status
+// 
 #define PBE_BLE5_RAM_FL1MASK_MATCH                                       0x8000U
 #define PBE_BLE5_RAM_FL1MASK_MATCH_M                                     0x8000U
 #define PBE_BLE5_RAM_FL1MASK_MATCH_S                                         15U
@@ -1742,14 +1687,14 @@
 
 // Field: [14:4] rfuign
 //
-// Reserved for future use. Function similar to PRIVIGN and DUPLICATEIGN.
+// These bits works the same was as PRIVIGN and FALIGN.
 #define PBE_BLE5_RAM_FL1MASK_RFUIGN_W                                        11U
 #define PBE_BLE5_RAM_FL1MASK_RFUIGN_M                                    0x7FF0U
 #define PBE_BLE5_RAM_FL1MASK_RFUIGN_S                                         4U
 
 // Field: [3:3] privign
 //
-// Privacy ignore filter control
+// 
 #define PBE_BLE5_RAM_FL1MASK_PRIVIGN                                     0x0008U
 #define PBE_BLE5_RAM_FL1MASK_PRIVIGN_M                                   0x0008U
 #define PBE_BLE5_RAM_FL1MASK_PRIVIGN_S                                        3U
@@ -1758,7 +1703,7 @@
 
 // Field: [2:2] duplicateign
 //
-// Duplicate filtering ignore control  
+// 
 #define PBE_BLE5_RAM_FL1MASK_DUPLICATEIGN                                0x0004U
 #define PBE_BLE5_RAM_FL1MASK_DUPLICATEIGN_M                              0x0004U
 #define PBE_BLE5_RAM_FL1MASK_DUPLICATEIGN_S                                   2U
@@ -1767,7 +1712,7 @@
 
 // Field: [1:1] type
 //
-// Address type matching requirement
+// Address type
 #define PBE_BLE5_RAM_FL1MASK_TYPE                                        0x0002U
 #define PBE_BLE5_RAM_FL1MASK_TYPE_M                                      0x0002U
 #define PBE_BLE5_RAM_FL1MASK_TYPE_S                                           1U
@@ -1776,7 +1721,7 @@
 
 // Field: [0:0] en
 //
-// Entry enable requirement
+// Enable
 #define PBE_BLE5_RAM_FL1MASK_EN                                          0x0001U
 #define PBE_BLE5_RAM_FL1MASK_EN_M                                        0x0001U
 #define PBE_BLE5_RAM_FL1MASK_EN_S                                             0U
@@ -1788,7 +1733,7 @@
 //******************************************************************************
 // Field: [3:0] index
 //
-// Filter List 2 match result. Index (0-15) of matching entry. Valid when FL2MASK.MATCH is set.
+// Which entry in the address table matched
 #define PBE_BLE5_RAM_FL2RESULT_INDEX_W                                        4U
 #define PBE_BLE5_RAM_FL2RESULT_INDEX_M                                   0x000FU
 #define PBE_BLE5_RAM_FL2RESULT_INDEX_S                                        0U
@@ -1798,7 +1743,7 @@
 //******************************************************************************
 // Field: [15:15] match
 //
-// Filter List 2 global control and match status
+// 
 #define PBE_BLE5_RAM_FL2MASK_MATCH                                       0x8000U
 #define PBE_BLE5_RAM_FL2MASK_MATCH_M                                     0x8000U
 #define PBE_BLE5_RAM_FL2MASK_MATCH_S                                         15U
@@ -1807,14 +1752,14 @@
 
 // Field: [14:4] rfuign
 //
-// Reserved for future use. Function similar to PRIVIGN and DUPLICATEIGN.
+// These bits works the same was as PRIVIGN and FALIGN.
 #define PBE_BLE5_RAM_FL2MASK_RFUIGN_W                                        11U
 #define PBE_BLE5_RAM_FL2MASK_RFUIGN_M                                    0x7FF0U
 #define PBE_BLE5_RAM_FL2MASK_RFUIGN_S                                         4U
 
 // Field: [3:3] privign
 //
-// Privacy ignore filter control
+// 
 #define PBE_BLE5_RAM_FL2MASK_PRIVIGN                                     0x0008U
 #define PBE_BLE5_RAM_FL2MASK_PRIVIGN_M                                   0x0008U
 #define PBE_BLE5_RAM_FL2MASK_PRIVIGN_S                                        3U
@@ -1823,7 +1768,7 @@
 
 // Field: [2:2] duplicateign
 //
-// Duplicate filtering ignore control
+// 
 #define PBE_BLE5_RAM_FL2MASK_DUPLICATEIGN                                0x0004U
 #define PBE_BLE5_RAM_FL2MASK_DUPLICATEIGN_M                              0x0004U
 #define PBE_BLE5_RAM_FL2MASK_DUPLICATEIGN_S                                   2U
@@ -1832,7 +1777,7 @@
 
 // Field: [1:1] type
 //
-// Address type matching requirement
+// Address type
 #define PBE_BLE5_RAM_FL2MASK_TYPE                                        0x0002U
 #define PBE_BLE5_RAM_FL2MASK_TYPE_M                                      0x0002U
 #define PBE_BLE5_RAM_FL2MASK_TYPE_S                                           1U
@@ -1841,7 +1786,7 @@
 
 // Field: [0:0] en
 //
-// Entry enable requirement
+// Enable
 #define PBE_BLE5_RAM_FL2MASK_EN                                          0x0001U
 #define PBE_BLE5_RAM_FL2MASK_EN_M                                        0x0001U
 #define PBE_BLE5_RAM_FL2MASK_EN_S                                             0U
@@ -1853,7 +1798,7 @@
 //******************************************************************************
 // Field: [1:1] fl2running
 //
-// Filter List 2 operation status
+// Status; is FL2 running address filtering
 #define PBE_BLE5_RAM_FLSTAT_FL2RUNNING                                   0x0002U
 #define PBE_BLE5_RAM_FLSTAT_FL2RUNNING_M                                 0x0002U
 #define PBE_BLE5_RAM_FLSTAT_FL2RUNNING_S                                      1U
@@ -1862,7 +1807,7 @@
 
 // Field: [0:0] fl1running
 //
-// Filter List 1 operation status
+// Status; is FL1 running address filtering
 #define PBE_BLE5_RAM_FLSTAT_FL1RUNNING                                   0x0001U
 #define PBE_BLE5_RAM_FLSTAT_FL1RUNNING_M                                 0x0001U
 #define PBE_BLE5_RAM_FLSTAT_FL1RUNNING_S                                      0U
@@ -1874,7 +1819,7 @@
 //******************************************************************************
 // Field: [0:0] val
 //
-// Temporary address type storage for internal processing. 0=public, 1=random.
+// temporary address type storage
 #define PBE_BLE5_RAM_TMPATYPE_VAL                                        0x0001U
 #define PBE_BLE5_RAM_TMPATYPE_VAL_M                                      0x0001U
 #define PBE_BLE5_RAM_TMPATYPE_VAL_S                                           0U
@@ -1884,7 +1829,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// 16-bit pattern to transmit when OPCFG.TXPATTERN=1. Used for continuous carrier testing.
+// Data to send if OPCFG.TXPATTERN is 1
 #define PBE_BLE5_RAM_PATTERN_VAL_W                                           16U
 #define PBE_BLE5_RAM_PATTERN_VAL_M                                       0xFFFFU
 #define PBE_BLE5_RAM_PATTERN_VAL_S                                            0U
@@ -1894,7 +1839,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Time between TX_RAW packet starts (start-to-start). Units depend on timer1 configuration. Used with OPCFG.RFINTERVAL.
+// RF interval, measured from start-to-start of TX_RAW. The actual time depends on configuration of timer1.
 #define PBE_BLE5_RAM_RFINTERVAL_VAL_W                                        16U
 #define PBE_BLE5_RAM_RFINTERVAL_VAL_M                                    0xFFFFU
 #define PBE_BLE5_RAM_RFINTERVAL_VAL_S                                         0U
@@ -1904,7 +1849,7 @@
 //******************************************************************************
 // Field: [15:0] val
 //
-// Total number of packets to transmit in TX_RAW operation. 0 = continuous transmission.
+// Used in TX_RAW; Total number of packets to transfer.
 #define PBE_BLE5_RAM_NTXTARGET_VAL_W                                         16U
 #define PBE_BLE5_RAM_NTXTARGET_VAL_M                                     0xFFFFU
 #define PBE_BLE5_RAM_NTXTARGET_VAL_S                                          0U
@@ -1914,7 +1859,7 @@
 //******************************************************************************
 // Field: [4:4] repeat
 //
-// Operation repeat control
+// Rule for what to do after operation completes.
 #define PBE_BLE5_RAM_OPCFG_REPEAT                                        0x0010U
 #define PBE_BLE5_RAM_OPCFG_REPEAT_M                                      0x0010U
 #define PBE_BLE5_RAM_OPCFG_REPEAT_S                                           4U
@@ -1923,7 +1868,7 @@
 
 // Field: [3:3] txpattern
 //
-// TX pattern mode (testing/continuous wave)
+// Send fixed pattern
 #define PBE_BLE5_RAM_OPCFG_TXPATTERN                                     0x0008U
 #define PBE_BLE5_RAM_OPCFG_TXPATTERN_M                                   0x0008U
 #define PBE_BLE5_RAM_OPCFG_TXPATTERN_S                                        3U
@@ -1932,7 +1877,7 @@
 
 // Field: [2:1] txfcmd
 //
-// TX FIFO command after TX_DONE
+// Rule for FCMD after TX_DONE
 #define PBE_BLE5_RAM_OPCFG_TXFCMD_W                                           2U
 #define PBE_BLE5_RAM_OPCFG_TXFCMD_M                                      0x0006U
 #define PBE_BLE5_RAM_OPCFG_TXFCMD_S                                           1U
@@ -1942,7 +1887,7 @@
 
 // Field: [0:0] rfinterval
 //
-// Fixed interval TX timing (requires REPEAT=1)
+// Requires REPEAT to make sense.
 #define PBE_BLE5_RAM_OPCFG_RFINTERVAL                                    0x0001U
 #define PBE_BLE5_RAM_OPCFG_RFINTERVAL_M                                  0x0001U
 #define PBE_BLE5_RAM_OPCFG_RFINTERVAL_S                                       0U
@@ -1954,7 +1899,7 @@
 //******************************************************************************
 // Field: [0:0] txrx
 //
-// Initial operation direction for RAW operations
+// Initial direction of operation
 #define PBE_BLE5_RAM_OPDIR_TXRX                                          0x0001U
 #define PBE_BLE5_RAM_OPDIR_TXRX_M                                        0x0001U
 #define PBE_BLE5_RAM_OPDIR_TXRX_S                                             0U
@@ -1975,7 +1920,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO0_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO0_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO0_RESERVED_S                                      4U
@@ -2060,7 +2005,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO1_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO1_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO1_RESERVED_S                                      4U
@@ -2145,7 +2090,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO2_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO2_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO2_RESERVED_S                                      4U
@@ -2230,7 +2175,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO3_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO3_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO3_RESERVED_S                                      4U
@@ -2315,7 +2260,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO4_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO4_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO4_RESERVED_S                                      4U
@@ -2400,7 +2345,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO5_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO5_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO5_RESERVED_S                                      4U
@@ -2485,7 +2430,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO6_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO6_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO6_RESERVED_S                                      4U
@@ -2570,7 +2515,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO7_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO7_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO7_RESERVED_S                                      4U
@@ -2655,7 +2600,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO8_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO8_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO8_RESERVED_S                                      4U
@@ -2740,7 +2685,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO9_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL1INFO9_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO9_RESERVED_S                                      4U
@@ -2825,7 +2770,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO10_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL1INFO10_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO10_RESERVED_S                                     4U
@@ -2910,7 +2855,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO11_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL1INFO11_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO11_RESERVED_S                                     4U
@@ -2995,7 +2940,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO12_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL1INFO12_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO12_RESERVED_S                                     4U
@@ -3080,7 +3025,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO13_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL1INFO13_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO13_RESERVED_S                                     4U
@@ -3165,7 +3110,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO14_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL1INFO14_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO14_RESERVED_S                                     4U
@@ -3250,7 +3195,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL1INFO15_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL1INFO15_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL1INFO15_RESERVED_S                                     4U
@@ -3335,7 +3280,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO0_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO0_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO0_RESERVED_S                                      4U
@@ -3420,7 +3365,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO1_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO1_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO1_RESERVED_S                                      4U
@@ -3505,7 +3450,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO2_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO2_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO2_RESERVED_S                                      4U
@@ -3590,7 +3535,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO3_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO3_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO3_RESERVED_S                                      4U
@@ -3675,7 +3620,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO4_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO4_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO4_RESERVED_S                                      4U
@@ -3760,7 +3705,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO5_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO5_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO5_RESERVED_S                                      4U
@@ -3845,7 +3790,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO6_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO6_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO6_RESERVED_S                                      4U
@@ -3930,7 +3875,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO7_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO7_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO7_RESERVED_S                                      4U
@@ -4015,7 +3960,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO8_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO8_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO8_RESERVED_S                                      4U
@@ -4100,7 +4045,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO9_RESERVED_W                                     11U
 #define PBE_BLE5_RAM_FL2INFO9_RESERVED_M                                 0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO9_RESERVED_S                                      4U
@@ -4185,7 +4130,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO10_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL2INFO10_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO10_RESERVED_S                                     4U
@@ -4270,7 +4215,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO11_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL2INFO11_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO11_RESERVED_S                                     4U
@@ -4355,7 +4300,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO12_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL2INFO12_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO12_RESERVED_S                                     4U
@@ -4440,7 +4385,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO13_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL2INFO13_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO13_RESERVED_S                                     4U
@@ -4525,7 +4470,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO14_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL2INFO14_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO14_RESERVED_S                                     4U
@@ -4610,7 +4555,7 @@
 
 // Field: [14:4] reserved
 //
-// Reserved for future use                     
+// Reserved for future use					 
 #define PBE_BLE5_RAM_FL2INFO15_RESERVED_W                                    11U
 #define PBE_BLE5_RAM_FL2INFO15_RESERVED_M                                0x7FF0U
 #define PBE_BLE5_RAM_FL2INFO15_RESERVED_S                                     4U

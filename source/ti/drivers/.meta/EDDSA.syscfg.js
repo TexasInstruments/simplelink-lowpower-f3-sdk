@@ -89,14 +89,14 @@ and verifying digital signatures.
 [1]: /secure_drivers/doxygen/html/_e_d_d_s_a_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_e_d_d_s_a_8h.html#ti_drivers_EDDSA_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_e_d_d_s_a_8h.html#ti_drivers_EDDSA_Examples "C usage examples"
-[4]: /secure_drivers/syscfg/html/ConfigDoc.html#EDDSA_Configuration_Options "Configuration options reference"
+[4]: /drivers/syscfg/html/ConfigDoc.html#EDDSA_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_EDDSA_",
     config              : Common.addNameConfig(config, "/ti/drivers/EDDSA", "CONFIG_EDDSA_"),
     modules: (inst) => {
         let forcedModules = ["Board", "Power", "CryptoBoard"];
 
-        if (deviceId.match(/CC27/) || deviceId.match(/CC35/)) {
+        if (deviceId.match(/CC27/)) {
             /* HSM library requires Key Store module */
             forcedModules.push("CryptoKeyKeyStore_PSA");
         }

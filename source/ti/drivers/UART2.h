@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2026, Texas Instruments Incorporated
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,10 @@
  */
 /*!*****************************************************************************
  *  @file       UART2.h
- *  @brief      UART driver interface
+ *  @brief      <b>PRELIMINARY</b> UART driver interface
+ *
+ *  <b>WARNING</b> These APIs are <b>PRELIMINARY</b>, and subject to
+ *  change in the next few months.
  *
  *  The UART2 driver is an updated version of the UART driver.  The name
  *  UART2 was given due to changes in the API, to support backwards

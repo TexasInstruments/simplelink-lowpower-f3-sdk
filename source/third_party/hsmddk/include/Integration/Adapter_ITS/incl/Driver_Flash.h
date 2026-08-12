@@ -58,6 +58,46 @@ extern "C"
 
 #define ARM_FLASH_SECTOR_INFO(addr,size) { (addr), (addr)+(size)-1 }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+/* Defines supports bit manipulation macros #BITMASK_x_0() & #BITMASK_x_y() */
+#define __IF__(x)   (x)
+#define __THEN__(x) ? (x)
+#define __ELSE__(x)     : (x)
+#define __ELSE_IF__(x)  : (x)
+
+/*!
+ * BITMASK_x_0() returns a bit mask of "1" from Bits[x:0]
+ *
+ * E.g., for x=5
+ *
+ * BITMASK_x_0(5) = ........111111     Bits[5:0] = "111111"
+ * BITMASK_x_0(0) = .............1     Bits[0:0] = "000001"
+ *
+ */
+#define BITMASK_x_0(x)                                                                 \
+    (__IF__((x) == 31)               /* For x==31, we immediately return 0xFFFFFFFF */ \
+     __THEN__(0xFFFFFFFF)            /* For other x, we return 2^(x+1) - 1.         */ \
+     __ELSE__((1 << ((x) + 1)) - 1)) // MACRO BITMASK_x_0() //
+
+/*!
+ * BITMASK_x_y() returns a bit mask of "1" from Bits[x:y]
+ * (naturally, x >= y should be enforces by the caller!!)
+ *
+ * E.g., for x=5, y=2
+ *
+ * BITMASK_x_y(5,5) = ......1.....     Bits[5:5] = "100000"
+ * BITMASK_x_y(5,2) = ......1111..     Bits[5:0] = "111100"
+ * BITMASK_x_0(5,1) = ......11111.     Bits[5:1] = "111110"
+ * BITMASK_x_0(5,0) = ......111111     Bits[5:0] = "111111"
+ *
+ */
+#define BITMASK_x_y(x, y)                                                                             \
+    (__IF__((y) == 0)                               /* For y==0, we return Bits[x:0]               */ \
+     __THEN__(BITMASK_x_0(x))                       /* For y> 0, we return Bits[x:0] - Bits[y-1:0] */ \
+     __ELSE__(BITMASK_x_0(x) - BITMASK_x_0((y)-1))) // MACRO BITMASK_x_y(). //
+#endif
+
+
 /**
 \brief Flash Sector information
 */
@@ -71,16 +111,12 @@ typedef struct _ARM_FLASH_SECTOR {
 */
 typedef struct _ARM_FLASH_INFO {
   ARM_FLASH_SECTOR *sector_info;        ///< Sector layout information (NULL=Uniform sectors)
-  #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-  const uint32_t          sector_count;       ///< Number of sectors
-  #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-  uint32_t                sector_count;       ///< Number of sectors - must be set at runtime for CC35XX
-  #endif
-  const uint32_t          sector_size;        ///< Uniform sector size in bytes (0=sector_info used)
-  const uint32_t          page_size;          ///< Optimal programming page size in bytes
-  const uint32_t          program_unit;       ///< Smallest programmable unit in bytes
-  const uint8_t           erased_value;       ///< Contents of erased memory (usually 0xFF)
-} ARM_FLASH_INFO;
+  uint32_t          sector_count;       ///< Number of sectors
+  uint32_t          sector_size;        ///< Uniform sector size in bytes (0=sector_info used)
+  uint32_t          page_size;          ///< Optimal programming page size in bytes
+  uint32_t          program_unit;       ///< Smallest programmable unit in bytes
+  uint8_t           erased_value;       ///< Contents of erased memory (usually 0xFF)
+} const ARM_FLASH_INFO;
 
 
 /**

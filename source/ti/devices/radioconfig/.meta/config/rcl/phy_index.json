@@ -139,28 +139,14 @@
     },
     {
       "file8": {
-        "cc23xx": "nesb_1m_2m_cc23xx.json",
-        "cc27xx": "nesb_1m_2m_cc27xx.json"
+        "cc23xx": "nesb_1m_2m_cc23xx.json"
       },
       "phy_files": {
-        "cc23xx": "nesb_1m_2m_cc23xx.phy",
-        "cc27xx": "nesb_1m_2m_cc27xx.phy"
+        "cc23xx": "nesb_1m_2m_cc23xx.phy"
       },
       "name": "nesb",
       "label": "1 Mbps / 2 Mbps",
       "protocol": "NESB",
-      "usage": "stack"
-    },
-    {
-      "file8": {
-        "cc27xx": "wbms_2m_1m_cc27xx.json"
-      },
-      "phy_files": {
-        "cc27xx": "wbms_2m_1m_cc27xx.phy"
-      },
-      "name": "wbms",
-      "label": "wBMS, 2 Mbps / 1 Mbps, GFSK",
-      "protocol": "Proprietary",
       "usage": "stack"
     }
   ]

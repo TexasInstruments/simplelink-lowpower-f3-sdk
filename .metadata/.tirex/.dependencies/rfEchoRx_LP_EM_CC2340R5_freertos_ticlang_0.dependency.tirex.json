@@ -1,15 +1,14 @@
 [
     {
         "files": [
-            "+../../README.md -> README.md",
-            "+../../README.html -> README.html",
             "+../../rfEchoRx.c -> rfEchoRx.c",
-            "+../../images/rfEcho_ErrorTxRx.png -> images/rfEcho_ErrorTxRx.png",
-            "+../../images/rfEcho_PerfectEcho.png -> images/rfEcho_PerfectEcho.png",
-            "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.md -> README.md",
+            "+../../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
+            "+../../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
             "+../rfEchoRx.syscfg -> rfEchoRx.syscfg",
             "+../main_freertos.c -> main_freertos.c",
-            "+cc23x0r5.cmd -> cc23x0r5.cmd"
+            "+../../overview.rov.json -> overview.rov.json",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
         ]
     }
 ]

@@ -194,10 +194,6 @@ extern "C"
  */
 #define GAP_LINK_PARAM_UPDATE_EVENT           0x07
 /**
- * Sent after a link has been established as  @ref gapEstLinkReqV2Event_t.
- */
-#define GAP_LINK_ESTABLISHED_EVENT_V2         0x08
-/**
  * Sent when the peer device's signature counter is updated as
  * @ref gapSignUpdateEvent_t.
  *
@@ -281,21 +277,6 @@ extern "C"
 #define GAP_ADV_SET_PERIODIC_ADV_ENABLE_EVENT 0x1B
 
 /**
- * Periodic Advertising Advertiser subevent data request event.
- */
-#define GAP_ADV_PERIODIC_ADV_SUBEVENT_DATA_REQ_EVENT 0x2B
-
-/**
- * Periodic Advertising Advertiser response header report event.
- */
-#define GAP_ADV_PERIODIC_ADV_RSP_HDR_REPORT_EVENT 0x2C
-
-/**
- * Periodic Advertising Advertiser response report event.
- */
-#define GAP_ADV_PERIODIC_ADV_RSP_REPORT_EVENT 0x2D
-
-/**
  * Periodic Advertising Scanner command status event.
  */
 #define GAP_SCAN_CREATE_SYNC_EVENT        	    0x1C
@@ -319,55 +300,20 @@ extern "C"
 #define GAP_SCAN_CLEAR_ADV_LIST_EVENT           0x23
 
 /**
- * Periodic Advertising Scanner establish V1 event.
+ * Periodic Advertising Scanner establish event.
  */
-#define GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V1    0x24
+#define GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT    0x24
 
 /**
  * Periodic Advertising Scanner sync lost event.
  */
-#define GAP_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT      0x25
-
-/**
- * Periodic Advertising Scanner report V1 event.
- */
-#define GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V1      0x26
-
-/**
- * Periodic Advertising Scanner establish V2 event.
- */
-#define GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V2    0x27
-
-/**
- * Periodic Advertising Scanner report V2 event.
- */
-#define GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V2      0x28
+#define GAP_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT    0x25
 
 /**
  * Periodic Advertising Scanner report event.
  */
-#define GAP_PAST_RECEIVED_V1_EVENT                 0x29
-
-/**
- * Periodic Advertising Scanner report event.
- */
-#define GAP_PAST_RECEIVED_V2_EVENT                 0x2A
+#define GAP_SCAN_PERIODIC_ADV_REPORT_EVENT       0x26
 /** @} End GAP_Event_IDs */
-
-/**
- * @defgroup GAP_EVT_MASK GAP HCI LE Event Mask Bits
- * @{
- * Byte-level bitmasks for the 8-byte HCI LE event mask, used by the GAP layer
- * to enable PAwR-related controller events.
- */
-// Byte 4
-#define GAP_EVT_MASK_BYTE4_PADV_SYNC_ESTABLISHED_V2    0x08  ///< Periodic Adv Sync Established V2 (bit 35)
-#define GAP_EVT_MASK_BYTE4_PADV_REPORT_V2              0x10  ///< Periodic Adv Report V2 (bit 36)
-#define GAP_EVT_MASK_BYTE4_PADVA_SUBEVENT_DATA_REQ     0x40  ///< PAwR Advertiser Subevent Data Request (bit 38)
-#define GAP_EVT_MASK_BYTE4_PADVA_RESPONSE_REPORT       0x80  ///< PAwR Advertiser Response Report (bit 39)
-// Byte 5
-#define GAP_EVT_MASK_BYTE5_ENH_CONN_COMPLETE_V2        0x01  ///< Enhanced Connection Complete V2 (bit 40)
-/** @} End GAP_EVT_MASK */
 
 /**
  * @defgroup GapAdvScan_Event_IDs GapAdv Event IDs
@@ -876,8 +822,8 @@ typedef enum
 #define RANDOM_ADDR_HDR_MASK          0xC0
 /// Random Static Address (b11)
 #define STATIC_ADDR_HDR               0xC0
-/// Random Private Non-Resolvable Address (b00)
-#define PRIVATE_NON_RESOLVE_ADDR_HDR  0x00
+/// Random Private Non-Resolvable Address (b10)
+#define PRIVATE_NON_RESOLVE_ADDR_HDR  0x80
 /// Random Private Resolvable Address (b01)
 #define PRIVATE_RESOLVE_ADDR_HDR      0x40
 /** @} End Random_Addr_Bitfields */
@@ -1230,32 +1176,6 @@ typedef struct
   uint16_t connTimeout;        //!< Connection Timeout
   uint8_t clockAccuracy;       //!< Clock Accuracy
 } gapEstLinkReqEvent_t;
-
-/**
- * @ref GAP_LINK_ESTABLISHED_EVENT_V2 message format.
- *
- * This message is sent to the app when a link is established (with status
- * SUCCESS), just as the GAP_LINK_ESTABLISHED_EVENT_V2 except for the fields @param advHandle and @param syncHandle.
- * If the connection was established from periodic advertising with responses and the device role is Central,
- * advHandle is set to the handle of the periodic advertising train, else it is set to 0xFF.
- * If the connection was established from periodic advertising with responses and the device role is Peripheral,
- * syncHandle is set to the handle of the periodic advertising train, else it is set to 0xFFFF.
- */
-typedef struct
-{
-  osal_event_hdr_t  hdr;       //!< @ref GAP_MSG_EVENT and status
-  uint8_t opcode;              //!< @ref GAP_LINK_ESTABLISHED_EVENT_V2
-  uint8_t devAddrType;         //!< Device address type: @ref GAP_Addr_Types_t
-  uint8_t devAddr[B_ADDR_LEN]; //!< Device address of link
-  uint16_t connectionHandle;   //!< Connection Handle for this connection
-  uint8_t connRole;            //!< Role connection was formed as, @ref GAP_Profile_Roles
-  uint16_t connInterval;       //!< Connection Interval
-  uint16_t connLatency;        //!< Connection Latency
-  uint16_t connTimeout;        //!< Connection Timeout
-  uint8_t clockAccuracy;       //!< Clock Accuracy
-  uint8_t advHandle;           //!< Advertising handle
-  uint16_t syncHandle;         //!< Periodic advertising sync handle
-} gapEstLinkReqEventV2_t;
 
 /**
  * @ref GAP_LINK_PARAM_UPDATE_EVENT message format.
@@ -1798,16 +1718,6 @@ extern uint8_t *GAP_GetIRK(void);
  * @return pointer to the 16-byte SRK
  */
 extern uint8_t *GAP_GetSRK(void);
-
-/**
- * Get the current BLE stack time
- *
- * Returns the current time from the Link Layer timer. This provides
- * a consistent time reference across the BLE stack layers.
- *
- * @return Current time in RAT ticks (0.25 µs resolution)
- */
-extern uint32_t GAP_GetCurrentTime(void);
 
 /*-------------------------------------------------------------------
  * FUNCTIONS - Pairing

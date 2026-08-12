@@ -84,15 +84,15 @@
 #include "ti/ble/stack_util/icall/app/icall_hci_tl.h"
 #include "ti/ble/stack_util/lib_opt/map_direct.h"
 
+#include "ti/ble/controller/ll/ll_cs_mgr.h"
 #include "ti/ble/controller/ll/ll_cs_db.h"
-#include "ti/ble/controller/ll/ll_pawr_advertiser.h"
+#include "ti/ble/controller/ll/ll_cs_common.h"
 #include <ti/drivers/utils/Math.h>
 // Stub headers
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_connectable.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_ble_health.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_pscan.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_scan.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_pawr_advertiser.h"
 
 /*******************************************************************************
  * MACROS
@@ -108,8 +108,6 @@
 #define MAX_REPORT_DATA_SIZE                     200
 #define HCI_MAX_EVT_PKT_SIZE                     0xFF          //!< Max event Packet Size
 #define HCI_MAX_EVT_PKT_SIZE_EXT                 0xFFFF        //!< Max ext event Pakcet Size
-// Maximum response data that can fit in one PAwR response report event
-#define HCI_PADVA_MAX_SINGLE_RSP_DATA            (MAX_REPORT_DATA_SIZE - HCI_PADVA_RESPONSE_REPORT_EVENT_BASE_LEN - HCI_PADVA_RESPONSE_REPORT_ENTRY_BASE_LEN)
 
 // Module Id Used to report system event (error or other)
 #define HCI_MODULE_ID                            0
@@ -141,7 +139,6 @@ void hciCreateEventExtScanReqReceived( aeScanReqReceived_t *extAdvRpt );
 void hciCreateEventExtAdv( uint8 eventId, uint8 handle );
 void hciCreateEventExtAdvDataTruncated( aeAdvTrucData_t *extAdvTrunc );
 void hciCreateEventExtAdvReport( aeExtAdvRptEvt_t *pExtAdvRpt );
-void hciCreateEventAdvReport( aeExtAdvRptEvt_t *pExtAdvRpt );
 void hciCreateEventExtScanTimeout();
 void hciCreateEventExtScan( uint8 event );
 
@@ -967,61 +964,6 @@ void HCI_AeScanCback( uint8 event, void *pData )
 }
 
 /*******************************************************************************
- * @fn          HCI_LegacyScanCback
- *
- * @brief       Callback for legacy (BT4.x) scanning events from the Link Layer.
- *              Converts extended advertising report format to legacy format
- *              for backward compatibility.
- *
- * input parameters
- *
- * @param       event - Event type (LL_CBACK_EXT_ADV_REPORT, etc.)
- * @param       pData - Pointer to event data (aeExtAdvRptEvt_t for adv reports)
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None
- */
-void HCI_LegacyScanCback( uint8 event, void *pData )
-{
-  switch ( event )
-  {
-    case LL_CBACK_EXT_ADV_REPORT:
-    {
-      // Convert extended advertising report to legacy format
-      hciCreateEventAdvReport( (aeExtAdvRptEvt_t*) pData );
-      break;
-    }
-    case LL_CBACK_EXT_SCAN_TIMEOUT:
-    {
-      // Legacy scan timeout event (same as extended)
-      hciCreateEventExtScanTimeout( );
-      break;
-    }
-    case LL_CBACK_EXT_SCAN_START:
-    case LL_CBACK_EXT_SCAN_PERIOD_END:
-    case LL_CBACK_EXT_SCAN_END:
-    case LL_CBACK_EXT_SCAN_WINDOW_END:
-    case LL_CBACK_EXT_SCAN_INTERVAL_END:
-    case LL_CBACK_EXT_SCAN_DURATION_END:
-    {
-      // Legacy scan events (same as extended)
-      hciCreateEventExtScan( event );
-      break;
-    }
-    default:
-    {
-      // Unknown event, report error
-      hciSendSystemReport( LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE,
-                           HCI_EXT_LE_SCAN_EVENT );
-      break;
-    }
-  }
-}
-
-/*******************************************************************************
  * @fn          HCI_CS_ReadRemoteSupportedCapabilitiesCback
  *
  * @brief       Callback for reading the remote CS capabilities.
@@ -1257,10 +1199,10 @@ WEAK_FUNC void HCI_CS_SecurityEnableCompleteCback(uint8 status, uint16 connHandl
  *
  * @return      None
  */
-WEAK_FUNC void HCI_CS_ProcedureEnableCompleteCback(uint16 connHandle,
-                                                   uint8_t configId,
+WEAK_FUNC void HCI_CS_ProcedureEnableCompleteCback(uint8 status,
+                                                   uint16 connHandle,
                                                    uint8 enable,
-                                                   uint8 status)
+                                                   csProcedureEnable_t* enableData)
 {
   uint8* pEvt;
   // Pointer to data inside pEvt, that pointer point next slot to be filled
@@ -1272,29 +1214,30 @@ WEAK_FUNC void HCI_CS_ProcedureEnableCompleteCback(uint16 connHandle,
 
   if (NULL != pEvt)
   {
-    const csEnableProcedureCtrlData_t *pEnable = llCsDbGetProcedureData();
-
     *pData++ = status;
     *pData++ = LO_UINT16(connHandle); // connection handle (LSB)
     *pData++ = HI_UINT16(connHandle); // connection handle (MSB)
-    *pData++ = configId;                               // config Id
-    *pData++ = enable;                                 // State
-    *pData++ = pEnable->ACI;                           // Tone_Antenna_Config_Selection
-    *pData++ = (uint8_t)pEnable->pwrDelta;             // Selected_TX_Power
-    *pData++ = BREAK_UINT32(pEnable->subEventLen, 0);
-    *pData++ = BREAK_UINT32(pEnable->subEventLen, 1);
-    *pData++ = BREAK_UINT32(pEnable->subEventLen, 2);
-    *pData++ = pEnable->subEventsPerEvent;
-    *pData++ = LO_UINT16(pEnable->subEventInterval);
-    *pData++ = HI_UINT16(pEnable->subEventInterval);
-    *pData++ = LO_UINT16(pEnable->eventInterval);
-    *pData++ = HI_UINT16(pEnable->eventInterval);
-    *pData++ = LO_UINT16(pEnable->procedureInterval);
-    *pData++ = HI_UINT16(pEnable->procedureInterval);
-    *pData++ = LO_UINT16(pEnable->procedureCount);
-    *pData++ = HI_UINT16(pEnable->procedureCount);
-    *pData++ = LO_UINT16(pEnable->maxProcedureDur);
-    *pData = HI_UINT16(pEnable->maxProcedureDur);
+    if (enableData != NULL)
+    {
+      *pData++ = enableData->configId;  // config Id
+      *pData++ = enable;                // State
+      *pData++ = enableData->ACI;       // Tone_Anetenna_Config_Selection
+      *pData++ = enableData->pwrDelta;  // Selected_TX_Power
+      *pData++ = BREAK_UINT32(enableData->subEventLen, 0);
+      *pData++ = BREAK_UINT32(enableData->subEventLen, 1);
+      *pData++ = BREAK_UINT32(enableData->subEventLen, 2);
+      *pData++ = enableData->subEventsPerEvent;
+      *pData++ = LO_UINT16(enableData->subEventInterval);
+      *pData++ = HI_UINT16(enableData->subEventInterval);
+      *pData++ = LO_UINT16(enableData->eventInterval);
+      *pData++ = HI_UINT16(enableData->eventInterval);
+      *pData++ = LO_UINT16(enableData->procedureInterval);
+      *pData++ = HI_UINT16(enableData->procedureInterval);
+      *pData++ = LO_UINT16(enableData->procedureCount);
+      *pData++ = HI_UINT16(enableData->procedureCount);
+      *pData++ = LO_UINT16(enableData->maxProcedureDur);
+      *pData = HI_UINT16(enableData->maxProcedureDur);
+    }
 
     // send the message
     HCI_SendEventToHost(pEvt);
@@ -2154,25 +2097,27 @@ void LL_EnhancedConnectionCompleteCback( uint8 reasonCode, uint16 connHandle,
   uint8 *pEvt;
   // Pointer to data inside pEvt, that pointer point next slot to be filled
   uint8 *pData;
-  uint8 enhanceConn = TRUE;
+  uint8 enhanceConn = FALSE;
   uint8 hciEvtType;
   uint8 hciPktLen;
 
-
-  if (((OPT_LL_PAwRS_IsEnable() == UTRUE) || (OPT_LL_PAwRA_IsEnable() == UTRUE)) &&
-      (HCI_CheckEventMaskLe( LE_EVT_ENH_CONN_COMPLETE_BIT_V2 ) == UTRUE))
+  if ( HCI_CheckEventMaskLe( LE_EVT_ENH_CONN_COMPLETE_BIT ) )
   {
+    if(OPT_LL_PAwRS_IsEnable() == TRUE)
+    {
         hciPktLen = HCI_ENH_CONNECTION_COMPLETE_EVENT_LEN_V2;
         hciEvtType = HCI_BLE_ENHANCED_CONNECTION_COMPLETE_EVENT_V2;
-  }
-  else if (HCI_CheckEventMaskLe( LE_EVT_ENH_CONN_COMPLETE_BIT_V1 ) == UTRUE)
-  {
+    }
+    else
+    {
         hciPktLen = HCI_ENH_CONNECTION_COMPLETE_EVENT_LEN_V1;
         hciEvtType = HCI_BLE_ENHANCED_CONNECTION_COMPLETE_EVENT_V1;
+    }
+
+    enhanceConn = TRUE;
   }
   else if ( HCI_CheckEventMaskLe( LE_EVT_CONN_COMPLETE_BIT ) )
   {
-    enhanceConn = FALSE;
     hciPktLen = HCI_CONNECTION_COMPLETE_EVENT_LEN;
     hciEvtType = HCI_BLE_CONNECTION_COMPLETE_EVENT;
   }
@@ -2236,8 +2181,7 @@ void LL_EnhancedConnectionCompleteCback( uint8 reasonCode, uint16 connHandle,
       *pData++ = HI_UINT16( connTimeout );         // connection timeout (MSB)
       *pData = clockAccuracy;                      // clock accuracy
 
-      if (((OPT_LL_PAwRS_IsEnable() == UTRUE) || (OPT_LL_PAwRA_IsEnable() == UTRUE)) &&
-          (HCI_CheckEventMaskLe( LE_EVT_ENH_CONN_COMPLETE_BIT_V2 ) == UTRUE))
+      if ((enhanceConn == TRUE) && (OPT_LL_PAwRS_IsEnable() == TRUE))
       {
           pData++;
           *pData++ = advHandle; // Advertising handle
@@ -2682,10 +2626,10 @@ void HCI_PadvSyncEstabEventV1( uint8 status, uint8_t* llPadvSEstEventParams)
   // Pointer to data inside pEvt, that pointer point next slot to be filled
   uint8 *pData;
 
-  if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT_V1 ) )
+  if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT ) )
   {
     pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_PADV_SYNC_ESTAB_EVENT_V1,
+                                       HCI_BLE_PADV_SYNC_ESTAB_V1_EVENT,
                                        HCI_PADV_SYNC_ESTAB_EVENT_V1_LEN );
     if ( pEvt )
     {
@@ -2708,10 +2652,10 @@ void HCI_PadvSyncEstabEventV2( uint8 status, uint8_t* llPadvSEstEventParams)
   // Pointer to data inside pEvt, that pointer point next slot to be filled
   uint8_t *pData;
 
-  if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT_V2 ) )
+  if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT ) )
   {
     pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_PADV_SYNC_ESTAB_EVENT_V2,
+                                       HCI_BLE_PADV_SYNC_ESTAB_V2_EVENT,
                                        HCI_PADV_SYNC_ESTAB_EVENT_V2_LEN );
     if ( pEvt )
     {
@@ -2734,7 +2678,7 @@ void HCI_PeriodicAdvReportEventV1( uint8_t* periodicEvtParams, uint8_t dataStatu
  // Pointer to data inside pEvt, that pointer point next slot to be filled
  uint8_t *pData;
 
- if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_REPORT_BIT_V1 ) )
+ if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_REPORT_BIT ) )
  {
    uint8_t dataLength;
    uint8_t eventLength;
@@ -2748,7 +2692,7 @@ void HCI_PeriodicAdvReportEventV1( uint8_t* periodicEvtParams, uint8_t dataStatu
      eventLength = HCI_PADV_REPORT_EVENT_V1_LEN + dataLength;
 
      pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                        HCI_BLE_PADV_REPORT_EVENT_V1,
+                                        HCI_BLE_PADV_REPORT_V1_EVENT,
                                         eventLength );
      if ( pEvt )
      {
@@ -2781,7 +2725,7 @@ void HCI_PeriodicAdvReportEventV2( uint8_t* periodicEvtParams, uint8_t dataStatu
   // Pointer to data inside pEvt, that pointer point next slot to be filled
   uint8_t *pData;
 
-  if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_REPORT_BIT_V2 ) )
+  if ( HCI_CheckEventMaskLe( LE_EVT_PERIODIC_ADV_REPORT_BIT ) )
   {
     uint8_t dataLength;
     uint8_t eventLength;
@@ -2795,7 +2739,7 @@ void HCI_PeriodicAdvReportEventV2( uint8_t* periodicEvtParams, uint8_t dataStatu
       eventLength = HCI_PADV_REPORT_EVENT_V2_LEN + dataLength;
 
       pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                         HCI_BLE_PADV_REPORT_EVENT_V2,
+                                         HCI_BLE_PADV_REPORT_V2_EVENT,
                                          eventLength );
       if ( pEvt )
       {
@@ -2855,291 +2799,6 @@ void HCI_PeriodicAdvSyncLostEvent( uint16 syncHandle )
     }
   }
 }
-
-/*******************************************************************************
- * Public function defined in ll.h
- */
-void HCI_PASTReceivedEventV1( uint8_t status, uint8_t* pPASTReceivedInfo )
-{
-  uint8_t *pEvt = NULL;
-  // Pointer to data inside pEvt, that pointer point next slot to be filled
-  uint8_t *pData = NULL;
-
-  // Check if the periodic advertising sync transfer received event V1 is enabled
-  if ( HCI_CheckEventMaskLe( LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V1 ) == UTRUE )
-  {
-    // Allocate and prepare the event V1
-    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V1,
-                                       HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V1 );
-    if ( pEvt != NULL )
-    {
-      // Populate data
-      *pData++ = status;
-      // Copy the received info, excluding the first two bytes (status and subevent code),
-      // which are already set
-      osal_memcpy( pData, pPASTReceivedInfo, HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V1 - 2 );
-
-      // Send message
-      HCI_SendEventToHost( pEvt );
-    }
-  }
-}
-
-/*******************************************************************************
- * Public function defined in ll.h
- */
-void HCI_PASTReceivedEventV2( uint8_t status, uint8_t* pPASTReceivedInfo )
-{
-  uint8_t *pEvt = NULL;
-  // Pointer to data inside pEvt, that pointer point next slot to be filled
-  uint8_t *pData = NULL;
-
-  // Check if the periodic advertising sync transfer received event V2 is enabled
-  if ( HCI_CheckEventMaskLe( LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V2 ) == UTRUE )
-  {
-    // Allocate and prepare the event V2
-    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V2,
-                                       HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V2 );
-    if ( pEvt != NULL )
-    {
-      // Populate data
-      *pData++ = status;
-      // Copy the received info, excluding the first two bytes (status and subevent code),
-      // which are already set
-      osal_memcpy( pData, pPASTReceivedInfo, HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V2 - 2 );
-
-      // Send message
-      HCI_SendEventToHost( pEvt );
-    }
-  }
-}
-
-/*******************************************************************************
- * @fn          HCI_PadvASubeventDataRequestEvent
- *
- * @brief       Sends a request to the host for subevent data.
- *
- * input parameters
- *
- * @param      advHandle - The advertiser handle.
- * @param      subeventStart - The starting subevent.
- * @param      subeventCount - The number of subevents to request.
- *
- * output parameters
- *
- * @param      None.
- *
- * @return     None.
-*/
-void HCI_PadvASubeventDataRequestEvent(uint8_t advHandle, uint8_t subeventStart, uint8_t subeventCount)
-{
-  uint8 *pEvt;
-  // Pointer to data inside pEvt, that pointer point next slot to be filled
-  uint8 *pData;
-
-  if ( HCI_CheckEventMaskLe( LE_EVT_PADVA_SUBEVENT_DATA_REQUEST_EVENT_BIT ) )
-  {
-    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_PADVA_SUBEVENT_DATA_REQUEST_EVENT,
-                                       HCI_PADVA_SUBEVENT_DATA_REQUEST_EVENT_LEN );
-
-    if ( pEvt )
-    {
-      // Populate data
-      *pData++ = advHandle;              // Advertising handle
-      *pData++ = subeventStart;          // Subevent start
-      *pData   = subeventCount;          // Subevent count
-
-      // Send message
-      HCI_SendEventToHost( pEvt );
-    }
-  }
-}
-
-/*******************************************************************************
- * @fn          hciSendFragmentedPadvAResponse
- *
- * @brief       Sends a single large PAwR response that needs fragmentation
- *              across multiple HCI events.
- *
- * input parameters
- *
- * @param      advHandle - The advertiser handle.
- * @param      subevent  - The subevent number.
- * @param      txStatus  - TX status.
- * @param      pReport   - Pointer to the response report to fragment.
- *
- * output parameters
- *
- * @param      None.
- *
- * @return     SUCCESS if successful, FAILURE if out of memory.
-*/
-static uint8_t hciSendFragmentedPadvAResponse(uint8_t advHandle,
-                                              uint8_t subevent,
-                                              uint8_t txStatus,
-                                              responseReport_t *pReport)
-{
-  uint8 *pEvt;
-  uint8 *pData;
-  uint8_t remainingLen = pReport->dataLen;
-  uint8_t dataOffset = 0;
-
-  while (remainingLen > 0)
-  {
-    uint8_t fragLen = (remainingLen > HCI_PADVA_MAX_SINGLE_RSP_DATA) ? HCI_PADVA_MAX_SINGLE_RSP_DATA : remainingLen;
-    uint16 totalLen = HCI_PADVA_RESPONSE_REPORT_EVENT_BASE_LEN + HCI_PADVA_RESPONSE_REPORT_ENTRY_BASE_LEN + fragLen;
-
-    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_PADVA_RESPONSE_REPORT_EVENT,
-                                       totalLen );
-
-    if ( pEvt )
-    {
-      *pData++ = advHandle;
-      *pData++ = subevent;
-      *pData++ = txStatus;
-      *pData++ = 1;  // Single response per event when fragmenting
-
-      *pData++ = pReport->txPower;
-      *pData++ = pReport->rssi;
-      *pData++ = 0xFF;  // CTE Type (0xFF = No CTE)
-      *pData++ = pReport->responseSlot;
-
-      // Set data status: 0x01 = incomplete more to come, original status for last fragment
-      *pData++ = (remainingLen > HCI_PADVA_MAX_SINGLE_RSP_DATA) ? 0x01 : pReport->dataStatus;
-      *pData++ = fragLen;
-
-      osal_memcpy(pData, &pReport->data[dataOffset], fragLen);
-
-      HCI_SendEventToHost( pEvt );
-
-      dataOffset += fragLen;
-      remainingLen -= fragLen;
-    }
-    else
-    {
-      return FAILURE;
-    }
-  }
-
-  return SUCCESS;
-}
-
-/*******************************************************************************
- * @fn          HCI_PadvAResponseReportEvent
- *
- * @brief       Sends a periodic advertising response report to the host.
- *
- * input parameters
- *
- * @param      advHandle    - The advertiser handle.
- * @param      subevent     - The subevent number for which responses are reported.
- * @param      txStatus     - 0x00: AUX_SYNC_SUBEVENT_IND was transmitted,
- *                            0x01: AUX_SYNC_SUBEVENT_IND was not transmitted.
- * @param      numResponses - Number of response reports.
- * @param      pResponses   - Pointer to array of response reports (responseReport_t).
- *
- * output parameters
- *
- * @param      None.
- *
- * @return     None.
-*/
-void HCI_PadvAResponseReportEvent(uint8_t advHandle,
-                                  uint8_t subevent,
-                                  uint8_t txStatus,
-                                  uint8_t numResponses,
-                                  void   *pResponses)
-{
-  uint8 *pEvt;
-  uint8 *pData;
-
-  if ( HCI_CheckEventMaskLe( LE_EVT_PADVA_RESPONSE_REPORT_EVENT_BIT ) )
-  {
-    responseReport_t *pReports = (responseReport_t *)pResponses;
-    uint8_t rspIdx = 0;
-
-    // Process all responses. Each HCI event is limited to MAX_REPORT_DATA_SIZE (200 bytes).
-    // Two cases are handled:
-    // 1. Large response (data > HCI_PADVA_MAX_SINGLE_RSP_DATA): Fragment across multiple events
-    // 2. Small responses: Batch multiple responses into one event until size limit is reached
-    while (rspIdx < numResponses)
-    {
-      // Case 1: Large response - needs fragmentation across multiple HCI events
-      if (pReports[rspIdx].dataLen > HCI_PADVA_MAX_SINGLE_RSP_DATA)
-      {
-        if (hciSendFragmentedPadvAResponse(advHandle, subevent, txStatus, &pReports[rspIdx]) != SUCCESS)
-        {
-          return;  // Out of memory
-        }
-        rspIdx++;
-      }
-      else
-      {
-        // Case 2: Small responses - batch as many as possible into one HCI event
-        uint16 totalLen = HCI_PADVA_RESPONSE_REPORT_EVENT_BASE_LEN;
-        uint8_t count = 0;
-
-        // Calculate how many responses can fit in this event
-        for (uint8_t i = rspIdx; i < numResponses; i++)
-        {
-          // Stop if next response needs fragmentation (will be handled in next iteration)
-          if (pReports[i].dataLen > HCI_PADVA_MAX_SINGLE_RSP_DATA)
-          {
-            break;
-          }
-
-          uint16 entryLen = HCI_PADVA_RESPONSE_REPORT_ENTRY_BASE_LEN + pReports[i].dataLen;
-
-          // Stop if adding this response would exceed the HCI event size limit
-          if ((totalLen + entryLen) > MAX_REPORT_DATA_SIZE)
-          {
-            break;
-          }
-
-          totalLen += entryLen;
-          count++;
-        }
-
-        // Skip to next response if none could be batched (shouldn't happen normally)
-        if (count == 0)
-        {
-          rspIdx++;
-          continue;
-        }
-
-        // Allocate and send the batched event
-        pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                           HCI_BLE_PADVA_RESPONSE_REPORT_EVENT,
-                                           totalLen );
-
-        if ( pEvt )
-        {
-          // Populate event header
-          *pData++ = advHandle;
-          *pData++ = subevent;
-          *pData++ = txStatus;
-          *pData++ = count;
-
-          // Populate each response entry
-          LL_PAwRA_PackResponseReports(pData, &pReports[rspIdx], count);
-
-          HCI_SendEventToHost( pEvt );
-        }
-        else
-        {
-          break;  // Out of memory
-        }
-
-        rspIdx += count;
-      }
-    }
-  }
-}
-
 #endif //HOST_CONFIG
 
 /*
@@ -3768,157 +3427,6 @@ void hciCreateEventExtAdvReport( aeExtAdvRptEvt_t *pExtAdvRpt )
 }
 
 /*******************************************************************************
- * @fn          hciCreateEventAdvReport
- *
- * @brief       This function creates a legacy advertising report event from
- *              an extended advertising report. It converts the extended format
- *              (BT5+) to legacy format (BT4.x) for backward compatibility.
- *
- * input parameters
- *
- * @param       *pExtAdvRpt  - Pointer to extended advertising report data
- *
- * output parameters
- *
- * @param       None.
- *
- * @return      None.
- */
-void hciCreateEventAdvReport( aeExtAdvRptEvt_t *pExtAdvRpt )
-{
-  uint8 *pEvt;
-  uint8 *pData;
-  uint8 dataLen;
-  uint8 legacyEvtType;
-
-  // Validate input
-  if ( (pExtAdvRpt == NULL) || (pExtAdvRpt->subCode != HCI_BLE_EXTENDED_ADV_REPORT_EVENT) )
-  {
-    hciSendSystemReport( LL_STATUS_ERROR_UNKNOWN_ADV_EVT_TYPE,
-                         HCI_BLE_EXTENDED_ADV_REPORT_EVENT );
-    return;
-  }
-
-#ifdef QUAL_TEST
-  // Handle directed advertising with unresolved RPA (qualification test requirement)
-  if ( pExtAdvRpt->directAddrType == AE_EXT_ADV_RPT_DIR_ADDR_TYPE_UNRESOLVED_RPA )
-  {
-    // Create HCI_BLE_DIRECT_ADVERTISING_REPORT_EVENT for directed advertising
-    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                       HCI_BLE_DIRECT_ADVERTISING_REPORT_EVENT,
-                                       HCI_ADV_DIRECTED_REPORT_EVENT_LEN );
-
-    if ( pEvt )
-    {
-      *pData++ = pExtAdvRpt->numRpts;        // Number of reports
-      *pData++ = 1;                          // Event type: Connectable directed advertising (ADV_DIRECT_IND)
-      *pData++ = pExtAdvRpt->addrType;       // Address type
-
-      memcpy( pData, pExtAdvRpt->addr, B_ADDR_LEN );  // Advertiser address
-      pData += B_ADDR_LEN;
-
-      *pData++ = LL_DEV_ADDR_TYPE_RANDOM;    // Direct address type (random for unresolved RPA)
-
-      memcpy( pData, pExtAdvRpt->directAddr, B_ADDR_LEN );  // Direct address (target)
-      pData += B_ADDR_LEN;
-
-      *pData = pExtAdvRpt->rssi;             // RSSI
-
-      // Send message to host
-      HCI_SendEventToHost( pEvt );
-    }
-
-    // Free the extended advertising report memory
-    if ( pExtAdvRpt->pData )
-    {
-      ICall_free( pExtAdvRpt->pData );
-    }
-    ICall_free( pExtAdvRpt );
-    return;
-  }
-#endif
-
-  // Check if LE Meta-Events are enabled and this event is enabled
-  if ( MAP_HCI_CheckEventMaskLe( LE_EVT_ADV_REPORT_BIT ) == 0 )
-  {
-    // Event mask not set for this event, skip it
-    if ( pExtAdvRpt->pData )
-    {
-      ICall_free( pExtAdvRpt->pData );
-    }
-    ICall_free( pExtAdvRpt );
-    return;
-  }
-
-  // Convert extended advertising event type to legacy event type
-  switch ( pExtAdvRpt->evtType )
-  {
-    case AE_EXT_ADV_RPT_EVT_TYPE_ADV_IND:
-      legacyEvtType = 0;  // ADV_IND
-      break;
-    case AE_EXT_ADV_RPT_EVT_TYPE_DIRECT_IND:
-      legacyEvtType = 1;  // ADV_DIRECT_IND
-      break;
-    case AE_EXT_ADV_RPT_EVT_TYPE_SCAN_IND:
-      legacyEvtType = 2;  // ADV_SCAN_IND
-      break;
-    case AE_EXT_ADV_RPT_EVT_TYPE_NONCONN_IND:
-      legacyEvtType = 3;  // ADV_NONCONN_IND
-      break;
-    case AE_EXT_ADV_RPT_EVT_TYPE_SCAN_RSP_ADV_IND:
-    case AE_EXT_ADV_RPT_EVT_TYPE_SCAN_RSP_ADV_SCAN_IND:
-    case AE_EXT_ADV_RPT_EVT_TYPE_SCAN_RSP:
-      legacyEvtType = 4;  // SCAN_RSP
-      break;
-    default:
-      // Unsupported event type for legacy format, discard
-      if ( pExtAdvRpt->pData )
-      {
-        ICall_free( pExtAdvRpt->pData );
-      }
-      ICall_free( pExtAdvRpt );
-      return;
-  }
-
-  // Allocate and prepare HCI LE event packet
-  dataLen = pExtAdvRpt->dataLen;
-  pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
-                                     HCI_BLE_ADV_REPORT_EVENT,
-                                     HCI_ADV_REPORT_EVENT_LEN + dataLen );
-
-  if ( pEvt )
-  {
-    // Populate legacy advertising report data
-    *pData++ = pExtAdvRpt->numRpts;      // Number of reports (always 1)
-    *pData++ = legacyEvtType;            // Event type (converted to legacy)
-    *pData++ = pExtAdvRpt->addrType;     // Address type
-
-    memcpy( pData, pExtAdvRpt->addr, B_ADDR_LEN );  // Device address
-    pData += B_ADDR_LEN;
-
-    *pData++ = dataLen;                  // Data length
-
-    if ( dataLen )
-    {
-      memcpy( pData, pExtAdvRpt->pData, dataLen );  // Advertising data
-      pData += dataLen;
-    }
-
-    *pData = pExtAdvRpt->rssi;           // RSSI
-
-    // Send message to host
-    HCI_SendEventToHost( pEvt );
-  }
-
-  // Free the extended advertising report memory
-  if ( pExtAdvRpt->pData )
-  {
-    ICall_free( pExtAdvRpt->pData );
-  }
-  ICall_free( pExtAdvRpt );
-}
-
-/*******************************************************************************
  * @fn          hciCreateEventExtScanTimeout
  *
  * @brief       This function create event for AE scan timeout
@@ -4035,6 +3543,66 @@ uint8 hciSetEventMask( uint8 *pEventMask, uint8 eventMaskTableIndex )
   }
 
   return status;
+}
+
+/*******************************************************************************
+ * Public function defined in ll.h
+ */
+void HCI_PASTReceivedEventV1( uint8_t status, uint8_t* pPASTReceivedInfo )
+{
+  uint8_t *pEvt = NULL;
+  // Pointer to data inside pEvt, that pointer point next slot to be filled
+  uint8_t *pData = NULL;
+
+  // Check if the periodic advertising sync transfer received event V1 is enabled
+  if ( HCI_CheckEventMaskLe( LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V1 ) == UTRUE )
+  {
+    // Allocate and prepare the event V1
+    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
+                                       HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V1,
+                                       HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V1 );
+    if ( pEvt != NULL )
+    {
+      // Populate data
+      *pData++ = status;
+      // Copy the received info, excluding the first two bytes (status and subevent code),
+      // which are already set
+      osal_memcpy( pData, pPASTReceivedInfo, HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V1 - 2 );
+
+      // Send message
+      HCI_SendEventToHost( pEvt );
+    }
+  }
+}
+
+/*******************************************************************************
+ * Public function defined in ll.h
+ */
+void HCI_PASTReceivedEventV2( uint8_t status, uint8_t* pPASTReceivedInfo )
+{
+  uint8_t *pEvt = NULL;
+  // Pointer to data inside pEvt, that pointer point next slot to be filled
+  uint8_t *pData = NULL;
+
+  // Check if the periodic advertising sync transfer received event V2 is enabled
+  if ( HCI_CheckEventMaskLe( LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V2 ) == UTRUE )
+  {
+    // Allocate and prepare the event V2
+    pEvt = hciAllocAndPrepHciLeEvtPkt( &pData,
+                                       HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V2,
+                                       HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V2 );
+    if ( pEvt != NULL )
+    {
+      // Populate data
+      *pData++ = status;
+      // Copy the received info, excluding the first two bytes (status and subevent code),
+      // which are already set
+      osal_memcpy( pData, pPASTReceivedInfo, HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V2 - 2 );
+
+      // Send message
+      HCI_SendEventToHost( pEvt );
+    }
+  }
 }
 
 /*******************************************************************************

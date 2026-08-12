@@ -27,13 +27,8 @@
 extern "C" {
 #endif
 
-/* Dummy struct used for internal random number generation APIs */
-typedef struct {
-    uintptr_t opaque[2];
-} mbedtls_psa_external_random_context_t;
-
 /*
- * Note that the below structures are different from the declarations in
+ * Note that the below structures are different from the decalrations in
  * mbed-crypto. This is because TF-M maintains 'front-end' and 'back-end'
  * versions of this header. In the front-end version, exported to NS
  * clients in interface/include/psa, a crypto operation is defined as an
@@ -70,12 +65,7 @@ struct psa_mac_operation_s
 #endif
 };
 
-#ifdef TI_PSA_CRYPTO_NS_CLIENT
-#define PSA_MAC_OPERATION_INIT {0, 0}
-#else
 #define PSA_MAC_OPERATION_INIT {0}
-#endif /* TI_PSA_CRYPTO_NS_CLIENT */
-
 static inline struct psa_mac_operation_s psa_mac_operation_init(void)
 {
     const struct psa_mac_operation_s v = PSA_MAC_OPERATION_INIT;
@@ -131,9 +121,6 @@ typedef uint16_t psa_key_bits_t;
  * conditionals. */
 #define PSA_MAX_KEY_BITS 0xfff8
 
-/* Default owner ID to match with client ID in TFM-enabled builds */
-#define PSA_CRYPTO_KEY_ID_DEFAULT_OWNER -1
-
 /* On the client side, only some key attributes are visible.
  * The server has a different definition of psa_key_attributes_s which
  * maintains more attributes.
@@ -143,11 +130,7 @@ struct psa_key_attributes_s {
     struct psa_client_key_attributes_s client;
 };
 
-#define PSA_KEY_ATTRIBUTES_INIT \
-    (psa_key_attributes_t)      \
-    {                           \
-        {0}                     \
-    }
+#define PSA_KEY_ATTRIBUTES_INIT {PSA_CLIENT_KEY_ATTRIBUTES_INIT}
 
 static inline struct psa_key_attributes_s psa_key_attributes_init(void)
 {

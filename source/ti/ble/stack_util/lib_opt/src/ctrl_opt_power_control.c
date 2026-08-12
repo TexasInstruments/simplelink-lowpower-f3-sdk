@@ -150,21 +150,6 @@ llStatus_t OPT_LL_PwrCtrl_SetTransPwrRptEnableCmd(uint16_t connHandle, uint8_t l
     return LL_PwrCtrl_SetTransPwrRptEnableCmd(connHandle, localEnable, remoteEnable);
 }
 
-void OPT_LL_PwrCtrl_CheckAndSendPendingRequest(uint16_t connHandle)
-{
-    LL_PwrCtrl_CheckAndSendPendingRequest(connHandle);
-}
-
-bool OPT_LL_PwrCtrl_IsProcedureInProgress(uint16_t connHandle)
-{
-    return LL_PwrCtrl_IsProcedureInProgress(connHandle);
-}
-
-llStatus_t OPT_LL_PwrCtrl_IsPhyManaged(uint16_t connHandle, uint8_t phy)
-{
-    return LL_PwrCtrl_IsPhyManaged(connHandle, phy);
-}
-
 llStatus_t OPT_LL_EXT_PwrCtrl_SendPwrCtrlReqCmd(uint16_t connHandle, uint8_t txPhy, int8_t deltaPowerDb, uint8_t aprEnable)
 {
     return LL_EXT_PwrCtrl_SendPwrCtrlReqCmd(connHandle, txPhy, deltaPowerDb, aprEnable);
@@ -193,16 +178,6 @@ hciStatus_t OPT_hci_le_EnhancedReadTransmitPowerLevelCmd(uint16_t connHandle, ui
 hciStatus_t OPT_hci_le_ReadRemoteTransmitPowerLevelCmd(uint16_t connHandle, uint8_t txPhy)
 {
     return hci_le_ReadRemoteTransmitPowerLevelCmd(connHandle, txPhy);
-}
-
-hciStatus_t OPT_hci_ext_SetPowerCtrlRangeCmd(int8_t minTxPower, int8_t maxTxPower)
-{
-    return hci_ext_SetPowerCtrlRangeCmd(minTxPower, maxTxPower);
-}
-
-hciStatus_t OPT_hci_ext_GetPowerCtrlRangeCmd(int8_t* minTxPower, int8_t* maxTxPower)
-{
-    return hci_ext_GetPowerCtrlRangeCmd(minTxPower, maxTxPower);
 }
 
 #endif /* defined(POWER_CONTROL) */

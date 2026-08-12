@@ -87,8 +87,8 @@
 /*******************************************************************************
  * CONSTANTS
  */
-#define CS_CENT_CONNEVENT_OFFSET       6 /* The central connEvent offset to start the CS procedure */
-#define CS_PERI_CONNEVENT_OFFSET       5 /* The peripheral connEvent offset to start the CS procedure */
+#define CS_CENT_CONNEVENT_OFFSET       3 /* The central connEvent offset to start the CS procedure */
+#define CS_PERI_CONNEVENT_OFFSET       2 /* The peripheral connEvent offset to start the CS procedure */
 #define CS_MIN_CONNEVENT_OFFSET        1 /* The minimum connEvent offset to start the CS procedure after the Indication received */
 
 #define CS_T_MES_MIN                   150 /* The minimum subevent space. Units: us */
@@ -200,21 +200,20 @@ void llCsSetupCapabilities(uint8* data);
  * @fn          llCsCalcSubEventParams
  *
  * @brief       Calculate the parameters related to subEventLen and update in
- *              the csEnableProcedureCtrlData_t parameter.
+ *              the csProcedureEnable_t parameter.
  *
  * input parameters
  *
  * @param       connPtr      - Pointer to connection
- * @param       configId     - Configuration ID
- * @param       pEnable    - Pointer to procedure data.
+ * @param       pCsReq       - Pointer to ProcedureEnable parameter.
  *
  * output parameters
  *
- * @param       pEnable    - Pointer to procedure data.
+ * @param       pCsReq       - Pointer to ProcedureEnable parameter.
  *
  * @return      None
  */
-void llCsCalcSubEventParams(const llConnState_t *connPtr, uint8_t configId, csEnableProcedureCtrlData_t *pEnable);
+void llCsCalcSubEventParams(const llConnState_t* connPtr, csProcedureEnable_t *pCsReq);
 
 /*******************************************************************************
 * @fn          llCsCalcEventIntervalMin

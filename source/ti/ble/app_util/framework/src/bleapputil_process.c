@@ -56,7 +56,7 @@ Target Device: cc23xx
  */
 #define BLEAPPUTIL_PAIR_STATE_TABLE_SIZE 7
 
-#define BLEAPPUTIL_GAP_PERIODIC_TABLE_SIZE      20
+#define BLEAPPUTIL_GAP_PERIODIC_TABLE_SIZE      14
 #define BLEAPPUTIL_GAP_PERIODIC_EVENTS_OFFSET   0x19
 
 #define BLEAPPUTIL_GAP_CONN_TABLE_SIZE          20
@@ -98,15 +98,9 @@ const uint32_t periodicEventsLookupTable[BLEAPPUTIL_GAP_PERIODIC_TABLE_SIZE] =
     BLEAPPUTIL_SCAN_REMOVE_DEVICE_ADV_LIST_EVENT,
     BLEAPPUTIL_SCAN_READ_ADV_LIST_SIZE_EVENT,
     BLEAPPUTIL_SCAN_CLEAR_ADV_LIST_EVENT,
-    BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V1,
+    BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_EST_EVENT,
     BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT,
-    BLEAPPUTIL_SCAN_PERIODIC_ADV_REPORT_EVENT_V1,
-    BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V2,
-    BLEAPPUTIL_SCAN_PERIODIC_ADV_REPORT_EVENT_V2,
-    BLEAPPUTIL_PAST_RECEIVED_V1_EVENT,
-    BLEAPPUTIL_PAST_RECEIVED_V2_EVENT,
-    BLEAPPUTIL_ADV_PERIODIC_ADV_SUBEVENT_DATA_REQ_EVENT,
-    BLEAPPUTIL_ADV_PERIODIC_ADV_RSP_HDR_REPORT_EVENT
+    BLEAPPUTIL_SCAN_PERIODIC_ADV_REPORT_EVENT
 };
 
 // The following look up table is used to convert GAP connection related
@@ -116,7 +110,7 @@ const uint32_t gapConnEventsLookupTable[BLEAPPUTIL_GAP_CONN_TABLE_SIZE] =
     BLEAPPUTIL_LINK_ESTABLISHED_EVENT,
     BLEAPPUTIL_LINK_TERMINATED_EVENT,
     BLEAPPUTIL_LINK_PARAM_UPDATE_EVENT,
-    BLEAPPUTIL_LINK_ESTABLISHED_EVENT_V2,
+    0,
     BLEAPPUTIL_SIGNATURE_UPDATED_EVENT,
     BLEAPPUTIL_AUTHENTICATION_COMPLETE_EVENT,
     BLEAPPUTIL_PASSKEY_NEEDED_EVENT,
@@ -252,37 +246,6 @@ void BLEAppUtil_processStackEvents(BLEAppUtil_msgHdr_t *pMsg ,BLEAppUtil_eventAn
                                     pMsg,
                                     bleAppUtilEventAndHandle.handlerType);
 
-        // Free the data of periodic advertising events if exist
-        if(pMsg->event == GAP_MSG_EVENT)
-        {
-            gapEventHdr_t *pGapHdr = (gapEventHdr_t *)pMsg;
-
-            // Check if this is a periodic advertising report event
-            switch(pGapHdr->opcode)
-            {
-                case GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V1:
-                {
-                    GapScan_Evt_PeriodicAdvRptV1_t *pEvt = (GapScan_Evt_PeriodicAdvRptV1_t *)pMsg;
-                    if(pEvt->pData != NULL)
-                    {
-                        BLEAppUtil_free(pEvt->pData);
-                    }
-                    break;
-                }
-                case GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V2:
-                {
-                    GapScan_Evt_PeriodicAdvRptV2_t *pEvt = (GapScan_Evt_PeriodicAdvRptV2_t *)pMsg;
-                    if(pEvt->pData != NULL)
-                    {
-                        BLEAppUtil_free(pEvt->pData);
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-
         // If this is a GATT_MSG_EVENT free the data
         if(pMsg->event == GATT_MSG_EVENT)
         {
@@ -416,7 +379,6 @@ uint8_t BLEAppUtil_convertGAPEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventA
         case GAP_LINK_ESTABLISHED_EVENT:
         case GAP_LINK_TERMINATED_EVENT:
         case GAP_LINK_PARAM_UPDATE_EVENT:
-        case GAP_LINK_ESTABLISHED_EVENT_V2:
         case GAP_SIGNATURE_UPDATED_EVENT:
         case GAP_AUTHENTICATION_COMPLETE_EVENT:
         case GAP_PASSKEY_NEEDED_EVENT:
@@ -451,15 +413,9 @@ uint8_t BLEAppUtil_convertGAPEvents(BLEAppUtil_msgHdr_t *pMsg, BLEAppUtil_eventA
         case GAP_SCAN_REMOVE_DEVICE_ADV_LIST_EVENT:
         case GAP_SCAN_READ_ADV_LIST_SIZE_EVENT:
         case GAP_SCAN_CLEAR_ADV_LIST_EVENT:
-        case GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V1:
+        case GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT:
         case GAP_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT:
-        case GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V1:
-        case GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V2:
-        case GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V2:
-        case GAP_PAST_RECEIVED_V1_EVENT:
-        case GAP_PAST_RECEIVED_V2_EVENT:
-        case GAP_ADV_PERIODIC_ADV_SUBEVENT_DATA_REQ_EVENT:
-        case GAP_ADV_PERIODIC_ADV_RSP_HDR_REPORT_EVENT:
+        case GAP_SCAN_PERIODIC_ADV_REPORT_EVENT:
         {
             // Get the "BLE App Util" event format
             event = periodicEventsLookupTable[pMsgData->opcode - BLEAPPUTIL_GAP_PERIODIC_EVENTS_OFFSET];

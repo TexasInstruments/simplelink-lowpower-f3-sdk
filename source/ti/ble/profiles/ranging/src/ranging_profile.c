@@ -255,15 +255,12 @@ uint8_t RRSP_ProcedureStarted(uint16_t connHandle, uint16_t rangingCounter, uint
   procedureID.connHandle = connHandle;
   procedureID.rangingCounter = rangingCounter;
 
-  // Stop and clear any active segmentation process (for any previous procedure)
-  // This ensures clean state before starting new procedure and prevents
-  // blePending callbacks for overwritten procedures
-  memset(&gRAPControlBlock.rrspSegmentationProcess, 0, sizeof(gRAPControlBlock.rrspSegmentationProcess));
+  gRAPControlBlock.rrspSegmentationProcess.waitForConf = FALSE;
+  gRAPControlBlock.rrspSegmentationProcess.waitForNoti = FALSE;
 
   status = RangingDBServer_procedureStart(&procedureID, pRangingHeader, RAS_RANGING_HEADER_LEN);
 
   // If FAILURE, procedure ID already exists in the database.
-  // Restart the procedure by removing the procedureID and start again.
   if (status == FAILURE)
   {
       // clear procedure from DB
@@ -273,12 +270,13 @@ uint8_t RRSP_ProcedureStarted(uint16_t connHandle, uint16_t rangingCounter, uint
           // Start the procedure again
           status = RangingDBServer_procedureStart(&procedureID, pRangingHeader, RAS_RANGING_HEADER_LEN);
       }
+
   }
 
   // If procedureID is not identical, the received procedeID is an overwritten procedure
   if ((procedureID.connHandle != connHandle) || (procedureID.rangingCounter != rangingCounter))
   {
-      // The old procedure was overwritten - send notification to peer (On-Demand only)
+      // send overwritten message to the peer (On-Demand only)
       rrspSendOverWritten(procedureID.connHandle, procedureID.rangingCounter);
   }
 
@@ -289,7 +287,7 @@ uint8_t RRSP_ProcedureStarted(uint16_t connHandle, uint16_t rangingCounter, uint
  * @fn      RRSP_ProcedureDone
  *
  * @brief   This function is called to indicate that a ranging procedure has completed
- *          and now the profile acknowledge that he is ready to transfer data.
+ *          and now the profile aknowledge that he is ready to transfer data.
  *
  * @param   connHandle - Connection handle of the device that completed the procedure.
  * @param   rangingCounter - The ranging counter for the procedure.
@@ -302,26 +300,21 @@ uint8_t RRSP_ProcedureDone(uint16_t connHandle, uint16_t rangingCounter)
   uint8_t status = USUCCESS;
   uint8_t mode = rrspGetCurrentMode(connHandle);
 
-  if (mode == RAS_ON_DEMAND_ID)
+  if ( mode == RAS_ON_DEMAND_ID)
   {
-    // Send data ready message to the client peer
-    rrspSetParameter(connHandle, RAS_READY_ID, &rangingCounter, RAS_DATA_READY_LEN);
+      // Send data ready message to the client peer
+      rrspSetParameter(connHandle, RAS_READY_ID, &rangingCounter, RAS_DATA_READY_LEN);
   }
   else if (mode == RAS_REAL_TIME_ID)
   {
-    // Send data over Real-Time characteristic
-    rrspSendData(connHandle, rangingCounter);
+      // Send data over Real-Time characteristic
+      rrspSendData(connHandle, rangingCounter);
   }
-  else // mode == RAS_INVALID_MODE_ID
+  else
   {
-    // Unregister the application callback function for Flow Control
-    L2CAP_RegisterFlowCtrlTask(INVALID_TASK_ID);
-
-    // // Mark as not busy after all segments sent and Complete Data Response sent
-    // // Mark the segmentation process as ended
-    memset(&gRAPControlBlock.rrspSegmentationProcess, 0, sizeof(gRAPControlBlock.rrspSegmentationProcess));
-    status = FAILURE;
+      status = FAILURE;
   }
+
 
   return status;
 }
@@ -382,7 +375,6 @@ uint8_t RRSP_AddSubeventResult(RRSP_csSubEventResults_t* pSubeventResult)
     }
     else
     {
-        memset(parsedResultData, 0, parsedResultLen);
         // Parse the subevent
         status = rangingSubeventParser(pSubeventResult, parsedResultData);
 
@@ -412,7 +404,7 @@ uint8_t RRSP_AddSubeventResult(RRSP_csSubEventResults_t* pSubeventResult)
 uint8_t RRSP_AddSubeventContinueResult(RRSP_csSubEventResultsContinue_t* pSubeventContResult)
 {
     // Result to send to the RAS profile
-    uint8_t status = SUCCESS;
+    uint8_t status;
     uint8_t eventStatusData; // Holds both procedure and subevent statuses
     RangingDBServer_procedureId_t procedureID;
     uint16_t parsedResultLen;
@@ -426,37 +418,20 @@ uint8_t RRSP_AddSubeventContinueResult(RRSP_csSubEventResultsContinue_t* pSubeve
 
     // Parse the continue subevent to a RAS CS subevent
     parsedResultLen = pSubeventContResult->dataLen - pSubeventContResult->numStepsReported * 2;
-
-    // Allocate data only if necessary
-    if (parsedResultLen != 0)
+    parsedResultData = (uint8_t *)ICall_malloc(parsedResultLen);
+    if (parsedResultData == NULL)
     {
-        parsedResultData = (uint8_t *)ICall_malloc(parsedResultLen);
-
-        // Check allocation status
-        if (parsedResultData == NULL)
-        {
-            status = bleNoResources;
-        }
+        status = bleNoResources;
     }
-
-    if (status == SUCCESS)
+    else
     {
-        // Handle subevent data if needed
-        if (parsedResultData != NULL)
+        // Parse the subevent
+        status = rangingSubeventContParser(pSubeventContResult, parsedResultData);
+
+        if(status == SUCCESS)
         {
-            memset(parsedResultData, 0, parsedResultLen);
-
-            // Parse the subevent
-            status = rangingSubeventContParser(pSubeventContResult, parsedResultData);
-
-            if(status == SUCCESS)
-            {
-                // Send the merged data to the database
-                status = RangingDBServer_AddData(procedureID, parsedResultData, parsedResultLen);
-            }
-
-            // Free parsedResultData
-            ICall_free(parsedResultData);
+            // Send the merged data to the database
+            status = RangingDBServer_AddData(procedureID, parsedResultData, parsedResultLen);
         }
 
         // Update subevent and procedure statuses in the subevent header
@@ -470,14 +445,16 @@ uint8_t RRSP_AddSubeventContinueResult(RRSP_csSubEventResultsContinue_t* pSubeve
         // The number of steps is known only in the end of the subevent,
         // so when the subevent has ended, update the num of steps in the DB.
         if (status == SUCCESS &&
-            (pSubeventContResult->subeventDoneStatus == CS_SUBEVENT_DONE ||
-             pSubeventContResult->subeventDoneStatus == CS_SUBEVENT_ABORTED))
+            pSubeventContResult->subeventDoneStatus == CS_PROCEDURE_DONE)
         {
             status = RangingDBServer_UpdateData(procedureID,
                                                 (uint8_t*)&gRAPControlBlock.receivingSubeventProcess.subeventNumOfSteps,
                                                 sizeof(gRAPControlBlock.receivingSubeventProcess.subeventNumOfSteps),
                                                 gRAPControlBlock.receivingSubeventProcess.startOfSubeventoffset + SUBEVENT_STEPS_NUM_INDEX);
         }
+
+        // Free parsedResultData
+        ICall_free(parsedResultData);
     }
 
     return status;
@@ -878,17 +855,11 @@ void rrspSendData(uint16_t connHandle, uint16_t rangingCounter)
     if(gRAPControlBlock.rrspRegisteredData[connHandle] == RRSP_ON_DEMAND_NOTI ||
        gRAPControlBlock.rrspRegisteredData[connHandle] == RRSP_REAL_TIME_NOTI)
     {
-        uint8_t status = USUCCESS;
         // Register the application callback function for Flow Control
         L2CAP_RegisterFlowCtrlTask(BLEAppUtil_getSelfEntity());
 
        // If the connection handle is registered for notification, send all segments synchronously
-        status = rrspSendSegmentsNoti(connHandle, rangingCounter);
-        if (status != USUCCESS && status != blePending)
-        {
-          // Unregister the application callback function
-          L2CAP_RegisterFlowCtrlTask(INVALID_TASK_ID);
-        }
+        rrspSendSegmentsNoti(connHandle, rangingCounter);
     }
     else if( gRAPControlBlock.rrspRegisteredData[connHandle] == RRSP_ON_DEMAND_IND ||
              gRAPControlBlock.rrspRegisteredData[connHandle] == RRSP_REAL_TIME_IND)
@@ -1050,14 +1021,6 @@ uint8_t rrspSendSegmentsNoti(uint16_t connHandle, uint16_t rangingCounter)
         return status;
     }
 
-    // Get the mode that the client is registered to
-    mode = rrspGetCurrentMode(connHandle);
-    if (mode != RAS_REAL_TIME_ID &&
-        mode != RAS_ON_DEMAND_ID)
-    {
-        return UFAILURE;
-    }
-
     // Set the procedure ID
     procedureID.connHandle = connHandle;
     procedureID.rangingCounter = rangingCounter;
@@ -1070,6 +1033,15 @@ uint8_t rrspSendSegmentsNoti(uint16_t connHandle, uint16_t rangingCounter)
 
     // Save the connHandle for later use in L2CAP event handler
     gRAPControlBlock.rrspSegmentationProcess.currentConnHandle = connHandle;
+
+    // Get the mode that the client is registered to
+    mode = rrspGetCurrentMode(connHandle);
+
+    if (mode != RAS_REAL_TIME_ID &&
+        mode != RAS_ON_DEMAND_ID)
+    {
+        return UFAILURE;
+    }
 
     // Send segments until all data is sent or blePending action is returned.
     // If blePending is returned, the process will be continued in the callback function. @ref rrspL2CapEventHandler
@@ -1099,12 +1071,15 @@ uint8_t rrspSendSegmentsNoti(uint16_t connHandle, uint16_t rangingCounter)
         if(pData == NULL)
         {
             // Mark as not busy
-            // Mark that we don't wait for notification
-            memset(&gRAPControlBlock.rrspSegmentationProcess, 0, sizeof(gRAPControlBlock.rrspSegmentationProcess));
+            gRAPControlBlock.rrspSegmentationProcess.busy = FALSE;
 
+            // Mark that we don't wait for notification
+            gRAPControlBlock.rrspSegmentationProcess.waitForNoti = FALSE;
+
+            status = bleInvalidRange;
             // Unregister the application callback function for Flow Control
             L2CAP_RegisterFlowCtrlTask(INVALID_TASK_ID);
-            return bleInvalidRange;
+            return status;
         }
 
         // Copy the data to the segment
@@ -1149,8 +1124,10 @@ uint8_t rrspSendSegmentsNoti(uint16_t connHandle, uint16_t rangingCounter)
         L2CAP_RegisterFlowCtrlTask(INVALID_TASK_ID);
 
         // Mark as not busy after all segments sent and Complete Data Response sent
+        gRAPControlBlock.rrspSegmentationProcess.busy = FALSE;
+
         // Mark the segmentation process as ended
-        memset(&gRAPControlBlock.rrspSegmentationProcess, 0, sizeof(gRAPControlBlock.rrspSegmentationProcess));
+        gRAPControlBlock.rrspSegmentationProcess.waitForNoti = FALSE;
     }
 
     return status;
@@ -1203,7 +1180,7 @@ uint8_t rangingSubeventParser(RRSP_csSubEventResults_t* subeventResult, uint8_t 
     uint8_t status = SUCCESS;
 
     /** Parse subeventHeader **/
-    subEventAttr.freqCompensation = subeventResult->frequencyCompensation;
+    subEventAttr.freqCompenstation = subeventResult->frequencyCompensation;
     subEventAttr.numStepsReported = subeventResult->numStepsReported;
     // abort reason is the 0-3 bites of the rangingAbortReason
     subEventAttr.rangingAbortReason = subeventResult->abortReason & RRSP_ABORT_REASON_MASK;
@@ -1219,12 +1196,9 @@ uint8_t rangingSubeventParser(RRSP_csSubEventResults_t* subeventResult, uint8_t 
     // copy the subevent header to the parsed data buffer
     memcpy(pParsedData, &subEventAttr, sizeof(Ranging_subEventHeader_t));
 
-    // Parse the subevent data, only if not empty (could be empty for an aborted subevent)
-    if (subeventResult->dataLen > 0)
-    {
-        status = RangingDataParser(subeventResult->data, subeventResult->dataLen, subeventResult->numStepsReported,
-                                pParsedData + sizeof(Ranging_subEventHeader_t));
-    }
+    // Parse the subevent data
+    status = RangingDataParser(subeventResult->data, subeventResult->dataLen, subeventResult->numStepsReported,
+                               pParsedData + sizeof(Ranging_subEventHeader_t));
 
     return status;
 }
@@ -1242,11 +1216,8 @@ uint8_t rangingSubeventContParser(RRSP_csSubEventResultsContinue_t* subeventResu
 {
     uint8_t status = SUCCESS;
 
-    // Parse the subevent data, only if not empty (could be empty for an aborted subevent)
-    if (subeventResultCont->dataLen > 0)
-    {
-        status = RangingDataParser(subeventResultCont->data, subeventResultCont->dataLen, subeventResultCont->numStepsReported, pParsedData);
-    }
+    // Parse the continuation data
+    status = RangingDataParser(subeventResultCont->data, subeventResultCont->dataLen, subeventResultCont->numStepsReported, pParsedData);
 
     return status;
 }
@@ -1294,7 +1265,7 @@ uint8_t RangingDataParser(uint8_t *pData, uint16_t datalen, uint8_t numSteps, ui
         }
 
         // Extract stepChannel (1 byte) and stepLength (1 byte)
-        pData++; // skip stepChannel
+        uint8_t stepChannel = *pData++;
         uint8_t stepLength = *pData++;
         datalen -= 2;
 
@@ -1393,8 +1364,6 @@ void rrspL2CapEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData)
                     CPRsp.opCode = RAS_CP_OPCODE_COMPLETE_DATA_RSP;
                     CPRsp.param1 = rangingCounter;
                     rrspSetParameter(connHandle, RAS_CONTROL_POINT_ID, &CPRsp, RAS_CP_RSP_COMPLETE_DATA_RSP_LEN);
-
-                    gRAPControlBlock.rrspSegmentationProcess.busy = FALSE;
 
                     // If the current mode is Real-Time, call the data sent handler and finish
                     if (rrspGetCurrentMode(connHandle) == RAS_REAL_TIME_ID)

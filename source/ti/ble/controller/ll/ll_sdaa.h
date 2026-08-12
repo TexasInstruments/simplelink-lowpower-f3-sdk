@@ -84,7 +84,6 @@
 
 // Stub headers
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_ae.h"
-#include "ti/ble/stack_util/lib_opt/ctrl_stub_padv.h"
 
 /*******************************************************************************
  * CONSTANTS

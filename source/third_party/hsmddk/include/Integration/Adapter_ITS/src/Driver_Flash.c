@@ -24,42 +24,41 @@
 #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/build_dependencies/flash_layout.h>
 
 #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/dpl/HwiP.h>
-#include <DeviceFamily.h>
 
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include DeviceFamily_constructPath(driverlib/flash.h) /* FAPI status codes */
     #include DeviceFamily_constructPath(driverlib/hapi.h) /* HAPI functions */
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    typedef struct
+    #include <stdlib.h> // abs()
+    /* Erase status */
+    typedef enum
     {
-        size_t regionBase;      /*!< physical Offset from base of Ext flash*/
-        size_t regionStartAddr; /*!< The regionBase translated to logical address*/
-        size_t regionSize;      /*!< The size of the region in bytes*/
-        uint8_t deviceNum;      /*!< FLASH/PSRAM */
-    } XMEM_Params;
+        FLASH_ERASE_DONE    = 0, /*!< Erase command completed successfully */
+        FLASH_ERASE_TIMEOUT = 1, /*!< Erase command completed with timeout */
+        FLASH_ERASE_ERROR   = 2  /*!< Erase command did not complete successfully */
+    } FlashEraseStatus;
 
-    typedef struct XMEM_Config_
-    {
-        /*! Pointer to a driver specific data object */
-        void *object;
+    extern void FlashWrite(uint32_t *readFromAddr, uint32_t *writeToAddr, uint32_t length);
+    extern void FlashRead(uint32_t *readFromAddr, uint32_t *writeToAddr, uint32_t length);
+    extern void FlashSetTickPeriod(uint32_t TickPeriod);
+    extern FlashEraseStatus FlashSectorErase(uint32_t eraseStartAddr, uint32_t sectorEraseOpCode, uint32_t sectorEraseTimeout);
 
-        /*! Pointer to a driver specific hardware attributes structure */
-        const void *hwAttrs;
-    } XMEM_Config;
+    extern uint32_t ClockP_getSystemTicks(void);
+    extern uint32_t ClockP_getSystemTickPeriod(void);
 
-    typedef struct XMEM_Config_ *XMEM_Handle;
+    /* Fixed values from XSPIWFF3 driver: Found in drivers/source/ti/drivers/XMEMWFF3.c */
+    static const size_t sectorEraseOpCode = 0x20;
+    static const size_t sectorEraseTimeout = 200;
 
-    extern void XMEMWFF3_init(void);
-    extern XMEM_Handle XMEMWFF3_open(XMEM_Params *params);
-    extern int32_t XMEMWFF3_close(XMEM_Handle handle);
-    extern int_fast16_t XMEMWFF3_erase(XMEM_Handle handle, size_t offset, size_t size);
-    extern int_fast16_t XMEMWFF3_read(XMEM_Handle handle, size_t offset, void *buffer, size_t bufferSize, uint_fast16_t flags);
-    extern int_fast16_t XMEMWFF3_write(XMEM_Handle handle, size_t offset, void *buffer, size_t bufferSize, uint_fast16_t flags);
-    static XMEM_Handle handle = NULL;
-    static XMEM_Params params;
-    #define XMEMWFF3_KEYSTORE_DEVICE_NUM 0x0
-    #define XMEM_STATUS_SUCCESS (0)
+    /* Fixed values from XMEMWFF3 driver: Found in drivers/source/ti/drivers/XMEMWFF3.c */
+    static const size_t logicalBaseAddr = 0xA0050000;
+    static const size_t regionOffset = 0x1CA;
+
+    #define PHY_OFFSET 12
+    static uint32_t convertToLogicalAddr(uint32_t addr);
+
+    #define IS_WORD_ALIGNED(ptr) (((uintptr_t)(ptr) << 30) == 0U)
 #endif
 
 #ifndef ARG_UNUSED
@@ -75,11 +74,7 @@
  * ARM FLASH device structure
  */
 struct arm_flash_dev_t {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     const uint32_t memory_base;   /*!< FLASH memory base address */
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    uint32_t memory_base;         /*!< FLASH memory base address - must be set at runtime for CC35XX */
-#endif
     ARM_FLASH_INFO *data;         /*!< FLASH data */
 };
 
@@ -130,12 +125,7 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities =
 static ARM_FLASH_INFO ARM_FLASH0_DEV_DATA =
 {
     .sector_info  = NULL,  /* Uniform sector layout */
-    /* Since FLASH0_SIZE is a link-time variable for CC35XX,
-     * we cannot determine the sector count at compile-time.
-     */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     .sector_count = FLASH0_SIZE / FLASH0_SECTOR_SIZE,
-#endif
     .sector_size  = FLASH0_SECTOR_SIZE,
     .page_size    = FLASH0_PAGE_SIZE,
     .program_unit = FLASH0_PROGRAM_UNIT,
@@ -144,12 +134,7 @@ static ARM_FLASH_INFO ARM_FLASH0_DEV_DATA =
 
 static struct arm_flash_dev_t ARM_FLASH0_DEV =
 {
-    /* Since FLASH0_BASE_S is a link-time variable for CC35XX,
-     * we cannot determine the memory_base at compile-time.
-     */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     .memory_base = FLASH0_BASE_S,
-#endif
     .data        = &(ARM_FLASH0_DEV_DATA)
 };
 
@@ -206,6 +191,33 @@ static int32_t translateFAPIStatus(uint32_t fapiStatus)
 
     return status;
 }
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+/**
+  * \brief      Translates physical flash address offset to a logical address
+  * \param[in]  offset
+  * \return     ARM driver status code.
+  */
+static uint32_t convertToLogicalAddr(uint32_t addr)
+{
+    /* Calculates the logical address based on the given physical address. The addresses
+     * used by ITS prior to this function call are physical, due to the values set in
+     * flash_layout.h, which are used by the tfm_hal_its layer.
+     */
+    uint32_t calcAddr;
+    uint32_t blockBits;
+    uint32_t controlBits = 0xFFFFFFFF;
+    uint32_t regionOffsetAlign = (uint32_t)regionOffset << PHY_OFFSET;
+    size_t offset = addr - FLASH0_DEV->memory_base;
+
+    /* The following calculations (and this convertToLogicalAddr API as a whole) are copied from the XMEMWFF3
+     * implementation in drivers.
+     */
+    controlBits = (logicalBaseAddr & BITMASK_x_y(31, 26));
+    blockBits = ((uint32_t)abs((int)FLASH0_DEV->memory_base - (int)regionOffsetAlign) & BITMASK_x_y(25, 12));
+    calcAddr  = controlBits + blockBits + offset;
+
+    return calcAddr;
+}
 #endif
 
 static ARM_DRIVER_VERSION ARM_Flash_GetVersion(void)
@@ -226,36 +238,12 @@ static int32_t ARM_Flash_Initialize(ARM_Flash_SignalEvent_t cb_event)
         return ARM_DRIVER_ERROR;
     }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    /* Set link-time variable values for FLASH0_DEV structure */
-    FLASH0_DEV->memory_base = (uint32_t) FLASH0_BASE_S;
-    FLASH0_DEV->data->sector_count = FLASH0_SIZE / FLASH0_SECTOR_SIZE;
-
-    XMEMWFF3_init();
-    /* Configure XMEM parameters for KeyStore */
-    /* Physical address */
-    params.regionBase = (size_t) FLASH_ITS_AREA_ADDR;
-    params.regionStartAddr = (size_t) FLASH_ITS_AREA_LOGICAL_ADDR;
-    params.regionSize = (size_t) FLASH_ITS_AREA_SIZE;
-    params.deviceNum = (uint8_t) XMEMWFF3_KEYSTORE_DEVICE_NUM;
-
-    handle = XMEMWFF3_open(&params);
-
-    if (handle == NULL)
-    {
-        return ARM_DRIVER_ERROR;
-    }
-#endif
     /* Nothing to be done */
     return ARM_DRIVER_OK;
 }
 
 static int32_t ARM_Flash_Uninitialize(void)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    XMEMWFF3_close(handle);
-    handle = NULL;
-#endif
     /* Nothing to be done */
     return ARM_DRIVER_OK;
 }
@@ -293,15 +281,12 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     (void)memcpy(data, (void *)addr, cnt);
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    int_fast16_t status;
-    /* addr is passed as a physical address. Subtract the physical base
-     * address to get the offset into the KeyStore XMEM region.
-     */
-    status = XMEMWFF3_read(handle, (addr - FLASH0_DEV->memory_base), data, cnt, 0);
-
-    if (status != XMEM_STATUS_SUCCESS) {
-        return status;
+    if (!IS_WORD_ALIGNED(data))
+    {
+        return 0;
     }
+    uint32_t logicalAddr = convertToLogicalAddr(addr);
+    FlashRead((uint32_t *)logicalAddr, (uint32_t *)data, cnt);
 #endif
     /* Conversion between bytes and data items */
     cnt /= data_width_byte[DriverCapabilities.data_width];
@@ -333,14 +318,16 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data, uint32_t c
 
     status = translateFAPIStatus(fapi_status);
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    /* addr is passed as a physical address. Subtract the physical base
-     * address to get the offset into the KeyStore XMEM region.
-     * Have to discard const qualifer on data to match XMEMWFF3_write()
-     * prototype.
-     */
-    status = XMEMWFF3_write(handle, (addr - FLASH0_DEV->memory_base), (void *)data, cnt, 0);
+    if (!IS_WORD_ALIGNED(data))
+    {
+        return 0;
+    }
+    uint32_t logicalAddr = convertToLogicalAddr(addr);
+    FlashWrite((uint32_t *)data, (uint32_t *)logicalAddr, cnt);
 
     HwiP_restore(key);
+
+    status = ARM_DRIVER_OK;
 #endif
 
     if (status != ARM_DRIVER_OK) {
@@ -356,6 +343,11 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data, uint32_t c
 static int32_t ARM_Flash_EraseSector(uint32_t addr)
 {
     int32_t status;
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    FlashEraseStatus flashStatus;
+    uint32_t clockPTick;
+    uint32_t clockPTickPeriod;
+#endif
     uintptr_t key;
 
     /*
@@ -371,7 +363,28 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
 
     return status;
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    status = XMEMWFF3_erase(handle, (addr - FLASH0_DEV->memory_base), FLASH0_SECTOR_SIZE);
+    /* Driver_Flash is emulating the behavior of XMEMWFF3 in drivers. The following code
+     * is copied from XMEMWFF3.
+     */
+    clockPTick       = ClockP_getSystemTicks();
+    clockPTickPeriod = ClockP_getSystemTickPeriod();
+    FlashSetTickPeriod(clockPTickPeriod);
+
+    /* Note that FlashSectorErase is the one FlashWFF3 API that takes in a physical address as input.
+     * Therefore, we can use addr directly without converting it to logical. The addr provided to
+     * ARM_Flash_EraseSector by ITS is with offset from FLASH_0_BASE, which is the physical address.
+     */
+    flashStatus = FlashSectorErase(addr, sectorEraseOpCode, sectorEraseTimeout);
+
+    /* Set FAPI status codes to return same status translation API below */
+    if (flashStatus == FLASH_ERASE_DONE)
+    {
+        status = ARM_DRIVER_OK;
+    }
+    else
+    {
+        status = ARM_DRIVER_ERROR;
+    }
 
     HwiP_restore(key);
 

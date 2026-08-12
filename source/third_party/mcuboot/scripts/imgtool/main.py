@@ -34,13 +34,6 @@ from imgtool.dumpinfo import dump_imginfo
 from .keys import (
     RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError)
 
-comp_default_dictsize=131072
-comp_default_pb=2
-comp_default_lc=3
-comp_default_lp=1
-comp_default_preset=9
-
-
 MIN_PYTHON_VERSION = (3, 6)
 if sys.version_info < MIN_PYTHON_VERSION:
     sys.exit("Python %s.%s or newer is required by imgtool."

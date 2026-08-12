@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2026 Texas Instruments Incorporated
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +58,7 @@
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(driverlib/uart.h)
 #include DeviceFamily_constructPath(driverlib/evtsvt.h)
+#include DeviceFamily_constructPath(driverlib/flash.h)
 
 /* Headers required for intrinsics */
 #if defined(__TI_COMPILER_VERSION__)
@@ -168,7 +169,7 @@ static inline size_t UART2LPF3_getRxData(UART2_Handle handle, size_t size)
     while (UARTCharAvailable(hwAttrs->baseAddr) && size)
     {
         /* Read directly from DATA register */
-        data = UARTGetCharNonBlocking(hwAttrs->baseAddr);
+        data = HWREG(hwAttrs->baseAddr + UART_O_DR);
         Log_printf(LogModule_UART2, Log_VERBOSE,
                    "UART2LPF3_getRxData: Write one byte to the ring buffer from the FIFO.");
         RingBuf_put(&object->rxBuffer, data);
@@ -426,7 +427,7 @@ void UART2Support_disableRx(UART2_HWAttrs const *hwAttrs)
                  UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE | UART_INT_RT | UART_INT_RX |
                      UART_INT_RXDMADONE);
 
-    UARTDisableRx(hwAttrs->baseAddr);
+    HWREG(hwAttrs->baseAddr + UART_O_CTL) &= ~UART_CTL_RXE;
 }
 
 /*
@@ -434,7 +435,7 @@ void UART2Support_disableRx(UART2_HWAttrs const *hwAttrs)
  */
 void UART2Support_disableTx(UART2_HWAttrs const *hwAttrs)
 {
-    UARTDisableTx(hwAttrs->baseAddr);
+    HWREG(hwAttrs->baseAddr + UART_O_CTL) &= ~(UART_CTL_TXE);
 }
 
 /*
@@ -745,7 +746,7 @@ void UART2Support_enableInts(UART2_Handle handle)
 void UART2Support_enableRx(UART2_HWAttrs const *hwAttrs)
 {
     /* Enable RX but not interrupts, since we may be using DMA */
-    UARTEnableRx(hwAttrs->baseAddr);
+    HWREG(hwAttrs->baseAddr + UART_O_CTL) |= UART_CTL_RXE;
 }
 
 /*
@@ -754,7 +755,7 @@ void UART2Support_enableRx(UART2_HWAttrs const *hwAttrs)
  */
 void UART2Support_enableTx(UART2_HWAttrs const *hwAttrs)
 {
-    UARTEnableTx(hwAttrs->baseAddr);
+    HWREG(hwAttrs->baseAddr + UART_O_CTL) |= UART_CTL_TXE;
 }
 
 /*
@@ -863,7 +864,7 @@ static void UART2LPF3_hwiIntRead(uintptr_t arg, uint32_t status)
         {
             while (UARTCharAvailable(hwAttrs->baseAddr) && object->readCount)
             {
-                uint8_t data                           = UARTGetCharNonBlocking(hwAttrs->baseAddr);
+                uint8_t data                           = HWREG(hwAttrs->baseAddr + UART_O_DR);
                 *(object->readBuf + object->bytesRead) = data;
                 object->bytesRead++;
                 object->readCount--;
@@ -988,9 +989,9 @@ static void UART2LPF3_hwiIntFxn(uintptr_t arg)
              */
             UART2LPF3_getRxData(handle, RingBuf_space(&object->rxBuffer));
             /* Throw away the rest in order to clear the overrun */
-            while (UARTCharAvailable(hwAttrs->baseAddr))
+            while (!(HWREG(hwAttrs->baseAddr + UART_O_FR) & UART_FR_RXFE))
             {
-                volatile uint8_t data = UARTGetCharNonBlocking(hwAttrs->baseAddr);
+                volatile uint8_t data = HWREG(hwAttrs->baseAddr + UART_O_DR);
                 (void)data;
             }
 
@@ -1029,16 +1030,12 @@ static void UART2LPF3_hwiIntFxn(uintptr_t arg)
         UART2LPF3_hwiIntWrite(arg);
     }
 
-    /* Make sure the UART is not busy before handling the End of Transmission.
-     * This could happen if a prior EOT is invalidated due to transmit being
-     * rearmed during course of the interrupt handler. The extra busy check
-     * will catch if this is the case, and allow the ISR to return, pending the
-     * next EOT interrupt, which will re-enter this handler.
-     */
-    if ((status & (UART_INT_EOT)) && !UARTBusy(hwAttrs->baseAddr))
+    if (status & (UART_INT_EOT))
     {
+        /* End of Transmission occurred. Make sure TX FIFO is truly empty before disabling TX */
+        while (HWREG(hwAttrs->baseAddr + UART_O_FR) & UART_FR_BUSY) {}
         /* Disable TX */
-        UARTDisableTx(hwAttrs->baseAddr);
+        HWREG(hwAttrs->baseAddr + UART_O_CTL) &= ~UART_CTL_TXE;
 
         if (object->state.txEnabled)
         {
@@ -1103,45 +1100,45 @@ static void UART2LPF3_initHw(UART2_Handle handle)
     /* If Flow Control is enabled, configure hardware flow control for CTS and/or RTS. */
     if (UART2LPF3_isFlowControlEnabled(hwAttrs) && (hwAttrs->ctsPin != GPIO_INVALID_INDEX))
     {
-        UARTEnableCts(hwAttrs->baseAddr);
+        UARTEnableCTS(hwAttrs->baseAddr);
     }
     else
     {
-        UARTDisableCts(hwAttrs->baseAddr);
+        UARTDisableCTS(hwAttrs->baseAddr);
     }
 
     if (UART2LPF3_isFlowControlEnabled(hwAttrs) && (hwAttrs->rtsPin != GPIO_INVALID_INDEX))
     {
-        UARTEnableRts(hwAttrs->baseAddr);
+        UARTEnableRTS(hwAttrs->baseAddr);
     }
     else
     {
-        UARTDisableRts(hwAttrs->baseAddr);
+        UARTDisableRTS(hwAttrs->baseAddr);
     }
 
     if (hwAttrs->codingScheme == UART2LPF3_CODING_SIR)
     {
         /* Enable IrDA SIR Encoder/decoder */
-        UARTEnableSir(hwAttrs->baseAddr);
+        HWREG(hwAttrs->baseAddr + UART_O_CTL) |= UART_CTL_SIREN;
     }
 
     if (hwAttrs->codingScheme == UART2LPF3_CODING_SIR_LP)
     {
         /* Enable IrDA SIR low-power Encoder/decoder */
-        UARTEnableSirLp(hwAttrs->baseAddr);
-        UARTSetIrdaLowPowerDivider(hwAttrs->baseAddr, hwAttrs->irLPClkDivider);
+        HWREG(hwAttrs->baseAddr + UART_O_CTL) |= (UART_CTL_SIREN | UART_CTL_SIRLP);
+        HWREG(hwAttrs->baseAddr + UART_O_UARTILPR) = hwAttrs->irLPClkDivider;
     }
 
     /* Enable UART FIFOs */
     UARTEnableFifo(hwAttrs->baseAddr);
 
     /* Enable the UART module, but not RX or TX */
-    UARTEnableModule(hwAttrs->baseAddr);
+    HWREG(hwAttrs->baseAddr + UART_O_CTL) |= UART_CTL_UARTEN;
 
     /* Enable FIFO concatenation if selected */
     if (hwAttrs->concatenateFIFO)
     {
-        UARTEnableFifoConcatenation(hwAttrs->baseAddr);
+        HWREG(hwAttrs->baseAddr + UART_O_CTL) |= UART_CTL_FCEN;
     }
 
     if ((hwAttrs->rxChannelMask > 0) && (hwAttrs->txChannelMask > 0))

@@ -38,33 +38,12 @@
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.h>
 
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    #include <third_party/mbedtls/include/psa/crypto.h>
     #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/tfm_internal_trusted_storage.h> /* tfm_its_init() */
     #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
-    #include <ti/drivers/cryptoutils/hsm/HSMXXF3.h>
-    #include <ti/drivers/cryptoutils/hsm/HSMXXF3Utility.h>
-/* CryptoKeyKeyStore_PSA_helpers is a light wrapper around KeyMgmt APIs in the DDK for HSM-enabled KeyStore.
- * There is no need to use PSA APIs as another middle man.
- */
-extern psa_status_t KeyMgmt_psa_copy_key(mbedtls_svc_key_id_t source_key,
-                                         const psa_key_attributes_t *attributes,
-                                         mbedtls_svc_key_id_t *target_key);
-extern psa_status_t KeyMgmt_psa_crypto_init(void);
-extern psa_status_t KeyMgmt_psa_destroy_key(mbedtls_svc_key_id_t key);
-extern psa_status_t KeyMgmt_psa_export_key(mbedtls_svc_key_id_t key,
-                                           uint8_t *data,
-                                           size_t data_size,
-                                           size_t *data_length);
-extern psa_status_t KeyMgmt_psa_export_public_key(mbedtls_svc_key_id_t key,
-                                                  uint8_t *data,
-                                                  size_t data_size,
-                                                  size_t *data_length);
-extern psa_status_t KeyMgmt_psa_get_key_attributes(mbedtls_svc_key_id_t key, psa_key_attributes_t *attributes);
-extern psa_status_t KeyMgmt_psa_purge_key(mbedtls_svc_key_id_t key);
-extern psa_status_t KeyMgmt_psa_import_key(const psa_key_attributes_t *attributes,
-                                           const uint8_t *data,
-                                           size_t data_length,
-                                           mbedtls_svc_key_id_t *key);
+    #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_system.h>
+    #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/platform.h>
+    #include <ti/drivers/cryptoutils/hsm/HSMLPF3.h>
+    #include <ti/drivers/cryptoutils/hsm/HSMLPF3Utility.h>
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     #include <third_party/tfm/secure_fw/partitions/internal_trusted_storage/tfm_internal_trusted_storage.h> /* tfm_its_init() */
     #include <third_party/mbedtls/include/mbedtls/memory_buffer_alloc.h>
@@ -173,7 +152,7 @@ int_fast16_t KeyStore_PSA_purgeKey(KeyStore_PSA_KeyFileId key)
     if ((key >= KEYSTORE_PSA_KEY_ID_USER_MIN) && (key <= KEYSTORE_PSA_KEY_ID_USER_MAX))
     #endif
     {
-        status = KeyMgmt_psa_purge_key(key);
+        status = psa_purge_key(key);
     }
     else
     {
@@ -214,27 +193,26 @@ int_fast16_t KeyStore_PSA_init(void)
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
         int_fast16_t hsmStatus;
 
-        /* HSMXXF3_init (via HSMXXF3_getEngineSystemInfo) and psa_crypto_init
-         * both acquire the HSM lock, so the semaphore must be constructed
-         * first.
-         */
-        HSMXXF3_constructRTOSObjects();
+        hsmStatus = HSMLPF3_init();
 
-        hsmStatus = HSMXXF3_init();
-
-        if (hsmStatus != HSMXXF3_STATUS_SUCCESS)
+        if (hsmStatus != HSMLPF3_STATUS_SUCCESS)
         {
             return status;
         }
 
-        if (!HSMXXF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)NULL))
+        /* CC27XX and CC35XX require the HSM lock before calling psa_crypto_init() because
+         * that function call requires a token submission.
+         */
+        HSMLPF3_constructRTOSObjects();
+
+        if (!HSMLPF3_acquireLock(SemaphoreP_NO_WAIT, (uintptr_t)NULL))
         {
             return KEYSTORE_PSA_STATUS_RESOURCE_UNAVAILABLE;
         }
 
         status = KeyMgmt_psa_crypto_init();
 
-        HSMXXF3_releaseLock();
+        HSMLPF3_releaseLock();
 
 #else
         mbedtls_memory_buffer_alloc_init(allocBuffer, sizeof(allocBuffer));
@@ -299,6 +277,7 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
     psa_status_t status = KEYSTORE_PSA_STATUS_GENERIC_ERROR;
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     psa_key_context_t *slot;
+    psa_status_t unlockStatus;
 #else
     psa_key_slot_t *slot;
 #endif
@@ -329,7 +308,7 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
 
     /* Fetch key slot from key storage. */
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    status = psaInt_KeyMgmtGetKey(key, &slot);
+    status = psaInt_KeyMgmtGetAndLockKey(key, &slot);
 #else
     status                          = psa_get_and_lock_key_slot_with_policy(key, &slot, usage, alg);
 #endif /* ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)) \
@@ -338,7 +317,8 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
     if (status != KEYSTORE_PSA_STATUS_SUCCESS)
     {
         /* Ignore return value for decrement of lock counter, the return value from attempting to fetch key is apt for
-         * application.
+         * application. Note that psaInt_KeyMgmtGetAndLockKey does not lock the key slot in the case that retrieving it
+         * was not successful - this means we do not need to release the key slot in this error condition.
          */
 #if ((DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX))
         (void)psa_unlock_key_slot(slot);
@@ -346,9 +326,20 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
         return KeyStore_cleanUp(status);
     }
 
-    /* Access the key material then decrement lock counter on key slot, if there is one */
+    /* Access the key material then decrement lock counter on key slot */
 #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     status = psaInt_KeyMgmtLoadKey(slot, NULL, alg, usage, data, dataSize, (uint32_t *)dataLength);
+
+    unlockStatus = psaInt_KeyMgmtClrKeyInUse(key);
+
+    /* Overwrite the psaInt_KeyMgmtLoadKey() status with the status of unlocking the key
+     * entry, if the unlock fails. We shouldn't overwrite status with unlockStatus in the
+     * case that the load fails but the unlock succeeds
+     */
+    if (unlockStatus != KEYSTORE_PSA_STATUS_SUCCESS)
+    {
+        status = unlockStatus;
+    }
 #else
     psa_key_attributes_t attributes = {.MBEDTLS_PRIVATE(core) = slot->attr};
 
@@ -371,6 +362,7 @@ int_fast16_t KeyStore_PSA_getKeyAssetId(KeyStore_PSA_KeyFileId key,
                                         KeyStore_PSA_KeyUsage targetUsage)
 {
     psa_status_t status = KEYSTORE_PSA_STATUS_GENERIC_ERROR;
+    psa_status_t unlockStatus;
     psa_key_context_t *slot;
 
     if (!KeyStore_acquireLock())
@@ -381,14 +373,28 @@ int_fast16_t KeyStore_PSA_getKeyAssetId(KeyStore_PSA_KeyFileId key,
     KeyStore_semaphoreObject.isAcquired = true;
 
     /* Fetch key slot from key storage. */
-    status = psaInt_KeyMgmtGetKey(key, &slot);
+    status = psaInt_KeyMgmtGetAndLockKey(key, &slot);
 
     if (status != KEYSTORE_PSA_STATUS_SUCCESS)
     {
+        /* Note that psaInt_KeyMgmtGetAndLockKey does not lock the key slot in the case that retrieving it
+         * was not successful - this means we do not need to release the key slot in this error condition.
+         */
         return KeyStore_cleanUp(status);
     }
 
     status = psaInt_KeyMgmtLoadKey(slot, pAssetId, targetAlg, targetUsage, NULL, 0, NULL);
+
+    unlockStatus = psaInt_KeyMgmtClrKeyInUse(key);
+
+    /* Overwrite the psaInt_KeyMgmtLoadKey() status with the status of unlocking the key
+     * entry, if the unlock fails. We shouldn't overwrite status with unlockStatus in the
+     * case that the load fails but the unlock succeeds
+     */
+    if (unlockStatus != KEYSTORE_PSA_STATUS_SUCCESS)
+    {
+        status = unlockStatus;
+    }
 
     return KeyStore_cleanUp(status);
 }
@@ -425,10 +431,8 @@ int_fast16_t KeyStore_PSA_retrieveFromKeyStore(const CryptoKey *key,
         lifetime = KeyStore_PSA_getKeyLifetime(&attributes);
         location = KEYSTORE_PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
 
-        if ((key->encoding == CryptoKey_KEYSTORE) && (location != KEYSTORE_PSA_KEY_LOCATION_LOCAL_STORAGE) &&
-            (targetAlg != KEYSTORE_PSA_ALG_CCM))
+        if ((key->encoding == CryptoKey_KEYSTORE) && (location != KEYSTORE_PSA_KEY_LOCATION_LOCAL_STORAGE))
         {
-            /* HSM asset store keys are only supported for LAES engine for CCM algorithm at this time */
             status = KEYSTORE_PSA_STATUS_NOT_PERMITTED;
         }
         else if (location == KEYSTORE_PSA_KEY_LOCATION_LOCAL_STORAGE)
@@ -449,12 +453,6 @@ int_fast16_t KeyStore_PSA_retrieveFromKeyStore(const CryptoKey *key,
                 else if (keyLength == key->u.keyStore.keyLength)
                 {
                     /* Nothing to do. The key length returned is expected for the symmetric key. */
-                }
-                else if (keyBits == 0)
-                {
-                    /* Nothing to do. Setting key bits is not mandatory, so in this case we cannot perform
-                     * extra key length validation.
-                     */
                 }
                 else
                 {
@@ -486,6 +484,7 @@ int_fast16_t KeyStore_PSA_retrieveFromKeyStore(const CryptoKey *key,
 int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key)
 {
     psa_status_t status = KEYSTORE_PSA_STATUS_GENERIC_ERROR;
+    psa_status_t unlockStatus;
     psa_key_context_t *slot;
     KeyStore_PSA_KeyAttributes attributes = KEYSTORE_PSA_KEY_ATTRIBUTES_INIT;
     KeyStore_PSA_KeyLifetime lifetime;
@@ -499,17 +498,13 @@ int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key)
     }
     KeyStore_semaphoreObject.isAcquired = true;
 
-    status = KeyMgmt_psa_get_key_attributes(key, &attributes);
+    status = psa_get_key_attributes(key, &attributes);
 
     if (status != KEYSTORE_PSA_STATUS_SUCCESS)
     {
         return KeyStore_cleanUp(status);
     }
 
-    /* This function does not actually interact with KeyStore - it's just a getter.
-     * The getter function is only defined in the mbedTLS crypto.h header.
-     * There is no KeyMgmt equivalent.
-     */
     lifetime = psa_get_key_lifetime(&attributes);
 
     location = KEYSTORE_PSA_KEY_LIFETIME_GET_LOCATION(lifetime);
@@ -538,10 +533,13 @@ int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key)
     }
 
     /* Fetch key slot from key storage. */
-    status = psaInt_KeyMgmtGetKey(key, &slot);
+    status = psaInt_KeyMgmtGetAndLockKey(key, &slot);
 
     if (status != KEYSTORE_PSA_STATUS_SUCCESS)
     {
+        /* Note that psaInt_KeyMgmtGetAndLockKey does not lock the key slot in the case that retrieving it
+         * was not successful - this means we do not need to release the key slot in this error condition.
+         */
         return KeyStore_cleanUp(status);
     }
 
@@ -549,6 +547,17 @@ int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key)
      * stored in the key slot.
      */
     status = psaInt_KeyMgmtReleaseKey(slot);
+
+    unlockStatus = psaInt_KeyMgmtClrKeyInUse(key);
+
+    /* Overwrite the psaInt_KeyMgmtReleaseKey() status with the status of unlocking the key
+     * entry, if the unlock fails. We shouldn't overwrite status with unlockStatus in the
+     * case that the load fails but the unlock succeeds
+     */
+    if (unlockStatus != KEYSTORE_PSA_STATUS_SUCCESS)
+    {
+        status = unlockStatus;
+    }
 
     return KeyStore_cleanUp(status);
 }
@@ -572,11 +581,7 @@ int_fast16_t KeyStore_PSA_importKey(KeyStore_PSA_KeyAttributes *attributes,
     }
     KeyStore_semaphoreObject.isAcquired = true;
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    status = KeyMgmt_psa_import_key(attributes, data, dataLength, key);
-#else
     status = psa_import_key(attributes, data, dataLength, key);
-#endif
 
     return KeyStore_cleanUp(status);
 }
@@ -595,11 +600,7 @@ int_fast16_t KeyStore_PSA_exportKey(KeyStore_PSA_KeyFileId key, uint8_t *data, s
     }
     KeyStore_semaphoreObject.isAcquired = true;
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    status = KeyMgmt_psa_export_key(key, data, dataSize, dataLength);
-#else
     status = psa_export_key(key, data, dataSize, dataLength);
-#endif
 
     return KeyStore_cleanUp(status);
 }
@@ -621,11 +622,7 @@ int_fast16_t KeyStore_PSA_exportPublicKey(KeyStore_PSA_KeyFileId key,
     }
     KeyStore_semaphoreObject.isAcquired = true;
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    status = KeyMgmt_psa_export_public_key(key, data, dataSize, dataLength);
-#else
     status = psa_export_public_key(key, data, dataSize, dataLength);
-#endif
 
     return KeyStore_cleanUp(status);
 }
@@ -653,11 +650,7 @@ int_fast16_t KeyStore_PSA_destroyKey(KeyStore_PSA_KeyFileId key)
     }
     KeyStore_semaphoreObject.isAcquired = true;
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    status = KeyMgmt_psa_destroy_key(key);
-#else
     status = psa_destroy_key(key);
-#endif
 
     return KeyStore_cleanUp(status);
 }
@@ -677,11 +670,7 @@ int_fast16_t KeyStore_PSA_getKeyAttributes(KeyStore_PSA_KeyFileId key, KeyStore_
     }
     KeyStore_semaphoreObject.isAcquired = true;
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
-    status = KeyMgmt_psa_get_key_attributes(key, attributes);
-#else
     status = psa_get_key_attributes(key, attributes);
-#endif
 
     return KeyStore_cleanUp(status);
 }
@@ -691,8 +680,12 @@ int_fast16_t KeyStore_PSA_getKeyAttributes(KeyStore_PSA_KeyFileId key, KeyStore_
  */
 void KeyStore_PSA_resetKeyAttributes(KeyStore_PSA_KeyAttributes *attributes)
 {
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+    psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4)
     mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
+#else
+    #error "Unsupported DeviceFamily_Parent for CryptoKeyKeyStore_PSA_helpers"
 #endif
 
     memset(attributes, 0, sizeof(*attributes));
@@ -716,7 +709,7 @@ int_fast16_t KeyStore_PSA_copyKey(KeyStore_PSA_KeyFileId source_key,
 
     KeyStore_semaphoreObject.isAcquired = true;
 
-    status = KeyMgmt_psa_copy_key(source_key, attributes, target_key);
+    status = psa_copy_key(source_key, attributes, target_key);
 
     return KeyStore_cleanUp(status);
 }

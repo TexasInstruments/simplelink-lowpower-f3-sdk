@@ -1,14 +1,13 @@
 [
     {
         "files": [
-            "+../README.md -> README.md",
-            "+../README.html -> README.html",
             "+../rfEchoRx.c -> rfEchoRx.c",
-            "+../images/rfEcho_ErrorTxRx.png -> images/rfEcho_ErrorTxRx.png",
-            "+../images/rfEcho_PerfectEcho.png -> images/rfEcho_PerfectEcho.png",
+            "+../README.md -> README.md",
+            "+../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
+            "+../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
             "+../rfEchoRx.syscfg -> rfEchoRx.syscfg",
             "+../main_nortos.c -> main_nortos.c",
-            "+cc23x0r5.cmd -> cc23x0r5.cmd"
+            "+lpf3_nortos.cmd -> lpf3_nortos.cmd"
         ]
     }
 ]

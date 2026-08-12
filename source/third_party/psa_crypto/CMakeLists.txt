@@ -32,34 +32,41 @@ cmake_minimum_required(VERSION ${TI_MIN_CMAKE_VERSION})
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources.cmake)
 
 project(psa_crypto LANGUAGES C ASM)
-
-ti_init_package(NAMESPACE ThirdPartyPsaCryptoLib DEPENDS_ON DriversUtils SecureDriversUtils TrustZone)
+ti_init_package(
+    NAMESPACE ThirdPartyPsaCryptoLib
+              DEPENDS_ON
+              Drivers
+              SecureDrivers
+              DriversUtils
+              SecureDriversUtils
+              TrustZone
+)
 
 # Pull "all supported architectures" from cmake-common
 foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
 
-    #if(${TI_PLATFORM} MATCHES "cc(13|26).4")
-    #    ti_add_package_dependency(DriversLPF2)
-    #    ti_add_package_dependency(SecureDriversLPF2)
+    if(${TI_PLATFORM} MATCHES "cc(13|26).4")
+        ti_add_package_dependency(DriversLPF2)
+        ti_add_package_dependency(SecureDriversLPF2)
 
-    #    # Non-secure PSA Crypto library (for use with TF-M)
-    #    ti_add_library(
-    #        psa_crypto_${TI_PLATFORM}_ns
-    #        SOURCES ${SOURCES}
-    #        LINK_PUBLIC
-    #            Drivers::drivers_${TI_PLATFORM} SecureDrivers::secure_drivers_${TI_PLATFORM}
-    #            TrustZone::tfm_dependencies_cc26x4 DriversUtils::tfm_enabled
-    #            CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-    #    )
-    #endif()
+        # Non-secure PSA Crypto library (for use with TF-M)
+        ti_add_library(
+            psa_crypto_${TI_PLATFORM}_ns
+            SOURCES ${SOURCES}
+            LINK_PUBLIC
+                Drivers::drivers_${TI_PLATFORM} SecureDrivers::secure_drivers_${TI_PLATFORM}
+                TrustZone::tfm_dependencies_cc26x4 DriversUtils::tfm_enabled
+                CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+        )
+    endif()
 
-    if(${TI_PLATFORM} MATCHES "cc27xxx10")
+    if(${TI_PLATFORM} MATCHES "cc27")
         ti_add_package_dependency(DriversLPF3)
         ti_add_package_dependency(SecureDriversLPF3)
 
         # Secure-only PSA Crypto library
         ti_add_library(
-            psa_crypto_cc27xx
+            psa_crypto_${TI_PLATFORM}
             SOURCES ${SOURCES}
             LINK_PUBLIC
                 CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} SecureDrivers::secure_drivers_${TI_PLATFORM}

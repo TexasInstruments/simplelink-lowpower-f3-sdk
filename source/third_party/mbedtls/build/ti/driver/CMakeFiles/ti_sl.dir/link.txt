@@ -1,2 +1,0 @@
-/usr/bin/ar qc libti_sl.a CMakeFiles/ti_sl.dir/ti_sl_transparent_key_management.c.o CMakeFiles/ti_sl.dir/ti_sl_transparent_builtin_key_support.c.o
-/usr/bin/ranlib libti_sl.a

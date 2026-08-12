@@ -96,18 +96,16 @@ const deviceToBoard = {
     CC2340R22RKP:   "LP_EM_CC2340R5",
     CC2340R2RGE:    "LP_EM_CC2340R5_RGE_4X4_IS24",
     CC2340R5RKP:    "LP_EM_CC2340R5",
-    CC2340R5RHBQ1:  "LP_EM_CC2340R5_Q1",
+    CC2340R5RHB:    "LP_EM_CC2340R5_Q1",
     CC2340R5RGE:    "LP_EM_CC2340R5_RGE_4X4_IS24",
     CC2340R53YBG:   "LP_EM_CC2340R53_WCSP",
     CC2340R53RKP:   "LP_EM_CC2340R5",
     CC2340R53RHBQ1: "LP_EM_CC2340R53_Q1",
-    CC2340R5MODA:   "LP_EM_CC2340R5MODA",
     CC2744R7RHAQ1:  "LP_EM_CC2745R10_Q1",
     CC2745R7RHAQ1:  "LP_EM_CC2745R10_Q1",
     CC2745P10RHAQ1: "LP_EM_CC2755P10",
     CC2745R10RHAQ1: "LP_EM_CC2745R10_Q1",
     CC2755P105RHA:  "LP_EM_CC2755P10",
-    CC2755P207RHA:  "LP_EM_CC2755P20",
     CC2755R105YCJ:  "LP_EM_CC2755R10_BG",
     CC2755R105RHA:  "LP_EM_CC2745R10_Q1"
 };
@@ -118,12 +116,11 @@ const deviceToBondNVBaseAddress = {
   CC2340R2RGE:    0x3D000,
 /* 512KB devices */
   CC2340R5RKP:    0x7D000,
-  CC2340R5RHBQ1:    0x7D000,
+  CC2340R5RHB:    0x7D000,
   CC2340R5RGE:    0x7D000,
   CC2340R53YBG:   0x7D000,
   CC2340R53RKP:   0x7D000,
   CC2340R53RHBQ1: 0x7D000,
-  CC2340R5MODA:   0x7D000,
 /* 786KB devices + HSM */
   CC2744R7RHAQ1:  0xA5000,
   CC2745R7RHAQ1:  0xA5000,
@@ -132,9 +129,7 @@ const deviceToBondNVBaseAddress = {
   CC2745R10RHAQ1: 0xE5000,
   CC2755P105RHA:  0xE5000,
   CC2755R105YCJ:  0xE5000,
-  CC2755R105RHA:  0xE5000,
-/* 2MB devices + HSM */
-  CC2755P207RHA:  0x1E5000
+  CC2755R105RHA:  0xE5000
 };
 
 const deviceToHeapSize = {
@@ -143,12 +138,11 @@ const deviceToHeapSize = {
     CC2340R2RGE:    0x3D000,
   /* 512KB devices */
     CC2340R5RKP:    0x7D000,
-    CC2340R5RHBQ1:    0x7D000,
+    CC2340R5RHB:    0x7D000,
     CC2340R5RGE:    0x7D000,
     CC2340R53YBG:   0x7D000,
     CC2340R53RKP:   0x7D000,
     CC2340R53RHBQ1: 0x7D000,
-    CC2340R5MODA:   0x7D000,
   /* 786KB devices + HSM */
     CC2744R7RHAQ1:  0xA5000,
     CC2745R7RHAQ1:  0xA5000,
@@ -157,10 +151,16 @@ const deviceToHeapSize = {
     CC2745R10RHAQ1: 0xE5000,
     CC2755P105RHA:  0xE5000,
     CC2755R105YCJ:  0xE5000,
-    CC2755R105RHA:  0xE5000,
-  /* 2MB devices + HSM */
-    CC2755P207RHA:  0x1E5000
+    CC2755R105RHA:  0xE5000
   };
+
+const deviceToDefines = {
+  "LP_CC2340R2": ["-DCC23X0"],
+  "LP_CC2340R22": ["-DCC23X0"],
+  "LP_CC2340R5": ["-DCC23X0"],
+  "LP_CC2340R53": ["-DCC23X0"],
+  "LP_CC2340R5_Q1": ["-DCC23X0"]
+};
 
 const txPowerValueToIndex = [
   { displayName: "-20", name: "HCI_EXT_TX_POWER_MINUS_20_DBM"},
@@ -191,6 +191,31 @@ const txPowerValueToIndex = [
   { displayName: "19",  name: "HCI_EXT_TX_POWER_P2_19_DBM"},
   { displayName: "20",  name: "HCI_EXT_TX_POWER_P2_20_DBM"}];
 
+// Settings for ti/devices/CCFG module
+const bleCentralCCFGSettings = {
+  CC1312R1_LAUNCHXL_CCFG_SETTINGS: {},
+  CC1352R1_LAUNCHXL_CCFG_SETTINGS: {},
+  CC1352P1_LAUNCHXL_CCFG_SETTINGS: {},
+  CC1352P_2_LAUNCHXL_CCFG_SETTINGS: {},
+  CC1352P_4_LAUNCHXL_CCFG_SETTINGS: {},
+  CC26X2R1_LAUNCHXL_CCFG_SETTINGS: {},
+  LP_CC2652RSIP_CCFG_SETTINGS: {},
+  LP_CC2652PSIP_CCFG_SETTINGS: {},
+  LP_CC2652R7_CCFG_SETTINGS: {},
+  LP_CC1352P7_1_CCFG_SETTINGS: {},
+  LP_CC1352P7_4_CCFG_SETTINGS: {},
+  LP_CC2651P3_CCFG_SETTINGS: {},
+  LP_CC2651R3_CCFG_SETTINGS: {},
+  LP_CC2651R3SIPA_CCFG_SETTINGS: {},
+  LP_CC2652RB_CCFG_SETTINGS: {
+    srcClkLF: "Derived from HF XOSC"
+  },
+  LP_EM_CC1354P10_1_CCFG_SETTINGS: {},
+  LP_EM_CC1354P10_6_CCFG_SETTINGS: {},
+  LP_CC2674R10_RGZ_CCFG_SETTINGS: {},
+  LP_CC2674P10_RGZ_CCFG_SETTINGS: {}
+};
+
 const ranging_service_uuid = 0x185B;
 
 const profiles_list = [
@@ -216,23 +241,19 @@ const CC23XXMigration = [
   {target: "CC2340R53YBG"},
   {target: "CC2340R53RHBQ1"},
   {target: "CC2340R5RGE"},
-  {target: "CC2340R5RHBQ1"},
+  {target: "CC2340R5RHB"},
   {target: "CC2340R2RGE"},
-  {target: "CC2340R22RKP"},
-  {target: "LP_EM_CC2340R5MODA"},
-  {target: "CC2340R5MODA"}
+  {target: "CC2340R22RKP"}
 ]
 
 // The list of CC27xx LPs and devices that can be migrated to
 const CC27XXMigration = [
   {target: "LP_EM_CC2745R10_Q1"},
   {target: "LP_EM_CC2755P10"},
-  {target: "LP_EM_CC2755P20"},
   {target: "LP_EM_CC2755R10_BG"},
   {target: "CC2745R10RHAQ1"},
   {target: "CC2745P10RHAQ1"},
   {target: "CC2755P105RHA"},
-  {target: "CC2755P207RHA"},
   {target: "CC2755R105RHA"},
   {target: "CC2745R7RHAQ1"},
   {target: "CC2755R105YCJ"},
@@ -249,10 +270,8 @@ const supportedMigrations = {
   LP_EM_CC2340R5_Q1:            CC23XXMigration,
   LP_EM_CC2340R2:               CC23XXMigration,
   LP_EM_CC2340R22:              CC23XXMigration,
-  LP_EM_CC2340R5MODA:           CC23XXMigration,
   LP_EM_CC2745R10_Q1:           CC27XXMigration,
   LP_EM_CC2755P10:              CC27XXMigration,
-  LP_EM_CC2755P20:              CC27XXMigration,
   LP_EM_CC2755R10_BG:           CC27XXMigration,
   //Devices
   CC2340R5RKP:    CC23XXMigration,
@@ -260,19 +279,20 @@ const supportedMigrations = {
   CC2340R53YBG:   CC23XXMigration,
   CC2340R53RHBQ1: CC23XXMigration,
   CC2340R5RGE:    CC23XXMigration,
-  CC2340R5RHBQ1:    CC23XXMigration,
+  CC2340R5RHB:    CC23XXMigration,
   CC2340R2RGE:    CC23XXMigration,
   CC2340R22RKP:   CC23XXMigration,
-  CC2340R5MODA:   CC23XXMigration,
   CC2745P10RHAQ1: CC27XXMigration,
   CC2745R10RHAQ1: CC27XXMigration,
   CC2755P105RHA:  CC27XXMigration,
-  CC2755P207RHA:  CC27XXMigration,
   CC2755R105RHA:  CC27XXMigration,
   CC2745R7RHAQ1:  CC27XXMigration,
   CC2744R7RHAQ1:  CC27XXMigration,
   CC2755R105YCJ:  CC27XXMigration
 };
+
+const boardName = getLaunchPadName();
+const centralRoleCcfgSettings = bleCentralCCFGSettings[boardName + "_CCFG_SETTINGS"];
 
 /*
  * ======== convertTxPowerIndexToValue ========
@@ -756,6 +776,48 @@ function listOfHexValues(param)
 }
 
 /*!
+ *  ======== device2DeviceFamily ========
+ *  Map a pimux deviceID to a TI-driver device family string
+ *
+ *  @param deviceId  - a pinmux deviceId (system.deviceData)
+ *
+ *  @returns String - the corresponding "DeviceFamily_xxxx" string
+ *                    used by driverlib header files.
+ */
+function device2DeviceFamily(deviceId)
+{
+    let driverString = null;
+
+    /* Determine libraries required by device name. */
+    if(deviceId.match(/CC2340R5/))
+    {
+        driverString = "DeviceFamily_CC23X0R5";
+    }
+    else if(deviceId.match(/CC2340R53/))
+    {
+        driverString = "DeviceFamily_CC23X0R53"; // Need to verify with CoreSDK team !!!!!!
+    }
+    else if(deviceId.match(/CC2340R2/))
+    {
+        driverString = "DeviceFamily_CC23X0R2";
+    }
+    else if(deviceId.match(/CC27../))
+    {
+        driverString = "DeviceFamily_CC27XX";
+    }
+    else if(deviceId.match(/CC23.0R22/))
+    {
+        driverString = "DeviceFamily_CC23X0R22";
+    }
+    else
+    {
+        driverString = "";
+    }
+
+    return(driverString);
+}
+
+/*!
  *  ======== getBondNVBaseAddress ========
  *  Returns the base address in non-volatile (NV) memory where bond data
  *  is stored for the given device type.
@@ -777,17 +839,8 @@ function getBondNVBaseAddress()
  *
  *  @returns String - Name of the LaunchPad
  */
-// Boards that share a device ID with another launchpad but need their own rfDesign name.
-const customBoardNames = ["CC2745R10_CS_EVM"];
-
 function getLaunchPadName()
 {
-  if (system.deviceData.board) {
-    const boardName = system.deviceData.board.name;
-    if (boardName && customBoardNames.includes(boardName)) {
-      return boardName;
-    }
-  }
   return deviceToBoard[system.deviceData.deviceId];
 }
 
@@ -879,17 +932,8 @@ function getRadioScript(rfDesign, deviceId)
  */
 function hideGroup(group, toHide, ui)
 {
-    _.each(group, (item) => {
-        if(item.config)
-        {
-            // Nested sub-group — recurse into its items
-            hideGroup(item.config, toHide, ui);
-        }
-        else if(item.name && !item.name.includes("hide") && item.name !== "DeviceInfo")
-        {
-            ui[item.name].hidden = toHide;
-        }
-    });
+  let namesArray = _.map(group,function(n) {return n.name});
+  _.each(namesArray, (cfg) => {cfg.includes("hide") || cfg == "DeviceInfo" ? true : ui[cfg].hidden = toHide;});
 }
 
 /*
@@ -908,11 +952,6 @@ function getGroupByName(groupList, groupName)
     if(groupList[i].name == groupName)
     {
       return groupList[i].config;
-    }
-    if(groupList[i].config)
-    {
-      const found = getGroupByName(groupList[i].config, groupName);
-      if(found !== undefined) return found;
     }
   }
 }
@@ -1006,66 +1045,23 @@ function getMigrationMarkdown(currTarget)
   return(migrationText);
 }
 
-/*
- * ======== getInstModes ========
- * Returns the active BLE modes for a module instance, regardless of whether
- * the instance exposes deviceRole (host/full BLE) or ctrlConfig (controller).
- *
- * @param inst  - Module instance
- * @returns     - Modes object from getModes
- */
-/**
- * Configure FreeRTOS Timer Task priority to be maxPriorities - 1
- * This ensures the timer task runs at high priority but lower than the BLE stack.
- * BLE-LOKI-4122: Makes timer priority dynamic like ICALL_WORKER_THREAD_PRIORITY
- *
- * @param {object} FreeRTOS - FreeRTOS module instance from syscfg
- */
-function configureTimerTaskPriority(FreeRTOS) {
-    if (FreeRTOS && FreeRTOS.maxPriorities) {
-        FreeRTOS.timerTaskPriority = FreeRTOS.maxPriorities - 1;
+/* ======== defaultBondValue ========
+* Returns maxBonds default value based on the
+* device type
+*
+* @returns 5 - for CC23X0, else, 10
+*/
+function defaultBondValue()
+{
+    if( (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R5")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R53") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC27XX") )
+    {
+        return 5;
     }
-}
-
-function getInstModes(inst)
-{
-    return "deviceRole" in inst
-        ? getModes(inst.deviceRole)
-        : getModes(inst.ctrlConfig);
-}
-
-/*
- * ======== getModes ========
- * Returns which BLE operating modes are active for a given role/config value.
- * Accepts either:
- *   - a deviceRole string  (e.g. "PERIPHERAL_CFG+CENTRAL_CFG")
- *   - a ctrlConfig array   (e.g. ["ADV_CONN_CFG", "SCAN_CFG", "INIT_CFG"])
- *
- * @param roleOrConfig  - deviceRole string or ctrlConfig array
- * @returns Object with boolean flags:
- *   { broadcaster, peripheral, observer, central,
- *     isConnectable, isAdvertising, isScanning }
- */
-function getModes(roleOrConfig)
-{
-    const tokens = Array.isArray(roleOrConfig)
-        ? roleOrConfig
-        : roleOrConfig.split("+");
-
-    const broadcaster = tokens.includes("BROADCASTER_CFG") || tokens.includes("ADV_NCONN_CFG");
-    const peripheral  = tokens.includes("PERIPHERAL_CFG")  || tokens.includes("ADV_CONN_CFG");
-    const observer    = tokens.includes("OBSERVER_CFG")    || tokens.includes("SCAN_CFG");
-    const central     = tokens.includes("CENTRAL_CFG")     || tokens.includes("INIT_CFG");
-
-    return {
-        broadcaster,
-        peripheral,
-        observer,
-        central,
-        isConnectable: peripheral || central,
-        isAdvertising: broadcaster || peripheral,
-        isScanning:    observer || central
-    };
+    return 10;
 }
 
 /* ======== isChannelSoundingSupported ========
@@ -1077,7 +1073,8 @@ function getModes(roleOrConfig)
  */
 function isChannelSoundingSupported()
 {
-    if(system.deviceData.deviceId.match(/CC2340R2/))
+    if( (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R2")  ||
+        (device2DeviceFamily(system.deviceData.deviceId) == "DeviceFamily_CC23X0R22") )
     {
         return false;
     }
@@ -1108,10 +1105,12 @@ exports = {
     advAHdrLen: advAHdrLen,
     targetAHdrLen: targetAHdrLen,
     txPowerHdrLen: txPowerHdrLen,
+    deviceToDefines: deviceToDefines,
     txPowerValueToIndex: txPowerValueToIndex,
     addPeerAddress: addPeerAddress,
     reverseBytes: reverseBytes,
     checkTXPower: checkTXPower,
+    centralRoleCcfgSettings: centralRoleCcfgSettings,
     getChanMap: getChanMap,
     getSelectedDataList: getSelectedDataList,
     validateConnInterval: validateConnInterval,
@@ -1126,6 +1125,7 @@ exports = {
     getBoardOrLaunchPadName: getBoardOrLaunchPadName,
     getBondNVBaseAddress: getBondNVBaseAddress,
     getLaunchPadName: getLaunchPadName,
+    device2DeviceFamily: device2DeviceFamily,
     getRadioScript: getRadioScript,
     hideGroup: hideGroup,
     getGroupByName: getGroupByName,
@@ -1133,11 +1133,9 @@ exports = {
     isMigrationValid: isMigrationValid,
     migrate: migrate,
     getMigrationMarkdown: getMigrationMarkdown,
+    defaultBondValue: defaultBondValue,
     getPeripheralConnIntervalRange: getPeripheralConnIntervalRange,
     isChannelSoundingSupported: isChannelSoundingSupported,
-    getModes: getModes,
-    getInstModes: getInstModes,
-    configureTimerTaskPriority: configureTimerTaskPriority,
     ranging_service_uuid: ranging_service_uuid,
     profiles_list: profiles_list
 };

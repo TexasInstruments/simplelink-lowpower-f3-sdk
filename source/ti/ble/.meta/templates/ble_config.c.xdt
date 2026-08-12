@@ -16,7 +16,6 @@ ble.deviceRole.includes("CENTRAL_CFG") ? profileRole.push("GAP_PROFILE_CENTRAL")
 ble.deviceRole.includes("OBSERVER") ? profileRole.push("GAP_PROFILE_OBSERVER"): false;
 
 %%}
-% if(!ble.host) {
 
 #include "ti/ble/stack_util/bcomdef.h"
 #include "ti/ble/host/gap/gapgattserver.h"
@@ -128,12 +127,6 @@ uint8_t eccDebugKeys            =    `ble.eccDebugKeys`;
 uint8_t allowDebugKeys          =    `ble.allowDebugKeys`;
 uint8_t eraseBondWhileInConn    =    `ble.eraseBondWhileInConn`;
 uint8_t sameIrkAction           =    `ble.sameIrkOption`;
-
-% if(ble.padvTimeSync)
-%{
-// PADV Time Sync parameters assign
-uint8_t padvTimeSyncTsaName[GAP_DEVICE_NAME_LEN] = "`ble.padvTimeSyncTsaName`";
-%}
 
 void setBondManagerParameters()
 {
@@ -632,5 +625,4 @@ void BleConfig_stopAdvSets(uint8_t* advHandles, uint8_t* advHandlesStatus, uint8
 }
 
 % } // ble.hideBroadcasterGroup
-% } // !ble.host
 %}

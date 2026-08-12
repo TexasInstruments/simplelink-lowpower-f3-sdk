@@ -6,7 +6,6 @@
  */
 
 #include "mcuboot_config.h"
-#include <ti/devices/DeviceFamily.h>
 
 #if defined(MCUBOOT_ENC_IMAGES)
 #include <stddef.h>
@@ -266,14 +265,7 @@ hkdf(uint8_t *ikm, uint16_t ikm_len, uint8_t *info, uint16_t info_len,
         goto error;
     }
 
-/* TI Solution - The shared secret should not include the compression byte. However for CC27XX, updating this is in the sl_crypto layer does not work
- * So for now, the change will occur in MCUboot. This should be investigated and fixed.
- */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-    rc = bootutil_hmac_sha256_update(&hmac, ikm + 1, ikm_len);
-#else
     rc = bootutil_hmac_sha256_update(&hmac, ikm, ikm_len);
-#endif
     if (rc != 0) {
         goto error;
     }
@@ -626,7 +618,7 @@ boot_enc_load(struct enc_key_data *enc_state, int image_index,
     uint8_t slot;
     int rc;
 
-    rc = flash_area_id_to_multi_image_slot(image_index, flash_area_get_id(fap));
+    rc = flash_area_id_to_multi_image_slot(image_index, fap->fa_id);
     if (rc < 0) {
         return rc;
     }
@@ -673,7 +665,7 @@ boot_enc_valid(struct enc_key_data *enc_state, int image_index,
 {
     int rc;
 
-    rc = flash_area_id_to_multi_image_slot(image_index, flash_area_get_id(fap));
+    rc = flash_area_id_to_multi_image_slot(image_index, fap->fa_id);
     if (rc < 0) {
         /* can't get proper slot number - skip encryption, */
         /* postpone the error for a upper layer */
@@ -705,7 +697,7 @@ boot_encrypt(struct enc_key_data *enc_state, int image_index,
     nonce[14] = (uint8_t)(off >> 8);
     nonce[15] = (uint8_t)off;
 
-    rc = flash_area_id_to_multi_image_slot(image_index, flash_area_get_id(fap));
+    rc = flash_area_id_to_multi_image_slot(image_index, fap->fa_id);
     if (rc < 0) {
         assert(0);
 #if defined (__IAR_SYSTEMS_ICC__)
@@ -719,14 +711,7 @@ boot_encrypt(struct enc_key_data *enc_state, int image_index,
 
     enc = &enc_state[rc];
     assert(enc->valid == 1);
-    /* TI Solution - at this point the aes instance has been dropped after deriving cipherkey from TLV
-     * and needs to be reinitialized*/
-    bootutil_aes_ctr_init(&enc->aes_ctr);
     bootutil_aes_ctr_encrypt(&enc->aes_ctr, nonce, buf, sz, blk_off, buf);
-    /* TI Solution - Although de-initializing aes instance would be conistent with lifetime of other crypto instances throughout MCUboot,
-     * this can not be done since the decrypted plaintext will be immediately hashed for verification. De-initializing the aes instance
-     * will deinitialize the HSM for CC27XX, and sha instace will not be able to reinitialize HSM again.*/
-    // bootutil_aes_ctr_drop(&enc->aes_ctr);
 }
 
 /**

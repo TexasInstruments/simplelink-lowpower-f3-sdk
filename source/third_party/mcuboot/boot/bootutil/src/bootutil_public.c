@@ -5,8 +5,6 @@
  * Copyright (c) 2016-2019 JUUL Labs
  * Copyright (c) 2019-2023 Arm Limited
  * Copyright (c) 2020-2023 Nordic Semiconductor ASA
- * Copyright (c) 2026 Texas Instruments Incorporated
-
  *
  * Original license:
  *
@@ -101,16 +99,6 @@ struct boot_swap_table {
  * the bootloader, as in starting/finishing a swap operation.
  */
 static const struct boot_swap_table boot_swap_tables[] = {
-#ifndef MCUBOOT_OVERWRITE_ONLY
-    {
-        .magic_primary_slot =       BOOT_MAGIC_GOOD,
-        .magic_secondary_slot =     BOOT_MAGIC_GOOD,
-        .image_ok_primary_slot =    BOOT_FLAG_UNSET,
-        .image_ok_secondary_slot =  BOOT_FLAG_UNSET,
-        .copy_done_primary_slot =   BOOT_FLAG_SET,
-        .swap_type =                BOOT_SWAP_TYPE_REVERT,
-    },
-#endif
     {
         .magic_primary_slot =       BOOT_MAGIC_ANY,
         .magic_secondary_slot =     BOOT_MAGIC_GOOD,
@@ -313,8 +301,8 @@ boot_write_magic(const struct flash_area *fap)
     memcpy(&magic[BOOT_MAGIC_ALIGN_SIZE - BOOT_MAGIC_SZ], BOOT_IMG_MAGIC, BOOT_MAGIC_SZ);
 
     BOOT_LOG_DBG("writing magic; fa_id=%d off=0x%lx (0x%lx)",
-                 flash_area_get_id(fap), (unsigned long)off,
-                 (unsigned long)(flash_area_get_off(fap) + off));
+                 fap->fa_id, (unsigned long)off,
+                 (unsigned long)(fap->fa_off + off));
     rc = flash_area_write(fap, pad_off, &magic[0], BOOT_MAGIC_ALIGN_SIZE);
     if (rc != 0) {
         return BOOT_EFLASH;
@@ -371,8 +359,8 @@ boot_write_image_ok(const struct flash_area *fap)
 
     off = boot_image_ok_off(fap);
     BOOT_LOG_DBG("writing image_ok; fa_id=%d off=0x%lx (0x%lx)",
-                 flash_area_get_id(fap), (unsigned long)off,
-                 (unsigned long)(flash_area_get_off(fap) + off));
+                 fap->fa_id, (unsigned long)off,
+                 (unsigned long)(fap->fa_off + off));
     return boot_write_trailer_flag(fap, off, BOOT_FLAG_SET);
 }
 
@@ -398,8 +386,8 @@ boot_write_swap_info(const struct flash_area *fap, uint8_t swap_type,
     off = boot_swap_info_off(fap);
     BOOT_LOG_DBG("writing swap_info; fa_id=%d off=0x%lx (0x%lx), swap_type=0x%x"
                  " image_num=0x%x",
-                 flash_area_get_id(fap), (unsigned long)off,
-                 (unsigned long)(flash_area_get_off(fap) + off), swap_type, image_num);
+                 fap->fa_id, (unsigned long)off,
+                 (unsigned long)(fap->fa_off + off), swap_type, image_num);
     return boot_write_trailer(fap, off, (const uint8_t *) &swap_info, 1);
 }
 
@@ -454,19 +442,6 @@ boot_swap_type_multi(int image_index)
     BOOT_LOG_INF("Image index: %d, Swap type: none", image_index);
     return BOOT_SWAP_TYPE_NONE;
 }
-
-int
-boot_write_copy_done(const struct flash_area *fap)
-{
-    uint32_t off;
-
-    off = boot_copy_done_off(fap);
-    BOOT_LOG_DBG("writing copy_done; fa_id=%d off=0x%lx (0x%lx)",
-                 fap->fa_id, (unsigned long)off,
-                 (unsigned long)(fap->fa_off + off));
-    return boot_write_trailer_flag(fap, off, BOOT_FLAG_SET);
-}
-
 
 /*
  * This function is not used by the bootloader itself, but its required API
@@ -541,7 +516,7 @@ boot_set_pending(int permanent)
             return BOOT_EFLASH;
         }
 
-        flash_area_erase(fap, 0, flash_area_get_size(fap));
+        flash_area_erase(fap, 0, fap->fa_size);
         flash_area_close(fap);
         return BOOT_EBADIMAGE;
 
@@ -616,11 +591,11 @@ done:
 }
 
 int
-boot_image_load_header(const struct flash_area *fa_p,
+boot_image_load_header(const struct flash_area *fap,
                        struct image_header *hdr)
 {
     uint32_t size;
-    int rc = flash_area_read(fa_p, 0, hdr, sizeof *hdr);
+    int rc = flash_area_read(fap, 0, hdr, sizeof *hdr);
 
     if (rc != 0) {
         rc = BOOT_EFLASH;
@@ -641,7 +616,7 @@ boot_image_load_header(const struct flash_area *fa_p,
     }
 
     if (!boot_u32_safe_add(&size, hdr->ih_img_size, hdr->ih_hdr_size) ||
-        size >= flash_area_get_size(fa_p)) {
+        size >= fap->fa_size) {
         return BOOT_EBADIMAGE;
     }
 

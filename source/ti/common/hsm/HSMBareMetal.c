@@ -57,53 +57,83 @@
 #define HSM_OUTPUT_TOKEN_WORD_COUNT HSM_TOKEN_MAX_LENGTH
 
 /* Boot-related Defines */
-#define HSM_BOOT_TOKEN_WORD0        0xCF000000
-#define HSM_BOOT_TOKEN_WORD1        0x03725746
-#define HSM_BOOT_DELAY              0xFFFFF
-#define HSM_TOKEN_WORD1_OFFSET      0x4
-#define HSM_CRYPTO_OFFICER_ID       0x4F5A3647
-#define HSM_OUTPUT_TOKEN_ERROR_MASK 0xFF000000
-#define HSM_OUTPUT_TOKEN_VRFY_ERROR 0x92000000
-#define HSM_SYSINFO_TOKEN_WORD0     0x0F030000
-#define HSM_SYSINFO_PATCH_MASK      0x000000FF
-#define HSM_SYSINFO_MINOR_MASK      0x0000FF00
-#define HSM_SYSINFO_MAJOR_MASK      0x00FF0000
-#define HSM_BOOT_TOKEN_WORD_COUNT   2
+#define HSM_VERSION                      0x04317D82
+#define HSM_BOOT_TOKEN_WORD0             0xCF000000
+#define HSM_BOOT_TOKEN_WORD1             0x03725746
+#define HSM_BOOT_DELAY                   0xFFFFF
+#define HSM_TOKEN_WORD1_OFFSET           0x4
+#define HSM_CRYPTO_OFFICER_ID            0x4F5A3647
+#define HSM_OUTPUT_TOKEN_ERROR_MASK      0xFF000000
+#define HSM_OUTPUT_TOKEN_VRFY_ERROR      0x92000000
+#define HSM_SYSINFO_TOKEN_WORD0          0x0F030000
+#define HSM_SYSINFO_PATCH_MASK           0x000000FF
+#define HSM_SYSINFO_MINOR_MASK           0x0000FF00
+#define HSM_SYSINFO_MAJOR_MASK           0x00FF0000
+#define HSM_BOOT_INPUT_TOKEN_WORD_COUNT  2
+#define HSM_BOOT_OUTPUT_TOKEN_WORD_COUNT 1
 
 /* Encryption Defines */
-#define HSM_ENCRYPTION_TOKEN_WORD0      0x01000000
-#define HSM_ENCRYPTION_TOKEN_WORD11_ECB 0x00000000
-#define HSM_ENCRYPTION_TOKEN_WORD11_CBC 0x00000010
-#define HSM_ENCRYPTION_TOKEN_WORD11_CTR 0x00000020
-#define HSM_ENCRYPTION_TOKEN_WORD11_CCM 0x00000050
-#define HSM_ENCRYPTION_TOKEN_WORD11_GCM 0x00000070
-#define AES_BLOCK_SIZE                  16U
-#define AES_BLOCK_SIZE_ALIGN            (((uint32_t)AES_BLOCK_SIZE) - 1U)
-#define AES_GCM_IV_LAST_WORD            0x01000000
-#define HSM_ENCRYPTION_TOKEN_WORD_COUNT 37
+#define HSM_ENCRYPTION_TOKEN_WORD0             0x01000000
+#define HSM_ENCRYPTION_TOKEN_WORD11_ECB        0x00000000
+#define HSM_ENCRYPTION_TOKEN_WORD11_CBC        0x00000010
+#define HSM_ENCRYPTION_TOKEN_WORD11_CTR        0x00000020
+#define HSM_ENCRYPTION_TOKEN_WORD11_CCM        0x00000050
+#define HSM_ENCRYPTION_TOKEN_WORD11_GCM        0x00000070
+#define AES_BLOCK_SIZE                         16U
+#define AES_BLOCK_SIZE_ALIGN                   (((uint32_t)AES_BLOCK_SIZE) - 1U)
+#define AES_GCM_IV_LAST_WORD                   0x01000000
+#define HSM_ENCRYPTION_INPUT_TOKEN_WORD_COUNT  37
+#define HSM_ENCRYPTION_OUTPUT_TOKEN_WORD_COUNT 10
 
 /* HASH Defines */
-#define HSM_HASH_TOKEN_WORD0       0x12000000
-#define HSM_HASH_DIGEST_LENGTH_224 28
-#define HSM_HASH_DIGEST_LENGTH_256 32
-#define HSM_HASH_DIGEST_LENGTH_384 48
-#define HSM_HASH_DIGEST_LENGTH_512 64
-#define HSM_HASH_TOKEN_WORD_COUNT  64
+#define HSM_HASH_TOKEN_WORD0             0x12000000
+#define HSM_HASH_DIGEST_LENGTH_224       28
+#define HSM_HASH_DIGEST_LENGTH_256       32
+#define HSM_HASH_DIGEST_LENGTH_384       48
+#define HSM_HASH_DIGEST_LENGTH_512       64
+#define HSM_HASH_INPUT_TOKEN_WORD_COUNT  64
+#define HSM_HASH_OUTPUT_TOKEN_WORD_COUNT 52
 
 /* MAC Defines */
-#define HSM_MAC_TOKEN_WORD0      0x13000000
-#define HSM_MAC_TOKEN_WORD_COUNT 30
+#define HSM_MAC_TOKEN_WORD0             0x13000000
+#define HSM_MAC_INPUT_TOKEN_WORD_COUNT  30
+#define HSM_MAC_OUTPUT_TOKEN_WORD_COUNT 18
 
 /* Asset Management Defines */
 #define HSM_ASSET_MANAGEMENT_CREATE_TOKEN_WORD0 0x17000000
 #define HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0   0x27000000
 #define HSM_ASSET_MANAGEMENT_DELETE_TOKEN_WORD0 0x37000000
 #define HSM_ASSET_MANAGEMENT_READ_TOKEN_WORD0   0x47000000
+#define HSM_ASSET_MANAGEMENT_OTP_DATA_WRITE     0x77000000
+#define HSM_ASSET_MANAGEMENT_HUK_TOKEN_WORD0    0x97000000
 #define HSM_ASSET_LOAD_DERIVE                   0x01000000
 #define HSM_ASSET_LOAD_IMPORT                   0x04000000
 #define HSM_ASSET_LOAD_PLAINTEXT                0x08000000
 #define HSM_ASSET_LOAD_KEY_BLOB                 0x80000000
-#define HSM_ASSET_MANAGEMENT_WORD_COUNT         30
+#define HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT   30
+#define HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT  3
+
+/* RNG Defines */
+#define HSM_RNG_GET_TOKEN_WORD0           0x04000000
+#define HSM_RNG_CONFIG_TOKEN_WORD0        0x14000000
+#define HSM_RNG_CONFIG_TOKEN_WORD2        0X00000004
+#define HSM_RNG_CONFIG_RESEED_TOKEN_WORD2 0x00000002
+#define HSM_RNG_INPUT_TOKEN_WORD_COUNT    5
+#define HSM_RNG_OUTPUT_TOKEN_WORD_COUNT   1
+
+/* ECC Defines */
+#define HSM_PK_TOKEN_WORD0                         0x19000000
+#define HSM_PK_TOKEN_WORD2_CMD_ECC_KEYS_CHECK      0x00000001
+#define HSM_PK_TOKEN_WORD2_CMD_ECDSA_SIGN          0x00000006
+#define HSM_PK_TOKEN_WORD2_CMD_ECDSA_VRFY          0x00000007
+#define HSM_PK_TOKEN_WORD2_CMD_ECC_GEN_PUBKEY      0x00000014
+#define HSM_PK_TOKEN_WORD2_CMD_ECDH_GEN_SHRD_SCRT  0x00000016
+#define HSM_PK_TOKEN_WORD2_CMD_25519_GEN_PUBKEY    0x00000028
+#define HSM_PK_TOKEN_WORD2_CMD_25519_GEN_SHRD_SCRT 0x0000002A
+#define HSM_PK_TOKEN_WORD3_SV_SHRD_SCRT            0x80000000
+#define HSM_PK_TOKEN_WORD3_EXP_DGST                0x40000000
+#define HSM_PK_INPUT_TOKEN_WORD_COUNT              40
+#define HSM_PK_OUTPUT_TOKEN_WORD_COUNT             2
 
 /* Asset Policy Defines */
 #define HSM_ASSET_POLICY_SYM_HASH_MAC   0x00012801
@@ -148,37 +178,23 @@
 #define HSM_KEK_ASSET_POLICY HSM_ASSET_POLICY_SYM_WRAP | HSM_ASSET_POLICY_DIR_ENC_DEC
 #define HSM_KEK_ASSET_SIZE   64
 
-/* RNG Defines */
-#define HSM_RNG_GET_TOKEN_WORD0           0x04000000
-#define HSM_RNG_CONFIG_TOKEN_WORD0        0x14000000
-#define HSM_RNG_CONFIG_TOKEN_WORD2        0X00000004
-#define HSM_RNG_CONFIG_RESEED_TOKEN_WORD2 0x00000002
-#define HSM_RNG_TOKEN_WORD_COUNT          5
-
-/* ECC Defines */
-#define HSM_PK_TOKEN_WORD0                         0x19000000
-#define HSM_PK_TOKEN_WORD2_CMD_ECC_KEYS_CHECK      0x00000001
-#define HSM_PK_TOKEN_WORD2_CMD_ECDSA_SIGN          0x00000006
-#define HSM_PK_TOKEN_WORD2_CMD_ECDSA_VRFY          0x00000007
-#define HSM_PK_TOKEN_WORD2_CMD_ECC_GEN_PUBKEY      0x00000014
-#define HSM_PK_TOKEN_WORD2_CMD_ECDH_GEN_SHRD_SCRT  0x00000016
-#define HSM_PK_TOKEN_WORD2_CMD_25519_GEN_PUBKEY    0x00000028
-#define HSM_PK_TOKEN_WORD2_CMD_25519_GEN_SHRD_SCRT 0x0000002A
-#define HSM_PK_TOKEN_WORD_COUNT                    40
-
-#define HSM_PK_TOKEN_WORD3_SV_SHRD_SCRT 0x80000000
-#define HSM_PK_TOKEN_WORD3_EXP_DGST     0x40000000
-
 /* Misc Defines */
-#define HSM_HUK_TOKEN_WORD0              0x97000000
-#define HUK_PROVISION_TOKEN_WORD2_256BIT 0x00020000
-#define HSM_HUK_TOKEN_WORD2              HSM_RNG_CONFIG_TOKEN_WORD2 | HUK_PROVISION_TOKEN_WORD2_256BIT
-#define HSM_HUK_ALREADY_PROVISIONED      0x87
-#define HSM_RESET_TOKEN_WORD0            0x2F000000
-#define HSM_SEARCH_TOKEN_WORD0           0x07000000
-#define HSM_HUK_TOKEN_WORD_COUNT         3
-#define HSM_RESET_TOKEN_WORD_COUNT       2
-#define HSM_SEARCH_TOKEN_COUNT           5
+#define HUK_PROVISION_TOKEN_WORD2_256BIT     0x00020000
+#define HSM_HUK_TOKEN_WORD2                  HSM_RNG_CONFIG_TOKEN_WORD2 | HUK_PROVISION_TOKEN_WORD2_256BIT
+#define HSM_HUK_ALREADY_PROVISIONED          0x87
+#define HSM_RESET_TOKEN_WORD0                0x2F000000
+#define HSM_SEARCH_TOKEN_WORD0               0x07000000
+#define HSM_HUK_INPUT_TOKEN_WORD_COUNT       3
+#define HSM_HUK_OUTPUT_TOKEN_WORD_COUNT      2
+#define HSM_RESET_INPUT_TOKEN_WORD_COUNT     2
+#define HSM_RESET_OUTPUT_TOKEN_WORD_COUNT    1
+#define HSM_STATIC_SEARCH_INPUT_TOKEN_COUNT  5
+#define HSM_STATIC_SEARCH_OUTPUT_TOKEN_COUNT 3
+#define HSM_SYSTEM_TOKEN_INPUT_COUNT         2
+#define HSM_SYSTEM_TOKEN_OUTPUT_COUNT        10
+
+#define HSM_SYSTEM_SLEEP_TOKEN_WORD0  0x4F000000
+#define HSM_SYSTEM_WAKEUP_TOKEN_WORD0 0x5F000000
 
 #define HSM_RNG_RAW_DATA_BLOCK_SIZE 256
 #define HSM_RNG_WORD_LENGTH         4
@@ -218,8 +234,6 @@ typedef struct
 } HSMBareMetal_ECCOperationObject;
 
 /* Metadata global variables */
-
-static bool HSMBareMetal_isInitialized = false;
 static uint32_t HSMBareMetal_inputToken[HSM_TOKEN_MAX_LENGTH];
 static uint32_t HSMBareMetal_outputToken[HSM_TOKEN_MAX_LENGTH];
 
@@ -230,14 +244,18 @@ static HSMBareMetal_NRBGMode HSMBareMetal_currentNRBGType = NRBG_TYPE_CRNG;
 static uint32_t HSMBareMetal_hukAssetId = 0U;
 static uint32_t HSMBareMetal_kekAssetId = 0U;
 
+static bool HSMBareMetal_HSMInSleepMode = false;
+
 /* Forward declarations */
 static void HSMBareMetal_writeToken(const uint32_t *token, uint32_t len);
 static void HSMBareMetal_initMbox(void);
 static void HSMBareMetal_enableClock(void);
 static int_fast16_t HSMBareMetal_boot(void);
-static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount);
+static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t inputTokenWordCount,
+                                                             uint32_t outputTokenWordCount);
 static int_fast16_t HSMBareMetal_isHSMInFatalStatus(void);
-static int_fast16_t HSMBareMetal_isHSMfirmwareImgAccepted(void);
+static int_fast16_t HSMBareMetal_isHSMFirmwareImgAccepted(void);
+static int_fast16_t HSMBareMetal_isHSMMailboxWritable(void);
 static int_fast16_t HSMBareMetal_resetHSM(void);
 static int_fast16_t HSMBareMetal_deriveKekAsset(void);
 static int_fast16_t HSMBareMetal_createKeyAssetId(uint32_t assetPolicy, uint32_t keyLength, uint32_t *keyAssetId);
@@ -260,11 +278,22 @@ static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetIdAndExport(uint32_t *keyA
                                                                   uint32_t blobLength,
                                                                   uint8_t *additionalData,
                                                                   uint32_t additionalDataLength);
-static int_fast16_t HSMBareMetal_constructAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
-                                                      HSMBareMetal_operationDirection operationDirection,
-                                                      uint32_t *assetPolicy);
+static int_fast16_t HSMBareMetal_constructSymAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                         HSMBareMetal_operationDirection operationDirection,
+                                                         uint32_t *assetPolicy);
 static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperationStruct *operationStruct,
                                                      HSMBareMetal_operationDirection operationDirection);
+static int_fast16_t HSMBareMetal_SymAssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct);
+static void HSMBareMetal_formatCurve25519PrivateKeyScratch(uint8_t *myPrivateKey);
+static int_fast16_t HSMBareMetal_AsymAssetOperationValidateParams(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                                  HSMBareMetal_ECCOperationCurveLength curveLength);
+static int_fast16_t HSMBareMetal_getECCMetaData(HSMBareMetal_ECCOperationCurveType curveType,
+                                                HSMBareMetal_ECCOperationCurveLength *curveLength,
+                                                HSMBareMetal_ECCOperationDigestLength *digestLength,
+                                                HSMBareMetal_ECCDomainID *domainId);
+static int_fast16_t HSMBareMetal_constructAsymAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                          uint32_t *assetPolicy);
+static int_fast16_t HSMBareMetal_AsymAssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct);
 static int_fast16_t HSMBareMetal_ECCOperationGetCurveLength(HSMBareMetal_ECCOperationObject *object);
 static int_fast16_t HSMBareMetal_ECCOperationCreateCurveParamsAsset(HSMBareMetal_ECCOperationObject *object);
 static int_fast16_t HSMBareMetal_ECCOperationCreateAndLoadPrivateKeyAsset(HSMBareMetal_ECCOperationObject *object);
@@ -280,6 +309,54 @@ static int_fast16_t HSMBareMetal_ECCOperationReadPublicDataAsset(uint32_t *asset
 static int_fast16_t HSMBareMetal_ECCOperationInitializeOperation(HSMBareMetal_ECCOperationObject *object);
 static int_fast16_t HSMBareMetal_ECCOperationInternal(HSMBareMetal_ECCOperationObject *object);
 static int_fast16_t HSMBareMetal_ECCOperationInternalPostProcessing(HSMBareMetal_ECCOperationObject *object);
+
+/*
+ *  ======== HSMBareMetal_RNGOperation_init ========
+ */
+void HSMBareMetal_RNGOperation_init(HSMBareMetal_RNGOperationStruct *operationStruct)
+{
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_RNGOperationStruct));
+}
+
+/*
+ *  ======== HSMBareMetal_AssetOperation_init ========
+ */
+void HSMBareMetal_AssetOperation_init(HSMBareMetal_AssetOperationStruct *operationStruct)
+{
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_AssetOperationStruct));
+}
+
+/*
+ *  ======== HSMBareMetal_HASHOperation_init ========
+ */
+void HSMBareMetal_HASHOperation_init(HSMBareMetal_HASHOperationStruct *operationStruct)
+{
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_HASHOperationStruct));
+}
+
+/*
+ *  ======== HSMBareMetal_AESOperation_init ========
+ */
+void HSMBareMetal_AESOperation_init(HSMBareMetal_AESOperationStruct *operationStruct)
+{
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_AESOperationStruct));
+}
+
+/*
+ *  ======== HSMBareMetal_MACOperation_init ========
+ */
+void HSMBareMetal_MACOperation_init(HSMBareMetal_MACOperationStruct *operationStruct)
+{
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_MACOperationStruct));
+}
+
+/*
+ *  ======== HSMBareMetal_ECCOperation_init ========
+ */
+void HSMBareMetal_ECCOperation_init(HSMBareMetal_ECCOperationStruct *operationStruct)
+{
+    memset(operationStruct, 0x00, sizeof(HSMBareMetal_ECCOperationStruct));
+}
 
 /*
  *  ======== HSMBareMetal_enableClock ========
@@ -319,11 +396,20 @@ static int_fast16_t HSMBareMetal_isHSMInFatalStatus()
 }
 
 /*
- *  ======== HSMBareMetal_isHSMfirmwareImgAccepted ========
+ *  ======== HSMBareMetal_isHSMFirmwareImgAccepted ========
  */
-static int_fast16_t HSMBareMetal_isHSMfirmwareImgAccepted()
+static int_fast16_t HSMBareMetal_isHSMFirmwareImgAccepted()
 {
     return ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MODSTA) & HSMCRYPTO_MODSTA_FWACPTD_M) == HSMCRYPTO_MODSTA_FWACPTD);
+}
+
+/*
+ *  ======== HSMBareMetal_isHSMMailboxWritable ========
+ */
+static int_fast16_t HSMBareMetal_isHSMMailboxWritable(void)
+{
+    return ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1IN_M) == HSMCRYPTO_MBSTA_MB1IN_EMTY) &&
+            ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1OUT_M) == HSMCRYPTO_MBSTA_MB1OUT_EMTY);
 }
 
 /*
@@ -349,6 +435,13 @@ static void HSMBareMetal_writeToken(const uint32_t *token, uint32_t len)
 {
     uint32_t i;
 
+    if ((HSMBareMetal_inputToken[0] == HSM_ASSET_MANAGEMENT_HUK_TOKEN_WORD0) ||
+        (HSMBareMetal_inputToken[0] == HSM_ASSET_MANAGEMENT_OTP_DATA_WRITE))
+    {
+        /* Enable the OTP interrupt event */
+        HWREG(HSM_BASE + HSM_O_CTL) |= HSM_CTL_OTPEVTEN_EN;
+    }
+
     /* Wait for mbx1_in_full to be false */
     while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1IN) == HSMCRYPTO_MBSTA_MB1IN_FULL) {}
 
@@ -362,21 +455,10 @@ static void HSMBareMetal_writeToken(const uint32_t *token, uint32_t len)
 }
 
 /*
- *  ======== HSMBareMetal_writeTokenAndWaitForResults ========
+ *  ======== HSMBareMetal_waitForResultToken ========
  */
-static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount)
+static void HSMBareMetal_waitForResultToken()
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
-    uint32_t *output    = (uint32_t *)(HSMCRYPTO_BASE);
-
-    if (HSMBareMetal_inputToken[0] != HSM_BOOT_TOKEN_WORD0)
-    {
-        HSMBareMetal_inputToken[1] = HSM_CRYPTO_OFFICER_ID;
-    }
-
-    /* Write token to mbx1_in */
-    HSMBareMetal_writeToken(HSMBareMetal_inputToken, wordCount);
-
     /* Wait for result in mbx1_out */
     while ((HWREG(HSMCRYPTO_BASE + HSMCRYPTO_O_MBSTA) & HSMCRYPTO_MBSTA_MB1OUT_M) != HSMCRYPTO_MBSTA_MB1OUT_FULL)
     {
@@ -384,14 +466,52 @@ static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t wordCount)
          * This means, the code requires constant clearing of the interrupt bit since we are not setting an interrupt
          * handler.
          */
-        if (HSMBareMetal_inputToken[0] == HSM_HUK_TOKEN_WORD0)
+        if ((HSMBareMetal_inputToken[0] == HSM_ASSET_MANAGEMENT_HUK_TOKEN_WORD0) ||
+            (HSMBareMetal_inputToken[0] == HSM_ASSET_MANAGEMENT_OTP_DATA_WRITE))
         {
             HWREG(HSM_BASE + HSM_O_CTL) |= HSM_CTL_OTPEVTCLR_CLR;
         }
     }
 
+    if ((HSMBareMetal_inputToken[0] == HSM_ASSET_MANAGEMENT_HUK_TOKEN_WORD0) ||
+        (HSMBareMetal_inputToken[0] == HSM_ASSET_MANAGEMENT_OTP_DATA_WRITE))
+    {
+        /* Disable the OTP interrupt event */
+        HWREG(HSM_BASE + HSM_O_CTL) &= ~HSM_CTL_OTPEVTEN_EN;
+    }
+}
+
+/*
+ *  ======== HSMBareMetal_writeTokenAndWaitForResults ========
+ */
+static int_fast16_t HSMBareMetal_writeTokenAndWaitForResults(uint32_t inputTokenWordCount,
+                                                             uint32_t outputTokenWordCount)
+{
+    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    uint32_t *output    = (uint32_t *)(HSMCRYPTO_BASE);
+
+    if (!HSMBareMetal_isHSMMailboxWritable())
+    {
+        return HSMBAREMETAL_STATUS_ERROR;
+    }
+
+    if ((inputTokenWordCount > HSM_TOKEN_MAX_LENGTH) || (outputTokenWordCount > HSM_TOKEN_MAX_LENGTH))
+    {
+        return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if (HSMBareMetal_inputToken[0] != HSM_BOOT_TOKEN_WORD0)
+    {
+        HSMBareMetal_inputToken[1] = HSM_CRYPTO_OFFICER_ID;
+    }
+
+    /* Write token to mbx1_in */
+    HSMBareMetal_writeToken(HSMBareMetal_inputToken, inputTokenWordCount);
+
+    HSMBareMetal_waitForResultToken();
+
     /* Copy the mailbox 1 out register into the static HSMBareMetal_outputToken buffer. */
-    (void)memcpy((void *)&HSMBareMetal_outputToken, (void *)&output[0], sizeof(HSMBareMetal_outputToken));
+    (void)memcpy((void *)&HSMBareMetal_outputToken, (void *)&output[0], (sizeof(uint32_t) * outputTokenWordCount));
 
     if ((HSMBareMetal_outputToken[0] & HSM_OUTPUT_TOKEN_ERROR_MASK) == 0)
     {
@@ -423,26 +543,27 @@ static int_fast16_t HSMBareMetal_boot(void)
     }
     else
     {
-        if (HSMBareMetal_isHSMfirmwareImgAccepted())
+        if (HSMBareMetal_isHSMFirmwareImgAccepted())
         {
             /* If HSM is already booted*/
             status = HSMBAREMETAL_STATUS_SUCCESS;
         }
         else
         {
-            (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_BOOT_TOKEN_WORD_COUNT);
-            (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+            (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_BOOT_INPUT_TOKEN_WORD_COUNT);
+            (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_BOOT_OUTPUT_TOKEN_WORD_COUNT);
 
             HSMBareMetal_inputToken[0] = HSM_BOOT_TOKEN_WORD0;
             HSMBareMetal_inputToken[1] = HSM_BOOT_TOKEN_WORD1;
 
-            status = HSMBareMetal_writeTokenAndWaitForResults(HSM_BOOT_TOKEN_WORD_COUNT);
+            status = HSMBareMetal_writeTokenAndWaitForResults(HSM_BOOT_INPUT_TOKEN_WORD_COUNT,
+                                                              HSM_BOOT_OUTPUT_TOKEN_WORD_COUNT);
 
             if (status == HSMBAREMETAL_STATUS_SUCCESS)
             {
                 for (delay = HSM_BOOT_DELAY; delay; delay--)
                 {
-                    if (HSMBareMetal_isHSMfirmwareImgAccepted())
+                    if (HSMBareMetal_isHSMFirmwareImgAccepted())
                     {
                         status = HSMBAREMETAL_STATUS_SUCCESS;
 
@@ -469,13 +590,13 @@ int_fast16_t HSMBareMetal_getHSMFirmwareVersion(HSMBareMetal_systemInfoVersionSt
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_PK_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_SYSTEM_TOKEN_INPUT_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_SYSTEM_TOKEN_OUTPUT_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_SYSINFO_TOKEN_WORD0;
 
@@ -484,7 +605,7 @@ int_fast16_t HSMBareMetal_getHSMFirmwareVersion(HSMBareMetal_systemInfoVersionSt
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_PK_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_SYSTEM_TOKEN_INPUT_COUNT, HSM_SYSTEM_TOKEN_OUTPUT_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -503,17 +624,8 @@ int_fast16_t HSMBareMetal_init(void)
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
 
-    if (!HSMBareMetal_isInitialized)
-    {
-        /* Initialize HSM clock and mailbox, then boot it */
-        if (HSMBareMetal_boot() == HSMBAREMETAL_STATUS_SUCCESS)
-        {
-            HSMBareMetal_isInitialized = true;
-
-            status = HSMBAREMETAL_STATUS_SUCCESS;
-        }
-    }
-    else
+    /* Initialize HSM clock and mailbox, then boot it */
+    if (HSMBareMetal_boot() == HSMBAREMETAL_STATUS_SUCCESS)
     {
         status = HSMBAREMETAL_STATUS_SUCCESS;
     }
@@ -534,8 +646,6 @@ int_fast16_t HSMBareMetal_deInit(void)
     /* Turn off the HSM IP */
     HSMBareMetal_disableClock();
 
-    HSMBareMetal_isInitialized = false;
-
     return status;
 }
 
@@ -544,23 +654,117 @@ int_fast16_t HSMBareMetal_deInit(void)
  */
 int_fast16_t HSMBareMetal_checkHSMStatus(void)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED;
+    int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
 
-    if (!HSMBareMetal_isInitialized)
+    HSMBareMetal_enableClock();
+
+    /* Check whether the HSM has a fatal error. */
+    if (HSMBareMetal_isHSMInFatalStatus())
     {
-        /* Turn on the HSM IP. */
-        HSMBareMetal_enableClock();
+        /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
+        return HSMBAREMETAL_STATUS_HW_ERROR;
+    }
+    /*
+     * Check if HSM FW is accepted, meaning the HSM is in FW mode and not ROM mode.
+     * If the HSM FW is not accepted, it means that the HSM has not been booted yet!
+     */
+    else if (!HSMBareMetal_isHSMFirmwareImgAccepted())
+    {
+        return HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
+    }
 
-        /* Check whether the HSM has a fatal error. */
-        if (HSMBareMetal_isHSMInFatalStatus())
+    /* If the HSM is in sleep mode, then send a resume token. */
+    if (HSMBareMetal_HSMInSleepMode)
+    {
+        status = HSMBareMetal_wakeup();
+
+        if (status != HSMBAREMETAL_STATUS_SUCCESS)
         {
-            /* The HSM IP entered in a fatal error condition and cannot be resuscitated. */
-            status = HSMBAREMETAL_STATUS_HW_ERROR;
+            return status;
         }
-        else
-        {
-            status = HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED;
-        }
+    }
+
+    if (!HSMBareMetal_isHSMMailboxWritable())
+    {
+        /* HSM MBX is being used and not writeable. */
+        status = HSMBAREMETAL_STATUS_ERROR;
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_sleep ========
+ */
+int_fast16_t HSMBareMetal_sleep(void)
+{
+    int_fast16_t status = HSMBareMetal_checkHSMStatus();
+
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    if (HSMBareMetal_HSMInSleepMode)
+    {
+        return HSMBAREMETAL_STATUS_SUCCESS;
+    }
+
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RESET_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_RESET_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_SYSTEM_SLEEP_TOKEN_WORD0;
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RESET_INPUT_TOKEN_WORD_COUNT,
+                                                      HSM_RESET_OUTPUT_TOKEN_WORD_COUNT);
+
+    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        (void)HSMBareMetal_disableClock();
+
+        HSMBareMetal_HSMInSleepMode = true;
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_wakeup ========
+ */
+int_fast16_t HSMBareMetal_wakeup(void)
+{
+    int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
+
+    if (!HSMBareMetal_HSMInSleepMode)
+    {
+        return HSMBAREMETAL_STATUS_SUCCESS;
+    }
+
+    HSMBareMetal_enableClock();
+
+    HSMBareMetal_initMbox();
+
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RESET_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_RESET_OUTPUT_TOKEN_WORD_COUNT);
+
+    HSMBareMetal_inputToken[0] = HSM_SYSTEM_WAKEUP_TOKEN_WORD0;
+
+    /* Perform the following:
+     *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
+     *  - Trigger the mailbox 1 control register for the HSM to process the request.
+     *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
+     */
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RESET_INPUT_TOKEN_WORD_COUNT,
+                                                      HSM_RESET_OUTPUT_TOKEN_WORD_COUNT);
+
+    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        HSMBareMetal_HSMInSleepMode = false;
     }
 
     return status;
@@ -573,13 +777,13 @@ static int_fast16_t HSMBareMetal_resetHSM(void)
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RESET_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RESET_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_RESET_OUTPUT_TOKEN_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_RESET_TOKEN_WORD0;
 
@@ -588,7 +792,8 @@ static int_fast16_t HSMBareMetal_resetHSM(void)
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    return HSMBareMetal_writeTokenAndWaitForResults(HSM_RESET_TOKEN_WORD_COUNT);
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_RESET_INPUT_TOKEN_WORD_COUNT,
+                                                    HSM_RESET_OUTPUT_TOKEN_WORD_COUNT);
 }
 
 /*
@@ -599,43 +804,44 @@ int_fast16_t HSMBareMetal_provisionHUK(void)
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
     uint32_t hukAssetId = 0U;
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
     status = HSMBareMetal_searchStaticAsset(HSMBAREMETAL_HUK_ASSET_NUMBER, &hukAssetId);
 
-    if ((status == HSMBAREMETAL_STATUS_SUCCESS) && (hukAssetId != 0U))
+    if ((status == HSMBAREMETAL_STATUS_SUCCESS) && (hukAssetId != 0U) && (HSMBareMetal_kekAssetId == 0U))
     {
+        status = HSMBareMetal_deriveKekAsset();
+
+        if (status != HSMBAREMETAL_STATUS_SUCCESS)
+        {
+            return status;
+        }
+
         return HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HUK_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HUK_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_HUK_OUTPUT_TOKEN_WORD_COUNT);
 
-    HSMBareMetal_inputToken[0] = HSM_HUK_TOKEN_WORD0;
+    HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_HUK_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = (HSMBareMetal_currentNRBGType << 4) | HSM_HUK_TOKEN_WORD2;
-
-    /* Enable the OTP interrupt event */
-    HWREG(HSM_BASE + HSM_O_CTL) |= HSM_CTL_OTPEVTEN_EN;
 
     /* Perform the following:
      *  - Write the command token to the mailbox 1 in register from #HSMBareMetal_inputToken.
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HUK_TOKEN_WORD_COUNT);
-
-    /* Disable the OTP interrupt event */
-    HWREG(HSM_BASE + HSM_O_CTL) &= ~HSM_CTL_OTPEVTEN_EN;
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HUK_INPUT_TOKEN_WORD_COUNT, HSM_HUK_OUTPUT_TOKEN_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
         status = HSMBareMetal_resetHSM();
     }
 
-    return status;
+    return HSMBareMetal_deriveKekAsset();
 }
 
 /*
@@ -646,7 +852,7 @@ static int_fast16_t HSMBareMetal_deriveKekAsset(void)
     int_fast16_t status           = HSMBareMetal_checkHSMStatus();
     const uint8_t adLabelDerive[] = HSM_AS_DERIVE_ADLABEL;
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
@@ -680,13 +886,13 @@ int_fast16_t HSMBareMetal_searchStaticAsset(uint32_t assetNumber, uint32_t *asse
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_SEARCH_TOKEN_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_STATIC_SEARCH_INPUT_TOKEN_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_STATIC_SEARCH_OUTPUT_TOKEN_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_SEARCH_TOKEN_WORD0;
     HSMBareMetal_inputToken[4] = (assetNumber << 16);
@@ -696,7 +902,8 @@ int_fast16_t HSMBareMetal_searchStaticAsset(uint32_t assetNumber, uint32_t *asse
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_SEARCH_TOKEN_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_STATIC_SEARCH_INPUT_TOKEN_COUNT,
+                                                      HSM_STATIC_SEARCH_OUTPUT_TOKEN_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -713,8 +920,8 @@ static int_fast16_t HSMBareMetal_createKeyAssetId(uint32_t assetPolicy, uint32_t
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_CREATE_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = assetPolicy;
@@ -725,7 +932,8 @@ static int_fast16_t HSMBareMetal_createKeyAssetId(uint32_t assetPolicy, uint32_t
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                      HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -744,8 +952,8 @@ static int_fast16_t HSMBareMetal_loadDerive(uint32_t *keyAssetId,
                                             uint8_t *additionalData,
                                             uint32_t additionalDataLength)
 {
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = *keyAssetId;
@@ -759,7 +967,8 @@ static int_fast16_t HSMBareMetal_loadDerive(uint32_t *keyAssetId,
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                    HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 }
 
 /*
@@ -772,8 +981,8 @@ static int_fast16_t HSMBareMetal_loadImport(uint32_t *keyAssetId,
                                             uint8_t *additionalData,
                                             uint32_t additionalDataLength)
 {
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = *keyAssetId;
@@ -788,7 +997,8 @@ static int_fast16_t HSMBareMetal_loadImport(uint32_t *keyAssetId,
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                    HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 }
 
 /*
@@ -796,8 +1006,8 @@ static int_fast16_t HSMBareMetal_loadImport(uint32_t *keyAssetId,
  */
 static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetId(uint32_t *keyAssetId, uint8_t *key, uint32_t keyLength)
 {
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = *keyAssetId;
@@ -809,7 +1019,8 @@ static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetId(uint32_t *keyAssetId, u
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                    HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 }
 
 /*
@@ -824,8 +1035,8 @@ static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetIdAndExport(uint32_t *keyA
                                                                   uint8_t *additionalData,
                                                                   uint32_t additionalDataLength)
 {
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_LOAD_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = *keyAssetId;
@@ -833,7 +1044,7 @@ static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetIdAndExport(uint32_t *keyA
                                  keyLength;
     HSMBareMetal_inputToken[4] = (uintptr_t)key;
     HSMBareMetal_inputToken[6] = (uintptr_t)blob;
-    HSMBareMetal_inputToken[8] = AES_BLOCK_SIZE + keyLength;
+    HSMBareMetal_inputToken[8] = HSMBAREMEATL_KEYBLOB_ELEM_SIZE(keyLength);
     HSMBareMetal_inputToken[9] = *rootKeyAssetId;
 
     (void)memcpy((void *)&HSMBareMetal_inputToken[10], (void *)additionalData, additionalDataLength);
@@ -843,15 +1054,133 @@ static int_fast16_t HSMBareMetal_loadPlaintextKeyAssetIdAndExport(uint32_t *keyA
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    return HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                    HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 }
 
 /*
- *  ======== HSMBareMetal_constructAssetPolicy ========
+ *  ======== HSMBareMetal_getECCMetaData ========
  */
-static int_fast16_t HSMBareMetal_constructAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
-                                                      HSMBareMetal_operationDirection operationDirection,
-                                                      uint32_t *assetPolicy)
+static int_fast16_t HSMBareMetal_getECCMetaData(HSMBareMetal_ECCOperationCurveType curveType,
+                                                HSMBareMetal_ECCOperationCurveLength *curveLength,
+                                                HSMBareMetal_ECCOperationDigestLength *digestLength,
+                                                HSMBareMetal_ECCDomainID *domainId)
+{
+    int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
+    *domainId           = HSMBareMetal_ECC_DOMAIN_ID_SEC;
+
+    switch (curveType)
+    {
+        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_224_R1:
+            *curveLength  = HSMBareMetal_PK_CURVE_LENGTH_224;
+            *digestLength = HSMBareMetal_PK_DIGEST_LENGTH_224;
+            break;
+        case HSMBareMetal_PK_CURVE_TYPE_BRP_P_256_R1:
+        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1:
+            *curveLength  = HSMBareMetal_PK_CURVE_LENGTH_256;
+            *digestLength = HSMBareMetal_PK_DIGEST_LENGTH_256;
+            break;
+        case HSMBareMetal_PK_CURVE_TYPE_BRP_P_384_R1:
+        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_384_R1:
+            *curveLength  = HSMBareMetal_PK_CURVE_LENGTH_384;
+            *digestLength = HSMBareMetal_PK_DIGEST_LENGTH_384;
+            break;
+        case HSMBareMetal_PK_CURVE_TYPE_BRP_P_512_R1:
+            *curveLength  = HSMBareMetal_PK_CURVE_LENGTH_512;
+            *digestLength = HSMBareMetal_PK_DIGEST_LENGTH_512;
+            break;
+        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_521_R1:
+            *curveLength  = HSMBareMetal_PK_CURVE_LENGTH_521;
+            *digestLength = HSMBareMetal_PK_DIGEST_LENGTH_512;
+            break;
+        case HSMBareMetal_PK_CURVE_TYPE_25519:
+            *curveLength  = HSMBareMetal_PK_CURVE_LENGTH_255;
+            *digestLength = HSMBareMetal_PK_DIGEST_LENGTH_256;
+            break;
+        default:
+            /* Invalid CurveType. Set object->curveFamily to NONE and return an error.
+             * A valid CurveType that is supported by the ECDH driver should be
+             * provided in order to perform a public key or a shared secret
+             * operation.
+             */
+            status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+            break;
+    }
+
+    if ((curveType == HSMBareMetal_PK_CURVE_TYPE_BRP_P_256_R1) ||
+        (curveType == HSMBareMetal_PK_CURVE_TYPE_BRP_P_384_R1) ||
+        (curveType == HSMBareMetal_PK_CURVE_TYPE_BRP_P_512_R1))
+    {
+        *domainId = HSMBareMetal_ECC_DOMAIN_ID_BRP;
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_constructAsymAssetPolicy ========
+ */
+static int_fast16_t HSMBareMetal_constructAsymAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                          uint32_t *assetPolicy)
+{
+    int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
+    *assetPolicy        = 0u;
+
+    if (operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY)
+    {
+        *assetPolicy |= HSM_ASSET_POLICY_PRIVATEDATA;
+    }
+
+    if ((operationStruct->eccOperationMode == HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY) ||
+        (operationStruct->eccOperationMode == HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT))
+    {
+        *assetPolicy |= HSM_ASSET_POLICY_ASYM_KEYEXCH | HSM_ASSET_POLICY_ST_ANY;
+
+        if (operationStruct->eccCurveType == HSMBareMetal_PK_CURVE_TYPE_25519)
+        {
+            *assetPolicy |= HSM_ASSET_POLICY_ASYM_CURVE25519;
+        }
+        else
+        {
+            *assetPolicy |= HSM_ASSET_POLICY_ASYM_ECDH;
+        }
+    }
+    else
+    {
+        *assetPolicy |= HSM_ASSET_POLICY_ASYM_SIGNVRFY | HSM_ASSET_POLICY_ASYM_ECDSA;
+
+        switch (operationStruct->eccCurveType)
+        {
+            case HSMBareMetal_PK_CURVE_TYPE_SEC_P_224_R1:
+                *assetPolicy |= HSM_ASSET_POLICY_ASYM_SHA2_224;
+                break;
+            case HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1:
+            case HSMBareMetal_PK_CURVE_TYPE_BRP_P_256_R1:
+                *assetPolicy |= HSM_ASSET_POLICY_ASYM_SHA2_256;
+                break;
+            case HSMBareMetal_PK_CURVE_TYPE_SEC_P_384_R1:
+            case HSMBareMetal_PK_CURVE_TYPE_BRP_P_384_R1:
+                *assetPolicy |= HSM_ASSET_POLICY_ASYM_SHA2_384;
+                break;
+            case HSMBareMetal_PK_CURVE_TYPE_SEC_P_521_R1:
+            case HSMBareMetal_PK_CURVE_TYPE_BRP_P_512_R1:
+                *assetPolicy |= HSM_ASSET_POLICY_ASYM_SHA2_512;
+                break;
+            default:
+                /* Do nothing. Curve type is invalid */
+                break;
+        }
+    }
+
+    return status;
+}
+
+/*
+ *  ======== HSMBareMetal_constructSymAssetPolicy ========
+ */
+static int_fast16_t HSMBareMetal_constructSymAssetPolicy(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                         HSMBareMetal_operationDirection operationDirection,
+                                                         uint32_t *assetPolicy)
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
 
@@ -959,16 +1288,22 @@ static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperation
     uint32_t assetPolicy           = 0U;
     uint32_t *keyAssetId           = operationStruct->keyAssetIDs.encGenKeyAssetID;
     const uint8_t adLabelKeyblob[] = HSM_AS_KEYBLOB_ADLABEL;
-    uint8_t *keyBlob               = operationStruct->keyBlobs.encGenKeyBlob;
+    uint8_t *keyBlob               = operationStruct->keyblob;
 
     if (operationDirection == HSMBareMetal_OPERATION_DIR_DEC_VRFY)
     {
         keyAssetId = operationStruct->keyAssetIDs.decVrfyKeyAssetID;
-        keyBlob    = operationStruct->keyBlobs.decVrfyKeyBlob;
+
+        if (operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY)
+        {
+            /* HSM BareMetal assumes the user allocated enough space for the keyblob buffer so the following indexing
+             * does not go out of bound. */
+            keyBlob += HSMBAREMEATL_KEYBLOB_ELEM_SIZE(operationStruct->keyLength);
+        }
     }
 
     /* Get the asset policy based on the user-provided data. */
-    status = HSMBareMetal_constructAssetPolicy(operationStruct, operationDirection, &assetPolicy);
+    status = HSMBareMetal_constructSymAssetPolicy(operationStruct, operationDirection, &assetPolicy);
 
     if (status == HSMBAREMETAL_STATUS_ERROR)
     {
@@ -994,7 +1329,7 @@ static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperation
                 status = HSMBareMetal_loadImport(keyAssetId,
                                                  &HSMBareMetal_kekAssetId,
                                                  keyBlob,
-                                                 HSM_KEYBLOB_SIZE(operationStruct->keyLength),
+                                                 HSMBAREMEATL_KEYBLOB_ELEM_SIZE(operationStruct->keyLength),
                                                  (uint8_t *)adLabelKeyblob,
                                                  (sizeof(adLabelKeyblob) - 1U));
                 break;
@@ -1005,7 +1340,8 @@ static int_fast16_t HSMBareMetal_createAndLoadSymKey(HSMBareMetal_AssetOperation
                                                                        operationStruct->key,
                                                                        operationStruct->keyLength,
                                                                        keyBlob,
-                                                                       HSM_KEYBLOB_SIZE(operationStruct->keyLength),
+                                                                       HSMBAREMEATL_KEYBLOB_ELEM_SIZE(
+                                                                           operationStruct->keyLength),
                                                                        (uint8_t *)adLabelKeyblob,
                                                                        (sizeof(adLabelKeyblob) - 1U));
                 break;
@@ -1025,7 +1361,7 @@ int_fast16_t HSMBareMetal_RNGOperation(HSMBareMetal_RNGOperationStruct *operatio
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
     size_t randomLength = operationStruct->randomLength;
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
@@ -1045,8 +1381,8 @@ int_fast16_t HSMBareMetal_RNGOperation(HSMBareMetal_RNGOperationStruct *operatio
         return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_RNG_OUTPUT_TOKEN_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_RNG_GET_TOKEN_WORD0;
 
@@ -1077,7 +1413,7 @@ int_fast16_t HSMBareMetal_RNGOperation(HSMBareMetal_RNGOperationStruct *operatio
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_INPUT_TOKEN_WORD_COUNT, HSM_RNG_OUTPUT_TOKEN_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1103,7 +1439,7 @@ int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode)
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
@@ -1113,8 +1449,8 @@ int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode)
         return HSMBAREMETAL_STATUS_NRBG_ALREADY_IN_MODE;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(HSMBareMetal_outputToken));
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_RNG_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_RNG_OUTPUT_TOKEN_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_RNG_CONFIG_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = (NRBGMode << 4) | HSM_RNG_CONFIG_TOKEN_WORD2;
@@ -1124,7 +1460,7 @@ int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode)
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_RNG_INPUT_TOKEN_WORD_COUNT, HSM_RNG_OUTPUT_TOKEN_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1139,7 +1475,7 @@ int_fast16_t HSMBareMetal_RNGSwitchNRBGMode(HSMBareMetal_NRBGMode NRBGMode)
  */
 void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey, uint8_t *key, size_t keyLength)
 {
-    memset(cryptoKey, 0x00, sizeof(HSMBareMetal_CryptoKeyStruct));
+    (void)memset(cryptoKey, 0x00, sizeof(HSMBareMetal_CryptoKeyStruct));
 
     cryptoKey->keyInputType = HSMBareMetal_KEY_INPUT_PLAINTEXT;
 
@@ -1148,26 +1484,140 @@ void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *crypt
 }
 
 /*
+ *  ======== HSMBareMetal_CryptoKeyAssetStore_initKey ========
+ */
+void HSMBareMetal_CryptoKeyAssetStore_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey,
+                                              uint32_t *assetId,
+                                              size_t keyLength)
+{
+    (void)memset(cryptoKey, 0x00, sizeof(HSMBareMetal_CryptoKeyStruct));
+
+    cryptoKey->keyInputType = HSMBareMetal_KEY_INPUT_ASSETSTORE;
+
+    cryptoKey->u.assetStore.assetId   = assetId;
+    cryptoKey->u.assetStore.keyLength = keyLength;
+}
+
+/*
  *  ======== HSMBareMetal_SymAssetOperation ========
  */
 static int_fast16_t HSMBareMetal_SymAssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct)
 {
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t encStatus = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t decStatus = HSMBAREMETAL_STATUS_ERROR;
 
-    /* Perform Asset create and Asset load operations for encrypt mode. */
-    status = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_ENC_GEN);
+    if ((operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_ENC_GEN) ||
+        (operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY))
+    {
+        /* Perform Asset create and Asset load operations for encrypt mode. */
+        encStatus = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_ENC_GEN);
+    }
+    else
+    {
+        encStatus = HSMBAREMETAL_STATUS_SUCCESS;
+    }
 
-    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    if ((operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_DEC_VRFY) ||
+        (operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY))
     {
         if (operationStruct->algorithm == HSMBareMetal_OPERATION_ALGO_AES)
         {
             /* Perform Asset create and Asset load operations for decrypt mode (only in the case of AES). */
-            status = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_DEC_VRFY);
+            decStatus = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_DEC_VRFY);
         }
         else if (operationStruct->algorithm == HSMBareMetal_OPERATION_ALGO_MAC)
         {
+            if (operationStruct->operationDirection == HSMBareMetal_OPERATION_DIR_DEC_VRFY)
+            {
+                decStatus = HSMBareMetal_createAndLoadSymKey(operationStruct, HSMBareMetal_OPERATION_DIR_ENC_GEN);
+            }
+            else
+            {
+                decStatus = HSMBAREMETAL_STATUS_SUCCESS;
+            }
+
             *operationStruct->keyAssetIDs.decVrfyKeyAssetID = *operationStruct->keyAssetIDs.encGenKeyAssetID;
         }
+    }
+    else
+    {
+        decStatus = HSMBAREMETAL_STATUS_SUCCESS;
+    }
+
+    if (encStatus != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return encStatus;
+    }
+
+    return decStatus;
+}
+
+/*
+ *  ======== HSMBareMetal_AsymAssetOperationValidateParams ========
+ */
+static int_fast16_t HSMBareMetal_AsymAssetOperationValidateParams(HSMBareMetal_AssetOperationStruct *operationStruct,
+                                                                  HSMBareMetal_ECCOperationCurveLength curveLength)
+{
+    int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
+
+    /* Check the operation's mode. */
+    if ((operationStruct->eccOperationMode != HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY) &&
+        (operationStruct->eccOperationMode != HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT) &&
+        (operationStruct->eccOperationMode != HSMBareMetal_PK_MODE_ECDSA_SIGN) &&
+        (operationStruct->eccOperationMode != HSMBareMetal_PK_MODE_ECDSA_VERIFY))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if ((operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_SEC_P_224_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_SEC_P_384_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_SEC_P_521_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_BRP_P_256_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_BRP_P_384_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_BRP_P_512_R1) &&
+        (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_25519))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if ((operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY) &&
+        (operationStruct->eccOperationMode == HSMBareMetal_PK_MODE_ECDSA_VERIFY))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if ((operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PUBLIC_KEY) &&
+        ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB) ||
+         (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB)))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if ((operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PUBLIC_KEY) &&
+        (operationStruct->eccOperationMode == HSMBareMetal_PK_MODE_ECDSA_SIGN))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if ((operationStruct->eccCurveType == HSMBareMetal_PK_CURVE_TYPE_25519) &&
+        ((operationStruct->eccOperationMode == HSMBareMetal_PK_MODE_ECDSA_SIGN) ||
+         (operationStruct->eccOperationMode == HSMBareMetal_PK_MODE_ECDSA_VERIFY)))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
+    if ((operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY) &&
+        (operationStruct->keyLength != BITS_TO_BYTES(curveLength)))
+    {
+        status = HSMBAREMETAL_STATUS_INVALID_PRIVATE_KEY_SIZE;
+    }
+
+    if ((operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PUBLIC_KEY) &&
+        (operationStruct->keyLength !=
+         (HSM_ASYM_ECC_PUB_KEY_VCOUNT * BITS_TO_BYTES(curveLength) + HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG)))
+    {
+        return HSMBAREMETAL_STATUS_INVALID_PUBLIC_KEY_SIZE;
     }
 
     return status;
@@ -1178,7 +1628,118 @@ static int_fast16_t HSMBareMetal_SymAssetOperation(HSMBareMetal_AssetOperationSt
  */
 static int_fast16_t HSMBareMetal_AsymAssetOperation(HSMBareMetal_AssetOperationStruct *operationStruct)
 {
-    return HSMBAREMETAL_STATUS_FEATURE_NOT_SUPPORTED;
+    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
+
+    uint8_t componentVector[HSM_ASYM_COMPONENT_VECTOR_LENGTH];
+
+    uint32_t assetPolicy           = 0U;
+    uint32_t assetSize             = 0U;
+    uint32_t itemCount             = HSM_ASYM_CURVE25519_PUB_KEY_VCOUNT;
+    uint32_t *keyAssetId           = operationStruct->keyAssetIDs.privateKeyAssetID;
+    const uint8_t adLabelKeyblob[] = HSM_AS_KEYBLOB_ADLABEL;
+    uint8_t *keyBlob               = operationStruct->keyblob;
+
+    HSMBareMetal_ECCOperationCurveType curveType       = operationStruct->eccCurveType;
+    HSMBareMetal_ECCOperationCurveLength curveLength   = HSMBareMetal_PK_CURVE_LENGTH_224;
+    HSMBareMetal_ECCOperationDigestLength digestLenght = HSMBareMetal_PK_DIGEST_LENGTH_224;
+    HSMBareMetal_ECCDomainID domainId                  = HSMBareMetal_ECC_DOMAIN_ID_SEC;
+
+    status = HSMBareMetal_getECCMetaData(curveType, &curveLength, &digestLenght, &domainId);
+
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+    else
+    {
+        assetSize = HSM_ASYM_DATA_SIZE_VWB(curveLength);
+    }
+
+    status = HSMBareMetal_AsymAssetOperationValidateParams(operationStruct, curveLength);
+
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    status = HSMBareMetal_constructAsymAssetPolicy(operationStruct, &assetPolicy);
+
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    if ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_PLAINTEXT) ||
+        (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB))
+    {
+        if (operationStruct->eccKeyType == HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY)
+        {
+            (void)memset(&componentVector[0], 0, assetSize);
+
+            HSMBareMetalECCParams_asymDHPriKeyToHW(operationStruct->key, curveLength, domainId, &componentVector[0]);
+
+            if (curveType == HSMBareMetal_PK_CURVE_TYPE_25519)
+            {
+                /* HSMBareMetal needs to prune the private key. */
+                HSMBareMetal_formatCurve25519PrivateKeyScratch(&componentVector[HSM_ASYM_DATA_VHEADER]);
+            }
+        }
+        else
+        {
+            keyAssetId = operationStruct->keyAssetIDs.publicKeyAssetID;
+
+            if (operationStruct->eccCurveType != HSMBareMetal_PK_CURVE_TYPE_25519)
+            {
+                itemCount = HSM_ASYM_ECC_PUB_KEY_VCOUNT;
+                assetSize *= HSM_ASYM_ECC_PUB_KEY_VCOUNT;
+            }
+
+            (void)memset(&componentVector[0], 0, assetSize);
+
+            HSMBareMetalECCParams_asymDHPubKeyToHW(operationStruct->key,
+                                                   curveLength,
+                                                   itemCount,
+                                                   domainId,
+                                                   &componentVector[0]);
+        }
+    }
+
+    status = HSMBareMetal_createKeyAssetId(assetPolicy, assetSize, keyAssetId);
+
+    if (status == HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        switch (operationStruct->operationType)
+        {
+            case HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_PLAINTEXT:
+                /* Load the key into the created asset. */
+                status = HSMBareMetal_loadPlaintextKeyAssetId(keyAssetId, &componentVector[0], assetSize);
+                break;
+            case HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB:
+                /* Load the key blob into the created asset. */
+                status = HSMBareMetal_loadImport(keyAssetId,
+                                                 &HSMBareMetal_kekAssetId,
+                                                 keyBlob,
+                                                 HSMBAREMEATL_KEYBLOB_ELEM_SIZE(assetSize),
+                                                 (uint8_t *)adLabelKeyblob,
+                                                 (sizeof(adLabelKeyblob) - 1U));
+                break;
+            case HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB:
+                /* Load the key into the created asset and export a key blob. */
+                status = HSMBareMetal_loadPlaintextKeyAssetIdAndExport(keyAssetId,
+                                                                       &HSMBareMetal_kekAssetId,
+                                                                       &componentVector[0],
+                                                                       assetSize,
+                                                                       keyBlob,
+                                                                       HSMBAREMEATL_KEYBLOB_ELEM_SIZE(assetSize),
+                                                                       (uint8_t *)adLabelKeyblob,
+                                                                       (sizeof(adLabelKeyblob) - 1U));
+                break;
+            default:
+                status = HSMBAREMETAL_STATUS_ERROR;
+        }
+    }
+
+    return status;
 }
 
 /*
@@ -1188,15 +1749,9 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
-    }
-
-    if ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB) ||
-        (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB))
-    {
-        status = HSMBareMetal_deriveKekAsset();
     }
 
     /* When user requests the key generated, then the customer is not expected to provide the key. The key will be
@@ -1241,12 +1796,6 @@ int_fast16_t HSMBareMetal_AssetOperation(HSMBareMetal_AssetOperationStruct *oper
         operationStruct->key = NULL;
     }
 
-    if ((operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB) ||
-        (operationStruct->operationType == HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB))
-    {
-        status |= HSMBareMetal_freeKeyAsset(&HSMBareMetal_kekAssetId);
-    }
-
     return status;
 }
 
@@ -1257,13 +1806,13 @@ int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID)
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_DELETE_TOKEN_WORD0;
     HSMBareMetal_inputToken[2] = *keyAssetID;
@@ -1273,7 +1822,8 @@ int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID)
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                      HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1288,65 +1838,34 @@ int_fast16_t HSMBareMetal_freeKeyAsset(uint32_t *keyAssetID)
  */
 int_fast16_t HSMBareMetal_freeAssetPair(HSMBareMetal_AssetPairStruct keyAssetPair)
 {
-    int_fast16_t status      = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t encStatus   = HSMBAREMETAL_STATUS_ERROR;
+    int_fast16_t decStatus   = HSMBAREMETAL_STATUS_ERROR;
     bool isPairWithSameAsset = (*keyAssetPair.encGenKeyAssetID) == (*keyAssetPair.decVrfyKeyAssetID);
 
-    status = HSMBareMetal_freeKeyAsset(keyAssetPair.encGenKeyAssetID);
-
-    if (!isPairWithSameAsset)
+    if (*keyAssetPair.encGenKeyAssetID != 0)
     {
-        status |= HSMBareMetal_freeKeyAsset(keyAssetPair.decVrfyKeyAssetID);
+        encStatus = HSMBareMetal_freeKeyAsset(keyAssetPair.encGenKeyAssetID);
+    }
+    else
+    {
+        encStatus = HSMBAREMETAL_STATUS_SUCCESS;
     }
 
-    return status;
-}
+    if ((*keyAssetPair.decVrfyKeyAssetID != 0) && (!isPairWithSameAsset))
+    {
+        decStatus = HSMBareMetal_freeKeyAsset(keyAssetPair.decVrfyKeyAssetID);
+    }
+    else
+    {
+        decStatus = HSMBAREMETAL_STATUS_SUCCESS;
+    }
 
-/*
- *  ======== HSMBareMetal_RNGOperation_init ========
- */
-void HSMBareMetal_RNGOperation_init(HSMBareMetal_RNGOperationStruct *operationStruct)
-{
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_RNGOperationStruct));
-}
+    if (encStatus != HSMBAREMETAL_STATUS_SUCCESS)
+    {
+        return encStatus;
+    }
 
-/*
- *  ======== HSMBareMetal_AssetOperation_init ========
- */
-void HSMBareMetal_AssetOperation_init(HSMBareMetal_AssetOperationStruct *operationStruct)
-{
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_AssetOperationStruct));
-}
-
-/*
- *  ======== HSMBareMetal_HASHOperation_init ========
- */
-void HSMBareMetal_HASHOperation_init(HSMBareMetal_HASHOperationStruct *operationStruct)
-{
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_HASHOperationStruct));
-}
-
-/*
- *  ======== HSMBareMetal_AESOperation_init ========
- */
-void HSMBareMetal_AESOperation_init(HSMBareMetal_AESOperationStruct *operationStruct)
-{
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_AESOperationStruct));
-}
-
-/*
- *  ======== HSMBareMetal_MACOperation_init ========
- */
-void HSMBareMetal_MACOperation_init(HSMBareMetal_MACOperationStruct *operationStruct)
-{
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_MACOperationStruct));
-}
-
-/*
- *  ======== HSMBareMetal_ECCOperation_init ========
- */
-void HSMBareMetal_ECCOperation_init(HSMBareMetal_ECCOperationStruct *operationStruct)
-{
-    memset(operationStruct, 0x00, sizeof(HSMBareMetal_ECCOperationStruct));
+    return decStatus;
 }
 
 /*
@@ -1359,13 +1878,13 @@ int_fast16_t HSMBareMetal_AESOperation(HSMBareMetal_AESOperationStruct *operatio
     uint32_t inputDataLength  = operationStruct->inputLength;
     uint32_t outputDataLength = operationStruct->inputLength;
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ENCRYPTION_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ENCRYPTION_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ENCRYPTION_OUTPUT_TOKEN_WORD_COUNT);
 
     /* Input Data Length to the HSM needs to be block size aligned but the overall data length should not */
     inputDataLength += AES_BLOCK_SIZE_ALIGN;
@@ -1471,7 +1990,8 @@ int_fast16_t HSMBareMetal_AESOperation(HSMBareMetal_AESOperationStruct *operatio
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ENCRYPTION_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ENCRYPTION_INPUT_TOKEN_WORD_COUNT,
+                                                      HSM_ENCRYPTION_OUTPUT_TOKEN_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1506,19 +2026,20 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
     uint32_t inputDataLength = operationStruct->inputLength;
     uint32_t padBytes        = 0U;
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_MAC_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_MAC_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_MAC_OUTPUT_TOKEN_WORD_COUNT);
 
     if ((operationStruct->operationMode == HSMBareMetal_MAC_MODE_CMAC) ||
         (operationStruct->operationMode == HSMBareMetal_MAC_MODE_CBC_MAC))
     {
         /* Check for acceptable mac length*/
-        if((operationStruct->macLength > 16) || (operationStruct->macLength == 0) || (operationStruct->macLength % 2 != 0))
+        if ((operationStruct->macLength > 16) || (operationStruct->macLength == 0) ||
+            (operationStruct->macLength % 2 != 0))
         {
             return HSMBAREMETAL_STATUS_INVALID_MAC_LENGTH;
         }
@@ -1562,7 +2083,7 @@ int_fast16_t HSMBareMetal_MACOperation(HSMBareMetal_MACOperationStruct *operatio
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_MAC_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_MAC_INPUT_TOKEN_WORD_COUNT, HSM_MAC_OUTPUT_TOKEN_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1594,27 +2115,27 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
 {
     int_fast16_t status   = HSMBareMetal_checkHSMStatus();
     uint32_t digestLength = 0U;
-    uint16_t blockAlign = 0U;
+    uint16_t blockAlign   = 0U;
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
 
     /* Determine the correct digest length for intermediate state. This will be updated if a final hash operation is
-     * being performed before retreiving the final hash
+     * being performed before retrieving the final hash
      */
     switch (operationStruct->operationMode)
     {
         case HSMBareMetal_HASH_MODE_SHA2_224:
         case HSMBareMetal_HASH_MODE_SHA2_256:
             digestLength = HSM_HASH_DIGEST_LENGTH_256;
-            blockAlign = 64U;
+            blockAlign   = 64U;
             break;
         case HSMBareMetal_HASH_MODE_SHA2_384:
         case HSMBareMetal_HASH_MODE_SHA2_512:
             digestLength = HSM_HASH_DIGEST_LENGTH_512;
-            blockAlign = 128U;
+            blockAlign   = 128U;
             break;
         default:
             return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
@@ -1630,8 +2151,8 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
         }
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HASH_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HASH_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_HASH_OUTPUT_TOKEN_WORD_COUNT);
 
     /* Construct the input token. */
     HSMBareMetal_inputToken[0] = HSM_HASH_TOKEN_WORD0;
@@ -1681,7 +2202,8 @@ int_fast16_t HSMBareMetal_HASHOperation(HSMBareMetal_HASHOperationStruct *operat
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HASH_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HASH_INPUT_TOKEN_WORD_COUNT,
+                                                      HSM_HASH_OUTPUT_TOKEN_WORD_COUNT);
 
     if (status == HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1702,52 +2224,10 @@ static int_fast16_t HSMBareMetal_ECCOperationGetCurveLength(HSMBareMetal_ECCOper
     HSMBareMetal_ECCOperationCurveType curveType = object->operation->operationCurveType;
     object->domainId                             = HSMBareMetal_ECC_DOMAIN_ID_SEC;
 
-    switch (curveType)
-    {
-        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_224_R1:
-            object->operationCurveLength  = HSMBareMetal_PK_CURVE_LENGTH_224;
-            object->operationDigestLength = HSMBareMetal_PK_DIGEST_LENGTH_224;
-            break;
-        case HSMBareMetal_PK_CURVE_TYPE_BRP_P_256_R1:
-        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_256_R1:
-            object->operationCurveLength  = HSMBareMetal_PK_CURVE_LENGTH_256;
-            object->operationDigestLength = HSMBareMetal_PK_DIGEST_LENGTH_256;
-            if (curveType == HSMBareMetal_PK_CURVE_TYPE_BRP_P_256_R1)
-            {
-                object->domainId = HSMBareMetal_ECC_DOMAIN_ID_BRP;
-            }
-            break;
-        case HSMBareMetal_PK_CURVE_TYPE_BRP_P_384_R1:
-        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_384_R1:
-            object->operationCurveLength  = HSMBareMetal_PK_CURVE_LENGTH_384;
-            object->operationDigestLength = HSMBareMetal_PK_DIGEST_LENGTH_384;
-            if (curveType == HSMBareMetal_PK_CURVE_TYPE_BRP_P_384_R1)
-            {
-                object->domainId = HSMBareMetal_ECC_DOMAIN_ID_BRP;
-            }
-            break;
-        case HSMBareMetal_PK_CURVE_TYPE_BRP_P_512_R1:
-            object->operationCurveLength  = HSMBareMetal_PK_CURVE_LENGTH_512;
-            object->operationDigestLength = HSMBareMetal_PK_DIGEST_LENGTH_512;
-            object->domainId              = HSMBareMetal_ECC_DOMAIN_ID_BRP;
-            break;
-        case HSMBareMetal_PK_CURVE_TYPE_SEC_P_521_R1:
-            object->operationCurveLength  = HSMBareMetal_PK_CURVE_LENGTH_521;
-            object->operationDigestLength = HSMBareMetal_PK_DIGEST_LENGTH_512;
-            break;
-        case HSMBareMetal_PK_CURVE_TYPE_25519:
-            object->operationCurveLength  = HSMBareMetal_PK_CURVE_LENGTH_255;
-            object->operationDigestLength = HSMBareMetal_PK_DIGEST_LENGTH_256;
-            break;
-        default:
-            /* Invalid CurveType. Set object->curveFamily to NONE and return an error.
-             * A valid CurveType that is supported by the ECDH driver should be
-             * provided in order to perform a public key or a shared secret
-             * operation.
-             */
-            status = HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
-            break;
-    }
+    status = HSMBareMetal_getECCMetaData(curveType,
+                                         &object->operationCurveLength,
+                                         &object->operationDigestLength,
+                                         &object->domainId);
 
     if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
@@ -1804,6 +2284,13 @@ static int_fast16_t HSMBareMetal_ECCOperationCreateAndLoadPrivateKeyAsset(HSMBar
     int_fast16_t status  = HSMBAREMETAL_STATUS_ERROR;
     uint32_t assetPolicy = 0U;
     uint32_t assetSize   = HSM_ASYM_DATA_SIZE_VWB(object->operationCurveLength);
+
+    if (object->operation->privateKey->keyInputType == HSMBareMetal_KEY_INPUT_ASSETSTORE)
+    {
+        object->privateKeyAssetId = *object->operation->privateKey->u.assetStore.assetId;
+
+        return HSMBAREMETAL_STATUS_SUCCESS;
+    }
 
     if ((object->operation->operationMode == HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY) ||
         (object->operation->operationMode == HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT))
@@ -1879,6 +2366,13 @@ static int_fast16_t HSMBareMetal_ECCOperationCreateAndLoadPublicKeyAsset(HSMBare
     uint32_t assetPolicy = 0U;
     uint32_t assetSize   = HSM_ASYM_DATA_SIZE_VWB(object->operationCurveLength);
     uint32_t itemCount   = HSM_ASYM_CURVE25519_PUB_KEY_VCOUNT;
+
+    if (object->operation->publicKey->keyInputType == HSMBareMetal_KEY_INPUT_ASSETSTORE)
+    {
+        object->publicKeyAssetId = *object->operation->publicKey->u.assetStore.assetId;
+
+        return HSMBAREMETAL_STATUS_SUCCESS;
+    }
 
     if ((object->operation->operationMode == HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY) ||
         (object->operation->operationMode == HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT))
@@ -2023,6 +2517,26 @@ static int_fast16_t HSMBareMetal_ECCOperationValidateParams(HSMBareMetal_ECCOper
     HSMBareMetal_CryptoKeyStruct *publicKey    = object->operation->publicKey;
     HSMBareMetal_CryptoKeyStruct *sharedSecret = object->operation->sharedSecret;
 
+    size_t privateKeyLength      = privateKey->u.plaintext.keyLength;
+    size_t publicKeyLength       = publicKey->u.plaintext.keyLength;
+    size_t sharedSecretKeyLength = sharedSecret->u.plaintext.keyLength;
+
+    if (privateKey->keyInputType == HSMBareMetal_KEY_INPUT_ASSETSTORE)
+    {
+        privateKeyLength = privateKey->u.assetStore.keyLength;
+    }
+
+    if (publicKey->keyInputType == HSMBareMetal_KEY_INPUT_ASSETSTORE)
+    {
+        publicKeyLength = publicKey->u.assetStore.keyLength;
+    }
+
+    /* Shared secret is always an output and can only be returned in plaintext format. */
+    if (sharedSecret->keyInputType == HSMBareMetal_KEY_INPUT_ASSETSTORE)
+    {
+        return HSMBAREMETAL_STATUS_INVALID_INPUT_PARAMETERS;
+    }
+
     /* Check the operation's mode. */
     if ((object->operation->operationMode != HSMBareMetal_PK_MODE_ECDH_GEN_PUB_KEY) &&
         (object->operation->operationMode != HSMBareMetal_PK_MODE_ECDH_GEN_SHRD_SCRT) &&
@@ -2053,7 +2567,7 @@ static int_fast16_t HSMBareMetal_ECCOperationValidateParams(HSMBareMetal_ECCOper
 
     /* Check private key length. It should match the curve length after conversion. */
     if ((object->operation->operationMode != HSMBareMetal_PK_MODE_ECDSA_VERIFY) &&
-        (privateKey->u.plaintext.keyLength != BITS_TO_BYTES(object->operationCurveLength)))
+        (privateKeyLength != BITS_TO_BYTES(object->operationCurveLength)))
     {
         return HSMBAREMETAL_STATUS_INVALID_PRIVATE_KEY_SIZE;
     }
@@ -2062,9 +2576,8 @@ static int_fast16_t HSMBareMetal_ECCOperationValidateParams(HSMBareMetal_ECCOper
      * The format for uncompressed big endian, it is 1 + (BITS_TO_BYTES(object->object->operationCurveLength) * 2).
      */
     if ((object->operation->operationMode != HSMBareMetal_PK_MODE_ECDSA_SIGN) &&
-        (publicKey->u.plaintext.keyLength !=
-         (HSM_ASYM_ECC_PUB_KEY_VCOUNT * BITS_TO_BYTES(object->operationCurveLength) +
-          HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG)))
+        (publicKeyLength != (HSM_ASYM_ECC_PUB_KEY_VCOUNT * BITS_TO_BYTES(object->operationCurveLength) +
+                             HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG)))
     {
         return HSMBAREMETAL_STATUS_INVALID_PUBLIC_KEY_SIZE;
     }
@@ -2085,12 +2598,10 @@ static int_fast16_t HSMBareMetal_ECCOperationValidateParams(HSMBareMetal_ECCOper
         /* We cannot guarantee what the user will pass in as a key length for the shared secret so we check against the
          * known permutations.
          */
-        if ((sharedSecret->u.plaintext.keyLength != BITS_TO_BYTES(object->operationCurveLength)) &&
-            (sharedSecret->u.plaintext.keyLength !=
-             (BITS_TO_BYTES(object->operationCurveLength) * HSM_ASYM_ECC_PUB_KEY_VCOUNT)) &&
-            (sharedSecret->u.plaintext.keyLength !=
-             (BITS_TO_BYTES(object->operationCurveLength) * HSM_ASYM_ECC_PUB_KEY_VCOUNT +
-              HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG)))
+        if ((sharedSecretKeyLength != BITS_TO_BYTES(object->operationCurveLength)) &&
+            (sharedSecretKeyLength != (BITS_TO_BYTES(object->operationCurveLength) * HSM_ASYM_ECC_PUB_KEY_VCOUNT)) &&
+            (sharedSecretKeyLength != (BITS_TO_BYTES(object->operationCurveLength) * HSM_ASYM_ECC_PUB_KEY_VCOUNT +
+                                       HSM_ASYM_ECC_PUB_KEY_UNCOMP_ENC_LENG)))
         {
             return HSMBAREMETAL_STATUS_INVALID_SHARED_SECRET_KEY_SIZE;
         }
@@ -2106,7 +2617,7 @@ static int_fast16_t HSMBareMetal_ECCOperationInitializeOperation(HSMBareMetal_EC
 {
     int_fast16_t status = HSMBareMetal_checkHSMStatus();
 
-    if (status != HSMBAREMETAL_STATUS_HSM_ALREADY_INITIALIZED)
+    if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
         return status;
     }
@@ -2169,8 +2680,8 @@ static int_fast16_t HSMBareMetal_ECCOperationCheckECCKeys(HSMBareMetal_ECCOperat
         privateKeyAssetId = 0U;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HASH_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_PK_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_PK_OUTPUT_TOKEN_WORD_COUNT);
 
     /* Construct the input token. */
     HSMBareMetal_inputToken[0] = HSM_PK_TOKEN_WORD0;
@@ -2184,7 +2695,7 @@ static int_fast16_t HSMBareMetal_ECCOperationCheckECCKeys(HSMBareMetal_ECCOperat
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HASH_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_PK_INPUT_TOKEN_WORD_COUNT, HSM_PK_OUTPUT_TOKEN_WORD_COUNT);
 
     return status;
 }
@@ -2198,8 +2709,8 @@ static int_fast16_t HSMBareMetal_ECCOperationReadPublicDataAsset(uint32_t *asset
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_HASH_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     /* Construct the input token. */
     HSMBareMetal_inputToken[0] = HSM_ASSET_MANAGEMENT_READ_TOKEN_WORD0;
@@ -2212,7 +2723,8 @@ static int_fast16_t HSMBareMetal_ECCOperationReadPublicDataAsset(uint32_t *asset
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_HASH_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_ASSET_MANAGEMENT_INPUT_WORD_COUNT,
+                                                      HSM_ASSET_MANAGEMENT_OUTPUT_WORD_COUNT);
 
     return status;
 }
@@ -2270,8 +2782,8 @@ static int_fast16_t HSMBareMetal_ECCOperationInternal(HSMBareMetal_ECCOperationO
             break;
     }
 
-    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_PK_TOKEN_WORD_COUNT);
-    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_OUTPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_inputToken[0], 0, sizeof(uint32_t) * HSM_PK_INPUT_TOKEN_WORD_COUNT);
+    (void)memset(&HSMBareMetal_outputToken[0], 0, sizeof(uint32_t) * HSM_PK_OUTPUT_TOKEN_WORD_COUNT);
 
     /* Construct the input token. */
     HSMBareMetal_inputToken[0] = HSM_PK_TOKEN_WORD0;
@@ -2328,7 +2840,7 @@ static int_fast16_t HSMBareMetal_ECCOperationInternal(HSMBareMetal_ECCOperationO
      *  - Trigger the mailbox 1 control register for the HSM to process the request.
      *  - Poll on the out register and read out the result token to #HSMBareMetal_outputToken.
      */
-    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_PK_TOKEN_WORD_COUNT);
+    status = HSMBareMetal_writeTokenAndWaitForResults(HSM_PK_INPUT_TOKEN_WORD_COUNT, HSM_PK_OUTPUT_TOKEN_WORD_COUNT);
 
     return status;
 }
@@ -2340,12 +2852,14 @@ static int_fast16_t HSMBareMetal_ECCOperationFreeAllAssets(HSMBareMetal_ECCOpera
 {
     int_fast16_t status = HSMBAREMETAL_STATUS_SUCCESS;
 
-    if (object->privateKeyAssetId != 0U)
+    if ((object->operation->privateKey->keyInputType == HSMBareMetal_KEY_INPUT_PLAINTEXT) &&
+        (object->privateKeyAssetId != 0U))
     {
         status |= HSMBareMetal_freeKeyAsset(&object->privateKeyAssetId);
     }
 
-    if (object->publicKeyAssetId != 0U)
+    if ((object->operation->publicKey->keyInputType == HSMBareMetal_KEY_INPUT_PLAINTEXT) &&
+        (object->publicKeyAssetId != 0U))
     {
         status |= HSMBareMetal_freeKeyAsset(&object->publicKeyAssetId);
     }
@@ -2436,6 +2950,8 @@ int_fast16_t HSMBareMetal_ECCOperation(HSMBareMetal_ECCOperationStruct *operatio
 
     if (status != HSMBAREMETAL_STATUS_SUCCESS)
     {
+        (void)HSMBareMetal_ECCOperationFreeAllAssets(&object);
+
         return status;
     }
 

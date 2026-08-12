@@ -357,7 +357,7 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_READ_NUM_SUPPORTED_ADV_SETS                0x203B    //!< EXTRA opcode of @ref HCI_LE_ReadNumSupportedAdvSetsCmd
 #define HCI_LE_REMOVE_ADV_SET                             0x203C    //!< EXTRA opcode of @ref HCI_LE_RemoveAdvSetCmd
 #define HCI_LE_CLEAR_ADV_SETS                             0x203D    //!< EXTRA opcode of @ref HCI_LE_ClearAdvSetsCmd
-#define HCI_LE_SET_PERIODIC_ADV_PARAMETERS                0x203E    //!< opcode of @ref HCI_LE_SetPeriodicAdvParamsV1Cmd
+#define HCI_LE_SET_PERIODIC_ADV_PARAMETERS                0x203E    //!< opcode of @ref HCI_LE_SetPeriodicAdvParamsCmd
 #define HCI_LE_SET_PERIODIC_ADV_DATA                      0x203F    //!< opcode of @ref HCI_LE_SetPeriodicAdvDataCmd
 #define HCI_LE_SET_PERIODIC_ADV_ENABLE                    0x2040    //!< opcode of @ref HCI_LE_SetPeriodicAdvEnableCmd
 #define HCI_LE_SET_EXT_SCAN_PARAMETERS                    0x2041    //!< EXTRA opcode of @ref LE_SetExtScanParams
@@ -371,7 +371,6 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_CLEAR_PERIODIC_ADV_LIST                    0x2049    //!< opcode of @ref HCI_LE_ClearPeriodicAdvListCmd
 #define HCI_LE_READ_PERIODIC_ADV_LIST_SIZE                0x204A    //!< opcode of @ref HCI_LE_ReadPeriodicAdvListSizeCmd
 #define HCI_LE_SET_HOST_FEATURE                           0x2074    //!< opcode of @ref HCI_LE_SetHostFeature
-#define HCI_LE_SET_PERIODIC_ADV_PARAMETERS_V2             0x2086    //!< opcode of @ref HCI_LE_SetPeriodicAdvParamsV1CmdV2
 // @endcond // NODOC
 
 /* Powe Control Commands
@@ -383,14 +382,11 @@ extern uint8 hciSmpTaskID;
 #define HCI_LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL         0x2076    //!< opcode of @ref HCI_LE_EnhancedReadTransmitPowerLevelCmd
 #define HCI_LE_READ_REMOTE_TRANSMIT_POWER_LEVEL           0x2077    //!< opcode of @ref HCI_LE_ReadRemoteTransmitPowerLevelCmd
 #define HCI_LE_SET_TRANSMIT_POWER_REPORTING_ENABLE        0x207A    //!< opcode of @ref HCI_LE_SetTransmitPowerReportingEnableCmd
-#define HCI_LE_ENHANCED_TRANSMITTER_TEST_V4               0x207B    //!< opcode of @ref HCI_LE_EnhancedCteTxTestV4Cmd
 
 /* Periodic Advertising with responses */
 
-#define HCI_LE_SET_PERIODIC_ADV_SUBEVENT_DATA             0x2082    //!< opcode of @ref HCI_LE_SetPeriodicAdvSubeventDataCmd
 #define HCI_LE_SET_PERIODIC_ADV_RESPONSE_DATA             0x2083    //!< opcode of @ref HCI_LE_SetPeriodicAdvResponseDataCmd
 #define HCI_LE_SET_PERIODIC_SYNC_SUBEVENT                 0x2084    //!< opcode of @ref HCI_LE_SetPeriodicSyncSubeventCmd
-#define HCI_LE_EXT_CREATE_CONNECTION_V2                   0x2085    //!< opcode of @ref HCI_LE_ExtCreateConnV2 (PAwR connection creation)
 
 // V5.1
 // @cond NODOC
@@ -513,10 +509,6 @@ extern uint8 hciSmpTaskID;
 // Multiple Antennas Vendro Specific commands opcodes
 #define HCI_EXT_SET_DEFAULT_ANTENNA                         0xFC7D    //!< opcode of @ref HCI_EXT_SetDefaultAntennaCmd
 
-// Power Control Range Vendor Specific command opcodes
-#define HCI_EXT_SET_POWER_CTRL_RANGE                        0xFC7E    //!< opcode of @ref HCI_EXT_SetPowerCtrlRangeCmd
-#define HCI_EXT_GET_POWER_CTRL_RANGE                        0xFC7F    //!< opcode of @ref HCI_EXT_GetPowerCtrlRangeCmd
-
 /*
 ** HCI Event Codes
 */
@@ -555,8 +547,8 @@ extern uint8 hciSmpTaskID;
 
 /// @cond NODOC
 #define HCI_BLE_EXTENDED_ADV_REPORT_EVENT                 0x0D      //!< Extended Adv Report
-#define HCI_BLE_PADV_SYNC_ESTAB_EVENT_V1                  0x0E      //!< Periodic Adv Sync Established V1 Event ( device doesn't support PAwR )
-#define HCI_BLE_PADV_REPORT_EVENT_V1                      0x0F      //!< Periodic Adv Report Event V1( device doesn't support PAwR )
+#define HCI_BLE_PADV_SYNC_ESTAB_V1_EVENT                  0x0E      //!< Periodic Adv Sync Established V1 Event ( device doesn't support PAwR )
+#define HCI_BLE_PADV_REPORT_V1_EVENT                      0x0F      //!< Periodic Adv Report Event V1( device doesn't support PAwR )
 #define HCI_BLE_PERIODIC_ADV_SYNCH_LOST_EVENT             0x10      //!< Periodic Adv Synch Lost
 /// @endcond //NODOC
 #define HCI_BLE_SCAN_TIMEOUT_EVENT                        0x11      //!< Scan Timeout
@@ -575,11 +567,9 @@ extern uint8 hciSmpTaskID;
 #define HCI_BLE_TRANSMIT_POWER_REPORTING_EVENT            0x21      //!< Power Control report event (sub event value)
 
 // PAwR events
-#define HCI_BLE_PADV_SYNC_ESTAB_EVENT_V2                  0x24      //!< Periodic Adv Sync Established V2 Event ( device support PAwR )
-#define HCI_BLE_PADV_REPORT_EVENT_V2                      0x25      //!< Periodic Adv Report Event V2( device support PAwR )
+#define HCI_BLE_PADV_SYNC_ESTAB_V2_EVENT                  0x24      //!< Periodic Adv Sync Established V2 Event ( device support PAwR )
+#define HCI_BLE_PADV_REPORT_V2_EVENT                      0x25      //!< Periodic Adv Report Event V2( device support PAwR )
 #define HCI_BLE_PADV_SYNC_TRANSFER_RECEIVED_EVENT_V2      0x26      //!< Periodic Adv Sync transfer received v2
-#define HCI_BLE_PADVA_SUBEVENT_DATA_REQUEST_EVENT         0x27      //!< Periodic Advertising with Responses Subevent Data Request Event
-#define HCI_BLE_PADVA_RESPONSE_REPORT_EVENT               0x28      //!< Periodic Advertising Response Report Event
 #define HCI_BLE_ENHANCED_CONNECTION_COMPLETE_EVENT_V2     0x29      //!< Enhanced Connection complete V2 (PAwR supported)
 
 // CS events
@@ -677,9 +667,6 @@ extern uint8 hciSmpTaskID;
 #define HCI_EXT_RSSI_MON_RSSI_STATISTIC_EVENT              0x0438U   //!< event from @ref HCI_EXT_RssiMon_GetRssiStatCmd
 #define HCI_EXT_RSSI_MON_CB_EVENT                          0x0439U   //!< event from @ref HCI_EXT_RssiMon_ThresholdEvent
 
-// Power control range vendor specific events
-#define HCI_EXT_SET_POWER_CTRL_RANGE_EVENT                 0x043AU   //!< event from @ref HCI_EXT_SetPowerCtrlRangeCmd
-#define HCI_EXT_GET_POWER_CTRL_RANGE_EVENT                 0x043BU   //!< event from @ref HCI_EXT_GetPowerCtrlRangeCmd
 
 #define HCI_EXT_LL_TEST_MODE_EVENT                        0x0470    //!< LL Test Mode
 

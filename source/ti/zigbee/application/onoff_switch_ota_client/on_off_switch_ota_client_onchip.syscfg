@@ -107,40 +107,6 @@ for(var setting in ccfgSettings)
 var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
 zigbee.deviceType                    = ["zed"];
 zigbee.deviceTypeReadOnly            = false;
-zigbee.loggingEnabled                = true;
-
-/* ======== UART Logging ========
- * Logs are sent as binary-encoded data over UART at 115200 baud.
- * A standard serial terminal will show gibberish - use tilogger to decode:
- *
- *   tilogger --elf <path_to>.out uart <COM_PORT> 115200 stdout
- *
- * tilogger requires Python + the tilogger package (pip install tilogger).
- * NOTE: tilogger only works on native Windows, not WSL (binary frames get corrupted).
- *
- * Two log modules are connected to UART:
- *   - LogModule_Zigbee_App:  Application-level events (OTA status, signals, F&B)
- *   - LogModule_Zigbee_OSIF: OSIF-level events (NVS open/close, flash ops)
- * The LLMAC module uses LogSinkBuf (too high-frequency for UART).
- *
- * To disable logging: set zigbee.loggingEnabled = false and remove the
- * LogSinkUART section below. This saves ~2KB RAM and reduces code size.
- */
-/* ======== LogSinkUART ======== */
-const LogSinkUART  = scripting.addModule("/ti/log/LogSinkUART", {}, false);
-const LogSinkUART1 = LogSinkUART.addInstance();
-LogSinkUART1.$name    = "CONFIG_ti_log_LogSinkUART_0";
-LogSinkUART1.baudRate = 115200;
-LogSinkUART1.uart.$name     = "CONFIG_UART2_0";
-LogSinkUART1.uart.$hardware = system.deviceData.board.components.XDS110UART;
-
-/* Connect Zigbee log modules to UART sink */
-zigbee.LogModuleZigbeeApp.loggerSink   = "/ti/log/LogSinkUART";
-zigbee.LogModuleZigbeeApp.logger       = LogSinkUART1;
-zigbee.LogModuleZigbeeApp.enable_INFO  = true;
-zigbee.LogModuleZigbeeOSIF.loggerSink  = "/ti/log/LogSinkUART";
-zigbee.LogModuleZigbeeOSIF.logger      = LogSinkUART1;
-zigbee.LogModuleZigbeeOSIF.enable_INFO = true;
 
 if(system.deviceData.deviceId.match(/CC23.*/))
 {
@@ -166,41 +132,6 @@ for(var setting in rfDesignSettings)
 {
     rfDesign[setting] = rfDesignSettings[setting];
 }
-/* ======== OTA On-Chip Flash Layout ========
- * MCUBoot (overwrite mode) uses two flash slots:
- *   - Primary slot:   running application (flashed at appBase)
- *   - Secondary slot: OTA download staging area (NVS1 / CONFIG_NVSINTERNAL1)
- *
- * The build produces 3 signed images (see ExampleList.js):
- *   _ota_1st_slot.bin  - Padded to slot size. Flash this at appBase via UniFlash.
- *   _ota_2nd_slot.bin  - Padded to slot size. For direct secondary slot testing.
- *   _ota_nopad.bin     - Unpadded (~220KB). Use this for OTA file generation:
- *
- *       zOTAfileGen <name>_ota_nopad.bin <output_dir> BEBE 2340 <version_hex>
- *
- *     The version must be GREATER than the client's file_version in the .c file.
- *     Load the resulting .zigbee file on the Z-Stack OTA server.
- *
- * IMPORTANT: Do NOT use _ota_2nd_slot.bin for zOTAfileGen on devices with large
- * slots (e.g., CC2755P20 at 896KB). OTA .zigbee files >= 512KB fail during
- * discovery. Always use _ota_nopad.bin for OTA transfers.
- *
- * Memory maps per device (MCUBoot overwrite mode, appBase=0x4000):
- *
- *   CC23xx (1M Low+):
- *     Primary: 0x7000,  Slot: 0x46000, Secondary: 0x4D000, NVS_ZB: auto
- *
- *   CC2755P10 (1M High):
- *     Primary: 0x4000,  Slot: 0x60000, Secondary: 0x87000, NVS_ZB: 0xE7000
- *
- *   CC2755P20 (2M High):
- *     Primary:   0x4000  → 0xE4000  (0xE0000, Bank 0)
- *     GAP:       0xE4000 → 0x100000 (0x1C000, Bank 0 unused)
- *     Secondary: 0x100000→ 0x1E0000 (0xE0000, all Bank 1) ← critical: avoids Bank0/Bank1 write conflict
- *     NVS_ZB:    0x1E7000→ 0x1E8000 (4KB, auto-placed, no overlap)
- *     HSM:       0x1E8000→ 0x200000 (96KB)
- *     MCUBoot must match: primarySize1=0xE0000, secondaryBase1=0x100000, secondarySize1=0xE0000
- */
 if(system.deviceData.deviceId.match(/CC23.*/))
 {
     /* ======== Internal Flash for Image Slot 2 ======== */
@@ -219,48 +150,9 @@ if(system.deviceData.deviceId.match(/CC23.*/))
     mcuboot_app.appSlotSize              = 0x00046000;
     mcuboot_app.appSlotSizeCompressed    = 0x00032000;
 }
-else if(system.deviceData.deviceId.match(/CC2755P20.*/))
-{
-    /* ======== CC27xx 2M: Internal Flash for Image Slot 2 ========
-     *
-     * Layout:
-     *   MCUBoot    16 KB   0x000000 – 0x003FFF
-     *   Primary   896 KB   0x004000 – 0x0E3FFF  (Bank 0, entirely)
-     *   GAP       112 KB   0x0E4000 – 0x0FFFFF  (Bank 0 unused — unavoidable)
-     *   Secondary 896 KB   0x100000 – 0x1DFFFF  (Bank 1, entirely)
-     *   FREE       28 KB   0x1E0000 – 0x1E6FFF
-     *   NVS_ZB      4 KB   0x1E7000 – 0x1E7FFF  (auto-placed)
-     *   HSM        96 KB   0x1E8000 – 0x1FFFFF
-     *
-     * Secondary is entirely in Bank 1 — NVS_write() never crosses 0x100000.
-     * NVSLPF3 driver does not support writes spanning Bank 0/Bank 1 boundary
-     * (cross-bank NVS_write returns NVS_STATUS_ERROR — see coresdk_lpf3 bug).
-     *
-     * BOOT_MAGIC at: 0x100000 + 0xE0000 - 16 = 0x1DFFF0
-     *
-     * MCUBoot syscfg (sccm package) must match:
-     *   primarySize1   = 0xE0000
-     *   secondaryBase1 = 0x100000
-     *   secondarySize1 = 0xE0000
-     */
-    const NVS      = scripting.addModule("/ti/drivers/NVS", {}, false);
-    const NVS2       = NVS.addInstance();
-    NVS2.$name                    = "CONFIG_NVSINTERNAL1";
-    NVS2.internalFlash.$name      = "ti_drivers_nvs_NVSLPF30";
-    NVS2.internalFlash.regionType = "Pointer";
-    NVS2.internalFlash.regionBase = 0x100000;
-    NVS2.internalFlash.regionSize = 0xE0000;
-
-    /* ======== MCUBoot App ======== */
-    const mcuboot_app  = scripting.addModule("/ti/common/mcuboot_application");
-    mcuboot_app.imageCompression         = false;
-    mcuboot_app.appBase                  = 0x00004000;
-    mcuboot_app.appSlotSize              = 0x000E0000;
-    mcuboot_app.appSlotSizeCompressed    = 0x000E0000;
-}
 else
 {
-    /* ======== CC27xx 1M: Internal Flash for Image Slot 2 ======== */
+    /* ======== Internal Flash for Image Slot 2 ======== */
     const NVS      = scripting.addModule("/ti/drivers/NVS", {}, false);
     const NVS2       = NVS.addInstance();
     NVS2.$name                    = "CONFIG_NVSINTERNAL1";
@@ -273,6 +165,6 @@ else
     const mcuboot_app  = scripting.addModule("/ti/common/mcuboot_application");
     mcuboot_app.imageCompression         = false;
     mcuboot_app.appBase                  = 0x00004000;
-    mcuboot_app.appSlotSize              = 0x00060000;
-    mcuboot_app.appSlotSizeCompressed    = 0x00060000;
+    mcuboot_app.appSlotSize              = 0x00071000;
+    mcuboot_app.appSlotSizeCompressed    = 0x00071000;
 }

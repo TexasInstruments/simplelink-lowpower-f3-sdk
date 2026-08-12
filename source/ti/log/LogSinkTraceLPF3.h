@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,10 @@
  *  <b>WARNING</b> These APIs are <b>PRELIMINARY</b>, and subject to
  *  change in the next few months.
  *
- *  The LogSinkTraceLPF3 module is a sink that can be used in conjunction with
- *  the Log.h API. The API defined in this file should not be used directly, but
- *  is made available to the Logging framework and used as a transport layer for
- *  Log.h
+ *  The LogSinkTraceLPF3 module is a sink that can be used in conjunction with the
+ *  Log.h API. The API defined in this file should not be used directly, but
+ *  is made available to the Logging framework and used as a transport layer
+ *  for Log.h
  *
  *  To use the LogSinkTraceLPF3 sink, ensure that the correct library for your
  *  device is linked in and include this header file as follows:
@@ -48,52 +48,46 @@
  *  #include <ti/log/LogSinkTraceLPF3.h>
  *  @endcode
  *
- *  Additionally, LogSinkTraceLPF3_init must be called before LogSinkTraceLPF3
- *  can be used. It is called from Board_init() and thus can only be called if
- *  SysConfig is used and the LogSinkTraceLPF3 module is enabled.
+ *  Additionally, LogSinkTraceLPF3_init must be called before LogSinkTraceLPF3 can be used.
+ *  It is called from Board_init() and thus can only be called if SysConfig is used and the LogSinkTraceLPF3 module is
+ * enabled.
  *  @code
  *  // Initialize LogSinkTraceLPF3 sink
  *  LogSinkTraceLPF3_init();
  *  @endcode
  *
  *  This module implements one function that is required by the Log API:
- *   - printf(const Log_Module *handle, uint32_t header, uint32_t headerPtr,
- *     uint32_t numArgs, ...);
+ *   - printf(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint32_t numArgs, ...);
  *
- *  Whenever a log-statement is invoked, that uses LogSinkTraceLPF3 as its sink,
- *  the function above is ultimately invoked.
+ *  Whenever a log-statement is invoked, that uses LogSinkTraceLPF3 as its sink, the function above is ultimately
+ *  invoked.
  *
- *  Note: buf(const Log_Module *handle, uint32_t header, uint32_t headerPtr,
- *  uint8_t *data, size_t size) is not implemented due to hardware limitations
- *  with this sink.
+ *  Note: buf(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint8_t *data, size_t size) is not
+ *  implemented due to hardware limitations with this sink.
  *
  *  @anchor ti_log_LogSinkTraceLPF3_Overview
  *  # Overview
- *  LogSinkTraceLPF3 is a sink/transport layer that is able to output
- *  log-statements over the tracer. The tracer is a hardware module inside the
- *  radio core which can extract logs at high speed. LogSinkTraceLPF3 uses the
- *  tracer to stream data out onto a user-selectable pin. The frequency of the
- *  data stream is set by the RF tracer prescaler which divides the internal 24
- *  MHz clock. Hardware and software needed to decode the data stream is
- *  currently only available through TI.
+ *  LogSinkTraceLPF3 is a sink/transport layer that is able to output log-statements over the tracer.
+ *  The tracer is a hardware module inside the radio core which can extract logs at high speed.
+ *  LogSinkTraceLPF3 uses the tracer to stream data out onto a user-selectable pin. The frequency of the data stream is
+ *  set by the RF tracer prescaler which divides the internal 24 MHz clock. Hardware and software needed to decode the
+ *  data stream is currently only available through TI.
  *
  *  @anchor ti_log_LogSinkTraceLPF3_Channels
  *  # Tracer Channels
- *  LogSinkTraceLPF3 uses certain channels for different purposes. Separate
- *  channels are used for data transfer, time synchronization, etc. Channel 1 is
- *  used for logs inside the CPU. The other channels are used by the internal
+ *  LogSinkTraceLPF3 uses certain channels for different purposes. Separate channels are used for data transfer,
+ *  time synchronization, etc. Channel 1 is used for logs inside the CPU. The other channels are used by the internal
  *  parts of the radio.
  *
  *  @anchor ti_log_LogSinkTraceLPF3_Timestamps
  *  # Tracer Timestamps
- *  Timestamps are automatically generated internally by the tracer hardware
- *  inside the radio core. A synchronization timestamp is sent over the tracer
- *  pin when a log statement is sent. The timestamp resolution is fixed to 0.5
- *  us with a max range of 32 ms.
+ *  Timestamps are automatically generated internally by the tracer hardware inside the radio core. A synchronization
+ *  timestamp is sent over the tracer pin when a log statement is sent. The timestamp resolution is fixed to 0.5 us
+ *  with a max range of 32 ms.
  *
- *  @anchor ti_log_LogSinkTraceLPF3_Parameters The tracer supports a maximum of
- *  four 16bit parameters inside each log statement. If using two parameters or
- *  less, the parameters can be of 32bit.
+ *  @anchor ti_log_LogSinkTraceLPF3_Parameters
+ *  The tracer supports a maximum of four 16bit parameters inside each log statement. If using two parameters or less,
+ * the parameters can be of 32bit.
  *  ============================================================================
  */
 
@@ -129,19 +123,13 @@ extern "C" {
 /*!
  *  @brief  LogSinkTraceLPF3 global configuration
  *
- *  The LogSinkTraceLPF3_Config structure contains settings used to configure
- *  RFtracer.
+ *  The LogSinkTraceLPF3_Config structure contains settings used to configure RFtracer.
  *
- *  The tracerConfig member needs a 3 element combination of the configuration
- *  defines above put together with an OR operation. A valid configuration would
- *  be:
+ *  The tracerConfig member needs a 3 element combination of the configuration defines above put together with an OR
+ * operation. A valid configuration would be: tracerConfig = LogSinkTraceLPF3_CHANNELS_RADIO_ONLY |
+ * LogSinkTraceLPF3_TIMESTAMP_ENABLED | LogSinkTraceLPF3_PRESCALER_DIV3 LRFDTRC_CFG_PRESCAL_DIV3
  *
- *  tracerConfig = LogSinkTraceLPF3_CHANNELS_RADIO_ONLY |
- *  LogSinkTraceLPF3_TIMESTAMP_ENABLED | LogSinkTraceLPF3_PRESCALER_DIV3
- *  LRFDTRC_CFG_PRESCAL_DIV3
- *
- *  lrfdTracerPin, tracerPinMux, tracerPin are all settings needed for the
- *  internal muxing of the tracer pin.
+ *  lrfdTracerPin, tracerPinMux, tracerPin are all settings needed for the internal muxing of the tracer pin.
  */
 
 typedef struct
@@ -159,8 +147,7 @@ extern const LogSinkTraceLPF3_Config LogSinkTraceLPF3_config;
 
 /*!
  *  @cond NODOC
- *  @brief Create a packet from a #Log_printf() call and send it out over RF
- *  Tracer.
+ *  @brief Create a packet from a #Log_printf() call and send it out over RF Tracer.
  *
  *  Function to create a packet from a #Log_printf() call and send it out over
  *  RF Tracer.
@@ -173,10 +160,9 @@ extern const LogSinkTraceLPF3_Config LogSinkTraceLPF3_config;
  *  @note Applications must not call this function directly. This is a helper
  *  function to implement #Log_printf()
  *
- *  @param[in]  handle     Handle to log module
+ *  @param[in]  handle     Unused handle
  *
- *  @param[in]  level      Level of this log statement to compare against
- *                         enabled module level
+ *  @param[in]  header     Unused metadata pointer
  *
  *  @param[in]  headerPtr  Pointer to metadata pointer
  *
@@ -187,27 +173,25 @@ extern const LogSinkTraceLPF3_Config LogSinkTraceLPF3_config;
  *  @endcond
  */
 extern void LogSinkTraceLPF3_printfSingleton(const Log_Module *handle,
-                                             Log_Level level,
+                                             uint32_t header,
                                              uint32_t headerPtr,
                                              uint32_t numArgs,
                                              ...);
 
-extern void LogSinkTraceLPF3_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
+extern void LogSinkTraceLPF3_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
 
-extern void LogSinkTraceLPF3_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
+extern void LogSinkTraceLPF3_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
 
-extern void LogSinkTraceLPF3_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
+extern void LogSinkTraceLPF3_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
 
-extern void LogSinkTraceLPF3_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
+extern void LogSinkTraceLPF3_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
 
 extern void LogSinkTraceLPF3_init(void);
 /*!
  *  @cond NODOC
- *  @brief Create a packet from a #Log_buf() call and send it out over RF
- *  Tracer.
+ *  @brief Create a packet from a #Log_buf() call and send it out over RF Tracer.
  *
- *  This function has not been implemented since it is not supported by the
- *  hardware.
+ *  This function has not been implemented since it is not supported by the hardware.
  *
  *  Function to create a packet from a #Log_buf() call and send it out over
  *  RF Tracer.
@@ -220,10 +204,9 @@ extern void LogSinkTraceLPF3_init(void);
  *  @note Applications must not call this function directly. This is a helper
  *  function to implement #Log_buf
  *
- *  @param[in]  handle     Handle to log module
+ *  @param[in]  handle     Unused handle
  *
- *  @param[in]  level      Level of this log statement to compare against
- *                         enabled module level
+ *  @param[in]  header     Unused metadata pointer
  *
  *  @param[in]  headerPtr  Pointer to metadata pointer
  *
@@ -234,7 +217,7 @@ extern void LogSinkTraceLPF3_init(void);
  *  @endcond
  */
 extern void LogSinkTraceLPF3_bufSingleton(const Log_Module *handle,
-                                          Log_Level level,
+                                          uint32_t header,
                                           uint32_t headerPtr,
                                           uint8_t *data,
                                           size_t size);

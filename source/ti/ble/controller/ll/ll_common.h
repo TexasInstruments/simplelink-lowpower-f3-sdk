@@ -98,13 +98,13 @@ extern "C"
 
 #include <string.h>
 #include <stdint.h>
-#include <ti/drivers/RCL.h>
+#include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>
+#include <ti/drivers/RNG.h>
 #include "ti/drivers/utils/List.h"
 
 #include "ti/ble/controller/ll/ll.h"
 #include "ti/ble/controller/ll/ll_scheduler.h"
-#include "ti/ble/controller/ll/ll_tx_power.h"
 #include "ti/ble/stack_util/health_toolkit/assert.h"
 #include "ti/ble/stack_util/health_toolkit/ble_sys_stat.h"
 /*******************************************************************************
@@ -199,8 +199,6 @@ extern "C"
 
 #define CONVERT_1US_TO_0_625MS( us )         ( (us) / 625 )     //!< Convert US to 0.625 ms
 #define CONVERT_1_25MS_TO_0_625MS( ms )      ( ms << 1 )      //!< Convert 1.25 ms to 0.625 ms
-#define CONVERT_0_125MS_TO_US(ms)            ( ms * 125)      //!< Convert 0.125ms to us
-#define CONVERT_1_25MS_TO_US(ms)             ( (ms) * 1250)   //!< Convert 1.25ms to us
 
 /*******************************************************************************
  * CONSTANTS
@@ -223,7 +221,6 @@ extern "C"
 #define LL_STATE_MODEM_TEST_TX_FREQ_HOPPING            0x0D
 #define LL_STATE_CONN_MONITOR                          0x0E
 #define LL_STATE_CS_PRECAL                             0x0F
-#define LL_STATE_RESET                                 0x10
 // Extended Advertising
 
 // Pre release flag for the health check
@@ -679,7 +676,6 @@ extern char *llCtrl_BleLogStrings[];
 
 // Feature Set Related
 #define LL_MAX_FEATURE_SET_SIZE                        8         // in bytes
-#define LL_MAX_FEATURE_BIT_NUMBER                      0x3F      // maximum bit number (63)
 //
 #define LL_FEATURE_NONE                                0x00
 
@@ -723,30 +719,30 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_FEATURE_PERIODIC_ADV_SYNC_TRANSFER_RECV     0x02          //     "Y"
 #define LL_FEATURE_SLEEP_CLOCK_ACCURACY_UPDATES        0x04          //     "Y"
 #define LL_FEATURE_REMOTE_PUBLIC_KEY_VALIDATION        0x08          //     "N"
-#define LL_FEATURE_CONNECTED_ISOCHRONOUS_STREAM_CENTRAL 0x10         //     "Y"
-#define LL_FEATURE_CONNECTED_ISOCHRONOUS_STREAM_PERIPHERAL 0x20      //     "Y"
+#define LL_FEATURE_CONNECTED_ISOCHROOUS_STREAM_CENTRAL 0x10          //     "Y"
+#define LL_FEATURE_CONNECTED_ISOCHROOUS_STREAM_PERIPHERAL 0x20       //     "Y"
 #define LL_FEATURE_ISOCHRONOUS_BROADCASTER             0x40          //     "Y"
 #define LL_FEATURE_SYNCRONIZED_RECEIVER                0x80          //     "Y"
 // Byte 4
-#define LL_FEATURE_CONNECTED_ISOCHRONOUS_STREAM_HOST   0x01          //     "Y"
+#define LL_FEATURE_CONNECTED_ISOCHROOUS_STREAM_HOST    0x01          //     "Y"
 #define LL_FEATURE_LE_PWR_CTRL_REQ                     0x02          //     "Y"
 #define LL_FEATURE_LE_PWR_CTRL_REQ_2                   0x04          //     "Y"
 #define LL_FEATURE_LE_PATH_LOSS_MONITORING             0x08          //     "Y"
 #define LL_FEATURE_PERIODIC_ADVERTISING_ADI_SUPPORT    0x10          //     "O"
 #define LL_FEATURE_CONNECTION_SUBRATING                0x20          //     "Y"
-#define LL_FEATURE_CONNECTION_SUBRATING_HOST_SUPPORT   0x40          //     "Y"
+#define LL_FEATURE_CONNECTION_SUBRAING_HOST_SUPPORT    0x40          //     "Y"
 #define LL_FEATURE_CHANNEL_CLASSIFICATION              0x80          //     "Y"
 // Byte 5
-#define LL_FEATURE_ADV_CODING_SELECTION                0x01
-#define LL_FEATURE_ADV_CODING_SELECTION_HOST_SUPPORT   0x02
+#define LL_FEATURE_RESERVED0                           0x01
+#define LL_FEATURE_RESERVED1                           0x02
 #define LL_FEATURE_DECISION_BASED                      0x04
-#define LL_FEATURE_PAWR_ADVERTISER                     0x08
+#define LL_FEATURE_RESERVED3                           0x08
 #define LL_FEATURE_PAWR_SCANNER                        0x10
 #define LL_FEATURE_RESERVED5                           0x20
 #define LL_FEATURE_CS                                  0x40
 #define LL_FEATURE_CS_HOST                             0x80
 // Byte 6
-#define LL_FEATURE_CS_TONE_QUALITY_IND                 0x01
+#define LL_FEATURE_RESERVED0                           0x01
 #define LL_FEATURE_RESERVED1                           0x02
 #define LL_FEATURE_RESERVED2                           0x04
 #define LL_FEATURE_RESERVED3                           0x08
@@ -796,19 +792,6 @@ extern char *llCtrl_BleLogStrings[];
 #define LL_FEATURE_BYTE_5                             0x5
 #define LL_FEATURE_BYTE_6                             0x6
 #define LL_FEATURE_BYTE_7                             0x7
-
-// Host Controlled Feature Bits, per BLE Core Spec v6.2, Vol 6, Part B, Section 4.6 - Feature support.
-// These defines hold bits that can be set by the Host using HCI_LE_Set_Host_Feature
-#define LL_HOST_CONTROLLED_BYTE_0                     0x00
-#define LL_HOST_CONTROLLED_BYTE_1                     0x00
-#define LL_HOST_CONTROLLED_BYTE_2                     0x00
-#define LL_HOST_CONTROLLED_BYTE_3                     0x00
-#define LL_HOST_CONTROLLED_BYTE_4                     ( LL_FEATURE_CONNECTED_ISOCHRONOUS_STREAM_HOST | \
-                                                        LL_FEATURE_CONNECTION_SUBRATING_HOST_SUPPORT ) // Bits 0 and 6
-#define LL_HOST_CONTROLLED_BYTE_5                     ( LL_FEATURE_ADV_CODING_SELECTION_HOST_SUPPORT | \
-                                                        LL_FEATURE_CS_HOST )                           // Bits 1 and 7
-#define LL_HOST_CONTROLLED_BYTE_6                     0x00
-#define LL_HOST_CONTROLLED_BYTE_7                     0x00
 
 // Rx Ifs Timeout
 #define LL_RF_RX_IFS_TIMEOUT                           0x10A6  // halfword write rxIfsTimeout
@@ -1145,10 +1128,6 @@ typedef struct
   uint16 subverNum;                                  // implementation version
 } verInfo_t;
 
-////////////////////////////////////////////////////////
-//// Periodic Advertising structures ///////////////////
-////////////////////////////////////////////////////////
-
 typedef struct
 {
   uint32                            packetOffset;          // Time from a reference point to the start of the AUX_SYNC_IND in usec
@@ -1171,31 +1150,6 @@ typedef struct
   llPeriodicChanMap_t               next;                  // new channel map
   uint8                             updated;               // channel map was updated
 } llPeriodicAdvChanMap_t;
-
-// This enum defines the type of periodic advertising set.
-// It is used to differentiate between periodic advertising with and without responses.
-typedef enum
-{
-  LL_PERIODIC_ADV_TYPE_WITHOUT_RESPONSES,   // Periodic advertising without responses
-  LL_PERIODIC_ADV_TYPE_WITH_RESPONSES,      // Periodic advertising with responses
-  LL_PERIODIC_ADV_TYPE_UNKNOWN_IDENTIFIER   // invalid periodic advertising identifier
-} llPeriodicAdvSetType_e;
-
-// This struct holds the information required to transfer periodic advertising and periodic
-// scan sync information
-typedef struct
-{
-  llPeriodicChanMap_t     *pChannelMap;           // Pointer to channel map for periodic advertising
-  llPeriodicAdvSyncInfo_t syncInfo;               // Sync information in LL_PERIODIC_SYNC_IND
-  uint32_t                lastPeriodicEventTime;  // Time of the last periodic advertising event in RAT
-  uint16_t                periodcInterval;        // Periodic advertising interval in 1.25 ms units
-  uint16_t                lastPeriodicEventCount; // Event counter of the last periodic advertising event
-  uint8_t                 *pPAwRParams;           // pPAwR params (if supported).
-  uint8_t                 sid;                    // SID of the periodic advertising set
-  uint8_t                 advAddrType;            // Type of the periodic advertiser address
-  uint8_t                 advAddr[B_ADDR_LEN];    // Periodic advertiser address
-  uint8_t                 phy;                    // PHY used for periodic advertising
-} llPeriodicSyncTransferInfo_t;
 
 /*
 ** Connection Data
@@ -1552,9 +1506,6 @@ struct llConn_t
   phyInfo_t         phyInfo;                            // PHY info for update
   uint8             phyUpdateSentOrReceivedInd ;        // indicates that there was a phy update sent or recieved
 
-  // RX PHY
-  RCL_Ble5_RxPhy    lastRxPhy;                          // PHY of last packet received on this connection
-
   chSelAlgo_t       pChSelAlgo;                         // function for data channel algorithm
 
   extFeatureMask_t  extFeatureMask;                     // features can highjack this bitmap which is connection oriented
@@ -1833,15 +1784,18 @@ extern volatile uint8 numFailedTx;
 // Host Connection Event Notice Callback
 extern llConnEvtNotice_t llConnEvtNotice;
 
+// TRNG handle
+extern RNG_Handle trngHandle;
+
 // QOS PARAMETERS
 //***************
 // Qos default parameters
-extern uint8_t  qosDefaultPriorityConnParameter;
-extern uint8_t  qosDefaultPriorityAdvParameter;
-extern uint8_t  qosDefaultPriorityScnParameter;
-extern uint8_t  qosDefaultPriorityInitParameter;
-extern uint8_t  qosDefaultPriorityPerAdvParameter;
-extern uint8_t  qosDefaultPriorityPerScnParameter;
+extern uint8  qosDefaultPriorityConnParameter;
+extern uint8  qosDefaultPriorityAdvParameter;
+extern uint8  qosDefaultPriorityScnParameter;
+extern uint8  qosDefaultPriorityInitParameter;
+extern uint8  qosDefaultPriorityPerAdvParameter;
+extern uint8  qosDefaultPriorityPerScnParameter;
 extern uint8  defaultChannelMap[LL_NUM_BYTES_FOR_CHAN_MAP];
 
 extern const uint8 ctrlPktLenTable[NUM_OF_CTRL_PKT];
@@ -1856,7 +1810,6 @@ extern void (*taskEndAction)( void );
 ** Link Layer Common
 */
 uint8                llHaltRadio( uint32 );
-void                 llHaltRadioAndPend( uint32 );
 
 uint16               llGetCsConnTaskID( void );
 void                 llGetTimeToStableXOSC( void );
@@ -1927,10 +1880,7 @@ void                 llAlignToNextEvent( llConnState_t *connPtr );
 void                 llGetAdvChanPDU( uint8 *, uint8 *, uint8 *, uint8 *, uint8 *, int8 * );
 void                 llSecTaskInitiatorHandle( taskInfo_t* secTask, RCL_Command* secCmd, llConnState_t* nextConnPtr, uint32_t* timeGap, uint32_t curTime );
 void                 llUpdateTimeGapForInitiator( uint32_t* timeGap );
-uint8_t              llIsScanWindowActive( uint32_t time );
-void                 llScanSetTaskAnchorScanWindow( uint32_t absStartTime );
-void                 llScanSetRclScanWindow( uint32_t absStartTime );
-void                 llAdjustScanStartTimeForConnWindow( taskInfo_t* secTask, llConnState_t* nextConnPtr, RCL_Command* secCmd, uint32_t* timeGap, uint32_t curTime );
+void                 llUpdateTimeGapForScanWindow( taskInfo_t* secTask, llConnState_t* nextConnPtr, RCL_Command* secCmd, uint32_t* timeGap, uint32_t curTime );
 void                 LL_GetConnTxUsageParams( llTxUsageParams_t *pConnTxParams );
 uint32_t             llConnCalculatePacketTime( uint16_t octets, uint8_t llPhy, uint8_t llPhyOpts );
 
@@ -1956,7 +1906,7 @@ uint8                llDataQEmpty( llDataQ_t * );
 void                 llProcessTxData( void );
 uint8                llWriteTxData( llConnState_t *, uint8 *, uint8 , uint8, uint8 );
 void                 llCombinePDU( uint16, uint8 *, uint16, uint8 );
-uint8                llFragmentPDU( llConnState_t *, uint8 *, uint16, uint8 );
+uint8                llFragmentPDU( llConnState_t *, uint8 *, uint16 );
 uint8                *llMemCopySrc( uint8 *, uint8 *, uint8 );
 uint8                *llMemCopyDst( uint8 *, uint8 *, uint8 );
 void                 llUpdateRxBuffersForActiveConnections(List_List *rxBuffers);
@@ -1995,12 +1945,6 @@ void                 llProcessScanRxFIFO( uint8 scanStatus );
 void                 llInit_TaskConnect( void );
 void                 llExtInit_ResolveConnRsp( void );
 void                 llSetPeerAddress( uint8_t* advPkt, llConnState_t *connPtr );
-uint8_t              llInitActivateCentralConn(llConnState_t *connPtr, uint32_t anchorPoint);
-void                 llInitPrepareConnParams(llConnState_t *connPtr);
-uint8_t              llInitSetupConnCmd(llConnState_t *connPtr, llTxPowerRfCmd_t txPower);
-uint8_t              llResolveConnRspAddr(RCL_Buffer_DataEntry *pDataEntryLast,
-                                          uint8_t privacyPolicy,
-                                          uint8_t *pRlIndex);
 
 // Central Task End Cause
 void                 llCentral_TaskEnd( void );
@@ -2044,7 +1988,7 @@ void                 llSendConnEvtCallback( uint8 connEvtStatus, uint16 numPkts,
 
 // LL Process Event functions
 void                 llProcessScanTimeout( void );
-void                 llProcessCentralConnectionCreated( uint8_t advHandle );
+void                 llProcessCentralConnectionCreated( void );
 void                 llProcessPeripheralConnectionCreated( llConnState_t* connPtr, uint8_t ownAddType, uint16_t pAdvSyncHandle );
 void                 llProcessAdvAddrResolutionTimeout( void );
 void                 llProcessPeriConnectionEstablishFailed( uint8_t reason );
@@ -2099,7 +2043,7 @@ uint8 llQueryTxQueue(uint32 addr);
 uint8 llValidateConnectIndPkt( uint8 * );
 
 // Check if there is a control procedure with instant active for a specific connection
-uint8 llConnIsInstantProcedurePending(llConnState_t *connPtr);
+uint8 llCheckConnInstant(llConnState_t *connPtr);
 
 // Removes the handover connection from activeConns list
 void llRemoveHandoverConn(uint8_t *activeConnsArray, uint8_t numActiveConns);
@@ -2134,9 +2078,6 @@ bool llCompareAddresses( uint8_t *pAddr1, uint8_t addrType1,
                          uint8_t *pAddr2, uint8_t addrType2 );
 
 uint32_t llEstimateConnMinTimeLength(uint16_t connId);
-
-// Update effective data length times when PHY changes and notify host if changed
-void llUpdateDataLengthOnPhyChange(llConnState_t *connPtr, uint8 phy);
 
 #ifdef __cplusplus
 }

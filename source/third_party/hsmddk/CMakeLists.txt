@@ -33,100 +33,65 @@ include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc27xx.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc35xx.cmake)
 
-# Regular expressions used to split SUPPORTED_PLATFORMS into a per-family list.
-# Lists are stringified on the form "cc13x1;cc35xx;...", so the resulting list
-# should include everything until (but not including) the next semicolon (;),
-# or when end of string ($) is reached.
-set(LPF3_REGEX "cc(23|27)[^;$]*")
-set(WFF3_REGEX "cc35[^;$]*")
+ti_init_package(NAMESPACE ThirdPartyHSMDDKLib)
 
-# For each item in SUPPORTED_PLATFORMS, add it to a family-specific list
-string(REGEX MATCHALL "${LPF3_REGEX}" LPF3_PLATFORMS "${SUPPORTED_PLATFORMS}")
-string(REGEX MATCHALL "${WFF3_REGEX}" WFF3_PLATFORMS "${SUPPORTED_PLATFORMS}")
+foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
+    if(${TI_PLATFORM} STREQUAL "cc27xx")
+        ti_init_package(NAMESPACE ThirdPartyHSMDDKLib PACKAGE_NAME CC27XX DEPENDS_ON DriversLPF3 TiUtils)
 
-if(LPF3_PLATFORMS)
-    ti_init_package(NAMESPACE ThirdPartyHSMDDKLib
-        PACKAGE_NAME
-            LPF3
-            DEPENDS_ON
-            DriversLPF3
-    )
-    foreach(TI_PLATFORM ${LPF3_PLATFORMS})
-        if(${TI_PLATFORM} MATCHES "cc27xxx")
-            if(${TI_PLATFORM} STREQUAL "cc27xxx10")
-                ti_add_package_dependency(DriverlibCC27XXX10)
-            elseif(${TI_PLATFORM} STREQUAL "cc27xxx20")
-                ti_add_package_dependency(DriverlibCC27XXX20)
-            endif()
+        ti_add_package_dependency(DriverlibCC27XX)
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}
+            SOURCES ${SOURCES_CC27XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
 
-            ti_add_package_dependency(DriversLPF3)
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}_its
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}_its
+            SOURCES ${SOURCES_ITS_CC27XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
 
-            ti_add_library(
-                hsmddk_${TI_PLATFORM}
-                OUTPUT_NAME hsmddk_${TI_PLATFORM}
-                SOURCES ${SOURCES_CC27XX}
-                ARCH m33f
-                ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-                Driverlib::${TI_PLATFORM}
-            )
+        if (${TI_TOOLCHAIN_NAME} MATCHES "ticlang|gcc")
+            target_compile_options(hsmddk_${TI_PLATFORM}_its PRIVATE -mcmse)
+        elseif (${TI_TOOLCHAIN_NAME} MATCHES "iar")
+            target_compile_options(hsmddk_${TI_PLATFORM}_its PRIVATE --cmse)
+        endif ()
 
-            ti_add_library(
-                hsmddk_${TI_PLATFORM}_its
-                OUTPUT_NAME hsmddk_${TI_PLATFORM}_its
-                SOURCES ${SOURCES_ITS_CC27XX}
-                ARCH m33f
-                ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-                Driverlib::${TI_PLATFORM}
-            )
 
-            if (${TI_TOOLCHAIN_NAME} MATCHES "ticlang|gcc")
-                target_compile_options(hsmddk_${TI_PLATFORM}_its PRIVATE -mcmse)
-            elseif (${TI_TOOLCHAIN_NAME} MATCHES "iar")
-                target_compile_options(hsmddk_${TI_PLATFORM}_its PRIVATE --cmse)
-            endif()
+        ti_export_package()
+    elseif(${TI_PLATFORM} MATCHES "cc35")
+        ti_init_package(NAMESPACE ThirdPartyHSMDDKLib PACKAGE_NAME CC35XX DEPENDS_ON DriversWFF3 TiUtils)
 
-        endif()
-    endforeach()
+        ti_add_package_dependency(DriverlibCC35XX)
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}
+            SOURCES ${SOURCES_CC35XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
 
-    ti_export_package()
-endif() # if(LPF3_PLATFORMS)
+        ti_add_library(
+            hsmddk_${TI_PLATFORM}_its
+            OUTPUT_NAME hsmddk_${TI_PLATFORM}_its
+            SOURCES ${SOURCES_ITS_CC35XX}
+            ARCH m33f
+            ADD_SDK_INCLUDE_PATH source
+            LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            Driverlib::${TI_PLATFORM}
+        )
 
-if(WFF3_PLATFORMS)
-    ti_init_package(NAMESPACE ThirdPartyHSMDDKLib
-        PACKAGE_NAME
-            WFF3
-            DEPENDS_ON
-            DriversWFF3
-    )
-    foreach(TI_PLATFORM ${WFF3_PLATFORMS})
-        if(${TI_PLATFORM} MATCHES "cc35")
-            ti_add_package_dependency(DriverlibCC35XX)
-            ti_add_package_dependency(DriversWFF3)
-
-            ti_add_library(
-                hsmddk_${TI_PLATFORM}
-                OUTPUT_NAME hsmddk_${TI_PLATFORM}
-                SOURCES ${SOURCES_CC35XX}
-                ARCH m33f
-                ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-                Driverlib::${TI_PLATFORM}
-            )
-
-            ti_add_library(
-                hsmddk_${TI_PLATFORM}_its
-                OUTPUT_NAME hsmddk_${TI_PLATFORM}_its
-                SOURCES ${SOURCES_ITS_CC35XX}
-                ARCH m33f
-                ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-                Driverlib::${TI_PLATFORM}
-            )
-
-        endif()
-    endforeach()
-
-    ti_export_package()
-endif() # if(WFF3_PLATFORMS)
+        ti_export_package()
+    endif()
+endforeach()

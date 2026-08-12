@@ -568,7 +568,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
 
     if (bs->state == BOOT_STATUS_STATE_0) {
         BOOT_LOG_DBG("erasing scratch area");
-        rc = boot_erase_region(fap_scratch, 0, flash_area_get_size(fap_scratch));
+        rc = boot_erase_region(fap_scratch, 0, fap_scratch->fa_size);
         assert(rc == 0);
 
         if (bs->idx == BOOT_STATUS_IDX_0) {
@@ -592,7 +592,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
 
                 /* Erase the temporary trailer from the scratch area. */
                 rc = boot_erase_region(fap_scratch, 0,
-                        flash_area_get_size(fap_scratch));
+                        fap_scratch->fa_size);
                 assert(rc == 0);
             }
         }
@@ -689,7 +689,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
         BOOT_STATUS_ASSERT(rc == 0);
 
         if (erase_scratch) {
-            rc = boot_erase_region(fap_scratch, 0, flash_area_get_size(fap_scratch));
+            rc = boot_erase_region(fap_scratch, 0, fap_scratch->fa_size);
             assert(rc == 0);
         }
     }
@@ -854,7 +854,7 @@ int app_max_size(struct boot_loader_state *state)
     fa_id = flash_area_id_from_multi_image_slot(BOOT_CURR_IMG(state), active_slot);
     rc = flash_area_open(fa_id, &fap);
     assert(rc == 0);
-    primary_sz = flash_area_get_size(fap);
+    primary_sz = fap->fa_size;
     flash_area_close(fap);
 
     if (active_slot == BOOT_PRIMARY_SLOT) {
@@ -866,7 +866,7 @@ int app_max_size(struct boot_loader_state *state)
     fa_id = flash_area_id_from_multi_image_slot(BOOT_CURR_IMG(state), active_slot);
     rc = flash_area_open(fa_id, &fap);
     assert(rc == 0);
-    secondary_sz = flash_area_get_size(fap);
+    secondary_sz = fap->fa_size;
     flash_area_close(fap);
 
     return (secondary_sz < primary_sz ? secondary_sz : primary_sz);

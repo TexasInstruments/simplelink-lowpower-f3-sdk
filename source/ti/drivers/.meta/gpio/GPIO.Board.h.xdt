@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2021, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,29 +42,14 @@
 /*
  *  ======== GPIO ========
  */
-#include <ti/drivers/GPIO.h>
-
-#define GPIO_NUMBER_OF_CONFIGS `GPIO.getPinData(GPIO).length`
-
 % for (let inst of GPIO.$instances) {
 % if (inst.$ownedBy) {
 /* Owned by `inst.$ownedBy.$name` as `inst.parentDescription` */
 % }
 extern const uint_least8_t `inst.$name`_CONST;
 #define `inst.$name` `GPIO.getDioForInst(inst)`
-% if (inst.alternativeMux !== "None") {
-/* Mux option to connect `inst.$name` to `inst.alternativeMux` */
-#define `inst.$name`_ALT_MUX `GPIO._getPinMuxModeFromPin(inst.pinPeripheral.gpioPin)`
-% }
 
 % }
-
-% if (GPIO._getShuffleNetworkRoutes) {
-% let routes = GPIO._getShuffleNetworkRoutes(GPIO);
-extern GPIOLPF4_ShuffleNetworkRoute GPIOLPF4_shuffleNetworkRoutesArray[`routes.length`];
-extern const GPIOLPF4_ShuffleNetworkRoutes GPIOLPF4_shuffleNetworkRoutes;
-% }
-
 /* The range of pins available on this device */
 extern const uint_least8_t GPIO_pinLowerBound;
 extern const uint_least8_t GPIO_pinUpperBound;

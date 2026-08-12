@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_rcl_RCL_Command__include
-#define ti_drivers_rcl_RCL_Command__include
+#ifndef ti_drivers_RCL_Command_h__include
+#define ti_drivers_RCL_Command_h__include
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -142,7 +142,7 @@ typedef enum RCL_CommandStatus_e {
  *
  *  Type of stop to perform
  */
-typedef enum RCL_StopType_e {
+typedef enum {
     RCL_StopType_None = 0,        /*!< No stop requested */
     RCL_StopType_DescheduleOnly,  /*!< Stop a command that is queued or pending start, but do not stop it from running */
     RCL_StopType_Graceful,        /*!< Stop the command gracefully, that is finish a packet or transaction in progress before ending */
@@ -154,7 +154,7 @@ typedef enum RCL_StopType_e {
  *
  *  The type of scheduling used for a command
  */
-typedef enum RCL_ScheduleType_e {
+typedef enum  {
     RCL_Schedule_Now = 0,               /*!< Schedule the command to start as soon as possible */
     RCL_Schedule_AbsTime = 1,           /*!< Schedule command to start at a given time; give error if delays occur */
 } RCL_ScheduleType;
@@ -164,7 +164,7 @@ typedef enum RCL_ScheduleType_e {
  *
  *  How will this command interact with an already running and overlapping command
  */
-typedef enum RCL_ConflictPolicy_e {
+typedef enum {
     RCL_ConflictPolicy_AlwaysInterrupt = 0, /*!< Always stop a running command if necessary to run this command */
     RCL_ConflictPolicy_Polite = 1,          /*!< Stop a running command unless it is communicating, i.e. transmitting or is actively receiving */
     RCL_ConflictPolicy_NeverInterrupt = 2,  /*!< Never stop an ongoing command */
@@ -178,9 +178,9 @@ typedef enum RCL_ConflictPolicy_e {
 struct RCL_Command_s {
     uint16_t cmdId;                         /*!< Command ID */
     uint16_t phyFeatures;                   /*!< PHY feature selector; use 0 if only one PHY */
-    RCL_ScheduleType scheduling;            /*!< Scheduling type */
-    RCL_CommandStatus status;               /*!< Status of command */
-    RCL_ConflictPolicy conflictPolicy;      /*!< Conflict resolution policy */
+    RCL_ScheduleType scheduling : 8;        /*!< Scheduling type */
+    RCL_CommandStatus status    : 8;        /*!< Status of command */
+    RCL_ConflictPolicy conflictPolicy : 8;  /*!< Conflict resolution policy */
     bool allowDelay;                        /*!< Start may be delayed */
     RCL_CommandRuntime runtime;             /*!< Runtime information */
     RCL_CommandTiming timing;               /*!< Timing information */
@@ -193,7 +193,7 @@ struct RCL_Command_s {
     .scheduling = RCL_Schedule_Now,                         \
     .status  = RCL_CommandStatus_Idle,                      \
     .conflictPolicy = RCL_ConflictPolicy_AlwaysInterrupt,   \
-    .allowDelay = (bool) false,                                    \
+    .allowDelay = false,                                    \
     .runtime = {                                            \
         .handler = _handler,                                \
     },                                                      \
@@ -209,7 +209,7 @@ struct RCL_Command_s {
  *  @brief Type for Coex priority
  *
  */
-typedef enum RCL_Command_CoexPriority_e {
+typedef enum {
     RCL_CoexPriority_Low = 0,                   /*!< Low priority */
     RCL_CoexPriority_High = 1,                  /*!< High priority */
 } RCL_Command_CoexPriority;
@@ -218,7 +218,7 @@ typedef enum RCL_Command_CoexPriority_e {
  *  @brief Type for Coex receive mode
  *
  */
-typedef enum RCL_Command_CoexRxMode_e {
+typedef enum {
     RCL_CoexRxMode_AlwaysRequest = 0,           /*!< Always assert request while in RX */
     RCL_CoexRxMode_RequestOnPacket = 1,         /*!< Request assert in RX only on indication of a packet to receive */
 } RCL_Command_CoexRxMode;
@@ -264,4 +264,4 @@ static inline void RCL_Command_setRawTxPower(uint32_t registerSetting, uint32_t 
     LRF_setRawTxPower(registerSetting, temperatureCoefficient);
 }
 
-#endif /* ti_drivers_rcl_RCL_Command__include */
+#endif /* ti_drivers_RCL_Command_h__include */

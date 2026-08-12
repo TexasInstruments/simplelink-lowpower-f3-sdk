@@ -83,57 +83,6 @@ extern "C"
 #define BLEAppUtil_malloc   ICall_malloc
 #define BLEAppUtil_free     ICall_free
 #define BLEAppUtil_freeMsg  ICall_freeMsg
-
-/*********************************************************************
- * ADVERTISING DEFINES
- */
-
-/**
- *  @defgroup BLEAppUtil_Advertising_Defines BLEAppUtil Advertising Defines
- *  @brief Advertising parameter defines for BLEAppUtil
- *  @{
- */
-/// Advertising channel map - use all channels (37, 38, 39)
-#define BLEAPPUTIL_ADV_CHAN_ALL                         GAP_ADV_CHAN_ALL
-
-/// Peer address type - Public or Public Identity Address
-#define BLEAPPUTIL_PEER_ADDRTYPE_PUBLIC_OR_PUBLIC_ID    PEER_ADDRTYPE_PUBLIC_OR_PUBLIC_ID
-
-/// Peer address type - Random or Random Identity Address
-#define BLEAPPUTIL_PEER_ADDRTYPE_RANDOM_OR_RANDOM_ID    PEER_ADDRTYPE_RANDOM_OR_RANDOM_ID
-
-/// Advertising filter policy - Process all requests
-#define BLEAPPUTIL_ADV_AL_POLICY_ANY_REQ                GAP_ADV_AL_POLICY_ANY_REQ
-
-/// TX power - No preference (use maximum)
-#define BLEAPPUTIL_ADV_TX_POWER_NO_PREFERENCE           GAP_ADV_TX_POWER_NO_PREFERENCE
-
-/// Primary PHY - 1 Mbps
-#define BLEAPPUTIL_ADV_PRIM_PHY_1_MBPS                  GAP_ADV_PRIM_PHY_1_MBPS
-
-/// Primary PHY - Coded
-#define BLEAPPUTIL_ADV_PRIM_PHY_CODED                   GAP_ADV_PRIM_PHY_CODED
-
-/// Secondary PHY - 1 Mbps
-#define BLEAPPUTIL_ADV_SEC_PHY_1_MBPS                   GAP_ADV_SEC_PHY_1_MBPS
-
-/// Secondary PHY - 2 Mbps
-#define BLEAPPUTIL_ADV_SEC_PHY_2_MBPS                   GAP_ADV_SEC_PHY_2_MBPS
-
-/// Secondary PHY - Coded
-#define BLEAPPUTIL_ADV_SEC_PHY_CODED                    GAP_ADV_SEC_PHY_CODED
-
-/// Advertising enable option - use maximum duration
-#define BLEAPPUTIL_ADV_START_ENABLE_OPTIONS_USE_MAX     GAP_ADV_ENABLE_OPTIONS_USE_MAX
-
-/// Advertising enable option - use specified duration
-#define BLEAPPUTIL_ADV_START_ENABLE_OPTIONS_USE_DURATION GAP_ADV_ENABLE_OPTIONS_USE_DURATION
-
-/// Advertising enable option - use max events
-#define BLEAPPUTIL_ADV_START_ENABLE_OPTIONS_USE_MAX_EVENTS GAP_ADV_ENABLE_OPTIONS_USE_MAX_EVENTS
-
-/** @} End BLEAppUtil_Advertising_Defines */
-
 /*********************************************************************
  * TYPEDEFS
  */
@@ -195,26 +144,6 @@ typedef void (*InvokeFromBLEAppUtilContext_t)(char *pData);
 
 /** @} End BLEAppUtil_Functions_Typedefs */
 
-/**
- *  @defgroup BLEAppUtil_GAP_Typedefs BLEAppUtil GAP Typedefs
- *  @brief GAP-related type definitions wrapped by BLEAppUtil
- *  @{
- */
-
-/// Advertising parameters structure
-typedef GapAdv_params_t                         BLEAppUtil_AdvParams_t;
-
-/// Periodic advertising parameters structure
-typedef GapAdv_periodicAdvParams_t              BLEAppUtil_PeriodicAdvParams_t;
-
-/// Periodic advertising data structure
-typedef GapAdv_periodicAdvData_t                BLEAppUtil_PeriodicAdvData_t;
-
-/// Periodic advertising sync creation parameters structure
-typedef GapScan_PeriodicAdvCreateSyncParams_t   BLEAppUtil_PeriodicAdvSyncParams_t;
-
-/** @} End BLEAppUtil_GAP_Typedefs */
-
 /*********************************************************************
  * Enumerators
  */
@@ -253,20 +182,19 @@ typedef enum BLEAppUtil_eventHandlerType_e
 typedef enum BLEAppUtil_GAPConnEventMaskFlags_e
 {
     BLEAPPUTIL_LINK_ESTABLISHED_EVENT               = (uint32_t)BV(0),   //!< Link established event
-    BLEAPPUTIL_LINK_ESTABLISHED_EVENT_V2            = (uint32_t)BV(1),   //!< Enhanced connection complete V2 event
-    BLEAPPUTIL_LINK_TERMINATED_EVENT                = (uint32_t)BV(2),   //!< Link terminated event
-    BLEAPPUTIL_CONNECTING_CANCELLED_EVENT           = (uint32_t)BV(3),   //!< Connecting cancelled event
-    BLEAPPUTIL_LINK_PARAM_UPDATE_EVENT              = (uint32_t)BV(4),   //!< Link parameters update event
-    BLEAPPUTIL_LINK_PARAM_UPDATE_REQ_EVENT          = (uint32_t)BV(5),   //!< Link parameters update request event
-    BLEAPPUTIL_LINK_PARAM_UPDATE_REJECT_EVENT       = (uint32_t)BV(6),   //!< Link parameters update reject event
-    BLEAPPUTIL_SIGNATURE_UPDATED_EVENT              = (uint32_t)BV(7),   //!< Signature updated event
-    BLEAPPUTIL_AUTHENTICATION_COMPLETE_EVENT        = (uint32_t)BV(8),   //!< Authentication complete event
-    BLEAPPUTIL_PASSKEY_NEEDED_EVENT                 = (uint32_t)BV(9),   //!< Passkey needed event
-    BLEAPPUTIL_PERIPHERAL_REQUESTED_SECURITY_EVENT  = (uint32_t)BV(10),  //!< Peripheral requested security event
-    BLEAPPUTIL_BOND_COMPLETE_EVENT                  = (uint32_t)BV(11),  //!< Bond complete event
-    BLEAPPUTIL_PAIRING_REQ_EVENT                    = (uint32_t)BV(12),  //!< Pairing request event
-    BLEAPPUTIL_AUTHENTICATION_FAILURE_EVT           = (uint32_t)BV(13),  //!< Authentication failure event
-    BLEAPPUTIL_BOND_LOST_EVENT                      = (uint32_t)BV(14)   //!< Bond lost event
+    BLEAPPUTIL_LINK_TERMINATED_EVENT                = (uint32_t)BV(1),   //!< Link terminated event
+    BLEAPPUTIL_CONNECTING_CANCELLED_EVENT           = (uint32_t)BV(2),   //!< Connecting cancelled event
+    BLEAPPUTIL_LINK_PARAM_UPDATE_EVENT              = (uint32_t)BV(3),   //!< Link parameters update event
+    BLEAPPUTIL_LINK_PARAM_UPDATE_REQ_EVENT          = (uint32_t)BV(4),   //!< Link parameters update request event
+    BLEAPPUTIL_LINK_PARAM_UPDATE_REJECT_EVENT       = (uint32_t)BV(5),   //!< Link parameters update reject event
+    BLEAPPUTIL_SIGNATURE_UPDATED_EVENT              = (uint32_t)BV(6),   //!< Signature updated event
+    BLEAPPUTIL_AUTHENTICATION_COMPLETE_EVENT        = (uint32_t)BV(7),   //!< Authentication complete event
+    BLEAPPUTIL_PASSKEY_NEEDED_EVENT                 = (uint32_t)BV(8),   //!< Passkey needed event
+    BLEAPPUTIL_PERIPHERAL_REQUESTED_SECURITY_EVENT  = (uint32_t)BV(9),   //!< Peripheral requested security event
+    BLEAPPUTIL_BOND_COMPLETE_EVENT                  = (uint32_t)BV(10),  //!< Bond complete event
+    BLEAPPUTIL_PAIRING_REQ_EVENT                    = (uint32_t)BV(11),  //!< Pairing request event
+    BLEAPPUTIL_AUTHENTICATION_FAILURE_EVT           = (uint32_t)BV(12),  //!< Authentication failure event
+    BLEAPPUTIL_BOND_LOST_EVENT                      = (uint32_t)BV(13)   //!< Bond lost event
 } BLEAppUtil_GAPConnEventMaskFlags_e;
 
 /// Connection event event mask
@@ -308,26 +236,20 @@ typedef enum BLEAppUtil_GAPScanEventMaskFlags_e
 /// GAP Periodic event mask
 typedef enum BLEAppUtil_GAPPeriodicEventMaskFlags_e
 {
-	BLEAPPUTIL_ADV_SET_PERIODIC_ADV_PARAMS_EVENT        = (uint32_t)BV(0),  //!< @ref  GAP_ADV_SET_PERIODIC_ADV_PARAMS_EVENT
-	BLEAPPUTIL_ADV_SET_PERIODIC_ADV_DATA_EVENT          = (uint32_t)BV(1),  //!< @ref  GAP_ADV_SET_PERIODIC_ADV_DATA_EVENT
-	BLEAPPUTIL_ADV_SET_PERIODIC_ADV_ENABLE_EVENT        = (uint32_t)BV(2),  //!< @ref  GAP_ADV_SET_PERIODIC_ADV_ENABLE_EVENT
-	BLEAPPUTIL_SCAN_CREATE_SYNC_EVENT                   = (uint32_t)BV(3),  //!< @ref  GAP_SCAN_CREATE_SYNC_EVENT
-	BLEAPPUTIL_SCAN_SYNC_CANCEL_EVENT                   = (uint32_t)BV(4),  //!< @ref  GAP_SCAN_SYNC_CANCEL_EVENT
-	BLEAPPUTIL_SCAN_TERMINATE_SYNC_EVENT                = (uint32_t)BV(5),  //!< @ref  GAP_SCAN_TERMINATE_SYNC_EVENT
-	BLEAPPUTIL_SCAN_PERIODIC_RECEIVE_EVENT              = (uint32_t)BV(6),  //!< @ref  GAP_SCAN_PERIODIC_RECEIVE_EVENT
-	BLEAPPUTIL_SCAN_ADD_DEVICE_ADV_LIST_EVENT           = (uint32_t)BV(7),  //!< @ref  GAP_SCAN_ADD_DEVICE_ADV_LIST_EVENT
-	BLEAPPUTIL_SCAN_REMOVE_DEVICE_ADV_LIST_EVENT        = (uint32_t)BV(8),  //!< @ref  GAP_SCAN_REMOVE_DEVICE_ADV_LIST_EVENT
-	BLEAPPUTIL_SCAN_READ_ADV_LIST_SIZE_EVENT            = (uint32_t)BV(9),  //!< @ref  GAP_SCAN_READ_ADV_LIST_SIZE_EVENT
-	BLEAPPUTIL_SCAN_CLEAR_ADV_LIST_EVENT                = (uint32_t)BV(10), //!< @ref  GAP_SCAN_CLEAR_ADV_LIST_EVENT
-	BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V1      = (uint32_t)BV(11), //!< @ref  GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V1
-	BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT        = (uint32_t)BV(12), //!< @ref  GAP_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT
-	BLEAPPUTIL_SCAN_PERIODIC_ADV_REPORT_EVENT_V1        = (uint32_t)BV(13), //!< @ref  GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V1
-	BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V2      = (uint32_t)BV(14), //!< @ref  GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT_V2
-    BLEAPPUTIL_SCAN_PERIODIC_ADV_REPORT_EVENT_V2        = (uint32_t)BV(15), //!< @ref  GAP_SCAN_PERIODIC_ADV_REPORT_EVENT_V2
-    BLEAPPUTIL_PAST_RECEIVED_V1_EVENT                   = (uint32_t)BV(16), //!< @ref  GAP_PAST_RECEIVED_V1_EVENT
-    BLEAPPUTIL_PAST_RECEIVED_V2_EVENT                   = (uint32_t)BV(17), //!< @ref  GAP_PAST_RECEIVED_V2_EVENT
-    BLEAPPUTIL_ADV_PERIODIC_ADV_SUBEVENT_DATA_REQ_EVENT = (uint32_t)BV(18), //!< @ref GAP_ADV_PERIODIC_ADV_SUBEVENT_DATA_REQ_EVENT
-    BLEAPPUTIL_ADV_PERIODIC_ADV_RSP_HDR_REPORT_EVENT    = (uint32_t)BV(19)  //!< @ref GAP_ADV_PERIODIC_ADV_RSP_HDR_REPORT_EVENT - Including the reponse pointer
+	BLEAPPUTIL_ADV_SET_PERIODIC_ADV_PARAMS_EVENT = (uint32_t)BV(0),	 //!< @ref  GAP_ADV_SET_PERIODIC_ADV_PARAMS_EVENT
+	BLEAPPUTIL_ADV_SET_PERIODIC_ADV_DATA_EVENT   = (uint32_t)BV(1),	 //!< @ref  GAP_ADV_SET_PERIODIC_ADV_DATA_EVENT
+	BLEAPPUTIL_ADV_SET_PERIODIC_ADV_ENABLE_EVENT = (uint32_t)BV(2),	 //!< @ref  GAP_ADV_SET_PERIODIC_ADV_ENABLE_EVENT
+	BLEAPPUTIL_SCAN_CREATE_SYNC_EVENT            = (uint32_t)BV(3),	 //!< @ref  GAP_SCAN_CREATE_SYNC_EVENT
+	BLEAPPUTIL_SCAN_SYNC_CANCEL_EVENT            = (uint32_t)BV(4),	 //!< @ref  GAP_SCAN_SYNC_CANCEL_EVENT
+	BLEAPPUTIL_SCAN_TERMINATE_SYNC_EVENT         = (uint32_t)BV(5),	 //!< @ref  GAP_SCAN_TERMINATE_SYNC_EVENT
+	BLEAPPUTIL_SCAN_PERIODIC_RECEIVE_EVENT       = (uint32_t)BV(6),	 //!< @ref  GAP_SCAN_PERIODIC_RECEIVE_EVENT
+	BLEAPPUTIL_SCAN_ADD_DEVICE_ADV_LIST_EVENT    = (uint32_t)BV(7),	 //!< @ref  GAP_SCAN_ADD_DEVICE_ADV_LIST_EVENT
+	BLEAPPUTIL_SCAN_REMOVE_DEVICE_ADV_LIST_EVENT = (uint32_t)BV(8),	 //!< @ref  GAP_SCAN_REMOVE_DEVICE_ADV_LIST_EVENT
+	BLEAPPUTIL_SCAN_READ_ADV_LIST_SIZE_EVENT     = (uint32_t)BV(9),	 //!< @ref  GAP_SCAN_READ_ADV_LIST_SIZE_EVENT
+	BLEAPPUTIL_SCAN_CLEAR_ADV_LIST_EVENT         = (uint32_t)BV(10), //!< @ref  GAP_SCAN_CLEAR_ADV_LIST_EVENT
+	BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_EST_EVENT  = (uint32_t)BV(11), //!< @ref  GAP_SCAN_PERIODIC_ADV_SYNC_EST_EVENT
+	BLEAPPUTIL_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT = (uint32_t)BV(12), //!< @ref  GAP_SCAN_PERIODIC_ADV_SYNC_LOST_EVENT
+	BLEAPPUTIL_SCAN_PERIODIC_ADV_REPORT_EVENT    = (uint32_t)BV(13)	 //!< @ref  GAP_SCAN_PERIODIC_ADV_REPORT_EVENT
 } BLEAppUtil_GAPPeriodicEventMaskFlags_e;
 
 /// GAP Pairing event mask
@@ -769,7 +691,6 @@ typedef struct
 typedef union
 {
     gapEstLinkReqEvent_t            estLinkReqEvent;            //!< see @ref gapEstLinkReqEvent_t.             BLEAPPUTIL_LINK_ESTABLISHED_EVENT
-    gapEstLinkReqEventV2_t          estLinkReqEventV2;          //!< see @ref gapEstLinkReqEventV2_t.         BLEAPPUTIL_LINK_ESTABLISHED_EVENT_V2
     gapTerminateLinkEvent_t         termLinkEvent;              //!< see @ref gapTerminateLinkEvent_t.          BLEAPPUTIL_LINK_TERMINATED_EVENT
     gapConnCancelledEvent_t         gapConnCancelledEvent;      //!< see @ref gapConnCancelledEvent_t.          BLEAPPUTIL_CONNECTING_CANCELLED_EVENT
     gapLinkUpdateEvent_t            linkUpdateEvent;            //!< see @ref gapLinkUpdateEvent_t.             BLEAPPUTIL_LINK_PARAM_UPDATE_EVENT and BLEAPPUTIL_LINK_PARAM_UPDATE_REJECT_EVENT
@@ -1224,19 +1145,6 @@ bStatus_t BLEAppUtil_registerCMSCBs(void);
  */
 bStatus_t BLEAppUtil_registerCMCBs(void);
 
-#if defined( HOST_CONFIG ) && ( HOST_CONFIG & ( CENTRAL_CFG | OBSERVER_CFG ) )
-/*********************************************************************
- * @fn      BLEAppUtil_startTSO
- *
- * @brief   Save syncHandle to LL to send to application the expected data
- *
- * @param   syncHandle - Sync handle to receive events for (0xFFFF for all)
- *
- * @return  SUCCESS - syncHandle saved
- */
-bStatus_t BLEAppUtil_startTSO(uint16_t syncHandle);
-#endif // HOST_CONFIG & ( CENTRAL_CFG | OBSERVER_CFG )
-
 /*********************************************************************
  * @fn      BLEAppUtil_isbufset
  *
@@ -1250,92 +1158,6 @@ bStatus_t BLEAppUtil_startTSO(uint16_t syncHandle);
  *          FALSE otherwise
  */
 bool BLEAppUtil_isbufset(uint8_t *buf, uint8_t val, uint8_t len);
-
-/*********************************************************************
- * @fn      BLEAppUtil_setPeriodicAdvParams
- *
- * @brief   Set periodic advertising parameters for an advertising set.
- *
- * @param   advHandle      - Handle of the advertising set
- * @param   periodicParams - Pointer to periodic advertising parameters
- *                           (@ref BLEAppUtil_PeriodicAdvParams_t)
- *
- * @return  SUCCESS, INVALIDPARAMETER, bleGAPNotFound
- */
-bStatus_t BLEAppUtil_setPeriodicAdvParams(uint8 advHandle, BLEAppUtil_PeriodicAdvParams_t *periodicParams);
-
-/*********************************************************************
- * @fn      BLEAppUtil_setPeriodicAdvData
- *
- * @brief   Set periodic advertising data for an advertising set.
- *
- *          This must be called after setPeriodicAdvParams and before
- *          setPeriodicAdvEnable. Even if no data is needed (dataLength=0),
- *          this call is required to properly initialize the periodic
- *          advertising train.
- *
- * @param   advHandle       - Handle of the advertising set
- * @param   pPeriodicAdvData - Pointer to periodic advertising data
- *                            (@ref BLEAppUtil_PeriodicAdvData_t)
- *
- * @return  SUCCESS, FAILURE, bleInvalidRange
- */
-bStatus_t BLEAppUtil_setPeriodicAdvData(uint8 advHandle, BLEAppUtil_PeriodicAdvData_t *pPeriodicAdvData);
-
-/*********************************************************************
- * @fn      BLEAppUtil_setPeriodicAdvEnable
- *
- * @brief   Enable or disable periodic advertising for an advertising set.
- *
- * @param   enable    - TRUE to enable, FALSE to disable periodic advertising
- * @param   advHandle - Handle of the advertising set
- *
- * @return  SUCCESS, INVALIDPARAMETER, bleGAPNotFound, bleIncorrectMode
- */
-bStatus_t BLEAppUtil_setPeriodicAdvEnable(uint8 enable, uint8 advHandle);
-
-/*********************************************************************
- * @fn      BLEAppUtil_setPeriodicAdvTimeSyncEnable
- *
- * @brief   Enable time synchronization for periodic advertising.
- *          When enabled, the TSO (Time Sync Observer) will include the
- *          absolute start time in the periodic advertising data.
- *
- * @param   advHandle - Handle of the advertising set
- *
- * @return  SUCCESS, INVALIDPARAMETER, bleGAPNotFound, bleInvalidRange
- */
-bStatus_t BLEAppUtil_setPeriodicAdvTimeSyncEnable(uint8 advHandle);
-
-#if defined( HOST_CONFIG ) && ( HOST_CONFIG & ( CENTRAL_CFG | OBSERVER_CFG ) )
-/*********************************************************************
- * @fn      BLEAppUtil_periodicAdvCreateSync
- *
- * @brief   Create sync to a periodic advertising train.
- *
- * @param   advSID      - Advertising SID to sync to (0-15)
- * @param   pSyncParams - Pointer to sync parameters
- *                        (@ref BLEAppUtil_PeriodicAdvSyncParams_t)
- *
- * @return  SUCCESS, INVALIDPARAMETER, bleMemAllocError
- */
-bStatus_t BLEAppUtil_periodicAdvCreateSync(uint8 advSID, BLEAppUtil_PeriodicAdvSyncParams_t *pSyncParams);
-#endif // HOST_CONFIG & ( CENTRAL_CFG | OBSERVER_CFG )
-
-/*********************************************************************
- * @fn      BLEAppUtil_getCurrentTime
- *
- * @brief   Get the current BLE stack time.
- *
- *          Returns the current time from the BLE stack timer.
- *          This provides a consistent time reference for application
- *          layer time synchronization operations.
- *
- * @param   None
- *
- * @return  Current time in RAT ticks (0.25 µs resolution)
- */
-uint32_t BLEAppUtil_getCurrentTime(void);
 
 /** @} End BLEAppUtil_Functions */
 

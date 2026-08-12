@@ -81,7 +81,6 @@
 
 #include <ti/drivers/rcl/commands/ble_cs.h>
 #include <ti/drivers/rcl/handlers/ble_cs.h>
-#include "ti/ble/controller/ll/ll_soc.h"
 /*******************************************************************************
  * CONSTANTS
  */
@@ -120,7 +119,6 @@
 #define CS_MAX_SUBEVENTS_PER_PROCEDURE         32
 #define CS_INFINITE_PROCEDURE_REPETITIONS      0U
 #define CS_SINGLE_PROCEDURE                    1U
-#define CS_TX_PWR_DELTA_NO_RECOMMENDATION      ((int8_t)-128)
 
 // Capabilities
 #define CS_MAX_NUM_CONFIG_SUPPORTED            0x04
@@ -157,7 +155,7 @@
 // of this bitwise number.
 #define CS_T_IP1_IP2_CAP          0x0078 // supported: 40, 50, 60, 80us, (145us Mandatory)
 #define CS_T_FCS_CAP              0x01C0 // supported: 80us, 100us, 120us, (150us Mandatory)
-#define CS_T_PM_CAP               0x02   // supported: 20us, (40us Mandatory)
+#define CS_T_PM_CAP               0x00   // supported: 40us Mandatory
 
 #define CS_T_SW_CAP               0x0A   // antenna switch period
 #define CS_T_SW_DEFAULT           0U     // Default Value (when default num antennas (1) is used)
@@ -232,7 +230,7 @@
  * The start of the first CS subevent
  * The min value must be betwen 500us to 4s
  * The actual max value can be up to the connInterval*/
-#define CS_OWN_OFFSET_MIN                      SOC_CS_OWN_OFFSET_MIN  // SoC-dependent, see ll_soc.h
+#define CS_OWN_OFFSET_MIN                      1500    // this is the minimum offset value TI can handle
 #define CS_OWN_CODED_OFFSET_MIN                2500    /* NOTE: The coded PHY offset used here is hardcoded and doesn't account for
                                                         * the specific S2/S8 sub-coding scheme. While this value
                                                         * works for all cases, S2 coding could potentially use a smaller offset
@@ -283,7 +281,7 @@
 
 /* Number of max elements (steps) in a Tx buffer */
 /* ------------------------------------------*/
-#define CS_MAX_NUM_STEPS_IN_TX_BUFF            10U
+#define CS_MAX_NUM_STEPS_IN_TX_BUFF            15U
 
 /* Stable Phase Test */
 #define CS_STABLE_PHASE_TONE_DURATION_US       326
@@ -382,7 +380,7 @@ typedef enum csStepType
 #define CS_EVENTS_PER_PROCEDURE(procedureLen, eventInterval, connInterval) (procedureLen / (eventInterval * connInterval))
 
 /* The value shall be greater than or equal to the Offset_Min value and shall be less than the LE connection interval. */
-#define CS_CALC_OFFSET_MAX(offsetMax, offsetMin, connInterval) ((offsetMax < offsetMin) ? offsetMin : ((offsetMax > (T625MS2US(connInterval) - 1)) ? (T625MS2US(connInterval) - 1) : offsetMax))
+#define CS_CALC_OFFSET_MAX(offsetMax, offsetMin, connInterval) ((offsetMax < offsetMin) ? offsetMin : ((offsetMax > (T625MS2US(connInterval) - CS_MIN_SUBEVENT_LEN)) ? (T625MS2US(connInterval) - CS_MIN_SUBEVENT_LEN) : offsetMax))
 #define CS_CALC_OFFSET_MIN(phy) ((phy == LL_PHY_CODED) ? CS_OWN_CODED_OFFSET_MIN : CS_OWN_OFFSET_MIN)
 
 #define CS_CONNEVENT_OFFSET(taskId) ((taskId == LL_TASK_ID_CENTRAL) ? CS_CENT_CONNEVENT_OFFSET : CS_PERI_CONNEVENT_OFFSET)
@@ -435,19 +433,9 @@ typedef struct
     uint8 CSPV[CS_CSPV_LEN];
 } csSecVectors_t;
 
-/*
- * CS Capabilities — internal (DB/API) representation.
- *
- * Unpacked struct with natural alignment; no wire-format constraints.
- * Bitfields from the CS_CAPABILITIES_REQ/RSP PDU (wire bytes 10 and 11) are
- * expanded into individual uint8_t fields so that field access carries no
- * packed-struct overhead.
- * This is the type used everywhere except at PDU parse/serialize boundaries.
- *
- * Wire-format encoding/decoding is handled exclusively by:
- *   llCsCapab_ParsePDU()      — PDU bytes -> llCsCapabilities_t
- *   llCsCapab_SerializePDU()  — llCsCapabilities_t -> PDU bytes
- */
+/* CS Capabilities */
+/* This struct is based on the PDU CS_CAPABILTITIES_REQ/RSP in the SPEC Core_v6.0 */
+/* Therefore, shall not be changed unless the there is an update to the PDU */
 struct llCsCapab_t
 {
     uint8_t  optionalModes;      //!< indicates which of the optional CS modes are supported
@@ -458,14 +446,14 @@ struct llCsCapab_t
     uint16_t nadmSounding;       //!< NADM Sounding Capability
     uint16_t nadmRandomSeq;      //!< NADM Random Sequence Capability
     uint8_t  optionalCsSyncPhy;  //!< supported CS sync PHYs, bit mapped field
-    uint8_t  numAntennas;        //!< number of antenna elements (wire byte 10 bits [3:0])
-    uint8_t  maxAntPath;         //!< max antenna paths supported (wire byte 10 bits [7:4])
-    uint8_t  role;               //!< initiator or reflector or both (wire byte 11 bits [1:0])
-    /* rfu0 (wire byte 11 bit [2]) not stored; written as 0 on serialize */
-    uint8_t  noFAE;              //!< No FAE (wire byte 11 bit [3])
-    uint8_t  chSel3c;            //!< channel selection 3c support (wire byte 11 bit [4])
-    uint8_t  csBasedRanging;     //!< CS based ranging (wire byte 11 bit [5])
-    /* rfu1 (wire byte 11 bits [7:6]) not stored; written as 0 on serialize */
+    uint8_t  numAntennas:4;      //!< the number of antenna elements that are available for CS tone exchanges
+    uint8_t  maxAntPath:4;       //!< max number of antenna paths that are supported
+    uint8_t  role:2;             //!< initiator or reflector or both
+    uint8_t  rfu0:1;             //!< reserved for future use
+    uint8_t  noFAE:1;            //!< No FAE
+    uint8_t  chSel3c:1;          //!< channel selection 3c support
+    uint8_t  csBasedRanging:1;   //!< CS based ranging
+    uint8_t  rfu1:2;             //!< reserved for future use
     uint8_t  numConfig;          //!< Number of CS configurations supported per conn
     uint16_t maxProcedures;      //!< Max num of CS procedures supported
     uint8_t  tSwCap;             //!< Antenna switch time capability
@@ -474,97 +462,18 @@ struct llCsCapab_t
     uint16_t tFcsCap;            //!< tFCS Capability
     uint16_t tPmCsap;            //!< tPM Capability
     uint8_t  snrTxCap;           //!< Spec defines an additional byte for RFU
-};
-// Typedef separated from struct due to MisraC
+} __attribute__((packed));
+// Typedef separated from packed struct due to MisraC
 typedef struct llCsCapab_t llCsCapabilities_t;
 
-/*
- * CS Capabilities PDU wire layout — packed, matches CS_CAPABILITIES_REQ/RSP PDU payload.
- * (Core Spec v6.0, Vol 6, Part B)
- *
- * Used ONLY inside llCsCapab_ParsePDU() and llCsCapab_SerializePDU().
- * Never stored in the DB or passed through the API.
- *
- *   [0]     optionalModes
- *   [1]     rttCap
- *   [2]     rttAAOnlyN
- *   [3]     rttSoundingN
- *   [4]     rttRandomPayloadN
- *   [5-6]   nadmSounding (little-endian)
- *   [7-8]   nadmRandomSeq (little-endian)
- *   [9]     optionalCsSyncPhy
- *   [10]    numAntennas[3:0] | maxAntPath[7:4]
- *   [11]    role[1:0] | rfu0[2] | noFAE[3] | chSel3c[4] | csBasedRanging[5] | rfu1[7:6]
- *   [12]    numConfig
- *   [13-14] maxProcedures (little-endian)
- *   [15]    tSwCap
- *   [16-17] tIp1Cap (little-endian)
- *   [18-19] tIp2Cap (little-endian)
- *   [20-21] tFcsCap (little-endian)
- *   [22-23] tPmCsap (little-endian)
- *   [24]    snrTxCap
- */
-struct llCsCapabPdu_t
-{
-    uint8_t optionalModes;
-    uint8_t rttCap;
-    uint8_t rttAAOnlyN;
-    uint8_t rttSoundingN;
-    uint8_t rttRandomPayloadN;
-    uint8_t nadmSounding[2];    /* little-endian */
-    uint8_t nadmRandomSeq[2];   /* little-endian */
-    uint8_t optionalCsSyncPhy;
-    uint8_t byte10;             /* numAntennas[3:0] | maxAntPath[7:4]                                     */
-    uint8_t byte11;             /* role[1:0] | rfu0[2] | noFAE[3] | chSel3c[4] | csBasedRanging[5] | rfu1[7:6] */
-    uint8_t numConfig;
-    uint8_t maxProcedures[2];   /* little-endian */
-    uint8_t tSwCap;
-    uint8_t tIp1Cap[2];         /* little-endian */
-    uint8_t tIp2Cap[2];         /* little-endian */
-    uint8_t tFcsCap[2];         /* little-endian */
-    uint8_t tPmCsap[2];         /* little-endian */
-    uint8_t snrTxCap;
-} __attribute__((packed));
-// Typedef separated from struct due to MisraC
-typedef struct llCsCapabPdu_t llCsCapabPdu_t;
-
-/* Paranoia check: wire payload must be exactly 25 bytes */
-_Static_assert(sizeof(llCsCapabPdu_t) == 25, "llCsCapabPdu_t size mismatch with CS_CAPABILITIES PDU");
-
-/* Bit-field decode helpers for llCsCapabPdu_t byte10 */
-#define CS_CAPAB_PDU_GET_NUM_ANT(b)        ((uint8_t)((b) & 0x0FU))
-#define CS_CAPAB_PDU_GET_MAX_ANT_PATH(b)   ((uint8_t)(((b) >> 4U) & 0x0FU))
-
-/* Bit-field decode helpers for llCsCapabPdu_t byte11 */
-#define CS_CAPAB_PDU_GET_ROLE(b)           ((uint8_t)((b) & 0x03U))
-#define CS_CAPAB_PDU_GET_NO_FAE(b)         ((uint8_t)(((b) >> 3U) & 0x01U))
-#define CS_CAPAB_PDU_GET_CH_SEL_3C(b)      ((uint8_t)(((b) >> 4U) & 0x01U))
-#define CS_CAPAB_PDU_GET_CS_BASED_RNG(b)   ((uint8_t)(((b) >> 5U) & 0x01U))
-
-/* Bit-field encode helpers — rfu0 and rfu1 are always written as 0 */
-#define CS_CAPAB_PDU_SET_BYTE10(ant, path) \
-    ((uint8_t)(((ant) & 0x0FU) | (((path) & 0x0FU) << 4U)))
-#define CS_CAPAB_PDU_SET_BYTE11(role, noFAE, ch3c, csRng) \
-    ((uint8_t)(((role) & 0x03U) | (((noFAE) & 0x01U) << 3U) | \
-               (((ch3c) & 0x01U) << 4U) | (((csRng) & 0x01U) << 5U)))
-
-/*
- * CS Configuration — internal (DB/API) representation.
- *
- * Unpacked struct with natural alignment; no wire-format constraints.
- * Bitfields from the CS_CONFIG_REQ PDU are expanded into individual uint8
- * fields so that field access carries no packed-struct overhead.
- * This is the type used everywhere except at PDU parse/serialize boundaries.
- *
- * Wire-format encoding/decoding is handled exclusively by:
- *   csConfig_ParsePDU()   — PDU bytes -> csConfigurationSet_t
- *   csConfig_SerializePDU() — csConfigurationSet_t -> PDU bytes
- */
+/* CS Configuration */
+/* This struct is based on the PDU CS_CONFIG_REQ/RSP in the SPEC Core_v6.0 */
+/* Therefore, shall not be changed unless the there is an update to the PDU */
 struct csConfig_t
 {
-    uint8 configId;           /* CS configuration ID (wire byte 0 bits [5:0]) */
-    uint8 action;             /* 0b00 disabled, 0b01 enabled (wire byte 0 bits [7:6]) */
-    csChm_t channelMap;       /* channel map */
+    uint8 configId:6;         /* CS configuration ID */
+    uint8 action:2;           /* 0b00 disabled, 0b01 enabled */
+    csChm_t channelMap;       /* channel map. */
     uint8 chMRepetition;      /* number of times the ChM field will be cycled through */
                               /* for non-mode 0 steps within a CS procedure */
     uint8 mainMode;           /* which CS modes are to be used */
@@ -573,88 +482,22 @@ struct csConfig_t
                               /* a Sub_Mode step is executed */
     uint8 mainModeMaxSteps;
     uint8 mainModeRepetition; /* num of main mode steps from the last CS subevent to be repeated */
-    uint8 modeZeroSteps;      /* number of mode 0 steps to be included at the beginning of each CS Subevent */
+    uint8 modeZeroSteps;      /*  number of mode 0 steps to be included at the beginning of each CS Subevent */
     uint8 csSyncPhy;          /* transmit and receive PHY to be used */
-    uint8 rttType;            /* which RTT variant is to be used (wire byte 19 bits [3:0]) */
-    uint8 role;               /* CS role (wire byte 19 bits [5:4]) */
-    uint8 chSel;              /* channel selection algorithm to be used (wire byte 20 bits [3:0]) */
-    uint8 ch3cShape;          /* selected shape to be rendered (wire byte 20 bits [7:4]) */
-    uint8 ch3CJump;           /* one of the valid CSChannelJump values */
+    uint8 rttType:4;          /* which RTT variant is to be used */
+    uint8 role:2;
+    uint8 rfu0:2;
+    uint8 chSel:4;            /* channel selection algorithm to be used */
+    uint8 ch3cShape:4;        /* selected shape to be rendered */
+    uint8 ch3CJump;           /* one of the valid CSChannelJump values defined in table 32? */
     uint8 tIP1;               /* Index of the period used between RTT packets */
     uint8 tIP2;               /* Index of the interlude period used between CS tones */
     uint8 tFCs;               /* Index used for frequency changes */
     uint8 tPM;                /* Index for the measurement period of CS tones */
-    /* Note: rfu0 (wire byte 19 bits [7:6]) and rfu1 (wire byte 26) are not stored;
-     * both are written as 0 on serialize */
-};
-// Typedef separated from struct due to MisraC
-typedef struct csConfig_t csConfigurationSet_t;
-
-/*
- * CS Configuration PDU wire layout — packed, matches CS_CONFIG_REQ PDU payload.
- * (Core Spec v6.0, Vol 6, Part B, CS_CONFIG_REQ)
- *
- * Used ONLY inside csConfig_ParsePDU() and csConfig_SerializePDU().
- * Never stored in the DB or passed through the API.
- *
- *   [0]     configId[5:0] | action[7:6]
- *   [1-10]  channelMap[10]
- *   [11]    chMRepetition
- *   [12]    mainMode
- *   [13]    subMode
- *   [14]    mainModeMinSteps
- *   [15]    mainModeMaxSteps
- *   [16]    mainModeRepetition
- *   [17]    modeZeroSteps
- *   [18]    csSyncPhy
- *   [19]    rttType[3:0] | role[5:4] | rfu0[7:6]
- *   [20]    chSel[3:0] | ch3cShape[7:4]
- *   [21]    ch3CJump
- *   [22]    tIP1
- *   [23]    tIP2
- *   [24]    tFCs
- *   [25]    tPM
- *   [26]    rfu1
- */
-struct csConfigPdu_t
-{
-    uint8 byte0;                      /* configId[5:0] | action[7:6]         */
-    uint8 channelMap[CS_CHM_SIZE];    /* 10-byte channel map                 */
-    uint8 chMRepetition;
-    uint8 mainMode;
-    uint8 subMode;
-    uint8 mainModeMinSteps;
-    uint8 mainModeMaxSteps;
-    uint8 mainModeRepetition;
-    uint8 modeZeroSteps;
-    uint8 csSyncPhy;
-    uint8 byte19;                     /* rttType[3:0] | role[5:4] | rfu0[7:6] */
-    uint8 byte20;                     /* chSel[3:0]   | ch3cShape[7:4]        */
-    uint8 ch3CJump;
-    uint8 tIP1;
-    uint8 tIP2;
-    uint8 tFCs;
-    uint8 tPM;
     uint8 rfu1;
 } __attribute__((packed));
-// Typedef separated from struct due to MisraC
-typedef struct csConfigPdu_t csConfigPdu_t;
-
-/* Paranoia check: wire payload must be exactly 27 bytes (LL_CS_CONFIG_REQ_PL_LEN - 1) */
-_Static_assert(sizeof(csConfigPdu_t) == 27, "csConfigPdu_t size mismatch with CS_CONFIG_REQ PDU");
-
-/* Bit-field decode helpers for csConfigPdu_t packed bytes */
-#define CS_CFG_PDU_GET_CONFIG_ID(b)   ((uint8)((b) & 0x3FU))
-#define CS_CFG_PDU_GET_ACTION(b)      ((uint8)(((b) >> 6U) & 0x03U))
-#define CS_CFG_PDU_GET_RTT_TYPE(b)    ((uint8)((b) & 0x0FU))
-#define CS_CFG_PDU_GET_ROLE(b)        ((uint8)(((b) >> 4U) & 0x03U))
-#define CS_CFG_PDU_GET_CH_SEL(b)      ((uint8)((b) & 0x0FU))
-#define CS_CFG_PDU_GET_CH3C_SHAPE(b)  ((uint8)(((b) >> 4U) & 0x0FU))
-
-/* Bit-field encode helpers — rfu0 is always written as 0 */
-#define CS_CFG_PDU_SET_BYTE0(id, act)      ((uint8)(((id) & 0x3FU) | (((act) & 0x03U) << 6U)))
-#define CS_CFG_PDU_SET_BYTE19(rtt, role)   ((uint8)(((rtt) & 0x0FU) | (((role) & 0x03U) << 4U)))
-#define CS_CFG_PDU_SET_BYTE20(sel, shape)  ((uint8)(((sel) & 0x0FU) | (((shape) & 0x0FU) << 4U)))
+// Typedef separated from packed struct due to MisraC
+typedef struct csConfig_t csConfigurationSet_t;
 
 typedef struct
 {
@@ -663,53 +506,49 @@ typedef struct
     int8_t  maxTxPower;
 } csDefaultSettings_t;
 
+/* This structure stores the parameters received from the Host, as some params can be re-negotiated during Enable procedure.*/
 typedef struct
 {
-    uint16 nTotal;    /* Planned/configured ceiling (e.g., steps per subevent, procedure instances) */
-    uint16 nCounter;  /* Running count toward the ceiling */
-} csCounter_t;
+  uint32_t minSubEventLen;             //!< Min SubEvent Len in microseconds, range 1250us to 4s
+  uint32_t maxSubEventLen;             //!< Max SubEvent Len in microseconds, range 1250us to 4s
+  csACI_e  aci;                        //!< Antenna Config Index
+  uint16 procedureCount;
+} csHostProcedureParams_t;
 
-/* CS Procedure Enable Data — negotiated parameters stored in the DB and used during CS execution.
- * Populated from CS_REQ/RSP/IND PDUs; fields not needed at runtime (configId, txSnrI/R) are
- * kept in csProcedureParams_t instead. */
+/* CS Procedure Enable */
+/* This struct is based on the PDU CS_REQ/CS_RSP/CS_IND in the SPEC Core_v6.0 */
+/* Therefore, shall not be changed unless there is an update to the PDU */
 typedef struct
 {
-    uint32_t offset;               /*  X  |  X  | IND */ /* Selected event offset (μs) */
-    uint32_t offsetMin;            /* REQ | RSP |  X  */ /* Min acceptable offset (μs) — negotiation */
-    uint32_t offsetMax;            /* REQ | RSP |  X  */ /* Max acceptable offset (μs) — negotiation */
-    uint16_t eventAnchorConnEvent; /* REQ | RSP | IND */
-                                   /* Live scheduling tracker: the ACL connection-event counter value
-                                    * on which the *next* CS event (not procedure) is expected to fire.
-                                    *
-                                    * Initialised from the connEventCount field of the CS_REQ / CS_RSP /
-                                    * CS_IND PDU that establishes the first CS event.  Thereafter it is
-                                    * advanced by eventInterval (conn events) each time the RCL reports
-                                    * a CS event done, so it always reflects the next scheduled CS event.
-                                    *
-                                    * NOTE: this field diverges from csProcRepetitions_t.procedureAnchorConnEvent
-                                    * during a multi-event procedure.  procedureAnchorConnEvent stays fixed at
-                                    * the start of the current repetition period; eventAnchorConnEvent moves
-                                    * forward with every CS event within that period.  They are re-synchronised
-                                    * (set to the same value) only at procedure boundaries. */
-    uint16_t eventInterval;        /* REQ | RSP | IND */ /* ACL conn events between CS event anchors */
-    uint16_t subEventInterval;     /* REQ | RSP | IND */ /* Time between subevents (625 μs units) */
-    uint16_t maxProcedureDur;      /* REQ |  X  |  X  */ /* Max procedure duration (625 μs units) */
-    uint16_t procedureInterval;    /* REQ |  X  |  X  */ /* Interval between procedures (conn intervals) */
-    uint16_t procedureCount;       /* REQ |  X  |  X  */ /* Number of procedures to run (OTA nTotal) */
-    uint32_t subEventLen;          /* REQ | RSP | IND */ /* Subevent duration (μs), 1250–4 000 000 */
-    uint8_t  subEventsPerEvent;    /* REQ | RSP | IND */ /* Subevents anchored off the same ACL event */
-    csACI_e  ACI;                  /* REQ | RSP | IND */ /* Antenna Configuration Index */
-    uint8_t  preferredPeerAntenna; /* REQ |  X  |  X  */ /* Preferred peer antenna bitmap */
-    uint8_t  phy;                  /* REQ | RSP | IND */ /* PHY used for CS */
-    int8_t   pwrDelta;             /* REQ | RSP | IND */ /* TX power delta */
-} csEnableProcedureCtrlData_t;
+    csHostProcedureParams_t hostProcedureParams;    /* DO NOT CHANGE THE ORDER - this must be the first element *//* Parameters received from the Host, used for CS_REQ */
+    uint8   configId:6;              /* REQ | RSP | IND */
+    uint8   rfu:2;                   /* REQ | RSP | IND */
+    uint16  connEventCount;          /* REQ | RSP | IND */
+    uint32  offset;                  /*  X  |  X  | IND */ /* microseconds */
+    uint32  offsetMin;               /* REQ | RSP |  X  */ /* microseconds */
+    uint32  offsetMax;               /* REQ | RSP |  X  */ /* microseconds */
+    uint16  maxProcedureDur;         /* REQ |  X  |  X  */ /* Maximum duration for each CS procedure. Range: 0x0001 to 0xFFFF. Time = N × 0.625 ms. Time range: 0.625 ms to 40.959375 s */
+    uint16  eventInterval;           /* REQ | RSP | IND */ /* Number of ACL connection events between consecutive CS event anchor points */
+    uint8   subEventsPerEvent;       /* REQ | RSP | IND */ /* nNumber of CS subevents anchored off the same ACL connection event */
+    uint16  subEventInterval;        /* REQ | RSP | IND */ /* Time between consecutive CS subevents anchored off the same ACL connection event. units 625 us*/
+    uint32  subEventLen;             /* REQ | RSP | IND */ /* Duration for each CS subevent in microseconds, range 1250us to 4s */
+    uint16  procedureInterval;       /* REQ |  X  |  X  */ /* units of connInt */
+    uint16  procedureCount;          /* REQ |  X  |  X  */ /* 0x0000 - CS procedures to continue until disabled.
+                                                              0x0001 to 0xFFFF - Number of CS procedures to be scheduled*/
+    csACI_e ACI;                     /* REQ | RSP | IND */
+    uint8   preferredPeerAntenna;    /* REQ |  X  |  X  */
+    uint8   phy;                     /* REQ | RSP | IND */
+    uint8   pwrDelta;                /* REQ | RSP | IND */
+    uint8   txSnrI:4;                /* REQ |  X  |  X  */
+    uint8   txSnrR:4;                /* REQ |  X  |  X  */
+} csProcedureEnable_t;
 
 // Channel Map
 typedef struct
 {
-    uint8 shuffledChanIdxArray[CS_FILTERED_CHAN_MAX_SIZE];  /* Channel Index Array */
-    uint8 numChanUsed;                                      /* Channel used as we iterate over the channels  */
-    uint8 numRepetitions;                                   /* number of times the channel array was repeated */
+    uint8* shuffledChanIdxArray; /* Channel Index Array */
+    uint8 numChanUsed;           /* Channel used as we iterate over the channels  */
+    uint8 numRepetitions;        /* number of times the channel array was repeated */
     uint8 selectionAlgo;
 } modeSpecificChanInfo_t;
 
@@ -720,6 +559,12 @@ typedef struct
     modeSpecificChanInfo_t nonMode0;
     uint8 numChans;
 } csChanInfo_t;
+
+typedef struct
+{
+    uint16 numSteps;
+    uint16 stepCount;
+} csSubeventInfo_t;
 
 typedef struct
 {
@@ -746,8 +591,8 @@ typedef struct
 
 typedef struct csDoneInfo
 {
-    uint8 status;                           /* The status of CS procedure termination */
-    uint8 reason;                           /* The reason of CS procedure termination */
+    uint8 errorCode;      /* The reason the CS procedure will be terminated */
+    uint8 doneStatus;     /* The subEvent reason for the CS procedure will be terminated */
 } csDoneInfo_t;
 
 typedef struct
@@ -759,29 +604,10 @@ typedef struct
 
 typedef struct
 {
-    csCounter_t             repetitions;          /* nTotal = procedures to run, nCounter = completed */
-    uint16_t                procedureAnchorConnEvent;
-                                                  /* Repetition-period anchor: the ACL connection-event counter value
-                                                   * at which the *current* CS repetition period began (i.e. the start
-                                                   * of the last scheduled CS procedure, not the individual CS events
-                                                   * within it).
-                                                   *
-                                                   * Set once at the start of each procedure (from the connEventCount
-                                                   * negotiated in the CS_REQ / CS_IND PDU) and advanced by
-                                                   * procedureInterval at every procedure boundary.  It is never
-                                                   * touched by the RCL mid-procedure.
-                                                   *
-                                                   * Used by llCsRealignProceduresRepetition to detect missed
-                                                   * procedures (MAP_llEventCmp(currentEvent, procedureAnchorConnEvent))
-                                                   * and by llCsPrepareNextProcedure as the base from which the next
-                                                   * repetition start is computed:
-                                                   *   nextConnEvent = procedureAnchorConnEvent + procedureInterval
-                                                   *
-                                                   * NOTE: contrast with csEnableProcedureCtrlData_t.eventAnchorConnEvent, which
-                                                   * is the per-event scheduler trigger and moves by eventInterval
-                                                   * inside a procedure. */
+    uint16_t                repetitionsCounter;   /* procedure counter */
     uint16_t                peerTermProcCount;    /* The peer procedure counter received in the terminate indication */
-    csDoneInfo_t            repetitionsDone;      /* Marks the DoneInfo of the procedure repetitions */
+    uint16_t                connEvent;            /* The connection event on which we need to start the repeated procedure */
+    csDoneInfo_t            procedure;            /* Marks the DoneInfo of the procedure */
     csRepetitionsFlags_t    flags;
 } csProcRepetitions_t;
 
@@ -827,20 +653,21 @@ typedef struct
 typedef struct
 {
     csProcCnt_t                 counters;             /* Counters used for the procedure */
-    csCounter_t                 subEventInfo;         /* Subevent step counters: nTotal = planned, nCounter = generated */
+    csSubeventInfo_t            subEventInfo;         /* Subevent Info */
     csMainModeRepetitionsInfo_t mModeRepetitions;     /* Main Mode Repetitions Info */
     csSubModeInsertionInfo_t    subModeInsertion;     /* Submode insertions info */
     uint16_t                    mMStepsRemain;        /* Number of main mode steps remain to be done. When this reaches 0, the procedure ends. */
     uint32_t                    eventAnchorPoint;     /* The time from which consecutive subevents are anchored. */
     csFlags_t                   csFlags;              /* CS Flags Per Connection */
-    csDoneInfo_t                procedureDone;        /* Marks the DoneInfo of the procedure */
-    csDoneInfo_t                subEventDone;         /* Marks the DoneInfo of the subEvent */
+    csDoneInfo_t                procedure;            /* Marks the DoneInfo of the procedure */
+    csDoneInfo_t                subEvent;             /* Marks the DoneInfo of the subEvent */
 } csProcedureInfo_t;
 
 typedef struct
 {
-    csConfigurationSet_t configSet;       /* CS config */
-    csProcedureParams_t  procedureParams; /* Host procedure params — persistent across procedures */
+    csConfigurationSet_t configSet;                  /* CS config */
+    csProcedureEnable_t procedureEnableData;         /* Procedure Enable */
+    csChanInfo_t filteredChanIdx;                    /* Channel Index Array */
 } llCsConfig_t;
 
 typedef struct
@@ -856,14 +683,17 @@ typedef struct
 typedef struct
 {
     drbgParams_t csDrbgParams;                                      /* CS DRBG Parameters */
-    uint8_t completedProcedures;                                    /* Bitmap of completed procedures @ref csProcedures_e */
-    uint8_t activeCsCtrlProcedure;                                  /* Active CS Ctrl Procedure  @ref csProcedures_e */
+    uint8 completedProcedures;                                      /* Bitmap of completed procedures @ref csProcedures_e */
+    uint8 activeCsCtrlProcedure;                                    /* Active CS Ctrl Procedure  @ref csProcedures_e */
+    uint8 currentConfigId;                                          /* Current Config ID */
+    csFaeTbl_t* peerFaeTbl;                                         /* Peer FAE table */
     llCsCapabilities_t peerCapabilities;                            /* Peer capabilities */
     csDefaultSettings_t defaultSettings;                            /* CS Default Settings */
-    llCsConfig_t hostConfig[CS_MAX_NUM_CONFIG_IDS];                 /* CS host-configured params (config set + procedure params) — read-only during procedures */
-    csConfigurationSet_t* llCsPendingConfigReqCtrlSet;              /* CS Config Request Control Packet structure per connection */
+    csProcedureInfo_t procedureInfo;                                /* Procedure Info */
+    csProcRepetitions_t procedureRepetitionsInfo;                   /* Procedure Repetitions Info */
+    csProcedureAntennasInfo_t antennasInfo;                         /* Antennas Info */
+    llCsConfig_t config[CS_MAX_NUM_CONFIG_IDS];                     /* CS Config */
     llCsChannelMapClassification_t peerChannelMapClassification;    /* Channel Map Classification */
-    csFaeTbl_t* peerFaeTbl;                                         /* Peer FAE table */
 } llCs_t;
 
 /*******************************************************************************
@@ -1317,17 +1147,16 @@ csStatus_e llCsCheckChannelMap( csChm_t chanMap1, csChm_t chanMap2 );
  *
  * input parameters
  *
- * @param       connPtr  - Connection Pointer
- * @param       configId - CS configuration ID
- * @param       pEnable  - Pointer to procedure data to validate
+ * @param       csReq - Pointer to LL_CS_REQ
+ * @param       connPtr - Connection Pointer
  *
  * output parameters
  *
  * @param       None
  *
- * @return      CS_STATUS_SUCCESS if the procedure parameters are valid, error otherwise
+ * @return      STATUS - Success if the procedure parameters are valid, Fail otherwise
  * */
-csStatus_e llCsCheckProcedureEnableParams(const llConnState_t *connPtr, uint8_t configId, const csEnableProcedureCtrlData_t *pEnable);
+csStatus_e llCsCheckProcedureEnableParams(const csProcedureEnable_t* csReq, const llConnState_t* connPtr);
 
 /*******************************************************************************
  * @fn          llCsSubeventsPerEvent
@@ -1544,95 +1373,5 @@ void llCsSetConfigReqtTiming(csConfigurationSet_t* pConfigSet,
  * @return      None
  */
 void llCsSetConfigReqtSubModeInsertionRange(csConfigurationSet_t* pConfigSet, uint8 numStepsMin, uint8 numStepsMax);
-
-/*******************************************************************************
- * @fn          csConfig_ParsePDU
- *
- * @brief       Parse a CS_CONFIG_REQ PDU payload into an unpacked
- *              csConfigurationSet_t.  This is the sole entry point for
- *              air-received configuration data; it replaces the previous
- *              direct cast of the PDU buffer to csConfigurationSet_t*.
- *
- * input parameters
- *
- * @param pDst  - Output: pointer to csConfigurationSet_t to populate.
- * @param pBuf  - Input:  27-byte PDU payload (wire layout = csConfigPdu_t).
- *
- * output parameters
- *
- * @return      None
- */
-void csConfig_ParsePDU(csConfigurationSet_t *pDst, const uint8 *pBuf);
-
-/*******************************************************************************
- * @fn          csConfig_SerializePDU
- *
- * @brief       Serialize a csConfigurationSet_t into a CS_CONFIG_REQ PDU
- *              payload.  This is the sole exit point for configuration data
- *              going over the air; it replaces the previous direct memcpy of
- *              csConfigurationSet_t to the PDU buffer.
- *
- * input parameters
- *
- * @param pBuf  - Output: 27-byte PDU payload buffer to fill.
- * @param pSrc  - Input:  pointer to csConfigurationSet_t from DB.
- *
- * output parameters
- *
- * @return      None
- */
-void csConfig_SerializePDU(uint8 *pBuf, const csConfigurationSet_t *pSrc);
-
-/*******************************************************************************
- * @fn          llCsCapab_ParsePDU
- *
- * @brief       Parse a CS_CAPABILITIES_REQ/RSP PDU payload into an unpacked
- *              llCsCapabilities_t.  This is the sole entry point for
- *              air-received capabilities data; it replaces the previous
- *              direct cast of the PDU buffer to llCsCapabilities_t*.
- *
- * input parameters
- *
- * @param pDst  - Output: pointer to llCsCapabilities_t to populate.
- * @param pBuf  - Input:  25-byte PDU payload (wire layout = llCsCapabPdu_t).
- *
- * output parameters
- *
- * @return      None
- */
-void llCsCapab_ParsePDU(llCsCapabilities_t *pDst, const uint8 *pBuf);
-
-/*******************************************************************************
- * @fn          llCsCapab_SerializePDU
- *
- * @brief       Serialize a llCsCapabilities_t into a CS_CAPABILITIES_REQ/RSP
- *              PDU payload.  This is the sole exit point for capabilities data
- *              going over the air; it replaces the previous direct memcpy of
- *              llCsCapabilities_t to the PDU buffer.
- *
- * input parameters
- *
- * @param pBuf  - Output: 25-byte PDU payload buffer to fill.
- * @param pSrc  - Input:  pointer to llCsCapabilities_t from DB.
- *
- * output parameters
- *
- * @return      None
- */
-void llCsCapab_SerializePDU(uint8 *pBuf, const llCsCapabilities_t *pSrc);
-
-/*******************************************************************************
- * @fn          llCSHasNoFunctionPreventingPending
- *
- * @brief       This function check if this connection has an instant in progress
- *              (this excludes Channel Sounding)
- * input parameters
- *
- * @param       connPtr - Connection pointer
- *
- * output parameters
- *
- * @return FALSE if there isn't a control procedure active else TRUE.
- */uint8 llCSHasNoFunctionPreventingPending(llConnState_t *connPtr);
 
 #endif // LL_CS_COMMON_H

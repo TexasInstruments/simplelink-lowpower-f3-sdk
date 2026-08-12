@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2021-2022, Arm Limited. All rights reserved.
- * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -16,7 +15,6 @@
 #include "tfm_crypto_defs.h"
 
 #include "crypto_library.h"
-#include "ti_psa_crypto.h"
 
 /*!
  * \addtogroup tfm_crypto_api_shim_layer
@@ -52,19 +50,13 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         if (status != PSA_SUCCESS) {
             return status;
         }
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_import_key(&key_attributes,
-                                   data, data_length, &library_key);
-#else
+
         status = psa_import_key(&key_attributes,
                                 data, data_length, &library_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         /* Update the imported key id */
         *key_id = CRYPTO_LIBRARY_GET_KEY_ID(library_key);
     }
     break;
-/* TI-TFM: These deprecated APIs are not supported by TI's PSA Crypto API implementation */
-#ifndef TI_PSA_CRYPTO_API_WRAPPER
     case TFM_CRYPTO_OPEN_KEY_SID:
     {
         psa_key_id_t *key_id = out_vec[0].base;
@@ -78,25 +70,17 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         status = psa_close_key(library_key);
     }
     break;
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     case TFM_CRYPTO_DESTROY_KEY_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_destroy_key(library_key);
-#else
         status = psa_destroy_key(library_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     break;
     case TFM_CRYPTO_GET_KEY_ATTRIBUTES_SID:
     {
         psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
         struct psa_client_key_attributes_s *client_key_attr = out_vec[0].base;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_get_key_attributes(library_key, &key_attributes);
-#else
+
         status = psa_get_key_attributes(library_key, &key_attributes);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status == PSA_SUCCESS) {
             status = tfm_crypto_core_library_key_attributes_to_client(&key_attributes,
                                                                       client_key_attr);
@@ -115,11 +99,8 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         if (status != PSA_SUCCESS) {
             return status;
         }
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        ti_psa_reset_key_attributes(&key_attributes);
-#else
+
         psa_reset_key_attributes(&key_attributes);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
         status = tfm_crypto_core_library_key_attributes_to_client(&key_attributes,
                                                                   client_key_attr);
@@ -129,13 +110,9 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
     {
         uint8_t *data = out_vec[0].base;
         size_t data_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_export_key(library_key, data, data_size,
-                                   &(out_vec[0].len));
-#else
+
         status = psa_export_key(library_key, data, data_size,
                                 &(out_vec[0].len));
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -145,13 +122,9 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
     {
         uint8_t *data = out_vec[0].base;
         size_t data_size = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_export_public_key(library_key, data, data_size,
-                                          &(out_vec[0].len));
-#else
+
         status = psa_export_public_key(library_key, data, data_size,
                                        &(out_vec[0].len));
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -159,11 +132,7 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
     break;
     case TFM_CRYPTO_PURGE_KEY_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_purge_key(library_key);
-#else
         status = psa_purge_key(library_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     break;
     case TFM_CRYPTO_COPY_KEY_SID:
@@ -181,13 +150,10 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         if (status != PSA_SUCCESS) {
             return status;
         }
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_copy_key(library_key, &key_attributes, &target_key);
-#else
+
         status = psa_copy_key(library_key,
                               &key_attributes,
                               &target_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             return status;
         }
@@ -209,11 +175,8 @@ psa_status_t tfm_crypto_key_management_interface(psa_invec in_vec[],
         if (status != PSA_SUCCESS) {
             return status;
         }
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_generate_key(&key_attributes, &library_key);
-#else
+
         status = psa_generate_key(&key_attributes, &library_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             return status;
         }

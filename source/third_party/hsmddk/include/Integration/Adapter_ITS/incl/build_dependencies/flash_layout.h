@@ -27,20 +27,19 @@
 
 #include <DeviceFamily.h>
 
-#define PROGRAM_UNIT 1
-
-
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #include DeviceFamily_constructPath(inc/hw_device.h)
+    #define PROGRAM_UNIT 1
     #define BASE 0x0
     #define SIZE FLASH_MAIN_SW_SIZE /* FLASH_MAIN_SIZE - HSM_FW_SIZE in driverlib */
     #define SECTOR_SIZE FLASH_MAIN_SECTOR_SIZE /* 2 KB for 1M CC27XX */
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    /* Generated in ti_flash_map_config.c by Memory Map SysConfig module */
-    extern const uint32_t key_storage_physical_slot_address;
-    extern const uint32_t key_storage_region_size;
-    #define BASE key_storage_physical_slot_address /* XMEM KeyStore Region physical address base */
-    #define SIZE key_storage_region_size /* Size of KeyStore's XMEM region */
+    #define PROGRAM_UNIT 16
+    /* The following values are from drivers/source/ti/drivers/XMEMWFF3.c
+     * ITS occupies a region of user flash, which is the XMEM region.
+     */
+    #define BASE 0x0021A000 /* XMEM Region physical address base */
+    #define SIZE 0x001E5000 /* Size of XMEM region */
     #define SECTOR_SIZE 0x1000 /* 4 KB */
 #endif
 
@@ -55,29 +54,14 @@
 #define FLASH_TOTAL_SIZE             FLASH0_SIZE
 
 /* Internal Trusted Storage (ITS) Service definitions */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
-#if ((defined (__GNUC__) && !defined (__clang__)))
+extern const size_t FLASH_ITS_SIZE;
+#define FLASH_ITS_AREA_SIZE (FLASH_ITS_SIZE)
+
+#if ((defined (__GNUC__) && !defined (__clang__)) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     #define FLASH_ITS_AREA_ADDR ((FLASH_TOTAL_SIZE - FLASH_ITS_AREA_SIZE) + FLASH0_BASE_S)
 #else
     extern const void *FLASH_ITS_ADDRESS;
     #define FLASH_ITS_AREA_ADDR ((uint32_t)FLASH_ITS_ADDRESS)
-#endif
-    /* This represents the size of the ITS area specifically.
-     * For CC35XX, the ITS area is the only flash region known
-     * to ITS. For CC27XX, the ITS area is calculated relative
-     * to the whole flash available on the device.
-     */
-    extern const size_t FLASH_ITS_SIZE;
-    #define FLASH_ITS_AREA_SIZE   (FLASH_ITS_SIZE)
-#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    /* Generated in ti_flash_map_config.c by Memory Map SysConfig module */
-    extern const uint32_t key_storage_logical_slot_address;
-    #define FLASH_ITS_AREA_SIZE (FLASH0_SIZE) /* Entire XMEM region is dedicated to ITS */
-    /* XMEM KeyStore Region physical address base - note that 'offset' and 'base' are used
-     * interchangeably since the XMEM region is the ONLY region of flash that CC35XX ITS is aware of.
-     */
-    #define FLASH_ITS_AREA_ADDR (FLASH0_BASE_S)
-    #define FLASH_ITS_AREA_LOGICAL_ADDR (key_storage_logical_slot_address) /* XMEM KeyStore Region logical address base */
 #endif
 
 /*

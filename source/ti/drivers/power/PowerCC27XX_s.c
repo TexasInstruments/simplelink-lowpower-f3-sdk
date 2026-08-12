@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2026, Texas Instruments Incorporated
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,9 +73,7 @@
 #include DeviceFamily_constructPath(driverlib/gpio.h)
 #include DeviceFamily_constructPath(driverlib/lrfd.h)
 #include DeviceFamily_constructPath(driverlib/pmctl.h)
-#include DeviceFamily_constructPath(driverlib/systimer.h)
 #include DeviceFamily_constructPath(driverlib/ull.h)
-#include DeviceFamily_constructPath(driverlib/clkctl.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 
 /* Type definitions */
@@ -97,6 +95,7 @@ typedef enum
 } PowerCC27XX_LfclkTdcTrigSrc;
 
 /* Forward declarations */
+psa_flih_result_t cpuirq3_irqn_flih(void);
 static int_fast16_t PowerCC27XX_notify(uint_fast16_t eventType);
 static int_fast16_t PowerCC27XX_notify_s(uint_fast16_t eventType);
 static int_fast16_t PowerCC27XX_notify_ns(uint_fast16_t eventType);
@@ -145,6 +144,8 @@ extern const uint_least8_t GPIO_pinUpperBound;
  */
 #define LFINCCTL_INT_START_VALUE (0x1E8480U)
 
+#define SYSTIMER_CHANNEL_COUNT (5U)
+
 /* Max number of ClockP ticks into the future supported by this ClockP
  * implementation.
  * Under the hood, ClockP uses the SysTimer whose events trigger immediately if
@@ -159,11 +160,6 @@ extern const uint_least8_t GPIO_pinUpperBound;
  * subscribers on the non-secure side.
  */
 #define SYNCHRONOUS_NS_EVENTS (PowerLPF3_ENTERING_STANDBY | PowerLPF3_AWAKE_STANDBY | PowerLPF3_ENTERING_SHUTDOWN)
-
-/* Value to be written to the SCB.AIRCR.VECTKEY when writing to the SCB.AIRCR
- * register for the write to take effect.
- */
-#define SCB_AIRCR_VECTKEY (0x05FAUL << SCB_AIRCR_VECTKEY_Pos)
 
 /* Static Globals */
 
@@ -230,6 +226,16 @@ static SecureCallback_Handle notifySecureCallbackHandle = NULL;
 /* Non-static Globals */
 
 /* ****************** Power APIs ******************** */
+
+/*
+ *  ======== cpuirq3_irqn_flih ========
+ */
+psa_flih_result_t cpuirq3_irqn_flih(void)
+{
+    HwiP_dispatchInterrupt(INT_CPUIRQ3);
+
+    return PSA_FLIH_NO_SIGNAL;
+}
 
 /*
  *  ======== Power_init ========
@@ -905,7 +911,7 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
             uint32_t ioShutdownConfig = HWREG(PowerCC27XX_getIocAddr(i)) & IOC_IOC0_WUCFGSD_M;
 
             if (((ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_HIGH) || (ioShutdownConfig == IOC_IOC0_WUCFGSD_WAKE_LOW)) &&
-                (GPIOGetEventDio((uint32_t)i, false) != 0U))
+                (GPIOGetEventDio((uint32_t)i) != 0U))
             {
                 ioPending = true;
             }
@@ -935,11 +941,9 @@ int_fast16_t Power_shutdown(uint_fast16_t shutdownState, uint_fast32_t shutdownT
 int_fast16_t Power_sleep(uint_fast16_t sleepState)
 {
     int_fast16_t status = Power_SOK;
-    uint32_t sysTickCsrNs;
-    uint32_t sysTickRvrNs;
-    uint32_t icbActlrNs;
-    uint32_t scbAircrS;
-    uint32_t scbAircrNs;
+    uint32_t SysTick_NS_CSR;
+    uint32_t SysTick_NS_RVR;
+    uint32_t ICB_NS_ACTLR;
 
     (void)sleepState;
 
@@ -962,22 +966,11 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
          */
 
         /* Store ICB_NS.ACTLR. Add 0x20000 to access NS ICB */
-        icbActlrNs = HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR);
+        ICB_NS_ACTLR = HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR);
 
         /* Store SysTick_NS.CSR/RVR */
-        sysTickCsrNs = SysTick_NS->CTRL;
-        sysTickRvrNs = SysTick_NS->LOAD;
-
-        /* Due to a bug in the ROM code, the SCB.AIRCR registers are not
-         * restored correctly so we need to store and restore the state here
-         * instead.
-         */
-
-        /* Read S and NS AIRCR registers, and store them with the required
-         * VECTKEY value so the write when restoring the values will be applied.
-         */
-        scbAircrS  = (SCB->AIRCR & ((uint32_t)~SCB_AIRCR_VECTKEY_Msk)) | SCB_AIRCR_VECTKEY;
-        scbAircrNs = (SCB_NS->AIRCR & ((uint32_t)~SCB_AIRCR_VECTKEY_Msk)) | SCB_AIRCR_VECTKEY;
+        SysTick_NS_CSR = SysTick_NS->CTRL;
+        SysTick_NS_RVR = SysTick_NS->LOAD;
 
         /* Call wrapper function to ensure that R0-R3 are saved and restored before
          * and after this function call. Otherwise, compilers will attempt to stash
@@ -987,18 +980,12 @@ int_fast16_t Power_sleep(uint_fast16_t sleepState)
          */
         PowerCC27XX_enterStandby();
 
-        /* Restore S and NS AIRCR registers. The stored register values already
-         * have the correct VECTKEY value.
-         */
-        SCB_NS->AIRCR = scbAircrNs;
-        SCB->AIRCR    = scbAircrS;
-
         /* Restore ICB_NS.ACTLR. Add 0x20000 to access NS ICB */
-        HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR) = icbActlrNs;
+        HWREG(ICB_BASE + 0x20000U + ICB_O_ACTLR) = ICB_NS_ACTLR;
 
         /* Restore SysTick_NS.CSR/RVR */
-        SysTick_NS->CTRL = sysTickCsrNs;
-        SysTick_NS->LOAD = sysTickRvrNs;
+        SysTick_NS->CTRL = SysTick_NS_CSR;
+        SysTick_NS->LOAD = SysTick_NS_RVR;
 
         /* Now that we have returned and are executing code from flash again, start
          * up the HFXT. The HFXT might already have been enabled automatically by
@@ -1236,15 +1223,14 @@ static bool PowerCC27XX_lfxtQual(uint32_t maskedStatus)
             int32_t edgeOffset = (int32_t)edges - 1500000;
 
             /* For LFXT the clock is considered good if the frequency is
-             * within 32.768 kHz +/-500 ppm, and the frequency is within
+             * within 32.768 kHz +/-100 ppm, and the frequency is within
              * +/-100 ppm of the last measurement.
              *
              * The expected number of edges is (96 MHz/32.768 kHz)*512 =
              * 1500000.
-             * 100 ppm of 1500000 edges is 150 edges, and 500 ppm of 1500000
-             * edges is 750 edges
+             * 100 ppm of 1500000 edges is 150 edges.
              */
-            isClockGood = (Math_ABS(lastOffset) < 750) && (Math_ABS(edgeOffset) < 750) &&
+            isClockGood = (Math_ABS(lastOffset) < 150) && (Math_ABS(edgeOffset) < 150) &&
                           (Math_ABS(edgeDeltaLast) < 150);
         }
 
@@ -1914,20 +1900,6 @@ int_fast16_t PowerLPF3_sleep(uint32_t nextEventTimeUs)
     standbyAllowed = (constraints & ((uint32_t)1U << PowerLPF3_DISALLOW_STANDBY)) == 0U;
     idleAllowed    = (constraints & ((uint32_t)1U << PowerLPF3_DISALLOW_IDLE)) == 0U;
 
-    /* Do not attempt to enter standby if there is a pending interrupt.
-     * This is not trying to guarantee that standby will not be entered with a
-     * pending interrupt, since an interrupt can always become pending after
-     * checking the pending status. Instead this is to catch the cases where a
-     * S interrupt might have caused a NS interrupt to become pending while NS
-     * interrupts are disabled but before S interrupts get disabled. In this
-     * case, the NS interrupt will not be serviced if the device enters standby.
-     */
-    if (((SCB->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U)
-    {
-        standbyAllowed = false;
-        idleAllowed    = false;
-    }
-
     /* If we are using LFOSC, it has been observed a brief period of ~15us
      * occurring ~130us after starting HFXT where FLTSETTLED pulses high. If the
      * idle loop attempts to enter standby while FLTSETTLED pulses high, it may
@@ -1967,7 +1939,7 @@ int_fast16_t PowerLPF3_sleep(uint32_t nextEventTimeUs)
          * If the next event is in the past then soonestDelta will be greater
          * than MAX_SYSTIMER_DELTA.
          */
-        ticksBefore  = SysTimerGetTime1Us();
+        ticksBefore  = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
         soonestDelta = nextEventTimeUs - ticksBefore;
         if ((soonestDelta > PowerCC27XX_TOTALTIMESTANDBY) && (soonestDelta <= MAX_SYSTIMER_DELTA))
         {
@@ -2109,8 +2081,8 @@ void PowerCC27XX_doWFI(void)
 {
     uint32_t constraints;
     bool idleAllowed;
-    bool pendingInt;
-    bool flashNotNeeded;
+    bool pendingNsInt;
+    bool pendingSInt;
     uint32_t nsKey;
 
     /* Disallow NS interrupts while looping */
@@ -2125,28 +2097,22 @@ void PowerCC27XX_doWFI(void)
      */
     do
     {
-        constraints    = Power_getConstraintMask();
-        idleAllowed    = (constraints & ((uint32_t)1U << PowerLPF3_DISALLOW_IDLE)) == 0U;
-        flashNotNeeded = (constraints & (1 << PowerLPF3_NEED_FLASH_IN_IDLE)) == 0U;
+        constraints = Power_getConstraintMask();
+        idleAllowed = (constraints & ((uint32_t)1U << PowerLPF3_DISALLOW_IDLE)) == 0U;
         if (idleAllowed)
         {
-            /* Configure device to turn on/off flash LDO when in idle */
-            if (flashNotNeeded)
-            {
-                /* FlashLdo can be turned off when in IDLE */
-                CLKCTLEnableFlashLdoOffInIdle();
-            }
-            else
-            {
-                /* FlashLdo cannot be turned off when in IDLE */
-                CLKCTLDisableFlashLdoOffInIdle();
-            }
-
             __WFI();
         }
-        /* Determine if there are any pending interrupts. */
-        pendingInt = ((SCB->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U;
-    } while (pendingInt == false);
+        /* Determine if there are any pending NS interrupts */
+        pendingNsInt = ((SCB_NS->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U;
+
+        /* Determine if there are any pending S interrupts. If there is a
+         * pending S interrupt, it means that something prevents the CPU from
+         * vectoring to it. For example, S interrupts could be disabled.
+         * Exit the loop if that is the case.
+         */
+        pendingSInt = ((SCB->ICSR & SCB_ICSR_VECTPENDING_Msk) >> SCB_ICSR_VECTPENDING_Pos) != 0U;
+    } while ((pendingNsInt == false) && (pendingSInt == false));
 
     /* Restore NS interrupts */
     __TZ_set_PRIMASK_NS(nsKey);

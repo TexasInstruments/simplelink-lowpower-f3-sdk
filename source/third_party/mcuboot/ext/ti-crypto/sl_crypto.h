@@ -34,7 +34,6 @@
 #define __TI_CRYPTO_H__
 
 #include <stddef.h>
-#include <ti/devices/DeviceFamily.h>
 
   /*********************************************************************
  * GLOBAL VARIABLES
@@ -65,13 +64,16 @@ extern uint32_t NIST_Curve_P256_Gy;
  * MACROS
  */
 
-/* Simplified Device family macro for sl_crypto*/
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4 || defined(DeviceFamily_CC26X2X7) || defined(DeviceFamily_CC13X2X7)
-#define IS_CC13X2X7_CC13X4_CC26X4
+/* Device family macros*/
+#if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22)
+#define IS_CC23XX
+#elif defined(DeviceFamily_CC27XX)
+#define IS_CC27XX
 #elif defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC26X2)
 #define IS_CC13X2_CC26X2
-#endif
-
+#else
+#define IS_CC13X2X7_CC13X4_CC26X4
+#endif 
 
 #define AES_CTR_KEY_SIZE        (16)
 
@@ -133,10 +135,6 @@ int SlCrypto_sha256_update(const void *data,
 int SlCrypto_sha256_final(uint8_t *output);
 
 int SlCrypto_sha256_setupHmac(const uint8_t *key, unsigned int key_size);
-
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
-int SlCrypto_sha256_updateHmac(const void *data, uint32_t data_len);
-#endif
 
 int SlCrypto_sha256_finalizeHmac(uint8_t *tag);
 

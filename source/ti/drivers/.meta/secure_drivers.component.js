@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== secure_drivers.component.js ========
+ *  ======== drivers.component.js ========
  */
 
 "use strict";
@@ -192,8 +192,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                         "/ti/drivers/ECDH",
                         "/ti/drivers/ECDSA",
                         "/ti/drivers/EDDSA",
-                        "/ti/drivers/RNG",
                         "/ti/drivers/SHA2",
+                        "/ti/drivers/RNG",
                         "/ti/drivers/TRNG"
                     ]
                 }
@@ -221,7 +221,6 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                         "/ti/drivers/AESGCM",
                         "/ti/drivers/CryptoKeyKeyStore_PSA",
                         "/ti/drivers/ECDSA",
-                        "/ti/drivers/EDDSA",
                         "/ti/drivers/RNG",
                         "/ti/drivers/SHA2",
                         "/ti/drivers/TRNG"

@@ -18,7 +18,6 @@
 #include "tfm_crypto_defs.h"
 
 #include "crypto_library.h"
-#include "ti_psa_crypto.h"
 
 /*!
  * \addtogroup tfm_crypto_api_shim_layer
@@ -44,15 +43,10 @@ psa_status_t tfm_crypto_key_derivation_interface(psa_invec in_vec[],
         size_t output_size = out_vec[0].len;
         const uint8_t *peer_key = in_vec[1].base;
         size_t peer_key_length = in_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_raw_key_agreement(iov->alg, library_key,
-                                         peer_key, peer_key_length,
-                                         output, output_size, &out_vec[0].len);
-#else
+
         return psa_raw_key_agreement(iov->alg, library_key,
                                      peer_key, peer_key_length,
                                      output, output_size, &out_vec[0].len);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
 
     if (sid == TFM_CRYPTO_KEY_DERIVATION_SETUP_SID) {
@@ -75,11 +69,7 @@ psa_status_t tfm_crypto_key_derivation_interface(psa_invec in_vec[],
     switch (sid) {
     case TFM_CRYPTO_KEY_DERIVATION_SETUP_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_key_derivation_setup(operation, iov->alg);
-#else
         status = psa_key_derivation_setup(operation, iov->alg);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
@@ -89,52 +79,33 @@ psa_status_t tfm_crypto_key_derivation_interface(psa_invec in_vec[],
     case TFM_CRYPTO_KEY_DERIVATION_GET_CAPACITY_SID:
     {
         size_t *capacity = out_vec[0].base;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_key_derivation_get_capacity(operation, capacity);
-#else
+
         return psa_key_derivation_get_capacity(operation, capacity);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_KEY_DERIVATION_SET_CAPACITY_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_key_derivation_set_capacity(operation, iov->capacity);
-#else
         return psa_key_derivation_set_capacity(operation, iov->capacity);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_KEY_DERIVATION_INPUT_BYTES_SID:
     {
         const uint8_t *data = in_vec[1].base;
         size_t data_length = in_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_key_derivation_input_bytes(operation, iov->step, data,
-                                                  data_length);
-#else
+
         return psa_key_derivation_input_bytes(operation, iov->step, data,
                                               data_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_KEY_DERIVATION_OUTPUT_BYTES_SID:
     {
         uint8_t *output = out_vec[0].base;
         size_t output_length = out_vec[0].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_key_derivation_output_bytes(operation,
-                                                   output, output_length);
-#else
+
         return psa_key_derivation_output_bytes(operation,
                                                output, output_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_KEY_DERIVATION_INPUT_KEY_SID:
     {
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_key_derivation_input_key(operation, iov->step, library_key);
-#else
          return psa_key_derivation_input_key(operation,
                                              iov->step, library_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_KEY_DERIVATION_OUTPUT_KEY_SID:
     {
@@ -151,13 +122,9 @@ psa_status_t tfm_crypto_key_derivation_interface(psa_invec in_vec[],
         if (status != PSA_SUCCESS) {
             return status;
         }
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_key_derivation_output_key(&key_attributes, operation,
-                                                   &library_key);
-#else
+
         status = psa_key_derivation_output_key(&key_attributes, operation,
                                                &library_key);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
         *key_handle = CRYPTO_LIBRARY_GET_KEY_ID(library_key);
     }
@@ -175,11 +142,8 @@ psa_status_t tfm_crypto_key_derivation_interface(psa_invec in_vec[],
              */
             return PSA_SUCCESS;
         }
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        status = ti_psa_key_derivation_abort(operation);
-#else
+
         status = psa_key_derivation_abort(operation);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
         goto release_operation_and_return;
     }
@@ -187,17 +151,11 @@ psa_status_t tfm_crypto_key_derivation_interface(psa_invec in_vec[],
     {
         const uint8_t *peer_key = in_vec[1].base;
         size_t peer_key_length = in_vec[1].len;
-#ifdef TI_PSA_CRYPTO_API_WRAPPER
-        return ti_psa_key_derivation_key_agreement(operation, iov->step,
-                                                    library_key,
-                                                    peer_key,
-                                                    peer_key_length);
-#else
+
         return psa_key_derivation_key_agreement(operation, iov->step,
                                                 library_key,
                                                 peer_key,
                                                 peer_key_length);
-#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     break;
     default:

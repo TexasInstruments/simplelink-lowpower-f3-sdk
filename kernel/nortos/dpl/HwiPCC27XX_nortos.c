@@ -40,7 +40,7 @@
 
 /* Driverlib includes */
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(cmsis/device.h)
+#include DeviceFamily_constructPath(cmsis/cc27xx.h)
 #include DeviceFamily_constructPath(cmsis/core/core_cm33.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
@@ -169,14 +169,11 @@ HwiP_Handle HwiP_construct(HwiP_Struct *handle, int interruptNum, HwiP_Fxn hwiFx
 
         if ((params->priority & 0xFF) == 0xFF)
         {
-            /* SwiP_nortos.c uses INT_PRI_LEVEL15 as its scheduler. No one else
-             * may use that priority level. CC27XX has four priority bits.
-             * So level 15 is the lowest.
-             */
-            params->priority = INT_PRI_LEVEL14;
+            /* SwiP_nortos.c uses INT_PRI_LEVEL7 as its scheduler */
+            params->priority = INT_PRI_LEVEL6;
         }
 
-        if ((interruptNum != HwiP_swiPIntNum) && (params->priority == INT_PRI_LEVEL15))
+        if (interruptNum != HwiP_swiPIntNum && params->priority == INT_PRI_LEVEL7)
         {
             handle = NULL;
         }

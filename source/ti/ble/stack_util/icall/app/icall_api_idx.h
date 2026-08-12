@@ -71,7 +71,6 @@
 #define IDX_GAPBondMgr_GenerateEccKeys                GAPBondMgr_GenerateEccKeys
 #define IDX_GapBondMgr_readBondFromNV                 GapBondMgr_readBondFromNV
 #define IDX_GapBondMgr_writeBondToNv                  GapBondMgr_writeBondToNv
-#define IDX_GapBondMgr_writeBondToNvByIndex           GapBondMgr_writeBondToNvByIndex
 #define IDX_GapBondMgr_GetPrevAuth                    GapBondMgr_GetPrevAuth
 #define IDX_GapBondMgr_StartEnc                       GapBondMgr_StartEnc
 
@@ -154,10 +153,6 @@
 #define IDX_HCI_LE_SetEventMaskCmd                    HCI_LE_SetEventMaskCmd
 #define IDX_HCI_LE_ReadLocalSupportedFeaturesCmd      HCI_LE_ReadLocalSupportedFeaturesCmd
 #define IDX_HCI_LE_ReadAdvChanTxPowerCmd              HCI_LE_ReadAdvChanTxPowerCmd
-#define IDX_HCI_LE_ReadMaxAdvDataLenCmd               HCI_LE_ReadMaxAdvDataLenCmd
-#define IDX_HCI_LE_ReadNumSupportedAdvSetsCmd         HCI_LE_ReadNumSupportedAdvSetsCmd
-#define IDX_HCI_LE_CreateConnCmd                      HCI_LE_CreateConnCmd
-#define IDX_HCI_LE_ExtCreateConnCmd                   HCI_LE_ExtCreateConnCmd
 #define IDX_HCI_LE_ReadAcceptListSizeCmd              HCI_LE_ReadAcceptListSizeCmd
 #define IDX_HCI_LE_ClearAcceptListCmd                 HCI_LE_ClearAcceptListCmd
 #define IDX_HCI_LE_AddAcceptListCmd                   HCI_LE_AddAcceptListCmd
@@ -183,8 +178,7 @@
 #define IDX_HCI_LE_SetConnectionCteRequestEnableCmd   HCI_LE_SetConnectionCteRequestEnableCmd
 #define IDX_HCI_LE_SetConnectionCteResponseEnableCmd  HCI_LE_SetConnectionCteResponseEnableCmd
 #define IDX_HCI_LE_ReadAntennaInformationCmd          HCI_LE_ReadAntennaInformationCmd
-#define IDX_HCI_LE_SetPeriodicAdvParamsV1Cmd            HCI_LE_SetPeriodicAdvParamsV1Cmd
-#define IDX_HCI_LE_SetPeriodicAdvParamsV2Cmd          HCI_LE_SetPeriodicAdvParamsV2Cmd
+#define IDX_HCI_LE_SetPeriodicAdvParamsCmd            HCI_LE_SetPeriodicAdvParamsCmd
 #define IDX_HCI_LE_SetPeriodicAdvDataCmd              HCI_LE_SetPeriodicAdvDataCmd
 #define IDX_HCI_LE_SetPeriodicAdvEnableCmd            HCI_LE_SetPeriodicAdvEnableCmd
 #define IDX_HCI_LE_PeriodicAdvCreateSyncCmd           HCI_LE_PeriodicAdvCreateSyncCmd
@@ -198,8 +192,8 @@
 #define IDX_HCI_LE_SetConnectionlessCteTransmitParamsCmd HCI_LE_SetConnectionlessCteTransmitParamsCmd
 #define IDX_HCI_LE_SetConnectionlessCteTransmitEnableCmd HCI_LE_SetConnectionlessCteTransmitEnableCmd
 #define IDX_HCI_LE_SetExtScanRspData                    HCI_LE_SetExtScanRspData
+#define IDX_HCI_LE_SetExtAdvData                        HCI_LE_SetExtAdvData
 #define IDX_HCI_LE_SetAdvStatus                         HCI_LE_SetAdvStatus
-#define IDX_HCI_LE_ExtCreateConnV2                      HCI_LE_ExtCreateConnV2
 #define IDX_HCI_LE_ReadRemoteTransmitPowerLevelCmd      HCI_LE_ReadRemoteTransmitPowerLevelCmd
 #define IDX_HCI_LE_EnhancedReadTransmitPowerLevelCmd    HCI_LE_EnhancedReadTransmitPowerLevelCmd
 #define IDX_HCI_LE_SetTransmitPowerReportingEnableCmd   HCI_LE_SetTransmitPowerReportingEnableCmd
@@ -241,6 +235,7 @@
 #define IDX_HCI_TL_getCmdResponderID                     HCI_TL_getCmdResponderID
 #define IDX_HCI_LE_RandCmd                               HCI_LE_RandCmd
 #define IDX_HCI_LE_ReadBufSizeCmd                        HCI_LE_ReadBufSizeCmd
+#define IDX_HCI_LE_SetRandomAddressCmd                   HCI_LE_SetRandomAddressCmd
 #define IDX_HCI_DisconnectCmd                            HCI_DisconnectCmd
 #define IDX_HCI_SetControllerToHostFlowCtrlCmd           HCI_SetControllerToHostFlowCtrlCmd
 #define IDX_HCI_HostBufferSizeCmd                        HCI_HostBufferSizeCmd
@@ -267,7 +262,7 @@
 #define IDX_HCI_LE_SetAdvEnableCmd                       HCI_LE_SetAdvEnableCmd
 #define IDX_HCI_LE_SetScanParamCmd                       HCI_LE_SetScanParamCmd
 #define IDX_HCI_LE_SetScanEnableCmd                      HCI_LE_SetScanEnableCmd
-#define IDX_HCI_LE_SetExtScanEnableCmd                   HCI_LE_SetExtScanEnableCmd
+#define IDX_HCI_LE_CreateConnCmd                         HCI_LE_CreateConnCmd
 #define IDX_HCI_LE_CreateConnCancelCmd                   HCI_LE_CreateConnCancelCmd
 #define IDX_HCI_LE_StartEncyptCmd                        HCI_LE_StartEncyptCmd
 #define IDX_HCI_LE_ConnUpdateCmd                         HCI_LE_ConnUpdateCmd
@@ -293,16 +288,18 @@
 #define IDX_HCI_LE_EnhancedTxTestCmd                     HCI_LE_EnhancedTxTestCmd
 #define IDX_HCI_LE_EnhancedCteRxTestCmd                  HCI_LE_EnhancedCteRxTestCmd
 #define IDX_HCI_LE_EnhancedCteTxTestCmd                  HCI_LE_EnhancedCteTxTestCmd
+#define IDX_LE_SetAdvSetRandAddr                         LE_SetAdvSetRandAddr
 #define IDX_LE_SetExtAdvParams                           LE_SetExtAdvParams
+#define IDX_LE_SetExtAdvData                             LE_SetExtAdvData
 #define IDX_LE_SetExtScanRspData                         LE_SetExtScanRspData
 #define IDX_LE_SetExtAdvEnable                           LE_SetExtAdvEnable
 #define IDX_LE_RemoveAdvSet                              LE_RemoveAdvSet
 #define IDX_LE_ClearAdvSets                              LE_ClearAdvSets
+#define IDX_LE_SetExtScanParams                          LE_SetExtScanParams
 #define IDX_LE_SetExtScanEnable                          LE_SetExtScanEnable
 #define IDX_LE_ReadMaxAdvDataLen                         LE_ReadMaxAdvDataLen
 #define IDX_LE_ReadNumSupportedAdvSets                   LE_ReadNumSupportedAdvSets
 #define IDX_LL_AE_RegCBack                               LL_AE_RegCBack
-#define IDX_LL_AE_RegMultipleCBacks                      LL_AE_RegMultipleCBacks
 #define IDX_LE_ExtCreateConn                             LE_ExtCreateConn
 #define IDX_LL_Handover_StartSN                          LL_Handover_StartSN
 #define IDX_LL_Handover_CloseSN                          LL_Handover_CloseSN
@@ -320,8 +317,6 @@
 #define IDX_HCI_EXT_SetQOSDefaultParameters              HCI_EXT_SetQOSDefaultParameters
 #define IDX_HCI_EXT_SendPowerControlRequestCmd           HCI_EXT_SendPowerControlRequestCmd
 #define IDX_HCI_EXT_SetDefaultAntenna                    HCI_EXT_SetDefaultAntenna
-#define IDX_HCI_EXT_SetPowerCtrlRangeCmd                 HCI_EXT_SetPowerCtrlRangeCmd
-#define IDX_HCI_EXT_GetPowerCtrlRangeCmd                 HCI_EXT_GetPowerCtrlRangeCmd
 #define IDX_HCI_EXT_RssiMon_RegCmd                       HCI_EXT_RssiMon_RegCmd
 #define IDX_HCI_EXT_RssiMon_UnregCmd                     HCI_EXT_RssiMon_UnregCmd
 #define IDX_HCI_EXT_RssiMon_SetConfigCmd                 HCI_EXT_RssiMon_SetConfigCmd

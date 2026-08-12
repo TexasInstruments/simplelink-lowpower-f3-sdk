@@ -6,7 +6,6 @@
             "+../main_freertos.c -> main_freertos.c",
             "+../../psaAeadEncrypt.c -> psaAeadEncrypt.c",
             "+../psaAeadEncrypt.syscfg -> psaAeadEncrypt.syscfg",
-            "+../../README.html -> README.html",
             "+../../README.md -> README.md"
         ]
     }

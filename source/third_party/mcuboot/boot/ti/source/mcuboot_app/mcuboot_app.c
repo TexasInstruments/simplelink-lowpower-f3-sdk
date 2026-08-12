@@ -40,12 +40,6 @@
 
 #include "mcuboot_config/mcuboot_logging.h"
 
-#if defined(MCUBOOT_SWAP_USING_MOVE)
-#include "bootutil/bootutil_public.h"
-#include "sysflash/sysflash.h"
-#include "watchdog/watchdog.h"
-#endif
-
 #ifndef EXCLUDE_GPIOS
 #include "ti/common/cc26xx/debug/led_debug.h"
 #endif // EXCLUDE_GPIOS
@@ -127,10 +121,6 @@ int main(void)
     lightRedLed();
 #endif //EXCLUDE_GPIOS
 
-#ifdef DEBUG
-    delay(3000);
-#endif
-
     trace_init();
     MCUBOOT_LOG_INF("mcuboot_app");
 
@@ -150,9 +140,7 @@ int main(void)
 
     if ((0 == bootStatus) && (IMAGE_MAGIC == bootRsp.br_hdr->ih_magic))
     {
-#ifndef EXCLUDE_GPIOS
         blinkLed(GREEN_LED, 3, 500);
-#endif //EXCLUDE_GPIOS
         MCUBOOT_LOG_INF("bootRsp: slot = %x, offset = %x, ver=%d.%d.%d.%d",
                             bootStatus,
                             bootRsp.br_image_off,
@@ -161,25 +149,6 @@ int main(void)
                             bootRsp.br_hdr->ih_ver.iv_revision,
                             bootRsp.br_hdr->ih_ver.iv_build_num);
 
-/* Enables H/W watchdog for unconfirmed image in primary slot for test swap */
-#if defined(MCUBOOT_SWAP_USING_MOVE)
-        {
-            struct boot_swap_state primaryState;
-            int rc = boot_read_swap_state_by_id(
-                         FLASH_AREA_IMAGE_PRIMARY(0), &primaryState);
-            if (rc != 0)
-            {
-                MCUBOOT_LOG_INF("Failed to read swap state");
-                mcubootFail();
-            }
-            else if (primaryState.copy_done == BOOT_FLAG_SET
-                     && primaryState.image_ok  == BOOT_FLAG_UNSET)
-            {
-                MCUBOOT_LOG_INF("Unconfirmed image: enabling HW watchdog");
-                mcuboot_watchdog_init();
-            }
-        }
-#endif
         do_boot(&bootRsp);
     }
     else

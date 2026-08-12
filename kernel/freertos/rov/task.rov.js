@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,9 +54,7 @@ function BasicTask(){
     this.State             = null;
     this.StackSize         = null;
     this.StackUsage        = null;
-    this.BlockedOnType     = null;
-    this.BlockedOnName     = null;
-    this.BlockedOnAddress  = null;
+    this.BlockedOn         = null;
 }
 
 function DetailedTask(){
@@ -71,9 +69,7 @@ function DetailedTask(){
     this.StackLimit        = null;
     this.CurrentTaskSP     = null;
     this.MutexesHeld       = null;
-    this.BlockedOnType     = null;
-    this.BlockedOnName     = null;
-    this.BlockedOnAddress  = null;
+    this.BlockedOn         = null;
     this.StaticAlloc       = null;
 }
 
@@ -103,11 +99,11 @@ function getTasks(makeDetailed){
 
     /* Delay1 List */
     let delay1List = Program.fetchVariable("xDelayedTaskList1");
-    addTasksFromListObj(view, delay1List, "Blocked", currentTask, makeDetailed);
+    addTasksFromListObj(view, delay1List, "Delayed", currentTask, makeDetailed);
 
     /* Delay2 List */
     let delay2List = Program.fetchVariable("xDelayedTaskList2");
-    addTasksFromListObj(view, delay2List, "Blocked", currentTask, makeDetailed);
+    addTasksFromListObj(view, delay2List, "Delayed", currentTask, makeDetailed);
 
     /* Terminated List */
     let terminatedList = Program.fetchVariable("xTasksWaitingTermination");
@@ -151,19 +147,17 @@ function setBlockedOn(taskInfo){
     /* queueMapList will be null here when configQUEUE_REGISTRY_SIZE
      * is set to zero */
     if (queueMapList == null) {
-        taskInfo.BlockedOnType = "Tracking Disabled";
+        taskInfo.BlockedOn = "Unknown";
         return;
     }
 
     for (let i = 0; i < queueMapList.length; i++) {
         if (checkIfTaskIsBlockingOnQueue(taskInfo.Address, queueMapList[i])) {
-            taskInfo.BlockedOnType = queueMapList[i]["Type"];
-            taskInfo.BlockedOnName = queueMapList[i]["Name"];
-            taskInfo.BlockedOnAddress = helperGetHexString(queueMapList[i]["Address"]);
+            taskInfo.BlockedOn = queueMapList[i]["Type"] + ": " + queueMapList[i]["Name"];
             return;
         }
     }
-    taskInfo.BlockedOnType = "Not Found";
+    taskInfo.BlockedOn = "Unknown";
 }
 
 /* ======== getStaticAllocationInfo ======== */

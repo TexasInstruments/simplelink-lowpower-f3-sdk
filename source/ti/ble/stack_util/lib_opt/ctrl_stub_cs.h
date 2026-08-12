@@ -84,7 +84,6 @@
 #include "ti/ble/controller/ll/ll_cs_ctrl_pkt_mgr.h"
 #include "ti/ble/controller/ll/ll_cs_rcl.h"
 #include "ti/ble/controller/ll/ll_cs_handover.h"
-#include "ti/ble/controller/ll/ll_cs_db.h"
 
 // Function prototypes for the actual implementations
 extern csStatus_e LL_CS_ReadLocalSupportedCapabilites(llCsCapabilities_t* pLocalCapabilities);
@@ -92,6 +91,7 @@ extern csStatus_e LL_CS_ReadRemoteSupportedCapabilities(uint16_t connId);
 extern csStatus_e LL_CS_WriteCachedRemoteSupportedCapabilities(uint16_t connId, llCsCapabilities_t* pPeerCapabilitiesRaw);
 extern csStatus_e LL_CS_CreateConfig(uint16_t connId, const csConfigurationSet_t* pConfig, uint8_t createContext);
 extern csStatus_e LL_CS_RemoveConfig(uint16_t connId, uint8_t configId);
+extern csStatus_e LL_CS_GetConfig(uint16_t connId, uint8_t configId, csConfigurationSet_t* pConfig);
 extern csStatus_e LL_CS_SecurityEnable(uint16_t connId);
 extern csStatus_e LL_CS_SetDefaultSettings(uint16_t connId, csDefaultSettings_t* defaultSettings);
 extern csStatus_e LL_CS_ReadLocalFAETable(csFaeTbl_t* pFaeTable);
@@ -103,10 +103,9 @@ extern csStatus_e LL_CS_SetProcedureParameters(uint16_t connId, uint8_t configId
 extern csStatus_e LL_CS_ProcedureEnable(uint16_t connId, uint8_t configId, uint8_t enable);
 extern csStatus_e llCsReceiveCsControlPacket(uint8_t ctrlType, llConnState_t* connPtr, uint8_t* pBuf);
 extern uint8_t llCsTransmitCsCtrlProcedure(llConnState_t* connPtr, uint8_t ctrlPkt);
-extern uint8_t llCsInitPrecal(void);
-extern void llCsReset(void);
-extern bool llCsDbIsCsCtrlProcedureInProgress(uint16_t connId);
 extern uint8_t llCsInit(void);
+extern bool llCsDbIsCsCtrlProcedureInProgress(uint16_t connId);
+extern uint8_t llCsInitDb(void);
 extern void llCsClearConnProcedures(uint16_t connId);
 extern void llCsFreeAll(void);
 extern void llCsSetFeatureBit(void);
@@ -128,9 +127,7 @@ extern uint16 llConnGetMissCountMargin(void);
 extern bool LL_CS_isCsInProgress(uint16_t connId);
 extern bool llCsIsChannelClassificationAllowed(uint32_t currentTime);
 extern uint32_t LL_CS_Handover_SnGetSNDataSize(uint16 connHandle);
-extern void llCsPrecal_clear(void);
 extern uint8_t LL_CS_GetTswByACI(csACI_e ACI, uint8_t initTsw, uint8_t reflTsw);
-extern const csConfigurationSet_t* llCsDbGetConfiguration(uint16 connId, uint8 configId);
 
 
 // Wrapper functions for the feature implementations
@@ -139,6 +136,7 @@ csStatus_e OPT_LL_CS_ReadRemoteSupportedCapabilities(uint16_t connId);
 csStatus_e OPT_LL_CS_WriteCachedRemoteSupportedCapabilities(uint16_t connId, llCsCapabilities_t* pPeerCapabilitiesRaw);
 csStatus_e OPT_LL_CS_CreateConfig(uint16_t connId, const csConfigurationSet_t* pConfig, uint8_t createContext);
 csStatus_e OPT_LL_CS_RemoveConfig(uint16_t connId, uint8_t configId);
+csStatus_e OPT_LL_CS_GetConfig(uint16_t connId, uint8_t configId, csConfigurationSet_t* pConfig);
 csStatus_e OPT_LL_CS_SecurityEnable(uint16_t connId);
 csStatus_e OPT_LL_CS_SetDefaultSettings(uint16_t connId, csDefaultSettings_t* defaultSettings);
 csStatus_e OPT_LL_CS_ReadLocalFAETable(csFaeTbl_t* pFaeTable);
@@ -150,10 +148,9 @@ csStatus_e OPT_LL_CS_SetProcedureParameters(uint16_t connId, uint8_t configId, c
 csStatus_e OPT_LL_CS_ProcedureEnable(uint16_t connId, uint8_t configId, uint8_t enable);
 csStatus_e OPT_llCsReceiveCsControlPacket(uint8_t ctrlType, llConnState_t* connPtr, uint8_t* pBuf);
 uint8_t OPT_llCsTransmitCsCtrlProcedure(llConnState_t* connPtr, uint8_t ctrlPkt);
-uint8_t OPT_llCsInitPrecal(void);
-void OPT_llCsReset(void);
-bool OPT_llCsDbIsCsCtrlProcedureInProgress(uint16_t connId);
 uint8_t OPT_llCsInit(void);
+bool OPT_llCsDbIsCsCtrlProcedureInProgress(uint16_t connId);
+uint8_t OPT_llCsInitDb(void);
 void OPT_llCsClearConnProcedures(uint16_t connId);
 void OPT_llCsFreeAll(void);
 void OPT_llCsSetFeatureBit(void);
@@ -175,8 +172,6 @@ uint16 OPT_llConnGetMissCountMargin(void);
 bool OPT_LL_CS_isCsInProgress(uint16_t connId);
 bool OPT_llCsIsChannelClassificationAllowed(uint32_t currentTime);
 uint32_t OPT_LL_CS_Handover_SnGetSNDataSize(uint16 connHandle);
-void OPT_llCsPrecal_clear(void);
 uint8_t OPT_LL_CS_GetTswByACI(csACI_e ACI, uint8_t initTsw, uint8_t reflTsw);
-const csConfigurationSet_t* OPT_llCsDbGetConfiguration(uint16 connId, uint8 configId);
 
 #endif /* CTRL_CS_H_ */

@@ -1,6 +1,1 @@
-{
-    "../../../examples/rtos/LP_EM_CC2755P10/dmm/ble_hci_ser_mux/freertos/ticlang/ble_hci_ser_mux_LP_EM_CC2755P10_freertos_ticlang.projectspec": "ble_hci_ser_mux_LP_EM_CC2755P10_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2755P10/dmm/mac_sensor_ble_basic/freertos/ticlang/mac_sensor_ble_basic_LP_EM_CC2755P10_freertos_ticlang.projectspec": "mac_sensor_ble_basic_LP_EM_CC2755P10_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2755P20/dmm/ble_hci_ser_mux/freertos/ticlang/ble_hci_ser_mux_LP_EM_CC2755P20_freertos_ticlang.projectspec": "ble_hci_ser_mux_LP_EM_CC2755P20_freertos_ticlang_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2755P20/dmm/mac_sensor_ble_basic/freertos/ticlang/mac_sensor_ble_basic_LP_EM_CC2755P20_freertos_ticlang.projectspec": "mac_sensor_ble_basic_LP_EM_CC2755P20_freertos_ticlang_0.dependency.tirex.json"
-}
+{}

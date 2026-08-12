@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
  {
     "name": "LP_EM_CC2340R5_Q1",
     "displayName": "CC2340R5 Q1 Development Platform",
-    "device": "CC2340R5RHBQ1",
+    "device": "CC2340R5RHB",
     "part": "Default",
     "package": "RHB",
     "headers": [

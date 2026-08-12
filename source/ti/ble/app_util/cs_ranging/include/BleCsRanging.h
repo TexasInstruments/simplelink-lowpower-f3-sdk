@@ -56,15 +56,15 @@
 #include <float.h>
 #include <math.h>
 #include <complex.h>
-#include <ti/drivers/utils/List.h>
+
 /**
  * Type/Data structure definitions
  */
-#define PCT_LEN                         75   /*!< Maximum length of PCT vector */
-#define MAX_NUM_ANTPATH                 4    /*!< Maximum number of antenna path */
-#define BLECSRANGING_MAX_RANGE          150  /*!< Maximum range can be estimated */
-#define BLECSRANGING_MAX_MUSIC_SPECTRUM 320  /*!< Maximum music spectrum can be estimated */
-#define BLECSRANGING_HEAP_SIZE          1500 /*!< Size of heap of RangingLib in number of floats */
+#define PCT_LEN              75  /*!< Maximum length of PCT vector */
+#define MAX_NUM_ANTPATH      4   /*!< Maximum number of antenna path */
+#define MAX_RANGE            150 /*!< Maximum range can be estimated */
+#define MAX_MUSIC_SPECTRUM   256
+#define RANGINGLIB_HEAP_SIZE 1000 /*!< Size of heap of RangingLib in number of floats */
 
 typedef uint16_t BleCsRanging_Return_t; /*!< Function return code, see BleCsRanging_Status_e */
 
@@ -91,9 +91,6 @@ typedef struct BleCsRanging_Tone_t
     uint32_t q:12;
     uint32_t quality:8;
 } BleCsRanging_Tone_t;
-
-/*!< Sign-extend a 12-bit unsigned bitfield value (from BleCsRanging_Tone_t.i/.q) to int16_t */
-#define BLECSRANGING_SIGN_EXT12(v) ((int16_t)(((uint16_t)(v) & 0x800u) ? ((uint16_t)(v) | 0xF000u) : (uint16_t)(v)))
 
 /**
  *  @brief Container format for timing parameters
@@ -185,35 +182,29 @@ typedef enum
  */
 typedef struct BleCsRanging_Config_t
 {
-    uint16_t numAntPath;                      /*!< Number of antenna paths, max 4 */
-    uint16_t numChannels;                     /*!< Number of actual CS steps, up to 75 */
-    BleCsRanging_TimingParams_t timingParams; /*!< Timing parameters */
-    uint16_t maxDistance;                     /*!< Maximum distance to measure in meter, must less than 150m */
-    float distanceOffset;                     /*!< Distance offset from calibration, in meters */
-    float maxVelocity;                        /*!< Maximum velocity in meters per second for motion compensation */
-    BleCsRanging_MAP_e sumAntPath;            /*!< Individual or Summation before estimating distance */
-    BleCsRanging_GapInterp_e gapInterp;       /*!< Interpolation method for gap */
-    BleCsRanging_Algorithm_e algorithm;       /*!< Enum to select the algorithm for distance */
-    BleCsRanging_DistanceFusion_e distFusion; /*!< Combine Antenna Path Method */
+    uint16_t maxDistance;                           /*!< Maximum distance to measure in meter, must less than 150m */
+    uint16_t numAntPath;                            /*!< Number of antenna paths, max 4 */
+    uint16_t numChannels;                           /*!< Number of actual CS steps, up to 75 */
+    float distanceOffset;                           /*!< Distance offset from calibration, in meters */
+    float maxVelocity;                              /*!< Maximum velocity in meters per second for motion compensation */
+    BleCsRanging_MAP_e sumAntPath;                  /*!< Individual or Summation before estimating distance */
+    BleCsRanging_GapInterp_e gapInterp;             /*!< Interpolation method for gap */
+    BleCsRanging_Algorithm_e algorithm;             /*!< Enum to select the algorithm for distance */
+    BleCsRanging_DistanceFusion_e distFusion;       /*!< Combine Antenna Path Method */
+    BleCsRanging_FilterChain_e antFilter;           /*!< Antenna Path Filtering Method */
     BleCsRanging_AdaptiveProfile_e adaptiveProfile; /*!< NLOS adaptive profile */
     float tqiThresh;                                /*!< TQI threshold */
     float peakEnergyThresh;                         /*!< Peak energy threshold */
     uint16_t peakDiffThresh;                        /*!< Peak distance difference threshold */
     float dVarMax;                                  /*!< Max distance variance*/
     uint16_t resetHist;                             /*!< Reset history when disconnected for a long time*/
-    float iirCoeff;      /*!< IIR filter coefficient sets weight of current dataset vs history
-                              data buffer, in range [0, 1]. Higher value gives more weight to current dataset.*/
-    uint8_t *pBuffer;    /*!< For Adaptive algorithm: application needs to provide pointer to a history
-                           data buffer for BleCsRanging library to store the last datasets for smoother estimation.
-                           The application must use the function @ref BleCsRanging_getHeapSize to get the required buffer
-                           size. */
-    uint8_t *pBufferPCT; /*!< Buffer to store PCT values for adaptive algorithm */
-    bool isInlinePCT; /*!< Set @c true to enable BT v6.3 Inline PCT (one-sided) mode.
-                       *   When @c true, @c pReflectorSubevents passed to
-                       *   @c BleCsRanging_estimatePbr is unused; reflector tones are
-                       *   synthesised internally as unit complex values so the two-way
-                       *   multiply degrades to a one-way (initiator-only) operation.
-                       *   Default: @c false (standard two-way PBR). */
+    float iirCoeff;                                 /*!< IIR filter coefficient sets weight of current dataset vs history
+                                                         data buffer, in range [0, 1]. Higher value gives more weight to current dataset.*/
+    BleCsRanging_TimingParams_t timingParams;       /*!< Timing parameters */
+    uint8_t *pBuffer; /*!< For Adaptive algorithm: application needs to provide pointer to a history
+                          data buffer for BleCsRanging library to store the last datasets for smoother estimation.
+                          The application must use the function @ref BleCsRanging_getHeapSize to get the required buffer
+                         size. */
 } BleCsRanging_Config_t;
 
 /**
@@ -233,22 +224,27 @@ typedef enum
 
 typedef struct
 {
-    float distanceMusic;              /*!< Distance MUSIC algo of each antenna path */
-    float distanceNN;                 /*!< Distance NN algo of each antenna path */
-    float distanceIFFT;               /*!< Distance IFFT algo of each antenna path */
-    float confidence;                 /*!< Confidence metric of each antenna path. Reserved for future use. */
-    uint16_t numMPC;                  /*!< Number of MUSIC multipath-components of each antenna path */
-    float quality[MAX_NUM_ANTPATH];   /*!< Quality metric QQ3 of each antenna path */
-    float tqi_score[MAX_NUM_ANTPATH]; /*!< Debug information: Reserved for future use */
-    float dcand;                      /*!< Debug information: Reserved for future use */
-    float cf;                         /*!< Debug information: Reserved for future use */
-    float d_var;                      /*!< Debug information: Reserved for future use */
-    uint16_t class;                   /*!< Debug information: Reserved for future use */
-    float runtime_ms;                 /*!< Debug information: Reserved for future use */
-    float runtimeProfile[10];         /*!< Debug information: Reserved for future use */
-    uint16_t peakBinIFFT;             /*!< Peak Bin IFFT*/
-    uint16_t peakCountIFFT;           /*!< Peak Count IFFT*/
-    uint16_t ifftValid;               /*!< IFFT Valid*/
+    float distanceMusic[MAX_NUM_ANTPATH];  /*!< Distance MUSIC algo of each antenna path */
+    float distanceNN[MAX_NUM_ANTPATH];     /*!< Distance NN algo of each antenna path */
+    float distanceIFFT[MAX_NUM_ANTPATH];   /*!< Distance IFFT algo of each antenna path */
+    float confidence[MAX_NUM_ANTPATH];     /*!< Confidence metric of each antenna path. Reserved for future use. */
+    uint16_t numMPC[MAX_NUM_ANTPATH];      /*!< Number of MUSIC multipath-components of each antenna path */
+    float quality[MAX_NUM_ANTPATH];        /*!< Quality metric QQ3 of each antenna path */
+    float zoneProfile[MAX_NUM_ANTPATH][5]; /*!< Debug information: Reserved for future use */
+    float normDistance[MAX_NUM_ANTPATH];   /*!< Debug information: Reserved for future use */
+    float normTerm[MAX_NUM_ANTPATH];       /*!< Debug information: Reserved for future use */
+    float tqi_score[MAX_NUM_ANTPATH];      /*!< Debug information: Reserved for future use */
+    float peak_diff[MAX_NUM_ANTPATH];      /*!< Debug information: Reserved for future use */
+    float dcand[MAX_NUM_ANTPATH];          /*!< Debug information: Reserved for future use */
+    float cf[MAX_NUM_ANTPATH];             /*!< Debug information: Reserved for future use */
+    float LOSd[MAX_NUM_ANTPATH];           /*!< Debug information: Reserved for future use */
+    float d_var[MAX_NUM_ANTPATH];          /*!< Debug information: Reserved for future use */
+    uint16_t class[MAX_NUM_ANTPATH];       /*!< Debug information: Reserved for future use */
+    float runtime_ms;                      /*!< Debug information: Reserved for future use */
+    float runtimeProfile[10];              /*!< Debug information: Reserved for future use */
+    uint16_t peakBinIFFT;    /*!< Peak Bin IFFT*/
+    uint16_t peakCountIFFT;  /*!< Peak Count IFFT*/
+    uint16_t ifftValid;      /*!< IFFT Valid*/
 } BleCsRanging_DebugResult_t;
 
 typedef struct
@@ -256,289 +252,46 @@ typedef struct
     float distance;                           /*!< Estimated distance, meters */
     float quality;                            /*!< Quality metric QQ3 of the estimated distance */
     float confidence;                         /*!< Confidence of the estimation */
+    uint16_t numMPC;                          /*!< Number of multipath-component (MPC) of the estimated distance */
     float velocity;                           /*!< Estimated velocity (meters/second) used in motion compensation */
     BleCsRanging_DebugResult_t *pDebugResult; /*!< Debug results (optional) */
 } BleCsRanging_Result_t;
 
 /***********************************************************************************
- * CS Subevent data structures — multi-subevent support (BLECSRANGING-86)
- **********************************************************************************/
-
-/*!
- * @brief CS procedure configuration parameters.
- *        Populated once per CS configuration from HCI_LE_CS_CONFIG_COMPLETE event.
- *        Passed separately to BleCsRanging_estimatePbr(); not linked to subevent list.
- */
-typedef struct
-{
-    uint8_t tFCS;                       /*!< T_FCS: frequency change/settle period (us) */
-    uint8_t tIP1;                       /*!< T_IP1: interlude period between CS packets (us) */
-    uint8_t tIP2;                       /*!< T_IP2: interlude period between CS tones (us) */
-    uint8_t tPM;                        /*!< T_PM: phase measurement period (us) */
-    uint8_t tSW;                        /*!< T_SW: antenna switch period (us) */
-    uint8_t csSync;                     /*!< CS_SYNC type (see BT Core Spec CS_SYNC_PHY) */
-    uint8_t rttType;                    /*!< RTT type (see BT Core Spec RTT_Type) */
-    uint8_t mode0Steps;                 /*!< Number of Mode 0 steps per subevent */
-    uint8_t mainModeType;               /*!< Main_Mode_Type (1=Mode1, 2=Mode2, 3=Mode3) */
-    uint8_t mainModeRepetition;         /*!< Main_Mode_Repetition count (0..3)*/
-    uint8_t toneAntennaConfigSelection; /*!< Antenna Configuration Index (0..7) */
-} BleCsRanging_CsConfig_t;
-
-/*!
- * @brief CS subevent header. Represents one HCI_LE_CS_Subevent_Result event.
- *        One contiguous allocation block holds this header followed by all step data.
- *        numAntennaPaths applies to every step in this subevent.
- *
- *        Linked list usage:
- *          - elem.next / elem.prev managed by List_put() / List_get()
- *          - Cast to node: (BleCsRanging_CsSubevent_t *)List_head(&list)
- */
-typedef struct
-{
-    List_Elem elem;                /*!< Linked list node — MUST be first member */
-    int16_t frequencyCompensation; /*!< Frequency compensation, units: 0.01 ppm (initiator: measured; reflector: 0) */
-    uint16_t numSteps;             /*!< Number of steps reported in this subevent */
-    int8_t referencePowerLevel;    /*!< Reference power level (dBm) */
-    uint8_t numAntennaPaths;       /*!< Antenna paths per step (valid range: 1..4) */
-    uint8_t pad[2];                /*!< Reserved, set to 0 */
-    /* Step data follows immediately in the same allocation block */
-} BleCsRanging_CsSubevent_t;
-
-/*!
- * @brief CS Mode 0 step data. Synchronization and frequency offset calibration.
- *        measuredFreqOffset is valid for initiator role only; reflector sets it to 0.
- */
-typedef struct
-{
-    uint8_t stepMode;           /*!< Step mode = 0 */
-    uint8_t stepChannel;        /*!< CS channel index for this step (2..80) */
-    uint8_t packetQuality;      /*!< Packet quality indicator (bit mask per BT Core Spec) */
-    int8_t packetRssi;          /*!< RSSI of received packet (dBm) */
-    int16_t measuredFreqOffset; /*!< Measured frequency offset (units: 0.01 ppm, initiator only) */
-    uint8_t packetAntenna;      /*!< Antenna ID used for this step (1-based index) */
-    uint8_t pad;                /*!< Reserved, set to 0 */
-} BleCsRanging_StepMode0_t;
-
-/*!
- * @brief CS Mode 1 step data. Round-Trip Time (RTT) ranging.
- *        ToFdelta = ToA_ToD (initiator) or ToD_ToA (reflector).
- *        Sounding Sequence is not supported; Packet_PCT fields are omitted.
- */
-typedef struct
-{
-    uint8_t stepMode;      /*!< Step mode = 1 */
-    uint8_t stepChannel;   /*!< CS channel index for this step (2..80) */
-    uint8_t packetQuality; /*!< Packet quality indicator (bit mask per BT Core Spec) */
-    uint8_t packetNadm;    /*!< Normalized Attack Detector Metric(NADM) indicator */
-    int8_t packetRssi;     /*!< RSSI of received packet (dBm) */
-    int16_t ToFdelta;      /*!< Time-of-Flight delta (units: 0.5 ns) */
-    uint8_t packetAntenna; /*!< Antenna Identifider used for CS_SYNC packets (1..4) */
-} BleCsRanging_StepMode1_t;
-
-/*!
- * @brief CS Mode 2 step data. Phase-Based Ranging (PBR) only.
- *        Sounding Sequence is not supported; Packet_PCT fields are omitted.
- *        tonePCT[] element count equals numAntennaPaths from the containing subevent header.
- */
-typedef struct
-{
-    uint8_t stepMode;                /*!< Step mode = 2 */
-    uint8_t stepChannel;             /*!< CS channel index for this step (2..80) */
-    uint8_t antennaPermutationIndex; /*!< Antenna permutation index (see BT Core Spec Table) */
-    uint8_t pad;                     /*!< Reserved for 4-byte alignment of tonePCT */
-    BleCsRanging_Tone_t tonePCT[];   /*!< PCT+TQI per antenna path; count = numAntennaPaths */
-} BleCsRanging_StepMode2_t;
-
-/*!
- * @brief CS Mode 3 step data. RTT and Phase-Based Ranging (RTT + PBR).
- *        Combines Mode 1 RTT fields with Mode 2 PBR tone fields.
- *        Sounding Sequence is not supported; Packet_PCT fields are omitted.
- *        tonePCT[] element count equals numAntennaPaths from the containing subevent header.
- */
-typedef struct
-{
-    uint8_t stepMode;                /*!< Step mode = 3 */
-    uint8_t stepChannel;             /*!< CS channel index for this step (2..80) */
-    uint8_t packetQuality;           /*!< Packet quality indicator (bit mask per BT Core Spec) */
-    uint8_t packetNadm;              /*!< Normalized Attack Detector Metric(NADM) indicator */
-    int8_t packetRssi;               /*!< RSSI of received packet (dBm) */
-    int16_t ToFdelta;                /*!< Time-of-Flight delta (units: 0.5 ns) */
-    uint8_t packetAntenna;           /*!< Antenna ID used for this step (1-based index) */
-    uint8_t antennaPermutationIndex; /*!< Antenna permutation index */
-    uint8_t pad[3];                  /*!< Reserved for 4-byte alignment of tonePCT */
-    BleCsRanging_Tone_t tonePCT[];   /*!< PCT+TQI per antenna path; count = numAntennaPaths */
-} BleCsRanging_StepMode3_t;
-
-/* Step size macros */
-#define BLECSRANGING_STEP_MODE0_SIZE (sizeof(BleCsRanging_StepMode0_t))
-#define BLECSRANGING_STEP_MODE1_SIZE (sizeof(BleCsRanging_StepMode1_t))
-#define BLECSRANGING_STEP_MODE2_SIZE(numAntPaths) \
-    (sizeof(BleCsRanging_StepMode2_t) + (uint32_t)(numAntPaths) * sizeof(BleCsRanging_Tone_t))
-#define BLECSRANGING_STEP_MODE3_SIZE(numAntPaths) \
-    (sizeof(BleCsRanging_StepMode3_t) + (uint32_t)(numAntPaths) * sizeof(BleCsRanging_Tone_t))
-
-/* Full subevent allocation size macros (header + all steps contiguous) */
-#define BLECSRANGING_SUBEVENT_ALLOC_MODE0_MODE2(numMode0Steps, numMode2Steps, numAntPaths)          \
-    (sizeof(BleCsRanging_CsSubevent_t) + (uint32_t)(numMode0Steps) * BLECSRANGING_STEP_MODE0_SIZE + \
-     (uint32_t)(numMode2Steps) * BLECSRANGING_STEP_MODE2_SIZE(numAntPaths))
-
-/*!
- * @brief Get a pointer to the first step in a subevent's step data area.
- *
- * @param[in] pSubevent  Pointer to the subevent header.
- * @return               Pointer to the first step byte, or NULL if numSteps == 0.
- */
-static inline const void *BleCsRanging_subEventFirstStep(const BleCsRanging_CsSubevent_t *pSubevent)
-{
-    if (pSubevent->numSteps == 0)
-    {
-        return (NULL);
-    }
-
-    return ((const uint8_t *)pSubevent + sizeof(BleCsRanging_CsSubevent_t));
-}
-
-/*!
- * @brief Advance a step pointer to the next step.
- *        Reads stepMode from the current step to determine its size.
- *
- * @param[in] pStep           Pointer to the current step (any mode).
- * @param[in] numAntennaPaths numAntennaPaths from the containing subevent header.
- * @return                    Pointer to the next step, or NULL on unrecognized mode.
- */
-static inline const void *BleCsRanging_stepAdvance(const void *pStep, uint8_t numAntennaPaths)
-{
-    const uint8_t *p      = (const uint8_t *)pStep;
-    volatile uint8_t mode = p[0]; /* stepMode is always the first byte of any step struct */
-    volatile uint32_t size;
-
-    switch (mode)
-    {
-        case 0:
-            size = BLECSRANGING_STEP_MODE0_SIZE;
-            break;
-
-        case 1:
-            size = BLECSRANGING_STEP_MODE1_SIZE;
-            break;
-
-        case 2:
-            size = BLECSRANGING_STEP_MODE2_SIZE(numAntennaPaths);
-            break;
-
-        case 3:
-            size = BLECSRANGING_STEP_MODE3_SIZE(numAntennaPaths);
-            break;
-
-        default:
-            return (NULL);
-    }
-
-    return (p + size);
-}
-
-/***********************************************************************************
  * Functions/APIs definitions
  **********************************************************************************/
-/*!
- * @brief Estimate distance using Phase-Based Ranging (PBR) from multiple CS subevents.
+/**
+ * Main function for Phase-based Ranging algorithms
+ * NOTE: Current version assumed input is stored as
+ *  [tone_ant0[PCT_LEN], tone_ant1[PCT_LEN], tone_ant2[PCT_LEN], tone_ant3[PCT_LEN]]
+ * NOTE: The new vector with channel list will have 72 entries, chronological order.
+ * The values in the array should be the same channel index as coming from the HCI report.
+ * (lowest=2, highest=76).
+ * Future version will relax this assumption
  *
- * @pre  pInitiatorSubevents and pReflectorSubevents must contain the same number of
- *       subevent nodes, ordered identically (subevent index 0 first in each list).
- * @pre  Each subevent in both lists must have identical numAntennaPaths.
- * @pre  pCsConfig, pConfig, and pResult must be non-NULL.
+ * @param pResult Result struct
+ * @param pTone_i Tone with TQI from Initiator
+ * @param pTone_r Tone with TQI from Reflector
+ * @param pRPL_i Reference Power Level (RPL) from Initiator
+ * @param pRPL_r Reference Power Level (RPL) from Reflector
+ * @param pChannelIdxList Channel index list
+ * @param pConfig General config
  *
- * @param[in]  pInitiatorSubevents  Pointer to initiator CS subevent linked list (List_List).
- *                                  Each node is a BleCsRanging_CsSubevent_t allocation block.
- * @param[in]  pReflectorSubevents  Pointer to reflector CS subevent linked list (List_List).
- *                                  Each node is a BleCsRanging_CsSubevent_t allocation block.
- * @param[in]  pCsConfig            CS procedure configuration (from HCI_LE_CS_CONFIG_COMPLETE).
- * @param[in]  pConfig              Algorithm configuration parameters (legacy interface, unchanged).
- * @param[out] pResult              Distance estimation result (legacy interface, unchanged).
+ * @return Status of distance estimation
  *
- * @return BleCsRanging_Status_e indicating success or error.
- *
- * @retval BleCsRanging_Status_Success       Success. The result in @p pResult is valid.
- * @retval BleCsRanging_Status_InvalidInput  Invalid input. The result in @p pResult is invalid.
- * @retval BleCsRanging_Status_Undefined     Stub: implementation pending (BLECSRANGING-86).
+ * @retval BleCsRanging_Status_Success          Success. The result in @pResult is valid.
+ * @retval BleCsRanging_Status_InvalidInput     Invalid input error. The result in @pResult is invalid.
+ * @retval BleCsRanging_Status_MemAllocError    Dynamic memory allocation on heap failed. Not enough memory. The result
+ * in @pResult is invalid.
+ * @retval BleCsRanging_Status_Undefined        Undefined error.
  */
-BleCsRanging_Status_e BleCsRanging_estimatePbr(List_List *pInitiatorSubevents,
-                                               List_List *pReflectorSubevents,
-                                               const BleCsRanging_CsConfig_t *pCsConfig,
-                                               const BleCsRanging_Config_t *pConfig,
-                                               BleCsRanging_Result_t *pResult);
-
-/* Forward declaration — full definition in BleCsRangingProcess.h */
-typedef struct BleCsRanging_PbrInput_t BleCsRanging_PbrInput_t;
-
-/*!
- * @brief Extract PBR measurement inputs from CS subevent linked lists.
- *
- * Validates inputs and walks the paired initiator/reflector subevent lists,
- * collecting mode-2 and mode-3 tone data into @p pInput. Also validates
- * mode-0 step counts for link quality assurance.
- *
- * @param[out] pInput               Caller-allocated struct to fill.
- * @param[in]  pInitiatorSubevents  Initiator subevent linked list.
- * @param[in]  pReflectorSubevents  Reflector subevent linked list.
- * @param[in]  pCsConfig            CS procedure configuration.
- * @param[in]  pConfig              Algorithm configuration.
- *
- * @return BleCsRanging_Status_e
- * @retval BleCsRanging_Status_Success      Extraction succeeded; pInput is valid.
- * @retval BleCsRanging_Status_InvalidInput NULL argument, mismatched step counts,
- *                                          zero tones, or failed mode-0 check.
- */
-BleCsRanging_Status_e BleCsRanging_extractPbrInput(BleCsRanging_PbrInput_t *pInput,
-                                                   List_List *pInitiatorSubevents,
-                                                   List_List *pReflectorSubevents,
-                                                   const BleCsRanging_CsConfig_t *pCsConfig,
-                                                   const BleCsRanging_Config_t *pConfig);
-
-/*!
- * @brief Validate subevent pairs and descramble tone data in-place.
- *
- * Validates the paired initiator/reflector subevent lists (NULL checks,
- * @c numAntPath range, per-subevent mode-0 step count and packet quality).
- * For every mode-2 and mode-3 step, de-scrambles @c tonePCT in-place using
- * @c BleCsRanging_sortTonePCT and resets @c antennaPermutationIndex to 0 so
- * subsequent callers see tones in canonical antenna-path order.
- *
- * Must be called before @c BleCsRanging_stitchSubevents and
- * @c BleCsRanging_extractPbrInput.
- *
- * @param[in,out] pInitiatorSubevents  Initiator subevent linked list (tones modified in-place)
- * @param[in,out] pReflectorSubevents  Reflector subevent linked list (tones modified in-place)
- * @param[in]     pCsConfig            CS procedure configuration (@c mode0Steps)
- * @return BleCsRanging_Status_Success or BleCsRanging_Status_InvalidInput
- */
-BleCsRanging_Status_e BleCsRanging_preprocessSubevents(List_List *pInitiatorSubevents,
-                                                       List_List *pReflectorSubevents,
-                                                       const BleCsRanging_CsConfig_t *pCsConfig);
-
-/*!
- * @brief Apply inter-subevent phase stitching to initiator tone data.
- *
- * When @c pCsConfig->mainModeRepetition > 0, each subevent's last
- * @c mainModeRepetition mode-2 steps are repeated at the start of the next
- * subevent (same channels). This function estimates the inter-subevent phase
- * drift per antenna path from those repeated steps and applies the inverse
- * rotation to every mode-2/3 initiator tone in each subsequent subevent.
- *
- * Must be called before @c BleCsRanging_extractPbrInput so that extracted
- * tones are already phase-corrected.
- * No-op when @c mainModeRepetition == 0 or fewer than 2 subevents are present.
- * Only initiator tones are modified; reflector data is read-only.
- *
- * @param[in,out] pInitiatorSubevents  Linked list of initiator subevent structs
- * @param[in]     pReflectorSubevents  Linked list of reflector subevent structs
- * @param[in]     pCsConfig            CS configuration (@c mainModeRepetition, @c mode0Steps)
- * @return BleCsRanging_Status_Success, or BleCsRanging_Status_InvalidInput if
- *         the subevent lists are mismatched
- */
-BleCsRanging_Status_e BleCsRanging_stitchSubevents(List_List *pInitiatorSubevents,
-                                                   List_List *pReflectorSubevents,
-                                                   const BleCsRanging_CsConfig_t *pCsConfig);
+BleCsRanging_Status_e BleCsRanging_estimatePbr(BleCsRanging_Result_t *pResult,
+                                               BleCsRanging_Tone_t *pTone_i, /*!< Tone with TQI from Local */
+                                               BleCsRanging_Tone_t *pTone_r, /*!< Tone with TQI from Remote */
+                                               BleCsRanging_RPL_t *pRPL_i,   /*!<  Reference Power Level (RPL) local */
+                                               BleCsRanging_RPL_t *pRPL_r,   /*!< Reference Power Level (RPL) remote */
+                                               uint8_t *pChannelIdxList,     /*!< Channel index list */
+                                               BleCsRanging_Config_t *pConfig);
 
 /**
  * @brief Initialize the configuration structure with default values
@@ -569,20 +322,5 @@ extern BleCsRanging_Status_e __attribute__((weak)) BleCsRanging_initConfig(BleCs
  * @see BleCsRanging_Config_t::pBuffer
  */
 uint16_t BleCsRanging_getHeapSize(BleCsRanging_Config_t *pConfig);
-
-/**
- * @brief Calculate the required heap buffer size for the PCT algorithm
- *
- * This function calculates the required buffer size (in bytes) if a history data buffer is
- * to be used. The application must call this function to determine the buffer size
- * needed for the pBufferPCT field in BleCsRanging_Config_t before calling BleCsRanging_estimatePbr.
- *
- * @param pConfig Pointer to the configuration structure
- *
- * @return Required buffer size in bytes. If pConfig is NULL or invalid, returns 0.
- *
- * @see BleCsRanging_Config_t::pBufferPCT
- */
-uint16_t BleCsRanging_getHeapSizePCT(BleCsRanging_Config_t *pConfig);
 
 #endif //_BLECSRANGING_H_

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2026, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ const displayName = "TI Devices";
 const description = "TI Device Configuration";
 const deviceId = system.deviceData.deviceId;
 
-if (deviceId.match(/CC13.[124]|CC26.[1234]|CC23.0|CC23.1|CC27..|CC283./)) {
+if (deviceId.match(/CC13.[124]|CC26.[1234]|CC23.0|CC27../)) {
     topModules = [
         {
             displayName: displayName,
@@ -67,17 +67,7 @@ if (deviceId.match(/CC13.[124]|CC26.[1234]|CC23.0|CC23.1|CC27..|CC283./)) {
             alwaysRun: false
         },
         {
-            name: "/ti/devices/templates/ti_devices_CC23X1_config.c.xdt",
-            outputPath: "ti_devices_config.c",
-            alwaysRun: false
-        },
-        {
             name: "/ti/devices/templates/ti_devices_CC27XX_config.c.xdt",
-            outputPath: "ti_devices_config.c",
-            alwaysRun: false
-        },
-        {
-            name: "/ti/devices/templates/ti_devices_CC283X_config.c.xdt",
             outputPath: "ti_devices_config.c",
             alwaysRun: false
         },

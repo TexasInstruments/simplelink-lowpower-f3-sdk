@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,12 +32,11 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <DeviceFamily.h>
+
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_preprovisioned_keys.h>
 
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
 /**
  * @brief Counter to keep track of the number of pre-provisioned keys available during psa_crypto_init()
  *
@@ -122,14 +121,14 @@ static psa_status_t local_initPreProvisionedKeys(void)
         if (lifetime == KEYMGMT_PRE_PROVISIONED_KEY_VALID_LIFETIME)
         {
             /* Copy the psa_key_lifetime_t */
-            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(lifetime));
+            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
             memcpy(dest,
                    (currentKey + keySize),
                    sizeof(psa_key_lifetime_t));
             keySize += sizeof(psa_key_lifetime_t);
 
             /* Copy the key id */
-            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(id));
+            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id));
             /* If MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER is defined, then that should be reflected
              * in both the source and destination of the key information. In other words,
              * mbedtls_svc_key_id_t will include id & owner in both the preProvisionedKeys
@@ -141,14 +140,14 @@ static psa_status_t local_initPreProvisionedKeys(void)
             keySize += sizeof(mbedtls_svc_key_id_t);
 
             /* Copy the Algorithm */
-            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg));
+            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg));
             memcpy(dest,
                    (currentKey + keySize),
                    sizeof(psa_algorithm_t));
             keySize += sizeof(psa_algorithm_t);
 
             /* Copy the Usage */
-            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage));
+            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage));
             memcpy(dest,
                    (currentKey + keySize),
                    sizeof(psa_key_usage_t));
@@ -162,7 +161,7 @@ static psa_status_t local_initPreProvisionedKeys(void)
             keySize += MEMBER_SIZE(KeyMgmt_PreProvisionedKeyMetaData, keyLength);
 
             /* Copy the psa_key_type_t */
-            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(type));
+            dest = &(preProvisionedKeys[preProvisionedKeyCount].attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type));
             memcpy(dest,
                    (currentKey + keySize),
                    sizeof(psa_key_type_t));
@@ -218,7 +217,7 @@ static psa_status_t local_getPreProvisionedKey(mbedtls_svc_key_id_t key,
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
     id = key.MBEDTLS_PRIVATE(key_id);
 #else
-    id = key;
+    id = key.MBEDTLS_PRIVATE(id);
 #endif
 
     if ((id < MBEDTLS_PSA_KEY_ID_BUILTIN_MIN) ||
@@ -240,9 +239,9 @@ static psa_status_t local_getPreProvisionedKey(mbedtls_svc_key_id_t key,
         pEntry = &preProvisionedKeys[entryIdx];
 
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-        if (id == pEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
+        if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
 #else
-        if (id == pEntry->attributes.MBEDTLS_PRIVATE(id))
+        if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
 #endif
         {
             break;
@@ -258,7 +257,7 @@ static psa_status_t local_getPreProvisionedKey(mbedtls_svc_key_id_t key,
         /* A slot with a matching ID was found - verify that the pre-provisioned key has valid
          * metadata before returning it.
          */
-        psa_key_location_t key_location = PSA_KEY_LIFETIME_GET_LOCATION(pEntry->attributes.MBEDTLS_PRIVATE(lifetime));
+        psa_key_location_t key_location = PSA_KEY_LIFETIME_GET_LOCATION(pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
 
         if ((key_location != PSA_KEY_LOCATION_LOCAL_STORAGE) ||
             (pEntry->fAllocated != 255U))
@@ -276,4 +275,3 @@ static psa_status_t local_getPreProvisionedKey(mbedtls_svc_key_id_t key,
 
     return funcres;
 }
-#endif /* (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX) */

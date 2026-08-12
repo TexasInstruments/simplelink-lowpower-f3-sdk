@@ -45,7 +45,7 @@
 
 /*
  *  Copyright The Mbed TLS Contributors
- *  Copyright (c) 2024-2025, Texas Instruments Incorporated
+ *  Copyright (c) 2024, Texas Instruments Incorporated
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -84,7 +84,6 @@
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/platform.h>
 #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_token_pk.h> // generate public key token
 #include <third_party/hsmddk/include/Config/cs_mbedtls.h>
-#include <DeviceFamily.h>
 
 #ifdef PSA_ENABLE_DEBUG_FUNCTIONS
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_debug.h>
@@ -109,9 +108,6 @@ extern const size_t MBEDTLS_KEY_PERSISTENT_COUNT;
 
 #define MBEDTLS_MAX_KEY_BUFF_ENTRIES (MBEDTLS_KEY_VOLATILE_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT + \
                                       MBEDTLS_KEY_PERSISTENT_COUNT)
-
-#define COPROCESSOR_ASSET_POLICY_FLAGS (EIP130_ASSET_POLICY_PRIVATEDATA | EIP130_ASSET_POLICY_NONMODIFIABLE | \
-                                        EIP130_ASSET_POLICY_COPROIFC)
 
 /** Global value to not use ASN1DER - allowing for potential future configuration by
  * the application.
@@ -150,9 +146,9 @@ static uint8_t KeyDataBuffer[PSA_KEYBLOB_ADDITIONAL_BYTES + (2U * (PSA_ASYM_DATA
 static uint8_t KeyDataBuffer2[PSA_KEYBLOB_ADDITIONAL_BYTES + 32];
 
 /* vendor_ok is only true for key IDs assigned by the implementation -
- * i.e. volatile or preprovisioned keys. Keys with persistence HSM_ASSET_STORE
- * will have the same acceptable key ID range as persistent keys. The TKDK
- * and HUK occupy the highest two key IDs, so those IDs are only valid in the
+ * i.e. volatile keys. Keys with persistence HSM_ASSET_STORE will have the
+ * same acceptable key ID range as persistent keys. The TKDK and HUK
+ * occupy the highest two key IDs, so those IDs are only valid in the
  * context of key derivation, which does not use this API.
  */
 static inline int psa_is_valid_key_id(psa_key_id_t key_id, int vendor_ok)
@@ -598,8 +594,8 @@ local_SymKeyType(const psa_key_attributes_t * attributes,
                  PsaPolicyMask_t * AssetPolicy)
 {
     psa_status_t funcres = PSA_SUCCESS;
-    psa_key_usage_t psaUsage = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-    psa_algorithm_t psaAlg = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+    psa_key_usage_t psaUsage = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+    psa_algorithm_t psaAlg = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
 
     if (PSA_ALG_IS_MAC(psaAlg))
     {
@@ -768,12 +764,12 @@ local_SymKeyType(const psa_key_attributes_t * attributes,
                 {
                     funcres = PSA_ERROR_INVALID_ARGUMENT;
                 }
-                if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(type))
+                if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
                 {
                     *AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
                 }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-                else if (PSA_KEY_TYPE_ARIA == attributes->MBEDTLS_PRIVATE(type))
+                else if (PSA_KEY_TYPE_ARIA == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
                 {
                     *AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
                 }
@@ -787,68 +783,40 @@ local_SymKeyType(const psa_key_attributes_t * attributes,
     }
     else if (PSA_ALG_IS_CIPHER(psaAlg))
     {
-        /* Check if the key is allowed to be used with LAES coprocessor */
-        if (PSA_KEY_USAGE_COPROCESSOR == (psaUsage & PSA_KEY_USAGE_COPROCESSOR))
+        *AssetPolicy = EIP130_ASSET_POLICY_SYM_CIPHERBULK;
+        /* Note that the asset policy will only reflect encryption usage even if both
+         * encryption and decryption are set. The key creation APIs that call this function
+         * will be responsible for populating the second asset policy differently if decryption
+         * should also be allowed by the imported key.
+         */
+        if (PSA_KEY_USAGE_ENCRYPT == (psaUsage & PSA_KEY_USAGE_ENCRYPT))
         {
-            *AssetPolicy = COPROCESSOR_ASSET_POLICY_FLAGS | EIP130_ASSET_POLICY_COPRO1_ALLOW;
-
-            if ((key_size != (128U / 8U)) || (PSA_KEY_TYPE_AES != attributes->MBEDTLS_PRIVATE(type)) ||
-                (psaUsage & (PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT)) == 0)
-            {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-            }
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRENCGEN;
+        }
+        else if (PSA_KEY_USAGE_DECRYPT == (psaUsage & PSA_KEY_USAGE_DECRYPT))
+        {
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRDECVRFY;
         }
         else
         {
-            *AssetPolicy = EIP130_ASSET_POLICY_SYM_CIPHERBULK;
-            /* Note that the asset policy will only reflect encryption usage even if both
-            * encryption and decryption are set. The key creation APIs that call this function
-            * will be responsible for populating the second asset policy differently if decryption
-            * should also be allowed by the imported key.
-            */
-            if (PSA_KEY_USAGE_ENCRYPT == (psaUsage & PSA_KEY_USAGE_ENCRYPT))
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
+        }
+        if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+        {
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
+            if (PSA_ALG_XTS == psaAlg)
             {
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRENCGEN;
-            }
-            else if (PSA_KEY_USAGE_DECRYPT == (psaUsage & PSA_KEY_USAGE_DECRYPT))
-            {
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRDECVRFY;
-            }
-            else
-            {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-            }
-            if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(type))
-            {
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
-                if (PSA_ALG_XTS == psaAlg)
+                if ((key_size != (256U / 8U)) &&
+                    (key_size != (512U / 8U)))
                 {
-                    if ((key_size != (256U / 8U)) &&
-                        (key_size != (512U / 8U)))
-                    {
-                        funcres = PSA_ERROR_INVALID_ARGUMENT;
-                    }
-                    else
-                    {
-                        /* MISRA - Intentially empty */
-                    }
+                    funcres = PSA_ERROR_INVALID_ARGUMENT;
                 }
                 else
                 {
-                    if ((key_size != (128U / 8U)) &&
-                        (key_size != (192U / 8U)) &&
-                        (key_size != (256U / 8U)))
-                    {
-                        funcres = PSA_ERROR_INVALID_ARGUMENT;
-                    }
-                    else
-                    {
-                        /* MISRA - Intentially empty */
-                    }
+                    /* MISRA - Intentially empty */
                 }
             }
-#ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == attributes->MBEDTLS_PRIVATE(type))
+            else
             {
                 if ((key_size != (128U / 8U)) &&
                     (key_size != (192U / 8U)) &&
@@ -858,156 +826,155 @@ local_SymKeyType(const psa_key_attributes_t * attributes,
                 }
                 else
                 {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
+                    /* MISRA - Intentially empty */
                 }
             }
+        }
+#ifndef PSA_REMOVE_SYM_ALGO_ARIA
+        else if (PSA_KEY_TYPE_ARIA == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+        {
+            if ((key_size != (128U / 8U)) &&
+                (key_size != (192U / 8U)) &&
+                (key_size != (256U / 8U)))
+            {
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
+            }
+            else
+            {
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
+            }
+        }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_3DES
-            else if (PSA_KEY_TYPE_DES == attributes->MBEDTLS_PRIVATE(type))
+        else if (PSA_KEY_TYPE_DES == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+        {
+            if (key_size != (3U * (64U / 8U)))
             {
-                if (key_size != (3U * (64U / 8U)))
-                {
-                    funcres = PSA_ERROR_INVALID_ARGUMENT;
-                }
-                else
-                {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCACTDES;
-                }
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
+            else
+            {
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCACTDES;
+            }
+        }
 #endif
+        else
+        {
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
+        }
+        switch (psaAlg)
+        {
+        case PSA_ALG_CTR:
+#ifndef PSA_REMOVE_SYM_ALGO_3DES
+            if (PSA_KEY_TYPE_DES != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+#endif
+            {
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCTR32;
+            }
+#ifndef PSA_REMOVE_SYM_ALGO_3DES
             else
             {
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
-            switch (psaAlg)
+#endif
+            break;
+        case PSA_ALG_XTS:
+            if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
             {
-            case PSA_ALG_CTR:
-#ifndef PSA_REMOVE_SYM_ALGO_3DES
-                if (PSA_KEY_TYPE_DES != attributes->MBEDTLS_PRIVATE(type))
-#endif
-                {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCTR32;
-                }
-#ifndef PSA_REMOVE_SYM_ALGO_3DES
-                else
-                {
-                    funcres = PSA_ERROR_INVALID_ARGUMENT;
-                }
-#endif
-                break;
-            case PSA_ALG_XTS:
-                if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(type))
-                {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBXTS;
-                }
-                else
-                {
-                    funcres = PSA_ERROR_INVALID_ARGUMENT;
-                }
-                break;
-            case PSA_ALG_ECB_NO_PADDING:
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBECB;
-                break;
-            case PSA_ALG_CBC_NO_PADDING:
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCBC;
-                break;
-            default:
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-                break;
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBXTS;
             }
+            else
+            {
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
+            }
+            break;
+        case PSA_ALG_ECB_NO_PADDING:
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBECB;
+            break;
+        case PSA_ALG_CBC_NO_PADDING:
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCMCBCBC;
+            break;
+        default:
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
+            break;
         }
     }
     else if (PSA_ALG_IS_AEAD(psaAlg))
     {
-        /* Check if the key is allowed to be used with LAES coprocessor */
-        if (PSA_KEY_USAGE_COPROCESSOR == (psaUsage & PSA_KEY_USAGE_COPROCESSOR))
-        {
-            *AssetPolicy = COPROCESSOR_ASSET_POLICY_FLAGS | EIP130_ASSET_POLICY_COPRO1_ALLOW;
+        *AssetPolicy = EIP130_ASSET_POLICY_SYM_CIPHERAUTH;
 
-            if ((key_size != (128U / 8U)) || (PSA_KEY_TYPE_AES != attributes->MBEDTLS_PRIVATE(type)) ||
-                (psaUsage & (PSA_KEY_USAGE_ENCRYPT | PSA_KEY_USAGE_DECRYPT)) == 0)
-            {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-            }
+        if (PSA_KEY_USAGE_ENCRYPT == (psaUsage & PSA_KEY_USAGE_ENCRYPT))
+        {
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRENCGEN;
+        }
+        else if (PSA_KEY_USAGE_DECRYPT == (psaUsage & PSA_KEY_USAGE_DECRYPT))
+        {
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRDECVRFY;
         }
         else
         {
-            *AssetPolicy = EIP130_ASSET_POLICY_SYM_CIPHERAUTH;
-
-            if (PSA_KEY_USAGE_ENCRYPT == (psaUsage & PSA_KEY_USAGE_ENCRYPT))
-            {
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRENCGEN;
-            }
-            else if (PSA_KEY_USAGE_DECRYPT == (psaUsage & PSA_KEY_USAGE_DECRYPT))
-            {
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCDIRDECVRFY;
-            }
-            else
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
+        }
+        if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+        {
+            if ((key_size != (128U / 8U)) &&
+                (key_size != (192U / 8U)) &&
+                (key_size != (256U / 8U)))
             {
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
-            if (PSA_KEY_TYPE_AES == attributes->MBEDTLS_PRIVATE(type))
+            else
             {
-                if ((key_size != (128U / 8U)) &&
-                    (key_size != (192U / 8U)) &&
-                    (key_size != (256U / 8U)))
-                {
-                    funcres = PSA_ERROR_INVALID_ARGUMENT;
-                }
-                else
-                {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
-                }
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCACAES;
             }
+        }
 #ifndef PSA_REMOVE_SYM_ALGO_ARIA
-            else if (PSA_KEY_TYPE_ARIA == attributes->MBEDTLS_PRIVATE(type))
+        else if (PSA_KEY_TYPE_ARIA == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+        {
+            if ((key_size != (128U / 8U)) &&
+                (key_size != (192U / 8U)) &&
+                (key_size != (256U / 8U)))
             {
-                if ((key_size != (128U / 8U)) &&
-                    (key_size != (192U / 8U)) &&
-                    (key_size != (256U / 8U)))
-                {
-                    funcres = PSA_ERROR_INVALID_ARGUMENT;
-                }
-                else
-                {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
-                }
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
+            else
+            {
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCACARIA;
+            }
+        }
 #endif
 #ifndef PSA_REMOVE_SYM_ALGO_CHACHA20
-            else if (PSA_KEY_TYPE_CHACHA20 == attributes->MBEDTLS_PRIVATE(type))
+        else if (PSA_KEY_TYPE_CHACHA20 == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))
+        {
+            if (key_size != (256U / 8U))
             {
-                if (key_size != (256U / 8U))
-                {
-                    funcres = PSA_ERROR_INVALID_ARGUMENT;
-                }
-                else
-                {
-                    *AssetPolicy |= EIP130_ASSET_POLICY_SCACCHACHA20;
-                }
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
-#endif
             else
             {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
+                *AssetPolicy |= EIP130_ASSET_POLICY_SCACCHACHA20;
             }
-
-            switch (psaAlg)
-            {
+        }
+#endif
+        else
+        {
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
+        }
+        switch (psaAlg)
+        {
 #if !defined(PSA_REMOVE_SYM_ALGO_CHACHA20) && \
     !defined(PSA_REMOVE_SYM_ALGO_POLY1305)
-            case PSA_ALG_CHACHA20_POLY1305:
+        case PSA_ALG_CHACHA20_POLY1305:
 #endif
-            case PSA_ALG_CCM:
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCMCACCM;
-                break;
-            case PSA_ALG_GCM:
-                *AssetPolicy |= EIP130_ASSET_POLICY_SCMCAGCM;
-                break;
-            default:
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-                break;
-            }
+        case PSA_ALG_CCM:
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCMCACCM;
+            break;
+        case PSA_ALG_GCM:
+            *AssetPolicy |= EIP130_ASSET_POLICY_SCMCAGCM;
+            break;
+        default:
+            funcres = PSA_ERROR_INVALID_ARGUMENT;
+            break;
         }
     }
     else if (PSA_ALG_IS_SP800_108_COUNTER_MAC(psaAlg))
@@ -1128,14 +1095,27 @@ local_AsymHashPolicy(psa_algorithm_t alg,
         (PSA_ALG_ANY_HASH != PSA_ALG_GET_HASH(alg)))
     {
         size_t DigestNBits = (8U * PSA_HASH_LENGTH(PSA_ALG_GET_HASH(alg)));
-        /* At PSA layer and KeyStore layer, we reject digest lengths that are
-         * less than the modulus size, per FIPS 186-4 recommendation. An
-         * exception is made at modulus size 521 bits, since a 512 bit hash
-         * meets the security strength recommendation for that key size.
-         */
-        if ((DigestNBits < ModulusSizeBits) && (ModulusSizeBits != 521))
+        if (PSA_ALG_SHA_512 == (PSA_ALG_GET_HASH(alg)))
         {
-            funcres = PSA_ERROR_INVALID_ARGUMENT;
+            if ((ModulusSizeBits < DigestNBits) && (ModulusSizeBits != 255U))
+            {
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
+            }
+            else
+            {
+                /* MISRA - Intentially empty */
+            }
+        }
+        else
+        {
+            if (ModulusSizeBits < DigestNBits)
+            {
+                funcres = PSA_ERROR_INVALID_ARGUMENT;
+            }
+            else
+            {
+                /* MISRA - Intentially empty */
+            }
         }
     }
     else
@@ -1210,62 +1190,28 @@ local_AsymKeyType(const size_t PersistentItemSize,
                   size_t data_length,
                   uint8_t * pOutputData,
                   size_t * pOutputDataLength,
-                  psa_key_bits_t * modulus_size,
+                  size_t * modulus_size,
+                  size_t * exponentsize,
                   PsaPolicyMask_t * AssetPolicy)
 {
     psa_status_t funcres = PSA_SUCCESS;
-    size_t exponent_size = 0U;
-    /* Curve25519 is the only EC curve with a key_bit size that is not exactly 8 times*/
-    size_t curve_bits;
 
-    if (attributes->MBEDTLS_PRIVATE(bits) == 0)
-    {
-        if (PSA_ECC_FAMILY_MONTGOMERY == PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
-        {
-            curve_bits = 255U;
-        }
-        else if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
-        {
-            /* NISTP-521 is a unique case where the key_bit size is not exactly 8 times the byte size */
-            curve_bits = (PSA_BYTES_TO_BITS(data_length) == 528U) ?
-                          521U : PSA_BYTES_TO_BITS((data_length));
-        }
-        else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
-        {
-            /* local_AsymKeyType is only used for Montgomery and Weierstrass ECC public keys currently.
-             * Since we check for Montgomery above, this condition catches all Weierstrass public keys,
-             * and those are in octet format. So, subtract the header byte, then divide by two
-             * (since there are two components in the public key) before converting to a bit value.
-             */
-            curve_bits = (PSA_BYTES_TO_BITS((data_length-1) / 2U) == 528U) ?
-                          521U : PSA_BYTES_TO_BITS((data_length - 1U) / 2U);
-        }
-        else
-        {
-            funcres = PSA_ERROR_INVALID_ARGUMENT;
-        }
-    }
-    else
-    {
-        curve_bits = attributes->MBEDTLS_PRIVATE(bits);
-    }
-
-    if (PSA_ALG_IS_SIGN(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+    if (PSA_ALG_IS_SIGN(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         *AssetPolicy = EIP130_ASSET_POLICY_ASYM_SIGNVERIFY;
-        if (PSA_KEY_TYPE_IS_RSA(attributes->MBEDTLS_PRIVATE(type)))
+        if (PSA_KEY_TYPE_IS_RSA(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
-            funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), AssetPolicy, 0U, 0U);
+            funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), AssetPolicy, 0U, 0U);
             if (PSA_SUCCESS == funcres)
             {
                 Asn1Der_BigNumber Modulus;
                 Asn1Der_BigNumber PubExponent;
 
-                if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+                if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     Asn1Der_BigNumber PrvExponent;
 
-                    if (PSA_ALG_IS_RSA_PSS(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+                    if (PSA_ALG_IS_RSA_PSS(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
                     {
                         *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA |
                                         EIP130_ASSET_POLICY_ACA_RSAPSS;
@@ -1281,7 +1227,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             /* MISRA - Intentially empty */
                         }
                     }
-                    else if (PSA_ALG_IS_RSA_PKCS1V15_SIGN(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+                    else if (PSA_ALG_IS_RSA_PKCS1V15_SIGN(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
                     {
                         *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA |
                                         EIP130_ASSET_POLICY_ACA_RSAPKCS1V15;
@@ -1307,13 +1253,15 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         {
                             *modulus_size = PSA_BYTES_TO_BITS(Modulus.Length);
 
-                            if ((0U != attributes->MBEDTLS_PRIVATE(bits)) &&
-                                (*modulus_size != attributes->MBEDTLS_PRIVATE(bits)))
+                            if ((0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)) &&
+                                (*modulus_size != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)))
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
                             else
                             {
+                                *exponentsize = *modulus_size;
+
                                 /* Convert to VaultIP HW format */
                                 if ((NULL == pOutputData) ||
                                     (NULL == pOutputDataLength) ||
@@ -1326,7 +1274,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                     *pOutputDataLength = 2U * PSA_ASYM_DATA_SIZE_VWB(*modulus_size);
                                     local_AsymBigIntToHW(Modulus.pData, *modulus_size,
                                                          0, 2, pOutputData);
-                                    local_AsymBigIntToHW(PrvExponent.pData, *modulus_size,
+                                    local_AsymBigIntToHW(PrvExponent.pData, *exponentsize,
                                                          1, 2, &pOutputData[PSA_ASYM_DATA_VHEADER +
                                                          Modulus.Length]);
                                 }
@@ -1340,15 +1288,16 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
-                            else if (0U != curve_bits)
+                            else if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                             {
-                                *modulus_size = curve_bits;
+                                *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                                 if (*pOutputDataLength < (2U * PSA_ASYM_DATA_SIZE_VWB(*modulus_size)))
                                 {
                                     funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                                 }
                                 else
                                 {
+                                    *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                                     *pOutputDataLength = 2U * PSA_ASYM_DATA_SIZE_VWB(*modulus_size);
                                 }
                             }
@@ -1363,7 +1312,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         /* Error already set */
                     }
                 }
-                else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+                else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     uint8_t fPSS;
 
@@ -1375,7 +1324,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     }
                     else
                     {
-                        if (PSA_ALG_IS_RSA_PSS(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+                        if (PSA_ALG_IS_RSA_PSS(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
                         {
                             fPSS = 255U;
                         }
@@ -1386,7 +1335,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     }
                     if (PSA_SUCCESS == funcres)
                     {
-                        if (PSA_ALG_IS_RSA_PSS(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+                        if (PSA_ALG_IS_RSA_PSS(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
                         {
                             if (0U != fPSS)
                             {
@@ -1398,7 +1347,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
                         }
-                        else if (PSA_ALG_IS_RSA_PKCS1V15_SIGN(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+                        else if (PSA_ALG_IS_RSA_PKCS1V15_SIGN(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
                         {
                             if (0U == fPSS)
                             {
@@ -1425,30 +1374,30 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         {
                             *modulus_size = PSA_BYTES_TO_BITS(Modulus.Length);
 
-                            if ((0U != attributes->MBEDTLS_PRIVATE(bits)) &&
-                                (*modulus_size != attributes->MBEDTLS_PRIVATE(bits)))
+                            if ((0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)) &&
+                                (*modulus_size != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)))
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
                             else
                             {
-                                exponent_size = PSA_BYTES_TO_BITS(PubExponent.Length);
+                                *exponentsize = PSA_BYTES_TO_BITS(PubExponent.Length);
 
                                 /* Convert to VaultIP HW format */
                                 if ((NULL == pOutputData) ||
                                     (NULL == pOutputDataLength) ||
                                     (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(*modulus_size) +
-                                                           PSA_ASYM_DATA_SIZE_VWB(exponent_size))))
+                                                           PSA_ASYM_DATA_SIZE_VWB(*exponentsize))))
                                 {
                                     funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                                 }
                                 else
                                 {
                                     *pOutputDataLength = (PSA_ASYM_DATA_SIZE_VWB(*modulus_size) +
-                                                          PSA_ASYM_DATA_SIZE_VWB(exponent_size));
+                                                          PSA_ASYM_DATA_SIZE_VWB(*exponentsize));
                                     local_AsymBigIntToHW(Modulus.pData, *modulus_size,
                                                          0, 2, pOutputData);
-                                    local_AsymBigIntToHW(PubExponent.pData, exponent_size,
+                                    local_AsymBigIntToHW(PubExponent.pData, *exponentsize,
                                                          1, 2, &pOutputData[PSA_ASYM_DATA_VHEADER +
                                                                             Modulus.Length]);
                                 }
@@ -1456,9 +1405,12 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         }
                         else
                         {
-                            if (0U != curve_bits)
+                            if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                             {
-                                /* Nothing to do. */
+                                *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *exponentsize = PersistentItemSize -
+                                                (2 * PSA_ASYM_DATA_VHEADER) -
+                                                PSA_ASYM_DATA_SIZE_VWB(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits));
                             }
                             else
                             {
@@ -1481,14 +1433,14 @@ local_AsymKeyType(const size_t PersistentItemSize,
                 /* Error already set */
             }
         }
-        else if (PSA_KEY_TYPE_IS_ECC(attributes->MBEDTLS_PRIVATE(type)))
+        else if (PSA_KEY_TYPE_IS_ECC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
-            if (PSA_ALG_IS_ECDSA(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+            if (PSA_ALG_IS_ECDSA(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
             {
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_ECDSA;
 
-                funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
-                                               AssetPolicy, curve_bits, 255U);
+                funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
+                                               AssetPolicy, attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits), 255U);
                 if (PSA_SUCCESS == funcres)
                 {
                     Asn1Der_BigNumber KeyInfo;
@@ -1504,7 +1456,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     /* KEY_PAIR type corresponds to a private key in storage, but its attributes correspond to
                      * the pair of the private key and the public key you can generate from it.
                      */
-                    if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+                    if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                     {
                         *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA;
 
@@ -1521,7 +1473,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                 {
                                 case EIP130DOMAIN_ECC_FAMILY_NIST_P:
                                     if (PSA_ECC_FAMILY_SECP_R1 !=
-                                        PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                                        PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                                     {
                                         funcres = PSA_ERROR_INVALID_ARGUMENT;
                                     }
@@ -1533,7 +1485,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                     break;
                                 case EIP130DOMAIN_ECC_FAMILY_BRAINPOOL_R1:
                                     if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 !=
-                                        PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                                        PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                                     {
                                         funcres = PSA_ERROR_INVALID_ARGUMENT;
                                     }
@@ -1558,7 +1510,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         else
                         {
                             /* Validate the key type belongs to a support ECC family */
-                            switch (PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                            switch (PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                             {
                             case PSA_ECC_FAMILY_SECP_R1:
                                 items = 0x1U;
@@ -1575,7 +1527,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         {
                             if (0U == PersistentItemSize)
                             {
-                                if (attributes->MBEDTLS_PRIVATE(bits) != CurveBits)
+                                if (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) != CurveBits)
                                 {
                                     funcres = PSA_ERROR_INVALID_ARGUMENT;
                                 }
@@ -1594,6 +1546,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                     else
                                     {
                                         *modulus_size = CurveBits;
+                                        *exponentsize = CurveBits;
 
                                         *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(CurveBits);
                                         local_AsymBigIntToHW(KeyInfo.pData, CurveBits, 0,
@@ -1603,9 +1556,11 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             }
                             else
                             {
-                                if (0U != curve_bits)
+                                if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                                 {
-                                    *modulus_size = curve_bits;
+                                    CurveBits     = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                    *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                    *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
 
                                     /* Convert to VaultIP HW format */
                                     if (isDerivedKey)
@@ -1614,21 +1569,21 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                     }
                                     else if ((NULL == pOutputData) ||
                                         (NULL == pOutputDataLength) ||
-                                        (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(curve_bits))))
+                                        (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(CurveBits))))
                                     {
                                         funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                                     }
                                     else
                                     {
-                                        /* Set the output data length to the curve_bits in bytes plus the number
+                                        /* Set the output data length to the CurveBits in bytes plus the number
                                          * of bytes for the sub-vector header word.
                                          */
-                                        *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(curve_bits);
+                                        *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(CurveBits);
 
                                         /* Pass key data directly in. API changed to take data pointer
                                          * instead of ASN1DerBigNumber.
                                          */
-                                        local_AsymBigIntToHW(data, curve_bits, 0,
+                                        local_AsymBigIntToHW(data, CurveBits, 0,
                                                              items, pOutputData);
                                     }
                                 }
@@ -1643,12 +1598,12 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             /* Error already set */
                         }
                     }
-                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                     {
                         uint8_t fECDH = 0U;
                         funcres = psaInt_KeyMgmtReadECPubKey(PersistentItemSize, data, data_length,
-                                                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)),
-                                                             curve_bits,
+                                                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)),
+                                                             attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                                              &CurveFamily, &CurveBits,
                                                              &fECDH,
                                                              pOutputData,
@@ -1662,6 +1617,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             else
                             {
                                 *modulus_size = CurveBits;
+                                *exponentsize = CurveBits;
                             }
                         }
                         else
@@ -1679,7 +1635,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     /* Error already set */
                 }
             }
-            else if (PSA_ALG_PURE_EDDSA == attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))
+            else if (PSA_ALG_PURE_EDDSA == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))
             {
                 Asn1Der_BigNumber KeyInfo;
                 size_t CurveBits;
@@ -1687,7 +1643,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
 
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_EDDSA | EIP130_ASSET_POLICY_ACH_SHA512;
 
-                if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+                if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA;
 
@@ -1701,19 +1657,20 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         {
                             if ((CurveFamily != EIP130DOMAIN_ECC_FAMILY_TWISTED_EDWARDS) ||
                                 (PSA_ECC_FAMILY_TWISTED_EDWARDS !=
-                                 PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type))))
+                                 PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
                             else
                             {
-                                if (attributes->MBEDTLS_PRIVATE(bits) != CurveBits)
+                                if (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) != CurveBits)
                                 {
                                     funcres = PSA_ERROR_INVALID_ARGUMENT;
                                 }
                                 else
                                 {
                                     *modulus_size = CurveBits;
+                                    *exponentsize = CurveBits;
 
                                     /* Convert to VaultIP HW format */
                                     if ((NULL == pOutputData) ||
@@ -1739,15 +1696,17 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     else
                     {
                         if (PSA_ECC_FAMILY_TWISTED_EDWARDS !=
-                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                         {
                             funcres = PSA_ERROR_INVALID_ARGUMENT;
                         }
                         else
                         {
-                            if (0U != curve_bits)
+                            if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                             {
-                                *modulus_size = curve_bits;
+                                CurveBits     = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
 
                                 /* Convert to VaultIP HW format */
                                 if (isDerivedKey)
@@ -1756,18 +1715,18 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                 }
                                 else if ((NULL == pOutputData) ||
                                     (NULL == pOutputDataLength) ||
-                                    (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(curve_bits))))
+                                    (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(CurveBits))))
                                 {
                                     funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                                 }
                                 else
                                 {
-                                    /* Set the output data length to the curve_bits in bytes plus the number
+                                    /* Set the output data length to the CurveBits in bytes plus the number
                                      * of bytes for the sub-vector header word.
                                      */
-                                    *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(curve_bits);
+                                    *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(CurveBits);
 
-                                    local_AsymBigIntToHW(data, curve_bits, 0,
+                                    local_AsymBigIntToHW(data, CurveBits, 0,
                                                          0x11, pOutputData);
                                 }
                             }
@@ -1778,15 +1737,15 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         }
                     }
                 }
-                else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+                else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     uint8_t fECDH;
 
                     if (0U == PersistentItemSize)
                     {
                         funcres = psaInt_KeyMgmtReadECPubKey(PersistentItemSize, data, data_length,
-                                                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)),
-                                                             attributes->MBEDTLS_PRIVATE(bits),
+                                                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)),
+                                                             attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                                              &CurveFamily, &CurveBits,
                                                              &fECDH,
                                                              pOutputData,
@@ -1800,6 +1759,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             else
                             {
                                 *modulus_size = CurveBits;
+                                *exponentsize = CurveBits;
                             }
                         }
                         else
@@ -1810,15 +1770,17 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     else
                     {
                         if (PSA_ECC_FAMILY_TWISTED_EDWARDS !=
-                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                             PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                         {
                             funcres = PSA_ERROR_INVALID_ARGUMENT;
                         }
                         else
                         {
-                            if (0U != curve_bits)
+                            if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                             {
-                                *modulus_size  = curve_bits;
+                                CurveBits     = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                                *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
 
                                 /* Convert to VaultIP HW format */
                                 if (isDerivedKey)
@@ -1827,18 +1789,18 @@ local_AsymKeyType(const size_t PersistentItemSize,
                                 }
                                 else if ((NULL == pOutputData) ||
                                     (NULL == pOutputDataLength) ||
-                                    (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(curve_bits))))
+                                    (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(CurveBits))))
                                 {
                                     funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                                 }
                                 else
                                 {
-                                    /* Set the output data length to the curve_bits in bytes plus the number
+                                    /* Set the output data length to the CurveBits in bytes plus the number
                                         * of bytes for the sub-vector header word.
                                         */
-                                    *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(curve_bits);
+                                    *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(CurveBits);
 
-                                    local_AsymBigIntToHW(data, curve_bits, 0,
+                                    local_AsymBigIntToHW(data, CurveBits, 0,
                                                          0x11, pOutputData);
                                 }
                             }
@@ -1864,17 +1826,17 @@ local_AsymKeyType(const size_t PersistentItemSize,
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
     }
-    else if (PSA_ALG_IS_ASYMMETRIC_ENCRYPTION(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+    else if (PSA_ALG_IS_ASYMMETRIC_ENCRYPTION(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         *AssetPolicy = EIP130_ASSET_POLICY_ASYM_DECENC;
-        if (PSA_ALG_RSA_PKCS1V15_CRYPT == attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))
+        if (PSA_ALG_RSA_PKCS1V15_CRYPT == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))
         {
             *AssetPolicy |= EIP130_ASSET_POLICY_ACA_RSAPKCS1V15;
         }
-        else if (PSA_ALG_IS_RSA_OAEP(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        else if (PSA_ALG_IS_RSA_OAEP(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
         {
             *AssetPolicy |= EIP130_ASSET_POLICY_ACA_RSAOEAP;
-            funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), AssetPolicy, 0U, 0U);
+            funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), AssetPolicy, 0U, 0U);
         }
         else
         {
@@ -1885,7 +1847,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
             Asn1Der_BigNumber Modulus;
             Asn1Der_BigNumber PubExponent;
 
-            if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+            if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 Asn1Der_BigNumber PrvExponent;
 
@@ -1901,7 +1863,8 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     {
                         if (PrvExponent.Length <= Modulus.Length)
                         {
-                            *modulus_size  = PSA_BYTES_TO_BITS(Modulus.Length);
+                            *modulus_size = PSA_BYTES_TO_BITS(Modulus.Length);
+                            *exponentsize = *modulus_size;
 
                             /* Convert to VaultIP HW format */
                             if ((NULL == pOutputData) ||
@@ -1913,11 +1876,11 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             else
                             {
                                 *pOutputDataLength = 2U * PSA_ASYM_DATA_SIZE_VWB(*modulus_size);
-                                if (attributes->MBEDTLS_PRIVATE(bits) == (*modulus_size))
+                                if (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) == (*modulus_size))
                                 {
                                     local_AsymBigIntToHW(Modulus.pData, *modulus_size,
                                                          0, 2, pOutputData);
-                                    local_AsymBigIntToHW(PrvExponent.pData, *modulus_size,
+                                    local_AsymBigIntToHW(PrvExponent.pData, *exponentsize,
                                                          1, 2, &pOutputData[PSA_ASYM_DATA_VHEADER +
                                                                             Modulus.Length]);
                                 }
@@ -1939,9 +1902,10 @@ local_AsymKeyType(const size_t PersistentItemSize,
                 }
                 else
                 {
-                    if (0U != curve_bits)
+                    if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                     {
-                        /* Nothing to do. */
+                        *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                        *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                     }
                     else
                     {
@@ -1949,7 +1913,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     }
                 }
             }
-            else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+            else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 uint8_t fPSS;
 
@@ -1963,25 +1927,25 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         if (0U == fPSS)
                         {
                             *modulus_size = PSA_BYTES_TO_BITS(Modulus.Length);
-                            exponent_size = PSA_BYTES_TO_BITS(PubExponent.Length);
+                            *exponentsize = PSA_BYTES_TO_BITS(PubExponent.Length);
 
                             /* Convert to VaultIP HW format */
                             if ((NULL == pOutputData) ||
                                 (NULL == pOutputDataLength) ||
                                 (*pOutputDataLength < (PSA_ASYM_DATA_SIZE_VWB(*modulus_size) +
-                                                       PSA_ASYM_DATA_SIZE_VWB(exponent_size))))
+                                                       PSA_ASYM_DATA_SIZE_VWB(*exponentsize))))
                             {
                                 funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                             }
                             else
                             {
                                 *pOutputDataLength = (PSA_ASYM_DATA_SIZE_VWB(*modulus_size) +
-                                                      PSA_ASYM_DATA_SIZE_VWB(exponent_size));
-                                if (attributes->MBEDTLS_PRIVATE(bits) == (*modulus_size))
+                                                      PSA_ASYM_DATA_SIZE_VWB(*exponentsize));
+                                if (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) == (*modulus_size))
                                 {
                                     local_AsymBigIntToHW(Modulus.pData, *modulus_size,
                                                          0, 2, pOutputData);
-                                    local_AsymBigIntToHW(PubExponent.pData, exponent_size,
+                                    local_AsymBigIntToHW(PubExponent.pData, *exponentsize,
                                                          1, 2, &pOutputData[PSA_ASYM_DATA_VHEADER +
                                                                             Modulus.Length]);
                                 }
@@ -2003,9 +1967,10 @@ local_AsymKeyType(const size_t PersistentItemSize,
                 }
                 else
                 {
-                    if (0U != curve_bits)
+                    if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                     {
-                        /* Nothing to do. */
+                        *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                        *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                     }
                     else
                     {
@@ -2023,27 +1988,27 @@ local_AsymKeyType(const size_t PersistentItemSize,
             /* Error already set */
         }
     }
-    else if (PSA_ALG_IS_KEY_AGREEMENT(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+    else if (PSA_ALG_IS_KEY_AGREEMENT(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         *AssetPolicy = EIP130_ASSET_POLICY_ASYM_KEYEXCHANGE;
-        if (PSA_ALG_IS_FFDH(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        if (PSA_ALG_IS_FFDH(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
         {
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
-        else if (PSA_ALG_IS_ECDH(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        else if (PSA_ALG_IS_ECDH(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
         {
             Asn1Der_BigNumber KeyInfo;
             size_t CurveBits;
             uint8_t CurveFamily;
             uint8_t items;
 
-            if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+            if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA |
                                 EIP130_ASSET_POLICY_STANY;
 
                 if (PSA_ECC_FAMILY_MONTGOMERY ==
-                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     if (0U == PersistentItemSize)
                     {
@@ -2058,9 +2023,9 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     }
                 }
                 else if ((PSA_ECC_FAMILY_SECP_R1 ==
-                          PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type))) ||
+                          PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) ||
                          (PSA_ECC_FAMILY_BRAINPOOL_P_R1 ==
-                          PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type))))
+                          PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
                 {
                     if (0U == PersistentItemSize)
                     {
@@ -2086,7 +2051,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         {
                         case EIP130DOMAIN_ECC_FAMILY_NIST_P:
                             if (PSA_ECC_FAMILY_SECP_R1 !=
-                                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
@@ -2098,7 +2063,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             break;
                         case EIP130DOMAIN_ECC_FAMILY_BRAINPOOL_R1:
                             if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 !=
-                                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
@@ -2110,7 +2075,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                             break;
                         case EIP130DOMAIN_ECC_FAMILY_MONTGOMERY:
                             if (PSA_ECC_FAMILY_MONTGOMERY !=
-                                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                             {
                                 funcres = PSA_ERROR_INVALID_ARGUMENT;
                             }
@@ -2127,7 +2092,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     }
                     else
                     {
-                        switch (PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                        switch (PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                         {
                         case PSA_ECC_FAMILY_SECP_R1:
                             *AssetPolicy |= EIP130_ASSET_POLICY_ACA_ECDH;
@@ -2155,13 +2120,14 @@ local_AsymKeyType(const size_t PersistentItemSize,
                 {
                     if (0U == PersistentItemSize)
                     {
-                        if (attributes->MBEDTLS_PRIVATE(bits) != CurveBits)
+                        if (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) != CurveBits)
                         {
                             funcres = PSA_ERROR_INVALID_ARGUMENT;
                         }
                         else
                         {
                             *modulus_size = CurveBits;
+                            *exponentsize = CurveBits;
 
                             /* Convert to VaultIP HW format */
                             if ((NULL == pOutputData) ||
@@ -2182,36 +2148,40 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     {
                         if (isDerivedKey)
                         {
-                            /* There are no input or output buffers of key material to format. Nothing
-                             * to do.
+                            /* There are no input or output buffers of key material to format. Simply save
+                             * the modulus and exponent sizes.
                              */
+                            *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                            *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                         }
                         else if ((NULL == pOutputData) || (NULL == pOutputDataLength))
                         {
                             funcres = PSA_ERROR_INVALID_ARGUMENT;
                         }
-                        else if (*pOutputDataLength < PSA_ASYM_DATA_SIZE_VWB(curve_bits))
+                        else if (*pOutputDataLength < PSA_ASYM_DATA_SIZE_VWB(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)))
                         {
                             funcres = PSA_ERROR_BUFFER_TOO_SMALL;
                         }
-                        else if (0U != curve_bits)
+                        else if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                         {
-                            *modulus_size = curve_bits;
-                            *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(*modulus_size);
+                            CurveBits     = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                            *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                            *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                            *pOutputDataLength = PSA_ASYM_DATA_SIZE_VWB(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits));
 
                             /* Pass key data directly in to be HSM sub-vector formatted. Note that
-                             * curve_bits will be 255 if Curve25519 is being used. In that case, the
+                             * CurveBits will be 255 if Curve25519 is being used. In that case, the
                              * following API will use that information to determine that the data is
                              * already in little-endian format.
                              */
-                            local_AsymBigIntToHW(data, curve_bits, 0,
+                            local_AsymBigIntToHW(data, CurveBits, 0,
                                                  items, pOutputData);
 
                             /* If Curve25519 is used, the private key stored should be pruned. However, it cannot be done
                              * inside of local_AsymBigIntToHW(), since that is also used for Curve25519 Public Keys, which
                              * must not be pruned.
                              */
-                            if (curve_bits == 255U)
+                            if (CurveBits == 255U)
                             {
                                 /* Prune the private key. It is now in HW format, so we must skip the header word
                                  * to prune the 0th and 31st bytes of the key material.
@@ -2232,7 +2202,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     /* Error already set */
                 }
             }
-            else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+            else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 uint8_t fECDH = 0U;
 
@@ -2243,8 +2213,8 @@ local_AsymKeyType(const size_t PersistentItemSize,
                  * size into pOutputDataLength.
                  */
                 funcres = psaInt_KeyMgmtReadECPubKey(PersistentItemSize, data, data_length,
-                                                     PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)),
-                                                     curve_bits,
+                                                     PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)),
+                                                     attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                                      &CurveFamily, &CurveBits,
                                                      &fECDH,
                                                      pOutputData,
@@ -2258,7 +2228,7 @@ local_AsymKeyType(const size_t PersistentItemSize,
                     fECDH = 255U;
                 }
 
-                switch (PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                switch (PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                 case PSA_ECC_FAMILY_SECP_R1:
                 case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
@@ -2283,13 +2253,15 @@ local_AsymKeyType(const size_t PersistentItemSize,
                         else
                         {
                             *modulus_size = CurveBits;
+                            *exponentsize = CurveBits;
                         }
                     }
                     else
                     {
-                        if (0U != curve_bits)
+                        if (0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))
                         {
-                            *modulus_size = curve_bits;
+                            *modulus_size = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                            *exponentsize = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                         }
                         else
                         {
@@ -2348,25 +2320,25 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
 {
     psa_status_t funcres = PSA_SUCCESS;
 
-    if (PSA_ALG_IS_SIGN(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+    if (PSA_ALG_IS_SIGN(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         *pfECDH = 0U;
         *AssetPolicy = EIP130_ASSET_POLICY_ASYM_SIGNVERIFY;
-        if (PSA_KEY_TYPE_IS_ECC(attributes->MBEDTLS_PRIVATE(type)))
+        if (PSA_KEY_TYPE_IS_ECC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
-            *pModulusSize = (size_t)attributes->MBEDTLS_PRIVATE(bits);
+            *pModulusSize = (size_t)attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
 
-            if (PSA_ALG_IS_ECDSA(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+            if (PSA_ALG_IS_ECDSA(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
             {
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_ECDSA;
 
                 if (PSA_ECC_FAMILY_SECP_R1 ==
-                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     *pCurveFamily = EIP130DOMAIN_ECC_FAMILY_NIST_P;
                 }
                 else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 ==
-                         PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                         PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     *pCurveFamily = EIP130DOMAIN_ECC_FAMILY_BRAINPOOL_R1;
                 }
@@ -2376,7 +2348,7 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
                 }
                 if (PSA_SUCCESS == funcres)
                 {
-                    funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
+                    funcres = local_AsymHashPolicy(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
                                                    AssetPolicy, *pModulusSize, 255U);
                 }
                 else
@@ -2385,11 +2357,11 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
                 }
                 if (PSA_SUCCESS == funcres)
                 {
-                    if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+                    if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                     {
                         *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA;
                     }
-                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                     {
                         /* The AssetPolicy is already OK */
                     }
@@ -2403,12 +2375,12 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
                     /* Error already set */
                 }
             }
-            else if (PSA_ALG_PURE_EDDSA == attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))
+            else if (PSA_ALG_PURE_EDDSA == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))
             {
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_EDDSA | EIP130_ASSET_POLICY_ACH_SHA512;
 
                 if (PSA_ECC_FAMILY_TWISTED_EDWARDS ==
-                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                    PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     *pCurveFamily = EIP130DOMAIN_ECC_FAMILY_TWISTED_EDWARDS;
                 }
@@ -2418,11 +2390,11 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
                 }
                 if (PSA_SUCCESS == funcres)
                 {
-                    if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+                    if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                     {
                         *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA;
                     }
-                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                     {
                         /* The AssetPolicy is already OK */
                     }
@@ -2446,31 +2418,31 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
     }
-    else if (PSA_ALG_IS_KEY_AGREEMENT(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+    else if (PSA_ALG_IS_KEY_AGREEMENT(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         *AssetPolicy = EIP130_ASSET_POLICY_ASYM_KEYEXCHANGE;
-        if (PSA_ALG_IS_FFDH(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        if (PSA_ALG_IS_FFDH(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
         {
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
-        else if (PSA_ALG_IS_ECDH(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        else if (PSA_ALG_IS_ECDH(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
         {
             *pfECDH = 255U;
-            *pModulusSize = (size_t)attributes->MBEDTLS_PRIVATE(bits);
+            *pModulusSize = (size_t)attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
             if (PSA_ECC_FAMILY_SECP_R1 ==
-                PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 *pCurveFamily = EIP130DOMAIN_ECC_FAMILY_NIST_P;
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_ECDH;
             }
             else if (PSA_ECC_FAMILY_BRAINPOOL_P_R1 ==
-                     PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                     PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 *pCurveFamily = EIP130DOMAIN_ECC_FAMILY_BRAINPOOL_R1;
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_ECDH;
             }
             else if (PSA_ECC_FAMILY_MONTGOMERY ==
-                     PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(type)))
+                     PSA_KEY_TYPE_ECC_GET_FAMILY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 *pCurveFamily = EIP130DOMAIN_ECC_FAMILY_MONTGOMERY;
                 *AssetPolicy |= EIP130_ASSET_POLICY_ACA_CURVE25519;
@@ -2479,7 +2451,7 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
             {
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
-            if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(type)))
+            if (PSA_KEY_TYPE_IS_KEY_PAIR(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 *AssetPolicy |= EIP130_ASSET_POLICY_PRIVATEDATA |
                                 EIP130_ASSET_POLICY_STANY;
@@ -2496,7 +2468,7 @@ local_AsymKeyGenType(const psa_key_attributes_t * attributes,
                     break;
                 }
             }
-            else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type)))
+            else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 /* The AssetPolicy is already OK */
             }
@@ -3200,8 +3172,8 @@ local_GetFreeKeyEntry(uint32_t * index, psa_key_persistence_t persistence)
     for (; key_index < max_index; key_index++)
     {
         tempEntry = &gl_PSA_Key[key_index];
-        entryPersistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(tempEntry->attributes.MBEDTLS_PRIVATE(lifetime));
-        entryUsage = tempEntry->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        entryPersistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(tempEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        entryUsage = tempEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
 
         if (0U == tempEntry->fAllocated)
         {
@@ -3297,21 +3269,21 @@ local_RemoveKey(psa_key_context_t * pKey)
      * fails - but if it succeeds, we must not replace the original error condition in funcres.
      */
     psa_status_t removalResult;
-    mbedtls_svc_key_id_t key = pKey->attributes.MBEDTLS_PRIVATE(id);
-    psa_key_persistence_t key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(lifetime));
+    mbedtls_svc_key_id_t key = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
+    psa_key_persistence_t key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
     psa_storage_uid_t UId;
     psa_key_id_t id;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
     id = key.MBEDTLS_PRIVATE(key_id);
 #else
-    id = key;
+    id = key.MBEDTLS_PRIVATE(id);
 #endif
 
     if (psa_is_preprovisioned_key_id(id))
     {
         funcres = PSA_ERROR_NOT_SUPPORTED;
     }
-    else
+    else if (0U == pKey->KeyInUseFlag)
     {
         if (PSA_ASSETID_INVALID != pKey->key_assetId)
         {
@@ -3387,6 +3359,11 @@ local_RemoveKey(psa_key_context_t * pKey)
         {
             /* Error already set */
         }
+    }
+    else
+    {
+        /* The in-use counter is not zero */
+        funcres = PSA_ERROR_INVALID_HANDLE;
     }
 
     return funcres;
@@ -3575,17 +3552,15 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
     psa_key_context_t * pEntry;
     uint32_t entryIdx;
     psa_key_id_t id;
-    bool iakIsPreProvisioned = false;
-    uint8_t CurveFamily = 0U;
-    uint8_t fECDH = 0U;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
     id = key.MBEDTLS_PRIVATE(key_id);
 #else
-    id = key;
+    id = key.MBEDTLS_PRIVATE(id);
 #endif
     /* The last 'MBEDTLS_KEY_VOLATILE_COUNT' indices of the global array are for volatile keys. Their associated
-     * key IDs range from PSA_KEY_ID_VOLATILE_MIN to PSA_KEY_ID_VOLATILE_MAX, but that range is only valid if
-     * MBEDTLS_KEY_VOLATILE_COUNT is greater than 0. For example, if MBEDTLS_KEY_VOLATILE_COUNT is 1, then
+     * key IDs range from PSA_KEY_ID_VOLATILE_MIN to PSA_KEY_ID_VOLATILE_MAX, but only if MBEDTLS_KEY_VOLATILE_COUNT
+     * is as large as that range. If not, then the given ID must be within the possible range of volatile IDs
+     * based on the set number of volatile slots. For example, if MBEDTLS_KEY_VOLATILE_COUNT is 1, then
      * PSA_KEY_ID_VOLATILE_MIN will be the only possible volatile key ID stored in the array.
      */
     if ((psa_key_id_is_volatile(id)) && ((id - PSA_KEY_ID_VOLATILE_MIN) <= (MBEDTLS_KEY_VOLATILE_COUNT - 1)))
@@ -3599,9 +3574,9 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
         pEntry = &gl_PSA_Key[entryIdx];
 
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-        if (id != pEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
+        if (id != pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
 #else
-        if (id != pEntry->attributes.MBEDTLS_PRIVATE(id))
+        if (id != pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
 #endif
         {
             funcres = PSA_ERROR_INVALID_HANDLE;
@@ -3615,190 +3590,69 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
             /* MISRA - Intentially empty */
         }
     }
-    else if ((psa_is_valid_key_id(id, 0)) || (id == PSA_KEY_ID_IAK))
+    else if (psa_is_valid_key_id(id, 0))
     {
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
-        if (id == PSA_KEY_ID_IAK)
+        /* Persistent keys and asset store keys share the same valid key ID ranges, so we must check the full array
+         * besides the region containing only volatile keys.
+         */
+        for (entryIdx = 0U; entryIdx < (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT); entryIdx++)
         {
-            /* We must first check if the IAK is preprovisioned, if it is being requested.
-             * If it is not preprovisioned, then we will attempt to retrieve it
-             * from KeyStore cache space, as we would for any other persistent key.
-             */
-            funcres = KeyMgmt_getPreProvisionedKey(key, &pEntry);
-
-            if (funcres == PSA_ERROR_INVALID_HANDLE)
+            pEntry = &gl_PSA_Key[entryIdx];
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+            if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
+#else
+            if (id == pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
+#endif
             {
-                /* If PSA_ERROR_INVALID_HANDLE, then the IAK does not exist as
-                 * a preprovisioned key. Continue on to see if it was imported
-                 * as a persistent key instead.
-                 */
-            }
-            else
-            {
-                /* In this case, we have either successfully retrieved the IAK
-                 * from the preprovisioned key space, or there was some other
-                 * failure unrelated to the IAK not existing in that space.
-                 * There is no need to check the KeyStore cache for the key in
-                 * either of these cases.
-                 */
-                iakIsPreProvisioned = true;
+                break;
             }
         }
-#endif
-        /* For CC35XX, the IAK does not yet exist & cannot be pre-provisioned.
-         * This boolean will always be false from its initialization at the
-         * top of the function.
-         */
-        if (!iakIsPreProvisioned)
-        {
-            /* Persistent keys and asset store keys share the same valid key ID ranges, so we must check the full array
-             * besides the region containing only volatile keys.
-             */
-            for (entryIdx = 0U; entryIdx < (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT); entryIdx++)
-            {
-                pEntry = &gl_PSA_Key[entryIdx];
-#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-                if (id == pEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
-#else
-                if (id == pEntry->attributes.MBEDTLS_PRIVATE(id))
-#endif
-                {
-                    /* Key ID was found in the cache */
-                    funcres = PSA_SUCCESS;
-                    break;
-                }
-            }
 
-            if (entryIdx >= (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT))
+        if (entryIdx >= (MBEDTLS_KEY_PERSISTENT_COUNT + MBEDTLS_KEY_ASSET_STORE_COUNT))
+        {
+            /* If we've not found the given key ID in the array, check if that ID is associated with a key
+             * in persistent storage.
+             */
+            if (psa_is_key_present_in_storage(key))
             {
-                /* If we've not found the given key ID in the array, check if that ID is associated with a key
-                 * in persistent storage.
+                /* Get free entry pointer for pEntry, that will evict an entry of another persistent key
+                 * if necessary.
                  */
-                if (psa_is_key_present_in_storage(key))
+                funcres = local_GetFreeKeyEntry(&entryIdx, PSA_KEY_PERSISTENCE_DEFAULT);
+
+                if (funcres == PSA_SUCCESS)
                 {
-                    /* Get free entry pointer for pEntry, that will evict an entry of another persistent key
-                     * if necessary.
-                     */
-                    funcres = local_GetFreeKeyEntry(&entryIdx, PSA_KEY_PERSISTENCE_DEFAULT);
+                    pEntry = &gl_PSA_Key[entryIdx];
+
+                    /* Load persistent key material along with its attributes directly into the global array entry */
+                    funcres = psa_load_persistent_key_into_slot(key, pEntry);
 
                     if (funcres == PSA_SUCCESS)
                     {
-                        pEntry = &gl_PSA_Key[entryIdx];
-
-                        /* Load persistent key material along with its attributes directly into the global array entry */
-                        funcres = psa_load_persistent_key_into_slot(key, pEntry);
-
-                        if (funcres == PSA_SUCCESS)
-                        {
-                            /* When key blobs are stored to NVM, the key_size is stored as the length of the wrapped key material. This is
-                             * necessary to store and load the correct data lengths to ITS. However, when we read from ITS, we want key_size
-                             * to reflect the size of the key material without the wrapping. This is because the Asset Create token expects
-                             * the length of the actual asset key material, ignoring extra bytes from a key blob wrapping.
-                             */
-                            psa_key_location_t key_location = PSA_KEY_LIFETIME_GET_LOCATION(pEntry->attributes.MBEDTLS_PRIVATE(lifetime));
-                            pEntry->key_size = (key_location == PSA_KEY_LOCATION_LOCAL_STORAGE) ? pEntry->key_size : PSA_KEYMATERIAL_SIZE(pEntry->key_size);
-
-                            /* Key attributes are stored to NVM before the key bits attribute gets set internally. We must re-calculate it here, assuming
-                             * that the key bits weren't set by the caller of the key creation API. This also only needs to be done for asymmetric keys,
-                             * since they are the only keys where the bits attribute is relevant to operations.
-                             */
-                            if ((pEntry->attributes.MBEDTLS_PRIVATE(bits) == 0) && (PSA_KEY_TYPE_IS_ASYMMETRIC(pEntry->attributes.MBEDTLS_PRIVATE(type))))
-                            {
-                                fECDH = PSA_ALG_IS_ECDH(pEntry->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)) ? 1U : 0U;
-                                CurveFamily = local_CurveFamilyFromKeyType(pEntry->attributes.MBEDTLS_PRIVATE(type), fECDH);
-                                if ((CurveFamily == EIP130DOMAIN_ECC_FAMILY_MONTGOMERY) ||
-                                    (CurveFamily == EIP130DOMAIN_ECC_FAMILY_TWISTED_EDWARDS))
-                                {
-                                    /* Curve25519/Ed25519 are the only montgomery curves we support. */
-                                    pEntry->attributes.MBEDTLS_PRIVATE(bits) = 255U;
-                                }
-                                else
-                                {
-                                    /* For Weierstrass curves, consider the HW format sizes for both public keys & private keys.
-                                    * Note that there is a collision between PSA_ASYM_DATA_SIZE_VWB_MACRO(521) &
-                                    * 2*PSA_ASYM_DATA_SIZE_VWB_MACRO(256), so we must separate the switch statements for public
-                                    * and private keys.
-                                    */
-                                    if (PSA_KEY_TYPE_IS_KEY_PAIR(pEntry->attributes.MBEDTLS_PRIVATE(type)))
-                                    {
-                                        switch (pEntry->key_size)
-                                        {
-                                            case PSA_ASYM_DATA_SIZE_VWB_MACRO(192):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 192U;
-                                                break;
-                                            case PSA_ASYM_DATA_SIZE_VWB_MACRO(224):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 224U;
-                                                break;
-                                            case PSA_ASYM_DATA_SIZE_VWB_MACRO(256):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 256U;
-                                                break;
-                                            case PSA_ASYM_DATA_SIZE_VWB_MACRO(384):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 384U;
-                                                break;
-                                            case PSA_ASYM_DATA_SIZE_VWB_MACRO(512):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 512U;
-                                                break;
-                                            case PSA_ASYM_DATA_SIZE_VWB_MACRO(521):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 521U;
-                                                break;
-                                            default:
-                                                funcres = PSA_ERROR_CORRUPTION_DETECTED;
-                                                break;
-                                        }
-                                    }
-                                    else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(pEntry->attributes.MBEDTLS_PRIVATE(type)))
-                                    {
-                                        switch (pEntry->key_size)
-                                        {
-                                            case (2U * PSA_ASYM_DATA_SIZE_VWB_MACRO(192)):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 192U;
-                                                break;
-                                            case (2U * PSA_ASYM_DATA_SIZE_VWB_MACRO(224)):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 224U;
-                                                break;
-                                            case (2U * PSA_ASYM_DATA_SIZE_VWB_MACRO(256)):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 256U;
-                                                break;
-                                            case (2U * PSA_ASYM_DATA_SIZE_VWB_MACRO(384)):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 384U;
-                                                break;
-                                            case (2U * PSA_ASYM_DATA_SIZE_VWB_MACRO(512)):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 512U;
-                                                break;
-                                            case (2U * PSA_ASYM_DATA_SIZE_VWB_MACRO(521)):
-                                                pEntry->attributes.MBEDTLS_PRIVATE(bits) = 521U;
-                                                break;
-                                            default:
-                                                funcres = PSA_ERROR_CORRUPTION_DETECTED;
-                                                break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        /* Safeguard: Should never happen, already checked earlier */
-                                        funcres = PSA_ERROR_NOT_SUPPORTED;
-                                    }
-                                }
-                            }
-                        }
+                        /* When key blobs are stored to NVM, the key_size is stored as the length of the wrapped key material. This is
+                         * necessary to store and load the correct data lengths to ITS. However, when we read from ITS, we want key_size
+                         * to reflect the size of the key material without the wrapping. This is because the Asset Create token expects
+                         * the length of the actual asset key material, ignoring extra bytes from a key blob wrapping.
+                         */
+                        psa_key_location_t key_location = PSA_KEY_LIFETIME_GET_LOCATION(pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+                        pEntry->key_size = (key_location == PSA_KEY_LOCATION_LOCAL_STORAGE) ? pEntry->key_size : PSA_KEYMATERIAL_SIZE(pEntry->key_size);
                     }
                 }
-                else
-                {
-                    funcres = PSA_ERROR_INVALID_HANDLE;
-                }
-            }
-            else if (0U == pEntry->fAllocated)
-            {
-                funcres = PSA_ERROR_INVALID_HANDLE;
             }
             else
             {
-                /* MISRA - Intentionally empty */
+                funcres = PSA_ERROR_INVALID_HANDLE;
             }
         }
+        else if (0U == pEntry->fAllocated)
+        {
+            funcres = PSA_ERROR_INVALID_HANDLE;
+        }
+        else
+        {
+            /* MISRA - Intentially empty */
+        }
     }
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
     else if (psa_is_preprovisioned_key_id(id))
     {
         /* If the key doesn't exist in KeyStore RAM nor in KeyStore Flash, then check
@@ -3808,7 +3662,6 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
          */
         funcres = KeyMgmt_getPreProvisionedKey(key, &pEntry);
     }
-#endif
     else
     {
         funcres = PSA_ERROR_INVALID_HANDLE;
@@ -3820,6 +3673,42 @@ psaInt_KeyMgmtGetKey(mbedtls_svc_key_id_t key,
     if (funcres == PSA_SUCCESS)
     {
         *ppKeyEntry = pEntry;
+    }
+
+    return funcres;
+}
+
+/*----------------------------------------------------------------------------
+ * psaInt_KeyMgmtGetAndLockKey
+ *
+ * Returns the key entry for the specified KeyId, when allocated. Also locks
+ * the key entry - must be released by caller.
+ */
+psa_status_t
+psaInt_KeyMgmtGetAndLockKey(mbedtls_svc_key_id_t key,
+                            psa_key_context_t ** ppKeyEntry)
+{
+    psa_status_t funcres = PSA_SUCCESS;
+    psa_key_context_t * pEntry = NULL;
+
+    funcres = psaInt_KeyMgmtGetKey(key, &pEntry);
+
+    /* Manually set KeyInUseFlag - using psaInt_KeyMgmtSetKeyInUse()
+     * incurs an unnecessary extra call to psaInt_KeyMgmtGetKey()
+     */
+    if ((funcres == PSA_SUCCESS) && (pEntry->KeyInUseFlag == 0U))
+    {
+        *ppKeyEntry = pEntry;
+        /* Lock the key entry */
+        pEntry->KeyInUseFlag = 1U;
+    }
+    else if ((pEntry != NULL) && (pEntry->KeyInUseFlag > 0U))
+    {
+        funcres = PSA_ERROR_KEY_IN_USE;
+    }
+    else
+    {
+        /* MISRA - Intentially empty */
     }
 
     return funcres;
@@ -3860,7 +3749,6 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
     bool pubKeyGenerated = false;
     uint8_t fECDH = 0U;
     uint8_t CurveFamily = 0U;
-    size_t CurveBits = 0U;
     size_t PublicKeyLength = 0U;
     psa_key_id_t id;
 
@@ -3873,9 +3761,9 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
          ((NULL == pAssetId) && (NULL != pData) && (0U != DataSize) && (NULL != pActualDataSize))))
     {
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-        id = pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+        id = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
 #else
-        id = pKey->attributes.MBEDTLS_PRIVATE(id);
+        id = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
 #endif
         /* If a pre-provisioned key is requested for a crypto operation (not an export),
          * we have to convert to HW format and produce an asset policy for the key, because
@@ -3884,19 +3772,22 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
         if ((psa_is_preprovisioned_key_id(id)) &&
             (target_usage != PSA_KEY_USAGE_EXPORT))
         {
-            if (PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(type)))
+            if (PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 funcres = local_SymKeyType(&pKey->attributes, pKey->key_size, &pKey->AssetPolicy);
 
                 key = pKey->key;
             }
-            else if (PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(type)))
+            else if (PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
+                size_t modulus_size  = 0;
+                size_t exponent_size = 0;
                 size_t KeyDataBufferSize = sizeof(KeyDataBuffer);
                 funcres = local_AsymKeyType(bypassASN1DER, &pKey->attributes,
                                             false, pKey->key, pKey->key_size,
                                             KeyDataBuffer, &KeyDataBufferSize,
-                                            &pKey->attributes.MBEDTLS_PRIVATE(bits), &pKey->AssetPolicy);
+                                            &modulus_size, &exponent_size,
+                                            &pKey->AssetPolicy);
 
                 key = KeyDataBuffer;
             }
@@ -3921,21 +3812,18 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
         /* This is our cached marker that a key is symmetric, and we may have its data split to support
          * two separate assets
          */
-        key_usage = pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-        key_type = pKey->attributes.MBEDTLS_PRIVATE(type);
-        key_location = PSA_KEY_LIFETIME_GET_LOCATION(pKey->attributes.MBEDTLS_PRIVATE(lifetime));
+        key_usage = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        key_type = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+        key_location = PSA_KEY_LIFETIME_GET_LOCATION(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
 
-        if ((PSA_KEY_TYPE_IS_SYMMETRIC(key_type)) &&
-            (PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
+        if ((PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
             (PSA_KEY_USAGE_DECRYPT == (key_usage & PSA_KEY_USAGE_DECRYPT)) &&
-            (0 == (key_usage & PSA_KEY_USAGE_COPROCESSOR)) &&
+            (PSA_KEY_TYPE_IS_SYMMETRIC(key_type)) &&
             (pAssetId != NULL))
         {
-            /* The stored key is symmetric for both encrypt & decrypt, and not a coprocessor key. We
-             * must check the target usage to know which asset to return. It is expected that the
-             * target_usage meets one of the following two conditions, if an asset is requested.
-             * Note that the only differences between the two keys can be the key blob content,
-             * asset ID, and asset policies.
+            /* The stored key is symmetric. We must check the target usage to know which asset to return. It is
+             * expected that the target_usage meets one of the following two conditions, if an asset is requested.
+             * Note that the only differences between the two keys can be the key blob content, asset ID, and asset policies.
              */
             if (PSA_KEY_USAGE_ENCRYPT == (target_usage & PSA_KEY_USAGE_ENCRYPT))
             {
@@ -3986,7 +3874,7 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
                                                             key,
                                                             pKey->key_size);
                     }
-                    else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+                    else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
                     {
                         /* Key data is available as Asset blob (wrapped form) */
                         funcres = local_LoadImport(PrivateAssetId,
@@ -4008,7 +3896,7 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
             {
                 /* Now we have a private key asset to generate a public key from */
 
-                if (PSA_ALG_IS_KEY_AGREEMENT(pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+                if (PSA_ALG_IS_KEY_AGREEMENT(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
                 {
                     fECDH = 255U;
                 }
@@ -4017,21 +3905,20 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
                     /* MISRA - Intentially empty */
                 }
 
-                CurveFamily = local_CurveFamilyFromKeyType(pKey->attributes.MBEDTLS_PRIVATE(type), fECDH);
-                CurveBits = pKey->attributes.MBEDTLS_PRIVATE(bits);
+                CurveFamily = local_CurveFamilyFromKeyType(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type), fECDH);
 
                 if (NULL != pAssetId)
                 {
                     /* If public key is requested as an asset, return it directly to the output parameter */
                     funcres = local_AsymKeyGenPub(PrivateAssetId, pAssetId, pKey->AssetPolicy, true,
-                                                  CurveFamily, CurveBits,
+                                                  CurveFamily, (size_t)pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                                   fECDH, NULL, 0, NULL);
                 }
                 else
                 {
                     /* If public key is requested in plaintext (component format, since a crypto driver would be the caller) */
                     funcres = local_AsymKeyGenPub(PrivateAssetId, NULL, pKey->AssetPolicy, true,
-                                                  CurveFamily, CurveBits,
+                                                  CurveFamily, (size_t)pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                                   fECDH, KeyDataBuffer, sizeof(KeyDataBuffer), &PublicKeyLength);
 
                     if (PSA_SUCCESS == funcres)
@@ -4067,7 +3954,7 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
             /* If the public key is being requested as an export, it must be converted from HSM HW format to the format
              * specified by the PSA spec for points of each curve family.
              */
-            if (PSA_ALG_IS_KEY_AGREEMENT(pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+            if (PSA_ALG_IS_KEY_AGREEMENT(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
             {
                 fECDH = 255U;
             }
@@ -4076,20 +3963,19 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
                 /* MISRA - Intentially empty */
             }
 
-            CurveFamily = local_CurveFamilyFromKeyType(pKey->attributes.MBEDTLS_PRIVATE(type), fECDH);
-            CurveBits = pKey->attributes.MBEDTLS_PRIVATE(bits);
+            CurveFamily = local_CurveFamilyFromKeyType(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type), fECDH);
 
             if ((CurveFamily == EIP130DOMAIN_ECC_FAMILY_MONTGOMERY) ||
                 (CurveFamily == EIP130DOMAIN_ECC_FAMILY_TWISTED_EDWARDS))
             {
-                PublicKeyLength = PSA_ASYM_DATA_SIZE_B2B(CurveBits);
+                PublicKeyLength = PSA_ASYM_DATA_SIZE_B2B(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits));
             }
             else
             {
-                PublicKeyLength = 1 + (2 * PSA_ASYM_DATA_SIZE_B2B(CurveBits));
+                PublicKeyLength = 1 + (2 * PSA_ASYM_DATA_SIZE_B2B(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)));
             }
 
-            if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+            if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
             {
                 /* TODO: It should be possible to export a public key that is stored in asset or wrapped form, using
                  * a Public Data Read token. The token will read it into PublicDataBuffer, before using
@@ -4116,7 +4002,7 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
             }
             else
             {
-                local_AsymPointOutputFromHW(pData, CurveBits, CurveFamily, key);
+                local_AsymPointOutputFromHW(pData, pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits), CurveFamily, key);
                 *pActualDataSize = PublicKeyLength;
             }
 
@@ -4187,7 +4073,7 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
                                                                 key,
                                                                 pKey->key_size);
                         }
-                        else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+                        else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
                         {
                             /* Key data is available as Asset blob (wrapped form) */
                             funcres = local_LoadImport(*pKeyAssetId,
@@ -4258,7 +4144,7 @@ psaInt_KeyMgmtLoadKey(psa_key_context_t * pKey,
                             funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
                         }
                     }
-                    else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+                    else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
                     {
                         /* Key data is available as Asset blob (wrapped form) */
                         funcres = PSA_ERROR_NOT_PERMITTED;
@@ -4306,7 +4192,7 @@ psaInt_KeyMgmtReleaseKey(psa_key_context_t * pKey)
             funcres = psaInt_AssetFree(pKey->key_assetId);
             pKey->key_assetId = PSA_ASSETID_INVALID;
 
-            persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(lifetime));
+            persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
             if (persistence == PSA_KEY_PERSISTENCE_HSM_ASSET_STORE)
             {
                 /* If the persistence is PSA_KEY_PERSISTENCE_HSM_ASSET_STORE, then there is no use for the key entry once
@@ -4334,6 +4220,96 @@ psaInt_KeyMgmtReleaseKey(psa_key_context_t * pKey)
     return funcres;
 }
 
+/*----------------------------------------------------------------------------
+ * psaInt_KeyMgmtSetKeyInUse
+ *
+ * Set key in use flag.
+ */
+psa_status_t
+psaInt_KeyMgmtSetKeyInUse(mbedtls_svc_key_id_t key)
+{
+    psa_status_t funcres;
+    psa_key_context_t * pKey;
+    psa_key_id_t id;
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+    id = key.MBEDTLS_PRIVATE(key_id);
+#else
+    id = key.MBEDTLS_PRIVATE(id);
+#endif
+
+    funcres = psaInt_KeyMgmtGetKey(key, &pKey);
+    if (PSA_SUCCESS == funcres)
+    {
+        if ((PSA_KEY_ID_NULL == id) ||
+            (0U == pKey->fAllocated))
+        {
+            /* Safeguard: Should not happen, blocked by psaInt_KeyMgmtGetKey() */
+            funcres = PSA_ERROR_INVALID_HANDLE;
+        }
+        else if (pKey->KeyInUseFlag == 0U)
+        {
+            pKey->KeyInUseFlag = 1U;
+        }
+        else
+        {
+            funcres = PSA_ERROR_KEY_IN_USE;
+        }
+    }
+    else
+    {
+        /* Error already set */
+    }
+
+    return funcres;
+}
+
+/*----------------------------------------------------------------------------
+ * psaInt_KeyMgmtClrKeyInUse
+ *
+ * Zero key in use flag.
+ */
+psa_status_t
+psaInt_KeyMgmtClrKeyInUse(mbedtls_svc_key_id_t key)
+{
+    psa_status_t funcres;
+    psa_key_context_t * pKey;
+    psa_key_id_t id;
+#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
+    id = key.MBEDTLS_PRIVATE(key_id);
+#else
+    id = key.MBEDTLS_PRIVATE(id);
+#endif
+
+    funcres = psaInt_KeyMgmtGetKey(key, &pKey);
+
+    if (PSA_SUCCESS == funcres)
+    {
+        if ((PSA_KEY_ID_NULL == id) ||
+            (0U == pKey->fAllocated))
+        {
+            /* Safeguard: Can only happen when called by an abort operation */
+            funcres = PSA_ERROR_INVALID_HANDLE;
+        }
+        else
+        {
+            if (0U != pKey->KeyInUseFlag)
+            {
+                pKey->KeyInUseFlag = 0U;
+            }
+            else
+            {
+                /* Safeguard: Should not happen */
+                funcres = PSA_ERROR_CORRUPTION_DETECTED;
+            }
+        }
+    }
+    else
+    {
+        /* Error already set */
+    }
+
+    return funcres;
+}
 
 /*----------------------------------------------------------------------------
  * psaInt_KeyMgmtReadECPubKey
@@ -4370,7 +4346,7 @@ psaInt_KeyMgmtReadECPubKey(const size_t PersistentItemSize,
 
         /* If the input key is not DER-formatted, then we cannot extract Curve Bit
          * information from it. We'll just set the local pCurveBits value to the value
-         * that was passed into (or inferred from) the key attributes.
+         * that was passed into the key attributes.
          */
         *pCurveBits = ExpCurveBits;
 
@@ -4529,7 +4505,7 @@ psaInt_KeyMgmtReadECPubKey(const size_t PersistentItemSize,
  */
 psa_status_t
 psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
-                        KeyMgmt_psa_key_derivation_operation_t * operation,
+                        psa_key_derivation_operation_t * operation,
                         mbedtls_svc_key_id_t * key)
 {
     psa_status_t funcres;
@@ -4538,46 +4514,46 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
      * fails - but if it succeeds, we must not replace the original error condition in funcres.
      */
     psa_status_t removalResult;
-    psa_key_persistence_t key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(lifetime));
+    psa_key_persistence_t key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
     PsaPolicyMask_t AssetPolicy = (PsaPolicyMask_t)0U;
     PsaPolicyMask_t AssetPolicy2 = (PsaPolicyMask_t)0U;
-    size_t key_size = (attributes->MBEDTLS_PRIVATE(bits) + 7) / 8;
+    size_t key_size = (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) + 7) / 8;
     /* Refers to the output length, L, that is part of the key's context. Calculated from the capacity
      * for KDKs that the HSM doesn't handle the context for.
      */
     uint32_t outputLength = 0U;
     uint32_t key_index = 0U;
     size_t inputDataSize = operation->labelSize + operation->contextSize;
-    psa_key_bits_t modulus_size = 0U;
+    size_t modulus_size = 0U;
+    size_t exponent_size = 0U;
     psa_key_context_t *pKey = NULL;
+    bool derivationSlotLocked = false;
     bool useCounterMode = true;
     bool isBidirectionalKey = false;
     uint32_t derivationKeyAssetID = PSA_ASSETID_INVALID;
     uint32_t derivedKeyAssetID = PSA_ASSETID_INVALID;
     /* Used in case we are deriving a symmetric key */
     uint32_t derivedKeyAssetID2 = PSA_ASSETID_INVALID;
-    psa_key_type_t key_usage = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+    psa_key_type_t key_usage = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
     psa_key_id_t derivationKeyID;
-    psa_key_id_t derivedKeyID;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
     derivationKeyID = operation->inputKey.MBEDTLS_PRIVATE(key_id);
-    derivedKeyID = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
 #else
-    derivationKeyID = operation->inputKey;
-    derivedKeyID = attributes->MBEDTLS_PRIVATE(id);
+    derivationKeyID = operation->inputKey.derivationKey;
 #endif
 
     /* Populate the asset policy of the key asset we are going to derive */
-    if (PSA_KEY_TYPE_IS_UNSTRUCTURED(attributes->MBEDTLS_PRIVATE(type)))
+    if (PSA_KEY_TYPE_IS_UNSTRUCTURED(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
     {
         /* This handles DERIVE key types (valid for HMAC KDKs) as well as AES key types (valid for CMAC KDKs). */
         funcres = local_SymKeyType(attributes, key_size, &AssetPolicy);
     }
-    else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(type)))
+    else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
     {
         funcres = local_AsymKeyType(bypassASN1DER, attributes,
                                     true, NULL, key_size, NULL, 0,
-                                    &modulus_size, &AssetPolicy);
+                                    &modulus_size, &exponent_size,
+                                    &AssetPolicy);
     }
     else
     {
@@ -4593,13 +4569,27 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
          * effect.
          */
 
-        if (psaInt_KeyMgmtGetKey(attributes->MBEDTLS_PRIVATE(id), &pKey) == PSA_SUCCESS)
+        if (psaInt_KeyMgmtGetKey(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id), &pKey) == PSA_SUCCESS)
         {
             funcres = PSA_ERROR_ALREADY_EXISTS;
         }
         else
         {
-            /* Nothing to do. psaInt_KeyMgmtGetKey exhaustively checks for pre-existing keys. */
+            struct psa_storage_info_t info;
+            psa_storage_uid_t UId = psa_its_identifier_of_slot(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id));
+            funcres = psaInt_KeyStore_PersistentInfo(UId, &info);
+
+            if (PSA_SUCCESS == funcres)
+            {
+                funcres = PSA_ERROR_ALREADY_EXISTS;
+            }
+            else
+            {
+                /* Mark success to continue derivation, since we have verified there is no existing
+                 * key with the desired ID.
+                 */
+                funcres = PSA_SUCCESS;
+            }
         }
     }
 
@@ -4626,9 +4616,10 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
             }
             else
             {
-                funcres = psaInt_KeyMgmtGetKey(operation->inputKey, &pKey);
+                funcres = psaInt_KeyMgmtGetAndLockKey(operation->inputKey, &pKey);
                 if (PSA_SUCCESS == funcres)
                 {
+                    derivationSlotLocked = true;
                     funcres = psaInt_KeyMgmtLoadKey(pKey, &derivationKeyAssetID, 0, 0, NULL, 0, NULL);
                 }
             }
@@ -4637,7 +4628,7 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
 
     if ((PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
         (PSA_KEY_USAGE_DECRYPT == (key_usage & PSA_KEY_USAGE_DECRYPT)) &&
-        (PSA_KEY_TYPE_IS_SYMMETRIC(attributes->MBEDTLS_PRIVATE(type))))
+        (PSA_KEY_TYPE_IS_SYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
     {
         /* Place marker to note that two key assets will have to be created,
          * if the key is to be used as an HSM asset. In this case, the assetPolicy populated
@@ -4714,6 +4705,13 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
     /* If we successfully performed the derivation, now populate the newly derived key slot */
     if (PSA_SUCCESS == funcres)
     {
+        /* The key slot containing the key derivation key no longer needs to be protected */
+        if (derivationKeyID != PSA_KEY_ID_HSM_HUK)
+        {
+            pKey->KeyInUseFlag = 0U;
+            derivationSlotLocked = false;
+        }
+
         /* Reduce operation capacity by the number of bytes of key material derived. Though deriving
          * a symmetric key requires two derivations, both should produce the same material. So
          * capacity should still lessen by the key_size just once.
@@ -4722,49 +4720,48 @@ psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
 
         /* Point to the free key slot that we will place the newly derived key into */
         pKey = &gl_PSA_Key[key_index];
+        pKey->KeyInUseFlag = 1U;
 
         /* Save derived key asset into slot */
         pKey->key_assetId = derivedKeyAssetID;
         pKey->key_assetId2 = derivedKeyAssetID2;
 
         /* Initialize remaining part of the key entry */
-        pKey->attributes.MBEDTLS_PRIVATE(type) = attributes->MBEDTLS_PRIVATE(type);
-        pKey->attributes.MBEDTLS_PRIVATE(bits) = attributes->MBEDTLS_PRIVATE(bits);
-        pKey->attributes.MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(lifetime);
-        pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-        pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
-        pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
         pKey->key_size = key_size;
         pKey->AssetPolicy = AssetPolicy;
-
-        /* Set an automatic output key ID for the asset store key, if a particular ID wasn't requested. */
-        if (derivedKeyID == PSA_KEY_ID_NULL)
-        {
-            /* Only persistent keys come before asset store keys in the key array.*/
-            derivedKeyID = PSA_KEY_ID_ASSET_STORE_AUTO_MIN + (key_index - MBEDTLS_KEY_PERSISTENT_COUNT);
-        }
-        else
-        {
-            /* Nothing to do. Use the key ID provided. */
-        }
+        pKey->modulus_size = modulus_size;
+        pKey->exponentsize = exponent_size;
 
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-        /* A key ID initialized to PSA_KEY_ID_NULL also has a default owner value. So, we can use
-         * the provided owner value in any case.
-         */
-        key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
-        pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
-
-        key->MBEDTLS_PRIVATE(key_id) = derivedKeyID;
-        pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = derivedKeyID;
+        key->MBEDTLS_PRIVATE(key_id) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+        key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
 #else
-        *key = derivedKeyID;
-        pKey->attributes.MBEDTLS_PRIVATE(id) = derivedKeyID;
+        *key = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
+        pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
 #endif
+        pKey->KeyInUseFlag = 0U;
     }
 
     if (pKey != NULL)
     {
+        if (derivationSlotLocked)
+        {
+            /* This check and unlock is required in the case that we successfully get and lock the
+            * slot containing the KDK, but an error occurs afterwards. In that case, pKey would
+            * still be pointing to the slot containing the KDK, not the slot intended for the
+            * derived key.
+            */
+            pKey->KeyInUseFlag = 0U;
+        }
+
         if (PSA_SUCCESS != funcres)
         {
             if (PSA_ASSETID_INVALID != pKey->key_assetId)
@@ -4824,7 +4821,8 @@ psa_import_key(const psa_key_attributes_t * attributes,
     psa_key_location_t key_location;
     psa_key_usage_t key_usage;
     psa_key_type_t key_type;
-    psa_key_bits_t key_bits = 0U;
+    size_t modulus_size = 0U;
+    size_t exponentsize = 0U;
     size_t DataSize = 0U;
     size_t DataToSaveSize = 0U;
     const uint8_t * pDataToSave = NULL;
@@ -4833,53 +4831,68 @@ psa_import_key(const psa_key_attributes_t * attributes,
     psa_key_id_t attributesID;
     bool isBidirectionalKey = false;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-    attributesID = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+    attributesID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
 #else
-    attributesID = attributes->MBEDTLS_PRIVATE(id);
+    attributesID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
 #endif
 
     if ((NULL == key) ||
         (NULL == attributes) ||
-        (PSA_KEY_TYPE_NONE == attributes->MBEDTLS_PRIVATE(type)) ||
-        (PSA_ALG_NONE == attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        (PSA_KEY_TYPE_NONE == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)) ||
+        (PSA_ALG_NONE == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         funcres = PSA_ERROR_INVALID_ARGUMENT;
     }
-    else if ((0U != attributes->MBEDTLS_PRIVATE(bits)) &&
-             (data_length != (size_t)PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(bits))) &&
-             (data_length != ((2 * (size_t)PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(bits))) + 1)) &&
-             (!PSA_KEY_TYPE_IS_RSA(attributes->MBEDTLS_PRIVATE(type))))
+    else if ((0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)) &&
+             (data_length != (size_t)PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))) &&
+             (data_length != ((2 * (size_t)PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))) + 1)))
     {
-        /* If the 'bits' field is set, it is expected to match either the private or public key length.
-         * Since RSA is DER-encoded, we cannot perform this check.
-         */
         funcres = PSA_ERROR_INVALID_ARGUMENT;
     }
     else
     {
-        key_location = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(lifetime));
-        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(lifetime));
-        key_usage = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-        key_type = attributes->MBEDTLS_PRIVATE(type);
+        key_location = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_usage = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        key_type = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
 
         if (PSA_KEY_ID_NULL != attributesID)
         {
-            if ((!psa_is_valid_key_id(attributesID, 0)) && (attributesID != PSA_KEY_ID_IAK))
+            if (!psa_is_valid_key_id(attributesID, 0))
             {
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
-            else if ((PSA_KEY_PERSISTENCE_DEFAULT == key_persistence) ||
-                     (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence))
+
+            if (PSA_KEY_PERSISTENCE_DEFAULT == key_persistence)
             {
-                if (PSA_SUCCESS == psaInt_KeyMgmtGetKey(attributesID, &pKey))
+                struct psa_storage_info_t info;
+                psa_storage_uid_t UId = psa_its_identifier_of_slot(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id));
+                /* Don't overwrite the error if the key ID was found invalid */
+                if (PSA_SUCCESS == funcres)
                 {
-                    /* A key with the requested ID already exists */
+                    funcres = psaInt_KeyStore_PersistentInfo(UId, &info);
+                }
+
+                if (PSA_SUCCESS == funcres)
+                {
+                    /* Cannot import a persistent key if there is one with the same ID already */
                     funcres = PSA_ERROR_ALREADY_EXISTS;
+                }
+                else if (PSA_ERROR_DOES_NOT_EXIST == funcres)
+                {
+                    /* This is the expected case */
+                    funcres = PSA_SUCCESS;
                 }
                 else
                 {
-                    /* Nothing to do. psaInt_KeyMgmtGetKey exhaustively checks for pre-existing keys. */
+                    /* Another error, which is already set */
                 }
+            }
+            else if (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence)
+            {
+                /* Do nothing. The Key ID should still be returned to the user to reference the
+                 * asset that will be created.
+                 */
             }
             else
             {
@@ -4889,63 +4902,31 @@ psa_import_key(const psa_key_attributes_t * attributes,
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
         }
-        else if ((PSA_KEY_PERSISTENCE_VOLATILE == key_persistence) ||
-                 (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence))
+        else if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
         {
-            /* Only keys with these two persistences may be created without an input key ID */
+            /* Intended to be stored in the volatile PSA Key Store */
         }
         else
         {
-            /* A key ID must be provided for keys without volatile or asset store persistence */
+            /* A key ID must be provided for keys without volatile persistence */
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
 
         if ((PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
             (PSA_KEY_USAGE_DECRYPT == (key_usage & PSA_KEY_USAGE_DECRYPT)) &&
-            (PSA_KEY_TYPE_IS_SYMMETRIC(key_type)) &&
-            (0 == (key_usage & PSA_KEY_USAGE_COPROCESSOR)))
+            (PSA_KEY_TYPE_IS_SYMMETRIC(key_type)))
         {
-            /* Place marker to note that two key blobs or assets will have to be created, if the key
-             * is to be used as an HSM asset. In this case, the assetPolicy populated by
-             * local_SymKeyType will reflect only the encryption usage. We will populate a second
-             * asset policy to preserve the user-specified decryption usage. Coprocessor keys do not
-             * require a second asset policy since they are always bidirectional.
+            /* Place marker to note that two key blobs or assets will have to be created,
+             * if the key is to be used as an HSM asset. In this case, the assetPolicy populated
+             * by local_SymKeyType will reflect only the encryption usage. We will populate
+             * a second asset policy to preserve the user-specified decryption usage.
              */
             isBidirectionalKey = true;
         }
     }
     if (PSA_SUCCESS == funcres)
     {
-        /* Check exceptions before normal cases */
-        if ((PSA_KEY_TYPE_IS_RSA(attributes->MBEDTLS_PRIVATE(type))) ||
-            (PSA_KEY_TYPE_IS_DH(attributes->MBEDTLS_PRIVATE(type))) ||
-            (attributes->MBEDTLS_PRIVATE(type) == PSA_KEY_TYPE_CHACHA20))
-        {
-            /* RSA keys need to be stored in the DER format directly if used for
-             * SW operations. When RSA is enabled via HW acceleration, this condition should be removed.
-             * At that point, local_AsymKeyType will be needed to translate the RSA attributes
-             * into an HSM Asset Policy. For DH keys, only SW is supported currently as well,
-             * so we must skip the local_AsymKeyType call, even though they are not DER-encoded.
-             */
-            if (NULL == data)
-            {
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
-            }
-            else
-            {
-                pDataToSave = data;
-                DataToSaveSize = data_length;
-                if (PSA_KEY_TYPE_IS_DH(attributes->MBEDTLS_PRIVATE(type)))
-                {
-                    /* SW implementation for FFDH makes use of the attributes->bits value, even though
-                     * it's not mandatory to import an FFDH key with that value set. So, set the
-                     * key_bits here so that we can assign the key SLOT's attributes->bits value.
-                     */
-                    key_bits = PSA_BYTES_TO_BITS(data_length);
-                }
-            }
-        }
-        else if (PSA_KEY_TYPE_IS_UNSTRUCTURED(attributes->MBEDTLS_PRIVATE(type)))
+        if (PSA_KEY_TYPE_IS_UNSTRUCTURED(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
             /* New item */
             if (NULL == data)
@@ -4961,26 +4942,21 @@ psa_import_key(const psa_key_attributes_t * attributes,
             if (PSA_SUCCESS == funcres)
             {
                 funcres = local_SymKeyType(attributes, DataToSaveSize, &AssetPolicy);
-
-                /* For all symmetric key types we support, there is a simple relationship between
-                 * the key bits & the data length provided to the import API. We set this here so
-                 * that it gets stored in the key slot's attributes->bits field.
-                 */
-                key_bits = PSA_BYTES_TO_BITS(data_length);
             }
             else
             {
                 /* Error already set */
             }
         }
-        else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(type)))
+        else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
             DataSize = sizeof(KeyDataBuffer);
             /* bypassASN1DER is true by default */
             funcres = local_AsymKeyType(bypassASN1DER, attributes,
                                         false, data, data_length,
                                         KeyDataBuffer, &DataSize,
-                                        &key_bits, &AssetPolicy);
+                                        &modulus_size, &exponentsize,
+                                        &AssetPolicy);
             pDataToSave = KeyDataBuffer;
             DataToSaveSize = DataSize;
         }
@@ -4999,6 +4975,7 @@ psa_import_key(const psa_key_attributes_t * attributes,
             {
                 psa_key_id_t keyID;
                 pKey = &gl_PSA_Key[key_index];
+                pKey->KeyInUseFlag = 1U;
 
                 /* Volatile key IDs start at PSA_KEY_ID_VOLATILE_MIN and increment based on the
                  * first available index for volatile keys in the global array. The key ID is always
@@ -5007,14 +4984,6 @@ psa_import_key(const psa_key_attributes_t * attributes,
                 if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                 {
                     keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
-                }
-                else if ((PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence) &&
-                         (attributesID == PSA_KEY_ID_NULL))
-                {
-                    /* Set an automatic key ID for an Asset Store key. Only persistent keys come
-                     * before asset store keys in the key array.
-                     */
-                    keyID = PSA_KEY_ID_ASSET_STORE_AUTO_MIN + (key_index - MBEDTLS_KEY_PERSISTENT_COUNT);
                 }
                 else
                 {
@@ -5050,9 +5019,9 @@ psa_import_key(const psa_key_attributes_t * attributes,
                         funcres = PSA_ERROR_INVALID_ARGUMENT;
                     }
                 }
-                else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+                else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
                 {
-                    if ((PSA_ALG_IS_HMAC(attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))) &&
+                    if ((PSA_ALG_IS_HMAC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg))) &&
                         ((DataToSaveSize % 4) != 0))
                     {
                         /* Copy HMAC key data into a buffer, so that we can pad 0s after. HMAC keys can have padded 0s
@@ -5221,6 +5190,8 @@ psa_import_key(const psa_key_attributes_t * attributes,
                 if (PSA_SUCCESS != funcres)
                 {
                     /* Do necessary cleanup */
+                    pKey->KeyInUseFlag = 0U;
+
                     removalResult = local_RemoveKey(pKey);
                     if (removalResult != PSA_SUCCESS)
                     {
@@ -5230,25 +5201,27 @@ psa_import_key(const psa_key_attributes_t * attributes,
                 else
                 {
                     /* Initialize remaining part of the key entry */
-                    pKey->attributes.MBEDTLS_PRIVATE(type) = attributes->MBEDTLS_PRIVATE(type);
-                    pKey->attributes.MBEDTLS_PRIVATE(bits) = (attributes->MBEDTLS_PRIVATE(bits) == 0) ? key_bits : attributes->MBEDTLS_PRIVATE(bits);
-                    pKey->attributes.MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(lifetime);
-                    pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-                    pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
-                    pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
                     pKey->key_size = DataToSaveSize;
                     pKey->AssetPolicy = AssetPolicy;
+                    pKey->modulus_size = modulus_size;
+                    pKey->exponentsize = exponentsize;
+
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
                     key->MBEDTLS_PRIVATE(key_id) = keyID;
-                    pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = keyID;
-
-                    /* A key ID initialized to PSA_KEY_ID_NULL also has a default owner value. We can just keep that. */
-                    key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
-                    pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+                    key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = keyID;
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
 #else
                     *key = (mbedtls_svc_key_id_t)keyID;
-                    pKey->attributes.MBEDTLS_PRIVATE(id) = (mbedtls_svc_key_id_t)keyID;
+                    pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = (mbedtls_svc_key_id_t)keyID;
 #endif
+                    pKey->KeyInUseFlag = 0U;
                 }
             }
             else
@@ -5307,6 +5280,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
     PsaPolicyMask_t AssetPolicy = (PsaPolicyMask_t)0;
     PsaPolicyMask_t AssetPolicy2;
     size_t ModulusSize = 0U;
+    size_t ExponentSize = 0U;
     size_t KeySize = 0U;
     uint8_t CurveFamily = 0U;
     /* Size of largest symmetric key - used to retrieve random plaintext */
@@ -5316,31 +5290,31 @@ psa_generate_key(const psa_key_attributes_t * attributes,
     psa_key_id_t attributesID;
     bool isBidirectionalKey = false;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-    attributesID = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+    attributesID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
 #else
-    attributesID = attributes->MBEDTLS_PRIVATE(id);
+    attributesID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
 #endif
 
     if ((NULL == key) ||
         (NULL == attributes) ||
-        (PSA_KEY_TYPE_NONE == attributes->MBEDTLS_PRIVATE(type)) ||
-        (0U == attributes->MBEDTLS_PRIVATE(bits)) ||
-        (PSA_ALG_NONE == attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+        (PSA_KEY_TYPE_NONE == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)) ||
+        (0U == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)) ||
+        (PSA_ALG_NONE == attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
     {
         funcres = PSA_ERROR_INVALID_ARGUMENT;
     }
     else
     {
-        if (PSA_KEY_TYPE_IS_UNSTRUCTURED(attributes->MBEDTLS_PRIVATE(type)))
+        if (PSA_KEY_TYPE_IS_UNSTRUCTURED(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
             /* Set the actual key size */
-            KeySize = (size_t)PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(bits));
+            KeySize = (size_t)PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits));
 
             funcres = local_SymKeyType(attributes, KeySize, &AssetPolicy);
         }
-        else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(type)))
+        else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
-            if (PSA_KEY_TYPE_IS_RSA(attributes->MBEDTLS_PRIVATE(type)))
+            if (PSA_KEY_TYPE_IS_RSA(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
             {
                 funcres = PSA_ERROR_NOT_SUPPORTED;
             }
@@ -5362,9 +5336,9 @@ psa_generate_key(const psa_key_attributes_t * attributes,
             funcres = PSA_ERROR_NOT_SUPPORTED;
         }
 
-        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(lifetime));
-        key_usage = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-        key_type = attributes->MBEDTLS_PRIVATE(type);
+        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_usage = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        key_type = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
 
         /* Validate the key ID that has been passed in where necessary. Don't overwrite an
          * error set beforehand.
@@ -5377,40 +5351,35 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                 {
                     funcres = PSA_ERROR_INVALID_ARGUMENT;
                 }
-                else if ((PSA_KEY_PERSISTENCE_DEFAULT == key_persistence) ||
-                         (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence))
-                {
-                    if (PSA_SUCCESS == psaInt_KeyMgmtGetKey(attributesID, &pKey))
-                    {
-                        /* A key with the requested ID already exists */
-                        funcres = PSA_ERROR_ALREADY_EXISTS;
-                    }
-                    else
-                    {
-                        /* If the input ID is not null and not a duplicate, we can save the Key ID that
-                         * we'll assign to the persistent/asset store key. Volatile Key ID will have to
-                         * be set later based on the open key entry found.
-                         */
-                        keyID = attributesID;
-                    }
-                }
-                else
+                else if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                 {
                     /* When a key id is passed through the attributes struct, the key must be either
                      * persistent or meant to be stored in Asset Store.
                      */
                     funcres = PSA_ERROR_INVALID_ARGUMENT;
                 }
-            }
-            else if ((PSA_KEY_PERSISTENCE_VOLATILE == key_persistence) ||
-                     (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence))
-            {
-                /* Only keys with these two persistences may be created without an input key ID */
+                else
+                {
+                    /* If the input ID is not null, we can save the Key ID that we'll assign to the
+                    * persistent key. Volatile Key ID will have to be set later based on the open
+                    * key entry found.
+                    */
+                    keyID = attributesID;
+                }
             }
             else
             {
-                /* A key ID must be provided for keys without volatile or asset store persistence */
-                funcres = PSA_ERROR_INVALID_ARGUMENT;
+                if (PSA_KEY_PERSISTENCE_VOLATILE != key_persistence)
+                {
+                    /* A key ID must be passed through the attributes struct for keys not of volatile
+                     * persistence
+                     */
+                    funcres = PSA_ERROR_INVALID_ARGUMENT;
+                }
+                else
+                {
+                    /* Intended to be stored in the volatile PSA Key Store */
+                }
             }
 
             if ((PSA_KEY_USAGE_ENCRYPT == (key_usage & PSA_KEY_USAGE_ENCRYPT)) &&
@@ -5449,25 +5418,43 @@ psa_generate_key(const psa_key_attributes_t * attributes,
 
         if (PSA_SUCCESS == funcres)
         {
-            key_location = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(lifetime));
+
+            key_location = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
             if (PSA_KEY_LOCATION_LOCAL_STORAGE == key_location)
             {
                 /* Key will be in plaintext form in the PSA key store */
-                if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(type)))
+                if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     /* Asymmetric crypto
                      * => A private key is never available in the plaintext
                      */
                     funcres = PSA_ERROR_NOT_SUPPORTED;
                 }
-                else if ((PSA_KEY_PERSISTENCE_VOLATILE == key_persistence) ||
-                         (PSA_KEY_PERSISTENCE_DEFAULT == key_persistence))
+                else if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                 {
-                    /* For persistent keys, we have already verified that the key ID is not a duplicate
-                     * with psaInt_KeyMgmtGetKey. No need to check again here - just mark the key
-                     * as nonexistent so that we can generate a new one.
+                    /* Symmetric crypto for volatile storage
+                     * => Generate a key
                      */
                     funcres = PSA_ERROR_DOES_NOT_EXIST;
+                }
+                else if (PSA_KEY_PERSISTENCE_DEFAULT == key_persistence)
+                {
+                    /* Symmetric crypto for persistent storage
+                     * => First check availability in persistent storage
+                     * => If not exists, generate a key
+                     * */
+                    struct psa_storage_info_t info;
+                    psa_storage_uid_t UId = psa_its_identifier_of_slot(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id));
+                    funcres = psaInt_KeyStore_PersistentInfo(UId, &info);
+
+                    if (PSA_SUCCESS == funcres)
+                    {
+                        funcres = PSA_ERROR_ALREADY_EXISTS;
+                    }
+                    else
+                    {
+                        /* Error already set */
+                    }
                 }
                 else
                 {
@@ -5500,6 +5487,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                     if (PSA_SUCCESS == funcres)
                     {
                         pKey = &gl_PSA_Key[key_index];
+                        pKey->KeyInUseFlag = 1U;
                         if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                         {
                             keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
@@ -5524,6 +5512,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                                                               NULL,
                                                               KeySize);
                         }
+                        pKey->KeyInUseFlag = 0U;
                     }
                     else
                     {
@@ -5535,18 +5524,36 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                     /* MISRA - Intentially empty */
                 }
             }
-            else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+            else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
             {
                 /* Key will be in wrapped form (Asset Blob) form in the PSA key store */
                 size_t KeyBlobSize = PSA_KEYBLOB_SIZE(KeySize);
 
-                if ((PSA_KEY_PERSISTENCE_DEFAULT == key_persistence) ||
-                    (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence) ||
-                    (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence))
+                if (PSA_KEY_PERSISTENCE_DEFAULT == key_persistence)
                 {
-                    /* For persistent keys, we have already verified that the key ID is not a duplicate
-                     * with psaInt_KeyMgmtGetKey. No need to check again here - just mark the key
-                     * as nonexistent so that we can generate a new one.
+                    /* (A)Symmetric crypto for persistent storage
+                     * => First check availability in persistent storage
+                     * => If not exists, generate a key pair or key
+                     */
+                    struct psa_storage_info_t info;
+                    psa_storage_uid_t UId = psa_its_identifier_of_slot(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id));
+
+                    funcres = psaInt_KeyStore_PersistentInfo(UId, &info);
+
+                    if (PSA_SUCCESS == funcres)
+                    {
+                        funcres = PSA_ERROR_ALREADY_EXISTS;
+                    }
+                    else
+                    {
+                        /* Error already set */
+                    }
+                }
+                else if ((PSA_KEY_PERSISTENCE_VOLATILE == key_persistence) ||
+                         (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence))
+                {
+                    /* (A)Symmetric crypto for volatile storage or VaultIP
+                     * => Generate a key pair or key
                      */
                     funcres = PSA_ERROR_DOES_NOT_EXIST;
                 }
@@ -5563,16 +5570,8 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                         if (PSA_SUCCESS == funcres)
                         {
                             pKey = &gl_PSA_Key[key_index];
-                            if (PSA_KEY_ID_NULL == attributesID)
-                            {
-                                keyID = PSA_KEY_ID_ASSET_STORE_AUTO_MIN + (key_index - MBEDTLS_KEY_PERSISTENT_COUNT);
-                            }
-                            else
-                            {
-                                /* Nothing to do. keyID was already set to attributesID above. */
-                            }
-
-                            if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(type)))
+                            pKey->KeyInUseFlag = 1U;
+                            if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                             {
                                 /* Generate ECDH/ECDSA/Curve25519/EdDSA key pair */
                                 funcres = local_AsymKeyGenPrv(AssetPolicy,
@@ -5699,6 +5698,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                                     /* Error already set */
                                 }
                             }
+                            pKey->KeyInUseFlag = 0U;
                         }
                         else
                         {
@@ -5711,7 +5711,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                         {
                             funcres = PSA_ERROR_INSUFFICIENT_MEMORY;
                         }
-                        else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(type)))
+                        else if (PSA_KEY_TYPE_IS_ASYMMETRIC(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                         {
                             /* Generate ECDH/ECDSA/Curve25519/EdDSA key pair */
                             funcres = local_AsymKeyGenPrv(AssetPolicy,
@@ -5788,6 +5788,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                         if (PSA_SUCCESS == funcres)
                         {
                             pKey = &gl_PSA_Key[key_index];
+                            pKey->KeyInUseFlag = 1U;
                             if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence)
                             {
                                 keyID = PSA_KEY_ID_VOLATILE_MIN + (key_index - (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
@@ -5837,6 +5838,7 @@ psa_generate_key(const psa_key_attributes_t * attributes,
                                                                   NULL,
                                                                   KeyBlobSize);
                             }
+                            pKey->KeyInUseFlag = 0U;
                         }
                         else
                         {
@@ -5860,21 +5862,25 @@ psa_generate_key(const psa_key_attributes_t * attributes,
         if (NULL != pKey)
         {
             /* Initialize remaining part of the key entry */
-            pKey->attributes.MBEDTLS_PRIVATE(type) = attributes->MBEDTLS_PRIVATE(type);
-            pKey->attributes.MBEDTLS_PRIVATE(bits) = attributes->MBEDTLS_PRIVATE(bits);
-            pKey->attributes.MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(lifetime);
-            pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-            pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+            pKey->KeyInUseFlag = 1U;
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
             pKey->key_size = KeySize;
             pKey->AssetPolicy = AssetPolicy;
+            pKey->modulus_size = ModulusSize;
+            pKey->exponentsize = ExponentSize;
+            pKey->KeyInUseFlag = 0U;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
             key->MBEDTLS_PRIVATE(key_id) = keyID;
-            key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
-            pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = keyID;
-            pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+            key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = keyID;
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
 #else
             *key = keyID;
-            pKey->attributes.MBEDTLS_PRIVATE(id) = keyID;
+            pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = keyID;
 #endif
         }
         else
@@ -5954,7 +5960,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
     id = key.MBEDTLS_PRIVATE(key_id);
 #else
-    id = key;
+    id = key.MBEDTLS_PRIVATE(id);
 #endif
 
     /* This function does nothing and returns successfully for volatile keys */
@@ -5962,7 +5968,7 @@ psa_purge_key(mbedtls_svc_key_id_t key)
     {
         funcres = PSA_SUCCESS;
     }
-    else if ((!psa_is_valid_key_id(id, 0)) && (id != PSA_KEY_ID_IAK))
+    else if (!psa_is_valid_key_id(id, 0))
     {
         funcres = PSA_ERROR_INVALID_HANDLE;
     }
@@ -5973,18 +5979,18 @@ psa_purge_key(mbedtls_svc_key_id_t key)
             pKey = &gl_PSA_Key[temp_index];
 
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-            if (id == pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
+            if (id == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id))
 #else
-            if (id == pKey->attributes.MBEDTLS_PRIVATE(id))
+            if (id == pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
 #endif
             {
-                if (PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(lifetime)) ==
+                if (PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime)) ==
                     PSA_KEY_PERSISTENCE_HSM_ASSET_STORE)
                 {
                     /* Nothing to purge for keys with this persistence */
                     funcres = PSA_SUCCESS;
                 }
-                else
+                else if (0U == pKey->KeyInUseFlag)
                 {
                     /* Remove the cached copy (key material and attributes) of the persistent key.
                      * It can (and will) still be loaded back upon next request to use the key.
@@ -6021,6 +6027,10 @@ psa_purge_key(mbedtls_svc_key_id_t key)
 
                     (void)memset(pKey, 0, sizeof(psa_key_context_t));
                 }
+                else
+                {
+                    funcres = PSA_ERROR_INVALID_HANDLE;
+                }
 
                 break;
             }
@@ -6053,17 +6063,17 @@ psa_get_key_attributes(mbedtls_svc_key_id_t key,
         else
         {
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-            attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
-            attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = pKey->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
 #else
-            attributes->MBEDTLS_PRIVATE(id) = pKey->attributes.MBEDTLS_PRIVATE(id);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
 #endif
-            attributes->MBEDTLS_PRIVATE(bits) = pKey->attributes.MBEDTLS_PRIVATE(bits);
-            attributes->MBEDTLS_PRIVATE(type) = pKey->attributes.MBEDTLS_PRIVATE(type);
-            attributes->MBEDTLS_PRIVATE(lifetime) = pKey->attributes.MBEDTLS_PRIVATE(lifetime);
-            attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
-            attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
-            attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
+            attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
         }
     }
     else
@@ -6082,6 +6092,7 @@ psa_get_key_attributes(mbedtls_svc_key_id_t key,
 void
 psa_reset_key_attributes(psa_key_attributes_t * attributes)
 {
+    psaInt_mbedtls_free(attributes->MBEDTLS_PRIVATE(domain_parameters));
     memset(attributes, 0, sizeof(*attributes));
 }
 
@@ -6120,11 +6131,11 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
      */
     psa_key_attributes_t actual_attributes = *attributes;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-    attributesID = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+    attributesID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
 #else
-    attributesID = attributes->MBEDTLS_PRIVATE(id);
+    attributesID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id)
 #endif
-    key_persistence_trgt = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(lifetime));
+    key_persistence_trgt = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
 
     /* Check for a valid key ID if the copy is meant to be persistent. The ID must be in range
      * and not duplicate that of an existing key.
@@ -6138,49 +6149,34 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
         {
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
-        else if ((PSA_KEY_PERSISTENCE_DEFAULT == key_persistence_trgt) ||
-                 (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence_trgt))
+        else if (PSA_SUCCESS == psaInt_KeyMgmtGetKey(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id), &pTgtKeyEntry))
         {
-            if (PSA_SUCCESS == psaInt_KeyMgmtGetKey(attributes->MBEDTLS_PRIVATE(id), &pTgtKeyEntry))
-            {
-                funcres = PSA_ERROR_ALREADY_EXISTS;
-            }
-            else
-            {
-                /* Nothing to do. psaInt_KeyMgmtGetKey exhaustively checks for pre-existing keys. */
-            }
-        }
-        else
-        {
-            /* When a key id is passed through the attributes struct, the key must be either
-             * persistent or meant to be stored in Asset Store.
-             */
-            funcres = PSA_ERROR_INVALID_ARGUMENT;
+            funcres = PSA_ERROR_ALREADY_EXISTS;
         }
     }
-    else if ((PSA_KEY_PERSISTENCE_VOLATILE == key_persistence_trgt) ||
-             (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence_trgt))
+    else if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence_trgt)
     {
-        /* Only keys with these two persistences may be created without an input key ID */
+        /* Intended to be stored in the volatile PSA Key Store */
     }
     else
     {
-        /* A key ID must be provided for keys without volatile or asset store persistence */
+        /* A key ID must be provided for keys without volatile persistence */
         funcres = PSA_ERROR_INVALID_ARGUMENT;
     }
 
     if (PSA_SUCCESS == funcres)
     {
-        funcres = psaInt_KeyMgmtGetKey(source_key, &pSrcKeyEntry);
+        /* Note that the lock is only applied on success */
+        funcres = psaInt_KeyMgmtGetAndLockKey(source_key, &pSrcKeyEntry);
     }
 
     if (PSA_SUCCESS == funcres)
     {
         /* Get source key data */
-        key_persistence_src = PSA_KEY_LIFETIME_GET_PERSISTENCE(pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(lifetime));
-        key_location_src = PSA_KEY_LIFETIME_GET_LOCATION(pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(lifetime));
-        key_usage_src = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-        key_type_src = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(type);
+        key_persistence_src = PSA_KEY_LIFETIME_GET_PERSISTENCE(pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_location_src = PSA_KEY_LIFETIME_GET_LOCATION(pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_usage_src = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        key_type_src = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
 
         if ((PSA_KEY_USAGE_ENCRYPT == (key_usage_src & PSA_KEY_USAGE_ENCRYPT)) &&
             (PSA_KEY_USAGE_DECRYPT == (key_usage_src & PSA_KEY_USAGE_DECRYPT)) &&
@@ -6196,15 +6192,16 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
 
         if ((NULL == attributes) ||
             (NULL == target_key) ||
-            ((0U != attributes->MBEDTLS_PRIVATE(bits)) &&
-             (pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(bits) != attributes->MBEDTLS_PRIVATE(bits))) ||
-            ((attributes->MBEDTLS_PRIVATE(type) != PSA_KEY_TYPE_NONE) &&
-             (pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(type) != attributes->MBEDTLS_PRIVATE(type))))
+            ((0U != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits)) &&
+             (pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))) ||
+            ((attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) != PSA_KEY_TYPE_NONE) &&
+             (pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) != attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
         {
             funcres = PSA_ERROR_INVALID_ARGUMENT;
         }
-        else if ((PSA_KEY_USAGE_COPY != (key_usage_src & PSA_KEY_USAGE_COPY)) ||
-                 ((PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_src) &&
+        else if ((PSA_KEY_ID_NULL != pSrcKeyEntry->source_key_id) ||
+                 (PSA_KEY_USAGE_COPY != (key_usage_src & PSA_KEY_USAGE_COPY)) ||
+                 ((PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src) &&
                   (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence_src)))
         {
             funcres = PSA_ERROR_NOT_PERMITTED;
@@ -6212,13 +6209,13 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
         else
         {
             /* Validate that the algorithm for the target key is a valid combination with that of the source key */
-            funcres = psa_restrict_key_policy(pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(type),
-                                              &actual_attributes.MBEDTLS_PRIVATE(policy),
-                                              &pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(policy));
+            funcres = psa_restrict_key_policy(pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type),
+                                              &actual_attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy),
+                                              &pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy));
 
             if (PSA_SUCCESS == funcres)
             {
-                key_location_trgt = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(lifetime));
+                key_location_trgt = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
 
                 /* If key_persistence_trgt is PSA_KEY_PERSISTENCE_DEFAULT, then another persistent
                  * key may be replaced in the cache if storage is limited.
@@ -6243,14 +6240,6 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                     tKeyID = PSA_KEY_ID_VOLATILE_MIN + (target_index -
                                                        (MBEDTLS_MAX_KEY_BUFF_ENTRIES - MBEDTLS_KEY_VOLATILE_COUNT));
                 }
-                else if ((PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence_trgt) &&
-                         (PSA_KEY_ID_NULL == attributesID))
-                {
-                    /* Set an automatic key ID for an Asset Store key. Only persistent keys come
-                     * before asset store keys in the key array.
-                     */
-                    tKeyID = PSA_KEY_ID_ASSET_STORE_AUTO_MIN + (target_index - MBEDTLS_KEY_PERSISTENT_COUNT);
-                }
                 else
                 {
                     tKeyID = attributesID;
@@ -6260,25 +6249,30 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                  */
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
                 target_key->MBEDTLS_PRIVATE(key_id) = tKeyID;
-                target_key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = tKeyID;
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
-                trgtKeyEntryID = pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+                target_key->MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = tKeyID;
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner);
+                pTrgtKeyEntry->source_key_id = source_key.MBEDTLS_PRIVATE(key_id);
+                trgtKeyEntryID = pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
 #else
                 *target_key = tKeyID;
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(id) = tKeyID;
-                trgtKeyEntryID = pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(id);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = tKeyID;
+                pTrgtKeyEntry->source_key_id = source_key;
+                trgtKeyEntryID = pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
 #endif
 
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(lifetime);
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(type) = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(type);
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(bits) = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(bits);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = pSrcKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                 /* The intersection of the policies provided and of the source key are stored in actual_attributes */
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = actual_attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = actual_attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
-                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = actual_attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = actual_attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = actual_attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2) = actual_attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2);
+                pTrgtKeyEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(flags) = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(flags);
                 pTrgtKeyEntry->key_size = pSrcKeyEntry->key_size;
                 pTrgtKeyEntry->AssetPolicy = pSrcKeyEntry->AssetPolicy;
+                pTrgtKeyEntry->modulus_size = pSrcKeyEntry->modulus_size;
+                pTrgtKeyEntry->exponentsize = pSrcKeyEntry->exponentsize;
 
                 /* First get the source key from right location */
                 if (PSA_KEY_LOCATION_LOCAL_STORAGE == key_location_src)
@@ -6286,8 +6280,8 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                     /* Source key is stored in plaintext format */
                     CopyKeySize = pSrcKeyEntry->key_size;
                 }
-                else if ((PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_src) &&
-                         (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_trgt))
+                else if ((PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src) &&
+                         (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_trgt))
                 {
                     /* Source key is stored in wrapped format */
                     CopyKeySize = PSA_KEYBLOB_SIZE(pSrcKeyEntry->key_size);
@@ -6372,12 +6366,12 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                             funcres = PSA_ERROR_INVALID_ARGUMENT;
                         }
                     }
-                    else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_trgt)
+                    else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_trgt)
                     {
                         /* Target key goes to Secure Element store */
                         if (PSA_KEY_PERSISTENCE_VOLATILE == key_persistence_trgt)
                         {
-                            if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_src)
+                            if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src)
                             {
                                 /* Source key is already in wrapped format */
                                 pTrgtKeyEntry->key = psaInt_mbedtls_calloc(1, CopyKeySize);
@@ -6456,7 +6450,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                                                         &pTrgtKeyEntry->key_assetId);
                             if (PSA_SUCCESS == funcres)
                             {
-                                if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_src)
+                                if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src)
                                 {
                                     /* Source key is in wrapped format */
                                     funcres = local_LoadImport(pTrgtKeyEntry->key_assetId,
@@ -6488,7 +6482,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                                                             &pTrgtKeyEntry->key_assetId2);
                                 if (PSA_SUCCESS == funcres)
                                 {
-                                    if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_src)
+                                    if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src)
                                     {
                                         /* Source key is in wrapped format */
                                         funcres = local_LoadImport(pTrgtKeyEntry->key_assetId2,
@@ -6515,7 +6509,7 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                         else if ((PSA_KEY_PERSISTENCE_DEFAULT == key_persistence_trgt) &&
                                  (PSA_KEY_ID_NULL != trgtKeyEntryID))
                         {
-                            if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location_src)
+                            if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location_src)
                             {
                                 /* Source key is already in wrapped format */
                                 funcres = psa_save_persistent_key(pTrgtKeyEntry,
@@ -6618,6 +6612,9 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                 }
                 if (funcres != PSA_SUCCESS)
                 {
+                    /* Key has to be designated as not in-use to be removed successfully */
+                    pSrcKeyEntry->KeyInUseFlag = 0U;
+
                     /* Do necessary cleanup - overwrite existing error if there was a cleanup issue, as it
                      * would interfere with future operations
                      */
@@ -6637,6 +6634,10 @@ psa_copy_key(mbedtls_svc_key_id_t source_key,
                 /* Error already set */
             }
         }
+        /* The lock on the source key entry must be released in all cases where acquiring
+         * the lock was successful
+         */
+        pSrcKeyEntry->KeyInUseFlag = 0U;
     }
     else
     {
@@ -6663,7 +6664,7 @@ psa_export_key(mbedtls_svc_key_id_t key,
     psa_key_usage_t key_usage;
     size_t CurveBits;
 
-    funcres = psaInt_KeyMgmtGetKey(key, &pKey);
+    funcres = psaInt_KeyMgmtGetAndLockKey(key, &pKey);
 
     if (PSA_SUCCESS != funcres)
     {
@@ -6673,30 +6674,33 @@ psa_export_key(mbedtls_svc_key_id_t key,
              (NULL == data_length))
     {
         funcres = PSA_ERROR_INVALID_ARGUMENT;
+        pKey->KeyInUseFlag = 0U;
     }
-    else if (PSA_KEY_USAGE_EXPORT != (pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_EXPORT))
+    else if (PSA_KEY_USAGE_EXPORT != (pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) & PSA_KEY_USAGE_EXPORT))
     {
         funcres = PSA_ERROR_NOT_PERMITTED;
+        pKey->KeyInUseFlag = 0U;
     }
-    else if (data_size < (size_t)(PSA_EXPORT_KEY_OUTPUT_SIZE(pKey->attributes.MBEDTLS_PRIVATE(type),
-                                                             pKey->attributes.MBEDTLS_PRIVATE(bits))))
+    else if (data_size < (size_t)(PSA_EXPORT_KEY_OUTPUT_SIZE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type),
+                                                             pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits))))
     {
         funcres = PSA_ERROR_BUFFER_TOO_SMALL;
+        pKey->KeyInUseFlag = 0U;
     }
     else
     {
-        key_location = PSA_KEY_LIFETIME_GET_LOCATION(pKey->attributes.MBEDTLS_PRIVATE(lifetime));
-        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(lifetime));
-        key_usage = pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+        key_location = PSA_KEY_LIFETIME_GET_LOCATION(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
+        key_usage = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
         if (PSA_KEY_LOCATION_LOCAL_STORAGE == key_location)
         {
             if (NULL != pKey->key)
             {
-                if ((PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(type))) &&
-                    (PSA_KEY_TYPE_IS_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(type))))
+                if ((PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) &&
+                    (PSA_KEY_TYPE_IS_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
                 {
                     /* This condition is specifically for asymmetric private keys */
-                    CurveBits = pKey->attributes.MBEDTLS_PRIVATE(bits);
+                    CurveBits = pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
                     *data_length = PSA_ASYM_DATA_SIZE_B2B(CurveBits);
 
                     if (CurveBits == 255U)
@@ -6717,7 +6721,7 @@ psa_export_key(mbedtls_svc_key_id_t key,
                         psaInt_ReverseMemCpy(data, &pKey->key[PSA_ASYM_DATA_VHEADER], PSA_ASYM_DATA_SIZE_B2B(CurveBits));
                     }
                 }
-                else if (PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(type)))
+                else if (PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
                 {
                     *data_length = pKey->key_size;
                     (void)memcpy(data, pKey->key, *data_length);
@@ -6743,11 +6747,11 @@ psa_export_key(mbedtls_svc_key_id_t key,
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
         }
-        else if (PSA_KEY_LOCATION_HSM_ASSET_STORE == key_location)
+        else if (PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT == key_location)
         {
-            if ((PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(type))) ||
-                ((PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(type))) &&
-                (PSA_KEY_TYPE_IS_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(type)))))
+            if ((PSA_KEY_TYPE_IS_UNSTRUCTURED(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) ||
+                ((PSA_KEY_TYPE_IS_ASYMMETRIC(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))) &&
+                (PSA_KEY_TYPE_IS_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))))
             {
                 if (PSA_KEY_PERSISTENCE_HSM_ASSET_STORE == key_persistence)
                 {
@@ -6798,6 +6802,8 @@ psa_export_key(mbedtls_svc_key_id_t key,
         {
             funcres = PSA_ERROR_NOT_SUPPORTED;
         }
+
+        pKey->KeyInUseFlag = 0U;
     }
 
     return funcres;
@@ -6824,8 +6830,8 @@ psa_export_public_key(mbedtls_svc_key_id_t key,
     psa_status_t removalResult;
     psa_key_persistence_t key_persistence;
     uint8_t fECDH = 0U;
+    bool keyLocked = false;
     bool isPubKey = false;
-    size_t curve_bits;
 
     if ((NULL == data) ||
         (NULL == data_length) ||
@@ -6835,18 +6841,19 @@ psa_export_public_key(mbedtls_svc_key_id_t key,
     }
     else
     {
-        funcres = psaInt_KeyMgmtGetKey(key, &pKey);
+        funcres = psaInt_KeyMgmtGetAndLockKey(key, &pKey);
     }
 
     if (PSA_SUCCESS == funcres)
     {
-        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(lifetime));
+        keyLocked = true;
+        key_persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
         /* Key found - it must be an asymmetric ECC key_pair or public key. Note that exporting a public key
          * is always allowed in either case, regardless of key usage flags.
          */
-        if (PSA_KEY_TYPE_IS_ECC_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(type)))
+        if (PSA_KEY_TYPE_IS_ECC_KEY_PAIR(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
-            if (PSA_ALG_IS_KEY_AGREEMENT(pKey->attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
+            if (PSA_ALG_IS_KEY_AGREEMENT(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg)))
             {
                 fECDH = 255U;
             }
@@ -6855,7 +6862,7 @@ psa_export_public_key(mbedtls_svc_key_id_t key,
                 /* MISRA - Intentially empty */
             }
 
-            CurveFamily = local_CurveFamilyFromKeyType(pKey->attributes.MBEDTLS_PRIVATE(type), fECDH);
+            CurveFamily = local_CurveFamilyFromKeyType(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type), fECDH);
 
             if (CurveFamily == EIP130DOMAIN_ECC_FAMILY_NONE)
             {
@@ -6865,7 +6872,7 @@ psa_export_public_key(mbedtls_svc_key_id_t key,
                 funcres = PSA_ERROR_INVALID_ARGUMENT;
             }
         }
-        else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(pKey->attributes.MBEDTLS_PRIVATE(type)))
+        else if (PSA_KEY_TYPE_IS_PUBLIC_KEY(pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type)))
         {
             isPubKey = true;
             funcres = psaInt_KeyMgmtLoadKey(pKey, NULL, 0, PSA_KEY_USAGE_EXPORT, data, data_size, (uint32_t *)data_length);
@@ -6892,10 +6899,8 @@ psa_export_public_key(mbedtls_svc_key_id_t key,
         }
         if (PSA_SUCCESS == funcres)
         {
-            curve_bits = (size_t)pKey->attributes.MBEDTLS_PRIVATE(bits);
-
             funcres = local_AsymKeyGenPub(PrvKeyAssetId, NULL, pKey->AssetPolicy, false,
-                                          CurveFamily, curve_bits,
+                                          CurveFamily, (size_t)pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits),
                                           fECDH, data, data_size, data_length);
         }
         else
@@ -6924,6 +6929,11 @@ psa_export_public_key(mbedtls_svc_key_id_t key,
     else
     {
         /* MISRA - Intentionally empty */
+    }
+
+    if (keyLocked)
+    {
+        pKey->KeyInUseFlag = 0U;
     }
 
     return funcres;
@@ -6965,10 +6975,10 @@ psaDebug_KeyStoreDump(void)
             {
                 /* MISRA - Intentially empty */
             }
-            if (PSA_KEY_ID_NULL != pKey->attributes.MBEDTLS_PRIVATE(id))
+            if (PSA_KEY_ID_NULL != pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id))
             {
                 LOG_CRIT("  ==> Persistent PSA Key Store (%u)\n",
-                         pKey->attributes.MBEDTLS_PRIVATE(id));
+                         pKey->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id));
             }
             else
             {
