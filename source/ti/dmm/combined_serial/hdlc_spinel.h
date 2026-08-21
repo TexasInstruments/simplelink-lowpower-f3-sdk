@@ -61,11 +61,15 @@
  * Most CMD values (0x03, 0x06) encode as a single byte.
  * Keepalive CMDs (15555, 15556, 15557) encode as two bytes.
  *
- * Stack usage note
- * ----------------
- * MuxSpinelHdlc_encode() allocates a temporary Spinel frame on the stack
- * (MUX_SPINEL_BUF_MAX bytes = 1 + 4 + MUX_MSG_BUF_LEN = 517 bytes).
- * Ensure the calling task has sufficient stack headroom.
+ * Scratch buffer note
+ * -------------------
+ * MuxSpinelHdlc_encode() stages the intermediate Spinel frame
+ * (MUX_SPINEL_BUF_MAX bytes = 1 + 4 + MUX_MSG_BUF_LEN = 517 bytes) in a
+ * caller-supplied scratch buffer rather than on its own stack or in
+ * internal static storage. Callers own this buffer's lifetime and
+ * concurrency; each caller should use its own scratch buffer (e.g. a field
+ * in its own state struct) rather than sharing one across concurrent
+ * callers, since the function itself does not synchronize access to it.
  */
 
 #ifndef HDLC_SPINEL_H
@@ -243,21 +247,27 @@ MuxErr_t MuxSpinel_parseFrame(const uint8_t *spinelFrame, uint16_t frameLen,
  *
  * For keepalive messages pass @p payload = NULL and @p payloadLen = 0.
  *
- * @param[in]  nli         NLI channel (MUX_NLI_BLE, MUX_NLI_ZB, …).
- * @param[in]  cmd         Spinel CMD value (e.g. SPINEL_CMD_PROP_VALUE_IS).
- * @param[in]  payload     Application payload bytes (may be NULL if len = 0).
- * @param[in]  payloadLen  Length of @p payload in bytes (0 for keepalive).
- * @param[out] outBuf      Destination for the encoded HDLC frame.
- * @param[in]  outMaxLen   Capacity of @p outBuf.  MAX_FRAME_SIZE is sufficient.
- * @param[out] outLen      Number of bytes written to @p outBuf on success.
+ * @param[in]  nli          NLI channel (MUX_NLI_BLE, MUX_NLI_ZB, …).
+ * @param[in]  cmd          Spinel CMD value (e.g. SPINEL_CMD_PROP_VALUE_IS).
+ * @param[in]  payload      Application payload bytes (may be NULL if len = 0).
+ * @param[in]  payloadLen   Length of @p payload in bytes (0 for keepalive).
+ * @param[out] scratchBuf   Caller-owned scratch buffer for the intermediate
+ *                          Spinel frame. Must be at least MUX_SPINEL_BUF_MAX
+ *                          bytes. Not touched after this call returns.
+ * @param[in]  scratchMaxLen Capacity of @p scratchBuf in bytes.
+ * @param[out] outBuf       Destination for the encoded HDLC frame.
+ * @param[in]  outMaxLen    Capacity of @p outBuf.  MAX_FRAME_SIZE is sufficient.
+ * @param[out] outLen       Number of bytes written to @p outBuf on success.
  *
  * @return MUX_SUCCESS      Frame encoded and ready to transmit.
  * @return MUX_ERR_OVERFLOW Encoded frame exceeds @p outMaxLen or payload
  *                          exceeds MUX_MSG_BUF_LEN.
- * @return MUX_ERR_INVALID  NULL pointer or @p nli out of range.
+ * @return MUX_ERR_INVALID  NULL pointer, @p nli out of range, or
+ *                          @p scratchMaxLen < MUX_SPINEL_BUF_MAX.
  */
 MuxErr_t MuxSpinelHdlc_encode(uint8_t nli, uint32_t cmd,
                                const uint8_t *payload, uint16_t payloadLen,
+                               uint8_t *scratchBuf, uint16_t scratchMaxLen,
                                uint8_t *outBuf, uint16_t outMaxLen,
                                uint16_t *outLen);
 

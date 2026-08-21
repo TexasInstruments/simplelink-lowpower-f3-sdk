@@ -32,17 +32,20 @@
  * @brief UART2 driver integration for the embedded TI Combined Serial MUX.
  *
  * This module owns the UART2 handle used by the MUX layer.  It provides:
- *   - A blocking TX path for the MUX task to write encoded HDLC frames.
- *   - A callback-driven RX path that feeds received bytes into the shared
- *     intermediary ring buffer and signals the MUX task.
+ *   - A blocking TX path for MuxTask_sendPacket() to write encoded HDLC
+ *     frames (see mux_task_app.h).
+ *   - A callback-driven RX path that decodes and dispatches received bytes
+ *     directly from UART ISR context — there is no RX task and no
+ *     intermediate chunk buffer.
  *
  * Architecture
  * ------------
  *
- *   MUX task (TX)
+ *   any task context (TX)
  *       │
  *       ▼  MuxUart_write(buf, len)
- *   UART2_write() — blocking, called only from the MUX task
+ *   UART2_write() — blocking; caller must serialize (see mux_task_app.c's
+ *   txLock)
  *       │
  *       ▼  wire (UART TX pin)
  *
@@ -51,11 +54,16 @@
  *       ▼  DMA → driver internal ring buffer
  *   muxUart_rxCallback()  ← called from UART ISR
  *       │
- *       ▼  HwiP_disable/restore  (critical section for ring buffer)
- *   MuxBuf_write(rxBuf, ...)   (intermediary ring buffer)
- *       │
- *       ▼  xTaskNotifyFromISR(muxTask, rxNotifyBit, eSetBits)
- *   MUX task wakes (xTaskNotifyFromISR → xTaskNotifyWait), calls MuxBuf_extractFrame()
+ *       ▼  rxHandler(buf, count)   — called synchronously, still in ISR context
+ *   incremental HDLC frame assembler → decode → per-NLI dispatch callback
+ *   (see mux_task_app.c's MuxUart_RxHandler_t passed to MuxUart_open())
+ *
+ * Since rxHandler and everything it calls (the assembler, the decoder, and
+ * every registered per-stack RX callback) runs synchronously inside the
+ * UART ISR, all of that code must be ISR-safe: no blocking calls, no
+ * FreeRTOS/ICall API that isn't its *FromISR variant, and bounded execution
+ * time (it directly extends UART interrupt latency for every other
+ * interrupt on the system while it runs).
  *
  * SysConfig note
  * --------------
@@ -68,22 +76,22 @@
  *
  * Thread-safety
  * -------------
- * - MuxUart_write() must be called only from the MUX task context.
- * - MuxUart_open() and MuxUart_close() must be called before the MUX task
- *   starts and after it has stopped, respectively.
- * - The RX callback runs in UART ISR context; ring buffer writes are
- *   protected with HwiP_disable()/restore().
+ * - MuxUart_write() is not internally synchronized and may be called from
+ *   any task context, but concurrent calls are not safe — the caller must
+ *   serialize access. mux_task_app.c does this via gMuxTxTask.txLock, so
+ *   every call in this codebase already goes through that; do not call
+ *   MuxUart_write() directly from a new call site without equivalent
+ *   serialization.
+ * - MuxUart_open() and MuxUart_close() must be called before and after,
+ *   respectively, any MuxUart_write() calls or RX activity.
+ * - The rxHandler passed to MuxUart_open() runs in UART ISR context on
+ *   every call — see the ISR-safety note above.
  */
 
 #ifndef MUX_UART_H
 #define MUX_UART_H
 
 #include "../mux_common.h"
-#include "../mux_buffer.h"
-
-/* FreeRTOS */
-#include <FreeRTOS.h>
-#include <task.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,9 +112,23 @@ extern "C" {
  * Number of bytes requested per UART2_read() call (RX staging chunk size).
  * Should be >= the UART2 driver's internal DMA ring buffer size (default 32).
  * Larger values reduce callback frequency at the cost of slightly higher
- * worst-case latency between first byte arriving and ring buffer write.
+ * per-callback time spent in ISR context (see the ISR-safety note above).
  */
 #define MUX_UART_RX_CHUNK       (64U)
+
+/*---------------------------------------------------------------------------
+ * Types
+ *--------------------------------------------------------------------------*/
+
+/*!
+ * @brief RX handler invoked synchronously from UART ISR context for every
+ *        chunk of received bytes.
+ *
+ * @param buf  Pointer to the received bytes. Valid only for the duration of
+ *             this call.
+ * @param len  Number of valid bytes in @p buf. Always > 0.
+ */
+typedef void (*MuxUart_RxHandler_t)(const uint8_t *buf, uint16_t len);
 
 /*---------------------------------------------------------------------------
  * API
@@ -123,36 +145,31 @@ extern "C" {
  * Issues the first UART2_read() call to arm the RX path.  Subsequent reads
  * are re-armed automatically from within the RX callback.
  *
- * @param uartIndex    UART2 instance index from SysConfig (e.g. CONFIG_MUX_UART).
- * @param baudRate     Baud rate in bits/second (e.g. MUX_UART_DEFAULT_BAUD).
- * @param rxBuf        Intermediary ring buffer owned by the MUX task.
- *                     Must remain valid for the lifetime of the UART session.
- * @param muxTask      Handle of the MUX FreeRTOS task.  The RX callback calls
- *                     xTaskNotifyFromISR() on this handle to wake the task.
- *                     Must be non-NULL and valid before calling this function.
- * @param rxNotifyBit  Notification bit to set in the MUX task's notification
- *                     value when RX bytes arrive (e.g. MUX_NOTIFY_RX_BIT).
+ * @param uartIndex  UART2 instance index from SysConfig (e.g. CONFIG_MUX_UART).
+ * @param baudRate   Baud rate in bits/second (e.g. MUX_UART_DEFAULT_BAUD).
+ * @param rxHandler  Called synchronously, in UART ISR context, with every
+ *                   chunk of received bytes. Must be non-NULL and ISR-safe
+ *                   (see the file-level ISR-safety note above).
  *
  * @return MUX_SUCCESS      UART opened and RX armed.
  * @return MUX_ERR_INVALID  NULL pointer argument.
  * @return MUX_ERR_UART     UART2_open() or initial UART2_read() failed.
  */
 MuxErr_t MuxUart_open(uint8_t uartIndex, uint32_t baudRate,
-                      MuxRingBuf_t *rxBuf, TaskHandle_t muxTask,
-                      uint32_t rxNotifyBit);
+                      MuxUart_RxHandler_t rxHandler);
 
 /*!
  * @brief Close the UART2 instance and stop the RX path.
  *
- * Safe to call only when the MUX task is no longer running and no further
- * MuxUart_write() calls will be made.
+ * Safe to call only when no further MuxUart_write() calls will be made and
+ * RX activity has stopped.
  */
 void MuxUart_close(void);
 
 /*!
  * @brief Blocking write of @p len bytes to the MUX UART.
  *
- * Must be called only from the MUX task context (not from an ISR).
+ * Must be called only from task context (not from an ISR).
  * Blocks until all bytes have been transmitted or a hardware error occurs.
  *
  * @param buf  Pointer to the data to transmit (encoded HDLC frame).

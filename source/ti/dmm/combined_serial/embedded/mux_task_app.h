@@ -29,65 +29,121 @@
 
 /*!
  * @file  mux_task_app.h
- * @brief FreeRTOS MUX task for the embedded TI Combined Serial Interface.
+ * @brief FreeRTOS MUX tasks for the embedded TI Combined Serial Interface.
  *
- * The MUX task is the single owner of the UART.  It:
- *   - Encodes outbound packets (from BLE/Zigbee stacks) as Spinel+HDLC frames
- *     and writes them to the UART.
- *   - Decodes inbound HDLC frames from the UART, extracts the NLI, and
- *     delivers the payload to the registered per-stack RX callback.
- *   - Sends periodic CMD_KEEPALIVE frames to the Linux host and processes
- *     CMD_KEEPALIVE_ACK replies.
+ * There is no RX task and, as of the synchronous-send redesign, no TX
+ * queue either — the only FreeRTOS task this layer creates is the TX task,
+ * which exists solely to send the periodic keepalive:
+ *   - RX: decoded and dispatched entirely inside the UART ISR. Every
+ *     received byte is fed to the incremental HDLC assembler, and any
+ *     complete frame is decoded, Spinel-parsed, and handed to the
+ *     registered per-stack RX callback — all synchronously, in ISR
+ *     context, before the ISR re-arms the next UART2_read() and returns.
+ *   - TX: MuxTask_sendPacket() encodes outbound packets (from BLE/Zigbee/OT
+ *     stacks) as Spinel+HDLC frames and writes them to the UART
+ *     synchronously, in the calling task's own context — no queue, no
+ *     notify, no task switch.
+ *   - The TX task sends periodic CMD_KEEPALIVE frames to the Linux host
+ *     (processing CMD_KEEPALIVE_ACK replies happens inline in the RX ISR
+ *     path, since that's where the ACK frame arrives).
+ *
+ * Because RX runs entirely in the ISR, it is inherently independent of
+ * whatever any task is doing: MuxTask_sendPacket() blocking inside
+ * MuxUart_write() — a genuine blocking call in UART2_Mode_BLOCKING — blocks
+ * only the calling task (BLE/Zigbee/OT/NPI); it cannot delay RX processing,
+ * since RX doesn't wait on the scheduler at all. The UART2 driver
+ * explicitly supports concurrent UART2_read()/UART2_write(); the only
+ * restriction is two concurrent operations in the *same* direction.
+ *
+ * ISR-safety requirement on RX callbacks
+ * ----------------------------------------
+ * Every callback registered via MuxTask_registerRxCb() — and everything it
+ * calls transitively — now runs in real UART hardware interrupt context.
+ * It must not block, must not call any FreeRTOS/ICall API that isn't
+ * explicitly documented as ISR-safe (i.e. a *FromISR variant, or one that
+ * internally branches on HwiP_inISR() like this SDK's mq_send()), and
+ * should keep execution time bounded, since it directly extends UART
+ * interrupt latency for every other interrupt in the system while it runs.
+ * Verified ISR-safe today: the BLE path (MuxVirtUart_rxNotify(), which is
+ * how NPI's UART2_Mode_CALLBACK contract already expects to be invoked) and
+ * the OT/Thread path (ThreadMux_rxNotify() → platformUartMuxDeliver(),
+ * whose mq_send()/platformUartSignal() calls are already used from real
+ * ISR context elsewhere in this SDK's non-MUX UART callback). Zigbee's
+ * ZbMux_muxRxCb() is not currently registered in this build (Zigbee is
+ * disabled) and has not been audited for ISR-safety — audit it before
+ * enabling Zigbee on this path.
  *
  * Data flow overview
  * ------------------
  *
- *   BLE task / Zigbee task
+ *   BLE task / Zigbee task / OT task
  *       │
- *       ▼  MuxTask_sendPacket(nli, buf, len)  [any task context]
- *   TX queue (MuxQueueMsg_t × MUX_QUEUE_DEPTH)
+ *       ▼  MuxTask_sendPacket(nli, buf, len)  [any task context, blocks here]
+ *   take txLock → MuxSpinelHdlc_encode() → MuxUart_write() → give txLock
  *       │
- *       ▼  xTaskNotify(TX_BIT) wakes MUX task
- *   MuxSpinelHdlc_encode()  →  MuxUart_write()  →  UART TX pin → host
+ *       ▼
+ *   UART TX pin → host
  *
- *   UART RX pin → ISR → MuxBuf_write() → ring buffer
+ *   UART RX pin → ISR (muxUart_rxCallback, see mux_uart.h)
  *       │
- *       ▼  xTaskNotifyFromISR(RX_BIT), MUX task wakes (xTaskNotifyWait)
- *   MuxBuf_extractFrame() → MuxHdlc_decode() → MuxSpinel_parseFrame()
+ *       ▼  muxRx_handleBytes(buf, len) — still in ISR context
+ *   incremental HDLC assembler (muxRxAsm_feedByte)
+ *       → MuxHdlc_decode() → MuxSpinel_parseFrame()
  *       │
- *       ├── NLI = BLE  →  gRxCbs[MUX_NLI_BLE](payload, len)
- *       ├── NLI = ZB   →  gRxCbs[MUX_NLI_ZB](payload, len)
+ *       ├── NLI = BLE  →  gMuxRx.rxCbs[MUX_NLI_BLE](payload, len)
+ *       ├── NLI = ZB   →  gMuxRx.rxCbs[MUX_NLI_ZB](payload, len)
  *       └── NLI = KA   →  keepalive ACK handling (no callback)
  *
  * Task priority and scheduling
  * ----------------------------
- * The MUX task runs at priority MUX_TASK_PRIORITY (7), higher than both
- * the BLE task (6) and the Zigbee task (1).  This ensures that received
- * data is dispatched to the stacks promptly after the UART ISR fires.
+ * The TX (keepalive-only) task runs at MUX_TX_TASK_PRIORITY (7), higher
+ * than both the BLE task (6) and the Zigbee task (1). MuxTask_sendPacket()
+ * runs in the calling task's own priority, not this one. RX has no task
+ * priority at all — it runs at UART interrupt priority.
  *
- * Blocking strategy — FreeRTOS Task Notifications
- * -------------------------------------------------
- * The MUX task blocks on xTaskNotifyWait() using two notification bits:
- *   MUX_NOTIFY_TX_BIT — set by MuxTask_sendPacket() after each enqueue.
- *   MUX_NOTIFY_RX_BIT — set by the UART ISR via xTaskNotifyFromISR().
- * Both bits are cleared atomically on exit from xTaskNotifyWait().  If
- * multiple TX messages or RX chunks arrive while the task is processing,
- * the bits coalesce and the task drains all queued messages in one pass.
- * On timeout it sends the periodic keepalive.
+ * Blocking strategy
+ * ------------------
+ * The TX task just sleeps for MUX_KEEPALIVE_PERIOD_MS (vTaskDelay) between
+ * keepalives — it doesn't wait on any notification, since nothing defers
+ * work to it.
+ *
+ * TX lock — synchronous send, not a queue
+ * ----------------------------------------
+ * MuxTask_sendPacket() may be called concurrently from multiple task
+ * contexts (BLE task, Zigbee/OT task), and the TX task's own keepalive also
+ * needs the same encode scratch buffers and UART. gMuxTxTask.txLock (a
+ * mutex) serializes exactly that: a caller takes it, encodes into
+ * gMuxTxTask.spinelEncBuf/encodedBuf, writes to the UART, and releases it —
+ * held only for the duration of one encode + one UART2 write, never across
+ * a wait on anything else. There is no MPSC array and no separate consumer
+ * task to depend on: a blocked caller is only ever waiting on whichever
+ * context currently holds txLock to finish that one send.
  *
  * Keepalive
  * ---------
  * The embedded device sends CMD_KEEPALIVE (15555) to the host every
- * MUX_KEEPALIVE_PERIOD_MS milliseconds.  The host is expected to reply with
- * CMD_KEEPALIVE_ACK (15556).  The current implementation logs the ACK;
- * dead-host detection and recovery are left for a future phase.
+ * MUX_KEEPALIVE_PERIOD_MS milliseconds — owned entirely by the TX task,
+ * since sending it is a TX action (encode + MuxUart_write()). The host is
+ * expected to reply with CMD_KEEPALIVE_ACK (15556); the RX ISR path
+ * receives and acknowledges it. Dead-host detection and recovery are left
+ * for a future phase.
  *
  * Thread safety
  * -------------
  * - MuxTask_registerRxCb() must be called before MuxTask_create().
  * - MuxTask_sendPacket() is thread-safe and may be called from any task.
- * - Large buffers (ring buffer, frame staging) are module-static and
- *   accessed only by the MUX task or under HwiP critical sections.
+ *   It no longer depends on a *separate task* being scheduled to make
+ *   progress (there is no queue/consumer task to wait on) — but
+ *   MuxUart_write() still uses UART2_Mode_BLOCKING internally, which waits
+ *   on a semaphore signaled by the UART2 TX-complete interrupt. Calling
+ *   this from inside a critical section that disables interrupts (e.g.
+ *   NPIUtil_EnterCS()/ICall_enterCriticalSection()) will still deadlock,
+ *   since that interrupt can never fire. Callers must not hold such a
+ *   critical section across this call.
+ * - gMuxRx (RX frame-staging state) is touched only from UART ISR context;
+ *   gMuxTxTask's encode scratch buffers are touched only while holding
+ *   txLock. The two are disjoint module-static structs — RX never touches
+ *   gMuxTxTask's buffers, and MuxTask_sendPacket() never touches gMuxRx's.
  */
 
 #ifndef MUX_TASK_APP_H
@@ -104,24 +160,24 @@ extern "C" {
  *--------------------------------------------------------------------------*/
 
 /*!
- * FreeRTOS task priority for the MUX task.
- * Must be higher than BLE (typically 6) and Zigbee (1) so that received
- * data is dispatched promptly.
+ * FreeRTOS task priority for the MUX TX task (keepalive-only — see the
+ * file-level doc comment above). There is no RX task: RX runs at UART
+ * interrupt priority, not a FreeRTOS task priority.
  */
-#define MUX_TASK_PRIORITY       (7U)
+#define MUX_TX_TASK_PRIORITY       (7U)
 
 /*!
- * MUX task stack size in bytes.
- * Large intermediate buffers (ring buffer, HDLC frame, decoded Spinel frame,
- * encoded TX frame) are all module-static, so the task stack only needs to
- * accommodate function call frames.
+ * MUX TX task stack size in bytes.
+ * Large intermediate buffers (encoded TX frame, Spinel encode scratch) are
+ * module-static, so the task stack only needs to accommodate function call
+ * frames (encode → write).
  */
-#define MUX_TASK_STACK_BYTES    (1024U)
+#define MUX_TX_TASK_STACK_BYTES    (1024U)
 
 /*!
  * Interval between CMD_KEEPALIVE transmissions (milliseconds).
- * Also used as the xQueueSelectFromSet() timeout — the task wakes at least
- * this often even when idle.
+ * Also used as the TX task's xTaskNotifyWait() timeout — the task wakes at
+ * least this often even when idle.
  */
 #define MUX_KEEPALIVE_PERIOD_MS (5000U)
 
@@ -132,9 +188,11 @@ extern "C" {
 /*!
  * @brief Register a per-NLI RX callback.
  *
- * May be called before or after MuxTask_create().  The callback is invoked
- * by the MUX task when a decoded inbound packet arrives for the given NLI
- * channel.
+ * Must be called before MuxTask_create() — see MuxTask_create()'s doc.
+ * The callback is invoked synchronously, in UART ISR context, when a
+ * decoded inbound packet arrives for the given NLI channel. It (and
+ * everything it calls) must be ISR-safe: see the file-level ISR-safety
+ * note above.
  *
  * @param nli  NLI channel (MUX_NLI_BLE or MUX_NLI_ZB).
  * @param cb   Callback function; NULL to deregister.
@@ -142,15 +200,20 @@ extern "C" {
 void MuxTask_registerRxCb(uint8_t nli, MuxStackRxCb_t cb);
 
 /*!
- * @brief Initialise MUX resources and create the FreeRTOS MUX task.
+ * @brief Initialise MUX resources, create the TX (keepalive) task, and
+ *        open the UART.
  *
  * Performs in order:
- *   1. Creates the TX queue.
- *   2. Initialises the intermediary RX ring buffer.
- *   3. Creates the MUX FreeRTOS task at MUX_TASK_PRIORITY (does not run
- *      until vTaskStartScheduler() is called).
- *   4. Opens the UART via MuxUart_open(), passing the task handle so the
- *      UART ISR can wake the task via xTaskNotifyFromISR().
+ *   1. Resets the RX frame assembler state (asmInFrame/asmPayloadSeen/
+ *      asmLen) — NOT the RX callback table, which must already be
+ *      populated by MuxTask_registerRxCb() calls made before this
+ *      function, per its documented contract.
+ *   2. Creates the TX mutex (gMuxTxTask.txLock).
+ *   3. Creates the TX task at MUX_TX_TASK_PRIORITY (does not run until
+ *      vTaskStartScheduler() is called).
+ *   4. Opens the UART via MuxUart_open(), passing muxRx_handleBytes as the
+ *      RX handler the UART ISR calls directly for every received chunk.
+ *      There is no RX task to wake — RX is fully handled inside the ISR.
  *
  * Any OS resource allocation failure triggers a configASSERT() halt.
  * Call this function once from application main() before vTaskStartScheduler().
@@ -160,29 +223,35 @@ void MuxTask_registerRxCb(uint8_t nli, MuxStackRxCb_t cb);
  * @param uartIndex  UART2 instance index from SysConfig (CONFIG_MUX_UART).
  * @param baudRate   Baud rate in bits/second (e.g. MUX_UART_DEFAULT_BAUD).
  *
- * @return MUX_SUCCESS   Task created and UART open.
+ * @return MUX_SUCCESS   TX task created and UART open.
  * @return MUX_ERR_UART  UART2_open() or initial UART2_read() failed.
  */
 MuxErr_t MuxTask_create(uint8_t uartIndex, uint32_t baudRate);
 
 /*!
- * @brief Enqueue a packet for transmission to the Linux host.
+ * @brief Encode and transmit a packet to the Linux host.
  *
- * Thread-safe: may be called from any task context (BLE task, Zigbee task).
- * The payload is copied into the TX queue so the caller's buffer is not
- * referenced after this function returns.
+ * Thread-safe: may be called concurrently from any task context (BLE task,
+ * Zigbee/OT task). Encodes and writes to the UART synchronously, in the
+ * calling task's own context — see the "TX lock" section of the file-level
+ * doc comment above. The caller's buffer is not referenced after this
+ * function returns.
  *
- * The MUX task dequeues the message, prepends the Spinel header, HDLC-frames
- * the result, and writes it to the UART.
+ * Blocking
+ * --------
+ * This call blocks for as long as it takes to take txLock (if another
+ * context is mid-send) plus one encode and one blocking UART2 write. There
+ * is no unbounded queue to fill up — the caller is only ever waiting on
+ * whichever single context currently holds txLock, never on a separate
+ * consumer task making progress.
  *
  * @param nli  NLI channel (MUX_NLI_BLE or MUX_NLI_ZB).
  * @param buf  Payload bytes to transmit (BLE HCI packet or Zigbee MAC frame).
  * @param len  Payload length.  Must be in [1, MUX_MSG_BUF_LEN].
  *
- * @return MUX_SUCCESS      Message enqueued successfully.
+ * @return MUX_SUCCESS      Message encoded and written successfully.
  * @return MUX_ERR_INVALID  NULL pointer, zero length, length > MUX_MSG_BUF_LEN,
  *                          or NLI is out of range.
- * @return MUX_ERR_QUEUE    TX queue is full (host or UART not keeping up).
  */
 MuxErr_t MuxTask_sendPacket(uint8_t nli, const uint8_t *buf, uint16_t len);
 

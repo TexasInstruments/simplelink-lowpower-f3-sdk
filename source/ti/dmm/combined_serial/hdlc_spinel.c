@@ -408,15 +408,11 @@ MuxErr_t MuxSpinel_parseFrame(const uint8_t *spinelFrame, uint16_t frameLen,
 
 MuxErr_t MuxSpinelHdlc_encode(uint8_t nli, uint32_t cmd,
                                const uint8_t *payload, uint16_t payloadLen,
+                               uint8_t *scratchBuf, uint16_t scratchMaxLen,
                                uint8_t *outBuf, uint16_t outMaxLen,
                                uint16_t *outLen)
 {
-    /*
-     * Temporary Spinel frame built on the stack.
-     * Size: 1 header + 4 packed-uint (worst case) + MUX_MSG_BUF_LEN payload.
-     * The calling task must have sufficient stack for MUX_SPINEL_BUF_MAX bytes.
-     */
-    static uint8_t  spinelBuf[MUX_SPINEL_BUF_MAX];
+    uint8_t *spinelBuf = scratchBuf;
     uint16_t spinelPos = 0U;
     uint16_t cmdBytes;
     MuxErr_t err;
@@ -427,6 +423,12 @@ MuxErr_t MuxSpinelHdlc_encode(uint8_t nli, uint32_t cmd,
     }
     if (payloadLen > 0U && !payload)
     {
+        return MUX_ERR_INVALID;
+    }
+    if (!scratchBuf || scratchMaxLen < MUX_SPINEL_BUF_MAX)
+    {
+        /* Scratch buffer must be caller-owned and large enough to hold the
+         * worst-case Spinel frame (header + packed-uint CMD + payload). */
         return MUX_ERR_INVALID;
     }
 
@@ -441,7 +443,7 @@ MuxErr_t MuxSpinelHdlc_encode(uint8_t nli, uint32_t cmd,
     /* 2. Packed-uint CMD */
     err = MuxSpinel_encodeUint(cmd,
                                spinelBuf + spinelPos,
-                               (uint16_t)(sizeof(spinelBuf) - spinelPos),
+                               (uint16_t)(scratchMaxLen - spinelPos),
                                &cmdBytes);
 
     if (err != MUX_SUCCESS)

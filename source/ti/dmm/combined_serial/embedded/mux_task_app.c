@@ -29,8 +29,8 @@
 
 /*!
  * @file  mux_task_app.c
- * @brief FreeRTOS MUX task implementation for the embedded TI Combined Serial
- *        Interface.
+ * @brief FreeRTOS MUX RX/TX task implementation for the embedded TI Combined
+ *        Serial Interface.
  *
  * See mux_task_app.h for the architecture overview and thread-safety contract.
  *
@@ -45,72 +45,100 @@
 #include "mux_task_app.h"
 #include "mux_uart.h"
 
-#include "../mux_buffer.h"
 #include "../hdlc_spinel.h"
 
 #include <assert.h>
 #include <string.h>   /* memset */
 
-/* TI-Drivers */
-#include <ti/drivers/dpl/HwiP.h>
-
 /* FreeRTOS */
 #include <FreeRTOS.h>
 #include <task.h>
-#include <queue.h>
+#include <semphr.h>
 
 /*---------------------------------------------------------------------------
- * Module-private state  (singleton — one MUX task per device)
+ * Per-NLI OT (Thread/spinel, MUX_NLI_OT) frame instrumentation — counts
+ * complete frames, not raw bytes (see gMuxUartBytesTx/Rx in mux_uart.c for
+ * the byte-level counterparts). gMuxOtFramesTx increments only after
+ * MuxUart_write() returns success for an OT-tagged frame — i.e. the encoded
+ * spinel reply/request actually left the device on the wire.
+ * gMuxOtFramesRx increments when a decoded frame's NLI is MUX_NLI_OT, right
+ * before dispatch to the registered OT RX callback. Non-static for
+ * debugger visibility, matching the radio.c/ncp_base_radio.cpp counters.
+ *--------------------------------------------------------------------------*/
+volatile uint32_t gMuxOtFramesTx;
+volatile uint32_t gMuxOtFramesRx;
+
+/*---------------------------------------------------------------------------
+ * Module-private state  (singletons — one RX state block and one TX task
+ * per device — there is no RX task; see MuxRxState_t below)
  *--------------------------------------------------------------------------*/
 
 /*!
- * Task notification bits used to wake the MUX task.
- * TX_BIT: set by MuxTask_sendPacket() after enqueueing a TX message.
- * RX_BIT: set by the UART ISR (via xTaskNotifyFromISR) when new bytes arrive.
+ * RX state. Owns the incremental HDLC frame assembler and per-NLI dispatch
+ * callbacks. frameBuf doubles as the assembler's accumulation buffer.
+ *
+ * Accessed only from muxUart_rxCallback()'s ISR context via
+ * muxRx_handleBytes() (see below) — there is no RX task and no other
+ * writer, so no locking is needed around any of this state: a single
+ * execution context (the UART ISR, which cannot preempt itself) owns it
+ * exclusively.
  */
-typedef enum
+typedef struct
 {
-    MUX_NOTIFY_TX_BIT = (1UL << 0U),   /*!< TX message enqueued */
-    MUX_NOTIFY_RX_BIT = (1UL << 1U),   /*!< RX bytes in ring buffer */
-} MuxNotifyBit_t;
+    bool                   asmInFrame;       /* opening 0x7E seen */
+    bool                   asmPayloadSeen;   /* non-flag byte seen since opening flag */
+    uint16_t               asmLen;           /* bytes accumulated in frameBuf */
 
+    uint8_t                frameBuf[MAX_FRAME_SIZE];         /* 2048 B */
+    uint8_t                decodedBuf[MUX_SPINEL_BUF_MAX];  /*  517 B */
+
+    /* Per-NLI RX callbacks registered before MuxTask_create(). Called
+     * directly from ISR context — every registered callback (and anything
+     * it calls transitively) must be ISR-safe. */
+    MuxStackRxCb_t         rxCbs[MUX_NLI_COUNT];
+} MuxRxState_t;
+
+/*!
+ * TX task state. Owns the encode scratch buffers and the TX lock, and is
+ * solely responsible for sending the periodic keepalive.
+ *
+ * MuxTask_sendPacket() encodes and writes to the UART synchronously, in the
+ * calling task's own context — no queue, no notify, no task switch. txLock
+ * only serializes access to the shared scratch buffers (encodedBuf,
+ * spinelEncBuf) and the UART write itself against concurrent callers (BLE
+ * task, Zigbee/OT task) and the TX task's own periodic keepalive; it is
+ * held only for the duration of one encode + one UART2 write, never across
+ * a blocking wait on anything else.
+ */
 typedef struct
 {
     TaskHandle_t           taskHandle;
-    QueueHandle_t          txQueue;
 
-    /* RX intermediary ring buffer (written by UART ISR, read by MUX task) */
-    MuxRingBuf_t           rxBuf;
-    uint8_t                rxBufStorage[MAX_RING_BUF_SIZE];   /* 4096 B static */
+    SemaphoreHandle_t      txLock;
 
-    /* Scratch buffers used only inside the MUX task — module-static to keep
-     * them off the task stack (which only needs room for function frames). */
-    uint8_t                rxFrameBuf[MAX_FRAME_SIZE];         /* 2048 B */
-    uint8_t                rxDecodedBuf[MUX_SPINEL_BUF_MAX];  /*  517 B */
-    uint8_t                txEncodedBuf[MAX_FRAME_SIZE];       /* 2048 B */
+    uint8_t                encodedBuf[MAX_FRAME_SIZE];       /* 2048 B */
+    uint8_t                spinelEncBuf[MUX_SPINEL_BUF_MAX]; /*  517 B — scratch for MuxSpinelHdlc_encode() */
 
-    /* Per-NLI RX callbacks registered before MuxTask_create() */
-    MuxStackRxCb_t         rxCbs[MUX_NLI_COUNT];
-} MuxTaskState_t;
+    /* Static FreeRTOS object storage — avoids heap allocation for the TCB/stack
+     * and the TX mutex. */
+    StaticTask_t           taskTcb;
+    StackType_t            taskStack[MUX_TX_TASK_STACK_BYTES / sizeof(StackType_t)];
+    StaticSemaphore_t      txLockBuf;
+} MuxTxTaskState_t;
 
-static MuxTaskState_t gMuxTask;
-
-/* Static task storage — avoids a heap allocation for the task TCB and stack */
-static StaticTask_t         gMuxTaskTcb;
-static StackType_t          gMuxTaskStack[MUX_TASK_STACK_BYTES / sizeof(StackType_t)];
-
-/* Static queue storage */
-static StaticQueue_t        gTxQueueStruct;
-static uint8_t              gTxQueueStorage[MUX_QUEUE_DEPTH * sizeof(MuxQueueMsg_t)];
+static MuxRxState_t gMuxRx;
+static MuxTxTaskState_t gMuxTxTask;
 
 /*---------------------------------------------------------------------------
  * Forward declarations
  *--------------------------------------------------------------------------*/
 
-static void muxTask_fn(void *arg);
-static void muxTask_handleTx(const MuxQueueMsg_t *msg);
-static void muxTask_handleRx(void);
-static void muxTask_sendKeepalive(void);
+static void muxTxTask_fn(void *arg);
+static MuxErr_t muxTx_encodeAndSend(uint8_t nli, uint32_t cmd, const uint8_t *buf, uint16_t len);
+static void muxRx_handleBytes(const uint8_t *buf, uint16_t len);
+static void muxTxTask_sendKeepalive(void);
+static bool muxRxAsm_feedByte(uint8_t b, uint16_t *outFrameLen);
+static void muxRx_processFrame(const uint8_t *frame, uint16_t frameLen);
 
 /*---------------------------------------------------------------------------
  * MuxTask_registerRxCb
@@ -125,7 +153,7 @@ void MuxTask_registerRxCb(uint8_t nli, MuxStackRxCb_t cb)
         return;
     }
 
-    gMuxTask.rxCbs[nli] = cb;
+    gMuxRx.rxCbs[nli] = cb;
 }
 
 /*---------------------------------------------------------------------------
@@ -136,56 +164,48 @@ MuxErr_t MuxTask_create(uint8_t uartIndex, uint32_t baudRate)
 {
     MuxErr_t err;
 
-    /* Zero the entire state block (clears handles, callbacks, buffers) */
-    memset(&gMuxTask, 0, sizeof(gMuxTask));
+    /*
+     * Reset only the assembler state, not the whole gMuxRx block: rxCbs
+     * must already be populated by MuxTask_registerRxCb() calls made before
+     * this function per its documented contract, and must survive here.
+     */
+    gMuxRx.asmInFrame     = false;
+    gMuxRx.asmPayloadSeen = false;
+    gMuxRx.asmLen         = 0U;
+
+    memset(&gMuxTxTask, 0, sizeof(gMuxTxTask));
 
     /* ------------------------------------------------------------------
-     * 1. TX queue (MuxQueueMsg_t × MUX_QUEUE_DEPTH)
+     * 1. TX mutex — serializes the encode scratch buffers and the UART
+     *    write itself across concurrent MuxTask_sendPacket() callers and
+     *    the TX task's periodic keepalive.
      * ------------------------------------------------------------------ */
-    gMuxTask.txQueue = xQueueCreateStatic(
-        (UBaseType_t)MUX_QUEUE_DEPTH,
-        (UBaseType_t)sizeof(MuxQueueMsg_t),
-        gTxQueueStorage,
-        &gTxQueueStruct);
+    gMuxTxTask.txLock = xSemaphoreCreateMutexStatic(&gMuxTxTask.txLockBuf);
 
-    configASSERT(gMuxTask.txQueue != NULL);
+    configASSERT(gMuxTxTask.txLock != NULL);
 
     /* ------------------------------------------------------------------
-     * 2. Intermediary RX ring buffer
+     * 2. Create the TX FreeRTOS task (static allocation — no heap).
+     *    There is no RX task: RX is decoded and dispatched directly from
+     *    the UART ISR via muxRx_handleBytes(), passed to MuxUart_open()
+     *    below as its rxHandler.
      * ------------------------------------------------------------------ */
-    MuxBuf_init(&gMuxTask.rxBuf,
-                gMuxTask.rxBufStorage,
-                (uint16_t)sizeof(gMuxTask.rxBufStorage));
-
-    /* ------------------------------------------------------------------
-     * 3. Create MUX FreeRTOS task (static allocation — no heap).
-     *
-     *    The task is created before MuxUart_open() so that its handle can
-     *    be passed to the UART layer for xTaskNotifyFromISR() delivery.
-     *    This is safe because MuxTask_create() must be called before
-     *    vTaskStartScheduler() — the task will not execute until the
-     *    scheduler starts, by which time the UART is already open.
-     * ------------------------------------------------------------------ */
-    gMuxTask.taskHandle = xTaskCreateStatic(
-        muxTask_fn,
-        "MuxTask",
-        (uint32_t)(MUX_TASK_STACK_BYTES / sizeof(StackType_t)),
+    gMuxTxTask.taskHandle = xTaskCreateStatic(
+        muxTxTask_fn,
+        "MuxTxTask",
+        (uint32_t)(MUX_TX_TASK_STACK_BYTES / sizeof(StackType_t)),
         NULL,
-        (UBaseType_t)MUX_TASK_PRIORITY,
-        gMuxTaskStack,
-        &gMuxTaskTcb);
+        (UBaseType_t)MUX_TX_TASK_PRIORITY,
+        gMuxTxTask.taskStack,
+        &gMuxTxTask.taskTcb);
 
-    configASSERT(gMuxTask.taskHandle != NULL);
+    configASSERT(gMuxTxTask.taskHandle != NULL);
 
     /* ------------------------------------------------------------------
-     * 4. Open UART (arms first UART2_read internally).
-     *    Pass the task handle and RX notification bit so the UART ISR
-     *    can wake the MUX task directly via xTaskNotifyFromISR().
+     * 3. Open UART (arms first UART2_read internally), passing
+     *    muxRx_handleBytes as the ISR-context RX handler.
      * ------------------------------------------------------------------ */
-    err = MuxUart_open(uartIndex, baudRate,
-                       &gMuxTask.rxBuf,
-                       gMuxTask.taskHandle,
-                       (uint32_t)MUX_NOTIFY_RX_BIT);
+    err = MuxUart_open(uartIndex, baudRate, muxRx_handleBytes);
 
     if (err != MUX_SUCCESS)
     {
@@ -197,13 +217,60 @@ MuxErr_t MuxTask_create(uint8_t uartIndex, uint32_t baudRate)
 }
 
 /*---------------------------------------------------------------------------
+ * muxTx_encodeAndSend  (private — encodes into the shared scratch buffers
+ * and writes to the UART; caller must hold gMuxTxTask.txLock)
+ *--------------------------------------------------------------------------*/
+
+static MuxErr_t muxTx_encodeAndSend(uint8_t nli, uint32_t cmd, const uint8_t *buf, uint16_t len)
+{
+    uint16_t encodedLen = 0U;
+    MuxErr_t err;
+
+    err = MuxSpinelHdlc_encode(
+            nli,
+            cmd,
+            buf,
+            len,
+            gMuxTxTask.spinelEncBuf,
+            (uint16_t)sizeof(gMuxTxTask.spinelEncBuf),
+            gMuxTxTask.encodedBuf,
+            (uint16_t)sizeof(gMuxTxTask.encodedBuf),
+            &encodedLen);
+
+    assert(err == MUX_SUCCESS);   /* encoding error — buffer sizing or invalid NLI */
+
+    if (err != MUX_SUCCESS)
+    {
+        return err;
+    }
+
+    err = MuxUart_write(gMuxTxTask.encodedBuf, encodedLen);
+
+    if (err == MUX_SUCCESS && nli == (uint8_t)MUX_NLI_OT)
+    {
+        gMuxOtFramesTx++;
+    }
+
+    return err;
+}
+
+/*---------------------------------------------------------------------------
  * MuxTask_sendPacket
+ *
+ * Encodes and writes to the UART synchronously, in the calling task's own
+ * context. No queue, no notify, no task switch: the encode and MuxUart_write
+ * (blocking — UART2_Mode_BLOCKING) both happen here before this returns.
+ * txLock serializes this against concurrent callers (BLE task, Zigbee/OT
+ * task) and the TX task's own periodic keepalive, so the shared scratch
+ * buffers and the UART write itself are never touched by two contexts at
+ * once — but a caller only ever waits on whichever context currently holds
+ * txLock to finish one encode + one UART write, never on a separate task
+ * being scheduled to drain a queue.
  *--------------------------------------------------------------------------*/
 
 MuxErr_t MuxTask_sendPacket(uint8_t nli, const uint8_t *buf, uint16_t len)
 {
-    MuxQueueMsg_t msg;
-    BaseType_t    result;
+    MuxErr_t err;
 
     assert(buf != NULL);                /* NULL payload pointer       */
     assert(len != 0U);                  /* zero-length packet is a bug */
@@ -215,287 +282,237 @@ MuxErr_t MuxTask_sendPacket(uint8_t nli, const uint8_t *buf, uint16_t len)
         return MUX_ERR_INVALID;
     }
 
-    msg.nli = nli;
-    msg.len = len;
-    memcpy(msg.buf, buf, len);
+    (void)xSemaphoreTake(gMuxTxTask.txLock, portMAX_DELAY);
+    err = muxTx_encodeAndSend(nli, (uint32_t)SPINEL_CMD_PROP_VALUE_IS, buf, len);
+    xSemaphoreGive(gMuxTxTask.txLock);
 
-    /*
-     * Non-blocking enqueue.  The payload has been copied so the caller's
-     * buffer is safe to reuse immediately.
-     */
-    result = xQueueSend(gMuxTask.txQueue, &msg, 0);
-
-    if (result != pdPASS)
-    {
-        assert(false);   /* TX queue full — host or UART not keeping up */
-        return MUX_ERR_QUEUE;
-    }
-
-    /*
-     * Wake the MUX task.  xTaskNotify with eSetBits is idempotent — if the
-     * task is already awake (processing a previous message), the bit stays
-     * set and the task will drain the full queue on its next iteration.
-     */
-    (void)xTaskNotify(gMuxTask.taskHandle, (uint32_t)MUX_NOTIFY_TX_BIT, eSetBits);
-
-    return MUX_SUCCESS;
+    assert(err == MUX_SUCCESS);   /* UART TX error */
+    return err;
 }
 
 /*---------------------------------------------------------------------------
- * muxTask_sendKeepalive  (private — called from MUX task only)
+ * muxTxTask_sendKeepalive  (private — called from the TX task only)
  *--------------------------------------------------------------------------*/
 
-static void muxTask_sendKeepalive(void)
+static void muxTxTask_sendKeepalive(void)
 {
-    uint16_t encodedLen = 0U;
     MuxErr_t err;
 
     /*
      * Keepalive frame has no application payload (payload = NULL, len = 0).
      * MuxSpinelHdlc_encode handles the zero-length payload case.
      */
-    err = MuxSpinelHdlc_encode(
-            (uint8_t)MUX_NLI_KEEPALIVE,
-            (uint32_t)CMD_KEEPALIVE,
-            NULL,          /* no payload */
-            0U,
-            gMuxTask.txEncodedBuf,
-            (uint16_t)sizeof(gMuxTask.txEncodedBuf),
-            &encodedLen);
-
-    assert(err == MUX_SUCCESS);   /* internal sizing error */
-
-    if (err != MUX_SUCCESS)
-    {
-        return;
-    }
-
-    err = MuxUart_write(gMuxTask.txEncodedBuf, encodedLen);
+    (void)xSemaphoreTake(gMuxTxTask.txLock, portMAX_DELAY);
+    err = muxTx_encodeAndSend((uint8_t)MUX_NLI_KEEPALIVE, (uint32_t)CMD_KEEPALIVE, NULL, 0U);
+    xSemaphoreGive(gMuxTxTask.txLock);
 
     assert(err == MUX_SUCCESS);   /* UART TX error during keepalive */
     (void)err;
 }
 
 /*---------------------------------------------------------------------------
- * muxTask_handleTx  (private — called from MUX task only)
+ * muxRxAsm_feedByte  (private — called from UART ISR context only, via
+ * muxRx_handleBytes() below)
+ *
+ * Incremental HDLC frame assembler. Feeds one byte at a time and reports
+ * when a complete frame (opening flag .. closing flag, inclusive) has been
+ * accumulated in gMuxRx.frameBuf. Mirrors the garbage-skip /
+ * inter-frame-fill-collapse / closing-flag rules that MuxBuf_extractFrame()
+ * implemented as a multi-pass scan, but processes each byte exactly once
+ * with no rescanning and no shared buffer with the ISR.
+ *
+ * @param b            Next raw byte from the UART RX stream.
+ * @param[out] outFrameLen  Set to the completed frame's length when this
+ *                          function returns true.
+ *
+ * @return true   A complete frame is ready in gMuxRx.frameBuf.
+ * @return false  No complete frame yet — keep feeding bytes.
  *--------------------------------------------------------------------------*/
 
-static void muxTask_handleTx(const MuxQueueMsg_t *msg)
+static bool muxRxAsm_feedByte(uint8_t b, uint16_t *outFrameLen)
 {
-    uint16_t encodedLen = 0U;
-    MuxErr_t err;
-
-    assert(msg != NULL);   /* NULL message pointer — internal logic error */
-
-    if (!msg)
+    if (!gMuxRx.asmInFrame)
     {
-        return;
+        if (b != HDLC_FLAG)
+        {
+            /* Garbage before the first flag — discard. Not asserted:
+             * legitimate at start-up or after a line glitch. */
+            return false;
+        }
+        gMuxRx.frameBuf[0]    = HDLC_FLAG;
+        gMuxRx.asmLen         = 1U;
+        gMuxRx.asmInFrame     = true;
+        gMuxRx.asmPayloadSeen = false;
+        return false;
     }
 
-    err = MuxSpinelHdlc_encode(
-            msg->nli,
-            (uint32_t)SPINEL_CMD_PROP_VALUE_IS,
-            msg->buf,
-            msg->len,
-            gMuxTask.txEncodedBuf,
-            (uint16_t)sizeof(gMuxTask.txEncodedBuf),
-            &encodedLen);
+    if (b == HDLC_FLAG)
+    {
+        if (!gMuxRx.asmPayloadSeen)
+        {
+            /* Repeated flag before any payload — inter-frame fill, ignore. */
+            return false;
+        }
 
-    assert(err == MUX_SUCCESS);   /* encoding error — buffer sizing or invalid NLI */
+        /*
+         * Closing flag — frame complete. This same byte doubles as the
+         * opening flag for the next frame, collapsing consecutive flags
+         * exactly like the original multi-pass extractor did.
+         */
+        gMuxRx.frameBuf[gMuxRx.asmLen++] = HDLC_FLAG;
+        *outFrameLen = gMuxRx.asmLen;
+
+        gMuxRx.frameBuf[0]    = HDLC_FLAG;
+        gMuxRx.asmLen         = 1U;
+        gMuxRx.asmPayloadSeen = false;
+        return true;
+    }
+
+    if (gMuxRx.asmLen >= sizeof(gMuxRx.frameBuf))
+    {
+        /* Oversized/unterminated frame — discard rather than stalling the
+         * consumer, and resync on the next flag byte. Not asserted —
+         * runtime robustness for corrupted or partial data. */
+        gMuxRx.asmInFrame = false;
+        gMuxRx.asmLen     = 0U;
+        return false;
+    }
+
+    gMuxRx.frameBuf[gMuxRx.asmLen++] = b;
+    gMuxRx.asmPayloadSeen = true;
+    return false;
+}
+
+/*---------------------------------------------------------------------------
+ * muxRx_processFrame  (private — called from UART ISR context only)
+ *
+ * Decodes one complete raw HDLC frame (as assembled by muxRxAsm_feedByte()),
+ * parses the Spinel header, and dispatches the payload to the appropriate
+ * per-NLI callback. The callback (gMuxRx.rxCbs[nli]) runs synchronously
+ * here, still in ISR context — it and everything it calls must be ISR-safe.
+ *--------------------------------------------------------------------------*/
+
+static void muxRx_processFrame(const uint8_t *frame, uint16_t frameLen)
+{
+    MuxErr_t        err;
+    uint16_t        decodedLen;
+    uint8_t         nli;
+    uint32_t        cmd;
+    const uint8_t  *payloadPtr;
+    uint16_t        payloadLen;
+
+    /* ------------------------------------------------------------------
+     * HDLC decode: unescape and verify CRC
+     * ------------------------------------------------------------------ */
+    decodedLen = (uint16_t)sizeof(gMuxRx.decodedBuf);
+    err        = MuxHdlc_decode(frame, frameLen,
+                                gMuxRx.decodedBuf, decodedLen,
+                                &decodedLen);
+
+    if (err == MUX_ERR_CRC)
+    {
+        /* CRC mismatch is a recoverable runtime event (line noise).
+         * Not asserted — discard. */
+        return;
+    }
 
     if (err != MUX_SUCCESS)
     {
+        /* Other decode errors (framing, overflow).  Not asserted — could
+         * be caused by partial frames at startup or link glitches. */
         return;
     }
 
-    err = MuxUart_write(gMuxTask.txEncodedBuf, encodedLen);
+    /* ------------------------------------------------------------------
+     * Spinel parse: extract NLI, CMD, and payload pointer
+     * ------------------------------------------------------------------ */
+    err = MuxSpinel_parseFrame(gMuxRx.decodedBuf, decodedLen,
+                               &nli, &cmd,
+                               &payloadPtr, &payloadLen);
 
-    assert(err == MUX_SUCCESS);   /* UART TX error */
-    (void)err;
+    if (err != MUX_SUCCESS)
+    {
+        /* Malformed Spinel frame — discard */
+        return;
+    }
+
+    /* ------------------------------------------------------------------
+     * Dispatch by NLI
+     * ------------------------------------------------------------------ */
+    if (nli == (uint8_t)MUX_NLI_KEEPALIVE)
+    {
+        if (cmd == (uint32_t)CMD_KEEPALIVE_ACK)
+        {
+            /*
+             * Host acknowledged our keepalive.
+             * Dead-host detection and recovery are left for a future phase.
+             * For now, just acknowledge receipt silently.
+             */
+        }
+        /* Any other keepalive-channel CMD is ignored */
+    }
+    else if (nli < (uint8_t)MUX_NLI_COUNT)
+    {
+        if (nli == (uint8_t)MUX_NLI_OT)
+        {
+            gMuxOtFramesRx++;
+        }
+
+        if (gMuxRx.rxCbs[nli] != NULL)
+        {
+            gMuxRx.rxCbs[nli](payloadPtr, payloadLen);
+        }
+        /* If no callback is registered, the packet is silently dropped.
+         * Not asserted — stacks may not register callbacks during init. */
+    }
+    /* NLI values >= MUX_NLI_COUNT are silently ignored */
 }
 
 /*---------------------------------------------------------------------------
- * muxTask_handleRx  (private — called from MUX task only)
+ * muxRx_handleBytes  (private — this IS the UART ISR context; passed to
+ * MuxUart_open() as its rxHandler)
  *
- * Drains all complete HDLC frames from the ring buffer, decodes each one,
- * and dispatches the payload to the appropriate per-NLI callback.
+ * Feeds each received byte into the incremental HDLC frame assembler and
+ * processes any frame it completes — synchronously, before returning to
+ * muxUart_rxCallback(). There is no task hand-off and no intermediate
+ * buffer: this function, muxRxAsm_feedByte(), muxRx_processFrame(), and
+ * every registered per-NLI callback all run in UART ISR context and must
+ * be ISR-safe (no blocking calls, no non-FromISR FreeRTOS/ICall APIs,
+ * bounded execution time).
  *--------------------------------------------------------------------------*/
 
-static void muxTask_handleRx(void)
+static void muxRx_handleBytes(const uint8_t *buf, uint16_t len)
 {
-    MuxErr_t         err;
-    uintptr_t        key;
-    uint16_t         frameLen;
-    uint16_t         decodedLen;
-    uint8_t          nli;
-    uint32_t         cmd;
-    const uint8_t   *payloadPtr;
-    uint16_t         payloadLen;
+    uint16_t frameLen;
+    uint16_t i;
 
-    /*
-     * Drain all frames that are currently in the ring buffer.
-     * Each iteration extracts one complete HDLC frame (delimited by 0x7E).
-     * Loop exits when MuxBuf_extractFrame returns MUX_ERR_NO_PACKET
-     * (no complete frame available yet).
-     */
-    while (1)
+    for (i = 0U; i < len; i++)
     {
-        /*
-         * Critical section: prevent the UART ISR from writing to the ring
-         * buffer concurrently while the MUX task is reading from it.
-         */
-        key      = HwiP_disable();
-        frameLen = (uint16_t)sizeof(gMuxTask.rxFrameBuf);
-        err      = MuxBuf_extractFrame(&gMuxTask.rxBuf,
-                                       gMuxTask.rxFrameBuf,
-                                       frameLen,
-                                       &frameLen);
-        HwiP_restore(key);
-
-        if (err == MUX_ERR_NO_PACKET)
+        if (muxRxAsm_feedByte(buf[i], &frameLen))
         {
-            /* Normal: ring buffer drained, no more complete frames */
-            break;
+            muxRx_processFrame(gMuxRx.frameBuf, frameLen);
         }
-
-        if (err != MUX_SUCCESS)
-        {
-            /*
-             * Unexpected ring buffer error (overflow, etc.).
-             * The frame has been discarded by extractFrame.  Continue
-             * draining in case more frames follow.
-             * Not asserted here — runtime robustness for corrupted data.
-             */
-            continue;
-        }
-
-        /* ------------------------------------------------------------------
-         * HDLC decode: unescape and verify CRC
-         * ------------------------------------------------------------------ */
-        decodedLen = (uint16_t)sizeof(gMuxTask.rxDecodedBuf);
-        err        = MuxHdlc_decode(gMuxTask.rxFrameBuf, frameLen,
-                                    gMuxTask.rxDecodedBuf, decodedLen,
-                                    &decodedLen);
-
-        if (err == MUX_ERR_CRC)
-        {
-            /* CRC mismatch is a recoverable runtime event (line noise).
-             * Not asserted — discard and continue. */
-            continue;
-        }
-
-        if (err != MUX_SUCCESS)
-        {
-            /* Other decode errors (framing, overflow).  Not asserted — could
-             * be caused by partial frames at startup or link glitches. */
-            continue;
-        }
-
-        /* ------------------------------------------------------------------
-         * Spinel parse: extract NLI, CMD, and payload pointer
-         * ------------------------------------------------------------------ */
-        err = MuxSpinel_parseFrame(gMuxTask.rxDecodedBuf, decodedLen,
-                                   &nli, &cmd,
-                                   &payloadPtr, &payloadLen);
-
-        if (err != MUX_SUCCESS)
-        {
-            /* Malformed Spinel frame — discard */
-            continue;
-        }
-
-        /* ------------------------------------------------------------------
-         * Dispatch by NLI
-         * ------------------------------------------------------------------ */
-        if (nli == (uint8_t)MUX_NLI_KEEPALIVE)
-        {
-            if (cmd == (uint32_t)CMD_KEEPALIVE_ACK)
-            {
-                /*
-                 * Host acknowledged our keepalive.
-                 * Dead-host detection and recovery are left for a future phase.
-                 * For now, just acknowledge receipt silently.
-                 */
-            }
-            /* Any other keepalive-channel CMD is ignored */
-        }
-        else if (nli < (uint8_t)MUX_NLI_COUNT)
-        {
-            if (gMuxTask.rxCbs[nli] != NULL)
-            {
-                gMuxTask.rxCbs[nli](payloadPtr, payloadLen);
-            }
-            /* If no callback is registered, the packet is silently dropped.
-             * Not asserted — stacks may not register callbacks during init. */
-        }
-        /* NLI values >= MUX_NLI_COUNT are silently ignored */
     }
 }
 
 /*---------------------------------------------------------------------------
- * muxTask_fn  (MUX task entry point)
+ * muxTxTask_fn  (TX task entry point)
+ *
+ * Data sends no longer go through this task — MuxTask_sendPacket() writes
+ * synchronously in the caller's own context (see above). This task now
+ * exists solely to send the periodic keepalive.
  *--------------------------------------------------------------------------*/
 
-static void muxTask_fn(void *arg)
+static void muxTxTask_fn(void *arg)
 {
-    BaseType_t  notified;
-    uint32_t    notifiedBits;
-
     (void)arg;
 
     /* Send an initial keepalive so the host knows the device is up */
-    muxTask_sendKeepalive();
+    muxTxTask_sendKeepalive();
 
     for (;;)
     {
-        /*
-         * Block until either:
-         *   a) MUX_NOTIFY_TX_BIT set by MuxTask_sendPacket()  (stack → MUX → host)
-         *   b) MUX_NOTIFY_RX_BIT set by UART ISR              (host → MUX → stack)
-         *   c) Timeout expires                                 (send periodic keepalive)
-         *
-         * ulBitsToClearOnEntry = 0: preserve any bits that arrived while we
-         *   were processing the previous iteration.
-         * ulBitsToClearOnExit  = all: atomically snapshot and clear so no
-         *   notification is lost between reading and re-entering the wait.
-         */
-        notifiedBits = 0U;
-        notified = xTaskNotifyWait(0U,
-                                   (uint32_t)(MUX_NOTIFY_TX_BIT | MUX_NOTIFY_RX_BIT),
-                                   &notifiedBits,
-                                   pdMS_TO_TICKS(MUX_KEEPALIVE_PERIOD_MS));
-
-        if (notifiedBits & (uint32_t)MUX_NOTIFY_TX_BIT)
-        {
-            MuxQueueMsg_t txMsg;
-
-            /*
-             * Drain the entire TX queue.  Multiple sendPacket() calls may have
-             * been coalesced into a single TX_BIT notification while the task
-             * was busy — process them all before sleeping again.
-             */
-            while (xQueueReceive(gMuxTask.txQueue, &txMsg, 0) == pdPASS)
-            {
-                muxTask_handleTx(&txMsg);
-            }
-        }
-
-        if (notifiedBits & (uint32_t)MUX_NOTIFY_RX_BIT)
-        {
-            /*
-             * UART ISR wrote bytes to the ring buffer and set RX_BIT.
-             * Drain all complete HDLC frames now available.
-             */
-            muxTask_handleRx();
-        }
-
-        if (notified == pdFALSE)
-        {
-            /*
-             * Timeout — no TX or RX activity for MUX_KEEPALIVE_PERIOD_MS.
-             * Send the periodic keepalive to the host.
-             */
-            muxTask_sendKeepalive();
-        }
+        vTaskDelay(pdMS_TO_TICKS(MUX_KEEPALIVE_PERIOD_MS));
+        muxTxTask_sendKeepalive();
     }
 }

@@ -429,13 +429,13 @@ uint16 NPITL_writeTL(uint8 *buf, uint16 len)
     npiTxActive = TRUE;
     txPktCount++;
 
+    ICall_leaveCriticalSection(key);
+
     len = transportWrite(npiTxBufLen);
 
 #if (NPI_FLOW_CTRL == 1)
     SRDY_ENABLE();
 #endif // NPI_FLOW_CTRL = 1
-
-    ICall_leaveCriticalSection(key);
 
     return len;
 }

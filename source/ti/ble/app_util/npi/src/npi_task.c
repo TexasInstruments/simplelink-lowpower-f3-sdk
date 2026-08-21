@@ -185,7 +185,9 @@
 #endif // __TI_COMPILER_VERSION__
 
 //! \brief Task priority for NPI RTOS task
-#define NPITASK_PRIORITY 2
+//! Raised from 2 to 7 so NPI can drain BLE HCI TX responses without being
+//! starved during active Thread operations.
+#define NPITASK_PRIORITY 7
 
 #ifdef FREERTOS
 // Queue configuration

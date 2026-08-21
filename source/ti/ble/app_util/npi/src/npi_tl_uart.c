@@ -459,12 +459,12 @@ uint16 NPITLUART_writeTransport(uint16 len)
     // Check to see if transport is successful. If not, reset TxLen to allow
     // another write to be processed
 
+    ICall_leaveCriticalSection(key);
     if(UART2_write(uartHandle, TransportTxBuf, TransportTxLen, NULL) != UART2_STATUS_SUCCESS)
     {
       TransportTxLen = 0;
     }
 #endif // NPI_FLOW_CTRL = 1
-    ICall_leaveCriticalSection(key);
 
     return TransportTxLen;
 }

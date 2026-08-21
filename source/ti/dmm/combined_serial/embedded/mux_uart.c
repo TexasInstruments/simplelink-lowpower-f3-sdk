@@ -44,11 +44,19 @@
 
 /* TI-Drivers */
 #include <ti/drivers/UART2.h>
-#include <ti/drivers/dpl/HwiP.h>   /* HwiP_disable / HwiP_restore */
 
-/* FreeRTOS */
-#include <FreeRTOS.h>
-#include <task.h>
+/*---------------------------------------------------------------------------
+ * Raw byte-level TX/RX instrumentation — every byte physically written to
+ * or read from the UART2 peripheral, regardless of which stack (OT/BLE/ZB/
+ * keepalive) it belongs to. Non-static so a debugger can watch them
+ * directly. Compare against the per-NLI OT-frame counters in
+ * mux_task_app.c (gMuxOtFramesTx/gMuxOtFramesRx) to localize a loss: if
+ * bytes left the UART here but the corresponding OT-frame counter didn't
+ * increment, the loss is above this layer (encode/dispatch); if bytes never
+ * reached here at all, the loss is below (UART hardware/driver).
+ *--------------------------------------------------------------------------*/
+volatile uint32_t gMuxUartBytesTx;
+volatile uint32_t gMuxUartBytesRx;
 
 /*---------------------------------------------------------------------------
  * Module-private state  (singleton — one MUX UART per device)
@@ -56,12 +64,10 @@
 
 typedef struct
 {
-    UART2_Handle      handle;                        /*!< Open UART2 handle          */
-    MuxRingBuf_t     *rxBuf;                         /*!< Intermediary ring buffer   */
-    TaskHandle_t      muxTask;                       /*!< MUX task to notify on RX   */
-    uint32_t          rxNotifyBit;                   /*!< Notification bit for RX    */
-    uint8_t           rxStagingBuf[MUX_UART_RX_CHUNK]; /*!< DMA→ringbuf staging     */
-    bool              isOpen;                        /*!< Guard against double-open  */
+    UART2_Handle         handle;                          /*!< Open UART2 handle          */
+    MuxUart_RxHandler_t  rxHandler;                        /*!< Called from ISR per chunk  */
+    uint8_t              rxStagingBuf[MUX_UART_RX_CHUNK]; /*!< DMA staging (ISR only)  */
+    bool                 isOpen;                          /*!< Guard against double-open  */
 } MuxUartState_t;
 
 static MuxUartState_t gUart = { 0 };
@@ -78,26 +84,22 @@ static void muxUart_rxCallback(UART2_Handle handle, void *buf, size_t count,
  *--------------------------------------------------------------------------*/
 
 MuxErr_t MuxUart_open(uint8_t uartIndex, uint32_t baudRate,
-                      MuxRingBuf_t *rxBuf, TaskHandle_t muxTask,
-                      uint32_t rxNotifyBit)
+                      MuxUart_RxHandler_t rxHandler)
 {
     UART2_Params params;
     int_fast16_t status;
 
-    assert(rxBuf    != NULL);   /* NULL ring buffer pointer  */
-    assert(muxTask  != NULL);   /* NULL task handle          */
-    assert(!gUart.isOpen);      /* MuxUart_open called twice */
+    assert(rxHandler != NULL);   /* NULL RX handler           */
+    assert(!gUart.isOpen);       /* MuxUart_open called twice */
 
-    if (!rxBuf || !muxTask)
+    if (!rxHandler)
     {
         return MUX_ERR_INVALID;
     }
 
-    /* Store references before opening so the callback can use them
+    /* Store the handler before opening so the callback can use it
      * immediately after UART2_open() arms the first read. */
-    gUart.rxBuf       = rxBuf;
-    gUart.muxTask     = muxTask;
-    gUart.rxNotifyBit = rxNotifyBit;
+    gUart.rxHandler = rxHandler;
 
     /* Configure UART2 parameters */
     UART2_Params_init(&params);
@@ -119,9 +121,7 @@ MuxErr_t MuxUart_open(uint8_t uartIndex, uint32_t baudRate,
     if (gUart.handle == NULL)
     {
         /* UART2_open() failed — hardware not available or index invalid */
-        gUart.rxBuf       = NULL;
-        gUart.muxTask     = NULL;
-        gUart.rxNotifyBit = 0U;
+        gUart.rxHandler = NULL;
         return MUX_ERR_UART;
     }
 
@@ -134,10 +134,8 @@ MuxErr_t MuxUart_open(uint8_t uartIndex, uint32_t baudRate,
     if (status != UART2_STATUS_SUCCESS)
     {
         UART2_close(gUart.handle);
-        gUart.handle      = NULL;
-        gUart.rxBuf       = NULL;
-        gUart.muxTask     = NULL;
-        gUart.rxNotifyBit = 0U;
+        gUart.handle    = NULL;
+        gUart.rxHandler = NULL;
         return MUX_ERR_UART;
     }
 
@@ -159,10 +157,8 @@ void MuxUart_close(void)
         gUart.handle = NULL;
     }
 
-    gUart.rxBuf       = NULL;
-    gUart.muxTask     = NULL;
-    gUart.rxNotifyBit = 0U;
-    gUart.isOpen      = false;
+    gUart.rxHandler = NULL;
+    gUart.isOpen    = false;
 }
 
 /*---------------------------------------------------------------------------
@@ -194,6 +190,8 @@ MuxErr_t MuxUart_write(const uint8_t *buf, uint16_t len)
 
     assert(bytesWritten == (size_t)len);   /* partial write — should not happen in blocking mode */
 
+    gMuxUartBytesTx += (uint32_t)bytesWritten;
+
     return MUX_SUCCESS;
 }
 
@@ -203,60 +201,29 @@ MuxErr_t MuxUart_write(const uint8_t *buf, uint16_t len)
  * Called by the UART2 driver after each completed UART2_read().
  * Execution context: UART hardware interrupt (ISR).
  *
- * This function must:
- *   1. Copy received bytes into the intermediary ring buffer (critical section).
- *   2. Set MUX_NOTIFY_RX_BIT in the MUX task's notification value.
- *   3. Re-arm the next UART2_read() so bytes keep flowing.
+ * Dispatches the received bytes directly to gUart.rxHandler — synchronously,
+ * still in ISR context — then re-arms the next UART2_read(). There is no
+ * intermediate buffer and no task hand-off: rxHandler (and everything it
+ * calls — the frame assembler, decoder, and per-NLI RX callbacks in
+ * mux_task_app.c) must be ISR-safe. See the file-level ISR-safety note in
+ * mux_uart.h.
  *--------------------------------------------------------------------------*/
 
 static void muxUart_rxCallback(UART2_Handle handle, void *buf, size_t count,
                                 void *userArg, int_fast16_t status)
 {
-    uintptr_t         key;
-    BaseType_t        higherPriorityTaskWoken = pdFALSE;
-    MuxErr_t          err;
-
     (void)userArg;   /* unused — module state accessed via gUart */
 
-    if (status != UART2_STATUS_SUCCESS || count == 0U)
+    if (status == UART2_STATUS_SUCCESS && count != 0U)
     {
-        /*
-         * Hardware error (framing, overrun, break) or zero-byte callback.
-         * Re-arm the read and return — the MUX task does not need to wake
-         * since there is no new data to process.
-         * Not asserted: hardware errors are runtime events on a real link.
-         */
-        UART2_read(handle, gUart.rxStagingBuf, MUX_UART_RX_CHUNK, NULL);
-        return;
+        gMuxUartBytesRx += (uint32_t)count;
+        gUart.rxHandler((const uint8_t *)buf, (uint16_t)count);
     }
-
     /*
-     * Write received bytes into the intermediary ring buffer.
-     * Critical section: prevents the MUX task from reading the ring buffer
-     * concurrently while we are modifying it from ISR context.
+     * Hardware error (framing, overrun, break) or zero-byte callback: skip
+     * dispatch, just re-arm below. Not asserted — hardware errors are
+     * runtime events on a real link.
      */
-    key = HwiP_disable();
-    err = MuxBuf_write(gUart.rxBuf, (const uint8_t *)buf, (uint16_t)count);
-    HwiP_restore(key);
-
-    /*
-     * If the ring buffer was full we dropped bytes — assert to catch this
-     * during development (means MUX task is not draining fast enough).
-     */
-    assert(err == MUX_SUCCESS);   /* ring buffer full — increase MAX_RING_BUF_SIZE or MUX task priority */
-
-    /*
-     * Wake the MUX task.  xTaskNotifyFromISR with eSetBits is safe from ISR
-     * context and idempotent — if the task is already running, the bit stays
-     * set so it will call muxTask_handleRx() again on its next iteration.
-     * The scheduler yields to the MUX task after this ISR exits if it has
-     * higher priority than the interrupted task.
-     */
-    (void)xTaskNotifyFromISR(gUart.muxTask,
-                             gUart.rxNotifyBit,
-                             eSetBits,
-                             &higherPriorityTaskWoken);
-    portYIELD_FROM_ISR(higherPriorityTaskWoken);
 
     /*
      * Re-arm the next read.  UART2_read() in callback mode is safe to call

@@ -53,6 +53,10 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti_drivers_config.h>
 
+/* FreeRTOS — needed for the BLE RX delivery task */
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include "../mux_common.h"
 #include "mux_task_app.h"
 #include "mux_virt_uart.h"
@@ -67,6 +71,30 @@
  * while NPI is processing the previous one.
  */
 #define VIRT_RX_RING_SIZE  (MUX_MSG_BUF_LEN * 2U)  /* 1024 B — power of 2 */
+
+/*!
+ * BLE RX delivery task configuration.
+ *
+ * This task exists solely to call virtUart_serviceRead() from TASK context
+ * so that the NPI readCb chain (readCb → NPITL_transmissionCallBack →
+ * NPITask_transportRXCallBack → EventP_post) runs from a task rather than
+ * from the UART ISR.
+ *
+ * When EventP_post is called from ISR context it uses
+ * xEventGroupSetBitsFromISR(), which defers the actual bit-set to the
+ * FreeRTOS timer/daemon task via a queue. If that queue is full, or the
+ * timer task is starved, the event is silently dropped and NPI never wakes
+ * up to process the incoming HCI command — causing BlueZ scan timeouts.
+ *
+ * By running virtUart_serviceRead() from task context, EventP_post uses
+ * xEventGroupSetBits() directly, which sets the bit immediately with no
+ * timer-task intermediary.
+ *
+ * Priority: same as NPI task (NPITASK_PRIORITY = 7). They round-robin;
+ * NPI processes the event as soon as it is posted.
+ */
+#define MUX_BLE_RX_TASK_PRIORITY    (7U)
+#define MUX_BLE_RX_TASK_STACK_WORDS (256U)
 
 /*---------------------------------------------------------------------------
  * Virtual UART state
@@ -103,18 +131,29 @@ typedef struct
      */
     bool inReadCb;
 
+    /*
+     * Sentinel handle returned by MuxVirtUart_npiOpen when
+     * index == CONFIG_UART2_0. Any subsequent MuxVirtUart_npi* call that
+     * receives this pointer is handled by the virtual implementation; the
+     * physical driver never sees it.
+     */
+    UART2_Config cfg;
+
 } MuxVirtUartState_t;
 
 static MuxVirtUartState_t gVirt;
 
-/*
- * Sentinel handle returned by MuxVirtUart_npiOpen when index == CONFIG_UART2_0.
- * Any subsequent MuxVirtUart_npi* call that receives this pointer is handled by
- * the virtual implementation; the physical driver never sees it.
- */
-static UART2_Config gVirtCfg = { .object = NULL, .hwAttrs = NULL };
+#define IS_VIRT(h)  ((h) == (UART2_Handle)&gVirt.cfg)
 
-#define IS_VIRT(h)  ((h) == (UART2_Handle)&gVirtCfg)
+/*---------------------------------------------------------------------------
+ * BLE RX delivery task state (static allocation — no heap).
+ *--------------------------------------------------------------------------*/
+static TaskHandle_t gBleRxTaskHandle;
+static StaticTask_t gBleRxTaskTcb;
+static StackType_t  gBleRxTaskStack[MUX_BLE_RX_TASK_STACK_WORDS];
+
+/* Forward declaration — defined after virtUart_serviceRead(). */
+static void muxBleRxTask_fn(void *arg);
 
 /*---------------------------------------------------------------------------
  * Ring-buffer helpers
@@ -206,7 +245,7 @@ static void virtUart_serviceRead(void)
         if (gVirt.readCb != NULL)
         {
             gVirt.inReadCb = true;
-            gVirt.readCb((UART2_Handle)&gVirtCfg,
+            gVirt.readCb((UART2_Handle)&gVirt.cfg,
                          buf, (size_t)got,
                          gVirt.userArg,
                          UART2_STATUS_SUCCESS);
@@ -245,7 +284,23 @@ UART2_Handle MuxVirtUart_npiOpen(uint_least8_t index, UART2_Params *params)
 
     gVirt.isOpen = true;
 
-    return (UART2_Handle)&gVirtCfg;
+    /* Create the BLE RX delivery task once. It calls virtUart_serviceRead()
+     * from task context so EventP_post uses xEventGroupSetBits() (immediate)
+     * rather than xEventGroupSetBitsFromISR() (deferred via timer task,
+     * lossy when the timer task command queue is full). */
+    if (gBleRxTaskHandle == NULL)
+    {
+        gBleRxTaskHandle = xTaskCreateStatic(
+            muxBleRxTask_fn,
+            "BleRxDlvr",
+            MUX_BLE_RX_TASK_STACK_WORDS,
+            NULL,
+            (UBaseType_t)MUX_BLE_RX_TASK_PRIORITY,
+            gBleRxTaskStack,
+            &gBleRxTaskTcb);
+    }
+
+    return (UART2_Handle)&gVirt.cfg;
 }
 
 /*===========================================================================
@@ -312,7 +367,7 @@ int_fast16_t MuxVirtUart_npiReadCancel(UART2_Handle handle)
     /* Fire readCb with zero bytes to match physical driver behaviour. */
     if (wasPending && (gVirt.readCb != NULL))
     {
-        gVirt.readCb((UART2_Handle)&gVirtCfg,
+        gVirt.readCb((UART2_Handle)&gVirt.cfg,
                      buf, 0U,
                      gVirt.userArg,
                      UART2_STATUS_SUCCESS);
@@ -364,13 +419,13 @@ int_fast16_t MuxVirtUart_npiWrite(UART2_Handle handle, const void *buffer,
      */
     if ((gVirt.eventMask & UART2_EVENT_TX_FINISHED) && (gVirt.eventCb != NULL))
     {
-        gVirt.eventCb((UART2_Handle)&gVirtCfg,
+        gVirt.eventCb((UART2_Handle)&gVirt.cfg,
                       UART2_EVENT_TX_FINISHED, 0U, gVirt.userArg);
     }
     else if (gVirt.writeCb != NULL)
     {
         /* Fallback for code that does not subscribe to TX_FINISHED. */
-        gVirt.writeCb((UART2_Handle)&gVirtCfg,
+        gVirt.writeCb((UART2_Handle)&gVirt.cfg,
                       (void *)buffer, size,
                       gVirt.userArg, UART2_STATUS_SUCCESS);
     }
@@ -379,11 +434,35 @@ int_fast16_t MuxVirtUart_npiWrite(UART2_Handle handle, const void *buffer,
 }
 
 /*===========================================================================
+ * muxBleRxTask_fn
+ *
+ * BLE RX delivery task. Blocks on a direct task notification posted by
+ * MuxVirtUart_rxNotify() from ISR context via vTaskNotifyGiveFromISR().
+ * Calls virtUart_serviceRead() from TASK context so that the downstream
+ * EventP_post() call uses xEventGroupSetBits() (immediate, reliable) rather
+ * than xEventGroupSetBitsFromISR() (deferred to timer task, lossy).
+ *==========================================================================*/
+
+static void muxBleRxTask_fn(void *arg)
+{
+    (void)arg;
+    while (1)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        virtUart_serviceRead();
+    }
+}
+
+/*===========================================================================
  * MuxVirtUart_rxNotify
  *
- * Called by the MUX task on the NLI_BLE receive path with NPI-framed HCI
- * bytes decoded from the host HDLC/Spinel frame.  Appends to the ring
- * buffer and triggers NPI delivery.
+ * Called by the MUX UART ISR on the NLI_BLE receive path with NPI-framed
+ * HCI bytes decoded from the host HDLC/Spinel frame. Appends to the ring
+ * buffer and wakes the BLE RX delivery task via vTaskNotifyGiveFromISR().
+ *
+ * vTaskNotifyGiveFromISR increments the task notification counter directly
+ * in the TCB — no timer/daemon task intermediary, cannot be dropped
+ * silently regardless of system load.
  *==========================================================================*/
 
 void MuxVirtUart_rxNotify(const uint8_t *buf, uint16_t len)
@@ -397,5 +476,7 @@ void MuxVirtUart_rxNotify(const uint8_t *buf, uint16_t len)
     ringWrite(buf, len);
     HwiP_restore(key);
 
-    virtUart_serviceRead();
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(gBleRxTaskHandle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
