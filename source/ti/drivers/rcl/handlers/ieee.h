@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025, Texas Instruments Incorporated
+ * Copyright (c) 2020-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_handlers_ieee_h__include
-#define ti_drivers_RCL_handlers_ieee_h__include
+#ifndef ti_drivers_rcl_handlers_ieee__include
+#define ti_drivers_rcl_handlers_ieee__include
 
 #include <stdint.h>
 #include <ti/drivers/rcl/RCL_Command.h>
@@ -84,7 +84,7 @@ typedef enum
 
 typedef struct
 {
-    uint8_t panNo;                              /*!< PAN number to update (only 0 supported in this version) */
+    uint8_t panNo;                              /*!< PAN number to update  */
     uint8_t index;                              /*!< Index into source matching table to update */
     RCL_IEEE_SourceMatchingOperation operation; /*!< Operation to perform on entry */
 } RCL_IEEE_SourceMatchingUpdate;
@@ -133,7 +133,6 @@ RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableShort(RCL_CmdIeeeRxTx *c
  *  @param  newAddr             If entry is changed: Pointer to the new address to set
  *
  * @return                      Result telling if update was successful
- * @note                        Not supported in this version
  *
  */
 RCL_IEEE_UpdateResult RCL_IEEE_updateSourceMatchingTableExt(RCL_CmdIeeeRxTx *cmd, RCL_IEEE_SourceMatchingUpdate description, const uint64_t *newAddr);
@@ -254,4 +253,4 @@ uint8_t RCL_IEEE_getRxLqi(const RCL_Buffer_DataEntry *rxEntry);
  */
 uint32_t RCL_IEEE_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry);
 
-#endif /* ti_drivers_RCL_handlers_ble5_h__include */
+#endif /* ti_drivers_rcl_handlers_ieee__include */

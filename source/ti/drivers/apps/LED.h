@@ -172,7 +172,7 @@
  *  "ti_drivers_config.c"
  *  @code
  *  #include <ti/drivers/GPIO.h>
- *  GPIO_PinConfig gpioPinConfigs[] = {
+ *  GPIO_PinConfig gpioPinConfigs[GPIO_NUMBER_OF_CONFIGS] = {
  *      GPIOMSP432_P1_0 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
  *      GPIOMSP432_P2_0 | GPIO_CFG_OUT_STD | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW,
  *  }

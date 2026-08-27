@@ -93,7 +93,7 @@ extern "C"
 /*******************************************************************************
  * INCLUDES
  */
-#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/RCL.h>
 #include "ti/ble/stack_util/bcomdef.h"
 /*******************************************************************************
  * MACROS
@@ -112,9 +112,28 @@ extern "C"
 #define LL_SCHED_START_CS_PRECAL    4
 #define LL_SDAA_SCHED_HANDLED       5
 //
-#define LL_SCHED_SETUP_PROCESSING_TIME  RAT_TICKS_IN_220US
-#define LL_SCHED_PRE_CUTOFF             (10 * RAT_TICKS_IN_625US)
-#define LL_SCHED_POST_CUTOFF            (4 * RAT_TICKS_IN_625US)
+#define LL_SCHED_SETUP_PROCESSING_TIME  RAT_TICKS_IN_100US
+#define LL_SCHED_PRE_CUTOFF             RAT_TICKS_IN_100US
+// POST_CUTOFF must cover three components for peripheral connections:
+//   1. SW path: secondary-task hard-stop ISR -> osal_set_event ->
+//      [RTOS context switch to LL task] -> llExtScan_PostProcess ->
+//      MAP_llScheduler() -> llSchedulerSecondaryTasksConn ->
+//      llFindStartType -> llSetTaskCentral/Peripheral -> llScheduleTask ->
+//      RCL_Command_submit (~300us typical, up to ~400us worst case)
+//   2. SETUP_PROCESSING_TIME: time for RCL to configure the radio after
+//      RCL_Command_submit (~220us)
+//   3. rxWindowAdjust (peripheral only): the Rx window opens rxWindowAdjust
+//      before conn.cmd.absStartTime (the anchor). With 10ms conn interval and
+//      ~500ppm SCA, rxWindowAdjust ≈ 26us nominally but grows with consecutive
+//      missed events; observed ~180us. Max ~480us for long intervals.
+//
+// 500us was insufficient for peripheral: conn.cmd.absStartTime = anchor, and
+// RCL internally opens the Rx window rxWindowAdjust=180us before the anchor.
+// With POST_CUTOFF=500us and SW path ~300us, RCL_Command_submit arrived at
+// anchor-200us but needed to arrive by anchor-400us (SETUP+rxWindowAdjust).
+// 1ms provides margin: 1000us - 300us SW - 220us setup = 480us before anchor,
+// which exceeds the observed 180us rxWindowAdjust with comfortable margin.
+#define LL_SCHED_POST_CUTOFF            RAT_TICKS_IN_1MS
 #define LL_SCHED_OVERHEAD               (LL_SCHED_PRE_CUTOFF + LL_SCHED_POST_CUTOFF)
 
 // Task ID
@@ -260,7 +279,7 @@ extern RCL_Command *llSchedulerGetCsCmd( void );
 extern taskInfo_t *llGetTask( uint16 llTaskID );
 extern uint8       llGetTaskState( uint16 llTaskID );
 extern uint8       llActiveTask( uint16 llTaskID );
-extern uint8       llGetActiveTasks( void );
+extern uint16      llGetActiveTasks( void );
 uint16_t           llGetCurTaskID( void );
 extern uint8       llGetNumTasks( void );
 extern void        llSetupRatCompare( taskInfo_t *llTask );

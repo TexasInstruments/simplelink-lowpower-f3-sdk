@@ -108,6 +108,7 @@ var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
 zigbee.deviceType                    = ["zed"];
 zigbee.deviceTypeReadOnly            = false;
 
+
 if(system.deviceData.deviceId.match(/CC23.*/))
 {
     // Suppress warning on RNG module

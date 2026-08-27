@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../attestation.c -> attestation.c",
+            "+../attestation.syscfg -> attestation.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2745R10_Q1/Board.html -> Board.html",
+            "+../../hex2cbor.py -> hex2cbor.py",
+            "+../../hex2pem.py -> hex2pem.py",
+            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../README.html -> README.html",
+            "+../../README.md -> README.md"
+        ]
+    }
+]

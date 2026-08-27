@@ -90,7 +90,7 @@
 #define EIP130TOKEN_RESULT_INVALID_STATE        (-19)   /** Invalid state */
 #define EIP130TOKEN_RESULT_OTP_WRITE_ERROR      (-20)   /** OTP write error */
 #define EIP130TOKEN_RESULT_ASSET_EXPIRED        (-21)   /** Asset Lifetime has expired */
-#define EIP130TOKEN_RESULT_COPROCESSOR_IF_ERROR (-22)   /** Co-Processor interface error */
+#define EIP130TOKEN_RESULT_COPROCESSOR_IF_ERROR (-22)   /** Coprocessor interface error */
 #define EIP130TOKEN_RESULT_PANIC_ERROR          (-31)   /** Panic error */
 
 /** DMA related errors are bus related [-32 ... -63]: Bus specific error */
@@ -102,6 +102,27 @@
 /** The FIPS-Approved service indication */
 #define EIP130TOKEN_RESULT_FASVC                (BIT_16)
 
+/*----------------------------------------------------------------------------
+ * Eip130Token_Result_StripFASvc
+ *
+ * Strip the FIPS-Approved service indication bit from a token result code so
+ * that the remaining value can be compared against the signed error constants
+ * defined above.
+ */
+static inline int32_t
+Eip130Token_Result_StripFASvc(const int32_t tokenResult)
+{
+    if (((uint32_t)tokenResult & BIT_31) != 0U)
+    {
+        /* Negative value, so we must set the FASVC bit and return a negative value */
+        return (int32_t)((uint32_t)tokenResult | EIP130TOKEN_RESULT_FASVC);
+    }
+    else
+    {
+        /* Positive value, so we can just clear the FASVC bit and return a positive value */
+        return (int32_t)((uint32_t)tokenResult & ~EIP130TOKEN_RESULT_FASVC);
+    }
+}
 
 #endif /* INCLUDE_GUARD_EIP130TOKEN_RESULT_H */
 

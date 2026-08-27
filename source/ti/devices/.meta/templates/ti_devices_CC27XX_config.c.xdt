@@ -41,6 +41,8 @@
     const Common = system.getScript("/ti/drivers/Common.js");
     var i = 0;
     const isCC27xxx7 = system.deviceData.deviceId.match(/CC27...7/) !== null;
+    const isCC27xxx15 = system.deviceData.deviceId.match(/CC27...15/) !== null;
+    const isCC27xxx20 = system.deviceData.deviceId.match(/CC27...20/) !== null;
 
     /**
      * Formats a hex string into a formatted byte array string representation
@@ -214,12 +216,26 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .flashProt.writeEraseProt.mainSectors0_31 = 0x`inst.writeEraseProt_mainSectors0_31.toString(16)`,
     .flashProt.writeEraseProt.mainSectors32_255 = 0x`inst.writeEraseProt_mainSectors32_255.toString(16)`,
     .flashProt.writeEraseProt.mainSectors256_511 = 0x`inst.writeEraseProt_mainSectors256_511.toString(16)`,
+% if (isCC27xxx15 || isCC27xxx20){
+    .flashProt.writeEraseProt.mainSectors512_767 = 0x`inst.writeEraseProt_mainSectors512_767.toString(16)`,
+% }
+% if (isCC27xxx20){
+    .flashProt.writeEraseProt.mainSectors768_1023 = 0x`inst.writeEraseProt_mainSectors768_1023.toString(16)`,
+% }
 
     .flashProt.writeEraseProt.ccfgSector = `inst.writeEraseProt_ccfgSector ? 0 : 1`,
     .flashProt.writeEraseProt.fcfgSector = `inst.writeEraseProt_fcfgSector ? 0 : 1`,
     .flashProt.writeEraseProt.engrSector = `inst.writeEraseProt_engrSector ? 0 : 1`,
     .flashProt.writeEraseProt.scfgSector = `inst.writeEraseProt_scfgSector ? 0 : 1`,
     .flashProt.writeEraseProt.vlogSector = `inst.writeEraseProt_vlogSector ? 0 : 1`,
+% if (isCC27xxx15 || isCC27xxx20){
+    .flashProt.writeEraseProt.b2nm0Sector  = `inst.writeEraseProt_b2nm0Sector  ? 0 : 1`,
+    .flashProt.writeEraseProt.b2nm1Sector  = `inst.writeEraseProt_b2nm1Sector  ? 0 : 1`,
+    .flashProt.writeEraseProt.b2trimSector = `inst.writeEraseProt_b2trimSector ? 0 : 1`,
+    .flashProt.writeEraseProt.b3nm0Sector  = `inst.writeEraseProt_b3nm0Sector  ? 0 : 1`,
+    .flashProt.writeEraseProt.b3nm1Sector  = `inst.writeEraseProt_b3nm1Sector  ? 0 : 1`,
+    .flashProt.writeEraseProt.b3trimSector = `inst.writeEraseProt_b3trimSector ? 0 : 1`,
+% }
 
     .flashProt.readProt.mainSectors = 0x`inst.mainSectors.toString(16)`,
     .flashProt.readProt.ccfgSector = 0x`inst.ccfgSector.toString(16)`,
@@ -227,6 +243,12 @@ const ccfg_t ccfg __attribute__((section(".ccfg"), used)) =
     .flashProt.chipEraseRetain.mainSectors0_31 = 0x`inst.chipEraseRetain_mainSectors0_31.toString(16)`,
     .flashProt.chipEraseRetain.mainSectors32_255 = 0x`inst.chipEraseRetain_mainSectors32_255.toString(16)`,
     .flashProt.chipEraseRetain.mainSectors256_511 = 0x`inst.chipEraseRetain_mainSectors256_511.toString(16)`,
+% if (isCC27xxx15 || isCC27xxx20){
+    .flashProt.chipEraseRetain.mainSectors512_767 = 0x`inst.chipEraseRetain_mainSectors512_767.toString(16)`,
+% }
+% if (isCC27xxx20){
+    .flashProt.chipEraseRetain.mainSectors768_1023 = 0x`inst.chipEraseRetain_mainSectors768_1023.toString(16)`,
+% }
 
 % if(inst.useHwInitCopyList){
     .hwInitCopyList = {`inst.hwInitCopyListMacro`},

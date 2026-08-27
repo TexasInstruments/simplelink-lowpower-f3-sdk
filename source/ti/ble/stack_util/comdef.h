@@ -321,6 +321,8 @@ typedef uint32_t        halDataAlign_t;
 #define ASM_NOP    asm("NOP")
 #define NO_INIT    __no_init
 #define WEAK_FUNC __weak
+#define WEAK_VAR_PRE __weak
+#define WEAK_VAR_POST
 
 /* ----------- KEIL Compiler ----------- */
 #elif defined __KEIL__
@@ -335,6 +337,8 @@ typedef uint32_t        halDataAlign_t;
 #elif defined __GNUC__
 #define ASM_NOP __asm__ __volatile__ ("nop")
 #define WEAK_FUNC __attribute__((__weak__))
+#define WEAK_VAR_PRE
+#define WEAK_VAR_POST __attribute__((__weak__))
 
 /* ---------- MSVC compiler ---------- */
 #elif _MSC_VER

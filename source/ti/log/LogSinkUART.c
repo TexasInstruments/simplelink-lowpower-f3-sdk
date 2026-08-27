@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -253,230 +253,262 @@ void LogSinkUART_printf(LogSinkUART_Config *config, uint32_t headerPtr, uint32_t
 /*
  *  ======== LogSinkUART_printfSingleton ========
  */
-void LogSinkUART_printfSingleton(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint32_t numArgs, ...)
+void LogSinkUART_printfSingleton(const Log_Module *handle, Log_Level level, uint32_t headerPtr, uint32_t numArgs, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    /* Since we assume LogSinkUART is a singleton in this implementation, we can
-     * access the zeroth array element directly.
-     */
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[0];
+        /* Since we assume LogSinkUART is a singleton in this implementation, we can
+         * access the zeroth array element directly.
+         */
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[0];
 
-    /* Get the VA args pointer in the initial wrapper since you cannot pass VA
-     * args to further functions using elipses (...) syntax.
-     *
-     * All va_start() does is get us the pointer to the first VA arg on the
-     * stack. That value will still be valid when passed on further.
-     */
-    va_start(argptr, numArgs);
+        /* Get the VA args pointer in the initial wrapper since you cannot pass VA
+         * args to further functions using elipses (...) syntax.
+         *
+         * All va_start() does is get us the pointer to the first VA arg on the
+         * stack. That value will still be valid when passed on further.
+         */
+        va_start(argptr, numArgs);
 
-    LogSinkUART_printf(config, headerPtr, numArgs, argptr);
+        LogSinkUART_printf(config, headerPtr, numArgs, argptr);
 
-    va_end(argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfSingleton0 ========
  */
-void LogSinkUART_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 0, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 0, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfSingleton1 ========
  */
-void LogSinkUART_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 1, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 1, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfSingleton2 ========
  */
-void LogSinkUART_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 2, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 2, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfSingleton3 ========
  */
-void LogSinkUART_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 3, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf((LogSinkUART_Config *)&LogSinkUART_config[0], headerPtr, 3, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfDepInjection ========
  */
 void LogSinkUART_printfDepInjection(const Log_Module *handle,
-                                    uint32_t header,
+                                    Log_Level level,
                                     uint32_t headerPtr,
                                     uint32_t numArgs,
                                     ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    /* Since this is a dependency injection implementation, we need to fetch the
-     * config pointer from the Log_Module handle.
-     */
-    LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
+        /* Since this is a dependency injection implementation, we need to fetch the
+         * config pointer from the Log_Module handle.
+         */
+        LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
 
-    /* Get the VA args pointer in the initial wrapper since you cannot pass VA
-     * args to further functions using elipses (...) syntax.
-     *
-     * All va_start() does is get us the pointer to the first VA arg on the
-     * stack. That value will still be valid when passed on further.
-     */
-    va_start(argptr, numArgs);
+        /* Get the VA args pointer in the initial wrapper since you cannot pass VA
+         * args to further functions using elipses (...) syntax.
+         *
+         * All va_start() does is get us the pointer to the first VA arg on the
+         * stack. That value will still be valid when passed on further.
+         */
+        va_start(argptr, numArgs);
 
-    LogSinkUART_printf(config, headerPtr, numArgs, argptr);
+        LogSinkUART_printf(config, headerPtr, numArgs, argptr);
 
-    va_end(argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfDepInjection0 ========
  */
-void LogSinkUART_printfDepInjection0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfDepInjection0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
+        LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf(config, headerPtr, 0, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf(config, headerPtr, 0, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfDepInjection1 ========
  */
-void LogSinkUART_printfDepInjection1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfDepInjection1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
+        LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf(config, headerPtr, 1, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf(config, headerPtr, 1, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfDepInjection2 ========
  */
-void LogSinkUART_printfDepInjection2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfDepInjection2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
+        LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
 
-    LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
-
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf(config, headerPtr, 2, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf(config, headerPtr, 2, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_printfDepInjection3 ========
  */
-void LogSinkUART_printfDepInjection3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkUART_printfDepInjection3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
+        LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
 
-    va_start(argptr, headerPtr);
-    LogSinkUART_printf(config, headerPtr, 3, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkUART_printf(config, headerPtr, 3, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkUART_bufDepInjection ========
  */
 void LogSinkUART_bufDepInjection(const Log_Module *handle,
-                                 uint32_t header,
+                                 Log_Level level,
                                  uint32_t headerPtr,
                                  uint8_t *data,
                                  size_t size)
 {
-    uintptr_t key;
-    uint32_t packet[LogSinkUART_BUF_MIN_FIELDS];
-
-    LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
-    LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
-    LogSinkUART_Object *object = config->object;
-
-    size_t packetSize = LogSinkUART_BUF_MIN_FIELDS * LogSinkUART_BYTES_PER_FIELD;
-
-    /* Get faithful timestamp and ensure that we check
-     * if we have space for this packet.
-     */
-    key = HwiP_disable();
-
-    packet[1] = TimestampP_getNative32();
-
-    /* Check if the ring buffer is full */
-    if (RingBuf_isFull(&object->ringObj))
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
     {
-        HwiP_restore(key);
-        return;
-    }
+        uintptr_t key;
+        uint32_t packet[LogSinkUART_BUF_MIN_FIELDS];
 
-    /* Assuming that the ring buffer is not full, we check if we
-     * have space for the current packet and the overflow packet.
-     *
-     * If there is space, we proceed normally, and we ensure that
-     * if there were not space for the next message, at least there
-     * would be space for the overflow message.
-     *
-     * If there is not enough space, we put an overflow packet into
-     * the ring buffer.
-     */
-    if (RingBuf_space(&object->ringObj) >= packetSize + size + LogSinkUART_OVERFLOW_PACKET_SIZE)
-    {
-        /* Construct and store packet to be sent over UART */
-        packet[0] = headerPtr;
-        packet[2] = size;
-        LogSinkUART_storePacket(&object->ringObj, (unsigned char *)packet, packetSize);
-        LogSinkUART_storePacket(&object->ringObj, data, size);
-    }
-    else
-    {
-        /* Construct overflow packet to be sent over UART.
-         * This packet is the header of the original buffer
-         * but we mask it so it points to an invalid region.
-         * This can then be detected by the host tool. Information
-         * about which buffer it is is conserved.
+        LogSinkUART_Handle inst    = (LogSinkUART_Handle)handle->sinkConfig;
+        LogSinkUART_Config *config = (LogSinkUART_Config *)&LogSinkUART_config[inst->index];
+        LogSinkUART_Object *object = config->object;
+
+        size_t packetSize = LogSinkUART_BUF_MIN_FIELDS * LogSinkUART_BYTES_PER_FIELD;
+
+        /* Get faithful timestamp and ensure that we check
+         * if we have space for this packet.
          */
-        packet[0] = headerPtr & LogSinkUART_OVERFLOW_MASK;
-        LogSinkUART_storePacket(&object->ringObj, (unsigned char *)packet, LogSinkUART_OVERFLOW_PACKET_SIZE);
-    }
+        key = HwiP_disable();
 
-    /* enable interrupts */
-    HwiP_restore(key);
+        packet[1] = TimestampP_getNative32();
+
+        /* Check if the ring buffer is full */
+        if (RingBuf_isFull(&object->ringObj))
+        {
+            HwiP_restore(key);
+            return;
+        }
+
+        /* Assuming that the ring buffer is not full, we check if we
+         * have space for the current packet and the overflow packet.
+         *
+         * If there is space, we proceed normally, and we ensure that
+         * if there were not space for the next message, at least there
+         * would be space for the overflow message.
+         *
+         * If there is not enough space, we put an overflow packet into
+         * the ring buffer.
+         */
+        if (RingBuf_space(&object->ringObj) >= packetSize + size + LogSinkUART_OVERFLOW_PACKET_SIZE)
+        {
+            /* Construct and store packet to be sent over UART */
+            packet[0] = headerPtr;
+            packet[2] = size;
+            LogSinkUART_storePacket(&object->ringObj, (unsigned char *)packet, packetSize);
+            LogSinkUART_storePacket(&object->ringObj, data, size);
+        }
+        else
+        {
+            /* Construct overflow packet to be sent over UART.
+             * This packet is the header of the original buffer
+             * but we mask it so it points to an invalid region.
+             * This can then be detected by the host tool. Information
+             * about which buffer it is is conserved.
+             */
+            packet[0] = headerPtr & LogSinkUART_OVERFLOW_MASK;
+            LogSinkUART_storePacket(&object->ringObj, (unsigned char *)packet, LogSinkUART_OVERFLOW_PACKET_SIZE);
+        }
+
+        /* enable interrupts */
+        HwiP_restore(key);
+    }
 }
 
 /*

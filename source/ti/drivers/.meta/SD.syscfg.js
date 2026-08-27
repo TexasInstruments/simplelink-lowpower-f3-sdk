@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,20 +42,35 @@ let Common = system.getScript("/ti/drivers/Common.js");
 
 let family = Common.device2Family(system.deviceData, "SD");
 
-/* generic configuration parameters for SD instances */
-let config = [
-    {
-        name: "useFatFS",
-        displayName: "Use FatFS",
-        description: "Enables the driver to use the SDFatFS driver interface",
-        longDescription:`When enabled, the [__SDFatFS__][1] driver interface
-will be accessible by the application.
+let intPriority = Common.newIntPri()[0];
+intPriority.name = "interruptPriority";
+intPriority.displayName = "Interrupt Priority";
+intPriority.description = "SD Interrupt Priority";
 
-[1]: /drivers/doxygen/html/_s_d_fat_f_s_8h.html#details "C API reference"
-`,
-        default: false
-    }
-];
+/* generic configuration parameters for SD instances */
+let config;
+if(family == "WFF3")
+{
+    config = [
+        intPriority
+    ];
+}
+else
+{
+    config = [
+        {
+            name: "useFatFS",
+            displayName: "Use FatFS",
+            description: "Enables the driver to use the SDFatFS driver interface",
+            longDescription:`When enabled, the [__SDFatFS__][1] driver interface
+    will be accessible by the application.
+
+    [1]: /drivers/doxygen/html/_s_d_fat_f_s_8h.html#details "C API reference"
+    `,
+            default: false
+        }
+    ];
+}
 
 /*
  *  ========= filterHardware ========
@@ -66,13 +81,20 @@ will be accessible by the application.
  *           be assigned to an instance's $hardware config
  */
 function filterHardware(component) {
-    if (component.type) {
-        if (Common.typeMatches(component.type, ["SD_SPI_FLASH"])) {
-            return (true);
+    if (family != "WFF3")
+    {
+        if (component.type) {
+            if (Common.typeMatches(component.type, ["SD_SPI_FLASH"])) {
+                return (true);
+            }
         }
-    }
 
-    return (false);
+        return (false);
+    }
+    else
+    {
+        return (false);
+    }
 }
 
 /*
@@ -83,16 +105,22 @@ function _getPinResources(inst)
     let pin;
     let mod = system.getScript("/ti/drivers/SPI.syscfg.js");
 
-    if (inst.spiInstance) {
-        pin = mod._getPinResources(inst.spiInstance);
-    }
+    if (family != "WFF3")
+    {
+        if (inst.spiInstance) {
+            pin = mod._getPinResources(inst.spiInstance);
+        }
 
-    if (inst.chipSelect) {
-        let mod = system.getScript("/ti/drivers/GPIO.syscfg.js");
-        pin += "\nCS: " + mod._getPinResources(inst.chipSelect);
+        if (inst.chipSelect) {
+            let mod = system.getScript("/ti/drivers/GPIO.syscfg.js");
+            pin += "\nCS: " + mod._getPinResources(inst.chipSelect);
+        }
+        return (pin);
     }
-
-    return (pin);
+    else
+    {
+        return ([]);
+    }
 }
 
 /*
@@ -100,31 +128,38 @@ function _getPinResources(inst)
  */
 function sharedModuleInstances(inst)
 {
-    /* Some devices support non SPI modes */
-    if (inst.interfaceType && inst.interfaceType !== "SD SPI") {
+    if(family != "WFF3")
+    {
+        /* Some devices support non SPI modes */
+        if (inst.interfaceType && inst.interfaceType !== "SD SPI") {
+            return ([]);
+        }
+
+        let spiName = "SD SPI";
+        let spiHardware = null;
+
+        /* Speculatively get hardware and displayName */
+        if (inst.$hardware && inst.$hardware.subComponents) {
+            let components = inst.$hardware.subComponents;
+            spiHardware = components.SPI;
+            if (spiHardware && spiHardware.displayName) {
+                spiName = spiHardware.displayName;
+            }
+        }
+
+        return ([
+            {
+                name: "spiInstance",
+                displayName: spiName,
+                moduleName: "/ti/drivers/SPI",
+                hardware: spiHardware
+            }
+        ]);
+    }
+    else
+    {
         return ([]);
     }
-
-    let spiName = "SD SPI";
-    let spiHardware = null;
-
-    /* Speculatively get hardware and displayName */
-    if (inst.$hardware && inst.$hardware.subComponents) {
-        let components = inst.$hardware.subComponents;
-        spiHardware = components.SPI;
-        if (spiHardware && spiHardware.displayName) {
-            spiName = spiHardware.displayName;
-        }
-    }
-
-    return ([
-        {
-            name: "spiInstance",
-            displayName: spiName,
-            moduleName: "/ti/drivers/SPI",
-            hardware: spiHardware
-        }
-    ]);
 }
 
 /*
@@ -133,25 +168,32 @@ function sharedModuleInstances(inst)
  */
 function pinmuxRequirements(inst)
 {
-    /* Some devices support non SPI modes */
-    if (inst.interfaceType && inst.interfaceType !== "SD SPI") {
-        return inst.$module.devSpecificPinmuxRequirements(inst);
+    if (family != "WFF3")
+    {
+        /* Some devices support non SPI modes */
+        if (inst.interfaceType && inst.interfaceType !== "SD SPI") {
+            return inst.$module.devSpecificPinmuxRequirements(inst);
+        }
+
+        let csnPin = {
+            name: "sdCSPin",
+            legacyNames: ["sdSSPin"],
+            displayName: "SD SPI Chip Select",
+            interfaceName: "GPIO",
+            signalTypes: ["DOUT"]
+        };
+
+        /* If we have hardware, require the specific pins instead of generic DOUT pins */
+        if (inst.$hardware) {
+            csnPin.signalTypes = ["SPI_CSN"];
+        }
+
+        return [csnPin];
     }
-
-    let csnPin = {
-        name: "sdCSPin",
-        legacyNames: ["sdSSPin"],
-        displayName: "SD SPI Chip Select",
-        interfaceName: "GPIO",
-        signalTypes: ["DOUT"]
-    };
-
-    /* If we have hardware, require the specific pins instead of generic DOUT pins */
-    if (inst.$hardware) {
-        csnPin.signalTypes = ["SPI_CSN"];
+    else
+    {
+        return ([]);
     }
-
-    return [csnPin];
 }
 
 /*
@@ -159,53 +201,58 @@ function pinmuxRequirements(inst)
  */
 function moduleInstances(inst)
 {
-    /* Some devices support non SPI modes */
-    if (inst.interfaceType && inst.interfaceType !== "SD SPI") {
+    if (family != "WFF3")
+    {
+        /* Some devices support non SPI modes */
+        if (inst.interfaceType && inst.interfaceType !== "SD SPI") {
+            return ([]);
+        }
+
+        let selectHardware = null;
+        let selectName = "SD Chip Select";
+        let shortName = inst.$name.replace("CONFIG_", "");
+
+        /* Speculatively get hardware and displayName */
+        if (inst.$hardware && inst.$hardware.subComponents) {
+            let components = inst.$hardware.subComponents;
+
+            selectHardware = components.SELECT;
+            if (selectHardware && selectHardware.displayName) {
+                selectName = selectHardware.displayName;
+            }
+        }
+
+        let requiredArgs = {
+            /* Can't be changed by the user */
+            parentInterfaceName: "GPIO",
+            parentSignalName: "sdCSPin",
+            parentSignalDisplayName: selectName
+        };
+
+        /* Ensure selected hardware is not null */
+        if (selectHardware != null)
+        {
+            requiredArgs.$hardware = selectHardware;
+        }
+
+        return ([{
+            name: "chipSelect",
+            legacyNames: ["slaveSelect"],
+            displayName: selectName,
+            moduleName: "/ti/drivers/GPIO",
+            args: {
+                $name: "CONFIG_GPIO_" + shortName + "_CS",
+                mode: "Output",
+                outputType: "Standard",
+                initialOutputState:"High"
+            },
+            requiredArgs: requiredArgs
+        }]);
+    }
+    else
+    {
         return ([]);
     }
-
-    let selectHardware = null;
-    let selectName = "SD Chip Select";
-    let shortName = inst.$name.replace("CONFIG_", "");
-
-    /* Speculatively get hardware and displayName */
-    if (inst.$hardware && inst.$hardware.subComponents) {
-        let components = inst.$hardware.subComponents;
-
-        selectHardware = components.SELECT;
-        if (selectHardware && selectHardware.displayName) {
-            selectName = selectHardware.displayName;
-        }
-    }
-
-    let requiredArgs = {
-        /* Can't be changed by the user */
-        parentInterfaceName: "GPIO",
-        parentSignalName: "sdCSPin",
-        parentSignalDisplayName: selectName
-    };
-
-    /* Ensure selected hardware is not null */
-    if (selectHardware != null)
-    {
-        requiredArgs.$hardware = selectHardware;
-    }
-
-    return ([{
-        name: "chipSelect",
-        legacyNames: ["slaveSelect"],
-        displayName: selectName,
-        moduleName: "/ti/drivers/GPIO",
-        args: {
-            $name: "CONFIG_GPIO_" + shortName + "_CS",
-            mode: "Output",
-            outputType: "Standard",
-            initialOutputState:"High"
-        },
-        requiredArgs: requiredArgs
-    }]);
-
-
 }
 
 /*
@@ -214,25 +261,30 @@ function moduleInstances(inst)
  */
 function getLibs(mod)
 {
-    /* Get device information from GenLibs */
-    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
+    if(family != "WFF3")
+    {
+        /* Get device information from GenLibs */
+        let GenLibs = system.getScript("/ti/utils/build/GenLibs");
 
-    let libGroup = {
-        name: "/third_party/fatfs",
-        deps: [],
-        libs: []
-    };
+        let libGroup = {
+            name: "/third_party/fatfs",
+            deps: [],
+            libs: []
+        };
 
-    /* add dependency on useFatFS configuration (if needed) */
-    for (let i = 0; i < mod.$instances.length; i++) {
-        let inst =  mod.$instances[i];
-        if (inst.useFatFS === true) {
-            libGroup.libs.push(GenLibs.libPath("third_party/fatfs", "fatfs.a"));
-            break;
+        /* add dependency on useFatFS configuration (if needed) */
+        for (let i = 0; i < mod.$instances.length; i++) {
+            let inst =  mod.$instances[i];
+            if (inst.useFatFS === true) {
+                libGroup.libs.push(GenLibs.libPath("third_party/fatfs", "fatfs.a"));
+                break;
+            }
         }
+        return (libGroup);
     }
-
-    return (libGroup);
+    {
+        return ([]);
+    }
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,14 +91,14 @@ signatures.
 [1]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_e_c_d_s_a_8h.html#ti_drivers_ECDSA_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#ECDSA_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#ECDSA_Configuration_Options "Configuration options reference"
 `,
     defaultInstanceName : "CONFIG_ECDSA_",
     config              : Common.addNameConfig(config, "/ti/drivers/ECDSA", "CONFIG_ECDSA_"),
     modules: (inst) => {
         let forcedModules = ["Board", "Power", "CryptoBoard"];
 
-        if (deviceId.match(/CC27/)) {
+        if (deviceId.match(/CC27/) || deviceId.match(/CC23.1/) || deviceId.match(/CC35/)) {
             /* HSM library requires Key Store module */
             forcedModules.push("CryptoKeyKeyStore_PSA");
         }

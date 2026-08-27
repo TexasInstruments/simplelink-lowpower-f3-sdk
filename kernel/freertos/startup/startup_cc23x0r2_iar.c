@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,76 +37,58 @@
 #include DeviceFamily_constructPath(driverlib/setup.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
-#include DeviceFamily_constructPath(cmsis/cc23x0r2.h)
-#include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 
 #include <FreeRTOSConfig.h>
 
 /* IAR includes */
 #include <intrinsics.h>
 
-//*****************************************************************************
-//
-// The entry point for the application startup code.
-//
-//*****************************************************************************
+/* The entry point for the application startup code. */
 int localProgramStart(void);
 
-// Place something in the CSTACK segment to get the stack check feature
-// to work as expected
+/* Place something in the CSTACK segment to get the stack check feature to work
+ * as expected.
+ */
 __root static void *dummy_stack @ ".stack";
 
-//*****************************************************************************
-//
-// Reset vectors defined and populated in SysConfig.
-//
-//*****************************************************************************
+/* Reset vectors defined and populated in SysConfig. */
 extern void (*const __vector_table[])(void);
 
-//*****************************************************************************
-//
-// Perform early-boot device initialisation.
-//
-//*****************************************************************************
+/* Perform early-boot device initialisation. */
 int localProgramStart(void)
 {
     unsigned long *vtor = (unsigned long *)0xE000ED08;
 
-    /* do final trim of device */
+    /* Do final trim of device. */
     SetupTrimDevice();
 
-    /* disable interrupts */
+    /* Disable interrupts. */
     __disable_irq();
     __DSB();
     __ISB();
 
-    /*
-     * set vector table base to point to above vectors in Flash; during
-     * driverlib interrupt initialization this table will be copied to RAM
+    /* Set vector table base to point to above vectors in Flash; during
+     * driverlib interrupt initialization this table will be copied to RAM.
      */
     *vtor = (unsigned long)&__vector_table[0];
 
     return 1;
 }
 
-//*****************************************************************************
-//
-// This function is called by __iar_program_start() early in the boot sequence.
-//
-//*****************************************************************************
+/* This function is called by __iar_program_start() early in the boot sequence. */
 int __low_level_init(void)
 {
-    /*
-     *  Initialize the stack pointer and branch to localProgramStart().
-     *  Some debuggers do not load the stack pointer from the reset vector.
-     *  This code ensures that the stack pointer is initialized.
-     *  The first entry of the vector table is the address of the stack.
+    /* Initialize the stack pointer and branch to localProgramStart().
+     * Some debuggers do not load the stack pointer from the reset vector.
+     * This code ensures that the stack pointer is initialized.
+     * The first entry of the vector table is the address of the stack.
      */
     __asm(" ldr r0, =__vector_table\n"
           " ldr r0, [r0]\n"
           " mov sp, r0\n"
           " b localProgramStart");
 
-    // This code is unreachable but the compiler expects a return statement
+    /* Indicate that static and global variables shall be initialized. */
     return 1;
 }

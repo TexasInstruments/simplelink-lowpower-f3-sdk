@@ -124,7 +124,6 @@ static void psa_format_key_data_for_storage(const uint8_t *data,
                                             const PsaPolicyMask_t *assetPolicy,
                                             uint8_t *storage_data)
 {
-    psa_core_key_attributes_t attrCore = attr->MBEDTLS_PRIVATE(core);
     psa_persistent_key_storage_format *storage_format =
         (psa_persistent_key_storage_format *) storage_data;
 
@@ -132,20 +131,20 @@ static void psa_format_key_data_for_storage(const uint8_t *data,
     memcpy(storage_format->magic, PSA_KEY_STORAGE_MAGIC_HEADER,
            PSA_KEY_STORAGE_MAGIC_HEADER_LENGTH);
 
-    memcpy(storage_format->MBEDTLS_PRIVATE(lifetime), &attrCore.MBEDTLS_PRIVATE(lifetime), sizeof(psa_key_lifetime_t));
+    memcpy(storage_format->MBEDTLS_PRIVATE(lifetime), &attr->MBEDTLS_PRIVATE(lifetime), sizeof(psa_key_lifetime_t));
 
-    memcpy(storage_format->MBEDTLS_PRIVATE(type), &attrCore.MBEDTLS_PRIVATE(type), sizeof(psa_key_type_t));
+    memcpy(storage_format->MBEDTLS_PRIVATE(type), &attr->MBEDTLS_PRIVATE(type), sizeof(psa_key_type_t));
 
-    memcpy(storage_format->MBEDTLS_PRIVATE(bits), &attrCore.MBEDTLS_PRIVATE(bits), sizeof(psa_key_bits_t));
+    memcpy(storage_format->MBEDTLS_PRIVATE(bits), &attr->MBEDTLS_PRIVATE(bits), sizeof(psa_key_bits_t));
 
     memcpy(storage_format->MBEDTLS_PRIVATE(policy),
-           &attrCore.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage), sizeof(psa_key_usage_t));
+           &attr->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage), sizeof(psa_key_usage_t));
 
     memcpy(storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t),
-           &attrCore.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), sizeof(psa_algorithm_t));
+           &attr->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg), sizeof(psa_algorithm_t));
 
     memcpy(storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t) + sizeof(psa_algorithm_t),
-           &attrCore.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2), sizeof(psa_algorithm_t));
+           &attr->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2), sizeof(psa_algorithm_t));
 
     memcpy(storage_format->assetPolicy, assetPolicy, sizeof(PsaPolicyMask_t));
 
@@ -177,7 +176,6 @@ static psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
                                                     PsaPolicyMask_t *assetPolicy)
 {
     psa_status_t status;
-    psa_core_key_attributes_t * attrCore = &attr->MBEDTLS_PRIVATE(core);
     const psa_persistent_key_storage_format *storage_format =
         (const psa_persistent_key_storage_format *) storage_data;
     bool hasSymmetricKey = false;
@@ -246,19 +244,19 @@ static psa_status_t psa_parse_key_data_from_storage(const uint8_t *storage_data,
         }
     }
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(lifetime), storage_format->MBEDTLS_PRIVATE(lifetime), sizeof(psa_key_lifetime_t));
-    memcpy(&attrCore->MBEDTLS_PRIVATE(type), storage_format->MBEDTLS_PRIVATE(type), sizeof(psa_key_type_t));
-    memcpy(&attrCore->MBEDTLS_PRIVATE(bits), storage_format->MBEDTLS_PRIVATE(bits), sizeof(psa_key_bits_t));
+    memcpy(&attr->MBEDTLS_PRIVATE(lifetime), storage_format->MBEDTLS_PRIVATE(lifetime), sizeof(psa_key_lifetime_t));
+    memcpy(&attr->MBEDTLS_PRIVATE(type), storage_format->MBEDTLS_PRIVATE(type), sizeof(psa_key_type_t));
+    memcpy(&attr->MBEDTLS_PRIVATE(bits), storage_format->MBEDTLS_PRIVATE(bits), sizeof(psa_key_bits_t));
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage),
+    memcpy(&attr->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage),
            storage_format->MBEDTLS_PRIVATE(policy),
            sizeof(psa_key_usage_t));
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
+    memcpy(&attr->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg),
            storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t),
            sizeof(psa_algorithm_t));
 
-    memcpy(&attrCore->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2),
+    memcpy(&attr->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg2),
            storage_format->MBEDTLS_PRIVATE(policy) + sizeof(psa_key_usage_t) + sizeof(psa_algorithm_t),
            sizeof(psa_algorithm_t));
 
@@ -405,8 +403,13 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
 
     psa_format_key_data_for_storage(data, data2, data_length, attr, assetPolicy, storage_data);
 
-    status = psa_crypto_storage_store(attr->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id),
+    status = psa_crypto_storage_store(attr->MBEDTLS_PRIVATE(id),
                                       storage_data, storage_data_length);
+
+    /* Free the storage_data from the cache now to limit fragmentation */
+    memset(storage_data, 0, storage_data_length);
+
+    psaInt_mbedtls_free(storage_data);
 
     /* After storing to persistent storage, also save the key and its attributes in
      * the cache
@@ -440,10 +443,6 @@ psa_status_t psa_save_persistent_key(psa_key_context_t * pEntry,
             }
         }
     }
-
-    memset(storage_data, 0, storage_data_length);
-
-    psaInt_mbedtls_free(storage_data);
 
     return status;
 }
@@ -481,10 +480,10 @@ psa_status_t psa_load_persistent_key_into_slot(const mbedtls_svc_key_id_t key,
                                              &pEntry->attributes, &pEntry->AssetPolicy);
 
 #if defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
-    pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = key.MBEDTLS_PRIVATE(key_id);
-    pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = key.MBEDTLS_PRIVATE(owner);
+    pEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = key.MBEDTLS_PRIVATE(key_id);
+    pEntry->attributes.MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = key.MBEDTLS_PRIVATE(owner);
 #else
-    pEntry->attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = key;
+    pEntry->attributes.MBEDTLS_PRIVATE(id) = key;
 #endif
 
     /* All keys saved to persistent storage always have a key context */

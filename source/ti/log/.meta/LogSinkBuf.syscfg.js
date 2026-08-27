@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -170,10 +170,9 @@ linking against a known LogSinkBuf_Instance symbol name.
             "/ti/log/templates/LogSinkBuf.Config.c.xdt",
         "/ti/log/templates/ti_log_config.h.xdt":
             "/ti/log/templates/LogSinkBuf.Config.h.xdt",
-        "/ti/utils/rov/syscfg_c.rov.xs.xdt":
-            "/ti/log/LogSinkBuf.rov.js",
-        "/ti/log/templates/rov.js.xdt":
-            "/ti/log/LogSinkBuf.rov.js.xdt",
+        "/ti/utils/rov/syscfg_c.rov.xs.xdt": [
+            "objView:source/ti/log/LogSinkBuf_theia.rov.js"
+        ],
         "/ti/utils/build/GenLibs.cmd.xdt":
             { modName: "/ti/log/LogSinkBuf", getLibs: getLibs }
     }

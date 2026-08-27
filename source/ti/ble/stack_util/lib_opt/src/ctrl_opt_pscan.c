@@ -102,9 +102,9 @@ bool OPT_LL_PadvA_CheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo)
     return LL_PadvA_CheckSyncInfoCriteria(pAdvPDUInfo);
 }
 
-void OPT_LL_PadvS_ProcessPeriodicSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp)
+void OPT_LL_PadvS_ProcessPeriodicSyncInfo(llAdvPDUInfo * pAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp)
 {
-    LL_PadvS_ProcessPeriodicSyncInfo(pExtAdvInfo, advEvent, timeStamp);
+    LL_PadvS_ProcessPeriodicSyncInfo(pAdvInfo, advEvent, timeStamp);
 }
 
 void OPT_LL_PadvS_PostProcess(void)

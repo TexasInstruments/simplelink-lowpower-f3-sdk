@@ -264,6 +264,9 @@
 // Temporary address register  
 #define PBE_GENERIC_RAM_O_TMPADR4                                    0x000000BAU
 
+// Temporary register for storing register needed in a short-term operation
+#define PBE_GENERIC_RAM_O_TMPREG                                     0x000000BCU
+
 //******************************************************************************
 // Register: PHY
 //******************************************************************************
@@ -1557,6 +1560,16 @@
 #define PBE_GENERIC_RAM_TMPADR4_VAL_W                                        16U
 #define PBE_GENERIC_RAM_TMPADR4_VAL_M                                    0xFFFFU
 #define PBE_GENERIC_RAM_TMPADR4_VAL_S                                         0U
+
+//******************************************************************************
+// Register: TMPREG
+//******************************************************************************
+// Field: [15:0] val
+//
+// Code address
+#define PBE_GENERIC_RAM_TMPREG_VAL_W                                         16U
+#define PBE_GENERIC_RAM_TMPREG_VAL_M                                     0xFFFFU
+#define PBE_GENERIC_RAM_TMPREG_VAL_S                                          0U
 
 
 #endif // __PBE_GENERIC_RAM_REGS_H

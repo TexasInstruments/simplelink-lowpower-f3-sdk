@@ -185,7 +185,7 @@ typedef struct
 typedef struct
 {
   uint16_t startAclConnEvt;         // Start of ACL connection event
-  uint16_t freqCompenstation;       // Frequency compensation value
+  uint16_t freqCompensation;        // Frequency compensation value
   uint8_t  rangingDoneStatus : 4;   // Ranging done status (0-15)
   uint8_t  subeventDoneStatus : 4;  // Subevent done status (0-15)
   uint8_t  rangingAbortReason : 4;  // ranging abort reason (0-15)
@@ -198,7 +198,7 @@ typedef struct
 typedef struct
 {
   Ranging_subEventHeader_t subEventHeader; // Header of the subevent data
-  uint8_t data[];                          // Buffer to hold all setps of the subevent.
+  uint8_t data[];                          // Buffer to hold all steps of the subevent.
 } Ranging_subEvent_t;
 
 // Ranging data header structure

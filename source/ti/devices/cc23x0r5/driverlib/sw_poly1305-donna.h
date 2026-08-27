@@ -2,8 +2,8 @@
  *  Filename:       sw_poly1305-donna.h
  ******************************************************************************/
 
-#ifndef POLY1305_DONNA_H
-#define POLY1305_DONNA_H
+#ifndef ti_devices_sw_poly1305_donna__include
+#define ti_devices_sw_poly1305_donna__include
 
 #include <stddef.h>
 
@@ -21,4 +21,4 @@ void poly1305_auth(unsigned char mac[16], const unsigned char *m, size_t bytes, 
 int poly1305_verify(const unsigned char mac1[16], const unsigned char mac2[16]);
 int poly1305_power_on_self_test(void);
 
-#endif /* POLY1305_DONNA_H */
+#endif /* ti_devices_sw_poly1305_donna__include */

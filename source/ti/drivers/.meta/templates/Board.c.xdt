@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2018-2020, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -92,6 +92,7 @@
 % }
 #include <ti/drivers/Board.h>
 
+% if (system.modules["/ti/drivers/Board"].$static.generateBoardInit) {
 /*
  *  ======== Board_initHook ========
  *  Perform any board-specific initialization needed at startup.  This
@@ -142,5 +143,6 @@ void Board_init(void)
 % }
     Board_initHook();
 }
+% }
 % /* Get board-specific epilogue template content */
 `template("epilogue")`

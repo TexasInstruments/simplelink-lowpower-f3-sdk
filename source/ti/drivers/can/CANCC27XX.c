@@ -366,7 +366,7 @@ void CANCC27XX_irqHandler(void *arg)
 static bool CANCC27XX_isRxStructRingBufFull(CAN_Handle handle)
 {
     CAN_Object *object = (CAN_Object *)handle->object;
-    uint32_t isFull    = StructRingBuf_isFull(&object->rxStructRingBuf);
+    bool isFull        = StructRingBuf_isFull(&object->rxStructRingBuf);
 
     if (isFull)
     {
@@ -395,8 +395,10 @@ static void CANCC27XX_handleRxFifo(CAN_Handle handle, uint32_t fifoNum)
     if (fifoStatus.fillLvl == 0U)
     {
         /* If a new message is received between the time MCAN_IR is cleared and
-         * the Rx FIFO status is read, the New Message flag will be set but
-         * there may be no message available.
+         * the Rx FIFO status is read, the New Message flag will be set which
+         * will cause the interrupt to be pended again. However, there may be no
+         * messages available (fill level will be zero) so this handler should
+         * return early in that case.
          */
         return;
     }
@@ -436,8 +438,11 @@ static void CANCC27XX_handleRxFifo(CAN_Handle handle, uint32_t fifoNum)
             fifoStatus.fillLvl--;
         }
 
-        /* ACK the sequence of messages read above. Return value can be ignored
-         * since the inputs are known to be valid.
+        /* Write the last buffer index read to acknowledge the sequence of
+         * messages read above. This single write is used instead of
+         * acknowledging each message individually to minimize latency caused by
+         * the special handling of register writes for errata SYS_211. Return
+         * value can be ignored since the inputs are known to be valid.
          */
         (void)MCAN_setRxFifoAck(fifoNum, fifoStatus.getIdx);
     }
@@ -522,7 +527,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
     {
         case 125000U:
             /* 125kbps nominal with 40MHz clk and 75% sample point: ((40E6 / 2) / (119 + 40 + 1) = 125E3) */
-            bitTiming.nomRatePrescaler  = 1U;
+            bitTiming.nomRatePrescaler  = MCAN_PRESCALER(2U);
             bitTiming.nomTimeSeg1       = 118U;
             bitTiming.nomTimeSeg2       = 39U;
             bitTiming.nomSynchJumpWidth = 39U; /* typically set equal to seg 2 */
@@ -530,7 +535,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
         case 250000U:
             /* 250kbps nominal with 40MHz clk and 75% sample point: ((40E6 / 1) / (119 + 40 + 1) = 250E3) */
-            bitTiming.nomRatePrescaler  = 0U;
+            bitTiming.nomRatePrescaler  = MCAN_PRESCALER(1U);
             bitTiming.nomTimeSeg1       = 118U;
             bitTiming.nomTimeSeg2       = 39U;
             bitTiming.nomSynchJumpWidth = 39U; /* typically set equal to seg 2 */
@@ -538,7 +543,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
         case 500000U:
             /* 500kbps nominal with 40MHz clk and 75% sample point ((40E6 / 1) / (59 + 20 + 1) = 500E3) */
-            bitTiming.nomRatePrescaler  = 0U;
+            bitTiming.nomRatePrescaler  = MCAN_PRESCALER(1U);
             bitTiming.nomTimeSeg1       = 58U;
             bitTiming.nomTimeSeg2       = 19U;
             bitTiming.nomSynchJumpWidth = 19U; /* typically set equal to seg 2 */
@@ -546,7 +551,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
         case 1000000U:
             /* 1Mbps nominal with 40MHz clk and 75% sample point ((40E6 / 1) / (29 + 10 + 1) = 1E6) */
-            bitTiming.nomRatePrescaler  = 0U;
+            bitTiming.nomRatePrescaler  = MCAN_PRESCALER(1U);
             bitTiming.nomTimeSeg1       = 28U;
             bitTiming.nomTimeSeg2       = 9U;
             bitTiming.nomSynchJumpWidth = 9U; /* typically set equal to seg 2 */
@@ -563,7 +568,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
         {
             case 125000U:
                 /* 125kbps with 40MHz clk and 75% sample point: ((40E6 / 10) / (23 + 8 + 1) = 125E3) */
-                bitTiming.dataRatePrescaler  = 9U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(10U);
                 bitTiming.dataTimeSeg1       = 22U;
                 bitTiming.dataTimeSeg2       = 7U;
                 bitTiming.dataSynchJumpWidth = 7U; /* typically set equal to seg 2 */
@@ -571,7 +576,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
             case 250000U:
                 /* 250kbps with 40MHz clk and 75% sample point: ((40E6 / 8) / (14 + 5 + 1) = 250E3) */
-                bitTiming.dataRatePrescaler  = 7U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(8U);
                 bitTiming.dataTimeSeg1       = 13U;
                 bitTiming.dataTimeSeg2       = 4U;
                 bitTiming.dataSynchJumpWidth = 4U; /* typically set equal to seg 2 */
@@ -579,7 +584,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
             case 500000U:
                 /* 500kbps with 40MHz clk and 75% sample point ((40E6 / 2) / (29 + 10 + 1) = 500E3) */
-                bitTiming.dataRatePrescaler  = 1U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(2U);
                 bitTiming.dataTimeSeg1       = 28U;
                 bitTiming.dataTimeSeg2       = 9U;
                 bitTiming.dataSynchJumpWidth = 9U; /* typically set equal to seg 2 */
@@ -587,7 +592,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
             case 1000000U:
                 /* 1Mbps with 40MHz clk and 75% sample point ((40E6 / 1) / (29 + 10 + 1) = 1E6) */
-                bitTiming.dataRatePrescaler  = 0U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(1U);
                 bitTiming.dataTimeSeg1       = 28U;
                 bitTiming.dataTimeSeg2       = 9U;
                 bitTiming.dataSynchJumpWidth = 9U; /* typically set equal to seg 2 */
@@ -595,7 +600,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
             case 2000000U:
                 /* 2Mbps with 40MHz clk and 75% sample point ((40E6 / 1) / (14 + 5 + 1) = 2E6) */
-                bitTiming.dataRatePrescaler  = 0U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(1U);
                 bitTiming.dataTimeSeg1       = 13U;
                 bitTiming.dataTimeSeg2       = 4U;
                 bitTiming.dataSynchJumpWidth = 4U;  /* typically set equal to seg 2 */
@@ -604,7 +609,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
             case 4000000U:
                 /* 4Mbps with 40MHz clk and 70% sample point ((40E6 / 1) / (6 + 3 + 1) = 4E6) */
-                bitTiming.dataRatePrescaler  = 0U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(1U);
                 bitTiming.dataTimeSeg1       = 5U;
                 bitTiming.dataTimeSeg2       = 2U;
                 bitTiming.dataSynchJumpWidth = 2U; /* typically set equal to seg 2 */
@@ -613,7 +618,7 @@ static int_fast16_t CANCC27XX_setBitRate(const CAN_Config *config)
 
             case 5000000U:
                 /* 5Mbps with 40MHz clk and 62.5% sample point ((40E6 / 1) / (4 + 3 + 1) = 5E6) */
-                bitTiming.dataRatePrescaler  = 0U;
+                bitTiming.dataRatePrescaler  = MCAN_PRESCALER(1U);
                 bitTiming.dataTimeSeg1       = 3U;
                 bitTiming.dataTimeSeg2       = 2U;
                 bitTiming.dataSynchJumpWidth = 2U; /* typically set equal to seg 2 */

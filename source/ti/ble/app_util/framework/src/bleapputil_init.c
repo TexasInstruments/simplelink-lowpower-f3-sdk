@@ -495,7 +495,7 @@ static bStatus_t BLEAppUtil_createQueue(void)
 
      attr.mq_flags = 0; // Parameter mq_flags is ignored when the queue is created with O_CREAT
      attr.mq_curmsgs = 0;
-     attr.mq_maxmsg = 8;
+     attr.mq_maxmsg = BLEAPPUTIL_QUEUE_SIZE;
      attr.mq_msgsize = sizeof(BLEAppUtil_appEvt_t);
 
      /* Create the message queue */
@@ -817,6 +817,11 @@ bStatus_t BLEAppUtil_initAdvSet(uint8 *advHandle, const BLEAppUtil_AdvInit_t *ad
                                  advInitInfo->scanRespData);
 }
 
+bStatus_t BLEAppUtil_advDestroy(uint8 advHandle, BLEAppUtil_freeBufferOptions_t freeOption)
+{
+    return GapAdv_destroy(advHandle, freeOption);
+}
+
 bStatus_t BLEAppUtil_advStart(uint8 handle, const BLEAppUtil_AdvStart_t *advStartInfo)
 {
     return GapAdv_enable(handle, advStartInfo->enableOptions ,
@@ -965,6 +970,14 @@ bStatus_t BLEAppUtil_unRegisterConnNotifHandler()
     return Gap_RegisterConnEventCb(BLEAppUtil_connEventCB, GAP_CB_UNREGISTER, GAP_CB_CONN_EVENT_ALL, LINKDB_CONNHANDLE_ALL);
 }
 
+#if defined( HOST_CONFIG ) && ( HOST_CONFIG & ( CENTRAL_CFG | OBSERVER_CFG ) )
+bStatus_t BLEAppUtil_startTSO(uint16_t syncHandle)
+{
+    // Save syncHandle to LL to manipulate relevant data for time sync
+    return GapScan_StartTSO(syncHandle);
+}
+#endif // HOST_CONFIG & ( CENTRAL_CFG | OBSERVER_CFG )
+
 /*********************************************************************
  * @fn      BLEAppUtil_paramUpdateRsp
  *
@@ -1098,6 +1111,134 @@ bStatus_t BLEAppUtil_registerCMSCBs(void)
 bStatus_t BLEAppUtil_registerCMCBs(void)
 {
     return CM_RegisterCBs(&BLEAppUtil_cmCBs);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_setPeriodicAdvParams
+ *
+ * @brief   Set periodic advertising parameters for an advertising set.
+ *
+ * @param   advHandle      - Handle of the advertising set
+ * @param   periodicParams - Pointer to periodic advertising parameters
+ *                           (@ref BLEAppUtil_PeriodicAdvParams_t)
+ *
+ * @return  SUCCESS, INVALIDPARAMETER, bleGAPNotFound
+ */
+bStatus_t BLEAppUtil_setPeriodicAdvParams(uint8 advHandle, BLEAppUtil_PeriodicAdvParams_t *periodicParams)
+{
+    return GapAdv_SetPeriodicAdvParams(advHandle, periodicParams);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_setPeriodicAdvData
+ *
+ * @brief   Set periodic advertising data for an advertising set.
+ *
+ *          This must be called after setPeriodicAdvParams and before
+ *          setPeriodicAdvEnable. Even if no data is needed (dataLength=0),
+ *          this call is required to properly initialize the periodic
+ *          advertising train.
+ *
+ * @param   advHandle       - Handle of the advertising set
+ * @param   pPeriodicAdvData - Pointer to periodic advertising data
+ *                            (@ref BLEAppUtil_PeriodicAdvData_t)
+ *
+ * @return  SUCCESS, FAILURE, bleInvalidRange
+ */
+bStatus_t BLEAppUtil_setPeriodicAdvData(uint8 advHandle, BLEAppUtil_PeriodicAdvData_t *pPeriodicAdvData)
+{
+    return GapAdv_SetPeriodicAdvData(advHandle, pPeriodicAdvData);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_setPeriodicAdvEnable
+ *
+ * @brief   Enable or disable periodic advertising for an advertising set.
+ *
+ * @param   enable    - TRUE to enable, FALSE to disable periodic advertising
+ * @param   advHandle - Handle of the advertising set
+ *
+ * @return  SUCCESS, INVALIDPARAMETER, bleGAPNotFound, bleIncorrectMode
+ */
+bStatus_t BLEAppUtil_setPeriodicAdvEnable(uint8 enable, uint8 advHandle)
+{
+    return GapAdv_SetPeriodicAdvEnable(enable, advHandle);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_setPeriodicAdvTimeSyncEnable
+ *
+ * @brief   Enable time synchronization for periodic advertising.
+ *          When enabled, the TSA (Time Sync Advertiser) will include the
+ *          absolute start time in the periodic advertising data.
+ *
+ * @param   advHandle - Handle of the advertising set
+ *
+ * @return  SUCCESS, INVALIDPARAMETER, bleGAPNotFound, bleInvalidRange
+ */
+bStatus_t BLEAppUtil_setPeriodicAdvTimeSyncEnable(uint8 advHandle)
+{
+    return GapAdv_SetPeriodicAdvTimeSyncEnable(advHandle);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_periodicAdvCreateSync
+ *
+ * @brief   Create sync to a periodic advertising train.
+ *
+ * @param   advSID      - Advertising SID to sync to (0-15)
+ * @param   pSyncParams - Pointer to sync parameters
+ *                        (@ref BLEAppUtil_PeriodicAdvSyncParams_t)
+ *
+ * @return  SUCCESS, INVALIDPARAMETER, bleMemAllocError
+ */
+bStatus_t BLEAppUtil_periodicAdvCreateSync(uint8 advSID, BLEAppUtil_PeriodicAdvSyncParams_t *pSyncParams)
+{
+    return GapScan_PeriodicAdvCreateSync(advSID, pSyncParams);
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_getCurrentTime
+ *
+ * @brief   Get the current BLE stack time.
+ *
+ *          Returns the current time from the BLE stack timer.
+ *          This provides a consistent time reference for application
+ *          layer time synchronization operations.
+ *
+ * @param   None
+ *
+ * @return  Current time in RAT ticks (0.25 µs resolution)
+ */
+uint32_t BLEAppUtil_getCurrentTime(void)
+{
+    return GAP_GetCurrentTime();
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_getTimeDelta
+ *
+ * @brief   Get the time difference between two BLE stack timestamps.
+ *
+ *          Returns time1 - time2, accounting for 32-bit RAT counter wrap.
+ *          This provides a consistent time delta utility for application
+ *          layer time synchronization operations.
+ *
+ * @param   time1 - Later time in RAT ticks
+ * @param   time2 - Earlier time in RAT ticks
+ *
+ * @return  Difference in RAT ticks (0.25 µs resolution)
+ */
+uint32_t BLEAppUtil_getTimeDelta(uint32_t time1, uint32_t time2)
+{
+  if ( time1 >= time2 )
+  {
+    return( time1 - time2 );
+  }
+  else // time2 > time1
+  {
+    return( (BLEAPPUTIL_MAX_32BIT_TIME - (time2 - time1)) + 1 );
+  }
 }
 
 /*********************************************************************

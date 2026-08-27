@@ -70,7 +70,7 @@ Target Device: cc23xx
 #define MSG_DATA_LEN_HI              3          //!< Host msg app data len second offset
 #define MSG_PAYLOAD                  4          //!< Host msg app payload offset
 
-#define NUM_APPLICATION              13         //!< The number of supported applications
+#define NUM_APPLICATION              14         //!< The number of supported applications
 #define EXTCTRL_HOST_CTRL_REV        3
 /*********************************************************************
 * TYPEDEFS

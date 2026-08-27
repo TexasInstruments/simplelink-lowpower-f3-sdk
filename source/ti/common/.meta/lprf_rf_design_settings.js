@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -139,6 +139,9 @@ const boardSpecificRfDesignSettings = {
     },
     LP_EM_CC2340R2_RF_DESIGN_SETTINGS: {
         rfDesign: "LP_EM_CC2340R2"
+    },
+    LP_EM_CC2341R10_RF_DESIGN_SETTINGS: {
+        rfDesign: "LP_EM_CC2341R10_SOCKET"
     },
     LP_EM_CC2745R10_Q1_RF_DESIGN_SETTINGS: {
         rfDesign: "LP_EM_CC2745R10_Q1"

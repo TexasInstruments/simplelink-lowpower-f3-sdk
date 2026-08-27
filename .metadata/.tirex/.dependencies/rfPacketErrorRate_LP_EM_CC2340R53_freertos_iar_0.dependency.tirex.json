@@ -1,13 +1,14 @@
 [
     {
         "files": [
+            "+cc23x0r5.icf -> cc23x0r5.icf",
             "+../../config.c -> config.c",
             "+../../config.h -> config.h",
-            "+lpf3_freertos.icf -> lpf3_freertos.icf",
             "+../main_freertos.c -> main_freertos.c",
             "+../../menu.c -> menu.c",
             "+../../menu.h -> menu.h",
             "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.html -> README.html",
             "+../../README.md -> README.md",
             "+../../rfPacketErrorRate.c -> rfPacketErrorRate.c",
             "+../rfPacketErrorRate.syscfg -> rfPacketErrorRate.syscfg",

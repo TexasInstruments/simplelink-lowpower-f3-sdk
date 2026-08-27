@@ -25,5 +25,25 @@ set_target_properties(SecureDrivers::secure_drivers_cc23x0r5 PROPERTIES
 list(APPEND _IMPORT_CHECK_TARGETS SecureDrivers::secure_drivers_cc23x0r5 )
 list(APPEND _IMPORT_CHECK_FILES_FOR_SecureDrivers::secure_drivers_cc23x0r5 "${_IMPORT_PREFIX}/source/ti/drivers/secure/lib/ticlang/m0p/secure_drivers_cc23x0r5.a" )
 
+# Import target "SecureDrivers::secure_drivers_cc23x1r10" for configuration "Release"
+set_property(TARGET SecureDrivers::secure_drivers_cc23x1r10 APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(SecureDrivers::secure_drivers_cc23x1r10 PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/secure/lib/ticlang/m0p/secure_drivers_cc23x1r10.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS SecureDrivers::secure_drivers_cc23x1r10 )
+list(APPEND _IMPORT_CHECK_FILES_FOR_SecureDrivers::secure_drivers_cc23x1r10 "${_IMPORT_PREFIX}/source/ti/drivers/secure/lib/ticlang/m0p/secure_drivers_cc23x1r10.a" )
+
+# Import target "SecureDrivers::secure_drivers_cc23x1r10_mbedtls" for configuration "Release"
+set_property(TARGET SecureDrivers::secure_drivers_cc23x1r10_mbedtls APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(SecureDrivers::secure_drivers_cc23x1r10_mbedtls PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/secure/lib/ticlang/m0p/secure_drivers_cc23x1r10_mbedtls.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS SecureDrivers::secure_drivers_cc23x1r10_mbedtls )
+list(APPEND _IMPORT_CHECK_FILES_FOR_SecureDrivers::secure_drivers_cc23x1r10_mbedtls "${_IMPORT_PREFIX}/source/ti/drivers/secure/lib/ticlang/m0p/secure_drivers_cc23x1r10_mbedtls.a" )
+
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

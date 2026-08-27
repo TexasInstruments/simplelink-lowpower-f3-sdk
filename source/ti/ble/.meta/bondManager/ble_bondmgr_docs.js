@@ -47,7 +47,7 @@ ensure that the number of NV pages is fits, \
 and the region size of NVS is suitable to the number of NV pages. \n
 Adjust the size of the Accept List to be greater than or equal to the maximum \
 number of bonds if the privacy policy is configured to use the Accept List.\n
-__Default__: ${Common.defaultBondValue()}\n`
+__Default__: 5\n`
 
 // Long description for the maxCharCfg configuration parameter
 const maxCharCfgLongDescription = `Maximum number of characteristic configurations \

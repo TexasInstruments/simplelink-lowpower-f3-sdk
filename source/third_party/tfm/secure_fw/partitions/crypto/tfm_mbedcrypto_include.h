@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2021, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *

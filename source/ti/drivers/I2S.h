@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,29 +81,33 @@
  *  @anchor ti_drivers_I2S_Driver_Transactions
  *  ### Transactions #
  *
- *  Data transfers are achieved through #I2S_Transaction structures. Application is
- *  responsible to maintain the transactions queues. The I2S driver completes the
- *  transactions one by one. When a transaction is over, the I2S driver takes in
- *  consideration the next transaction (if the next transaction is NULL, the I2S
- *  drivers signals this to the user).
+ *  Data transfers are achieved through #I2S_Transaction structures. Application
+ *  is responsible to maintain the transactions queues. The I2S driver completes
+ *  the transactions one by one. When a transaction is over, the I2S driver
+ *  takes in consideration the next transaction (if the next transaction is
+ *  NULL, the I2S drivers signals this to the user).
  *  The I2S driver relies on the following fields of the #I2S_Transaction to
  *  complete it:
  *  - the buffer
  *  - the length of the buffer
- *  - a pointer on the next transaction to achieve (kept in a List_Elem structure)
+ *  - a pointer on the next transaction to achieve (kept in a List_Elem
+ *    structure)
  *  .
- *  The I2S driver provides the following elements (fields of the #I2S_Transaction):
- *  - the number of untransferred bytes: the driver is designed to avoid memory corruption and will
- *  not complete an incomplete transaction (meaning a transaction where the buffer size would not
- *  permit to send or receive a whole number of samples). In this case, the system considers the
- *  samples of the beginning of the buffer and read/write as much as possible samples and ignore the
- *  end of the buffer. The number of untransafered bytes is the number of bytes left at the end of
- *  the buffer)
- *  - the number of completions of the transaction. This value is basically incremented by one
- *  every time the transaction is completed.
+ *  The I2S driver provides the following elements (fields of the
+ *  #I2S_Transaction):
+ *  - the number of untransferred bytes: the driver is designed to avoid memory
+ *    corruption and will not complete an incomplete transaction (meaning a
+ *    transaction where the buffer size would not permit to send or receive a
+ *    whole number of samples). In this case, the system considers the samples
+ *    of the beginning of the buffer and read/write as much as possible samples
+ *    and ignore the end of the buffer. The number of untransafered bytes is the
+ *    number of bytes left at the end of the buffer)
+ *  - the number of completions of the transaction. This value is basically
+ *    incremented by one every time the transaction is completed.
  *
- *  Please note that these two fields are valid only when the transaction has been completed.
- *  Consult examples to get more details on the transaction usage.
+ *  Please note that these two fields are valid only when the transaction has
+ *  been completed. Consult examples to get more details on the transaction
+ *  usage.
  *
  *  The sample buffer structure and content is different between devices. Please
  *  refer to the device-specific documentation for details.
@@ -112,12 +116,12 @@
  *  @anchor ti_drivers_I2S_Driver_ProvidingData
  *  ### Providing data to the I2S driver #
  *  Application is responsible to handle the queues of transactions.
- *  Application is also responsible to provide to the driver a pointer on
- *  the first transaction to consider (considering that all the following
+ *  Application is also responsible to provide to the driver a pointer on the
+ *  first transaction to consider (considering that all the following
  *  transactions are correctly queued).
- *  #I2S_setReadQueueHead() and #I2S_setWriteQueueHead()  allow the user to
- *  set the first transaction to consider. These functions should be used only
- *  when no transaction is running on the considered interface.
+ *  #I2S_setReadQueueHead() and #I2S_setWriteQueueHead() allow the user to set
+ *  the first transaction to consider. These functions should be used only when
+ *  no transaction is running on the considered interface.
  *
  *  <hr>
  *  @anchor ti_drivers_I2S_Driver_StartStopClocks
@@ -147,7 +151,8 @@
  *  <hr>
  *  @anchor ti_drivers_I2S_Example_PlayAndStop
  *  ### Mode Play and Stop #
- *  The following example shows how to simultaneously receive and send out a given amount of data.
+ *  The following example shows how to simultaneously receive and send out a
+ *  given amount of data.
  *
  *  <hr>
  *  @anchor ti_drivers_I2S_Example_PlayAndStop_Code
@@ -207,9 +212,9 @@
  *
  *      // Initialize I2S opening parameters
  *      I2S_Params_init(&i2sParams);
- *      i2sParams.fixedBufferLength     =  500; // fixedBufferLength is the greatest common
+ *      i2sParams.fixedBufferLength     =  250; // fixedBufferLength is the greatest common
  *                                              // divisor of all the different buffers
- *                                              // (here buffers' size are 500 and 1000 bytes)
+ *                                              // (here buffers' size are 250 and 500 bytes)
  *      i2sParams.writeCallback         =  writeCallbackFxn ;
  *      i2sParams.readCallback          =  readCallbackFxn ;
  *      i2sParams.errorCallback         =  errCallbackFxn;
@@ -266,15 +271,16 @@
  *  }
  *  @endcode
  *
- *  \note If you desire to put only one transaction in the queue, fixedBufferLength must be inferior to half the length
- *(in bytes) of the buffer to transfer.
+ *  \note If you desire to put only one transaction in the queue,
+ *  fixedBufferLength must be inferior to half the length (in bytes) of the
+ *  buffer to transfer.
  *
  *  <hr>
  *  @anchor ti_drivers_I2S_Example_Streaming
  *  ### Writing Data in Continuous Streaming Mode #
  *  The following example shows how to read and write data in streaming mode.
  *  A dummy treatment of the data is also done.
- *  This example is not complete (semaphore and tasks creation are not shown)
+ *  This example is not complete (semaphore and tasks creation are not shown).
  *
  *  <hr>
  *  @anchor ti_drivers_I2S_Example_Streaming_Code
@@ -369,7 +375,7 @@
  *
  *      //Initialize I2S opening parameters
  *      I2S_Params_init(&i2sParams);
- *      i2sParams.fixedBufferLength     =  1000;
+ *      i2sParams.fixedBufferLength     =  500;
  *      i2sParams.writeCallback         =  writeCallbackFxn ;
  *      i2sParams.readCallback          =  readCallbackFxn ;
  *      i2sParams.errorCallback         =  errCallbackFxn;
@@ -457,8 +463,10 @@
  *  @anchor ti_drivers_I2S_Example_RepeatMode
  *  ### Writing Data in repeat Mode #
  *  The following example shows how to read and write data in repeat mode.
- *  The same buffers are continuously written and send out while the driver is not stopped.
- *  Here, we decide to only stop sending out after an arbitrary number of sending.
+ *  The same buffers are continuously written and send out while the driver is
+ *  not stopped.
+ *  Here, we decide to only stop sending out after an arbitrary number of
+ *  sending.
  *
  *  <hr>
  *  @anchor ti_drivers_I2S_Example_RepeatMode_Code
@@ -514,7 +522,7 @@
  *
  *      // Initialize I2S opening parameters
  *      I2S_Params_init(&i2sParams);
- *      i2sParams.fixedBufferLength     =  1000; // No problem here: the driver consider
+ *      i2sParams.fixedBufferLength     =  500; // No problem here: the driver consider
  *                                               // the list as an infinite list.
  *      i2sParams.writeCallback         =  writeCallbackFxn ;
  *      i2sParams.readCallback          =  readCallbackFxn ;
@@ -556,15 +564,15 @@
  *  }
  *  @endcode
  *
- *  @note In the case of circular lists, there is no problem to put only
- *  one buffer in the queue.
+ *  @note In the case of circular lists, there is no problem to put only one
+ *  buffer in the queue.
  *
  *  <hr>
  *  @anchor ti_drivers_I2S_Configuration
  *  # Configuration
  *
- *  Refer to the @ref driver_configuration "Driver's Configuration" section
- *  for driver configuration information.
+ *  Refer to the @ref driver_configuration "Driver's Configuration" section for
+ *  driver configuration information.
  *  <hr>
  ******************************************************************************
  */
@@ -584,7 +592,8 @@ extern "C" {
 
 /**
  *  @defgroup I2S_STATUS Status Codes
- *  I2S_STATUS_* macros are general status codes used when user callback is called
+ *  I2S_STATUS macros are general status codes used when user callback is
+ *  called
  *  @{
  *  @ingroup I2S_CONTROL
  */
@@ -592,8 +601,8 @@ extern "C" {
 /*!
  * @brief   Successful status code returned by I2S driver functions.
  *
- * I2S driver functions return I2S_ALL_TRANSACTION_SUCCESS if ALL the queued transactions
- * were executed successfully.
+ * I2S driver functions return I2S_ALL_TRANSACTION_SUCCESS if ALL the queued
+ * transactions were executed successfully.
  */
 #define I2S_ALL_TRANSACTIONS_SUCCESS (0x0001U)
 
@@ -608,7 +617,8 @@ extern "C" {
 /*!
  * @brief   Error status code returned by I2S driver functions.
  *
- * I2S driver functions return I2S_TIMEOUT_ERROR if I2S module lost the audio clock.
+ * I2S driver functions return I2S_TIMEOUT_ERROR if I2S module lost the audio
+ * clock.
  * If this error has been raised, I2S module must be reseted and restarted.
  */
 #define I2S_TIMEOUT_ERROR (0x0100U)
@@ -616,8 +626,8 @@ extern "C" {
 /*!
  * @brief   Error status code returned by I2S driver functions.
  *
- * I2S driver functions return I2S_BUS_ERROR if I2S module faced problem with the DMA
- * bus (DMA transfer not completed in time).
+ * I2S driver functions return I2S_BUS_ERROR if I2S module faced problem with
+ * the DMA bus (DMA transfer not completed in time).
  * If this error has been raised, I2S module must be reseted and restarted.
  */
 #define I2S_BUS_ERROR (0x0200U)
@@ -625,7 +635,8 @@ extern "C" {
 /*!
  * @brief   Error status code returned by I2S driver functions.
  *
- * I2S driver functions return I2S_WS_ERROR if I2S module detect noise on the WS signal.
+ * I2S driver functions return I2S_WS_ERROR if I2S module detect noise on the WS
+ * signal.
  * If this error has been raised, I2S module must be reseted and restarted.
  */
 #define I2S_WS_ERROR (0x0400U)
@@ -651,11 +662,11 @@ extern "C" {
 
 /*! @brief  I2S Global configuration
  *
- *  The I2S_Config structure contains a set of pointers used to characterize
- *  the I2S driver implementation.
+ *  The I2S_Config structure contains a set of pointers used to characterize the
+ *  I2S driver implementation.
  *
- *  This structure needs to be defined before calling I2S_init() and it must
- *  not be changed thereafter.
+ *  This structure needs to be defined before calling I2S_init() and it must not
+ *  be changed thereafter.
  *
  *  @sa     I2S_init()
  */
@@ -699,9 +710,11 @@ typedef struct
  *
  *  @param      I2S_Handle      I2S_Handle
  *
- *  @param      status          Status of the operation (possible values are :
- *                              :I2S_STATUS_SUCCESS, :I2S_STATUS_ERROR,
- *                              :I2S_STATUS_BUFFER_UNAVAILABLE, :I2S_STATUS_TIMEOUT)
+ *  @param      status          Status of the operation (possible values are:
+ *                              #I2S_ALL_TRANSACTIONS_SUCCESS,
+ *                              #I2S_TRANSACTION_SUCCESS, #I2S_TIMEOUT_ERROR,
+ *                              #I2S_BUS_ERROR, #I2S_WS_ERROR,
+ *                              #I2S_PTR_READ_ERROR, #I2S_PTR_WRITE_ERROR).
  *
  *  @param      I2S_Transaction *transactionPtr: Pointer on the transaction that has just started.
  *                              For error callbacks, transactionPtr points on NULL.
@@ -730,9 +743,9 @@ typedef void (*I2S_StopInterface)(I2S_Handle handle);
 /*!
  *  @brief      I2S slot memory length setting
  *
- *  The enum defines if the module uses a 16 bits or a 24 bits buffer in memory.
- *  This value has no influence on the number of bits transmitted, but it should
- *  be consistent with the chosen word length.
+ *  The enum defines the number of bits used by the buffer in memory. This value
+ *  has no influence on the number of bits transmitted, but it should be
+ *  consistent with the chosen word length.
  *
  *  @warning Not all devices support all of the listed memory lengths. Please
  *  refer to the device-specific documentation for possible limitations.
@@ -750,8 +763,8 @@ typedef enum
 /*!
  *  @brief      I2S controller / target selection
  *
- *  The enum defines if the module acts like a controller (clocks are internally generated)
- *  or a target (the clocks are externally generated).
+ *  The enum defines if the module acts like a controller (clocks are internally
+ *  generated) or a target (the clocks are externally generated).
  */
 typedef enum
 {
@@ -790,8 +803,8 @@ typedef enum
  *
  *  The enum defines if the I2S if set with single or dual phase.
  *
- *  @warning Not all devices support all of the listed phase types. Please
- *  refer to the device-specific documentation for possible limitations.
+ *  @warning Not all devices support all of the listed phase types. Please refer
+ *  to the device-specific documentation for possible limitations.
  */
 typedef enum
 {
@@ -817,7 +830,8 @@ typedef enum
 /*!
  *  @brief      I2S data interface configuration
  *
- *  The enum defines the different settings for the data interfaces (SD0 and SD1).
+ *  The enum defines the different settings for the data interfaces (SD0 and
+ *  SD1).
  */
 typedef enum
 {
@@ -1035,8 +1049,8 @@ typedef struct
 
     /*!
      *  Select the frequency divider for CCLK signal. Final value of CCLK is
-     *  48MHz/CCLKDivider. Value must be selected
-     *  between 2 and 1024.
+     *  audio clock source / CCLKDivider. Value must be selected between 2 and
+     *  1024.
      */
     uint16_t CCLKDivider;
 
@@ -1044,8 +1058,9 @@ typedef struct
      *  I2S sampling frequency configuration in samples/second.
      *
      *  The selected sampling frequency must ensure that the SCK frequency will
-     *  be inside of its device-specific limits. Please refer to the device-specific
-     *  documentation for the lower and upper limits of the SCK frequency.
+     *  be inside of its device-specific limits. Please refer to the
+     *  device-specific documentation for the lower and upper limits of the SCK
+     *  frequency.
      */
     uint32_t samplingFrequency;
 
@@ -1159,15 +1174,15 @@ extern void I2S_Params_init(I2S_Params *params);
 /*!
  *  @brief   Initialize an I2S_Transaction struct to known state.
  *
- *  The I2S_Transaction struct is put in a known state. The application is
- *  still responsible for populating some of the fields.
+ *  The I2S_Transaction struct is put in a known state. The application is still
+ *  responsible for populating some of the fields.
  *  For example, the user is responsible to provide the buffer containing the
  *  data and the size of it.
  *  User provided buffer's size must matche with the I2S settings.
  *  If the buffer size is not adapted, the I2S module will truncate it.
- *  Authorized buffer sizes depend on the number of activated outputs, the number
- *  of channels activated, the memory slots length (16 or 24 bits), and the
- *  fixed-buffer-size eventually provided.
+ *  Authorized buffer sizes depend on the number of activated outputs, the
+ *  number of channels activated, the memory slots length (16 or 24 bits), and
+ *  the fixed-buffer-size eventually provided.
  *  Authorized buffer sizes are all the multiple values of the value of
  *  handle->object->memoryStepOut.
  *
@@ -1183,9 +1198,10 @@ extern void I2S_Transaction_init(I2S_Transaction *transaction);
  *
  *  @param  [in]    handle  An I2S_Handle.
  *
- *  @param  [in]    transaction A pointer to an I2S_Transaction object. The bufPtr
- *                              and bufSize fields must be set to a buffer and the
- *                              size of the buffer before passing to this function.
+ *  @param  [in]    transaction A pointer to an I2S_Transaction object. The
+ *                              bufPtr and bufSize fields must be set to a
+ *                              buffer and the size of the buffer before passing
+ *                              to this function.
  *
  *  @return void
  *
@@ -1201,9 +1217,10 @@ extern void I2S_setReadQueueHead(I2S_Handle handle, I2S_Transaction *transaction
  *
  *  @param  [in]    handle  An I2S_Handle.
  *
- *  @param  [in]    transaction A pointer to an I2S_Transaction object. The bufPtr
- *                              and bufSize fields must be set to a buffer and the
- *                              size of the buffer before passing to this function.
+ *  @param  [in]    transaction A pointer to an I2S_Transaction object. The
+ *                              bufPtr and bufSize fields must be set to a
+ *                              buffer and the size of the buffer before passing
+ *                              to this function.
  *
  *  @return void
  *
@@ -1214,8 +1231,8 @@ extern void I2S_setWriteQueueHead(I2S_Handle handle, I2S_Transaction *transactio
 /*!
  *  @brief Start the WS, SCK and CCLK clocks.
  *
- *  This function enable WS, SCK and CCLK (if activated) clocks. This is required before starting
- *  any reading or a writing transaction.
+ *  This function enable WS, SCK and CCLK (if activated) clocks. This is
+ *  required before starting any reading or a writing transaction.
  *  This function is supposed to be executed both in target and controller mode.
  *
  *  @param  [in]    handle  An I2S_Handle.
@@ -1231,7 +1248,8 @@ extern void I2S_startClocks(I2S_Handle handle);
  *
  *  This function disable WS, SCK and CCLK clocks.
  *  This function must be executed only if no transaction is in progress.
- *  This function is supposed to be executed in a Task context (NOT in a HWI or Callback context).
+ *  This function is supposed to be executed in a Task context (NOT in a HWI or
+ *  Callback context).
  *  This function is supposed to be executed both in target and controller mode.
  *
  *  @warning This function is supposed to be executed in a Task context
@@ -1249,18 +1267,19 @@ extern void I2S_stopClocks(I2S_Handle handle);
 /*!
  *  @brief Start read transactions.
  *
- *  This function starts reception of the transactions stored in the read-queue.
- *  and returns immediately. At the completion of each transaction the readCallback
- *  provided is executed.
+ *  This function starts reception of the transactions stored in the read-queue
+ *  and returns immediately. At the completion of each transaction the
+ *  readCallback provided is executed.
  *
  *  If the queue for read transactions becomes empty (i.e. the read Callback is
  *  triggered with status #I2S_ALL_TRANSACTIONS_SUCCESS and the application has
- *  not queued new transactions or defined a new first read-transaction to consider
- *  using #I2S_setReadQueueHead()), the driver will stop the read interface on its
- *  own in order to avoid the occurrence of errors (such as #I2S_PTR_READ_ERROR).
+ *  not queued new transactions or defined a new first read-transaction to
+ *  consider using #I2S_setReadQueueHead()), the driver will stop the read
+ *  interface on its own in order to avoid the occurrence of errors (such as
+ *  #I2S_PTR_READ_ERROR).
  *
- *  @pre First read-transaction to consider must be set and clocks must be running
- *  before calling this function.
+ *  @pre First read-transaction to consider must be set and clocks must be
+ *  running before calling this function.
  *
  *  @param  [in]    handle  An I2S_Handle.
  *
@@ -1274,18 +1293,19 @@ extern void I2S_startRead(I2S_Handle handle);
 /*!
  *  @brief Start write transactions.
  *
- *  This function starts transmission of the transactions stored in the write-queue
- *  and returns immediately. At the completion of each transaction the write Callback
- *  provided is executed.
+ *  This function starts transmission of the transactions stored in the
+ *  write-queue and returns immediately. At the completion of each transaction
+ *  the write Callback provided is executed.
  *
- *  If the queue for write transactions becomes empty (i.e. the write Callback is
- *  triggered with status #I2S_ALL_TRANSACTIONS_SUCCESS and the application has not
- *  queued new transactions or defined a new first write-transaction to consider using
- *  #I2S_setWriteQueueHead()), the driver will stop the write interface on its own in
- *  order to avoid the occurrence of errors (such as #I2S_PTR_WRITE_ERROR).
+ *  If the queue for write transactions becomes empty (i.e. the write Callback
+ *  is triggered with status #I2S_ALL_TRANSACTIONS_SUCCESS and the application
+ *  has not queued new transactions or defined a new first write-transaction to
+ *  consider using #I2S_setWriteQueueHead()), the driver will stop the write
+ *  interface on its own in order to avoid the occurrence of errors (such as
+ *  #I2S_PTR_WRITE_ERROR).
  *
- *  @pre First write-transaction to consider must be set and clocks must be running
- *  before calling this function.
+ *  @pre First write-transaction to consider must be set and clocks must be
+ *  running before calling this function.
  *
  *  @param  [in]    handle  An I2S_Handle.
  *
@@ -1302,16 +1322,18 @@ extern void I2S_startWrite(I2S_Handle handle);
  *  This function stops the reception of read transactions correctly so that
  *  read operations can be safely restarted later.
  *
- *  The application can decide at any time to suspend the reception of data by calling
- *  this function. In this case (and because the transaction queue is not empty) the
- *  execution of #I2S_stopRead() is blocked until the current transaction is completed
- *  (this ensures that the I2S read interface is correctly stopped). Therefore, this
- *  function must be executed in a Task context (not in a HWI or Callback context).
+ *  The application can decide at any time to suspend the reception of data by
+ *  calling this function. In this case (and because the transaction queue is
+ *  not empty) the execution of #I2S_stopRead() is blocked until the current
+ *  transaction is completed (this ensures that the I2S read interface is
+ *  correctly stopped). Therefore, this function must be executed in a Task
+ *  context (not in a HWI or Callback context).
  *
- *  After the transfers have been stopped (either by calling #I2S_stopRead() or because
- *  the queue has been empty), the application can resume the transfers using the
- *  function #I2S_startRead(). If the read-queue was empty application must beforehand
- *  set the first read-transaction using #I2S_setReadQueueHead().
+ *  After the transfers have been stopped (either by calling #I2S_stopRead() or
+ *  because the queue has been empty), the application can resume the transfers
+ *  using the function #I2S_startRead(). If the read-queue was empty application
+ *  must beforehand set the first read-transaction using
+ *  #I2S_setReadQueueHead().
  *
  *  @param  [in]    handle  An I2S_Handle.
  *
@@ -1325,16 +1347,18 @@ extern void I2S_stopRead(I2S_Handle handle);
  *  This function stops the transmission of write transactions correctly so that
  *  writing operations can be safely restarted later.
  *
- *  The application can decide at any time to suspend the sending of data by calling
- *  this function. In this case (and because the transaction queue is not empty) the
- *  execution of #I2S_stopWrite() is blocked until the current transaction is completed
- *  (this ensures that the I2S write interface is correctly stopped). Therefore, this
- *  function must be executed in a Task context (not in a HWI or Callback context).
+ *  The application can decide at any time to suspend the sending of data by
+ *  calling this function. In this case (and because the transaction queue is
+ *  not empty) the execution of #I2S_stopWrite() is blocked until the current
+ *  transaction is completed (this ensures that the I2S write interface is
+ *  correctly stopped). Therefore, this function must be executed in a Task
+ *  context (not in a HWI or Callback context).
  *
- *  After the transfers have been stopped (either by calling #I2S_stopWrite() or because
- *  the queue has been empty), the application can resume the transfers using the
- *  function #I2S_startWrite(). If the write-queue was empty application must beforehand
- *  set the first write-transaction using #I2S_setWriteQueueHead().
+ *  After the transfers have been stopped (either by calling #I2S_stopWrite() or
+ *  because the queue has been empty), the application can resume the transfers
+ *  using the function #I2S_startWrite(). If the write-queue was empty
+ *  application must beforehand set the first write-transaction using
+ *  #I2S_setWriteQueueHead().
  *
  *  @param  [in]    handle  An I2S_Handle.
  *

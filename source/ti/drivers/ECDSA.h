@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2024, Texas Instruments Incorporated
+ * Copyright (c) 2017-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -637,7 +637,8 @@ typedef enum
                                          */
 } ECDSA_ReturnBehavior;
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) || \
+     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1))
 /*!
  *  @brief  Enum for the curve types supported by the driver.
  */
@@ -682,8 +683,10 @@ typedef enum
  */
 typedef struct
 {
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) || \
+     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1))
     ECDSA_CurveType curveType; /*!< An ECDSA_CurveType value indicating which EC curve to use for the operation*/
+    size_t hashLength;         /*!< The length in bytes of the hash digest */
 #endif
     const ECCParams_CurveParams *curve; /*!< A pointer to the elliptic curve parameters */
     const CryptoKey *myPrivateKey;      /*!< A pointer to the private ECC key that will
@@ -711,8 +714,10 @@ typedef struct
  */
 typedef struct
 {
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) || \
+     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1))
     ECDSA_CurveType curveType;
+    size_t hashLength; /*!< The length in bytes of the hash digest */
 #else
     const ECCParams_CurveParams *curve; /*!< A pointer to the elliptic curve parameters */
 #endif

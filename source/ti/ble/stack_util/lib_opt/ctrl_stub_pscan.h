@@ -90,7 +90,7 @@
 extern void llSetTaskPeriodicScan(void);
 extern taskInfo_t * llSelectTaskPeriodicScan(uint8_t secTaskID, uint32_t timeGap);
 extern bool LL_PadvA_CheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo);
-extern void LL_PadvS_ProcessPeriodicSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
+extern void LL_PadvS_ProcessPeriodicSyncInfo(llAdvPDUInfo * pAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
 extern void LL_PadvS_PostProcess(void);
 extern void LL_PadvS_ProcessRxFIFO(void);
 extern void * LL_PadvS_FindNextSet(uint16_t scanMaxNumMiss);
@@ -122,7 +122,7 @@ extern llStatus_t LL_PadvS_GetPerodicSyncTransferInfo(uint16_t syncHandle, llPer
 void OPT_llSetTaskPeriodicScan(void);
 taskInfo_t * OPT_llSelectTaskPeriodicScan(uint8_t secTaskID, uint32_t timeGap);
 bool OPT_LL_PadvA_CheckSyncInfoCriteria(llAdvPDUInfo * pAdvPDUInfo);
-void OPT_LL_PadvS_ProcessPeriodicSyncInfo(llExtAdvPDUInfo * pExtAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
+void OPT_LL_PadvS_ProcessPeriodicSyncInfo(llAdvPDUInfo * pAdvInfo, aeExtAdvRptEvt_t * advEvent, uint32_t timeStamp);
 void OPT_LL_PadvS_PostProcess(void);
 void OPT_LL_PadvS_ProcessRxFIFO(void);
 void * OPT_LL_PadvS_FindNextSet(uint16_t scanMaxNumMiss);

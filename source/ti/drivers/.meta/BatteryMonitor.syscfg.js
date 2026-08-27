@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,9 +56,9 @@ are invoked when the supply voltage crosses a specified threshold.
 * [Examples][3]
 * [Configuration Options][4]
 
-[1]: /drivers/doxygen/html/_batterymonitor_8h.html#details "C API reference"
-[2]: /drivers/doxygen/html/_batterymonitor_8h.html#ti_drivers_BatteryMonitor_Synopsis "Basic C usage summary"
-[3]: /drivers/doxygen/html/_batterymonitor_8h.html#ti_drivers_BatteryMonitor_Examples "C usage examples"
+[1]: /drivers/doxygen/html/_battery_monitor_8h.html#details "C API reference"
+[2]: /drivers/doxygen/html/_battery_monitor_8h.html#ti_drivers_BatteryMonitor_Synopsis "Basic C usage summary"
+[3]: /drivers/doxygen/html/_battery_monitor_8h.html#ti_drivers_BatteryMonitor_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#BatteryMonitor_Configuration_Options "Configuration options reference"
 `,
     maxInstances        : 1,

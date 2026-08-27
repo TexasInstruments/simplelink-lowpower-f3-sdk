@@ -17,6 +17,11 @@
 
 #include "crypto_library.h"
 
+/* TI-TFM: Add header include for TI's PSA Crypto API implementation */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+#include "ti_psa_crypto.h"
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
+
 /*!
  * \addtogroup tfm_crypto_api_shim_layer
  *
@@ -40,9 +45,13 @@ psa_status_t tfm_crypto_asymmetric_sign_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         uint8_t *signature = out_vec[0].base;
         size_t signature_size = out_vec[0].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_sign_message(library_key, iov->alg, input, input_length,
+                                    signature, signature_size, &(out_vec[0].len));
+#else
         status = psa_sign_message(library_key, iov->alg, input, input_length,
                                   signature, signature_size, &(out_vec[0].len));
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -54,9 +63,13 @@ psa_status_t tfm_crypto_asymmetric_sign_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         const uint8_t *signature = in_vec[2].base;
         size_t signature_length = in_vec[2].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_verify_message(library_key, iov->alg, input, input_length,
+                                      signature, signature_length);
+#else
         return psa_verify_message(library_key, iov->alg, input, input_length,
                                   signature, signature_length);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_ASYMMETRIC_SIGN_HASH_SID:
     {
@@ -64,9 +77,13 @@ psa_status_t tfm_crypto_asymmetric_sign_interface(psa_invec in_vec[],
         size_t hash_length = in_vec[1].len;
         uint8_t *signature = out_vec[0].base;
         size_t signature_size = out_vec[0].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_sign_hash(library_key, iov->alg, hash, hash_length,
+                                  signature, signature_size, &(out_vec[0].len));
+#else
         status = psa_sign_hash(library_key, iov->alg, hash, hash_length,
                                signature, signature_size, &(out_vec[0].len));
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -78,9 +95,13 @@ psa_status_t tfm_crypto_asymmetric_sign_interface(psa_invec in_vec[],
         size_t hash_length = in_vec[1].len;
         const uint8_t *signature = in_vec[2].base;
         size_t signature_length = in_vec[2].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_verify_hash(library_key, iov->alg, hash, hash_length,
+                                  signature, signature_length);
+#else
         return psa_verify_hash(library_key, iov->alg, hash, hash_length,
                                signature, signature_length);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     default:
         return PSA_ERROR_NOT_SUPPORTED;
@@ -120,12 +141,19 @@ psa_status_t tfm_crypto_asymmetric_encrypt_interface(psa_invec in_vec[],
         size_t salt_length = in_vec[2].len;
         uint8_t *output = out_vec[0].base;
         size_t output_size = out_vec[0].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_asymmetric_encrypt(library_key, iov->alg,
+                                            input, input_length,
+                                            salt, salt_length,
+                                            output, output_size,
+                                            &(out_vec[0].len));
+#else
         status = psa_asymmetric_encrypt(library_key, iov->alg,
                                         input, input_length,
                                         salt, salt_length,
                                         output, output_size,
                                         &(out_vec[0].len));
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -139,12 +167,19 @@ psa_status_t tfm_crypto_asymmetric_encrypt_interface(psa_invec in_vec[],
         size_t salt_length = in_vec[2].len;
         uint8_t *output = out_vec[0].base;
         size_t output_size = out_vec[0].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_asymmetric_decrypt(library_key, iov->alg,
+                                             input, input_length,
+                                             salt, salt_length,
+                                             output, output_size,
+                                             &(out_vec[0].len));
+#else
         status = psa_asymmetric_decrypt(library_key, iov->alg,
                                         input, input_length,
                                         salt, salt_length,
                                         output, output_size,
                                         &(out_vec[0].len));
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }

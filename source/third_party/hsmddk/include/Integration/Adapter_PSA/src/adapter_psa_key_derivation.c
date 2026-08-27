@@ -80,12 +80,47 @@
 #include <third_party/hsmddk/include/Kit/Log/incl/log.h>
 #include <third_party/hsmddk/include/Kit/DriverFramework/CLib_Abstraction_API/incl/clib.h>                       // size_t
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>                 // the API to implement
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_derivation.h> // psa_key_derivation_operation_t
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_internal.h>
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_management.h>
 
 /*----------------------------------------------------------------------------
  * Definitions and macros
  */
+
+/* Note that the following prefixing macros cannot exist in
+ * adapter_psa_key_management_prefix. This is because top-level
+ * crypto.h includes that prefix header, and the KeyMgmt
+ * key derivation APIs differ from those that the PSA API
+ * defines in more than just API name. The derivation
+ * operation struct is different.
+ */
+#define KEYMGMT_FUNCTION_NAME(x) KeyMgmt_##x
+
+#define psa_key_derivation_get_capacity \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_get_capacity)
+#define psa_key_derivation_set_capacity \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_set_capacity)
+#define psa_key_derivation_input_bytes \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_input_bytes)
+#define psa_key_derivation_input_integer \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_input_integer)
+#define psa_key_derivation_output_bytes \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_output_bytes)
+#define psa_key_derivation_input_key \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_input_key)
+#define psa_key_derivation_output_key \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_output_key)
+#define psa_key_derivation_verify_bytes \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_verify_bytes)
+#define psa_key_derivation_verify_key \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_verify_key)
+#define psa_key_derivation_setup \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_setup)
+#define psa_key_derivation_abort \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_abort)
+#define psa_key_derivation_key_agreement \
+        KEYMGMT_FUNCTION_NAME(psa_key_derivation_key_agreement)
 
 /*----------------------------------------------------------------------------
  * is_kdf_alg_supported
@@ -109,25 +144,25 @@ static int is_kdf_alg_supported(psa_algorithm_t kdf_alg)
 static psa_status_t validate_attributes(const psa_key_attributes_t * attributes, mbedtls_svc_key_id_t derivationKey, uint32_t capacity)
 {
     psa_status_t status = PSA_SUCCESS;
-    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
-    psa_key_persistence_t persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime));
-    size_t key_size = (attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) + 7) / 8;
+    psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION(attributes->MBEDTLS_PRIVATE(lifetime));
+    psa_key_persistence_t persistence = PSA_KEY_LIFETIME_GET_PERSISTENCE(attributes->MBEDTLS_PRIVATE(lifetime));
+    size_t key_size = PSA_BITS_TO_BYTES(attributes->MBEDTLS_PRIVATE(bits));
     psa_key_id_t derivedKeyID;
     psa_key_id_t derivationKeyID;
 #ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-    derivedKeyID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
+    derivedKeyID = attributes->MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id);
     derivationKeyID = derivationKey.MBEDTLS_PRIVATE(key_id);
 #else
-    derivedKeyID = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
+    derivedKeyID = attributes->MBEDTLS_PRIVATE(id);
     derivationKeyID = derivationKey;
 #endif
 
-    if ((attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) == PSA_KEY_TYPE_NONE) ||
-        (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type))))
+    if ((attributes->MBEDTLS_PRIVATE(type) == PSA_KEY_TYPE_NONE) ||
+        (PSA_KEY_TYPE_IS_PUBLIC_KEY(attributes->MBEDTLS_PRIVATE(type))))
     {
         status = PSA_ERROR_INVALID_ARGUMENT;
     }
-    else if ((location != PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT) ||
+    else if ((location != PSA_KEY_LOCATION_HSM_ASSET_STORE) ||
              (persistence != PSA_KEY_PERSISTENCE_HSM_ASSET_STORE))
     {
         /* Derived keys cannot be retrieved in plaintext. They must be derived as keys with HSM_ASSET_STORE
@@ -136,12 +171,12 @@ static psa_status_t validate_attributes(const psa_key_attributes_t * attributes,
         status = PSA_ERROR_INVALID_ARGUMENT;
     }
     else if (((derivationKeyID == PSA_KEY_ID_HSM_HUK) && (derivedKeyID != PSA_KEY_ID_HSM_TKDK)) ||
-             (derivedKeyID < PSA_KEY_ID_USER_MIN) ||
+             ((derivedKeyID != PSA_KEY_ID_NULL) && (derivedKeyID < PSA_KEY_ID_USER_MIN)) ||
              ((derivationKeyID != PSA_KEY_ID_HSM_HUK) && (derivedKeyID >= PSA_KEY_ID_HSM_TKDK)))
     {
         /* The derived key ID can only be that of the TKDK when the KDK is the HUK. The ID must be
-         * at least the minimum value. If the KDK is not the HUK, then the derived KDK ID must
-         * not be that of the TKDK or anything higher.
+         * at least the minimum value, if one is provided. If the KDK is not the HUK, then the derived
+         * KDK ID must not be that of the TKDK or anything higher.
          */
         status = PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -157,7 +192,7 @@ static psa_status_t validate_attributes(const psa_key_attributes_t * attributes,
  * psa_key_derivation_setup
  */
 psa_status_t
-psa_key_derivation_setup(psa_key_derivation_operation_t * operation,
+psa_key_derivation_setup(KeyMgmt_psa_key_derivation_operation_t * operation,
                          psa_algorithm_t alg)
 {
     if ((alg & PSA_ALG_CATEGORY_MASK) != PSA_ALG_CATEGORY_KEY_DERIVATION)
@@ -186,7 +221,7 @@ psa_key_derivation_setup(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_get_capacity
  */
 psa_status_t
-psa_key_derivation_get_capacity(const psa_key_derivation_operation_t *operation,
+psa_key_derivation_get_capacity(const KeyMgmt_psa_key_derivation_operation_t *operation,
                                 size_t *capacity)
 {
     if (operation->alg == 0) {
@@ -203,7 +238,7 @@ psa_key_derivation_get_capacity(const psa_key_derivation_operation_t *operation,
  * psa_key_derivation_set_capacity
  */
 psa_status_t
-psa_key_derivation_set_capacity(psa_key_derivation_operation_t * operation,
+psa_key_derivation_set_capacity(KeyMgmt_psa_key_derivation_operation_t * operation,
                                 size_t capacity)
 {
     if (operation->alg == 0) {
@@ -234,7 +269,7 @@ psa_key_derivation_set_capacity(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_input_bytes
  */
 psa_status_t
-psa_key_derivation_input_bytes(psa_key_derivation_operation_t * operation,
+psa_key_derivation_input_bytes(KeyMgmt_psa_key_derivation_operation_t * operation,
                                psa_key_derivation_step_t step,
                                const uint8_t * data,
                                size_t data_length)
@@ -356,7 +391,7 @@ psa_key_derivation_input_bytes(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_input_integer
  */
 psa_status_t
-psa_key_derivation_input_integer(psa_key_derivation_operation_t * operation,
+psa_key_derivation_input_integer(KeyMgmt_psa_key_derivation_operation_t * operation,
                                  psa_key_derivation_step_t step,
                                  uint64_t value)
 {
@@ -375,7 +410,7 @@ psa_key_derivation_input_integer(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_input_key
  */
 psa_status_t
-psa_key_derivation_input_key(psa_key_derivation_operation_t * operation,
+psa_key_derivation_input_key(KeyMgmt_psa_key_derivation_operation_t * operation,
                              psa_key_derivation_step_t step,
                              mbedtls_svc_key_id_t key)
 {
@@ -416,9 +451,9 @@ psa_key_derivation_input_key(psa_key_derivation_operation_t * operation,
 
             if (status == PSA_SUCCESS)
             {
-                psaAlg = attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
-                psaUsage = attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-                psaType = attributes.MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
+                psaAlg = attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+                psaUsage = attributes.MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+                psaType = attributes.MBEDTLS_PRIVATE(type);
 
                 if ((derivationKeyID == PSA_KEY_ID_HSM_TKDK) &&
                     (operation->alg == PSA_ALG_SP800_108_COUNTER_HMAC(PSA_ALG_SHA_256)) &&
@@ -473,7 +508,7 @@ psa_key_derivation_input_key(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_output_bytes
  */
 psa_status_t
-psa_key_derivation_output_bytes(psa_key_derivation_operation_t * operation,
+psa_key_derivation_output_bytes(KeyMgmt_psa_key_derivation_operation_t * operation,
                                 uint8_t * output,
                                 size_t output_length)
 {
@@ -493,7 +528,7 @@ psa_key_derivation_output_bytes(psa_key_derivation_operation_t * operation,
  */
 psa_status_t
 psa_key_derivation_output_key(const psa_key_attributes_t * attributes,
-                              psa_key_derivation_operation_t * operation,
+                              KeyMgmt_psa_key_derivation_operation_t * operation,
                               mbedtls_svc_key_id_t * key)
 {
     psa_status_t status;
@@ -532,7 +567,7 @@ psa_key_derivation_output_key(const psa_key_attributes_t * attributes,
  * psa_key_derivation_verify_bytes
  */
 psa_status_t
-psa_key_derivation_verify_bytes(psa_key_derivation_operation_t * operation,
+psa_key_derivation_verify_bytes(KeyMgmt_psa_key_derivation_operation_t * operation,
                                 const uint8_t *expected_output,
                                 size_t output_length)
 {
@@ -548,7 +583,7 @@ psa_key_derivation_verify_bytes(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_verify_key
  */
 psa_status_t
-psa_key_derivation_verify_key(psa_key_derivation_operation_t * operation,
+psa_key_derivation_verify_key(KeyMgmt_psa_key_derivation_operation_t * operation,
                               mbedtls_svc_key_id_t expected)
 {
     (void)operation;
@@ -562,7 +597,7 @@ psa_key_derivation_verify_key(psa_key_derivation_operation_t * operation,
  * psa_key_derivation_set_capacity
  */
 psa_status_t
-psa_key_derivation_abort(psa_key_derivation_operation_t * operation)
+psa_key_derivation_abort(KeyMgmt_psa_key_derivation_operation_t * operation)
 {
     operation->alg = 0;
     operation->inputKey = MBEDTLS_SVC_KEY_ID_INIT;
@@ -582,7 +617,7 @@ psa_key_derivation_abort(psa_key_derivation_operation_t * operation)
  * psa_key_derivation_key_agreement
  */
 psa_status_t
-psa_key_derivation_key_agreement(psa_key_derivation_operation_t * operation,
+psa_key_derivation_key_agreement(KeyMgmt_psa_key_derivation_operation_t * operation,
                                  psa_key_derivation_step_t step,
                                  mbedtls_svc_key_id_t private_key,
                                  const uint8_t * peer_key,

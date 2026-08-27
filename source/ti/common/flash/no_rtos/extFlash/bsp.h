@@ -52,8 +52,7 @@ extern "C" {
 #include DeviceFamily_constructPath(inc/hw_sysctl.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0 && DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
     #include DeviceFamily_constructPath(driverlib/ioc.h)
 #endif
 #include DeviceFamily_constructPath(driverlib/gpio.h)
@@ -62,8 +61,7 @@ extern "C" {
  * DEFINES
  */
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0 && DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
     // Board LED defines
     #define BSP_IOID_LED_1 IOID_6
     #define BSP_IOID_LED_2 IOID_7
@@ -74,8 +72,7 @@ extern "C" {
 #endif
 
 // Board external flash defines
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || \
-    (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X1_CC26X1)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X2_CC26X2) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X1_CC26X1)
 
     #define BSP_IOID_FLASH_CS IOID_20
     #define BSP_SPI_MOSI      IOID_9
@@ -120,7 +117,7 @@ extern "C" {
     #define BSP_SPI_MISO      21
     #define BSP_SPI_CLK_FLASH 24
 
-#elif defined(DeviceFamily_CC27XX)
+#elif defined(DeviceFamily_PARENT_CC27XX)
 
     #define BSP_IOID_FLASH_CS 19
     #define BSP_SPI_MOSI      5

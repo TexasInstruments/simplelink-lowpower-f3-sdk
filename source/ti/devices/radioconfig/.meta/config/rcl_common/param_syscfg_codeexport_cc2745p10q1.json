@@ -269,10 +269,10 @@
     "ieee_15_4": {},
     "prop": {
       "swConfig": "LRF_swConfig",
-      "config": "LRF_config",
-      "cfg_segment_list": "LRF_regConfigList",
       "txPowerTable": "LRF_txPowerTable",
-      "txPowerLimitTable": "LRF_txPowerLimitTable"
+      "txPowerLimitTable": "LRF_txPowerLimitTable",
+      "config": "LRF_config",
+      "cfg_segment_list": "LRF_regConfigList"
     }
   }
 }

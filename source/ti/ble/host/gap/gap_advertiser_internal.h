@@ -175,6 +175,19 @@ extern void      gapAdv_processRemoveSetEvt(uint8_t handle,
                                             aeSetParamCmd_t* pAdvParam);
 
 /**
+ * gapAdv_processBLEPeriodicAdvCBs
+ *
+ * Process an incoming OSAL HCI BLE specific events for
+ * periodic advertising with responses.
+ *
+ * @param   pMsg - message to process
+ *
+ * @return  TRUE if processed and safe to deallocate, FALSE if passed
+ *          off to another task.
+ */
+uint8_t gapAdv_processBLEPeriodicAdvCBs(osal_event_hdr_t *pMsg);
+
+/**
  * gapAdv_periodicAdvCmdCompleteCBs
  *
  * Process an incoming OSAL HCI Command Complete Event for

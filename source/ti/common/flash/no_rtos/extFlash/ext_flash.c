@@ -139,8 +139,7 @@ static int extFlashWaitPowerDown(void);
  */
 static void extFlashSelect(void)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0 && DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
     GPIO_clearDio(BSP_IOID_FLASH_CS);
 #else
     bspGpioWrite(BSP_IOID_FLASH_CS, 0);
@@ -158,8 +157,7 @@ static void extFlashSelect(void)
  */
 static void extFlashDeselect(void)
 {
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0 && DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
     GPIO_setDio(BSP_IOID_FLASH_CS);
 #else
     bspGpioWrite(BSP_IOID_FLASH_CS, 1);
@@ -224,13 +222,17 @@ static bool extFlashPowerStandby(void)
 
     if (success)
     {
-        volatile uint16_t i = 400;
-
         // Waking up of the device is manufacturer dependent.
         // for a Winbond chip-set, once the request to wake up the flash has been
         // send, CS needs to stay high at least 3us (for Winbond part)
         // for chip-set like Macronix, it can take up to 35us.
-        for (i; i > 0; i--)
+        // Iteration count scaled for CPU frequency: 400 at 48MHz, 800 at 96MHz (CC27XX).
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+        volatile uint16_t i = 800;
+#else
+        volatile uint16_t i = 400;
+#endif
+        for (; i > 0; i--)
         {
             ;
         }
@@ -380,8 +382,7 @@ bool extFlashOpen(void)
     bspSpiOpen(SPI_BIT_RATE, BSP_SPI_CLK_FLASH);
 
     /* GPIO pin configuration */
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0 && DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
     IOCPinTypeGpioOutput(BSP_IOID_FLASH_CS);
 #else
     bspGpioSetConfig(BSP_IOID_FLASH_CS, SPI_CS_STD_OUT);

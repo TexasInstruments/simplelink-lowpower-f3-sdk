@@ -62,7 +62,7 @@ The VC pins are used to select the antenna on the BoosterPack:
 | VC1 | 0        | 0        | 1        | 1        |
 | VC2 | 0        | 1        | 0        | 1        |
 
-[device]: https://www.ti.com/product/CC2340R53-Q1
+[device]: https://www.ti.com/product/CC2340R5-Q1
 [boostxl-sharp128]: https://www.ti.com/tool/BOOSTXL-SHARP128
 [bp-bassensorsmkii]: https://www.ti.com/tool/BP-BASSENSORSMKII
 [cc3200audboost]: https://www.ti.com/tool/CC3200AUDBOOST

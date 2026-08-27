@@ -92,39 +92,39 @@ void OPT_llSetTaskPeriodicAdv(void)
     llSetTaskPeriodicAdv();
 }
 
-void OPT_llClearPeriodicAdvSets(void)
+void OPT_LL_PadvA_ClearAllSets(void)
 {
-    llClearPeriodicAdvSets();
+    LL_PadvA_ClearAllSets();
 }
 
-void OPT_llSetPeriodicAdvChmapUpdate(uint8_t set)
+void OPT_LL_PadvA_SetChanMapUpdate(uint8_t set)
 {
-    llSetPeriodicAdvChmapUpdate(set);
+    LL_PadvA_SetChanMapUpdate(set);
 }
 
-void * OPT_llFindNextPeriodicAdv(void)
+void * OPT_LL_PadvA_GetNextSet(void)
 {
-    return llFindNextPeriodicAdv();
+    return LL_PadvA_GetNextSet();
 }
 
-llStatus_t OPT_llSetupPeriodicAdv(advSet_t * pAdvSet)
+llStatus_t OPT_LL_PadvA_SetupCommand(advSet_t * pAdvSet)
 {
-    return llSetupPeriodicAdv(pAdvSet);
+    return LL_PadvA_SetupCommand(pAdvSet);
 }
 
-void OPT_llSetPeriodicSyncInfo(advSet_t * pAdvSet, uint8_t * pBuf)
+void OPT_LL_PadvA_BuildSyncInfo(advSet_t * pAdvSet, uint8_t * pBuf)
 {
-    llSetPeriodicSyncInfo(pAdvSet, pBuf);
+    LL_PadvA_BuildSyncInfo(pAdvSet, pBuf);
 }
 
-llPeriodicAdvSet_t * OPT_llGetCurrentPeriodicAdv(void)
+llPeriodicAdvSet_t * OPT_LL_PadvA_GetCurrent(void)
 {
-    return llGetCurrentPeriodicAdv();
+    return LL_PadvA_GetCurrent();
 }
 
-llPeriodicAdvSet_t * OPT_llGetPeriodicAdv(uint8_t handle)
+llPeriodicAdvSet_t * OPT_LL_PadvA_GetSetByHandle(uint8_t handle)
 {
-    return llGetPeriodicAdv(handle);
+    return LL_PadvA_GetSetByHandle(handle);
 }
 
 taskInfo_t * OPT_llSelectTaskPeriodicAdv(uint8_t secTaskID, uint32_t timeGap)
@@ -137,9 +137,9 @@ hciStatus_t OPT_hciCmdParserPeriodicAdv(uint8_t * pData, uint16_t cmdOpCode)
     return hciCmdParserPeriodicAdv(pData, cmdOpCode);
 }
 
-llStatus_t OPT_LE_SetPeriodicAdvParams(uint8_t advHandle, uint16_t periodicAdvIntervalMin, uint16_t periodicAdvIntervalMax, uint16_t periodicAdvProp)
+llStatus_t OPT_LE_SetPeriodicAdvParams(uint8_t advHandle, uint16_t periodicAdvIntervalMin, uint16_t periodicAdvIntervalMax, uint16_t periodicAdvProp, uint8_t* pPAwRParams)
 {
-    return LE_SetPeriodicAdvParams(advHandle, periodicAdvIntervalMin, periodicAdvIntervalMax, periodicAdvProp);
+    return LE_SetPeriodicAdvParams(advHandle, periodicAdvIntervalMin, periodicAdvIntervalMax, periodicAdvProp, pPAwRParams);
 }
 
 llStatus_t OPT_LE_SetPeriodicAdvData(uint8_t advHandle, uint8_t operation, uint8_t dataLength, uint8_t * data)
@@ -152,44 +152,34 @@ llStatus_t OPT_LE_SetPeriodicAdvEnable(uint8_t enable, uint8_t advHandle)
     return LE_SetPeriodicAdvEnable(enable, advHandle);
 }
 
-void OPT_llExtAdv_PostProcess_padv(advSet_t * pAdvSet)
+uint8_t OPT_LL_PadvA_CompareQosPriorityToConn(llConnState_t * primConnPtr)
 {
-    llExtAdv_PostProcess_padv(pAdvSet);
+    return LL_PadvA_CompareQosPriorityToConn(primConnPtr);
 }
 
-void OPT_llPostProcessExtendedAdv_padv(advSet_t * pAdvSet)
+uint8_t OPT_LL_PadvA_GetCurrentQOSPriority(uint8_t curllStatePriority)
 {
-    llPostProcessExtendedAdv_padv(pAdvSet);
+    return LL_PadvA_GetCurrentQOSPriority(curllStatePriority);
 }
 
-uint8_t OPT_llCompareSecondaryPrimaryTasksQoSParam_padv(llConnState_t * primConnPtr)
+uint32_t OPT_LL_PadvA_GetCurrentTotalOtaTime(uint32_t curTotalOtaTime)
 {
-    return llCompareSecondaryPrimaryTasksQoSParam_padv(primConnPtr);
+    return LL_PadvA_GetCurrentTotalOtaTime(curTotalOtaTime);
 }
 
-uint8_t OPT_llGetCurrentPeriodicAdvPriority(uint8_t curllStatePriority)
+uint8_t OPT_LL_PadvA_ValidateExtAdvParams(aeSetParamCmd_t * pCmdParams)
 {
-    return llGetCurrentPeriodicAdvPriority(curllStatePriority);
+    return LL_PadvA_ValidateExtAdvParams(pCmdParams);
 }
 
-uint32_t OPT_llGetCurrentPeriodicAdvTotalOtaTime(uint32_t curTotalOtaTime)
+uint8_t OPT_LL_PadvA_AddACADToAdv(uint8_t handle, uint8_t * pBuf, uint8 * pAcadLen)
 {
-    return llGetCurrentPeriodicAdvTotalOtaTime(curTotalOtaTime);
+    return LL_PadvA_AddACADToAdv(handle, pBuf, pAcadLen);
 }
 
-llStatus_t OPT_LE_SetExtAdvParams_padv(aeSetParamCmd_t * pCmdParams)
+void OPT_LL_PadvA_SetQOSPriority(uint32_t priority, uint16_t handle)
 {
-    return LE_SetExtAdvParams_padv(pCmdParams);
-}
-
-void OPT_LE_SetExtAdvEnable_padv(advSet_t * pAdvSet)
-{
-    LE_SetExtAdvEnable_padv(pAdvSet);
-}
-
-void OPT_LL_EXT_SetQOSParameters_padv(uint32_t paramVal, uint16_t taskHandle)
-{
-    LL_EXT_SetQOSParameters_padv(paramVal, taskHandle);
+    LL_PadvA_SetQOSPriority(priority, handle);
 }
 
 uint32_t OPT_llHandlePeriodicAdvEvents(uint32_t events)
@@ -197,29 +187,69 @@ uint32_t OPT_llHandlePeriodicAdvEvents(uint32_t events)
     return llHandlePeriodicAdvEvents(events);
 }
 
-bool OPT_LL_PeriodicAdvIsEnable(void)
+bool OPT_LL_PadvA_IsEnable(void)
 {
-    return LL_PeriodicAdvIsEnable();
+    return LL_PadvA_IsEnable();
 }
 
-advSet_t* OPT_LL_AE_GetNextAdvSet(void)
+bool OPT_LL_PadvA_IsExistByHandle(uint8_t advHandle)
 {
-    return LL_AE_GetNextAdvSet();
+    return LL_PadvA_IsExistByHandle(advHandle);
 }
 
-void OPT_LL_GetPeriodicTxUsageParams(llTxUsageParams_t* pPeriodicTxParams)
+void OPT_LL_PadvA_GetTxUsageParams(llTxUsageParams_t* pPeriodicTxParams)
 {
-    LL_GetPeriodicTxUsageParams(pPeriodicTxParams);
+    LL_PadvA_GetTxUsageParams(pPeriodicTxParams);
 }
 
-llPeriodicAdvSetType_e OPT_LL_GetPerodicTypeByAdvHandle(uint8_t advHandle)
+llPeriodicAdvSetType_e OPT_LL_PadvA_GetTypeByHandle(uint8_t advHandle)
 {
-    return LL_GetPerodicTypeByAdvHandle(advHandle);
+    return LL_PadvA_GetTypeByHandle(advHandle);
 }
 
-llStatus_t OPT_LL_GetPerodicSyncTransferInfoByAdvHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData)
+llStatus_t OPT_LL_PadvA_GetSyncTransferInfoByHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData)
 {
-    return LL_GetPerodicSyncTransferInfoByAdvHandle(advHandle, pPeriodicSyncTransferData);
+    return LL_PadvA_GetSyncTransferInfoByHandle(advHandle, pPeriodicSyncTransferData);
+}
+
+void OPT_LL_PadvA_PostProcess(void)
+{
+    LL_PadvA_PostProcess();
+}
+
+void OPT_LL_PadvA_UpdateChainPacket(void)
+{
+    LL_PadvA_UpdateChainPacket();
+}
+
+uint8_t OPT_LL_PadvA_GetStateByHandle(uint8_t handle)
+{
+    return LL_PadvA_GetStateByHandle(handle);
+}
+
+uint8_t OPT_LL_PadvA_GetPendingDisableFlag(uint8_t handle)
+{
+    return LL_PadvA_GetPendingDisableFlag(handle);
+}
+
+void OPT_LL_PadvA_InitPAwRSubeventDataList(uint8_t handle)
+{
+    LL_PadvA_InitPAwRSubeventDataList(handle);
+}
+
+uint8_t OPT_LL_PadvA_TriggerCommand(advSet_t* pAdvSet, llPeriodicAdvSet_t* pPeriodicAdv)
+{
+    return LL_PadvA_TriggerCommand(pAdvSet, pPeriodicAdv);
+}
+
+void OPT_llExtAdvPeriodicHandler(advSet_t* pAdvSet)
+{
+    llExtAdvPeriodicHandler(pAdvSet);
+}
+
+void OPT_llExtAdvTriggerPeriodicIfNeeded(advSet_t* pAdvSet)
+{
+    llExtAdvTriggerPeriodicIfNeeded(pAdvSet);
 }
 
 #endif /* defined(USE_PERIODIC_ADV) */

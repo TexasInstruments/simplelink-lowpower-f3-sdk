@@ -1,0 +1,139 @@
+%%{
+/*
+ * Copyright (c) 2021-2026, Texas Instruments Incorporated - http://www.ti.com
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/*
+ *  ======== PowerCC23X1.Board_init.c.xdt ========
+ */
+    let CCFG = system.modules["/ti/devices/CCFG"];
+    let overrideCapArraySettings = false;
+    let enableHFXTCompensation = false;
+
+    /* Default values for HFXT */
+    let HFXTcoeffP0 = CCFG.hfxtDefaultParams["P0"];
+    let HFXTcoeffP1 = CCFG.hfxtDefaultParams["P1"];
+    let HFXTcoeffP2 = CCFG.hfxtDefaultParams["P2"];
+    let HFXTcoeffP3 = CCFG.hfxtDefaultParams["P3"];
+    let HFXTcoeffShift = CCFG.hfxtDefaultParams["shift"];
+    let HFXTCapArrayQ1 = CCFG.hfxtDefaultParams["hfxtCapArrayQ1"];
+    let HFXTCapArrayQ2 = CCFG.hfxtDefaultParams["hfxtCapArrayQ2"];
+    var HFXTTempThreshold, HFXTTempDelta;
+
+    if (CCFG !== undefined) {
+        if (CCFG.$static.overrideHfxtCapArray === true) {
+            // If the cap array settings were altered from their default, emit the code to set them
+            HFXTCapArrayQ1 = CCFG.$static.hfxtCapArrayQ1;
+            HFXTCapArrayQ2 = CCFG.$static.hfxtCapArrayQ2;
+            overrideCapArraySettings = true;
+        }
+
+        enableHFXTCompensation = CCFG.$static.enableHFXTComp;
+        HFXTTempThreshold = CCFG.$static.HFXTCompTempThreshold;
+        HFXTTempDelta = CCFG.$static.HFXTCompTempDelta;
+
+        if (CCFG.$static.customHFXTCoeff) {
+            HFXTcoeffP0 = CCFG.$static.HFXTCoefficientP0;
+            HFXTcoeffP1 = CCFG.$static.HFXTCoefficientP1;
+            HFXTcoeffP2 = CCFG.$static.HFXTCoefficientP2;
+            HFXTcoeffP3 = CCFG.$static.HFXTCoefficientP3;
+
+            /* If custom coefficients are used, we dynamically find the maximum scale-factor for maximum precision */
+            let coefficients = [HFXTcoeffP0, HFXTcoeffP1, HFXTcoeffP2, HFXTcoeffP3];
+            HFXTcoeffShift = CCFG.maxShift(coefficients);
+        }
+
+        /* If external capacitors are used the cap-array coefficients should be set to zero.
+         * The cap-array overrides should be forced to zero if the overrides have not been enabled.
+         */
+        if (CCFG.$static.useExternalHfxtCapacitors && (CCFG.$static.overrideHfxtCapArray === false)) {
+            HFXTCapArrayQ1 = 0;
+            HFXTCapArrayQ2 = 0;
+            overrideCapArraySettings = true;
+        }
+    }
+
+    /* Scale coefficients to fixed-point integers */
+    let HFXTcoeffP0Shifted = Math.trunc(HFXTcoeffP0 * Math.pow(2,HFXTcoeffShift));
+    let HFXTcoeffP1Shifted = Math.trunc(HFXTcoeffP1 * Math.pow(2,HFXTcoeffShift));
+    let HFXTcoeffP2Shifted = Math.trunc(HFXTcoeffP2 * Math.pow(2,HFXTcoeffShift));
+    let HFXTcoeffP3Shifted = Math.trunc(HFXTcoeffP3 * Math.pow(2,HFXTcoeffShift));
+
+    let board = system.deviceData.board;
+    let isFPGA = false;
+
+    /* Users may be using SysConfig with no provided board */
+    if (board !== undefined) {
+        isFPGA = board.name.match(/FPGA/);
+    }
+%%}
+%   if (overrideCapArraySettings) {
+    /* Set non-default cap array trims */
+    CKMDSetInitialCapTrim(`HFXTCapArrayQ1`, `HFXTCapArrayQ2`);
+    CKMDSetTargetCapTrim(`HFXTCapArrayQ1`, `HFXTCapArrayQ2`);
+%   }
+
+    Power_init();
+%   if (CCFG.$static.srcClkLF === "LF XOSC") {
+    PowerLPF3_selectLFXT();
+%   }
+%   else if (CCFG.$static.srcClkLF === "LF RCOSC") {
+    PowerLPF3_selectLFOSC();
+%   }
+%   else if (CCFG.$static.srcClkLF === "External LF clock") {
+    PowerLPF3_selectEXTLF();
+%   }
+%   if (!isFPGA && CCFG.$static.voltageRegulator == 'DCDC') {
+    PMCTLSetVoltageRegulator(PMCTL_VOLTAGE_REGULATOR_DCDC);
+%   }
+
+%   if (isFPGA) {
+    Power_setConstraint(PowerLPF3_DISALLOW_IDLE);
+    Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
+%   }
+
+    /* Set constraint to keep flash LDO on in IDLE */
+    Power_setConstraint(PowerLPF3_NEED_FLASH_IN_IDLE);
+
+%   if (enableHFXTCompensation) {
+    PowerLPF3_initHFXTCompensation(`HFXTcoeffP0Shifted`, /* floor(`HFXTcoeffP0` * 2^`HFXTcoeffShift`) */
+                                   `HFXTcoeffP1Shifted`, /* floor(`HFXTcoeffP1` * 2^`HFXTcoeffShift`) */
+                                   `HFXTcoeffP2Shifted`, /* floor(`HFXTcoeffP2` * 2^`HFXTcoeffShift`) */
+                                   `HFXTcoeffP3Shifted`, /* floor(`HFXTcoeffP3` * 2^`HFXTcoeffShift`) */
+                                   `HFXTcoeffShift`,     /* shift-value to bring floating-point coefficients to fixed-point */
+                                   false);               /* FCFG trim-values available */
+
+    /* HFXT temperature compensation will be performed as long as the measured temperature exceeds `HFXTTempThreshold`
+     * degrees Celsius, and drifts `HFXTTempDelta` degrees or more.
+     */
+    PowerLPF3_enableHFXTCompensation(`HFXTTempThreshold`, `HFXTTempDelta`);
+%   }

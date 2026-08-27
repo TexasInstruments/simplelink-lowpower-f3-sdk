@@ -63,7 +63,7 @@ The VC pins are used to select the antenna on the BoosterPack:
 | VC1 | 0        | 0        | 1        | 1        |
 | VC2 | 0        | 1        | 0        | 1        |
 
-[device]: https://www.ti.com/product/CC2340R53
+[device]: https://www.ti.com/product/CC2340R5
 [board]: https://www.ti.com/tool/LP-EM-CC2340R53
 [boostxl-canfd-lin]: https://www.ti.com/tool/BOOSTXL-CANFD-LIN
 [boostxl-sharp128]: https://www.ti.com/tool/BOOSTXL-SHARP128

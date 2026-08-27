@@ -50,29 +50,6 @@ intPriority.displayName = "Interrupt Priority";
 intPriority.description = "Crypto peripheral interrupt priority";
 
 /*
- *  ======== getLibs ========
- *  Argument to the /ti/utils/build/GenLibs.cmd.xdt template
- */
-function getLibs(mod)
-{
-    /* Get device information from GenLibs */
-    let GenLibs = system.getScript("/ti/utils/build/GenLibs");
-
-    let libGroup = {
-        name: "/third_party/hsmddk",
-        deps: [],
-        libs: [],
-        allowDuplicates: true
-    };
-
-    if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
-    }
-
-    return (libGroup);
-}
-
-/*
  *  ======== devSpecific ========
  *  Device-specific extensions to be added to base AESCTRDRBG configuration
  */
@@ -115,10 +92,6 @@ function extend(base)
 
     /* merge and overwrite base module attributes */
     let result = Object.assign({}, base, devSpecific);
-
-    if (deviceId.match(/CC27../)) {
-        devSpecific["templates"]["/ti/utils/build/GenLibs.cmd.xdt"] = {modName: "/ti/drivers/AESCTRDRBG", getLibs: getLibs};
-    }
 
     /* concatenate device-specific configs */
     result.config = base.config.concat(devSpecific.config);

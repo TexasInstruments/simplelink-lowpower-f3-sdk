@@ -44,6 +44,8 @@
  
  *****************************************************************************/
 
+#ifdef OAD_CFG
+
 /*********************************************************************
  * INCLUDES
  */
@@ -57,13 +59,16 @@
 #include "ti/ble/app_util/common/util.h"
 
 #ifdef SECURE_BOOT
-#include <ti/devices/cc27xx/driverlib/hapi.h>
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(driverlib/hapi.h)
 #endif
 #ifdef OAD_APP_ONCHIP
 #include "ti/ble/services/oad/oad_reset_service.h"
 #else
 #include "ti/ble/services/oad/oad_service.h"
 #endif //OAD_APP_ONCHIP
+
+#include <ti/log/Log.h>
 
 /*********************************************************************
  * MACROS
@@ -122,51 +127,63 @@ typedef enum
 
 typedef enum
 {
-    OAD_EVT_IMG_IDENTIFY_REQ = 0x00,  //Image identify request - his event occurs when new oad process begin with new image request.
+    OAD_EVT_IMG_IDENTIFY_REQ    = 0x00,  //Image identify request - his event occurs when new oad process begin with new image request.
 
-    OAD_EVT_BLOCK_REQ        = 0x01,  //Block request - This event occurs when new block is arrived
+    OAD_EVT_BLOCK_REQ           = 0x01,  //Block request - This event occurs when new block is arrived
 
-    OAD_EVT_TIMEOUT          = 0x02,  //Timeout - This event occurs by timeout clock interrupt
+    OAD_EVT_TIMEOUT             = 0x02,  //Timeout - This event occurs by timeout clock interrupt
 
-    OAD_EVT_START_OAD        = 0x03,  //Start OAD - This command is used after configuration state is done and we change to download.
+    OAD_EVT_START_OAD           = 0x03,  //Start OAD - This command is used after configuration state is done and we change to download.
 
-    OAD_EVT_ENABLE_IMG       = 0x04,  //Enable image - This command is used to enable an image after download.
+    OAD_EVT_ENABLE_IMG          = 0x04,  //Enable image - This command is used to enable an image after download.
 
-    OAD_EVT_CANCEL_OAD       = 0x05,  //Cancel OAD - This command is used to cancel the OAD process.
-
+    OAD_EVT_CANCEL_OAD          = 0x05,  //Cancel OAD - This command is used to cancel the OAD process.
 }oadEvent_e;
 
 
 //Some of the opcode dosen't exist anymore, and we save the orginal opcode number for backward compatibility
 typedef enum
 {
-    OAD_REQ_GET_BLK_SZ        = 0x01,  //Get Block Size - This command is used by a peer to determine
-                                       //what is the largest block size the target can support.
+    OAD_REQ_GET_BLK_SZ        = 0x01,  // Get Block Size - This command is used by a peer to determine
+                                       // what is the largest block size the target can support.
 
-    OAD_REQ_DISABLE_BLK_NOTIF = 0x06,  //Disable block notification - This command is used to disable the image
-                                       //block request notifications.
-    OAD_REQ_GET_SW_VER        = 0x07,  //Get software version - This command is used to query the OAD target
-                                       //device for its software version.
-    OAD_REQ_GET_OAD_STAT      = 0x08,  //Get oad  publiv state machine - This command is used to query the status of the OAD
-                                       //process OAD_PROFILE_NOT_STARTED/OAD_PROFILE_ALREADY_STARTED.
+    OAD_REQ_DISABLE_BLK_NOTIF = 0x06,  // Disable block notification - This command is used to disable the image
+                                       // block request notifications.
+
+    OAD_REQ_GET_SW_VER        = 0x07,  // Get software version - This command is used to query the OAD target
+                                       // device for its software version.
+
+    OAD_REQ_GET_OAD_STAT      = 0x08,  // Get oad  publiv state machine - This command is used to query the status of the OAD
+                                       // process OAD_PROFILE_NOT_STARTED/OAD_PROFILE_ALREADY_STARTED.
 
   //these opcodes are not supported yet
-  //OAD_REQ_GET_PROF_VER      = 0x09,  //Get profile version - This command is used to query the version of
-                                            //the OAD profile.
+  //OAD_REQ_GET_PROF_VER      = 0x09,  // Get profile version - This command is used to query the version of
+                                       // the OAD profile.
 
-  //OAD_REQ_GET_DEV_TYPE      = 0x10, //Get device type - This command is used to query type of the device the
-                                      //profile is running on.
+  //OAD_REQ_GET_DEV_TYPE      = 0x10,  // Get device type - This command is used to query type of the device the
+                                       // profile is running on.
 
-  //OAD_REQ_GET_IMG_INFO      = 0x11, //Get image info - This command is used to get the image info structure
-                                      //corresponding to the the image asked for.
+  //OAD_REQ_GET_IMG_INFO      = 0x11,  // Get image info - This command is used to get the image info structure
+                                       // corresponding to the the image asked for.
 
-    OAD_RSP_BLK_RSP_NOTIF     = 0x12, //Send block request - This command is used to send a block request
-                                            //notification to the peer device.
+    OAD_RSP_BLK_RSP_NOTIF     = 0x12,  // Send block request - This command is used to send a block request
+                                       // notification to the peer device.
 
-    OAD_REQ_ERASE_BONDS       = 0x13, //Erase bonds - This command is used to erase all BLE bonding info
-                                           //on the device.
-    OAD_RSP_CMD_NOT_SUPPORTED = 0xFF, //Error code returned when an external control command is received
-                                                 //with an invalid opcode.
+    OAD_REQ_ERASE_BONDS       = 0x13,  // Erase bonds - This command is used to erase all BLE bonding info
+                                       // on the device.
+
+    OAD_REQ_IS_MS_SUPPORTED   = 0x14,  // Is multistep OAD supported - This command is used to query if the target
+                                       // device supports multistep OAD.
+
+    OAD_REQ_INIT_MS_OAD       = 0x15,  // Initialize MS OAD - Device will reset and boot into half-mode
+
+    OAD_REQ_GET_MS_STATE      = 0x16,  // Identify MS OAD state - This event occurs when the client wants to identify the current MS OAD state.
+
+    OAD_MS_OAD_COMMIT         = 0x17,  // Commit - This command is used to notify the application
+                                       // to commit the downloaded image.
+
+    OAD_RSP_CMD_NOT_SUPPORTED = 0xFF,  // Error code returned when an external control command is received
+                                       // with an invalid opcode.
 
 }oadProtocolOPCode_e;
 
@@ -227,6 +244,19 @@ PACKED_TYPEDEF_STRUCT
     uint8       cmdID;                     //!< Ctrl Op-code
     uint8       swVer[MCUBOOT_SW_VER_LEN]; //!< App version
 } swVersionPld_t;
+
+#ifdef MS_OAD
+#ifdef __IAR_SYSTEMS_ICC__
+typedef struct __attribute__((__packed__))
+#else
+PACKED_TYPEDEF_STRUCT
+#endif
+{
+    uint8   cmdID;          //!< External control op-code
+    uint8   status;         //!< Status of the command request
+    uint32  msOadState;     //!< multistep-oad state
+}msOadStateRspPld_t;
+#endif //MS_OAD
 
 /*!
  * This struct contains all the global information that the module needs
@@ -325,6 +355,7 @@ static oadModuleGlobalData_t* pOADModuleGlobalData;
 
 // OAD Activity Clock
 static Clock_Struct oadActivityClk;
+
 #endif //OAD_APP_ONCHIP
 
 /*********************************************************************
@@ -346,22 +377,24 @@ static OADProfile_Status_e oadSendGenericExtCtrlRsp(uint8 cmdID ,uint8 stat);
 static OADProfile_Status_e oadSendBlockSizeRsp(oadProtocolOPCode_e cmdID ,uint16 oadBlkSz);
 static OADProfile_Status_e oadSendNextBlockReq(uint32 blkNum, uint8 status);
 static OADProfile_Status_e oadSendswVersionRsp();
-
+#ifdef MS_OAD
+static OADProfile_Status_e oadSendMsOadStateRsp(uint8 cmdID ,uint8 reqStatus, uint8 msOadState);
+#endif // MS_OAD
 static void oadResetState(void);
 static OADProfile_Status_e oadImgIdentifyWrite(uint16 len, uint8 *pValue);
 static OADProfile_Status_e oadImgBlockWrite(uint8 len, uint8 *pValue);
 
 static void oadChangeMachineState(oadState_e next_state);
 static OADProfile_Status_e oadSetGlobalActiveConnHandle(uint16 connhandle);
-
-#ifdef FREERTOS
 static void oadInactivityTimeout(uint32_t param);
-#else
-static void oadInactivityTimeout(UArg param);
-#endif //FREERTOS
 #endif //OAD_APP_ONCHIP
+
 static OADProfile_Status_e oadResetDevice(uint16 connHandle);
 void oadGAPConnEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData);
+
+#ifdef MS_OAD
+static void oadHandleMsOadReq(uint8 cmdID);
+#endif
 
 /*********************************************************************
  * PUBLIC FUNCTIONS
@@ -380,6 +413,7 @@ void oadGAPConnEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData);
  */
 bStatus_t OADProfile_start(OADProfile_AppCallback_t pOADAppCB)
 {
+    Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: OADProfile_start()");
     bStatus_t status = SUCCESS;
 
     oadProfileCB = pOADAppCB;
@@ -454,7 +488,7 @@ void oadInvokeFromFWContextOADReset(char *pData)
 
     if(OAD_RESET_CMD_START_OAD == oadResetWriteEvt.cmd)
     {
-        OADProfile_AppCommand_e permit = oadProfileCB(OAD_PROFILE_MSG_REVOKE_IMG_HDR);
+        OADProfile_AppCommand_e permit = oadProfileCB(OAD_PROFILE_MSG_REVOKE_IMG_HDR, NULL);
 
         if(OAD_PROFILE_PROCEED == permit)
         {
@@ -534,9 +568,19 @@ void oadInvokeFromFWContextOAD(char *pData)
                     oadSendGenericExtCtrlRsp(OAD_REQ_DISABLE_BLK_NOTIF,OAD_PROFILE_SUCCESS);
                     break;
                 }
+#ifdef MS_OAD
+                case OAD_REQ_IS_MS_SUPPORTED:
+                case OAD_REQ_INIT_MS_OAD:
+                case OAD_REQ_GET_MS_STATE:
+                case OAD_MS_OAD_COMMIT:
+                {
+                    oadHandleMsOadReq(opcode);
+                    break;
+                }
+#endif
                 default:
                 {
-                    oadSendGenericExtCtrlRsp(opcode,OAD_RSP_CMD_NOT_SUPPORTED);
+                    oadSendGenericExtCtrlRsp(opcode, OAD_RSP_CMD_NOT_SUPPORTED);
                     break;
                 }
             }
@@ -577,6 +621,14 @@ static OADProfile_Status_e oadStateMachine(oadEvent_e event, uint16 dataLen, uin
     // Timeout is state independent. Always results in OAD state reset
     if(OAD_EVT_TIMEOUT == event)
     {
+        // Notify application of timeout event.
+        // Gives application opportunity to log timeout or perform cleanup
+        // before OAD state is reset to idle.
+        if(NULL != oadProfileCB)
+        {
+            oadProfileCB(OAD_PROFILE_MSG_TIMEOUT, NULL);
+        }
+
         oadResetState();
     }
     else
@@ -645,14 +697,10 @@ static OADProfile_Status_e oadEventHandleStateIdle(oadEvent_e event, uint16 data
             if(OAD_PROFILE_SUCCESS == status)
             {
                 status = oadImgIdentifyWrite(dataLen,pData);
+
                 // Advance the state based on status
                 if(OAD_PROFILE_SUCCESS == status)
                 {
-                    if(NULL != oadProfileCB)
-                    {
-                        //inform app about new image
-                        oadProfileCB(OAD_PROFILE_MSG_NEW_IMG_IDENDIFY);
-                    }
                     oadChangeMachineState(OAD_CONFIG);
                 }
                 // Send a response to the ImgID command
@@ -706,7 +754,7 @@ static OADProfile_Status_e oadEventHandleStateConfig(oadEvent_e event, uint16 da
         {
             //Get app permission for download new image
             if((NULL != oadProfileCB) &&
-               (OAD_PROFILE_PROCEED != oadProfileCB(OAD_PROFILE_MSG_START_DOWNLOAD)))
+               (OAD_PROFILE_PROCEED != oadProfileCB(OAD_PROFILE_MSG_START_DOWNLOAD, NULL)))
             {
                     status = oadSendGenericExtCtrlRsp(event ,OAD_PROFILE_APP_STOP_PROCESS);
             }
@@ -729,6 +777,12 @@ static OADProfile_Status_e oadEventHandleStateConfig(oadEvent_e event, uint16 da
         }
         case OAD_EVT_CANCEL_OAD:
         {
+            // Notify app that OAD has been cancelled
+            if(NULL != oadProfileCB)
+            {
+                oadProfileCB(OAD_PROFILE_MSG_CANCEL_DOWNLOAD, NULL);
+            }
+
             // reset and go back to idle
             oadResetState();
             // This opcode doesn't exist/doesn't match the current state
@@ -777,14 +831,20 @@ static OADProfile_Status_e oadEventHandleStateDownload(oadEvent_e event, uint16 
                 if(NULL != oadProfileCB)
                 {
                     //inform app about download complete
-                    oadProfileCB(OAD_PROFILE_MSG_FINISH_DOWNLOAD);
+                    oadProfileCB(OAD_PROFILE_MSG_FINISH_DOWNLOAD, NULL);
                 }
                 // Image download is complete, now wait for enable command
                 oadChangeMachineState(OAD_COMPLETE);
             }
             else
             {
-                // An error has occured, reset and go back to idle
+                if(NULL != oadProfileCB)
+                {
+                    // inform app about download failed
+                    oadProfileCB(OAD_PROFILE_MSG_DOWNLOAD_FAILED, NULL);
+                }
+
+                // An error has occurred, reset and go back to idle
                 oadChangeMachineState(OAD_IDLE);
                 oadResetState();
             }
@@ -804,6 +864,12 @@ static OADProfile_Status_e oadEventHandleStateDownload(oadEvent_e event, uint16 
         }
         case OAD_EVT_CANCEL_OAD:
         {
+            // Notify app that OAD has been cancelled
+            if(NULL != oadProfileCB)
+            {
+                oadProfileCB(OAD_PROFILE_MSG_CANCEL_DOWNLOAD, NULL);
+            }
+
             // reset and go back to idle
             oadResetState();
             // This opcode doesn't exist/doesn't match the current state
@@ -840,6 +906,7 @@ static OADProfile_Status_e oadEventHandleStateComplete(oadEvent_e event, uint16 
     {
         case OAD_EVT_ENABLE_IMG:
         {
+            Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadEventHandleStateComplete(): OAD_EVT_ENABLE_IMG received");
             oadSendGenericExtCtrlRsp(OAD_EVT_ENABLE_IMG ,OAD_PROFILE_SUCCESS);
             //sw_update finish
             oadResetDevice(pOADModuleGlobalData->activeConnHandle);
@@ -856,6 +923,12 @@ static OADProfile_Status_e oadEventHandleStateComplete(oadEvent_e event, uint16 
         }
         case OAD_EVT_CANCEL_OAD:
         {
+            // Notify app that OAD has been cancelled
+            if(NULL != oadProfileCB)
+            {
+                oadProfileCB(OAD_PROFILE_MSG_CANCEL_DOWNLOAD, NULL);
+            }
+
             // reset and go back to idle
             oadResetState();
             // This opcode doesn't exist/doesn't match the current state
@@ -869,6 +942,91 @@ static OADProfile_Status_e oadEventHandleStateComplete(oadEvent_e event, uint16 
 
     return (status);
 }
+
+#ifdef MS_OAD
+/**
+ * @brief Handle Multistep-OAD specific control commands
+ *
+ * Processes MS-OAD specific opcodes received via the OAD control characteristic.
+ * Routes commands to appropriate handlers and sends responses back to client.
+ *
+ * @param cmdID MS-OAD opcode from oadProtocolOPCode_e
+ */
+static void oadHandleMsOadReq(uint8 cmdID)
+{
+    switch (cmdID)
+    {
+        case OAD_REQ_IS_MS_SUPPORTED:
+        {
+            Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadHandleMsOadReq(): OAD_REQ_IS_MS_SUPPORTED received");
+
+            // MS-OAD is supported - send success response
+            oadSendGenericExtCtrlRsp(cmdID, OAD_PROFILE_SUCCESS);
+            break;
+        }
+        case OAD_REQ_GET_MS_STATE:
+        {
+            Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadHandleMsOadReq(): OAD_REQ_GET_MS_STATE received");
+
+            // Query application for current MS-OAD state to send to client
+            uint8 msOadState;
+
+            if (NULL != oadProfileCB &&
+                OAD_PROFILE_PROCEED == oadProfileCB(OAD_PROFILE_MSG_GET_MS_OAD_STATE, &msOadState))
+            {
+                // Application provided state successfully
+                oadSendMsOadStateRsp(cmdID, OAD_PROFILE_SUCCESS, msOadState);
+            }
+            else
+            {
+                // Application failed to provide state
+                oadSendMsOadStateRsp(cmdID, OAD_PROFILE_ERROR, 0);
+            }
+            break;
+        }
+
+        case OAD_REQ_INIT_MS_OAD:
+        {
+            Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadHandleMsOadReq(): OAD_REQ_INIT_MS_OAD received");
+
+            // Request application permission to initialize MS-OAD.
+            // Application should call MSOAD_InitAndReset() which will reset the device.
+            if((NULL != oadProfileCB) &&
+               (OAD_PROFILE_PROCEED == oadProfileCB(OAD_PROFILE_MSG_MS_OAD_INIT_REQ, NULL)))
+            {
+                // If application accepted, device should have reset during callback.
+                // If we reach here, initialization failed - send error response.
+                oadSendGenericExtCtrlRsp(cmdID ,OAD_PROFILE_ERROR);
+            }
+            else
+            {
+                // Application declined MS-OAD initialization
+                oadSendGenericExtCtrlRsp(cmdID ,OAD_PROFILE_ERROR);
+            }
+            break;
+        }
+
+        case OAD_MS_OAD_COMMIT:
+        {
+            Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadHandleMsOadReq(): OAD_MS_OAD_COMMIT received");
+
+            // Notify application of commit (verification) request.
+            // Application should call MSOAD_ImageVerified() if image is good.
+            if (NULL != oadProfileCB)
+            {
+                oadProfileCB(OAD_PROFILE_MSG_MS_OAD_COMMIT, NULL);
+            }
+            break;
+        }
+        default:
+        {
+            // Unsupported MS-OAD command
+            oadSendGenericExtCtrlRsp(cmdID, OAD_RSP_CMD_NOT_SUPPORTED);
+            break;
+        }
+    }
+}
+#endif
 
 /*********************************************************************
  * Send responds functions
@@ -971,6 +1129,29 @@ static OADProfile_Status_e oadSendswVersionRsp()
     return (status);
 }
 
+#ifdef MS_OAD
+/*********************************************************************
+ * @fn      oadSendMsOadStateRsp
+ *
+ * @brief   Function for build and send respond for MS OAD state request
+ *
+ * @param   cmdID command ID to which an answer is responded
+ * @param   reqStatus status of the request
+ * @param   msOadState MS OAD state
+ *
+ * @return  OAD_PROFILE_SUCCESS or INVALIDPARAMETER
+ */
+static OADProfile_Status_e oadSendMsOadStateRsp(uint8 cmdID ,uint8 reqStatus, uint8 msOadState)
+{
+    OADProfile_Status_e status = OAD_PROFILE_SUCCESS;
+    msOadStateRspPld_t rsp = {cmdID, reqStatus, msOadState};
+
+    status = (OADProfile_Status_e)OADService_setParameter(OAD_SRV_CTRL_CMD, sizeof(msOadStateRspPld_t), (void *)&rsp);
+
+    return (status);
+}
+#endif // MS_OAD
+
 /*********************************************************************
  * Action functions
  */
@@ -1027,23 +1208,48 @@ static OADProfile_Status_e oadImgIdentifyWrite(uint16 len, uint8 *pValue)
     OADProfile_Status_e status = OAD_PROFILE_SUCCESS;
     int swUpdateStatus = 0;
 
-    // Validate the Header
-    swUpdateStatus = SwUpdate_CheckImageHeader(pValue);
-    if(swUpdateStatus < 0)
+#ifdef MS_OAD
+    // MS-OAD requires exact image header length from the identify payload
+    // It could be expended for additional OAD methods in the future.
+    if(len != sizeof(struct image_header))
     {
+        Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: Image Identify Write with invalid length %d", len);
         status = OAD_PROFILE_INVALID_FILE;
-        pOADModuleGlobalData->imgIDRetries--;
+    }
+#endif // MS_OAD
 
-        //If the number of attempts for sending a new header is over.
-        if(0 == pOADModuleGlobalData->imgIDRetries)
+    if (OAD_PROFILE_SUCCESS == status)
+    {
+        swUpdateStatus = SwUpdate_CheckImageHeader(pValue);
+
+        if(swUpdateStatus < 0)
         {
-            status = OAD_PROFILE_IMG_ID_TIMEOUT;
+            status = OAD_PROFILE_INVALID_FILE;
+            pOADModuleGlobalData->imgIDRetries--;
+
+            // If the number of attempts for sending a new header is over.
+            if(0 == pOADModuleGlobalData->imgIDRetries)
+            {
+                status = OAD_PROFILE_IMG_ID_TIMEOUT;
+            }
+        }
+        else
+        {
+            // Check if App allows this image to be downloaded
+            if(NULL != oadProfileCB &&
+               OAD_PROFILE_PROCEED != oadProfileCB(OAD_PROFILE_MSG_NEW_IMG_IDENTIFY, pValue))
+            {
+                status = OAD_PROFILE_INVALID_FILE;
+            }
+            else
+            {
+                // All checks passed and application has approved the image -
+                // Update image header and length
+                pOADModuleGlobalData->candidateImgLen = (uint32) swUpdateStatus;
+            }
         }
     }
-    else
-    {
-        pOADModuleGlobalData->candidateImgLen = swUpdateStatus;
-    }
+
     // If image ID is accepted, set variables
     if(OAD_PROFILE_SUCCESS == status)
     {
@@ -1058,6 +1264,11 @@ static OADProfile_Status_e oadImgIdentifyWrite(uint16 len, uint8 *pValue)
         {
             pOADModuleGlobalData->totalBlocks += 1;
         }
+
+        Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: Image Identify Write accepted, total image size %d", pOADModuleGlobalData->candidateImgLen);
+        Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: total blocks calculated as %d", pOADModuleGlobalData->totalBlocks);
+        Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: lastBlockSize is %d", pOADModuleGlobalData->lastBlockSize);
+
         // Image has been accepted, start the inactivity timer
         Util_startClock(&oadActivityClk);
     }
@@ -1110,6 +1321,25 @@ static OADProfile_Status_e oadImgBlockWrite(uint8 len, uint8 *pValue)
     // Check that this is the expected block number, and the block size is right
     if ((pOADModuleGlobalData->currentBlkNum == blkNum) && (len == expectedBlkSz))
     {
+#ifdef MS_OAD
+        // For MS-OAD, verify block 0 image version matches what was identified
+        // This logic is used to protect against a mismatch between the candidate image header and the block 0 header.
+        // It could be expended for additional OAD methods in the future.
+        if (blkNum == 0)
+        {
+            const struct image_header *pCandidateHdr = SwUpdate_GetCandidateImageHeader();
+            const struct image_header *pBlkHdr = (const struct image_header *)(pValue + OAD_BLK_NUM_HDR_SZ);
+
+            if (pCandidateHdr == NULL ||
+                memcmp(&pBlkHdr->ih_ver, &pCandidateHdr->ih_ver, sizeof(struct image_version)) != 0)
+            {
+                Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: Block 0 version mismatch, aborting OAD\n");
+                return (OAD_PROFILE_INVALID_FILE);
+            }
+        }
+#endif // MS_OAD
+
+        Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: Writing block number %lu, length %u\n", blkNum, len);
         // Calculate address to write as (start of OAD range) + (offset into range)
         uint32 blkStartAddr = (pOADModuleGlobalData->imgBytesPerBlock)*blkNum;
         status = (OADProfile_Status_e)SwUpdate_WriteBlock(blkStartAddr,(len - OAD_BLK_NUM_HDR_SZ),(pValue+OAD_BLK_NUM_HDR_SZ));
@@ -1125,6 +1355,7 @@ static OADProfile_Status_e oadImgBlockWrite(uint8 len, uint8 *pValue)
     }
     else
     {
+        Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: Overflow, aborting OAD\n");
         // Overflow, abort OAD
         pOADModuleGlobalData->currentBlkNum = 0;
         status = OAD_PROFILE_BUFFER_OFL;
@@ -1210,11 +1441,7 @@ static OADProfile_Status_e oadSetGlobalActiveConnHandle(uint16 connhandle)
  *          to inactivity
  *
  */
-#ifdef FREERTOS
 static void oadInactivityTimeout(uint32_t param)
-#else
-static void oadInactivityTimeout(UArg param)
-#endif //FREERTOS
 {
     BLEAppUtil_invokeFunction(oadInvokeFromFWContextTimeout, NULL);
 }
@@ -1255,6 +1482,8 @@ static OADProfile_Status_e oadResetDevice(uint16 connHandle)
         status = (OADProfile_Status_e)GAP_TerminateLinkReq(connHandle, HCI_DISCONNECT_REMOTE_USER_TERM);
     }
 
+    Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadResetDevice(): GAP_TerminateLinkReq returned with status %d, connHandle %d", status, connHandle);
+
     return(status);
 }
 
@@ -1274,8 +1503,9 @@ void oadGAPConnEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData)
     if(BLEAPPUTIL_LINK_TERMINATED_EVENT == event)
     {
         if((NULL == oadProfileCB) ||
-           (OAD_PROFILE_PROCEED == oadProfileCB(OAD_PROFILE_MSG_RESET_REQ)))
+           (OAD_PROFILE_PROCEED == oadProfileCB(OAD_PROFILE_MSG_RESET_REQ, NULL)))
         {
+                Log_printf(LogModule_OAD, Log_INFO, "OAD Profile: oadGAPConnEventHandler(): Proceeding with system reset");
                 SystemReset();
         }
     }
@@ -1283,3 +1513,5 @@ void oadGAPConnEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData)
 
 /*********************************************************************
 *********************************************************************/
+
+#endif // OAD_CFG

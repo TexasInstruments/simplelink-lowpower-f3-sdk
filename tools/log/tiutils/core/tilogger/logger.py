@@ -1,5 +1,5 @@
 """
-Copyright (C) 2020-2024, Texas Instruments Incorporated
+Copyright (C) 2020-2026, Texas Instruments Incorporated
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -36,7 +36,7 @@ import logging
 import platform
 from struct import pack
 import typing
-import pkg_resources
+from importlib.metadata import entry_points
 import argparse
 import typer
 import click
@@ -64,8 +64,7 @@ class Logger:
         # Locate all transports/formatters/subscribers by entry points
         # Note that any duplicate formatters are resolved to a single formatter last-come-first-served
         self._formatters: Dict[str, LogFormatterABC] = {
-            entry_point.name: entry_point.load()
-            for entry_point in pkg_resources.iter_entry_points("tilogger.formatter")
+            ep.name: ep.load() for ep in entry_points(group="tilogger.formatter")
         }
 
         self.timebase = None
@@ -73,8 +72,8 @@ class Logger:
         self.subscribers: DefaultDict[str, List[LogSubscriberABC]] = defaultdict(list)
 
         # Subscribers are slightly more difficult, because we need to handle duplicates explicitly
-        for entry_point in pkg_resources.iter_entry_points("tilogger.subscriber"):
-            self.subscribers[entry_point.name].append(entry_point.load())
+        for ep in entry_points(group="tilogger.subscriber"):
+            self.subscribers[ep.name].append(ep.load())
 
         self.transports: List[TransportABC] = transports
         self.outputs: List[LogOutputABC] = outputs
@@ -223,16 +222,14 @@ def main():
     Generates argparse parsers, reads command line arguments and starts a Logger.
     """
     # Plug in transports that are installed, add them as subcommands
-    for entry_point in pkg_resources.iter_entry_points("tilogger.transport"):
+    for entry_point in entry_points(group="tilogger.transport"):
         subtyper = entry_point.load()
         subtyper(logger_cli)
-        # logger_cli.add_typer(subtyper, name=entry_point.name)
 
     # Plug in outputs that are installed, add them as subcommands
-    for entry_point in pkg_resources.iter_entry_points("tilogger.output"):
+    for entry_point in entry_points(group="tilogger.output"):
         subtyper = entry_point.load()
         subtyper(logger_cli)
-        # logger_cli.add_typer(subtyper, name=entry_point.name)
 
     logger_cli()
 

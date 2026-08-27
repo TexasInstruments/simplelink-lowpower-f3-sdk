@@ -95,7 +95,8 @@
 /*******************************************************************************
  * MACROS
  */
-#define LL_HANDOVER_EARLIER_ST RAT_TICKS_IN_3MS // Guard time of 3ms
+#define LL_HANDOVER_EARLIER_ST       RAT_TICKS_IN_3MS   // Guard time of 3ms
+#define LL_HANDOVER_PREEMPTION_GUARD RAT_TICKS_IN_500US // Guard time of 500us to preempt an existing command
 
 /*******************************************************************************
  * CONSTANTS

@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -91,14 +91,14 @@ extern uint8_t zb_mac_default_tx_power;
  */
 #define xZB_MAC_DROP_PKT_WHEN_RX_OFF
 /* May use HW AES */
-#ifndef DeviceFamily_CC27XX
+#ifndef DeviceFamily_CC27XXX10
 #define ZB_HW_ZB_AES128
 #define ZB_HW_ZB_AES128_DEC
 #define ZB_HW_SHA_256
 #define ZB_HW_ECDH_P256_PUBLIC_KEY
 #define ZB_HW_ECDH_P256_SHARED_SECRET
 #define ZB_HW_HMAC_SHA_256
-#endif //DeviceFamily_CC27XX
+#endif //DeviceFamily_CC27XXX10
 
 #if defined ZB_USE_SLEEP && defined NCP_MODE
 #define ZB_OSIF_NCP_TRANSPORT_PREPARE_TO_SLEEP() zb_osif_spi_prepare_to_sleep()

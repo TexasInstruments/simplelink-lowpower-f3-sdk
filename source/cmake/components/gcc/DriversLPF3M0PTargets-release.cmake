@@ -45,5 +45,25 @@ set_target_properties(Drivers::drivers_cc23x0r5_log PROPERTIES
 list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc23x0r5_log )
 list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc23x0r5_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/gcc/m0p/drivers_cc23x0r5_log.a" )
 
+# Import target "Drivers::drivers_cc23x1r10" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc23x1r10 APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc23x1r10 PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/gcc/m0p/drivers_cc23x1r10.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc23x1r10 )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc23x1r10 "${_IMPORT_PREFIX}/source/ti/drivers/lib/gcc/m0p/drivers_cc23x1r10.a" )
+
+# Import target "Drivers::drivers_cc23x1r10_log" for configuration "Release"
+set_property(TARGET Drivers::drivers_cc23x1r10_log APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(Drivers::drivers_cc23x1r10_log PROPERTIES
+  IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "C"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/source/ti/drivers/lib/gcc/m0p/drivers_cc23x1r10_log.a"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS Drivers::drivers_cc23x1r10_log )
+list(APPEND _IMPORT_CHECK_FILES_FOR_Drivers::drivers_cc23x1r10_log "${_IMPORT_PREFIX}/source/ti/drivers/lib/gcc/m0p/drivers_cc23x1r10_log.a" )
+
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

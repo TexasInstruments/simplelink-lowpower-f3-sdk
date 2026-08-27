@@ -110,11 +110,6 @@ csStatus_e OPT_LL_CS_RemoveConfig(uint16_t connId, uint8_t configId)
     return LL_CS_RemoveConfig(connId, configId);
 }
 
-csStatus_e OPT_LL_CS_GetConfig(uint16_t connId, uint8_t configId, csConfigurationSet_t* pConfig)
-{
-    return LL_CS_GetConfig(connId, configId, pConfig);
-}
-
 csStatus_e OPT_LL_CS_SecurityEnable(uint16_t connId)
 {
     return LL_CS_SecurityEnable(connId);
@@ -170,9 +165,14 @@ uint8_t OPT_llCsTransmitCsCtrlProcedure(llConnState_t* connPtr, uint8_t ctrlPkt)
     return llCsTransmitCsCtrlProcedure(connPtr, ctrlPkt);
 }
 
-uint8_t OPT_llCsInit(void)
+uint8_t OPT_llCsInitPrecal(void)
 {
-    return llCsInit();
+    return llCsInitPrecal();
+}
+
+void OPT_llCsReset(void)
+{
+    llCsReset();
 }
 
 bool OPT_llCsDbIsCsCtrlProcedureInProgress(uint16_t connId)
@@ -180,9 +180,9 @@ bool OPT_llCsDbIsCsCtrlProcedureInProgress(uint16_t connId)
     return llCsDbIsCsCtrlProcedureInProgress(connId);
 }
 
-uint8_t OPT_llCsInitDb(void)
+uint8_t OPT_llCsInit(void)
 {
-    return llCsInitDb();
+    return llCsInit();
 }
 
 void OPT_llCsClearConnProcedures(uint16_t connId)
@@ -290,9 +290,19 @@ uint32_t OPT_LL_CS_Handover_SnGetSNDataSize(uint16 connHandle)
     return LL_CS_Handover_SnGetSNDataSize(connHandle);
 }
 
+void OPT_llCsPrecal_clear(void)
+{
+    llCsPrecal_clear();
+}
+
 uint8_t OPT_LL_CS_GetTswByACI(csACI_e ACI, uint8_t initTsw, uint8_t reflTsw)
 {
     return LL_CS_GetTswByACI(ACI, initTsw, reflTsw);
+}
+
+const csConfigurationSet_t* OPT_llCsDbGetConfiguration(uint16 connId, uint8 configId)
+{
+    return llCsDbGetConfiguration(connId, configId);
 }
 
 #endif /* defined(CHANNEL_SOUNDING) */

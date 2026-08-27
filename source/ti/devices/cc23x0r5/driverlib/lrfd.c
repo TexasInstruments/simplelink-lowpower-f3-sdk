@@ -3,7 +3,7 @@
  *
  *  Description:    Driver for LRFD
  *
- *  Copyright (c) 2023-2025 Texas Instruments Incorporated
+ *  Copyright (c) 2023-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,16 +33,14 @@
  *
  ******************************************************************************/
 
-#include "lrfd.h"
-
 #include <stdbool.h>
 #include "../inc/hw_types.h"
 #include "../inc/hw_memmap.h"
 #include "../inc/hw_clkctl.h"
 #include "../inc/hw_lrfddbell.h"
 
-#include "../driverlib/interrupt.h"
-#include "../driverlib/clkctl.h"
+#include "lrfd.h"
+#include "clkctl.h"
 
 static uint16_t lrfdClockDependencySets[LRFD_NUM_CLK_DEP];
 
@@ -95,10 +93,10 @@ void LRFDApplyClockDependencies(void)
 
     if (lrfdClocked)
     {
-        // BRIDGE bit should not be needed, as hardware will automatically
-        // enable the clock when needed. The bit should be always be 0 in the
-        // HW, and is thus cleared here.
-        HWREG(LRFDDBELL_BASE + LRFDDBELL_O_CLKCTL) = clkctl & ~LRFDDBELL_CLKCTL_BRIDGE_M;
+        // Before writing to the LRFDDBELL.CLKCTL register, clear out the
+        // special LRFD bit that is used to indicate dependency on the LRFD
+        // module itself, without any dependency on a specific LRFD clock.
+        HWREG(LRFDDBELL_BASE + LRFDDBELL_O_CLKCTL) = clkctl & ~LRFD_CLK_DEP_LRFD_M;
 
         if (clkctl == 0)
         {
@@ -113,12 +111,10 @@ void LRFDApplyClockDependencies(void)
             // Enable LRFD module clock
             CLKCTLEnableLrfdClock();
 
-            // BRIDGE bit should not be needed as hardware will automatically
-            // enable the clock when needed. The bit should always be 0 in the
-            // HW, and is thus cleared here. The BRIDGE bit can be set as a
-            // dependency, making clkctl non-zero, to indicate the need for the
-            // LRFD module clock to be enabled, but no internal LRFD clocks.
-            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_CLKCTL) = clkctl & ~LRFDDBELL_CLKCTL_BRIDGE_M;
+            // Before writing to the LRFDDBELL.CLKCTL register, clear out the
+            // special LRFD bit that is used to indicate dependency on the LRFD
+            // module itself, without any dependency on a specific LRFD clock.
+            HWREG(LRFDDBELL_BASE + LRFDDBELL_O_CLKCTL) = clkctl & ~LRFD_CLK_DEP_LRFD_M;
         }
     }
 }

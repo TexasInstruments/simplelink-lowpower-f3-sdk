@@ -125,10 +125,17 @@ extern "C"
 #define LL_EVT_PAWR_RSP_DATA_LAST_CMD_DONE             (LL_EVT_PERIODIC_SCANNER | 1 << 2)
 #define LL_EVT_PERIODIC_SCAN_CANCELLED                 (LL_EVT_PERIODIC_SCANNER | 1 << 3)
 
+// Periodic Advertiser + PAwR events family
+#define LL_EVT_PERIODIC_ADV                            0x00200000u
+#define LL_EVT_PERIODIC_ADV_RX_AVAIL                   (LL_EVT_PERIODIC_ADV | 1 << 0)
+#define LL_EVT_PERIODIC_ADV_LAST_CMD_DONE              (LL_EVT_PERIODIC_ADV | 1 << 1)
+#define LL_EVT_PERIODIC_ADV_TX_BUFF_FINISHED           (LL_EVT_PERIODIC_ADV | 1 << 2)
+#define LL_EVT_PAWRA_GENERIC_RX_RSP_DONE               (LL_EVT_PERIODIC_ADV | 1 << 3)
+#define LL_EVT_PAWRA_LAST_CMD_DONE_CONNECT             (LL_EVT_PERIODIC_ADV | 1 << 4)
+#define LL_EVT_PAWRA_CONN_CANCELLED                    (LL_EVT_PERIODIC_ADV | 1 << 5)
+
 #define LL_EVT_RESCHEDULE                              0x00400000u
 #define LL_EVT_CMD_STARTED                             0x00800000u
-#define LL_EVT_PERIODIC_ADV_LAST_CMD_DONE              0x01000000u
-#define LL_EVT_PERIODIC_ADV_TX_BUFF_FINISHED           0x02000000u
 #define LL_EVT_CONN_TX_BUFF_FINISHED                   0x04000000u
 #define LL_EVT_ADV_RX_AVAIL                            0x08000000u
 #define LL_EVT_ADV_TX_BUFF_FINISHED                    0x10000000u

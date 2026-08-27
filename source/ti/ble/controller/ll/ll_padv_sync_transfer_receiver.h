@@ -255,6 +255,26 @@ bool LL_PAST_R_IsEnable( void );
 void LL_PAST_R_SetFeatureBit( void );
 
 /*******************************************************************************
+ * @fn          LL_PAST_R_Reset
+ *
+ * @brief       Reset the periodic advertising sync transfer receiver state.
+ *              This function resets both the default parameters and all
+ *              per-connection parameters to their uninitialized state.
+ *              Should be called during LL_Reset to ensure clean state.
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ *
+ * @param       None
+ *
+ * @return      None
+ */
+void LL_PAST_R_Reset( void );
+
+/*******************************************************************************
  * @fn          LL_PAST_R_ResetConnParamsToDefault
  *
  * @brief       This function resets the periodic advertising sync transfer
@@ -272,24 +292,6 @@ void LL_PAST_R_SetFeatureBit( void );
  * @return      None
  */
 void LL_PAST_R_ResetConnParamsToDefault( uint16_t connHandle );
-
-/*******************************************************************************
- * @fn          LL_PAST_R_SetMaxRXOctets
- *
- * @brief       Set the maximum RX octets for periodic advertising sync transfer
- *              receiver.
- *              This function updates the maximum RX octets to the length of the
- *              PAST control packets based on the PAwR support.
- *
- * input parameters
- * @param       connPtr - Connection pointer.
- *
- * output parameters
- * @param       None
- *
- * @return      None
- */
-void LL_PAST_R_SetMaxRXOctets( llConnState_t  *connPtr );
 
 /*******************************************************************************
  * @fn          LL_PAST_R_ProcessIndPackets
@@ -341,27 +343,6 @@ void LL_PAST_R_SetMaxRXOctets( llConnState_t  *connPtr );
  void LL_PAST_R_CreateReceivedEvent( uint8_t *pSyncEstabEvent,
                                      uint8_t eventLength,
                                      uint8_t status );
-
-/********************************************************************************
- * @fn          LL_PAST_R_SetLastRxPacketLen
- *
- * @brief       Set the length of the last received packet from central to
- *              peripheral.
- *
- * input parameters
- *
- * @param       connPtr           - Connection pointer.
- * @param       lastRXPktLength - Length of the last packet received from
- *                                  central.
- *
- * output parameters
- *
- * @param       None
- *
- * @return      None
- */
-void LL_PAST_R_SetLastRxPacketLen( llConnState_t   *connPtr,
-                                   uint8_t         lastRXPktLength);
 
 #ifdef __cplusplus
 }

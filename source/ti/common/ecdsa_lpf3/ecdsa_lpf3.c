@@ -12,37 +12,7 @@
  Target Device: cc23xx
 
  ******************************************************************************
- 
- Copyright (c) 2023-2025, Texas Instruments Incorporated
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
-
- *  Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
- *  Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
- *  Neither the name of Texas Instruments Incorporated nor the names of
-    its contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ $License: BSD3 2023-2025 $
  ******************************************************************************
  
  
@@ -278,6 +248,78 @@ int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation)
     return returnStatus;
 }
 
+int_fast16_t ECDH_computeSharedSecret(ECDH_computeSharedSecretStruct *operation)
+{
+    int_fast16_t returnStatus = ECDH_STATUS_ERROR;
+    uint8_t eccStatus;
+    uint32_t eccWorkZone[ECDSA_LPF3_ECC_WORKZONE_WORDS];
+
+    /* Initialize eccState with NIST-P256 curve */
+    ECC_State eccState = {
+        .data_Gx     = ECC_NISTP256_generatorX.word,
+        .data_Gy     = ECC_NISTP256_generatorY.word,
+        .data_p      = ECC_NISTP256_prime.word,
+        .data_r      = ECC_NISTP256_order.word,
+        .data_a      = ECC_NISTP256_a.word,
+        .data_b      = ECC_NISTP256_b.word,
+        .data_a_mont = ECC_NISTP256_a_mont.word,
+        .data_b_mont = ECC_NISTP256_b_mont.word,
+        .data_k_mont = ECC_NISTP256_k_mont.word,
+        .win         = ECDSA_LPF3_ECC_WINDOW_SIZE,
+
+        .workzone = eccWorkZone,
+    };
+
+    /*
+     * Allocate local copies of the private and public keys because the ECC
+     * library implementation requires the word length to be prepended to every
+     * array input.
+     */
+    ECC_NISTP256_Param privateKey;
+    ECC_NISTP256_Param publicKeyUnionX;
+    ECC_NISTP256_Param publicKeyUnionY;
+    ECC_NISTP256_Param sharedSecretUnionX;
+    ECC_NISTP256_Param sharedSecretUnionY;
+
+    /* Prepend the word length - always 8 words for P256 */
+    privateKey.word[0] = 0x08;
+    publicKeyUnionX.word[0] = 0x08;
+    publicKeyUnionY.word[0] = 0x08;
+    sharedSecretUnionX.word[0] = 0x08;
+    sharedSecretUnionY.word[0] = 0x08;
+
+    /*
+     * Since we are receiving the private and public keys in octet string
+     * format, we need to convert them to little-endian for use with the
+     * ECC library functions.
+     */
+    CryptoUtils_reverseCopyPad(operation->privateKey->keyMaterial, &privateKey.word[1], operation->privateKey->keyLength);
+
+    CryptoUtils_reverseCopyPad(operation->publicKey->keyMaterial + OCTET_STRING_OFFSET, &publicKeyUnionX.word[1], ECCParams_NISTP256_LENGTH);
+
+    CryptoUtils_reverseCopyPad(operation->publicKey->keyMaterial + ECCParams_NISTP256_LENGTH + OCTET_STRING_OFFSET, &publicKeyUnionY.word[1], ECCParams_NISTP256_LENGTH);
+
+    
+     /* Call ECC library to perform verification */
+    eccStatus = ECCSW_ECDHCommonKey(&eccState,
+                                    privateKey.word,
+                                    publicKeyUnionX.word,
+                                    publicKeyUnionY.word,
+                                    sharedSecretUnionX.word,
+                                    sharedSecretUnionY.word);
+
+    /* Check the ECC library return code and set the driver status accordingly */
+    if (eccStatus == STATUS_ECDH_COMMON_KEY_OK)
+    {
+        CryptoUtils_reverseCopyPad(&sharedSecretUnionX.word[1], (uint32_t *) operation->sharedSecret->keyMaterial,  ECCParams_NISTP256_LENGTH);
+
+        CryptoUtils_reverseCopyPad(&sharedSecretUnionY.word[1], ((uint32_t *) operation->sharedSecret->keyMaterial) + (ECCParams_NISTP256_LENGTH / 4),  ECCParams_NISTP256_LENGTH);
+
+        returnStatus = ECDH_STATUS_SUCCESS;
+    }
+    return returnStatus;
+}
+
 /*
  *  ======== CryptoKeyPlaintext_initKey ========
  */
@@ -285,4 +327,21 @@ void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle, uint8_t *key, si
 {
     keyHandle->keyMaterial = key;
     keyHandle->keyLength   = keyLength;
+}
+
+/**
+ * @fn     SHA2_xorBufferWithByte
+ *
+ * @brief  xor buffer with byte.
+ *
+ * @return N/A.
+ */
+void SHA2_xorBufferWithByte(uint8_t *buffer, size_t bufferLength, uint8_t byte)
+{
+    size_t i;
+
+    for (i = 0; i < bufferLength; i++)
+    {
+        buffer[i] = buffer[i] ^ byte;
+    }
 }

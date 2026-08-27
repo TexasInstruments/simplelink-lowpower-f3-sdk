@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,7 @@
 
 #define DL_INIT_OTA_MIN_BLOCK_REQUE             0 // ms
 #define DL_INIT_OTA_IMAGE_STAMP         ZB_ZCL_OTA_UPGRADE_IMAGE_STAMP_MIN_VALUE
-#define DL_OTA_IMAGE_BLOCK_DATA_SIZE_MAX        32
+#define DL_OTA_IMAGE_BLOCK_DATA_SIZE_MAX        64
 #define DL_OTA_UPGRADE_SERVER                   { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa }
 #define DL_OTA_UPGRADE_QUERY_TIMER_COUNTER      (12*60)
 

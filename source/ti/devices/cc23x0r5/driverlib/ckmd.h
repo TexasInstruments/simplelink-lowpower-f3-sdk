@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the CKMD module.
  *
- *  Copyright (c) 2023-2025 Texas Instruments Incorporated
+ *  Copyright (c) 2023-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,8 @@
  *
  ******************************************************************************/
 
-#ifndef __CKMD_H__
-#define __CKMD_H__
+#ifndef ti_devices_ckmd__include
+#define ti_devices_ckmd__include
 
 //*****************************************************************************
 //
@@ -731,4 +731,4 @@ __STATIC_INLINE void CKMDSetWatchdogDebugConfig(bool stopWhenCpuIsHalted)
 //
 //*****************************************************************************
 
-#endif // __CKMD_H__
+#endif // ti_devices_ckmd__include

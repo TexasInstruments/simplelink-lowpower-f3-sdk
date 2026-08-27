@@ -87,15 +87,19 @@
 // globals
 //*****************************************************************************
 
+//! \brief Flag for ongoing NPI TX
+static volatile bool npiTxActive = FALSE;
+
+#if (NPI_FLOW_CTRL == 1)
 //! \brief Flag for low power mode
 static volatile bool npiPMSetConstraint = FALSE;
 
-//! \brief Flag for ongoing NPI TX
-static volatile bool npiTxActive = FALSE;
+//! \brief Flag for ongoing NPI RX (used with NPI_CENTRAL)
 static volatile bool npiRxActive = FALSE;
 
 //! \brief The packet that was being sent when MRDY HWI negedge was received
 static volatile uint32_t mrdyPktStamp = 0;
+#endif // NPI_FLOW_CTRL = 1
 
 //! \brief Packets transmitted counter
 static uint32_t txPktCount = 0;

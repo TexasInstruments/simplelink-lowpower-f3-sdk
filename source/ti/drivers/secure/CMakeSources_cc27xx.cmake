@@ -10,14 +10,15 @@ set(SOURCES_CC27XX
     ../AESGCM.c
     ../cryptoutils/cryptokey/CryptoKey.c
     ../cryptoutils/cryptokey/CryptoKeyPlaintext.c
-    ../cryptoutils/hsm/HSMLPF3.c
-    ../cryptoutils/hsm/HSMLPF3Utility.c
-    ../cryptoutils/sharedresources/CryptoResourceLPF3.c
+    ../cryptoutils/hsm/HSMXXF3Utility.c
+    ../cryptoutils/sharedresources/CryptoResourceXXF3.c
     ../cryptoutils/utils/CryptoUtils.c
     ../ECDH.c
     ../ECDSA.c
     # ../ECJPAKE.c
     ../EDDSA.c
+    ../psa/ti_psa_crypto_helper.c
+    ../psa/ti_psa_crypto_wrapper.c
     ../RNG.c
     ../SHA2.c
     ../TRNG.c
@@ -26,47 +27,33 @@ set(SOURCES_CC27XX
 set(SOURCES_TFM_NS_API
     ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/src/tfm_tz_psa_ns_api.c
     ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/src/os_wrapper/tfm_ns_interface_bare_metal.c
-    # ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/src/tfm_attest_api.c
+    ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/src/tfm_crypto_api.c
+    ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/src/tfm_attest_api.c
 )
 
 set(SOURCES_SEC_ONLY_CC27XX
     ${SOURCES_CC27XX}
-    ../aescbc/AESCBCLPF3.c
-    ../aesccm/AESCCMLPF3.c
-    ../aescmac/AESCMACLPF3.c
-    ../aesctr/AESCTRLPF3.c
-    ../aesecb/AESECBLPF3.c
-    ../aesgcm/AESGCMLPF3HSM.c
-    ../cryptoutils/aes/AESCommonLPF3.c
+    ../aescbc/AESCBCXXF3.c
+    ../aesccm/AESCCMXXF3.c
+    ../aescmac/AESCMACXXF3.c
+    ../aesctr/AESCTRXXF3.c
+    ../aesecb/AESECBXXF3.c
+    ../aesgcm/AESGCMXXF3HSM.c
+    ../cryptoutils/aes/AESCommonXXF3.c
     ../cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_helpers.c
     ../cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.c
-    ../cryptoutils/ecc/ECCParamsLPF3HSM.c
-    ../ecdh/ECDHLPF3HSM.c
-    ../ecdsa/ECDSALPF3HSM.c
-    # ../ecjpake/ECJPAKECC26X2.c
-    ../eddsa/EDDSALPF3HSM.c
-    ../rng/RNGLPF3HSM.c
-    ../sha2/SHA2LPF3HSM.c
-    ../trng/TRNGLPF3HSM.c
+    ../cryptoutils/ecc/ECCParamsXXF3HSM.c
+    ../cryptoutils/hsm/HSMXXF3.c
+    ../ecdh/ECDHXXF3HSM.c
+    ../ecdsa/ECDSAXXF3HSM.c
+    ../eddsa/EDDSAXXF3HSM.c
+    ../psa/ti_psa_crypto.c
+    ../rng/RNGXXF3HSM.c
+    ../sha2/SHA2XXF3HSM.c
+    ../trng/TRNGXXF3HSM.c
     ../utils/Random.c
 )
 
-set(SOURCES_NONSEC_CC27XX
-    ${SOURCES_CC27XX}
-    ${SOURCES_TFM_NS_API}
-    # ../aescbc/AESCBCCC26X4_ns.c
-    # ../aesccm/AESCCMCC26X4_ns.c
-    # ../aescmac/AESCMACCC26X4_ns.c
-    # ../aesctr/AESCTRCC26X4_ns.c
-    # ../aesctrdrbg/AESCTRDRBGX4_ns.c
-    # ../aesecb/AESECBCC26X4_ns.c
-    # ../aesgcm/AESGCMCC26X4_ns.c
-    # ../attestation/Attestation_PSA_ns.c
-    # ../crypto/CryptoCC26X4_ns.c
-    # ../cryptoutils/cryptokey/CryptoKeyKeyStore_PSA_ns.c
-    # ../cryptoutils/cryptokey/CryptoKeyKeyStore_PSA.c
-    # ../cryptoutils/ecc/ECCParamsCC26X4_ns.c
-    # ../ecdh/ECDHCC26X4_ns.c
-    # ../sha2/SHA2CC26X4_ns.c
-    # ../trng/TRNGCC26X4_ns.c
+set(SOURCES_NONSEC_CC27XX ${SOURCES_CC27XX} ${SOURCES_TFM_NS_API} ../crypto/CryptoTFM_ns.c ../crypto/PSACrypto_ns.c
+                          ../cryptoutils/ecc/ECCParamsTFM_ns.c ../cryptoutils/hsm/HSMXXF3_ns.c
 )

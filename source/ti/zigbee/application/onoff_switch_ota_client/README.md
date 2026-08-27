@@ -15,6 +15,7 @@
         * [Flashing with Uniflash](#Flash-Uniflash)
         * [Flashing with CCS](#Flash-CCS)
     * [OTA Client Signing Image for Server](#OTA-Client-Image)
+* [OTA Changes and How to Use](#ota-changes)
 
 # <a name="intro"></a> Introduction
 
@@ -184,3 +185,157 @@ OTAfileGen <EXAMPLE_BUILD_DIR>\onoff_switch_ota_client_offchip_src_LP_EM_CC2340R
 The output of this tool can then be provided to the OtaServer PC tool.
 
 For more details, please follow the ota_server readme and the Zstack user guide in the CC13XX_26XX SDK.
+
+---
+
+# <a name="ota-changes"></a> OTA Changes and How to Use
+
+## Key Changes Made
+
+### Image to Use for OTA Transfer
+**Always use `_ota_2nd_slot.bin`** with zOTAfileGen — not `_ota_nopad.bin`.
+
+- `_ota_2nd_slot.bin` has BOOT_MAGIC embedded at `slot_size - 16` by imgtool `--pad`. After OTA download completes, MCUBoot finds it and swaps primary with secondary automatically.
+- `_ota_nopad.bin` has no BOOT_MAGIC. MCUBoot will not swap after download unless `mark_fw_ready()` in `ti_f3_ota.c` is uncommented to write BOOT_MAGIC manually.
+
+### MCUBoot Version — OTA_VER Environment Variable
+SysConfig regenerates `imgtool_args.txt` (which sets the MCUBoot image version) to `1.0.0+0` on every build. With `MCUBOOT_DOWNGRADE_PREVENTION` enabled, MCUBoot only swaps if `secondary_version > primary_version`.
+
+Use the `OTA_VER` env var to set the version for V2/V3 OTA builds:
+
+```bash
+# V1 — initial flash (MCUBoot version 1.0.0+0)
+gmake -C examples/rtos/<BOARD>/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang
+
+# V2 OTA image (MCUBoot version 2.0.0+0)
+OTA_VER=2.0.0+0 gmake -C examples/rtos/<BOARD>/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang
+
+# V3 OTA image
+OTA_VER=3.0.0+0 gmake -C examples/rtos/<BOARD>/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang
+```
+
+### Block Size
+`DL_OTA_IMAGE_BLOCK_DATA_SIZE_MAX` in `on_off_switch_ota_client.h` is set to **64 bytes**. This is required for reliable bank boundary crossing on dual-bank devices (e.g. CC2755P20). Do not reduce to 32.
+
+### OTA Logging
+`ota_client_interface.c` has comprehensive `[OTA]` prefixed logs on all status callbacks. Before each OTA init, ZCL attribute values are printed — if `file_version=2` on a V1 device, NVRAM has stale state and OTA will be silently denied. Fix: **Erase All** before testing.
+
+---
+
+## How to Run OTA (Step by Step)
+
+### 1. Build
+
+```bash
+source activate.sh
+python3 tools/ex_gen/gen.py -l -b <BOARD>
+
+# V1 (flash to device):
+gmake -C examples/rtos/<BOARD>/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang
+
+# V2 (OTA update image):
+OTA_VER=2.0.0+0 gmake -C examples/rtos/<BOARD>/zigbee/onoff_switch_ota_client_onchip/freertos/ticlang
+```
+
+### 2. Prepare OTA image (Windows)
+
+```powershell
+.\zOTAfileGen.exe <build_dir>\<name>_ota_2nd_slot.bin C:\output BEBE 2340 00000002
+# Output: BEBE-2340-00000002.zigbee
+```
+
+### 3. Flash device (UniFlash)
+
+> **Critical: Always Erase All before flashing.** This clears ZBOSS NVRAM — stale version state causes silent OTA denial.
+
+1. **Erase All**
+2. Flash `mcuboot.out`
+3. Flash `_ota_1st_slot.bin` at primary slot base address (`"Do not erase"`)
+
+### 4. Start OTA server BEFORE resetting device
+
+1. Flash `zc_ota_server` to coordinator (CC1354P10_1)
+2. Open OtaServer PC tool → load `.zigbee` file → connect COM port → form network
+3. **Then** reset the OTA client device
+
+> If the server is not ready before the device boots, the first discovery window (~42s after STEERING) will be missed and the device will retry 72s later.
+
+### 5. Expected OTA flow
+
+```
+Boot → joins network → 15s → ZDO Match Descriptor (finds OTA server)
+     → 72s timer → Query Next Image Request
+     → server responds → STATUS_START → erases secondary slot
+     → Image Block Requests (64 bytes each)
+     → STATUS_CHECK → STATUS_APPLY → STATUS_FINISH
+     → device resets after 15s → MCUBoot finds BOOT_MAGIC → swaps → V2 boots
+```
+
+> **First attempt after Erase All will fail** — ZBOSS initializes internal state to a sentinel value that causes the first QNI Response to be silently dropped. This is normal. The automatic retry at 72s will succeed.
+
+### 6. UART Logging
+
+Logs are binary-encoded. Use `tilogger` on Windows (native, not WSL) to decode:
+
+```powershell
+tilogger --elf <path>.out uart <COM_PORT> 115200 stdout
+```
+
+Key log indicators:
+
+| Log | Meaning |
+|-----|---------|
+| `[OTA] ZCL attrs: file_version=2` | NVRAM stale — do Erase All |
+| `[OTA] STATUS_START` | ZBOSS accepted image, download starting |
+| `[OTA] RECEIVE ... 5%` | Transfer progress |
+| `[OTA] RECEIVE WRITE FAILED` | Flash write error |
+| `[OTA] STATUS_FINISH` | Complete, resetting in 15s |
+| `[OTA] SERVER_NOT_FOUND` | Discovery failed — check server is running |
+---
+
+# <a name="uart-logging"></a> UART Logging
+
+This example has logging enabled by default (`zigbee.loggingEnabled = true` in the `.syscfg` file).
+
+## How It Works
+
+Logs are encoded in a compact **binary format** over UART at **115200 baud**. A standard serial terminal will show garbled characters — you must use `tilogger` to decode them.
+
+The binary format stores log level, module ID, and arguments as raw bytes rather than ASCII strings. This keeps UART traffic minimal so logging has negligible impact on real-time Zigbee operation.
+
+## Decoding Logs with tilogger
+
+`tilogger` runs on **native Windows only** (not WSL — binary frames get corrupted over WSL serial).
+
+```powershell
+# Install (once):
+pip install tilogger
+
+# Decode live from UART:
+tilogger --elf <path_to_build>/<example_name>.out uart <COM_PORT> 115200 stdout
+
+# Example:
+tilogger --elf examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch/freertos/ticlang/onoff_switch.out uart COM24 115200 stdout
+```
+
+## Enabling / Disabling Logging
+
+In the example `.syscfg` file:
+
+```javascript
+// Enable (default):
+zigbee.loggingEnabled = true;
+
+// Disable (saves ~2KB RAM and reduces code size):
+zigbee.loggingEnabled = false;
+```
+
+When disabled, also remove the `LogSinkUART` section from the syscfg.
+
+## Log Modules
+
+| Module | What it covers |
+|--------|---------------|
+| `LogModule_Zigbee_App` | Application-level events (commissioning, OTA status, signals) |
+| `LogModule_Zigbee_OSIF` | OSIF-level events (NVS open/close, flash ops, timers) |
+| `LogModule_Zigbee_LLMAC` | MAC-level events (uses `LogSinkBuf` — too high-frequency for UART) |

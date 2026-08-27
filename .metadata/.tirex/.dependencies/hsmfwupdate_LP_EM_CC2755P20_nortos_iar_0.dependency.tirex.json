@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../../../../../source/ti/boards/LP_EM_CC2755P20/Board.html -> Board.html",
+            "+../CC2755P20_hsm_fw_v3.5.0.bin -> CC2755P20_hsm_fw_v3.5.0.bin",
+            "+../CC2755P20_hsm_fw_v3.5.0.h -> CC2755P20_hsm_fw_v3.5.0.h",
+            "+../hsmFwUpdate.c -> hsmFwUpdate.c",
+            "+../hsmFwUpdate.syscfg -> hsmFwUpdate.syscfg",
+            "+lpf3_nortos.icf -> lpf3_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../README.html -> README.html",
+            "+../README.md -> README.md"
+        ]
+    }
+]

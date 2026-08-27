@@ -602,6 +602,14 @@ int_fast16_t ADCBufLPF3_convert(ADCBuf_Handle handle, ADCBuf_Conversion conversi
     /* Set constraints to guarantee operation */
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
 
+    /* Increase settling time for the comparator output to reduce the
+     * error rate of ADC conversions.
+     * This is a workaround for the ADC errata: 'ADC_09', documented at:
+     * https://www.ti.com/lit/er/swrz134e/swrz134e.pdf or
+     * https://www.ti.com/lit/er/swrz161a/swrz161a.pdf
+     */
+    ADCIncreaseComparatorSettlingTime();
+
     /* Disable interrupts while we trigger the ADC and update the
      * conversionStatus. Otherwise the ADCBufLPF3_hwiFxn() function might update
      * the conversionStatus before it is updated to
@@ -1063,8 +1071,8 @@ static void ADCBufLPF3_setupAdcForAutoConversion(ADCBuf_Handle handle, uint32_t 
          */
         if (ADCLPF3_adcExternalReferenceUsageCount == 0)
         {
-            GPIO_setConfigAndMux(hwAttrs->adcRefPosDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
-            GPIO_setConfigAndMux(hwAttrs->adcRefNegDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
+            GPIO_setConfigAndMux(hwAttrs->adcRefPosDIO, GPIO_CFG_NO_DIR, GPIO_MUX_PORTCFG_PFUNC6);
+            GPIO_setConfigAndMux(hwAttrs->adcRefNegDIO, GPIO_CFG_NO_DIR, GPIO_MUX_PORTCFG_PFUNC6);
         }
         ADCLPF3_adcExternalReferenceUsageCount++;
 
@@ -1072,7 +1080,7 @@ static void ADCBufLPF3_setupAdcForAutoConversion(ADCBuf_Handle handle, uint32_t 
     }
 
     /* Set input pin to analog function. If pin is unused, value is set to GPIO_INVALID_INDEX */
-    GPIO_setConfigAndMux(hwAttrs->adcChannelLut[adcChannel].adcInputDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
+    GPIO_setConfigAndMux(hwAttrs->adcChannelLut[adcChannel].adcInputDIO, GPIO_CFG_NO_DIR, GPIO_MUX_PORTCFG_PFUNC6);
 
     /* Make sure conversion is disabled to allow configuration changes */
     ADCDisableConversion();

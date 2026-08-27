@@ -146,6 +146,23 @@ extern void NPITask_registerIncomingTXEventAppCB(npiIncomingEventCBack_t appTxCB
 extern void NPITask_sendToHost(uint8_t *pMsg);
 
 // -----------------------------------------------------------------------------
+//! \brief      Send a raw HCI packet to the Host via the NPI task,
+//!             bypassing NPIFrame framing.
+//!
+//!             Allocates a single heap block containing the NPI_QueueRecRaw_t
+//!             header and the HCI payload inline, enqueues it on the NPI TX
+//!             queue, and wakes the NPI task.  The block is freed once UART
+//!             transmission completes.  If allocation or enqueuing fails the
+//!             block is freed immediately and the packet is dropped.
+//!
+//! \param[in]  pData   Pointer to raw HCI packet bytes.
+//! \param[in]  len     Length of the packet in bytes.
+//!
+//! \return     void
+// -----------------------------------------------------------------------------
+extern void NPITask_sendToHostRaw(uint8_t *pData, uint16_t len);
+
+// -----------------------------------------------------------------------------
 //! \brief      API for application task to properly release the NPI message
 //!             container and internal buffer.
 //!

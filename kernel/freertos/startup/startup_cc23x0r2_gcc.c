@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,61 +35,46 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/setup.h)
-#include DeviceFamily_constructPath(cmsis/cc23x0r2.h)
-#include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 
 #include <FreeRTOSConfig.h>
 
-// Forward declaration of the default fault and interrupt handlers.
+/* The reset vector handler. */
 void resetISR(void);
 
-// The reset handler called when processor is started
+/* The reset handler called when processor is started. */
 extern void _c_int00(void);
 
-// The entry point for the application.
+/* The entry point for the application. */
 extern int main(void);
 
-// Linker variable that marks the top and bottom of the stack.
+/* Linker variables that mark the top and bottom of the stack. */
 extern void *__stack;
 extern unsigned long _stack_end;
 
-//*****************************************************************************
-//
-// Reset vectors defined and populated in SysConfig.
-//
-//*****************************************************************************
+/* Reset vectors defined and populated in SysConfig. */
 extern void (*const resetVectors[])(void);
 
-//*****************************************************************************
-//
-// The following are arrays of pointers to constructor functions that need to
-// be called during startup to initialize global objects.
-//
-//*****************************************************************************
+/* The following are arrays of pointers to constructor functions that need to
+ * be called during startup to initialize global objects.
+ */
 extern void (*__init_array_start[])(void);
 extern void (*__init_array_end[])(void);
 
-//*****************************************************************************
-//
-// The following global variable is required for C++ support.
-//
-//*****************************************************************************
+/* The following global variable is required for C++ support. */
 void *__dso_handle = (void *)&__dso_handle;
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor starts execution
-// following a reset.  Only the absolutely necessary steps are performed,
-// after which the application supplied entry routine is called.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor starts execution
+ * following a reset. Only the absolutely necessary steps are performed,
+ * after which the application supplied entry routine is called.
+ */
 extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
 extern uint32_t __data_load__;
 extern uint32_t __data_start__;
 extern uint32_t __data_end__;
 
-/* Marked as used due to being removed by LTO, but is used in resetISR() */
+/* Marked as used due to being removed by LTO, but is used in resetISR(). */
 __attribute__((used)) void localProgramStart(void)
 {
     uint32_t *vtor = (unsigned long *)0xE000ED08;
@@ -101,16 +86,16 @@ __attribute__((used)) void localProgramStart(void)
     uint32_t count;
     uint32_t i;
 
-    /* do final trim of device */
+    /* Do final trim of device. */
     SetupTrimDevice();
 
-    /* Disable interrupts */
+    /* Disable interrupts. */
     __disable_irq();
     __DSB();
     __ISB();
 
 #if configENABLE_ISR_STACK_INIT
-    /* Initialize ISR stack to known value for Runtime Object View */
+    /* Initialize ISR stack to known value for Runtime Object View. */
     register uint32_t *top = (uint32_t *)&__stack;
     register uint32_t *end = (uint32_t *)&i;
     while (top < end)
@@ -119,7 +104,7 @@ __attribute__((used)) void localProgramStart(void)
     }
 #endif
 
-    /* initiailize .bss to zero */
+    /* Initialize .bss to zero. */
     bs = &__bss_start__;
     be = &__bss_end__;
     while (bs < be)
@@ -128,7 +113,7 @@ __attribute__((used)) void localProgramStart(void)
         bs++;
     }
 
-    /* relocate the .data section */
+    /* Relocate the .data section. */
     dl = &__data_load__;
     ds = &__data_start__;
     de = &__data_end__;
@@ -142,41 +127,38 @@ __attribute__((used)) void localProgramStart(void)
         }
     }
 
-    /* run any constructors */
+    /* Run any constructors. */
     count = (uint32_t)(__init_array_end - __init_array_start);
     for (i = 0; i < count; i++)
     {
         __init_array_start[i]();
     }
 
-    /*
-     * set vector table base to point to above vectors in Flash; during
-     * driverlib interrupt initialization this table will be copied to RAM
+    /* Set vector table base to point to above vectors in Flash; during
+     * driverlib interrupt initialization this table will be copied to RAM.
      */
     *vtor = (uint32_t)&resetVectors[0];
 
-    /* call the application's entry point. */
+    /* Call the application's entry point. */
     main();
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor is reset.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor first starts execution
+ * following a reset event. Only the absolutely necessary steps are performed,
+ * after which the application supplied entry routine is called.
+ */
 void __attribute__((naked)) resetISR(void)
 {
-    /*
-     *  Some debuggers do not load the stack pointer from the reset vector.
-     *  This code ensures that the stack pointer is initialized.  We branch
-     *  to localProgramStart() so that nothing is pushed to the stack
-     *  before it has been initialized.
+    /* Set stack pointer based on the stack value stored in the vector table.
+     * This is necessary to ensure that the application is using the correct
+     * stack when using a debugger since a reset within the debugger will
+     * load the stack pointer from the bootloader's vector table at address '0'.
      *
-     *  For freertos/gcc specifically on this platform, the ti_freertos_config
-     *  file is sufficiently large that it requires a full BL instruction
-     *  rather than the limited range of the simple B instruction.
+     * For freertos/gcc specifically on this platform, the ti_freertos_config
+     * file is sufficiently large that it requires a full BL instruction
+     * rather than the limited range of the simple B instruction.
      *
-     *  .ltorg is added to avoid literal pool errors when LTO is enabled.
+     * .ltorg is added to avoid literal pool errors when LTO is enabled.
      */
     __asm__ __volatile__(" ldr r0, =resetVectors\n"
                          " ldr r0, [r0]\n"
@@ -185,14 +167,11 @@ void __attribute__((naked)) resetISR(void)
                          " .ltorg\n");
 }
 
-//*****************************************************************************
-//
-// This function is called by __libc_fini_array which gets called when exit()
-// is called. In order to support exit(), an empty _fini() stub function is
-// required.
-//
-//*****************************************************************************
+/* This function is called by __libc_fini_array which gets called when exit()
+ * is called. In order to support exit(), an empty _fini() stub function is
+ * required.
+ */
 void _fini(void)
 {
-    /* Function body left empty intentionally */
+    /* Function body left empty intentionally. */
 }

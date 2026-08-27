@@ -42,5 +42,5 @@ setuptools.setup(
             "uart = tilogger_uart_transport.uart_transport:transport_factory_cli",
         ],
     },
-    install_requires=["pyserial>=3.5", "typer==0.15.1", "colorama==0.4.6"],
+    install_requires=["pyserial>=3.5", "typer==0.16.0", "colorama==0.4.6"],
 )

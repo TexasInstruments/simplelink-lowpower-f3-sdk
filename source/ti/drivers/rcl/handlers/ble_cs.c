@@ -43,7 +43,7 @@
 #include <ti/drivers/rcl/RCL_Buffer.h>
 #include <ti/drivers/rcl/RCL_Scheduler.h>
 
-#include <ti/drivers/rcl/hal/hal.h>
+#include <ti/drivers/rcl/hal/RCL_Hal.h>
 #include <ti/drivers/rcl/commands/ble_cs.h>
 
 #include <ti/devices/DeviceFamily.h>
@@ -72,40 +72,44 @@
 #include DeviceFamily_constructPath(inc/hw_ckmd.h)
 #endif
 
-#define BLE_CS_BASE_FREQ_MHZ            2402
-#define BLE_CS_MAX_CHANNEL              78
-#define BLE_CS_MID_CHANNEL              40
-#define BLE_CS_NUM_CHANNELS             79
-#define BLE_CS_NUM_INVALID_CHANNELS     7
-#define BLE_CS_SILENT_CHANNEL           100
-#define BLE_CS_NUM_PERMUTATION          24
-#define BLE_CS_S2R_OVERSAMPLE_RATE      4
-#define BLE_CS_S2R_MEMORY_OFFSET        0x0C00
-#define BLE_CS_TXFIFO_BASE_ADDR         128
-#define BLE_CS_TXFIFO_LEN               96
-#define BLE_CS_RXFIFO_BASE_ADDR         224
-#define BLE_CS_RXFIFO_LEN               160
-#define BLE_CS_FIRST_BATCH_SIZE         2
-#define BLE_CS_TONE_QUALITY_HIGH_THR    20
-#define BLE_CS_TONE_QUALITY_NA          255
-#define BLE_CS_TONE_EXTENSION_INITIATOR_TX 0b01
-#define BLE_CS_TONE_EXTENSION_REFLECTOR_TX 0b10
-#define BLE_CS_COMBINE_IQ(i, q)         ((((int32_t) i) & 0xFFFF) | ((((int32_t) q) & 0xFFFF) << 16))
-#define DECODE_ANTENNA(x, y)            (((x) >> ((y)*2)) & 0x03)
-#define ENCODE_ANTENNA(x, y)            (((x) << ((y)*4)))
-#define INT16_MSB(x)                    (((x) >> 8) & 0xFF)
-#define INT16_LSB(x)                    ((x) & 0xFF)
-#define INT32_H(x)                      (((x) >> 16) & 0xFFFF)
-#define INT32_L(x)                      ((x) & 0xFFFF)
+#define BLE_CS_BASE_FREQ_MHZ                2402U
+#define BLE_CS_MAX_CHANNEL                  78U
+#define BLE_CS_MID_CHANNEL                  40U
+#define BLE_CS_NUM_CHANNELS                 79U
+#define BLE_CS_NUM_INVALID_CHANNELS         7U
+#define BLE_CS_SILENT_CHANNEL               100U
+#define BLE_CS_NUM_PERMUTATION              24U
+#define BLE_CS_S2R_OVERSAMPLE_RATE          4U
+#define BLE_CS_S2R_MEMORY_OFFSET            0x0C00U
+#define BLE_CS_TXFIFO_BASE_ADDR             128U
+#define BLE_CS_TXFIFO_LEN                   96U
+#define BLE_CS_RXFIFO_BASE_ADDR             224U
+#define BLE_CS_RXFIFO_LEN                   160U
+#define BLE_CS_FIRST_BATCH_SIZE             2U
+#define BLE_CS_TONE_QUALITY_HIGH_THR        20U
+#define BLE_CS_TONE_QUALITY_NA              255U
+#define BLE_CS_TONE_EXTENSION_INITIATOR_TX  0b01U
+#define BLE_CS_TONE_EXTENSION_REFLECTOR_TX  0b10U
+#define BLE_CS_RX_GAIN_AUTO_DEFAULT         0x0EC9
+#define BLE_CS_RX_GAIN_DB_TO_OVERRIDE(x)    (((x) / 3U) << 8U)
+#define BLE_CS_FOFF_COMP_TO_OVERRIDE(x)     ((x) * 4U)
+#define BLE_CS_FOFF_NUM_OVERRIDE            ((1 << 15U) | 1U)     // [15]=Enable, [1]=NUM hardcoded to 1
+#define BLE_CS_COMBINE_IQ(i, q)             ((((int32_t) i) & 0xFFFF) | ((((int32_t) q) & 0xFFFF) << 16))
+#define DECODE_ANTENNA(x, y)                (uint8_t) (((x) >> ((y)*2U)) & 0x03U)
+#define ENCODE_ANTENNA(x, y)                (((x) << ((y)*4U)))
+#define INT16_MSB(x)                        (uint8_t) (((uint16_t) (x) >> 8U) & 0xFFU)
+#define INT16_LSB(x)                        (uint8_t) ((uint16_t) (x) & 0xFFU)
+#define INT32_H(x)                          (uint16_t) (((uint32_t) (x) >> 16U) & 0xFFFFU)
+#define INT32_L(x)                      (uint16_t) ((uint32_t) (x) & 0xFFFFU)
 
 /* Prepare constant terms for step specific calculations */
-#define T1US  RCL_BLE_CS_US_TO_MCE_TIMER(1)
-#define T3US  RCL_BLE_CS_US_TO_MCE_TIMER(3)
-#define TRD   RCL_BLE_CS_US_TO_MCE_TIMER(5)
-#define TGD   RCL_BLE_CS_US_TO_MCE_TIMER(10)
-#define TFM   RCL_BLE_CS_US_TO_MCE_TIMER(80)
-#define TPLT  RCL_BLE_CS_US_TO_MCE_TIMER(20)
-#define TPYL  0   // Unknown at this point, will be calculated per step
+#define T1US  RCL_BLE_CS_US_TO_MCE_TIMER(1U)
+#define T3US  RCL_BLE_CS_US_TO_MCE_TIMER(3U)
+#define TRD   RCL_BLE_CS_US_TO_MCE_TIMER(5U)
+#define TGD   RCL_BLE_CS_US_TO_MCE_TIMER(10U)
+#define TPLT  RCL_BLE_CS_US_TO_MCE_TIMER(20U)
+#define TFM   RCL_BLE_CS_US_TO_MCE_TIMER(80U)
+#define TPYL  0U   // Unknown at this point
 
 /* Define Antenna Indexes */
 #define A1 (0)
@@ -122,8 +126,11 @@ struct
         RCL_CommandStatus endStatus;
     } common;
     struct {
-        uint32_t startTime;
-        bool firstBuffer;
+        bool     rxGainCacheValid;
+        uint16_t rxGainCache;
+        bool     foffCacheValid;
+        int16_t  foffCache;
+        bool     firstBuffer;
         uint32_t hftrackctl;
     } ble_cs;
 } bleCsHandlerState;
@@ -134,12 +141,12 @@ RCL_CmdBleCs_StepResult_Internal stepResult;
 
 /* Precalculated base terms */
 uint32_t tStepLut[RCL_CmdBleCs_StepMode_Length];
-uint16_t tPllRx[RCL_CmdBleCs_StepMode_Length];
-uint16_t tAdjALut[RCL_CmdBleCs_StepMode_Length];
-uint16_t tAdjBLut[RCL_CmdBleCs_StepMode_Length];
-uint16_t tAntALut[RCL_CmdBleCs_StepMode_Length];
-uint16_t tAntBLut[RCL_CmdBleCs_StepMode_Length];
-uint16_t tRttAdjustLut[RCL_CmdBleCs_StepMode_Length];
+int16_t  tPllRx[RCL_CmdBleCs_StepMode_Length];
+int16_t  tAdjALut[RCL_CmdBleCs_StepMode_Length];
+int16_t  tAdjBLut[RCL_CmdBleCs_StepMode_Length];
+int16_t  tAntBLut[RCL_CmdBleCs_StepMode_Length];
+int16_t  tAntALut[RCL_CmdBleCs_StepMode_Length];
+int16_t  tRttAdjustLut[RCL_CmdBleCs_StepMode_Length];
 
 /*
  *  ======== Type for indexing antenna sequence ========
@@ -364,9 +371,9 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
         .tCorr             = 377, // 7.85us
         .tDem              = 914, // 19.05us
 
-        .tRxTimeoutI0      = RCL_BLE_CS_US_TO_MCE_TIMER(65), // MCE
-        .tRxTimeoutI3      = RCL_BLE_CS_US_TO_MCE_TIMER(49), // MCE
-        .tRxTimeoutRn      = RCL_BLE_CS_US_TO_MCE_TIMER(64), // MCE
+        .tRxTimeoutI0      = RCL_BLE_CS_US_TO_MCE_TIMER(65U), // MCE
+        .tRxTimeoutI3      = RCL_BLE_CS_US_TO_MCE_TIMER(49U), // MCE
+        .tRxTimeoutRn      = RCL_BLE_CS_US_TO_MCE_TIMER(64U), // MCE
 
         .pctConfig = {
             /*TPM = 10US*/{.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL32 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S),  .numIteration = 1, .fracWait = 32,  .fracWaitAdj = 0},
@@ -400,8 +407,8 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
         /* Sum of demodulation and modulation delay (HW only) */
         .tRtt = {
                   /* Initiator / Reflector */
-                 .mode1 = {599, 599},
-                 .mode3 = {600, 600}
+                 .mode1 = {601, 607},
+                 .mode3 = {601, 607}
         },
 
         .tAnt = {
@@ -440,9 +447,9 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
         .tCorr             = 204, // 4.25us
         .tDem              = 565, // 11.77us
 
-        .tRxTimeoutI0      = RCL_BLE_CS_US_TO_MCE_TIMER(46), // MCE
-        .tRxTimeoutI3      = RCL_BLE_CS_US_TO_MCE_TIMER(32), // MCE
-        .tRxTimeoutRn      = RCL_BLE_CS_US_TO_MCE_TIMER(46), // MCE
+        .tRxTimeoutI0      = RCL_BLE_CS_US_TO_MCE_TIMER(46U), // MCE
+        .tRxTimeoutI3      = RCL_BLE_CS_US_TO_MCE_TIMER(32U), // MCE
+        .tRxTimeoutRn      = RCL_BLE_CS_US_TO_MCE_TIMER(46U), // MCE
 
         .pctConfig = {
             /*TPM = 10US*/{.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL32 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S),  .numIteration = 2, .fracWait = 32,  .fracWaitAdj = 9},
@@ -476,8 +483,8 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
         /* Sum of demodulation and modulation delay (HW only) */
         .tRtt = {
                   /* Initiator / Reflector */
-                 .mode1 = {333, 334},
-                 .mode3 = {336, 334}
+                 .mode1 = {336, 338},
+                 .mode3 = {336, 338}
         },
 
         .tAnt = {
@@ -515,9 +522,9 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
         .tCorr             = 204, // 4.25us
         .tDem              = 565, // 11.77us
 
-        .tRxTimeoutI0      = RCL_BLE_CS_US_TO_MCE_TIMER(46), // MCE
-        .tRxTimeoutI3      = RCL_BLE_CS_US_TO_MCE_TIMER(32), // MCE
-        .tRxTimeoutRn      = RCL_BLE_CS_US_TO_MCE_TIMER(46), // MCE
+        .tRxTimeoutI0      = RCL_BLE_CS_US_TO_MCE_TIMER(46U), // MCE
+        .tRxTimeoutI3      = RCL_BLE_CS_US_TO_MCE_TIMER(32U), // MCE
+        .tRxTimeoutRn      = RCL_BLE_CS_US_TO_MCE_TIMER(46U), // MCE
 
         .pctConfig = {
             /*TPM = 10US*/{.period = (LRFDMDM_DEMFIDC0_ACCPERIOD_SMPL32 >> LRFDMDM_DEMFIDC0_ACCPERIOD_S),  .numIteration = 2, .fracWait = 32,  .fracWaitAdj = 9},
@@ -551,8 +558,8 @@ const RCL_PhyConfig_t phyConfigLut[RCL_CmdBleCs_Phy_Length] = {
         /* Sum of demodulation and modulation delay (HW only) */
         .tRtt = {
                   /* Initiator / Reflector */
-                 .mode1 = {333, 334},
-                 .mode3 = {336, 334}
+                 .mode1 = {336, 338},
+                 .mode3 = {336, 338}
         },
 
         .tAnt = {
@@ -587,11 +594,11 @@ const int8_t foffErrorLut[BLE_CS_NUM_CHANNELS] = {
 
 /* Look up table of payload length in units of MCE Timer at rate of [1M]. Scaling dynamically if needed. */
 const uint16_t payloadLut[RCL_CmdBleCs_Payload_Length] = {
-    /*0 bits =*/   RCL_BLE_CS_US_TO_MCE_TIMER(0),
-    /*32 bits =*/  RCL_BLE_CS_US_TO_MCE_TIMER(32),
-    /*64 bits =*/  RCL_BLE_CS_US_TO_MCE_TIMER(64),
-    /*96 bits =*/  RCL_BLE_CS_US_TO_MCE_TIMER(96),
-    /*128 bits =*/ RCL_BLE_CS_US_TO_MCE_TIMER(128)
+    /*0 bits =*/   RCL_BLE_CS_US_TO_MCE_TIMER(0U),
+    /*32 bits =*/  RCL_BLE_CS_US_TO_MCE_TIMER(32U),
+    /*64 bits =*/  RCL_BLE_CS_US_TO_MCE_TIMER(64U),
+    /*96 bits =*/  RCL_BLE_CS_US_TO_MCE_TIMER(96U),
+    /*128 bits =*/ RCL_BLE_CS_US_TO_MCE_TIMER(128U)
 };
 
 /* PCT compensation table for antenna/front-end delay */
@@ -616,7 +623,7 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd);
 static void RCL_Handler_BLE_CS_preprocessStep(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_Step *pStep, RCL_CmdBleCs_Step_Internal *pStepI);
 static RCL_CmdBleCs_StepResult_Internal* RCL_Handler_BLE_CS_fetchNextStepResult(RCL_CmdBleCs *pCmd);
 static int16_t RCL_Handler_BLE_CS_convertFreqOffset(int16_t foffMeasured, bool ceil);
-static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, uint8_t mode, int8_t channel, uint8_t payload, bool secondToneExtensionSlot, int32_t toAD, uint16_t corrBefore, uint16_t corrPeak, uint16_t corrAfter);
+static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_StepMode mode, uint8_t channel, uint8_t payload, bool secondToneExtensionSlot, uint32_t rtt, uint16_t corrBefore, uint16_t corrPeak, uint16_t corrAfter);
 static uint32_t RCL_Handler_BLE_CS_convertPct(const RCL_CmdBleCs_IQSample *pPct, const uint8_t channelIdx, bool inlinePhase);
 static uint8_t RCL_Handler_BLE_CS_calcQ3(uint16_t qMin, uint16_t qMax, uint16_t qAvg);
 static uint8_t RCL_Handler_BLE_CS_convertPctQuality(uint16_t qMin, uint16_t qMax, uint16_t qAvg, bool toneExtensionSlot, bool toneExpected, bool toneQualityOverride);
@@ -624,6 +631,7 @@ static uint16_t RCL_Handler_BLE_CS_estimateStepResultLength(RCL_CmdBleCs *pCmd,R
 static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t *dst, RCL_CmdBleCs_StepResult_Internal* src);
 static RCL_CommandStatus RCL_Handler_BLE_CS_findPbeErrorEndStatus(uint16_t pbeEndStatus);
 static bool RCL_Handler_BLE_CS_filterDC(uint16_t max, uint16_t min, uint16_t thr);
+static void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t theta);
 
 /*
  *  ======== Traverse multibuffer list looking for space ========
@@ -638,7 +646,7 @@ static RCL_MultiBuffer* RCL_Handler_BLE_CS_findBufferFitNumberOfBytes(List_List 
         pBuffer = RCL_MultiBuffer_findFirstWritableBuffer(pBuffer);
 
         /* Avoid NULL pointer dereferencing */
-        if (pBuffer)
+        if (pBuffer != NULL)
         {
             /* Check for available space */
             if (pBuffer->length - pBuffer->tailIndex >= numBytes)
@@ -655,7 +663,7 @@ static RCL_MultiBuffer* RCL_Handler_BLE_CS_findBufferFitNumberOfBytes(List_List 
                 bleCsHandlerState.ble_cs.firstBuffer = false;
             }
         }
-    } while (pBuffer);
+    } while (pBuffer != NULL);
 
     return (pBuffer);
 }
@@ -674,7 +682,7 @@ static bool RCL_Handler_BLE_CS_transferFinishedBuffers(List_List *pSrc, List_Lis
     {
         pBuffer = RCL_MultiBuffer_head(pSrc);
 
-        if (pBuffer)
+        if (pBuffer != NULL)
         {
             if (forceBufferToFinishState)
             {
@@ -696,7 +704,7 @@ static bool RCL_Handler_BLE_CS_transferFinishedBuffers(List_List *pSrc, List_Lis
                 break;
             }
         }
-    } while (pBuffer);
+    } while (pBuffer != NULL);
 
     return (callbackEvent);
 }
@@ -717,16 +725,16 @@ static void RCL_Handler_BLE_CS_configureTxRxFifo(RCL_CmdBleCs* pCmd)
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCMD) = LRFDPBE_FCMD_DATA_FIFO_RESET;
 
     /* Calculate how many entries can be stored simultaneous in given size of tx/rx fifos */
-    uint16_t nStepsFit = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE) / sizeof(RCL_CmdBleCs_Step_Internal);
-    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWBTHRS) = (nStepsFit - 1) * sizeof(RCL_CmdBleCs_Step_Internal);
+    uint16_t nStepsFit = (HWREGH_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE) / (uint16_t) sizeof(RCL_CmdBleCs_Step_Internal));
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWBTHRS) = (nStepsFit - 1U) * sizeof(RCL_CmdBleCs_Step_Internal);
 
-    uint16_t nResultsFit = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFWRITABLE) / sizeof(RCL_CmdBleCs_StepResult_Internal);
-    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = (nResultsFit - 1) * sizeof(RCL_CmdBleCs_StepResult_Internal);
-
-    #ifndef PG2
-    /* CDDS BUG00003 - Temporarily workaround */
+#if defined(DeviceFamily_PARENT) && (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    /* CC27xx: Process one step at the time */
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = sizeof(RCL_CmdBleCs_StepResult_Internal);
-    #endif
+#else
+    uint16_t nResultsFit = (HWREGH_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFWRITABLE) / (uint16_t) sizeof(RCL_CmdBleCs_StepResult_Internal));
+    HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = (nResultsFit - 1U) * sizeof(RCL_CmdBleCs_StepResult_Internal);
+#endif
 
     /* FIFO pointers should auto-commit/auto-dealloc, enable threshold events */
     HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0)   = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_FCFG0) | (LRFDPBE_FCFG0_TXACOM_M | LRFDPBE_FCFG0_TXADEAL_M | LRFDPBE_FCFG0_RXACOM_M | LRFDPBE_FCFG0_RXADEAL_M);
@@ -746,15 +754,15 @@ static RCL_Events RCL_Handler_BLE_CS_preFillTxBuffer(RCL_CmdBleCs* pCmd)
     RCL_Events events = {.value = 0};
 
     /* Calculate how many additional step will fit (which might be all) */
-    uint16_t nWritable  = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE) / sizeof(RCL_CmdBleCs_Step_Internal);
+    uint16_t nWritable  = (HWREGH_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_TXFWRITABLE) / (uint16_t) sizeof(RCL_CmdBleCs_Step_Internal));
     uint16_t nRemaining = (pCmd->mode.repeatSteps) ? (pCmd->mode.nSteps) : (pCmd->mode.nSteps - pCmd->stats->nStepsWritten);
     uint16_t nBatch     = (nWritable < nRemaining) ? nWritable : nRemaining;
 
     /* Limited time is available when we start the command (ABS_START_TIME_OFFSET),
         so the first batch is reduced */
-    if (pCmd->stats->nStepsWritten == 0)
+    if (pCmd->stats->nStepsWritten == 0U)
     {
-        nBatch = (nBatch < BLE_CS_FIRST_BATCH_SIZE) ? nBatch : BLE_CS_FIRST_BATCH_SIZE;
+        nBatch = ((nBatch < BLE_CS_FIRST_BATCH_SIZE) ? nBatch :  (uint16_t) BLE_CS_FIRST_BATCH_SIZE);
     }
 
     /* Transfer the calculated number of steps into the fifo */
@@ -764,7 +772,7 @@ static RCL_Events RCL_Handler_BLE_CS_preFillTxBuffer(RCL_CmdBleCs* pCmd)
     }
 
     /* Transfer the used buffers, should trigger a callback if any */
-    events.txBufferFinished = (uint32_t) RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->stepBuffers, &pCmd->stepBuffersDone, false);
+    events.txBufferFinished =  RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->stepBuffers, &pCmd->stepBuffersDone, false) ? 1U : 0U;
 
     return (events);
 }
@@ -782,7 +790,7 @@ static void RCL_Handler_BLE_CS_fetchAndforwardNextStep(RCL_CmdBleCs* pCmd)
 
     /* Handle buffer boundaries within a batch */
     pStepBuffer = RCL_MultiBuffer_findFirstWritableBuffer(pStepBuffer);
-    if (pStepBuffer)
+    if (pStepBuffer != NULL)
     {
         /* Flag the buffer */
         if (pStepBuffer->state != RCL_BufferStateInUse)
@@ -816,12 +824,12 @@ static void RCL_Handler_BLE_CS_fetchAndforwardNextStep(RCL_CmdBleCs* pCmd)
             /* The step have been consumed */
             pCmd->stats->nStepsWritten++;
 
-            pStepBuffer->headIndex += sizeof(RCL_CmdBleCs_Step);
+            pStepBuffer->headIndex += (uint16_t) sizeof(RCL_CmdBleCs_Step);
 
             /* This buffer is exhausted, or end of subevent */
             if (pStepBuffer->headIndex == pStepBuffer->tailIndex)
             {
-                if (pCmd->mode.repeatSteps == false)
+                if ((bool)pCmd->mode.repeatSteps == false)
                 {
                     /* Update state and move the buffer */
                     pStepBuffer->state = RCL_BufferStateFinished;
@@ -848,18 +856,29 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
         *(ptr+j) = HWREG_READ_LRF(LRFDRXF_BASE + LRFDRXF_O_RXD);
     }
 
-    if (stepResult.pktResult == RCL_CmdBleCs_PacketResult_Ok)
+    /* Update counters */
+    if ((RCL_CmdBleCs_StepMode) stepResult.mode == RCL_CmdBleCs_StepMode_0)
     {
-        pCmd->stats->nRxOk += 1;
+        pCmd->stats->nMode0++;
+        if ((RCL_CmdBleCs_PacketResult) stepResult.pktResult != RCL_CmdBleCs_PacketResult_Lost)
+        {
+            pCmd->stats->nMode0Ok++;
+        }
+    }
+
+    if (((RCL_CmdBleCs_StepMode) stepResult.mode == RCL_CmdBleCs_StepMode_2) ||
+        ((RCL_CmdBleCs_PacketResult)stepResult.pktResult == RCL_CmdBleCs_PacketResult_Ok))
+    {
+        pCmd->stats->nRxOk++;
     }
     else
     {
-        pCmd->stats->nRxNok += 1;
+        pCmd->stats->nRxNok++;
     }
 
     /* Pop and fill the next container */
     RCL_CmdBleCs_StepResult_Internal *pResult = RCL_Handler_BLE_CS_fetchNextStepResult(pCmd);
-    if (pResult)
+    if (pResult != NULL)
     {
         memcpy(pResult, (RCL_CmdBleCs_StepResult_Internal *) &stepResult, sizeof(RCL_CmdBleCs_StepResult_Internal));
     }
@@ -877,7 +896,7 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
     }
 
     /* Avoid NULL pointer dereferencing */
-    if (pResultBuffer)
+    if (pResultBuffer != NULL)
     {
         if (bleCsHandlerState.ble_cs.firstBuffer)
         {
@@ -885,7 +904,7 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
             RCL_CmdBleCs_SubeventResults *pSubeventResults = (RCL_CmdBleCs_SubeventResults *) pResultBuffer->data;
 
             /* Initialize header in an empty buffer */
-            if (pResultBuffer->tailIndex == 0)
+            if (pResultBuffer->tailIndex == 0U)
             {
                 /* Fill out the static frame info */
                 pSubeventResults->subeventCode     = RCL_CMD_BLE_CS_SUBEVENT_RESULTS_OPCODE;
@@ -897,17 +916,17 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
             }
 
             /* Update the HCI header */
-            pSubeventResults->numStepsReported     += 1;
-            pSubeventResults->subeventDoneStatus   = (pCmd->mode.nSteps != pCmd->stats->nResultsRead);
+            pSubeventResults->numStepsReported     += 1U;
+            pSubeventResults->subeventDoneStatus   = (uint8_t) (pCmd->mode.nSteps != pCmd->stats->nResultsRead);
 
             /* Only available after AGC is locked
              * RPL = IQ[dBm] - 20*log(IQ/2048) */
-            pSubeventResults->referencePowerLevel = -(int8_t) HWREG_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_RFGAIN);
+            pSubeventResults->referencePowerLevel = -(int8_t) HWREGB_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_RFGAIN);
 
             /* Only available after last mode-0 step */
-            pSubeventResults->frequencyCompensation = (pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
-                                                    ? RCL_Handler_BLE_CS_convertFreqOffset(HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFCOMP) << 2, true)
-                                                    : RCL_CMD_BLE_CS_FREQCOMP_NA;
+            pSubeventResults->frequencyCompensation = ((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
+                                                    ? RCL_Handler_BLE_CS_convertFreqOffset((int16_t) (HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFCOMP) << 2), true)
+                                                    : (int16_t) RCL_CMD_BLE_CS_FREQCOMP_NA;
         }
         else
         {
@@ -915,7 +934,7 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
            RCL_CmdBleCs_SubeventResultsContinue *pSubeventResultsContinue = (RCL_CmdBleCs_SubeventResultsContinue *) pResultBuffer->data;
 
            /* Initialize header in an empty buffer */
-           if (pResultBuffer->tailIndex == 0)
+           if (pResultBuffer->tailIndex == 0U)
            {
                /* Fill out the static frame info */
                pSubeventResultsContinue->subeventCode     = RCL_CMD_BLE_CS_SUBEVENT_RESULTS_CONTINUE_OPCODE;
@@ -927,8 +946,8 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
            }
 
            /* Update the HCI header */
-           pSubeventResultsContinue->numStepsReported   += 1;
-           pSubeventResultsContinue->subeventDoneStatus  = (pCmd->mode.nSteps != pCmd->stats->nResultsRead);
+           pSubeventResultsContinue->numStepsReported   += 1U;
+           pSubeventResultsContinue->subeventDoneStatus  = (uint8_t) (pCmd->mode.nSteps != pCmd->stats->nResultsRead);
         }
 
         /* Decode the offset of data field */
@@ -941,13 +960,17 @@ static void RCL_Handler_BLE_CS_retrieveAndStoreNextResult(RCL_CmdBleCs* pCmd, bo
         RCL_MultiBuffer_commitBytes(pResultBuffer, nBytes);
 
         /* Force close the multibuffer, even if there is more space left */
-        if ( (pCmd->mode.repeatSteps == false) && (pCmd->mode.nSteps == pCmd->stats->nResultsRead) )
+        if ( ((bool)pCmd->mode.repeatSteps == false) && (pCmd->mode.nSteps == pCmd->stats->nResultsRead) )
         {
             pResultBuffer->state = RCL_BufferStateFinished;
         }
         else if (forceBufferToFinishState)
         {
             pResultBuffer->state = RCL_BufferStateFinished;
+        }
+        else
+        {
+            /* Do nothing */
         }
     }
 }
@@ -961,36 +984,39 @@ static RCL_Events RCL_Handler_BLE_CS_readWriteBuffer(RCL_CmdBleCs* pCmd, bool fo
     RCL_Events events = {.value = 0};
 
     /* Calculate how many result entries are available in rx fifo (might be all that has left) */
-    uint16_t nBatch  = HWREG_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) / sizeof(RCL_CmdBleCs_StepResult_Internal);
+    uint16_t nBatch  = HWREGH_READ_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFREADABLE) /  ((uint16_t) sizeof(RCL_CmdBleCs_StepResult_Internal));
 
     /* Read out the calculated number of entries */
-    for (uint16_t i=0; i<nBatch; i++)
+    for (uint16_t i = 0; i < nBatch; i++)
     {
         /* Retrieve all that's available and terminate*/
-        bool forceTerminate = (forceBufferToFinishState && (i == nBatch-1));
+        bool forceTerminate = (forceBufferToFinishState && (i == nBatch - 1U));
 
-        RCL_Handler_BLE_CS_retrieveAndStoreNextResult(pCmd, forceTerminate);
         RCL_Handler_BLE_CS_fetchAndforwardNextStep(pCmd);
+        RCL_Handler_BLE_CS_retrieveAndStoreNextResult(pCmd, forceTerminate);
     }
 
     /* Transfer the used buffers, should trigger a callback if any */
-    events.rxBufferFinished = (uint32_t) RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->resultBuffers, &pCmd->resultBuffersDone, forceBufferToFinishState);
-    events.txBufferFinished = (uint32_t) RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->stepBuffers, &pCmd->stepBuffersDone, false);
+    events.rxBufferFinished = RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->resultBuffers, &pCmd->resultBuffersDone, forceBufferToFinishState) ? 1U : 0U;
+    events.txBufferFinished = RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->stepBuffers, &pCmd->stepBuffersDone, false) ? 1U : 0U;
 
     /* Reduce the batch size if there is only a few entries missing */
-    int16_t nRemaining = pCmd->mode.nSteps - pCmd->stats->nResultsRead;
+    int16_t nRemaining = (int16_t) (pCmd->mode.nSteps - pCmd->stats->nResultsRead);
     if (nRemaining <= 0)
     {
-        if (pCmd->mode.repeatSteps == false)
+        if ((bool) pCmd->mode.repeatSteps == false)
         {
             /* No more results expected, set the threshold to the max */
-            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = 0x3FF;
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = 0x3FFU;
         }
     }
-    else if (nRemaining < nBatch)
+    else
     {
-        /* Reduce the Fifo threshold to number of remaining steps */
-        HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = (nRemaining * sizeof(RCL_CmdBleCs_StepResult_Internal));
+        if ((pCmd->mode.nSteps - pCmd->stats->nResultsRead) < nBatch)
+        {
+            /* Reduce the Fifo threshold to number of remaining steps */
+            HWREG_WRITE_LRF(LRFDPBE_BASE + LRFDPBE_O_RXFRBTHRS) = (nRemaining * (int16_t)(sizeof(RCL_CmdBleCs_StepResult_Internal)));
+        }
     }
 
     return (events);
@@ -1008,9 +1034,9 @@ static void RCL_Handler_BLE_CS_configureS2R(RCL_CmdBleCs *pCmd)
     RCL_MultiBuffer *pS2rBuffer = RCL_MultiBuffer_head(&pCmd->s2rBuffers);
 
     /* Only set up S2R, if there is buffer on the list */
-    if (pS2rBuffer)
+    if (pS2rBuffer != NULL)
     {
-        uint8_t rate = (pCmd->mode.phy) ? (1) : (0);
+        uint8_t rate = (pCmd->mode.phy) ? (1U) : (0U);
 
         /* Store 32bit words in S2R (offset 3072) memory; don't arm yet */
         HWREG_WRITE_LRF(LRFDS2R_BASE + LRFDS2R_O_START) = BLE_CS_S2R_MEMORY_OFFSET;
@@ -1029,22 +1055,22 @@ RCL_Events RCL_Handler_BLE_CS_readS2RSamples(RCL_CmdBleCs *pCmd)
 {
     RCL_Events events = {.value = 0};
 
-    uint16_t s2rLength  = sizeof(S2RSample) * HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTWORDSIZE);
-    uint16_t dataLength = sizeof(RCL_CmdBleCs_S2r) + s2rLength;
+    uint16_t s2rLength  = (uint16_t) sizeof(S2RSample) * HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTWORDSIZE);
+    uint16_t dataLength = (uint16_t) sizeof(RCL_CmdBleCs_S2r) + s2rLength;
 
     /* Access the list of multibuffers */
     RCL_MultiBuffer *pS2rBuffer = RCL_Handler_BLE_CS_findBufferFitNumberOfBytes(&pCmd->s2rBuffers, dataLength);
 
-    if (pS2rBuffer)
+    if (pS2rBuffer != NULL)
     {
         /* Decode the next free slot in the multibuffer */
         RCL_CmdBleCs_S2r *pS2rData = (RCL_CmdBleCs_S2r *) RCL_MultiBuffer_getNextWritableByte(pS2rBuffer);
 
         /* Store the step index */
         pS2rData->phy        = pCmd->mode.phy;
-        pS2rData->idx        = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTIDX);
-        pS2rData->channel    = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTCHIDX);
-        pS2rData->payloadLen = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTPAYLOADLEN);
+        pS2rData->idx        = HWREGB_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTIDX);
+        pS2rData->channel    = HWREGB_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTCHIDX);
+        pS2rData->payloadLen = HWREGB_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTPAYLOADLEN);
         /* 32 bit access */
         pS2rData->payload0   = HWREG_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTPAYLOAD0L);
         pS2rData->payload1   = HWREG_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_S2ROUTPAYLOAD1L);
@@ -1084,13 +1110,15 @@ RCL_Events RCL_Handler_BLE_CS_readS2RSamples(RCL_CmdBleCs *pCmd)
 
         /* Flag the entry */
         RCL_MultiBuffer_commitBytes(pS2rBuffer, dataLength);
+
+        /* Update the statistics */
         pCmd->stats->nS2RDone++;
 
         /* Force close the buffer, even if there is more space left */
         pS2rBuffer->state = RCL_BufferStateFinished;
 
         /* Transfer the used buffers, should trigger a callback if any */
-        events.swTriggered = (uint32_t) RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->s2rBuffers, &pCmd->s2rBuffersDone, false);
+        events.swTriggered = (uint8_t) (RCL_Handler_BLE_CS_transferFinishedBuffers(&pCmd->s2rBuffers, &pCmd->s2rBuffersDone, false));
     }
 
     return (events);
@@ -1101,12 +1129,17 @@ RCL_Events RCL_Handler_BLE_CS_readS2RSamples(RCL_CmdBleCs *pCmd)
  */
 static void RCL_Handler_BLE_CS_readStatistics(RCL_CmdBleCs *pCmd)
 {
-    if (pCmd->stats)
+    if (pCmd->stats != NULL)
     {
-        pCmd->stats->nStepsDone = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_NSTEPSDONE);
-        pCmd->stats->lastRssi   = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_RSSILAST);
-        pCmd->stats->lastFoff   = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFLAST);
-        pCmd->stats->foffComp   = HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFCOMP);
+        pCmd->stats->nStepsDone = (uint8_t) HWREGB_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_NSTEPSDONE);
+        pCmd->stats->lastRssi   = (int8_t) HWREGB_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_RSSILAST);
+        pCmd->stats->lastFoff   = (int16_t) HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFLAST);
+        pCmd->stats->foffComp   = (int16_t) HWREGH_READ_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFCOMP);
+        pCmd->stats->rxGain     = (uint16_t) HWREGH_READ_LRF(LRFDRFE_BASE + LRFDRFE_O_RFGAIN);
+
+        /* Convert to API units */
+        pCmd->stats->rxGain   = BLE_CS_RX_GAIN_DB_TO_OVERRIDE(pCmd->stats->rxGain);
+        pCmd->stats->foffComp = BLE_CS_FOFF_COMP_TO_OVERRIDE(pCmd->stats->foffComp);
     }
 }
 
@@ -1116,7 +1149,7 @@ static void RCL_Handler_BLE_CS_readStatistics(RCL_CmdBleCs *pCmd)
 static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
 {
     /* Force antenna switching time to zero for single antenna path per spec */
-    if (pCmd->antennaConfig.select == 0)
+    if (pCmd->antennaConfig.select == 0U)
     {
         pCmd->timing.tSw = 0;
     }
@@ -1128,9 +1161,9 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     const RCL_PhyConfig_t *config = &phyConfigLut[pCmd->mode.phy];
 
     /* Clear output statistics */
-    if (pCmd->stats)
+    if (pCmd->stats != NULL)
     {
-        memset((void *)pCmd->stats, 0, sizeof(RCL_CmdBleCs_Stats));
+        (void) memset((void *)pCmd->stats, 0, sizeof(RCL_CmdBleCs_Stats));
 
         pCmd->stats->lastRssi = LRF_RSSI_INVALID;
         pCmd->stats->numAntennaPath = antennaEntry->numPath;
@@ -1150,25 +1183,13 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_ANT3)   = pCmd->antennaConfig.gpoVal[3];
 
     /* Timing */
-    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TFCS)    = pCmd->timing.tFcs - (TPLT + config->tStartup); // Pilot tone + startup time is included into the TFCS budget
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TFCS)    = (uint16_t) (pCmd->timing.tFcs - (TPLT + config->tStartup)); // Pilot tone + startup time is included into the TFCS budget
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TPM)     = pCmd->timing.tPm;
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TIP1)    = pCmd->timing.tIp1;
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TIP2)    = pCmd->timing.tIp2;
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSW)     = pCmd->timing.tSw;
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSWADJA) = pCmd->timing.tSwAdjustA;
     HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSWADJB) = pCmd->timing.tSwAdjustB;
-
-    /* Apply override if configured */
-    if (pCmd->foffOverrideEnable)
-    {
-        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFSUM) = pCmd->foffOverride;
-        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFNUM) = (1 << 15) | 1; // [15]=Enable, [1]=NUM hardcoded to 1
-    }
-    else
-    {
-        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFSUM) = 0;
-        HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFNUM) = 0;
-    }
 
     /* Frequency dependent config (2402MHz + channel dependent correction by RFE */
     HWREG_WRITE_LRF(LRFDMDM32_BASE + LRFDMDM32_O_DEMFRAC1_DEMFRAC0) = 0x0D800000;     // P: Constant
@@ -1177,27 +1198,77 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
     /* Shaper gain */
     HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_MOD0) = 0x1824;
 
-    /* Configure AGC */
-    if (pCmd->frontend.rxGain == RCL_CmdBleCs_RxGain_Auto)
+    /* Configure Rx Gain Policy */
+    uint16_t rfGain = BLE_CS_RX_GAIN_AUTO_DEFAULT;
+    switch (pCmd->rxGainPolicy)
     {
-        /* [0:7]   = Max gain RSSI threshold
+        /* SPARE0 register format:
+           [0:7]   = Max gain RSSI threshold
            [8:11]  = Max gain index
            [12]    = 3/6 dB step selection */
-        HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE0) = 0x0EC9;
+        case (RCL_CmdBleCs_Policy_Cache):
+                if (bleCsHandlerState.ble_cs.rxGainCacheValid == true)
+                {
+                    rfGain = bleCsHandlerState.ble_cs.rxGainCache;
+                }
+                else
+                {
+                    /* If no valid cache, fall back to auto mode */
+                    pCmd->rxGainPolicy = RCL_CmdBleCs_Policy_Auto;
+                }
+                break;
+        case (RCL_CmdBleCs_Policy_Manual):
+                rfGain = pCmd->rxGainVal;
+                break;
+        case (RCL_CmdBleCs_Policy_Auto):
+        default:
+                bleCsHandlerState.ble_cs.rxGainCacheValid = false;
+                break;
     }
+    HWREG_WRITE_LRF(LRFDRFE_BASE + LRFDRFE_O_SPARE0) = rfGain;
 
-    uint8_t lutIdx = RCL_CmdBleCs_Tpm_40us;
-    if (pCmd->timing.tPm <= RCL_BLE_CS_US_TO_MCE_TIMER(20))
+    /* Configure Frequency Offset Compensation Policy */
+    uint16_t foffSum = 0;
+    uint16_t foffNum = 0;
+    switch (pCmd->foffPolicy)
+    {
+        /* FOFFSUM = 4xFOFF */
+        case (RCL_CmdBleCs_Policy_Cache):
+                if (bleCsHandlerState.ble_cs.foffCacheValid == true)
+                {
+                    foffSum = (uint16_t) bleCsHandlerState.ble_cs.foffCache;
+                    foffNum = BLE_CS_FOFF_NUM_OVERRIDE;
+                }
+                else
+                {
+                    /* If no valid cache, fall back to auto mode */
+                    pCmd->foffPolicy = RCL_CmdBleCs_Policy_Auto;
+                }
+                break;
+        case (RCL_CmdBleCs_Policy_Manual):
+                foffSum = (uint16_t) pCmd->foffVal;
+                foffNum = BLE_CS_FOFF_NUM_OVERRIDE;
+                break;
+        case (RCL_CmdBleCs_Policy_Auto):
+        default:
+                bleCsHandlerState.ble_cs.foffCacheValid = false;
+                break;
+    }
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFSUM) = foffSum;
+    HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_FOFFNUM) = foffNum;
+
+    RCL_CmdBleCs_Tpm lutIdx = RCL_CmdBleCs_Tpm_40us;
+    if (pCmd->timing.tPm <= RCL_BLE_CS_US_TO_MCE_TIMER(20U))
     {
         lutIdx = RCL_CmdBleCs_Tpm_20us;
     }
-    if (pCmd->timing.tPm <= RCL_BLE_CS_US_TO_MCE_TIMER(10))
+    if (pCmd->timing.tPm <= RCL_BLE_CS_US_TO_MCE_TIMER(10U))
     {
         lutIdx = RCL_CmdBleCs_Tpm_10us;
     }
 
     /* MAFC gain */
-    #ifdef DeviceFamily_CC27XX
+    #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         /* Workaround for IQ swap */
         HWREG_WRITE_LRF(LRFDMDM_BASE + LRFDMDM_O_DEMMISC2) = config->demmisc2 | LRFDMDM_DEMMISC2_PDIFIQCONJEN;
     #else
@@ -1242,16 +1313,16 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
 
     /* Calculate base terms of step duration for each mode.
        Later can be extended with optional payload per step before sending it over to the PBE. */
-    tStepLut[RCL_CmdBleCs_StepMode_0] = (tFcs + ((tPkt + TRD) << 1) + TGD + tIp1 + TFM);
-    tStepLut[RCL_CmdBleCs_StepMode_1] = (tFcs + ((tPkt + TPYL + TRD) << 1) + tIp1);
-    tStepLut[RCL_CmdBleCs_StepMode_2] = (tFcs + ((((tPm + tSw) * (nPath + 1)) + TRD) << 1) + tIp2);
-    tStepLut[RCL_CmdBleCs_StepMode_3] = (tFcs + ((tPkt + TPYL + TGD + ((tPm + tSw) * (nPath + 1)) + TRD) << 1) + tIp2);
+    tStepLut[RCL_CmdBleCs_StepMode_0] = (tFcs + ((tPkt + TRD) << 1U) + TGD + tIp1 + TFM);
+    tStepLut[RCL_CmdBleCs_StepMode_1] = (tFcs + ((tPkt + TPYL + TRD) << 1U) + tIp1);
+    tStepLut[RCL_CmdBleCs_StepMode_2] = (tFcs + ((((tPm + tSw) * (nPath + 1U)) + TRD) << 1) + tIp2);
+    tStepLut[RCL_CmdBleCs_StepMode_3] = (tFcs + ((tPkt + TPYL + TGD + ((tPm + tSw) * (nPath + 1U)) + TRD) << 1U) + tIp2);
 
     /* Adjustment of MCE timegrid */
     const RCL_Tadjust_t *tAdj = &config->tAdj[pCmd->mode.role];
     const RCL_Tadjust_t *tRtt = &config->tRtt;
 
-    if (pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
+    if ((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
     {
         /* Calculate base terms of interlude period. Later will scale with payload. */
 
@@ -1271,7 +1342,7 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
         tRttAdjustLut[RCL_CmdBleCs_StepMode_0] = 0; /* NA, no RTT defined */
         tRttAdjustLut[RCL_CmdBleCs_StepMode_1] = TPYL + TRD + tIp1 + tPkt + tRtt->mode1[0];
         tRttAdjustLut[RCL_CmdBleCs_StepMode_2] = 0; /* NA, no RTT defined */
-        tRttAdjustLut[RCL_CmdBleCs_StepMode_3] = TPYL + (TGD << 1) + (((tPm + tSw) * ((nPath << 1) + 1))) + TRD + tIp2 + tPkt + tRtt->mode3[0];
+        tRttAdjustLut[RCL_CmdBleCs_StepMode_3] = TPYL + (TGD << 1) + (((tPm + tSw) * ((nPath << 1) + 1U))) + TRD + tIp2 + tPkt + tRtt->mode3[0];
 
         /* LIF */
         tPllRx[RCL_CmdBleCs_StepMode_0] = 0xFFFF;
@@ -1316,16 +1387,16 @@ static void RCL_Handler_BLE_CS_preprocessCommand(RCL_CmdBleCs *pCmd)
 
         /* Handle infinite/extended RX timeout implemented by PBE */
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TRXWIDENINGR0)
-            = (pCmd->timing.tRxWideningR0 == 0xFFFF)
-            ? (0xFFFF)
+            = (pCmd->timing.tRxWideningR0 == 0xFFFFU)
+            ? 0xFFFFU
             : RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(tFcs + (tPkt - tTr) + tDem + T3US + pCmd->timing.tRxWideningR0);
 
         HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_TSTEPREMAININGR0) =
-          RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(0 - tDem + tTr + TRD + tIp1 + tPkt + TGD + TFM + TRD - tInfiniteRx);
+          RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(0U - tDem + tTr + TRD + tIp1 + tPkt + TGD + TFM + TRD - tInfiniteRx);
     }
 
     /* Adjustment of antenna control per mode per phy */
-    const RCL_Tadjust_t *tAnt = &config->tAnt[pCmd->mode.role & 1];
+    const RCL_Tadjust_t *tAnt = &config->tAnt[pCmd->mode.role & 1U];
 
     tAntALut[RCL_CmdBleCs_StepMode_0] = 0; /* NA - no antenna */
     tAntALut[RCL_CmdBleCs_StepMode_1] = 0; /* NA - no antenna */
@@ -1364,27 +1435,27 @@ static void RCL_Handler_BLE_CS_preprocessStep(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_S
 
     /* Decode the base term for the complete duration of the step */
     uint32_t tStep = tStepLut[pStepI->mode];
-    uint16_t tAdjA = tAdjALut[pStepI->mode];
-    uint16_t tAdjB = tAdjBLut[pStepI->mode];
+    int16_t tAdjA = tAdjALut[pStepI->mode];
+    int16_t tAdjB = tAdjBLut[pStepI->mode];
 
     /* Scale with bit length and 1M/2M rate */
-    uint8_t  rate = (pCmd->mode.phy) ? (1) : (0);
-    uint16_t tPyl = (payloadLut[pStepI->payloadLen]) >> rate;
+    uint8_t  rate = (pCmd->mode.phy) ? (1U) : (0U);
+    int16_t tPyl = (payloadLut[pStepI->payloadLen]) >> rate;
 
     /* Extend with timing of optional payload */
-    if (pStepI->payloadLen)
+    if (pStepI->payloadLen != 0U)
     {
         /* Adjustment only on Reflector */
-        uint16_t tAdj = (pCmd->mode.role == RCL_CmdBleCs_Role_Reflector)
-                      ? (tPyl)
-                      : (0);
+        int16_t tAdj = ((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Reflector)
+                     ? (tPyl)
+                     : (0U);
 
         /* Payload is only allowed for certain modes. */
-        if (pStepI->mode == RCL_CmdBleCs_StepMode_1 ||
-            pStepI->mode == RCL_CmdBleCs_StepMode_3)
+        if ((RCL_CmdBleCs_StepMode) pStepI->mode == RCL_CmdBleCs_StepMode_1 ||
+            (RCL_CmdBleCs_StepMode) pStepI->mode == RCL_CmdBleCs_StepMode_3)
         {
             /* Multiplied by two for combined effect of TX and RX */
-            tStep += (tPyl << 1);
+            tStep += ((uint32_t) tPyl << 1);
 
             /* The duration from AA sync until the next activity scales with payload on reflector only */
             tAdjA += tAdj;
@@ -1400,7 +1471,7 @@ static void RCL_Handler_BLE_CS_preprocessStep(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_S
     }
 
     /* Configure the PBE with the scaled step duration */
-    pStepI->tStep = (uint16_t) RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(tStep);
+    pStepI->tStep = RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(tStep);
 
     /* Configure the MCE with the scaled intermediate timegrid parameters */
     pStepI->tAdjustA = tAdjA;
@@ -1446,7 +1517,7 @@ static void RCL_Handler_BLE_CS_preprocessStep(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_S
             but only use the appropriate number of entries from each row */
         for(uint8_t k1=0; k1<antennaEntry->numPath; k1++)
         {
-            uint8_t apm = antennaEntry->ap[pCmd->mode.role & 1].apn;
+            uint8_t apm = antennaEntry->ap[pCmd->mode.role & 1U].apn;
 
             /* Decode bitfields */
             uint8_t k2 = DECODE_ANTENNA(apn, k1);
@@ -1459,7 +1530,7 @@ static void RCL_Handler_BLE_CS_preprocessStep(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_S
     }
 
     /* Look up the frequency offset actuation error (only used by mode 0) */
-    pStepI->foffErr = (uint16_t) foffErrorLut[pStepI->channelIdx];
+    pStepI->foffErr = (int16_t) foffErrorLut[pStepI->channelIdx];
 }
 
 /*
@@ -1475,6 +1546,29 @@ static RCL_CmdBleCs_StepResult_Internal* RCL_Handler_BLE_CS_fetchNextStepResult(
     }
 
     return (pResult);
+}
+
+/*
+ *  ======== Update the rx gain and frequency compensation cache for later use ========
+ */
+static void RCL_Handler_BLE_CS_updateCache(RCL_CmdBleCs *pCmd)
+{
+    /* Only update the cache if the subevent executed in automatic gain control
+       or frequency offset measurement mode, and at least 1 mode-0 step succeeded */
+    if (pCmd->stats->nMode0Ok > 0)
+    {
+        if (pCmd->rxGainPolicy == RCL_CmdBleCs_Policy_Auto)
+        {
+            bleCsHandlerState.ble_cs.rxGainCache      = pCmd->stats->rxGain;
+            bleCsHandlerState.ble_cs.rxGainCacheValid = true;
+        }
+
+        if (pCmd->foffPolicy == RCL_CmdBleCs_Policy_Auto)
+        {
+            bleCsHandlerState.ble_cs.foffCache      = pCmd->stats->foffComp;
+            bleCsHandlerState.ble_cs.foffCacheValid = true;
+        }
+    }
 }
 
 /*
@@ -1502,36 +1596,37 @@ static int16_t RCL_Handler_BLE_CS_convertFreqOffset(int16_t foffMeasured, bool c
 /*
  *  ======== RCL_Handler_BLE_CS_convertRtt ========
  */
-static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, uint8_t mode, int8_t channel, uint8_t payloadLen, bool secondToneExtensionSlot,
-                                             int32_t toAD, uint16_t corrBefore, uint16_t corrPeak, uint16_t corrAfter)
+static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_StepMode mode, uint8_t channel, uint8_t payloadLen, bool secondToneExtensionSlot,
+                                             uint32_t rtt, uint16_t corrBefore, uint16_t corrPeak, uint16_t corrAfter)
 {
     /* Raw RTT need to be compensated with:
        1) Remove nominal turn-around time T = TSY + TIP + TEXT + TPYL + ...
        2) Adjust with correlator before/after fractional approximation
        3) Initiator only: rebase onto the reflectors timegrid based on FFO
        4) Initiator only: Adjust with channel specific delays */
+    int32_t toAD = (int32_t) rtt;
 
     /* Conversion from 2M/1M baudrate to 48M clock tick */
-    uint8_t rateDiv = (pCmd->mode.phy) ? (1) : (0);
+    uint8_t rateDiv = (pCmd->mode.phy) ? (1U) : (0U);
 
     /* Remove nominal turn-around time (adjust to the signal on the antenna) */
-    toAD -= tRttAdjustLut[mode];
+    toAD -= (int32_t) tRttAdjustLut[mode];
 
     /* Adjust with optional payload duration */
-    toAD -= (payloadLut[payloadLen] >> rateDiv);
+    toAD -= (int32_t)((payloadLut[payloadLen] >> rateDiv));
 
     /* Adjust with optional tone-extension slot for mode-3 */
     if (secondToneExtensionSlot == true)
     {
-         toAD -= (pCmd->timing.tPm + pCmd->timing.tSw);
+         toAD -= (int32_t)((pCmd->timing.tPm + pCmd->timing.tSw));
     }
 
     /* Compensation based on fractional information */
-    float tCorr = 0;
+    float tCorr = 0.0f;
 
     if (corrBefore != corrAfter)
     {
-        #ifdef DeviceFamily_CC27XX
+        #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             /* Due to missing HW on the CC27xx device, the LRF returns with constant value of 64.
                We approximate the true peak from the before/after values: peak = 64 - 0.5x abs(before - after) */
             if (corrAfter < corrBefore) corrPeak -= ((corrBefore - corrAfter) >> 1);
@@ -1539,26 +1634,27 @@ static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, uint8_t mode, i
         #endif
 
         /* 2M @ 8MHz / 1M @ 4Mhz */
-        uint8_t baud2tick_div2 = (pCmd->mode.phy) ? (3) : (6);
+        int16_t baud2tick_div2 = (pCmd->mode.phy) ? (3) : (6);
         int16_t corrB = (int16_t) corrBefore;
         int16_t corrA = (int16_t) corrAfter;
+        int16_t corrP = (int16_t) corrPeak;
 
         /* Quadratic interpolation */
-        tCorr = baud2tick_div2 * (corrB - corrA);
-        tCorr /= ((corrB + corrA - (corrPeak << 1)));
+        tCorr = (float) (baud2tick_div2 * (corrB - corrA));
+        tCorr /= (float)((corrB + corrA - (corrP << 1U)));
     }
 
     /* Due to the varying clock rates used in the front-end stage,
        the time need to be further compensated per channel */
-    float c[3] = { /*1M*/0.12, /*2M*/0.15, /*2M2BT*/0.15 };
+    float c[3] = { /*1M*/0.12f, /*2M*/0.15f, /*2M2BT*/0.15f };
 
     float tChannel = c[pCmd->mode.phy] * (BLE_CS_MAX_CHANNEL - channel);
 
     /* Start with 48MHz ticks */
-    float t = toAD;
+    float t = (float) toAD;
 
     /* Adjust initiator */
-    if (pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
+    if ((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
     {
         /* Adjust with correlator before/after fractional detail */
         t += tCorr;
@@ -1569,7 +1665,7 @@ static int16_t RCL_Handler_BLE_CS_convertRtt(RCL_CmdBleCs *pCmd, uint8_t mode, i
         /* Convert to reflectors time frame:
            toAD = (1 + FFO) (ToA-ToD)
                 = (1 + foff/2^21) (ToA-ToD) */
-        t += ((float)foffComp) * t / 0x200000;
+        t += ((float)foffComp) * t / (float)0x200000;
 
         /* Adjust per channel */
         t -= tChannel;
@@ -1607,7 +1703,7 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
         * pct_i = I component of PCT
         * pct_q = Q component of PCT
         * */
-        #define PI_div2 (1 << (16-2))
+        #define PI_div2 (int16_t) (1 << (16-2))
 
         /* The LUT and normalization factor is generated by the following python expression:
         *
@@ -1621,7 +1717,7 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
         * f = 1/np.sqrt(f) * (2**NBITS)
         * K = (np.floor) (f + 0.5)
         * */
-        #define NBITS  (14)
+        #define NBITS  (14U)
         #define K14    (9949)
         const uint16_t atanLut[NBITS] = { 8192, 4836, 2555, 1297, 651, 326, 163, 81, 41, 20, 10, 5, 3, 1 };
 
@@ -1640,6 +1736,10 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
             x = +((int32_t) *pct_q);
             y = -((int32_t) *pct_i);
         }
+        else
+        {
+            /* Do nothing */
+        }
         x *= K14;
         y *= K14;
 
@@ -1655,13 +1755,13 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
         {
             if (phi < 0)
             {   /* Counter-clockwise */
-                phi += atanLut[i];
+                phi += (int32_t) atanLut[i];
                 y1 = y + (x >> i);
                 x1 = x - (y >> i);
             }
             else
             {   /* Clockwise */
-                phi -= atanLut[i];
+                phi -= (int32_t) atanLut[i];
                 y1 = y - (x >> i);
                 x1 = x + (y >> i);
             }
@@ -1671,8 +1771,8 @@ void RCL_Handler_BLE_CS_rotateVector(int16_t *pct_i, int16_t *pct_q, int16_t the
         }
 
         /* Scale according to LUT normalization weight */
-        *pct_i = (x >> NBITS);
-        *pct_q = (y >> NBITS);
+        *pct_i = (int16_t) (x >> NBITS);
+        *pct_q = (int16_t) (y >> NBITS);
     }
 }
 
@@ -1686,7 +1786,7 @@ static uint32_t RCL_Handler_BLE_CS_convertPct(const RCL_CmdBleCs_IQSample *pPct,
 
     if (pPct == NULL)
     {
-        return 0;
+        return (0);
     }
 
     int16_t  pct_i = pPct->i;
@@ -1696,11 +1796,11 @@ static uint32_t RCL_Handler_BLE_CS_convertPct(const RCL_CmdBleCs_IQSample *pPct,
        both the phase rotation and the RPL scaling must be skipped. */
     if (inlinePhase == false)
     {
-        const uint32_t DELAY_FRAC_BITS = 4;
-        const uint32_t THETA_SCALE_BITS = 21;
+        const uint32_t DELAY_FRAC_BITS = 4U;
+        const uint32_t THETA_SCALE_BITS = 21U;
 
-        const uint32_t MAGN_FRAC_BITS = 6;
-        const uint32_t MAGN_K_SCALE_BITS = 7;           // k = magnCoeff / 127
+        const uint32_t MAGN_FRAC_BITS = 6U;
+        const uint32_t MAGN_K_SCALE_BITS = 7U;           // k = magnCoeff / 127
 
         if ((pTable->enPhaseComp || pTable->enMagnComp) && (pTable->firstChannelIdx <= channelIdx))
         {
@@ -1708,7 +1808,7 @@ static uint32_t RCL_Handler_BLE_CS_convertPct(const RCL_CmdBleCs_IQSample *pPct,
             uint8_t baseOffset = (channelIdx - pTable->firstChannelIdx);
             uint8_t leftIdx = baseOffset / pTable->chSpacing;
             uint8_t leftOffset = baseOffset - (leftIdx * pTable->chSpacing);
-            uint8_t rightIdx = leftIdx + ((leftOffset > 0) ? 1 : 0);
+            uint8_t rightIdx = leftIdx + ((leftOffset > 0) ? 1U : 0U);
 
             if (rightIdx < pTable->numEntries)
             {
@@ -1788,13 +1888,13 @@ static uint8_t RCL_Handler_BLE_CS_calcQ3(uint16_t qMin, uint16_t qMax, uint16_t 
     uint8_t Q3 = BLE_CS_TONE_QUALITY_NA;
 
     /* Avoid zero-division. */
-    if (qAvg != 0)
+    if (qAvg != 0U)
     {
         /* Calculate Q3 metric on 16bit scale */
-        uint16_t Q16 = 100 * (qMax - qMin)/qAvg;
+        uint16_t Q16 = 100U * (qMax - qMin)/qAvg;
 
         /* Saturate */
-        Q3 = (Q16 < 0xFF) ? Q16 : 0xFF;
+        Q3 = (Q16 < 0xFFU) ? (uint8_t) Q16 : 0xFFU;
     }
 
     return (Q3);
@@ -1810,23 +1910,27 @@ static uint8_t RCL_Handler_BLE_CS_convertPctQuality(uint16_t qMin, uint16_t qMax
 
     /* Classify based on threshold. The lower the better. */
     uint8_t tnQ = (Q3 < BLE_CS_TONE_QUALITY_HIGH_THR)
-                ? (RCL_CmdBleCs_ToneQuality_High)
-                : (RCL_CmdBleCs_ToneQuality_Low);
+                ? (uint8_t)(RCL_CmdBleCs_ToneQuality_High)
+                : (uint8_t)(RCL_CmdBleCs_ToneQuality_Low);
 
     /* Override the value to unavailable for initiator mode-3 w/o second tone extension */
     if (toneQualityOverride)
     {
-        tnQ = RCL_CmdBleCs_ToneQuality_Unavailable;
+        tnQ = (uint8_t) RCL_CmdBleCs_ToneQuality_Unavailable;
     }
 
     /* Add additional flag for the tone extension slot */
     if (toneExtensionSlot)
     {
         uint8_t toneExtensionFlag = (toneExpected)
-                                  ? (RCL_CmdBleCs_ToneExtensionSlot_Enabled_ToneExpected)
-                                  : (RCL_CmdBleCs_ToneExtensionSlot_Enabled_NoToneExpected);
+                                  ? (uint8_t) (RCL_CmdBleCs_ToneExtensionSlot_Enabled_ToneExpected)
+                                  : (uint8_t) (RCL_CmdBleCs_ToneExtensionSlot_Enabled_NoToneExpected);
 
         tnQ |= (toneExtensionFlag << 4);
+    }
+    else
+    {
+        /* Do nothing */
     }
 
     return (tnQ);
@@ -1838,29 +1942,33 @@ static uint8_t RCL_Handler_BLE_CS_convertPctQuality(uint16_t qMin, uint16_t qMax
 static uint16_t RCL_Handler_BLE_CS_estimateStepResultLength(RCL_CmdBleCs *pCmd, RCL_CmdBleCs_StepResult_Internal* src)
 {
     /* Information extracted from registers */
-    uint8_t role = pCmd->mode.role;
+    RCL_CmdBleCs_Role role = (RCL_CmdBleCs_Role) pCmd->mode.role;
 
     /* Number of bytes will scale with number of tones. +1 = tone extension */
-    uint8_t numTone = pCmd->stats->numAntennaPath + 1;
+    uint8_t numTone = pCmd->stats->numAntennaPath + 1U;
 
     /* First two fields are mandatory */
     uint16_t length = 0;
 
     /* Dataformat varies based on the mode. Constants are known from the spec */
-    switch (src->mode)
+    switch ((RCL_CmdBleCs_StepMode) src->mode)
     {
         case (RCL_CmdBleCs_StepMode_0):
             /* Initiator also contains the measured frequency offset */
-            length = (role == RCL_CmdBleCs_Role_Initiator) ? sizeof(RCL_CmdBleCs_ResultI0) : sizeof(RCL_CmdBleCs_ResultR0);
+            length = (uint16_t) ((role == RCL_CmdBleCs_Role_Initiator) ?
+                    sizeof(RCL_CmdBleCs_ResultI0) : sizeof(RCL_CmdBleCs_ResultR0));
             break;
         case (RCL_CmdBleCs_StepMode_1):
-            length = sizeof(RCL_CmdBleCs_ResultIR1);
+            length = (uint16_t) sizeof(RCL_CmdBleCs_ResultIR1);
             break;
         case (RCL_CmdBleCs_StepMode_2):
-            length = sizeof(RCL_CmdBleCs_ResultIR2) + numTone * sizeof(RCL_CmdBleCs_Tone);
+            length = (uint16_t) (sizeof(RCL_CmdBleCs_ResultIR2) + numTone * sizeof(RCL_CmdBleCs_Tone));
             break;
         case (RCL_CmdBleCs_StepMode_3):
-            length = sizeof(RCL_CmdBleCs_ResultIR3) + numTone * sizeof(RCL_CmdBleCs_Tone);
+            length = (uint16_t) (sizeof(RCL_CmdBleCs_ResultIR3) + numTone * sizeof(RCL_CmdBleCs_Tone));
+            break;
+        default:
+            length = 0;
             break;
     }
 
@@ -1873,12 +1981,12 @@ static uint16_t RCL_Handler_BLE_CS_estimateStepResultLength(RCL_CmdBleCs *pCmd, 
 static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t *dst, RCL_CmdBleCs_StepResult_Internal* src)
 {
     /* Calculate number of tones to be measured. +1 = tone extension */
-    uint8_t numTone = pCmd->stats->numAntennaPath + 1;
+    uint8_t numTone = pCmd->stats->numAntennaPath + 1U;
 
     /* Determine the format of the report */
-    uint8_t reportFormat = pCmd->reportFormat;
+    uint8_t reportFormat = pCmd->mode.reportFormat;
 
-    /* Determine whether the reflector have already adjusted the phase inline */
+    /* Determine whether the reflector has already adjusted the phase inline */
     bool inlinePhase = (pCmd->mode.role == RCL_CmdBleCs_Role_Reflector) && (pCmd->mode.inlinePhase);
 
     /* Dataformat varies based on the mode */
@@ -1894,41 +2002,41 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
     /* Remember the address of field 'datalength' and skip it for now, will be filled later */
     uint8_t *dataLength = dst++;
 
-    if (mode == RCL_CmdBleCs_StepMode_0)
+    if ((RCL_CmdBleCs_StepMode) mode == RCL_CmdBleCs_StepMode_0)
     {
         *dst++ = src->pktResult;             /* Packet_AA_Quality */
-        *dst++ = src->pktRssi;               /* Packet_RSSI */
+        *dst++ = (uint8_t) src->pktRssi;     /* Packet_RSSI */
         *dst++ = src->antennaPacket;         /* Packet_Antenna */
 
-        if (pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
+        if ((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
         {
-            int16_t freqOffset = (src->pktResult != RCL_CmdBleCs_PacketResult_Ok)
-                               ? RCL_CMD_BLE_CS_FREQCOMP_NA
+            int16_t freqOffset = ((RCL_CmdBleCs_PacketResult) src->pktResult != RCL_CmdBleCs_PacketResult_Ok)
+                               ? (int16_t) RCL_CMD_BLE_CS_FREQCOMP_NA
                                : RCL_Handler_BLE_CS_convertFreqOffset(src->foffMeasured, true);
             *dst++ = INT16_LSB(freqOffset);
             *dst++ = INT16_MSB(freqOffset);
         }
     }
-    else if (mode == RCL_CmdBleCs_StepMode_1)
+    else if ((RCL_CmdBleCs_StepMode) mode == RCL_CmdBleCs_StepMode_1)
     {
         /* RTT calculation using correlator values if the packet was received */
-        int16_t toAD = (src->pktResult != RCL_CmdBleCs_PacketResult_Ok)
+        int16_t toAD = ((RCL_CmdBleCs_PacketResult) src->pktResult != RCL_CmdBleCs_PacketResult_Ok)
                      ? RCL_CMD_BLE_CS_TOAD_NA
-                     : RCL_Handler_BLE_CS_convertRtt(pCmd,
+                     : (int16_t) RCL_Handler_BLE_CS_convertRtt(pCmd,
                                                      RCL_CmdBleCs_StepMode_1,
                                                      channel,
                                                      payloadLen,
                                                      false, /* secondToneExtensionSlot=NA, there are no tones in mode-1 */
                                                      src->rtt, src->corr[0], src->corr[1], src->corr[2]);
 
-        *dst++ = src->pktResult;             /* Packet_AA_Quality */
-        *dst++ = RCL_CmdBleCs_Nadm_Unknown;  /* Packet_NADM */
-        *dst++ = src->pktRssi;               /* Packet_RSSI */
-        *dst++ = INT16_LSB(toAD);            /* Time_Of_Flight */
-        *dst++ = INT16_MSB(toAD);
-        *dst++ = src->antennaPacket;         /* Packet_Antenna */
+        *dst++ = src->pktResult;                       /* Packet_AA_Quality */
+        *dst++ = (uint8_t) RCL_CmdBleCs_Nadm_Unknown;  /* Packet_NADM */
+        *dst++ = (uint8_t) src->pktRssi;               /* Packet_RSSI */
+        *dst++ =  INT16_LSB(toAD);                     /* Time_Of_Flight */
+        *dst++ =  INT16_MSB(toAD);
+        *dst++ = src->antennaPacket;                   /* Packet_Antenna */
     }
-    else if (mode == RCL_CmdBleCs_StepMode_2)
+    else if ((RCL_CmdBleCs_StepMode) mode == RCL_CmdBleCs_StepMode_2)
     {
         /* Tone related data */
         *dst++ = src->antennaPermIdx;          /* Antenna_Permutation_Index*/
@@ -1941,8 +2049,8 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
             *dst++       = (uint8_t)((pct >> 16) & 0xFF);
 
             /* Calculate PCT quality */
-            bool toneExtensionSlot = (bool)(j == (numTone - 1));
-            bool toneExpected = (bool)((pCmd->mode.role == RCL_CmdBleCs_Role_Reflector)
+            bool toneExtensionSlot = (bool)(j == (numTone - 1U));
+            bool toneExpected = (bool) (((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Reflector)
                               ? (toneExtension & BLE_CS_TONE_EXTENSION_INITIATOR_TX)
                               : (toneExtension & BLE_CS_TONE_EXTENSION_REFLECTOR_TX));
 
@@ -1951,7 +2059,7 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
             uint16_t avg = src->magn[j].magnAvg;
 
             /* Vendor specific format? */
-            if (reportFormat == RCL_CmdBleCs_ReportFormat_HCI)
+            if ((RCL_CmdBleCs_ReportFormat) reportFormat == RCL_CmdBleCs_ReportFormat_HCI)
             {
                 *dst++ = RCL_Handler_BLE_CS_convertPctQuality(min, max, avg, toneExtensionSlot, toneExpected, false);
             }
@@ -1961,25 +2069,25 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
             }
         }
     }
-    else if (mode == RCL_CmdBleCs_StepMode_3)
+    else if ((RCL_CmdBleCs_StepMode) mode == RCL_CmdBleCs_StepMode_3)
     {
         /* RTT calculation using correlator values if the packet was received */
-        int16_t toAD = (src->pktResult != RCL_CmdBleCs_PacketResult_Ok)
+        int16_t toAD = ((RCL_CmdBleCs_PacketResult) src->pktResult != RCL_CmdBleCs_PacketResult_Ok)
                      ? RCL_CMD_BLE_CS_TOAD_NA
                      : RCL_Handler_BLE_CS_convertRtt(pCmd,
                                                      RCL_CmdBleCs_StepMode_3,
                                                      channel,
                                                      payloadLen,
-                                                     (bool)(toneExtension & 2),
+                                                     (bool)(toneExtension & 2U),
                                                      src->rtt, src->corr[0], src->corr[1], src->corr[2]);
 
         /* Packet related data */
-        *dst++ = src->pktResult;             /* Packet_AA_Quality */
-        *dst++ = RCL_CmdBleCs_Nadm_Unknown;  /* Packet_NADM */
-        *dst++ = src->pktRssi;               /* Packet_RSSI */
-        *dst++ = INT16_LSB(toAD);            /* Time_Of_Flight */
+        *dst++ = src->pktResult;                       /* Packet_AA_Quality */
+        *dst++ = (uint8_t) RCL_CmdBleCs_Nadm_Unknown;  /* Packet_NADM */
+        *dst++ = (uint8_t) src->pktRssi;               /* Packet_RSSI */
+        *dst++ = INT16_LSB(toAD);                      /* Time_Of_Flight */
         *dst++ = INT16_MSB(toAD);
-        *dst++ = src->antennaPacket;         /* Packet_Antenna */
+        *dst++ = src->antennaPacket;                   /* Packet_Antenna */
 
         /* Tone related data */
         *dst++ = src->antennaPermIdx;        /* Antenna_Permutation_Index*/
@@ -1992,15 +2100,15 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
             *dst++       = (uint8_t)((pct >> 16) & 0xFF);
 
             /* Calculate PCT quality */
-            bool toneExtensionSlot = (bool)(j == (numTone - 1));
+            bool toneExtensionSlot = (bool)(j == (numTone - 1U));
 
             /* Mode-3 may or may not have the R->I tone extension present */
-            bool toneExpected = (bool)((pCmd->mode.role == RCL_CmdBleCs_Role_Reflector)
+            bool toneExpected = (bool) (((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Reflector)
                               ? (toneExtension & BLE_CS_TONE_EXTENSION_INITIATOR_TX)
                               : (toneExtension & BLE_CS_TONE_EXTENSION_REFLECTOR_TX));
 
             /* Special case where we need to report unavailable */
-            bool toneQualityOverride = (pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
+            bool toneQualityOverride = ((RCL_CmdBleCs_Role) pCmd->mode.role == RCL_CmdBleCs_Role_Initiator)
                                      && (toneExtensionSlot)
                                      && (!toneExpected);
 
@@ -2009,7 +2117,7 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
             uint16_t avg = src->magn[j].magnAvg;
 
             /* Vendor specific format? */
-            if (reportFormat == RCL_CmdBleCs_ReportFormat_HCI)
+            if ((RCL_CmdBleCs_ReportFormat) reportFormat == RCL_CmdBleCs_ReportFormat_HCI)
             {
                 *dst++ = RCL_Handler_BLE_CS_convertPctQuality(min, max, avg, toneExtensionSlot, toneExpected, toneQualityOverride);
             }
@@ -2019,12 +2127,16 @@ static uint16_t RCL_Handler_BLE_CS_convertStepResult(RCL_CmdBleCs* pCmd, uint8_t
             }
         }
     }
+    else
+    {
+        /* Do nothing */
+    }
 
     /* Fill the Step_Data_Length based on difference of addresses */
-    *dataLength = (dst - dataLength - 1);
+    *dataLength = (uint8_t)(dst - dataLength - 1U);
 
     /* Return the number of bytes written (+3 = mode & channel & dataLength) */
-    return (*dataLength + 3);
+    return (*dataLength + 3U);
 }
 
 /*
@@ -2069,7 +2181,7 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
     RCL_CmdBleCs *pCmd = (RCL_CmdBleCs *) cmd;
     RCL_Events rclEvents = {.value = 0};
 
-    if (rclEventsIn.setup != 0)
+    if (rclEventsIn.setup != 0U)
     {
         uint32_t earliestStartTime;
 
@@ -2078,10 +2190,10 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
 
         /* Make sure SWTCXO does not adjust clock while radio is running */
         #ifndef OCTOPUS
-            bleCsHandlerState.ble_cs.hftrackctl = HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL);
+            bleCsHandlerState.ble_cs.hftrackctl = (uint32_t) HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL);
             HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) = 0x80400000;
         #endif
-        hal_power_set_swtcxo_update_constraint();
+        RCL_Hal_powerSetSwTcxoUpdateConstraint();
 
         /* Mark as active */
         cmd->status = RCL_CommandStatus_Active;
@@ -2112,7 +2224,7 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
             RCL_Handler_BLE_CS_preprocessCommand(pCmd);
 
             /* Configure TX power. Use special frequency value to indicate that no compensation should be applied */
-            if (LRF_programTxPower(pCmd->frontend.txPower, LRF_TXPOWER_BYPASS_FREQUENCY_BACKOFF) != TxPowerResult_Ok)
+            if (LRF_programTxPower(pCmd->txPower, LRF_TXPOWER_BYPASS_FREQUENCY_BACKOFF) != TxPowerResult_Ok)
             {
                 cmd->status = RCL_CommandStatus_Error_Param;
                 rclEvents.lastCmdDone = 1;
@@ -2144,37 +2256,39 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
         /* Read the statistics */
         RCL_Handler_BLE_CS_readStatistics(pCmd);
 
-        if (rclEventsIn.timerStart != 0)
+        if (rclEventsIn.timerStart != 0U)
         {
             rclEvents.cmdStarted = 1;
         }
 
-        if (lrfEvents.opDone != 0 || lrfEvents.opError != 0)
+        if (lrfEvents.opDone != 0U || lrfEvents.opError != 0U)
         {
             /* Drain the rx fifo of the final batch of results. Force close the buffer. */
             rclEvents.value |= RCL_Handler_BLE_CS_readWriteBuffer(pCmd, true).value;
         }
         else
         {
-            if (lrfEvents.rxfifo != 0)
+            if (lrfEvents.rxfifo != 0U)
             {
                 /* Read the available results, and issue event if multibuffer is exhausted */
                 rclEvents.value |= RCL_Handler_BLE_CS_readWriteBuffer(pCmd, false).value;
             }
         }
 
-        if (lrfEvents.mdmsoft0 != 0)
+        if (lrfEvents.mdmsoft0 != 0U)
         {
             /* Read S2R samples upon MCE event */
             rclEvents.value |= RCL_Handler_BLE_CS_readS2RSamples(pCmd).value;
         }
 
-        if (lrfEvents.opDone != 0)
+        if (lrfEvents.opDone != 0U)
         {
+            RCL_Handler_BLE_CS_updateCache(pCmd);
+
             cmd->status = bleCsHandlerState.common.endStatus;
             rclEvents.lastCmdDone = 1;
         }
-        else if (lrfEvents.opError != 0)
+        else if (lrfEvents.opError != 0U)
         {
             RCL_CommandStatus endStatus = bleCsHandlerState.common.endStatus;
             if (endStatus == RCL_CommandStatus_Finished)
@@ -2193,7 +2307,7 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
         }
     }
 
-    if (rclEvents.lastCmdDone != 0)
+    if (rclEvents.lastCmdDone != 0U)
     {
         LRF_disable();
         LRF_disableSynthRefsys();
@@ -2201,7 +2315,7 @@ RCL_Events RCL_Handler_BLE_CS(RCL_Command *cmd, LRF_Events lrfEvents, RCL_Events
         #ifndef OCTOPUS
             HWREG(CKMD_BASE + CKMD_O_HFTRACKCTL) = bleCsHandlerState.ble_cs.hftrackctl;
         #endif
-        hal_power_release_swtcxo_update_constraint();
+        RCL_Hal_powerReleaseSwTcxoUpdateConstraint();
     }
     return (rclEvents);
 }
@@ -2222,14 +2336,14 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
     RCL_CmdBleCs_Precal *pCmd = (RCL_CmdBleCs_Precal *) cmd;
     RCL_Events rclEvents = {.value = 0};
 
-    if (rclEventsIn.setup != 0)
+    if (rclEventsIn.setup != 0U)
     {
         uint32_t earliestStartTime;
 
         /* Start by enabling refsys */
         earliestStartTime = LRF_enableSynthRefsys();
         /* Make sure SWTCXO does not adjust clock while radio is running */
-        hal_power_set_swtcxo_update_constraint();
+        RCL_Hal_powerSetSwTcxoUpdateConstraint();
 
         /* Mark as active */
         cmd->status = RCL_CommandStatus_Active;
@@ -2257,16 +2371,16 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
             RCL_Handler_BLE_CS_configureTxRxFifo(NULL);
 
             /* Number of channels to calibrate on */
-            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_MODE) = ((pCmd->table->numEntries << PBE_BLE_CS_RAM_MODE_NUM_STEPS_S) & PBE_BLE_CS_RAM_MODE_NUM_STEPS_M);
+            HWREGH_WRITE_LRF(LRFD_BUFRAM_BASE + PBE_BLE_CS_RAM_O_MODE) = (((uint16_t) pCmd->table->numEntries << PBE_BLE_CS_RAM_MODE_NUM_STEPS_S) & PBE_BLE_CS_RAM_MODE_NUM_STEPS_M);
 
-            for (uint8_t j=0; j<pCmd->table->numEntries; j++)
+            for (uint8_t j = 0; j < pCmd->table->numEntries; j++)
             {
                 /* 32bit aperture */
                 HWREG_WRITE_LRF(LRFDTXF_BASE + LRFDTXF_O_TXD) = pCmd->table->entries[j].channel;
             }
 
             /* The calibration is only valid around the current temperature */
-            pCmd->table->temperature = hal_get_temperature();
+            pCmd->table->temperature = RCL_Hal_getTemperature();
 
             /* Post command */
             LRF_waitForTopsmReady();
@@ -2277,7 +2391,7 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
 
     if (cmd->status == RCL_CommandStatus_Active)
     {
-        if (lrfEvents.opDone != 0)
+        if (lrfEvents.opDone != 0U)
         {
             volatile uint32_t data;
             for (uint8_t j=0; j<pCmd->table->numEntries; j++)
@@ -2286,7 +2400,7 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
                 uint16_t *dst = (uint16_t *) &pCmd->table->entries[j].high;
 
                 /*  x2 = high/low entries */
-                for (uint8_t k=0; k < (2*sizeof(RCL_CmdBleCs_DCSample)/sizeof(uint32_t)); k++)
+                for (uint8_t k= 0; k < (2U * sizeof(RCL_CmdBleCs_DCSample) / sizeof(uint32_t)); k++)
                 {
                     data = HWREG_READ_LRF(LRFDRXF_BASE + LRFDRXF_O_RXD);
                     *dst++ = INT32_L(data);
@@ -2294,15 +2408,15 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
                 }
 
                 /* Post process/validate the entry */
-                pCmd->table->entries[j].highValid =
-                    RCL_Handler_BLE_CS_filterDC(pCmd->table->entries[j].high.magnMax,
+                pCmd->table->entries[j].highValid = (uint8_t)
+                    (RCL_Handler_BLE_CS_filterDC(pCmd->table->entries[j].high.magnMax,
                                                 pCmd->table->entries[j].high.magnMin,
-                                                pCmd->table->highThreshold);
+                                                pCmd->table->highThreshold));
 
-                pCmd->table->entries[j].lowValid =
-                    RCL_Handler_BLE_CS_filterDC(pCmd->table->entries[j].low.magnMax,
+                pCmd->table->entries[j].lowValid = (uint8_t)
+                    (RCL_Handler_BLE_CS_filterDC(pCmd->table->entries[j].low.magnMax,
                                                 pCmd->table->entries[j].low.magnMin,
-                                                pCmd->table->lowThreshold);
+                                                pCmd->table->lowThreshold));
             }
 
             /* Validate the table */
@@ -2311,7 +2425,7 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
             cmd->status = bleCsHandlerState.common.endStatus;
             rclEvents.lastCmdDone = 1;
         }
-        else if (lrfEvents.opError != 0)
+        else if (lrfEvents.opError != 0U)
         {
             /* Invalidate the table */
             pCmd->table->valid = 0;
@@ -2333,12 +2447,12 @@ RCL_Events RCL_Handler_BLE_CS_Precal(RCL_Command *cmd, LRF_Events lrfEvents, RCL
         }
     }
 
-    if (rclEvents.lastCmdDone != 0)
+    if (rclEvents.lastCmdDone != 0U)
     {
         LRF_disable();
         LRF_disableSynthRefsys();
         /* Allow SWTCXO again */
-        hal_power_release_swtcxo_update_constraint();
+        RCL_Hal_powerReleaseSwTcxoUpdateConstraint();
     }
     return (rclEvents);
 }
@@ -2377,19 +2491,19 @@ void RCL_Handler_BLE_CS_PrecalDefaultCallback(RCL_CmdBleCs_PrecalTable *table, u
                 bool lowValid  = false;
 
                 /* Search in both direction according to the given pattern */
-                for (uint8_t s=0; s<sizeof(search); s++)
+                for (uint8_t s = 0; s < sizeof(search); s++)
                 {
-                    int8_t i = k + search[s];
-                    if ((i >= 0) && (i < N))
+                    int8_t i = (int8_t) k + search[s];
+                    if ((i >= 0) && (i < (int8_t) N))
                     {
-                        if ((highValid == false) && (table->entries[i].highValid == true))
+                        if ((highValid == false) && ((bool) table->entries[i].highValid == true))
                         {
                             highValid = true;
                             pHigh->i  = table->entries[i].high.i;
                             pHigh->q  = table->entries[i].high.q;
                         }
 
-                        if ((lowValid == false) && (table->entries[i].lowValid == true))
+                        if ((lowValid == false) && ((bool) table->entries[i].lowValid == true))
                         {
                             lowValid = true;
                             pLow->i  = table->entries[i].low.i;

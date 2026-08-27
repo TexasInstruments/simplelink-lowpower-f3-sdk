@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024, Texas Instruments Incorporated
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,6 +65,7 @@
  * |---------------|---------|---------|---------|---------|
  * | CC2340R2      | 16 bits | 16 bits |   N.A   |   N.A   |
  * | CC2340R5      | 16 bits | 16 bits | 16 bits | 24 bits |
+ * | CC2341R10     | 16 bits | 16 bits | 16 bits | 24 bits |
  * | CC27XX        | 16 bits | 16 bits | 16 bits | 32 bits |
  *
  *  @anchor ti_drivers_LGPTimer_CounterModes

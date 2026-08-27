@@ -14,6 +14,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+/* This file is currently not used in mbedTLS 3.6.6, so its contents do not need to be
+ * built into the DDK library. The file will remain for reference, but likely can be
+ * removed at some point in the future.
+ */
+#if 0
+
 #include <string.h>
 
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/private_access.h>
@@ -52,3 +59,4 @@ psa_status_t psa_set_key_domain_parameters(psa_key_attributes_t *attributes,
 
     return PSA_SUCCESS;
 }
+#endif

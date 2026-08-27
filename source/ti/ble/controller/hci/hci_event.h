@@ -361,12 +361,12 @@ extern "C"
 #define LE_EVT_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE_BIT               7
 //
 #define LE_EVT_GENERATE_DHKEY_COMPLETE_BIT                           8
-#define LE_EVT_ENH_CONN_COMPLETE_BIT                                 9
+#define LE_EVT_ENH_CONN_COMPLETE_BIT_V1                              9
 #define LE_EVT_DIRECT_ADVERTISING_REPORT_BIT                         10
 #define LE_EVT_PHY_UPDATE_COMPLETE_BIT                               11
 #define LE_EVT_EXTENDED_ADV_REPORT_BIT                               12
-#define LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT                     13
-#define LE_EVT_PERIODIC_ADV_REPORT_BIT                               14
+#define LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT_V1                  13
+#define LE_EVT_PERIODIC_ADV_REPORT_BIT_V1                            14
 #define LE_EVT_PERIODIC_ADV_SYNC_LOST_BIT                            15
 //
 #define LE_EVT_EXTENDED_SCAN_TIMEOUT_BIT                             16
@@ -379,7 +379,12 @@ extern "C"
 #define LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V1                    23
 //
 #define LE_EVT_TRANS_POWER_REPORT_BIT                                32
+#define LE_EVT_PERIODIC_ADV_SYNC_ESTABLISHED_BIT_V2                  35
+#define LE_EVT_PERIODIC_ADV_REPORT_BIT_V2                            36
 #define LE_EVT_PADV_SYNC_TRANSFER_RECEIVED_BIT_V2                    37
+#define LE_EVT_PADVA_SUBEVENT_DATA_REQUEST_EVENT_BIT                 38
+#define LE_EVT_PADVA_RESPONSE_REPORT_EVENT_BIT                       39
+#define LE_EVT_ENH_CONN_COMPLETE_BIT_V2                              40
 
 // Bluetooth LE Event Mask Default Values
 #define LE_EVT_MASK_BYTE0   (LE_EVT_MASK_CONN_COMPLETE             |     \
@@ -453,6 +458,9 @@ extern "C"
 #define HCI_PERIODIC_ADV_SYNCH_LOST_EVENT_LEN                          3
 #define HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V1                         20
 #define HCI_PADV_SYNC_TRANSFER_RECEIVED_LEN_V2                         24
+#define HCI_PADVA_SUBEVENT_DATA_REQUEST_EVENT_LEN                      4
+#define HCI_PADVA_RESPONSE_REPORT_EVENT_BASE_LEN                       5   // advHandle(1) + subevent(1) + txStatus(1) + numResponses(1)
+#define HCI_PADVA_RESPONSE_REPORT_ENTRY_BASE_LEN                       6   // txPower(1) + rssi(1) + cteType(1) + responseSlot(1) + dataStatus(1) + dataLen(1)
 #define HCI_HARDWARE_ERROR_EVENT_LEN                                   1
 #define HCI_DIRECT_TEST_END_LEN                                        3
 // Vendor Specific LE Events
@@ -781,6 +789,25 @@ void HCI_AeAdvCback( uint8 event, void *pData );
  * @return      None.
 */
 void HCI_AeScanCback( uint8 event, void *pData );
+
+/*******************************************************************************
+ * @fn          HCI_LegacyScanCback
+ *
+ * @brief       Callback for legacy (BT4.x) scanning events from Link Layer.
+ *              Converts extended advertising reports to legacy format.
+ *
+ * input parameters
+ *
+ * @param       event - Event type from LL (LL_CBACK_EXT_ADV_REPORT, etc.)
+ * @param       pData - Pointer to event data
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      None.
+*/
+void HCI_LegacyScanCback( uint8 event, void *pData );
 
 /*******************************************************************************
  * @fn          HCI_CommandCompleteEvent

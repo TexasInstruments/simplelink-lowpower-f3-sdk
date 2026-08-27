@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2025-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -50,13 +50,13 @@ function init()
 
 /*!
  *  ======== device2Family ========
- *  Map a pimux device object to a TI-driver device family string
+ *  Map a pinmux device object to a TI-driver device family string
  *
  *  @param device   - a pinmux device object (system.deviceData)
  *  @param mod      - module name ("ADC", "PWM", etc)
  *
  *  @returns String - the name of a device family that's used to
- *                    create family specifc-implementation module
+ *                    create family specific-implementation module
  *                    names.  Returns null, in the event of an
  *                    unsupported device.
  */
@@ -74,6 +74,7 @@ function device2Family(device, mod)
         {prefix: "CC13",     family: "CC26XX"},
         {prefix: "CC26",     family: "CC26XX"},
         {prefix: "CC23.0",   family: "CC23X0"},
+        {prefix: "CC23.1",   family: "CC23X1"},
         {prefix: "CC27",     family: "CC27XX"},
         {prefix: "CC35",     family: "CC35XX"}
     ];
@@ -110,12 +111,17 @@ function device2Family(device, mod)
      * contain all CC23X0 specific modules
      */
     let cc23x0Mods = {
+        "AESCBC":        "XXF3",
+        "AESCCM":        "XXF3",
+        "AESCMAC":       "XXF3",
+        "AESCTR":        "XXF3",
+        "AESECB":        "XXF3",
         "Board" :        "CC23X0",
         "CAN" :          "CC23X0",
-        "SHA2" :         "LPF3SW",
         "ECDH" :         "LPF3SW",
         "ECDSA" :        "LPF3SW",
-        "RNG"  :         "LPF3RF"
+        "RNG"  :         "LPF3RF",
+        "SHA2" :         "LPF3SW"
     };
 
     /* CC27XX specific module delegates
@@ -123,16 +129,42 @@ function device2Family(device, mod)
      * contain all CC27XX specific modules
      */
     let cc27xxMods = {
+        "AESCBC":          "XXF3",
+        "AESCCM":          "XXF3",
+        "AESCMAC":         "XXF3",
+        "AESCTR":          "XXF3",
+        "AESECB":          "XXF3",
+        "AESGCM":          "XXF3HSM",
         "Board" :          "CC27XX",
         "CAN" :            "CC27XX",
-        "ECDH" :           "LPF3HSM",
-        "ECDSA" :          "LPF3HSM",
-        "EDDSA":           "LPF3HSM",
-        "SHA2" :           "LPF3HSM",
-        "TRNG":            "LPF3HSM",
-        "RNG"  :           "LPF3HSM",
-        "AESGCM":          "LPF3HSM",
+        "ECDH" :           "XXF3HSM",
+        "ECDSA" :          "XXF3HSM",
+        "EDDSA":           "XXF3HSM",
+        "RNG"  :           "XXF3HSM",
+        "SHA2" :           "XXF3HSM",
+        "TRNG":            "XXF3HSM",
         "CryptoKeyKeyStore_PSA" : "CC27XX"
+    };
+
+    /* CC23X1 specific module delegates (similar to CC27XX but without TrustZone)
+     * Note, the default family name returned below is LPF3, so this list must
+     * contain all CC23X1 specific modules
+     */
+    let cc23x1Mods = {
+        "AESCBC":          "XXF3",
+        "AESCCM":          "XXF3",
+        "AESCMAC":         "XXF3",
+        "AESCTR":          "XXF3",
+        "AESECB":          "XXF3",
+        "AESGCM":          "XXF3HSM",
+        "Board" :          "CC23X1",
+        "ECDH" :           "XXF3HSM",
+        "ECDSA" :          "XXF3HSM",
+        "EDDSA":           "XXF3HSM",
+        "RNG"  :           "XXF3HSM",
+        "SHA2" :           "XXF3HSM",
+        "TRNG":            "XXF3HSM",
+        "CryptoKeyKeyStore_PSA" : "CC23X1"
     };
 
     /* CC35XX specific module delegates
@@ -140,18 +172,19 @@ function device2Family(device, mod)
      * contain all CC35XX specific modules
      */
     let cc35xxMods = {
-        "AESGCM":          "LPF3HSM",
-        "AESECB":          "LPF3",
-        "AESCBC":          "LPF3",
-        "AESCCM":          "LPF3",
-        "AESCMAC":         "LPF3",
-        "AESCTR":          "LPF3",
+        "AESGCM":          "XXF3HSM",
+        "AESECB":          "XXF3",
+        "AESCBC":          "XXF3",
+        "AESCCM":          "XXF3",
+        "AESCMAC":         "XXF3",
+        "AESCTR":          "XXF3",
         "CryptoKeyKeyStore_PSA": "CC35XX",
-        "ECDH":            "LPF3HSM",
-        "ECDSA" :          "LPF3HSM",
-        "RNG"  :           "LPF3HSM",
-        "SHA2":            "LPF3HSM",
-        "TRNG":            "LPF3HSM"
+        "ECDH":            "XXF3HSM",
+        "ECDSA" :          "XXF3HSM",
+        "EDDSA":           "XXF3HSM",
+        "RNG"  :           "XXF3HSM",
+        "SHA2":            "XXF3HSM",
+        "TRNG":            "XXF3HSM"
     };
 
     /* deviceId is the directory name within the pinmux/deviceData */
@@ -197,6 +230,14 @@ function device2Family(device, mod)
             else if (d2f.prefix == "CC27") {
                 if (mod in cc27xxMods) {
                     return (cc27xxMods[mod]);
+                }
+                else {
+                    return ("LPF3");
+                }
+            }
+            else if (d2f.prefix == "CC23.1") {
+                if (mod in cc23x1Mods) {
+                    return (cc23x1Mods[mod]);
                 }
                 else {
                     return ("LPF3");

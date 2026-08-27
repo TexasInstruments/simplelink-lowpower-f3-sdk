@@ -75,6 +75,15 @@ function(_ti_require variable_name)
 endfunction()
 
 function(_ti_quiet_find package_name)
+    # Skip search if <PACKAGE_NAME>_LOCAL_CREATED variable is true
+    if(${package_name}_LOCAL_CREATED)
+        message(
+            DEBUG
+            "_ti_quiet_find: Skipping find_package for ${package_name} because ${package_name}_LOCAL_CREATED is true."
+        )
+        return()
+    endif()
+
     if(NOT ${package_name}_FOUND)
         # Attempt to find the specified package. If not available (for example, the libraries are
         # defined locally) just silently accept it. This will cause configure errors e.g. "XYZ::zyx
@@ -178,6 +187,13 @@ function(ti_init_package)
 
     set_property(DIRECTORY PROPERTY TI_PACKAGE_LIBRARIES "")
     set_property(DIRECTORY PROPERTY TI_PACKAGE_TARGET_FILES "")
+
+    # Set a <PACKAGE_NAME>_LOCAL_CREATED cache variable.
+    # This variable is used to indicate that this package was created locally,
+    # and should not be found by find_package calls. This is useful for packages
+    # that are not installed, but are defined locally.
+    set("${TI_SETUP_PACKAGE_NAME}_LOCAL_CREATED" ON CACHE BOOL "Indicates a local package was created" FORCE)
+    message(DEBUG "Set cache variable ${TI_SETUP_PACKAGE_NAME}_LOCAL_CREATED to ON.")
 endfunction()
 
 function(ti_add_package_dependency package_name)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +30,13 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "RCL_Feature.h"
+#include <ti/drivers/rcl/RCL_Feature.h>
 
 /* Set defaults for the feature control. New values may be added with a strong definition */
 const RCL_FeatureControl rclFeatureControl __attribute__((weak)) =
 {
     .enableTemperatureMonitoring = true,
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     .enablePaEsdProtection = false,
     .enableTxOutputPowerCompensation = false,
 #endif

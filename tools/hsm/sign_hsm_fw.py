@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+import sys
+import shutil
 import os
 import argparse
 import binascii
@@ -115,9 +118,7 @@ def pad_into_24_bit_format(data_bytes: list) -> list:
     return data_bytes_padded
 
 
-def format_hui_bytes_from_private_key(
-    key_file: argparse.FileType, key_format: str, image_file: argparse.FileType
-) -> bytearray:
+def sign_image(key_file: argparse.FileType, key_format: str, image_file: argparse.FileType) -> bytearray:
 
     # Get the private and public key pair
     private_key, public_key = get_keys(key_file, key_format)
@@ -149,6 +150,81 @@ def format_hui_bytes_from_private_key(
     hui_byte_list.extend(msg_digest_byte_list)
 
     return bytearray(hui_byte_list)
+
+
+def add_len_prefix(fn):
+    len = os.path.getsize(fn)
+    with open(fn, "rb") as f:
+        data = f.read()
+
+    with open(f"_{fn}", "wb") as f:
+        bin_len = len.to_bytes(4, byteorder="little")
+        f.write(bin_len)
+        f.write(data)
+
+    return len
+
+
+def ble_mid_sign_image(key_file: argparse.FileType, key_format: str, image_file: argparse.FileType) -> bytearray:
+
+    tmp_dir = "tmp"
+
+    if os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
+
+    os.mkdir(tmp_dir)
+
+    data = image_file.read(8)
+    huiLen = struct.unpack("<II", data)[0]
+    hashTblSigLen = struct.unpack("<II", data)[1]
+    print(f"huiLen {huiLen}")
+    print(f"hashTblSigLen {hashTblSigLen}")
+    image_file.seek(0)
+
+    totalFileLen = huiLen + 4
+    hashTblSigBlockLen = 8 + hashTblSigLen
+    encBlockLen = totalFileLen - hashTblSigBlockLen
+
+    print(f"Total file length {totalFileLen}")
+    print(f"Hash Table and Signature block length {hashTblSigBlockLen}")
+    print(f"Encrypted Blocks length {encBlockLen}")
+
+    hashTblSig = image_file.read(hashTblSigBlockLen)
+    with open(f"{tmp_dir}/hashtblsigblock.bin", "wb") as f_hashTblSig:
+        f_hashTblSig.write(hashTblSig)
+
+    encBlocks = image_file.read(encBlockLen)
+    with open(f"{tmp_dir}/encblocks.bin", "wb") as f_encBlocks:
+        f_encBlocks.write(encBlocks)
+
+    # Run sign_hsm_fw.py to sign hashtblsigblock.bin
+
+    with open(f"{tmp_dir}/hashtblsigblock.bin", "rb") as input:
+        signed_image_bytes: bytearray = sign_image(key_file, key_format, input)
+        with open(f"{tmp_dir}/hashtblsigblock_signed.bin", "wb") as output:
+            output.write(signed_image_bytes)
+
+    os.chdir(f"./{tmp_dir}")
+
+    add_len_prefix("hashtblsigblock_signed.bin")
+
+    with open("tmp.bin", "wb") as f_tmp:
+        with open("_hashtblsigblock_signed.bin", "rb") as f_hashtblsigblock_signed:
+            hashtblsigblock_signed = f_hashtblsigblock_signed.read()
+
+        f_tmp.write(hashtblsigblock_signed)
+        f_tmp.write(encBlocks)
+
+    add_len_prefix("tmp.bin")
+
+    os.chdir("..")
+
+    with open(f"{tmp_dir}/_tmp.bin", "rb") as signed_hui:
+        signed_image_bytes = signed_hui.read()
+
+    shutil.rmtree(tmp_dir)
+
+    return signed_image_bytes
 
 
 def main(raw_args=None):
@@ -199,6 +275,15 @@ def main(raw_args=None):
         default="PEM",
     )
     parser.add_argument(
+        "--target",
+        help="""
+            Specify the target device family. By default 'cc27xx' is
+            used, but 'cc23xx' can optionally be specified.
+        """,
+        choices=["cc27xx", "cc23xx"],
+        default="cc27xx",
+    )
+    parser.add_argument(
         "--input",
         help="""
             The input HSM FW image you wish to wrap with your signature and key
@@ -239,7 +324,10 @@ def main(raw_args=None):
         if not args.input:
             input_failure("input")
 
-        signed_image_bytes: bytearray = format_hui_bytes_from_private_key(args.key, args.key_format, args.input)
+        if args.target == "cc27xx":
+            signed_image_bytes: bytearray = sign_image(args.key, args.key_format, args.input)
+        else:
+            signed_image_bytes: bytearray = ble_mid_sign_image(args.key, args.key_format, args.input)
 
         # If no output was provided use the default
         if not args.output:

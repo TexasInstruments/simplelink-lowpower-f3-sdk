@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -130,10 +130,25 @@ function getAttrs(deviceId, part) {
         result.deviceDefine = "DeviceFamily_CC23X0R5";
         result.libName = "cc23x0r5";
     }
-    else if (deviceId.match(/CC27/)) {
-        result.deviceDir = "cc27xx";
-        result.deviceDefine = "DeviceFamily_CC27XX";
-        result.libName = "cc27xx";
+    else if (deviceId.match(/CC23.1R10/)) {
+        result.deviceDir = "cc23x1r10";
+        result.deviceDefine = "DeviceFamily_CC23X1R10";
+        result.libName = "cc23x1r10";
+    }
+    else if (deviceId.match(/CC27..(R|P)(10|7)/)) {
+        result.deviceDir = "cc27xxx10";
+        result.deviceDefine = "DeviceFamily_CC27XXX10";
+        result.libName = "cc27xxx10";
+    }
+    else if (deviceId.match(/CC27..(R|P)(20|15)/)) {
+        result.deviceDir = "cc27xxx20";
+        result.deviceDefine = "DeviceFamily_CC27XXX20";
+        result.libName = "cc27xxx20";
+    }
+    else if (deviceId.match(/CC283./)) {
+        result.deviceDir = "cc283x";
+        result.deviceDefine = "DeviceFamily_CC283X";
+        result.libName = "cc283x";
     }
     else if (deviceId.match(/CC35/)) {
         result.deviceDir = "cc35xx";
@@ -231,12 +246,11 @@ function getLinkerDefs() {
         { name: "SCFG_BASE", value: 0x4E040000 },
         { name: "SCFG_SIZE", value: 0x00000400 }
     ];
-    /* HSM might overlap with flash, if so flash size will be reduced in the
-     * linker file.
-     */
-    let hsmFw = [
-        { name: "HSM_FW_BASE", value: 0x000E8000 }
+    let scfg_cc283x = [
+        { name: "SCFG_BASE", value: 0x4E030000 },
+        { name: "SCFG_SIZE", value: 0x00000800 }
     ];
+
     let flashBase = [
         { name: "FLASH0_BASE", value: 0x00000000 }
     ];
@@ -261,24 +275,46 @@ function getLinkerDefs() {
             { name: "FLASH0_SIZE", value: 0x00080000 },
             { name: "RAM0_SIZE",   value: 0x00010000 }
         ].concat(s2rram, ccfg, flashBase, ramBase),
+        "CC2341R10RKP": [
+            { name: "FLASH0_SIZE", value: 0x00100000 },
+            { name: "RAM0_SIZE",   value: 0x00018000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
+        "CC2341R73RHBQ1": [
+            { name: "FLASH0_SIZE", value: 0x000C0000 },
+            { name: "RAM0_SIZE",   value: 0x00010000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
         "CC2745R7RHAQ1": [
             { name: "FLASH0_SIZE", value: 0x000C0000 },
-            { name: "RAM0_SIZE",   value: 0x00020000 }
-        ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase),
+            { name: "RAM0_SIZE",   value: 0x00020000 },
+            { name: "HSM_FW_BASE", value: 0x000E8000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
         "CC2755R105RHA": [
             { name: "FLASH0_SIZE", value: 0x00100000 },
-            { name: "RAM0_SIZE",   value: 0x00028800 }
-        ].concat(s2rram, ccfg, scfg, hsmFw, flashBase, ramBase)
+            { name: "RAM0_SIZE",   value: 0x00028800 },
+            /* HSM FW overlaps with flash, linker file will reduce flash size */
+            { name: "HSM_FW_BASE", value: 0x000E8000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
+        "CC2755P207RHA": [
+            { name: "FLASH0_SIZE", value: 0x00200000 },
+            { name: "RAM0_SIZE",   value: 0x00048000 },
+            /* HSM FW overlaps with flash, linker file will reduce flash size */
+            { name: "HSM_FW_BASE", value: 0x001E8000 }
+        ].concat(s2rram, ccfg, scfg, flashBase, ramBase),
+        "CC2830R53RKP": [
+            { name: "FLASH0_SIZE", value: 0x00080000 },
+            { name: "RAM0_SIZE",   value: 0x00010000 }
+        ].concat(ccfg, scfg_cc283x, flashBase, ramBase)
     };
 
     /* These devices reuse the device definitions above as they have the same
      * memory map.
      */
-    dev2mem["CC2340R53YBG"] = dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHB"] = dev2mem["CC2340R5RKP"];
-    dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
+    dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHBQ1"] = dev2mem["CC2340R5RKP"];
+    dev2mem["CC2340R5MODA"] = dev2mem["CC2340R53YBG"] = dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
     dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
     dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
-    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2755R105RHA"];
+    dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2765R10RTQ"] = dev2mem["CC2755R105RHA"];
+    dev2mem["CC2755P207RSL"] = dev2mem["CC2755R207YCJ"] = dev2mem["CC2755R207RSL"] = dev2mem["CC2755P207RHA"];
 
     /* Override FLASH, RAM and S2RRAM base/size if TFM is enabled */
     if (system.modules["/ti/utils/TrustZone"]) {

@@ -91,7 +91,7 @@
 #define CM_EMPTY_PACKET_OCTETS             0U
 #define CM_INVALID_ACCESS_ADDR             0xFFFFFFFFU
 #define CM_DEFAULT_ADJUSTMENTS_EVT_TRIES   4
-#define CM_INVALID_PKT_PHY                  0xFFU
+#define CM_INVALID_PKT_PHY                 0xFFU
 
 
 /*******************************************************************************

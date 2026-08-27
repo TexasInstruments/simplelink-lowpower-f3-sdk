@@ -473,8 +473,8 @@ extern "C"
 #define SUP_CMD_LE_SET_CONN_CTE_RESPONSE_ENABLE                               0x08U
 #define SUP_CMD_LE_RD_ANTENNA_INFORMATION                                     0x10U
 #define SUP_CMD_LE_SET_PRD_ADV_RECEIVE_ENABLE                                 0x20U
-#define SUP_CMD_RFU_BYTE40_BIT07                                              0x40U
-#define SUP_CMD_RFU_BYTE40_BIT08                                              0x80U
+#define SUP_CMD_LE_PRD_ADV_SYNC_TRANSFER                                      0x40U
+#define SUP_CMD_LE_PRD_ADV_SET_INFO_TRANSFER                                  0x80U
 // Byte 41
 #define SUP_CMD_LE_SET_PRD_ADV_SYNC_TRANSFER_PARAMETERS                       0x01U
 #define SUP_CMD_LE_SET_DEFAULT_PRD_ADV_SYNC_TRANSFER_PARAMETERS               0x02U
@@ -495,8 +495,35 @@ extern "C"
 #define SUP_CMD_RFU_BYTE44_BIT06                                              0x20U
 #define SUP_CMD_RFU_BYTE44_BIT07                                              0x40U
 #define SUP_CMD_LE_SET_TRANSMIT_POWER_REPORTING_ENABLE                        0x80U
+// Byte 45
+#define SUP_CMD_LE_TRANSMITTER_TEST_V4                                        0x01U
+#define SUP_CMD_SET_ECOSYSTEM_BASE_INTERVAL                                   0x02U
+#define SUP_CMD_READ_LOCAL_SUPPORTED_CODECS_V2                                0x04U
+#define SUP_CMD_READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES                       0x08U
+#define SUP_CMD_READ_LOCAL_SUPPORTED_CONTROLLER_DELAY                         0x10U
+#define SUP_CMD_CONFIGURE_DATA_PATH                                           0x20U
+#define SUP_CMD_LE_SET_DATA_RELATED_ADDRESS_CHANGES                           0x40U
+#define SUP_CMD_SET_MIN_ENCRYPTION_KEY_SIZE                                   0x80U
+// Byte 46
+#define SUP_CMD_RFU_BYTE46_BIT01                                              0x01U
+#define SUP_CMD_RFU_BYTE46_BIT02                                              0x02U
+#define SUP_CMD_RFU_BYTE46_BIT03                                              0x04U
+#define SUP_CMD_RFU_BYTE46_BIT04                                              0x08U
+#define SUP_CMD_RFU_BYTE46_BIT05                                              0x10U
+#define SUP_CMD_LE_SET_PRD_ADV_SUBEVENT_DATA                                  0x20U
+#define SUP_CMD_LE_SET_PRD_ADV_RESPONSE_DATA                                  0x40U
+#define SUP_CMD_LE_SET_PRD_SYNC_SUBEVENT                                      0x80U
+// Byte 47
+#define SUP_CMD_LE_EXTENDED_CREATE_CONN_V2                                    0x01U
+#define SUP_CMD_LE_SET_PRD_ADV_PARAMETERS_V2                                  0x02U
+#define SUP_CMD_RFU_BYTE47_BIT03                                              0x04U
+#define SUP_CMD_RFU_BYTE47_BIT04                                              0x08U
+#define SUP_CMD_RFU_BYTE47_BIT05                                              0x10U
+#define SUP_CMD_RFU_BYTE47_BIT06                                              0x20U
+#define SUP_CMD_RFU_BYTE47_BIT07                                              0x40U
+#define SUP_CMD_RFU_BYTE47_BIT08                                              0x80U
 
-// Byte 45-63 will define if we support commands in these bytes.
+// Byte 48-63 will define if we support commands in these bytes.
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_0  //
@@ -590,7 +617,8 @@ extern "C"
 // SUPPORTED_COMMAND_BYTE_12 //
 ///////////////////////////////
 #ifdef CHANNEL_SOUNDING
-#define SUPPORTED_COMMAND_BYTE_12                    (SUP_CMD_CS_RD_REMOTE_FAE_TABLE)
+#define SUPPORTED_COMMAND_BYTE_12                    (SUP_CMD_CS_RD_REMOTE_FAE_TABLE | \
+                                                      SUP_CMD_CS_WR_CACHED_REMOTE_FAE_TABLE)
 #else
 #define SUPPORTED_COMMAND_BYTE_12                    (SUP_CMD_NONE)
 #endif
@@ -654,7 +682,8 @@ extern "C"
 
 #ifdef CHANNEL_SOUNDING
 #define SUPPORTED_COMMAND_BYTE_20                    (SUP_CMD_CS_RD_REMOTE_SUPPORTED_CAPABILITIES |\
-                                                      SUP_CMD_CS_RD_LOCAL_SUPPORTED_CAPABILITIES)
+                                                      SUP_CMD_CS_RD_LOCAL_SUPPORTED_CAPABILITIES | \
+                                                      SUP_CMD_CS_WR_CACHED_REMOTE_SUPPORTED_CAPABILITIES)
 #else
 #define SUPPORTED_COMMAND_BYTE_20                    (SUP_CMD_NONE)
 #endif
@@ -938,9 +967,7 @@ extern "C"
 
 #define BYTE_39_COMMON                               (SUP_CMD_LE_RD_RF_PATH_COMPENSATION                  | \
                                                       SUP_CMD_LE_WR_RF_PATH_COMPENSATION                  | \
-                                                      SUP_CMD_LE_SET_PRIVACY_MODE                         | \
-                                                      SUP_CMD_LE_RECEIVER_TEST_V3                         | \
-                                                      SUP_CMD_LE_TRANSMITTER_TEST_V3)
+                                                      SUP_CMD_LE_SET_PRIVACY_MODE)
 #define BYTE_39_RTLS_CTE_TX                          (SUP_CMD_NONE)
 
 #define BYTE_39_RTLS_CTE_RX                          (SUP_CMD_NONE)
@@ -954,7 +981,9 @@ extern "C"
 ///////////////////////////////
 
 #if defined(USE_PERIODIC_SCAN) && defined(USE_AE)
-  #define BYTE_40_PRD_ADV                       (SUP_CMD_LE_SET_PRD_ADV_RECEIVE_ENABLE)
+  #define BYTE_40_PRD_ADV                       (SUP_CMD_LE_SET_PRD_ADV_RECEIVE_ENABLE | \
+                                                 SUP_CMD_LE_PRD_ADV_SYNC_TRANSFER      | \
+                                                 SUP_CMD_LE_PRD_ADV_SET_INFO_TRANSFER)
 #else  //!defined(USE_PERIODIC_SCAN) && defined(USE_AE)
   #define BYTE_40_PRD_ADV                       (SUP_CMD_NONE)
 #endif  //defined(USE_PERIODIC_SCAN) && defined(USE_AE)
@@ -969,7 +998,9 @@ extern "C"
 // SUPPORTED_COMMAND_BYTE_41 //
 ///////////////////////////////
 
-#define SUPPORTED_COMMAND_BYTE_41                    (SUP_CMD_LE_SET_GENERATE_DHKEY_V2)
+#define SUPPORTED_COMMAND_BYTE_41                    (SUP_CMD_LE_SET_PRD_ADV_SYNC_TRANSFER_PARAMETERS         | \
+                                                      SUP_CMD_LE_SET_DEFAULT_PRD_ADV_SYNC_TRANSFER_PARAMETERS | \
+                                                      SUP_CMD_LE_SET_GENERATE_DHKEY_V2)
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_42 //
@@ -1000,19 +1031,22 @@ extern "C"
 // SUPPORTED_COMMAND_BYTE_45 //
 ///////////////////////////////
 
-#define SUPPORTED_COMMAND_BYTE_45                    (SUP_CMD_NONE)
+#define SUPPORTED_COMMAND_BYTE_45                    (SUP_CMD_LE_TRANSMITTER_TEST_V4)
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_46 //
 ///////////////////////////////
 
-#define SUPPORTED_COMMAND_BYTE_46                    (SUP_CMD_NONE)
+#define SUPPORTED_COMMAND_BYTE_46                    (SUP_CMD_LE_SET_PRD_ADV_SUBEVENT_DATA | \
+                                                      SUP_CMD_LE_SET_PRD_ADV_RESPONSE_DATA | \
+                                                      SUP_CMD_LE_SET_PRD_SYNC_SUBEVENT)
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_47 //
 ///////////////////////////////
 
-#define SUPPORTED_COMMAND_BYTE_47                    (SUP_CMD_NONE)
+#define SUPPORTED_COMMAND_BYTE_47                    (SUP_CMD_LE_EXTENDED_CREATE_CONN_V2 | \
+                                                      SUP_CMD_LE_SET_PRD_ADV_PARAMETERS_V2)
 
 ///////////////////////////////
 // SUPPORTED_COMMAND_BYTE_48 //

@@ -54,31 +54,18 @@
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_ae.h"
 #include "ti/ble/stack_util/lib_opt/ctrl_stub_adaptivity.h"
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
-#include <ti/drivers/utils/Random.h>
-
-#include <ti/drivers/RNG.h>
 
 #if defined( HOST_CONFIG ) && ( HOST_CONFIG & ( CENTRAL_CFG | PERIPHERAL_CFG ) )
 #include "ti/ble/host/l2cap/l2cap.h"
 #endif // ( CENTRAL_CFG | PERIPHERAL_CFG )
 
-#ifdef SYSCFG
-#include "ti_ble_config.h"
-#else
-#ifndef CONTROLLER_ONLY
 #include "ti/ble/host/gapbondmgr/gapbondmgr.h"
-#endif // CONTROLLER_ONLY
-#endif // SYSCFG
 
 #ifdef FREERTOS
 #include "FreeRTOSConfig.h"
 #endif // FREERTOS
 
-#ifdef CONFIG_ZEPHYR
-#include "rcl_settings_ble.h"
-#else
 #include "ti_radio_config.h"
-#endif // CONFIG_ZEPHYR
 
 #define Swi_restore SwiP_restore
 #define Swi_disable SwiP_disable
@@ -156,7 +143,7 @@ const stackSpecific_t bleStackConfig =
   .advReportIncChannel                  = ADV_RPT_INC_CHANNEL,
   .rssiMonitorMaxCliNum                 = 4,
   .rssiMonitorMaxRssiWeight             = 10,
-  .pwrCtrlRssiLowThreshold              = -85,
+  .pwrCtrlRssiLowThreshold              = -70,
   .pwrCtrlRssiHighThreshold             = 0,
   .pwrCtrlDeltaStepDb                   = 10,
   .llTaskPriority                       = LL_MAX_TASK_PRIORITY
@@ -276,6 +263,15 @@ void setBleUserConfig( icall_userCfg_t *userCfg )
     llUserConfig.rclPhyFeatureCoded = RCL_PHY_FEATURE_SUB_PHY_CODED;
     llUserConfig.rclPhyFeatureCodedS8 = RCL_PHY_FEATURE_CODED_TX_RATE_S8;
     llUserConfig.rclPhyFeatureCodedS2 = RCL_PHY_FEATURE_CODED_TX_RATE_S2;
+
+    // RSSI monitor configuration
+    llUserConfig.rssiMonitorMaxCliNum = stackConfig->rssiMonitorMaxCliNum;
+    llUserConfig.rssiMonitorMaxRssiWeight = stackConfig->rssiMonitorMaxRssiWeight;
+
+    // Power Control configuration
+    llUserConfig.pwrCtrlRssiLowThreshold = stackConfig->pwrCtrlRssiLowThreshold;
+    llUserConfig.pwrCtrlRssiHighThreshold = stackConfig->pwrCtrlRssiHighThreshold;
+    llUserConfig.pwrCtrlDeltaStepDb = stackConfig->pwrCtrlDeltaStepDb;
 
     // Set the user configuration for the SDAA module
     OPT_setSddaBleUserConfig();

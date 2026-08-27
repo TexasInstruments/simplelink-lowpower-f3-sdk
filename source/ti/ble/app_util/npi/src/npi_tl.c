@@ -48,30 +48,10 @@
 // includes
 // ****************************************************************************
 #include <string.h>
-#include <ti/drivers/Power.h>
-#ifndef FREERTOS
-#include <xdc/std.h>
-#if defined( CC13X4 )
-#include <ti/sysbios/family/arm/v8m/Hwi.h>
-#else
-#include <ti/sysbios/family/arm/m3/Hwi.h>
-#endif // CC13X4
-#include <ti/sysbios/knl/Task.h>
-#include <ti/sysbios/knl/Swi.h>
-#endif
-
-#if defined( CC23X0 )
-#ifdef DeviceFamily_CC27XX
-#include <ti/drivers/power/PowerCC27XX.h>
-#else
-#include <ti/drivers/power/PowerCC23X0.h>
-#endif
-#else
-#include <ti/drivers/power/PowerCC26XX.h>
-#endif
-
-#include <ti/drivers/GPIO.h>
 #include <ti/devices/DeviceFamily.h>
+
+#include <ti/drivers/Power.h>
+#include <ti/drivers/GPIO.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
 #include <ti_drivers_config.h>
@@ -101,14 +81,16 @@
 // globals
 //*****************************************************************************
 
-//! \brief Flag for low power mode
-static volatile bool npiPMSetConstraint = FALSE;
-
 //! \brief Flag for ongoing NPI TX
 static volatile bool npiTxActive = FALSE;
 
+#if (NPI_FLOW_CTRL == 1)
+//! \brief Flag for low power mode
+static volatile bool npiPMSetConstraint = FALSE;
+
 //! \brief The packet that was being sent when HWI of MRDY going low was received
 static volatile uint32 mrdyPktStamp = 0;
+#endif // NPI_FLOW_CTRL = 1
 
 //! \brief Packets transmitted counter
 static uint32 txPktCount = 0;
@@ -226,13 +208,8 @@ static void NPITL_setPM(void)
         return;
     }
     // set constraints for Standby and idle mode
-#ifdef CC23X0
     Power_setConstraint(PowerLPF3_DISALLOW_STANDBY);
     Power_setConstraint(PowerLPF3_DISALLOW_IDLE);
-#else
-    Power_setConstraint(PowerCC26XX_SB_DISALLOW);
-    Power_setConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
-#endif
     npiPMSetConstraint = TRUE;
 }
 #endif // NPI_FLOW_CTRL = 1
@@ -250,13 +227,8 @@ static void NPITL_relPM(void)
         return;
     }
     // release constraints for Standby and idle mode
-#ifdef CC23X0
     Power_releaseConstraint(PowerLPF3_DISALLOW_STANDBY);
     Power_releaseConstraint(PowerLPF3_DISALLOW_IDLE);
-#else
-    Power_releaseConstraint(PowerCC26XX_SB_DISALLOW);
-    Power_releaseConstraint(PowerCC26XX_IDLE_PD_DISALLOW);
-#endif
     npiPMSetConstraint = FALSE;
 }
 #endif // NPI_FLOW_CTRL = 1

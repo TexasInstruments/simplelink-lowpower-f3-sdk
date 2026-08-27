@@ -155,9 +155,9 @@ void OPT_llAdvProcessExtendedAdv(advSet_t* pAdvSet)
     llAdvProcessExtendedAdv(pAdvSet);
 }
 
-void OPT_llAEProcessAuxAdvInd(advSet_t* pAdvSet, uint8_t numActiveAdvSets)
+void OPT_llAEProcessAuxAdvInd(advSet_t* pAdvSet)
 {
-    llAEProcessAuxAdvInd(pAdvSet, numActiveAdvSets);
+    llAEProcessAuxAdvInd(pAdvSet);
 }
 
 void OPT_llupdateAuxAdvHeader(sortedAdv_t* pNextAdvSet)
@@ -228,6 +228,11 @@ void OPT_LL_AE_GetTxUsageParams(llTxUsageParams_t* pExtAdvTxParams)
 void OPT_setAeBleUserConfig(void)
 {
     setAeBleUserConfig();
+}
+
+advSet_t* OPT_LL_AE_GetNextAdvSet(void)
+{
+    return LL_AE_GetNextAdvSet();
 }
 
 #endif /* defined(USE_AE) */

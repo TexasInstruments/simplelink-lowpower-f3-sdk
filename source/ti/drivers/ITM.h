@@ -208,7 +208,7 @@ extern "C" {
  *
  */
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4 || \
-     DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+     DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX || DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #define ITM_FUNCTION_DISABLED                  (0x00)
     #define ITM_FUNCTION_EMIT_PC                   (0x30 | 0x4)
     #define ITM_FUNCTION_EMIT_DATA_ON_READ_WRITE   (0x800 | 0x20 | 0xc)

@@ -85,25 +85,13 @@ extern "C"
   #define SRDY_DISABLE()
 #endif // NPI_FLOW_CTRL = 1
 
-
-#if defined( CC26X2 ) || defined( CC13X2 ) || defined( CC13X2P ) || defined( CC33xx )
-  #ifndef NPI_TL_BUF_SIZE
+#ifndef NPI_TL_BUF_SIZE
+  #ifdef NPI_MAX_DATA
     #define NPI_TL_BUF_SIZE         1680
+  #else
+    #define NPI_TL_BUF_SIZE         660
   #endif
-#elif defined ( CC23X0 )
-  #ifndef NPI_TL_BUF_SIZE
-    #ifdef NPI_MAX_DATA
-      #define NPI_TL_BUF_SIZE         1680
-    #else
-      #define NPI_TL_BUF_SIZE         660
-    #endif
-  #endif
-#else // CC26XX_R2 || CC1350LP_7XD ...
-  #ifndef NPI_TL_BUF_SIZE
-    #define NPI_TL_BUF_SIZE         330
-  #endif
-#endif // CC26X2 || CC13X2
-
+#endif
 
 #define NPI_SPI_PAYLOAD_SIZE    255
 #define NPI_SPI_HDR_LEN         4

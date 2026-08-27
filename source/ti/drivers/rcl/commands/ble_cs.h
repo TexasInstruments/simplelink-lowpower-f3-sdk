@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_commands_ble_cs_h__include
-#define ti_drivers_RCL_commands_ble_cs_h__include
+#ifndef ti_drivers_rcl_commands_ble_cs__include
+#define ti_drivers_rcl_commands_ble_cs__include
 
 #include <ti/drivers/rcl/RCL_Command.h>
 #include <ti/drivers/rcl/RCL_Buffer.h>
@@ -88,24 +88,24 @@ typedef enum   RCL_CMD_BLE_CS_Nadm_e                      RCL_CmdBleCs_Nadm;
 #define RCL_CMDID_BLE_CS_PRECAL                 0x1102U
 
 /* Helper macros to convert between time units */
-#define RCL_BLE_CS_US_TO_MCE_TIMER(x)           ((x)*48)
-#define RCL_BLE_CS_US_TO_PBE_TIMER(x)           ((x)*4)
-#define RCL_BLE_CS_MCE_TIMER_TO_US(x)           ((x)/48)
-#define RCL_BLE_CS_PBE_TIMER_TO_US(x)           ((x)/12)
-#define RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(x)    ((x)/4)
-#define RCL_BLE_CS_MCE_TIMER_TO_PREFREF(x)      ((x)/3)
-#define RCL_BLE_CS_DELAY_PS_TO_LUT(x)           (((x)+16)/32)
+#define RCL_BLE_CS_US_TO_MCE_TIMER(x)           ((x)*48U)
+#define RCL_BLE_CS_US_TO_PBE_TIMER(x)           ((x)*4U)
+#define RCL_BLE_CS_MCE_TIMER_TO_US(x)           ((x)/48U)
+#define RCL_BLE_CS_PBE_TIMER_TO_US(x)           ((x)/12U)
+#define RCL_BLE_CS_MCE_TIMER_TO_PBE_TIMER(x)    (uint16_t) ((x)/4U)
+#define RCL_BLE_CS_MCE_TIMER_TO_PREFREF(x)      ((x)/3U)
+#define RCL_BLE_CS_DELAY_PS_TO_LUT(x)           (((x)+16U)/32U)
 
 /* Helper macros for constants */
-#define RCL_BLE_CS_MAX_NUM_ANT                  4
-#define RCL_BLE_CS_MAX_NUM_ANT_PATH             5
-#define RCL_BLE_CS_MAX_PAYLOAD_SIZE             4
-#define RCL_BLE_CS_NUM_CORR                     3
-#define RCL_BLE_CS_NUM_STIM                     2
-#define RCL_BLE_CS_MAX_S2R_LEN                  1024
-#define RCL_BLE_CS_NUM_RX_GAIN_LEVEL            2
-#define RCL_BLE_CS_STEP_RX_GAIN_DB              3
-#define RCL_BLE_CS_NUM_PRECAL_CHANNELS          8
+#define RCL_BLE_CS_MAX_NUM_ANT                  4U
+#define RCL_BLE_CS_MAX_NUM_ANT_PATH             5U
+#define RCL_BLE_CS_MAX_PAYLOAD_SIZE             4U
+#define RCL_BLE_CS_NUM_CORR                     3U
+#define RCL_BLE_CS_NUM_STIM                     2U
+#define RCL_BLE_CS_MAX_S2R_LEN                  1024U
+#define RCL_BLE_CS_NUM_RX_GAIN_LEVEL            2U
+#define RCL_BLE_CS_STEP_RX_GAIN_DB              3U
+#define RCL_BLE_CS_NUM_PRECAL_CHANNELS          8U
 
 /**
  *  @brief BLE Channel Sounding IQ Sample
@@ -130,9 +130,9 @@ struct RCL_CMD_BLE_CS_t {
             uint16_t role:2;                     /*!< Role of the device @ref RCL_CmdBleCs_Role */
             uint16_t phy:2;                      /*!< Phy used for packet exchange @ref RCL_CmdBleCs_Phy */
             uint16_t repeatSteps:1;              /*!< Enable continuous repetition of step list */
-            uint16_t reserved0:1;
+            uint16_t reportFormat:1;             /*!< Select a vendor specific report format instead of the default HCI LE CS subevent result */
             uint16_t inlinePhase:1;              /*!< Enable the reflector to apply inline phase adjustment */
-            uint16_t reserved1:1;
+            uint16_t reserved0:1;
             uint16_t nSteps:8;                   /*!< Total number of steps within the BLE CS Sub-Event */
         };
         uint16_t val;
@@ -156,15 +156,12 @@ struct RCL_CMD_BLE_CS_t {
         uint16_t tSwAdjustB;                     /*!< Time adjustment of second set of antenna switching within a step (... / Tn-Pkt) */
     } timing;
 
-    struct {
-        RCL_Command_TxPower txPower;              /*!< Transmit power */
-        uint8_t  rxGain;                          /*!< Automatic Gain Control enabled @ref RCL_CmdBleCs_RxGain */
-    } frontend;
+    RCL_Command_TxPower txPower;                  /*!< Transmit power in dBm format */
 
-    int16_t foffOverride;                         /*!< Frequency offset compensation override value in [4xFOFF = 4x (FRF/2^21)] units. */
-    uint8_t foffOverrideEnable:1;                 /*!< Disables automatic frequency offset estimation and enforces the use of the provided override value */
-
-    uint8_t reportFormat;                         /*!< Select a vendor specific report format instead of the default HCI LE CS subevent result */
+    uint8_t  rxGainPolicy:2;                      /*!< 0: Automatic RX gain selection, 1: Use cached value from previous subevent, 2: Manual override */
+    uint8_t  foffPolicy:2;                        /*!< 0: Automatic frequency offset selection, 1: Use cached value from previous subevent, 2: Manual override */
+    uint16_t rxGainVal;                           /*!< Manual RX gain control override value in SPARE register format*/
+    int16_t  foffVal;                             /*!< Manual frequency offset override value in [4xFOFF = 4x (FRF/2^21)] format. */
 
     RCL_CmdBleCs_PrecalTable *precalTable;        /*!< Pointer to a table contains DC values from precalibration */
     RCL_CmdBleCs_StepResult_Internal *results;    /*!< Pointer to result list */
@@ -191,26 +188,30 @@ struct RCL_CMD_BLE_CS_t {
  *  Descriptor to configure a single step within the BLE Channel Sounding Event
  */
 struct RCL_CMD_BLE_CS_STEP_INTERNAL_t {
-    uint16_t channelIdx;                             /*!< Integer index of channel information (0: 2402MHz) */
-    uint16_t mode;                                   /*!< Step mode @ref RCL_CmdBleCs_StepMode */
-    uint16_t toneExtension;                          /*!< Configuration of tone extension */
-    uint16_t payloadLen;                             /*!< Length of payload in units of 32bit words @ref RCL_CmdBleCs_Payload */
-    uint16_t foffErr;                                /*!< Internal! Used for frequency offset compensation */
-    uint16_t tAdjustA;                               /*!< Internal! Used for timegrid adjustment */
-    uint16_t tAdjustB;                               /*!< Internal! Used for timegrid adjustment */
-    uint16_t tPllRx;
-    RCL_CmdBleCs_IQSample dcComp[RCL_BLE_CS_NUM_RX_GAIN_LEVEL]; /*!< Internal! Used for DC compensation with precalibrated values */
+    uint8_t  channelIdx;                             /*!< Integer index of channel information (0: 2402MHz) */
+    uint8_t  reserved0;
+    uint8_t  mode;                                   /*!< Step mode @ref RCL_CmdBleCs_StepMode */
+    uint8_t  reserved1;
+    uint8_t  toneExtension;                          /*!< Configuration of tone extension */
+    uint8_t  reserved2;
+    uint8_t  payloadLen;                             /*!< Length of payload in units of 32bit words @ref RCL_CmdBleCs_Payload */
+    uint8_t  reserved3;
+    int16_t  foffErr;                                /*!< Used for frequency offset compensation */
+    int16_t  tAdjustA;                               /*!< Used for timegrid adjustment */
+    int16_t  tAdjustB;                               /*!< Used for timegrid adjustment */
+    uint16_t tPllRx;                                 /*!< Used for PLL adjustment */    
+    RCL_CmdBleCs_IQSample dcComp[RCL_BLE_CS_NUM_RX_GAIN_LEVEL]; /*!< Used for DC compensation with precalibrated values */
     uint32_t payloadTx[RCL_BLE_CS_MAX_PAYLOAD_SIZE]; /*!< Payload to transmit containing random bit sequence (TX) */
     uint32_t payloadRx[RCL_BLE_CS_MAX_PAYLOAD_SIZE]; /*!< Expected payload to receive containing random bit sequence (RX) */
     uint32_t aaTx;                                   /*!< Access Address to be transmitted */
     uint32_t aaRx;                                   /*!< Access Address to be received */
     uint8_t  antennaPermIdx;                         /*!< Index of entry to be used from the antenna permutation table @ref RCL_CmdBleCs_AntennaConfig */
     uint8_t  antennaPacket;                          /*!< Index of physical antenna to be used for all packet exchanges @ref RCL_CMD_BLE_CS_PacketAntenna_e */
-    uint16_t antennaSequence;                        /*!< Internal! Decoded antenna control sequence based on permutation table */
-    uint16_t tStep;                                  /*!< Internal! The total duration of step dynamically calculated */
-    uint16_t tAntennaA;                              /*!< Internal! Antenna timing adjustment */
-    uint16_t tAntennaB;                              /*!< Internal! Antenna timing adjustment */
-    uint16_t reserved;
+    uint16_t antennaSequence;                        /*!< Decoded antenna control sequence based on permutation table */
+    uint16_t tStep;                                  /*!< The total duration of step dynamically calculated */
+    int16_t  tAntennaA;                              /*!< Antenna timing adjustment */
+    int16_t  tAntennaB;                              /*!< Antenna timing adjustment */
+    uint16_t reserved4;
 };
 
 /**
@@ -219,10 +220,10 @@ struct RCL_CMD_BLE_CS_STEP_INTERNAL_t {
  *  Container to store RSSI data for postprocess of the quality of tone
  */
 typedef struct {
-    int16_t magnMin;     /*!< Minimum of signal magnitude during TPM */
-    int16_t magnMax;     /*!< Maximum of signal magnitude during TPM */
-    int16_t magnAvg;     /*!< Average of signal magnitude during TPM */
-    int16_t magnAvgdB;   /*!< Average of signal magnitude during TPM in dB */
+    uint16_t magnMin;     /*!< Minimum of signal magnitude during TPM */
+    uint16_t magnMax;     /*!< Maximum of signal magnitude during TPM */
+    uint16_t magnAvg;     /*!< Average of signal magnitude during TPM */
+    uint16_t magnAvgdB;   /*!< Average of signal magnitude during TPM in dB */
 } MagnData;
 
 /**
@@ -231,13 +232,18 @@ typedef struct {
  *  Container to store the results of a single step within the BLE Channel Sounding Event
  */
 struct RCL_CMD_BLE_CS_STEP_RESULT_INTERNAL_t {
-    uint16_t channelIdx;                                    /*!< Integer index of channel information (0: 2402MHz) */
-    uint16_t mode;                                          /*!< Step mode @ref RCL_CmdBleCs_StepMode */
-    uint16_t toneExtension;                                 /*!< Configuration of tone extension */
-    uint16_t payloadLen;                                    /*!< Length of payload in units of 32bit words @ref RCL_CmdBleCs_Payload */
-    uint16_t reserved;
+    uint8_t  channelIdx;                                     /*!< Integer index of channel information (0: 2402MHz) */
+    uint8_t  reserved0;
+    uint8_t  mode;                                          /*!< Step mode @ref RCL_CmdBleCs_StepMode */
+    uint8_t  reserved1;
+    uint8_t  toneExtension;                                 /*!< Configuration of tone extension */
+    uint8_t  reserved2;
+    uint8_t  payloadLen;                                    /*!< Length of payload in units of 32bit words @ref RCL_CmdBleCs_Payload */
+    uint8_t  reserved3;
+    uint16_t reserved4;
     int16_t  foffMeasured;                                  /*!< Frequency offset between devices (only set on Initiator Mode 0) */
-    uint16_t pktResult;                                     /*!< Result of packet reception @ref RCL_CmdBleCs_PacketResult */
+    uint8_t  pktResult;                                     /*!< Result of packet reception @ref RCL_CmdBleCs_PacketResult */
+    uint8_t  reserved5;
     uint8_t  gain;                                          /*!< LNA gain used (Low/High)*/
     int8_t   pktRssi;                                       /*!< Receiver Signal Strength Indicator [dBm] captured during packet reception */
     uint16_t rtt;                                           /*!< RTT timestamp */
@@ -250,7 +256,7 @@ struct RCL_CMD_BLE_CS_STEP_RESULT_INTERNAL_t {
     /* Echoed by PBE */
     uint8_t  antennaPermIdx;                                /*!< Index of entry to be used from the antenna permutation table @ref RCL_CmdBleCs_AntennaConfig */
     uint8_t  antennaPacket;                                 /*!< Index of physical antenna to be used for all packet exchanges @ref RCL_CMD_BLE_CS_PacketAntenna_e */
-    uint16_t reserved1;
+    uint16_t reserved6;
 };
 
 /**
@@ -289,18 +295,21 @@ struct RCL_CMD_BLE_CS_S2R_t {
  *  Container to store the statistical outputs of the BLE Channel Sounding Event
  */
 struct RCL_CMD_BLE_CS_STATS_t {
-    uint16_t nStepsWritten;                             /*!< Number of steps sent to the PBE through the FIFO */
-    uint16_t nResultsRead;                              /*!< Number of results read from the PBE through the FIFO */
-    uint16_t nStepsDone;                                /*!< Number of steps have been executed by the PBE */
-    uint16_t nRxOk;                                     /*!< Number of steps where pktResult == OK, filled by the CM0 */
-    uint16_t nRxNok;                                    /*!< Number of steps where pktResult != OK, filled by the CM0 */
-    uint8_t  nS2RDone;                                  /*!< Number of Samples-To-Ram containers filled by the CM0 */
-    int8_t   lastRssi;                                  /*!< Last valid RSSI received by the PBE */
-    int16_t  lastFoff;                                  /*!< Last valid frequency offset received by the PBE */
-    int16_t  foffComp;                                  /*!< Frequency offset compensation value */
-    uint8_t  numAntennaPath;                            /*!< Number of true antenna paths (1...4) */
-    uint8_t  rplScaler;                                 /*!< Log2 scaler of the internal PCT values when converting to HCI format */
-    uint16_t reserved;
+    uint8_t  nStepsWritten;        /*!< Number of steps sent to the PBE through the FIFO */
+    uint8_t  nResultsRead;         /*!< Number of results read from the PBE through the FIFO */
+    uint8_t  nStepsDone;           /*!< Number of steps have been executed by the PBE */
+    uint8_t  nRxOk;                /*!< Number of steps where pktResult == OK, filled by the CM0 */
+    uint8_t  nRxNok;               /*!< Number of steps where pktResult != OK, filled by the CM0 */
+    uint8_t  nS2RDone;             /*!< Number of Samples-To-Ram containers filled by the CM0 */
+    uint8_t  nMode0;               /*!< Number of mode-0 steps in the subevent */
+    uint8_t  nMode0Ok;             /*!< Number of sucessfull mode-0 steps */
+    uint8_t  reserved0;
+    int8_t   lastRssi;             /*!< Last valid RSSI received by the PBE */
+    int16_t  lastFoff;             /*!< Last valid frequency offset received by the PBE */
+    uint16_t rxGain;               /*!< RX gain used for main mode steps */
+    int16_t  foffComp;             /*!< Frequency offset compensation value */
+    uint8_t  numAntennaPath;       /*!< Number of true antenna paths (1...4) */
+    uint8_t  reserved1;
 };
 
 /**
@@ -345,8 +354,7 @@ enum RCL_CMD_BLE_CS_StepMode_e {
  *  Describes the available packet status words
  */
 enum RCL_CMD_BLE_CS_PacketResult_e {
-    RCL_CmdBleCs_PacketResult_Error     = -1,   /*!< NA for mode-2 steps, otherwise command execution error. */
-    RCL_CmdBleCs_PacketResult_Ok        =  0,   /*!< The packet reception was succesfull */
+    RCL_CmdBleCs_PacketResult_Ok        =  0,   /*!< The packet reception was successful */
     RCL_CmdBleCs_PacketResult_BitError  =  1,   /*!< The packet was received with one or more bit errors */
     RCL_CmdBleCs_PacketResult_Lost      =  2,   /*!< The packet reception was terminated by timeout */
     RCL_CmdBleCs_PacketResult_Length
@@ -438,12 +446,14 @@ enum RCL_CMD_BLE_CS_Payload_e {
 };
 
 /**
- *  @brief Enumerator of RX gain
+ *  @brief Enumerator of policies
  *
- *  Describes the available RX gain settings
+ *  Describes the available policy rules
  */
-enum RCL_CMD_BLE_CS_RxGain_e {
-    RCL_CmdBleCs_RxGain_Auto = 0,
+enum RCL_CMD_BLE_CS_Policy_e {
+    RCL_CmdBleCs_Policy_Auto   = 0,
+    RCL_CmdBleCs_Policy_Cache  = 1,
+    RCL_CmdBleCs_Policy_Manual = 2,
 };
 
 /**
@@ -528,10 +538,9 @@ struct RCL_CMD_BLE_CS_PRECAL_ENTRY_t {
 struct RCL_CMD_BLE_CS_PRECAL_TABLE_t {
     RCL_CmdBleCs_PrecalCallback callback;
     uint32_t timestamp;
+    int16_t  temperature;
     uint8_t  highThreshold;
     uint8_t  lowThreshold;
-    uint8_t  reserved;
-    int8_t   temperature;
     uint8_t  chSpacing;
     uint8_t  numEntries : 7;
     uint8_t  valid      : 1;
@@ -546,10 +555,9 @@ void RCL_Handler_BLE_CS_PrecalDefaultCallback(RCL_CmdBleCs_PrecalTable *table, u
 {                                                              \
     .callback      = RCL_Handler_BLE_CS_PrecalDefaultCallback, \
     .timestamp     = 0,                                        \
+    .temperature   = 0,                                        \
     .highThreshold = 50,                                       \
     .lowThreshold  = 10,                                       \
-    .reserved      = 0,                                        \
-    .temperature   = 0,                                        \
     .chSpacing     = 10,                                       \
     .numEntries    = 8,                                        \
     .valid         = 0,                                        \
@@ -614,7 +622,7 @@ struct RCL_CMD_BLE_CS_PCT_COMP_TABLE_t {
 /* Adjust RCL_BLE_CS_PHASE_DELAY_PS for linear PCT phase compensation due to antenna/front-end design,
  * or adjust RCL_CmdBleCs_PctCompTable bleCsPctCompTable, using a calibrated instrument */
 #ifndef RCL_BLE_CS_PHASE_DELAY_PS
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     /* Example: LP-EM-CC2745R10-Q1 Launchpad development kit, SMA port */
     #define RCL_BLE_CS_PHASE_DELAY_PS  (1100UL)
 #else
@@ -670,7 +678,7 @@ enum RCL_CMD_BLE_CS_Nadm_e {
 
 /* Special values for linear parameters */
 #define RCL_CMD_BLE_CS_FREQCOMP_NA  0xC000
-#define RCL_CMD_BLE_CS_TOAD_NA      0x8000
+#define RCL_CMD_BLE_CS_TOAD_NA      (int16_t) 0x8000
 #define RCL_CMD_BLE_CS_RSSI_NA      0x7F
 
 /* Opcodes */
@@ -839,4 +847,4 @@ struct RCL_CMD_BLE_CS_STEP_RESULTS_IR3_t {
     RCL_CmdBleCs_Tone tones[];
 };
 
-#endif
+#endif /* ti_drivers_rcl_commands_ble_cs__include */

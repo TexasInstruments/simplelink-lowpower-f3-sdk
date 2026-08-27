@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_14_03_13.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_21_00_36_LTS.html",
         "devices": [
             "CC2340R5"
         ],
@@ -100,7 +100,7 @@
     {
         "name": "BLE Stack User's Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-users-guide.html",
+        "location": "../../docs/ble5stack/blestack-users-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -122,7 +122,7 @@
     {
         "name": "BLE Stack Quick Start Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-quickstart-guide.html",
+        "location": "../../docs/ble5stack/blestack-quickstart-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -144,7 +144,7 @@
     {
         "name": "BLE Stack Migration Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-migration-guide.html",
+        "location": "../../docs/ble5stack/blestack-migration-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -166,7 +166,7 @@
     {
         "name": "BLE Stack Debugging Guide",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/ble5stack-debugging-guide.html",
+        "location": "../../docs/ble5stack/blestack-debugging-guide.html",
         "devices": [
             "CC2340R5"
         ],
@@ -384,9 +384,53 @@
         ]
     },
     {
+        "name": "CC27xx Security Getting Started",
+        "resourceType": "file",
+        "location": "../../docs/security/cc27xx-security-getting-started.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Security"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "CC27xx Security User's Guide",
+        "resourceType": "file",
+        "location": "../../docs/security/cc27xx-security-users-guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "Security"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
         "name": "Core SDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_14_02_04.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_22_00_18.html",
         "devices": [
             "CC2340R5"
         ],
@@ -428,6 +472,28 @@
         ]
     },
     {
+        "name": "TI DMM Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/dmm/release_notes_dmm_1_00_00.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "TI DMM"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
         "name": "Zigbee Release Notes",
         "resourceType": "file",
         "location": "../../docs/zigbee/release_notes_zigbee_1_00_00.html",
@@ -452,7 +518,29 @@
     {
         "name": "TI BLE Stack Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble_9_14_02.html",
+        "location": "../../docs/ble5stack/release_notes_ble_9_21_00.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "subCategories": [
+            "BLE Stack"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "TI BLE Stack Release Notes",
+        "resourceType": "file",
+        "location": "../../docs/ble5stack/release_notes_blecsranging_9_21_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -474,7 +562,7 @@
     {
         "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_14_02.html",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_21_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -496,7 +584,7 @@
     {
         "name": "SimpleLink Common Components Module (SCCM) Release Notes",
         "resourceType": "file",
-        "location": "../../docs/sccm/release_notes_sccm_9_14_01.html",
+        "location": "../../docs/sccm/release_notes_sccm_9_21_00.html",
         "devices": [
             "CC2340R5"
         ],

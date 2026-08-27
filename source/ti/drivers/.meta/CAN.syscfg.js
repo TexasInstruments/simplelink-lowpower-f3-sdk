@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,27 +48,15 @@ let family = Common.device2Family(system.deviceData, "CAN");
 let deviceId = system.deviceData.deviceId;
 
 /* Default Rx ring buffer size based on device.
- * CC27xx devices have more RAM and have 24 elements, others have 6.
+ * CC27xx devices have more RAM and have 12 elements, others have 6.
  */
-let defaultRxRingBufferSize = deviceId.match(/CC27/) ? 24 : 6;
+let defaultRxRingBufferSize = deviceId.match(/CC27/) ? 12 : 6;
 
 let recommendedMinRxRingBufferSize = 3;
 
-/* Generic configuration parameters for CAN instances */
-let config = [
-    {
-        name: "nomBitRate",
-        displayName: "Nominal Bit Rate",
-        description: "Specifies the nominal bit rate.",
-        default: 125000,
-        options: [
-            { name: 125000 },
-            { name: 250000 },
-            { name: 500000 },
-            { name: 1000000 }
-        ],
-        onChange: onNomRateChange
-    },
+let supportsMCAN = !deviceId.match(/CC3551/);
+
+let mcanSpecificConfigs = [
     {
         name: "canFDEnable",
         displayName: "CAN FD Operation",
@@ -94,7 +82,7 @@ let config = [
         name: "dataBitRate",
         displayName: "CAN FD Data Bit Rate",
         description: "Specifies the CAN FD data bit rate when Bit Rate Switching (BRS) " +
-            "is enabled.  Must be higher or equal to than the nominal bit rate.",
+            "is enabled.  Must be higher than or equal to the nominal bit rate.",
         default: 125000,
         hidden: true,
         options: [
@@ -106,7 +94,25 @@ let config = [
             { name: 4000000 },
             { name: 5000000 }
         ]
+    }
+];
+
+/* Generic configuration parameters for CAN instances */
+let config = [
+    {
+        name: "nomBitRate",
+        displayName: "Nominal Bit Rate",
+        description: "Specifies the nominal bit rate.",
+        default: 125000,
+        options: [
+            { name: 125000 },
+            { name: 250000 },
+            { name: 500000 },
+            { name: 1000000 }
+        ],
+        onChange: onNomRateChange
     },
+    ...(supportsMCAN ? mcanSpecificConfigs : []),
     {
         name: "rejectNonMatching",
         displayName: "Reject Non-Matching Messages",
@@ -195,9 +201,12 @@ function onBRSChange(inst, ui)
  */
 function onNomRateChange(inst, ui)
 {
-    if (inst.dataBitRate < inst.nomBitRate)
+    if( supportsMCAN )
     {
-        inst.dataBitRate = inst.nomBitRate;
+        if (inst.dataBitRate < inst.nomBitRate)
+        {
+            inst.dataBitRate = inst.nomBitRate;
+        }
     }
 }
 
@@ -226,10 +235,13 @@ function validate(inst, validation)
 {
     let message;
 
-    if (inst.brsEnable && (inst.dataBitRate < inst.nomBitRate))
+    if( supportsMCAN )
     {
-        message = 'CAN FD Data Bit Rate must greater than or equal to the Nominal Bit Rate';
-        logError(validation, inst, "dataBitRate", message);
+        if (inst.brsEnable && (inst.dataBitRate < inst.nomBitRate))
+        {
+            message = 'CAN FD Data Bit Rate must be greater than or equal to the Nominal Bit Rate';
+            logError(validation, inst, "dataBitRate", message);
+        }
     }
 
     if (inst.rxRingBufferSize == 0)
@@ -266,14 +278,16 @@ The [__CAN driver__][1] provides APIs to control a single external or onboard Co
 `,
     maxInstances: 1,
     defaultInstanceName: "CONFIG_CAN_",
+
     config: Common.addNameConfig(config, "/ti/drivers/CAN", "CONFIG_CAN_"),
+
     validate: validate,
     moduleInstances: moduleInstances,
     modules: (inst) => {
         let forcedModules = ["Board", "Power"];
 
-        /* Due to errata SYS_211, add DMA module for CC2745 768k/1M flash devices */
-        if (deviceId.match(/CC2745[A-Z](7|10)/)) {
+        /* Due to errata SYS_211, add DMA module for CC27XXX7/CC27XXX10 flash devices */
+        if (deviceId.match(/CC274[4-5][A-Z](7|10)/)) {
             forcedModules.push("DMA");
         }
         return Common.autoForceModules(forcedModules)();

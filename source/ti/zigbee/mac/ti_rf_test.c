@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2025, Texas Instruments Incorporated
+ Copyright (c) 2025-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/log/Log.h>
-#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/RCL.h>
 #include <ti/drivers/rcl/LRF.h>
 #include <ti/drivers/rcl/RCL_Scheduler.h>
 #include <ti/drivers/rcl/commands/ieee.h>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,187 +30,143 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//*****************************************************************************
-//
-// Check if compiler is IAR
-//
-//*****************************************************************************
+/* Check if compiler is IAR. */
 #if !(defined(__IAR_SYSTEMS_ICC__))
     #error "startup_cc23x0r2_iar.c: Unsupported compiler!"
 #endif
 
-// We need intrinsic functions for IAR (if used in source code)
+/* We need intrinsic functions for IAR (if used in source code). */
 #include <intrinsics.h>
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(driverlib/setup.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
-#include DeviceFamily_constructPath(cmsis/cc23x0r2.h)
-#include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 
-//*****************************************************************************
-//
-//! Forward declaration of the reset ISR and the default fault handlers.
-//
-//*****************************************************************************
+/* Forward declaration of the reset ISR and the default fault handlers. */
 static void nmiISR(void);
 static void faultISR(void);
 static void intDefaultHandler(void);
 extern int main(void);
 
-//*****************************************************************************
-//
-//! The entry point for the application startup code.
-//
-//*****************************************************************************
+/* The entry point for the application startup code. */
 extern void __iar_program_start(void);
 int localProgramStart(void);
 
-//*****************************************************************************
-//
-//! Get stack start (highest address) symbol from linker file.
-//
-//*****************************************************************************
+/* Get stack start (highest address) symbol from linker file. */
 extern const void *STACK_TOP;
 
-// It is required to place something in the CSTACK segment to get the stack
-// check feature in IAR to work as expected
+/* It is required to place something in the CSTACK segment to get the stack
+ * check feature in IAR to work as expected.
+ */
 __root static void *dummy_stack @ ".stack";
 
-//*****************************************************************************
-//
-//! The vector table. Note that the proper constructs must be placed on this to
-//! ensure that it ends up at physical address 0x0000.0000 or at the start of
-//! the program if located at a start address other than 0.
-//
-//*****************************************************************************
+/* The vector table. Note that the proper constructs must be placed on this to
+ * ensure that it ends up at physical address 0x0000.0000 or at the start of
+ * the program if located at a start address other than 0.
+ */
 __root void (*const __vector_table[])(void) @ ".resetVecs" = {
-    (void (*)(void)) & STACK_TOP, // The initial stack pointer
-    __iar_program_start,          //  1 The reset handler
-    nmiISR,                       //  2 The NMI handler
-    faultISR,                     //  3 The hard fault handler
-    intDefaultHandler,            //  4 Reserved
-    intDefaultHandler,            //  5 Reserved
-    intDefaultHandler,            //  6 The usage fault handler
-    intDefaultHandler,            //  7 Reserved
-    intDefaultHandler,            //  8 Reserved
-    intDefaultHandler,            //  9 Reserved
-    intDefaultHandler,            // 10 Reserved
-    intDefaultHandler,            // 11 SVCall handler
-    intDefaultHandler,            // 12 Debug monitor handler
-    intDefaultHandler,            // 13 Reserved
-    intDefaultHandler,            // 14 The PendSV handler
-    intDefaultHandler,            // 15 The SysTick handler
-    intDefaultHandler,            // 16 CPUIRQ0
-    intDefaultHandler,            // 17 CPUIRQ1
-    intDefaultHandler,            // 18 CPUIRQ2
-    intDefaultHandler,            // 19 CPUIRQ3
-    intDefaultHandler,            // 20 CPUIRQ4
-    intDefaultHandler,            // 21 GPIO event interrupt
-    intDefaultHandler,            // 22 LRF interrupt 0
-    intDefaultHandler,            // 23 LRF interrupt 1
-    intDefaultHandler,            // 24 uDMA done events
-    intDefaultHandler,            // 25 AES interrupt
-    intDefaultHandler,            // 26 SPI0 combined interrupt
-    intDefaultHandler,            // 27 UART0 combined interrupt
-    intDefaultHandler,            // 28 I2C0 combined interrupt
-    intDefaultHandler,            // 29 LGPT0 interrupt
-    intDefaultHandler,            // 30 LGPT1 interrupt
-    intDefaultHandler,            // 31 ADC interrupt
-    intDefaultHandler,            // 32 CPUIRQ16
-    intDefaultHandler,            // 33 LGPT2 interrupt
-    intDefaultHandler,            // 34 LGPT3 interrupt
+    (void (*)(void)) & STACK_TOP, /* 0 The initial stack pointer. */
+    __iar_program_start,          /* 1 The reset handler. */
+    nmiISR,                       /* 2 The NMI handler. */
+    faultISR,                     /* 3 The hard fault handler. */
+    intDefaultHandler,            /* 4 Reserved. */
+    intDefaultHandler,            /* 5 Reserved. */
+    intDefaultHandler,            /* 6 The usage fault handler. */
+    intDefaultHandler,            /* 7 Reserved. */
+    intDefaultHandler,            /* 8 Reserved. */
+    intDefaultHandler,            /* 9 Reserved. */
+    intDefaultHandler,            /* 10 Reserved. */
+    intDefaultHandler,            /* 11 SVCall handler. */
+    intDefaultHandler,            /* 12 Debug monitor handler. */
+    intDefaultHandler,            /* 13 Reserved. */
+    intDefaultHandler,            /* 14 The PendSV handler. */
+    intDefaultHandler,            /* 15 The SysTick handler. */
+    intDefaultHandler,            /* 16 CPUIRQ0. */
+    intDefaultHandler,            /* 17 CPUIRQ1. */
+    intDefaultHandler,            /* 18 CPUIRQ2. */
+    intDefaultHandler,            /* 19 CPUIRQ3. */
+    intDefaultHandler,            /* 20 CPUIRQ4. */
+    intDefaultHandler,            /* 21 GPIO event interrupt. */
+    intDefaultHandler,            /* 22 LRF interrupt 0. */
+    intDefaultHandler,            /* 23 LRF interrupt 1. */
+    intDefaultHandler,            /* 24 uDMA done events. */
+    intDefaultHandler,            /* 25 AES interrupt. */
+    intDefaultHandler,            /* 26 SPI0 combined interrupt. */
+    intDefaultHandler,            /* 27 UART0 combined interrupt. */
+    intDefaultHandler,            /* 28 I2C0 combined interrupt. */
+    intDefaultHandler,            /* 29 LGPT0 interrupt. */
+    intDefaultHandler,            /* 30 LGPT1 interrupt. */
+    intDefaultHandler,            /* 31 ADC interrupt. */
+    intDefaultHandler,            /* 32 CPUIRQ16. */
+    intDefaultHandler,            /* 33 LGPT2 interrupt. */
+    intDefaultHandler,            /* 34 LGPT3 interrupt. */
 };
 
-//*****************************************************************************
-//
-// Perform early-boot device initialisation.
-//
-//*****************************************************************************
+/* Perform early-boot device initialisation. */
 int localProgramStart(void)
 {
     unsigned long *vtor = (unsigned long *)0xE000ED08;
 
-    /* do final trim of device */
+    /* Do final trim of device. */
     SetupTrimDevice();
 
-    /* disable interrupts */
+    /* Disable interrupts. */
     __disable_irq();
     __DSB();
     __ISB();
 
-    /*
-     * set vector table base to point to above vectors in Flash; during
-     * driverlib interrupt initialization this table will be copied to RAM
+    /* Set vector table base to point to above vectors in Flash; during
+     * driverlib interrupt initialization this table will be copied to RAM.
      */
     *vtor = (unsigned long)&__vector_table[0];
 
     return 1;
 }
 
-//*****************************************************************************
-//
-// This function is called by __iar_program_start() early in the boot sequence.
-//
-//*****************************************************************************
+/* This function is called by __iar_program_start() early in the boot sequence. */
 int __low_level_init(void)
 {
-    /*
-     *  Initialize the stack pointer and branch to localProgramStart().
-     *  Some debuggers do not load the stack pointer from the reset vector.
-     *  This code ensures that the stack pointer is initialized.
-     *  The first entry of the vector table is the address of the stack.
+    /* Initialize the stack pointer and branch to localProgramStart().
+     * Some debuggers do not load the stack pointer from the reset vector.
+     * This code ensures that the stack pointer is initialized.
+     * The first entry of the vector table is the address of the stack.
      */
     __asm(" ldr r0, =__vector_table\n"
           " ldr r0, [r0]\n"
           " mov sp, r0\n"
           " b localProgramStart");
 
-    // This code is unreachable but the compiler expects a return statement
+    /* This code is unreachable but the compiler expects a return statement. */
     return 1;
 }
 
-//*****************************************************************************
-//
-//! This is the code that gets called when the processor receives a NMI. This
-//! simply enters an infinite loop, preserving the system state for examination
-//! by a debugger.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor receives an NMI. This
+ * simply enters an infinite loop, preserving the system state for examination
+ * by a debugger.
+ */
 static void nmiISR(void)
 {
-    //
-    // Enter an infinite loop.
-    //
+    /* Enter an infinite loop. */
     while (1) {}
 }
 
-//*****************************************************************************
-//
-//! This is the code that gets called when the processor receives a fault
-//! interrupt. This simply enters an infinite loop, preserving the system state
-//! for examination by a debugger.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor receives a fault
+ * interrupt. This simply enters an infinite loop, preserving the system state
+ * for examination by a debugger.
+ */
 static void faultISR(void)
 {
-    //
-    // Enter an infinite loop.
-    //
+    /* Enter an infinite loop. */
     while (1) {}
 }
 
-//*****************************************************************************
-//
-//! This is the code that gets called when the processor receives an unexpected
-//! interrupt. This simply enters an infinite loop, preserving the system state
-//! for examination by a debugger.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor receives an unexpected
+ * interrupt. This simply enters an infinite loop, preserving the system state
+ * for examination by a debugger.
+ */
 static void intDefaultHandler(void)
 {
-    //
-    // Enter an infinite loop.
-    //
+    /* Enter an infinite loop. */
     while (1) {}
 }

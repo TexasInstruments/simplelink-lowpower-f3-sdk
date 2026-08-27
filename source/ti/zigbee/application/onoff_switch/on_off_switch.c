@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -235,6 +235,12 @@ static zb_bool_t finding_binding_cb(zb_int16_t status,
   return ZB_TRUE;
 }
 
+//! IMPORTANT!
+//! The return value of this function is used to determine
+//! whether the command was processed by this handler or not.
+//! If the command was processed, the function must return ZB_TRUE,
+//! otherwise ZB_FALSE. If processed here, the command will not be
+//! processed by the stack.
 zb_uint8_t zcl_specific_cluster_cmd_handler(zb_uint8_t param)
 {
   zb_zcl_parsed_hdr_t *cmd_info = ZB_BUF_GET_PARAM(param, zb_zcl_parsed_hdr_t);
@@ -354,7 +360,6 @@ void zboss_signal_handler(zb_uint8_t param)
   zb_zdo_app_signal_hdr_t *sg_p = NULL;
   zb_zdo_app_signal_type_t sig = zb_get_app_signal(param, &sg_p);
   zb_bufid_t buf;
-  zb_bufid_t req_buf = 0;
   zb_zdo_mgmt_permit_joining_req_param_t *req_param;
 
   if (ZB_GET_APP_SIGNAL_STATUS(param) == 0)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,7 @@ let mcubootApplication = {
                 displayName : "Enable Image Compression",
                 description : "Enable MCUboot to decompress image from secondary slot",
                 default     : false,
-                hidden      : (deviceGroup == "DeviceGroup_CC23X0") ? false : true,
+                hidden      : (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20") ? false : true,
                 onChange    : changeImageCompression
             },
             {
@@ -181,7 +181,7 @@ let mcubootApplication = {
 
 function changeImageCompression(inst, ui)
 {
-    if (deviceGroup == "DeviceGroup_CC23X0")
+    if (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20")
     {
         if (inst.imageCompression)
         {

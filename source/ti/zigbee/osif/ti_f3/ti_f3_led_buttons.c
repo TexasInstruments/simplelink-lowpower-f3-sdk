@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -57,9 +57,6 @@
 #define CPU_convertMsToDelayCycles(milliseconds) \
     (((uint32_t)(milliseconds)) * (48000 / 3))
 
-static zb_uint8_t buttonsInit = ZB_FALSE;
-static zb_uint8_t ledsInit = ZB_FALSE;
-static zb_uint8_t s_btn_max_num = 0;
 static zb_bool_t s_btn_debounce = ZB_FALSE;
 extern SemaphoreP_Handle wakeSem;
 
@@ -117,12 +114,6 @@ static void ti_f3_buttons_enable_irq(void)
   GPIO_enableInt(CONFIG_GPIO_BTN2);
 }
 
-static void ti_f3_buttons_disable_irq(void)
-{
-  GPIO_disableInt(CONFIG_GPIO_BTN1);
-  GPIO_disableInt(CONFIG_GPIO_BTN2);
-}
-
 void ti_f3_buttons_init(void)
 {
 #if defined ZB_ZGPD_ROLE
@@ -140,6 +131,9 @@ void ti_f3_buttons_init(void)
 }
 
 #if defined ZB_COORDINATOR_ROLE || defined ZB_ROUTER_ROLE ||  defined ZB_ED_ROLE || !defined ZB_ZGPD_ROLE
+static zb_uint8_t buttonsInit = ZB_FALSE;
+static zb_uint8_t ledsInit = ZB_FALSE;
+
 void ti_f3_leds_init(void)
 {
   /* Configure the LED pin and turn it off */
@@ -249,6 +243,15 @@ zb_bool_t zb_setup_buttons_cb(zb_callback_t cb)
 
 #ifdef ZB_ZGPD_ROLE
 #include <zb_nvm.h>
+
+static zb_uint8_t s_btn_max_num = 0;
+
+static void ti_f3_buttons_disable_irq(void)
+{
+  GPIO_disableInt(CONFIG_GPIO_BTN1);
+  GPIO_disableInt(CONFIG_GPIO_BTN2);
+}
+
 zb_uint32_t gboss_test_get_button_mask(void)
 {
   zb_uint32_t ret_state = 0;

@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -231,6 +231,7 @@ extern void mac_ti23xx_src_match_short_set_pending_bit(zb_uint16_t short_addr, z
 extern zb_bool_t mac_ti23xx_buffer_available(uint8_t ref_new);
 extern void mac_ti23xx_enable_rx(void);
 extern void mac_ti23xx_24_get_tx_power_ptr(zb_int8_t *tx_power_dbm);
+extern zb_bool_t mac_ti23xx_get_rx_on_off(void);
 extern void update_rx_panconfig(zb_uint16_t pan_id);
 extern zb_int8_t mac_ti23xx_get_sync_rssi(void);
 extern void mac_ti23xx_set_cca_rssi_threshold(zb_int8_t new_rssi_threshold);

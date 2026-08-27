@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,43 +41,27 @@
 
 #include <FreeRTOSConfig.h>
 
-//*****************************************************************************
-//
-// The entry point for the application startup code.
-//
-//*****************************************************************************
+/* The entry point for the application startup code. */
 extern void _c_int00(void);
 void resetISR(void);
 
-//*****************************************************************************
-//
-// Linker variables that marks the top and bottom of the stack.
-//
-//*****************************************************************************
-extern unsigned long __STACK_END;
+/* Linker variables that mark the top and bottom of the stack. */
 extern void *__stack;
+extern unsigned long __STACK_END;
 
-//*****************************************************************************
-//
-// Reset vectors defined and populated in SysConfig.
-//
-//*****************************************************************************
+/* Reset vectors defined and populated in SysConfig. */
 extern void (*const resetVectors[])(void);
 
-//*****************************************************************************
-//
-// This function is called at reset entry early in the boot sequence.
-//
-//*****************************************************************************
+/* This function is called at reset entry early in the boot sequence. */
 void localProgramStart(void)
 {
     unsigned long *vtor = (unsigned long *)0xE000ED08;
     uint32_t newBasePri;
 
-    /* do final trim of device */
+    /* Do final trim of device. */
     SetupTrimDevice();
 
-    /* disable interrupts */
+    /* Disable interrupts. */
     __asm volatile(" mov %0, %1 \n"
                    " msr basepri, %0 \n"
                    " isb \n"
@@ -87,7 +71,7 @@ void localProgramStart(void)
                    : "memory");
 
 #if configENABLE_ISR_STACK_INIT
-    /* Initialize ISR stack to known value for Runtime Object View */
+    /* Initialize ISR stack to known value for Runtime Object View. */
     register uint32_t *top = (uint32_t *)&__stack;
     register uint32_t *end = (uint32_t *)&newBasePri;
     while (top < end)
@@ -96,28 +80,23 @@ void localProgramStart(void)
     }
 #endif
 
-    /*
-     * set vector table base to point to above vectors in Flash; during
-     * driverlib interrupt initialization this table will be copied to RAM
+    /* Set vector table base to point to above vectors in Flash; during
+     * driverlib interrupt initialization this table will be copied to RAM.
      */
     *vtor = (unsigned long)&resetVectors[0];
 
-    /* jump to the C initialization routine. */
+    /* Jump to the C initialization routine. */
     __asm(" .global _c_int00\n"
           " b.w     _c_int00");
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor first starts execution
-// following a reset event.  Only the absolutely necessary steps are performed,
-// after which the application supplied entry routine is called.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor first starts execution
+ * following a reset event.  Only the absolutely necessary steps are performed,
+ * after which the application supplied entry routine is called.
+ */
 void resetISR(void)
 {
-    /*
-     * Set stack pointer based on the stack value stored in the vector table.
+    /* Set stack pointer based on the stack value stored in the vector table.
      * This is necessary to ensure that the application is using the correct
      * stack when using a debugger since a reset within the debugger will
      * load the stack pointer from the bootloader's vector table at address '0'.

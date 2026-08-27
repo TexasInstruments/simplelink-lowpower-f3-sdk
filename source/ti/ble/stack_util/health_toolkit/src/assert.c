@@ -158,7 +158,7 @@ void halAssertInit( assertCback_t initAssertCback, uint8 initLegacyMode )
  */
 void halAssertHandler( void )
 {
-  Log_printf(LogModule_BleCtrl, Log_ERROR, "HAL Assert Handler called. SystemStatus: 0x%08X", BleSysStat_getllSysStat());
+  Log_printf(BLE_GENERAL, Log_ERROR, "HAL Assert Handler called. SystemStatus: 0x%08X", BleSysStat_getllSysStat());
 #if defined( HAL_ASSERT_RESET )
   Power_reset();
 #elif defined( HAL_ASSERT_SPIN )

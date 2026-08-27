@@ -120,6 +120,10 @@ function validate(inst, validation)
     }
     // Validate connection interval
     Common.validateConnInterval(inst,validation,inst.reqMinConnInt,"reqMinConnInt",inst.reqMaxConnInt,"reqMaxConnInt");
+    if(inst.paramUpdateDelay < 0 || inst.paramUpdateDelay > (Math.pow(2,32) - 1))
+    {
+        validation.logError("Parameter Update Delay range is 0 to sizeof(uint32)", inst, "paramUpdateDelay");
+    }
 }
 
 /*

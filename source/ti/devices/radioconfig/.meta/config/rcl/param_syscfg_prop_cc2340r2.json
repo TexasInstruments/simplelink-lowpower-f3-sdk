@@ -22,7 +22,8 @@
           "displayName": "Bare-Metal ACK 2 Mbps, 500 kHz dev, GFSK"
         }
       ],
-      "default": "bmack"
+      "default": "bmack",
+      "hidden": true
     },
     {
       "name": "parent",
@@ -54,21 +55,22 @@
       "hidden": true,
       "options": [
         {
-          "name": "1_mbps",
-          "displayName": "1 Mbps"
-        },
-        {
           "name": "2_mbps",
           "displayName": "2 Mbps"
+        },
+        {
+          "name": "1_mbps",
+          "displayName": "1 Mbps"
         }
       ],
-      "default": "1_mbps"
+      "default": "2_mbps"
     },
     {
       "name": "frequency",
       "displayName": "Frequency (MHz)",
       "description": "Frequency.",
       "default": 2440,
+      "hidden": true,
       "displayFormat": {
         "radix": "dec",
         "fixedPoint": 4
@@ -78,13 +80,15 @@
       "name": "txPower",
       "displayName": "TX Power (dBm)",
       "description": "TX Power",
-      "default": "5"
+      "default": "5",
+      "hidden": true
     },
     {
       "name": "syncWord",
       "displayName": "Sync Word",
       "description": "Complete Sync Word. Number of bits that is checked is determined by the Sync word length field.\\n The bit order is determined by formatConf.bMsbFirst.",
       "default": 0,
+      "hidden": true,
       "displayFormat": {
         "radix": "hex",
         "bitSize": 32
@@ -95,6 +99,7 @@
       "displayName": "Whitening",
       "description": "Whitening",
       "default": "Disabled",
+      "hidden": true,
       "options": [
         {
           "name": "Disabled",
@@ -111,6 +116,7 @@
       "displayName": "Packet Length Config",
       "description": "Packet Length Configuration",
       "default": "Variable, 8-bit length field",
+      "hidden": true,
       "options": [
         {
           "name": "Fixed",

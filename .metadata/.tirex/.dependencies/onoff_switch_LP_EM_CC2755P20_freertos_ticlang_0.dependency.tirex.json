@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../../on_off_switch.c -> on_off_switch.c",
+            "+../../on_off_switch.syscfg -> on_off_switch.syscfg",
+            "+../../README.md -> README.md",
+            "+../../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+../../dmm/rcl_stub_dmm.c -> dmm/rcl_stub_dmm.c",
+            "+lpf3_zigbee_freertos.cmd -> lpf3_zigbee_freertos.cmd"
+        ]
+    }
+]

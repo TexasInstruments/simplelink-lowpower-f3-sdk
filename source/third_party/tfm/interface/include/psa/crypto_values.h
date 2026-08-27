@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -332,6 +333,37 @@
  * written by an incompatible version of the library.
  */
 #define PSA_ERROR_DATA_INVALID          ((psa_status_t)-153)
+
+/* TI-TFM: Added PSA_ERROR_KEY_IN_USE, PSA_ERROR_HUK_NOT_PROVISIONED, and PSA_ERROR_ASSET_STORE_FULL */
+/** The specified key ID references a key that is already in use.
+ *
+ * This error indicates that the requested key has a lock on it, and
+ * needs to complete the operation it is currently being used in before
+ * its key entry in the cache can be modified or accessed.
+ *
+ * Callers are responsible for unlocking key entries in the cache that
+ * they retrieve and lock.
+*/
+#define PSA_ERROR_KEY_IN_USE            ((psa_status_t)-154)
+
+/** The operation required use of the HUK (root key) from OTP, and could not find it.
+ *
+ * This error indicates that the HUK has not yet been provisioned by the
+ * application. The application should submit the 'Provision Random HUK'
+ * token to fix this.
+ *
+ * The key management implementation returns this when failing to retrieve the HUK
+ * in order to derive the Key Blob KEK.
+ */
+#define PSA_ERROR_HUK_NOT_PROVISIONED   ((psa_status_t)-155)
+
+/** The operation attempted to create an asset, and the Asset Store did not have space.
+ *
+ * This error indicates that the HSM Asset Store is too full for the creation of a new asset
+ * with the requested size. To fix this, the application should remove assets from asset store
+ * using psa_destroy_key().
+ */
+#define PSA_ERROR_ASSET_STORE_FULL      ((psa_status_t)-158)
 
 /** The function that returns this status is defined as interruptible and
  *  still has work to do, thus the user should call the function again with the
@@ -1924,6 +1956,60 @@
      ((alg) & ~PSA_ALG_HASH_MASK) == PSA_ALG_HKDF_EXTRACT_BASE ||  \
      ((alg) & ~PSA_ALG_HASH_MASK) == PSA_ALG_HKDF_EXPAND_BASE)
 
+/* TI-TFM: Added PSA_ALG_SP800_108 defines */
+#define PSA_ALG_SP800_108_COUNTER_MAC_BASE      ((psa_algorithm_t)0x08000700)
+
+/** Macro to build a NIST SP 800-108 conformant, counter-mode KDF algorithm based on CMAC.
+ *
+ * This is a CMAC-based, counter mode key derivation function, using the construction recommended by
+ * Section 4.1 of NIST Special Publication 800-108r1: Recommendation for Key Derivation Using Pseudorandom
+ * Functions.
+ *
+ *
+ * This key derivation algorithm uses the following inputs, which must be
+ * passed in the order given here:
+ * - #PSA_KEY_DERIVATION_INPUT_SECRET is the secret input keying material. This
+ *   must be a block-cipher key that is compatible with the CMAC algorithm,
+ *   and must be input using psa_key_derivation_input_key(). See also PSA_ALG_CMAC.
+ * - #PSA_KEY_DERIVATION_INPUT_LABEL is the label. It is optional; if omitted, it
+ *   is a zero-length string. If provided, it must not contain any null bytes.
+ * - #PSA_KEY_DERIVATION_INPUT_CONTEXT is the context. It is optional; if omitted,
+ *   context is a zero-length string.
+ *
+ * \note This algorithm should be used even when deriving the TKDK from the HUK, even
+ * though this derivation technically uses CMAC in feedback mode.
+*/
+#define PSA_ALG_SP800_108_COUNTER_CMAC                                  \
+    (PSA_ALG_SP800_108_COUNTER_MAC_BASE | (0x01))
+
+/** Macro to build a NIST SP 800-108 conformant, counter-mode KDF algorithm based on HMAC.
+ *
+ * This is an HMAC-based, counter mode key derivation function, using the construction recommended by
+ * Section 4.1 of NIST Special Publication 800-108r1: Recommendation for Key Derivation Using Pseudorandom
+ * Functions.
+ *
+ * This key derivation algorithm uses the following inputs, which must be
+ * passed in the order given here:
+ * - #PSA_KEY_DERIVATION_INPUT_SECRET is the secret input keying material.
+ * - #PSA_KEY_DERIVATION_INPUT_LABEL is the label. It is optional; if omitted, it
+ *   is a zero-length string. If provided, it must not contain any null bytes.
+ * - #PSA_KEY_DERIVATION_INPUT_CONTEXT is the context. It is optional; if omitted,
+ *   context is a zero-length string.
+*/
+#define PSA_ALG_SP800_108_COUNTER_HMAC(hash_alg)                                  \
+    (PSA_ALG_SP800_108_COUNTER_MAC_BASE | ((hash_alg) & PSA_ALG_HASH_MASK))
+
+/** Whether the specified algorithm is a NIST SP 800-108 conformant, counter-mode KDF algorithm.
+ *
+ * \param alg An algorithm identifier (value of type #psa_algorithm_t).
+ *
+ * \return 1 if \c alg is the specified algorithm, 0 otherwise.
+ *         This macro may return either 0 or 1 if \c alg is not a supported
+ *         key derivation algorithm identifier.
+ */
+#define PSA_ALG_IS_SP800_108_COUNTER_MAC(alg)                                    \
+    (((alg) & ~PSA_ALG_HASH_MASK) == PSA_ALG_SP800_108_COUNTER_MAC_BASE)
+
 #define PSA_ALG_TLS12_PRF_BASE                  ((psa_algorithm_t) 0x08000200)
 /** Macro to build a TLS-1.2 PRF algorithm.
  *
@@ -2311,6 +2397,17 @@
  */
 #define PSA_KEY_PERSISTENCE_DEFAULT             ((psa_key_persistence_t) 0x01)
 
+/* TI-TFM: Added HSM Asset Store Persistence */
+/** The persistence level for HSM Asset Store.
+ *
+ * This persistence level is available on systems that have one or more secure
+ * elements that are able to store keys.
+ *
+ * See ::psa_key_persistence_t for more information.
+ * 128 - 254 Persistent key with a vendor-specified lifetime.
+ */
+#define PSA_KEY_PERSISTENCE_HSM_ASSET_STORE     ((psa_key_persistence_t) 0x80)
+
 /** A persistence level indicating that a key is never destroyed.
  *
  * See ::psa_key_persistence_t for more information.
@@ -2385,6 +2482,19 @@
  */
 #define PSA_KEY_LOCATION_LOCAL_STORAGE          ((psa_key_location_t) 0x000000)
 
+/* TI-TFM: Added HSM Asset Store Location */
+/** The default secure element storage area.
+ *
+ * This storage location is available on systems that have one or more secure
+ * elements that are able to store keys.
+ *
+ * Vendor-defined locations must be provided by the system for
+ * storing keys in additional secure elements.
+ *
+ * See ::psa_key_location_t for more information.
+ */
+#define PSA_KEY_LOCATION_HSM_ASSET_STORE        ((psa_key_location_t) 0x000001)
+
 #define PSA_KEY_LOCATION_VENDOR_FLAG            ((psa_key_location_t) 0x800000)
 
 /* Note that key identifier values are embedded in the
@@ -2410,6 +2520,17 @@
  */
 #define PSA_KEY_ID_VENDOR_MAX                   ((psa_key_id_t) 0x7fffffff)
 
+/* TI-TFM: Added PSA_KEY_ID for HUK, TKDK, and IAK */
+/** Key identifier for HSM Hardware Unique Key (HUK)
+ */
+#define PSA_KEY_ID_HSM_HUK                      ((psa_key_id_t)(PSA_KEY_ID_USER_MAX))
+/** Key identifier for HSM Trusted Key Derivation Key (TKDK)
+ */
+#define PSA_KEY_ID_HSM_TKDK                     ((psa_key_id_t)(PSA_KEY_ID_USER_MAX - 1))
+/** Key identifier for Initial Attestation Key (IAK)
+ *  - Value of TFM_BUILTIN_KEY_ID_HUK should reference PSA_KEY_ID_HSM_IAK
+ */
+#define PSA_KEY_ID_IAK                          ((psa_key_id_t) 0x7fff815d)
 
 #if !defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
 
@@ -2718,6 +2839,14 @@ static inline int mbedtls_svc_key_id_is_null(mbedtls_svc_key_id_t key)
  * This must be a direct input, passed to psa_key_derivation_input_integer().
  */
 #define PSA_KEY_DERIVATION_INPUT_COST       ((psa_key_derivation_step_t) 0x0205)
+
+/* TI-TFM: Added PSA_KEY_DERIVATION_INPUT_CONTEXT */
+/** A context for key derivation.
+ *
+ * This is typically a direct input. It is currently unsupported to use it as a key
+ * of type PSA_KEY_TYPE_RAW_DATA.
+*/
+#define PSA_KEY_DERIVATION_INPUT_CONTEXT    ((psa_key_derivation_step_t) 0x0206)
 
 /**@}*/
 

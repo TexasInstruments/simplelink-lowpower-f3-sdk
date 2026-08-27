@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,6 +79,6 @@ function extend(base)
  *  Export device-specific extensions to base exports
  */
 exports = {
-    /* required function, called by base TRNG module */
+    /* required function, called by base AESGCM module */
     extend: extend
 };

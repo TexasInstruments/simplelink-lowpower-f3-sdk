@@ -49,11 +49,6 @@ const ConfigPathRclCommon = Common.ConfigPathRclCommon;
 const isRFD = Common.isPlatformRFD();
 const isRCL = !isRFD;
 
-let CmdScripts = null;
-if (isRCL) {
-    CmdScripts = system.getScript(ConfigPathRclCommon + `rfcmd_scripts.json`);
-}
-
 // Other dependencies
 const DeviceInfo = Common.getScript("device_info.js");
 // eslint-disable-next-line no-unused-vars
@@ -140,9 +135,6 @@ function create(phyDef, phyGroup, phyName) {
     createCommandBuffer();
     initDefaultValues();
 
-    // Add Javascript snippets to RF commands
-    addRfCmdScripts();
-
     /**
      *  ======== getRclRfCommands  ========
      *  Create list of RF commands in the current PHY.
@@ -225,35 +217,6 @@ function create(phyDef, phyGroup, phyName) {
             }
         }
         return paramMap;
-    }
-
-    /**
-     *  ======== addRfCmdScripts  ========
-     *  Add RF command scripts to commands that are not part of a PHY definition.
-     *
-     *  RCL only
-     */
-    function addRfCmdScripts() {
-        if (CmdScripts === null) {
-            // Only RCL so far
-            return;
-        }
-        const key = PhyName === "ble_gen" ? "ble" : PhyName;
-        const scripts = CmdScripts[key];
-
-        // Iterate command buffer
-        for (const [name, cmd] of Object.entries(CmdBuf)) {
-            // Add scripts if applicable
-            if (scripts !== undefined && name in scripts) {
-                // Iterate fields in rF command
-                const cmdScript = scripts[name];
-                for (const field of cmd) {
-                    if (field.name !== undefined && field.name in cmdScript) {
-                        field.script = cmdScript[field.name];
-                    }
-                }
-            }
-        }
     }
 
     /**

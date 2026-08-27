@@ -128,9 +128,8 @@ static void CANCC27XX_writeRegDma(uint32_t addr, uint32_t value)
     uint32_t dmaDoneMask;
     uint32_t primask;
 
-    /* Acquire HSM semaphore to prevent AHB bus master transactions. There is no
-     * protection against I2S bus master so I2S cannot be used at the same
-     * time as CAN.
+    /* Due to errata SYS_211, acquire lock to arbitrate access to the HSM, CAN,
+     * and APU.
      */
     CommonResourceXXF3_acquireLock(SemaphoreP_WAIT_FOREVER);
 
@@ -151,7 +150,10 @@ static void CANCC27XX_writeRegDma(uint32_t addr, uint32_t value)
     CANCC27XX_regWriteDmaTableEntry->control = (UDMA_SIZE_32 | UDMA_SRC_INC_NONE | UDMA_DST_INC_NONE | UDMA_ARB_1 |
                                                 UDMA_MODE_AUTO);
 
-    /* Set DMA channel to high priority to minimize the critical section duration */
+    /* Set DMA channel to high priority to minimize the critical section duration.
+     * It is assumed no other drivers in the system are using this DMA channel and
+     * thus we do not need to save and restore the previous priority.
+     */
     uDMASetChannelPriority(CANCC27XX_WRITE_REG_UDMA_CHANNEL_MASK);
 
     /* Configure the DMA transfer source and destination end addresses. The end
@@ -166,12 +168,16 @@ static void CANCC27XX_writeRegDma(uint32_t addr, uint32_t value)
      */
     dmaDoneMask                      = HWREG(DMA_BASE + DMA_O_DONEMASK);
     HWREG(DMA_BASE + DMA_O_DONEMASK) = CANCC27XX_WRITE_REG_UDMA_CHANNEL_MASK;
-    /* Clear potentially pending interrupt from this channel. */
+
+    /* Clear potential DMA channel request done for the channel being used */
     uDMAClearInt(CANCC27XX_WRITE_REG_UDMA_CHANNEL_MASK);
-    /* Read any DMA register to ensure the write above has taken
-     * effect, before clearing the interrupt.
+
+    /* Read any DMA register to ensure the DMA channel request done clear above
+     * has completed before clearing the DMA interrupt.
      */
     HWREG(DMA_BASE + DMA_O_DONEMASK);
+
+    /* Clear potential pending DMA interrupt */
     HwiP_clearInterrupt(INT_DMA_DONE_COMB);
 
     /* Enable the DMA channel; it will be disabled automatically by the uDMA
@@ -201,14 +207,16 @@ static void CANCC27XX_writeRegDma(uint32_t addr, uint32_t value)
 
     /* Clear the DMA channel request done */
     uDMAClearInt(CANCC27XX_WRITE_REG_UDMA_CHANNEL_MASK);
-    /* Read any DMA register to ensure the write above has taken
-     * effect, before clearing the interrupt.
+
+    /* Read any DMA register to ensure the DMA channel request done clear above
+     * has completed before clearing the DMA interrupt.
      */
     HWREG(DMA_BASE + DMA_O_DONEMASK);
 
     /* Clear the pending DMA interrupt */
-    IntClearPend(INT_DMA_DONE_COMB);
-    /* Read the pending status to ensure the write above has taken
+    HwiP_clearInterrupt(INT_DMA_DONE_COMB);
+
+    /* Read the pending interrupt status to ensure the write above has taken
      * effect before re-enabling interrupts.
      */
     (void)IntGetPend(INT_DMA_DONE_COMB);
@@ -410,7 +418,7 @@ int_fast16_t CANCC27XXXX_init(const CAN_Config *config)
     int_fast16_t status = CAN_STATUS_SUCCESS;
     TaskP_Params taskParams;
 
-    /* Initialize CommonResource access semaphore, needed due to errata SYS_211. */
+    /* Initialize CommonResource access semaphore, needed due to errata SYS_211 */
     CommonResourceXXF3_constructRTOSObjects();
 
     /* Create binary semaphore for IRQ handling */
@@ -469,6 +477,9 @@ void CANCC27XXXX_close(CAN_Handle handle)
 
     /* Destroy the IRQ handling semaphore */
     SemaphoreP_destruct(&CANCC27XX_irqSemaphore);
+
+    /* Destroy the write semaphore */
+    SemaphoreP_destruct(&CANCC27XX_writeSemaphore);
 
     /* Release the DMA power dependency */
     Power_releaseDependency(PowerLPF3_PERIPH_DMA);

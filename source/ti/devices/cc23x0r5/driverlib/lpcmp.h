@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the LPCMP peripheral.
  *
- *  Copyright (c) 2022-2024, Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@
  *
  ******************************************************************************/
 
-#ifndef __LPCMP_H__
-#define __LPCMP_H__
+#ifndef ti_devices_lpcmp__include
+#define ti_devices_lpcmp__include
 
 //*****************************************************************************
 //
@@ -380,4 +380,4 @@ __STATIC_INLINE void LPCMPSetDividerPath(uint32_t path)
 //
 //*****************************************************************************
 
-#endif // __LPCMP_H__
+#endif // ti_devices_lpcmp__include

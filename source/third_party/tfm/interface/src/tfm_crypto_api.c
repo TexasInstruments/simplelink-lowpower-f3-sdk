@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -9,6 +10,29 @@
 #include "psa/crypto.h"
 #include "psa/client.h"
 #include "psa_manifest/sid.h"
+
+/* TI-TFM: Use TI's PSA Crypto service stateless handle if the default TFM
+ * crypto service handle is not defined.
+ */
+#ifndef TFM_CRYPTO_HANDLE
+#define TFM_CRYPTO_HANDLE TI_CRYPTO_SERVICE_HANDLE
+#endif
+
+/* TI-TFM: Use custom dispatch function for psa_call() to support PSA Crypto
+ * when built into the Non-Secure driver library.
+ */
+#ifdef TI_PSA_CRYPTO_NS_CLIENT
+
+#define psa_call CryptoTFM_ns_dispatch
+
+extern psa_status_t CryptoTFM_ns_dispatch(psa_handle_t handle,
+                                          int32_t type,
+                                          psa_invec *invecs,
+                                          size_t numInvecs,
+                                          psa_outvec *outvecs,
+                                          size_t numOutvecs);
+
+#endif /* TI_PSA_CRYPTO_NS_CLIENT */
 
 #define API_DISPATCH(in_vec, out_vec)          \
     psa_call(TFM_CRYPTO_HANDLE, PSA_IPC_CALL,  \
@@ -52,6 +76,8 @@
 #define TFM_CRYPTO_API(ret, fun) ret fun
 #endif /* CONFIG_TFM_CRYPTO_API_RENAME */
 
+/* TI-TFM: psa_crypto_init API is directly defined by ti_psa layer on S-side. */
+#ifdef TI_PSA_CRYPTO_NS_CLIENT
 TFM_CRYPTO_API(psa_status_t, psa_crypto_init)(void)
 {
     /* Service init is performed during TFM boot up,
@@ -59,6 +85,7 @@ TFM_CRYPTO_API(psa_status_t, psa_crypto_init)(void)
      */
     return PSA_SUCCESS;
 }
+#endif /* TI_PSA_CRYPTO_NS_CLIENT */
 
 TFM_CRYPTO_API(psa_status_t, psa_open_key)(psa_key_id_t id,
                                            psa_key_id_t *key)

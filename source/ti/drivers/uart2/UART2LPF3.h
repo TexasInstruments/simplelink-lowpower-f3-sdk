@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025, Texas Instruments Incorporated
+ * Copyright (c) 2021-2025 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -157,7 +157,7 @@ typedef struct
     int32_t rxPinMux;                                   /*!< RX PIN mux value */
     int32_t ctsPinMux;                                  /*!< CTS PIN mux value for flow control */
     int32_t rtsPinMux;                                  /*!< RTS PIN mux value for flow control */
-    PowerLPF3_Resource powerID;                         /*!< Power driver ID for this UART instance */
+    Power_Resource powerID;                             /*!< Power driver ID for this UART instance */
     UART2LPF3_CodingScheme codingScheme;                /*!< UART TXD/RXD encoding/decoding scheme */
     uint8_t irLPClkDivider;                             /*!< Clock divider for IR Low-Power mode */
     uint8_t txChannelEvtMux;        /*!< DMA trigger ID for this UART TX channel, as defined in driverlib/evtsvt.h */

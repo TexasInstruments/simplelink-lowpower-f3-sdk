@@ -174,8 +174,8 @@ boot_slots_compatible(struct boot_loader_state *state)
     size_t num_sectors_primary;
     size_t num_sectors_secondary;
     size_t sz0, sz1;
-    size_t primary_slot_sz, secondary_slot_sz;
 #ifndef MCUBOOT_OVERWRITE_ONLY
+    size_t primary_slot_sz, secondary_slot_sz;
     size_t scratch_sz;
 #endif
     size_t i, j;
@@ -200,8 +200,12 @@ boot_slots_compatible(struct boot_loader_state *state)
      * number of a slot's sectors are able to fit into another, which only
      * excludes cases where sector sizes are not a multiple of each other.
      */
-    i = sz0 = primary_slot_sz = 0;
-    j = sz1 = secondary_slot_sz = 0;
+    i = sz0 = 0;
+    j = sz1 = 0;
+#ifndef MCUBOOT_OVERWRITE_ONLY
+    primary_slot_sz = 0;
+    secondary_slot_sz = 0;
+#endif
     smaller = 0;
     while (i < num_sectors_primary || j < num_sectors_secondary) {
         if (sz0 == sz1) {
@@ -261,7 +265,7 @@ boot_slots_compatible(struct boot_loader_state *state)
  * The primary and secondary slot sizes can be different when compression
  * is enabled.
  */
-#ifndef MCUBOOT_DECOMPRESS_IMAGES
+#if !defined(MCUBOOT_DECOMPRESS_IMAGES) && !defined(MCUBOOT_OVERWRITE_ONLY)
     if ((i != num_sectors_primary) ||
         (j != num_sectors_secondary) ||
         (primary_slot_sz != secondary_slot_sz)) {
@@ -568,7 +572,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
 
     if (bs->state == BOOT_STATUS_STATE_0) {
         BOOT_LOG_DBG("erasing scratch area");
-        rc = boot_erase_region(fap_scratch, 0, fap_scratch->fa_size);
+        rc = boot_erase_region(fap_scratch, 0, flash_area_get_size(fap_scratch));
         assert(rc == 0);
 
         if (bs->idx == BOOT_STATUS_IDX_0) {
@@ -592,7 +596,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
 
                 /* Erase the temporary trailer from the scratch area. */
                 rc = boot_erase_region(fap_scratch, 0,
-                        fap_scratch->fa_size);
+                        flash_area_get_size(fap_scratch));
                 assert(rc == 0);
             }
         }
@@ -689,7 +693,7 @@ boot_swap_sectors(int idx, uint32_t sz, struct boot_loader_state *state,
         BOOT_STATUS_ASSERT(rc == 0);
 
         if (erase_scratch) {
-            rc = boot_erase_region(fap_scratch, 0, fap_scratch->fa_size);
+            rc = boot_erase_region(fap_scratch, 0, flash_area_get_size(fap_scratch));
             assert(rc == 0);
         }
     }
@@ -854,7 +858,7 @@ int app_max_size(struct boot_loader_state *state)
     fa_id = flash_area_id_from_multi_image_slot(BOOT_CURR_IMG(state), active_slot);
     rc = flash_area_open(fa_id, &fap);
     assert(rc == 0);
-    primary_sz = fap->fa_size;
+    primary_sz = flash_area_get_size(fap);
     flash_area_close(fap);
 
     if (active_slot == BOOT_PRIMARY_SLOT) {
@@ -866,7 +870,7 @@ int app_max_size(struct boot_loader_state *state)
     fa_id = flash_area_id_from_multi_image_slot(BOOT_CURR_IMG(state), active_slot);
     rc = flash_area_open(fa_id, &fap);
     assert(rc == 0);
-    secondary_sz = fap->fa_size;
+    secondary_sz = flash_area_get_size(fap);
     flash_area_close(fap);
 
     return (secondary_sz < primary_sz ? secondary_sz : primary_sz);

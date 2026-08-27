@@ -87,9 +87,9 @@
 #error "One or more dependencies are missing! Please add them."
 #endif
 
-void OPT_llProcessCentralConnectionCreated(void)
+void OPT_llProcessCentralConnectionCreated(uint8_t advHandle)
 {
-    llProcessCentralConnectionCreated();
+    llProcessCentralConnectionCreated(advHandle);
 }
 
 void OPT_llProcessCentralControlPacket(llConnState_t* connPtr, uint8_t* pPkt)
@@ -150,16 +150,6 @@ void OPT_llPostSetupCtrlPktCent(llConnState_t* connPtr, uint8_t ctrlPkt)
 hciStatus_t OPT_hciCmdParserInitiator(uint8_t* pData, uint16_t cmdOpCode)
 {
     return hciCmdParserInitiator(pData, cmdOpCode);
-}
-
-llStatus_t OPT_HCI_TL_create_conn(uint16_t opcode, uint8_t* pHciParams)
-{
-    return HCI_TL_create_conn(opcode, pHciParams);
-}
-
-llStatus_t OPT_HCI_TL_ext_create_conn(uint16_t opcode, uint8_t* pHciParams)
-{
-    return HCI_TL_ext_create_conn(opcode, pHciParams);
 }
 
 hciStatus_t OPT_hciCmdParserExtVendorSpecificInitiator(uint8_t* pData, uint16_t cmdOpCode)
@@ -250,6 +240,11 @@ void OPT_LL_InitiatorReadSupportedStates(uint8_t* states)
 uint8_t OPT_LL_PRIV_ValidatePeerAddress(uint8_t* peerAddr, uint8_t peerAddrType, uint8_t peerRLIndex)
 {
     return LL_PRIV_ValidatePeerAddress(peerAddr, peerAddrType, peerRLIndex);
+}
+
+hciStatus_t OPT_hciCmdParserLegacyInitiator(uint8_t* pData, uint16_t cmdOpCode)
+{
+    return hciCmdParserLegacyInitiator(pData, cmdOpCode);
 }
 
 #endif /* defined(CTRL_INITIATOR_CFG) */

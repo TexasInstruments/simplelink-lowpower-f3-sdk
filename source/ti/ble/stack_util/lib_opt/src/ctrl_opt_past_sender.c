@@ -132,9 +132,4 @@ uint8_t OPT_LL_PAST_S_ProcessCtrlPacketProcedure(llConnState_t * connPtr, uint8_
     return LL_PAST_S_ProcessCtrlPacketProcedure(connPtr, ctrlPktType);
 }
 
-void OPT_LL_PAST_S_SetLastRxPacketLen(llConnState_t * connPtr, uint8_t lastRXPktLength)
-{
-    LL_PAST_S_SetLastRxPacketLen(connPtr, lastRXPktLength);
-}
-
 #endif /* defined(USE_PAST_SENDER) */

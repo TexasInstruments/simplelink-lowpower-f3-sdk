@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2017-2025, Texas Instruments Incorporated
+ Copyright (c) 2017-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -317,58 +317,42 @@ extern uint32_t _sign_fnPtr; //!< Variable for Pointer to BIM Function
 
 /** @} End OAD_WIRELESS_TECH */
 
-#if defined(DeviceFamily_CC26X2) || defined(DeviceFamily_CC26X2_V2) || defined(DeviceFamily_CC26X2X7) || \
-    defined(DeviceFamily_CC26X1)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'C', 'C', '2', '6', 'x', '2', 'R', '1' \
-        }
-#elif defined(DeviceFamily_CC13X2) || defined(DeviceFamily_CC13X2X7) || defined(DeviceFamily_CC13X1) || \
-    defined(DeviceFamily_CC13X2_V1) || defined(DeviceFamily_CC13X2_V2)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'C', 'C', '1', '3', 'x', '2', 'R', '1' \
-        }
-#elif defined(DeviceFamily_CC13X4)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'C', 'C', '1', '3', 'x', '4', ' ', ' ' \
-        }
-#elif defined(DeviceFamily_CC26X3)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'C', 'C', '2', '6', 'x', '3', ' ', ' ' \
-        }
-#elif defined(DeviceFamily_CC26X4)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'C', 'C', '2', '6', 'x', '4', ' ', ' ' \
-        }
-#elif defined(DeviceFamily_CC26X0R2)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'O', 'A', 'D', ' ', 'I', 'M', 'G', ' ' \
-        }
-#elif defined(DeviceFamily_CC23X0R2)
-    #define OAD_IMG_ID_VAL                         \
-        {                                          \
-            'C', 'C', '2', '3', 'x', '0', 'R', '2' \
-        }
-#elif defined(DOXYGEN)
-    /*!
-     * Magic number to identify OAD image header. It is recommended that the
-     * customer adjust these to uniquely identify their device
-     *
-     * This define will be filled in conditionally based on DeviceFamily_*
-     *   - DeviceFamily_CC26X2:  @code {'C', 'C', '2', '6', 'x', '2', 'R', '1'} @endcode
-     *   - DeviceFamily_CC13X2:  @code {'C', 'C', '1', '3', 'x', '2', 'R', '1'} @endcode
-     *   - DeviceFamily_CC26X0R2: @code {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '} @endcode
-     *   - Else an error will be thrown
-     */
-    #define OAD_IMG_ID_VAL
+#ifndef OAD_IMG_ID_VAL
+#if defined(DeviceFamily_CC26X2) || defined (DeviceFamily_CC26X2_V2) || \
+    defined(DeviceFamily_CC26X2X7) || defined(DeviceFamily_CC26X1)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '2', 'R', '1'}
+#elif defined (DeviceFamily_CC13X2) ||                                        \
+      defined (DeviceFamily_CC13X2X7) ||                                      \
+      defined (DeviceFamily_CC13X1) ||                                        \
+      defined (DeviceFamily_CC13X2_V1) ||                                     \
+      defined (DeviceFamily_CC13X2_V2)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '1', '3', 'x', '2', 'R', '1'}
+#elif defined (DeviceFamily_CC13X4)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '1', '3', 'x', '4', ' ', ' '}
+#elif defined (DeviceFamily_CC26X3)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '3', ' ', ' '}
+#elif defined (DeviceFamily_CC26X4)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '6', 'x', '4', ' ', ' '}
+#elif defined (DeviceFamily_CC26X0R2)
+  #define OAD_IMG_ID_VAL                    {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '}
+#elif defined (DeviceFamily_CC23X0R2)
+  #define OAD_IMG_ID_VAL                    {'C', 'C', '2', '3', 'x', '0', 'R', '2'}
+#elif defined (DOXYGEN)
+  /*!
+   * Magic number to identify OAD image header. It is recommended that the
+   * customer adjust these to uniquely identify their device
+   *
+   * This define will be filled in conditionally based on DeviceFamily_*
+   *   - DeviceFamily_CC26X2:  @code {'C', 'C', '2', '6', 'x', '2', 'R', '1'} @endcode
+   *   - DeviceFamily_CC13X2:  @code {'C', 'C', '1', '3', 'x', '2', 'R', '1'} @endcode
+   *   - DeviceFamily_CC26X0R2: @code {'O', 'A', 'D', ' ', 'I', 'M', 'G', ' '} @endcode
+   *   - Else an error will be thrown
+   */
+  #define OAD_IMG_ID_VAL
 #else
-    #error "Unknown Device Family"
+  #error "Unknown Device Family"
 #endif // DeviceFamily_CC26X2
+#endif // OAD_IMG_ID_VAL
 
 /*!
  * Magic number used by entries in the image header table at the beginning of

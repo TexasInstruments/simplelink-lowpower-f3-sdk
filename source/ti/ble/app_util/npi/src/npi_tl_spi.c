@@ -48,19 +48,6 @@
 // includes
 // ****************************************************************************
 #include <string.h>
-#ifdef FREERTOS
-#include <FreeRTOS.h>
-#include <task.h>
-#else
-#include <xdc/std.h>
-#if defined( CC13X4 )
-#include <ti/sysbios/family/arm/v8m/Hwi.h>
-#else
-#include <ti/sysbios/family/arm/m3/Hwi.h>
-#endif // CC13X4
-#include <ti/sysbios/knl/Task.h>
-#include <ti/sysbios/knl/Swi.h>
-#endif // FREERTOS
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
@@ -71,11 +58,7 @@
 #include "ti/ble/app_util/npi/npi_tl.h"
 #include "ti/ble/app_util/npi/npi_tl_spi.h"
 #include <ti/drivers/SPI.h>
-#ifndef CC23X0
-#include <ti/drivers/spi/SPICC26X2DMA.h>
-#else
 #include <ti/drivers/spi/SPILPF3DMA.h>
-#endif
 
 // ****************************************************************************
 // defines

@@ -241,7 +241,8 @@ typedef enum csStatus_e {
     CS_STATUS_INVALID_STEP_MODE,
     CS_STATUS_INVOKE_FUNC_FAIL,
     CS_STATUS_NO_SYNC,
-    CS_STATUS_SE_ABORT_SCHED_CONFLICTS
+    CS_STATUS_SE_ABORT_SCHED_CONFLICTS,
+    CS_STATUS_POWER_CONTROL_IN_PROGRESS
 } csStatus_e;
 
 typedef enum
@@ -308,7 +309,7 @@ typedef struct
   uint32_t maxSubEventLen;             //!< Max SubEvent Len in microseconds, range 1250us to 4s
   csACI_e  aci;                        //!< Antenna Config Index
   uint8_t  phy;                        //!< PHY
-  uint8_t  txPwrDelta;                 //!< Tx Power Delta, in signed dB
+  int8_t   txPwrDelta;                 //!< Tx Power Delta, in signed dB
   uint8_t  preferredPeerAntenna;       //!< Preferred peer Antenna
   uint8_t  snrCtrlI;                   //!< SNR Control Initiator
   uint8_t  snrCtrlR;                   //!< SNR Control Reflector

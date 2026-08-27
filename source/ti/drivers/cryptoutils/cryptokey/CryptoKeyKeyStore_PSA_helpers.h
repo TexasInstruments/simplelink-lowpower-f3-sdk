@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,8 @@
     #include <third_party/mbedtls/library/psa_crypto_core.h>
     #include <third_party/mbedtls/library/psa_crypto_slot_management.h>
     #include <third_party/mbedtls/library/psa_crypto_storage.h>
-#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+#elif ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) || \
+       (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1))
     #include <ti/drivers/cryptoutils/cryptokey/CryptoKey.h>
 #else
     #error "Unsupported DeviceFamily_Parent for CryptoKeyKeyStore_PSA_helpers"
@@ -123,7 +124,8 @@ int_fast16_t KeyStore_PSA_getKey(KeyStore_PSA_KeyFileId key,
                                  KeyStore_PSA_Algorithm alg,
                                  KeyStore_PSA_KeyUsage usage);
 
-#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) || \
+     (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1))
 /**
  * @brief Attempt to acquire lock to access KeyStore.
  * This function is used to synchronize drivers and the application
@@ -261,8 +263,9 @@ int_fast16_t KeyStore_PSA_getKeyAssetId(KeyStore_PSA_KeyFileId key,
  */
 int_fast16_t KeyStore_PSA_assetPostProcessing(KeyStore_PSA_KeyFileId key);
 /*! @endcond */
-#endif /* #if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == \
-          DeviceFamily_PARENT_CC35XX)) */
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) \
+        * || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)                                                     \
+        */
 
 /**
  * @brief Initialize the Key Store.

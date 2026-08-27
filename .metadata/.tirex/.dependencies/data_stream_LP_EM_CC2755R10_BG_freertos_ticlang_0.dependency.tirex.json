@@ -14,6 +14,10 @@
             "+../../app/app_connection.c -> app/app_connection.c",
             "+../../app/app_pairing.c -> app/app_pairing.c",
             "+../../app/app_data.c -> app/app_data.c",
+            "+../../app/app_time_sync.h -> app/app_time_sync.h",
+            "+../../app/app_time_sync.c -> app/app_time_sync.c",
+            "+../../app/app_padv_time_sync.h -> app/app_padv_time_sync.h",
+            "+../../app/app_padv_time_sync.c -> app/app_padv_time_sync.c",
             "+../data_stream.syscfg -> data_stream.syscfg",
             "+../../common/Startup/main_freertos.c -> main_freertos.c",
             "+cc27xx_freertos.cmd -> cc27xx_freertos.cmd"

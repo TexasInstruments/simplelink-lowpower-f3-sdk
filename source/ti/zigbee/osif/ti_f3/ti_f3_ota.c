@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,15 @@
 #define PAGE_SIZE               EFL_PAGE_SIZE
 #endif // OTA_ONCHIP
 
+  /*
+   * set ZB_F3_OTA_ENABLE_OTA_FW_TRAIL_BITS to 1 to enable trailer bits.
+   *
+   * NOTE: To be used only when using _ota_nopad.bin for OTA transfer.
+   * When using _ota_2nd_slot.bin, BOOT_MAGIC is already embedded at slot_size-16
+   * by imgtool --pad, ZB_F3_OTA_ENABLE_OTA_FW_TRAIL_BITS should not be enabled
+   * in those cases
+   */
+#define ZB_F3_OTA_ENABLE_OTA_FW_TRAIL_BITS (0U)
 
 // OTA Header Magic Number Bytes
 static const zb_uint8_t otaHdrMagic[] = {0x1E, 0xF1, 0xEE, 0x0B};
@@ -82,14 +91,19 @@ zb_bool_t zb_osif_ota_open_storage(void)
 zb_bool_t zb_osif_ota_fw_size_ok(zb_uint32_t image_size)
 {
   zb_bool_t ret = ZB_FALSE;
-  if ( image_size <= ((zb_uint32_t) &_SECONDARY_SLOT_SIZE + OTA_HDR_SUB_ELE_MAX_SIZE) )
+  zb_uint32_t slot_size = (zb_uint32_t) &_SECONDARY_SLOT_SIZE;
+  zb_uint32_t limit = slot_size + OTA_HDR_SUB_ELE_MAX_SIZE;
+
+  if ( image_size <= limit )
   {
     ret = ZB_TRUE;
     clientWriteState = OTA_CLIENT_HDR_MAGIC_0_STATE;
   }
 
-  Log_printf(LogModule_Zigbee_App, Log_INFO, "zb_osif_ota_fw_size_ok image_size %d", image_size);
-  Log_printf(LogModule_Zigbee_App, Log_INFO, "zb_osif_ota_fw_size_ok ret %d", ret);
+  Log_printf(LogModule_Zigbee_App, Log_INFO,
+    "fw_size_ok: image=%lu slot=%lu overhead=%d limit=%lu ret=%d",
+    (unsigned long)image_size, (unsigned long)slot_size,
+    OTA_HDR_SUB_ELE_MAX_SIZE, (unsigned long)limit, ret);
 
   return ret;
 }
@@ -109,19 +123,30 @@ void zb_osif_ota_erase_fw(void *dev, zb_uint_t offset, zb_uint32_t size)
   ZVUNUSED(dev);
 
   zb_uint32_t numFlashPages = size / PAGE_SIZE;
-  zb_uint8_t page = (0 + offset) / PAGE_SIZE;
+  zb_uint32_t page = (0 + offset) / PAGE_SIZE;
+
+  /* Note: eraseFlashPg takes uint8_t page — if numFlashPages > 255,
+   * pages 256+ will truncate to 0+ and re-erase the beginning.
+   * Fix requires sccm Conan package to change eraseFlashPg(uint8_t) -> uint32_t */
+  Log_printf(LogModule_Zigbee_App, Log_INFO,
+    "erase_fw: size=%lu PAGE_SIZE=%d numPages=%lu startPage=%lu",
+    (unsigned long)size, PAGE_SIZE,
+    (unsigned long)numFlashPages, (unsigned long)page);
 
   for ( ; page < numFlashPages; page++ )
   {
     if (eraseFlashPg(page) != FLASH_SUCCESS)
     {
+      Log_printf(LogModule_Zigbee_App, Log_INFO, "erase FAILED at page %lu", (unsigned long)page);
       while(1){
         asm("NOP");
       }
     }
   }
 
-  Log_printf(LogModule_Zigbee_App, Log_INFO, "zb_osif_ota_erase_fw offset %d size %d", offset, size);
+  Log_printf(LogModule_Zigbee_App, Log_INFO,
+    "erase_fw DONE offset %d size %d pages erased %lu",
+    offset, size, (unsigned long)numFlashPages);
 }
 
 zb_uint8_t zb_osif_ota_write(void *dev, zb_uint8_t *data, zb_uint_t off, zb_uint_t size, zb_uint32_t image_size)
@@ -129,10 +154,9 @@ zb_uint8_t zb_osif_ota_write(void *dev, zb_uint8_t *data, zb_uint_t off, zb_uint
   ZVUNUSED(dev);
   ZVUNUSED(image_size);
 
-  zb_uint8_t page;
+  zb_uint32_t page;
   zb_uint32_t offset;
   zb_uint8_t status;
-  zb_uint8_t dataRead[32];
   zb_uint8_t i;
 
   if (!otaHdrSubElemProcessed)
@@ -259,6 +283,49 @@ void zb_osif_ota_mark_fw_ready(void *dev, zb_uint32_t size, zb_uint32_t revision
 {
   Log_printf(LogModule_Zigbee_App, Log_INFO, "zb_osif_ota_mark_fw_ready size %d revision %d",
              size, revision);
+
+#if ZB_F3_OTA_ENABLE_OTA_FW_TRAIL_BITS
+  /* BOOT_MAGIC write — only needed when using _ota_nopad.bin for OTA transfer.
+   * When using _ota_2nd_slot.bin, BOOT_MAGIC is already embedded at slot_size-16
+   * by imgtool --pad, so this function body can remain empty.
+   *
+   * To enable (e.g. if switching to nopad-based OTA):
+   *   1. define ZB_F3_OTA_ENABLE_OTA_FW_TRAIL_BITS as 1
+   *   2. Ensure sccm eraseFlashPg/writeFlashPg use uint32_t page (not uint8_t).
+   *   3. Only write if revision > 1 to prevent V1 accidentally triggering a swap.
+   *
+   * BOOT_MAGIC layout:
+   *   slot_size  = _SECONDARY_SLOT_SIZE = 0xE0000 = 917504 bytes
+   *   magic_off  = slot_size - 16       = 0xDFFF0  (NVS offset within secondary slot)
+   *   magic_page = 0xDFFF0 / 2048       = 447      (last page of secondary slot)
+   *   page_off   = 0xDFFF0 % 2048       = 2032     (last 16 bytes of that page)
+   *   BOOT_MAGIC absolute address       = secondaryBase + 0xDFFF0
+   */
+
+   if (revision <= 1)
+   {
+     return;
+   }
+
+   static const zb_uint8_t boot_magic[16] = {
+     0x77, 0xc2, 0x95, 0xf3, 0x60, 0xd2, 0xef, 0x7f,
+     0x35, 0x52, 0x50, 0x0f, 0x2c, 0xb6, 0x79, 0x80
+   };
+
+   zb_uint32_t slot_size  = (zb_uint32_t) &_SECONDARY_SLOT_SIZE;
+   zb_uint32_t magic_off  = slot_size - sizeof(boot_magic);
+   zb_uint32_t magic_page = magic_off / PAGE_SIZE;
+   zb_uint32_t page_off   = magic_off % PAGE_SIZE;
+
+   zb_uint8_t rc = eraseFlashPg(magic_page);
+   Log_printf(LogModule_Zigbee_App, Log_INFO,
+              "mark_fw_ready: erase page %lu rc=%d", (unsigned long)magic_page, rc);
+
+   rc = writeFlashPg(magic_page, page_off, (zb_uint8_t *)boot_magic, sizeof(boot_magic));
+   Log_printf(LogModule_Zigbee_App, Log_INFO,
+              "mark_fw_ready: BOOT_MAGIC written page=%lu off=%lu rc=%d",
+              (unsigned long)magic_page, (unsigned long)page_off, rc);
+#endif
 }
 
 void zb_osif_ota_mark_fw_absent(void)

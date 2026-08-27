@@ -52,26 +52,28 @@
 #include "ti_drivers_config.h"
 
 /* Defines */
-#define SYM_KEY_LENGTH_128 16
-#define KEY_BLOB_KEY_LENGTH_128 \
-    HSMBAREMETAL_GET_KEYBLOB_BUF_SIZE(SYM_KEY_LENGTH_128, HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY)
-#define MSG_MAX_LENGTH 512
-#define AAD_LENGTH     32
-#define NONCE_LENGTH   7
-#define MAC_LENGTH     16
+#define SYM_KEY_LENGTH_128      16
+#define KEY_BLOB_KEY_LENGTH_128 HSM_KEYBLOB_SIZE(SYM_KEY_LENGTH_128)
+#define MSG_MAX_LENGTH          512
+#define AAD_LENGTH              32
+#define NONCE_LENGTH            7
+#define MAC_LENGTH              16
 
 /* UART pre-formatted strings */
 static const char
     promptStartup[] = "\n\n\rBare Metal Asset and AES operations via the Hardware Security Module (HSM) Demo\r";
 static const char promptSeparator[] = "\n\n\r**********************************************************************\r";
+static const char promptKeyGenerationDescription
+    [] = "\n\n\rKey generation happens through RNG operations. HSMBareMetal supports \n\rin-API generation which means "
+         "RNG operations can happen within asset operations.\r";
+static const char promptKeyGenerationChoice[] = "\n\n\rIn-API key generation? (Y/N):";
 static const char
     promptRNGKeyGeneration[] = "\n\n\rSwitching to TRNG and generating a symmetric key through an RNG operation\r";
 static const char
     promptLoadAndExport[] = "\n\n\rLoading Plaintext and getting an asset ID pair and key blob pair....\r";
-static const char promptImportKeyBlob[] = "\n\n\rImporting key blob pair and getting asset ID pair....\r";
-static const char promptImportKeyBlobElements
-    [] = "\n\n\rAlternatively, importing key blob elements separately and getting asset IDs....\r";
-static const char promptKeyBlob[]          = "\n\n\r\tThe Generated Key Blob: ";
+static const char promptImportKeyBlob[]    = "\n\n\rImporting key blob pair and getting and asset ID pair....\r";
+static const char promptEncKeyBlob[]       = "\n\n\r\tThe Encryption Asset Key Blob: ";
+static const char promptDecKeyBlob[]       = "\n\n\r\tThe Decryption Asset Key Blob: ";
 static const char promptEncAsset[]         = "\n\n\r\tThe Encryption Asset ID: ";
 static const char promptDecAsset[]         = "\n\n\r\tThe Decryption Asset ID: ";
 static const char promptUserInputMessage[] = "\n\n\rEnter a message to Encrypt:\n\n\r";
@@ -88,7 +90,8 @@ static uint8_t aad[AAD_LENGTH]     = {0x37, 0x96, 0xcf, 0x51, 0xb8, 0x72, 0x66, 
                                       0x7e, 0x22, 0xec, 0x22, 0xb1, 0xa2, 0x68, 0xf8, 0x8e, 0x2c};
 static uint8_t nonce[NONCE_LENGTH] = {0x5a, 0x8a, 0xa4, 0x85, 0xc3, 0x16, 0xe9};
 
-static uint8_t keyblobBuffer[KEY_BLOB_KEY_LENGTH_128] = {0};
+static uint8_t encGenKeyBlob[KEY_BLOB_KEY_LENGTH_128]  = {0};
+static uint8_t decVrfyKeyBlob[KEY_BLOB_KEY_LENGTH_128] = {0};
 
 static uint32_t encGenKeyAssetId  = 0U;
 static uint32_t decVrfyKeyAssetId = 0U;
@@ -101,9 +104,11 @@ static uint8_t outputMac[MAC_LENGTH]        = {0};
 /* Metadata variables */
 UART2_Handle uart2Handle;
 
-static uint16_t inputMessageLength = 0;
+static bool isKeyGeneratedInternally = false;
+static uint16_t inputMessageLength   = 0;
 
 HSMBareMetal_AssetPairStruct keyAssetIdPair;
+HSMBareMetal_AssetPairKeyBlobStruct keyBlobPair;
 HSMBareMetal_RNGOperationStruct rngOperationStruct;
 HSMBareMetal_AssetOperationStruct assetOperationStruct;
 HSMBareMetal_AESOperationStruct AESOperationStruct;
@@ -112,8 +117,6 @@ HSMBareMetal_AESOperationStruct AESOperationStruct;
 static void keyBlobBareMetal_generateSymmetricKey(void);
 static void keyBlobBareMetal_loadPlaintextAndExportKeyBlob(void);
 static void keyBlobBareMetal_importKeyBlob(void);
-static void keyBlobBareMetal_importKeyBlobENC(void);
-static void keyBlobBareMetal_importKeyBlobDEC(void);
 static void keyBlobBareMetal_AESEncrypt(void);
 static void keyBlobBareMetal_AESDecrypt(void);
 
@@ -274,6 +277,7 @@ void *mainThread(void *arg0)
 {
     int_fast16_t result;
     UART2_Params uart2Params;
+    uint8_t input;
 
     GPIO_init();
 
@@ -300,6 +304,9 @@ void *mainThread(void *arg0)
 
     keyAssetIdPair.encGenKeyAssetID  = &encGenKeyAssetId;
     keyAssetIdPair.decVrfyKeyAssetID = &decVrfyKeyAssetId;
+
+    keyBlobPair.encGenKeyBlob  = (uint8_t *)encGenKeyBlob;
+    keyBlobPair.decVrfyKeyBlob = (uint8_t *)decVrfyKeyBlob;
 
     result = HSMBareMetal_init();
 
@@ -330,22 +337,38 @@ void *mainThread(void *arg0)
     /* Prompt startup message */
     printPrompt(uart2Handle, promptStartup, strlen(promptStartup));
 
-    /* Print prompt */
-    printPrompt(uart2Handle, promptRNGKeyGeneration, strlen(promptRNGKeyGeneration));
-
-    keyBlobBareMetal_generateSymmetricKey();
-
     /* Loop forever */
     while (1)
     {
         /* Print separator */
         printPrompt(uart2Handle, promptSeparator, strlen(promptSeparator));
 
+        printPrompt(uart2Handle, promptKeyGenerationDescription, strlen(promptKeyGenerationDescription));
+
+        /* Print prompt */
+        printPrompt(uart2Handle, promptKeyGenerationChoice, strlen(promptKeyGenerationChoice));
+
+        UART2_read(uart2Handle, &input, 1, NULL);
+
+        UART2_write(uart2Handle, &input, 1, NULL);
+
+        /* If input is Y or y, then change the key type to */
+        if ((input == 0x59) || (input == 0x79))
+        {
+            isKeyGeneratedInternally = true;
+        }
+        else
+        {
+            /* Print prompt */
+            printPrompt(uart2Handle, promptRNGKeyGeneration, strlen(promptRNGKeyGeneration));
+
+            keyBlobBareMetal_generateSymmetricKey();
+        }
+
         /* Print prompt */
         printPrompt(uart2Handle, promptLoadAndExport, strlen(promptLoadAndExport));
 
-        /* Load plaintext key and export a key blob for both encryption and decryption operations and return two asset
-         * IDs */
+        /* Load plaintext key and export a key blob and return asset ID pairs */
         keyBlobBareMetal_loadPlaintextAndExportKeyBlob();
 
         HSMBareMetal_freeAssetPair(keyAssetIdPair);
@@ -353,23 +376,7 @@ void *mainThread(void *arg0)
         /* Print prompt */
         printPrompt(uart2Handle, promptImportKeyBlob, strlen(promptImportKeyBlob));
 
-        /* Import keyblob and generate both encryption and decryption asset IDs.*/
         keyBlobBareMetal_importKeyBlob();
-
-        /* Free both encryption and decryption asset IDs. */
-        HSMBareMetal_freeAssetPair(keyAssetIdPair);
-
-        /* Alternatively, the user can generate each asset ID seperately.
-         * However, in this case, the use will have to maintain two different keyblob buffers as well as maintain buffer
-         * management. See below:
-         */
-        printPrompt(uart2Handle, promptImportKeyBlobElements, strlen(promptImportKeyBlobElements));
-
-        /* Import keyblob for only encryption operations and generate the corresponding asset ID. */
-        keyBlobBareMetal_importKeyBlobENC();
-
-        /* Import keyblob for only decryption operations and generate the corresponding asset ID. */
-        keyBlobBareMetal_importKeyBlobDEC();
 
         /* Read user input text for encryption */
         readInputFromUser(uart2Handle, promptUserInputMessage, strlen(promptUserInputMessage));
@@ -435,14 +442,21 @@ static void keyBlobBareMetal_loadPlaintextAndExportKeyBlob(void)
 
     HSMBareMetal_AssetOperation_init(&assetOperationStruct);
 
-    assetOperationStruct.key                = plaintextKeyMaterial;
-    assetOperationStruct.keyblob            = keyblobBuffer;
-    assetOperationStruct.keyLength          = SYM_KEY_LENGTH_128;
-    assetOperationStruct.keyAssetIDs        = keyAssetIdPair;
-    assetOperationStruct.algorithm          = HSMBareMetal_OPERATION_ALGO_AES;
-    assetOperationStruct.operationType      = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB;
-    assetOperationStruct.aesOperationMode   = HSMBareMetal_AES_MODE_CCM;
-    assetOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY;
+    if (isKeyGeneratedInternally)
+    {
+        assetOperationStruct.isKeyGenerated = true;
+    }
+    else
+    {
+        assetOperationStruct.key = plaintextKeyMaterial;
+    }
+
+    assetOperationStruct.keyLength        = SYM_KEY_LENGTH_128;
+    assetOperationStruct.keyBlobs         = keyBlobPair;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_AES;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_EXPORT_KEY_BLOB;
+    assetOperationStruct.aesOperationMode = HSMBareMetal_AES_MODE_CCM;
 
     status = HSMBareMetal_AssetOperation(&assetOperationStruct);
 
@@ -458,15 +472,21 @@ static void keyBlobBareMetal_loadPlaintextAndExportKeyBlob(void)
     printToConsole(uart2Handle, promptEncAsset, strlen(promptEncAsset), (uint8_t *)&encGenKeyAssetId, sizeof(uint32_t));
 
     printToConsole(uart2Handle,
+                   promptEncKeyBlob,
+                   strlen(promptEncKeyBlob),
+                   (uint8_t *)encGenKeyBlob,
+                   KEY_BLOB_KEY_LENGTH_128);
+
+    printToConsole(uart2Handle,
                    promptDecAsset,
                    strlen(promptDecAsset),
                    (uint8_t *)&decVrfyKeyAssetId,
                    sizeof(uint32_t));
 
     printToConsole(uart2Handle,
-                   promptKeyBlob,
-                   strlen(promptKeyBlob),
-                   (uint8_t *)keyblobBuffer,
+                   promptDecKeyBlob,
+                   strlen(promptDecKeyBlob),
+                   (uint8_t *)encGenKeyBlob,
                    KEY_BLOB_KEY_LENGTH_128);
 }
 
@@ -479,13 +499,12 @@ static void keyBlobBareMetal_importKeyBlob(void)
 
     HSMBareMetal_AssetOperation_init(&assetOperationStruct);
 
-    assetOperationStruct.keyblob            = keyblobBuffer;
-    assetOperationStruct.keyLength          = SYM_KEY_LENGTH_128;
-    assetOperationStruct.keyAssetIDs        = keyAssetIdPair;
-    assetOperationStruct.algorithm          = HSMBareMetal_OPERATION_ALGO_AES;
-    assetOperationStruct.operationType      = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
-    assetOperationStruct.aesOperationMode   = HSMBareMetal_AES_MODE_CCM;
-    assetOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY;
+    assetOperationStruct.keyLength        = SYM_KEY_LENGTH_128;
+    assetOperationStruct.keyBlobs         = keyBlobPair;
+    assetOperationStruct.keyAssetIDs      = keyAssetIdPair;
+    assetOperationStruct.algorithm        = HSMBareMetal_OPERATION_ALGO_AES;
+    assetOperationStruct.operationType    = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
+    assetOperationStruct.aesOperationMode = HSMBareMetal_AES_MODE_CCM;
 
     status = HSMBareMetal_AssetOperation(&assetOperationStruct);
 
@@ -499,66 +518,6 @@ static void keyBlobBareMetal_importKeyBlob(void)
     }
 
     printToConsole(uart2Handle, promptEncAsset, strlen(promptEncAsset), (uint8_t *)&encGenKeyAssetId, sizeof(uint32_t));
-
-    printToConsole(uart2Handle,
-                   promptDecAsset,
-                   strlen(promptDecAsset),
-                   (uint8_t *)&decVrfyKeyAssetId,
-                   sizeof(uint32_t));
-}
-
-static void keyBlobBareMetal_importKeyBlobENC(void)
-{
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
-
-    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
-
-    assetOperationStruct.keyblob            = keyblobBuffer;
-    assetOperationStruct.keyLength          = SYM_KEY_LENGTH_128;
-    assetOperationStruct.keyAssetIDs        = keyAssetIdPair;
-    assetOperationStruct.algorithm          = HSMBareMetal_OPERATION_ALGO_AES;
-    assetOperationStruct.operationType      = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
-    assetOperationStruct.aesOperationMode   = HSMBareMetal_AES_MODE_CCM;
-    assetOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_ENC_GEN;
-
-    status = HSMBareMetal_AssetOperation(&assetOperationStruct);
-
-    if (status != HSMBAREMETAL_STATUS_SUCCESS)
-    {
-        /* Print Failure
-         * HSMBareMetal_AssetOperation() failed.
-         * Toggle LED0 in an infinite loop.
-         */
-        displayFailureToUser(uart2Handle);
-    }
-
-    printToConsole(uart2Handle, promptEncAsset, strlen(promptEncAsset), (uint8_t *)&encGenKeyAssetId, sizeof(uint32_t));
-}
-
-static void keyBlobBareMetal_importKeyBlobDEC(void)
-{
-    int_fast16_t status = HSMBAREMETAL_STATUS_ERROR;
-
-    HSMBareMetal_AssetOperation_init(&assetOperationStruct);
-
-    assetOperationStruct.keyblob            = keyblobBuffer + HSMBAREMEATL_KEYBLOB_ELEM_SIZE(SYM_KEY_LENGTH_128);
-    assetOperationStruct.keyLength          = SYM_KEY_LENGTH_128;
-    assetOperationStruct.keyAssetIDs        = keyAssetIdPair;
-    assetOperationStruct.algorithm          = HSMBareMetal_OPERATION_ALGO_AES;
-    assetOperationStruct.operationType      = HSMBareMetal_ASSET_OPERATION_TYPE_LOAD_IMPORT_KEY_BLOB;
-    assetOperationStruct.aesOperationMode   = HSMBareMetal_AES_MODE_CCM;
-    assetOperationStruct.operationDirection = HSMBareMetal_OPERATION_DIR_DEC_VRFY;
-
-    status = HSMBareMetal_AssetOperation(&assetOperationStruct);
-
-    if (status != HSMBAREMETAL_STATUS_SUCCESS)
-    {
-        /* Print Failure
-         * HSMBareMetal_AssetOperation() failed.
-         * Toggle LED0 in an infinite loop.
-         */
-        displayFailureToUser(uart2Handle);
-    }
 
     printToConsole(uart2Handle,
                    promptDecAsset,

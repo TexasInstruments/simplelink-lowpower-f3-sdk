@@ -1,0 +1,11 @@
+[
+    {
+        "files": [
+            "+../lpf3_cc27xx_nortos.icf -> lpf3_cc27xx_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../../../../../../source/ti/common/secure_boot/README.md -> README.md",
+            "+../secure_boot.c -> secure_boot.c",
+            "+../secure_boot.syscfg -> secure_boot.syscfg"
+        ]
+    }
+]

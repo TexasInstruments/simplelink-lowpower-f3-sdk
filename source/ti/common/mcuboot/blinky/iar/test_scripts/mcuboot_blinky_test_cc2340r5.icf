@@ -38,15 +38,57 @@ define symbol CCFG_START__ = 0x4E020000;
 define symbol CCFG_END__   = 0x4E0207FF;
 
 if (XIP_SECONDARY == 1) {
-    define symbol __intvec_start__ = 0x00043080; 
+    define symbol __intvec_start__ = 0x00043080;
     define symbol FLASH_start__ = 0x00043080;
     define symbol FLASH_end__  = 0x0007FFFF;
     define exported symbol MCUBOOT_HDR_BASE = 0x00043000;
 } else {
-    define symbol __intvec_start__ = 0x00006080; 
-    define symbol FLASH_start__ = 0x00006080;
-    define symbol FLASH_end__  = 0x00042FFF;
-    define exported symbol MCUBOOT_HDR_BASE = 0x00006000;
+    if (isdefinedsymbol(FLEXIBLE_XIP_SECONDARY)) {
+        define symbol __intvec_start__ = 0x00000080;
+        define symbol FLASH_start__ = 0x00000080;
+        define symbol FLASH_end__  = 0x0003CFFF;
+        define exported symbol MCUBOOT_HDR_BASE = 0x00000000;
+    } else {
+        if (isdefinedsymbol(FLEXIBLE_SECONDARY)) {
+            define symbol __intvec_start__ = 0x0003D080;
+            define symbol FLASH_start__ = 0x0003D080;
+            define symbol FLASH_end__  = 0x00079FFF;
+            define exported symbol MCUBOOT_HDR_BASE = 0x0003D000;
+        } else {
+            if (isdefinedsymbol(FLEXIBLE_PRIMARY)) {
+                define symbol __intvec_start__ = 0x0003D080;
+                define symbol FLASH_start__ = 0x0003D080;
+                define symbol FLASH_end__  = 0x00079FFF;
+                define exported symbol MCUBOOT_HDR_BASE = 0x0003D000;
+            } else {
+                if (isdefinedsymbol(FLEXIBLE_OVERWRITE_SECONDARY_ENCRYPTED)) {
+                    define symbol __intvec_start__ = 0x0003D080;
+                    define symbol FLASH_start__ = 0x0003D080;
+                    define symbol FLASH_end__  = 0x00079FFF;
+                    define exported symbol MCUBOOT_HDR_BASE = 0x0003D000;
+                } else {
+                    if (IMAGE_COMPRESSION == 1) {
+                        define symbol __intvec_start__ = 0x00007080;
+                        define symbol FLASH_start__ = 0x00007080;
+                        define symbol FLASH_end__  = 0x00042FFF;
+                        define exported symbol MCUBOOT_HDR_BASE = 0x00007000;
+                    } else {
+                        if (isdefinedsymbol(FLEXIBLE_IMAGE_COMPRESSION)) {
+                            define symbol __intvec_start__ = 0x00031080;
+                            define symbol FLASH_start__ = 0x00031080;
+                            define symbol FLASH_end__  = 0x00076FFF;
+                            define exported symbol MCUBOOT_HDR_BASE = 0x00031000;
+                        } else {
+                            define symbol __intvec_start__ = 0x00006080;
+                            define symbol FLASH_start__ = 0x00006080;
+                            define symbol FLASH_end__  = 0x00042FFF;
+                            define exported symbol MCUBOOT_HDR_BASE = 0x00006000;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /* Define a memory region that covers the entire 4 GB addressable space */

@@ -24,9 +24,25 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
                                                               CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
             ADD_SDK_INCLUDE_PATH "source"
         )
-    elseif(${TI_PLATFORM} MATCHES "cc27")
+    elseif(${TI_PLATFORM} MATCHES "cc27xxx10")
         set(SOURCES ${SOURCES_COMMON} ${SOURCES_ITM} ${SOURCES_TRACE})
-        ti_add_package_dependency(DriverlibCC27XX)
+        ti_add_package_dependency(DriverlibCC27XXX10)
+        ti_add_library(
+            log_${TI_PLATFORM} SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM} TiUtils::tiutils
+                                                              CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            ADD_SDK_INCLUDE_PATH "source"
+        )
+    elseif(${TI_PLATFORM} MATCHES "cc27xxx20")
+        set(SOURCES ${SOURCES_COMMON} ${SOURCES_ITM} ${SOURCES_TRACE})
+        ti_add_package_dependency(DriverlibCC27XXX20)
+        ti_add_library(
+            log_${TI_PLATFORM} SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM} TiUtils::tiutils
+                                                              CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            ADD_SDK_INCLUDE_PATH "source"
+        )
+    elseif(${TI_PLATFORM} MATCHES "cc283x")
+        set(SOURCES ${SOURCES_COMMON} ${SOURCES_TRACE})
+        ti_add_package_dependency(DriverlibCC283X)
         ti_add_library(
             log_${TI_PLATFORM} SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM} TiUtils::tiutils
                                                               CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
@@ -46,6 +62,8 @@ foreach(TI_PLATFORM ${SUPPORTED_PLATFORMS})
             ti_add_package_dependency(DriverlibCC23X0R5)
         elseif(${TI_PLATFORM} STREQUAL "cc23x0r2")
             ti_add_package_dependency(DriverlibCC23X0R2)
+        elseif(${TI_PLATFORM} STREQUAL "cc23x1r10")
+            ti_add_package_dependency(DriverlibCC23X1R10)
         endif()
         ti_add_library(
             log_${TI_PLATFORM} SOURCES ${SOURCES} LINK_PUBLIC Driverlib::${TI_PLATFORM} TiUtils::tiutils

@@ -84,64 +84,77 @@
 #include "ti/ble/controller/ll/ll_scheduler.h"
 #include "ti/ble/controller/ll/ll_ae.h"
 #include "ti/ble/controller/ll/ll.h"
+#include "ti/ble/controller/ll/ll_padv_advertiser.h"
 
 // Function prototypes for the actual implementations
 extern void llSetTaskPeriodicAdv(void);
-extern void llClearPeriodicAdvSets(void);
-extern void llSetPeriodicAdvChmapUpdate(uint8_t set);
-extern void * llFindNextPeriodicAdv(void);
-extern llStatus_t llSetupPeriodicAdv(advSet_t * pAdvSet);
-extern void llSetPeriodicSyncInfo(advSet_t * pAdvSet, uint8_t * pBuf);
-extern llPeriodicAdvSet_t * llGetCurrentPeriodicAdv(void);
-extern llPeriodicAdvSet_t * llGetPeriodicAdv(uint8_t handle);
+extern void LL_PadvA_ClearAllSets(void);
+extern void LL_PadvA_SetChanMapUpdate(uint8_t set);
+extern void * LL_PadvA_GetNextSet(void);
+extern llStatus_t LL_PadvA_SetupCommand(advSet_t * pAdvSet);
+extern void LL_PadvA_BuildSyncInfo(advSet_t * pAdvSet, uint8_t * pBuf);
+extern llPeriodicAdvSet_t * LL_PadvA_GetCurrent(void);
+extern llPeriodicAdvSet_t * LL_PadvA_GetSetByHandle(uint8_t handle);
 extern taskInfo_t * llSelectTaskPeriodicAdv(uint8_t secTaskID, uint32_t timeGap);
 extern hciStatus_t hciCmdParserPeriodicAdv(uint8_t * pData, uint16_t cmdOpCode);
-extern llStatus_t LE_SetPeriodicAdvParams(uint8_t advHandle, uint16_t periodicAdvIntervalMin, uint16_t periodicAdvIntervalMax, uint16_t periodicAdvProp);
+extern llStatus_t LE_SetPeriodicAdvParams(uint8_t advHandle, uint16_t periodicAdvIntervalMin, uint16_t periodicAdvIntervalMax, uint16_t periodicAdvProp, uint8_t* pPAwRParams);
 extern llStatus_t LE_SetPeriodicAdvData(uint8_t advHandle, uint8_t operation, uint8_t dataLength, uint8_t * data);
 extern llStatus_t LE_SetPeriodicAdvEnable(uint8_t enable, uint8_t advHandle);
-extern void llExtAdv_PostProcess_padv(advSet_t * pAdvSet);
-extern void llPostProcessExtendedAdv_padv(advSet_t * pAdvSet);
-extern uint8_t llCompareSecondaryPrimaryTasksQoSParam_padv(llConnState_t * primConnPtr);
-extern uint8_t llGetCurrentPeriodicAdvPriority(uint8_t curllStatePriority);
-extern uint32_t llGetCurrentPeriodicAdvTotalOtaTime(uint32_t curTotalOtaTime);
-extern llStatus_t LE_SetExtAdvParams_padv(aeSetParamCmd_t * pCmdParams);
-extern void LE_SetExtAdvEnable_padv(advSet_t * pAdvSet);
-extern void LL_EXT_SetQOSParameters_padv(uint32_t paramVal, uint16_t taskHandle);
+extern uint8_t LL_PadvA_CompareQosPriorityToConn(llConnState_t * primConnPtr);
+extern uint8_t LL_PadvA_GetCurrentQOSPriority(uint8_t curllStatePriority);
+extern uint32_t LL_PadvA_GetCurrentTotalOtaTime(uint32_t curTotalOtaTime);
+extern uint8_t LL_PadvA_ValidateExtAdvParams(aeSetParamCmd_t * pCmdParams);
+extern uint8_t LL_PadvA_AddACADToAdv(uint8_t handle, uint8_t * pBuf, uint8 * pAcadLen);
+extern void LL_PadvA_SetQOSPriority(uint32_t priority, uint16_t handle);
 extern uint32_t llHandlePeriodicAdvEvents(uint32_t events);
-extern bool LL_PeriodicAdvIsEnable(void);
-extern advSet_t* LL_AE_GetNextAdvSet(void);
-extern void LL_GetPeriodicTxUsageParams(llTxUsageParams_t* pPeriodicTxParams);
-extern llPeriodicAdvSetType_e LL_GetPerodicTypeByAdvHandle(uint8_t advHandle);
-extern llStatus_t LL_GetPerodicSyncTransferInfoByAdvHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
+extern bool LL_PadvA_IsEnable(void);
+extern bool LL_PadvA_IsExistByHandle(uint8_t advHandle);
+extern void LL_PadvA_GetTxUsageParams(llTxUsageParams_t* pPeriodicTxParams);
+extern llPeriodicAdvSetType_e LL_PadvA_GetTypeByHandle(uint8_t advHandle);
+extern llStatus_t LL_PadvA_GetSyncTransferInfoByHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
+extern void LL_PadvA_PostProcess(void);
+extern void LL_PadvA_UpdateChainPacket(void);
+extern uint8_t LL_PadvA_GetStateByHandle(uint8_t handle);
+extern uint8_t LL_PadvA_GetPendingDisableFlag(uint8_t handle);
+extern void LL_PadvA_InitPAwRSubeventDataList(uint8_t handle);
+extern uint8_t LL_PadvA_TriggerCommand(advSet_t* pAdvSet, llPeriodicAdvSet_t* pPeriodicAdv);
+extern void llExtAdvPeriodicHandler(advSet_t* pAdvSet);
+extern void llExtAdvTriggerPeriodicIfNeeded(advSet_t* pAdvSet);
 
 
 // Wrapper functions for the feature implementations
 void OPT_llSetTaskPeriodicAdv(void);
-void OPT_llClearPeriodicAdvSets(void);
-void OPT_llSetPeriodicAdvChmapUpdate(uint8_t set);
-void * OPT_llFindNextPeriodicAdv(void);
-llStatus_t OPT_llSetupPeriodicAdv(advSet_t * pAdvSet);
-void OPT_llSetPeriodicSyncInfo(advSet_t * pAdvSet, uint8_t * pBuf);
-llPeriodicAdvSet_t * OPT_llGetCurrentPeriodicAdv(void);
-llPeriodicAdvSet_t * OPT_llGetPeriodicAdv(uint8_t handle);
+void OPT_LL_PadvA_ClearAllSets(void);
+void OPT_LL_PadvA_SetChanMapUpdate(uint8_t set);
+void * OPT_LL_PadvA_GetNextSet(void);
+llStatus_t OPT_LL_PadvA_SetupCommand(advSet_t * pAdvSet);
+void OPT_LL_PadvA_BuildSyncInfo(advSet_t * pAdvSet, uint8_t * pBuf);
+llPeriodicAdvSet_t * OPT_LL_PadvA_GetCurrent(void);
+llPeriodicAdvSet_t * OPT_LL_PadvA_GetSetByHandle(uint8_t handle);
 taskInfo_t * OPT_llSelectTaskPeriodicAdv(uint8_t secTaskID, uint32_t timeGap);
 hciStatus_t OPT_hciCmdParserPeriodicAdv(uint8_t * pData, uint16_t cmdOpCode);
-llStatus_t OPT_LE_SetPeriodicAdvParams(uint8_t advHandle, uint16_t periodicAdvIntervalMin, uint16_t periodicAdvIntervalMax, uint16_t periodicAdvProp);
+llStatus_t OPT_LE_SetPeriodicAdvParams(uint8_t advHandle, uint16_t periodicAdvIntervalMin, uint16_t periodicAdvIntervalMax, uint16_t periodicAdvProp, uint8_t* pPAwRParams);
 llStatus_t OPT_LE_SetPeriodicAdvData(uint8_t advHandle, uint8_t operation, uint8_t dataLength, uint8_t * data);
 llStatus_t OPT_LE_SetPeriodicAdvEnable(uint8_t enable, uint8_t advHandle);
-void OPT_llExtAdv_PostProcess_padv(advSet_t * pAdvSet);
-void OPT_llPostProcessExtendedAdv_padv(advSet_t * pAdvSet);
-uint8_t OPT_llCompareSecondaryPrimaryTasksQoSParam_padv(llConnState_t * primConnPtr);
-uint8_t OPT_llGetCurrentPeriodicAdvPriority(uint8_t curllStatePriority);
-uint32_t OPT_llGetCurrentPeriodicAdvTotalOtaTime(uint32_t curTotalOtaTime);
-llStatus_t OPT_LE_SetExtAdvParams_padv(aeSetParamCmd_t * pCmdParams);
-void OPT_LE_SetExtAdvEnable_padv(advSet_t * pAdvSet);
-void OPT_LL_EXT_SetQOSParameters_padv(uint32_t paramVal, uint16_t taskHandle);
+uint8_t OPT_LL_PadvA_CompareQosPriorityToConn(llConnState_t * primConnPtr);
+uint8_t OPT_LL_PadvA_GetCurrentQOSPriority(uint8_t curllStatePriority);
+uint32_t OPT_LL_PadvA_GetCurrentTotalOtaTime(uint32_t curTotalOtaTime);
+uint8_t OPT_LL_PadvA_ValidateExtAdvParams(aeSetParamCmd_t * pCmdParams);
+uint8_t OPT_LL_PadvA_AddACADToAdv(uint8_t handle, uint8_t * pBuf, uint8 * pAcadLen);
+void OPT_LL_PadvA_SetQOSPriority(uint32_t priority, uint16_t handle);
 uint32_t OPT_llHandlePeriodicAdvEvents(uint32_t events);
-bool OPT_LL_PeriodicAdvIsEnable(void);
-advSet_t* OPT_LL_AE_GetNextAdvSet(void);
-void OPT_LL_GetPeriodicTxUsageParams(llTxUsageParams_t* pPeriodicTxParams);
-llPeriodicAdvSetType_e OPT_LL_GetPerodicTypeByAdvHandle(uint8_t advHandle);
-llStatus_t OPT_LL_GetPerodicSyncTransferInfoByAdvHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
+bool OPT_LL_PadvA_IsEnable(void);
+bool OPT_LL_PadvA_IsExistByHandle(uint8_t advHandle);
+void OPT_LL_PadvA_GetTxUsageParams(llTxUsageParams_t* pPeriodicTxParams);
+llPeriodicAdvSetType_e OPT_LL_PadvA_GetTypeByHandle(uint8_t advHandle);
+llStatus_t OPT_LL_PadvA_GetSyncTransferInfoByHandle(uint8_t advHandle, llPeriodicSyncTransferInfo_t* pPeriodicSyncTransferData);
+void OPT_LL_PadvA_PostProcess(void);
+void OPT_LL_PadvA_UpdateChainPacket(void);
+uint8_t OPT_LL_PadvA_GetStateByHandle(uint8_t handle);
+uint8_t OPT_LL_PadvA_GetPendingDisableFlag(uint8_t handle);
+void OPT_LL_PadvA_InitPAwRSubeventDataList(uint8_t handle);
+uint8_t OPT_LL_PadvA_TriggerCommand(advSet_t* pAdvSet, llPeriodicAdvSet_t* pPeriodicAdv);
+void OPT_llExtAdvPeriodicHandler(advSet_t* pAdvSet);
+void OPT_llExtAdvTriggerPeriodicIfNeeded(advSet_t* pAdvSet);
 
 #endif /* CTRL_PADV_H_ */

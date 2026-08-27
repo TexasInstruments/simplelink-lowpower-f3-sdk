@@ -20,7 +20,16 @@
 #ifndef CRYPTO_SPE_H
 #define CRYPTO_SPE_H
 
+/* TI-TFM: There is no namespace collision on the S-side for the
+ * PSA API. The top-level PSA API in the NS-side wrapper is in a
+ * different image, and the HW-accelerated PSA API in the S-side
+ * has the 'ti_' prefix that also prevents collision.
+ */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+#define PSA_FUNCTION_NAME(x) x
+#else
 #define PSA_FUNCTION_NAME(x) mbedcrypto__ ## x
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 #define psa_crypto_init \
         PSA_FUNCTION_NAME(psa_crypto_init)

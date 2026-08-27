@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,6 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 /*
@@ -39,15 +38,17 @@ const RCL       = args[0];
 const rclStatic = RCL.$static;
 let rclGpio = system.getScript("/ti/drivers/rcl/rclgpio.syscfg.js");
 let board = system.deviceData.board;
+let rtos = system.getRTOS().toLowerCase();
 %%}
 
 /*
  *  ======== RCL ========
-*/
-% if(rclStatic.lrfGpio){
+ */
+% if (rtos != "zephyr") {
+% if (rclStatic.lrfGpio) {
 
 #include <ti/drivers/rcl/RCL_Gpio.h>
-% if (rclStatic.coexEnabled && rclStatic.coexRuntimeChangeable){
+% if (rclStatic.coexEnabled && rclStatic.coexRuntimeChangeable) {
 #include <ti/drivers/rcl/LRF.h>
 extern LRF_CoexConfiguration lrfCoexConfiguration;
 %}
@@ -72,4 +73,29 @@ const pad = 5;
 /* Bit mask to maintain regulatory domain selection */
 extern uint8_t rclRegulatoryMask;
 %}
+%}
+%}
+%else {
+%if (board !== undefined && board.name.match(/CC27/)) {
+#include <stdint.h>
+
+#ifndef RCL_REGULATORY_DOMAIN_ETSI
+#define RCL_REGULATORY_DOMAIN_ETSI     0x01
+#endif
+#ifndef RCL_REGULATORY_DOMAIN_FCC
+#define RCL_REGULATORY_DOMAIN_FCC      0x02
+#endif
+#ifndef RCL_REGULATORY_DOMAIN_MIIT
+#define RCL_REGULATORY_DOMAIN_MIIT     0x04
+#endif
+
+#if defined(CONFIG_RCL_REGULATORY_DOMAIN_RUNTIME_MODIFIABLE)
+extern uint8_t rclRegulatoryMask;
+#endif
+%}
+
+#if defined(CONFIG_RCL_COEX_RUNTIME_MODIFIABLE)
+#include <ti/drivers/rcl/LRF.h>
+extern LRF_CoexConfiguration lrfCoexConfiguration;
+#endif
 %}

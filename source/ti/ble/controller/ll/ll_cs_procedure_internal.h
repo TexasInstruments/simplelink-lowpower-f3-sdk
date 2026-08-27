@@ -478,19 +478,19 @@ uint16 llCsMode3Duration(uint16_t connId, uint8_t configId, uint8 nPath, uint16 
 /*******************************************************************************
  * @fn          llCsClearStepBuffers
  *
- * @brief       Clear the internal buffers
+ * @brief       Clear the internal buffers lists
  *
  * input parameters
  *
- * @param       connId   - connection ID
+ * @param       None
  *
  * output parameters
  *
  * @param       None
  *
- * @return
+ * @return      None
  */
-void llCsClearStepBuffers();
+void llCsClearStepBuffers(void);
 
 /*******************************************************************************
  * @fn          llCsInitProcedure
@@ -625,15 +625,13 @@ uint8_t llCsGetChannelIndex(uint16 connId, uint8_t configId, uint8 mode, csStepT
  *
  * input parameters
  *
- * @param       connId - Connection Id
- *
  * output parameters
  *
  * @param      None
  *
  * @return      Channel Array index
 */
-uint8_t llCsGetMModeRepetitionsIndex(uint16_t connId);
+uint8_t llCsGetMModeRepetitionsIndex(void);
 
 /*******************************************************************************
  * @fn          llCsDbSaveChannelIdx
@@ -721,7 +719,6 @@ void llCsAdjustSubEventStepCount(uint16 connId, uint8 configId);
  * input parameters
  *
  * @param       connPtr  - Pointer to connection state structure
- * @param       configId - CS configuration ID for the procedure
  *
  * output parameters
  *
@@ -729,6 +726,6 @@ void llCsAdjustSubEventStepCount(uint16 connId, uint8 configId);
  *
  * @return      None
  */
-void llCsSetConnMaxTimeForCS(llConnState_t* connPtr, uint8 configId);
+void llCsSetConnMaxTimeForCS(llConnState_t* connPtr);
 
 #endif // LL_CS_PROCEDURE_INTERNAL_H

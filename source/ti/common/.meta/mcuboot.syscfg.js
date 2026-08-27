@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,9 +93,17 @@ let base = {
                 }
             },
             {
+                name        : "noAuthentication",
+                displayName : "No Authentication",
+                description : "Disable image authentication. Only flash_map_backend.h will be generated. " +
+                              "mcuboot_config.h will not be generated.",
+                default     : false,
+                onChange    : changeNoAuthentication
+            },
+            {
                 name        : "tzEnabled",
                 displayName : "Enable TrustZone",
-                description : "Enable Mcuboot to store 2 images - secure and non secure image.",
+                description : "Enable MCUboot to store 2 images - secure and non secure image.",
                 default     : false,
                 readOnly    : mcubootSettings["tzEnabled"]["readOnly"],
                 hidden      : mcubootSettings["tzEnabled"]["hidden"],
@@ -112,13 +120,18 @@ let base = {
                     {
                         name: "overwrite",
                         displayName : "Overwrite",
-                        longDescription: "Mcuboot only runs an image from the primary slot. " +
-                                     "Mcuboot will copy the image from the secondary to the primary slot and erase the secondary slot afterwards."
+                        longDescription: "MCUboot only runs an image from the primary slot. " +
+                                     "MCUboot will copy the image from the secondary to the primary slot and erase the secondary slot afterwards."
                     },
                     {
                         name: "xip",
                         displayName : "XIP",
-                        longDescription: "Mcuboot runs an image directly from either the primary or the secondary slot, without moving and or copying it into the primary slot."
+                        longDescription: "MCUboot runs an image directly from either the primary or the secondary slot, without moving and or copying it into the primary slot."
+                    },
+                    {
+                        name: "swapUsingMove",
+                        displayName : "Swap (using Move)",
+                        longDescription: "MCUboot will perform a swap between the images in the primary and secondary slot. An extra sector for swapping is located at the end of the primary sector"
                     }
                 ],
                 readOnly: false,
@@ -127,7 +140,7 @@ let base = {
             {
                 name        : "externalFlash",
                 displayName : "Enable External Flash",
-                description : "Enable Mcuboot to search for valid images in external Flash",
+                description : "Enable MCUboot to search for valid images in external Flash",
                 default     : false,
                 hidden      : true,
                 onChange    : changeExternalFlash
@@ -143,7 +156,7 @@ let base = {
             {
                 name        : "enableEncryptedImage",
                 displayName : "Upgrade Using Encrypted Images",
-                description : "Enable Mcuboot to search for valid encrypted images",
+                description : "Enable MCUboot to search for valid encrypted images",
                 default     : false,
                 hidden      : true
             },
@@ -156,6 +169,14 @@ let base = {
                 hidden      : mcubootSettings["antiRollbackProtection"]["hidden"]
             },
             {
+                name        : "watchdogTimeoutMs",
+                displayName : "Watchdog Timeout (ms)",
+                description : "Watchdog timeout to recover from a bad image during OAD",
+                displayFormat: "dec",
+                default     : 60000,
+                hidden      : true
+            },
+            {
                 displayName: "Bootloader",
                 description: "Bootloader Configurations",
                 collapsed: true,
@@ -163,7 +184,7 @@ let base = {
                     {
                         name        : "bootloaderBaseAddress",
                         displayName : "Base",
-                        description : "Base Address of Mcuboot",
+                        description : "Base Address of MCUboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default     : mcubootSettings["bootloader"]["tzDisabledBase"]["base"],
                         readOnly    : false,
@@ -172,7 +193,7 @@ let base = {
                     {
                         name        : "bootloaderSize",
                         displayName : "Size",
-                        description : "Size of Mcuboot",
+                        description : "Size of MCUboot",
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default     : mcubootSettings["bootloader"]["size"],
                         readOnly    : false,
@@ -362,6 +383,58 @@ let base = {
     initPriority: 0
 };
 
+function changeNoAuthentication(inst, ui)
+{
+    if (inst.noAuthentication)
+    {
+        /* Reset authentication-related settings to safe defaults */
+        inst.tzEnabled = false;
+        inst.mode = 'xip';
+        inst.externalFlash = false;
+        inst.imageCompression = false;
+        inst.enableEncryptedImage = false;
+        inst.antiRollbackProtection = false;
+
+        /* Hide all authentication-related options */
+        ui.tzEnabled.hidden = true;
+        ui.mode.hidden = true;
+        ui.externalFlash.hidden = true;
+        ui.imageCompression.hidden = true;
+        ui.enableEncryptedImage.hidden = true;
+        ui.antiRollbackProtection.hidden = true;
+        ui.watchdogTimeoutMs.hidden = true;
+        ui.lzmaLc.hidden = true;
+        ui.lzmaLp.hidden = true;
+        ui.lzmaPb.hidden = true;
+        ui.lzmaDicSize.hidden = true;
+        ui.primaryBase2.hidden = true;
+        ui.primarySize2.hidden = true;
+        ui.secondaryBase2.hidden = true;
+        ui.secondarySize2.hidden = true;
+    }
+    else
+    {
+        /* Restore authentication-related options to their device-specific defaults */
+        ui.tzEnabled.hidden = mcubootSettings["tzEnabled"]["hidden"];
+        ui.mode.hidden = false;
+        ui.antiRollbackProtection.hidden = mcubootSettings["antiRollbackProtection"]["hidden"];
+
+        /* These remain hidden by default - they are revealed by changeMode/changeTzEnable */
+        ui.externalFlash.hidden = true;
+        ui.imageCompression.hidden = true;
+        ui.enableEncryptedImage.hidden = true;
+        ui.watchdogTimeoutMs.hidden = true;
+        ui.lzmaLc.hidden = true;
+        ui.lzmaLp.hidden = true;
+        ui.lzmaPb.hidden = true;
+        ui.lzmaDicSize.hidden = true;
+        ui.primaryBase2.hidden = true;
+        ui.primarySize2.hidden = true;
+        ui.secondaryBase2.hidden = true;
+        ui.secondarySize2.hidden = true;
+    }
+}
+
 function changeExternalFlash(inst, ui)
 {
     if(inst.externalFlash)
@@ -383,7 +456,7 @@ function changeExternalFlash(inst, ui)
 
 function changeImageCompression(inst, ui)
 {
-    if (deviceGroup == "DeviceGroup_CC23X0")
+    if (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20")
     {
         if (inst.imageCompression)
         {
@@ -416,38 +489,68 @@ function changeImageCompression(inst, ui)
 
 function changeMode(inst, ui)
 {
-    ui.externalFlash.hidden = !ui.externalFlash.hidden;
-
-    if(inst.mode === "overwrite" && deviceGroup == "DeviceGroup_CC23X0" )
+    if(inst.mode === "overwrite")
     {
-        ui.imageCompression.hidden = false;
+        ui.externalFlash.hidden = false;
+        if(mcubootSettings["enableEncryptedImage"]["enabled"])
+        {
+            ui.enableEncryptedImage.hidden = false;
+        }
+        else
+        {
+            ui.enableEncryptedImage.hidden = true;
+        }
+        if(deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20") /* enable for compression */
+        {
+            ui.imageCompression.hidden = false;
+        }
+        else
+        {
+            ui.imageCompression.hidden = true;
+        }
     }
-    else
+    else if(inst.mode === "xip")
     {
+        ui.externalFlash.hidden = true;
+        ui.enableEncryptedImage.hidden = true;
+    }
+    else if(inst.mode === "swapUsingMove")
+    {
+        ui.externalFlash.hidden = false;
+        if(mcubootSettings["enableEncryptedImage"]["enabled"])
+        {
+            ui.enableEncryptedImage.hidden = false;
+        }
+        else
+        {
+            ui.enableEncryptedImage.hidden = true;
+        }
         ui.imageCompression.hidden = true;
+        ui.watchdogTimeoutMs.hidden = false;
     }
 
-    inst.imageCompression = false;
-    inst.externalFlash = false;
-
-    if(mcubootSettings["enableEncryptedImage"]["enabled"])
+    if(inst.mode !== "swapUsingMove")
     {
-        ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
-        inst.enableEncryptedImage = false;
+        ui.watchdogTimeoutMs.hidden = true;
     }
+
+    // set default value to false when changing modes
+    inst.externalFlash = false;
+    inst.imageCompression = false;
+    inst.enableEncryptedImage = false;
 }
 
 function changeTzEnable(inst, ui)
 {
     // change mode to overwrite
     inst.mode = 'overwrite';
-    ui.mode.readOnly = !ui.mode.readOnly;
+    ui.mode.readOnly = true;
     ui.externalFlash.hidden = false;
 
     //change anti rollback protection settings
     inst.antiRollbackProtection = false;
-    ui.antiRollbackProtection.readOnly = !ui.antiRollbackProtection.readOnly;
-    ui.antiRollbackProtection.hidden = !ui.antiRollbackProtection.hidden;
+    ui.antiRollbackProtection.readOnly = true;
+    ui.antiRollbackProtection.hidden = true;
 
     // set hidden properties for second image slots
     ui.primaryBase2.hidden = !ui.primaryBase2.hidden;
@@ -472,7 +575,7 @@ function changeTzEnable(inst, ui)
     /* If encrypted images are enabled then update the instance and ui.*/
     if(mcubootSettings["enableEncryptedImage"]["enabled"])
     {
-        ui.enableEncryptedImage.hidden = !ui.enableEncryptedImage.hidden;
+        ui.enableEncryptedImage.hidden = false;
         inst.enableEncryptedImage = false;
     }
 
@@ -511,16 +614,35 @@ function changeTzEnable(inst, ui)
         inst.secondaryBase2 = mcubootSettings["image2"]["secondaryBase"];
         inst.secondarySize2 = mcubootSettings["image2"]["secondarySize"];
     }
-    
+
 }
 
 function validate(inst, validation) {
+
+    if (inst.noAuthentication === true)
+    {
+        logWarning(validation, inst, "noAuthentication",
+                 "No Authentication mode is enabled. Image authentication is disabled. " +
+                 "This is not recommended for production use.");
+    }
 
     // throw warning if this enabled
     if(inst.enableEncryptedImage === true)
     {
         logWarning(validation, inst, "enableEncryptedImage",
                  "Default Bootloader size may need to be increased if Encrypted Images are enabled ");
+    }
+
+    if(inst.mode === "swapUsingMove")
+    {
+        logWarning(validation, inst, "watchdogTimeoutMs",
+                 "The hardware watchdog is owned by MCUboot during boot. The application can take ownership by initializing the Watchdog via TI Drivers.");
+    }
+
+    if(inst.enableEncryptedImage === true && inst.imageCompression === true)
+    {
+        logError(validation, inst, "imageCompression",
+                 "Image compression can not be enabled if encrypted image updates are enabled.");
     }
 
     // if instance of external flash is true, flash base must be 0x800
@@ -553,33 +675,45 @@ function validate(inst, validation) {
         }
     }
 
-    // check if flash layout based on device group
-    if(deviceGroup === "DeviceGroup_CC13X2X7_CC26X2X7")
+    // if size of primary image is not the same as secondary image or if the size
+    // of the primary image is not 1 sector greater than secondary image throw error
+    if((inst.primarySize1 != inst.secondarySize1) &&
+        (inst.primarySize1 - inst.secondarySize1 !== mcubootSettings["alignment"]["sectorSize"]) &&
+        inst.mode == 'swapUsingMove')
     {
-        // if bootloader starts less than secondary image base + secondary image size, throw error
-        if(inst.secondaryBase1 + inst.secondarySize1 > inst.bootloaderBaseAddress)
-        {
-            logError(validation, inst, "secondaryBase1",
-                    "The base of the bootloader must be greater than or equal to the base of the secondary image plus the size of the secondary image.");
-            logError(validation, inst, "secondarySize1",
-                    "The base of the bootloader image must be greater than or equal to the base of the secondary image plus the size of the secondary image.");
-            logError(validation, inst, "bootloaderBaseAddress",
-                    "The base of the bootloader image must be greater than or equal to the base of the secondary image plus the size of the secondary image.");
-        }
-
+        logError(validation, inst, "primarySize1",
+                 "Primary image must be the same size or 1 sector larger than the secondary image");
+        logError(validation, inst, "secondarySize1",
+                 "Secondary image must be the same size or 1 sector larger than the primary image");
     }
-    else
+
+    // check if bootloader and primary image overlap
+    if(inst.bootloaderBaseAddress < inst.primaryBase1 + inst.primarySize1 &&
+       inst.primaryBase1 < inst.bootloaderBaseAddress + inst.bootloaderSize)
     {
-        // if primary image starts less than bootloader base + bootloader size, throw error
-        if(inst.bootloaderBaseAddress + inst.bootloaderSize > inst.primaryBase1)
-        {
-            logError(validation, inst, "bootloaderBaseAddress",
-                    "The base of the primary image must be greater than or equal to the base of the bootloader plus the size of the bootloader.");
-            logError(validation, inst, "bootloaderSize",
-                    "The base of the primary image must be greater than or equal to the base of the bootloader plus the size of the bootloader.");
-            logError(validation, inst, "primaryBase1",
-                    "The base of the primary image must be greater than or equal to the base of the bootloader plus the size of the bootloader.");
-        }
+        logError(validation, inst, "bootloaderBaseAddress",
+                "Bootloader and primary image overlap each other.");
+        logError(validation, inst, "bootloaderSize",
+                "Bootloader and primary image overlap each other.");
+        logError(validation, inst, "primaryBase1",
+                "Bootloader and primary image overlap each other.");
+        logError(validation, inst, "primarySize1",
+                "Bootloader and primary image overlap each other.");
+    }
+
+    // check if bootloader and secondary image overlap (only when secondary is in internal flash)
+    if(!inst.externalFlash &&
+       inst.bootloaderBaseAddress < inst.secondaryBase1 + inst.secondarySize1 &&
+       inst.secondaryBase1 < inst.bootloaderBaseAddress + inst.bootloaderSize)
+    {
+        logError(validation, inst, "bootloaderBaseAddress",
+                "Bootloader and secondary image overlap each other.");
+        logError(validation, inst, "bootloaderSize",
+                "Bootloader and secondary image overlap each other.");
+        logError(validation, inst, "secondaryBase1",
+                "Bootloader and secondary image overlap each other.");
+        logError(validation, inst, "secondarySize1",
+                "Bootloader and secondary image overlap each other.");
     }
 
     // check if the start address for bootloader and images are sector aligned
@@ -642,7 +776,7 @@ function validate(inst, validation) {
         logError(validation, inst, "secondarySize1",
                  "Primary image and secondary image overlap each other.");
     }
-    
+
     else if(inst.primaryBase1 >= inst.secondaryBase1 && inst.secondaryBase1 + inst.secondarySize1 > inst.primaryBase1 && !inst.externalFlash)
     {
         logError(validation, inst, "primaryBase1",
@@ -682,7 +816,7 @@ function validate(inst, validation) {
                     "MCUboot layout exceeds the flash boundaries. Make sure all image sizes and boundaries are less than 0x" + mcubootSettings["alignment"]["flashBoundary"].toString(16));
         }
     }
-    
+
     //check if all base addresses are within flash boundary (for all conditions except tz_enabled)
     if(inst.bootloaderBaseAddress > mcubootSettings["alignment"]["flashBoundary"])
     {
@@ -712,9 +846,10 @@ function validate(inst, validation) {
     }
 
     // check if all base and size addresses are within flash boundaries
-    if(inst.bootloaderBase + inst.bootloaderSize >  mcubootSettings["alignment"]["flashBoundary"] || inst.primaryBase1 + inst.primarySize1 > mcubootSettings["alignment"]["flashBoundary"])
+    if(inst.bootloaderBaseAddress + inst.bootloaderSize >  mcubootSettings["alignment"]["flashBoundary"] ||
+        inst.primaryBase1 + inst.primarySize1 > mcubootSettings["alignment"]["flashBoundary"])
     {
-        logError(validation, inst, "bootloaderBase",
+        logError(validation, inst, "bootloaderBaseAddress",
                     "MCUboot layout exceeds the flash boundaries. Make sure all image sizes and base addresses are all within 0x" + mcubootSettings["alignment"]["flashBoundary"].toString(16));
         logError(validation, inst, "bootloaderSize",
                     "MCUboot layout exceeds the flash boundaries. Make sure all image sizes and base addresses are all within 0x" + mcubootSettings["alignment"]["flashBoundary"].toString(16));
@@ -783,7 +918,7 @@ function validate(inst, validation) {
             logError(validation, inst, "secondarySize2",
                     "MCUboot layout exceeds the flash boundaries. Make sure all image sizes are less than 0x" + mcubootSettings["alignment"]["flashBoundary"].toString(16));
         }
-        
+
         if(inst.externalFlash === true)
         {
             if(inst.secondarySize2 % externalFlashSectorSize !== 0)
@@ -827,7 +962,7 @@ function getLinkerDefs()
     let mcuboot = system.modules["/ti/common/mcuboot"];
     let flashSize = mcuboot.$static.bootloaderSize;
 
-    /* reduce mcuboot flash size if anitrollback is enabled for non CC13X2X7_CC26X2X7 */ 
+    /* reduce mcuboot flash size if anitrollback is enabled for non CC13X2X7_CC26X2X7 */
     if(deviceGroup !== "DeviceGroup_CC13X2X7_CC26X2X7" && mcuboot.$static.antiRollbackProtection)
     {
         flashSize -= mcubootSettings["alignment"]["sectorSize"];

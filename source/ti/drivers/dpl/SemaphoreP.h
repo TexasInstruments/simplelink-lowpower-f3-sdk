@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2023, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,9 +69,9 @@ extern "C" {
  *            SemaphoreP object.
  *
  *  NoRTOS:   16
- *  BIOS 6.x: 28
  *  BIOS 7.x: 28
  *  FreeRTOS: 80
+ *  Zephyr: 16
  */
 #define SemaphoreP_STRUCT_SIZE (80)
 

@@ -3,7 +3,6 @@
         "files": [
             "+../aesccmBareMetal.syscfg -> aesccmBareMetal.syscfg",
             "+../HSMBareMetal.c -> HSMBareMetal.c",
-            "+../HSMBareMetalECCUtility.c -> HSMBareMetalECCUtility.c",
             "+../aesccmBareMetal.c -> aesccmBareMetal.c",
             "+../main_nortos.c -> main_nortos.c",
             "+../../../../../../source/ti/common/hsm/aesccmBareMetal/README.md -> README.md",

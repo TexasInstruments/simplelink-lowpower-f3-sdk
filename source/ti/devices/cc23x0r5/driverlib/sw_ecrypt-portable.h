@@ -20,8 +20,8 @@
  * editing 'ecrypt-machine.h'.
  */
 
-#ifndef ECRYPT_PORTABLE
-#define ECRYPT_PORTABLE
+#ifndef ti_devices_sw_ecrypt_portable__include
+#define ti_devices_sw_ecrypt_portable__include
 
 #include "sw_ecrypt-config.h"
 
@@ -275,4 +275,4 @@ typedef unsigned I64T u64;
 
 /* ------------------------------------------------------------------------- */
 
-#endif
+#endif /* ti_devices_sw_ecrypt_portable__include */

@@ -285,27 +285,6 @@ void LL_PAST_S_SetupCtrlPkt( const llConnState_t *connPtr,
 uint8_t LL_PAST_S_ProcessCtrlPacketProcedure( llConnState_t *connPtr,
                                               uint8_t        ctrlPktType);
 
-/********************************************************************************
- * @fn          LL_PAST_S_SetLastRxPacketLen
- *
- * @brief       Set the length of the last received packet from central to
- *              peripheral.
- *
- * input parameters
- *
- * @param       connPtr           - Connection pointer.
- * @param       lastRXPktLength - Length of the last packet received from
- *                                  central.
- *
- * output parameters
- *
- * @param       None
- *
- * @return      None
- */
-void LL_PAST_S_SetLastRxPacketLen( llConnState_t   *connPtr,
-                                   uint8_t         lastRXPktLength);
-
 #ifdef __cplusplus
 }
 #endif

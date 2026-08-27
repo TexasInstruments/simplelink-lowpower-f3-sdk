@@ -68,18 +68,109 @@ typedef enum OADProfile_AppCommand_e
 
 /*!
  * @OADProfile_App_Msg_e OAD msg from oad profile to app
+ *
+ * Events marked "REQUIRES INTERVENTION" need application to return OAD_PROFILE_PROCEED
+ * or OAD_PROFILE_CANCEL. Events marked "NOTIFICATION" are informational only.
  * @{
  */
 typedef enum OADProfile_App_Msg_e
 {
-    OAD_PROFILE_MSG_REVOKE_IMG_HDR, //!< Status from profile to app revoke app header
-    OAD_PROFILE_MSG_NEW_IMG_IDENDIFY, //!< For off-chip inform app about new image identify
-    OAD_PROFILE_MSG_START_DOWNLOAD, //!< Start download new image
-    OAD_PROFILE_MSG_FINISH_DOWNLOAD, //!< Dowanload of new image has finished
-    OAD_PROFILE_MSG_RESET_REQ, //!< Status from profile to app for get permission to do reset
+    /**
+     * Revoke image header (REQUIRES INTERVENTION) - On-chip OAD only
+     * pData: NULL
+     * Return: PROCEED to allow revocation, CANCEL to reject
+     */
+    OAD_PROFILE_MSG_REVOKE_IMG_HDR,
+
+    /**
+     * New image identification (REQUIRES INTERVENTION)
+     * pData: Pointer to struct image_header (candidate image metadata)
+     * Return: PROCEED to accept image, CANCEL to reject
+     */
+    OAD_PROFILE_MSG_NEW_IMG_IDENTIFY,
+
+    /**
+     * Start download request (REQUIRES INTERVENTION)
+     * pData: NULL
+     * Return: PROCEED to allow download, CANCEL to reject
+     */
+    OAD_PROFILE_MSG_START_DOWNLOAD,
+
+    /**
+     * Download finished (NOTIFICATION)
+     * pData: NULL
+     */
+    OAD_PROFILE_MSG_FINISH_DOWNLOAD,
+
+    /**
+     * Download cancelled (NOTIFICATION)
+     * pData: NULL
+     */
+    OAD_PROFILE_MSG_CANCEL_DOWNLOAD,
+
+    /**
+     * Reset request (REQUIRES INTERVENTION)
+     * pData: NULL
+     * Return: PROCEED to allow reset, CANCEL to delay
+     */
+    OAD_PROFILE_MSG_RESET_REQ,
+
+    /**
+     * Download failed (NOTIFICATION)
+     * pData: NULL
+     */
+    OAD_PROFILE_MSG_DOWNLOAD_FAILED,
+
+    /**
+     * OAD inactivity timeout (NOTIFICATION)
+     * Occurs after 10 seconds of inactivity in CONFIG, DOWNLOAD, or COMPLETE state.
+     * pData: NULL
+     */
+    OAD_PROFILE_MSG_TIMEOUT,
+
+#ifdef MS_OAD
+    /**
+     * Get MS-OAD state query (REQUIRES INTERVENTION - OUTPUT)
+     * Profile queries application for current MS-OAD state to send to client.
+     * pData: Pointer to uint8 output variable (write msOadState_e value here)
+     * Return: PROCEED after writing state, CANCEL on error
+     */
+    OAD_PROFILE_MSG_GET_MS_OAD_STATE,
+
+    /**
+     * MS-OAD initialization request (REQUIRES INTERVENTION)
+     * Application should call MSOAD_InitAndReset() if approved (device will reset).
+     * pData: NULL
+     * Return: PROCEED to approve, CANCEL to reject
+     */
+    OAD_PROFILE_MSG_MS_OAD_INIT_REQ,
+
+    /**
+     * MS-OAD commit request (REQUIRES INTERVENTION)
+     * Application should call MSOAD_ImageVerified() to mark image as good.
+     * pData: NULL
+     * Return: PROCEED after verification, CANCEL to reject
+     */
+    OAD_PROFILE_MSG_MS_OAD_COMMIT,
+#endif
 }OADProfile_App_Msg_e;
 
-typedef OADProfile_AppCommand_e (*OADProfile_AppCallback_t)(OADProfile_App_Msg_e msg);
+/*
+ * @OADProfile_AppCallback_t OAD profile callback function prototype
+ *
+ * @param   msg - message ID
+ * @param   pData - pointer to message specific data. For some events, pData might be
+ *                  used as a return value from the callback function to the profile.
+ *
+ * @return  OADProfile_AppCommand_e indicating whether to proceed or cancel the operation
+ *
+ * @see OADProfile_App_Msg_e for details on which events require pData
+ *      usage and expected data types.
+ *
+ * @see OADProfile_App_Msg_e for details on which events needs the application
+ *      intervention and which are informational only.
+ */
+typedef OADProfile_AppCommand_e (*OADProfile_AppCallback_t)(OADProfile_App_Msg_e msg, void *pData);
 
 /*********************************************************************
  * API FUNCTIONS

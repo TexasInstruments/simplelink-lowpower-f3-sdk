@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git ls-tree *)",
+      "Bash(ls README* readme*)",
+      "Bash(ls ti/README* ti/readme*)",
+      "Bash(ls /home/a0507704/git/mbedtlsprod/mbedtls/ti/lib/*/*/makefile)"
+    ]
+  }
+}

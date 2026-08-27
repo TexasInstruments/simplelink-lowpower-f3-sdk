@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,9 @@
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
 let logWarning = Common.logWarning;
+const deviceId = system.deviceData.deviceId;
+const hasAfosc = deviceId.match(/CC27/) !== null;
+const clkhfFreqMHz = (deviceId.match(/CC27/) !== null) ? 96 : 48;
 
 /*
  *  ======== devSpecific ========
@@ -67,11 +70,11 @@ to select, please refer to [Selecting the Audio Frequency Clock](drivers/doxygen
                     readOnly: false,
                     hidden: false,
                     options: [
-                        { name: "I2SLPF3_AFCLK_SRC_CLKAF", displayName: "Auxiliary Frequency Oscillator (AFOSC)" },
-                        { name: "I2SLPF3_AFCLK_SRC_CLKHF", displayName: "96MHz CLKHF" },
+                        ...(hasAfosc ? [{ name: "I2SLPF3_AFCLK_SRC_CLKAF", displayName: "Auxiliary Frequency Oscillator (AFOSC)" }] : []),
+                        { name: "I2SLPF3_AFCLK_SRC_CLKHF", displayName: `${clkhfFreqMHz}MHz CLKHF` },
                         { name: "I2SLPF3_AFCLK_SRC_CLKREF", displayName: "48MHz reference clock (HFXT)" }
                     ],
-                    default: "I2SLPF3_AFCLK_SRC_CLKHF",
+                    default: hasAfosc ? "I2SLPF3_AFCLK_SRC_CLKAF" : "I2SLPF3_AFCLK_SRC_CLKHF",
                     onChange: (inst, ui) => {
                         ui.afoscFreq.hidden = inst.afclkSrc != "I2SLPF3_AFCLK_SRC_CLKAF";
                     }
@@ -81,7 +84,7 @@ to select, please refer to [Selecting the Audio Frequency Clock](drivers/doxygen
                     displayName: "AFOSC Frequency",
                     description: "Select the Auxiliary Frequency Oscillator (AFOSC) frequency",
                     readOnly: false,
-                    hidden: true,
+                    hidden: hasAfosc ? false : true,
                     default: "PowerLPF3_AFOSC_FREQ_98P304MHZ",
                     options: [
                         {

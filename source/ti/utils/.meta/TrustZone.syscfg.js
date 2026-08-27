@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,10 @@ function getLibs(mod)
 
     /* Select which secure veneer object to use */
     if (mod.$static.secureImage == "1") {
-        if (deviceId.match(/CC27/)) {
-            libs.push("build/cc27xx/production_full/Release/export/tfm/veneers/s_veneers.o");
+        if (deviceId.match(/CC27..(R|P)(10|7)/)) {
+            libs.push("build/cc27xxx10/production_full/Release/export/tfm/veneers/s_veneers.o");
+        } else if (deviceId.match(/CC27..(R|P)(20|15)/)) {
+            libs.push("build/cc27xxx20/production_full/Release/export/tfm/veneers/s_veneers.o");
         } else { /* This is sufficient as other than CC27XX, only Thor supports TrustZone */
             libs.push("build/cc26x4/production_full/Release/export/tfm/veneers/s_veneers.o");
         }

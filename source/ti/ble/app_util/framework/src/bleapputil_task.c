@@ -55,6 +55,16 @@ Target Device: cc23xx
 /*********************************************************************
  * MACROS
  */
+// Check if an event is discardable (non-critical) at high queue load
+#define BLEAPPUTIL_IS_DISCARDABLE_EVENT(evt) \
+    ((evt) == BLEAPPUTIL_EVT_ADV_CB_EVENT ||       /* Advertisement callbacks */ \
+     (evt) == BLEAPPUTIL_EVT_CM_REPORT_EVENT_CB)   /* CM periodic RSSI reports */
+
+// Check if a scan event is discardable (ADV reports, not scan state changes)
+#define BLEAPPUTIL_IS_DISCARDABLE_SCAN_EVENT(scanEvt) \
+    ((scanEvt) == BLEAPPUTIL_ADV_REPORT ||         /* ADV report */ \
+     (scanEvt) == BLEAPPUTIL_ADV_REPORT_FULL ||    /* ADV report full */ \
+     (scanEvt) == BLEAPPUTIL_SCAN_INSUFFICIENT_MEMORY) /* Insufficient memory */
 
 
 /*********************************************************************
@@ -126,6 +136,59 @@ int BLEAppUtil_createBLEAppUtilTask(void)
 }
 
 /*********************************************************************
+ * @fn      BLEAppUtil_isMessagediscardable
+ *
+ * @brief   Determine if a message can be dropped when queue is under pressure.
+ *
+ * @param   event - message event type
+ * @param   pData - pointer to the message data
+ *
+ * @return  TRUE if message is discardable, FALSE if critical
+ */
+static inline bool BLEAppUtil_isMessageDiscardable(uint8_t event, void *pData)
+{
+    // Check for always-discardable events (ADV callbacks, CM RSSI reports)
+    if (BLEAPPUTIL_IS_DISCARDABLE_EVENT(event))
+    {
+        return TRUE;
+    }
+
+    // Special case: SCAN_CB_EVENT contains both critical and discardable sub-events
+    if (event == BLEAPPUTIL_EVT_SCAN_CB_EVENT && pData != NULL)
+    {
+        BLEAppUtil_ScanEventData_t *scanData = (BLEAppUtil_ScanEventData_t *)pData;
+
+        // Only ADV reports and insufficient memory events are discardable
+        // Scan state changes (ENABLED/DISABLED) are critical
+        return BLEAPPUTIL_IS_DISCARDABLE_SCAN_EVENT(scanData->event);
+    }
+
+    return FALSE;
+}
+
+/*********************************************************************
+ * @fn      BLEAppUtil_shouldDropMessage
+ *
+ * @brief   Check if message should be dropped due to queue pressure.
+ *
+ * @param   queueHandle - the message queue handle
+ *
+ * @return  TRUE if message should be dropped, FALSE otherwise
+ */
+static inline bool BLEAppUtil_shouldDropMessage(mqd_t queueHandle)
+{
+    struct mq_attr attr;
+
+    if (mq_getattr(queueHandle, &attr) != 0)
+    {
+        return FALSE;  // If we can't get status, don't drop
+    }
+
+    // Drop when queue is >= 70% full to protect critical messages
+    return (attr.mq_curmsgs >= BLEAPPUTIL_QUEUE_DROP_THRESHOLD);
+}
+
+/*********************************************************************
  * @fn      BLEAppUtil_enqueueMsg
  *
  * @brief   Enqueue the message from the BLE stack to the application queue.
@@ -138,22 +201,29 @@ int BLEAppUtil_createBLEAppUtilTask(void)
  */
 status_t BLEAppUtil_enqueueMsg(uint8_t event, void *pData)
 {
-    int8_t status = SUCCESS;
     BLEAppUtil_appEvt_t msg;
 
-    // Check if the queue is valid
+    // Early return: Check if queue is valid
     if (BLEAppUtil_threadEntity.queueHandle == (mqd_t)-1)
     {
-        return(bleNotReady);
+        return bleNotReady;
     }
 
+    // Apply selective discard for non-critical messages to prevent queue overflow
+    // This protects critical messages (pairing, CS events, connections, scan and adv state changes)
+    if (BLEAppUtil_isMessageDiscardable(event, pData))
+    {
+        if (BLEAppUtil_shouldDropMessage(BLEAppUtil_threadEntity.queueHandle))
+        {
+            return FAILURE;  // Discard non-critical message under queue pressure
+        }
+    }
+
+    // Enqueue the message
     msg.event = event;
     msg.pData = pData;
 
-    // Send the msg to the application queue
-    status = mq_send(BLEAppUtil_threadEntity.queueHandle,(char*)&msg,sizeof(msg),1);
-
-    return status;
+    return mq_send(BLEAppUtil_threadEntity.queueHandle, (char*)&msg, sizeof(msg), 1);
 }
 
 /*********************************************************************

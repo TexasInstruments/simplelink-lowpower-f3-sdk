@@ -187,7 +187,7 @@ function validatePhyProperty(inst, validation, phyType, phyGroup) {
 
         for (const phyProp in rfData) {
             if (!("highPA" in inst && phyProp.includes("txPower"))) {
-                if (!phyHandler.isPhyPropSupported(phyProp, usedCmds)) {
+                if (!phyHandler.isPhyPropSupported(inst, phyProp)) {
                     Common.logWarning(validation,
                         inst,
                         phyProp,
@@ -200,7 +200,7 @@ function validatePhyProperty(inst, validation, phyType, phyGroup) {
     else {
         // RCL device interfaces
         for (const phyProp in rfData) {
-            if (!phyHandler.isPhyPropSupported(inst, phyProp, "actual")) {
+            if (!phyHandler.isPhyPropSupported(inst, phyProp)) {
                 const ui = inst.$uiState;
                 if (!ui[phyProp].hidden) {
                     Common.logWarning(validation,

@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -148,6 +148,7 @@ void off_network_attention(zb_uint8_t param)
 
 void my_main_loop()
 {
+  // zb_osif_led_on(0);
   while (1)
   {
     /* ... User code ... */
@@ -167,6 +168,11 @@ MAIN()
   g_dev_ctx.basic_attr.power_source = ZB_ZCL_BASIC_POWER_SOURCE_DEFAULT_VALUE;
   g_dev_ctx.identify_attr.identify_time = 0;
 
+  /* OTA Upgrade client attributes.
+   * These must match the values used with zOTAfileGen when creating the .zigbee file:
+   *   zOTAfileGen <name>_ota_nopad.bin <dir> BEBE 2340 <version>
+   * The .zigbee file version must be GREATER than file_version below,
+   * otherwise ZBOSS will reject the image (same version = "already running"). */
   g_dev_ctx.ota_attr.manufacturer = 0xBEBE;
   g_dev_ctx.ota_attr.image_type = 0x2340;
   g_dev_ctx.ota_attr.file_version = 0x00000001;
@@ -274,13 +280,43 @@ static zb_bool_t finding_binding_cb(zb_int16_t status,
   return ZB_TRUE;
 }
 
+//! IMPORTANT!
+//! The return value of this function is used to determine
+//! whether the command was processed by this handler or not.
+//! If the command was processed, the function must return ZB_TRUE,
+//! otherwise ZB_FALSE. If processed here, the command will not be
+//! processed by the stack.
 zb_uint8_t zcl_specific_cluster_cmd_handler(zb_uint8_t param)
 {
   zb_zcl_parsed_hdr_t *cmd_info = ZB_BUF_GET_PARAM(param, zb_zcl_parsed_hdr_t);
   zb_bool_t unknown_cmd_received = ZB_TRUE;
 
   Log_printf(LogModule_Zigbee_App, Log_INFO, "> zcl_specific_cluster_cmd_handler %i", param);
-  Log_printf(LogModule_Zigbee_App, Log_INFO, "payload size: %i", zb_buf_len(param));
+
+  /* Log ZCL header and raw payload for OTA debugging
+   * - cmd_id 0x02 = Query Next Image Response (raw[0]=0x00 success, 0x98 no image)
+   * - cmd_id 0x05 = Image Block Response (raw[9-12] = file offset, not image size)
+   * - cmd_id 0x0B = Default Response (raw[0] = ZCL status, 0x06=INVALID_FIELD)
+   * - len=1, raw[0]=0x98: server has no image (version mismatch or no file loaded)
+   * - len=13, raw[0]=0x00: server found image, raw[9-12] = total .zigbee size (LE) */
+  {
+    zb_uint16_t plen = zb_buf_len(param);
+    zb_uint8_t *raw = zb_buf_begin(param);
+    Log_printf(LogModule_Zigbee_App, Log_VERBOSE,
+      "zcl: dir=%d cmd_id=0x%02X cluster=0x%04X seq=%d len=%d",
+      cmd_info->cmd_direction, cmd_info->cmd_id,
+      cmd_info->cluster_id, cmd_info->seq_number, plen);
+    if (plen >= 1) Log_printf(LogModule_Zigbee_App, Log_INFO, "raw[0]=0x%02X", raw[0]);
+    if (plen >= 5) Log_printf(LogModule_Zigbee_App, Log_INFO,
+      "raw[1-4]=0x%02X 0x%02X 0x%02X 0x%02X", raw[1],raw[2],raw[3],raw[4]);
+    if (plen >= 9) Log_printf(LogModule_Zigbee_App, Log_INFO,
+      "raw[5-8]=0x%02X 0x%02X 0x%02X 0x%02X", raw[5],raw[6],raw[7],raw[8]);
+    if (plen >= 13) Log_printf(LogModule_Zigbee_App, Log_INFO,
+      "image_size_bytes=0x%02X 0x%02X 0x%02X 0x%02X (LE->val=%lu)",
+      raw[9],raw[10],raw[11],raw[12],
+      (unsigned long)(raw[9] | ((unsigned long)raw[10]<<8) |
+                      ((unsigned long)raw[11]<<16) | ((unsigned long)raw[12]<<24)));
+  }
 
   if (cmd_info->cmd_direction == ZB_ZCL_FRAME_DIRECTION_TO_CLI)
   {
@@ -393,7 +429,6 @@ void zboss_signal_handler(zb_uint8_t param)
   zb_zdo_app_signal_hdr_t *sg_p = NULL;
   zb_zdo_app_signal_type_t sig = zb_get_app_signal(param, &sg_p);
   zb_bufid_t buf;
-  zb_bufid_t req_buf = 0;
   zb_zdo_mgmt_permit_joining_req_param_t *req_param;
 
   if (ZB_GET_APP_SIGNAL_STATUS(param) == 0)
@@ -592,11 +627,8 @@ void zboss_signal_handler(zb_uint8_t param)
 
 void device_interface_cb(zb_uint8_t param)
 {
-  zb_zcl_attr_t *attr_desc;
-  zb_uint16_t mask;
   zb_zcl_device_callback_param_t *device_cb_param =
           ZB_BUF_GET_PARAM(param, zb_zcl_device_callback_param_t);
-  const zb_zcl_parsed_hdr_t *in_cmd_info = ZB_ZCL_DEVICE_CMD_PARAM_CMD_INFO(param);
 
   Log_printf(LogModule_Zigbee_App, Log_INFO, "device_interface_cb param %d id %d",
              param, device_cb_param->device_cb_id);

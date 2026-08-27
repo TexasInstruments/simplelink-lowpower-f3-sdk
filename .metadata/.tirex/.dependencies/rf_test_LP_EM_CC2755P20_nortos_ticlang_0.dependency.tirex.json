@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../rf_test.c -> rf_test.c",
+            "+../rf_test.syscfg -> rf_test.syscfg",
+            "+../README.md -> README.md",
+            "+../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+../dmm/rcl_stub_dmm.c -> dmm/rcl_stub_dmm.c",
+            "+lpf3_zigbee_nortos.cmd -> lpf3_zigbee_nortos.cmd"
+        ]
+    }
+]

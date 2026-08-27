@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,14 @@
 
 /* get Common /ti/drivers utility functions */
 let Common = system.getScript("/ti/drivers/Common.js");
+let logError = Common.logError;
+let deviceId = system.deviceData.deviceId;
 
 /* Amount of bytes necessary to store a key's metadata in KeyStore. Keys of
- * every type require a slot, each with a constant size.
+ * every type require a slot, each with a constant size. This value is equivalent
+ * to sizeof(psa_key_context_t) from adapter_psa_key_management.h in the DDK.
  */
-const slotMetadataSize = 83;
+const slotMetadataSize = 57;
 
 /* The largest key that can be stored is an encrypted AES256 key.
  * The breakdown is as follows: For each key, there is 32 bytes of data.
@@ -65,6 +68,17 @@ const constantOverheadRam = 40;
 
 const defaultAssetStoreSlots = 3;
 
+/* With the smallest key size, only 66 keys can fit in asset store. We reserve
+ * at least 11 assets for crypto drivers to use internally. The remainder is the
+ * max number of slots allowed.
+ */
+const maxAssetStoreSlots = 55;
+
+/* The number of persistent key slots, used to cache persistent keys in RAM.
+ * Due to the current implementation of KeyStore, to retrieve persistent keys
+ * from flash for usage in an operation, there must be at least 1 slot available
+ * to load the key into.
+ */
 const defaultPersistentSlots = 3;
 
 const defaultVolatileSlots = 0;
@@ -84,12 +98,19 @@ let defaultRamUsage = (defaultTotalSlots * slotMetadataSize) + constantOverheadR
  */
 let defaultVolatileMemoryPoolSize = (keyItemSizeMaxDefault * (defaultPersistentSlots + 1)) + constantOverheadRam;
 
-/* The useable flash size on 1M CC27XX devices is 0xE8000. The default
- * KeyStore flash size is 8KB, or 0x2000 bytes. The default placement
- * of KeyStore flash is at the end of flash, the final 8KB starting at
- * 0xE6000.
+/* Flash memory layout (from base address 0x0):
+ *   [Application flash] ... [KeyStore] [HSM FW (96KB)]
+ *
+ * HSM firmware occupies the final 96KB (0x18000) of flash. The useable
+ * application flash ends where HSM FW begins:
+ *   1M devices (CC27XX10/7):  useable ends at 0xE8000  (HSM FW: 0xE8000 - 0xFFFFF)
+ *   2M devices (CC27XX20/15): useable ends at 0x1E8000 (HSM FW: 0x1E8000 - 0x1FFFFF)
+ *
+ * KeyStore is placed at the end of useable flash, just before HSM FW.
  */
-const defaultFlashOffset = 0xE6000;
+const useableFlashEnd = (deviceId.match(/CC27..(R|P)(20|15)/)) ? 0x1E8000 : 0xE8000;
+const defaultFlashSize = 0x2000;
+const defaultFlashOffset = useableFlashEnd - defaultFlashSize;
 const sectorSize = 0x800;
 const baseAddress = 0x00000000;
 
@@ -110,7 +131,11 @@ function getLibs(mod)
     };
 
     if (!system.modules["/ti/utils/TrustZone"]) {
-        libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xx_its.a"));
+        if (deviceId.match(/CC27..(R|P)(10|7)/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx10_its.a"));
+        } else if (deviceId.match(/CC27..(R|P)(20|15)/)) {
+            libGroup.libs.push(GenLibs.libPath("third_party/hsmddk", "hsmddk_cc27xxx20_its.a"));
+        }
     }
 
     return (libGroup);
@@ -119,6 +144,7 @@ function getLibs(mod)
 let aesConfig = {
     displayName : "Volatile AES Key Configuration",
     name: "aesConfig",
+
     config: [
         {
             name          : "aes128PlaintextNumVolatile",
@@ -148,6 +174,10 @@ let aesConfig = {
             name          : "aes128EncryptedNumVolatile",
             displayName   : "AES-128 Encrypted Keys",
             description   : "This is the number of AES-128 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of AES-128 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -156,6 +186,10 @@ let aesConfig = {
             name          : "aes192EncryptedNumVolatile",
             displayName   : "AES-192 Encrypted Keys",
             description   : "This is the number of AES-192 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of AES-192 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -164,6 +198,10 @@ let aesConfig = {
             name          : "aes256EncryptedNumVolatile",
             displayName   : "AES-256 Encrypted Keys",
             description   : "This is the number of AES-256 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of AES-256 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -173,6 +211,8 @@ let aesConfig = {
 
 let eccConfig = {
     displayName : "Volatile ECC Key Configuration",
+    name: "eccConfig",
+
     config: [
         {
             name          : "ecc224PlaintextNumVolatile",
@@ -218,6 +258,10 @@ let eccConfig = {
             name          : "ecc224EncryptedNumVolatile",
             displayName   : "ECC-224 Encrypted Keys",
             description   : "This is the number of ECC-224 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of ECC-224 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -226,6 +270,10 @@ let eccConfig = {
             name          : "ecc256EncryptedNumVolatile",
             displayName   : "ECC-256 Encrypted Keys",
             description   : "This is the number of ECC-256 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of ECC-256 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -234,6 +282,10 @@ let eccConfig = {
             name          : "ecc384EncryptedNumVolatile",
             displayName   : "ECC-384 Encrypted Keys",
             description   : "This is the number of ECC-384 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of ECC-384 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -242,6 +294,10 @@ let eccConfig = {
             name          : "ecc512EncryptedNumVolatile",
             displayName   : "ECC-512 Encrypted Keys",
             description   : "This is the number of ECC-512 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of ECC-512 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -250,6 +306,10 @@ let eccConfig = {
             name          : "ecc521EncryptedNumVolatile",
             displayName   : "ECC-521 Encrypted Keys",
             description   : "This is the number of ECC-521 keys planned to be used and stored in encrypted format in Key Store RAM.",
+            longDescription : "This is the number of ECC-521 keys planned to be used and stored in encrypted format in Key Store RAM. "
+                              + "Note that encrypted volatile keys which have the cache usage flag set will also occupy space in the "
+                              + "HSM Asset Store after usage until the key is purged by the application. Crypto driver operations may "
+                              + "fail if there is insufficient space left in the HSM Asset Store.",
             default       : 0,
             displayFormat : "dec",
             onChange      : onChangeUpdateSlotCountAndSize
@@ -264,7 +324,7 @@ let configBase = [
         name          : "totalSlotCount",
         displayName   : "Total Key Slots",
         description   : "The total number of keys (of any lifetime) that can be placed in KeyStore. "
-                        + "Each key slot, regardless of key type, occupies 83 bytes of data for "
+                        + "Each key slot, regardless of key type, occupies 57 bytes of data for "
                         + "metadata alone.",
         default       : defaultTotalSlots,
         displayFormat : "dec",
@@ -274,34 +334,35 @@ let configBase = [
         name          : "assetStoreSlotCount",
         displayName   : "Asset Store Key Slots",
         description   : "Sets the number of keys that can be actively stored in the HSM Asset Store. "
-                        + "There is a limit of 5, since some space in HSM dynamic RAM must be reserved "
+                        + "There is a limit of 55, since some space in HSM dynamic RAM must be reserved "
                         + "for crypto drivers to make use of.",
         default       : defaultAssetStoreSlots,
-        options       : [
-            { name: 1 },
-            { name: 2 },
-            { name: 3 },
-            { name: 4 },
-            { name: 5 }
-        ],
         onChange      : onChangeUpdateSlotCountAndSize,
         displayFormat : "dec"
     },
     {
         name          : "persistentKeyCacheSlots",
         displayName   : "Persistent Key Cache Slots",
-        description   : "Pre-define a non-configurable value for the number of slots that will "
-                        + "be reserved to cache keys that also get stored in NVM.",
+        description   : "The number of slots that will be reserved to cache persistent keys.",
+        longDescription   : "The number of slots that will be reserved to cache persistent keys "
+                            + "for faster access. Note that encrypted keys which are cached and have the "
+                            + "cache usage flag set also occupy space in the HSM Asset Store after usage "
+                            + "until the key is purged by the application. Crypto driver operations may "
+                            + "fail if there is insufficient space left in the HSM Asset Store.",
         default       : defaultPersistentSlots,
-        hidden        : true,
-        readOnly      : true,
+        onChange      : onChangeUpdateSlotCountAndSize,
         displayFormat : "dec"
     },
     {
         name          : "volatileSlotCount",
         displayName   : "Volatile Key Slots",
-        description   : "The number of volatile keys that can be stored in KeyStore at a given time. "
-                        + "This is determined by the number of volatile keys that are selected for usage.",
+        description   : "The number of volatile keys that can be stored in KeyStore at a given time.",
+        longDescription   : "The number of volatile keys that can be stored in KeyStore at a given time. "
+                            + "This is determined by the number of volatile keys that are selected for usage. "
+                            + "Note that encrypted volatile keys which have the cache usage flag set "
+                            + "will also occupy space in the HSM Asset Store after usage until the key is "
+                            + "purged by the application. Crypto driver operations may fail if there is "
+                            + "insufficient space left in the HSM Asset Store.",
         default       : defaultVolatileSlots,
         onChange      : onChangeUpdateSlotCountAndSize,
         displayFormat : "dec",
@@ -312,7 +373,7 @@ let configBase = [
         displayName   : "Volatile Key Material Storage Space",
         description   : "This is the amount of RAM space that will be necessary to hold the specified "
                         + "number of volatile keys of the given sizes, as well as the space required for "
-                        + "caching 3 persistent keys, in KeyStore's memory allocator pool.",
+                        + "caching persistent keys, in KeyStore's memory allocator pool.",
         default       : defaultVolatileMemoryPoolSize,
         displayFormat : "dec",
         hidden        : true
@@ -330,7 +391,7 @@ let configBase = [
             { name: "8KB (23 Persistent Keys Max)" },
             { name: "10KB (35 Persistent Keys Max)" }
         ],
-        onChange          : onChangeUpdateFlash,
+        onChange          : onChangeUpdateFlashSize,
         hidden            : false
     },
     {
@@ -349,7 +410,7 @@ let configBase = [
         name              : "flashSize",
         displayName       : "KeyStore Flash Size Value",
         description       : "Amount of flash space occupied by persistent keys and their metadata.",
-        default           : 0x2000,
+        default           : defaultFlashSize,
         displayFormat     : "hex",
         hidden            : true
     },
@@ -385,12 +446,13 @@ predefined internal flash region.
         description       : "KeyStore flash region offset, from this device's application-accessible base flash address.",
         longDescription   : "This is the offset from the base application-accessible flash address to the "
                           + "start of the KeyStore flash region. For example, if the base address of the "
-                          + "application-accessible flash is 0x0021A000, an offset of 0x1000 would place "
-                          + "the start of the KeyStore flash region at 0x0021B000. When changing KeyStore "
-                          + "flash address offset, be sure that the specified flash region will fit in the "
-                          + "device's available application flash and will not collide with vector table.",
+                          + "application-accessible flash is 0x00000000, an offset of 0xE6000 would place "
+                          + "the start of the KeyStore flash region at 0x000E6000. When changing KeyStore "
+                          + "flash address offset, be sure that the specified flash region will not collide "
+                          + "with the interrupt vector table at the beginning of application flash, nor "
+                          + "overlap with the HSM firmware region at the end of useable flash.",
         default           : defaultFlashOffset,
-        onChange          : onChangeUpdateFlash,
+        onChange          : onChangeUpdateFlashOffset,
         displayFormat     : "hex",
         hidden            : false
     },
@@ -409,6 +471,21 @@ predefined internal flash region.
         default       : 23,
         displayFormat : "dec",
         hidden        : true
+    },
+    {
+        name          : "isTrustZoneEnabled",
+        description   : "Tracks whether TrustZone is enabled - KeyStore SysConfig should not define content "
+                        + "for the secure build if so.",
+        default       : false,
+        hidden        : true
+    },
+    {
+        name          : "useSWCrypto",
+        displayName   : "Use MbedTLS SW Crypto",
+        description   : "Allows MbedTLS SW Crypto implementations to be used for select crypto operations "
+                        + "that the HSM doesn't support.",
+        default: false,
+        hidden: false
     }
 ];
 
@@ -523,10 +600,12 @@ function onChangeUpdateSlotCountAndSize(inst, ui)
 }
 
 /*
- *  ======== onChangeUpdateFlash ========
- *  Update number of persistent keys and flash size based on flash size configuration
+ *  ======== onChangeUpdateFlashSize ========
+ *  Update number of persistent keys, flash size, and recalculate flash offset
+ *  when flash size configuration changes. KeyStore is placed at the end of
+ *  useable flash, so the offset must shift when the size changes.
  */
-function onChangeUpdateFlash(inst)
+function onChangeUpdateFlashSize(inst)
 {
     if (inst.flashSizeConfig == "4KB (11 Persistent Keys Max)")
     {
@@ -545,7 +624,19 @@ function onChangeUpdateFlash(inst)
         inst.flashSize = 0x2800;
     }
 
+    /* Recalculate flash offset: KeyStore placed at end of useable flash */
+    inst.flashOffset = useableFlashEnd - inst.flashSize;
+
     /* Update the flash address based on the offset and base address */
+    inst.flashAddress = baseAddress + inst.flashOffset;
+}
+
+/*
+ *  ======== onChangeUpdateFlashOffset ========
+ *  Update flash address when the user manually changes the flash offset.
+ */
+function onChangeUpdateFlashOffset(inst)
+{
     inst.flashAddress = baseAddress + inst.flashOffset;
 }
 
@@ -569,7 +660,39 @@ function validate(inst, validation)
     if (inst.flashOffset % sectorSize) {
         let message = "KeyStore flash offset must be aligned on a " + sectorSize
             + " page boundary.";
-        Common.logError(validation, inst, "flashOffset", message);
+        logError(validation, inst, "flashOffset", message);
+    }
+
+    if (inst.flashOffset < 0x1000) {
+        let message = "KeyStore flash offset must be at least 0x1000 to avoid collision with "
+            + "the interrupt vector table at the beginning of application flash.";
+        logError(validation, inst, "flashOffset", message);
+    }
+
+    if (inst.flashOffset + inst.flashSize > useableFlashEnd) {
+        let message = "KeyStore flash region (offset 0x" + inst.flashOffset.toString(16).toUpperCase()
+            + " + size 0x" + inst.flashSize.toString(16).toUpperCase()
+            + ") exceeds useable flash boundary (0x"
+            + useableFlashEnd.toString(16).toUpperCase()
+            + ") and would overlap with the HSM firmware region.";
+        logError(validation, inst, "flashOffset", message);
+    }
+
+    if (inst.assetStoreSlotCount > maxAssetStoreSlots)
+    {
+        let message = "Asset store slot count must be " + maxAssetStoreSlots + " or less.";
+        logError(validation, inst, "assetStoreSlotCount", message);
+    }
+    else if (inst.assetStoreSlotCount < 1)
+    {
+        let message = "You must reserve at least 1 asset store slot.";
+        logError(validation, inst, "assetStoreSlotCount", message);
+    }
+
+    if (inst.persistentKeyCacheSlots < 1)
+    {
+        let message = "You must reserve at least 1 persistent key cache slot.";
+        logError(validation, inst, "persistentKeyCacheSlots", message);
     }
 }
 
@@ -586,6 +709,9 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
             inst.$uiState.ramUsage.hidden = true;
             inst.$uiState.flashRegionType.hidden = true;
             inst.$uiState.flashOffset.hidden = true;
+            inst.$uiState.useSWCrypto.hidden = true;
+            /* mbedTLS SW Crypto is not supported (yet) in TrustZone builds */
+            inst.useSWCrypto = false;
 
             /* Hide volatile key configs */
             Object.keys(inst.$uiState).forEach(key => {
@@ -593,6 +719,12 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
                     inst.$uiState[key].hidden = true;
                 }
             });
+
+            /* If TrustZone is enabled, we must prevent definition of
+             * SysConfig-generated content that the secure build defines
+             * for itself.
+             */
+            inst.isTrustZoneEnabled = true;
         }
         else {
             /* Display base config */
@@ -601,6 +733,7 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
             inst.$uiState.ramUsage.hidden = false;
             inst.$uiState.flashRegionType.hidden = false;
             inst.$uiState.flashOffset.hidden = false;
+            inst.$uiState.useSWCrypto.hidden = false;
 
             /* Display volatile key configs */
             Object.keys(inst.$uiState).forEach(key => {
@@ -608,6 +741,8 @@ function onModuleChanged(inst, dependentInst, moduleName, configurables) {
                     inst.$uiState[key].hidden = false;
                 }
             });
+
+            inst.isTrustZoneEnabled = false;
         }
     }
 }

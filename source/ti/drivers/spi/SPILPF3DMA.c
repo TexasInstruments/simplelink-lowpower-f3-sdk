@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,7 @@
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(driverlib/evtsvt.h)
 #include DeviceFamily_constructPath(driverlib/udma.h)
+#include DeviceFamily_constructPath(driverlib/cpu.h)
 
 #include <ti/drivers/dma/UDMALPF3.h>
 #include <ti/drivers/dpl/DebugP.h>
@@ -69,6 +70,13 @@
 #define PARAMS_DATASIZE_MIN SPI_DATASIZE_8
 #define PARAMS_DATASIZE_MAX SPI_DATASIZE_16
 
+/*
+ * Number of clock cycles before after which the receive timeout flag RTOUT is set.
+ * The value has been set the maximum value (63) so that a false receive timeout
+ * event is not triggered and sufficient time is available for the next SCLK pulse.
+ */
+#define SPI_RTOUT_VALUE (63)
+
 /* API Function Prototypes */
 void SPILPF3DMA_close(SPI_Handle handle);
 int_fast16_t SPILPF3DMA_control(SPI_Handle handle, uint_fast16_t cmd, void *arg);
@@ -79,39 +87,39 @@ bool SPILPF3DMA_transfer(SPI_Handle handle, SPI_Transaction *transaction);
 void SPILPF3DMA_transferCancel(SPI_Handle handle);
 
 /* Local Function Prototypes */
-static void blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg);
-static void configNextTransfer(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs);
-static void csnCallback(uint_least8_t);
-static void flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs);
-static bool initHw(SPI_Handle handle);
-static void initIO(SPI_Handle handle);
-static void finalizeIO(SPI_Handle handle);
-static void setIOStandbyState(SPI_Handle handle);
-static inline void primeTransfer(SPI_Handle handle);
-static inline void releaseConstraint(uint32_t txBufAddr);
-static inline void setConstraint(uint32_t txBufAddr);
-static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transaction);
-static int spiPostNotify(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg);
-static inline bool spiBusy(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs);
-static inline void disableSPI(uint32_t baseAddr);
-static inline void enableSPI(SPI_Handle handle);
-static inline bool isSPIEnabled(SPI_Handle handle);
-static inline void enableInterrupt(uint32_t baseAddr, uint32_t irqs);
-static inline void disableInterrupt(uint32_t baseAddr, uint32_t irqs);
-static inline void clearInterrupt(uint32_t baseAddr, uint32_t irqs);
-static void enableDMA(uint32_t baseAddr, uint32_t dmaFlags);
-static void disableDMA(uint32_t baseAddr, uint32_t dmaFlags);
-static inline uint32_t getInterruptStatus(uint32_t baseAddr, bool masked);
-static bool configSPI(uint32_t baseAddr,
-                      uint32_t freq,
-                      uint32_t format,
-                      uint32_t mode,
-                      uint32_t bitRate,
-                      uint32_t dataSize,
-                      uint32_t dsample);
-static int32_t dataPutNonBlocking(uint32_t baseAddr, uint32_t frame);
-static void dataGet(uint32_t baseAddr, uint32_t *frame);
-static bool isSPIbusy(uint32_t baseAddr);
+static void SPILPF3DMA_blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg);
+static void SPILPF3DMA_configNextTransfer(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs);
+static void SPILPF3DMA_csnCallback(uint_least8_t);
+static void SPILPF3DMA_flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs);
+static bool SPILPF3DMA_initHw(SPI_Handle handle);
+static void SPILPF3DMA_initIO(SPI_Handle handle);
+static void SPILPF3DMA_finalizeIO(SPI_Handle handle);
+static void SPILPF3DMA_setIOStandbyState(SPI_Handle handle);
+static inline void SPILPF3DMA_primeTransfer(SPI_Handle handle);
+static inline void SPILPF3DMA_releaseConstraint(uint32_t txBufAddr);
+static inline void SPILPF3DMA_setConstraint(uint32_t txBufAddr);
+static inline void SPILPF3DMA_spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transaction);
+static int SPILPF3DMA_spiPostNotify(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg);
+static inline bool SPILPF3DMA_spiBusy(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs);
+static inline void SPILPF3DMA_disableSPI(uint32_t baseAddr);
+static inline void SPILPF3DMA_enableSPI(SPI_Handle handle);
+static inline bool SPILPF3DMA_isSPIEnabled(SPI_Handle handle);
+static inline void SPILPF3DMA_enableInterrupt(uint32_t baseAddr, uint32_t irqs);
+static inline void SPILPF3DMA_disableInterrupt(uint32_t baseAddr, uint32_t irqs);
+static inline void SPILPF3DMA_clearInterrupt(uint32_t baseAddr, uint32_t irqs);
+static void SPILPF3DMA_enableDMA(uint32_t baseAddr, uint32_t dmaFlags);
+static void SPILPF3DMA_disableDMA(uint32_t baseAddr, uint32_t dmaFlags);
+static inline uint32_t SPILPF3DMA_getInterruptStatus(uint32_t baseAddr, bool masked);
+static bool SPILPF3DMA_configSPI(uint32_t baseAddr,
+                                 uint32_t freq,
+                                 uint32_t format,
+                                 uint32_t mode,
+                                 uint32_t bitRate,
+                                 uint32_t dataSize,
+                                 uint32_t dsample);
+static int32_t SPILPF3DMA_dataPutNonBlocking(uint32_t baseAddr, uint32_t frame);
+static void SPILPF3DMA_dataGet(uint32_t baseAddr, uint32_t *frame);
+static bool SPILPF3DMA_isSPIBusy(uint32_t baseAddr);
 
 /* RX FIFO over flowed, data was lost */
 #define SPI_INT_RXOF   (SPI_MIS_RXOVF_SET)
@@ -137,7 +145,7 @@ static bool isSPIbusy(uint32_t baseAddr);
 /* Maximum serial clock divider value */
 #define SERIAL_CLK_DIVIDER_MAX 0x3FFU
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     /*
      * DMA arbitration selection for TX channel
      * This is a workaround for a DMA errata documented at:
@@ -207,7 +215,7 @@ void SPILPF3DMA_close(SPI_Handle handle)
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
 
     /* Disable the SPI */
-    disableSPI(hwAttrs->baseAddr);
+    SPILPF3DMA_disableSPI(hwAttrs->baseAddr);
 
     HwiP_destruct(&(object->hwi));
 
@@ -218,7 +226,7 @@ void SPILPF3DMA_close(SPI_Handle handle)
         SemaphoreP_destruct(&(object->transferComplete));
     }
 
-    finalizeIO(handle);
+    SPILPF3DMA_finalizeIO(handle);
 
     Power_releaseDependency(hwAttrs->powerID);
 
@@ -335,16 +343,16 @@ int_fast16_t SPILPF3DMA_control(SPI_Handle handle, uint_fast16_t cmd, void *arg)
         case SPILPF3DMA_CMD_MANUAL_START:
             if (object->headPtr != NULL && object->manualStart)
             {
-                enableSPI(handle);
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
                 /*
                  * This is a workaround for a DMA errata documented at:
                  * https://www.ti.com/lit/pdf/swrz161
                  */
                 uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
 #endif
-                enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+                SPILPF3DMA_enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
                 UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
+                SPILPF3DMA_enableSPI(handle);
                 ret = SPI_STATUS_SUCCESS;
             }
             break;
@@ -375,6 +383,7 @@ int_fast16_t SPILPF3DMA_control(SPI_Handle handle, uint_fast16_t cmd, void *arg)
 /*
  *  ======== SPILPF3DMA_hwiFxn ========
  */
+
 static void SPILPF3DMA_hwiFxn(uintptr_t arg)
 {
     uint32_t freeChannel;
@@ -388,15 +397,15 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
     uint8_t i;
     uintptr_t key;
 
-    intStatus = getInterruptStatus(hwAttrs->baseAddr, true);
-    clearInterrupt(hwAttrs->baseAddr, intStatus);
+    intStatus = SPILPF3DMA_getInterruptStatus(hwAttrs->baseAddr, true);
+    SPILPF3DMA_clearInterrupt(hwAttrs->baseAddr, intStatus);
 
-    if (intStatus & SPI_MIS_RXOVF_SET)
+    if ((intStatus & SPI_MIS_RXOVF_SET) || (intStatus & SPI_MIS_RTOUT_SET))
     {
         if (object->headPtr != NULL)
         {
             /*
-             * RX overrun during a transfer; mark the current transfer
+             * RX overrun or RX timeout during a transfer; mark the current transfer
              * as failed & cancel all remaining transfers.
              */
             object->headPtr->status = SPI_TRANSFER_FAILED;
@@ -405,17 +414,17 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
         }
         else
         {
-            disableSPI(hwAttrs->baseAddr);
+            SPILPF3DMA_disableSPI(hwAttrs->baseAddr);
 
             /* Disable DMA and clear DMA interrupts */
-            disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+            SPILPF3DMA_disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
             UDMALPF3_channelDisable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
             UDMALPF3_clearInterrupt(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
-            disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
-            clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+            SPILPF3DMA_disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+            SPILPF3DMA_clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
 
             /* Clear out the FIFO by resetting SPI module and re-initting */
-            flushFifos(hwAttrs);
+            SPILPF3DMA_flushFifos(hwAttrs);
         }
     }
     else
@@ -461,7 +470,7 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                 (txDmaTableEntry->control & UDMA_MODE_M) == UDMA_MODE_STOP &&
                 object->framesQueued == object->headPtr->count && object->headPtr->nextPtr == NULL)
             {
-                disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN);
+                SPILPF3DMA_disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN);
                 UDMALPF3_clearInterrupt(hwAttrs->txChannelBitMask);
             }
 
@@ -473,7 +482,7 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
 
                 /*
                  * Set the channel's transfer size to 0; 0 lets
-                 * configNextTransfer() know that there is a free channel.
+                 * SPILPF3DMA_configNextTransfer() know that there is a free channel.
                  */
                 *transferSize = 0;
 
@@ -482,19 +491,19 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                 {
                     /*
                      * In this case we need to reconfigure the channel to
-                     * continue transferring frames. configNextTransfer() will
+                     * continue transferring frames. SPILPF3DMA_configNextTransfer() will
                      * continue queueing frames for the current transfer or
                      * start the following transaction if necessary.
                      */
-                    configNextTransfer(object, hwAttrs);
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+                    SPILPF3DMA_configNextTransfer(object, hwAttrs);
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
                     /*
                      * This is a workaround for a DMA errata documented at:
                      * https://www.ti.com/lit/pdf/swrz161
                      */
                     uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
 #endif
-                    enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+                    SPILPF3DMA_enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
                     UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                 }
                 else
@@ -552,21 +561,21 @@ static void SPILPF3DMA_hwiFxn(uintptr_t arg)
                     if (object->headPtr != NULL)
                     {
                         /* Reconfigure channel for following transaction */
-                        configNextTransfer(object, hwAttrs);
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+                        SPILPF3DMA_configNextTransfer(object, hwAttrs);
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
                         /*
                          * This is a workaround for a DMA errata documented at:
                          * https://www.ti.com/lit/pdf/swrz161
                          */
                         uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
 #endif
-                        enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+                        SPILPF3DMA_enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
                         UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
                     }
                     else
                     {
                         /* No more queued transfers; disable DMA & SPI */
-                        disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+                        SPILPF3DMA_disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
 
                         /*
                          * For this driver implementation the peripheral is kept
@@ -661,7 +670,7 @@ SPI_Handle SPILPF3DMA_open(SPI_Handle handle, SPI_Params *params)
      * Configure IOs after hardware has been initialized so that IOs aren't
      * toggled unnecessary
      */
-    if (!initHw(handle))
+    if (!SPILPF3DMA_initHw(handle))
     {
         /*
          * Trying to use SPI driver when some other driver or application
@@ -678,13 +687,8 @@ SPI_Handle SPILPF3DMA_open(SPI_Handle handle, SPI_Params *params)
 
     /*
      * IO configuration must occur before SPI IP is enabled
-     * for peripheral mode.
-     * For controller mode see enableSPI().
      */
-    if (object->mode == SPI_PERIPHERAL)
-    {
-        initIO(handle);
-    }
+    SPILPF3DMA_initIO(handle);
 
     HwiP_Params_init(&paramsUnion.hwiParams);
     paramsUnion.hwiParams.arg      = (uintptr_t)handle;
@@ -698,7 +702,7 @@ SPI_Handle SPILPF3DMA_open(SPI_Handle handle, SPI_Params *params)
 
     Power_registerNotify(&object->spiPostObj,
                          PowerLPF3_AWAKE_STANDBY | PowerLPF3_ENTERING_STANDBY,
-                         (Power_NotifyFxn)spiPostNotify,
+                         (Power_NotifyFxn)SPILPF3DMA_spiPostNotify,
                          (uint32_t)handle);
 
     if (object->transferMode == SPI_MODE_BLOCKING)
@@ -708,7 +712,7 @@ SPI_Handle SPILPF3DMA_open(SPI_Handle handle, SPI_Params *params)
          * SPI transfer
          */
         SemaphoreP_constructBinary(&(object->transferComplete), 0);
-        object->transferCallbackFxn = blockingTransferCallback;
+        object->transferCallbackFxn = SPILPF3DMA_blockingTransferCallback;
     }
     else
     {
@@ -744,7 +748,7 @@ static void SPILPF3DMA_swiFxn(uintptr_t arg0, uintptr_t arg1)
         transaction->nextPtr = NULL;
 
         /* Transaction complete; release power constraints */
-        releaseConstraint((uint32_t)transaction->txBuf);
+        SPILPF3DMA_releaseConstraint((uint32_t)transaction->txBuf);
 
         /* Inverted logic here to restore interrupts right before we jump to the callback function and disable them
          * after we return */
@@ -836,7 +840,7 @@ bool SPILPF3DMA_transfer(SPI_Handle handle, SPI_Transaction *transaction)
     }
 
     /* Set constraints to guarantee transaction */
-    setConstraint((uint32_t)transaction->txBuf);
+    SPILPF3DMA_setConstraint((uint32_t)transaction->txBuf);
 
     /*
      * Polling transfer if BLOCKING mode & transaction->count < threshold
@@ -849,10 +853,10 @@ bool SPILPF3DMA_transfer(SPI_Handle handle, SPI_Transaction *transaction)
     {
         HwiP_restore(key);
 
-        spiPollingTransfer(handle, transaction);
+        SPILPF3DMA_spiPollingTransfer(handle, transaction);
 
         /* Release constraint since transaction is done */
-        releaseConstraint((uint32_t)transaction->txBuf);
+        SPILPF3DMA_releaseConstraint((uint32_t)transaction->txBuf);
 
         /* Transaction completed; set status & mark SPI ready */
         object->headPtr->status = SPI_TRANSFER_COMPLETED;
@@ -868,13 +872,21 @@ bool SPILPF3DMA_transfer(SPI_Handle handle, SPI_Transaction *transaction)
          */
 
         /* Enable DMA interrupts */
-        clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
-        enableInterrupt(hwAttrs->baseAddr, SPI_MIS_DMATX_SET | SPI_MIS_DMARX_SET);
+        SPILPF3DMA_clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+        SPILPF3DMA_enableInterrupt(hwAttrs->baseAddr, SPI_MIS_DMATX_SET | SPI_MIS_DMARX_SET);
 
-        primeTransfer(handle);
+        SPILPF3DMA_primeTransfer(handle);
+
+        if (object->mode == SPI_PERIPHERAL)
+        {
+            HWREG(hwAttrs->baseAddr + SPI_O_CTL1) |= (SPI_RTOUT_VALUE << SPI_CTL1_RTOUT_S);
+
+            /* Enable the RX timeout interrupt in the SPI module */
+            SPILPF3DMA_enableInterrupt(hwAttrs->baseAddr, SPI_MIS_RTOUT_SET);
+        }
 
         /* Enable the RX overrun interrupt in the SPI module */
-        enableInterrupt(hwAttrs->baseAddr, SPI_MIS_RXOVF_SET);
+        SPILPF3DMA_enableInterrupt(hwAttrs->baseAddr, SPI_MIS_RXOVF_SET);
 
         HwiP_restore(key);
 
@@ -925,7 +937,7 @@ void SPILPF3DMA_transferCancel(SPI_Handle handle)
          * machine is in a bad state. Calling SPI_transfer() will re-enable
          * the peripheral.
          */
-        disableSPI(hwAttrs->baseAddr);
+        SPILPF3DMA_disableSPI(hwAttrs->baseAddr);
         HwiP_restore(key);
 
         return;
@@ -957,17 +969,17 @@ void SPILPF3DMA_transferCancel(SPI_Handle handle)
              * Wait until the TX FIFO is empty; this is to make sure the
              * chip select is deasserted before disabling the SPI.
              */
-            while (isSPIbusy(hwAttrs->baseAddr)) {}
+            while (SPILPF3DMA_isSPIBusy(hwAttrs->baseAddr)) {}
         }
 
-        disableSPI(hwAttrs->baseAddr);
+        SPILPF3DMA_disableSPI(hwAttrs->baseAddr);
 
         /* Now disable the RX, DMA & interrupts */
         UDMALPF3_channelDisable(hwAttrs->rxChannelBitMask);
-        disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+        SPILPF3DMA_disableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
         UDMALPF3_clearInterrupt(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
-        disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
-        clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+        SPILPF3DMA_disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+        SPILPF3DMA_clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
 
         /*
          * Update transaction->count with the amount of frames which have
@@ -998,7 +1010,7 @@ void SPILPF3DMA_transferCancel(SPI_Handle handle)
          * Disables peripheral, clears all registers & reinitializes it to
          * parameters used in SPI_open()
          */
-        initHw(handle);
+        SPILPF3DMA_initHw(handle);
 
         HwiP_clearInterrupt(hwAttrs->intNum);
         HwiP_enableInterrupt(hwAttrs->intNum);
@@ -1067,9 +1079,9 @@ void SPILPF3DMA_transferCancel(SPI_Handle handle)
 }
 
 /*
- *  ======== blockingTransferCallback ========
+ *  ======== SPILPF3DMA_blockingTransferCallback ========
  */
-static void blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg)
+static void SPILPF3DMA_blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg)
 {
     SPILPF3DMA_Object *object = handle->object;
 
@@ -1077,10 +1089,10 @@ static void blockingTransferCallback(SPI_Handle handle, SPI_Transaction *msg)
 }
 
 /*
- *  ======== configNextTransfer ========
+ *  ======== SPILPF3DMA_configNextTransfer ========
  *  This function must be executed with interrupts disabled.
  */
-static void configNextTransfer(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs)
+static void SPILPF3DMA_configNextTransfer(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs)
 {
     size_t framesQueued;
     uint32_t transferAmt;
@@ -1217,11 +1229,11 @@ static void configNextTransfer(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs con
 }
 
 /*
- *  ======== csnCallback ========
+ *  ======== SPILPF3DMA_csnCallback ========
  *  Peripheral mode optional callback function for when the CS is asserted &
  *  deasserted.
  */
-static void csnCallback(uint_least8_t index)
+static void SPILPF3DMA_csnCallback(uint_least8_t index)
 {
     uintptr_t key;
     SPI_Handle spiHandle      = (SPI_Handle)GPIO_getUserArg(index);
@@ -1266,12 +1278,12 @@ static void csnCallback(uint_least8_t index)
 }
 
 /*
- *  ======== flushFifos ========
+ *  ======== SPILPF3DMA_flushFifos ========
  */
-static void flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs)
+static void SPILPF3DMA_flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs)
 {
     /* Disable the SPI in case it isn't already */
-    disableSPI(hwAttrs->baseAddr);
+    SPILPF3DMA_disableSPI(hwAttrs->baseAddr);
 
     /* Trigger Fifo reset */
     HWREG(SPI0_BASE + SPI_O_CTL0) |= SPI_CTL0_FIFORST_RST_TRIG;
@@ -1280,23 +1292,23 @@ static void flushFifos(SPILPF3DMA_HWAttrs const *hwAttrs)
 }
 
 /*
- *  ======== initHw ========
+ *  ======== SPILPF3DMA_initHw ========
  */
-static bool initHw(SPI_Handle handle)
+static bool SPILPF3DMA_initHw(SPI_Handle handle)
 {
     ClockP_FreqHz freq                = {0, 0};
     SPILPF3DMA_Object *object         = handle->object;
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
     uint32_t format;
 
-    flushFifos(hwAttrs);
+    SPILPF3DMA_flushFifos(hwAttrs);
 
     /* Disable SSI operation */
-    disableSPI(hwAttrs->baseAddr);
+    SPILPF3DMA_disableSPI(hwAttrs->baseAddr);
 
     /* Disable SPI module interrupts */
-    disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
-    clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+    SPILPF3DMA_disableInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
+    SPILPF3DMA_clearInterrupt(hwAttrs->baseAddr, SPI_INT_ALL);
 
     /* Get requested format */
     format = frameFormat[object->format];
@@ -1314,54 +1326,53 @@ static bool initHw(SPI_Handle handle)
 
     if (freq.lo / 2 >= object->bitRate)
     {
-        configSPI(hwAttrs->baseAddr,
-                  freq.lo,
-                  format,
-                  mode[object->mode],
-                  object->bitRate,
-                  object->dataSize,
-                  object->dsample);
+        SPILPF3DMA_configSPI(hwAttrs->baseAddr,
+                             freq.lo,
+                             format,
+                             mode[object->mode],
+                             object->bitRate,
+                             object->dataSize,
+                             object->dsample);
         return true;
     }
     return false;
 }
 
 /*
- *  ======== initIO ========
+ *  ======== SPILPF3DMA_initIO ========
  *  This functions initializes the SPI IOs.
  *
  *  @pre    Function assumes that the SPI handle is pointing to a hardware
  *          module which has already been opened.
  */
-static void initIO(SPI_Handle handle)
+static void SPILPF3DMA_initIO(SPI_Handle handle)
 {
     SPILPF3DMA_Object *object         = handle->object;
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
 
     GPIO_setConfigAndMux(hwAttrs->sclkPin, GPIO_CFG_INPUT, hwAttrs->sclkPinMux);
-    GPIO_setConfigAndMux(object->csnPin, GPIO_CFG_INPUT, hwAttrs->csnPinMux);
+    /* Weak pull-up on CS line to avoid first frame issue
+     * First frame issue refers to a problem where first SPI data frame after
+     * asserting CS gets corrupted, shifter or lost while all subsequent frames
+     * are correct.
+     */
+    GPIO_setConfigAndMux(object->csnPin, GPIO_CFG_INPUT | GPIO_CFG_IN_PU, hwAttrs->csnPinMux);
+    GPIO_setConfigAndMux(hwAttrs->picoPin, GPIO_CFG_INPUT, hwAttrs->picoPinMux);
+    GPIO_setConfigAndMux(hwAttrs->pociPin, GPIO_CFG_INPUT, hwAttrs->pociPinMux);
 
     if (object->mode == SPI_PERIPHERAL)
     {
-        GPIO_setConfigAndMux(hwAttrs->picoPin, GPIO_CFG_INPUT, hwAttrs->picoPinMux);
-        GPIO_setConfigAndMux(hwAttrs->pociPin, GPIO_CFG_NO_DIR, hwAttrs->pociPinMux);
-
         /* In peripheral mode, enable WU from STDBY on CSN */
-        GPIO_setCallback(object->csnPin, csnCallback);
+        GPIO_setCallback(object->csnPin, SPILPF3DMA_csnCallback);
         GPIO_setUserArg(object->csnPin, handle);
-    }
-    else
-    {
-        GPIO_setConfigAndMux(hwAttrs->picoPin, GPIO_CFG_NO_DIR, hwAttrs->picoPinMux);
-        GPIO_setConfigAndMux(hwAttrs->pociPin, GPIO_CFG_INPUT, hwAttrs->pociPinMux);
     }
 }
 
 /*
- *  ======== finalizeIO ========
+ *  ======== SPILPF3DMA_finalizeIO ========
  *  This function releases the SPI IOs.
  */
-static void finalizeIO(SPI_Handle handle)
+static void SPILPF3DMA_finalizeIO(SPI_Handle handle)
 {
     SPILPF3DMA_Object *object         = handle->object;
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
@@ -1378,46 +1389,40 @@ static void finalizeIO(SPI_Handle handle)
 }
 
 /*
- *  ======== setIOStandbyState ========
+ *  ======== SPILPF3DMA_setIOStandbyState ========
  *  This function releases the SPI IOs and resets pins back to initial user and GPIO Configurations.
  */
-static void setIOStandbyState(SPI_Handle handle)
+static void SPILPF3DMA_setIOStandbyState(SPI_Handle handle)
 {
     SPILPF3DMA_Object *object         = handle->object;
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
     bool sclkIsActiveHigh             = (HWREG(hwAttrs->baseAddr + SPI_O_CTL0) & SPI_CTL0_SPO_M) != 0;
 
-    /* CONFIG_GPIO_SPI_CONTROLLER_SCLK */
-    GPIO_PinConfig sclkPinConfig = GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED;
-
-    /* CONFIG_GPIO_SPI_CONTROLLER_CSN */
-    GPIO_PinConfig csnPinConfig = GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_HIGH;
-
-    /* CONFIG_GPIO_SPI_CONTROLLER_POCI */
-    GPIO_PinConfig picoPinConfig = GPIO_CFG_INPUT_INTERNAL | GPIO_CFG_IN_INT_NONE | GPIO_CFG_PULL_NONE_INTERNAL;
-
-    /* CONFIG_GPIO_SPI_CONTROLLER_PICO */
-    GPIO_PinConfig pociPinConfig = GPIO_CFG_OUTPUT_INTERNAL | GPIO_CFG_OUT_STR_MED | GPIO_CFG_OUT_LOW;
-
     if (object->mode == SPI_CONTROLLER)
     {
-        GPIO_setConfig(object->csnPin, csnPinConfig);
-        GPIO_setConfig(hwAttrs->picoPin, picoPinConfig);
+        GPIO_PinConfig sclkPinConfig = GPIO_CFG_OUTPUT;
+
+        GPIO_setConfig(object->csnPin, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_HIGH);
+        GPIO_setConfig(hwAttrs->picoPin, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_LOW);
+        GPIO_setConfig(hwAttrs->pociPin, GPIO_CFG_NO_DIR);
 
         sclkPinConfig |= sclkIsActiveHigh ? GPIO_CFG_OUT_HIGH : GPIO_CFG_OUT_LOW;
         GPIO_setConfig(hwAttrs->sclkPin, sclkPinConfig);
     }
     else
     {
-        GPIO_setConfig(hwAttrs->pociPin, pociPinConfig);
+        GPIO_setConfig(object->csnPin, GPIO_CFG_NO_DIR);
+        GPIO_setConfig(hwAttrs->picoPin, GPIO_CFG_NO_DIR);
+        GPIO_setConfig(hwAttrs->pociPin, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_LOW);
+        GPIO_setConfig(hwAttrs->sclkPin, GPIO_CFG_NO_DIR);
     }
 }
 
 /*
- *  ======== primeTransfer ========
+ *  ======== SPILPF3DMA_primeTransfer ========
  *  Function must be executed with interrupts disabled.
  */
-static inline void primeTransfer(SPI_Handle handle)
+static inline void SPILPF3DMA_primeTransfer(SPI_Handle handle)
 {
     SPILPF3DMA_Object *object         = handle->object;
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
@@ -1461,39 +1466,39 @@ static inline void primeTransfer(SPI_Handle handle)
         HwiP_enableInterrupt(hwAttrs->intNum);
 
         /* Configure RX & TX DMA transfers */
-        configNextTransfer(object, hwAttrs);
+        SPILPF3DMA_configNextTransfer(object, hwAttrs);
         object->activeChannel = UDMA_PRI_SELECT;
         if (object->headPtr->count > MAX_DMA_TRANSFER_AMOUNT)
         {
-            configNextTransfer(object, hwAttrs);
+            SPILPF3DMA_configNextTransfer(object, hwAttrs);
         }
 
         if (!object->manualStart)
         {
-            enableSPI(handle);
             /* Enable DMA to generate interrupt on SPI peripheral */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
             /*
              * This is a workaround for a DMA errata documented at:
              * https://www.ti.com/lit/pdf/swrz161
              */
             uDMAEnableChannelAttribute(hwAttrs->txChannelBitMask, UDMA_ATTR_USEBURST);
 #endif
-            enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
+            SPILPF3DMA_enableDMA(hwAttrs->baseAddr, SPI_DMACR_TXEN | SPI_DMACR_RXEN);
             UDMALPF3_channelEnable(hwAttrs->rxChannelBitMask | hwAttrs->txChannelBitMask);
+            SPILPF3DMA_enableSPI(handle);
         }
     }
     else
     {
         /* One of the channels is active; configure the other channel */
-        configNextTransfer(object, hwAttrs);
+        SPILPF3DMA_configNextTransfer(object, hwAttrs);
     }
 }
 
 /*
- *  ======== releaseConstraint ========
+ *  ======== SPILPF3DMA_releaseConstraint ========
  */
-static inline void releaseConstraint(uint32_t txBufAddr)
+static inline void SPILPF3DMA_releaseConstraint(uint32_t txBufAddr)
 {
     /* Release need flash if buffer was in flash. */
     if (((txBufAddr & 0xE0000000) == 0x0) && (txBufAddr))
@@ -1506,9 +1511,9 @@ static inline void releaseConstraint(uint32_t txBufAddr)
 }
 
 /*
- *  ======== setConstraint ========
+ *  ======== SPILPF3DMA_setConstraint ========
  */
-static inline void setConstraint(uint32_t txBufAddr)
+static inline void SPILPF3DMA_setConstraint(uint32_t txBufAddr)
 {
     /*
      * Ensure flash is available if TX buffer is in flash.
@@ -1524,9 +1529,9 @@ static inline void setConstraint(uint32_t txBufAddr)
 }
 
 /*
- *  ======== spiPollingTransfer ========
+ *  ======== SPILPF3DMA_spiPollingTransfer ========
  */
-static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transaction)
+static inline void SPILPF3DMA_spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transaction)
 {
     uint8_t txIncrement, rxIncrement;
     uint32_t dummyBuffer;
@@ -1577,7 +1582,7 @@ static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transa
     rxCount = transaction->count;
     txCount = rxCount;
 
-    enableSPI(handle);
+    SPILPF3DMA_enableSPI(handle);
 
     /* Fill the TX FIFO as much as we can before reading */
     while (rxCount--)
@@ -1587,14 +1592,14 @@ static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transa
             put = true;
             while (txCount > 0 && put)
             {
-                put = dataPutNonBlocking(hwAttrs->baseAddr, *((uint8_t *)txBuf));
+                put = SPILPF3DMA_dataPutNonBlocking(hwAttrs->baseAddr, *((uint8_t *)txBuf));
                 if (put)
                 {
                     txBuf = (void *)(((uint32_t)txBuf) + txIncrement);
                     txCount--;
                 }
             }
-            dataGet(hwAttrs->baseAddr, &dummyBuffer);
+            SPILPF3DMA_dataGet(hwAttrs->baseAddr, &dummyBuffer);
             *((uint8_t *)rxBuf) = (uint8_t)dummyBuffer;
         }
         else
@@ -1602,14 +1607,14 @@ static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transa
             put = true;
             while (txCount > 0 && put)
             {
-                put = dataPutNonBlocking(hwAttrs->baseAddr, *((uint16_t *)txBuf));
+                put = SPILPF3DMA_dataPutNonBlocking(hwAttrs->baseAddr, *((uint16_t *)txBuf));
                 if (put)
                 {
                     txBuf = (void *)(((uint32_t)txBuf) + txIncrement);
                     txCount--;
                 }
             }
-            dataGet(hwAttrs->baseAddr, &dummyBuffer);
+            SPILPF3DMA_dataGet(hwAttrs->baseAddr, &dummyBuffer);
             *((uint16_t *)rxBuf) = (uint16_t)dummyBuffer;
         }
 
@@ -1617,40 +1622,36 @@ static inline void spiPollingTransfer(SPI_Handle handle, SPI_Transaction *transa
         rxBuf = (void *)(((uint32_t)rxBuf) + rxIncrement);
     }
 
-    while (spiBusy(object, hwAttrs)) {}
+    while (SPILPF3DMA_spiBusy(object, hwAttrs)) {}
 }
 
 /*
- *  ======== spiPostNotify ========
+ *  ======== SPILPF3DMA_spiPostNotify ========
  */
-static int spiPostNotify(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
+static int SPILPF3DMA_spiPostNotify(unsigned int eventType, uintptr_t eventArg, uintptr_t clientArg)
 {
-    SPI_Handle handle         = (SPI_Handle)clientArg;
-    SPILPF3DMA_Object *object = handle->object;
+    SPI_Handle handle = (SPI_Handle)clientArg;
 
     if (eventType == PowerLPF3_ENTERING_STANDBY)
     {
         /* Set the SPI IO back to default state before entering STDBY */
-        setIOStandbyState(handle);
+        SPILPF3DMA_setIOStandbyState(handle);
     }
     else
     {
-        initHw((SPI_Handle)clientArg);
-        if (object->mode == SPI_PERIPHERAL)
-        {
-            initIO(handle);
-        }
+        SPILPF3DMA_initHw((SPI_Handle)clientArg);
+        SPILPF3DMA_initIO(handle);
     }
 
     return (Power_NOTIFYDONE);
 }
 
 /*
- *  ======== spiBusy ========
+ *  ======== SPILPF3DMA_spiBusy ========
  *  HW is busy when in controller mode and BSY bit is set, or when in peripheral mode
  *  and TFE bit is not set.
  */
-static inline bool spiBusy(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs)
+static inline bool SPILPF3DMA_spiBusy(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *hwAttrs)
 {
     bool registerBit = (bool)(HWREG(hwAttrs->baseAddr + SPI_O_STA) & (object->busyBit));
     if (object->busyBit == SPI_STA_BUSY_ACTIVE)
@@ -1664,53 +1665,44 @@ static inline bool spiBusy(SPILPF3DMA_Object *object, SPILPF3DMA_HWAttrs const *
 }
 
 /*
- *  ======== disableSPI ========
+ *  ======== SPILPF3DMA_disableSPI ========
  *  Disables the SPI peripheral
  */
-static inline void disableSPI(uint32_t baseAddr)
+static inline void SPILPF3DMA_disableSPI(uint32_t baseAddr)
 {
     HWREG(baseAddr + SPI_O_CTL1) &= ~SPI_CTL1_EN_EN;
 }
 
 /*
- *  ======== enableSPI ========
+ *  ======== SPILPF3DMA_enableSPI ========
  *  Enables the SPI peripheral and performs IO muxing as necessary
  */
-static inline void enableSPI(SPI_Handle handle)
+static inline void SPILPF3DMA_enableSPI(SPI_Handle handle)
 {
-    SPILPF3DMA_Object *object         = handle->object;
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
     uint32_t baseAddr                 = hwAttrs->baseAddr;
 
-    if (!isSPIEnabled(handle))
+    if (!SPILPF3DMA_isSPIEnabled(handle))
     {
         HWREG(baseAddr + SPI_O_CTL1) |= SPI_CTL1_EN_EN;
-        if (object->mode == SPI_CONTROLLER)
-        {
-            /*
-             * IO mux needs to occur after SPI IP is enabled
-             * to produce correct signal state.
-             */
-            initIO(handle);
-        }
     }
 }
 
 /*
- *  ======== isSPIEnabled ========
+ *  ======== SPILPF3DMA_isSPIEnabled ========
  *  Returns the SPI Peripheral State
  */
-static inline bool isSPIEnabled(SPI_Handle handle)
+static inline bool SPILPF3DMA_isSPIEnabled(SPI_Handle handle)
 {
     SPILPF3DMA_HWAttrs const *hwAttrs = handle->hwAttrs;
     return (HWREG(hwAttrs->baseAddr + SPI_O_CTL1) & SPI_CTL1_EN_EN) != 0;
 }
 
 /*
- *  ======== getInterruptStatus ========
+ *  ======== SPILPF3DMA_getInterruptStatus ========
  *  Return the masked interrupt status
  */
-static inline uint32_t getInterruptStatus(uint32_t baseAddr, bool masked)
+static inline uint32_t SPILPF3DMA_getInterruptStatus(uint32_t baseAddr, bool masked)
 {
     /* Return either the interrupt status or the raw interrupt status as
     requested. */
@@ -1725,59 +1717,59 @@ static inline uint32_t getInterruptStatus(uint32_t baseAddr, bool masked)
 }
 
 /*
- *  ======== enableInterrupt ========
+ *  ======== SPILPF3DMA_enableInterrupt ========
  *  Enables the SPI peripheral interrupt
  */
-static inline void enableInterrupt(uint32_t baseAddr, uint32_t irqs)
+static inline void SPILPF3DMA_enableInterrupt(uint32_t baseAddr, uint32_t irqs)
 {
     HWREG(baseAddr + SPI_O_IMASK) |= irqs;
 }
 
 /*
- *  ======== disableInterrupt ========
+ *  ======== SPILPF3DMA_disableInterrupt ========
  *  Disables the SPI peripheral interrupt
  */
-static inline void disableInterrupt(uint32_t baseAddr, uint32_t irqs)
+static inline void SPILPF3DMA_disableInterrupt(uint32_t baseAddr, uint32_t irqs)
 {
     HWREG(baseAddr + SPI_O_IMASK) &= ~irqs;
 }
 
 /*
- *  ======== clearInterrupt ========
+ *  ======== SPILPF3DMA_clearInterrupt ========
  *  Clears the specified SPI peripheral interrupts
  */
-static inline void clearInterrupt(uint32_t baseAddr, uint32_t irqs)
+static inline void SPILPF3DMA_clearInterrupt(uint32_t baseAddr, uint32_t irqs)
 {
     HWREG(baseAddr + SPI_O_ICLR) = irqs;
 }
 
 /*
- *  ======== enableDMA ========
+ *  ======== SPILPF3DMA_enableDMA ========
  *  Enable the SPI DMA peripheral
  */
-static void enableDMA(uint32_t baseAddr, uint32_t dmaFlags)
+static void SPILPF3DMA_enableDMA(uint32_t baseAddr, uint32_t dmaFlags)
 {
     /* Set the requested bits in the SPI DMA control register. */
     HWREG(baseAddr + SPI_O_DMACR) |= dmaFlags;
 }
 
-static void disableDMA(uint32_t baseAddr, uint32_t dmaFlags)
+static void SPILPF3DMA_disableDMA(uint32_t baseAddr, uint32_t dmaFlags)
 {
     /* Clear the requested bits in the SPI DMA control register. */
     HWREG(baseAddr + SPI_O_DMACR) &= ~dmaFlags;
 }
 
 /*
- *  ======== configSPI ========
+ *  ======== SPILPF3DMA_configSPI ========
  *  Configures the peripheral settings
  */
-static bool configSPI(uint32_t baseAddr,
-                      uint32_t freq,
-                      uint32_t format,
-                      uint32_t mode,
-                      uint32_t bitRate,
-                      uint32_t dataSize,
-                      uint32_t dsample)
+static bool SPILPF3DMA_configSPI(uint32_t baseAddr,
+                                 uint32_t freq,
+                                 uint32_t format,
+                                 uint32_t mode,
+                                 uint32_t bitRate,
+                                 uint32_t dataSize,
+                                 uint32_t dsample)
 {
     uint16_t scr;
     uint32_t ratio;
@@ -1795,6 +1787,12 @@ static bool configSPI(uint32_t baseAddr,
     /* Set controller/peripheral mode, MSB first */
     HWREG(baseAddr + SPI_O_CTL1) = mode | SPI_CTL1_MSB_MSB;
 
+    /* If in peripheral mode, configure receive timeout */
+    if (mode == SPI_CTL1_MS_PERIPHERAL)
+    {
+        HWREG(baseAddr + SPI_O_CTL1) |= (SPI_RTOUT_VALUE << SPI_CTL1_RTOUT_S);
+    }
+
     /* Get existing settings */
     reg = HWREG(baseAddr + SPI_O_CLKCFG1);
 
@@ -1810,6 +1808,14 @@ static bool configSPI(uint32_t baseAddr,
      * This is a workaround for a DMA errata documented at:
      * https://www.ti.com/lit/pdf/swrz161
      */
+    HWREG(baseAddr + SPI_O_IFLS) = SPI_IFLS_TXSEL_LVL_3_4 | SPI_IFLS_RXSEL_LVL_1_2;
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
+    /*
+     * Set TX FIFO <= 3/4 empty, and RX FIFO >= 1/2 full (default).
+     * This is a workaround for a DMA errata documented at:
+     * https://www.ti.com/lit/pdf/swrz161
+     */
+    ratio                        = freq / (2 * bitRate);
     HWREG(baseAddr + SPI_O_IFLS) = SPI_IFLS_TXSEL_LVL_3_4 | SPI_IFLS_RXSEL_LVL_1_2;
 #else
     ratio = freq / (2 * bitRate);
@@ -1830,7 +1836,7 @@ static bool configSPI(uint32_t baseAddr,
     return (true);
 }
 
-static int32_t dataPutNonBlocking(uint32_t baseAddr, uint32_t frame)
+static int32_t SPILPF3DMA_dataPutNonBlocking(uint32_t baseAddr, uint32_t frame)
 {
     /* Check for space to write. */
     if (HWREG(baseAddr + SPI_O_STA) & SPI_STA_TNF_NOT_FULL)
@@ -1845,7 +1851,7 @@ static int32_t dataPutNonBlocking(uint32_t baseAddr, uint32_t frame)
     }
 }
 
-static void dataGet(uint32_t baseAddr, uint32_t *frame)
+static void SPILPF3DMA_dataGet(uint32_t baseAddr, uint32_t *frame)
 {
     /* Wait until there is data to be read. */
     while (HWREG(baseAddr + SPI_O_STA) & SPI_STA_RFE_EMPTY) {}
@@ -1854,7 +1860,7 @@ static void dataGet(uint32_t baseAddr, uint32_t *frame)
     *frame = HWREG(baseAddr + SPI_O_RXDATA);
 }
 
-static bool isSPIbusy(uint32_t baseAddr)
+static bool SPILPF3DMA_isSPIBusy(uint32_t baseAddr)
 {
     /* Determine if the SPI is busy. */
     return ((HWREG(baseAddr + SPI_O_STA) & SPI_STA_BUSY) ? true : false);

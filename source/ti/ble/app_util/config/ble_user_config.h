@@ -145,26 +145,6 @@ extern "C"
 #define LL_MAX_TASK_PRIORITY           (5)
 #endif // FREERTOS
 
-
-// RF Front End Settings
-// Note: The use of these values completely depends on how the PCB is laid out.
-//       Please see Device Package and Evaluation Module (EM) Board below.
-#define RF_FE_DIFFERENTIAL              0
-#define RF_FE_SINGLE_ENDED_RFP          1
-#define RF_FE_SINGLE_ENDED_RFN          2
-#define RF_FE_ANT_DIVERSITY_RFP_FIRST   3
-#define RF_FE_ANT_DIVERSITY_RFN_FIRST   4
-#define RF_FE_SINGLE_ENDED_RFP_EXT_PINS 5
-#define RF_FE_SINGLE_ENDED_RFN_EXT_PINS 6
-//
-#define RF_FE_INT_BIAS                  (0<<3)
-#define RF_FE_EXT_BIAS                  (1<<3)
-
-// This is a common file for the legacy and sysconfig examples,
-// the parameters under ifndef SYSCFG are defined in this file for
-// the legacy examples and generated using the sysconfig tool for
-// the sysconfig examples
-#ifndef SYSCFG
 // Maximum number of BLE connections. It should be set based on the
 // device GAP role. Here're some recommended values:
 //      * Central:     3
@@ -180,11 +160,16 @@ extern "C"
 /************************************/
 
 // Specifies whether LFOSC (RCOSC) was configured in CCFG module by the user
+#ifndef SRC_CLK_IS_LFOSC
 #define SRC_CLK_IS_LFOSC                0
+#endif
 
 // User configurable extra PPM for peripheral RX window widening
 // This only applies if SRC_CLK_IS_LFOSC is set to 1, default value will be 1500PPM
+#ifndef USER_CFG_LFOSC_EXTRA_PPM
 #define USER_CFG_LFOSC_EXTRA_PPM        1500
+#endif
+
 
 // bitmask of extended stack settings
 #ifndef EXTENDED_STACK_SETTINGS
@@ -210,8 +195,6 @@ extern "C"
 #define CS_STEPS_RESULTS_FORMAT         1   // By default set it to 'Custom' format
 #endif
 #endif
-
-#endif //SYSCFG
 
 // Maximum number of L2CAP Protocol/Service Multiplexers (PSM)
 #ifndef L2CAP_NUM_PSM
@@ -301,13 +284,13 @@ extern "C"
 #ifndef SDAA_TX_POWER_GAIN
 #define SDAA_TX_POWER_GAIN    0  // (dBm)
 #elif (SDAA_TX_POWER_GAIN < -20 || SDAA_TX_POWER_GAIN > 20)
-#error "SDAA_TX_POWER_GAIN should be between -40 and 20 dBm"
+#error "SDAA_TX_POWER_GAIN should be between -20 and 20 dBm"
 #endif
 
 #ifndef SDAA_RX_POWER_GAIN
 #define SDAA_RX_POWER_GAIN    0  // (dBm)
 #elif (SDAA_RX_POWER_GAIN < -20 || SDAA_RX_POWER_GAIN > 20)
-#error "SDAA_RX_POWER_GAIN should be between -40 and 20 dBm"
+#error "SDAA_RX_POWER_GAIN should be between -20 and 20 dBm"
 #endif
 
 /************************************/

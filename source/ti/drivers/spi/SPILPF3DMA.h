@@ -402,8 +402,9 @@
  *  @endcode
  *
  *  ### Controller Mode With Multiple Peripherals @anchor USE_CASE_MMMS_23X0 #
- *  This use case will configure a SPI controller to send data to one peripheral
-    and then to another in BLOCKING_MODE. It is assumed that SysConfig is
+ *  This use case will configure a single SPI instance configured as controller
+    in BLOCKING mode to send data to one peripheral, and then switch the CS
+    pin to send data to the other peripheral. It is assumed that SysConfig is
     configured so that the two chip select pins have a default setting of a high
     output and that the #SPILPF3DMA_HWAttrs used points to one of them since the
     SPI driver will revert to this default setting when switching the chip
@@ -413,15 +414,15 @@
  *  // From ti_drivers_config.c
  *  // Use the sysconfig settings to make sure both pins are set to HIGH when
  *  // not in use
- *  GPIO_PinConfig gpioPinConfigs[31] = {
+ *  GPIO_PinConfig gpioPinConfigs[GPIO_NUMBER_OF_CONFIGS] = {
  *      ...
- *      GPIO_CFG_OUT_STD | GPIO_CFG_OUT_HIGH, // CONFIG_CSN_0
+ *      GPIO_CFG_OUT_STD | GPIO_CFG_OUT_HIGH, // CONFIG_SPI_CSN_0
  *      ...
- *      GPIO_CFG_OUT_STD | GPIO_CFG_OUT_HIGH, // CONFIG_CSN_1
+ *      GPIO_CFG_OUT_STD | GPIO_CFG_OUT_HIGH, // CONFIG_SPI_CSN_1
  *  }
  *
  *  const SPILPF3DMA_HWAttrs SPILPF3DMAHWAttrs[CONFIG_SPI_COUNT] = {
- *      // Use SPI0 module with default chip select on CONFIG_CSN_0
+ *      // Use SPI0 module with default chip select on CONFIG_SPI_CSN_0
  *      .baseAddr              = SPI0_BASE,
  *      .intNum                = INT_SPI0_COMB,
  *      .intPriority           = (~0),
@@ -454,7 +455,7 @@
  *      SPI_Handle handle;
  *      SPI_Params params;
  *      SPI_Transaction transaction;
- *      uint_least8_t csnPin1 = CONFIG_CSN_1;
+ *      uint_least8_t csnPin1 = CONFIG_SPI_CSN_1;
  *      uint8_t txBuf[] = "Hello World";    // Transmit buffer
  *
  *      // Init SPI and specify non-default parameters

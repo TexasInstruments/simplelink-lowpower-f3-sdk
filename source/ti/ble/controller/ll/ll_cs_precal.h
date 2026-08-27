@@ -124,6 +124,24 @@ typedef struct RCL_CMD_BLE_CS_PRECAL_t       llCsPrecal_rclCmd_t;
 uint8_t llCsPrecal_init(RCL_Callback cmdCallback, uint16_t taskId);
 
 /*******************************************************************************
+ * @fn          llCsPrecal_clear
+ *
+ * @brief       Clear the CS Precal Module
+ * This function halts any ongoing precalibration command, frees the precal task
+ * and resets the retry timer and retry counter.
+ *
+ * input parameters
+ *
+ * @param       None
+ *
+ * output parameters
+ * @param       None
+ *
+ * @return      None
+ */
+void llCsPrecal_clear(void);
+
+/*******************************************************************************
  * @fn          llCsPrecal_getTable
  *
  * @brief       Get the CS Precalibration Table

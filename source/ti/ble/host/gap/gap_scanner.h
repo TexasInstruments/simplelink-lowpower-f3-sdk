@@ -302,6 +302,9 @@ enum GapScan_EndReason_t {
 #define SCAN_PERIODIC_REPORTING_INITIALLY_ENABLED  (0 << 1)
 /// Scanner's option - Periodic advertising reports initially disabled
 #define SCAN_PERIODIC_REPORTING_INITIALLY_DISABLED (1 << 1)
+/// Length of fixed PAwR response parameters packed for the HCI command:
+/// rqtEvent(2) + rqtSubevent(1) + rspSubevent(1) + rspSlot(1) + rspDataLen(1)
+#define PAWR_RSP_FIXED_PARAMS_LEN                  6
 /** @} End GapScan_Periodic_advertising */
 /// @endcond //NODOC
 
@@ -622,6 +625,27 @@ typedef struct
   uint8  syncCteType;
 } GapScan_PeriodicAdvCreateSyncParams_t;
 
+/// Set periodic response data parameters structure
+typedef struct
+{
+  uint16_t syncHandle;    //!< Handle identifying the periodic advertising train
+  uint16_t rqtEvent;      //!< The value of paEventCounter for the periodic advertising packet that the Host is responding to
+  uint8_t  rqtSubevent;   //!< The subevent for the periodic advertising packet that the Host is responding to
+  uint8_t  rspSubevent;   //!< Used to identify the subevent of the PAwR train\n Range: 0x00 to 0x7F
+  uint8_t  rspSlot;       //!< Used to identify the response slot of the PAwR train\n Range: 0x00 to 0xFF
+  uint8_t  rspDataLen;    //!< 0 to 251 - The number of octets in the Response_Data parameter\n All other values - Reserved for future use
+  uint8_t  *pData;        //!< Response data
+} GapScan_SetPeriodicResponseDataParams_t;
+
+/// Periodic Sync Subevent Parameters Structure
+typedef struct
+{
+  uint16_t syncHandle;     //!< Handle identifying the periodic advertising train
+  uint16_t perAdvProps;    //!< Bit 6 - Indicates to include TxPower in the AUX_SYNC_SUBEVENT_RSP PDU.
+  uint8_t  numSubevents;   //!< Number of subevents to sync\n Range: 0x01 to 0x80
+  uint8_t  *subEvents;     //!< The subevent to synchronize with\n Range 0x00 to 0x7F
+} GapScan_PeriodicSyncSubeventParams_t;
+
 /// Command status and command complete event structure
 typedef struct
 {
@@ -647,36 +671,73 @@ typedef struct
   uint16_t syncHandle;    //!< Handle identifying the periodic advertising train
 } GapScan_PeriodicAdvSyncLostEvt_t;
 
-/// Periodic advertising report event structure
+/// Periodic advertising report V1 event structure
 typedef struct
 {
   osal_event_hdr_t hdr;  //!< OSAL Event Header
-  uint8  opcode;         //!< GAP type of command
-  uint8  BLEEventCode;   //!< BLE Event Code
-  uint16 syncHandle;     //!< Handle identifying the periodic advertising train
-  int8   txPower;        //!< Tx Power information (Range: -127 to +20 dBm)
-  int8   rssi;           //!< RSSI value for the received packet (Range: -127 to +20 dBm); If the packet contains CTE, this value is not available
-  uint8  cteType;        //!< 0x00 AoA CTE\n 0x01 - AoD CTE with 1us slots\n 0x02 - AoD CTE with 2us slots\n 0xFF - No CTE
-  uint8  dataStatus;     //!< 0x00 - Data complete\n 0x01 - Data incomplete, more data to come\n 0x02 - Data incomplete, data truncated, no more to come
-  uint8  dataLen;        //!< Length of the Data field (Range: 0 to 247)
-  uint8  *pData;         //!< Data received from a Periodic Advertising packet
-} GapScan_Evt_PeriodicAdvRpt_t;
+  uint8_t  opcode;                  //!< GAP type of command
+  uint8_t  BLEEventCode;            //!< BLE Event Code
+  uint16_t syncHandle;              //!< Handle identifying the periodic advertising train
+  int8_t   txPower;                 //!< Tx Power information (Range: -127 to +20 dBm)
+  int8_t   rssi;                    //!< RSSI value for the received packet (Range: -127 to +20 dBm); If the packet contains CTE, this value is not available
+  uint8_t  cteType;                 //!< 0x00 AoA CTE\n 0x01 - AoD CTE with 1us slots\n 0x02 - AoD CTE with 2us slots\n 0xFF - No CTE
+  uint8_t  dataStatus;              //!< 0x00 - Data complete\n 0x01 - Data incomplete, more data to come\n 0x02 - Data incomplete, data truncated, no more to come
+  uint8_t  dataLen;                 //!< Length of the Data field (Range: 0 to 247)
+  uint8_t  *pData;                  //!< Data received from a Periodic Advertising packet
+} GapScan_Evt_PeriodicAdvRptV1_t;
 
-/// Periodic advertising sync establish event structure
+/// Periodic advertising report V2 event structure
+typedef struct
+{
+  osal_event_hdr_t hdr;  //!< OSAL Event Header
+  uint8_t  opcode;                  //!< GAP type of command
+  uint8_t  BLEEventCode;            //!< BLE Event Code
+  uint16_t syncHandle;              //!< Handle identifying the periodic advertising train
+  int8_t   txPower;                 //!< Tx Power information (Range: -127 to +20 dBm)
+  int8_t   rssi;                    //!< RSSI value for the received packet (Range: -127 to +20 dBm); If the packet contains CTE, this value is not available
+  uint8_t  cteType;                 //!< 0x00 AoA CTE\n 0x01 - AoD CTE with 1us slots\n 0x02 - AoD CTE with 2us slots\n 0xFF - No CTE
+  uint16_t periodicEventCounter;    //!< Range: 0xFFFF to 0x0000\n
+  uint8_t  subEvent;                //!< The subevent number\n Range: 0x00 to 0x7F\n 0xFF - No Subevent
+  uint8_t  dataStatus;              //!< 0x00 - Data complete\n 0x01 - Data incomplete, more data to come\n 0x02 - Data incomplete, data truncated, no more to come
+  uint8_t  dataLen;                 //!< Length of the Data field (Range: 0 to 247)
+  uint8_t  *pData;                  //!< Data received from a Periodic Advertising packet
+} GapScan_Evt_PeriodicAdvRptV2_t;
+
+/// Periodic advertising sync establish V1 event structure
 typedef struct
 {
   osal_event_hdr_t hdr;      //!< OSAL Event Header
-  uint8  opcode;             //!< GAP type of command
-  uint8  BLEEventCode;       //!< BLE Event Code
-  uint8  status;             //!< Periodic advertising sync HCI status
-  uint16 syncHandle;         //!< Handle identifying the periodic advertising train
-  uint8  advSid;             //!< Value of the Advertising SID subfield in the ADI field of the PDU
-  uint8  advAddrType;        //!< Advertiser address type:\n 0x00 - Public\n 0x01 - Random\n 0x02 - Public Identity Address\n 0x03 - Random Identity Addres
-  uint8  advAddress[6];      //!< Advertiser address
-  uint8  advPhy;             //!< Advertiser PHY:\n 0x01 - LE 1M\n 0x02 - LE 2M\n 0x03 - LE Coded
-  uint16 periodicAdvInt;     //!< Periodic advertising interval Range: 0x0006 to 0xFFFF. Time = N * 1.25 ms (Time Range: 7.5 ms to 81.91875 s)
-  uint8  advClockAccuracy;   //!< Accuracy of the periodic advertiser's clock:\n 0x00 - 500 ppm\n 0x01 - 250 ppm\n 0x02 - 150 ppm\n 0x03 - 100 ppm\n 0x04 - 75 ppm\n 0x05 - 50 ppm\n 0x06 - 30 ppm\n 0x07 - 20 ppm
-} GapScan_Evt_PeriodicAdvSyncEst_t;
+  uint8_t  opcode;                //!< GAP type of command
+  uint8_t  BLEEventCode;          //!< BLE Event Code
+  uint8_t  status;                //!< Periodic advertising sync HCI status
+  uint16_t syncHandle;            //!< Handle identifying the periodic advertising train
+  uint8_t  advSid;                //!< Value of the Advertising SID subfield in the ADI field of the PDU
+  uint8_t  advAddrType;           //!< Advertiser address type:\n 0x00 - Public\n 0x01 - Random\n 0x02 - Public Identity Address\n 0x03 - Random Identity Addres
+  uint8_t  advAddress[6];         //!< Advertiser address
+  uint8_t  advPhy;                //!< Advertiser PHY:\n 0x01 - LE 1M\n 0x02 - LE 2M\n 0x03 - LE Coded
+  uint16_t periodicAdvInt;        //!< Periodic advertising interval Range: 0x0006 to 0xFFFF. Time = N * 1.25 ms (Time Range: 7.5 ms to 81.91875 s)
+  uint8_t  advClockAccuracy;      //!< Accuracy of the periodic advertiser's clock:\n 0x00 - 500 ppm\n 0x01 - 250 ppm\n 0x02 - 150 ppm\n 0x03 - 100 ppm\n 0x04 - 75 ppm\n 0x05 - 50 ppm\n 0x06 - 30 ppm\n 0x07 - 20 ppm
+} GapScan_Evt_PeriodicAdvSyncEstV1_t;
+
+/// Periodic advertising sync establish V2 event structure
+typedef struct
+{
+  osal_event_hdr_t hdr;      //!< OSAL Event Header
+  uint8_t  opcode;                //!< GAP type of command
+  uint8_t  BLEEventCode;          //!< BLE Event Code
+  uint8_t  status;                //!< Periodic advertising sync HCI status
+  uint16_t syncHandle;            //!< Handle identifying the periodic advertising train
+  uint8_t  advSid;                //!< Value of the Advertising SID subfield in the ADI field of the PDU
+  uint8_t  advAddrType;           //!< Advertiser address type:\n 0x00 - Public\n 0x01 - Random\n 0x02 - Public Identity Address\n 0x03 - Random Identity Addres
+  uint8_t  advAddress[6];         //!< Advertiser address
+  uint8_t  advPhy;                //!< Advertiser PHY:\n 0x01 - LE 1M\n 0x02 - LE 2M\n 0x03 - LE Coded
+  uint16_t periodicAdvInt;        //!< Periodic advertising interval Range: 0x0006 to 0xFFFF. Time = N * 1.25 ms (Time Range: 7.5 ms to 81.91875 s)
+  uint8_t  advClockAccuracy;      //!< Accuracy of the periodic advertiser's clock:\n 0x00 - 500 ppm\n 0x01 - 250 ppm\n 0x02 - 150 ppm\n 0x03 - 100 ppm\n 0x04 - 75 ppm\n 0x05 - 50 ppm\n 0x06 - 30 ppm\n 0x07 - 20 ppm
+  uint8_t  numSubevents;          //!< 0x00 - No subevents\n N=0xXX - Number of subevents\n Range: 0x01 to 0x80
+  uint8_t  subeventInterval;      //!< 0x00 - No subevents\n N=0xXX - Subevent interval\n Range: 0x06 to 0xFF\n Time = N 1.25 ms\n Time Range: 7.5 ms to 318.75 ms
+  uint8_t  responseSlotDelay;     //!< 0x00 - No response slots\n N=0xXX - Response slot delay\n Range: 0x01 to 0xFE\n Time = N 1.25 ms\n Time Range: 1.25 ms to 317.5 ms
+  uint8_t  responseSlotSpacing;   //!< 0x00 - No response slots\n N=0xXX - Response slot delay\n Range: 0x02 to 0xFF\n Time = N 1.25 ms\n Time Range: 0.25 ms to 31.875
+} GapScan_Evt_PeriodicAdvSyncEstV2_t;
 /// @endcond //NODOC
 
 /** @} End GapScan_Structs */
@@ -984,6 +1045,45 @@ hciStatus_t GapScan_ReadPeriodicAdvListSize( void );
  * @return @ref SUCCESS
  */
 bStatus_t GapScan_ClearPeriodicAdvList( void );
+
+/**
+ * GapScan_SetPeriodicAdvResponseData
+ *
+ * Used by the Host to set the periodic advertising response parameters
+ * and data.
+ *
+ * @param   pRspParams - Pointer to the periodic advertising response parameters
+ *                       and data.
+ *
+ * @return @ref SUCCESS
+ */
+bStatus_t GapScan_SetPeriodicAdvResponseData(GapScan_SetPeriodicResponseDataParams_t *rspParams);
+
+/**
+ * GapScan_SetPeriodicSyncSubevent
+ *
+ * Used by the Host to instruct the Controller
+ * to synchronize with a subset of the subevents within a PAwR train identified by the
+ * Sync_Handle parameter.
+ *
+ * @param   syncSubeventParams   - Pointer to the parmeters to synchronize with subevents within a PAwR train.
+ *
+ * @return @ref SUCCESS
+ * @return @ref bleInvalidRange
+*/
+bStatus_t GapScan_SetPeriodicSyncSubevent(GapScan_PeriodicSyncSubeventParams_t *syncSubeventParams);
+
+/**
+ * Gap_StartTSO
+ *
+ * Save syncHandle to LL to send to application the expected data.
+ *
+ * @param   syncHandle - Sync handle to receive events for (0xFFFF for all)
+ *
+ * @return @ref SUCCESS
+ */
+bStatus_t GapScan_StartTSO(uint16_t syncHandle);
+
 /// @endcond //NODOC
 
 /*-------------------------------------------------------------------

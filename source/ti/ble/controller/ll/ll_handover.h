@@ -105,6 +105,10 @@
 #define LL_HANDOVER_CONTROLLER_DATA_SIZE    (241U + 3U)
 #define LL_HANDOVER_COMPONENT_HEADER_SIZE   4U
 
+// Tx burst (central only) ratio value cannot exceed 50%, since it opens the Tx window before AND after the connection event,
+// resulting in bursting window larger than 100% - overriding the next and previous connection intervals.
+#define LL_HANDOVER_TX_BURST_RATIO_MAX_VAL  50
+
 /*******************************************************************************
  * TYPEDEFS
  */

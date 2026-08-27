@@ -265,6 +265,8 @@ uint8_t                 LL_PRIV_ValidatePeerAddress(uint8_t *peerAddr,  uint8_t 
 
 uint8_t                 LL_PRIV_ResolveRPAtoIdAddr( uint8_t devAddrType, uint8_t *devAddr,  uint8_t **pIdAddr );
 
+uint8_t                 *LL_PRIV_GetRPAByIdAddr( uint8_t *idAddr, uint8_t idAddrType );
+
 bool                    LL_PRIV_IsIDAddrAllowed( uint8 rlIndex );
 
 #ifdef QUAL_TEST

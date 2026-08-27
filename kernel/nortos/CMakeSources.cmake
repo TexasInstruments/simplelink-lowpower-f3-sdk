@@ -36,10 +36,26 @@ set(SOURCES_CC23X0R5 ${SOURCES_CC23X0} startup/startup_cc23x0r5_${TI_TOOLCHAIN_N
 
 set(SOURCES_CC23X0R2 ${SOURCES_CC23X0} startup/startup_cc23x0r2_${TI_TOOLCHAIN_NAME}.c)
 
-set(SOURCES_CC27XX ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
-                   startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
+set(SOURCES_CC23X1 ${SOURCES_LPF3} dpl/HwiPCC23X1_nortos.c dpl/PowerCC23X1_nortos.c)
+
+set(SOURCES_CC23X1R10 ${SOURCES_CC23X1} startup/startup_cc23x1r10_${TI_TOOLCHAIN_NAME}.c)
+
+set(SOURCES_CC27XXX10 ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
+                      startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
 )
 
-set(SOURCES_CC27XX_NS ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
+set(SOURCES_CC27XXX10_NS ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
+                         startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
+)
+
+set(SOURCES_CC27XXX20 ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
                       startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
+)
+
+set(SOURCES_CC27XXX20_NS ${SOURCES_LPF3} dpl/HwiPCC27XX_nortos.c dpl/PowerCC27XX_nortos.c
+                         startup/startup_cc27xx_${TI_TOOLCHAIN_NAME}.c
+)
+
+set(SOURCES_CC283X ${SOURCES_COMMON} dpl/ClockPLPF3_nortos.c dpl/QueueP_nortos.c dpl/HwiPCC283X_nortos.c
+                   dpl/PowerCC283X_nortos.c startup/startup_cc283x_${TI_TOOLCHAIN_NAME}.c
 )

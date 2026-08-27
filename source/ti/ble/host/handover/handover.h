@@ -101,7 +101,12 @@
 
 #define HANDOVER_CONN_ESTABLISH_WITH_HANDOVER   LL_STATUS_ESTABLISH_WITH_HANDOVER
 
+
+// This value controls the window the central will open before and after the connection evet.
+// For example, 30% ratio in 100ms connection interval results in central device start
+//  bursting the calculated 30ms before and after the anchor point. 
 #define HANDOVER_TX_BURST_RATIO_DEFAULT_VAL     30
+
 // Defines for serving node modes
 #define HANDOVER_SN_MODE_DISCONNECT_IMMED       0
 #define HANDOVER_SN_MODE_WAIT_CN_STATUS         1

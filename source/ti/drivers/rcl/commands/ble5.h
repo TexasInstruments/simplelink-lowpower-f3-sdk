@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025, Texas Instruments Incorporated
+ * Copyright (c) 2020-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_commands_ble5_h__include
-#define ti_drivers_RCL_commands_ble5_h__include
+#ifndef ti_drivers_rcl_commands_ble5__include
+#define ti_drivers_rcl_commands_ble5__include
 
 typedef struct RCL_FL_ENTRY_t     RCL_FL_Entry;
 typedef struct RCL_FILTER_LIST_t  RCL_FilterList;
@@ -78,7 +78,7 @@ typedef uint8_t RCL_Ble5Channel;
  *  @brief PHY returned in status of received packets
  *
  */
-typedef enum {
+typedef enum RCL_Ble5_RxPhy_e {
     RCL_Ble5_RxPhy1Mbps = 0,
     RCL_Ble5_RxPhy2Mbps = 1,
     RCL_Ble5_RxPhyCodedS8 = 2,
@@ -205,13 +205,14 @@ struct RCL_CONN_PARAMS_t {
  */
 struct RCL_CMD_BLE5_ADV_t {
     RCL_Command  common;
-    uint8_t chanMap;              /*!< Channel map. Bit positions 0-2 correspond to channels 37-39; a 1 means channel enabled */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint8_t order;                /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
-    uint8_t highDuty;             /*!< High duty-cycle advertising (directed advertising only) 0: Disabled. 1 Enabled */
-    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND or AUX_CONNECT_REQ packet is returned if connection is formed */
-    RCL_CtxAdvertiser *ctx;       /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+    uint8_t chanMap;                     /*!< Channel map. Bit positions 0-2 correspond to channels 37-39; a 1 means channel enabled */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint8_t order;                       /*!< Order to run channels. 0: Run in increasing order. 1-5: Other order. Others: Reserved */
+    uint8_t highDuty;                    /*!< High duty-cycle advertising (directed advertising only) 0: Disabled. 1 Enabled */
+    uint32_t connectPktTime;             /*!< Time of received CONNECT_IND or AUX_CONNECT_REQ packet is returned if connection is formed */
+    RCL_CtxAdvertiser *ctx;              /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdBle5Advertiser_Default()                         \
@@ -220,6 +221,7 @@ struct RCL_CMD_BLE5_ADV_t {
                                   RCL_Handler_BLE5_adv),        \
     .chanMap = 0x7,                                             \
     .txPower = {.dBm = 0, .fraction = 0},                       \
+    .coexControl = {.value =  0},                               \
     .order = 0,                                                 \
     .highDuty = 0,                                              \
     .connectPktTime = 0,                                        \
@@ -235,11 +237,12 @@ struct RCL_CMD_BLE5_ADV_t {
  */
 struct RCL_CMD_BLE5_AUX_ADV_t {
     RCL_Command  common;
-    RCL_Ble5Channel channel;      /*!< Channel index */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint32_t connectPktTime;      /*!< Time of received CONNECT_IND packet is returned if connection is formed - Not supported in this release. */
-    RCL_CtxAdvertiser *ctx;       /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint32_t connectPktTime;             /*!< Time of received CONNECT_IND packet is returned if connection is formed - Not supported in this release. */
+    RCL_CtxAdvertiser *ctx;              /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdBle5AuxAdvertiser_Default()                      \
@@ -248,6 +251,7 @@ struct RCL_CMD_BLE5_AUX_ADV_t {
                                   RCL_Handler_BLE5_aux_adv),    \
     .channel = 0,                                               \
     .txPower = {.dBm = 0, .fraction = 0},                       \
+    .coexControl = {.value =  0},                               \
     .ctx = NULL,                                                \
     .stats = NULL,                                              \
 }
@@ -295,11 +299,31 @@ struct RCL_CTX_ADVERTISER_t {
  */
 struct RCL_CMD_BLE5_PER_ADV_t {
     RCL_Command  common;
-    RCL_Ble5Channel channel;         /*!< Channel index */
-    RCL_Command_TxPower txPower;     /*!< Transmit power */
-    RCL_CtxPeriodicAdvertiser *ctx;  /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;     /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;              /*!< Channel index */
+    RCL_Command_TxPower txPower;          /*!< Transmit power */
+    RCL_Command_CoexControl coexControl;  /*!< Enable coexistence signals as needed */
+    struct
+    {
+        uint8_t perAdvType : 1;           /*!< Periodic advertising type. 0: Without Responses (PA). 1: With Responses (PAwR) */
+        uint8_t pawrMode : 2;             /*!< Periodic Advertising with Responses mode. 0: Wait for subevent responses.
+                                                                                         1: End after subevent inidication is sent.
+                                                                                         2: Initiate connection. */
+        uint8_t reserved: 5;              /*!< Reserved, set to 0 */
+    } config;
+    uint16_t expSubeventRspNum;           /*!< Periodic Advertising with Responses Mode 0 Only: Expected number of subevent responses. Valid range [1, 256] */
+    uint8_t responseSlotDelay;            /*!< Periodic Advertising with Responses Mode 0 Only: Time between the indication packet in a subevent and
+                                               the first response slot (1.25 ms units). Valid range [1, 254] */
+    RCL_CtxPeriodicAdvertiser *ctx;       /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;          /*!< Pointer to statistics structure */
 };
+
+#define RCL_CMD_BLE_PER_ADV_TYPE_PADVB (0U) /*!< Periodic Advertising Advertiser */
+#define RCL_CMD_BLE_PER_ADV_TYPE_PAWR  (1U) /*!< Periodic Advertising with Responses Advertiser */
+
+#define RCL_CMD_BLE_PAWR_MODE_ZERO     (0U) /*!< PAwR Advertiser Mode 0 */
+#define RCL_CMD_BLE_PAWR_MODE_ONE      (1U) /*!< PAwR Advertiser Mode 1 */
+#define RCL_CMD_BLE_PAWR_MODE_TWO      (2U) /*!< PAwR Advertiser Mode 2 */
+#define RCL_CMD_BLE_PAWR_MODE_INVALID  (3U) /*!< PAwR Advertiser Mode Invalid */
 
 #define RCL_CmdBle5PeriodicAdvertiser_Default()                         \
 {                                                                       \
@@ -307,6 +331,8 @@ struct RCL_CMD_BLE5_PER_ADV_t {
                                   RCL_Handler_BLE5_periodicAdv),        \
     .channel = 0,                                                       \
     .txPower = {.dBm = 0, .fraction = 0},                               \
+    .coexControl = {.value =  0},                                       \
+    .config = {.perAdvType = RCL_CMD_BLE_PER_ADV_TYPE_PADVB},           \
     .ctx = NULL,                                                        \
     .stats = NULL,                                                      \
 }
@@ -318,16 +344,39 @@ struct RCL_CMD_BLE5_PER_ADV_t {
  *  Context for periodic advertiser command
  */
 struct RCL_CTX_PER_ADVERTISER_t {
-    List_List txBuffers;       /*!< Linked list of packets to transmit. Only AUX_SYNC_IND and AUX_CHAIN_IND */
-    uint32_t accessAddress;    /*!< Access address */
-    uint32_t crcInit;          /*!< CRC initialization value (24 bits) */
+    List_List txBuffers;                  /*!< Linked list of packets to transmit.
+                                               - For Periodic Advertising: `AUX_SYNC_IND` and `AUX_CHAIN_IND`.
+                                               - For Periodic Advertising with Responses: `AUX_SYNC_SUBEVENT_IND` or `AUX_CONNECT_RSP`. */
+    List_List rxBuffers;                  /*!< Periodic Advertising with Responses: Linked list of buffers for storing received packets */
+    uint32_t accessAddress;               /*!< Access address */
+    uint32_t rspAA;                       /*!< Periodic Advertising with Responses Mode 0 Only: Access Address used by AUX_SYNC_SUBEVENT_RSP */
+    uint8_t acceptAllTargetA: 1;          /*!< Periodic Advertising with Responses Mode 2 Only: AUX_CONNECT_RSP TargetA treatment.
+                                               - 0: Treat TargetA address normally.
+                                               - 1: Accept all TargetA addresses in AUX_CONNECT_RSP and report the packet */
+    uint8_t acceptAllAdvA: 1;             /*!< Periodic Advertising with Response Mode 2 Only: AUX_CONNECT_RSP AdvA treatment.
+                                               - 0: Treat AdvA address normally.
+                                               - 1: Accept all AdvA addresses in AUX_CONNECT_RSP and report the packet */
+    uint32_t crcInit;                     /*!< CRC initialization value (24 bits) */
+    uint16_t peerA[3];                    /*!< Periodic Advertising with Responses: Peer device address of type %addrType.peer.
+                                               Only required if pawrMode is configured to initiate a connection. */
+    uint16_t ownA[3];                     /*!< Periodic Advertising with Responses: Own device address of type %addrType.own.
+                                               Only required if pawrMode is configured to initiate a connection. */
+    RCL_AddrType addrType;                /*!< Periodic Advertising with Responses: Address types.
+                                               Only required if pawrMode is configured to initiate a connection. */
 };
 
 #define RCL_CtxPeriodicAdvertiser_Default() \
 {                                           \
     .txBuffers = { 0 },                     \
+    .rxBuffers = { 0 },                     \
     .accessAddress = 0,                     \
+    .rspAA = 0,                             \
+    .acceptAllTargetA = 0,                  \
+    .acceptAllAdvA = 0,                     \
     .crcInit = 0,                           \
+    .peerA = { 0 },                         \
+    .ownA = { 0 },                          \
+    .addrType = { 0 },                      \
 }
 #define RCL_CtxPeriodicAdvertiser_DefaultRuntime() (RCL_CtxPeriodicAdvertiser) RCL_CtxPeriodicAdvertiser_Default()
 
@@ -338,15 +387,16 @@ struct RCL_CTX_PER_ADVERTISER_t {
  */
 struct RCL_CMD_BLE5_INITIATOR_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;      /*!< Channel index */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint16_t maxAuxPtrWaitTime;   /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
-    bool dynamicWinOffset;        /*!< Window offset processing. 0: Fixed. 1: Dynamic */
-    bool acceptLegacy : 1;        /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
-    bool acceptExtended : 1;      /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
-    uint32_t connectTime;         /*!< For dynamic window offset, wanted connect time is given as input. In all cases, actual connect time is returned. */
-    RCL_CtxScanInit *ctx;         /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;  /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint16_t maxAuxPtrWaitTime;          /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    bool dynamicWinOffset;               /*!< Window offset processing. 0: Fixed. 1: Dynamic */
+    bool acceptLegacy : 1;               /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
+    bool acceptExtended : 1;             /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
+    uint32_t connectTime;                /*!< For dynamic window offset, wanted connect time is given as input. In all cases, actual connect time is returned. */
+    RCL_CtxScanInit *ctx;                /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdInitiator_Default()                                  \
@@ -355,6 +405,7 @@ struct RCL_CMD_BLE5_INITIATOR_t {
                                   RCL_Handler_BLE5_scan_init),      \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .maxAuxPtrWaitTime = 30000,                                     \
     .dynamicWinOffset = 0,                                          \
     .acceptLegacy = 1,                                              \
@@ -372,14 +423,15 @@ struct RCL_CMD_BLE5_INITIATOR_t {
  */
 struct RCL_CMD_BLE5_SCANNER_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;       /*!< Channel index */
-    RCL_Command_TxPower txPower;   /*!< Transmit power */
-    uint16_t maxAuxPtrWaitTime;    /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
-    bool activeScan;               /*!< Scan type. 0: Passive. 1: Active */
-    bool acceptLegacy : 1;         /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
-    bool acceptExtended : 1;       /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
-    RCL_CtxScanInit *ctx;          /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;   /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint16_t maxAuxPtrWaitTime;          /*!< Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    bool activeScan;                     /*!< Scan type. 0: Passive. 1: Active */
+    bool acceptLegacy : 1;               /*!< Accept legacy advertising. 0: Do not accept. 1: Accept */
+    bool acceptExtended : 1;             /*!< Accept extended advertising. 0: Do not accept. 1: Accept */
+    RCL_CtxScanInit *ctx;                /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdScanner_Default()                                    \
@@ -388,6 +440,7 @@ struct RCL_CMD_BLE5_SCANNER_t {
                                   RCL_Handler_BLE5_scan_init),      \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .maxAuxPtrWaitTime = 20000,                                     \
     .activeScan = 0,                                                \
     .acceptLegacy = 1,                                              \
@@ -455,13 +508,14 @@ struct RCL_CTX_SCAN_INIT_t {
  */
 struct RCL_CMD_BLE5_PER_SCANNER_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;       /*!< Channel index */
-    RCL_Command_TxPower txPower;   /*!< Transmit power */
-    bool perAdvType;               /*!< Periodic advertising type. 0: Without Responses (PA). 1: With Responses (PAwR) */
-    uint16_t maxAuxPtrWaitTime;    /*!< Periodic Advertising: Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
-    uint32_t receivedPktTime;      /*!< Periodic Advertising with Responses: Time of received AUX_SYNC_SUBEVENT_IND or AUX_CONNECT_REQ packet (if connection is formed) */
-    RCL_CtxPeriodicScanner *ctx;   /*!< Pointer to context structure */
-    RCL_StatsAdvScanInit *stats;   /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    bool perAdvType;                     /*!< Periodic advertising type. 0: Without Responses (PA). 1: With Responses (PAwR) */
+    uint16_t maxAuxPtrWaitTime;          /*!< Periodic Advertising: Maximum time to wait for AuxPtr before ending command (1 us units). 0: No limit */
+    uint32_t receivedPktTime;            /*!< Periodic Advertising with Responses: Time of received AUX_SYNC_SUBEVENT_IND or AUX_CONNECT_REQ packet (if connection is formed) */
+    RCL_CtxPeriodicScanner *ctx;         /*!< Pointer to context structure */
+    RCL_StatsAdvScanInit *stats;         /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdPeriodicScanner_Default()                            \
@@ -470,6 +524,7 @@ struct RCL_CMD_BLE5_PER_SCANNER_t {
                                   RCL_Handler_BLE5_periodicScan),   \
     .channel = 37,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .perAdvType = 0,                                                \
     .maxAuxPtrWaitTime = 20000,                                     \
     .receivedPktTime = 0,                                           \
@@ -493,6 +548,7 @@ struct RCL_CTX_PER_SCANNER_t {
     uint32_t accessAddress;               /*!< Access address */
     uint32_t crcInit;                     /*!< CRC initialization value (24 bits) */
     uint8_t acceptAllConnectInd;          /*!< Periodic Advertising with Responses: AUX_CONNECT_REQ treatment. 1: Accept all addresses in InitA of AUX_CONNECT_REQ. */
+    uint8_t ignoreConnectReq : 1;         /*!< Periodic Advertising with Responses: Ignore AUX_CONNECT_REQ. 0: Do not ignore. 1: Ignore. */
 };
 
 #define RCL_CtxPeriodicScanner_Default()   \
@@ -506,6 +562,7 @@ struct RCL_CTX_PER_SCANNER_t {
     .accessAddress = 0,                    \
     .crcInit = 0,                          \
     .acceptAllConnectInd = 1,              \
+    .ignoreConnectReq = 0,                 \
 }
 #define RCL_CtxPeriodicScanner_DefaultRuntime() (RCL_CtxPeriodicScanner) RCL_CtxPeriodicScanner_Default()
 
@@ -546,11 +603,12 @@ struct RCL_STATS_ADV_SCAN_INIT_t {
  */
 struct RCL_CMD_BLE5_CONNECTION_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;      /*!< Channel index */
-    RCL_Command_TxPower txPower;  /*!< Transmit power */
-    uint16_t relRxTimeoutTime;    /*!< Peripheral only: Time before timing out the first packet of the event (0.25 us units). 0: No timeout. */
-    RCL_CtxConnection *ctx;       /*!< Pointer to context structure */
-    RCL_StatsConnection *stats;   /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    uint16_t relRxTimeoutTime;           /*!< Peripheral only: Time before timing out the first packet of the event (0.25 us units). 0: No timeout. */
+    RCL_CtxConnection *ctx;              /*!< Pointer to context structure */
+    RCL_StatsConnection *stats;          /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdBle5Connection_Default()                             \
@@ -559,6 +617,7 @@ struct RCL_CMD_BLE5_CONNECTION_t {
                                   RCL_Handler_BLE5_conn),           \
     .channel = 0,                                                   \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .ctx = NULL,                                                    \
     .stats = NULL,                                                  \
 }
@@ -601,26 +660,27 @@ struct RCL_CTX_CONNECTION_t {
 struct RCL_STATS_CONNECTION_t {
     struct
     {
-        uint8_t accumulate : 1;      /*!< 0: Reset counters to 0 at start of command. 1: Add to incoming value of counters. */
-        uint8_t activeUpdate : 1;    /*!< 0: Update only at end of command. 1: Update after receiving or transmitting packets. */
-        uint8_t reserved : 6;        /*!< Reserved, set to 0 */
-    } config;                        /*!< Configuration provided to RCL */
-    uint8_t   anchorValid;           /*!< Returns 1 if %anchorPoint is updated; 0 otherwise */
-    int8_t    lastRssi;              /*!< RSSI of last received packet */
-    uint32_t  anchorPoint;           /*!< Peripheral only: Timestamp of first received packet */
-    uint8_t   nTxDone;               /*!< Number of TX buffers finished because ACK is received */
-    uint8_t   nTxAck;                /*!< Number of ACKs received on transmitted packets */
-    uint8_t   nTxCtlAck;             /*!< Number of ACKs received on transmitted control packets */
-    uint8_t   nTxCtl;                /*!< Number of control packets transmitted */
-    uint8_t   nTxRetrans;            /*!< Number of packets retransmitted */
-    uint8_t   nRxNok;                /*!< Number of packets received with CRC error */
-    uint8_t   nRxIgnored;            /*!< Number of packets to be ignored received */
-    uint8_t   nRxEmpty;              /*!< Number of empty packets received */
-    uint8_t   nRxFifoFull;           /*!< Number of packets received which could not be stored */
-    uint8_t   nRxOk;                 /*!< Number of correctly received, accepted packets */
-    uint8_t   nTx;                   /*!< Number of packets transmitted */
-    uint8_t   nRxCtl;                /*!< Number of control packets received */
-    uint8_t   nRxCtlAck;             /*!< Number of ACKs transmitted on received control packets */
+        uint8_t accumulate : 1;             /*!< 0: Reset counters to 0 at start of command. 1: Add to incoming value of counters. */
+        uint8_t activeUpdate : 1;           /*!< 0: Update only at end of command. 1: Update after receiving or transmitting packets. */
+        uint8_t reserved : 6;               /*!< Reserved, set to 0 */
+    } config;                               /*!< Configuration provided to RCL */
+    uint8_t          anchorValid;           /*!< Returns 1 if %anchorPoint is updated; 0 otherwise */
+    int8_t           lastRssi;              /*!< RSSI of last received packet */
+    RCL_Ble5_RxPhy   lastRxPhy;             /*!< Phy of last received packet */
+    uint32_t         anchorPoint;           /*!< Peripheral only: Timestamp of first received packet */
+    uint8_t          nTxDone;               /*!< Number of TX buffers finished because ACK is received */
+    uint8_t          nTxAck;                /*!< Number of ACKs received on transmitted packets */
+    uint8_t          nTxCtlAck;             /*!< Number of ACKs received on transmitted control packets */
+    uint8_t          nTxCtl;                /*!< Number of control packets transmitted */
+    uint8_t          nTxRetrans;            /*!< Number of packets retransmitted */
+    uint8_t          nRxNok;                /*!< Number of packets received with CRC error */
+    uint8_t          nRxIgnored;            /*!< Number of packets to be ignored received */
+    uint8_t          nRxEmpty;              /*!< Number of empty packets received */
+    uint8_t          nRxFifoFull;           /*!< Number of packets received which could not be stored */
+    uint8_t          nRxOk;                 /*!< Number of correctly received, accepted packets */
+    uint8_t          nTx;                   /*!< Number of packets transmitted */
+    uint8_t          nRxCtl;                /*!< Number of control packets received */
+    uint8_t          nRxCtlAck;             /*!< Number of ACKs transmitted on received control packets */
 };
 
 #define RCL_StatsConnection_Default()   \
@@ -668,9 +728,10 @@ struct RCL_CMD_BLE5_DTM_TX {
  */
 struct RCL_CMD_BLE5_GENERIC_RX_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;       /*!< Channel index */
-    RCL_CtxGenericRx *ctx;         /*!< Pointer to context structure */
-    RCL_StatsGenericRx *stats;     /*!< Pointer to statistics structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    RCL_CtxGenericRx *ctx;               /*!< Pointer to context structure */
+    RCL_StatsGenericRx *stats;           /*!< Pointer to statistics structure */
 };
 
 #define RCL_CmdBle5GenericRx_Default()                              \
@@ -678,6 +739,7 @@ struct RCL_CMD_BLE5_GENERIC_RX_t {
     .common = RCL_Command_Default(RCL_CMDID_BLE5_GENERIC_RX,        \
                                   RCL_Handler_BLE5_genericRx),      \
     .channel = 64,                                                  \
+    .coexControl = {.value =  0},                                   \
     .ctx = NULL,                                                    \
     .stats = NULL,                                                  \
 }
@@ -753,9 +815,10 @@ struct RCL_STATS_GENERIC_RX_t {
  */
 struct RCL_CMD_BLE5_GENERIC_TX_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;       /*!< Channel index */
-    RCL_Command_TxPower txPower;   /*!< Transmit power */
-    RCL_CtxGenericTx *ctx;         /*!< Pointer to context structure */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    RCL_Command_TxPower txPower;         /*!< Transmit power */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
+    RCL_CtxGenericTx *ctx;               /*!< Pointer to context structure */
 };
 
 #define RCL_CmdBle5GenericTx_Default()                              \
@@ -764,6 +827,7 @@ struct RCL_CMD_BLE5_GENERIC_TX_t {
                                   RCL_Handler_BLE5_genericTx),      \
     .channel = 64,                                                  \
     .txPower = {.dBm = 0, .fraction = 0},                           \
+    .coexControl = {.value =  0},                                   \
     .ctx = NULL,                                                    \
 }
 #define RCL_CmdBle5GenericTx_DefaultRuntime() (RCL_CmdBle5GenericTx) RCL_CmdBle5GenericTx_Default()
@@ -774,9 +838,10 @@ struct RCL_CMD_BLE5_GENERIC_TX_t {
  *  Context for generic TX command
  */
 struct RCL_CTX_GENERIC_TX_t {
-    List_List txBuffers;            /*!< Linked list of packets to transmit. First packet will be transmitted and consumed. */
-    uint32_t  accessAddress;        /*!< Access address */
-    uint32_t  crcInit;              /*!< CRC initialization value (24 bits) */
+    List_List txBuffers;                 /*!< Linked list of packets to transmit. First packet will be transmitted and consumed. */
+    uint32_t  accessAddress;             /*!< Access address */
+    uint32_t  crcInit;                   /*!< CRC initialization value (24 bits) */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
 };
 
 #define RCL_CtxGenericTx_Default()  \
@@ -819,10 +884,10 @@ struct RCL_CMD_BLE5_TX_TEST_t {
 }
 #define RCL_CmdBle5TxTest_DefaultRuntime() (RCL_CmdBle5TxTest) RCL_CmdBle5TxTest_Default()
 
-#define RCL_CMD_BLE5_WH_MODE_DEFAULT  0 /*!< config.whitenMode: Default (or no) whitening */
-#define RCL_CMD_BLE5_WH_MODE_PRBS9    1 /*!< config.whitenMode: PRBS-9  */
-#define RCL_CMD_BLE5_WH_MODE_PRBS15   2 /*!< config.whitenMode: PRBS-15 */
-#define RCL_CMD_BLE5_WH_MODE_PRBS32   3 /*!< config.whitenMode: PRBS-32 */
+#define RCL_CMD_BLE5_WH_MODE_DEFAULT  0U /*!< config.whitenMode: Default (or no) whitening */
+#define RCL_CMD_BLE5_WH_MODE_PRBS9    1U /*!< config.whitenMode: PRBS-9  */
+#define RCL_CMD_BLE5_WH_MODE_PRBS15   2U /*!< config.whitenMode: PRBS-15 */
+#define RCL_CMD_BLE5_WH_MODE_PRBS32   3U /*!< config.whitenMode: PRBS-32 */
 
 
 /**
@@ -832,9 +897,10 @@ struct RCL_CMD_BLE5_TX_TEST_t {
  */
 struct RCL_CMD_BLE5_CH_ASSESSMENT_t {
     RCL_Command common;
-    RCL_Ble5Channel channel;       /*!< Channel index */
-    int8_t assessmentThreshold;    /*!< RSSI threshold for channel assessment in dBm */
-    uint16_t assessmentDuration;   /*!< Active measuring time in 0.25 us steps */
+    RCL_Ble5Channel channel;             /*!< Channel index */
+    int8_t assessmentThreshold;          /*!< RSSI threshold for channel assessment in dBm */
+    uint16_t assessmentDuration;         /*!< Active measuring time in 0.25 us steps */
+    RCL_Command_CoexControl coexControl; /*!< Enable coexistence signals as needed */
 };
 
 #define RCL_CmdBle5ChAssessment_Default()                                   \
@@ -844,7 +910,8 @@ struct RCL_CMD_BLE5_CH_ASSESSMENT_t {
     .channel = 37,                                                          \
     .assessmentThreshold = -70,                                             \
     .assessmentDuration = 400,                                              \
+    .coexControl = {.value =  0},                                           \
 }
 #define RCL_CmdBle5ChAssessment_DefaultRuntime() (RCL_CmdBle5ChAssessment) RCL_CmdBle5ChAssessment_Default()
 
-#endif
+#endif /* ti_drivers_rcl_commands_ble5__include */

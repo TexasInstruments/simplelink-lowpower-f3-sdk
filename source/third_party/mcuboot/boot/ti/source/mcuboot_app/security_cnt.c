@@ -19,11 +19,13 @@
 #include "bootutil_priv.h"
 #include "bootutil/security_cnt.h"
 #include "flash_map_backend.h"
+#include "flash_map_backend/flash_map.h"
 
 #ifdef MCUBOOT_HW_ROLLBACK_PROT
 
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4) || \
-    (DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0)
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC13X4_CC26X3_CC26X4) && \
+    (DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0) && \
+    (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
     #error "MCUBOOT_HW_ROLLBACK_PROT not allowed in this device family"
 #endif
 

@@ -34,5 +34,6 @@ endmacro()
 
 include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartySpiffsM0PTargets.cmake")
 include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartySpiffsM33FTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/ThirdPartySpiffsM3Targets.cmake")
 
 check_required_components(ThirdPartySpiffs)

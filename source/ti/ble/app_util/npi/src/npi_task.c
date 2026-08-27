@@ -79,13 +79,9 @@
 // ****************************************************************************
 // defines
 // ****************************************************************************
-#ifdef CC23X0
 #define EVENT_POST(event, eventMask)          EventP_post(event, eventMask)
 #define EVENT_PEND(event)                     EventP_pend(event, FREE_RTOS_NPITASK_ALL_EVENTS , 0, WAIT_FOREVER)
-#else
-#define EVENT_POST(event, eventMask)          Event_post(event, eventMask)
-#define EVENT_PEND(event)                     Event_pend(event, Event_Id_NONE, NPITASK_ALL_EVENTS, BIOS_WAIT_FOREVER)
-#endif
+
 #ifdef ICALL_EVENTS
 #define NPITASK_ICALL_EVENT 0x00001000 //Event_id_31
 #ifdef FREERTOS
@@ -178,17 +174,6 @@
 
 #endif //ICALL_EVENTS
 
-#if defined(CC26X2) || defined(CC13X2) || defined(CC13X2P) || defined(CC13X4)
-#define NPITASK_STACK_SIZE (130*8)     /* in order to optimize memory, this value should be a multiple of 8 bytes */
-#else // !CC26X2 && !CC13X2 && !CC13X4
-//! \brief Size of stack created for NPI RTOS task
-#ifndef Display_DISABLE_ALL
-#ifdef __TI_COMPILER_VERSION__
-#define NPITASK_STACK_SIZE 752      /* in order to optimize memory, this value should be a multiple of 8 bytes */
-#else // !__TI_COMPILER_VERSION__
-#define NPITASK_STACK_SIZE 656      /* in order to optimize memory, this value should be a multiple of 8 bytes */
-#endif // __TI_COMPILER_VERSION__
-#else // Display_DISABLE_ALL
 #ifdef __TI_COMPILER_VERSION__
 #define NPITASK_STACK_SIZE 752      /* in order to optimize memory, this value should be a multiple of 8 bytes */
 #else // !__TI_COMPILER_VERSION__
@@ -198,8 +183,6 @@
 #define NPITASK_STACK_SIZE 608      /* in order to optimize memory, this value should be a multiple of 8 bytes */
 #endif
 #endif // __TI_COMPILER_VERSION__
-#endif // Display_DISABLE_ALL
-#endif // CC26X2 || CC13X2 || CC13X4
 
 //! \brief Task priority for NPI RTOS task
 #define NPITASK_PRIORITY 2
@@ -214,15 +197,34 @@
 // typedefs
 // ****************************************************************************
 
-//! \brief Queue record structure
-//!
+// NPI TX queue record type field (TLV-style: type identifies the record layout).
+#define NPI_QUEUE_TYPE_MSG      0  // framed NPIMSG_msg_t path
+#define NPI_QUEUE_TYPE_RAW      1  // raw inline-data path
+
+//! \brief Queue record structure for the framed (NPIMSG) TX path.
+//!        type MUST be the first field in both this struct and NPI_QueueRecRaw_t
+//!        so NPITask_ProcessTXQ can safely check it on any dequeued pointer.
 typedef struct NPI_QueueRec_t
 {
 #ifndef FREERTOS
-    Queue_Elem _elem;
+    Queue_Elem    _elem;
 #endif
+    uint8_t       type; /* NPI_QUEUE_TYPE_MSG */
     NPIMSG_msg_t *npiMsg;
 } NPI_QueueRec;
+
+//! \brief Single-allocation raw TX record used by NPITask_sendToHostRaw.
+//!        type, length, and HCI payload are packed into one
+//!        ICall_allocMsgLimited block.  Freed with ICall_freeMsg() once
+//!        UART transmission completes (or immediately on enqueue failure).
+//!        type MUST be the first field in both this struct and NPI_QueueRec
+//!        so NPITask_ProcessTXQ can safely check it on any dequeued pointer.
+typedef struct NPI_QueueRecRaw_t
+{
+    uint8_t     type; /* NPI_QUEUE_TYPE_RAW */
+    uint16_t    len;
+    uint8_t     data[]; /* HCI payload follows immediately */
+} NPI_QueueRecRaw_t;
 
 
 //*****************************************************************************
@@ -898,7 +900,6 @@ void NPITask_sendToHost(uint8_t *pMsg)
 #else
   uint8_t *pTemp = (uint8_t *)pMsg;
 #endif
-    ICall_CSState key;
     NPI_QueueRec *recPtr;
 
     // NPIFrame_frameMsg will always free pMsg when it's done
@@ -918,15 +919,13 @@ void NPITask_sendToHost(uint8_t *pMsg)
       return;
     }
 
-    // Enter CS to prevent higher priority tasks
-    // from also enqueuing msg at the same time
-    key = ICall_enterCriticalSection();
-
+    recPtr->type  = NPI_QUEUE_TYPE_MSG;
     recPtr->npiMsg = pNPIMsg;
 
     switch (pNPIMsg->msgType)
     {
         // Enqueue to appropriate NPI Task Q and post corresponding event.
+        // Queue_enqueue/Queue_put use HwiP_disable internally; no outer CS needed.
 #if defined(NPI_SREQRSP)
         case NPIMSG_Type_SYNCRSP:
         {
@@ -948,7 +947,6 @@ void NPITask_sendToHost(uint8_t *pMsg)
                 // Free NPI Message and NPI buffer in case it allocated.
                 NPITask_freeNpiMsg((uint8_t *)pNPIMsg);
                 ICall_free(recPtr);
-                ICall_leaveCriticalSection(key);
                 return;
             }
 #else
@@ -968,8 +966,52 @@ void NPITask_sendToHost(uint8_t *pMsg)
             break;
         }
     }
+}
 
-    ICall_leaveCriticalSection(key);
+// -----------------------------------------------------------------------------
+//! \brief      Send a raw HCI packet to the Host via the NPI task.
+//!
+//!             A single heap block (NPI_QueueRecRaw_t + inline payload) is
+//!             allocated, the HCI bytes are copied in, and the block is
+//!             enqueued on npiTxQueue for the NPI task to drain.  The block
+//!             is freed by ICall_freeMsg once UART transmission completes.
+//!             If enqueuing fails the block is freed immediately.
+//!
+//! \param[in]  pData   Pointer to raw HCI packet bytes.
+//! \param[in]  len     Length of the packet in bytes.
+//!
+//! \return     void
+// -----------------------------------------------------------------------------
+void NPITask_sendToHostRaw(uint8_t *pData, uint16_t len)
+{
+    if ((pData == NULL) || (len == 0))
+    {
+        return;
+    }
+
+    NPI_QueueRecRaw_t *msg = (NPI_QueueRecRaw_t *)ICall_allocMsgLimited(
+                              sizeof(NPI_QueueRecRaw_t) + len);
+    if (msg == NULL)
+    {
+        return;
+    }
+
+    msg->type = NPI_QUEUE_TYPE_RAW;
+    msg->len   = len;
+    memcpy(msg->data, pData, len);
+
+    if (Queue_enqueue(npiTxQueue, (char*)&msg) == FAILURE)
+    {
+        ICall_freeMsg(msg);
+        return;
+    }
+
+#ifdef ICALL_EVENTS
+    EVENT_POST(syncEvent, NPITASK_TX_READY_EVENT);
+#else //!ICALL_EVENTS
+    NPITask_events |= NPITASK_TX_READY_EVENT;
+    Semaphore_post(appSem);
+#endif //ICALL_EVENTS
 }
 
 // -----------------------------------------------------------------------------
@@ -1072,17 +1114,13 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
         recPtr = ICall_mallocLimited(sizeof(NPI_QueueRec));
         if(recPtr != NULL)
         {
-            ICall_CSState key;
-
-            // Enter CS to prevent higher priority tasks
-            // from also enqueuing msg at the same time
-            key = ICall_enterCriticalSection();
-
+            recPtr->type  = NPI_QUEUE_TYPE_MSG;
             recPtr->npiMsg = pNPIMsg;
 
             switch(pNPIMsg->msgType)
             {
                 // Enqueue to appropriate NPI Task Q and post corresponding event.
+                // Queue_enqueue/Queue_put use HwiP_disable internally; no outer CS needed.
 #if defined(NPI_SREQRSP)
                 case NPIMSG_Type_SYNCRSP:
                 {
@@ -1126,8 +1164,6 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
                     break;
                 }
             }
-
-            ICall_leaveCriticalSection(key);
         }
         else
         {
@@ -1146,35 +1182,37 @@ static void NPITask_processStackMsg(uint8_t *pMsg)
 // -----------------------------------------------------------------------------
 static void NPITask_ProcessTXQ(void)
 {
-    ICall_CSState key;
     NPI_QueueRec *recPtr = NULL;
 
-    // Processing of any TX Queue should only be done
-    // in a critical section since any application
-    // task can enqueue items freely
-    key = ICall_enterCriticalSection();
-
-    if (!Queue_empty(npiTxQueue))
-    {
+    // Queue_dequeue uses HwiP_disable internally; this function is only ever
+    // called from the NPI task, so no outer CS is needed.
 #ifdef FREERTOS
-      recPtr = (NPI_QueueRec *)Queue_dequeue(npiTxQueue);
+    recPtr = (NPI_QueueRec *)Queue_dequeue(npiTxQueue);
 #else
-      recPtr = Queue_dequeue(npiTxQueue);
+    recPtr = Queue_dequeue(npiTxQueue);
 #endif
 
-      if (recPtr != NULL)
-      {
-          lastQueuedTxMsg = recPtr->npiMsg->pBuf;
-
-          NPITL_writeTL(recPtr->npiMsg->pBuf, recPtr->npiMsg->pBufSize);
-
-          //free the Queue record
-          ICall_free(recPtr->npiMsg);
-          ICall_free(recPtr);
-      }
+    if (recPtr != NULL)
+    {
+        if (recPtr->type == NPI_QUEUE_TYPE_RAW)
+        {
+            // Raw path: single ICall_allocMsgLimited block (struct + inline data).
+            // lastQueuedTxMsg holds the block pointer; ICall_freeMsg in the
+            // TX-done callback releases it once UART transmission completes.
+            NPI_QueueRecRaw_t *raw = (NPI_QueueRecRaw_t *)recPtr;
+            lastQueuedTxMsg = (uint8_t *)raw;
+            NPITL_writeTL(raw->data, raw->len);
+        }
+        else
+        {
+            // Framed path: pBuf is freed by TX-done callback; npiMsg and recPtr
+            // are plain-malloc allocations freed here.
+            lastQueuedTxMsg = recPtr->npiMsg->pBuf;
+            NPITL_writeTL(recPtr->npiMsg->pBuf, recPtr->npiMsg->pBufSize);
+            ICall_free(recPtr->npiMsg);
+            ICall_free(recPtr);
+        }
     }
-
-    ICall_leaveCriticalSection(key);
 }
 
 #if defined(NPI_SREQRSP)
@@ -1186,46 +1224,37 @@ static void NPITask_ProcessTXQ(void)
 // -----------------------------------------------------------------------------
 static void NPITask_ProcessSyncTXQ(void)
 {
-    ICall_CSState key;
     NPI_QueueRec *recPtr = NULL;
 
-    // Processing of any TX Queue should only be done
-    // in a critical section since any application
-    // task can enqueue items freely
-    key = ICall_enterCriticalSection();
-
-    if (!Queue_empty(npiSyncTxQueue))
-    {
+    // Queue_dequeue uses HwiP_disable internally; this function is only ever
+    // called from the NPI task, so no outer CS is needed.
 #ifdef FREERTOS
-      recPtr = (NPI_QueueRec *)Queue_dequeue(npiSyncTxQueue);
+    recPtr = (NPI_QueueRec *)Queue_dequeue(npiSyncTxQueue);
 #else
-      recPtr = Queue_dequeue(npiSyncTxQueue);
+    recPtr = Queue_dequeue(npiSyncTxQueue);
 #endif
 
-      if (recPtr != NULL)
-      {
-          lastQueuedTxMsg = recPtr->npiMsg->pBuf;
+    if (recPtr != NULL)
+    {
+        lastQueuedTxMsg = recPtr->npiMsg->pBuf;
 
-          NPITL_writeTL(recPtr->npiMsg->pBuf, recPtr->npiMsg->pBufSize);
+        NPITL_writeTL(recPtr->npiMsg->pBuf, recPtr->npiMsg->pBufSize);
 
-          // Decrement the outstanding Sync REQ/RSP flag.
-          syncTransactionInProgress--;
+        // Decrement the outstanding Sync REQ/RSP flag.
+        syncTransactionInProgress--;
 
-          // Stop watchdog clock.
-          Clock_stop(syncReqRspWatchDogClkHandle);
+        // Stop watchdog clock.
+        Clock_stop(syncReqRspWatchDogClkHandle);
 
-          if (syncTransactionInProgress < 0)
-          {
-              // not expected!
-              syncTransactionInProgress = 0;
-          }
+        if (syncTransactionInProgress < 0)
+        {
+            // not expected!
+            syncTransactionInProgress = 0;
+        }
 
-          ICall_free(recPtr->npiMsg);
-          ICall_free(recPtr);
-      }
+        ICall_free(recPtr->npiMsg);
+        ICall_free(recPtr);
     }
-
-    ICall_leaveCriticalSection(key);
 }
 #endif // NPI_SREQRSP
 
@@ -1415,6 +1444,7 @@ static void NPITask_incomingFrameCB(uint16_t frameSize, uint8_t *pFrame,
         {
             npiMsgPtr->pBuf = pFrame;
             npiMsgPtr->pBufSize = frameSize;
+            recPtr->type  = NPI_QUEUE_TYPE_MSG;
             recPtr->npiMsg = npiMsgPtr;
 
             switch (msgType)

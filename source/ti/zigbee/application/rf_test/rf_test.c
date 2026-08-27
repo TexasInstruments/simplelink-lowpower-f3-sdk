@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2025, Texas Instruments Incorporated
+ Copyright (c) 2025-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -82,6 +82,7 @@ MAIN()
     for (int i= 0 ; i < RSSI_READINGS; i++){
         rssi = rf_test_get_rssi();
         Log_printf(LogModule_Zigbee_App, Log_INFO , "RSSI value=%d", rssi);
+        ZVUNUSED(rssi);
         ClockP_sleep(1);
 
     }

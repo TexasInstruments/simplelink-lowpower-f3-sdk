@@ -81,6 +81,7 @@
 #include "ti/ble/stack_util/osal/osal_bufmgr.h"
 #include "ti/ble/stack_util/lib_opt/map_direct.h"
 #include "ti/ble/controller/ll/ll_common.h"
+#include "ti/ble/stack_util/lib_opt/ctrl_stub_scanner.h"
 
 extern uint8 hciPTMenabled;
 
@@ -149,6 +150,9 @@ void HCI_Init( uint8 taskID )
 
   // disable HCI Vendor Specific Event Mask
   hciVsEvtMask = NO_FEATURES_ENABLED;
+
+  // Initialize scan callback arrays
+  OPT_HCI_InitScanCallbacks();
 
   return;
 }

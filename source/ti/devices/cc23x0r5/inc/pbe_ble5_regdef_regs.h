@@ -211,6 +211,7 @@
 #define PBE_BLE5_REGDEF_API_OP_INITIATOR                             0x00000007U
 #define PBE_BLE5_REGDEF_API_OP_RXRAW                                 0x00000008U
 #define PBE_BLE5_REGDEF_API_OP_TXRAW                                 0x00000009U
+#define PBE_BLE5_REGDEF_API_OP_CONNECT                               0x0000000AU
 
 
 #endif // __PBE_BLE5_REGDEF_REGS_H

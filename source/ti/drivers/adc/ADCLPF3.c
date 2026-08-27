@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -170,8 +170,8 @@ ADC_Handle ADCLPF3_open(ADC_Handle handle, ADC_Params *params)
          */
         if (ADCLPF3_adcExternalReferenceUsageCount == 0)
         {
-            GPIO_setConfigAndMux(hwAttrs->adcRefPosDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
-            GPIO_setConfigAndMux(hwAttrs->adcRefNegDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
+            GPIO_setConfigAndMux(hwAttrs->adcRefPosDIO, GPIO_CFG_NO_DIR, GPIO_MUX_PORTCFG_PFUNC6);
+            GPIO_setConfigAndMux(hwAttrs->adcRefNegDIO, GPIO_CFG_NO_DIR, GPIO_MUX_PORTCFG_PFUNC6);
         }
         ADCLPF3_adcExternalReferenceUsageCount++;
     }
@@ -179,7 +179,7 @@ ADC_Handle ADCLPF3_open(ADC_Handle handle, ADC_Params *params)
     HwiP_restore(key);
 
     /* Set input pin to analog function. If pin is unused, value is set to GPIO_INVALID_INDEX */
-    GPIO_setConfigAndMux(hwAttrs->adcInputDIO, GPIO_CFG_INPUT, GPIO_MUX_PORTCFG_PFUNC6);
+    GPIO_setConfigAndMux(hwAttrs->adcInputDIO, GPIO_CFG_NO_DIR, GPIO_MUX_PORTCFG_PFUNC6);
 
     return handle;
 }
@@ -295,6 +295,14 @@ int_fast16_t ADCLPF3_convert(ADC_Handle handle, uint16_t *value)
     /* Use software trigger source */
     ADCSetTriggerSource(ADC_TRIGGER_SOURCE_SOFTWARE);
 
+    /* Increase settling time for the comparator output to reduce the
+     * error rate of ADC conversions.
+     * This is a workaround for the ADC errata: 'ADC_09', documented at:
+     * https://www.ti.com/lit/er/swrz134e/swrz134e.pdf or
+     * https://www.ti.com/lit/er/swrz161a/swrz161a.pdf
+     */
+    ADCIncreaseComparatorSettlingTime();
+
     /* Enable conversion. ADC will wait for trigger. */
     ADCEnableConversion();
 
@@ -402,6 +410,14 @@ int_fast16_t ADCLPF3_convertChain(ADC_Handle *handleList, uint16_t *dataBuffer, 
          * source
          */
         ADCSetAdjustmentOffset(hwAttrs->refSource);
+
+        /* Increase settling time for the comparator output to reduce the
+         * error rate of ADC conversions.
+         * This is a workaround for the ADC errata: 'ADC_09', documented at:
+         * https://www.ti.com/lit/er/swrz134e/swrz134e.pdf or
+         * https://www.ti.com/lit/er/swrz161a/swrz161a.pdf
+         */
+        ADCIncreaseComparatorSettlingTime();
 
         /* Enable conversion. ADC will wait for trigger. */
         ADCEnableConversion();

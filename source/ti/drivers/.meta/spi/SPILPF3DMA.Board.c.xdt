@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,26 +90,16 @@ const SPILPF3DMA_HWAttrs SPILPF3DMA_hwAttrs[`countDef`] = {
     % let name = spi.$solution.peripheralName;
     % let dmaRXChNumber = inst.spi.dmaRxChannel.$solution.devicePinName.replace("DMA_CH", "");
     % let dmaTXChNumber = inst.spi.dmaTxChannel.$solution.devicePinName.replace("DMA_CH", "");
-    % let peripheral  = system.deviceData.peripherals[name];
 
     % /* Get the index of the SPI instance by extracting the last character */
 
-    % let pociPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'MISO'],
-    %                                         inst.spi.pociPin.$solution.devicePinName);
-    % let pociPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + pociPinMuxMode.toString();
-    %
-    % let picoPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'MOSI'],
-    %                                         inst.spi.picoPin.$solution.devicePinName);
-    % let picoPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + picoPinMuxMode.toString();
-    %
-    % let sclkPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'SCLK'],
-    %                                         inst.spi.sclkPin.$solution.devicePinName);
-    % let sclkPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + sclkPinMuxMode.toString();
+    % let pociPinMuxMode = GPIO._getPinMuxModeFromPin(inst.spi.pociPin).toString();
+    % let picoPinMuxMode = GPIO._getPinMuxModeFromPin(inst.spi.picoPin).toString();
+    % let sclkPinMuxMode = GPIO._getPinMuxModeFromPin(inst.spi.sclkPin).toString();
+    % let csnPinMuxMode  = "GPIO_MUX_GPIO_INTERNAL";
     %
     % if (inst.mode != 'Three Pin') {
-    %   var csnPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[name + 'CSN'],
-    %                                         inst.spi.csnPin.$solution.devicePinName);
-    %   var csnPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + csnPinMuxMode.toString();
+    %   csnPinMuxMode = GPIO._getPinMuxModeFromPin(inst.spi.csnPin).toString();
     % }
     {
         .baseAddr              = `name`_BASE,
@@ -128,15 +118,15 @@ const SPILPF3DMA_HWAttrs SPILPF3DMA_hwAttrs[`countDef`] = {
         .dmaTxTableEntryAlt    = &dmaChannel`dmaTXChNumber`AltControlTableEntry,
         .dmaRxTableEntryAlt    = &dmaChannel`dmaRXChNumber`AltControlTableEntry,
         .minDmaTransferSize    = `inst.minDmaTransferSize`,
-        .picoPinMux            = `picoPinMuxName`,
-        .pociPinMux            = `pociPinMuxName`,
-        .sclkPinMux            = `sclkPinMuxName`,
+        .picoPinMux            = `picoPinMuxMode`,
+        .pociPinMux            = `pociPinMuxMode`,
+        .sclkPinMux            = `sclkPinMuxMode`,
         .picoPin               = `inst.picoPinInstance.$name`,
         .pociPin               = `inst.pociPinInstance.$name`,
         .sclkPin               = `inst.sclkPinInstance.$name`,
     % if (inst.mode != 'Three Pin') {
         .csnPin                = `inst.csnPinInstance.$name`,
-        .csnPinMux             = `csnPinMuxName`,
+        .csnPinMux             = `csnPinMuxMode`,
     % } else {
         .csnPin                = GPIO_INVALID_INDEX,
     % }

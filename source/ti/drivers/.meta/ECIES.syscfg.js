@@ -66,7 +66,7 @@ a shared secret which is used as an input for ANSI X9.36 Key Derivation Function
 [1]: /secure_drivers/doxygen/html/_e_c_i_e_s_8h.html#details "C API reference"
 [2]: /secure_drivers/doxygen/html/_e_c_i_e_s_8h.html#ti_drivers_ECIES_Synopsis "Basic C usage summary"
 [3]: /secure_drivers/doxygen/html/_e_c_i_e_s_8h.html#ti_drivers_ECIES_Examples "C usage examples"
-[4]: /drivers/syscfg/html/ConfigDoc.html#ECIES_Configuration_Options "Configuration options reference"
+[4]: /secure_drivers/syscfg/html/ConfigDoc.html#ECIES_Configuration_Options "Configuration options reference"
 `,
     config              : Common.addNameConfig(config, "/ti/drivers/ecies", "CONFIG_ECIES_"),
     defaultInstanceName : "CONFIG_ECIES_",

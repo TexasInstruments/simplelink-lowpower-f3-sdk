@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,6 +103,42 @@ predefined internal flash region.
 ];
 
 /*
+ *  ======== getUsableFlashRange ========
+ *  Returns the usable flash range { base, end } for the current device,
+ *  accounting for HSM firmware that occupies the top of flash on CC27xx
+ *  devices. Returns null if the information is not available.
+ */
+function getUsableFlashRange()
+{
+    try {
+        let DriverLib = system.getScript("/ti/devices/DriverLib");
+        let linkerDefs = DriverLib.getLinkerDefs();
+        let flashBase = null;
+        let flashSize = null;
+        let hsmFwBase = null;
+        for (let def of linkerDefs) {
+            if (def.name === "FLASH0_BASE") { flashBase = def.value; }
+            if (def.name === "FLASH0_SIZE") { flashSize = def.value; }
+            if (def.name === "HSM_FW_BASE") { hsmFwBase = def.value; }
+        }
+        if (flashBase === null || flashSize === null) {
+            return null;
+        }
+        let flashEnd = flashBase + flashSize;
+        /* If HSM FW resides within flash, the linker reserves that region,
+         * so the NVS-accessible flash ends at HSM_FW_BASE.
+         */
+        if (hsmFwBase !== null && hsmFwBase < flashEnd) {
+            flashEnd = hsmFwBase;
+        }
+        return { base: flashBase, end: flashEnd };
+    }
+    catch (e) {
+        return null;
+    }
+}
+
+/*
  *  ======== validate ========
  */
 function validate(inst, validation)
@@ -124,6 +160,27 @@ function validate(inst, validation)
         let message = "Region Base address must be aligned on a " + sectorSize
             + " page boundary.";
         logError(validation, inst, "regionBase", message);
+    }
+
+    /* Verify that the region fits within the device's usable flash */
+    let flashRange = getUsableFlashRange();
+    if (flashRange !== null) {
+        let flashBaseStr = "0x" + flashRange.base.toString(16).toUpperCase();
+        let flashEndStr  = "0x" + flashRange.end.toString(16).toUpperCase();
+        if (regionBase < flashRange.base || regionBase >= flashRange.end) {
+            let message = "Region Base (0x" + regionBase.toString(16).toUpperCase()
+                + ") is outside the device's usable flash ["
+                + flashBaseStr + ", " + flashEndStr + ").";
+            logError(validation, inst, "regionBase", message);
+        }
+        else if ((regionBase + regionSize) > flashRange.end) {
+            let regionEnd = "0x" + (regionBase + regionSize).toString(16).toUpperCase();
+            let message = "NVS region end (" + regionEnd + ") exceeds the"
+                + " device's usable flash (" + flashEndStr + ")."
+                + " Reconfigure the region base/size to fit within flash.";
+            logError(validation, inst, "regionBase", message);
+            logError(validation, inst, "regionSize", message);
+        }
     }
 
     /* verify that this region does not overlap within any other region */

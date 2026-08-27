@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,7 @@ const uint_least8_t GPIO_pinUpperBound = `pinBounds.highest`;
  *  ======== gpioPinConfigs ========
  *  Array of Pin configurations
  */
-GPIO_PinConfig gpioPinConfigs[`localPinData.length`] = {
+GPIO_PinConfig gpioPinConfigs[GPIO_NUMBER_OF_CONFIGS] = {
 % for (let pinData of localPinData) {
 %     if (pinData.inst && pinData.inst.$ownedBy) {
     /* Owned by `pinData.inst.$ownedBy.$name` as `pinData.inst.parentSignalDisplayName` */
@@ -78,7 +78,7 @@ GPIO_PinConfig gpioPinConfigs[`localPinData.length`] = {
  *  Array of callback function pointers
  *  Change at runtime with GPIO_setCallback()
  */
-GPIO_CallbackFxn gpioCallbackFunctions[`localPinData.length`];
+GPIO_CallbackFxn gpioCallbackFunctions[GPIO_NUMBER_OF_CONFIGS];
 
 /*
  *  ======== gpioUserArgs ========
@@ -86,7 +86,7 @@ GPIO_CallbackFxn gpioCallbackFunctions[`localPinData.length`];
  *  Change at runtime with GPIO_setUserArg()
  *  Get values with GPIO_getUserArg()
  */
-void* gpioUserArgs[`localPinData.length`];
+void* gpioUserArgs[GPIO_NUMBER_OF_CONFIGS];
 
 `declarations`
 

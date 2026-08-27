@@ -29,6 +29,7 @@ target_include_directories(platform_ns
         ext/common
         ext/cmsis
         ${DRIVERLIB_SOURCE_DIR}
+        ${TIDRIVERS_INSTALL_DIR}/source
 )
 
 target_compile_definitions(platform_ns

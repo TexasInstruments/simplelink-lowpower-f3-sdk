@@ -117,6 +117,11 @@ void OPT_LL_PAST_R_SetFeatureBit(void)
     LL_PAST_R_SetFeatureBit();
 }
 
+void OPT_LL_PAST_R_Reset(void)
+{
+    LL_PAST_R_Reset();
+}
+
 void OPT_LL_PAST_R_ResetConnParamsToDefault(uint16_t connHandle)
 {
     LL_PAST_R_ResetConnParamsToDefault(connHandle);
@@ -125,16 +130,6 @@ void OPT_LL_PAST_R_ResetConnParamsToDefault(uint16_t connHandle)
 void OPT_LL_PAST_R_ProcessIndPackets(llConnState_t * connPtr, uint8_t * pControlPacket, uint8_t controlPacketType)
 {
     LL_PAST_R_ProcessIndPackets(connPtr, pControlPacket, controlPacketType);
-}
-
-void OPT_LL_PAST_R_SetLastRxPacketLen(llConnState_t * connPtr, uint8_t lastRXPktLength)
-{
-    LL_PAST_R_SetLastRxPacketLen(connPtr, lastRXPktLength);
-}
-
-void OPT_LL_PAST_R_SetMaxRXOctets(llConnState_t * connPtr)
-{
-    LL_PAST_R_SetMaxRXOctets(connPtr);
 }
 
 #endif /* defined(USE_PAST_RECEIVER) */

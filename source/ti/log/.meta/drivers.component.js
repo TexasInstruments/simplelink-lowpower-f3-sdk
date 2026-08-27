@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,18 +41,17 @@ let LogModule = system.getScript("/ti/log/LogModule.syscfg.js");
 let deviceId = system.deviceData.deviceId;
 
 let topModules;
-let templates;
 
 /* Include LogSinkBuf for all devices*/
 let logSinks = ["/ti/log/LogSinkBuf"];
 
-/* Include LogSinks conditionally on the board */
-if(!(deviceId.match(/CC23.0/) || deviceId.match(/CC35.0/))) {
+/* Include LogSinkITM conditionally on the board */
+if(!(deviceId.match(/CC23.0/) || deviceId.match(/CC23.1/) || deviceId.match(/CC283./) || deviceId.match(/CC35/))) {
 
     logSinks.push("/ti/log/LogSinkITM");
 }
-/* Include LogSinks conditionally on the board */
-if (deviceId.match(/CC23.0/) || deviceId.match(/CC27/))
+/* Include LogSinkTraceLPF3 conditionally on the board */
+if (deviceId.match(/CC23.0/) || deviceId.match(/CC23.1/) || deviceId.match(/CC27/) || deviceId.match(/CC283./))
 {
     logSinks.push("/ti/log/LogSinkTraceLPF3");
 }
@@ -64,15 +63,7 @@ topModules = [
     LogModule.sinksToTopModule(logSinks)
 ];
 
-templates = [
-    {
-        name: "/ti/log/templates/rov.js.xdt",
-        outputPath: "ti_utils_runtime_rov.js.xs"
-    }
-];
-
 exports = {
     displayName: LogModule.topModuleDisplayName,
-    topModules: topModules,
-    templates: templates
+    topModules: topModules
 };

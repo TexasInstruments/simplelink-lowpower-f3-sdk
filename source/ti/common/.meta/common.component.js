@@ -75,6 +75,18 @@ if (deviceId.match(/CC13.[2].[7]|CC26.[2].[7]|CC13.[4]|CC26.[34]|CC23.0|CC27/)) 
     ];
 }
 
+if (deviceId.match(/CC35/)) {
+    topModules = [
+        {
+            displayName: "TI Drivers",
+            description: "Enable Secure Protected Storage",
+            modules: [
+                "/ti/common/sps"
+            ]
+        }
+    ];
+}
+
 exports = {
     displayName: displayName,
     topModules: topModules,

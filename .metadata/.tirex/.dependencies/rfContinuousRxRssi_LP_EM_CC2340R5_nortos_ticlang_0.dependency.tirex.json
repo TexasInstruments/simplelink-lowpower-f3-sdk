@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../README.md -> README.md",
+            "+../README.html -> README.html",
+            "+../rfContinuousRxRssi.c -> rfContinuousRxRssi.c",
+            "+../rfContinuousRxRssi.syscfg -> rfContinuousRxRssi.syscfg",
+            "+../nortos/main_nortos.c -> nortos/main_nortos.c",
+            "+cc23x0r5.cmd -> cc23x0r5.cmd"
+        ]
+    }
+]

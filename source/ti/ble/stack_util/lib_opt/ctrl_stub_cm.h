@@ -82,6 +82,13 @@
 #include "ti/ble/controller/ll/ll_connection_monitor.h"
 
 // Function prototypes for the actual implementations
+extern cmErrorCodes_e LL_CMS_RegisterCBs(const cmsCBs_t* pCBs);
+extern uint8_t LL_CMS_GetConnDataSize(void);
+extern cmErrorCodes_e LL_CMS_GetConnData(uint16_t connHandle, cmsConnDataParams_t* pParams);
+extern cmErrorCodes_e LL_CM_RegisterCBs(const cmCBs_t* pCBs);
+extern cmErrorCodes_e LL_CM_StartMonitor(cmStartMonitorParams_t* pParams);
+extern cmErrorCodes_e LL_CM_StopMonitor(uint16_t connHandle);
+extern cmErrorCodes_e LL_CM_UpdateConn(cmConnUpdateEvt_t* pConnUpdateEvt);
 extern void llCmUpdateRclCmdPhyFeatures(uint8_t connId, uint16_t phyFeatures);
 extern void llCmUpdateRclCmdChannel(llConnState_t* connPtr, uint8_t channel);
 extern llStatus_t llCmDynamicAlloc(void);
@@ -98,6 +105,13 @@ extern bool llCmSwitchToAdjustmentIfNeeded(llConnState_t* connPtr, bool force);
 
 
 // Wrapper functions for the feature implementations
+cmErrorCodes_e OPT_LL_CMS_RegisterCBs(const cmsCBs_t* pCBs);
+uint8_t OPT_LL_CMS_GetConnDataSize(void);
+cmErrorCodes_e OPT_LL_CMS_GetConnData(uint16_t connHandle, cmsConnDataParams_t* pParams);
+cmErrorCodes_e OPT_LL_CM_RegisterCBs(const cmCBs_t* pCBs);
+cmErrorCodes_e OPT_LL_CM_StartMonitor(cmStartMonitorParams_t* pParams);
+cmErrorCodes_e OPT_LL_CM_StopMonitor(uint16_t connHandle);
+cmErrorCodes_e OPT_LL_CM_UpdateConn(cmConnUpdateEvt_t* pConnUpdateEvt);
 void OPT_llCmUpdateRclCmdPhyFeatures(uint8_t connId, uint16_t phyFeatures);
 void OPT_llCmUpdateRclCmdChannel(llConnState_t* connPtr, uint8_t channel);
 llStatus_t OPT_llCmDynamicAlloc(void);

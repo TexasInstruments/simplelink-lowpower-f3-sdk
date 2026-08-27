@@ -3,7 +3,7 @@
  *
  *  Description:    Collection of functions returning chip information.
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,8 @@
  *
  ******************************************************************************/
 
-#ifndef __CHIP_INFO_H__
-#define __CHIP_INFO_H__
+#ifndef ti_devices_chipinfo__include
+#define ti_devices_chipinfo__include
 
 //*****************************************************************************
 //
@@ -127,6 +127,25 @@ __STATIC_INLINE ChipPartId ChipInfoGetPartId(void)
 
 //*****************************************************************************
 //
+//! \brief Copies the BLE address to the provided buffer.
+//!
+//! \param pBleAddr Pointer to a valid 6-byte buffer where the BLE address
+//!                 will be copied.
+//!
+//! \return None
+//!
+//! \note
+//! While this function is a one-liner, it cannot be an inline function.
+//! The reason for this is that this function is used by the BLE stack,
+//! which is common to CC27xxx10 and CC27xxx20 devices. If this function were
+//! to be inline, the BLE stack would use the same FCFG struct for both
+//! devices, which causes issue.
+//
+//*****************************************************************************
+extern void ChipInfoGetBleAddr(uint8_t *pBleAddr);
+
+//*****************************************************************************
+//
 // Mark the end of the C bindings section for C++ compilers.
 //
 //*****************************************************************************
@@ -142,4 +161,4 @@ __STATIC_INLINE ChipPartId ChipInfoGetPartId(void)
 //
 //*****************************************************************************
 
-#endif // __CHIP_INFO_H__
+#endif // ti_devices_chipinfo__include

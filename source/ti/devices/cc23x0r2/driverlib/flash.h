@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -29,8 +29,8 @@
  *
  ******************************************************************************/
 
-#ifndef __FLASH_H__
-#define __FLASH_H__
+#ifndef ti_devices_flash__include
+#define ti_devices_flash__include
 
 //*****************************************************************************
 //
@@ -303,4 +303,4 @@ __STATIC_INLINE uint32_t FlashProgram(uint8_t *dataBuffer, uint32_t address, uin
 //
 //*****************************************************************************
 
-#endif // __FLASH_H__
+#endif // ti_devices_flash__include

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, Texas Instruments Incorporated
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -95,6 +95,7 @@ void I2S_init(void)
 I2S_Handle I2S_open(uint_least8_t index, I2S_Params *params)
 {
     I2S_Handle handle;
+    uintptr_t key;
     I2SLPF3_Object *object;
     I2SLPF3_HWAttrs const *hwAttrs;
 
@@ -104,11 +105,14 @@ I2S_Handle I2S_open(uint_least8_t index, I2S_Params *params)
 
     DebugP_assert(index < I2S_count);
 
+    key = HwiP_disable();
+
     /* Return early if module is not initialized or if the object is already
      * open.
      */
     if (!isInitialized || object->isOpen)
     {
+        HwiP_restore(key);
         return NULL;
     }
 
@@ -118,9 +122,11 @@ I2S_Handle I2S_open(uint_least8_t index, I2S_Params *params)
     if (!configObject(handle, params))
     {
         /* The parameters provided are not valid. */
+        HwiP_restore(key);
         return NULL;
     }
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X1)
     if (hwAttrs->afclkSrc == I2SLPF3_AFCLK_SRC_CLKAF)
     {
         /* Before configuring the rest of the HW, try to start and take
@@ -130,14 +136,18 @@ I2S_Handle I2S_open(uint_least8_t index, I2S_Params *params)
         if (PowerLPF3_startAFOSC(hwAttrs->afoscFreq) != Power_SOK)
         {
             /* Failed to start AFOSC */
+            HwiP_restore(key);
             return NULL;
         }
     }
+#endif
 
     /* Configure IOs, always succeeds */
     initIO(handle);
 
     object->isOpen = true;
+
+    HwiP_restore(key);
 
     /* Register power dependency - i.e. power up and enable clock for I2S. */
     Power_setDependency(PowerLPF3_PERIPH_I2S);
@@ -166,8 +176,7 @@ I2S_Handle I2S_open(uint_least8_t index, I2S_Params *params)
  */
 void I2S_close(I2S_Handle handle)
 {
-    I2SLPF3_Object *object         = handle->object;
-    I2SLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
+    I2SLPF3_Object *object = handle->object;
 
     /* Disable I2S interrupts. */
     I2SDisableInt(I2S_BASE, I2S_INT_ALL);
@@ -194,11 +203,14 @@ void I2S_close(I2S_Handle handle)
     /* Disable the audio clock */
     CKMDSelectAfclk(CKMD_AFCLK_SOURCE_NONE);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X1)
+    I2SLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
     if (hwAttrs->afclkSrc == I2SLPF3_AFCLK_SRC_CLKAF)
     {
         /* Stop AFOSC */
         PowerLPF3_stopAFOSC();
     }
+#endif
 
     /* Deallocate pins */
     finalizeIO(handle);
@@ -483,8 +495,6 @@ static void I2S_hwiIntFxn(uintptr_t arg)
  */
 static void initHw(I2S_Handle handle)
 {
-    I2SLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
-
     /* Configure serial format. */
     configSerialFormat(handle);
     /* Configure the channels used on each data interface. */
@@ -492,6 +502,8 @@ static void initHw(I2S_Handle handle)
     /* Configure the clocks for the CCLK, SCK and WS signals. */
     configClocks(handle);
 
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X1)
+    I2SLPF3_HWAttrs const *hwAttrs = handle->hwAttrs;
     /* Start AFOSC if selected */
     if (hwAttrs->afclkSrc == I2SLPF3_AFCLK_SRC_CLKAF)
     {
@@ -510,6 +522,7 @@ static void initHw(I2S_Handle handle)
          */
         PowerLPF3_startAFOSC(hwAttrs->afoscFreq);
     }
+#endif
 }
 
 /*
@@ -960,9 +973,6 @@ static bool computeWSDivider(I2S_Handle handle, const I2S_Params *params, uint16
  */
 static uint32_t getAudioClockFreq(I2S_Handle handle, const I2S_Params *params)
 {
-#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
-    #error "Clocking system is not know this device family."
-#endif
     I2SLPF3_HWAttrs const *hwAttrs;
 
     ClockP_FreqHz cpuFreq;
@@ -978,12 +988,18 @@ static uint32_t getAudioClockFreq(I2S_Handle handle, const I2S_Params *params)
         case I2SLPF3_AFCLK_SRC_CLKHF:
             return clkhfFreq;
         case I2SLPF3_AFCLK_SRC_CLKREF:
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
+            return clkhfFreq; /* CLKREF is the same as CLKHF */
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
             return clkhfFreq / 2; /* CLKREF is half of CLKHF */
         case I2SLPF3_AFCLK_SRC_CLKAF:
             /* The AFOSC frequencies are based on the assumption that the frequency
              * of CLKHF is 96MHz.
              */
             return hwAttrs->afoscFreq / (96000000 / clkhfFreq);
+#else
+    #error "Clocking system is not known for this device family."
+#endif
         default:
             /* The AFCLK source is not known. Return 0 to indicate error. */
             return 0;

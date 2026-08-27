@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -226,6 +226,7 @@ const boardSpecificCCFGSettings = {
     LP_EM_CC2340R5_CCFG_SETTINGS: {},
     LP_EM_CC2340R53_CCFG_SETTINGS: {},
     LP_EM_CC2340R2_CCFG_SETTINGS: {},
+    LP_EM_CC2341R10_CCFG_SETTINGS: {},
     LP_EM_CC2745R10_Q1_CCFG_SETTINGS: {},
     LP_EM_CC2674P10_CCFG_SETTINGS: {
         xoscCapArray: true,

@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@ const I2SLPF3_HWAttrs I2SLPF3_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
     % let inst = instances[i];
     % let sckPin = inst.sckPinInstance.$name;
-    % let sckPinMuxMode = inst.i2s.SCKPin.$solution.muxMode; 
+    % let sckPinMuxMode = inst.i2s.SCKPin.$solution.muxMode;
     % let sckPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + sckPinMuxMode.toString();
     %
     % let wsPin = inst.wsPinInstance.$name;
@@ -71,7 +71,7 @@ const I2SLPF3_HWAttrs I2SLPF3_hwAttrs[`countDef`] = {
     % let wsPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + wsPinMuxMode.toString();
     %
     % let cclkPin = "GPIO_INVALID_INDEX";
-    % let cclkPinMuxName = 'GPIO_MUX_GPIO_INTERNAL'; 
+    % let cclkPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
     % let sd0Pin = "GPIO_INVALID_INDEX";
     % let sd0PinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
     % let sd1Pin = "GPIO_INVALID_INDEX";
@@ -101,7 +101,9 @@ const I2SLPF3_HWAttrs I2SLPF3_hwAttrs[`countDef`] = {
     % }
     {
         .afclkSrc       =  `inst.afclkSrc`,
+% if (inst.afclkSrc == "I2SLPF3_AFCLK_SRC_CLKAF") {
         .afoscFreq      =  `inst.afoscFreq`,
+% }
         .sd1Pin         =  `sd1Pin`,
         .sd1PinMux      =  `sd1PinMuxName`,
         .sd0Pin         =  `sd0Pin`,

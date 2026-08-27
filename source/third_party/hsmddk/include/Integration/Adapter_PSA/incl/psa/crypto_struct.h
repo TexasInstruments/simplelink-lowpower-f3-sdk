@@ -70,141 +70,16 @@
 #ifndef PSA_CRYPTO_STRUCT_H
 #define PSA_CRYPTO_STRUCT_H
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/Adapter_mbedTLS/incl/private_access.h>
-#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_asset.h>
+
+
+/* TI Modifications: Remove content not relevant to DDK code. The DDK houses
+ * Key Management and Key Derivation code - only structs related to these
+ * items need to be defined here. This allows us to avoid a dependency from
+ * the DDK on mbedTLS.
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-/* The structure and initialization for a hash operation. */
-struct psa_hash_operation_s
-{
-    uint32_t alg;
-    uint32_t block_size;
-    uint32_t TempAssetId;
-    uint64_t TotalMessageLength;
-    uint32_t leftover_nbytes;
-    uint8_t leftover_buf[144];
-    uint8_t inter_digest[64];
-    uint8_t fUpdateDone;
-    uint8_t hash_state;
-};
-
-#define PSA_HASH_OPERATION_INIT {0}
-static inline struct psa_hash_operation_s
-psa_hash_operation_init(void)
-{
-    const struct psa_hash_operation_s v = PSA_HASH_OPERATION_INIT;
-    return (v);
-}
-
-/* The structure and initialization for a MAC operation. */
-struct psa_mac_operation_s
-{
-    uint32_t alg;
-    mbedtls_svc_key_id_t key;
-    uint32_t block_size;
-    uint64_t TotalMessageLength;
-    uint32_t TempAssetId;
-    uint32_t leftover_nbytes;
-    uint8_t leftover_buf[144];
-    uint8_t fVerify;
-    uint8_t fUpdateDone;
-    uint8_t mac_state;
-};
-
-#define PSA_MAC_OPERATION_INIT {0}
-static inline struct psa_mac_operation_s
-psa_mac_operation_init(void)
-{
-    const struct psa_mac_operation_s v = PSA_MAC_OPERATION_INIT;
-    return (v);
-}
-
-/* The structure and initialization for a symmetric cipher operation. */
-struct psa_cipher_operation_s
-{
-    mbedtls_svc_key_id_t key;
-    psa_algorithm_t Mode;
-    uint32_t alg;
-    uint32_t block_size;
-    uint32_t TempAssetId;
-    uint32_t leftover_nbytes;
-    uint8_t leftover_buf[16];
-    uint8_t tweak[16];
-    uint8_t cipher_state;
-    size_t IVSize;
-    uint8_t fEncrypt;
-};
-
-#define PSA_CIPHER_OPERATION_INIT {0}
-static inline struct psa_cipher_operation_s
-psa_cipher_operation_init(void)
-{
-    const struct psa_cipher_operation_s v = PSA_CIPHER_OPERATION_INIT;
-    return (v);
-}
-
-/* The structure and initialization for a symmetric authenticated cipher
- * operation. */
-struct psa_aead_operation_s
-{
-    mbedtls_svc_key_id_t key;
-    psa_algorithm_t Mode;
-    uint32_t plaintext_length;
-    uint32_t ad_length;
-    uint32_t leftover_nbytes_data;
-    uint32_t leftover_nbytes_AAD;
-    uint32_t TotalDataLength;
-    uint32_t TotalAADLength;
-    uint32_t TempAssetId;
-    uint8_t nonce[16];
-    uint8_t nonce_length;
-    uint8_t leftover_data[16];
-    uint8_t leftover_AAD[16];
-    uint8_t aead_state;
-    uint8_t fUpdateDone;
-    uint8_t fUpdateAadDone;
-    uint8_t fEncrypt;
-};
-
-#define PSA_AEAD_OPERATION_INIT {0}
-static inline struct psa_aead_operation_s
-psa_aead_operation_init(void)
-{
-    const struct psa_aead_operation_s v = PSA_AEAD_OPERATION_INIT;
-    return (v);
-}
-
-#ifndef PSA_KDF_LABEL_MAX_SIZE
-#define PSA_KDF_LABEL_MAX_SIZE       (224U - 20U)
-#endif
-/* The structure and initialization for key derivation operation(s). */
-struct psa_key_derivation_s
-{
-    psa_algorithm_t alg;
-    mbedtls_svc_key_id_t inputKey;
-    /* Should be at least 53 bytes of label data. Has to also fit an end marker
-     * between the label and the context, which is 1 byte (0x00). It should also
-     * fit four bytes for the length of the key to derive.
-     */
-    uint8_t fixedInputData[PSA_KDF_LABEL_MAX_SIZE];
-    size_t labelSize;
-    size_t contextSize;
-    uint32_t handle;
-    uint32_t capacity;
-    bool canDerive;
-    bool capacitySet;
-};
-
-#define PSA_KEY_DERIVATION_OPERATION_INIT {0, MBEDTLS_SVC_KEY_ID_INIT, {0, 0, 0, 0, 0}, false, false}
-static inline struct psa_key_derivation_s
-psa_key_derivation_operation_init(void)
-{
-    const struct psa_key_derivation_s v = PSA_KEY_DERIVATION_OPERATION_INIT;
-    return (v);
-}
-
 
 /* The type used internally for key sizes.
  * Public interfaces use size_t, but internally a smaller type is used. */
@@ -219,23 +94,6 @@ typedef uint16_t psa_key_bits_t;
  * conditionals. */
 #define PSA_MAX_KEY_BITS 0xfff8U
 
-/** A mask of flags that can be stored in key attributes.
- *
- * This type is also used internally to store flags in slots. Internal
- * flags are defined in library/psa_crypto_core.h. Internal flags may have
- * the same value as external flags if they are properly handled during
- * key creation and in psa_get_key_attributes.
- */
-typedef uint16_t psa_key_attributes_flag_t;
-
-#define PSA_KEY_POLICY_INIT { 0, 0, 0 }
-
-#define PSA_CORE_KEY_ATTRIBUTES_INIT { PSA_KEY_TYPE_NONE, 0,            \
-                                       PSA_KEY_LIFETIME_VOLATILE,       \
-                                       MBEDTLS_SVC_KEY_ID_INIT,         \
-                                       PSA_KEY_POLICY_INIT, 0 }
-
-#define PSA_KEY_ATTRIBUTES_INIT { PSA_CORE_KEY_ATTRIBUTES_INIT, NULL, 0 }
 
 struct psa_key_policy_s {
     psa_key_usage_t MBEDTLS_PRIVATE(usage);
@@ -244,157 +102,34 @@ struct psa_key_policy_s {
 };
 typedef struct psa_key_policy_s psa_key_policy_t;
 
-typedef struct {
+struct psa_key_attributes_s {
     psa_key_type_t MBEDTLS_PRIVATE(type);
     psa_key_bits_t MBEDTLS_PRIVATE(bits);
     psa_key_lifetime_t MBEDTLS_PRIVATE(lifetime);
-    mbedtls_svc_key_id_t MBEDTLS_PRIVATE(id);
     psa_key_policy_t MBEDTLS_PRIVATE(policy);
-    psa_key_attributes_flag_t MBEDTLS_PRIVATE(flags);
-} psa_core_key_attributes_t;
-
-struct psa_key_attributes_s {
-    psa_core_key_attributes_t MBEDTLS_PRIVATE(core);
-    void *MBEDTLS_PRIVATE(domain_parameters);
-    size_t MBEDTLS_PRIVATE(domain_parameters_size);
+    /* This type has a different layout in the client view wrt the
+     * service view of the key id, i.e. in service view usually is
+     * expected to have MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER defined
+     * thus adding an owner field to the standard psa_key_id_t. For
+     * implementations with client/service separation, this means the
+     * object will be marshalled through a transport channel and
+     * interpreted differently at each side of the transport. Placing
+     * it at the end of structures allows to interpret the structure
+     * at the client without reorganizing the memory layout of the
+     * struct
+     */
+    mbedtls_svc_key_id_t MBEDTLS_PRIVATE(id);
 };
 
-static inline struct psa_key_attributes_s
-psa_key_attributes_init(void)
-{
-    const struct psa_key_attributes_s v = PSA_KEY_ATTRIBUTES_INIT;
-    return (v);
-}
-
-static inline void
-psa_set_key_id(psa_key_attributes_t *attributes,
-               mbedtls_svc_key_id_t key)
-{
-    psa_key_lifetime_t lifetime = attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
-
-#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-    attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = key.MBEDTLS_PRIVATE(key_id);
-    attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(owner) = key.MBEDTLS_PRIVATE(owner);
-#else
-    attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = key;
-#endif
-
-    if (PSA_KEY_LIFETIME_IS_VOLATILE(lifetime)) {
-        attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) =
-            PSA_KEY_LIFETIME_FROM_PERSISTENCE_AND_LOCATION(
-                PSA_KEY_LIFETIME_PERSISTENT,
-                PSA_KEY_LIFETIME_GET_LOCATION(lifetime));
-    }
-}
-
-static inline mbedtls_svc_key_id_t
-psa_get_key_id(const psa_key_attributes_t *attributes)
-{
-    return attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id);
-}
-
-static inline void
-psa_set_key_lifetime(psa_key_attributes_t *attributes,
-                     psa_key_lifetime_t lifetime)
-{
-    attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime) = lifetime;
-    if (PSA_KEY_LIFETIME_IS_VOLATILE(lifetime)) {
-#ifdef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-        attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id).MBEDTLS_PRIVATE(key_id) = 0;
-#else
-        attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(id) = 0;
-#endif
-    }
-}
-
-static inline psa_key_lifetime_t
-psa_get_key_lifetime(const psa_key_attributes_t *attributes)
-{
-    return attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(lifetime);
-}
-
-static inline void
-psa_extend_key_usage_flags(psa_key_usage_t *usage_flags)
-{
-    if (*usage_flags & PSA_KEY_USAGE_SIGN_HASH) {
-        *usage_flags |= PSA_KEY_USAGE_SIGN_MESSAGE;
-    }
-
-    if (*usage_flags & PSA_KEY_USAGE_VERIFY_HASH) {
-        *usage_flags |= PSA_KEY_USAGE_VERIFY_MESSAGE;
-    }
-}
-
-static inline void
-psa_set_key_usage_flags(psa_key_attributes_t *attributes,
-                        psa_key_usage_t usage_flags)
-{
-    psa_extend_key_usage_flags(&usage_flags);
-    attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) = usage_flags;
-}
-
-static inline psa_key_usage_t
-psa_get_key_usage_flags(const psa_key_attributes_t *attributes)
-{
-    return attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
-}
-
-static inline void
-psa_set_key_algorithm(psa_key_attributes_t *attributes,
-                      psa_algorithm_t alg)
-{
-    attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) = alg;
-}
-
-static inline psa_algorithm_t
-psa_get_key_algorithm(const psa_key_attributes_t *attributes)
-{
-    return attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
-}
-
+/* See psa_crypto_client.c for the (also disabled) implementation of this API.
+ * We will keep this here for now, but it likely can be removed soon.
+ */
+#if 0
 psa_status_t psa_set_key_domain_parameters(psa_key_attributes_t *attributes,
                                            psa_key_type_t type,
                                            const uint8_t *data,
                                            size_t data_length);
-
-static inline void
-psa_set_key_type(psa_key_attributes_t *attributes,
-                 psa_key_type_t type)
-{
-    if (attributes->MBEDTLS_PRIVATE(domain_parameters) == NULL) {
-        /* Common case: quick path */
-        attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type) = type;
-    } else {
-        /* Call the bigger function to free the old domain parameters.
-         * Ignore any errors which may arise due to type requiring
-         * non-default domain parameters, since this function can't
-         * report errors. */
-        (void) psa_set_key_domain_parameters(attributes, type, NULL, 0);
-    }
-}
-
-static inline psa_key_type_t
-psa_get_key_type(const psa_key_attributes_t *attributes)
-{
-    return attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(type);
-}
-
-static inline void
-psa_set_key_bits(psa_key_attributes_t *attributes,
-                 size_t bits)
-{
-    if (bits > PSA_MAX_KEY_BITS) {
-        attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = PSA_KEY_BITS_TOO_LARGE;
-    } else {
-        attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits) = (psa_key_bits_t) bits;
-    }
-}
-
-static inline size_t
-psa_get_key_bits(const psa_key_attributes_t *attributes)
-{
-    return attributes->MBEDTLS_PRIVATE(core).MBEDTLS_PRIVATE(bits);
-}
+#endif
 
 #ifdef __cplusplus
 }

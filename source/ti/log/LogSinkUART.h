@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,9 +49,9 @@
  *  @endcode
  *
  *  This module implements two functions that are required by the Log API:
- *   - printf(const Log_Module *handle, uint32_t header, uint32_t headerPtr,
+ *   - printf(const Log_Module *handle, Log_Level level, uint32_t headerPtr,
  *     uint32_t numArgs, ...);
- *   - buf(const Log_Module *handle, uint32_t header, uint32_t headerPtr,
+ *   - buf(const Log_Module *handle, Log_Level level, uint32_t headerPtr,
  *     uint8_t *data, size_t size);
  *
  *  Whenever a log statement that uses LogSinkUART as its sink is called, the
@@ -115,7 +115,7 @@
  *        system where 1 bit = 8 us. The tick period for each device can be read
  *        from the multiplier variable in TimestamP<device>.c under
  *        kernel/freertos/dpl. If the timestamp overflows it will go back to 0.
- *      - The LogSinkUART sinks are flushed in the order they are instantiated. 
+ *      - The LogSinkUART sinks are flushed in the order they are instantiated.
  *      - If performance issues are observed either increase the size of the
  *        UART2 ring buffer to increase throughput or increase the size of the
  *        intermediate ring buffer size for more log statements. Also note that
@@ -494,18 +494,18 @@ extern void LogSinkUART_finalize(uint_least8_t index);
  *  @param[in]  ...        Variable amount of arguments
  */
 extern void LogSinkUART_printfSingleton(const Log_Module *handle,
-                                        uint32_t header,
+                                        Log_Level level,
                                         uint32_t headerPtr,
                                         uint32_t numArgs,
                                         ...);
 
-extern void LogSinkUART_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkUART_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkUART_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkUART_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 /*! @endcond NODOC */
 
 /*!
@@ -535,18 +535,18 @@ extern void LogSinkUART_printfSingleton3(const Log_Module *handle, uint32_t head
  *  @param[in]  ...        Variable amount of arguments
  */
 extern void LogSinkUART_printfDepInjection(const Log_Module *handle,
-                                           uint32_t header,
+                                           Log_Level level,
                                            uint32_t headerPtr,
                                            uint32_t numArgs,
                                            ...);
 
-extern void LogSinkUART_printfDepInjection0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfDepInjection0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkUART_printfDepInjection1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfDepInjection1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkUART_printfDepInjection2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfDepInjection2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkUART_printfDepInjection3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkUART_printfDepInjection3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 /*! @endcond NODOC */
 
 /*!
@@ -575,7 +575,7 @@ extern void LogSinkUART_printfDepInjection3(const Log_Module *handle, uint32_t h
  *  @param[in]  size       Size in bytes of array to store
  */
 extern void LogSinkUART_bufDepInjection(const Log_Module *handle,
-                                        uint32_t header,
+                                        Log_Level level,
                                         uint32_t headerPtr,
                                         uint8_t *data,
                                         size_t size);

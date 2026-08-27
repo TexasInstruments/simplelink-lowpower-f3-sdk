@@ -209,9 +209,7 @@ function getBoardName() {
         else if (boardName.includes("LP_")) {
             boardName = boardName.replace("P7_", "P7-");
         }
-        else {
-            throw new Error("RadioConfig: Unknown board [" + boardName + "]");
-        }
+        // No conversion needed for other board names
     }
     // Some board names don't need to be translated, check if the selected one does
     if (boardName in SysconfigRfconfigBoardMap) {

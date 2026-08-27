@@ -1,12 +1,13 @@
 [
     {
         "files": [
-            "+../../rfCarrierWave.c -> rfCarrierWave.c",
             "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../../rfCarrierWave.c -> rfCarrierWave.c",
+            "+../../overview.rov.json -> overview.rov.json",
             "+../rfCarrierWave.syscfg -> rfCarrierWave.syscfg",
             "+../main_freertos.c -> main_freertos.c",
-            "+../../overview.rov.json -> overview.rov.json",
-            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+            "+cc23x0r5.cmd -> cc23x0r5.cmd"
         ]
     }
 ]

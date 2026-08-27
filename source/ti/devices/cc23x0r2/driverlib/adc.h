@@ -3,7 +3,7 @@
  *
  *  Description:    Prototypes and defines for the ADC API.
  *
- *  Copyright (c) 2022-2025 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,8 @@
  *
  ******************************************************************************/
 
-#ifndef __ADC_H__
-#define __ADC_H__
+#ifndef ti_devices_adc__include
+#define ti_devices_adc__include
 
 //*****************************************************************************
 //
@@ -265,6 +265,9 @@ extern "C" {
 
 //! \brief Conversion overflow
 #define ADC_INT_OVIFG ADC_IMASK0_OVIFG
+
+//! \brief Max comparator settling time
+#define ADC_DEBUG1_CTRL_MAX_COMP_SETTLE_TIME (0x3 << 9)
 
 //*****************************************************************************
 //
@@ -778,6 +781,25 @@ __STATIC_INLINE void ADCClearInterrupt(uint32_t intFlags)
 
 //*****************************************************************************
 //
+//! \brief Increase settling time for comparator output.
+//!
+//! Set bits 9-10 in ADC:DEBUG1:CTRL to increase settling time for the
+//! comparator output. This will reduce the error rate of ADC conversions.
+//! This is a workaround for the ADC errata: 'ADC_09', documented at:
+//! https://www.ti.com/lit/er/swrz134e/swrz134e.pdf or
+//! https://www.ti.com/lit/er/swrz161a/swrz161a.pdf
+//!
+//! \return None
+//
+//*****************************************************************************
+__STATIC_INLINE void ADCIncreaseComparatorSettlingTime(void)
+{
+    /* It is sufficient to use the OR operator since the complete field will be set. */
+    HWREG(ADC_BASE + ADC_O_DEBUG1) |= ADC_DEBUG1_CTRL_MAX_COMP_SETTLE_TIME;
+}
+
+//*****************************************************************************
+//
 //! \brief Returns ADC gain value for given reference
 //!
 //! This returns a gain value that should be passed to \ref ADCAdjustValueForGain.
@@ -850,4 +872,4 @@ extern uint32_t ADCAdjustValueForGain(uint32_t adcValue, uint32_t bitResolution,
 //
 //*****************************************************************************
 
-#endif //  __ADC_H__
+#endif // ti_devices_adc__include

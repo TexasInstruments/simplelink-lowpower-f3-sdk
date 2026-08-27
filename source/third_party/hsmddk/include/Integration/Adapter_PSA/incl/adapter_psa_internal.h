@@ -96,6 +96,9 @@ PSA_ASYM_DATA_SIZE_VWB(const size_t x)
     return (uint32_t)(PSA_ASYM_DATA_VHEADER + PSA_ASYM_DATA_SIZE_B2WB(x));
 }
 
+#define PSA_ASYM_DATA_SIZE_VWB_MACRO(x) \
+    (PSA_ASYM_DATA_VHEADER + (4U * ((x + 31U) / 32U)))
+
 
 /*----------------------------------------------------------------------------
  * PSA_ASYM_DATA_SIZE_B2B

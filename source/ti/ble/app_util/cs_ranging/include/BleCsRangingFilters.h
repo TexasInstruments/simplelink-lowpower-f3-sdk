@@ -95,6 +95,19 @@ typedef struct
 } BleCsRanging_SlewRateLimiterFilter_t;
 
 /**
+ * @brief Structure to represent a Slew-Rate Limiter Filter with Confidence support
+ */
+typedef struct
+{
+    float upperChangeRate;      ///< Upper change rate limit (meters/second, typically positive value, must be >= lowerChangeRate)
+    float lowerChangeRate;      ///< Lower change rate limit (meters/second, typically negative value, must be <= upperChangeRate)
+    float prevValue;            ///< Previous value (y1 in matlab)
+    float prevFilteredValue;    ///< Previous filtered value (z1 in matlab)
+    float minConfidence;        ///< Minimum confidence threshold (default: 0.0625 = 1/16)
+    uint8_t optionFlags;        ///< Filter option flags, given by enum BleCsRanging_SlewRateLimiterFilterOptionFlags_e
+} BleCsRanging_SlewRateLimiterFilterWithConfidence_t;
+
+/**
  *  @brief Enumerator of Slew Rate Limiter Filter options
  *
  *  Flags to enable optional features in the filter function
@@ -235,5 +248,38 @@ BleCsRanging_Status_e BleCsRanging_initSlewRateLimiterFilter(BleCsRanging_SlewRa
  * @return The filtered value
  */
 float BleCsRanging_computeSlewRateLimiterFilter(BleCsRanging_SlewRateLimiterFilter_t *srlf, float deltaTimeSec, float value, float v_est);
+
+/**
+ * @brief Initialize the Slew Rate Limiter Filter with Confidence support
+ *
+ * This function initializes the Slew Rate Limiter Filter with Confidence structure with the given parameters.
+ *
+ * @param srlf Pointer to the Slew Rate Limiter with Confidence filter structure to be initialized
+ * @param upperChangeRate Upper change rate limit (meters/second), Example:  1.0f. Must be >= lowerChangeRate.
+ * @param lowerChangeRate Lower change rate limit (meters/second). Example: -1.0f. Must be <= upperChangeRate.
+ * @param minConfidence Minimum confidence threshold (in range [0, 1]). Confidence values below this threshold will cause the filter to maintain its previous state. (Example: 0.0625f)
+ * @param optionFlags Flags to enable optional features, see enum BleCsRanging_SlewRateLimiterFilterOptionFlags_e
+ * @return Return status to report success or error
+ */
+BleCsRanging_Status_e BleCsRanging_initSlewRateLimiterFilterWithConfidence(BleCsRanging_SlewRateLimiterFilterWithConfidence_t *srlf,
+                                            float upperChangeRate, float lowerChangeRate, float minConfidence, uint8_t optionFlags);
+
+/**
+ * @brief Update the Slew Rate Limiter Filter with Confidence
+ *
+ * This function updates the Slew Rate Limiter Filter with Confidence with a new value and returns the filtered value.
+ * The filter limits the rate of change based on upperChangeRate (typically positive) and lowerChangeRate (typically negative) relative to velocity estimate.
+ * When confidence is below minConfidence, the filter maintains its previous state.
+ * When using IIR mode, the filter coefficient is dynamically calculated based on confidence: b = 0.25 + 0.25*confidence (ranges 0.25 to 0.5).
+ *
+ * @param srlf Pointer to the Slew Rate Limiter with Confidence filter structure
+ * @param deltaTimeSec Time lapsed since previous data sample, in seconds. Not used for the first data sample (can set to 0).
+ * @param value New value to add to the filter, in meter
+ * @param v_est Estimated velocity (in m/s). Used to calculate expected change dynamically. Use 0.0f if velocity is unknown.
+ * @param confidence Confidence value in range [0, 1]. Values below confidenceMin will cause the filter to maintain previous state.
+ * @return The filtered value, or NAN if filter has empty state and input value has too low confidence.
+ */
+float BleCsRanging_computeSlewRateLimiterFilterWithConfidence(BleCsRanging_SlewRateLimiterFilterWithConfidence_t *srlf,
+                                                        float deltaTimeSec, float value, float v_est, float confidence);
 
 #endif //_BLECSRANGINGFILTERS_H_

@@ -93,14 +93,6 @@ const RegisterRegion = {
     T_HW_MASKED: {id: 0xB, comment: "HW masked region"}
 };
 
-// Map from PHY property to RCL command field
-const PhyPropCmdField = {
-    subPhy: "common.phyFeatures",
-    codedTxRate: "common.phyFeatures",
-    frequency: "rfFrequency",
-    txPower: "txPower.dBm"
-};
-
 // Code formatting
 const COMMENT_INDENT = 36;
 
@@ -1633,6 +1625,8 @@ function create(phyGroup, phyID, first) {
                     // Make sure that frequency is correctly set
                     if (name === "bleChannel") {
                         RfParamCache.frequency = UtilHandle.convBleChannelToFreq(fmtValue);
+                    } else if (name === "ieee802154Channel") {
+                        RfParamCache.frequency = UtilHandle.convIeee802154ChannelToFreq(fmtValue);
                     }
                 }
             }
@@ -1660,6 +1654,9 @@ function create(phyGroup, phyID, first) {
                     item.default = RfParamCache[item.name];
                 }
                 break;
+            }
+            if (String(PhyDef.phy_property_names).split(",").indexOf(item.name) >= 0) {
+                item.hidden = false;
             }
         }
 
@@ -1708,15 +1705,17 @@ function create(phyGroup, phyID, first) {
         const freq = getFrequency();
 
         if (PhyGroup === Common.PHY_PROP) {
+            // "subPhy" applies to WBMS only
             return {
                 frequency: parseFloat(freq),
                 syncWord: parseInt(getSyncWord()),
                 txPower: 0,
-                subPhy: "1_mbps"
+                subPhy: "2_mbps"
             };
         }
         else if (PhyGroup === Common.PHY_BLE) {
             RfParamCache.bleChannel = Common.bleFreqToChan(freq);
+            // "subPhy" applies to BLE only
             return {
                 // Placeholder values
                 frequency: freq,
@@ -3110,28 +3109,10 @@ ${symNameCode}
      *
      *  @param inst      - UI instances
      *  @param phyProp   - Name of PHY property (SRFS8)
-     *  @param selection - "default" or "actual"
      *  @returns boolean
      */
-    function isPhyPropSupported(inst, phyProp, selection = "default") {
-        const usedCmds = cmdHandler.getUsedCommands(inst, selection);
-        if (usedCmds.length > 0) {
-            const field = PhyPropCmdField[phyProp];
-            const cmds = cmdHandler.getCommandBuffer();
-
-            // Search for relevant command field
-            for (const cmdName of usedCmds) {
-                if (cmdName in cmds) {
-                    const cmdDef = cmds[cmdName];
-                    for (const cmd of cmdDef) {
-                        if (cmd.name === field) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+    function isPhyPropSupported(inst, name) {
+        return (String(PhyDef.phy_property_names).indexOf(name) >= 0);
     }
 
     /**

@@ -30,12 +30,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_Gpio_h__include
-#define ti_drivers_RCL_Gpio_h__include
+#ifndef ti_drivers_rcl_RCL_Gpio__include
+#define ti_drivers_rcl_RCL_Gpio__include
 
 extern void RCL_Tracer_enable(void);
 extern void RCL_GPIO_enable(void);
 extern void RCL_GPIO_disable(void);
 
 
-#endif /* ti_drivers_RCL_Gpio_h__include */
+#endif /* ti_drivers_rcl_RCL_Gpio__include */

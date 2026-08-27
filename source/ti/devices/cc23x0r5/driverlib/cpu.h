@@ -4,7 +4,7 @@
  *  Description:    Defines and prototypes for the CPU instruction wrapper
  *                  functions.
  *
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -34,8 +34,8 @@
  *
  ******************************************************************************/
 
-#ifndef __CPU_H__
-#define __CPU_H__
+#ifndef ti_devices_cpu__include
+#define ti_devices_cpu__include
 
 //*****************************************************************************
 //
@@ -111,4 +111,4 @@ extern void CPUDelay(uint32_t count);
 //
 //*****************************************************************************
 
-#endif // __CPU_H__
+#endif // ti_devices_cpu__include

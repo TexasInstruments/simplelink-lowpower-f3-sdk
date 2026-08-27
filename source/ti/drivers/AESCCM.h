@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2024, Texas Instruments Incorporated
+ * Copyright (c) 2017-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -439,13 +439,14 @@
  *      // handle error
  *  }
  *
- *  #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) // and the HSM is the engine of choice
+ *  // and the HSM is the engine of choice
+ *  #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
  *
  *  CryptoKeyPlaintextHSM_initKey(&cryptoKey, keyingMaterial, sizeof(keyingMaterial));
  *
  *  // You will also need to populate the mac in handle->object->mac because HSM needs the mac to construct each
  *  // segmented token.
- *  encryptionResult = AESCCMLPF3HSM_setMac(handle, &mac[0], 8);
+ *  encryptionResult = AESCCMXXF3HSM_setMac(handle, &mac[0], 8);
  *  if (encryptionResult != AESCCM_STATUS_SUCCESS) {
  *      // handle error
  *  }

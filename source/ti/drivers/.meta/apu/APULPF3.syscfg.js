@@ -39,6 +39,8 @@
 
 let Common = system.getScript("/ti/drivers/Common.js");
 
+const deviceId = system.deviceData.deviceId;
+
 let intPriority = Common.newIntPri()[0];
 intPriority.name = "interruptPriority";
 intPriority.displayName = "Interrupt Priority";
@@ -51,7 +53,15 @@ intPriority.description = "APU Interrupt Priority";
 let devSpecific = {
     moduleStatic: {
         config: [],
-        modules: Common.autoForceModules(["Board", "DMA"])
+        modules: (inst) => {
+            let forcedModules = ["Board"];
+
+            /* Due to errata SYS_211, add DMA module for CC27XXX10. */
+            if (deviceId.match(/^CC27\d{2}[A-Z](10|7)/)) {
+                forcedModules.push("DMA");
+            }
+            return Common.autoForceModules(forcedModules)();
+        }
     },
     templates: {
         boardc: "/ti/drivers/apu/APULPF3.Board.c.xdt",

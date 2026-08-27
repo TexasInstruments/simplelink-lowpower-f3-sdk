@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Texas Instruments Incorporated - https://www.ti.com
+ * Copyright (c) 2025-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
  */
 
 /*
- *  ======== drivers.component.js ========
+ *  ======== secure_drivers.component.js ========
  */
 
 "use strict";
@@ -169,6 +169,37 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
             ]
         }
     ];
+} else if (deviceId.match(/CC23.1/)) {
+    /* CC23X1 */
+    topModules = [
+        {
+            displayName: displayName,
+            description: description,
+            modules: [
+            ],
+            "categories": [
+                {
+                    "displayName": "Crypto Drivers",
+                    "description": "Encryption, Decryption and Authentication",
+                    "modules": [
+                        "/ti/drivers/AESCBC",
+                        "/ti/drivers/AESCCM",
+                        "/ti/drivers/AESCMAC",
+                        "/ti/drivers/AESCTR",
+                        "/ti/drivers/AESECB",
+                        "/ti/drivers/AESGCM",
+                        "/ti/drivers/CryptoKeyKeyStore_PSA",
+                        "/ti/drivers/ECDH",
+                        "/ti/drivers/ECDSA",
+                        "/ti/drivers/EDDSA",
+                        "/ti/drivers/RNG",
+                        "/ti/drivers/SHA2",
+                        "/ti/drivers/TRNG"
+                    ]
+                }
+            ]
+        }
+    ];
 } else if (deviceId.match(/CC27/)) {
     /* CC27XX */
     topModules = [
@@ -192,8 +223,8 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                         "/ti/drivers/ECDH",
                         "/ti/drivers/ECDSA",
                         "/ti/drivers/EDDSA",
-                        "/ti/drivers/SHA2",
                         "/ti/drivers/RNG",
+                        "/ti/drivers/SHA2",
                         "/ti/drivers/TRNG"
                     ]
                 }
@@ -221,6 +252,7 @@ if (deviceId.match(/CC13.4|CC26.4|CC2653/)) {
                         "/ti/drivers/AESGCM",
                         "/ti/drivers/CryptoKeyKeyStore_PSA",
                         "/ti/drivers/ECDSA",
+                        "/ti/drivers/EDDSA",
                         "/ti/drivers/RNG",
                         "/ti/drivers/SHA2",
                         "/ti/drivers/TRNG"

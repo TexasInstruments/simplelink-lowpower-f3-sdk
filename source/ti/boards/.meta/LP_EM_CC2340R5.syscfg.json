@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,9 @@
  {
     "name": "LP_EM_CC2340R5",
     "displayName": "CC2340R5 Development Platform",
-    "device": "CC2340R5RKP",
-    "part": "Default",
-    "package": "RKP",
+    "gpn": "CC2340R5",
+    "pkg": "VQFN (RKP)",
+    "variant": "CC2340R52",
     "headers": [
         {
             "type": "BoosterPack 40 pin",

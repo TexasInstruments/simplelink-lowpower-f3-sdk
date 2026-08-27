@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 class ExcContext {
     constructor() {
-        /* Core Registers */
+        /* Core Registers. */
         this.R0 = 0;
         this.R1 = 0;
         this.R2 = 0;
@@ -52,7 +52,7 @@ class ExcContext {
         this.LR = 0;
         this.PC = 0;
         this.PSR = 0;
-        /* NVIC registers */
+        /* NVIC registers. */
         this.ICSR = 0;
         this.SHCSR = 0;
         this.MMFSR = 0;
@@ -90,39 +90,41 @@ class Exception {
      * Gets the exception context, this is the register values that were present
      * before the exception occured. The PC will point to the next instruction
      * after the exception handling is done. Getting this context is done by the
-     * OS for TIRTOS7 but is done manually here for FreeRTOS. We also fetch certain
-     * fields from the NVIC that are used to decode the exception.
+     * OS for TIRTOS7 but is done manually here for FreeRTOS. We also fetch
+     * certain fields from the NVIC that are used to decode the exception.
      */
     async getExcContext() {
-        /* See page 40 of version 1b of the
-         * Cortex M4 Devices Generic User Guide. */
+        /* See page 40 of version 1b of the Cortex M4 Devices Generic User
+         * Guide.
+         */
         const CallStack = this.helper.getCallStack();
-        CallStack.fetchRegisters(["xPSR", "SP", "PSP", "LR", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11"]);
-        // Check if an exception has triggered
+        await CallStack.fetchRegisters(["xPSR", "SP", "PSP", "LR", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11"]);
+        /* Check if an exception has triggered. */
         let currentxPSR = Number(CallStack.getRegister("xPSR"));
         let ISRNum = currentxPSR & 0x1ff;
         if (ISRNum < 2 || (ISRNum >= 8 && ISRNum <= 10)) {
-            /* No exception to handle. See page 19 of version 1b
-             * of the Cortex M4 Devices Generic User Guide.*/
+            /* No exception to handle. See page 19 of version 1b of the Cortex
+             * M4 Devices Generic User Guide.
+             */
             return null;
         }
         let newLR = CallStack.getRegister("LR");
         let stackPointer;
         if (newLR == 0xfffffffd || newLR == 0xffffffed) {
-            // Used the program stack pointer before the exception
+            /* Used the program stack pointer before the exception. */
             stackPointer = CallStack.getRegister("PSP");
         }
         else {
-            // Used the main stack pointer before the exception
+            /* Used the main stack pointer before the exception. */
             stackPointer = CallStack.getRegister("SP");
         }
         let oldStackPointer;
         if (newLR == 0xffffffe1 || newLR == 0xffffffe9 || newLR == 0xffffffed) {
-            // Stores floating-point-state on the stack
+            /* Stores floating-point-state on the stack. */
             oldStackPointer = stackPointer + 26 * 4;
         }
         else {
-            // Does not store floating-point-state on the stack
+            /* Does not store floating-point-state on the stack. */
             oldStackPointer = stackPointer + 8 * 4;
         }
         let stackVals = await this.Program.fetchFromAddr(stackPointer, "uint32_t", 8);
@@ -402,28 +404,28 @@ class Exception {
         var excNum = String(excContext.ICSR & 0xff);
         switch (excNum) {
             case "2":
-                return (this.viewDecodeNMI(excContext)); /* NMI */
+                return (this.viewDecodeNMI(excContext)); /* NMI. */
             case "3":
-                return (this.viewDecodeHardFault(excContext)); /* Hard Fault */
+                return (this.viewDecodeHardFault(excContext)); /* Hard Fault. */
             case "4":
-                return (this.viewDecodeMemFault(excContext)); /* Mem Fault */
+                return (this.viewDecodeMemFault(excContext)); /* Mem Fault. */
             case "5":
-                return (this.viewDecodeBusFault(excContext)); /* Bus Fault */
+                return (this.viewDecodeBusFault(excContext)); /* Bus Fault. */
             case "6":
-                return (this.viewDecodeUsageFault(excContext)); /* Usage Fault */
+                return (this.viewDecodeUsageFault(excContext)); /* Usage Fault. */
             case "7":
-                return (this.viewDecodeSecureFault(excContext)); /* Secure Fault */
+                return (this.viewDecodeSecureFault(excContext)); /* Secure Fault. */
             case "11":
-                return (this.viewDecodeSvCall(excContext)); /* SVCall */
+                return (this.viewDecodeSvCall(excContext)); /* SVCall. */
             case "12":
-                return (this.viewDecodeDebugMon(excContext)); /* Debug Mon */
+                return (this.viewDecodeDebugMon(excContext)); /* Debug Mon. */
             case "8":
             case "9":
             case "10":
             case "13":
-                return (this.viewDecodeReserved(excContext, excNum)); /* reserved */
+                return (this.viewDecodeReserved(excContext, excNum)); /* Reserved. */
             default:
-                return (this.viewDecodeNoIsr(excContext, excNum)); /* no ISR */
+                return (this.viewDecodeNoIsr(excContext, excNum)); /* No ISR. */
         }
     }
     /*
@@ -437,7 +439,7 @@ class Exception {
             return [(instView)];
         }
         var view = new Array();
-        /* Add decoded exception */
+        /* Add decoded exception. */
         var decodeView = new ExceptionInfo();
         decodeView.exceptionInfo = "Decoded Exception:";
         view.push(decodeView);
@@ -447,7 +449,7 @@ class Exception {
         var registersView = new ExceptionInfo();
         registersView.exceptionInfo = "---";
         view.push(registersView);
-        /* Add register dump */
+        /* Add register dump. */
         registersView = new ExceptionInfo();
         registersView.exceptionInfo = "Registers:";
         view.push(registersView);
@@ -495,14 +497,13 @@ class Exception {
         CallStack.setRegister("R14", Number(excContext.LR));
         CallStack.setRegister("PC", Number(excContext.PC));
         CallStack.setRegister("xPSR", Number(excContext.PSR));
-        /* fetch call stack string */
+        /* Fetch call stack string. */
         var frames = CallStack.toText();
-        /* break up into separate lines */
+        /* Break up into separate lines. */
         frames = frames.split("\n");
-        /* Try using the LR as the PC if there is no call stack using the PC */
+        /* Try using the LR as the PC if there is no call stack using the PC. */
         if (frames.length == 1) {
-            /* Fixed below */
-            /* Try making a bunch of function calls to get a call stack */
+            /* Try making multiple function calls to get a call stack. */
             CallStack.setRegister("PC", Number(excContext.LR));
             frames = CallStack.toText();
             frames = frames.split("\n");
@@ -511,40 +512,37 @@ class Exception {
             }
         }
         if (frames.length > 1) {
-            /*
-             * Strip off "Unwind halted ... " from last frame
-             */
+            /* Strip off "Unwind halted ... " from last frame. */
             frames.length -= 1;
         }
         else {
-            /* No call stack */
+            /* No call stack. */
             let instView = new CallStackFrame();
             instView.frame = "No call stack";
             return [(instView)];
         }
         for (var i = 0; i < frames.length; i++) {
             var line = frames[i];
-            /* separate frame # from frame text a little */
+            /* Separate frame # from frame text a little */
             line = line.replace(" ", "    ");
             var file = line.substr(line.indexOf(" at ") + 4);
             file = file.replace(/\\/g, "/");
             file = file.substr(file.lastIndexOf("/") + 1);
             if (file != "") {
                 frames[i] = line.substring(0, line.indexOf(" at ") + 4);
-                /* tack on file info */
+                /* Tack on file info. */
                 frames[i] += file;
             }
         }
-        /*
-         * Invert the frames[] array so that the strings become the index of a
+        /* Invert the frames[] array so that the strings become the index of a
          * new associative array.
          *
-         * This is done because the TREE view renders the array index (field)
-         * on the left and the array value on the right.
+         * This is done because the TREE view renders the array index (field) on
+         * the left and the array value on the right.
          *
-         * At the same time, extract the "PC = ..." substrings and make them
-         * be the value of the array who's index is the beginning of the
-         * frame text.
+         * At the same time, extract the "PC = ..." substrings and make them be
+         * the value of the array who's index is the beginning of the frame
+         * text.
          */
         var invframes = new Array();
         for (let i = 0; i < frames.length; i++) {

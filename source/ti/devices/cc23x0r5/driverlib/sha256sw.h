@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
-#ifndef SHA256SW_H_
-#define SHA256SW_H_
+#ifndef ti_devices_sha256sw__include
+#define ti_devices_sha256sw__include
 
 /** ============================================================================
  *  @file       sha256sw.h
@@ -359,4 +359,4 @@ extern int_fast16_t SHA256SWFinalize(SHA256SW_Handle handle, uint32_t digest[8])
 /*! @}*/
 /*! @}*/
 
-#endif /* SHA256SW_H_ */
+#endif /* ti_devices_sha256sw__include */

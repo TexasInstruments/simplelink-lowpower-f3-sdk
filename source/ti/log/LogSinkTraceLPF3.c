@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2026 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_lrfdtrc.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(driverlib/hapi.h)
 
@@ -83,7 +84,16 @@ static const uint8_t channelLut[CHANNEL_FIELD_MAX + 1] = {0, 0, 1, 2, 0};
 
 static Power_NotifyObj LogSinkTraceLPF3_powerAwakeStandbyObj;
 
-static int_fast16_t LogSinkTraceLPF3_postNotify(uint_fast16_t eventType, uintptr_t eventArg, uintptr_t clientArg);
+/* Variable to ensure initialization is only done once. */
+static volatile bool LogSinkTraceLPF3_isInitialized = false;
+
+/* Variable to ensure it is not attempted to use the tracer before it is
+ * enabled.
+ */
+static volatile bool LogSinkTraceLPF3_isEnabled = false;
+
+/* Callback function for power notifications. */
+static int_fast16_t LogSinkTraceLPF3_powerNotify(uint_fast16_t eventType, uintptr_t eventArg, uintptr_t clientArg);
 
 void LogSinkTraceLPF3_enable(void)
 {
@@ -99,17 +109,32 @@ void LogSinkTraceLPF3_enable(void)
 
     /* Give enough time for FPGA tracer to lock on to signal */
     HapiWaitUs(5);
+
+    /* Mark tracer as enabled. */
+    LogSinkTraceLPF3_isEnabled = true;
 }
 
 void LogSinkTraceLPF3_init(void)
 {
-    /* Enable tracer clock */
-    Power_setDependency(PowerLPF3_PERIPH_LFRD_TRC);
 
-    /* Register for wakeup event */
+    /* Only perform initialization once. */
+    uintptr_t key = HwiP_disable();
+    if (LogSinkTraceLPF3_isInitialized == true)
+    {
+        HwiP_restore(key);
+        return;
+    }
+
+    LogSinkTraceLPF3_isInitialized = true;
+    HwiP_restore(key);
+
+    /* Enable tracer clock */
+    Power_setDependency(PowerLPF3_PERIPH_LRFD_TRC);
+
+    /* Register for standby entry and wakeup event */
     Power_registerNotify(&LogSinkTraceLPF3_powerAwakeStandbyObj,
-                         PowerLPF3_AWAKE_STANDBY,
-                         (Power_NotifyFxn)LogSinkTraceLPF3_postNotify,
+                         PowerLPF3_ENTERING_STANDBY | PowerLPF3_AWAKE_STANDBY,
+                         (Power_NotifyFxn)LogSinkTraceLPF3_powerNotify,
                          (uintptr_t)NULL);
 
     GPIO_setConfigAndMux(LogSinkTraceLPF3_config.tracerPin, GPIO_CFG_NO_DIR, LogSinkTraceLPF3_config.tracerPinMux);
@@ -121,7 +146,7 @@ void LogSinkTraceLPF3_init(void)
  *  ======== LogSinkTraceLPF3_printf ========
  */
 void LogSinkTraceLPF3_printf(const Log_Module *handle,
-                             uint32_t header,
+                             Log_Level level,
                              uint32_t headerPtr,
                              uint32_t numArgs,
                              va_list argptr)
@@ -132,6 +157,12 @@ void LogSinkTraceLPF3_printf(const Log_Module *handle,
     int32_t channelField;
     int32_t channelIndex;
     uint32_t key;
+
+    if (LogSinkTraceLPF3_isEnabled == false)
+    {
+        /* Not enabled. Can't do any logs. Just return. */
+        return;
+    }
 
     /* Check the channel field to see which channel to send the log to */
     channelField = ((headerPtr & LogSinkTraceLPF3_CHANNEL_M) >> LogSinkTraceLPF3_CHANNEL_S);
@@ -223,72 +254,87 @@ void LogSinkTraceLPF3_printf(const Log_Module *handle,
 /*
  *  ======== LogSinkTraceLPF3_printfSingleton0 ========
  */
-void LogSinkTraceLPF3_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkTraceLPF3_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkTraceLPF3_printf(handle, header, headerPtr, 0, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkTraceLPF3_printf(handle, level, headerPtr, 0, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkTraceLPF3_printfSingleton1 ========
  */
-void LogSinkTraceLPF3_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkTraceLPF3_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkTraceLPF3_printf(handle, header, headerPtr, 1, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkTraceLPF3_printf(handle, level, headerPtr, 1, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkTraceLPF3_printfSingleton2 ========
  */
-void LogSinkTraceLPF3_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkTraceLPF3_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkTraceLPF3_printf(handle, header, headerPtr, 2, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkTraceLPF3_printf(handle, level, headerPtr, 2, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkTraceLPF3_printfSingleton3 ========
  */
-void LogSinkTraceLPF3_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkTraceLPF3_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkTraceLPF3_printf(handle, header, headerPtr, 3, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkTraceLPF3_printf(handle, level, headerPtr, 3, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkTraceLPF3_printfSingleton ========
  */
 void LogSinkTraceLPF3_printfSingleton(const Log_Module *handle,
-                                      uint32_t header,
+                                      Log_Level level,
                                       uint32_t headerPtr,
                                       uint32_t numArgs,
                                       ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, numArgs);
-    LogSinkTraceLPF3_printf(handle, header, headerPtr, numArgs, argptr);
-    va_end(argptr);
+        va_start(argptr, numArgs);
+        LogSinkTraceLPF3_printf(handle, level, headerPtr, numArgs, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkTraceLPF3_bufSingleton ========
  */
 void LogSinkTraceLPF3_bufSingleton(const Log_Module *handle,
-                                   uint32_t header,
+                                   Log_Level level,
                                    uint32_t headerPtr,
                                    uint8_t *data,
                                    size_t size)
@@ -299,12 +345,17 @@ void LogSinkTraceLPF3_bufSingleton(const Log_Module *handle,
 /*
  *  ======== LogSinkTraceLPF3_postNotify ========
  */
-static int_fast16_t LogSinkTraceLPF3_postNotify(uint_fast16_t eventType, uintptr_t eventArg, uintptr_t clientArg)
+static int_fast16_t LogSinkTraceLPF3_powerNotify(uint_fast16_t eventType, uintptr_t eventArg, uintptr_t clientArg)
 {
-    /* Reconfigure the hardware if returning from sleep */
-    if (eventType == (uint32_t)PowerLPF3_AWAKE_STANDBY)
+    if (eventType == PowerLPF3_AWAKE_STANDBY)
     {
+        /* Reconfigure the hardware if returning from standby */
         LogSinkTraceLPF3_enable();
+    }
+    else if (eventType == PowerLPF3_ENTERING_STANDBY)
+    {
+        /* Mark tracer as disabled until it is re-enabled after standby. */
+        LogSinkTraceLPF3_isEnabled = false;
     }
 
     return Power_NOTIFYDONE;

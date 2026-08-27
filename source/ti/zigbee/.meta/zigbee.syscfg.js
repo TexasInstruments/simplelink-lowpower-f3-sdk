@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -395,6 +395,7 @@ function moduleInstances(inst)
         "CC2755R10": 0x00100000 - hsm_fw_size,
         "CC2745R10": 0x00100000 - hsm_fw_size,
         "CC2755P10": 0x00100000 - hsm_fw_size,
+        "CC2755P20": 0x00200000 - hsm_fw_size,
     }
 
     // Iterate over dev2FlashSize keys as regex patterns and match against system.deviceData.deviceId
@@ -751,7 +752,8 @@ function getOpts(inst) {
  */
 function getLinkerDefs() {
     var linkDef = []
-    if ("CC2755P105RHA" ==  system.deviceData.deviceId)
+    if ("CC2755P105RHA" ==  system.deviceData.deviceId || "CC2755P207RHA" == system.deviceData.deviceId ||
+        "CC2755R105YCJ" ==  system.deviceData.deviceId || "CC2755R105RHA" == system.deviceData.deviceId)
     {
         linkDef.push({ name: "HSM_FW_SIZE", value: hsm_fw_size })
     }

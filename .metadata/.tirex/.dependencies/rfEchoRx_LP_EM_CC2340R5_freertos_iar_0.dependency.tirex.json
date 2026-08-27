@@ -1,12 +1,13 @@
 [
     {
         "files": [
-            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../../images/rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
+            "+../../images/rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
+            "+cc23x0r5.icf -> cc23x0r5.icf",
             "+../main_freertos.c -> main_freertos.c",
             "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.html -> README.html",
             "+../../README.md -> README.md",
-            "+../../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
-            "+../../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
             "+../../rfEchoRx.c -> rfEchoRx.c",
             "+../rfEchoRx.syscfg -> rfEchoRx.syscfg"
         ]

@@ -92,7 +92,6 @@ extern void LL_PAST_S_SetFeatureBit(void);
 extern void LL_PAST_S_ResetConnParams(uint16_t connHandle);
 extern void LL_PAST_S_SetupCtrlPkt(const llConnState_t * connPtr, uint8_t ctrlPktType, uint8_t * pCtrlPktPayload);
 extern uint8_t LL_PAST_S_ProcessCtrlPacketProcedure(llConnState_t * connPtr, uint8_t ctrlPktType);
-extern void LL_PAST_S_SetLastRxPacketLen(llConnState_t * connPtr, uint8_t lastRXPktLength);
 
 
 // Wrapper functions for the feature implementations
@@ -105,6 +104,5 @@ void OPT_LL_PAST_S_SetFeatureBit(void);
 void OPT_LL_PAST_S_ResetConnParams(uint16_t connHandle);
 void OPT_LL_PAST_S_SetupCtrlPkt(const llConnState_t * connPtr, uint8_t ctrlPktType, uint8_t * pCtrlPktPayload);
 uint8_t OPT_LL_PAST_S_ProcessCtrlPacketProcedure(llConnState_t * connPtr, uint8_t ctrlPktType);
-void OPT_LL_PAST_S_SetLastRxPacketLen(llConnState_t * connPtr, uint8_t lastRXPktLength);
 
 #endif /* CTRL_PAST_SENDER_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -526,7 +526,7 @@ extern "C" {
 /*!
  * @brief Log version
  */
-#define Log_TI_LOG_VERSION 0.1.0
+#define Log_TI_LOG_VERSION 0.2.0
 
 /**
  *  @brief Defines a log module
@@ -581,7 +581,15 @@ extern "C" {
  *  if SysConfig does not define that particular module.
  *
  *  @param[in]  name    Name of the log module. Gets prefixed with `LogMod_`.
- *  @param[in]  init    Initialization value of the Log_Module struct.
+ *  @param[in]  init    Initialization value of the #Log_Module struct. This
+ *                      structure may not be zero-initialized as the delegate
+ *                      pointers will be called without runtime checks. Use
+ *                      #Log_MODULE_INIT_SINK_DUMMY unless you have a specific
+ *                      reason not to.
+ *
+ *  @sa #Log_MODULE_INIT_SINK_DUMMY
+ *  @sa #LogSinkDummy_printf
+ *  @sa #LogSinkDummy_buf
  */
 #if defined(DOXYGEN) || defined(__IAR_SYSTEMS_ICC__)
 #define Log_MODULE_DEFINE_WEAK(name, init) const __weak Log_Module LogMod_ ## name = init
@@ -764,19 +772,17 @@ supported compiler."
 #define _Log_buf_C_1(module, level, format, data, size)                                                 \
     _Log_GUARD_MACRO(                                                                                   \
         Log_MODULE_USE(module);                                                                         \
-            if ((level) & LogMod_ ## module.levels) {                                                   \
-                _Log_PLACE_FORMAT_IN_SECTOR(_Log_CONCAT2(LogSymbol, __LINE__),                          \
-                                            LOG_OPCODE_BUFFER,                                          \
-                                            level,                                                      \
-                                            LogMod_ ## module,                                          \
-                                            format,                                                     \
-                                            0);                                                         \
-                LogMod_ ## module.buf(&LogMod_ ## module,                                               \
-                        (uint32_t)&_Log_CONCAT2(LogSymbol, __LINE__),                                   \
-                        (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__),                              \
-                        data,                                                                           \
-                        size);                                                                          \
-            }                                                                                           \
+        _Log_PLACE_FORMAT_IN_SECTOR(_Log_CONCAT2(LogSymbol, __LINE__),                                  \
+                                    LOG_OPCODE_BUFFER,                                                  \
+                                    level,                                                              \
+                                    LogMod_ ## module,                                                  \
+                                    format,                                                             \
+                                    0);                                                                 \
+        LogMod_ ## module.buf(&LogMod_ ## module,                                                       \
+                              level,                                                                    \
+                              (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__),                        \
+                              data,                                                                     \
+                              size);                                                                    \
     )
 
 /* First level indirection macro for Log_buf that delegates between an empty
@@ -812,18 +818,18 @@ supported compiler."
  */
 #define _Log_printf__arg1(module, level, fmt, a0)                              \
     module.printf1(&module,                                                    \
-                   (uint32_t)&_Log_CONCAT2(LogSymbol, __LINE__),               \
+                   level,                                                      \
                    (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__),          \
                    (uintptr_t)a0)
 #define _Log_printf__arg2(module, level, fmt, a0, a1)                          \
     module.printf2(&module,                                                    \
-                   (uint32_t)&_Log_CONCAT2(LogSymbol, __LINE__),               \
+                   level,                                                      \
                    (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__),          \
                    (uintptr_t)a0,                                              \
                    (uintptr_t)a1)
 #define _Log_printf__arg3(module, level, fmt, a0, a1, a2)                      \
     module.printf3(&module,                                                    \
-                   (uint32_t)&_Log_CONCAT2(LogSymbol, __LINE__),               \
+                   level,                                                      \
                    (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__),          \
                    (uintptr_t)a0,                                              \
                    (uintptr_t)a1,                                              \
@@ -866,14 +872,14 @@ supported compiler."
 
 #define _Log_printf__arg(module, level, ...)                                   \
     module.printf(&module,                                                     \
-                  (uint32_t)&_Log_CONCAT2(LogSymbol, __LINE__),                \
+                  level,                                                       \
                   (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__),           \
                   _Log_NUMARGS(__VA_ARGS__),                                   \
                   _Log_CDR_ARG(__VA_ARGS__))
 
 #define _Log_printf__noarg(module, level, ...)                                 \
     module.printf0(&module,                                                    \
-                   (uint32_t)&_Log_CONCAT2(LogSymbol, __LINE__),               \
+                   level,                                                      \
                    (uint32_t)&_Log_CONCAT3(Ptr, LogSymbol, __LINE__))
 
 /* Empty Log_printf macro to use when a log module is not enabled in the
@@ -887,16 +893,13 @@ supported compiler."
 #define _Log_printf_C_1(opcode, module, level, ...)                             \
     _Log_GUARD_MACRO(                                                           \
         Log_MODULE_USE(module);                                                 \
-        if (((LogMod_ ## module.dynamicLevelsPtr != NULL) && ((level) & *LogMod_ ## module.dynamicLevelsPtr)) ||    \
-            ((level) & LogMod_ ## module.levels)) {                             \
-            _Log_PLACE_FORMAT_IN_SECTOR(_Log_CONCAT2(LogSymbol, __LINE__),      \
-                                        opcode,                                 \
-                                        level,                                  \
-                                        LogMod_ ## module,                      \
-                                        _Log_CAR_ARG(__VA_ARGS__),              \
-                                        _Log_NUMARGS(__VA_ARGS__))              \
-            _Log_VARIANT(_Log_printf, LogMod_ ## module, level, __VA_ARGS__);   \
-        }                                                                       \
+        _Log_PLACE_FORMAT_IN_SECTOR(_Log_CONCAT2(LogSymbol, __LINE__),          \
+                                    opcode,                                     \
+                                    level,                                      \
+                                    LogMod_ ## module,                          \
+                                    _Log_CAR_ARG(__VA_ARGS__),                  \
+                                    _Log_NUMARGS(__VA_ARGS__))                  \
+        _Log_VARIANT(_Log_printf, LogMod_ ## module, level, __VA_ARGS__);       \
     )
 
 /* First level indirection macro for Log_printf that delegates between an empty
@@ -1052,6 +1055,9 @@ _Log_DEFINE_LOG_VERSION(Log, Log_TI_LOG_VERSION);
  *
  * One of these enum values should be used in each #Log_printf and #Log_buf call
  * and one or more should be used in each #Log_Module definition.
+ *
+ * For optimization reasons, no #Log_Level with a value > 255 may be added to
+ * this enum.
  */
 typedef enum Log_Level {
     /*! This should be the default level, reserved to be used by users to insert
@@ -1069,7 +1075,7 @@ typedef enum Log_Level {
      *  the application or saturate available log sink bandwidth and cause
      *  stalls in log record emission.
      */
-    Log_VERBOSE = 1 << 2,
+    Log_VERBOSE = 1 << 1,
 
     /*! This level is recommended to be used in libraries to emit simple
      *  information about the operation of the system and the system state.
@@ -1078,7 +1084,7 @@ typedef enum Log_Level {
      *  the application or saturate available log sink bandwidth and cause
      *  stalls in log record emission.
      */
-    Log_INFO = 1 << 4,
+    Log_INFO = 1 << 2,
 
     /*! This level is recommended to be used in libraries to emit warnings. It
      *  should typically indicate something unexpected, but not something that
@@ -1094,7 +1100,7 @@ typedef enum Log_Level {
      *  Enabling this level in a #Log_Module will not impact regular device
      *  operation or impact available log sink bandwidth.
      */
-    Log_WARNING = 1 << 6,
+    Log_WARNING = 1 << 3,
 
     /*! This level is recommended to be used in libraries to emit errors.
      *  Typically, this should be used when something has failed and the system
@@ -1107,7 +1113,7 @@ typedef enum Log_Level {
      *  Enabling this level in a #Log_Module will not impact regular device
      *  operation or impact available log sink bandwidth.
      */
-    Log_ERROR = 1 << 8,
+    Log_ERROR = 1 << 4,
 
     /*! This value enables all levels. Should only be used in #Log_Module
      *  definitions.
@@ -1120,41 +1126,208 @@ typedef enum Log_Level {
     Log_NONE = 0,
 } Log_Level;
 
-typedef const struct Log_Module Log_Module;
+typedef const struct Log_Module_ Log_Module;
 
 typedef void (*Log_printf_fxn)(const Log_Module *handle,
-                              uint32_t header,
-                              uint32_t headerPtr,
-                              uint32_t numArgs,
-                              ...);
+                               Log_Level level,
+                               uint32_t headerPtr,
+                               uint32_t numArgs,
+                               ...);
 
 typedef void (*Log_printfN_fxn)(const Log_Module *handle,
-                              uint32_t header,
-                              uint32_t headerPtr,
-                              ...);
+                                Log_Level level,
+                                uint32_t headerPtr,
+                                ...);
 
 typedef void (*Log_buf_fxn)(const Log_Module *handle,
-                           uint32_t header,
-                           uint32_t headerPtr,
-                           uint8_t *data,
-                           size_t size);
+                            Log_Level level,
+                            uint32_t headerPtr,
+                            uint8_t *data,
+                            size_t size);
 
 /*!
  *  @brief      Log module
  *
  *  The application must not access any member variables of this structure!
  */
-struct Log_Module {
+struct Log_Module_ {
     void                 *sinkConfig;       /*!< Pointer to the selected sink implementation and sink configuration */
-    const Log_printf_fxn  printf;           /*!< Pointer to printf implementation with 4 to 8 arguments*/
-    const Log_printfN_fxn printf0;          /*!< Pointer to printf implementation with 0 arguments */
-    const Log_printfN_fxn printf1;          /*!< Pointer to printf implementation with 1 arguments */
-    const Log_printfN_fxn printf2;          /*!< Pointer to printf implementation with 2 arguments */
-    const Log_printfN_fxn printf3;          /*!< Pointer to printf implementation with 3 arguments */
+    const Log_printf_fxn  printf;           /*!< Pointer to printf implementation with 4 to 8 arguments. Must not be set
+                                             *   to NULL.
+                                             */
+    const Log_printfN_fxn printf0;          /*!< Pointer to printf implementation with 0 arguments.  Must not be set to
+                                             *   NULL.
+                                             */
+    const Log_printfN_fxn printf1;          /*!< Pointer to printf implementation with 1 arguments.  Must not be set to
+                                             *   NULL.
+                                             */
+    const Log_printfN_fxn printf2;          /*!< Pointer to printf implementation with 2 arguments.  Must not be set to
+                                             *   NULL.
+                                             */
+    const Log_printfN_fxn printf3;          /*!< Pointer to printf implementation with 3 arguments.  Must not be set to
+                                             *   NULL.
+                                             */
     const Log_buf_fxn     buf;              /*!< Pointer to buf implementation */
     uint32_t              levels;           /*!< Log levels bitmap */
     uint32_t* const       dynamicLevelsPtr; /*!< Pointer to a new volatile levels bitmap */
 };
+
+/**
+ *  @brief Dummy #Log_printf delegate function implementation
+ *
+ *  This #Log_printf delegate function implementation is intended to be used with
+ *  #Log_MODULE_DEFINE_WEAK to specify delegate function implementations.
+ *
+ *  Since there is no runtime protection for calling the delegate function
+ *  pointer from a log statement, we cannot zero-initialize the struct member in
+ *  the module.
+ *
+ *  This function provides a convenient dependency-less default delegate
+ *  implementation that can always be assigned regardless of which log sinks are
+ *  supported on the device used.
+ *
+ *  The function does nothing and simply returns without any side effects.
+ *
+ *  @param[in]  handle     Handle to log module. Unused.
+ *  @param[in]  level      Level of this log statement. Unused.
+ *  @param[in]  headerPtr  Pointer to metadata pointer. Unused.
+ *  @param[in]  numArgs    Number of arguments. Unused.
+ *  @param[in]  ...        Variable number of arguments. Unused.
+ *
+ *  @sa #Log_MODULE_DEFINE_WEAK
+ */
+__attribute__((weak)) void LogSinkDummy_printf(const Log_Module *handle,
+                                               Log_Level level,
+                                               uint32_t headerPtr,
+                                               uint32_t numArgs,
+                                               ...)
+{
+    /* The function is defined as weak to allow definition (as opposed to just a
+     * declaration) within this header file without running into symbol
+     * conflicts during linking.
+     * This way we do not need a separate library dependency just for this dummy
+     * log sink.
+     */
+
+    /* Cast all input arguments to void to avoid unused argument warnings. */
+    (void)handle;
+    (void)level;
+    (void)headerPtr;
+    (void)numArgs;
+
+    /* Do not perform any operations and return immediately. */
+}
+
+/**
+ *  @brief Dummy #Log_printf delegate function implementation
+ *
+ *  This #Log_printf delegate function implementation is intended to be used with
+ *  #Log_MODULE_DEFINE_WEAK to specify delegate function implementations.
+ *
+ *  Since there is no runtime protection for calling the delegate function
+ *  pointer from a log statement, we cannot zero-initialize the struct member in
+ *  the module.
+ *
+ *  This function provides a convenient dependency-less default delegate
+ *  implementation that can always be assigned regardless of which log sinks are
+ *  supported on the device used.
+ *
+ *  The function does nothing and simply returns without any side effects.
+ *
+ *  @param[in]  handle     Handle to log module. Unused.
+ *  @param[in]  level      Level of this log statement. Unused.
+ *  @param[in]  headerPtr  Pointer to metadata pointer. Unused.
+ *  @param[in]  ...        Variable number of arguments. Unused.
+ *
+ *  @sa #Log_MODULE_DEFINE_WEAK
+ */
+__attribute__((weak)) void LogSinkDummy_printfN(const Log_Module *handle,
+                                                Log_Level level,
+                                                uint32_t headerPtr,
+                                                ...)
+{
+    /* The function is defined as weak to allow definition (as opposed to just a
+     * declaration) within this header file without running into symbol
+     * conflicts during linking.
+     * This way we do not need a separate library dependency just for this dummy
+     * log sink.
+     */
+
+    /* Cast all input arguments to void to avoid unused argument warnings. */
+    (void)handle;
+    (void)level;
+    (void)headerPtr;
+
+    /* Do not perform any operations and return immediately. */
+}
+
+/**
+ *  @brief Dummy #Log_buf delegate function implementation
+ *
+ *  This #Log_buf delegate function implementation is intended to be used with
+ *  #Log_MODULE_DEFINE_WEAK to specify delegate function implementations.
+ *
+ *  Since there is no runtime protection for calling the delegate function
+ *  pointer from a log statement, we cannot zero-initialize the struct member in
+ *  the module.
+ *
+ *  This function provides a convenient dependency-less default delegate
+ *  implementation that can always be assigned regardless of which log sinks are
+ *  supported on the device used.
+ *
+ *  The function does nothing and simply returns without any side effects.
+ *
+ *  @param[in]  handle     Handle to log module. Unused.
+ *  @param[in]  level      Level of this log statement.  Unused.
+ *  @param[in]  headerPtr  Pointer to metadata pointer.  Unused.
+ *  @param[in]  data       Pointer to data to send out.  Unused.
+ *  @param[in]  size       Size of @c data in bytes.  Unused.
+ *
+ *  @sa #Log_MODULE_DEFINE_WEAK
+ */
+__attribute__((weak)) void LogSinkDummy_buf(const Log_Module *handle,
+                                            Log_Level level,
+                                            uint32_t headerPtr,
+                                            uint8_t *data,
+                                            size_t size)
+{
+    /* The function is defined as weak to allow definition (as opposed to just a
+     * declaration) within this header file without running into symbol
+     * conflicts during linking.
+     * This way we do not need a separate library dependency just for this dummy
+     * log sink.
+     */
+
+    /* Cast all input arguments to void to avoid unused argument warnings. */
+    (void)handle;
+    (void)level;
+    (void)headerPtr;
+    (void)data;
+    (void)size;
+
+    /* Do not perform any operations and return immediately. */
+}
+
+/**
+ *  @brief Module struct initializer for dummy log sink.
+ *
+ *  This define should be used as the input to the #Log_MODULE_DEFINE_WEAK macro
+ *  unless an actual log sink is required.
+ *
+ *  @sa #Log_MODULE_DEFINE_WEAK
+ */
+#define Log_MODULE_INIT_SINK_DUMMY                                             \
+    {                                                                          \
+        .sinkConfig = NULL,                                                    \
+        .printf = LogSinkDummy_printf,                                         \
+        .printf0 = LogSinkDummy_printfN,                                       \
+        .printf1 = LogSinkDummy_printfN,                                       \
+        .printf2 = LogSinkDummy_printfN,                                       \
+        .printf3 = LogSinkDummy_printfN,                                       \
+        .buf = LogSinkDummy_buf,                                               \
+        .levels = 0,                                                           \
+        .dynamicLevelsPtr = NULL,                                              \
+    }
 
 /*! @} */
 #if defined (__cplusplus)

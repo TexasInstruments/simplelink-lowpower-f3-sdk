@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2021-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -75,9 +75,9 @@ extern "C" {
 /*!
  *  @brief    Number of bytes greater than or equal to the size of any RTOS Event object.
  *
- *  BIOS 6.x: 20
  *  BIOS 7.x: 20
  *  FreeRTOS: 52
+ *  Zephyr: 12
  */
 #define EventP_STRUCT_SIZE (52)
 

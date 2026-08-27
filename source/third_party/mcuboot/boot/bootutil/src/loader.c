@@ -1,10 +1,10 @@
- /*   
+ /*
  * SPDX-License-Identifier: Apache-2.0
  *
  * Copyright (c) 2016-2020 Linaro LTD
  * Copyright (c) 2016-2019 JUUL Labs
  * Copyright (c) 2019-2020 Arm Limited
- * Copyright (c) 2025 Texas Instruments Incorporated
+ * Copyright (c) 2025-2026 Texas Instruments Incorporated
  *
  * Original license:
  *
@@ -402,7 +402,7 @@ static fih_ret
 boot_image_check(struct boot_loader_state *state, struct image_header *hdr,
                  const struct flash_area *fap, struct boot_status *bs)
 {
-    TARGET_STATIC uint8_t tmpbuf[BOOT_TMPBUF_SZ];
+    TARGET_STATIC uint8_t tmpbuf[BOOT_TMPBUF_SZ] __attribute__((aligned));
     uint8_t image_index;
     int rc;
     FIH_DECLARE(fih_rc, FIH_FAILURE);
@@ -500,7 +500,7 @@ boot_is_header_valid(const struct image_header *hdr, const struct flash_area *fa
         }
     }
 
-    if (size >= fap->fa_size) {
+    if (size >= flash_area_get_size(fap)) {
         return false;
     }
 
@@ -672,8 +672,19 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
 #endif
 
         /* No bootable image in slot; continue booting from the primary slot. */
-        fih_rc = fih_int_encode(1);
-        goto out;
+
+        /* TI Multistep OAD Solution - dont jump to out yet. We could have a split
+         * image and still want to verify the image. The non bootable
+         * section of the image is signed with IMAGE_F_NON_BOOTABLE flag,
+         * and the image has not been verified. We still erase the trailer
+         * to erase the trailer magic so that a swap can never happen
+         */
+        if(!(hdr->ih_flags & IMAGE_F_NON_BOOTABLE))
+        {
+            fih_rc = fih_int_encode(1);
+            goto out;
+        }
+
     }
 
 #if defined(MCUBOOT_OVERWRITE_ONLY) && defined(MCUBOOT_DOWNGRADE_PREVENTION)
@@ -684,7 +695,7 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
                 &boot_img_hdr(state, BOOT_PRIMARY_SLOT)->ih_ver);
         if (rc < 0 && boot_check_header_erased(state, BOOT_PRIMARY_SLOT)) {
             BOOT_LOG_ERR("insufficient version in secondary slot");
-            flash_area_erase(fap, 0, fap->fa_size);
+            flash_area_erase(fap, 0, flash_area_get_size(fap));
             /* Image in the secondary slot does not satisfy version requirement.
              * Erase the image and continue booting from the primary slot.
              */
@@ -697,7 +708,7 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
     FIH_CALL(boot_image_check, fih_rc, state, hdr, fap, bs);
     if (!boot_is_header_valid(hdr, fap, state) || FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
         if ((slot != BOOT_PRIMARY_SLOT) || ARE_SLOTS_EQUIVALENT()) {
-            flash_area_erase(fap, 0, fap->fa_size);
+            flash_area_erase(fap, 0, flash_area_get_size(fap));
             /* Image is invalid, erase it to prevent further unnecessary
              * attempts to validate and boot it.
              */
@@ -728,7 +739,7 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
             goto out;
         }
 
-        if (reset_value < pri_fa->fa_off || reset_value> (pri_fa->fa_off + pri_fa->fa_size)) {
+        if (reset_value < flash_area_get_off(pri_fa) || reset_value> (flash_area_get_off(pri_fa) + flash_area_get_size(pri_fa))) {
             BOOT_LOG_ERR("Reset address of image in secondary slot is not in the primary slot");
             BOOT_LOG_ERR("Erasing image from secondary slot");
 
@@ -738,7 +749,7 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
              *
              * Erase the image and continue booting from the primary slot.
              */
-            flash_area_erase(fap, 0, fap->fa_size);
+            flash_area_erase(fap, 0, flash_area_get_size(fap));
             fih_rc = FIH_NO_BOOTABLE_IMAGE;
             goto out;
         }
@@ -747,6 +758,26 @@ boot_validate_slot(struct boot_loader_state *state, int slot,
 
 out:
     flash_area_close(fap);
+
+    /* TI Multistep OAD Solution - we still have to return negative code
+     * if the image is not bootable. But before return a negative code, we
+     * need to compare the version of the bootable image with the non-bootable
+     * version. If they arent equal, erase the non-bootable image
+     */
+    if((hdr->ih_flags & IMAGE_F_NON_BOOTABLE))
+    {
+        rc = boot_version_cmp(
+                &boot_img_hdr(state, BOOT_SECONDARY_SLOT)->ih_ver,
+                &boot_img_hdr(state, BOOT_PRIMARY_SLOT)->ih_ver);
+        if (rc) {
+            BOOT_LOG_ERR("Non Bootable Image does not match the Bootable Image");
+            flash_area_erase(fap, 0, fap->fa_size);
+            /* Image in the secondary slot does not satisfy version requirement.
+             * Erase the image and continue booting from the primary slot.
+             */
+        }
+        fih_rc = FIH_NO_BOOTABLE_IMAGE;
+    }
 
     FIH_RET(fih_rc);
 }
@@ -798,10 +829,9 @@ done:
 
 #if !defined(MCUBOOT_DIRECT_XIP) && !defined(MCUBOOT_RAM_LOAD)
 /**
- * Determines which swap operation to perform, if any.  If it is determined
- * that a swap operation is required, the image in the secondary slot is checked
- * for validity.  If the image in the secondary slot is invalid, it is erased,
- * and a swap type of "none" is indicated.
+ * TI Multistep OAD solution - Determines which swap operation to perform, if any.
+ * The image in the secondary slot is always checked for validity. If the image in the
+ * secondary slot is invalid, it gets erased and an appropriate swap type is indicated.
  *
  * @return                      The type of swap to perform (BOOT_SWAP_TYPE...)
  */
@@ -812,11 +842,12 @@ boot_validated_swap_type(struct boot_loader_state *state,
     int swap_type;
     FIH_DECLARE(fih_rc, FIH_FAILURE);
 
+#if defined(MCUBOOT_OVERWRITE_ONLY)
+    /* Overwrite mode erases secondary header after copy, so an erased header
+     * reliably means empty slot - skip validation for fast boot. */
     swap_type = boot_swap_type_multi(BOOT_CURR_IMG(state));
-    if (BOOT_IS_UPGRADE(swap_type)) {
-        /* Boot loader wants to switch to the secondary slot.
-         * Ensure image is valid.
-         */
+    if (BOOT_IS_UPGRADE(swap_type) ||
+        boot_check_header_erased(state, BOOT_SECONDARY_SLOT) != 0) {
         FIH_CALL(boot_validate_slot, fih_rc, state, BOOT_SECONDARY_SLOT, bs);
         if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
             if (FIH_EQ(fih_rc, FIH_NO_BOOTABLE_IMAGE)) {
@@ -826,6 +857,22 @@ boot_validated_swap_type(struct boot_loader_state *state,
             }
         }
     }
+#else
+    /**
+     * TI Multistep OAD solution (SCCM-629) - This fixes an issue where secondary
+     * slot is not erased when an incomplete image is in the secondary slot. Instead
+     * of only validating secondary slot when an upgrade is indicated by the swap
+     * type, we validate the secondary slot first and then determine the swap type.
+     */
+    FIH_CALL(boot_validate_slot, fih_rc, state, BOOT_SECONDARY_SLOT, bs);
+    if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
+        swap_type = FIH_EQ(fih_rc, FIH_NO_BOOTABLE_IMAGE) ?
+                   BOOT_SWAP_TYPE_NONE : BOOT_SWAP_TYPE_FAIL;
+    }
+    else {
+        swap_type = boot_swap_type_multi(BOOT_CURR_IMG(state));
+    }
+#endif
 
     return swap_type;
 }
@@ -914,22 +961,22 @@ boot_copy_region(struct boot_loader_state *state,
 
 #ifdef MCUBOOT_ENC_IMAGES
         image_index = BOOT_CURR_IMG(state);
-        if ((fap_src->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index) ||
-            fap_dst->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index)) &&
-            !(fap_src->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index) &&
-              fap_dst->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index))) {
+        if ((flash_area_get_id(fap_src) == FLASH_AREA_IMAGE_SECONDARY(image_index) ||
+            flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SECONDARY(image_index)) &&
+            !(flash_area_get_id(fap_src) == FLASH_AREA_IMAGE_SECONDARY(image_index) &&
+              flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SECONDARY(image_index))) {
             /* assume the secondary slot as src, needs decryption */
             hdr = boot_img_hdr(state, BOOT_SECONDARY_SLOT);
 #if !defined(MCUBOOT_SWAP_USING_MOVE)
             off = off_src;
-            if (fap_dst->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index)) {
+            if (flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SECONDARY(image_index)) {
                 /* might need encryption (metadata from the primary slot) */
                 hdr = boot_img_hdr(state, BOOT_PRIMARY_SLOT);
                 off = off_dst;
             }
 #else
             off = off_dst;
-            if (fap_dst->fa_id == FLASH_AREA_IMAGE_SECONDARY(image_index)) {
+            if (flash_area_get_id(fap_dst) == FLASH_AREA_IMAGE_SECONDARY(image_index)) {
                 hdr = boot_img_hdr(state, BOOT_PRIMARY_SLOT);
             }
 #endif
@@ -1576,13 +1623,13 @@ boot_complete_partial_swap(struct boot_loader_state *state,
         assert(0);
 
 #if defined (__IAR_SYSTEMS_ICC__)
-#pragma diag_suppress=Pe111
+#pragma diag_suppress=Pe128
 #endif
         /* Loop forever... */
         FIH_PANIC;
 #if defined (__IAR_SYSTEMS_ICC__)
-#pragma diag_default=Pe111
-#endif  
+#pragma diag_default=Pe128
+#endif
     }
 
     return rc;
@@ -1859,7 +1906,7 @@ check_downgrade_prevention(struct boot_loader_state *state)
         /* Image in slot 0 prevents downgrade, delete image in slot 1 */
         BOOT_LOG_INF("Image %d in slot 1 erased due to downgrade prevention", BOOT_CURR_IMG(state));
         flash_area_erase(BOOT_IMG(state, 1).area, 0,
-                         flash_area_get_size(BOOT_IMG(state, 1).area));
+                         BOOT_IMG(state, 1).area->fa_size);
     } else {
         rc = 0;
     }
@@ -1904,7 +1951,7 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
      * completed.
      */
     IMAGES_ITER(BOOT_CURR_IMG(state)) {
-    
+
 #if BOOT_IMAGE_NUMBER > 1
         if (state->img_mask[BOOT_CURR_IMG(state)]) {
             continue;
@@ -2174,7 +2221,7 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
 
     fih_rc = FIH_SUCCESS;
 out:
-    
+
 
  #if (BOOT_IMAGE_NUMBER > 1)
      /* Always boot from the primary slot of Image 0. */
@@ -2190,7 +2237,7 @@ out:
      * them here to avoid the possibility of jumping into an image that could
      * easily recover them.
      */
-    rsp->br_flash_dev_id = BOOT_IMG_AREA(state, BOOT_PRIMARY_SLOT)->fa_device_id;
+    rsp->br_flash_dev_id = flash_area_get_device_id(BOOT_IMG_AREA(state, BOOT_PRIMARY_SLOT));
     rsp->br_image_off = boot_img_slot_off(state, BOOT_PRIMARY_SLOT);
     rsp->br_hdr = boot_img_hdr(state, BOOT_PRIMARY_SLOT);
 
@@ -2706,8 +2753,7 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
                      (selected_slot == BOOT_PRIMARY_SLOT) ?
                      "primary" : "secondary");
 
-        rsp->br_flash_dev_id =
-            BOOT_IMG_AREA(state, selected_slot)->fa_device_id;
+        rsp->br_flash_dev_id = flash_area_get_device_id(BOOT_IMG_AREA(state, selected_slot));
         rsp->br_image_off = boot_img_slot_off(state, selected_slot);
         rsp->br_hdr = selected_image_header;
     } else {

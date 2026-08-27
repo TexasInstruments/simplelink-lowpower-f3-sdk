@@ -6,6 +6,7 @@
     * [Software Overview](#software-overview)
         * [Application Files](#application)
 * [Configuration With SysConfig](#sysconfig)
+* [UART Logging](#uart-logging)
 * [Example Usage](#usage)
     * [Buttons](#usage-buttons)
     * [Commissioning the Device Into the Network](#Commission-Device)
@@ -76,3 +77,51 @@ attempting to join the network. The ZC will then respond and the commissioning
 process will continue until the ZED is joined into the network. At this point,
 On/Off Server Output ZC is ready to respond to On/Off Toggle commands from the
 ZED/ZR.
+---
+
+# <a name="uart-logging"></a> UART Logging
+
+This example has logging enabled by default (`zigbee.loggingEnabled = true` in the `.syscfg` file).
+
+## How It Works
+
+Logs are encoded in a compact **binary format** over UART at **115200 baud**. A standard serial terminal will show garbled characters — you must use `tilogger` to decode them.
+
+The binary format stores log level, module ID, and arguments as raw bytes rather than ASCII strings. This keeps UART traffic minimal so logging has negligible impact on real-time Zigbee operation.
+
+## Decoding Logs with tilogger
+
+`tilogger` runs on **native Windows only** (not WSL — binary frames get corrupted over WSL serial).
+
+```powershell
+# Install (once):
+pip install tilogger
+
+# Decode live from UART:
+tilogger --elf <path_to_build>/<example_name>.out uart <COM_PORT> 115200 stdout
+
+# Example:
+tilogger --elf examples/rtos/LP_EM_CC2755P20/zigbee/onoff_switch/freertos/ticlang/onoff_switch.out uart COM24 115200 stdout
+```
+
+## Enabling / Disabling Logging
+
+In the example `.syscfg` file:
+
+```javascript
+// Enable (default):
+zigbee.loggingEnabled = true;
+
+// Disable (saves ~2KB RAM and reduces code size):
+zigbee.loggingEnabled = false;
+```
+
+When disabled, also remove the `LogSinkUART` section from the syscfg.
+
+## Log Modules
+
+| Module | What it covers |
+|--------|---------------|
+| `LogModule_Zigbee_App` | Application-level events (commissioning, OTA status, signals) |
+| `LogModule_Zigbee_OSIF` | OSIF-level events (NVS open/close, flash ops, timers) |
+| `LogModule_Zigbee_LLMAC` | MAC-level events (uses `LogSinkBuf` — too high-frequency for UART) |

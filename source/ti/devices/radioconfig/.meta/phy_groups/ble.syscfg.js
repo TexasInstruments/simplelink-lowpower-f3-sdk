@@ -63,11 +63,6 @@ const config = _.cloneDeep(tmp.configs);
 
 let hasWBMS = false;
 
-// Special handling for PHY with RF commands
-const VisibleWithRfCmd = [
-    "txPower", "frequency"
-];
-
 const bleSpecific = {
     displayName: "RF Settings BLE",
     description: "RF Settings BLE",
@@ -86,6 +81,7 @@ const bleSpecific = {
  *  @param validation - Issue reporting object
  */
 function validate(inst, validation) {
+
     /* Validation common to all PHY groups */
     Common.validateBasic(inst, validation);
     const phyType = inst.phyType;
@@ -103,7 +99,8 @@ function validate(inst, validation) {
             hasWBMS = true;
         }
     }
-    // Make sure that RF commands are updated
+
+    // Update RF commands (this is where we do it)
     const phyGroup = Common.getPhyGroup(inst);
     PhyHandler.getUpdatedRfCommands(inst, phyGroup);
 }
@@ -122,30 +119,12 @@ function phyTypeOnChange(inst, ui) {
     // Refresh the instance
     RFBase.reloadInstanceFromPhy(inst, ui, phyType, PHY_GROUP, ["txPower", "txPowerHi"]);
 
-    // Hide whitening if wBMS setting
-    hasWBMS = phyType.includes("wbms");
-    if ("whitening" in ui) {
-        ui.whitening.hidden = hasWBMS;
-    }
-
-    if ("settingGroup" in ui) {
-        // The sensitivity v selectivity choice only applies to the BLE 2M PHY
-        ui.settingGroup.hidden = !phyType.includes("bt5le2m");
-    }
-
     // Update PHY property visibility
-    for (const cfg of VisibleWithRfCmd) {
-        if (cfg in ui) {
-            const visible = phyHandler.isPhyPropSupported(inst, cfg);
-            ui[cfg].hidden = !visible;
+    for (const cfg of config) {
+        if (cfg.name in ui) {
+            const visible = phyHandler.isPhyPropSupported(inst, cfg.name);
+            ui[cfg.name].hidden = !visible;
         }
-    }
-
-    if ("codedTxRate" in ui) {
-        ui.codedTxRate.hidden = !phyHandler.hasFeatureGroup("coded_tx_rate");
-    }
-    if ("subPhy" in ui) {
-        ui.subPhy.hidden = !phyHandler.hasFeatureGroup("sub_phy");
     }
 }
 
@@ -157,8 +136,7 @@ function onPermissionChange(inst, ui) {
     // PHY type:
     // - always ReadOnly with a Custom stack
     // - otherwise controlled by the 'permission' configurable
-    const freqReadOnly = inst.permission === "ReadOnly" || inst.parent === "Custom";
-    ui.phyType.readOnly = freqReadOnly;
+    ui.phyType.readOnly = inst.permission === "ReadOnly" || inst.parent === "Custom";
 }
 
 /**
@@ -198,7 +176,6 @@ function initConfigurables(configurables) {
     // eslint-disable-next-line guard-for-in
     for (const idx in configurables) {
         const item = configurables[idx];
-
         switch (item.name) {
         case "highPA":
             item.onChange = RFBase.highPaOnChange;

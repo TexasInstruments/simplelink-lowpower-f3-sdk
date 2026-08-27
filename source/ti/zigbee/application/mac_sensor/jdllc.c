@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -196,7 +196,6 @@ static void assocCnfCb(zb_mlme_associate_confirm_t *pData);
 static void beaconNotifyIndCb(zb_mac_beacon_notify_indication_t *pData);
 static void scanCnfCb(zb_mac_scan_confirm_t *pData);
 static void disassoCnfCb(zb_mac_disassociate_confirm_t *pData);
-static void disassocIndCb(zb_mac_disassociate_indication_t *pData);
 static void dataCnfCb(zb_mcps_data_confirm_params_t *pData);
 static void pollCnfCb(zb_ret_t status);
 
@@ -263,7 +262,7 @@ void Jdllc_init(zb_mac_callbacks_t *pMacCbs, Jdllc_callbacks_t *pJdllcCbs)
     pMacCbs->pDisassociateCnfCb = disassoCnfCb;
     pMacCbs->pDataCnfCb = dataCnfCb;
     pMacCbs->pPollCnfCb = pollCnfCb;
-    // pMacCbs->pDisassociateIndCb = disassocIndCb;
+
     pMacCbs->pBeaconNotifyIndCb = beaconNotifyIndCb;
     pMacCbs->pScanCnfCb = scanCnfCb;
     
@@ -671,8 +670,6 @@ void Jdllc_setPollRate(zb_uint32_t pollInterval)
  */
 void Jdllc_sendDisassociationRequest()
 {
-    zb_uint16_t coordShortAddr = devInfoBlock.coordShortAddr;
-
     zb_bufid_t buf = allocateOutBuffer();
     
     Log_printf(LogModule_Zigbee_App, Log_INFO, "Jdllc_sendDisassociationRequest: Sending disassociation request with buffer ID %d", buf);

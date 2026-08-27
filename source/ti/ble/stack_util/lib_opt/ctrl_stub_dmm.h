@@ -79,7 +79,7 @@
 #ifndef CTRL_DMM_H_
 #define CTRL_DMM_H_
 
-#include "ti/drivers/rcl/RCL.h"
+#include "ti/drivers/RCL.h"
 #include "ti/ble/controller/ll/ll_scheduler.h"
 
 // Function prototypes for the actual implementations

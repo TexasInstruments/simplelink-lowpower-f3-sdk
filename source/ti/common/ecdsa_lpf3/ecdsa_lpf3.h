@@ -13,7 +13,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2023-2025, Texas Instruments Incorporated
+ Copyright (c) 2025-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -109,6 +109,7 @@ extern "C" {
  * successfully.
  */
 #define ECDSA_STATUS_SUCCESS (0)
+#define ECDH_STATUS_SUCCESS ECDSA_STATUS_SUCCESS
 
 /*!
  * @brief   Generic error status code.
@@ -117,7 +118,7 @@ extern "C" {
  * successfully.
  */
 #define ECDSA_STATUS_ERROR (-1)
-
+#define ECDH_STATUS_ERROR ECDSA_STATUS_ERROR
 /*!
  *  @brief  The provided CryptoKey does not match the expected size
  *
@@ -127,6 +128,13 @@ extern "C" {
  *  scheme, this error will be returned.
  */
 #define ECDSA_STATUS_INVALID_KEY_SIZE (-10)
+
+/* HMAC defines */
+
+#define SHA2_DIGEST_LENGTH_BYTES_256 32
+#define SHA2_BLOCK_SIZE_BYTES_256 64
+#define HMAC_OPAD_BYTE 0x5C
+#define HMAC_IPAD_BYTE 0x36
 
 /*!
  *  @brief  Plaintext CryptoKey datastructure.
@@ -167,6 +175,24 @@ typedef struct
 } ECDSA_OperationVerify;
 
 /*!
+ *  @brief  Struct containing the parameters required for verifying a message.
+ */
+typedef struct
+{
+    const CryptoKey_Plaintext *privateKey;     /*!< A pointer to the private ECC key which will be used in to
+                                                *   compute the shared secret.
+                                                */
+    const CryptoKey_Plaintext *publicKey;      /*!< A pointer to the public key of the party with whom the
+                                                *   shared secret will be generated.
+                                                */
+    CryptoKey_Plaintext *sharedSecret;         /*!< A pointer to a CryptoKey which has been initialized blank.
+                                                *   The shared secret will be placed here.
+                                                *   The formatting byte will be filled in by the driver if the
+                                                *   keyMaterialEndianness requires it.
+                                                */
+} ECDH_computeSharedSecretStruct;
+
+/*!
  *  @brief Number of bytes for the length word prepended before all parameters
  *  passed into the ECC SW library functions.
  */
@@ -201,6 +227,8 @@ typedef union
  */
 int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation);
 
+int_fast16_t ECDH_computeSharedSecret(ECDH_computeSharedSecretStruct *operation);
+
 /*!
  *  @brief Initializes a plaintext CryptoKey
  *
@@ -209,6 +237,8 @@ int_fast16_t ECDSA_verify(ECDSA_OperationVerify *operation);
  *  @param [in]     keyLength   Length of keying material in bytes
  */
 void CryptoKeyPlaintext_initKey(CryptoKey_Plaintext *keyHandle, uint8_t *key, size_t keyLength);
+
+void SHA2_xorBufferWithByte(uint8_t *buffer, size_t bufferLength, uint8_t byte);
 
 #ifdef __cplusplus
 }

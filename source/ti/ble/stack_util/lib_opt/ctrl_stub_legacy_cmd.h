@@ -80,19 +80,19 @@
 #define CTRL_LEGACY_CMD_H_
 
 #include "ti/ble/controller/hci/hci.h"
-#include "ti/ble/stack_util/icall/app/icall_hci_tl.h"
+#include "ti/ble/controller/hci/hci_cmd_parser_legacy.h"
 
 // Function prototypes for the actual implementations
-extern uint8_t checkLegacyHCICmdStatus(uint16_t opcode);
 extern hciStatus_t hciCmdParserLegacy(uint8_t* pData, uint16_t cmdOpCode);
-extern uint8_t processLegacyExtraHCICmd(hciPacket_t* pMsg);
-extern uint8_t HCI_TL_legacyProcessHCICmd(hciPacket_t* pMsg);
+extern hciStatus_t HCI_LegacyCmd_PreCheck(uint16_t cmdOpCode);
+extern void HCI_LegacyCmd_Reset(void);
+extern uint8_t processLegacyAdvCmd(uint8_t* param, uint16_t cmdOpCode);
 
 
 // Wrapper functions for the feature implementations
-uint8_t OPT_checkLegacyHCICmdStatus(uint16_t opcode);
 hciStatus_t OPT_hciCmdParserLegacy(uint8_t* pData, uint16_t cmdOpCode);
-uint8_t OPT_processLegacyExtraHCICmd(hciPacket_t* pMsg);
-uint8_t OPT_HCI_TL_legacyProcessHCICmd(hciPacket_t* pMsg);
+hciStatus_t OPT_HCI_LegacyCmd_PreCheck(uint16_t cmdOpCode);
+void OPT_HCI_LegacyCmd_Reset(void);
+uint8_t OPT_processLegacyAdvCmd(uint8_t* param, uint16_t cmdOpCode);
 
 #endif /* CTRL_LEGACY_CMD_H_ */

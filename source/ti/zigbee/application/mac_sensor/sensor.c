@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -243,7 +243,7 @@ zb_bool_t redLEDState = ZB_FALSE;
 
 // MAC security key (configured to default key value from 15.4 collector and sensor syscfg settings)
 static zb_uint8_t default_key[16] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static zb_uint8_t default_key_source[8] = {0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33};
+static zb_uint8_t default_key_source[8] __attribute__((unused)) = {0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33};
 
 /* Clock/timer resources */
 ClockP_Struct readingClkStruct;
@@ -455,6 +455,7 @@ MAIN()
   {
     zb_uint8_t init_nv_status = Main_user1Cfg.nvFps.initNV(NULL); // Has been returning NVINTF_SUCCESS
     Log_printf(LogModule_Zigbee_App, Log_INFO, "NV initialization status: %d", init_nv_status);
+    ZVUNUSED(init_nv_status);
   }
 #endif // NV_RESTORE
 
@@ -1100,6 +1101,7 @@ static void Sensor_finish_init(zb_uint8_t param)
   // The buffer is not used in this function, so free it.
   zb_mlme_set_confirm_t *conf = (zb_mlme_set_confirm_t*)zb_buf_begin(param);
   Log_printf(LogModule_Zigbee_App, Log_INFO, "Sensor_finish_init: Setting IEEE address finished with status %x", conf->status);
+  ZVUNUSED(conf);
   zb_buf_free(param);
 
   // Add sensor's structures
@@ -1421,7 +1423,7 @@ static void dataIndCB(zb_mcps_data_indication_t *pDataInd)
             // Send the response message directly */
             cmdBytes[0] = (zb_uint8_t) Smsgs_cmdIds_toggleLedRsp;
             // Is the red LED on or off?
-            redLEDState = ~redLEDState;
+            redLEDState = (zb_uint8_t)!redLEDState;
             cmdBytes[1] = redLEDState;
 #ifndef USE_DMM
             zb_osif_led_toggle(1);

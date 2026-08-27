@@ -8,37 +8,7 @@
  Target Device: cc23xx
 
  ******************************************************************************
- 
- Copyright (c) 2018-2025, Texas Instruments Incorporated
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
-
- *  Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
- *  Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
- *  Neither the name of Texas Instruments Incorporated nor the names of
-    its contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ $License: BSD3 2018-2025 $
  ******************************************************************************
  
  
@@ -50,6 +20,12 @@
 #include <stdint.h>
 #ifdef NV_LINUX
     #include <stddef.h>
+#endif
+
+#include <ti/devices/DeviceFamily.h>
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+/* Driver configuration */
+#include "ti_drivers_config.h"
 #endif
 
 #ifdef __cplusplus
@@ -90,18 +66,23 @@ status = nvFps.readItem(id, 0, len, buf);
 //*****************************************************************************
 
 // NV system ID codes
-#define NVINTF_SYSID_NVDRVR 0 // Refrain from use
-#define NVINTF_SYSID_ZSTACK 1
-#define NVINTF_SYSID_TIMAC  2
-#define NVINTF_SYSID_REMOTI 3
-#define NVINTF_SYSID_BLE    4
-#define NVINTF_SYSID_6MESH  5
-#define NVINTF_SYSID_TIOP   6
-#define NVINTF_SYSID_APP    7
-#define NVINTF_SYSID_WBMS   8
-#define NVINTF_SYSID_BMESH  9
-#define NVINTF_SYSID_SIDWK  10
-#define NVINTF_SYSID_WISUN  11
+#define NVINTF_SYSID_NVDRVR         0 // Refrain from use
+#define NVINTF_SYSID_ZSTACK         1
+#define NVINTF_SYSID_TIMAC          2
+#define NVINTF_SYSID_REMOTI         3
+#define NVINTF_SYSID_BLE            4
+#define NVINTF_SYSID_6MESH          5
+#define NVINTF_SYSID_TIOP           6
+#define NVINTF_SYSID_APP            7
+#define NVINTF_SYSID_WBMS           8
+#define NVINTF_SYSID_BMESH          9
+#define NVINTF_SYSID_SIDWK          10
+#define NVINTF_SYSID_WISUN          11
+#define NVINTF_SYSID_WIFI           12
+#define NVINTF_SYSID_SECUREDATA     13
+#define NVINTF_SYSID_NONSECUREDATA  14
+#define NVINTF_SYSID_SECUREKEY      15
+#define NVINTF_SYSID_NONSECUREKEY   16
 
 // NV driver status codes
 #define NVINTF_SUCCESS    0
@@ -119,6 +100,13 @@ status = nvFps.readItem(id, 0, len, buf);
 #define NVINTF_BADVERSION 12
 #define NVINTF_EXIST      13
 #define NVINTF_NO_SIG     14
+
+#ifdef ENABLE_SPS
+#define NVINTF_PSAINIT_FAIL     15
+#define NVINTF_ENCRYPTION_FAIL  16
+#define NVINTF_DECRYPTION_FAIL  17
+#define NVINTF_PSAKEY_DER_FAIL  18
+#endif
 
 // doNext flag options
 #define NVINTF_DOSTART  0x1  // starts new search

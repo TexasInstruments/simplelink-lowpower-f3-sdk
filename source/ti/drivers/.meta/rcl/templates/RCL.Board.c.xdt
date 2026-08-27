@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,6 +41,27 @@ let RCL = args[0];
 let instances = RCL.$instances;
 const rclStatic = RCL.$static;
 let board = system.deviceData.board;
+let rtos = system.getRTOS().toLowerCase();
+
+/*
+ *  ======== isBle ========
+ *  Check if BLE phy has been selected
+ */
+function isBle()
+{
+    let status = false;
+    var radioconfig = system.modules["/ti/devices/radioconfig/custom"];
+    if (radioconfig)
+    {
+        var radioconfig_inst = radioconfig.$static;
+
+        if (radioconfig_inst.ble.length > 0) {
+            status = true;
+        }
+    }
+
+    return status;
+}
 
 function findPinMapInfo(pin)
 {
@@ -147,6 +168,12 @@ function findCoexConfig()
     coexConfig.ieeeTSync = rclStatic.ieeeTSync;
     coexConfig.ieeeCorrMask = (1 << rclStatic.coexPinRequestIeeeNumCorr) - 1;
 
+    if (isBle())
+    {
+        coexConfig.T1 = Math.round(coexConfig.T1 / 4) * 4;
+        coexConfig.T2 = Math.round(coexConfig.T2 / 4) * 4;
+    }
+
     return coexConfig;
 }
 
@@ -159,9 +186,10 @@ function generateRegulatoryMask() {
 
 %%}
 
+%if (rtos != "zephyr") {
 %if (board !== undefined && board.name.match(/CC27..P../)) {
 /*
- * =============================== RCL Feature Configuration ===============================
+ * ======== RCL Feature Configuration ========
  */
 #include <ti/drivers/rcl/RCL_Feature.h>
 const RCL_FeatureControl rclFeatureControl =
@@ -173,7 +201,7 @@ const RCL_FeatureControl rclFeatureControl =
 %}
 %if (board !== undefined && board.name.match(/CC27/)) {
 /*
- * =========================== RCL Regulatory Domain Configuration ===========================
+ * ======== RCL Regulatory Domain Configuration ========
  */
 
 % let regulatoryMask = generateRegulatoryMask();
@@ -187,7 +215,7 @@ uint8_t rclRegulatoryMask = `regulatoryMask`;
 
 %if (rclStatic.pbeGpoMask != 0) {
 /*
- * =============================== RCL Antenna Configuration ===============================
+ * ======== RCL Antenna Configuration ========
  */
 /* Bit mask indicating which bits in LRFDPBE_GPOCTRL register are written
  * This is the configuration supposed to not change during runtime and allowed
@@ -198,7 +226,7 @@ const uint8_t rclPbeGpoMask = 0x`rclStatic.pbeGpoMask.toString(16)`;
 
 % if(rclStatic.lrfGpio){
 /*
- *  =============================== RCL GPIOS ===============================
+ *  ======== RCL GPIOS ========
  */
 #include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
 #include DeviceFamily_constructPath(inc/hw_ioc.h)
@@ -253,6 +281,410 @@ void RCL_GPIO_disable (void)
     `lrfdStrings.resetGpioStr`;
 %        }
 %    });
+}
+
+%}
+%}
+%else {
+
+%if (board !== undefined && board.name.match(/CC27/)) {
+/*
+ * ======== RCL Regulatory Domain Configuration ========
+ */
+#if defined(CONFIG_SOC_CC2755P10) || defined(CONFIG_SOC_CC2755R10) || defined(CONFIG_SOC_CC2745R10_Q1)
+
+#include <zephyr/kernel.h>
+#include <ti/drivers/rcl/RCL_Feature.h>
+
+#define RCL_REGULATORY_MASK \
+    ((IS_ENABLED(CONFIG_RCL_REGULATORY_DOMAIN_ETSI) ? (RCL_REGULATORY_DOMAIN_ETSI) : 0U) | \
+     (IS_ENABLED(CONFIG_RCL_REGULATORY_DOMAIN_FCC)  ? (RCL_REGULATORY_DOMAIN_FCC) : 0U)  | \
+     (IS_ENABLED(CONFIG_RCL_REGULATORY_DOMAIN_MIIT) ? (RCL_REGULATORY_DOMAIN_MIIT) : 0U))
+
+#if defined(CONFIG_SOC_CC2755P10)
+const RCL_FeatureControl rclFeatureControl =
+{
+    .enableTemperatureMonitoring = true,
+    .enablePaEsdProtection = false,
+    .enableTxOutputPowerCompensation = true
+};
+#endif /* CONFIG_SOC_CC2755P10 */
+
+#if defined(CONFIG_RCL_REGULATORY_DOMAIN_RUNTIME_MODIFIABLE)
+uint8_t rclRegulatoryMask = RCL_REGULATORY_MASK;
+#else
+const uint8_t rclRegulatoryMask = RCL_REGULATORY_MASK;
+#endif
+
+#endif /* CONFIG_SOC_CC2755P10 || CONFIG_SOC_CC2755R10 || CONFIG_SOC_CC2745R10_Q1 */
+%}
+
+/*
+ * ======== RCL Coexistence Configuration ========
+ */
+#if defined(CONFIG_RCL_COEX)
+
+#include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(TI_RCL, LOG_LEVEL_ERR);
+
+#include <ti/devices/DeviceFamily.h>
+#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_types.h)
+#include DeviceFamily_constructPath(inc/hw_lrfddbell.h)
+#include DeviceFamily_constructPath(inc/rfe_common_ram_regs.h)
+#include <ti/drivers/rcl/RCL_Scheduler.h>
+
+#define COEX_NODE DT_NODELABEL(ti_rcl_coex)
+#define COEX_INVALID_LRFD_PIN 0xFFU
+#define COEX_IO_CONFIG_FAIL   (1)
+#define COEX_IO_CONFIG_PASS   (0)
+
+#if DT_NODE_HAS_COMPAT(COEX_NODE, ti_rcl_coex_three_wire)
+    #define COEX_HAS_REQUEST  1
+    #define COEX_HAS_PRIORITY 1
+    #define COEX_HAS_GRANT    1
+#elif DT_NODE_HAS_COMPAT(COEX_NODE, ti_rcl_coex_two_wire_grant_request)
+    #define COEX_HAS_REQUEST  1
+    #define COEX_HAS_PRIORITY 0
+    #define COEX_HAS_GRANT    1
+#elif DT_NODE_HAS_COMPAT(COEX_NODE, ti_rcl_coex_two_wire_priority_request)
+    #define COEX_HAS_REQUEST  1
+    #define COEX_HAS_PRIORITY 1
+    #define COEX_HAS_GRANT    0
+#elif DT_NODE_HAS_COMPAT(COEX_NODE, ti_rcl_coex_one_wire_grant)
+    #define COEX_HAS_REQUEST  0
+    #define COEX_HAS_PRIORITY 0
+    #define COEX_HAS_GRANT    1
+#elif DT_NODE_HAS_COMPAT(COEX_NODE, ti_rcl_coex_one_wire_request)
+    #define COEX_HAS_REQUEST  1
+    #define COEX_HAS_PRIORITY 0
+    #define COEX_HAS_GRANT    0
+#else
+    #error "Unknown CoEx compatible string"
+#endif
+
+#if COEX_HAS_REQUEST
+    #define COEX_T1_US DT_PROP(COEX_NODE, t1_us)
+    #define COEX_REQUEST_DIO DT_GPIO_PIN(COEX_NODE, request_gpios)
+    BUILD_ASSERT(COEX_T1_US >= 90 && COEX_T1_US <= 150, "T1 must be 90-150 us");
+    static const struct gpio_dt_spec request_gpio = GPIO_DT_SPEC_GET(COEX_NODE, request_gpios);
+#else
+    #define COEX_T1_US 0
+#endif
+
+#if COEX_HAS_PRIORITY
+    #define COEX_T2_US DT_PROP(COEX_NODE, t2_us)
+    #define COEX_PRIORITY_DIO DT_GPIO_PIN(COEX_NODE, priority_gpios)
+    #define COEX_INVERTED_PRIORITY (((DT_GPIO_FLAGS(COEX_NODE, priority_gpios) & GPIO_ACTIVE_LOW) != 0U) ? true : false)
+    BUILD_ASSERT(COEX_T2_US == 0 || (COEX_T2_US >= 3 && COEX_T2_US <= 30), "T2 must be 0 or 3-30 us");
+    static const struct gpio_dt_spec priority_gpio = GPIO_DT_SPEC_GET(COEX_NODE, priority_gpios);
+#else
+    #define COEX_T2_US 0
+    #define COEX_INVERTED_PRIORITY false
+#endif
+
+#if COEX_HAS_GRANT
+    #define COEX_GRANT_DIO DT_GPIO_PIN(COEX_NODE, grant_gpios)
+    static const struct gpio_dt_spec grant_gpio = GPIO_DT_SPEC_GET(COEX_NODE, grant_gpios);
+#endif
+
+PINCTRL_DT_DEFINE(COEX_NODE);
+static const struct pinctrl_dev_config *coex_pinctrl_config = PINCTRL_DT_DEV_CONFIG_GET(COEX_NODE);
+
+#if defined(CONFIG_SOC_SERIES_CC23X0)
+    #define DIO_TO_LRFD(dio) ( \
+        (dio) == 1  ? 7 : \
+        (dio) == 3  ? 0 : \
+        (dio) == 4  ? 1 : \
+        (dio) == 5  ? 6 : \
+        (dio) == 6  ? 2 : \
+        (dio) == 7  ? 4 : \
+        (dio) == 9  ? 3 : \
+        (dio) == 11 ? 0 : \
+        (dio) == 14 ? 5 : \
+        (dio) == 21 ? 1 : \
+        COEX_INVALID_LRFD_PIN)
+#elif defined(CONFIG_SOC_SERIES_CC27XX)
+    #define DIO_TO_LRFD(dio) ( \
+        (dio) == 17 ? 0 : \
+        (dio) == 18 ? 1 : \
+        (dio) == 19 ? 2 : \
+        (dio) == 20 ? 3 : \
+        (dio) == 21 ? 4 : \
+        (dio) == 22 ? 5 : \
+        (dio) == 27 ? 6 : \
+        (dio) == 28 ? 7 : \
+        COEX_INVALID_LRFD_PIN)
+#else
+    #error "Unsupported SoC for RCL CoEx"
+#endif
+
+#if COEX_HAS_REQUEST
+    #define COEX_REQUEST_LRFD DIO_TO_LRFD(COEX_REQUEST_DIO)
+    BUILD_ASSERT(COEX_REQUEST_LRFD != COEX_INVALID_LRFD_PIN, "REQUEST DIO doesn't support LRFD function");
+#endif
+
+#if COEX_HAS_PRIORITY
+    #define COEX_PRIORITY_LRFD DIO_TO_LRFD(COEX_PRIORITY_DIO)
+    BUILD_ASSERT(COEX_PRIORITY_LRFD != COEX_INVALID_LRFD_PIN, "PRIORITY DIO doesn't support LRFD function");
+#endif
+
+#if COEX_HAS_GRANT
+    #define COEX_GRANT_LRFD DIO_TO_LRFD(COEX_GRANT_DIO)
+    BUILD_ASSERT(COEX_GRANT_LRFD != COEX_INVALID_LRFD_PIN, "GRANT DIO doesn't support LRFD function");
+#endif
+
+#if COEX_HAS_REQUEST && COEX_HAS_PRIORITY
+    BUILD_ASSERT(COEX_REQUEST_LRFD != COEX_PRIORITY_LRFD, "REQUEST and PRIORITY must use different LRFD pins");
+#endif
+#if COEX_HAS_REQUEST && COEX_HAS_GRANT
+    BUILD_ASSERT(COEX_REQUEST_LRFD != COEX_GRANT_LRFD, "REQUEST and GRANT must use different LRFD pins");
+#endif
+#if COEX_HAS_PRIORITY && COEX_HAS_GRANT
+    BUILD_ASSERT(COEX_PRIORITY_LRFD != COEX_GRANT_LRFD, "PRIORITY and GRANT must use different LRFD pins");
+#endif
+
+typedef enum LRF_Gpio_Signal_e
+{
+    LRF_GRANT_DIS   = 0,    /* Disable output path for GRANT input pin */
+    LRF_REQUEST_EN  = 1,    /* PBEGPO0 -> LRFD */
+    LRF_PRIORITY_EN = 2,    /* PBEGPO1 -> LRFD */
+} LRF_Gpio_Signal;
+
+static void RCL_Coex_configLrfRouting(uint8_t lrfdPin, LRF_Gpio_Signal signal)
+{
+    uint32_t gpoSelOffset = LRFDDBELL_O_GPOSEL0 + (lrfdPin >> 2) * sizeof(uint32_t);
+    uint32_t bitShift = (lrfdPin & 0x3U) << 3;
+    uint32_t fieldMask = LRFDDBELL_GPOSEL0_SRC0_M << bitShift;
+    uint32_t srcValue = (uint32_t)signal << bitShift;
+    uint32_t gpoCfg = HWREG_READ_LRF(LRFDDBELL_BASE + gpoSelOffset);
+    gpoCfg = (gpoCfg & ~fieldMask) | srcValue;
+    HWREG_WRITE_LRF(LRFDDBELL_BASE + gpoSelOffset) = gpoCfg;
+}
+
+#if COEX_HAS_GRANT
+    #define GPI_TO_FIELD(gpi) ( \
+        (gpi) == 0 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI0 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 1 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI1 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 2 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI2 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 3 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI3 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 4 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI4 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 5 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI5 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 6 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI6 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (gpi) == 7 ? (RFE_COMMON_RAM_GRANTPIN_CFG_GPI7 >> RFE_COMMON_RAM_GRANTPIN_CFG_S) : \
+        (RFE_COMMON_RAM_GRANTPIN_CFG_DIS >> RFE_COMMON_RAM_GRANTPIN_CFG_S))
+    #define COEX_GRANT_PIN_FIELD GPI_TO_FIELD(COEX_GRANT_LRFD)
+#else
+    #define COEX_GRANT_PIN_FIELD (RFE_COMMON_RAM_GRANTPIN_CFG_DIS >> RFE_COMMON_RAM_GRANTPIN_CFG_S)
+#endif
+
+#if defined(CONFIG_RCL_COEX_RUNTIME_MODIFIABLE)
+    #define COEX_CONFIG_QUALIFIER
+#else
+    #define COEX_CONFIG_QUALIFIER const
+#endif
+
+COEX_CONFIG_QUALIFIER LRF_CoexConfiguration lrfCoexConfiguration =
+{
+    .T1 = RCL_SCHEDULER_SYSTIM_US(COEX_T1_US),
+    .T2 = RCL_SCHEDULER_SYSTIM_US(COEX_T2_US),
+    .grantPin = COEX_GRANT_PIN_FIELD,
+    .invertedPriority = COEX_INVERTED_PRIORITY,
+    /* IEEE 802.15.4 coexistence is not supported - zero initialization */
+    .ieeeTSync = 0U,
+    .ieeeCorrMask = 0U,
+};
+
+static inline void RCL_Coex_enableRequestRouting(void)
+{
+#if COEX_HAS_REQUEST
+    RCL_Coex_configLrfRouting(COEX_REQUEST_LRFD, LRF_REQUEST_EN);
+#endif
+}
+
+static inline int RCL_Coex_resetRequestGPIO(void)
+{
+#if COEX_HAS_REQUEST
+    if (gpio_is_ready_dt(&request_gpio) == false)
+    {
+        LOG_ERR("CoEx REQUEST GPIO device not ready");
+        return -COEX_IO_CONFIG_FAIL;
+    }
+
+    /* Configure REQUEST pin as GPIO output with INACTIVE state (respects DT polarity) */
+    if (gpio_pin_configure_dt(&request_gpio, GPIO_OUTPUT_INACTIVE) != 0)
+    {
+        LOG_ERR("Failed to configure REQUEST pin as GPIO output INACTIVE");
+        return -COEX_IO_CONFIG_FAIL;
+    }
+#endif
+    return COEX_IO_CONFIG_PASS;
+}
+
+static inline void RCL_Coex_enablePriorityRouting(void)
+{
+#if COEX_HAS_PRIORITY
+    RCL_Coex_configLrfRouting(COEX_PRIORITY_LRFD, LRF_PRIORITY_EN);
+#endif
+}
+
+static inline int RCL_Coex_resetPriorityGPIO(void)
+{
+#if COEX_HAS_PRIORITY
+    if (gpio_is_ready_dt(&priority_gpio) == false)
+    {
+        LOG_ERR("CoEx PRIORITY GPIO device not ready");
+        return -COEX_IO_CONFIG_FAIL;
+    }
+
+    /* Configure PRIORITY pin as GPIO output with INACTIVE state (respects DT polarity) */
+    if (gpio_pin_configure_dt(&priority_gpio, GPIO_OUTPUT_INACTIVE) != 0)
+    {
+        LOG_ERR("Failed to configure PRIORITY pin as GPIO output INACTIVE");
+        return -COEX_IO_CONFIG_FAIL;
+    }
+#endif
+    return COEX_IO_CONFIG_PASS;
+}
+
+static inline void RCL_Coex_enableGrantRouting(void)
+{
+#if COEX_HAS_GRANT
+    RCL_Coex_configLrfRouting(COEX_GRANT_LRFD, LRF_GRANT_DIS);
+#endif
+}
+
+static inline int RCL_Coex_resetGrantGPIO(void)
+{
+#if COEX_HAS_GRANT
+    if (gpio_is_ready_dt(&grant_gpio) == false)
+    {
+        LOG_ERR("CoEx GRANT GPIO device not ready");
+        return -COEX_IO_CONFIG_FAIL;
+    }
+
+    /* Configure GRANT pin as GPIO output with INACTIVE state (respects DT polarity) */
+    if (gpio_pin_configure_dt(&grant_gpio, GPIO_OUTPUT_INACTIVE) != 0)
+    {
+        LOG_ERR("Failed to configure GRANT pin as GPIO output INACTIVE");
+        return -COEX_IO_CONFIG_FAIL;
+    }
+#endif
+    return COEX_IO_CONFIG_PASS;
+}
+
+void RCL_GPIO_coexEnable(void)
+{
+    /* Configure all coexistence pins as GPIO outputs driven to INACTIVE state.
+     * This pre-conditions the pins to a known safe state before switching to LRFD
+     * peripheral control, preventing glitches during the transition.
+     */
+    int status = RCL_Coex_resetRequestGPIO()  |
+                 RCL_Coex_resetPriorityGPIO() |
+                 RCL_Coex_resetGrantGPIO();
+    __ASSERT(status == COEX_IO_CONFIG_PASS, "Failed to initialize CoEx GPIO pins to a known state");
+    if (status != COEX_IO_CONFIG_PASS)
+    {
+        LOG_ERR("Failed to initialize CoEx GPIO pins to a known state");
+        return;
+    }
+
+    /* Configure LRFDDBELL internal routing before switching pin functions.
+     * - REQUEST/PRIORITY signals: Route PBEGPO0/PBEGPO1 to LRFD outputs
+     * - GRANT signal: Route LRFD input to RFEGPI
+     *
+     * CRITICAL: This routing MUST be configured before applying pinctrl state.
+     * If the pins are switched to LRFD function before routing is configured,
+     * the LRFD outputs will be in an undefined state, causing glitches.
+     */
+    RCL_Coex_enableRequestRouting();
+    RCL_Coex_enablePriorityRouting();
+    RCL_Coex_enableGrantRouting();
+
+    /* Switch pins from GPIO to LRFD peripheral functions.
+     * Pins are now safely under LRF hardware control with routing pre-configured.
+     */
+    int ret = pinctrl_apply_state(coex_pinctrl_config, PINCTRL_STATE_DEFAULT);
+    if (ret != 0)
+    {
+        LOG_ERR("Failed to apply CoEx LRFD pinctrl state (ret=%d)", ret);
+    }
+}
+
+void RCL_GPIO_coexDisable(void)
+{
+    /* Switch pins from LRFD to GPIO function.
+     * This releases hardware coexistence control.
+     */
+    int ret = pinctrl_apply_state(coex_pinctrl_config, PINCTRL_STATE_SLEEP);
+    if (ret != 0)
+    {
+        LOG_ERR("Failed to apply CoEx sleep pinctrl state (ret=%d)", ret);
+    }
+
+    /* Drive all coexistence pins to INACTIVE state.
+     * This ensures REQUEST/PRIORITY signals are de-asserted (LOW for ACTIVE_HIGH)
+     * and GRANT input is in a known safe state, preventing spurious coex activity.
+     */
+    int status = RCL_Coex_resetRequestGPIO()  |
+                 RCL_Coex_resetPriorityGPIO() |
+                 RCL_Coex_resetGrantGPIO();
+    __ASSERT(status == COEX_IO_CONFIG_PASS, "Failed to drive CoEx GPIO pins to INACTIVE state");
+    if (status != COEX_IO_CONFIG_PASS)
+    {
+        LOG_ERR("Failed to drive CoEx GPIO pins to INACTIVE state");
+        return;
+    }
+}
+
+#endif /* RCL_COEX */
+
+/*
+ * ======== RCL GPIO Configuration ========
+ */
+
+__attribute__((weak)) void RCL_GPIO_appEnable(void)
+{
+}
+
+__attribute__((weak)) void RCL_GPIO_appDisable(void)
+{
+}
+
+void RCL_GPIO_enable (void)
+{
+#if defined(CONFIG_RCL_COEX)
+    extern void RCL_GPIO_coexEnable(void);
+    RCL_GPIO_coexEnable();
+#endif
+
+#if defined(CONFIG_RCL_PALNA)
+    extern void RCL_GPIO_paLnaEnable(void);
+    RCL_GPIO_paLnaEnable();
+#endif
+
+    RCL_GPIO_appEnable();
+}
+
+void RCL_GPIO_disable (void)
+{
+#if defined(CONFIG_RCL_COEX)
+    extern void RCL_GPIO_coexDisable(void);
+    RCL_GPIO_coexDisable();
+#endif
+
+#if defined(CONFIG_RCL_PALNA)
+    extern void RCL_GPIO_paLnaDisable(void);
+    RCL_GPIO_paLnaDisable();
+#endif
+
+    RCL_GPIO_appDisable();
 }
 
 %}

@@ -85,8 +85,8 @@
  *          - INIT_TO_CONT (once)
  *          - CONT_TO_CONT (as many times as necessary)
  *          - CONT_TO_FINAL (once)
- *      * Performing a CONT_TO_CONT or CONT_TO_FINAL hash operation before an INIT_TO_CONT hash operation will result
- *      * unexpected outputs.
+ *      * Performing a CONT_TO_CONT or CONT_TO_FINAL hash operation before an INIT_TO_CONT hash operation will result 
+ *      * unexpected outputs. 
  *      * Multi-step hash operations are supported for all digest lengths and sha2 algorithms.
  *  - HSM Support for RNG Operations:
  *      * Size must be 0 < x < (2^16 Bytes).
@@ -163,7 +163,7 @@
  *  ## Examples
  *  @code
  *
- *  // Import the HSMBareMetal definitions
+ *  // Import the HSMBareMetal defintions
  *  #include <ti/drivers/cryptoutils/hsm/HSMBareMetal.h>
  *
  *  int_fast16_t status;
@@ -355,8 +355,8 @@ extern "C" {
  *  @brief   The input data length is not block aligned.
  */
 #define HSMBAREMETAL_STATUS_INVALID_INPUT_DATA_LENGTH ((int_fast16_t)-14)
-
-/*!
+ 
+/*! 
  *  @brief   The mac length is invalid.
  */
 #define HSMBAREMETAL_STATUS_INVALID_MAC_LENGTH ((int_fast16_t)-15)
@@ -377,32 +377,12 @@ extern "C" {
 #define HSMBAREMETAL_AES_BLOCK_SIZE 16
 
 /*!
- *  @brief    The size of a private key header need at the beginning of the buffer and before importing the plaintext
- * material into the HSM.
- */
-#define HSMBAREMETAL_PRIVATE_KEY_VHEADER_SIZE 4
-
-/*!
- *  @brief The expected size of a single AES-SIV keyblob element.
- *
- *  Note: keyLength is the size of the asset in octects (bytes).
- */
-#define HSMBAREMEATL_KEYBLOB_ELEM_SIZE(keyLength) (HSMBAREMETAL_AES_BLOCK_SIZE + keyLength)
-
-/*!
- *  @brief The expected total size of the keyblob buffer.
- *
- *  !!!IMPORTANT!!!
- *  HSM BareMetal users should use this define to determine the appropriate memory footprint for their keyblob buffer.
+ *  @brief The expected size of an AES-SIV keyblob.
  *
  *  Note: keyLength is the size of the Asset in octects (bytes).
  */
-#define HSMBAREMETAL_GET_KEYBLOB_BUF_SIZE(keyLength, direction)                                                       \
-    ((direction) == HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY ? (2 * HSMBAREMEATL_KEYBLOB_ELEM_SIZE(keyLength)) \
-                                                                    : HSMBAREMEATL_KEYBLOB_ELEM_SIZE(keyLength))
+#define HSM_KEYBLOB_SIZE(keyLength) (HSMBAREMETAL_AES_BLOCK_SIZE + keyLength)
 
-#define HSMBAREMETAL_GET_PRIVATE_KEY_KEYBLOB_BUF_SIZE(keyLength) \
-    HSMBAREMEATL_KEYBLOB_ELEM_SIZE((HSMBAREMETAL_PRIVATE_KEY_VHEADER_SIZE + keyLength))
 /*!
  *  @brief  Enum for entropy type.
  *
@@ -440,15 +420,14 @@ typedef enum
 } HSMBareMetal_operationAlgorithm;
 
 /*!
- *  @brief  Enum for the direction of an AES/MAC/asset operation.
+ *  @brief  Enum for the direction of an AES operation.
  *  - Encryption/Decryption for (CCM, GCM, CBC, CTR, ECB)
  *  - Generate/Verify for (CMAC, CBC-MAC, HMAC)
  */
 typedef enum
 {
-    HSMBareMetal_OPERATION_DIR_ENC_GEN_AND_DEC_VRFY = 0, /* Intended for use by asset operations ONLY. */
-    HSMBareMetal_OPERATION_DIR_ENC_GEN              = 1,
-    HSMBareMetal_OPERATION_DIR_DEC_VRFY             = 2,
+    HSMBareMetal_OPERATION_DIR_ENC_GEN  = 1,
+    HSMBareMetal_OPERATION_DIR_DEC_VRFY = 2,
 } HSMBareMetal_operationDirection;
 
 /*!
@@ -548,15 +527,6 @@ typedef enum
     HSMBareMetal_PK_MODE_ECDSA_SIGN         = 3,
     HSMBareMetal_PK_MODE_ECDSA_VERIFY       = 4,
 } HSMBareMetal_ECCOperationMode;
-
-/*!
- *  @brief  Enum for ECC asset modes.
- */
-typedef enum
-{
-    HSMBareMetal_ECC_ASSET_TYPE_PRIVATE_KEY = 1,
-    HSMBareMetal_ECC_ASSET_TYPE_PUBLIC_KEY  = 2,
-} HSMBareMetal_ECCKeyType;
 
 /*!
  *  @brief  Enum for the AES operation mode.
@@ -686,11 +656,29 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t *encGenKeyAssetID;  /* Asset ID for symmetric encryption/ MAC generation */
-    uint32_t *decVrfyKeyAssetID; /* Asset ID for symmetric decryption/ MAC Verification */
-    uint32_t *privateKeyAssetID; /* Asset ID for asymmetric private key */
-    uint32_t *publicKeyAssetID;  /* Asset ID for asymmetric private key */
+    uint32_t *encGenKeyAssetID;  /* Asset ID for encryption/generation */
+    uint32_t *decVrfyKeyAssetID; /* Asset ID for decryption/Verification */
 } HSMBareMetal_AssetPairStruct;
+
+/*!
+ *  @brief  Struct containing the two buffers for symmetric key blob data.
+ *
+ *  For any given plaintext key material, there exists two key blobs.
+ */
+typedef struct
+{
+    uint8_t *encGenKeyBlob;  /* Key blob data for encryption/generation operations. */
+    uint8_t *decVrfyKeyBlob; /* Key blob data for decryption/Verification operations. */
+} HSMBareMetal_AssetPairKeyBlobStruct;
+
+/*!
+ *  @brief  Struct containing the two asset IDs returned for ECC operations.
+ */
+typedef struct
+{
+    uint32_t *privateKeyAssetID; /* Asset ID for the private key. */
+    uint32_t *publicKeyAssetID;  /* Asset ID for the public key. */
+} HSMBareMetal_AsymAssetPairStruct;
 
 /*!
  *  @brief  Struct containing the parameters required for asset create and plaintext key load operations.
@@ -698,10 +686,12 @@ typedef struct
 typedef struct
 {
     uint8_t *key;        /* Plaintext key buffer. */
-    uint8_t *keyblob;    /* Keyblob buffer. */
-    uint8_t keyLength;   /* Key length. Must be the plaintext key length such as 128, 192, or 256. */
+    uint8_t keyLength;   /* Key length. */
     bool isKeyGenerated; /* When set, HSMBareMetal will leverage the #HSMBareMetal_RNGOperation to generate a DRBG key
                             internally and return the AssetIDPair only. */
+    HSMBareMetal_AssetPairKeyBlobStruct keyBlobs; /* Contains a pair of pointers to the encrypt and decrypt key blob
+                                                     data. This field is used as an input and an ouput depending on the
+                                                     operationType. */
     HSMBareMetal_AssetPairStruct keyAssetIDs; /* In a symmetric operation, for every key there exists two key Asset IDs.
                                                  One for ENC/GEN and the other for DEC/VRFY. */
     HSMBareMetal_operationAlgorithm algorithm;     /* AES or MAC. */
@@ -709,10 +699,6 @@ typedef struct
                                                       blobs. */
     HSMBareMetal_AESOperationMode aesOperationMode;
     HSMBareMetal_MACOperationMode macOperationMode;
-    HSMBareMetal_ECCOperationMode eccOperationMode;
-    HSMBareMetal_ECCOperationCurveType eccCurveType;
-    HSMBareMetal_operationDirection operationDirection;
-    HSMBareMetal_ECCKeyType eccKeyType;
 } HSMBareMetal_AssetOperationStruct;
 
 /*!
@@ -752,7 +738,7 @@ typedef struct
  */
 typedef struct
 {
-    uint32_t *assetId;
+    uint32_t assetId;
     uint32_t keyLength;
 } HSMBareMetal_CryptoKeyAssetStoreStruct;
 
@@ -818,16 +804,7 @@ int_fast16_t HSMBareMetal_checkHSMStatus(void);
 /*!
  *  @brief  Provision the Hardware Unique Key (HUK) for this device.
  *
- *  This API should be called only if the following operations are used in the user's application code
- *  (Main app or Secondary Secure Bootloader (SSB)):
- *  - Wrap keys
- *  - Unwrap keys
- *
- *  While provisioning the Hardware Unique Key (HUK) should take place only once in the device's lifetime,
- *  this API should be called everytime the HSMBareMetal module is used and after #HSMBareMetal_init()
- *
- *  The reason behind the above: This API also creates an asset in the HSM RAM that is needed for
- *  wrapping/unwrapping keys and is needed everytime the device goes through a power cycle.
+ *  This is an operation that should be done only once per device lifetime.
  *
  *  @pre Must call #HSMBareMetal_init() prior.
  *
@@ -838,36 +815,6 @@ int_fast16_t HSMBareMetal_checkHSMStatus(void);
  *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
  */
 int_fast16_t HSMBareMetal_provisionHUK(void);
-
-/*!
- *  @brief  Send a sleep token to preserve the content of the HSM.
- *
- *  This operation should be called prior to the device going into standby.
- *
- *  @pre Must call #HSMBareMetal_init() prior.
- *
- *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
- *  @retval #HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED    HUK already provisioned.
- *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
- *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
- */
-int_fast16_t HSMBareMetal_sleep(void);
-
-/*!
- *  @brief  Send a sleep token to preserve the content of the HSM.
- *
- * This operation should be called after the device comes out of standby.
- *
- *  @pre Must call #HSMBareMetal_init() prior.
- *
- *  @retval #HSMBAREMETAL_STATUS_SUCCESS                    The operation succeeded.
- *  @retval #HSMBAREMETAL_STATUS_HUK_ALREADY_PROVISIONED    HUK already provisioned.
- *  @retval #HSMBAREMETAL_STATUS_ERROR                      The operation failed.
- *  @retval #HSMBAREMETAL_STATUS_HSM_NOT_INITIALIZED        Call #HSMBareMetal_init() first.
- *  @retval #HSMBAREMETAL_STATUS_HW_ERROR                   HSM in fatal mode. Reset Device.
- */
-int_fast16_t HSMBareMetal_wakeup(void);
 
 /*!
  *  @brief  Perform an HSM OTP search for static asset.
@@ -910,21 +857,6 @@ int_fast16_t HSMBareMetal_getHSMFirmwareVersion(HSMBareMetal_systemInfoVersionSt
  *
  */
 void HSMBareMetal_CryptoKeyPlaintext_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey, uint8_t *key, size_t keyLength);
-
-/*!
- *  @brief  Initializes a CryptoKey with plaintext encoding
- *
- *  @param [in]     cryptoKey   Pointer to a CryptoKey which will be initialized
- *                              to type HSMBareMetal_KEY_INPUT_PLAINTEXT
- *                              and ready for use
- *  @param [in]     key         Pointer to keying material
- *
- *  @param [in]     keyLength   Length of keying material in bytes
- *
- */
-void HSMBareMetal_CryptoKeyAssetStore_initKey(HSMBareMetal_CryptoKeyStruct *cryptoKey,
-                                              uint32_t *assetId,
-                                              size_t keyLength);
 
 /*!
  *  @brief Function to initialize an #HSMBareMetal_RNGOperation struct to its default (all zeroes)

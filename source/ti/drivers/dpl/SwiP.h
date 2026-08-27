@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2023, Texas Instruments Incorporated
+ * Copyright (c) 2017-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,8 +54,8 @@ extern "C" {
  *
  *  NoRTOS:   40
  *  FreeRTOS: ?? (should same as NoRTOS)
- *  BIOS 6.x: 52
  *  BIOS 7.x: 60
+ *  Zephyr: 40
  */
 #define SwiP_STRUCT_SIZE (60)
 

@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget Drivers::drivers_cc27xx Drivers::drivers_cc27xx_log Drivers::drivers_cc27xx_ns Drivers::drivers_cc27xx_ns_log)
+foreach(_expectedTarget Drivers::drivers_cc27xxx10 Drivers::drivers_cc27xxx10_log Drivers::drivers_cc27xxx10_ns Drivers::drivers_cc27xxx10_ns_log Drivers::drivers_cc27xxx20 Drivers::drivers_cc27xxx20_log Drivers::drivers_cc27xxx20_ns Drivers::drivers_cc27xxx20_ns_log)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -51,36 +51,68 @@ if(_IMPORT_PREFIX STREQUAL "/")
   set(_IMPORT_PREFIX "")
 endif()
 
-# Create imported target Drivers::drivers_cc27xx
-add_library(Drivers::drivers_cc27xx STATIC IMPORTED)
+# Create imported target Drivers::drivers_cc27xxx10
+add_library(Drivers::drivers_cc27xxx10 STATIC IMPORTED)
 
-set_target_properties(Drivers::drivers_cc27xx PROPERTIES
+set_target_properties(Drivers::drivers_cc27xxx10 PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xx;TOOLCHAIN_iar_m33f;TiUtils::json_m33f"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx10;TOOLCHAIN_iar_m33f;TiUtils::json_m33f"
 )
 
-# Create imported target Drivers::drivers_cc27xx_log
-add_library(Drivers::drivers_cc27xx_log STATIC IMPORTED)
+# Create imported target Drivers::drivers_cc27xxx10_log
+add_library(Drivers::drivers_cc27xxx10_log STATIC IMPORTED)
 
-set_target_properties(Drivers::drivers_cc27xx_log PROPERTIES
+set_target_properties(Drivers::drivers_cc27xxx10_log PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xx;TOOLCHAIN_iar_m33f;TiUtils::json_m33f"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx10;TOOLCHAIN_iar_m33f;TiUtils::json_m33f"
 )
 
-# Create imported target Drivers::drivers_cc27xx_ns
-add_library(Drivers::drivers_cc27xx_ns STATIC IMPORTED)
+# Create imported target Drivers::drivers_cc27xxx10_ns
+add_library(Drivers::drivers_cc27xxx10_ns STATIC IMPORTED)
 
-set_target_properties(Drivers::drivers_cc27xx_ns PROPERTIES
+set_target_properties(Drivers::drivers_cc27xxx10_ns PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xx_ns;TOOLCHAIN_iar_m33f;TiUtils::json_m33f;DriversUtils::tfm_enabled"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx10_ns;TOOLCHAIN_iar_m33f;TiUtils::json_m33f;DriversUtils::tfm_enabled"
 )
 
-# Create imported target Drivers::drivers_cc27xx_ns_log
-add_library(Drivers::drivers_cc27xx_ns_log STATIC IMPORTED)
+# Create imported target Drivers::drivers_cc27xxx10_ns_log
+add_library(Drivers::drivers_cc27xxx10_ns_log STATIC IMPORTED)
 
-set_target_properties(Drivers::drivers_cc27xx_ns_log PROPERTIES
+set_target_properties(Drivers::drivers_cc27xxx10_ns_log PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
-  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xx_ns;TOOLCHAIN_iar_m33f;TiUtils::json_m33f;DriversUtils::tfm_enabled"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx10_ns;TOOLCHAIN_iar_m33f;TiUtils::json_m33f;DriversUtils::tfm_enabled"
+)
+
+# Create imported target Drivers::drivers_cc27xxx20
+add_library(Drivers::drivers_cc27xxx20 STATIC IMPORTED)
+
+set_target_properties(Drivers::drivers_cc27xxx20 PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx20;TOOLCHAIN_iar_m33f;TiUtils::json_m33f"
+)
+
+# Create imported target Drivers::drivers_cc27xxx20_log
+add_library(Drivers::drivers_cc27xxx20_log STATIC IMPORTED)
+
+set_target_properties(Drivers::drivers_cc27xxx20_log PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx20;TOOLCHAIN_iar_m33f;TiUtils::json_m33f"
+)
+
+# Create imported target Drivers::drivers_cc27xxx20_ns
+add_library(Drivers::drivers_cc27xxx20_ns STATIC IMPORTED)
+
+set_target_properties(Drivers::drivers_cc27xxx20_ns PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx20_ns;TOOLCHAIN_iar_m33f;TiUtils::json_m33f;DriversUtils::tfm_enabled"
+)
+
+# Create imported target Drivers::drivers_cc27xxx20_ns_log
+add_library(Drivers::drivers_cc27xxx20_ns_log STATIC IMPORTED)
+
+set_target_properties(Drivers::drivers_cc27xxx20_ns_log PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc27xxx20_ns;TOOLCHAIN_iar_m33f;TiUtils::json_m33f;DriversUtils::tfm_enabled"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)
@@ -119,7 +151,7 @@ unset(_IMPORT_CHECK_TARGETS)
 # Make sure the targets which have been exported in some other
 # export set exist.
 unset(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets)
-foreach(_target "Driverlib::cc27xx" "TiUtils::json_m33f" "Driverlib::cc27xx_ns" "DriversUtils::tfm_enabled" )
+foreach(_target "Driverlib::cc27xxx10" "TiUtils::json_m33f" "Driverlib::cc27xxx10_ns" "DriversUtils::tfm_enabled" "Driverlib::cc27xxx20" "Driverlib::cc27xxx20_ns" )
   if(NOT TARGET "${_target}" )
     set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets "${${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets} ${_target}")
   endif()

@@ -1,5 +1,5 @@
 """
-Copyright (C) 2021-2024, Texas Instruments Incorporated
+Copyright (C) 2021-2026, Texas Instruments Incorporated
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -37,7 +37,6 @@ import platform
 from struct import pack
 from threading import local
 import typing
-import pkg_resources
 import argparse
 import win32pipe
 import win32file

@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2023-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,7 @@
     /* passed by /ti/drivers/templates/Board.c.xdt */
     let CAN = args[0];
     let Common    = system.getScript("/ti/drivers/Common.js");
+    let GPIO      = system.getScript("/ti/drivers/GPIO.syscfg.js");
     let instances = CAN.$instances;
     let deviceId = system.deviceData.deviceId;
 
@@ -57,7 +58,11 @@
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/utils/StructRingBuf.h>
 
+% if( deviceId.match(/CC3551/) ) {
+#include <third_party/dcan/DCAN.h>
+% } else {
 #include <third_party/mcan/MCAN.h>
+% }
 
 #define `countDef` `instances.length`
 
@@ -68,10 +73,17 @@
 #define CAN_TX_STRUCT_RING_BUF`i`_NUM `inst.txRingBufferSize`U
 %     }
 
+% if( deviceId.match(/CC3551/) ) {
+static DCAN_RxBufElement CAN_rxStructRingBuffer`i`[CAN_RX_STRUCT_RING_BUF`i`_NUM];
+%     if (inst.txRingBufferSize > 0) {
+static DCAN_TxBufElement CAN_txStructRingBuffer`i`[CAN_TX_STRUCT_RING_BUF`i`_NUM];
+%     }
+% } else {
 static MCAN_RxBufElement CAN_rxStructRingBuffer`i`[CAN_RX_STRUCT_RING_BUF`i`_NUM];
 %     if (inst.txRingBufferSize > 0) {
 static MCAN_TxBufElement CAN_txStructRingBuffer`i`[CAN_TX_STRUCT_RING_BUF`i`_NUM];
 %     }
+% }
 % }
 
 static CAN_Object CAN_objects[`countDef`];
@@ -83,11 +95,19 @@ static const CAN_HWAttrs CAN_hwAttrs[`countDef`] = {
 % for (let i = 0; i < instances.length; i++) {
 %     let inst        = instances[i];
     {
+% if (inst.canFDEnable !== undefined) {
         .enableCANFD           = `inst.canFDEnable`,
+% }
+% if (inst.canFDEnable !== undefined) {
         .enableBRS             = `inst.brsEnable`,
+% }
         .rejectNonMatchingMsgs = `inst.rejectNonMatching`,
         .nominalBitRate        = `inst.nomBitRate`U,
+% if( deviceId.match(/CC3551/) ) {
+
+%       } else {
         .dataBitRate           = `inst.dataBitRate`U,
+%       }
         .rxRingBufPtr          = CAN_rxStructRingBuffer`i`,
 %     if (inst.txRingBufferSize > 0) {
         .txRingBufPtr          = CAN_txStructRingBuffer`i`,
@@ -104,19 +124,15 @@ static const CAN_HWAttrs CAN_hwAttrs[`countDef`] = {
         .intPriority           = `Common.intPriority2Hex(inst.interruptPriority)`,
 %     }
 %     if ('rxPinInstance' in inst) {
-%         let rxPinName = inst.rxPinInstance.$name;
-%         let rxPinMuxMode = inst.can.rxPin.$solution.muxMode;
-%         let rxPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + rxPinMuxMode.toString();
+%       let rxPinName = inst.rxPinInstance.$name;
         .rxPin                 = `rxPinName`,
-        .rxPinMux              = `rxPinMuxName`,
+        .rxPinMux              = `GPIO._getPinMuxModeFromPin(inst.can.rxPin)`,
 %     }
 %
 %     if ('txPinInstance' in inst) {
-%         let txPinName = inst.txPinInstance.$name;
-%         let txPinMuxMode = inst.can.txPin.$solution.muxMode;
-%         let txPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + txPinMuxMode.toString();
+%       let txPinName = inst.txPinInstance.$name;
         .txPin                 = `txPinName`,
-        .txPinMux              = `txPinMuxName`,
+        .txPinMux              = `GPIO._getPinMuxModeFromPin(inst.can.txPin)`,
 %     }
     },
 % }
@@ -138,7 +154,7 @@ const CAN_Config CAN_config[`countDef`] = {
 `declarations`
 const uint_least8_t CAN_count = `countDef`;
 
-% if (deviceId.match(/CC2745[A-Z](7|10)/)) {
+% if (deviceId.match(/CC274[4-5][A-Z](7|10)/)) {
 #include <ti/drivers/can/CANCC27XX.h>
 #include <FreeRTOS.h>
 

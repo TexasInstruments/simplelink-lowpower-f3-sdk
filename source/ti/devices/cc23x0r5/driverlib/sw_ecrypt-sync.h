@@ -10,8 +10,8 @@
  * *** Please only edit parts marked with "[edit]". ***
  */
 
-#ifndef ECRYPT_SYNC
-#define ECRYPT_SYNC
+#ifndef ti_devices_sw_ecrypt_sync__include
+#define ti_devices_sw_ecrypt_sync__include
 
 #include "sw_ecrypt-portable.h"
 
@@ -245,4 +245,4 @@ void ECRYPT_keystream_blocks(ECRYPT_ctx *ctx, const u8 *keystream, u32 blocks); 
 
 /* ------------------------------------------------------------------------- */
 
-#endif
+#endif /* ti_devices_sw_ecrypt_sync__include */

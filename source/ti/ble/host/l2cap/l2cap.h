@@ -471,7 +471,7 @@ typedef struct
   uint16 srcCID; //!< Identifies CID on device receiving response
 } l2capDisconnectRsp_t;
 
-/// @brief L2CAP_FLOW_CTRL_CREDIT or L2CAP_PEER_CREDIT_RECEIVED_EVT payload's message format.
+/// @brief L2CAP_FLOW_CTRL_CREDIT or L2CAP_PEER_CREDIT_RECEIVED_EVT payload's message format. 
 typedef struct
 {
   uint16 CID;     //!< Represents Source CID of device sending credit packet

@@ -75,6 +75,14 @@
  * INCLUDES
  */
 #include "ti/ble/stack_util/cs_types.h"
+#include "ti/ble/stack_util/lib_opt/ctrl_stub_cs.h"
+
+/*******************************************************************************
+ * FORWARD DECLARATIONS
+ */
+// Forward declaration for CS configuration structure (fully defined in ll_cs_common.h)
+// The typedef csConfigurationSet_t is defined in ll_cs_common.h
+struct csConfig_t;
 
 /**
  * @defgroup CS_API Channel Sounding API
@@ -787,7 +795,7 @@ typedef struct
   uint32_t   maxSubEventLen;       //!< Maximum SubEvent length in microseconds, range 1250us to 4s
   csACI_e    aci;                  //!< Antenna Configuration Index @ref csACI_e
   uint8_t    phy;                  //!< PHY @ref CS_Phy_Supported
-  uint8_t    txPwrDelta;           //!< Tx Power Delta, in signed dB
+  int8_t     txPwrDelta;           //!< Tx Power Delta, in signed dB
   uint8_t    preferredPeerAntenna; //!< Preferred peer antenna
   uint8_t    snrCtrlI;             //!< SNR Control Initiator
   uint8_t    snrCtrlR;             //!< SNR Control Reflector
@@ -812,32 +820,6 @@ typedef struct
   uint16_t connHandle;  //!< Connection handle
   uint8_t  configID;    //!< Configuration ID
 } CS_GetRoleCmdParams_t;
-
-/*
- * The following structure is used to retrieve a CS configuration parameters via @ref CS_GetConfig api.
- */
-typedef struct
-{
-  uint8_t mainMode;           //!< which CS modes are to be used @ref CS_Mode
-  uint8_t subMode;            //!< which CS modes are to be used @ref CS_Mode
-  uint8_t mainModeMinSteps;   //!< range of Main_Mode steps to be executed before
-  uint8_t mainModeMaxSteps;   //!< a Sub_Mode step is executed
-  uint8_t mainModeRepetition; //!< num of main mode steps from the last CS subevent to be repeated
-  uint8_t modeZeroSteps;      //!< number of mode 0 steps to be included at the beginning of each CS Subevent
-  uint8_t role;               //!< initiator or reflector @ref CS_Role
-  uint8_t rttType;            //!< which RTT variant is to be used @ref CS_RTT_Type
-  uint8_t csSyncPhy;          //!< transmit and receive PHY to be used @ref CS_Sync_Phy_Supported
-  csChm_t channelMap;         //!< channel map @ref csChm_t
-  uint8_t chMRepetition;      //!< number of times the ChM field will be cycled through
-  uint8_t chSel;              //!< channel selection algorithm to be used @ref CS_Chan_Sel_Alg
-  uint8_t ch3cShape;          //!< selected shape to be rendered
-  uint8_t ch3CJump;           //!< one of the valid CSChannelJump values
-  uint8_t rfu0;               //!< reserved for future use
-  uint8_t tIP1;               //!< Index of the period used between RTT packets
-  uint8_t tIP2;               //!< Index of the interlude period used between CS tones
-  uint8_t tFCs;               //!< Index used for frequency changes
-  uint8_t tPM;                //!< Index for the measurement period of CS tones
-} CS_configParams_t;
 
 /*
  * The following structures are meant to help parsing the data from the subevent results
@@ -1027,32 +1009,6 @@ csStatus_e CS_CreateConfig(CS_createConfigCmdParams_t *params);
 csStatus_e CS_RemoveConfig(CS_removeConfigCmdParams_t *params);
 
 /**
- * @fn      CS_GetConfig
- *
- * @brief   Get (read) a CS configuration for Channel Sounding.
- *
- * This API allows the application to retrieve the current CS configuration
- * parameters that were previously set using @ref CS_CreateConfig.
- * It can be used by the application instead of grabbing the parameters via
- * CS Create Config event.
- *
- * input parameters
- *
- * @param   connHandle - Connection handle
- * @param   configID - Configuration ID
- *
- * output parameters
- *
- * @param   pConfigParams - Pointer to output structure to be filled with configuration data
- *
- * @return  @ref CS_STATUS_SUCCESS - Configuration retrieved successfully
- * @return  @ref CS_STATUS_UNEXPECTED_PARAMETER - Invalid configId or connection handle
- * @return  @ref CS_STATUS_COMMAND_DISALLOWED - CS feature not supported
- * @return  @ref CS_STATUS_INACTIVE_CONNECTION - Connection is not active
- */
-csStatus_e CS_GetConfig(uint16_t connHandle, uint8_t configID, CS_configParams_t *pConfigParams);
-
-/**
  * @fn      CS_SetChannelClassification
  *
  * @brief   Set the channel classification for Channel Sounding.
@@ -1122,6 +1078,78 @@ csStatus_e CS_SetDefaultAntenna(CS_setDefaultAntennaCmdParams_t *pParams);
  */
 csStatus_e CS_GetRole(CS_GetRoleCmdParams_t *pParams);
 
+/**
+ * @fn      CS_GetConfiguration
+ *
+ * @brief   Get const pointer to CS configuration from controller database.
+ *
+ * @note    This function provides READ-ONLY direct access to the CS configuration
+ *          stored in the controller database. The returned pointer remains valid
+ *          until the configuration is removed or the connection is terminated.
+ *          Do not modify the data through this pointer.
+ *
+ * @note    This zero-copy approach eliminates the need for caching configuration
+ *          parameters at the application layer, reducing memory overhead and
+ *          ensuring data is always up-to-date with the controller state.
+ *
+ * @param   connHandle - Connection handle
+ * @param   configId - Configuration ID (0-7)
+ *
+ * @return  Const pointer to configuration structure (struct csConfig_t)
+ * @return  NULL if configuration not found or connection/configId invalid
+ */
+const struct csConfig_t* CS_GetConfiguration(uint16_t connHandle, uint8_t configId);
+
+/*******************************************************************************
+ * @fn          CS_ConvertTip
+ *
+ * @brief       Convert T_IP timing index to microseconds value.
+ *
+ * @note        T_IP (Interlude Period) is used between RTT packets and
+ *              between CS tones. The index (0-7) maps to values in
+ *              the range 10-145 microseconds.
+ *
+ *              Inline function for zero-overhead conversion via wrapper chain.
+ *
+ * @param       idx - T_IP index (0-7) from CS configuration
+ *
+ * @return      T_IP value in microseconds (uint16_t)
+ */
+uint16_t CS_ConvertTip(uint8_t idx);
+
+/*******************************************************************************
+ * @fn          CS_ConvertTfcs
+ *
+ * @brief       Convert T_FCS timing index to microseconds value.
+ *
+ * @note        T_FCS (Frequency Change Switching) is the period of frequency
+ *              changes. The index (0-9) maps to values in the range
+ *              15-150 microseconds.
+ *
+ *              Inline function for zero-overhead conversion via wrapper chain.
+ *
+ * @param       idx - T_FCS index (0-9) from CS configuration
+ *
+ * @return      T_FCS value in microseconds (uint16_t)
+ */
+uint16_t CS_ConvertTfcs(uint8_t idx);
+
+/*******************************************************************************
+ * @fn          CS_ConvertTpm
+ *
+ * @brief       Convert T_PM timing index to microseconds value.
+ *
+ * @note        T_PM (Phase Measurement) is the measurement period of CS tones.
+ *              The index (0-3) maps to values in the range 10-40 microseconds.
+ *
+ *              Inline function for zero-overhead conversion via wrapper chain.
+ *
+ * @param       idx - T_PM index (0-3) from CS configuration
+ *
+ * @return      T_PM value in microseconds (uint16_t)
+ */
+uint16_t CS_ConvertTpm(uint8_t idx);
+
 /*******************************************************************************
  * @fn          CS_GetTswByACI
  *
@@ -1184,21 +1212,6 @@ uint8_t CS_GetStepLength(uint8_t mode, uint8_t role, uint8_t numAntennaPath);
  * @return      0 If the given parameter is invalid
  */
 uint8_t CS_calcNumPaths(csACI_e aci);
-
-/*******************************************************************************
- * @fn          CS_calcNumPathsFromAntennaMask
- *
- * @brief       This function returns number of antenna paths based on a given
- *              antenna paths mask.
- *
- * @param       antPathMask - first 4 bits, each one represent an antenna path.
- *                            Lsb bit represent the first antenna path.
- *                            Valid values: 0x1, 0x3, 0x7, 0xF
- *
- * @return      Number of antenna paths: 1 - 4
- * @return      0 If the given parameter is invalid
- */
-uint8_t CS_calcNumPathsFromAntennaMask(uint8_t antPathMask);
 
 /*******************************************************************************
  * @fn          CS_calcAntPathsMask

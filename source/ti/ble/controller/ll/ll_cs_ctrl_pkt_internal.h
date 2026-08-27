@@ -109,7 +109,7 @@ struct csReq_t
     csACI_e ACI;
     uint8   preferredPeerAntenna;
     uint8   phy;
-    uint8   pwrDelta;
+    int8    pwrDelta;
     uint8   txSnrI:4;
     uint8   txSnrR:4;
  } __attribute__((packed));
@@ -129,7 +129,7 @@ struct csRsp_t
     uint32  subEventLen:24;          /* tune ub 1250 ms */
     csACI_e ACI;
     uint8   phy;
-    uint8   pwrDelta;
+    int8    pwrDelta;
 } __attribute__((packed));
 // Typedef separated from packed struct due to MisraC
 typedef struct csRsp_t csRsp_t;
@@ -146,7 +146,7 @@ struct csInd_t
     uint32  subEventLen:24;       /* tune ub 1250 ms */
     csACI_e ACI;
     uint8   phy;
-    uint8   pwrDelta;
+    int8    pwrDelta;
 }__attribute__((packed));
 // Typedef separated from packed struct due to MisraC
 typedef struct csInd_t csInd_t;
@@ -225,77 +225,82 @@ csStatus_e llCsCtrlPktCheckACI(uint8 configId, uint16 connId, csACI_e peerACI,
 /*******************************************************************************
  * @fn          llCsNegotiateCsReq
  *
- * @brief       Negotiate CS Request
- * This function checks if the recieved cs req packet complies
- * with the cs configuration and the capabilities.
- * this function may modify csreq when needed.
- * the modified csreq will be sent as a cs_rsp or cs_ind packet
+ * @brief       Negotiate a received CS_REQ packet.
+ *              Validates the procedure parameters against local configuration
+ *              and capabilities. May modify pEnable (offsets, ACI, event interval)
+ *              to suggest acceptable values. The (possibly modified) pEnable is
+ *              then serialized into the CS_RSP or CS_IND PDU.
  *
  * input parameters
  *
- * @param       connPtr - connection Poitner
- * @param       csReq - pointer to CS Request
+ * @param       connPtr  - connection pointer
+ * @param       configId - CS configuration ID
+ * @param       pEnable  - procedure data to validate and adjust (in/out)
  *
  * output parameters
  *
  * @param       None.
  *
- * @return      csStatus_e
+ * @return      CS_STATUS_SUCCESS if negotiation succeeded, error otherwise
  */
-csStatus_e llCsNegotiateCsReq(llConnState_t* connPtr, csProcedureEnable_t* csReq);
+csStatus_e llCsNegotiateCsReq(llConnState_t* connPtr, uint8_t configId, csEnableProcedureCtrlData_t *pEnable);
 
 /*******************************************************************************
  * @fn          llCsNegotiateCsRsp
  *
- * @brief       Negotiate CS Rsp
- * This function checks if the recieved cs rsp packet complies
- * with the cs configuration and the capabilities.
- * this function may modify csrsp when needed.
- * the modified csRsp will be sent as cs_ind packet
+ * @brief       Negotiate a received CS_RSP packet.
+ *              Validates the procedure parameters against local configuration
+ *              and capabilities. May modify pEnable (connEventCount, offsets,
+ *              subevent length/interval) to bring them within acceptable bounds.
+ *              The (possibly modified) pEnable is then serialized into the CS_IND PDU.
  *
  * input parameters
  *
- * @param       connPtr - connection pointer
- * @param       csRsp - pointer to csRsp
+ * @param       connPtr  - connection pointer
+ * @param       configId - CS configuration ID
+ * @param       pEnable  - procedure data to validate and adjust (in/out)
  *
  * output parameters
  *
  * @param       None.
  *
- * @return      None
+ * @return      CS_STATUS_SUCCESS if negotiation succeeded, error otherwise
  */
-csStatus_e llCsNegotiateCsRsp(llConnState_t* connPtr, csProcedureEnable_t* csRsp);
+csStatus_e llCsNegotiateCsRsp(llConnState_t* connPtr, uint8_t configId, csEnableProcedureCtrlData_t *pEnable);
 
 /*******************************************************************************
  * @fn          llCsConfirmInd
  *
- * @brief       The final stage of the CS procedure negotiaion.
- * This function confirms that the CS IND that was received is
- * acceptable by the local device based on the CS_REQ/RSP and
- * the configuration and capabilities.
+ * @brief       Final stage of the CS procedure negotiation.
+ *              Validates the CS_IND parameters received from the central against
+ *              local configuration and capabilities (subevent length, ACI,
+ *              subEventInterval, instant). Does not modify pEnable.
  *
  * input parameters
  *
- * @param       connPtr - connection pointer
- * @param       csInd - point to cs Ind packet data
+ * @param       connPtr  - connection pointer
+ * @param       configId - CS configuration ID
+ * @param       pEnable  - procedure data parsed from CS_IND (read-only)
  *
  * output parameters
  *
  * @param       None.
  *
- * @return      None
+ * @return      CS_STATUS_SUCCESS if the IND is acceptable, error otherwise
  */
-csStatus_e llCsConfirmInd(llConnState_t* connPtr, csProcedureEnable_t* csInd);
+csStatus_e llCsConfirmInd(llConnState_t* connPtr, uint8_t configId, const csEnableProcedureCtrlData_t *pEnable);
 
 /*******************************************************************************
  * @fn          llCsReq2Data
  *
- * @brief       Convert csReq struct into raw data that will be sent OTA
+ * @brief       Serialize CS_REQ procedure data into OTA raw bytes
  *
  * input parameters
  *
- * @param       data - pointer to raw data as it will be sent
- * @param       csReq - pointer to the structurized data
+ * @param       connId    - connection identifier
+ * @param       configId  - CS configuration ID
+ * @param       pEnable   - pointer to procedure data to serialize
+ * @param       pData     - pointer to output buffer
  *
  * output parameters
  *
@@ -303,17 +308,19 @@ csStatus_e llCsConfirmInd(llConnState_t* connPtr, csProcedureEnable_t* csInd);
  *
  * @return      None
  */
-void llCsReq2Data(uint8* data, csProcedureEnable_t* csReq);
+void llCsReq2Data(uint16_t connId, uint8_t configId, const csEnableProcedureCtrlData_t *pEnable, uint8_t *pData);
 
 /*******************************************************************************
  * @fn          llCsRsp2Data
  *
- * @brief       Convert csRsp struct into raw data that will be sent OTA
+ * @brief       Serialize CS_RSP procedure data into OTA raw bytes
  *
  * input parameters
  *
- * @param       data - pointer to raw data
- * @param       csRsp - pointer to cs Resp
+ * @param       connId    - connection identifier
+ * @param       configId  - CS configuration ID
+ * @param       pEnable   - pointer to procedure data to serialize
+ * @param       pData     - pointer to output buffer
  *
  * output parameters
  *
@@ -321,17 +328,19 @@ void llCsReq2Data(uint8* data, csProcedureEnable_t* csReq);
  *
  * @return      None
  */
-void llCsRsp2Data(uint8* data, csProcedureEnable_t* csRsp);
+void llCsRsp2Data(uint16_t connId, uint8_t configId, const csEnableProcedureCtrlData_t* pEnable, uint8_t* pData);
 
 /*******************************************************************************
  * @fn          llCsInd2Data
  *
- * @brief       Convert csInd struct into raw data to send OTA
+ * @brief       Serialize CS_IND procedure data into OTA raw bytes
  *
  * input parameters
  *
- * @param       data - pointer to raw data
- * @param       csInd - pointer to struct to convert
+ * @param       connId    - connection identifier
+ * @param       configId  - CS configuration ID
+ * @param       pEnable   - pointer to procedure data to serialize
+ * @param       pData     - pointer to output buffer
  *
  * output parameters
  *
@@ -339,7 +348,7 @@ void llCsRsp2Data(uint8* data, csProcedureEnable_t* csRsp);
  *
  * @return      None
  */
-void llCsInd2Data(uint8* data, csProcedureEnable_t* csInd);
+void llCsInd2Data(uint16_t connId, uint8_t configId, const csEnableProcedureCtrlData_t* pEnable, uint8_t* pData);
 
 /*******************************************************************************
  * @fn          llCsSelectACI
@@ -367,58 +376,58 @@ csACI_e llCsSelectACI(llConnState_t* connPtr, csACI_e suggestedACI);
  *
  * input parameters
  *
- * @param       csInd - csInd data
- * @param       pBuf - packet data buffer
+ * @param       pEnable - procedure data to populate
+ * @param       pBuf    - packet data buffer
  *
  * @design      BLE_LOKI-506
  *
  * output parameters
  *
- * @param       csInd
+ * @param       pEnable
  *
  * @return      None
  */
-void llCsParseCsIndData(csProcedureEnable_t* csInd, uint8* pBuf);
+void llCsParseCsIndData(csEnableProcedureCtrlData_t *pEnable, uint8_t *pBuf);
 
 /*******************************************************************************
  * @fn          llCsParseCsRspData
  *
- * @brief       Parse the data from the LL_CS_RSP PKT
+ * @brief       Parse the data from the LL_CS_RSP PKT into local procedure data.
+ *              Only RSP-specific fields are written; all others keep their
+ *              existing values (caller should pre-load from DB if needed).
  *
  * input parameters
  *
- * @param       csRsp - csRsp data
- * @param       pBuf - packet data buffer
- *
- * @design      BLE_LOKI-506
+ * @param       pEnable - procedure data to update with RSP fields
+ * @param       pBuf    - packet data buffer
  *
  * output parameters
  *
- * @param       csRsp
+ * @param       pEnable
  *
  * @return      None
  */
-void llCsParseCsRspData(csProcedureEnable_t* csRsp, uint8* pBuf);
+void llCsParseCsRspData(csEnableProcedureCtrlData_t *pEnable, uint8_t *pBuf);
 
 /*******************************************************************************
  * @fn          llCsParseCsReqData
  *
- * @brief       Parse the data from the LL_CS_REQ PKT
+ * @brief       Parse the data from the LL_CS_REQ PKT into local procedure data.
+ *              configId is extracted separately via pConfigId.
  *
  * input parameters
  *
- * @param       csReq - csReq data
- * @param       pBuf - packet data buffer
- *
- * @design      BLE_LOKI-506
+ * @param       pEnable   - procedure data to populate
+ * @param       pBuf      - packet data buffer
+ * @param       pConfigId - output: CS configuration ID from PDU
  *
  * output parameters
  *
- * @param       csReq
+ * @param       pEnable, pConfigId
  *
  * @return      None
  */
-void llCsParseCsReqData(csProcedureEnable_t* csReq, uint8* pBuf);
+void llCsParseCsReqData(csEnableProcedureCtrlData_t *pEnable, uint8_t *pBuf, uint8_t *pConfigId);
 
 /*******************************************************************************
  * @fn          llCsSetupCtrlPkt

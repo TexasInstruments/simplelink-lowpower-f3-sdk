@@ -58,8 +58,10 @@
 
 #if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     #define _CONST
-#else
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     #define _CONST const
+#else
+    #error "Device family not currently supported"
 #endif
 
     /* NIST curves */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,7 @@ const deviceToBoard = {
     CC2340R5: "LP_EM_CC2340R5",
     CC2340R53: "LP_EM_CC2340R53",
     CC2340R2: "LP_EM_CC2340R2",
+    CC2341R10: "LP_EM_CC2341R10_SOCKET",
     CC2745R10_Q1: "LP_EM_CC2745R10_Q1",
     CC2674P10RGZ: "LP_EM_CC2674P10"
 };
@@ -183,9 +184,17 @@ function device2DeviceFamily(deviceId)
     {
         driverString = "DeviceFamily_CC23X0R2";
     }
-    else if(deviceId.match(/CC27../))
+    else if(deviceId.match(/CC23.1R10/))
     {
-        driverString = "DeviceFamily_CC27XX";
+        driverString = "DeviceFamily_CC23X1R10";
+    }
+    else if(deviceId.match(/CC27\d{2}[RP]10/))
+    {
+        deviceGroup = "DeviceGroup_CC27XXX10";
+    }
+    else if(deviceId.match(/CC27\d{2}[RP]20/))
+    {
+        deviceGroup = "DeviceGroup_CC27XXX20";
     }
     else
     {

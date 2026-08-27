@@ -78,11 +78,6 @@ const propSpecific = {
     config: config
 };
 
-// Special handling for PHY with RF commands
-const VisibleWithRfCmd = [
-    "txPower", "frequency", "syncWord", "packetLengthSize"
-];
-
 const RxFilterBwOptions7 = []; // For decimMode = 7
 const RxFilterBwOptions0 = []; // For decimMode = 0
 
@@ -155,10 +150,10 @@ function phyTypeOnChange(inst, ui) {
 
     // Update PHY property visibility
     const phyHandler = PhyHandler.get(PHY_GROUP, phyType);
-    for (const cfg of VisibleWithRfCmd) {
-        if (cfg in ui) {
-            const visible = phyHandler.isPhyPropSupported(inst, cfg);
-            ui[cfg].hidden = !visible;
+    for (const cfg of config) {
+        if (cfg.name in ui) {
+            const visible = phyHandler.isPhyPropSupported(inst, cfg.name);
+            ui[cfg.name].hidden = !visible;
         }
     }
 }
@@ -394,17 +389,7 @@ function updateVisibility(inst, ui) {
     }
 
     // RCL interface
-    const isNesb = "phyType2400" in inst && inst.phyType2400 === "nesb";
-    ui.whitening.hidden = isNesb;
-    ui.packetLengthSize.hidden = isNesb;
     ui.rxFixedPayloadLength.hidden = inst.packetLengthSize !== "Fixed";
-
-    if ("codedTxRate" in ui) {
-        ui.codedTxRate.hidden = !phyHandler.hasFeatureGroup("coded_tx_rate");
-    }
-    if ("subPhy" in ui) {
-        ui.subPhy.hidden = !phyHandler.hasFeatureGroup("sub_phy");
-    }
 }
 
 /**

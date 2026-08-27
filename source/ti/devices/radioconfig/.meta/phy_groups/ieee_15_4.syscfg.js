@@ -78,10 +78,15 @@ const ieee154Specific = {
  *  @param validation - Issue reporting object
  */
 function validate(inst, validation) {
+
     /* Validation common to all PHY groups */
     Common.validateBasic(inst, validation);
     /* Validate front-end settings */
     RFBase.validateFrontendSettings(inst, validation, PHY_GROUP);
+    
+    // Update RF commands (this is where we do it)
+    const phyGroup = Common.getPhyGroup(inst);
+    PhyHandler.getUpdatedRfCommands(inst, phyGroup);
 }
 
 /*
@@ -91,9 +96,18 @@ function validate(inst, validation) {
  */
 function phyTypeOnChange(inst, ui) {
     const phyType = inst.phyType;
+    const phyHandler = PhyHandler.get(PHY_GROUP, inst.phyType);
 
     // Refresh the instance
     RFBase.reloadInstanceFromPhy(inst, ui, phyType, PHY_GROUP, ["txPower", "txPowerHi"]);
+
+    // Update PHY property visibility
+    for (const cfg of config) {
+        if (cfg.name in ui) {
+            const visible = phyHandler.isPhyPropSupported(inst, cfg.name);
+            ui[cfg.name].hidden = !visible;
+        }
+    }
 }
 
 /**
@@ -104,8 +118,23 @@ function onPermissionChange(inst, ui) {
     // PHY type:
     // - always ReadOnly with a Custom stack
     // - otherwise controlled by the 'permission' configurable
-    const freqReadOnly = inst.permission === "ReadOnly" || inst.parent === "Custom";
-    ui.phyType.readOnly = freqReadOnly;
+    ui.phyType.readOnly = inst.permission === "ReadOnly" || inst.parent === "Custom";
+}
+
+/**
+ *  ======== onVisibilityChange ========
+ *  Change visibility of RF parameters
+ */
+function onVisibilityChange(inst, ui) {
+    const phyHandler = PhyHandler.get(PHY_GROUP, inst.phyType);
+    const rfData = phyHandler.getRfData();
+    const hidden = !inst.paramVisibility;
+
+    _.each(rfData, (value, key) => {
+        if (!("highPA" in inst && key.includes("txPower"))) {
+            ui[key].hidden = hidden;
+        }
+    });
 }
 
 /**
@@ -121,10 +150,14 @@ function initConfigurables(configurables) {
             item.onChange = RFBase.highPaOnChange;
             break;
         case "phyType":
+        case "settingGroup":
             item.onChange = phyTypeOnChange;
             break;
         case "permission":
             item.onChange = onPermissionChange;
+            break;
+        case "paramVisibility":
+            item.onChange = onVisibilityChange;
             break;
         default:
             break;

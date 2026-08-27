@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025, Texas Instruments Incorporated
+ * Copyright (c) 2020-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_handlers_ble5_h__include
-#define ti_drivers_RCL_handlers_ble5_h__include
+#ifndef ti_drivers_rcl_handlers_ble5__include
+#define ti_drivers_rcl_handlers_ble5__include
 
 #include <stdint.h>
 #include <ti/drivers/rcl/RCL_Command.h>
@@ -162,4 +162,30 @@ uint32_t RCL_BLE5_getRxTimestamp(const RCL_Buffer_DataEntry *rxEntry);
  */
 uint32_t RCL_BLE5_getAuxAdvStartTimeDelta(uint16_t primaryPhyFeatures, uint16_t secondaryPhyFeatures, uint8_t chMap, uint8_t advPayloadLen);
 
-#endif /* ti_drivers_RCL_handlers_ble5_h__include */
+/**
+ *  @brief  Adjust the absStartTime of a command to account for radio startup delay
+ *
+ *  Subtracts the internal radio delay from the absStartTime parameter of a command.
+ *  This makes sure that the RF operation starts at the absStartTime given to the command before calling this API.
+ *  This is supported for all BLE 5 commands. Note that channel sounding commands are not supported.
+ *  Has to be called before submitting the command to RCL.
+ *
+ *  @param  c         Command handle of the RCL command.
+ *
+ */
+void RCL_BLE5_adjustStartTime(RCL_Command_Handle c);
+
+/**
+ *  @brief  Get the radio startup delay for a specific command.
+ *
+ *  Returns the radio startup delay in ticks for a specific command. This is the same delay applied in
+ *  RCL_BLE5_adjustStartTime(). The API supports all BLE 5 commands. Note that channel sounding
+ *  commands are not supported.
+ *
+ *  @param  c          Command handle of the RCL command.
+ *
+ *  @return Start time delay in ticks
+ */
+uint32_t RCL_BLE5_getStartTimeDelay(RCL_Command_Handle c);
+
+#endif /* ti_drivers_rcl_handlers_ble5__include */

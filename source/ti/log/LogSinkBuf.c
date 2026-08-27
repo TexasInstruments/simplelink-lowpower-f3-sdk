@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@ static void findNextRecord(LogSinkBuf_Handle inst, LogSinkBuf_Rec **rec)
 /*
  *  ======== LogSinkBuf_printf ========
  */
-void LogSinkBuf_printf(LogSinkBuf_Handle inst, uint32_t header, uint32_t index, uint32_t numArgs, va_list argptr)
+void LogSinkBuf_printf(LogSinkBuf_Handle inst, Log_Level level, uint32_t headerPtr, uint32_t numArgs, va_list argptr)
 {
     uintptr_t key;
     uint32_t serial;
@@ -107,7 +107,7 @@ void LogSinkBuf_printf(LogSinkBuf_Handle inst, uint32_t header, uint32_t index, 
     rec->serial = serial;
     rec->type   = LogSinkBuf_PRINTF;
 
-    rec->data[0] = header;
+    rec->data[0] = headerPtr;
 
     uint32_t i;
     for (i = 0; i < argsToCopy; i++)
@@ -127,77 +127,92 @@ void LogSinkBuf_printf(LogSinkBuf_Handle inst, uint32_t header, uint32_t index, 
  *  The implementation will read out the LogSinkBuf_Instance address at runtime
  *  from the handle argument.
  */
-void LogSinkBuf_printfDepInjection(const Log_Module *handle, uint32_t header, uint32_t index, uint32_t numArgs, ...)
+void LogSinkBuf_printfDepInjection(const Log_Module *handle, Log_Level level, uint32_t headerPtr, uint32_t numArgs, ...)
 {
-    va_list argptr;
-
-    /* Guard against more arguments being passed in than supported */
-    if (numArgs > LogSinkBuf_MAX_ARGS)
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
     {
-        numArgs = LogSinkBuf_MAX_ARGS;
+        va_list argptr;
+
+        /* Guard against more arguments being passed in than supported */
+        if (numArgs > LogSinkBuf_MAX_ARGS)
+        {
+            numArgs = LogSinkBuf_MAX_ARGS;
+        }
+
+        LogSinkBuf_Handle inst = (LogSinkBuf_Handle)handle->sinkConfig;
+
+        /* Get the VA args pointer in the initial wrapper since you cannot pass VA
+         * args to further functions using elipses (...) syntax.
+         *
+         * All va_start() does is get us the pointer to the first VA arg on the
+         * stack. That value will still be valid when passed on further.
+         */
+        va_start(argptr, numArgs);
+
+        LogSinkBuf_printf(inst, level, headerPtr, numArgs, argptr);
+
+        va_end(argptr);
     }
-
-    LogSinkBuf_Handle inst = (LogSinkBuf_Handle)handle->sinkConfig;
-
-    /* Get the VA args pointer in the initial wrapper since you cannot pass VA
-     * args to further functions using elipses (...) syntax.
-     *
-     * All va_start() does is get us the pointer to the first VA arg on the
-     * stack. That value will still be valid when passed on further.
-     */
-    va_start(argptr, numArgs);
-
-    LogSinkBuf_printf(inst, header, index, numArgs, argptr);
-
-    va_end(argptr);
 }
 
 /*
  *  ======== LogSinkBuf_printfDepInjection0 ========
  */
-void LogSinkBuf_printfDepInjection0(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfDepInjection0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, header, index, 0, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, level, headerPtr, 0, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfDepInjection1 ========
  */
-void LogSinkBuf_printfDepInjection1(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfDepInjection1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, header, index, 1, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, level, headerPtr, 1, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfDepInjection2 ========
  */
-void LogSinkBuf_printfDepInjection2(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfDepInjection2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, header, index, 2, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, level, headerPtr, 2, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfDepInjection3 ========
  */
-void LogSinkBuf_printfDepInjection3(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfDepInjection3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, header, index, 3, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf((LogSinkBuf_Handle)handle->sinkConfig, level, headerPtr, 3, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
@@ -212,133 +227,150 @@ void LogSinkBuf_printfDepInjection3(const Log_Module *handle, uint32_t header, u
  *  LogSinkBuf instance may be used and it will be assigned the
  *  LogsinkBuf_Instance name LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config
  */
-void LogSinkBuf_printfSingleton(const Log_Module *handle, uint32_t header, uint32_t index, uint32_t numArgs, ...)
+void LogSinkBuf_printfSingleton(const Log_Module *handle, Log_Level level, uint32_t headerPtr, uint32_t numArgs, ...)
 {
-    va_list argptr;
-
-    /* Guard against more arguments being passed in than supported */
-    if (numArgs > LogSinkBuf_MAX_ARGS)
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
     {
-        numArgs = LogSinkBuf_MAX_ARGS;
-    }
+        va_list argptr;
 
-    /* Get the VA args pointer in the initial wrapper since you cannot pass VA
-     * args to further functions using elipses (...) syntax.
-     *
-     * All va_start() does is get us the pointer to the first VA arg on the
-     * stack. That value will still be valid when passed on further.
-     */
-    va_start(argptr, numArgs);
-    LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, header, index, numArgs, argptr);
-    va_end(argptr);
+        /* Guard against more arguments being passed in than supported */
+        if (numArgs > LogSinkBuf_MAX_ARGS)
+        {
+            numArgs = LogSinkBuf_MAX_ARGS;
+        }
+
+        /* Get the VA args pointer in the initial wrapper since you cannot pass VA
+         * args to further functions using elipses (...) syntax.
+         *
+         * All va_start() does is get us the pointer to the first VA arg on the
+         * stack. That value will still be valid when passed on further.
+         */
+        va_start(argptr, numArgs);
+        LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, level, headerPtr, numArgs, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfSingleton0 ========
  */
-void LogSinkBuf_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, header, index, 0, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, level, headerPtr, 0, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfSingleton1 ========
  */
-void LogSinkBuf_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, header, index, 1, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, level, headerPtr, 1, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfSingleton2 ========
  */
-void LogSinkBuf_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, header, index, 2, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, level, headerPtr, 2, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_printfSingleton3 ========
  */
-void LogSinkBuf_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t index, ...)
+void LogSinkBuf_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, index);
-    LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, header, index, 3, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkBuf_printf(&LogSinkBuf_CONFIG_ti_log_LogSinkBuf_0_config, level, headerPtr, 3, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkBuf_buf ========
  */
-void LogSinkBuf_bufDepInjection(const Log_Module *handle, uint32_t header, uint32_t index, uint8_t *data, size_t size)
+void LogSinkBuf_bufDepInjection(const Log_Module *handle,
+                                Log_Level level,
+                                uint32_t headerPtr,
+                                uint8_t *data,
+                                size_t size)
 {
-    uintptr_t key;
-    uint32_t serial;
-    LogSinkBuf_Rec *rec;
-    uint32_t numRecords = ((size) / LogSinkBuf_SIZEOF_RECORD) + ((size % LogSinkBuf_SIZEOF_RECORD) != 0);
-    numRecords += 1;
-    uint32_t i;
-
-    if (handle == NULL)
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
     {
-        return;
+        uintptr_t key;
+        uint32_t serial;
+        LogSinkBuf_Rec *rec;
+        uint32_t numRecords = ((size) / LogSinkBuf_SIZEOF_RECORD) + ((size % LogSinkBuf_SIZEOF_RECORD) != 0);
+        numRecords += 1;
+        uint32_t i;
+
+        LogSinkBuf_Handle inst = (LogSinkBuf_Handle)handle->sinkConfig;
+
+        /* disable interrupts */
+        key = HwiP_disable();
+
+        /* Here we acquire records as contiguous memory.
+         * This approach leads to long critical sections for large buffers
+         * and can be improved in the future once all hosts support fragmentation
+         * of packets
+         */
+        for (i = 0; i < numRecords; i++)
+        {
+            /* increment serial even when full */
+            serial = ++(inst->serial);
+
+            if (inst->advance == LogSinkBuf_FULL)
+            {
+                HwiP_restore(key);
+                return;
+            }
+
+            /* compute next available record */
+            findNextRecord(inst, &rec);
+
+            rec->timestampLow = TimestampP_getNative32();
+
+            /* write data to record */
+            rec->serial = serial;
+            if (i == 0)
+            {
+                rec->type    = LogSinkBuf_BUFFER_START;
+                rec->data[0] = headerPtr;
+                rec->data[1] = size;
+            }
+            else
+            {
+                rec->type = LogSinkBuf_BUFFER_CONTINUED;
+                memcpy(rec->data, &data[(i - 1) * LogSinkBuf_SIZEOF_RECORD], LogSinkBuf_SIZEOF_RECORD);
+            }
+        }
+
+        /* enable interrupts */
+        HwiP_restore(key);
     }
-
-    LogSinkBuf_Handle inst = (LogSinkBuf_Handle)handle->sinkConfig;
-
-    /* disable interrupts */
-    key = HwiP_disable();
-
-    /* Here we acquire records as contiguous memory.
-     * This approach leads to long critical sections for large buffers
-     * and can be improved in the future once all hosts support fragmentation
-     * of packets
-     */
-    for (i = 0; i < numRecords; i++)
-    {
-        /* increment serial even when full */
-        serial = ++(inst->serial);
-
-        if (inst->advance == LogSinkBuf_FULL)
-        {
-            HwiP_restore(key);
-            return;
-        }
-
-        /* compute next available record */
-        findNextRecord(inst, &rec);
-
-        rec->timestampLow = TimestampP_getNative32();
-
-        /* write data to record */
-        rec->serial = serial;
-        if (i == 0)
-        {
-            rec->type    = LogSinkBuf_BUFFER_START;
-            rec->data[0] = header;
-            rec->data[1] = size;
-        }
-        else
-        {
-            rec->type = LogSinkBuf_BUFFER_CONTINUED;
-            memcpy(rec->data, &data[(i - 1) * LogSinkBuf_SIZEOF_RECORD], LogSinkBuf_SIZEOF_RECORD);
-        }
-    }
-
-    /* enable interrupts */
-    HwiP_restore(key);
 }

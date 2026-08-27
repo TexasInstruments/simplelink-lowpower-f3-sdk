@@ -6,10 +6,12 @@
     {
       "file8": {
         "cc23xx": "adc_noise_bt5_cc23xx.json",
+        "cc23x1": "adc_noise_bt5_cc23xx.json",
         "cc27xx": "adc_noise_bt5_cc27xx.json"
       },
       "phy_files": {
         "cc23xx": "adc_noise_bt5_cc23xx.phy",
+        "cc23x1": "adc_noise_bt5_cc23xx.phy",
         "cc27xx": "adc_noise_bt5_cc27xx.phy"
       },
       "name": "adc_noise",
@@ -18,10 +20,12 @@
     },
     {
       "file8": {
+        "cc23x1": "ble_bt5_1m_2m_coded_cc23x1.json",
         "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.json",
         "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.json"
       },
       "phy_files": {
+        "cc23x1": "ble_bt5_1m_2m_coded_cc23x1.phy",
         "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.phy",
         "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.phy"
       },
@@ -32,10 +36,12 @@
     },
     {
       "file8": {
+        "cc23x1": "ble_bt5_1m_2m_coded_generic_cc23x1.json",
         "cc23xx": "ble_bt5_1m_2m_coded_generic_cc23xx.json",
         "cc27xx": "ble_bt5_1m_2m_coded_generic_cc27xx.json"
       },
       "phy_files": {
+        "cc23x1": "ble_bt5_1m_2m_coded_cc23x1.phy",
         "cc23xx": "ble_bt5_1m_2m_coded_cc23xx.phy",
         "cc27xx": "ble_bt5_1m_2m_coded_cc27xx.phy"
       },
@@ -47,10 +53,12 @@
     {
       "file8": {
         "cc23xx": "ble_bt6_cs_hp_cc23xx.json",
+        "cc23x1": "ble_bt6_cs_hp_cc23xx.json",
         "cc27xx": "ble_bt6_cs_hp_cc27xx.json"
       },
       "phy_files": {
         "cc23xx": "ble_bt6_cs_hp_cc23xx.phy",
+        "cc23x1": "ble_bt6_cs_hp_cc23xx.phy",
         "cc27xx": "ble_bt6_cs_hp_cc27xx.phy"
       },
       "name": "ble_cs_hp",
@@ -139,14 +147,28 @@
     },
     {
       "file8": {
-        "cc23xx": "nesb_1m_2m_cc23xx.json"
+        "cc23xx": "nesb_1m_2m_cc23xx.json",
+        "cc27xx": "nesb_1m_2m_cc27xx.json"
       },
       "phy_files": {
-        "cc23xx": "nesb_1m_2m_cc23xx.phy"
+        "cc23xx": "nesb_1m_2m_cc23xx.phy",
+        "cc27xx": "nesb_1m_2m_cc27xx.phy"
       },
       "name": "nesb",
       "label": "1 Mbps / 2 Mbps",
       "protocol": "NESB",
+      "usage": "stack"
+    },
+    {
+      "file8": {
+        "cc27xx": "wbms_2m_1m_cc27xx.json"
+      },
+      "phy_files": {
+        "cc27xx": "wbms_2m_1m_cc27xx.phy"
+      },
+      "name": "wbms",
+      "label": "wBMS, 2 Mbps / 1 Mbps, GFSK",
+      "protocol": "Proprietary",
       "usage": "stack"
     }
   ]

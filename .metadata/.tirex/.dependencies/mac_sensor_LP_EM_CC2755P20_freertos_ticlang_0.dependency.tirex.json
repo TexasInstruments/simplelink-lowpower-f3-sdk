@@ -1,0 +1,25 @@
+[
+    {
+        "files": [
+            "+../../jdllc.h -> jdllc.h",
+            "+../../jdllc.c -> jdllc.c",
+            "+../../sensor_mac_config_settings.h -> sensor_mac_config_settings.h",
+            "+../../smsgs.h -> smsgs.h",
+            "+../../translate.h -> translate.h",
+            "+../../translate.c -> translate.c",
+            "+../../sensor.h -> sensor.h",
+            "+../../sensor.c -> sensor.c",
+            "+../../mac_disassociate.h -> mac_disassociate.h",
+            "+../../mac_disassociate.c -> mac_disassociate.c",
+            "+../../zb_mac_only_stubs_with_signal_handler.h -> zb_mac_only_stubs_with_signal_handler.h",
+            "+../../nvocmp.c -> nvocmp.c",
+            "+../../crc.c -> crc.c",
+            "+../../mac_sensor.syscfg -> mac_sensor.syscfg",
+            "+../../README.md -> README.md",
+            "+../../osif/ti_f3_main.c -> osif/ti_f3_main.c",
+            "+../../osif/ti_f3_led_buttons.c -> osif/ti_f3_led_buttons.c",
+            "+../../dmm/rcl_stub_dmm.c -> dmm/rcl_stub_dmm.c",
+            "+lpf3_zigbee_freertos.cmd -> lpf3_zigbee_freertos.cmd"
+        ]
+    }
+]

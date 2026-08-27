@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -40,8 +40,8 @@
  *  crypto engine.
  ******************************************************************************/
 
-#ifndef __AES_H__
-#define __AES_H__
+#ifndef ti_devices_aes__include
+#define ti_devices_aes__include
 
 #include <stdint.h>
 
@@ -689,4 +689,4 @@ __STATIC_INLINE void AESDisableDMA(void)
 }
 #endif
 
-#endif /* __AES_H__ */
+#endif /* ti_devices_aes__include */

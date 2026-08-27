@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -29,7 +30,12 @@ extern "C" {
  * \brief This macro extracts the key ID from the library encoded key passed as parameter
  *
  */
+/* TI-TFM: PSA Crypto API wrapper requires a key ID which does not encode the owner */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+#define CRYPTO_LIBRARY_GET_KEY_ID(encoded_key_library) encoded_key_library
+#else
 #define CRYPTO_LIBRARY_GET_KEY_ID(encoded_key_library) MBEDTLS_SVC_KEY_ID_GET_KEY_ID(encoded_key_library)
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 /**
  * \brief This macro extracts the owner from the library encoded key passed as parameter
@@ -41,7 +47,12 @@ extern "C" {
  * \brief The following typedef must be defined to the type associated to the key_id in the underlying library
  *
  */
+/* TI-TFM: PSA Crypto API wrapper requires a key ID which does not encode the owner */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+typedef psa_key_id_t tfm_crypto_library_key_id_t;
+#else
 typedef mbedtls_svc_key_id_t tfm_crypto_library_key_id_t;
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 /**
  * \brief Function used to initialise an object of \ref tfm_crypto_library_key_id_t to a (owner, key_id) pair

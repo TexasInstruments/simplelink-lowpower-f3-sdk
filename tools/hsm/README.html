@@ -35,7 +35,7 @@
 <div id="content">
   <h1></h1>
 <h1 id="hsm-fw-update-signing">HSM FW Update Signing</h1>
-<p>If you should want your device to only accept HSM FW updates that have been OK’d by you. Then you will need to wrap the HSM FW provided in this SDK with your own signature.</p>
+<p>If you should want your device to only accept HSM FW updates that have been OK’d by you, then you will need to wrap the HSM FW provided in this SDK with your own signature.</p>
 <p>The steps below will walk you through using the provided python script to:</p>
 <ol>
 <li>Generate a pair of private/public keys if you do not already have them</li>
@@ -83,6 +83,10 @@
 </blockquote>
 <h2 id="sign-the-hsm-fw-with-your-private-key">Sign the HSM FW with your private key</h2>
 <pre><code>$(venv) python sign_hsm_fw.py --sign --key &lt;private_key_file&gt; --input &lt;sdk&gt;/bin/hsm/&lt;hsm_fw_name&gt;.bin</code></pre>
+<blockquote>
+<p>By default, <code>cc27xx</code> devices are supported. For <code>cc23xx</code> devices, run the script by prodiving an additional <code>--target cc23xx</code> as follows:</p>
+</blockquote>
+<pre><code>$(venv) python sign_hsm_fw.py --sign --key &lt;private_key_file&gt; --target cc23xx --input &lt;sdk&gt;/bin/hsm/&lt;hsm_fw_name&gt;.bin</code></pre>
 <h1 id="program-the-new-hsm-fw">Program the new HSM FW</h1>
 <p>Now that you have a new HSM FW binary image, you can provision your devices with it or send it as an update to your devices in the field.</p>
 <ul>

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Arm Limited. All rights reserved.
- * Copyright (c) 2024, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@
 #ifndef __PLATFORM_IRQ_H__
 #define __PLATFORM_IRQ_H__
 
-/* typedef enum IRQn {} IRQn_Type is defined in
- * ti/devices/cc27xx/cmsis/cc27xx.h which is included as part of cmsis.h
+/* typedef enum IRQn {} IRQn_Type is defined in Device-specific configuration
+ * file which is included by DeviceFamily_constructPath(cmsis/device.h) which is
+ * included as part of cmsis.h
  */
 
 #endif /* __PLATFORM_IRQ_H__ */

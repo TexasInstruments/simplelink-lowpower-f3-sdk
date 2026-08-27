@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from concurrent.futures import ThreadPoolExecutor
 import os
 import queue
 import time
@@ -7,6 +7,8 @@ import threading
 import json
 import logging
 import enum
+import copy
+
 
 from logging.handlers import RotatingFileHandler
 from dataclasses import dataclass
@@ -38,6 +40,7 @@ from ble_device.ble_device_enums import (
     CaServerCommands,
     RREQCommands,
     RRSPCommands,
+    TimeSyncCommands,
     AppSpecifier,
     CentralEventType,
     PeripheralEventType,
@@ -46,6 +49,7 @@ from ble_device.ble_device_enums import (
     CmEventType,
     RREQEventType,
     RRSPEventType,
+    TimeSyncEventType,
     AddressMode,
     ConnectionEventType,
     CsEventType,
@@ -355,6 +359,7 @@ class BleDevice:
         self.ca_server: BleDeviceCaServer | None = None
         self.rreq: BleDeviceRREQ | None = None
         self.rrsp: BleDeviceRRSP | None = None
+        self.time_sync: BleDeviceTimeSync | None = None
 
         self.addr_mode = None
         self.id_addr = None
@@ -556,6 +561,14 @@ class BleDevice:
                     max_event_list_size=self.max_event_list_size,
                 )
 
+            if self.device_node.capabilities.get("RTLS_CAP_TIME_SYNC", False):
+                self.time_sync = BleDeviceTimeSync(
+                    logger=self.logger,
+                    ble_device=self,
+                    sync_command=self.sync_command,
+                    max_event_list_size=self.max_event_list_size,
+                )
+
             return True
 
         except BleDeviceException as ex:
@@ -615,6 +628,8 @@ class BleDevice:
                 GATTEventType,
                 CaServerEventType,
                 RREQEventType,
+                RRSPEventType,
+                TimeSyncEventType,
             ]:
                 for member in _enum:
                     if member.value == event_type:
@@ -711,6 +726,11 @@ class BleDevice:
                     item.value for item in RRSPEventType
                 ):
                     parsed_data = self.rrsp.message_parser(msg)
+
+                elif self.time_sync and event_type in set(
+                    item.value for item in TimeSyncEventType
+                ):
+                    parsed_data = self.time_sync.message_parser(msg)
 
                 else:
                     self.unknown_event_list.add_event(event_type, parsed_data)
@@ -1769,6 +1789,8 @@ class BleDeviceCs(BleDeviceBasic):
 
         self.app_specifier = AppSpecifier.APP_SPECIFIER_CS
 
+        # self.threads_pool = ThreadPoolExecutor(1)
+
     def read_local_supported_capabilities(self):
         self.cmd = CsCommands.CS_CMD_READ_LOCAL_CAP
         self.data_struct = None
@@ -2039,37 +2061,57 @@ class BleDeviceCs(BleDeviceBasic):
             data_struct = Struct(
                 "event" / Int16ul,
                 "status" / Int8ul,
-                "connHandle" / Int16ul,
+                "conn_handle" / Int16ul,
                 "distance" / Int32ul,
                 "quality" / Int32ul,
                 "confidence" / Int32ul,
+                "velocity" / Int32ul,
             )
 
         elif event_type == CsEventType.NWP_CS_APP_DISTANCE_EXTENDED_RESULTS:
-            # Assuming CS_MAX_ANT_PATHS = 4, CS_MAX_MODE_ZERO_PER_PROCEDURE = 8, adjust if needed
+            # Mirrors AppExtCtrlCsAppExtendedResultsEvent_t (PACKED_TYPEDEF_STRUCT).
+            # CS_RANGING_MAX_ANT_PATHS = 4.
             data_struct = Struct(
                 "event" / Int16ul,
                 "status" / Int8ul,
-                "connHandle" / Int16ul,
+                "conn_handle" / Int16ul,
                 "distance" / Int32ul,
                 "quality" / Int32ul,
                 "confidence" / Int32ul,
-                "numMpc" / Int16ul,
-                "distanceMusic" / Array(4, Int32ul),
-                "distanceNN" / Array(4, Int32ul),
-                "numMpcPaths" / Array(4, Int16ul),
-                "qualityPaths" / Array(4, Int32ul),
-                "confidencePaths" / Array(4, Int32ul),
-                "localRpl" / Array(32, Int8sl),
-                "remoteRpl" / Array(32, Int8sl),
-                "modeZeroStepsInit"
-                / (Byte[96 * 5]),  # 96 elements of 5 bytes each for initiator
-                "modeZeroStepsRef"
-                / (Byte[96 * 3]),  # 96 elements of 3 bytes each for reflector
-                "permutationIndexLocal" / Array(75, Int8ul),
-                "stepsDataLocal" / (Byte[300 * 4]),  # 300 elements of 4 bytes each
-                "permutationIndexRemote" / Array(75, Int8ul),
-                "stepsDataRemote" / (Byte[300 * 4]),  # 300 elements of 4 bytes each
+                "velocity" / Int32ul,
+                "distance_music" / Int32ul,
+                "distance_nn" / Int32ul,
+                "distance_ifft" / Int32ul,
+                "ext_confidence" / Int32ul,
+                "num_mpc" / Int16ul,
+                "quality_paths" / Array(4, Int32ul),
+                "tqi_score" / Array(4, Int32ul),
+                "dcand" / Int32ul,
+                "cf" / Int32ul,
+                "d_var" / Int32ul,
+                "class_label" / Int16ul,
+                "runtime_ms" / Int32ul,
+                "runtime_profile" / Array(10, Int32ul),
+                "peak_bin_ifft" / Int16ul,
+                "peak_count_ifft" / Int16ul,
+                "ifft_valid" / Int16ul,
+            )
+
+        elif event_type == CsEventType.NWP_CS_APP_RAS_SUBEVENT_RESULTS:
+            data_struct = Struct(
+                "event" / Int16ul,
+                "status" / Int8ul,
+                "conn_handle" / Int16ul,
+                "start_acl_connection_event" / Int16ul,
+                "frequency_compensation" / Int16ul,
+                "ranging_done_status" / Int8ul,
+                "subevent_done_status" / Int8ul,
+                "ranging_abort_reason" / Int8ul,
+                "subevent_abort_reason" / Int8ul,
+                "reference_power_level" / Int8sl,
+                "num_steps_reported" / Int8ul,
+                "data_len" / Int32ul,
+                "data" / NiceBytes((Byte[this.data_len]))
             )
 
         if data_struct is not None:
@@ -2077,11 +2119,23 @@ class BleDeviceCs(BleDeviceBasic):
             self.cs.append(self._last_cs_data)
             parsed_data = self._last_cs_data
 
+        # if event_type == CsEventType.NWP_CS_APP_DISTANCE_RESULTS:
+        #     self.threads_pool.submit(copy.deepcopy(self.print_obj_data), caption=CsEventType(event_type).name, data=parsed_data, port=self.ble_device.device_node.port)
+
         self.events_counter.increment_event(
             event_value=event_type, data_from_event=parsed_data
         )
 
         return parsed_data
+
+    # @staticmethod
+    # def print_obj_data(caption, data, port):
+    #     print(f"{caption}")
+    #     print(f"###################{port}#######################")
+    #     for key, value in data.items():
+    #         print(f"{key}: {value}")
+    #     print("######################################################################")
+
 
 
 class BleDeviceL2CAP(BleDeviceBasic):
@@ -2613,4 +2667,36 @@ class BleDeviceRRSP(BleDeviceBasic):
         self.events_counter.increment_event(
             event_value=event_type, data_from_event=parsed_data
         )
+        return parsed_data
+
+
+class BleDeviceTimeSync(BleDeviceBasic):
+    def __init__(self, logger, ble_device, sync_command, max_event_list_size):
+        BleDeviceBasic.__init__(
+            self,
+            logger,
+            event_type_class=TimeSyncEventType,
+            max_event_list_size=max_event_list_size,
+        )
+
+        self.ble_device = ble_device
+        self.sync_command = sync_command
+        self.app_specifier = AppSpecifier.APP_SPECIFIER_TIME_SYNC
+
+    def init(self):
+        self.cmd = TimeSyncCommands.TIME_SYNC_CMD_INIT
+        self.data_struct = None
+        self.send_nwp_cmd(None)
+
+    def message_parser(self, msg):
+        event_type = msg.payload.event_type
+
+        if event_type == TimeSyncEventType.NWP_TIME_SYNC_INIT_DONE:
+            data_struct = Struct("event" / Int16ul)
+
+        parsed_data = self.parse_struct(data_struct, msg)
+        self.events_counter.increment_event(
+            event_value=event_type, data_from_event=parsed_data
+        )
+
         return parsed_data

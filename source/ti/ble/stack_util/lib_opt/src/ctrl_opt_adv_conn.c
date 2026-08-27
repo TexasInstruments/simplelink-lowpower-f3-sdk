@@ -192,9 +192,4 @@ bool OPT_ll_AdvConnIsEnable(void)
     return ll_AdvConnIsEnable();
 }
 
-void OPT_llCmdAdvStartedEventHandle(void)
-{
-    llCmdAdvStartedEventHandle();
-}
-
 #endif /* defined(CTRL_ADV_CONN_CFG) */

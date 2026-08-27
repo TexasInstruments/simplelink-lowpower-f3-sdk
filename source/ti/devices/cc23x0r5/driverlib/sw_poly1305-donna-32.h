@@ -1,8 +1,12 @@
 /******************************************************************************
  *  Filename:       sw_poly1305-donna-32.h
  ******************************************************************************/
+
+#ifndef ti_devices_sw_poly1305_donna_32__include
+#define ti_devices_sw_poly1305_donna_32__include
+
 /*
-   poly1305 implementation using 32 bit * 32 bit = 64 bit multiplication and 64 bit addition
+  poly1305 implementation using 32 bit * 32 bit = 64 bit multiplication and 64 bit addition
 */
 
 #if defined(_MSC_VER)
@@ -258,3 +262,5 @@ POLY1305_NOINLINE void poly1305_finish(poly1305_context *ctx, unsigned char mac[
     st->pad[2] = 0;
     st->pad[3] = 0;
 }
+
+#endif /* ti_devices_sw_poly1305_donna_32__include */

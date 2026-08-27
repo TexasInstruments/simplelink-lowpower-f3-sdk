@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -313,7 +313,9 @@ function device2Family(device, mod)
         {prefix: "CC13",     family: "CC26XX"},
         {prefix: "CC26",     family: "CC26XX"},
         {prefix: "CC23.0",   family: "CC23X0"},
+        {prefix: "CC23.1",   family: "CC23X1"},
         {prefix: "CC27",     family: "CC27XX"},
+        {prefix: "CC283",    family: "CC283X"},
         {prefix: "CC35",     family: "CC35XX"}
     ];
 
@@ -364,6 +366,23 @@ function device2Family(device, mod)
         "RNG"  :         "LPF3RF"
     };
 
+    /* CC23X1 specific module delegates
+     * Note, the default family name returned below is LPF3, so this list must
+     * contain all CC23X1 specific modules
+     */
+    let cc23x1Mods = {
+        "Board" :        "CC23X1",
+        "CAN" :          "CC23X0",
+        "CCFG" :         "CC23X1",
+        "Power" :        "CC23X1",
+        "ECDH" :         "LPF3HSM",
+        "ECDSA" :        "LPF3HSM",
+        "SHA2" :         "LPF3HSM",
+        "TRNG":          "LPF3HSM",
+        "RNG"  :         "LPF3HSM",
+        "AESGCM":        "LPF3HSM"
+    };
+
     /* CC27XX specific module delegates
      * Note, the default family name returned below is LPF3, so this list must
      * contain all CC27XX specific modules
@@ -383,6 +402,17 @@ function device2Family(device, mod)
         "CryptoKeyKeyStore_PSA" : "CC27XX"
     };
 
+    /* CC283X specific module delegates
+     * Note, the default family name returned below is LPF3, so this list must
+     * contain all CC283X specific modules
+     */
+    let cc283xMods = {
+        "Board" :          "CC283X",
+        "CCFG" :           "CC283X",
+        "GPIO" :           "LPF4",
+        "Power" :          "CC283X"
+    };
+
     /* CC35XX specific module delegates
      * Note, the default family name returned below is WFF3, so this list must
      * contain all CC35XX specific modules
@@ -394,6 +424,7 @@ function device2Family(device, mod)
         "AESCCM":          "LPF3",
         "AESCMAC":         "LPF3",
         "AESCTR":          "LPF3",
+        "CAN" :            "WFF3",
         "SHA2":            "LPF3HSM"
     };
 
@@ -437,9 +468,25 @@ function device2Family(device, mod)
                     return ("LPF3");
                 }
             }
+            else if (d2f.prefix == "CC23.1") {
+                if (mod in cc23x1Mods) {
+                    return (cc23x1Mods[mod]);
+                }
+                else {
+                    return ("LPF3");
+                }
+            }
             else if (d2f.prefix == "CC27") {
                 if (mod in cc27xxMods) {
                     return (cc27xxMods[mod]);
+                }
+                else {
+                    return ("LPF3");
+                }
+            }
+            else if (d2f.prefix == "CC283") {
+                if (mod in cc283xMods) {
+                    return (cc283xMods[mod]);
                 }
                 else {
                     return ("LPF3");
@@ -890,12 +937,12 @@ function newConfig()
  */
 function numPriorityBits()
 {
-    if (system.deviceData.deviceId.match(/CC23.0/)) {
-        /* CC23X0 devices have two NVIC priority bits available */
+    if (system.deviceData.deviceId.match(/CC23.0|CC23.1/)) {
+        /* CC23X0 and CC23X1 devices have two NVIC priority bits available */
         return 2;
     }
-    else if (system.deviceData.deviceId.match(/CC27/)) {
-        /* CC27XX devices have four NVIC priority bits available */
+    else if (system.deviceData.deviceId.match(/CC27..|CC35..|CC283./)) {
+        /* These devices have four NVIC priority bits available */
         return 4;
     }
     else {
@@ -976,6 +1023,22 @@ function intPriority2Hex(intPri)
  */
 function newSwiPri()
 {
+    let opts = [{ name: "0", displayName: "0 - Lowest Priority" }];
+    var numPri = 16; /* Original [0, 15] */
+
+    /* FreeRTOS SwiP_freertos.c #define NUMPRI 4
+     * NoRTOS SwiP_nortos.c #define NUMPRI 4
+     */
+    if ((system.getRTOS() === "freertos") ||
+        (system.getRTOS() === "nortos")) {
+        numPri = 4;
+    }
+
+    for (var i=1; i < (numPri - 1); i++) {
+        opts.push({name: String(i)});
+    }
+    opts.push({name: String(numPri - 1), displayName: String(numPri - 1) + " - Highest Priority"});
+
     let swiPri = {
         name: "softwareInterruptPriority",
         displayName: "Software Interrupt Priority",
@@ -984,24 +1047,7 @@ function newSwiPri()
 software interrupt priority.
 `,
         default: "0",
-        options: [
-            { name: "0", displayName: "0 - Lowest Priority" },
-            { name: "1" },
-            { name: "2" },
-            { name: "3" },
-            { name: "4" },
-            { name: "5" },
-            { name: "6" },
-            { name: "7" },
-            { name: "8" },
-            { name: "9" },
-            { name: "10" },
-            { name: "11" },
-            { name: "12" },
-            { name: "13" },
-            { name: "14" },
-            { name: "15", displayName: "15 - Highest Priority" }
-        ]
+        options: opts
     };
 
     return (swiPri);

@@ -52,30 +52,20 @@
 #include DeviceFamily_constructPath(inc/hw_systim.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(driverlib/systick.h)
-
-/* Max number of ClockP ticks into the future supported by this ClockP
- * implementation.
- * Under the hood, ClockP uses the SysTimer whose events trigger immediately if
- * the compare value is less than 2^22 systimer ticks in the past
- * (4.194sec at 1us resolution). Therefore, the max number of SysTimer ticks you
- * can schedule into the future is 2^32 - 2^22 - 1 ticks (~= 4290 sec at 1us
- * resolution).
- */
-#define MAX_SYSTIMER_DELTA (0xFFBFFFFFU)
-
-#define SYSTIMER_CHANNEL_COUNT (5U)
+#include DeviceFamily_constructPath(driverlib/systimer.h)
 
 /* Shift values to convert between the different resolutions of the SysTimer
- * channels. Channel 0 can technically support either 1us or 250ns. Until the
- * channel is actively used, we will hard-code it to 1us resolution to improve
- * runtime.
+ * channels. Channel 0 and 5 can technically support either 1 us or 250 ns.
+ * Channel 0 is used by ClockP with a resolution of 1 us and channel 5 is also
+ * assumed to have a resolution of 1 us.
  */
 static const uint8_t sysTimerResolutionShift[SYSTIMER_CHANNEL_COUNT] = {
     0, /* 1us */
     0, /* 1us */
     2, /* 250ns -> 1us */
     2, /* 250ns -> 1us */
-    2  /* 250ns -> 1us */
+    2, /* 250ns -> 1us */
+    0, /* 1us */
 };
 
 /*
@@ -126,7 +116,7 @@ void PowerCC27XX_standbyPolicy(void)
         sysTimerIMASK = HWREG(SYSTIM_BASE + SYSTIM_O_IMASK);
 
         /* Get current time in 1us resolution */
-        sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+        sysTimerCurrTime = SysTimerGetTime1Us();
 
         /* We only want to check the SysTimer channels if at least one of them
          * is active. It may be that no one is using ClockP or RCL in this
@@ -150,11 +140,10 @@ void PowerCC27XX_standbyPolicy(void)
             {
                 if (sysTimerIMASK & (1 << sysTimerIndex))
                 {
-                    /* Store current channel timeout in native channel
-                     * resolution. Read CHnCCSR to avoid clearing any pending
-                     * events as side effect of reading CHnCC.
+                    /* Get current channel timeout in native channel
+                     * resolution.
                      */
-                    sysTimerLoopDelta = HWREG(SYSTIM_BASE + SYSTIM_O_CH0CCSR + (sysTimerIndex * sizeof(uint32_t)));
+                    sysTimerLoopDelta = SysTimerGetCaptureCompareValue(sysTimerIndex);
 
                     /* Convert current time from 1us to native resolution and
                      * subtract from timeout to get delta in in native channel
@@ -171,12 +160,12 @@ void PowerCC27XX_standbyPolicy(void)
                      */
                     sysTimerLoopDelta -= sysTimerCurrTime << sysTimerResolutionShift[sysTimerIndex];
 
-                    /* If sysTimerDelta is larger than MAX_SYSTIMER_DELTA, the
+                    /* If sysTimerDelta is larger than SYSTIMER_MAX_DELTA, the
                      * compare event happened in the past and we need to abort
                      * entering standby to handle the timeout instead of waiting
                      * a really long time.
                      */
-                    if (sysTimerLoopDelta > MAX_SYSTIMER_DELTA)
+                    if (sysTimerLoopDelta > SYSTIMER_MAX_DELTA)
                     {
                         sysTimerLoopDelta = 0;
                     }
@@ -195,7 +184,7 @@ void PowerCC27XX_standbyPolicy(void)
              * SysTimer delta instead. That lets us sleep for at least this
              * long if the OS timeout is even longer.
              */
-            sysTimerDelta = MAX_SYSTIMER_DELTA;
+            sysTimerDelta = SYSTIMER_MAX_DELTA;
         }
 
         /* Check sysTimerDelta time vs STANDBY latency */

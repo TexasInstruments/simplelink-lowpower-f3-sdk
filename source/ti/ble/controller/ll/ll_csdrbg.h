@@ -78,7 +78,7 @@
 #include "ti/ble/controller/ll/ll_al.h"
 #include "ti/ble/controller/ll/ll_common.h"
 #include "ti/ble/controller/ll/ll_config.h"
-#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>
 
 /*******************************************************************************

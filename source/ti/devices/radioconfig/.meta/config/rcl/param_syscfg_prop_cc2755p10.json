@@ -16,8 +16,14 @@
       "name": "phyType2400",
       "displayName": "PHY Type",
       "description": "Selects the PHY setting",
-      "options": [],
-      "default": ""
+      "options": [
+        {
+          "name": "nesb",
+          "displayName": "1 Mbps / 2 Mbps"
+        }
+      ],
+      "default": "nesb",
+      "hidden": true
     },
     {
       "name": "parent",
@@ -49,21 +55,22 @@
       "hidden": true,
       "options": [
         {
-          "name": "1_mbps",
-          "displayName": "1 Mbps"
-        },
-        {
           "name": "2_mbps",
           "displayName": "2 Mbps"
+        },
+        {
+          "name": "1_mbps",
+          "displayName": "1 Mbps"
         }
       ],
-      "default": "1_mbps"
+      "default": "2_mbps"
     },
     {
       "name": "frequency",
       "displayName": "Frequency (MHz)",
       "description": "Frequency.",
       "default": 2440,
+      "hidden": true,
       "displayFormat": {
         "radix": "dec",
         "fixedPoint": 4
@@ -73,13 +80,15 @@
       "name": "txPower",
       "displayName": "TX Power (dBm)",
       "description": "TX Power",
-      "default": "5"
+      "default": "5",
+      "hidden": true
     },
     {
       "name": "syncWord",
       "displayName": "Sync Word",
       "description": "Complete Sync Word. Number of bits that is checked is determined by the Sync word length field.\\n The bit order is determined by formatConf.bMsbFirst.",
       "default": 0,
+      "hidden": true,
       "displayFormat": {
         "radix": "hex",
         "bitSize": 32
@@ -90,6 +99,7 @@
       "displayName": "Whitening",
       "description": "Whitening",
       "default": "Disabled",
+      "hidden": true,
       "options": [
         {
           "name": "Disabled",
@@ -106,6 +116,7 @@
       "displayName": "Packet Length Config",
       "description": "Packet Length Configuration",
       "default": "Variable, 8-bit length field",
+      "hidden": true,
       "options": [
         {
           "name": "Fixed",
@@ -126,7 +137,19 @@
     }
   ],
   "phys": {
-    "prop2400": []
+    "prop2400": [
+      {
+        "file8": "nesb_1m_2m_cc27xx.json",
+        "phy_files": {
+          "cc23xx": "nesb_1m_2m_cc23xx.phy",
+          "cc27xx": "nesb_1m_2m_cc27xx.phy"
+        },
+        "name": "nesb",
+        "label": "1 Mbps / 2 Mbps",
+        "protocol": "NESB",
+        "usage": "stack"
+      }
+    ]
   },
   "rcl_struct_defs": {
     "LRF_Events": {

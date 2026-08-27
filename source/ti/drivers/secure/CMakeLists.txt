@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025, Texas Instruments Incorporated
+# Copyright (c) 2022-2026 Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -32,9 +32,11 @@ get_install_dir(MBEDTLS_INSTALL_DIR)
 get_install_dir(TFM_INSTALL_DIR)
 get_install_dir(HSMDDK_INSTALL_DIR)
 get_install_dir(TIDRIVERS_CC13XX_CC26XX_INSTALL_DIR)
+get_install_dir(TIPOSIX_INSTALL_DIR)
 
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc13xx_cc26xx.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc23x0.cmake OPTIONAL)
+include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc23x1.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc27xx.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc35xx.cmake OPTIONAL)
 
@@ -52,6 +54,107 @@ set(WFF3_REGEX "cc35[^;$]*")
 string(REGEX MATCHALL "${LPF2_REGEX}" LPF2_PLATFORMS "${SUPPORTED_PLATFORMS}")
 string(REGEX MATCHALL "${LPF3_REGEX}" LPF3_PLATFORMS "${SUPPORTED_PLATFORMS}")
 string(REGEX MATCHALL "${WFF3_REGEX}" WFF3_PLATFORMS "${SUPPORTED_PLATFORMS}")
+
+################################################################################
+# Note: Local packages which are dependencies for other packages must be defined
+# before they are used to avoid slow cmake generation due to package not being
+# found.
+################################################################################
+
+#
+# A couple of simple utilities used by the drivers to portably export compile options
+#
+ti_init_package(NAMESPACE SecureDriversUtils)
+
+ti_add_library(secure_key_storage_enabled INTERFACE ARCH all)
+target_compile_definitions(secure_key_storage_enabled INTERFACE $<$<COMPILE_LANGUAGE:C>:ENABLE_KEY_STORAGE=1>)
+
+ti_add_library(mbedtls_dependencies_hsm INTERFACE ARCH all)
+
+# Note that the PSA crypto config file is not needed in secure drivers build context.
+target_compile_definitions(
+    mbedtls_dependencies_hsm
+    INTERFACE
+        $<$<COMPILE_LANGUAGE:C>:MBEDTLS_CONFIG_FILE="third_party/mbedtls/ti/configs/config-hsm.h">
+        $<$<COMPILE_LANGUAGE:C>:MBEDTLS_PSA_CRYPTO_CONFIG_FILE="third_party/mbedtls/ti/configs/config-psa-crypto-hsm.h">
+        $<$<COMPILE_LANGUAGE:C>:TI_SW_CRYPTO_ENABLED=0>
+)
+
+target_include_directories(
+    mbedtls_dependencies_hsm
+    INTERFACE ${MBEDTLS_INSTALL_DIR}/source ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
+              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti/port
+              ${TIPOSIX_INSTALL_DIR}/source/ti/posix/${TI_TOOLCHAIN_NAME}
+)
+
+# Same as above, except SW Crypto path will be built into the PSA Crypto wrapper
+ti_add_library(mbedtls_sw_dependencies_hsm INTERFACE ARCH all)
+
+target_compile_definitions(
+    mbedtls_sw_dependencies_hsm
+    INTERFACE
+        $<$<COMPILE_LANGUAGE:C>:MBEDTLS_CONFIG_FILE="third_party/mbedtls/ti/configs/config-hsm.h">
+        $<$<COMPILE_LANGUAGE:C>:MBEDTLS_PSA_CRYPTO_CONFIG_FILE="third_party/mbedtls/ti/configs/config-psa-crypto-hsm.h">
+        $<$<COMPILE_LANGUAGE:C>:TI_SW_CRYPTO_ENABLED=1>
+)
+
+target_include_directories(
+    mbedtls_sw_dependencies_hsm
+    INTERFACE ${MBEDTLS_INSTALL_DIR}/source ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
+              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti/port
+              ${TIPOSIX_INSTALL_DIR}/source/ti/posix/${TI_TOOLCHAIN_NAME}
+)
+
+ti_export_package()
+
+#
+# Targets for TrustZone support
+#
+ti_init_package(NAMESPACE TrustZone)
+
+ti_add_library(tfm_dependencies_cc26x4 INTERFACE ARCH all)
+
+target_include_directories(
+    tfm_dependencies_cc26x4
+    INTERFACE ${TFM_INSTALL_DIR}/source/
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
+              ${TFM_INSTALL_DIR}/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc
+              ${MBEDTLS_INSTALL_DIR}/source
+              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
+              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti
+)
+
+ti_add_library(tfm_dependencies_cc27xxx10 INTERFACE ARCH all)
+
+target_include_directories(
+    tfm_dependencies_cc27xxx10
+    INTERFACE ${TFM_INSTALL_DIR}/source/
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/ext/driver
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/partitions/internal_trusted_storage
+              ${TFM_INSTALL_DIR}/tfm_s/build/cc27xxx10/production_full/Release/export/tfm/inc
+)
+
+ti_add_library(tfm_dependencies_cc27xxx20 INTERFACE ARCH all)
+
+target_include_directories(
+    tfm_dependencies_cc27xxx20
+    INTERFACE ${TFM_INSTALL_DIR}/source/
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/ext/driver
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
+              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/partitions/internal_trusted_storage
+              ${TFM_INSTALL_DIR}/tfm_s/build/cc27xxx20/production_full/Release/export/tfm/inc
+)
+
+ti_export_package()
 
 #
 # Create LPF2 package
@@ -99,22 +202,22 @@ if(LPF2_PLATFORMS)
             )
 
             # C26X3 is deliberately excluded from this regex, as the 26x4 libraries are good enough
-        elseif(${TI_PLATFORM} MATCHES "cc(13|26).4")
-            ti_add_package_dependency(DriverlibCC13X4CC26X3CC26X4)
-            ti_add_package_dependency(Tirtos7Generic)
-            ti_add_library(
-                secure_drivers_${TI_PLATFORM} SOURCES ${SOURCES_SEC_ONLY_CC13X4_CC26X3_CC26X4}
-                ADD_SDK_INCLUDE_PATH source LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} Driverlib::${TI_PLATFORM}
-                                                        CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-            )
+            #elseif(${TI_PLATFORM} MATCHES "cc(13|26).4")
+            #    ti_add_package_dependency(DriverlibCC13X4CC26X3CC26X4)
+            #    ti_add_package_dependency(Tirtos7Generic)
+            #    ti_add_library(
+            #        secure_drivers_${TI_PLATFORM} SOURCES ${SOURCES_SEC_ONLY_CC13X4_CC26X3_CC26X4}
+            #        ADD_SDK_INCLUDE_PATH source LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} Driverlib::${TI_PLATFORM}
+            #                                                CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            #    )
 
-            ti_add_library(
-                secure_drivers_${TI_PLATFORM}_ns
-                SOURCES ${SOURCES_NONSEC_CC13X4_CC26X3_CC26X4}
-                ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} Driverlib::${TI_PLATFORM} DriversUtils::tfm_enabled
-                            TrustZone::tfm_dependencies_cc26x4 CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-            )
+            #    ti_add_library(
+            #        secure_drivers_${TI_PLATFORM}_ns
+            #        SOURCES ${SOURCES_NONSEC_CC13X4_CC26X3_CC26X4}
+            #        ADD_SDK_INCLUDE_PATH source
+            #        LINK_PUBLIC Drivers::drivers_${TI_PLATFORM} Driverlib::${TI_PLATFORM} DriversUtils::tfm_enabled
+            #                    TrustZone::tfm_dependencies_cc26x4 CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+            #    )
         endif()
     endforeach()
 
@@ -135,6 +238,7 @@ if(LPF3_PLATFORMS)
             SecureDriversUtils
             TrustZone
             ThirdPartyEccLib
+            ThirdPartyHSMDDKLibLPF3
             TiUtils
             TiUtilsJson
     )
@@ -157,9 +261,45 @@ if(LPF3_PLATFORMS)
             )
             add_dependencies(secure_drivers_${TI_PLATFORM} ecc_deploy)
 
-        elseif(${TI_PLATFORM} STREQUAL "cc27xx")
-            ti_add_package_dependency(DriverlibCC27XX)
-            ti_add_package_dependency(ThirdPartyHSMDDKLibCC27XX)
+        elseif(${TI_PLATFORM} STREQUAL "cc23x1r10")
+            ti_add_package_dependency(DriverlibCC23X1R10)
+            ti_add_library(
+                secure_drivers_${TI_PLATFORM}
+                SOURCES ${SOURCES_CC23X1}
+                ADD_SDK_INCLUDE_PATH source
+                LINK_PUBLIC
+                    Drivers::drivers_${TI_PLATFORM}
+                    ThirdPartyEccLib::ecc_cc23x0
+                    Driverlib::${TI_PLATFORM}
+                    CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                    SecureDriversUtils::secure_key_storage_enabled
+                    SecureDriversUtils::mbedtls_dependencies_hsm
+                    ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
+            )
+            add_dependencies(secure_drivers_${TI_PLATFORM} ecc_deploy)
+
+            ti_add_library(
+                secure_drivers_${TI_PLATFORM}_mbedtls
+                SOURCES ${SOURCES_CC23X1}
+                ADD_SDK_INCLUDE_PATH source
+                LINK_PUBLIC
+                    Drivers::drivers_${TI_PLATFORM}
+                    ThirdPartyEccLib::ecc_cc23x0
+                    Driverlib::${TI_PLATFORM}
+                    CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                    SecureDriversUtils::secure_key_storage_enabled
+                    SecureDriversUtils::mbedtls_sw_dependencies_hsm
+                    ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
+            )
+            add_dependencies(secure_drivers_${TI_PLATFORM}_mbedtls ecc_deploy)
+
+        elseif(${TI_PLATFORM} MATCHES "cc27xxx")
+            if(${TI_PLATFORM} STREQUAL "cc27xxx10")
+                ti_add_package_dependency(DriverlibCC27XXX10)
+            elseif(${TI_PLATFORM} STREQUAL "cc27xxx20")
+                ti_add_package_dependency(DriverlibCC27XXX20)
+            endif()
+
             ti_add_library(
                 secure_drivers_${TI_PLATFORM}
                 SOURCES ${SOURCES_SEC_ONLY_CC27XX}
@@ -171,9 +311,26 @@ if(LPF3_PLATFORMS)
                     CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
                     ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
                     SecureDriversUtils::secure_key_storage_enabled
-                    TrustZone::tfm_dependencies_cc27xx
+                    TrustZone::tfm_dependencies_${TI_PLATFORM}
+                    SecureDriversUtils::mbedtls_dependencies_hsm
             )
             add_dependencies(secure_drivers_${TI_PLATFORM} ecc_deploy)
+
+            ti_add_library(
+                secure_drivers_${TI_PLATFORM}_mbedtls
+                SOURCES ${SOURCES_SEC_ONLY_CC27XX}
+                ADD_SDK_INCLUDE_PATH source
+                LINK_PUBLIC
+                    Drivers::drivers_${TI_PLATFORM}
+                    ThirdPartyEccLib::ecc_cc27xx
+                    Driverlib::${TI_PLATFORM}
+                    CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                    ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
+                    SecureDriversUtils::secure_key_storage_enabled
+                    TrustZone::tfm_dependencies_${TI_PLATFORM}
+                    SecureDriversUtils::mbedtls_sw_dependencies_hsm
+            )
+            add_dependencies(secure_drivers_${TI_PLATFORM}_mbedtls ecc_deploy)
 
             ti_add_library(
                 secure_drivers_${TI_PLATFORM}_ns
@@ -187,9 +344,15 @@ if(LPF3_PLATFORMS)
                     ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
                     SecureDriversUtils::secure_key_storage_enabled
                     DriversUtils::tfm_enabled
-                    TrustZone::tfm_dependencies_cc27xx
+                    TrustZone::tfm_dependencies_${TI_PLATFORM}
+                    SecureDriversUtils::mbedtls_dependencies_hsm
             )
             add_dependencies(secure_drivers_${TI_PLATFORM}_ns ecc_deploy)
+
+            target_compile_definitions(
+                secure_drivers_${TI_PLATFORM}_ns PRIVATE CONFIG_TFM_CRYPTO_API_RENAME PLATFORM_DEFAULT_CRYPTO_KEYS
+                                                         TI_PSA_CRYPTO_NS_CLIENT
+            )
         endif()
     endforeach()
 
@@ -210,13 +373,13 @@ if(WFF3_PLATFORMS)
             SecureDriversUtils
             TrustZone
             ThirdPartyEccLib
+            ThirdPartyHSMDDKLibWFF3
             TiUtils
             TiUtilsJson
     )
     foreach(TI_PLATFORM ${WFF3_PLATFORMS})
         if(${TI_PLATFORM} MATCHES "cc35")
             ti_add_package_dependency(DriverlibCC35XX)
-            ti_add_package_dependency(ThirdPartyHSMDDKLibCC35XX)
 
             ti_add_library(
                 secure_drivers_${TI_PLATFORM}
@@ -225,55 +388,21 @@ if(WFF3_PLATFORMS)
                 LINK_PUBLIC
                     Drivers::drivers_${TI_PLATFORM} Driverlib::${TI_PLATFORM}
                     CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
-                    SecureDriversUtils::secure_key_storage_enabled
+                    SecureDriversUtils::secure_key_storage_enabled SecureDriversUtils::mbedtls_dependencies_hsm
             )
+
+            ti_add_library(
+                secure_drivers_${TI_PLATFORM}_mbedtls
+                SOURCES ${SOURCES_SEC_ONLY_CC35XX}
+                ADD_SDK_INCLUDE_PATH source
+                LINK_PUBLIC
+                    Drivers::drivers_${TI_PLATFORM} Driverlib::${TI_PLATFORM}
+                    CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}} ThirdPartyHSMDDKLib::hsmddk_${TI_PLATFORM}
+                    SecureDriversUtils::secure_key_storage_enabled SecureDriversUtils::mbedtls_sw_dependencies_hsm
+            )
+
         endif()
     endforeach()
 
     ti_export_package()
 endif() # if(WFF3_PLATFORMS)
-
-#
-# A couple of simple utilities used by the drivers to portably export compile options
-#
-ti_init_package(NAMESPACE SecureDriversUtils)
-
-ti_add_library(secure_key_storage_enabled INTERFACE ARCH all)
-target_compile_definitions(secure_key_storage_enabled INTERFACE $<$<COMPILE_LANGUAGE:C>:ENABLE_KEY_STORAGE=1>)
-
-ti_export_package()
-
-#
-# Targets for TrustZone support
-#
-ti_init_package(NAMESPACE TrustZone)
-
-ti_add_library(tfm_dependencies_cc26x4 INTERFACE ARCH all)
-
-target_include_directories(
-    tfm_dependencies_cc26x4
-    INTERFACE ${TFM_INSTALL_DIR}/source/
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
-              ${TFM_INSTALL_DIR}/tfm_s/build/cc26x4/production_full/Release/export/tfm/inc
-              ${MBEDTLS_INSTALL_DIR}/source
-              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/include
-              ${MBEDTLS_INSTALL_DIR}/source/third_party/mbedtls/ti
-)
-
-ti_add_library(tfm_dependencies_cc27xx INTERFACE ARCH all)
-
-target_include_directories(
-    tfm_dependencies_cc27xx
-    INTERFACE ${TFM_INSTALL_DIR}/source/
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/config
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/interface/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/ext/driver
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/platform/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/include
-              ${TFM_INSTALL_DIR}/source/third_party/tfm/secure_fw/partitions/internal_trusted_storage
-              ${TFM_INSTALL_DIR}/tfm_s/build/cc27xx/production_full/Release/export/tfm/inc
-)
-
-ti_export_package()

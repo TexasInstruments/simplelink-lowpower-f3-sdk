@@ -67,23 +67,24 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
         {
             uint32_t i = 0;
             /* Check if the image is 128-bit aligned, and if not, read out 32-bit word(s) */
-            while ((((uintptr_t) topsmSourcePointer) & 0x0F) != 0)
+            while ((((uintptr_t) topsmSourcePointer) & 0x0FU) != 0U)
             {
-#ifdef DeviceFamily_CC27XX
+                /* Protect the first memory write on CC27xxx10, ref. RCL-515. */
+#if (DeviceFamily_CC27XXX10)
                 ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif //DeviceFamily_CC27XXX10
                 *ram++ = *topsmSourcePointer++;
                 i++;
             }
             /* Load most of the image using aligned 128-bit reads */
-#ifdef DeviceFamily_CC27XX
-            /* We don't need to use HWREG_READ_LRF every time, as the loop only writes to RAM without registers inbetween, but we should protect the first write */
+            /* Protect the first memory write on CC27xxx10, ref. RCL-515. */
+#if DeviceFamily_CC27XXX10
             ASM_4_NOPS();
-#endif //DeviceFamily_CC27XX
+#endif //DeviceFamily_CC27XXX10
 #ifdef DeviceFamily_CC1404_CC1407
             ASM_2_NOPS();
 #endif //DeviceFamily_CC1404_CC1407
-            while (i < length - 3)
+            while (i < length - 3U)
             {
 #ifdef NO_INLINE_ASM
                 struct quadword {
@@ -93,7 +94,7 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
                 topsmSourcePointer += 4;
                 ram += 4;
 #else
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_CC27XXX10)
                 __asm volatile(
                     "LDMIA %0!, {r4, r5, r6, r7} \n"
                     /* Split the the quad write into four individual writes with dummy operations between each write. Ref. RCL-1063 */
@@ -129,9 +130,9 @@ LRF_SetupResult LRF_loadImage(const LRF_TOPsmImage *image, uint32_t destinationA
                       "+r" (ram) :
                     : "r4", "r5", "r6", "r7"
                 );
+#endif //DeviceFamily_CC27XXX10
 #endif
-#endif
-                i += 4;
+                i += 4U;
             }
 
             /* If one or more 32-bit word is left, read it here */
@@ -273,10 +274,10 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
             LRF_ConfigWord curWord;
             curWord.value32 = *curEntry++;
             uint16_t featureMask = curWord.segment.featureMask;
-            if ((curWord.segment.invertedFeatureMask == 0 &&
-                ((featureMask != 0 && (featureMask & state->phyFeatures) == 0) ||
-                    (featureMask == 0 && !state->includeBase))) ||
-                (curWord.segment.invertedFeatureMask != 0 && (featureMask != (featureMask & ~state->phyFeatures))))
+            if ((curWord.segment.invertedFeatureMask == 0U &&
+                ((featureMask != 0U && (featureMask & state->phyFeatures) == 0U) ||
+                    (featureMask == 0U && state->includeBase == LRF_ApplySettings_NoBase))) ||
+                (curWord.segment.invertedFeatureMask != 0U && (featureMask != (featureMask & ~state->phyFeatures))))
             {
                 /* We skip it */
 #ifdef LRF_DEBUG_TRACE
@@ -319,7 +320,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 bufferAvailWords--;
                 totalLength -= segmentLength + 1;
 #else
-                if (segmentLength == 0 || segmentLength >= MAX_REG_CONFIG_LEN)
+                if (segmentLength == 0U || segmentLength >= MAX_REG_CONFIG_LEN)
                 {
                     return SetupResult_ErrorConfigLen;
                 }
@@ -327,7 +328,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 regionLength = 0;  /* Read segment next */
             }
         }
-        while (segmentLength > 0)
+        while (segmentLength > 0U)
         {
 #ifdef BUFFER_SPLIT_SUPPORT
             if (bufferAvailWords == 0)
@@ -344,11 +345,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
             }
 #endif
             /* If regionLength is 0 we are expecting a region header */
-            if (regionLength == 0)
+            if (regionLength == 0U)
             {
                 LRF_ConfigWord curWord;
                 curWord.value32 = *curEntry++;
-                regionLength = curWord.region.lengthMinus1 + 1;
+                regionLength = curWord.region.lengthMinus1 + 1U;
                 operation    = (LRF_RegionOperation) curWord.region.type;
                 uint32_t regionStart  = curWord.region.startAddress;
 
@@ -364,7 +365,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                     if (operation >= Par_Region_Clear)
                     {
                         address = ((uintptr_t) &swParamList) + regionStart;
-                        uint32_t regionActualLength = (operation == Par_Reference_32bit) ? 1 : regionLength;
+                        uint32_t regionActualLength = (operation == Par_Reference_32bit) ? 1U : regionLength;
                         if ((regionStart + (regionActualLength * sizeof(uint32_t))) > swParamListSz)
                         {
                             return SetupResult_ErrorParRange;
@@ -391,18 +392,18 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 case HW_Region_Clear:
                 case Par_Region_Clear:
                     {
-                        if ((address & 0x03) != 0)
+                        if ((address & 0x03U) != 0U)
                         {
                             return SetupResult_ErrorElemAddrAlign;
                         }
                         volatile uint32_t *clear32 = (uint32_t *) address;
                         for (uint32_t i = 0; i < regionLength; i++)
                         {
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                             HWREG_WRITE_LRF(clear32++) = 0;
 #else
                             *clear32++ = 0;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                         }
                         regionLength = 0;
                         numWords = 0;
@@ -411,18 +412,18 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
 
                 case SW_Region_Clear:
                     {
-                        if ((address & 0x01) != 0)
+                        if ((address & 0x01U) != 0U)
                         {
                             return SetupResult_ErrorElemAddrAlign;
                         }
                         volatile uint16_t *clear16 = (uint16_t *) address;
                         for (uint32_t i = 0; i < regionLength; i++)
                         {
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                             HWREGH_WRITE_LRF(clear16++) = 0;
 #else
                             *clear16++ = 0;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                         }
                         regionLength = 0;
                         numWords = 0;
@@ -433,15 +434,15 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 case SW_Write_16bit:
                     /* Two output words per input words. If number of input
                         word is odd, last half-word is taken separately */
-                    if ((address & 0x01) != 0)
+                    if ((address & 0x01U) != 0U)
                     {
                         return SetupResult_ErrorElemAddrAlign;
                     }
-                    numWords = regionLength / 2;
+                    numWords = regionLength / 2U;
                     break;
 
                 case HW_Write_16bit_masked:
-                    if ((address & 0x01) != 0)
+                    if ((address & 0x01U) != 0U)
                     {
                         return SetupResult_ErrorElemAddrAlign;
                     }
@@ -454,7 +455,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 case Par_Write_32bit:
                 case HW_Write_16bit_sparse:
                 case SW_Write_16bit_sparse:
-                    if ((address & 0x03) != 0)
+                    if ((address & 0x03U) != 0U)
                     {
                         return SetupResult_ErrorElemAddrAlign;
                     }
@@ -474,7 +475,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 numWords = bufferAvailWords;
             }
 #endif
-            if (numWords > 0)
+            if (numWords > 0U)
             {
                 /* Write as much as we can */
                 switch (operation)
@@ -490,15 +491,15 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                                 Log_printf(LogModule_RCL, Log_VERBOSE, "LRF_initSettingsState: HW_Write_16bit: %04X = %08X, ", dst32&0xFFFF, curWord.value32);
 #endif
 
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                 HWREG_WRITE_LRF(dst32++) = curWord.value16[0];
                                 HWREG_WRITE_LRF(dst32++) = curWord.value16[1];
 #else
                                 *dst32++ = curWord.value16[0];
                                 *dst32++ = curWord.value16[1];
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                             }
-                            regionLength -= 2 * numWords;
+                            regionLength -= 2U * numWords;
                             address = (uintptr_t) dst32;
                         }
                         break;
@@ -515,25 +516,25 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                                     dst32&0xFFFF, curWord.masked.mask16, curWord.masked.value16);
 #endif
                                 /* On full setup, do not apply mask, as the register is assumed to start at 0 */
-                                if (state->includeBase)
+                                if (state->includeBase != LRF_ApplySettings_NoBase)
                                 {
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                     HWREG_WRITE_LRF(dst32++) = curWord.masked.value16;
 #else
                                     *dst32++ = curWord.masked.value16;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                                 }
                                 else
                                 {
                                     /* The type is intended for 16-bit registers with 32-bit aperture */
                                     /* If used on a true 32-bit register, the 16 most significant bits will not be changed */
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                     uint32_t oldValue = HWREG_READ_LRF(dst32);
                                     HWREG_WRITE_LRF(dst32++) = (oldValue & ~curWord.masked.mask16) | curWord.masked.value16;
 #else
                                     uint32_t oldValue = *dst32;
                                     *dst32++ = (oldValue & ~curWord.masked.mask16) | curWord.masked.value16;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                                 }
                             }
                             regionLength -= numWords;
@@ -552,15 +553,15 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                                 Log_printf(LogModule_RCL, Log_VERBOSE, "LRF_initSettingsState: SW_Write_16bit: %04X = %08X, ", dst16&0xFFFF, curWord.value32);
 #endif
 
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                 HWREGH_WRITE_LRF(dst16++) = curWord.value16[0];
                                 HWREGH_WRITE_LRF(dst16++) = curWord.value16[1];
 #else
                                 *dst16++ = curWord.value16[0];
                                 *dst16++ = curWord.value16[1];
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                             }
-                            regionLength -= 2 * numWords;
+                            regionLength -= 2U * numWords;
                             address = (uintptr_t) dst16;
                         }
                         break;
@@ -588,11 +589,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                                         break;
                                 }
 #endif
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                 HWREG_WRITE_LRF(dst32++) = *curEntry++;
 #else
                                 *dst32++ = *curEntry++;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                             }
                             regionLength -= numWords;
                             address = (uintptr_t) dst32;
@@ -624,25 +625,25 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                             LRF_ConfigWord curWord;
                             curWord.value32 = *curEntry++;
                             uint32_t curAddress = curWord.sparse.address;
-                            if ((curAddress & 3) == 0)
+                            if ((curAddress & 3U) == 0U)
                             {
                                 /* Word aligned access to hardware */
                                 uint32_t *dst32 = (uint32_t *)(address + curAddress);
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                 HWREG_WRITE_LRF(dst32) = curWord.sparse.value16;
 #else
                                 *dst32          = curWord.sparse.value16;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                             }
-                            else if ((curAddress & 1) == 0)
+                            else if ((curAddress & 1U) == 0U)
                             {
                                 /* Halfword aligned */
                                 uint16_t *dst16 = (uint16_t *)(address + curAddress);
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                 HWREGH_WRITE_LRF(dst16) = curWord.sparse.value16;
 #else
                                 *dst16          = curWord.sparse.value16;
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                             }
                             else
                             {
@@ -660,15 +661,15 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                         {
                             LRF_ConfigWord curWord;
                             curWord.value32 = *curEntry++;
-                            if ((curWord.sparse.address & 1) == 0)
+                            if ((curWord.sparse.address & 1U) == 0U)
                             {
                                 /* Word aligned 16 bit access  */
                                 uint16_t *dst16 = (uint16_t *)(address + curWord.sparse.address);
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                                 HWREGH_WRITE_LRF(dst16) = curWord.sparse.value16;
 #else
                                 *dst16          = curWord.sparse.value16;
-#endif
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
                             }
                             else
                             {
@@ -690,13 +691,13 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                 segmentLength -= numWords;
             }
             /* Write straggler for 16-bit */
-            if (regionLength == 1 &&
+            if (regionLength == 1U &&
 #ifdef BUFFER_SPLIT_SUPPORT
-                bufferAvailWords > 0 &&
+                bufferAvailWords > 0U &&
 #endif
                 (operation == HW_Write_16bit || operation == SW_Write_16bit))
             {
-                if (segmentLength < 1)
+                if (segmentLength < 1U)
                 {
                     return SetupResult_ErrorElemLen;
                 }
@@ -705,11 +706,11 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                     volatile uint16_t *dst16 = (volatile uint16_t *) address;
                     LRF_ConfigWord curWord;
                     curWord.value32 = *curEntry++;
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                     HWREGH_WRITE_LRF(dst16) = curWord.value16[0];
 #else
                     *dst16 = curWord.value16[0];
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
 #ifdef LRF_DEBUG_TRACE
                     Log_printf(LogModule_RCL, Log_VERBOSE, "LRF_initSettingsState: SW_Write_16bit: 0x%04X = 0x%04X, ", dst16&0xFFFF, curWord.value16[0]);
 #endif
@@ -719,16 +720,16 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
                     volatile uint32_t *dst32 = (volatile uint32_t *) address;
                     LRF_ConfigWord curWord;
                     curWord.value32 = *curEntry++;
-#if defined DeviceFamily_CC27XX || defined DeviceFamily_CC1404_CC1407
+#if (DeviceFamily_LRF_PARENT == DeviceFamily_PARENT_CC27XX) || defined DeviceFamily_CC1404_CC1407
                     HWREG_WRITE_LRF(dst32) = curWord.value16[0];
 #else
                     *dst32 = curWord.value16[0];
-#endif //DeviceFamily_CC27XX || DeviceFamily_CC1404_CC1407
+#endif //DeviceFamily_PARENT_CC27XX || DeviceFamily_CC1404_CC1407
 #ifdef LRF_DEBUG_TRACE
                     Log_printf(LogModule_RCL, Log_VERBOSE, "LRF_initSettingsState: HW_Write_16bit: 0x%04X = 0x%04X, ", dst32&0xFFFF, curWord.value16[0]);
 #endif
                 }
-                regionLength -= 1;
+                regionLength -= 1U;
 #ifdef BUFFER_SPLIT_SUPPORT
                 bufferAvailWords--;
 #endif
@@ -737,7 +738,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
         }
         /* Done with this segment and its header */
 #ifdef BUFFER_SPLIT_SUPPORT
-        if (bufferAvailWords == 0 && totalLength > 0)
+        if (bufferAvailWords == 0U && totalLength > 0U)
         {
             state->totalLength = totalLength;
             state->segmentLength = 0;
@@ -750,7 +751,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
     }
 
 #ifdef BUFFER_SPLIT_SUPPORT
-    RCL_Debug_assert(totalLength == 0);
+    RCL_Debug_assert(totalLength == 0U);
 
     state->totalLength = 0;
 #endif
@@ -758,7 +759,7 @@ LRF_SetupResult LRF_applySettings(LRF_ConfigWord         *config,
     return SetupResult_Ok;
 }
 
-LRF_TxPowerTable_Entry LRF_TxPowerTable_findValue(const LRF_TxPowerTable *table, LRF_TxPowerTable_Index powerLevel)
+LRF_TxPowerTable_Entry LRF_TxPowerTable_findValueExtended(const LRF_TxPowerTable *table, LRF_TxPowerTable_Index powerLevel, bool roundUp, bool returnBoundaryOnOutOfRange)
 {
     if (powerLevel.rawValue == LRF_TxPower_Use_Raw.rawValue)
     {
@@ -766,48 +767,76 @@ LRF_TxPowerTable_Entry LRF_TxPowerTable_findValue(const LRF_TxPowerTable *table,
            invalid value otherwise. */
         return LRF_getRawTxPower();
     }
-    else if (table != NULL && table->numEntries > 0 && powerLevel.rawValue <= LRF_TxPower_Use_Max.rawValue)
+    else if (table != NULL && table->numEntries > 0U && powerLevel.rawValue <= LRF_TxPower_Use_Max.rawValue)
     {
         if (powerLevel.rawValue == LRF_TxPower_Use_Min.rawValue)
         {
             /* Handle special input argument - return lowest possible tx power. */
-            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValue: Tx table search: lowest possible");
+            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValueExtended: Tx table search: lowest possible");
             return table->powerTable[0];
         }
         else if (powerLevel.rawValue == LRF_TxPower_Use_Max.rawValue)
         {
             /* Handle special input argument - return highest possible tx power. */
-            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValue: Tx table search: highest possible");
-            return table->powerTable[table->numEntries - 1];
+            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValueExtended: Tx table search: highest possible");
+            return table->powerTable[table->numEntries - 1U];
         }
         else if (table->powerTable[0].power.rawValue > powerLevel.rawValue)
         {
             /* If the first entry is already larger, then the requested
             power level is invalid. */
-            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValue: Tx table search: %d too low", powerLevel.rawValue);
-            return LRF_TxPowerEntry_INVALID_VALUE;
-        }
-        else
-        {
-            for (size_t i = 1; i < table->numEntries; i++)
+            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValueExtended: Tx table search: %d too low", powerLevel.rawValue);
+            if (returnBoundaryOnOutOfRange)
             {
-                /* Search for the first entry higher than target power level. */
-                if (table->powerTable[i].power.rawValue > powerLevel.rawValue)
-                {
-                    /* Return last entry that was not larger than target power level. */
-                    return table->powerTable[i - 1];
-                }
-            }
-            if (table->powerTable[table->numEntries - 1].power.rawValue == powerLevel.rawValue)
-            {
-                /* Return highest value if it matches the requested power level. */
-                return table->powerTable[table->numEntries - 1];
+                /* Return lowest possible */
+                return table->powerTable[0];
             }
             else
             {
-                /* If no entries are larger than target power level, then the requested
-                power level is invalid. */
-                Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValue: Tx table search: %d too high", powerLevel.rawValue);
+                return LRF_TxPowerEntry_INVALID_VALUE;
+            }
+        }
+        else
+        {
+            if (table->powerTable[0].power.rawValue == powerLevel.rawValue)
+            {
+                /* Handle exact match for first entry */
+                return table->powerTable[0];
+            }
+
+            for (size_t i = 1; i < table->numEntries; i++)
+            {
+                /* Search for the first entry higher than or equal to target power level. */
+                if (table->powerTable[i].power.rawValue >= powerLevel.rawValue)
+                {
+                    if (table->powerTable[i].power.rawValue == powerLevel.rawValue)
+                    {
+                        /* Exact match found */
+                        return table->powerTable[i];
+                    }
+                    else if (roundUp)
+                    {
+                        /* Return current entry since it's larger than target power level */
+                        return table->powerTable[i];
+                    }
+                    else
+                    {
+                        /* Return last entry that was not larger than target power level. */
+                        return table->powerTable[i - 1U];
+                    }
+                }
+            }
+
+            /* If no entries are larger than target power level, then the requested
+            power level is invalid. */
+            Log_printf(LogModule_RCL, Log_INFO, "LRF_TxPowerTable_findValueExtended: Tx table search: %d too high", powerLevel.rawValue);
+            if (returnBoundaryOnOutOfRange)
+            {
+                /* Return highest possible */
+                return table->powerTable[table->numEntries - 1U];
+            }
+            else
+            {
                 return LRF_TxPowerEntry_INVALID_VALUE;
             }
         }

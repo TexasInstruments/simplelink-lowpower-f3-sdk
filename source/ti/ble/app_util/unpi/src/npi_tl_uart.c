@@ -51,23 +51,14 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
+#include <ti/drivers/uart2/UART2LPF3.h>
+#include <ti/drivers/Power.h>
 #include "ti/ble/stack_util/comdef.h"
-
 #include "ti/ble/app_util/unpi/npi_data.h"
 #include "ti/ble/app_util/unpi/npi_util.h"
 #include "ti/ble/app_util/unpi/npi_tl_uart.h"
-#include <ti/drivers/UART2.h>
 
-#ifdef CC23X0
-#include <ti/drivers/Power.h>
-#include <ti/drivers/UART2.h>
-#include <ti/drivers/uart2/UART2LPF3.h>
-#else
-#include <ti/drivers/uart2/UART2CC26X2.h>
-#endif
 
-#include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(driverlib/uart.h)
 
 // ****************************************************************************
 // defines
@@ -207,11 +198,7 @@ void NPITLUART_stopTransfer(void)
     // or that the FIFO has already been read for this UART_read()
     // In either case UART2_readCancel will call the read CB function and it will
     // invoke npiTransmitCB with the appropriate number of bytes read
-#ifdef CC23X0
     if (!UARTCharAvailable(((UART2LPF3_HWAttrs const *)(uartHandle->hwAttrs))->baseAddr))
-#else
-    if (!UARTCharsAvail(((UART2CC26X2_HWAttrs const *)(uartHandle->hwAttrs))->baseAddr))
-#endif
     {
         RxActive = FALSE;
         UART2_readCancel(uartHandle);
@@ -388,11 +375,7 @@ void NPITLUART_readCallBack(UART2_Handle handle, void *ptr, size_t size, void *u
 #if (NPI_FLOW_CTRL == 1)
     // Read has been cancelled by transport layer, or bus timeout and no bytes in FIFO
     //    - do not invoke another read
-#ifdef CC23X0
     if (!UARTCharAvailable(((UART2LPF3_HWAttrs const *)(uartHandle->hwAttrs))->baseAddr) &&
-#else
-    if (!UARTCharsAvail(((UART2CC26X2_HWAttrs const *)(uartHandle->hwAttrs))->baseAddr) &&
-#endif
        (UART2_getRxCount(uartHandle) == 0) &&
             remRdy_flag)
     {

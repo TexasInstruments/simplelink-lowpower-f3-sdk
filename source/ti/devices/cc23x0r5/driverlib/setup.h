@@ -3,7 +3,7 @@
  *
  *  Description:    Prototypes and defines for the setup API.
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,8 @@
  *
  ******************************************************************************/
 
-#ifndef __SETUP_H__
-#define __SETUP_H__
+#ifndef ti_devices_setup__include
+#define ti_devices_setup__include
 
 //*****************************************************************************
 //
@@ -94,4 +94,4 @@ extern void SetupTrimDevice(void);
 //
 //*****************************************************************************
 
-#endif //  __SETUP_H__
+#endif // ti_devices_setup__include

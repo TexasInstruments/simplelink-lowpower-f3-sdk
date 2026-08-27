@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for reading the high accuracy temperature diode
  *
- *  Copyright (c) 2023, Texas Instruments Incorporated
+ *  Copyright (c) 2023-2026 Texas Instruments Incorporated
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,8 +34,8 @@
  *
  ******************************************************************************/
 
-#ifndef __tempdiode_H__
-#define __tempdiode_H__
+#ifndef ti_devices_tempdiode__include
+#define ti_devices_tempdiode__include
 
 //*****************************************************************************
 //
@@ -106,4 +106,4 @@ extern int32_t TempDiodeGetTemp(void);
 //
 //*****************************************************************************
 
-#endif // __tempdiode_H__
+#endif // ti_devices_tempdiode__include

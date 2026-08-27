@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2018-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -187,6 +187,46 @@ This parameter configures when the GPIO pin interrupt will trigger. Even when th
             default: false,
             onChange: updateConfigs
         },
+        {
+            name: "alternativeMux",
+            displayName: "Alternative Mux",
+            description: "Mux option to be used directly by the application.",
+            longDescription: `This options is for users wanting to interface with
+a non-GPIO peripheral, such as a UART or SPI, without using the TI provided
+peripheral driver, such as the UART2 or SPI driver respectively.
+
+However, it is recommended to select "None" and use the relevant TI provided
+peripheral driver and associated SysConfig module to configure the pin muxing,
+unless you have a specific need.
+
+When an option other than "None" is selected, SysConfig will only allow you to
+select DIOs which support the selected mux option.
+Additionally SysConfig will generate a define named \`<instance name>_ALT_MUX\`
+where the value is the mux value to be passed by the application to the
+[\`GPIO_setConfigAndMux()\`](/drivers/doxygen/html/_g_p_i_o_8h.html#a53cc86d668c93f510dc3de7332410ebd)
+function and where \`<instance name>\` is the name of the GPIO instance.
+
+Note, when the value of this config is changed to a different peripheral, any
+assigned pin in the PinMux settings for this GPIO instance will be lost, and you
+will need to reassign the pin in the PinMux settings.
+`,
+            default: "None",
+            options: (() =>
+            {
+                let options = [
+                    {name: "None"}
+                ];
+                for (let key in system.deviceData.peripheralPins)
+                {
+                    let peripheralPin = system.deviceData.peripheralPins[key];
+                    if (!peripheralPin.name.includes("GPIO") && peripheralPin.pinMappings.length > 0 && peripheralPin.pinMappings[0].devicePinType === "Default")
+                    {
+                        options.push({name: peripheralPin.name});
+                    }
+                }
+                return options;
+            })()
+        },
         /* Compatibility - these deprecated options mirror PIN configurables */
         {
             name: "outputState",
@@ -213,7 +253,20 @@ This parameter configures when the GPIO pin interrupt will trigger. Even when th
             name: "parentInterfaceName",
             displayName: "Parent Interface Name",
             hidden: true,
-            default: ""
+            default: "",
+            onChange: (inst, ui) => {
+                /* If signal name is set and is not GPIO, then hide
+                 * alternativeMux option.
+                 */
+                if (inst.parentInterfaceName !== "" && inst.parentInterfaceName !== "GPIO") {
+                    ui.alternativeMux.hidden = true;
+                    inst.alternativeMux = "None";
+                }
+                else
+                {
+                    ui.alternativeMux.hidden = false;
+                }
+            }
         },
         {
             name: "parentSignalDisplayName",
@@ -239,7 +292,15 @@ This parameter configures when the GPIO pin interrupt will trigger. Even when th
 
     if (family == "LPF3")
     {
-        /* CC23XX devices have hysteresis forcibly enabled to lower glitch
+        /* LPF3 devices have hysteresis forcibly enabled to lower glitch
+         * sensitivity
+         */
+        removeConfigElement("hysteresis");
+    }
+
+    else if (family == "LPF4")
+    {
+        /* LPF4 devices have hysteresis forcibly enabled to lower glitch
          * sensitivity
          */
         removeConfigElement("hysteresis");
@@ -324,6 +385,39 @@ function getDisabledHWOptions(inst, comps)
 }
 
 /*
+ *  ======== _pinmuxFilterCache ========
+ *  Cache for filter functions used in GPIO pinmuxRequirements.
+ *  This is used to ensure the same function reference is returned
+ *  for identical configurations (prevents re-creation on each call).
+ */
+let _pinmuxFilterCache = {
+    pinFilter: {},
+    peripheralFilter: {}
+};
+
+/*
+ * Create or retrieve cached pin filter function
+ */
+function _getPinFilterFunction(alternativeMux)
+{
+    if (!_pinmuxFilterCache.pinFilter[alternativeMux]) {
+        _pinmuxFilterCache.pinFilter[alternativeMux] = (devicePin, peripheralPin) => peripheralPin.name == alternativeMux;
+    }
+    return _pinmuxFilterCache.pinFilter[alternativeMux];
+}
+
+/*
+ * Create or retrieve cached peripheral filter function
+ */
+function _getPeripheralFilterFunction(peripheralName)
+{
+    if (!_pinmuxFilterCache.peripheralFilter[peripheralName]) {
+        _pinmuxFilterCache.peripheralFilter[peripheralName] = (peripheral) => peripheral.name == peripheralName;
+    }
+    return _pinmuxFilterCache.peripheralFilter[peripheralName];
+}
+
+/*
  *  ======== pinmuxRequirements ========
  *  Return peripheral pin requirements as a function of config
  */
@@ -333,14 +427,84 @@ function pinmuxRequirements(inst)
         return ([]);
     }
 
-    let gpio = {
-        name: "gpioPin",
-        displayName: "GPIO Pin",
-        interfaceName: "GPIO",
-        signalTypes: ["DIN", "DOUT"]
-    };
+    if (inst.alternativeMux === "None")
+    {
+        let gpio = {
+            name: "gpioPin",
+            displayName: "GPIO Pin",
+            interfaceName: "GPIO",
+            signalTypes: ["DIN", "DOUT"]
+        };
+        return ([gpio]);
+    }
+    else
+    {
+        let peripheralPinObject;
+        let peripheralObject;
+        let interfaceObject;
 
-    return ([gpio]);
+        /* Get the PeripheralPin object for the selected alternative mux option */
+        peripheralPinObject = system.deviceData.peripheralPins[inst.alternativeMux];
+
+
+        /* Get the Peripheral object for the selected PeripheralPin */
+        peripheralObject = system.deviceData.peripherals[peripheralPinObject.peripheralName];
+
+        /* Find the Interface object matching the selected PeripheralPin.
+         * Iterate all interfaces of the Peripheral object.
+         */
+        for (let key in peripheralObject.interfaces)
+        {
+            let tmpInterfaceObject = peripheralObject.interfaces[key];
+
+            /* Check if the current interface has a interface pin matching the
+             * selected PeripheralPin's interface pin.
+             */
+            for (let interfacePinKey in tmpInterfaceObject.interfacePins)
+            {
+                if (tmpInterfaceObject.interfacePins[interfacePinKey].id === peripheralPinObject.interfacePin.id)
+                {
+                    /* Found a match. */
+                    interfaceObject = tmpInterfaceObject;
+                    break; /* Break out of inner loop */
+                }
+            }
+            if (interfaceObject != undefined)
+            {
+                /* Break out of outer loop, if a match was found in the inner
+                 * loop.
+                 */
+                break;
+            }
+        }
+
+        /* Construct pinmux requirement object */
+        let peripheralPinRequirement = {
+            name: "pinPeripheral",
+            displayName: peripheralPinObject.peripheralName + " Peripheral (for alternative mux)",
+            description: "This is the peripheral matching the selected alternative mux option (" + inst.alternativeMux + ")",
+            longDescription: `This is the peripheral matching the selected alternative mux option (${inst.alternativeMux}).
+Only one option will be available. You do not need to select anything.
+This is just here to inform you which peripheral is used for the selected alternative mux option.`,
+            interfaceName: interfaceObject.name,
+            canShareWith: "GPIO", /* So multiple GPIOs can use the same peripheral (for example UART0), but a specific peripheral pin can still not be shared (for example UART0TX). */
+            resources: [
+                {
+                    name: "gpioPin",
+                    displayName: "GPIO Pin (" + peripheralPinObject.peripheralName + " " + peripheralPinObject.interfacePin.description + " Pin)",
+                    description: peripheralPinObject.peripheralName + " " + peripheralPinObject.interfacePin.description,
+                    longDescription: `This is the GPIO pin to be used. Only DIOs
+supporting the selected alternative mux option (${inst.alternativeMux}) are
+available.`,
+                    interfaceNames: [peripheralPinObject.interfacePin.name],
+                    filter: _getPinFilterFunction(inst.alternativeMux)
+                }
+            ],
+            signalTypes: {"gpioPin": ["DIN", "DOUT"]},
+            filter: _getPeripheralFilterFunction(peripheralObject.name)
+        };
+        return ([peripheralPinRequirement]);
+    }
 }
 
 /*
@@ -706,6 +870,14 @@ function getAttrs(inst)
             listOfDefines.push(strengthMapping[inst.outputStrength]);
         }
 
+        /* If the pull option exists, and output type is open drain
+         * add the define for selected pull option to the list of defines
+         */
+        if ("pull" in inst && inst.outputType == "Open Drain")
+        {
+            listOfDefines.push(pullMapping[inst.pull]);
+        }
+
         /* If the outputType option exists and is not "Standard",
          * add the define for the selected option to list of defines
          */
@@ -765,12 +937,11 @@ function _getPinResources(inst)
 }
 
 /*
- *  ======== getDioForInst ========
+ *  ======== getPinSolutionForInst ========
  */
-function getDioForInst(inst)
+function getPinSolutionForInst(inst)
 {
     let pinSolution;
-
     if (inst.$ownedBy) {
         if (inst.parentInterfaceName == "GPIO") {
             /* GPIO interfaces only have one layer */
@@ -782,9 +953,24 @@ function getDioForInst(inst)
         }
     }
     else {
-        pinSolution = inst.gpioPin.$solution;
+        if (inst.alternativeMux === "None")
+        {
+            pinSolution = inst.gpioPin.$solution;
+        }
+        else
+        {
+            pinSolution = inst.pinPeripheral.gpioPin.$solution;
+        }
     }
+    return pinSolution;
+}
 
+/*
+ *  ======== getDioForInst ========
+ */
+function getDioForInst(inst)
+{
+    let pinSolution = getPinSolutionForInst(inst);
     let devicePin = system.deviceData.devicePins[pinSolution.packagePinName];
 
     /* Conflicting pins have no valid mapping until ignored */
@@ -843,6 +1029,18 @@ function _getHwSpecificAttrs(inst)
 }
 
 /*
+ *  ======== _getPinMuxModeFromPin ========
+ * This can be overridden by the device-specific GPIO module to handle special
+ * pin mux modes.
+ *
+ * This function is supposed to return values that can be passed directly to
+ * GPIO_setConfigAndMux().
+ */
+function _getPinMuxModeFromPin(pin) {
+    return pin.$solution.muxMode;
+}
+
+/*
  *  ======== base ========
  *  Define the base/common GPIO property and method exports
  */
@@ -896,11 +1094,13 @@ dependency issue.
     _getDefaultAttrs: _getDefaultAttrs,
     _getInaccessiblePinAttrs: _getInaccessiblePinAttrs,
     _getHwSpecificAttrs: _getHwSpecificAttrs,
+    _getPinMuxModeFromPin: _getPinMuxModeFromPin,
     _pinToDio: _pinToDio,
     _isDioAccessible: _isDioAccessible,
 
     getPinData: getPinData,
     getPinBounds: getPinBounds,
+    getPinSolutionForInst: getPinSolutionForInst,
     getDioForInst: getDioForInst
 };
 

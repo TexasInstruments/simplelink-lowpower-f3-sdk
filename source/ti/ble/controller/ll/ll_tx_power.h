@@ -76,7 +76,7 @@
  */
 #include "ti/ble/stack_util/comdef.h"
 #include "ti/ble/controller/ll/ll_config.h"
-#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>
 
 /*******************************************************************************

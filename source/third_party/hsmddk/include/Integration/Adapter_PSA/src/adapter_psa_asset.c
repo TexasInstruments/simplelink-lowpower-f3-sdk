@@ -145,7 +145,7 @@ psaInt_AssetAlloc(const PsaPolicyMask_t AssetPolicy,
                     Eip130Token_Result_AssetCreate(&resultToken, AssetId_p);
                     funcres = PSA_SUCCESS;
                 }
-                else if (tokenResult == EIP130TOKEN_RESULT_FULL_ERROR)
+                else if (Eip130Token_Result_StripFASvc(tokenResult) == EIP130TOKEN_RESULT_FULL_ERROR)
                 {
                     funcres = PSA_ERROR_ASSET_STORE_FULL;
                 }

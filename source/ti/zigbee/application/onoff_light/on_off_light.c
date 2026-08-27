@@ -4,7 +4,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2024-2025, Texas Instruments Incorporated
+ Copyright (c) 2024-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -373,6 +373,12 @@ static void send_diag_data_req(zb_uint16_t short_address)
   }
 }
 
+//! IMPORTANT!
+//! The return value of this function is used to determine
+//! whether the command was processed by this handler or not.
+//! If the command was processed, the function must return ZB_TRUE,
+//! otherwise ZB_FALSE. If processed here, the command will not be
+//! processed by the stack.
 zb_uint8_t zcl_specific_cluster_cmd_handler(zb_uint8_t param)
 {
   zb_zcl_parsed_hdr_t cmd_info;

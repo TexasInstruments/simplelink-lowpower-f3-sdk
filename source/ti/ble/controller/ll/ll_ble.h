@@ -88,7 +88,7 @@
 /*******************************************************************************
  * INCLUDES
  */
-#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/RCL.h>
 #include <ti/drivers/rcl/commands/ble5.h>
 #include "ti/ble/controller/ll/ll_al.h"
 #include "ti/ble/controller/ll/ll_common.h"
@@ -608,6 +608,9 @@ PACKED_TYPEDEF_STRUCT
 // Scan and Periodic Scan Data finished buffers
 extern List_List scanDataQueue;
 
+// PAwR Response finished buffers
+extern List_List pawrRspDataQueue;
+
 // transmit queue
 extern txDataQ_t *txDataQ;
 extern rxDataQ_t rxDataQ;
@@ -636,12 +639,14 @@ extern void          llProcessCentralControlPacket( llConnState_t *, uint8_t * )
 extern void          llMoveTempTxDataEntries( llConnState_t * );
 extern void         *llSetupScanDataEntryQueue( void );
 extern void         *llSetupPeriodicScanDataEntryQueue( void );
+extern void         *llSetupPAwRResponseDataEntryQueue( List_List *pRxBuffers );
 extern void         *llSetupInitDataEntryQueue( void );
 extern void         *llSetupAdvDataEntryQueue( void );
 extern void         *llSetupConnRxDataEntryQueue( uint8 connId );
 extern void          llClearRxDataEntry( void *, List_List * );
 extern void          llClearScanDataQueue( uint8 );
 extern void          llClearPeriodicScanDataQueue( uint8 );
+extern void          llClearPAwRResponseDataQueue( uint8 );
 void                 llMoveTxDataEntriesToTemp( llConnState_t *connPtr );
 
 

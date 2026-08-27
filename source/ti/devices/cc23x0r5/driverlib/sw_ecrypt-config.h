@@ -5,8 +5,8 @@
 
 /* *** Normally, it should not be necessary to edit this file. *** */
 
-#ifndef ECRYPT_CONFIG
-#define ECRYPT_CONFIG
+#ifndef ti_devices_sw_ecrypt_config__include
+#define ti_devices_sw_ecrypt_config__include
 
 /* ------------------------------------------------------------------------- */
 
@@ -274,4 +274,4 @@
 
 /* ------------------------------------------------------------------------- */
 
-#endif
+#endif /* ti_devices_sw_ecrypt_config__include */

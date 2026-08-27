@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025, Texas Instruments Incorporated
+ * Copyright (c) 2021-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,9 +91,10 @@
  *  ============================================================================
  */
 
-#ifndef ti_drivers_power_PowerCC23X0_
-#define ti_drivers_power_PowerCC23X0_
+#ifndef ti_drivers_power_PowerCC23X0__include
+#define ti_drivers_power_PowerCC23X0__include
 
+#include <stdint.h>
 #include <ti/drivers/dpl/HwiP.h>
 #include <ti/drivers/dpl/ClockP.h>
 #include <ti/drivers/Power.h>
@@ -178,11 +179,61 @@ typedef uint16_t PowerLPF3_Resource; /* Power resource identifier */
     #define PowerLPF3_PERIPH_LGPT3 (PowerCC23X0_PERIPH_GROUP_CLKCTL0 | CLKCTL_DESCEX0_LGPT3_S)
 #endif
 
+/*! @brief Resource ID: LRFD
+ *
+ *  This can used to enable the clock for LRFD, without having to enable the
+ *  clock for any of the sub-clocks in LRFD.
+ *
+ *  To enable specific sub-clocks in LRFD, sub-clock specific resource IDs can
+ *  be used. Using those resource IDs will automatically enable the main LRFD
+ *  clock, so this resource ID (#PowerLPF3_PERIPH_LRFD) is not necessary.
+ *  The sub-clock resource IDs are:
+ *  - #PowerLPF3_PERIPH_LRFD_PBE
+ *  - #PowerLPF3_PERIPH_LRFD_MDM
+ *  - #PowerLPF3_PERIPH_LRFD_RFE
+ *  - #PowerLPF3_PERIPH_LRFD_S2R
+ *  - #PowerLPF3_PERIPH_LRFD_TRC
+ *  - #PowerLPF3_PERIPH_LRFD_PBERAM
+ *  - #PowerLPF3_PERIPH_LRFD_MCERAM
+ *  - #PowerLPF3_PERIPH_LRFD_RFERAM
+ *  - #PowerLPF3_PERIPH_LRFD_DSBRAM
+ *  - #PowerLPF3_PERIPH_LRFD_BUFRAM
+ *  - #PowerLPF3_PERIPH_LRFD_S2RRAM
+ */
+#define PowerLPF3_PERIPH_LRFD (PowerCC23X0_PERIPH_GROUP_LRFD | LRFD_CLK_DEP_LRFD_S)
+
+/*! Resource ID: LRFD PBE */
+#define PowerLPF3_PERIPH_LRFD_PBE (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_PBE_S)
+
+/*! Resource ID: LRFD Modem */
+#define PowerLPF3_PERIPH_LRFD_MDM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_MDM_S)
+
+/*! Resource ID: LRFD RFE */
+#define PowerLPF3_PERIPH_LRFD_RFE (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_RFE_S)
+
+/*! Resource ID: LRFD Samples2RAM */
+#define PowerLPF3_PERIPH_LRFD_S2R (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2R_S)
+
 /*! Resource ID: LRFD Tracer */
-#define PowerLPF3_PERIPH_LFRD_TRC (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
+#define PowerLPF3_PERIPH_LRFD_TRC (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_TRC_S)
+
+/*! Resource ID: LRFD PBE RAM */
+#define PowerLPF3_PERIPH_LRFD_PBERAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_PBERAM_S)
+
+/*! Resource ID: LRFD MCE RAM */
+#define PowerLPF3_PERIPH_LRFD_MCERAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_MCERAM_S)
+
+/*! Resource ID: LRFD RFE RAM */
+#define PowerLPF3_PERIPH_LRFD_RFERAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_RFERAM_S)
+
+/*! Resource ID: LRFD DSB RAM */
+#define PowerLPF3_PERIPH_LRFD_DSBRAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_DSBRAM_S)
+
+/*! Resource ID: LRFD BUFRAM */
+#define PowerLPF3_PERIPH_LRFD_BUFRAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_BUFRAM_S)
 
 /*! Resource ID: LRFD S2R RAM */
-#define PowerLPF3_PERIPH_LFRD_S2RRAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
+#define PowerLPF3_PERIPH_LRFD_S2RRAM (PowerCC23X0_PERIPH_GROUP_LRFD | LRFDDBELL_CLKCTL_S2RRAM_S)
 
 /* \cond */
 /* Number of resources in the different resource groups. This is possibly larger
@@ -619,7 +670,7 @@ void PowerLPF3_adjustHfxtAmp(int_fast8_t adjustment);
  *  The function is doing the following:
  *  - Disable SysTick (For TFM enabled apps, the NS SysTick is disabled)
  *  - Store SysTimer state
- *  - Configure RTC to wake up the device #PowerCC27XX_WAKEDELAYSTANDBY
+ *  - Configure RTC to wake up the device #PowerCC23X0_WAKEDELAYSTANDBY
  *    microseconds before the next event, @c nextEventTimeUs. This is to ensure
  *    that the device is ready to service the event at time @c nextEventTimeUs.
  *  - Post the #PowerLPF3_ENTERING_STANDBY notification
@@ -668,4 +719,4 @@ void PowerCC23X0_schedulerRestore(void);
 }
 #endif
 
-#endif /* POWER_CC23X0_ */
+#endif /* ti_drivers_power_PowerCC23X0__include */

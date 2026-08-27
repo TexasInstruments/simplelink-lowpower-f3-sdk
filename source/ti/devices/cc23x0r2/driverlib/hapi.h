@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -29,8 +29,8 @@
  *
  ******************************************************************************/
 
-#ifndef __HAPI_H__
-#define __HAPI_H__
+#ifndef ti_devices_hapi__include
+#define ti_devices_hapi__include
 
 #include <stdint.h>
 #include "sha256sw.h"
@@ -484,4 +484,4 @@ typedef struct
  *****************************************************************************/
 #define HapiClz(x) HAPI_TABLE_POINTER->clz((x))
 
-#endif //__HAPI_H__
+#endif // ti_devices_hapi__include

@@ -87,6 +87,41 @@
 #error "One or more dependencies are missing! Please add them."
 #endif
 
+cmErrorCodes_e OPT_LL_CMS_RegisterCBs(const cmsCBs_t* pCBs)
+{
+    return LL_CMS_RegisterCBs(pCBs);
+}
+
+uint8_t OPT_LL_CMS_GetConnDataSize(void)
+{
+    return LL_CMS_GetConnDataSize();
+}
+
+cmErrorCodes_e OPT_LL_CMS_GetConnData(uint16_t connHandle, cmsConnDataParams_t* pParams)
+{
+    return LL_CMS_GetConnData(connHandle, pParams);
+}
+
+cmErrorCodes_e OPT_LL_CM_RegisterCBs(const cmCBs_t* pCBs)
+{
+    return LL_CM_RegisterCBs(pCBs);
+}
+
+cmErrorCodes_e OPT_LL_CM_StartMonitor(cmStartMonitorParams_t* pParams)
+{
+    return LL_CM_StartMonitor(pParams);
+}
+
+cmErrorCodes_e OPT_LL_CM_StopMonitor(uint16_t connHandle)
+{
+    return LL_CM_StopMonitor(connHandle);
+}
+
+cmErrorCodes_e OPT_LL_CM_UpdateConn(cmConnUpdateEvt_t* pConnUpdateEvt)
+{
+    return LL_CM_UpdateConn(pConnUpdateEvt);
+}
+
 void OPT_llCmUpdateRclCmdPhyFeatures(uint8_t connId, uint16_t phyFeatures)
 {
     llCmUpdateRclCmdPhyFeatures(connId, phyFeatures);

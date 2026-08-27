@@ -38,8 +38,8 @@
  *  ============================================================================
  */
 
-#ifndef ti_drivers_power_PowerCC27XX_s_
-#define ti_drivers_power_PowerCC27XX_s_
+#ifndef ti_drivers_power_PowerCC27XX_s__include
+#define ti_drivers_power_PowerCC27XX_s__include
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,4 +60,4 @@ typedef enum
 }
 #endif
 
-#endif /* ti_drivers_power_PowerCC27XX_s_ */
+#endif /* ti_drivers_power_PowerCC27XX_s__include */

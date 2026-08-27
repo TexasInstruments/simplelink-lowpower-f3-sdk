@@ -152,10 +152,10 @@ extern "C" {
  *
  *  NoRTOS:   12
  *  FreeRTOS: 12
- *  BIOS 6.x: 28
  *  BIOS 7.x: 20
+ *  Zephyr: 8
  */
-#define HwiP_STRUCT_SIZE (28)
+#define HwiP_STRUCT_SIZE (20)
 
 /*!
  *  @brief    HwiP structure.

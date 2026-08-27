@@ -62,6 +62,14 @@ extern "C"
  * MACROS
  */
 
+/*
+ * Needed for defining the image trailer
+ *
+ * Taken from bootloader files as is, until there will be a way to grab it automatically.
+ */
+#define BOOT_MAGIC_SZ           16
+#define BOOT_MAX_ALIGN          8
+
 /*********************************************************************
  * TYPEDEFS
  */
@@ -72,6 +80,27 @@ typedef enum
 {
     SW_UPDATE_SOURCE_OAD,          //!<this mode is for OAD
 }swUpdateSource_e;
+
+/*
+ * Image trailer, positioned at the end of an image slot.
+ *
+ * This is needed for the OAD profile to be able to set the image_ok flag in
+ * the trailer of the primary slot after a successful OAD transfer.
+ *
+ * Taken from bootloader files as is, until there will be a way to grab it automatically.
+ */
+struct image_trailer {
+    uint8_t swap_type;
+    uint8_t pad1[BOOT_MAX_ALIGN - 1];
+    uint8_t copy_done;
+    uint8_t pad2[BOOT_MAX_ALIGN - 1];
+    uint8_t image_ok;
+    uint8_t pad3[BOOT_MAX_ALIGN - 1];
+#if BOOT_MAX_ALIGN > BOOT_MAGIC_SZ
+    uint8_t pad4[BOOT_MAGIC_ALIGN_SIZE - BOOT_MAGIC_SZ];
+#endif
+    uint8_t magic[BOOT_MAGIC_SZ];
+};
 
 /*!
  * This error will return from SwUpdate_CheckImageHeader if there is problem with header
@@ -126,6 +155,29 @@ extern int SwUpdate_CheckImageHeader(uint8 *imageHeader);
 extern Status_t SwUpdate_RevokeImage(uint8 imageSlot);
 
 /*********************************************************************
+ * @fn      SwUpdate_RevokeSecondaryImage
+ *
+ * @brief   This function invalidates the header of the secondary
+ *          image slot.
+ *
+ * @return  FLASH_SUCCESS or FLASH_FAILURE
+ */
+Status_t SwUpdate_RevokeSecondaryImage();
+
+/*********************************************************************
+ * @fn      SwUpdate_IsVersionGreater
+ *
+ * @brief   Check if one version is greater than another version.
+ *          Comparison order: major > minor > revision > build_num
+ *
+ * @param   pImg1   - Input image version 1
+ * @param   pImg2   - Input image version 2
+ *
+ * @return  true if pImg1 > pImg2, false otherwise
+ */
+extern bool SwUpdate_IsVersionGreater(const struct image_version *pImg1, const struct image_version *pImg2);
+
+/*********************************************************************
  * @fn      SwUpdate_GetSWVersion
  *
  * @brief   This function extract sw version of MCU header from
@@ -148,6 +200,18 @@ extern uint32* SwUpdate_GetSWVersion(uint32 hdrAdrr);
  *
  */
 extern Status_t SwUpdate_EraseFlash(uint8 imageSlot);
+
+/*********************************************************************
+ * @fn      SwUpdate_GetCandidateImageHeader
+ *
+ * @brief   Return a pointer to the candidate image header stored during
+ *          SwUpdate_CheckImageHeader(). Valid only after a successful call
+ *          to SwUpdate_CheckImageHeader().
+ *
+ * @return  Pointer to the stored candidate image header, or NULL if the
+ *          module has not been opened yet.
+ */
+extern const struct image_header *SwUpdate_GetCandidateImageHeader(void);
 
 /*********************************************************************
  * @fn      SwUpdate_WriteBlock

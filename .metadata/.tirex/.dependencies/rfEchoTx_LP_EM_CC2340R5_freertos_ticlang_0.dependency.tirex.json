@@ -1,16 +1,17 @@
 [
     {
         "files": [
-            "+../../rfEchoTx.c -> rfEchoTx.c",
             "+../../README.md -> README.md",
-            "+../../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
-            "+../../rfEcho_MissedFirstPacket.png -> rfEcho_MissedFirstPacket.png",
-            "+../../rfEcho_MissingFirstCouplePackets.png -> rfEcho_MissingFirstCouplePackets.png",
-            "+../../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
+            "+../../README.html -> README.html",
+            "+../../rfEchoTx.c -> rfEchoTx.c",
+            "+../../images/rfEcho_ErrorTxRx.png -> images/rfEcho_ErrorTxRx.png",
+            "+../../images/rfEcho_MissedFirstPacket.png -> images/rfEcho_MissedFirstPacket.png",
+            "+../../images/rfEcho_MissingFirstCouplePackets.png -> images/rfEcho_MissingFirstCouplePackets.png",
+            "+../../images/rfEcho_PerfectEcho.png -> images/rfEcho_PerfectEcho.png",
+            "+../../overview.rov.json -> overview.rov.json",
             "+../rfEchoTx.syscfg -> rfEchoTx.syscfg",
             "+../main_freertos.c -> main_freertos.c",
-            "+../../overview.rov.json -> overview.rov.json",
-            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+            "+cc23x0r5.cmd -> cc23x0r5.cmd"
         ]
     }
 ]

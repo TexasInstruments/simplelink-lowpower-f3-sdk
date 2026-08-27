@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,12 +66,12 @@ extern "C" {
 /*!
  *  @brief    Number of bytes greater than or equal to the size of any RTOS Task object.
  *
- *  BIOS 6.x: 80
  *  BIOS 7.x: 88
  *  FreeRTOS: 104(llvm)/340(gcc)
+ *  Zephyr: 160
  */
 #if (defined(__ti_version__) && defined(__clang__)) || defined(__IAR_SYSTEMS_ICC__)
-    #define TaskP_STRUCT_SIZE (104)
+    #define TaskP_STRUCT_SIZE (160)
 #elif defined(__GNUC__)
     #define TaskP_STRUCT_SIZE (340)
 #endif

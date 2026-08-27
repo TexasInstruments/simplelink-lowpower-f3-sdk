@@ -211,6 +211,7 @@ extern "C"
 #define LL_STATUS_ERROR_INSUFFICIENT_CHANNELS          0x48U // Number of channels is insufficient
 #define LL_STATUS_ERROR_PACKET_TOO_LONG                0x45 // Packet Too Long
 #define LL_STATUS_ERROR_PACKET_TOO_LATE                0x46 // Packet was submitted too late
+#define LL_STATUS_ERROR_PACKET_TOO_EARLY               0x47 // Packet was submitted too early
 
 // Internal
 // Handover
@@ -465,6 +466,12 @@ extern "C"
 #define LL_DTM_STABLE_MODULATION_INDEX                 1
 
 #define LL_DTM_RCL_CHANNEL_OFFSET                      64
+
+// BLE Spec V6.2 - LE Transmitter Test Version 4
+// Direct Test Mode TX Power special values
+#define LL_DTM_TX_POWER_USE_MIN_DBM                    0x7E  // Use minimum TX power supported by controller
+#define LL_DTM_TX_POWER_USE_MAX_DBM                    0x7F  // Use maximum TX power supported by controller
+
 //
 // Vendor Specific
 //
@@ -953,6 +960,42 @@ uint8_t LL_IsInitiatingWithRandomAddress( void );
 uint8_t LL_IsAdvertizeWithRandomAddress( void );
 
 /*******************************************************************************
+ * @fn          LL_IsCreateConnInProgress
+ *
+ * @brief       Checks if a create connection is in progress.
+ *
+ * input parameters
+ *
+ * @param       None.
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      TRUE if a create connection is in progress,
+ *              FALSE otherwise.
+ */
+uint8_t LL_IsCreateConnInProgress( void );
+
+/*******************************************************************************
+ * @fn          LL_GetExtInitParamIndexByBlePhy
+ *
+ * @brief       Get the index in extInitParam array for a given BLE PHY.
+ *
+ * input parameters
+ *
+ * @param       blePhy   - BLE PHY value (BLE5_1M_PHY=0, BLE5_2M_PHY=1, BLE5_CODED_PHY=2).
+ * @param       initPhys - Initiating PHYs bitmask (LL_PHY format).
+ *
+ * output parameters
+ *
+ * @param       None.
+ *
+ * @return      Index in extInitParam array for the given PHY.
+ */
+uint8_t LL_GetExtInitParamIndexByBlePhy( uint8_t blePhy, uint8_t initPhys );
+
+/*******************************************************************************
  * @fn          LL_GetCurConnId
  *
  * @brief       Getter for current connection handle
@@ -990,6 +1033,24 @@ void LL_SetCurConnId( uint16_t connHandle );
  * @return      TRUE/FALSE.
  */
 extern llStatus_t LL_IsRandomAddressConfigured ( void );
+
+/*******************************************************************************
+ * @fn      LL_GetSecondaryAdvChannelMap
+ *
+ * @brief   This function returns a pointer to the secondary advertising
+ *          channel map.
+ *
+ * input parameters
+ *
+ * @param   None
+ *
+ * output parameters
+ *
+ * @param   None
+ *
+ * @return  Pointer to the secondary advertising channel map array.
+ */
+uint8_t* LL_GetSecondaryAdvChannelMap( void );
 
 /*******************************************************************************
  * @fn          LL_ClearAcceptList API
@@ -2583,88 +2644,6 @@ extern llStatus_t LE_ReadRfPathCompCmd( int16 *txPathParam,
 extern llStatus_t LE_WriteRfPathCompCmd( int16 txPathParam,
                                          int16 rxPathParam );
 
-/*********************************************************************
- * @fn      LE_SetPeriodicAdvParams
- *
- * @brief   Used by the Host to set the advertiser parameters for periodic advertising
- *
- * @design  /ref did_286039104
- *
- * input parameters
- *
- * @param   advHandle              - Used to identify a periodic advertising train
- *                                   Created by LE Set Extended Advertising Parameters command
- * @param   periodicAdvIntervalMin - Minimum advertising interval for periodic advertising
- *                                   Range: 0x0006 to 0xFFFF Time = N * 1.25 ms Time Range: 7.5ms to 81.91875 s
- * @param   periodicAdvIntervalMax - Maximum advertising interval for periodic advertising
- *                                   Range: 0x0006 to 0xFFFF Time = N * 1.25 ms Time Range: 7.5ms to 81.91875 s
- * @param   periodicAdvProp        - Periodic advertising properties - set bit 6 for include TxPower in the advertising PDU
- *
- * output parameters
- *
- * @param       None.
- *
- * @return  llStatus_t
- */
-llStatus_t LE_SetPeriodicAdvParams( uint8_t advHandle,
-                                    uint16_t periodicAdvIntervalMin,
-                                    uint16_t periodicAdvIntervalMax,
-                                    uint16_t periodicAdvProp );
-
-/*********************************************************************
- * @fn      LE_SetPeriodicAdvData
- *
- * @brief   Used to set the advertiser data used in periodic advertising PDUs.
- *          This command may be issued at any time after the advertising set identified by
- *          the Advertising_Handle parameter has been configured for periodic advertising
- *          using the HCI_LE_Set_Periodic_Advertising_Parameters command
- *
- * @design  /ref did_286039104
- *
- * input parameters
- *
- * @param   advHandle  - Used to identify a periodic advertising train
- * @param   operation  - 0x00 - Intermediate fragment of fragmented periodic advertising data
- *                       0x01 - First fragment of fragmented periodic advertising data
- *                       0x02 - Last fragment of fragmented periodic advertising data
- *                       0x03 - Complete periodic advertising data
- * @param   dataLength - The number of bytes in the Advertising Data parameter
- * @param   data       - Periodic advertising data
- *
- * output parameters
- *
- * @param       None.
- *
- * @return  llStatus_t
- */
-llStatus_t LE_SetPeriodicAdvData( uint8_t advHandle,
-                                  uint8_t operation,
-                                  uint8_t dataLength,
-                                  uint8_t *data );
-
-/*********************************************************************
- * @fn      LE_SetPeriodicAdvEnable
- *
- * @brief   Used to request the advertiser to enable or disable
- *          the periodic advertising for the advertising set
- *
- * @design  /ref did_286039104
- *
- * input parameters
- *
- * @param   enable    - 0x00 - Periodic advertising is disabled (default)
- *                      0x01 - Periodic advertising is enabled
- * @param   advHandle - Used to identify a periodic advertising train
- *
- * output parameters
- *
- * @param       None.
- *
- * @return  llStatus_t
- */
-llStatus_t LE_SetPeriodicAdvEnable( uint8_t enable,
-                                    uint8_t advHandle );
-
 /*
 ** Vendor Specific Command API
 */
@@ -3157,13 +3136,20 @@ void LL_UpdateAdvSCAValue( uint16_t scaInPPM );
  *
  * input parameters
  *
- * @param       txPowerDbm - dBm value
- * @param       fraction   - Not used, added for future support
+ * @param       txPowerDbm - TX power level in dBm (-127 to +20), or special values
+ *                           LL_DTM_TX_POWER_USE_MIN_DBM / LL_DTM_TX_POWER_USE_MAX_DBM
+ * @param       fraction   - Fractional part of TX power (0 or 1)
+ * @param       returnBoundaryOnOutOfRange - If TRUE: Apply BLE spec-compliant behavior
+ *                                                     (handle LL_DTM_TX_POWER_USE_MIN_DBM/LL_DTM_TX_POWER_USE_MAX_DBM,
+ *                                                     clamp out-of-range values to min/max).
+ *                                           If FALSE: Apply strict validation (legacy behavior).
  *
- * @return      LL_STATUS_SUCCESS, LL_STATUS_ERROR_BAD_PARAMETER
+ * @return      LL_STATUS_SUCCESS if TX power is valid and set successfully
+ *              LL_STATUS_ERROR_BAD_PARAMETER if TX power is invalid
  */
 extern llStatus_t LL_EXT_SetMaxDtmTxPowerDbm( int8   txPowerDbm,
-                                              uint8  fraction);
+                                              uint8  fraction,
+                                              bool   returnBoundaryOnOutOfRange );
 
 /*******************************************************************************
  * @fn          LL_EXT_MapPmIoPort Vendor Specific API
@@ -3837,15 +3823,15 @@ void LL_ConnectionCompleteCback( uint8 reasonCode, uint16 connHandle,
  *
  * @return      None.
  */
-void LL_EnhancedConnectionCompleteCback( uint8 reasonCode, uint16 connHandle,
-                                         uint8 role, uint8 peerAddrType,
-                                         uint8 *peerAddr, uint8 *localRPA,
-                                         uint8 *peerRPA, uint16 connInterval,
-                                         uint16 peripheralLatency,
-                                         uint16 connTimeout,
-                                         uint8  clockAccuracy,
-                                         uint8  advHandle,
-                                         uint16 syncHandle);
+void LL_EnhancedConnectionCompleteCback( uint8_t reasonCode, uint16_t connHandle,
+                                         uint8_t role, uint8_t peerAddrType,
+                                         uint8_t *peerAddr, uint8_t *localRPA,
+                                         uint8_t *peerRPA, uint16_t connInterval,
+                                         uint16_t peripheralLatency,
+                                         uint16_t connTimeout,
+                                         uint8_t  clockAccuracy,
+                                         uint8_t  advHandle,
+                                         uint16_t syncHandle);
 
 /*******************************************************************************
  * @fn          LL_DisconnectCback Callback
@@ -4665,6 +4651,55 @@ void HCI_PeriodicAdvReportEventV1( uint8_t* periodicEvtParams,
  * @return  void
  */
 void HCI_PeriodicAdvSyncLostEvent( uint16 syncHandle );
+
+/*******************************************************************************
+ * @fn          HCI_PadvASubeventDataRequestEvent
+ *
+ * @brief       Sends a request to the host for subevent data.
+ *
+ * input parameters
+ *
+ * @param      advHandle - The advertiser handle.
+ * @param      subeventStart - The starting subevent.
+ * @param      subeventCount - The number of subevents to request.
+ *
+ * output parameters
+ *
+ * @param      None.
+ *
+ * @return     None.
+*/
+void HCI_PadvASubeventDataRequestEvent(uint8_t advHandle,
+                                       uint8_t subeventStart,
+                                       uint8_t subeventCount);
+
+/*******************************************************************************
+ * @fn          HCI_PadvAResponseReportEvent
+ *
+ * @brief       Sends a periodic advertising response report to the host.
+ *              This event reports AUX_SYNC_SUBEVENT_RSP packets received by
+ *              the PAwR advertiser.
+ *
+ * input parameters
+ *
+ * @param      advHandle    - The advertiser handle.
+ * @param      subevent     - The subevent number for which responses are reported.
+ * @param      txStatus     - 0x00: AUX_SYNC_SUBEVENT_IND was transmitted,
+ *                            0x01: AUX_SYNC_SUBEVENT_IND was not transmitted.
+ * @param      numResponses - Number of response reports.
+ * @param      pResponses   - Pointer to array of response reports.
+ *
+ * output parameters
+ *
+ * @param      None.
+ *
+ * @return     None.
+*/
+void HCI_PadvAResponseReportEvent(uint8_t advHandle,
+                                  uint8_t subevent,
+                                  uint8_t txStatus,
+                                  uint8_t numResponses,
+                                  void   *pResponses);
 
 /*******************************************************************************
  * @fn          LL_EXT_ChanMapUpdateCback Callback

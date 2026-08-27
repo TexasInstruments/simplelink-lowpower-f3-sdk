@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024, Texas Instruments Incorporated
+ * Copyright (c) 2016-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,11 +66,11 @@ extern "C" {
  *            ClockP object.
  *
  *  NoRTOS:   32 (biggest of the HW-specific ClockP instance structs)
- *  BIOS 6.x: 40
  *  BIOS 7.x: 36
  *  FreeRTOS: 68
+ *  Zephyr:   80
  */
-#define ClockP_STRUCT_SIZE (68)
+#define ClockP_STRUCT_SIZE (80)
 
 /*!
  *  @brief    ClockP structure.

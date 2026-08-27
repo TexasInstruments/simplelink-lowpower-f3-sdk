@@ -30,6 +30,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef INCLUDE_GUARD_ADAPTER_PSA_KEY_MANAGEMENT_PREFIX_H
+#define INCLUDE_GUARD_ADAPTER_PSA_KEY_MANAGEMENT_PREFIX_H
+
 /** \addtogroup crypto_prefix
  * @{
 */
@@ -37,30 +40,6 @@
 
 #define psa_crypto_init \
         KEYMGMT_FUNCTION_NAME(psa_crypto_init)
-#define psa_key_derivation_get_capacity \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_get_capacity)
-#define psa_key_derivation_set_capacity \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_set_capacity)
-#define psa_key_derivation_input_bytes \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_input_bytes)
-#define psa_key_derivation_input_integer \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_input_integer)
-#define psa_key_derivation_output_bytes \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_output_bytes)
-#define psa_key_derivation_input_key \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_input_key)
-#define psa_key_derivation_output_key \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_output_key)
-#define psa_key_derivation_verify_bytes \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_verify_bytes)
-#define psa_key_derivation_verify_key \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_verify_key)
-#define psa_key_derivation_setup \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_setup)
-#define psa_key_derivation_abort \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_abort)
-#define psa_key_derivation_key_agreement \
-        KEYMGMT_FUNCTION_NAME(psa_key_derivation_key_agreement)
 #define psa_raw_key_agreement \
         KEYMGMT_FUNCTION_NAME(psa_raw_key_agreement)
 #define psa_generate_random \
@@ -182,3 +161,5 @@
 #define psa_set_key_domain_parameters \
         KEYMGMT_FUNCTION_NAME(psa_set_key_domain_parameters)
 /**@}*/
+
+#endif /* INCLUDE_GUARD_ADAPTER_PSA_KEY_MANAGEMENT_PREFIX_H */

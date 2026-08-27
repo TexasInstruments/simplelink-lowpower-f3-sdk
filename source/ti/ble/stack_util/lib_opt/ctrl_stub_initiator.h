@@ -86,7 +86,7 @@
 #include "ti/ble/controller/hci/hci.h"
 
 // Function prototypes for the actual implementations
-extern void llProcessCentralConnectionCreated(void);
+extern void llProcessCentralConnectionCreated(uint8_t advHandle);
 extern void llProcessCentralControlPacket(llConnState_t* connPtr, uint8_t* pPkt);
 extern void llSetTaskInit(uint8_t startType, taskInfo_t* nextSecTask, void* nextSecCmd, void* nextConnCmd);
 extern void llSetTaskCentral(uint8_t connId, void* nextConnCmd);
@@ -99,8 +99,6 @@ extern llStatus_t LL_CreateConnCancel(void);
 extern void LL_SetConnIdInExtInit(uint8_t connId);
 extern void llPostSetupCtrlPktCent(llConnState_t* connPtr, uint8_t ctrlPkt);
 extern hciStatus_t hciCmdParserInitiator(uint8_t* pData, uint16_t cmdOpCode);
-extern llStatus_t HCI_TL_create_conn(uint16_t opcode, uint8_t* pHciParams);
-extern llStatus_t HCI_TL_ext_create_conn(uint16_t opcode, uint8_t* pHciParams);
 extern hciStatus_t hciCmdParserExtVendorSpecificInitiator(uint8_t* pData, uint16_t cmdOpCode);
 extern void LL_rclInitRxEntryDone(void);
 extern void llInit_TaskConnect(void);
@@ -119,10 +117,11 @@ extern uint8_t LL_validateChannelMap(uint8_t* chanMap);
 extern RCL_Callback LL_GetRfCentralCallback(void);
 extern void LL_InitiatorReadSupportedStates(uint8_t* states);
 extern uint8_t LL_PRIV_ValidatePeerAddress(uint8_t* peerAddr, uint8_t peerAddrType, uint8_t peerRLIndex);
+extern hciStatus_t hciCmdParserLegacyInitiator(uint8_t* pData, uint16_t cmdOpCode);
 
 
 // Wrapper functions for the feature implementations
-void OPT_llProcessCentralConnectionCreated(void);
+void OPT_llProcessCentralConnectionCreated(uint8_t advHandle);
 void OPT_llProcessCentralControlPacket(llConnState_t* connPtr, uint8_t* pPkt);
 void OPT_llSetTaskInit(uint8_t startType, taskInfo_t* nextSecTask, void* nextSecCmd, void* nextConnCmd);
 void OPT_llSetTaskCentral(uint8_t connId, void* nextConnCmd);
@@ -135,8 +134,6 @@ llStatus_t OPT_LL_CreateConnCancel(void);
 void OPT_LL_SetConnIdInExtInit(uint8_t connId);
 void OPT_llPostSetupCtrlPktCent(llConnState_t* connPtr, uint8_t ctrlPkt);
 hciStatus_t OPT_hciCmdParserInitiator(uint8_t* pData, uint16_t cmdOpCode);
-llStatus_t OPT_HCI_TL_create_conn(uint16_t opcode, uint8_t* pHciParams);
-llStatus_t OPT_HCI_TL_ext_create_conn(uint16_t opcode, uint8_t* pHciParams);
 hciStatus_t OPT_hciCmdParserExtVendorSpecificInitiator(uint8_t* pData, uint16_t cmdOpCode);
 void OPT_LL_rclInitRxEntryDone(void);
 void OPT_llInit_TaskConnect(void);
@@ -155,5 +152,6 @@ uint8_t OPT_LL_validateChannelMap(uint8_t* chanMap);
 RCL_Callback OPT_LL_GetRfCentralCallback(void);
 void OPT_LL_InitiatorReadSupportedStates(uint8_t* states);
 uint8_t OPT_LL_PRIV_ValidatePeerAddress(uint8_t* peerAddr, uint8_t peerAddrType, uint8_t peerRLIndex);
+hciStatus_t OPT_hciCmdParserLegacyInitiator(uint8_t* pData, uint16_t cmdOpCode);
 
 #endif /* CTRL_INITIATOR_H_ */

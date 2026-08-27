@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025, Texas Instruments Incorporated
+ * Copyright (c) 2021-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_commands_ieee_h__include
-#define ti_drivers_RCL_commands_ieee_h__include
+#ifndef ti_drivers_rcl_commands_ieee__include
+#define ti_drivers_rcl_commands_ieee__include
 
 #include <ti/drivers/rcl/RCL_Command.h>
 #include <ti/drivers/rcl/RCL_Buffer.h>
@@ -42,6 +42,7 @@ typedef struct RCL_CMD_IEEE_RX_TX_t            RCL_CmdIeeeRxTx;
 typedef struct RCL_CMD_IEEE_TX_TEST_t          RCL_CmdIeeeTxTest;
 typedef struct RCL_STATS_IEEE_t                RCL_StatsIeee;
 typedef struct RCL_CmdIeee_RxAction_t          RCL_CmdIeee_RxAction;
+typedef struct RCL_CmdIeee_RxActionSinglePan_t RCL_CmdIeee_RxActionSinglePan;
 typedef struct RCL_CmdIeee_TxAction_t          RCL_CmdIeee_TxAction;
 
 /* Command IDs for generic commands */
@@ -92,7 +93,7 @@ struct RCL_CMD_IEEE_RX_TX_t {
 }
 #define RCL_CmdIeeeRxTx_DefaultRuntime() (RCL_CmdIeeeRxTx) RCL_CmdIeeeRxTx_Default()
 
-typedef enum
+typedef enum RCL_CmdIeee_AutoAckMode_e
 {
     RCL_CmdIeee_AutoAck_Off,                    /*!< No auto-ACK */
     RCL_CmdIeee_AutoAck_ImmAckNoAutoPend,       /*!< Send automatic Imm-Ack with frame pending from setting */
@@ -111,32 +112,32 @@ typedef union
 } RCL_CmdIeee_PanIdAddr;
 
 /** Maximum number of entries in %RCL_CmdIeee_SourceMatchingTableShort (assuming no extended entry) */
-#define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN 64
+#define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN 64U
 
 /** Maximum number of entries in %RCL_CmdIeee_SourceMatchingTableShort if an extended table is present*/
-#define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_WITH_EXT_MAX_LEN 32
+#define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_WITH_EXT_MAX_LEN 32U
 
 #define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS \
-(((RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN) + ((8 * sizeof(uint16_t)) - 1)) / (8 * sizeof(uint16_t)))
+(((RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_MAX_LEN) + ((8U * sizeof(uint16_t)) - 1U)) / (8U * sizeof(uint16_t)))
 
 typedef struct
 {
     uint32_t numEntries;                                                    /*!< Number of entries in the list */
-    uint16_t entryEnable[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS];  /*!< Bits indicating which entires are enabled for matching (1 means enabled) */
+    uint16_t entryEnable[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS];  /*!< Bits indicating which entries are enabled for matching (1 means enabled) */
     uint16_t framePending[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_SHORT_NUM_WORDS]; /*!< Frame pending bits for the entries */
     RCL_CmdIeee_PanIdAddr shortEntry[];                                     /*!< PAN ID and short address for the entry */
 } RCL_CmdIeee_SourceMatchingTableShort;
 
 /** Maximum number of entries in %RCL_CmdIeee_SourceMatchingTableExt */
-#define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_MAX_LEN 16
+#define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_MAX_LEN 16U
 
 #define RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_NUM_WORDS \
-(((RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_MAX_LEN) + ((8 * sizeof(uint16_t)) - 1)) / (8 * sizeof(uint16_t)))
+(((RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_MAX_LEN) + ((8U * sizeof(uint16_t)) - 1U)) / (8U * sizeof(uint16_t)))
 
 typedef struct
 {
     uint32_t numEntries;                                                    /*!< Number of entries in the list */
-    uint16_t entryEnable[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_NUM_WORDS];    /*!< Bits indicating which entires are enabled for matching (1 means enabled) */
+    uint16_t entryEnable[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_NUM_WORDS];    /*!< Bits indicating which entries are enabled for matching (1 means enabled) */
     uint16_t framePending[RCL_CMD_IEEE_SOURCE_MATCH_TABLE_EXT_NUM_WORDS];   /*!< Frame pending bits for the entries */
     uint64_t extEntry[];                                                    /*!< Extended address for the entry */
 } RCL_CmdIeee_SourceMatchingTableExt;
@@ -161,7 +162,7 @@ typedef struct RCL_CmdIeee_PanConfig_t
     uint8_t panCoord : 1;                       /*!< 0: Device is not pan coordinator. 1: Device is PAN coordinator */
     uint8_t maxFrameVersion : 2;                /*!< Maximum frame version to accept */
     RCL_CmdIeee_SourceMatchingTableShort *sourceMatchingTableShort; /*!< Source matching table for short addresses */
-    RCL_CmdIeee_SourceMatchingTableExt *sourceMatchingTableExt;     /*!< Source matching table for extended addresses (not supported in this version)*/
+    RCL_CmdIeee_SourceMatchingTableExt *sourceMatchingTableExt;     /*!< Source matching table for extended addresses */
 } RCL_CmdIeee_PanConfig;
 
 #define RCL_CmdIeee_PanConfig_Default()                     \
@@ -182,12 +183,12 @@ typedef struct RCL_CmdIeee_PanConfig_t
 #include <ti/drivers/rcl/handlers/ieee.h>
 
 /** Maximum number of simultaneously supported PANs */
-#define RCL_CMD_IEEE_MAX_NUM_PAN    1   /* Maximum number of PANs; will be updated to 2 when dual PAN support is added */
+#define RCL_CMD_IEEE_MAX_NUM_PAN    2U   /* Maximum number of PANs */
 
 struct RCL_CmdIeee_RxAction_t
 {
     List_List rxBuffers;                /*!< Linked list of buffers for storing received packets */
-    uint8_t numPan;                     /*!< Number of PANs to support. 0: Frame filtering disabled (promiscuous mode). 1: Single PAN. 2: Dual PAN (not supported in this version). */
+    uint8_t numPan;                     /*!< Number of PANs to support. 0: Frame filtering disabled (promiscuous mode). 1: Single PAN. 2: Dual PAN. */
     bool frameFiltStop;                 /*!< 0: Receive frame to the end on frame filtering mismatch. 1: Go back to sync search on frame filtering mismatch. */
     bool disableSync;                   /*!< 0: Receive packets normally. 1: Do not sync to received SFD */
     bool alwaysStoreAck;                /*!< 0: Store ACKs received after transmission only. 1: Store all received ACKs. */
@@ -201,11 +202,37 @@ struct RCL_CmdIeee_RxAction_t
     .frameFiltStop = false,                                 \
     .disableSync = false,                                   \
     .alwaysStoreAck = false,                                \
-    .panConfig = {RCL_CmdIeee_PanConfig_Default()}          \
+    .panConfig = {                                          \
+        RCL_CmdIeee_PanConfig_Default(),                    \
+        RCL_CmdIeee_PanConfig_Default(),                    \
+    }                                                       \
 }
 #define RCL_CmdIeee_RxAction_DefaultRuntime() (RCL_CmdIeee_RxAction) RCL_CmdIeee_RxAction_Default()
 
-typedef enum
+struct RCL_CmdIeee_RxActionSinglePan_t
+{
+    List_List rxBuffers;                /*!< Linked list of buffers for storing received packets */
+    uint8_t numPan;                     /*!< Number of PANs to support. 0: Frame filtering disabled (promiscuous mode). 1: Single PAN. 2: Not supported with this data type */
+    bool frameFiltStop;                 /*!< 0: Receive frame to the end on frame filtering mismatch. 1: Go back to sync search on frame filtering mismatch. */
+    bool disableSync;                   /*!< 0: Receive packets normally. 1: Do not sync to received SFD */
+    bool alwaysStoreAck;                /*!< 0: Store ACKs received after transmission only. 1: Store all received ACKs. */
+    RCL_CmdIeee_PanConfig panConfig[1]; /*!< PAN configuration; single PAN */
+};
+
+#define RCL_CmdIeee_RxActionSinglePan_Default()             \
+{                                                           \
+    .rxBuffers = { 0 },                                     \
+    .numPan = 0,                                            \
+    .frameFiltStop = false,                                 \
+    .disableSync = false,                                   \
+    .alwaysStoreAck = false,                                \
+    .panConfig = {                                          \
+        RCL_CmdIeee_PanConfig_Default(),                    \
+    }                                                       \
+}
+#define RCL_CmdIeee_RxActionSinglePan_DefaultRuntime() (RCL_CmdIeee_RxActionSinglePan) RCL_CmdIeee_RxActionSinglePan_Default()
+
+typedef enum RCL_CmdIeee_CcaMode_e
 {
     RCL_CmdIeee_NoCca = 0,                   /*!< No CCA; transmit unconditionally */
     RCL_CmdIeee_CcaMode1Energy = 1,          /*!< Report busy channel on energy above threshold */
@@ -288,10 +315,10 @@ struct RCL_CMD_IEEE_TX_TEST_t {
 }
 #define RCL_CmdIeeeTxTest_DefaultRuntime() (RCL_CmdIeeeTxTest) RCL_CmdIeeeTxTest_Default()
 
-#define RCL_CMD_IEEE_WH_MODE_OFF         0 /*!< config.whitenMode: No whitening */
-#define RCL_CMD_IEEE_WH_MODE_PRBS9       1 /*!< config.whitenMode: PRBS-9 */
-#define RCL_CMD_IEEE_WH_MODE_PRBS15      2 /*!< config.whitenMode: PRBS-15 */
-#define RCL_CMD_IEEE_WH_MODE_PRBS32      3 /*!< config.whitenMode: PRBS-32 */
+#define RCL_CMD_IEEE_WH_MODE_OFF         0U /*!< config.whitenMode: No whitening */
+#define RCL_CMD_IEEE_WH_MODE_PRBS9       1U /*!< config.whitenMode: PRBS-9 */
+#define RCL_CMD_IEEE_WH_MODE_PRBS15      2U /*!< config.whitenMode: PRBS-15 */
+#define RCL_CMD_IEEE_WH_MODE_PRBS32      3U /*!< config.whitenMode: PRBS-32 */
 
 struct RCL_STATS_IEEE_t {
     struct
@@ -324,4 +351,4 @@ struct RCL_STATS_IEEE_t {
 
 
 
-#endif
+#endif /* ti_drivers_rcl_commands_ieee__include */

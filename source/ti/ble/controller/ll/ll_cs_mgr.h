@@ -395,31 +395,6 @@ csStatus_e LL_CS_CreateConfig(uint16 connId, const csConfigurationSet_t* pConfig
 csStatus_e LL_CS_RemoveConfig(uint16 connId, uint8 configId);
 
 /*******************************************************************************
- * @fn          LL_CS_GetConfig
- *
- * @brief       Get (read) a CS Configuration.
- * This API retrieves a previously created CS configuration from
- * the CS database. It allows the application to query the current
- * configuration parameters.
- *
- * input parameters
- *
- * @param       connId - connection handle
- * @param       configId - configuration ID
- *
- * output parameters
- *
- * @param       pConfig - Pointer to configuration structure to be filled
- *
- * @return      Status:
- *              CS_STATUS_SUCCESS - Configuration retrieved successfully
- *              CS_STATUS_UNEXPECTED_PARAMETER - Invalid configId or NULL pointer
- *              CS_STATUS_COMMAND_DISALLOWED - CS feature not supported
- *              CS_STATUS_INACTIVE_CONNECTION - Connection handle inactive
- */
-csStatus_e LL_CS_GetConfig(uint16_t connId, uint8_t configId, csConfigurationSet_t* pConfig);
-
-/*******************************************************************************
  * @fn          LL_CS_SetChannelClassification
  *
  * @brief       Update the channel classification based on its local info

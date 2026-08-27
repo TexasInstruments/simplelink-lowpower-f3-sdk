@@ -35,7 +35,9 @@ get_install_dir(HSMDDK_INSTALL_DIR)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc13xx_cc26xx.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc23x0.cmake OPTIONAL)
+include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc23x1.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc27xx.cmake OPTIONAL)
+include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc283x.cmake OPTIONAL)
 include(${CMAKE_CURRENT_LIST_DIR}/CMakeSources_cc35xx.cmake OPTIONAL)
 
 project(drivers LANGUAGES C ASM)
@@ -45,7 +47,7 @@ project(drivers LANGUAGES C ASM)
 # should include everything until (but not including) the next semicolon (;),
 # or when end of string ($) is reached.
 set(LPF2_REGEX "cc(13|26).[1-4][^;$]*")
-set(LPF3_REGEX "cc(23|27)[^;$]*")
+set(LPF3_REGEX "cc(23|27|283)[^;$]*")
 set(WFF3_REGEX "cc35[^;$]*")
 
 # For each item in SUPPORTED_PLATFORMS, add it to a family-specific list
@@ -252,17 +254,16 @@ if(LPF3_PLATFORMS)
             # Set module-level Log include switches for this library
             target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_Power=1)
             target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_UART2=1)
-
-        elseif(${TI_PLATFORM} STREQUAL "cc27xx")
-            ti_add_package_dependency(DriverlibCC27XX)
+        elseif(${TI_PLATFORM} STREQUAL "cc23x1r10")
+            ti_add_package_dependency(DriverlibCC23X1R10)
             ti_add_library(
-                drivers_${TI_PLATFORM} SOURCES ${SOURCES_SEC_ONLY_CC27XX} ADD_SDK_INCLUDE_PATH source
+                drivers_${TI_PLATFORM} SOURCES ${SOURCES_CC23X1R10} ADD_SDK_INCLUDE_PATH source
                 LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
                             TiUtils::json_${ARCH_${TI_PLATFORM}}
             )
 
             ti_add_library(
-                drivers_${TI_PLATFORM}_log SOURCES ${SOURCES_SEC_ONLY_CC27XX} ADD_SDK_INCLUDE_PATH source
+                drivers_${TI_PLATFORM}_log SOURCES ${SOURCES_CC23X1R10} ADD_SDK_INCLUDE_PATH source
                 LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
                             TiUtils::json_${ARCH_${TI_PLATFORM}}
             )
@@ -273,23 +274,94 @@ if(LPF3_PLATFORMS)
             target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_Power=1)
             target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_UART2=1)
 
-            ti_add_library(
-                drivers_${TI_PLATFORM}_ns SOURCES ${SOURCES_NONSEC_CC27XX} ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Driverlib::${TI_PLATFORM}_ns CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-                            TiUtils::json_${ARCH_${TI_PLATFORM}} DriversUtils::tfm_enabled
-            )
+        elseif((${TI_PLATFORM} MATCHES "cc27xxx"))
+            if(${TI_PLATFORM} STREQUAL "cc27xxx10")
+                ti_add_package_dependency(DriverlibCC27XXX10)
 
-            ti_add_library(
-                drivers_${TI_PLATFORM}_ns_log SOURCES ${SOURCES_NONSEC_CC27XX} ADD_SDK_INCLUDE_PATH source
-                LINK_PUBLIC Driverlib::${TI_PLATFORM}_ns CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
-                            TiUtils::json_${ARCH_${TI_PLATFORM}} DriversUtils::tfm_enabled
-            )
+                ti_add_library(
+                    drivers_${TI_PLATFORM} SOURCES ${SOURCES_SEC_ONLY_CC27XXX10} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}}
+                )
+
+                ti_add_library(
+                    drivers_${TI_PLATFORM}_log SOURCES ${SOURCES_SEC_ONLY_CC27XXX10} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}}
+                )
+            elseif(${TI_PLATFORM} STREQUAL "cc27xxx20")
+                ti_add_package_dependency(DriverlibCC27XXX20)
+
+                ti_add_library(
+                    drivers_${TI_PLATFORM} SOURCES ${SOURCES_SEC_ONLY_CC27XXX20} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}}
+                )
+
+                ti_add_library(
+                    drivers_${TI_PLATFORM}_log SOURCES ${SOURCES_SEC_ONLY_CC27XXX20} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}}
+                )
+            endif()
+
+            # Set global Log include switch for this library
+            target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE)
+            # Set module-level Log include switches for this library
+            target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_Power=1)
+            target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_UART2=1)
+
+            if(${TI_PLATFORM} STREQUAL "cc27xxx10")
+                ti_add_library(
+                    drivers_${TI_PLATFORM}_ns SOURCES ${SOURCES_NONSEC_CC27XXX10} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM}_ns CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}} DriversUtils::tfm_enabled
+                )
+
+                ti_add_library(
+                    drivers_${TI_PLATFORM}_ns_log SOURCES ${SOURCES_NONSEC_CC27XXX10} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM}_ns CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}} DriversUtils::tfm_enabled
+                )
+            elseif(${TI_PLATFORM} STREQUAL "cc27xxx20")
+                ti_add_library(
+                    drivers_${TI_PLATFORM}_ns SOURCES ${SOURCES_NONSEC_CC27XXX20} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM}_ns CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}} DriversUtils::tfm_enabled
+                )
+
+                ti_add_library(
+                    drivers_${TI_PLATFORM}_ns_log SOURCES ${SOURCES_NONSEC_CC27XXX20} ADD_SDK_INCLUDE_PATH source
+                    LINK_PUBLIC Driverlib::${TI_PLATFORM}_ns CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                                TiUtils::json_${ARCH_${TI_PLATFORM}} DriversUtils::tfm_enabled
+                )
+            endif()
 
             # Set global Log include switch for this library
             target_compile_definitions(drivers_${TI_PLATFORM}_ns_log PRIVATE ti_log_Log_ENABLE)
             # Set module-level Log include switches for this library
             target_compile_definitions(drivers_${TI_PLATFORM}_ns_log PRIVATE ti_log_Log_ENABLE_LogModule_Power=1)
             target_compile_definitions(drivers_${TI_PLATFORM}_ns_log PRIVATE ti_log_Log_ENABLE_LogModule_UART2=1)
+
+        elseif(${TI_PLATFORM} STREQUAL "cc283x")
+            ti_add_package_dependency(DriverlibCC283X)
+            ti_add_library(
+                drivers_${TI_PLATFORM} SOURCES ${SOURCES_CC283X} ADD_SDK_INCLUDE_PATH source
+                LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                            TiUtils::json_${ARCH_${TI_PLATFORM}}
+            )
+
+            ti_add_library(
+                drivers_${TI_PLATFORM}_log SOURCES ${SOURCES_CC283X} ADD_SDK_INCLUDE_PATH source
+                LINK_PUBLIC Driverlib::${TI_PLATFORM} CMakeCommon::${TI_TOOLCHAIN_NAME}_${ARCH_${TI_PLATFORM}}
+                            TiUtils::json_${ARCH_${TI_PLATFORM}}
+            )
+
+            # Set global Log include switch for this library
+            target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE)
+            # Set module-level Log include switches for this library
+            target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_Power=1)
+            target_compile_definitions(drivers_${TI_PLATFORM}_log PRIVATE ti_log_Log_ENABLE_LogModule_UART2=1)
         endif()
     endforeach()
 

@@ -1,5 +1,5 @@
 /******************************************************************************
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
-#ifndef SHA2SW_COMMON_H_
-#define SHA2SW_COMMON_H_
+#ifndef ti_devices_sha2sw_common__include
+#define ti_devices_sha2sw_common__include
 
 /*! ============================================================================
  *  @file       sha2sw_common.h
@@ -136,4 +136,4 @@ typedef enum
 /*! @}*/
 /*! @}*/
 
-#endif /* SHA2SW_COMMON_H_ */
+#endif /* ti_devices_sha2sw_common__include */

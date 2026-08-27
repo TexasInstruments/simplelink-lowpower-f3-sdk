@@ -37,11 +37,14 @@ HEAPSIZE = 8196; /* Size of heap buffer used by HeapMem */
 
 MEMORY
 {
-    /* If HSM FW is used and overlapping the user-accessible flash, reserve
-     * space for it. 
-     * The multiple ternary operators for the length are hard to understand, 
+    /* If secure boot is enabled, set FLASH region origin and size as defined by secure boot.
+     * If HSM FW is used and overlapping the user-accessible flash, reserve space for it.
+     * The multiple ternary operators for the length are hard to understand,
      * this is the logic implemented by them:
-     * if (DEFINED(ti_utils_build_GenMap_HSM_FW_BASE)) {
+     * if (DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE)) {
+     *   // Use secure boot defined flash size
+     *   LENGTH = ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE
+     * } else if (DEFINED(ti_utils_build_GenMap_HSM_FW_BASE)) {
      *   // If HSM FW overlaps the user-accessible flash, reserve space for it,
      *   // otherwise use the default flash size
      *   if (ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) {
@@ -51,15 +54,17 @@ MEMORY
      *   }
      * } else {
      *   LENGTH = ti_utils_build_GenMap_FLASH0_SIZE
-     * }*/
-    FLASH (RX) : ORIGIN = ti_utils_build_GenMap_FLASH0_BASE,
-                 LENGTH = DEFINED(ti_utils_build_GenMap_HSM_FW_BASE) ? ((ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) ? (ti_utils_build_GenMap_HSM_FW_BASE - ti_utils_build_GenMap_FLASH0_BASE) : ti_utils_build_GenMap_FLASH0_SIZE) : ti_utils_build_GenMap_FLASH0_SIZE
+     * }
+     */
+    FLASH (RX) : ORIGIN = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE) ? ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE : ti_utils_build_GenMap_FLASH0_BASE,
+                 LENGTH = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE) ? ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE : DEFINED(ti_utils_build_GenMap_HSM_FW_BASE) ? ((ti_utils_build_GenMap_HSM_FW_BASE < (ti_utils_build_GenMap_FLASH0_BASE + ti_utils_build_GenMap_FLASH0_SIZE)) ? (ti_utils_build_GenMap_HSM_FW_BASE - ti_utils_build_GenMap_FLASH0_BASE) : ti_utils_build_GenMap_FLASH0_SIZE) : ti_utils_build_GenMap_FLASH0_SIZE
     /*
      * Customer Configuration Area and Bootloader Backdoor configuration in
      * flash.
      */
     CCFG (R)   : ORIGIN = ti_utils_build_GenMap_CCFG_BASE, LENGTH = ti_utils_build_GenMap_CCFG_SIZE
-    SRAM (RWX) : ORIGIN = ti_utils_build_GenMap_RAM0_BASE, LENGTH = ti_utils_build_GenMap_RAM0_SIZE
+    SRAM (RWX) : ORIGIN = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE) ? ti_utils_build_GenMap_SECURE_BOOT_RAM_BASE : ti_utils_build_GenMap_RAM0_BASE,
+                 LENGTH = DEFINED(ti_utils_build_GenMap_SECURE_BOOT_RAM_SIZE) ? ti_utils_build_GenMap_SECURE_BOOT_RAM_SIZE : ti_utils_build_GenMap_RAM0_SIZE
 
     /* Security Configuration Area (SCFG) - if device supports it */
     SCFG (R)    : ORIGIN = DEFINED(ti_utils_build_GenMap_SCFG_BASE) ? ti_utils_build_GenMap_SCFG_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_SCFG_SIZE) ? ti_utils_build_GenMap_SCFG_SIZE : 0x0
@@ -69,6 +74,9 @@ MEMORY
      * refer to the s2rram example.
      */
     S2RRAM (RW) : ORIGIN = DEFINED(ti_utils_build_GenMap_S2RRAM_BASE) ? ti_utils_build_GenMap_S2RRAM_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_S2RRAM_SIZE) ? ti_utils_build_GenMap_S2RRAM_SIZE : 0x0
+
+    /* NVS region definition */
+    NVS (RW) : ORIGIN = DEFINED(ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_BASE) ? ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_SIZE) ? ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_SIZE : 0x0
 
     /* Explicitly placed off target for the storage of logging data.
      * The data placed here is NOT loaded onto the target device.
@@ -88,6 +96,7 @@ REGION_ALIAS("REGION_HEAP", SRAM);
 REGION_ALIAS("REGION_LOG", LOG_DATA);
 REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
 REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
+REGION_ALIAS("REGION_NVS", NVS);
 
 SECTIONS {
 
@@ -95,6 +104,7 @@ SECTIONS {
      * address.
      */
     PROVIDE (_resetVecs_base_address =
+        DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE) ? ti_utils_build_GenMap_SECURE_BOOT_FLASH_BASE :
         DEFINED(_resetVecs_base_address) ? _resetVecs_base_address : ti_utils_build_GenMap_FLASH0_BASE);
 
     .resetVecs (_resetVecs_base_address) : AT (_resetVecs_base_address) {
@@ -109,9 +119,11 @@ SECTIONS {
      * UDMALPF3_CONFIG_BASE below must match UDMALPF3_CONFIG_BASE defined
      * by ti/drivers/dma/UDMALPF3.h
      * The user is allowed to change UDMALPF3_CONFIG_BASE to move it away from
-     * the default address 0x20000400, but remember it must be 1024 bytes aligned.
+     * the default address 0x20000400 (0x3000C400 if TFM is enabled), but
+     * remember it must be 1024 bytes aligned.
      */
-    UDMALPF3_CONFIG_BASE = 0x20000400;
+    UDMALPF3_CONFIG_BASE = ((ti_utils_build_GenMap_FLASH0_BASE & 0x10000000) != 0) ? 0x3000C400 : 0x20000400;
+
     /*
      * Define absolute addresses for the DMA channels.
      * DMA channels must always be allocated at a fixed offset from the DMA base address.
@@ -223,8 +235,12 @@ SECTIONS {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > REGION_ARM_EXTAB AT> REGION_ARM_EXTAB
 
-    .nvs (NOLOAD) : ALIGN(0x2000) {
+    .nvs (NOLOAD) : ALIGN(0x800) {
         *(.nvs)
+    } > REGION_NVS
+
+    .keystore (NOLOAD) : ALIGN(0x800) {
+        *(.keystore)
     } > REGION_TEXT
 
     .ccfg : {

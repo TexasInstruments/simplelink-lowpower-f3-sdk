@@ -96,10 +96,6 @@
 // Stub headers
 #include "ti/ble/stack_util/lib_opt/host_stub_gap_bond_mgr.h"
 
-#ifdef SYSCFG
-#include "ti_ble_config.h"
-#endif //SYSCFG
-
 /*********************************************************************
  * MACROS
  */
@@ -317,6 +313,16 @@ gattClientSecCBs_t clientCbs =
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
+
+static uint8_t gapBondMgr_WriteToNv(uint8_t bondIdx,
+                                      gapBondRec_t *pBondRec,
+                                      gapBondLTK_t *pLocalLtk,
+                                      gapBondLTK_t *pDevLtk,
+                                      uint8_t *pIRK,
+                                      uint8_t *pSRK,
+                                      uint32_t signCount,
+                                      gapBondCharCfg_t *charCfg);
+                                      
 
 static void gapBondMgr_LinkEst(GAP_Peer_Addr_Types_t addrType, uint8_t *pDevAddr,
                                uint16_t connHandle, uint8_t role);
@@ -1515,6 +1521,7 @@ uint8_t GAPBondMgr_ProcessGAPMsg(gapEventHdr_t *pMsg)
     break;
 
     case GAP_LINK_ESTABLISHED_EVENT:
+    case GAP_LINK_ESTABLISHED_EVENT_V2:
     {
       gapEstLinkReqEvent_t *pPkt = (gapEstLinkReqEvent_t *)pMsg;
 
@@ -2173,6 +2180,12 @@ static void gapBondMgr_LinkEst(GAP_Peer_Addr_Types_t addrType, uint8_t *pDevAddr
     // Update LRU Bond list
     gapBondMgrUpdateLruBondList(idx);
     MAP_osal_mem_free( charCfg );
+  }
+  else if(linkDB_State(connHandle, LINK_ENCRYPTED))
+  {
+    // No bond in NV but link is already encrypted (e.g. after handover).
+    // Do not initiate pairing.
+    pair = FALSE;
   }
 
   // If connection role is peripheral and pairing mode is initiate then pair always.
@@ -2850,6 +2863,89 @@ static uint8_t gapBondMgrAddBond(gapBondRec_t *pBondRec,
 }
 
 /*********************************************************************
+ * @fn      GapBondMgr_writeBondToNvByIndex
+ *
+ * @brief   Write bond record to NV with mode-based operation (Vendor Specific)
+ *
+ * @param   mode - write mode (GAPBOND_WRITE_BY_IDX_OVERWRITE, GAPBOND_WRITE_BY_IDX_NO_OVERWRITE, or GAPBOND_WRITE_BY_ADDR)
+ * @param   bondIdx - bond index (0 to GAP_BONDINGS_MAX-1), used for OVERWRITE and NO_OVERWRITE modes
+ * @param   pBondRec - basic bond record
+ * @param   pLocalLTK - LTK used by the device that has the same public address as current device
+ * @param   pDevLTK - LTK used by the peer device during pairing
+ * @param   pIRK - IRK used by the peer device during pairing
+ * @param   pSRK - SRK used by the peer device during pairing
+ * @param   signCounter - Sign counter used by the peer device during pairing
+ * @param   charCfg - GATT characteristic configuration
+ *
+ * @return SUCCESS if bond was written
+ * @return bleInvalidRange if bondIdx is out of range (for index modes)
+ * @return bleNoResources if there are no empty slots or slot is occupied (NO_OVERWRITE mode)
+ */
+uint8_t GapBondMgr_writeBondToNvByIndex(uint8_t mode,
+                                          uint8_t bondIdx,
+                                          gapBondRec_t *pBondRec,
+                                          gapBondLTK_t *pLocalLtk,
+                                          gapBondLTK_t *pDevLtk,
+                                          uint8_t *pIRK,
+                                          uint8_t *pSRK,
+                                          uint32_t signCount,
+                                          gapBondCharCfg_t *charCfg)
+{
+  uint8_t status = SUCCESS;
+  gapBondRec_t tempBondRec;
+
+  // check if we are using one of the newer modes (by index) or the original functionality
+  if (mode != GAPBOND_WRITE_BY_ADDR)
+  {
+      // In case we'd like to write by Index make sure the Index we've recevied is a Valid one
+      if (bondIdx >= gapBond_maxBonds)
+      {
+          status = bleInvalidRange;
+      }
+
+      if (status == SUCCESS)
+      {
+          // check if the mode chosen was overwrite - in that case we erase the existing bond at that Index 
+          // (no need to check if there is any existing bond since we are going to overwrite it anyway)
+          if (mode == GAPBOND_WRITE_BY_IDX_OVERWRITE)
+          {
+              status = gapBondMgrEraseBonding(bondIdx);
+          }
+          // In case we've recevied a NO_OVERWRITE mode, we need to check if the slot is not occupied before writing to it
+          // if it's occupied we return an error and we don't overwrite it
+          else if (mode == GAPBOND_WRITE_BY_IDX_NO_OVERWRITE) 
+          {
+              // Check if slot is occupied
+              if ((osal_snv_read(MAIN_RECORD_NV_ID(bondIdx), sizeof(gapBondRec_t), &tempBondRec) == SUCCESS) &&
+                  (MAP_osal_isbufset(tempBondRec.addr, 0xFF, B_ADDR_LEN) == FALSE))
+                  {
+                      status = bleNoResources;
+                  }              
+          }
+          // any other case we've recevied a mode that is not supported, we return an error
+          else
+          {
+              status = bleIncorrectMode;
+          }
+          
+          if (status == SUCCESS)
+          {
+            status = gapBondMgr_WriteToNv(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK, signCount, charCfg);
+          }
+      }
+  }
+
+  else
+  {
+      // Call the original API to handle address-based writing
+      status = GapBondMgr_writeBondToNv(pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK,
+                                              signCount, charCfg);  
+  }
+
+  return (status);
+}
+
+/*********************************************************************
  * @fn      GapBondMgr_writeBondToNv
  *
  * @brief   Write bond record to NV
@@ -2874,7 +2970,6 @@ uint8_t GapBondMgr_writeBondToNv(gapBondRec_t *pBondRec,
                                  gapBondCharCfg_t *charCfg)
 {
   uint8_t bondIdx;
-  uint8_t snvErrorCode = SUCCESS;
   uint8_t status = SUCCESS;
 
   // First see if we already have an existing bond for this device
@@ -2906,34 +3001,54 @@ uint8_t GapBondMgr_writeBondToNv(gapBondRec_t *pBondRec,
     }
   }
 
-  // If an empty slot was found
+  status = gapBondMgr_WriteToNv(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK, signCount, charCfg);
+
+  return status;
+}
+
+uint8_t gapBondMgr_WriteToNv(uint8_t bondIdx,
+                                      gapBondRec_t *pBondRec,
+                                      gapBondLTK_t *pLocalLtk,
+                                      gapBondLTK_t *pDevLtk,
+                                      uint8_t *pIRK,
+                                      uint8_t *pSRK,
+                                      uint32_t signCount,
+                                      gapBondCharCfg_t *charCfg)
+{
+  uint8_t status = SUCCESS;
+
+  // Check again the the bondindex we've received is Valid - in some situations we might get an invalid index 
+  // if the bond record was not found and there are no empty slots
   if (bondIdx < gapBond_maxBonds)
   {
-    snvErrorCode = gapBondMgrSaveBond(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK,
+    // Save the bond information
+    status = gapBondMgrSaveBond(bondIdx, pBondRec, pLocalLtk, pDevLtk, pIRK, pSRK,
                                       signCount, TRUE);
 
     // If available, save the connected device's GATT configurations
     if (charCfg)
     {
-      snvErrorCode |=  osal_snv_write(GATT_CFG_NV_ID(bondIdx),
+      status |=  osal_snv_write(GATT_CFG_NV_ID(bondIdx),
                           sizeof(gapBondCharCfg_t) * gapBond_maxCharCfg,
                           charCfg);
     }
   }
   else
   {
-    return (bleNoResources);
+    // No empty slot was found return an error code
+    status = bleNoResources;
   }
 
   // Check for there was an error when writing to the NV area
-  if (snvErrorCode != SUCCESS)
+  if (status != SUCCESS)
   {
     gapBondMgrEraseBonding(bondIdx);
     gapBondMgrReadBonds();
   }
 
-  return (snvErrorCode);
+  return (status);
 }
+
 
 /*********************************************************************
  * @fn      GAPBondMgr_ReadLocalLTK
@@ -3103,6 +3218,7 @@ static uint8_t gapBondMgrReadBondInfo(uint8_t idx,
                                       gapBondNvRecord_t *pBondRecord)
 {
   uint8_t status = SUCCESS;
+  uint8_t secureConnectionValue;
 
   if (pBondRecord->pLocalLtk != NULL)
   {
@@ -3114,14 +3230,19 @@ static uint8_t gapBondMgrReadBondInfo(uint8_t idx,
     }
   }
 
+  GAPBondMgr_GetParameter(GAPBOND_SECURE_CONNECTION, &secureConnectionValue);
+
   if (pBondRecord->pDevLtk != NULL)
   {
     // Load the connected device's LTK information
     if (osal_snv_read(DEV_LTK_NV_ID(idx), sizeof(gapBondLTK_t), pBondRecord->pDevLtk) != SUCCESS)
     {
-      // Can't read the entry, assume that it doesn't exist
-      status = bleGAPBondItemNotFound;
-    }
+      if (secureConnectionValue != GAPBOND_SECURE_CONNECTION_ONLY)
+      {
+        // Can't read the entry, assume that it doesn't exist
+        status = bleGAPBondItemNotFound;
+      }
+    } 
   }
 
   if (pBondRecord->pIRK != NULL)

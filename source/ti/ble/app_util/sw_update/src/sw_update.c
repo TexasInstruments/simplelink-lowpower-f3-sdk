@@ -201,7 +201,6 @@ Status_t SwUpdate_RevokeImage(uint8 imageSlot)
     if(INT_PRIMARY_SLOT == imageSlot)
     {
         writeFlash(HDR_OFFSET, (uint8_t *)&(emptyHeader),sizeof(pSwUpdateModuleGlobalData->primaryHdr));
-
     }
     flash_close();
 
@@ -209,10 +208,84 @@ Status_t SwUpdate_RevokeImage(uint8 imageSlot)
 }
 
 /*********************************************************************
+ * @fn      SwUpdate_RevokeSecondaryImage
+ *
+ * @brief   This function invalidates the header of the secondary
+ *          image slot.
+ *
+ * @return  FLASH_SUCCESS or FLASH_FAILURE
+ */
+Status_t SwUpdate_RevokeSecondaryImage()
+{
+    Status_t status = FLASH_FAILURE;
+
+    if (flash_open() == true)
+    {
+        status = eraseFlashPg(0);
+        flash_close();
+    }
+
+    return (status);
+}
+
+/*********************************************************************
+ * @fn      SwUpdate_IsVersionGreater
+ *
+ * @brief   Check if one version is greater than another version.
+ *          Comparison order: major > minor > revision > build_num
+ *
+ * @param   pImg1   - Input image version 1
+ * @param   pImg2   - Input image version 2
+ *
+ * @return  true if pImg1 > pImg2, false otherwise
+ */
+bool SwUpdate_IsVersionGreater(const struct image_version *pImg1, const struct image_version *pImg2)
+{
+    // Compare major version
+    if (pImg1->iv_major > pImg2->iv_major)
+    {
+        return true;
+    }
+    if (pImg1->iv_major < pImg2->iv_major)
+    {
+        return false;
+    }
+
+    // Major versions equal, compare minor version
+    if (pImg1->iv_minor > pImg2->iv_minor)
+    {
+        return true;
+    }
+    if (pImg1->iv_minor < pImg2->iv_minor)
+    {
+        return false;
+    }
+
+    // Minor versions equal, compare revision
+    if (pImg1->iv_revision > pImg2->iv_revision)
+    {
+        return true;
+    }
+    if (pImg1->iv_revision < pImg2->iv_revision)
+    {
+        return false;
+    }
+
+    // Revisions equal, compare build number
+    if (pImg1->iv_build_num > pImg2->iv_build_num)
+    {
+        return true;
+    }
+
+    // Image 2 version is not greater (equal or less)
+    return false;
+}
+
+/*********************************************************************
  * @fn      SwUpdate_GetSWVersion
  *
  * @brief   This function extract sw version of MCU header from
- *          given address
+ *          a given address
  *
  * @param   hdrAdrr - Header address
  *
@@ -224,6 +297,7 @@ uint32* SwUpdate_GetSWVersion(uint32 hdrAdrr)
 
     return ((uint32 *)&(img_hdr->ih_ver));
 }
+
 /*********************************************************************
  * @fn      SwUpdate_EraseImageSlot
  *
@@ -260,6 +334,25 @@ Status_t SwUpdate_EraseImageSlot(uint8 imageSlot)
     }
 
     return (status);
+}
+
+/*********************************************************************
+ * @fn      SwUpdate_GetCandidateImageHeader
+ *
+ * @brief   Return a pointer to the candidate image header stored during
+ *          SwUpdate_CheckImageHeader(). Valid only after a successful call
+ *          to SwUpdate_CheckImageHeader().
+ *
+ * @return  Pointer to the stored candidate image header, or NULL if the
+ *          module has not been opened yet.
+ */
+const struct image_header *SwUpdate_GetCandidateImageHeader(void)
+{
+    if (NULL == pSwUpdateModuleGlobalData)
+    {
+        return (NULL);
+    }
+    return (&pSwUpdateModuleGlobalData->candidateImageHeader);
 }
 
 /*********************************************************************

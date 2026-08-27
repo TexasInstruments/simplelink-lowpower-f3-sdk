@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -16,6 +17,11 @@
 #include "tfm_crypto_defs.h"
 
 #include "crypto_library.h"
+
+/* TI-TFM: Add header include for TI's PSA Crypto API implementation */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+#include "ti_psa_crypto_aead.h"
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 /*!
  * \defgroup tfm_crypto_api_shim_layer Set of functions implementing a thin shim
@@ -54,10 +60,17 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
         const uint8_t *additional_data = in_vec[2].base;
         size_t additional_data_length = in_vec[2].len;
 
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_encrypt(library_key, iov->alg, nonce, nonce_length,
+                                     additional_data, additional_data_length,
+                                     plaintext, plaintext_length,
+                                     ciphertext, ciphertext_size, &out_vec[0].len);
+#else
         status = psa_aead_encrypt(library_key, iov->alg, nonce, nonce_length,
                                   additional_data, additional_data_length,
                                   plaintext, plaintext_length,
                                   ciphertext, ciphertext_size, &out_vec[0].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -79,11 +92,17 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
         size_t plaintext_size = out_vec[0].len;
         const uint8_t *additional_data = in_vec[2].base;
         size_t additional_data_length = in_vec[2].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_decrypt(library_key, iov->alg, nonce, nonce_length,
+                                     additional_data, additional_data_length,
+                                     ciphertext, ciphertext_length,
+                                     plaintext, plaintext_size, &out_vec[0].len);
+#else
         status = psa_aead_decrypt(library_key, iov->alg, nonce, nonce_length,
                                   additional_data, additional_data_length,
                                   ciphertext, ciphertext_length,
                                   plaintext, plaintext_size, &out_vec[0].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -135,7 +154,11 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
     switch (sid) {
     case TFM_CRYPTO_AEAD_ENCRYPT_SETUP_SID:
     {
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_encrypt_setup(operation, library_key, iov->alg);
+#else
         status = psa_aead_encrypt_setup(operation, library_key, iov->alg);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -143,7 +166,11 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
     break;
     case TFM_CRYPTO_AEAD_DECRYPT_SETUP_SID:
     {
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_decrypt_setup(operation, library_key, iov->alg);
+#else
         status = psa_aead_decrypt_setup(operation, library_key, iov->alg);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -155,12 +182,20 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
         size_t ciphertext_size = out_vec[2].len;
         uint8_t *tag = out_vec[1].base;
         size_t tag_size = out_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_finish(operation,
+                                     ciphertext, ciphertext_size, &out_vec[2].len,
+                                     tag, tag_size, &out_vec[1].len);
+#else
         status = psa_aead_finish(operation,
                                  ciphertext, ciphertext_size, &out_vec[2].len,
                                  tag, tag_size, &out_vec[1].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status == PSA_SUCCESS) {
+/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
             goto release_operation_and_return;
+#endif
         } else {
             out_vec[1].len = 0;
             out_vec[2].len = 0;
@@ -169,18 +204,26 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
     break;
     case TFM_CRYPTO_AEAD_ABORT_SID:
     {
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_abort(operation);
+#else
         status = psa_aead_abort(operation);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         goto release_operation_and_return;
     }
     case TFM_CRYPTO_AEAD_GENERATE_NONCE_SID:
     {
         uint8_t *nonce = out_vec[0].base;
         size_t nonce_size = out_vec[0].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_generate_nonce(operation,
+                                         nonce, nonce_size, &out_vec[0].len);
+#else
         status = psa_aead_generate_nonce(operation,
                                          nonce,
                                          nonce_size,
                                          &out_vec[0].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -190,13 +233,21 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
     {
         const uint8_t *nonce = in_vec[1].base;
         size_t nonce_size = in_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_aead_set_nonce(operation, nonce, nonce_size);
+#else
         return psa_aead_set_nonce(operation, nonce, nonce_size);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_AEAD_SET_LENGTHS_SID:
     {
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_aead_set_lengths(operation, iov->ad_length,
+                                       iov->plaintext_length);
+#else
         return psa_aead_set_lengths(operation, iov->ad_length,
                                     iov->plaintext_length);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_AEAD_UPDATE_SID:
     {
@@ -204,9 +255,13 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         uint8_t *output = out_vec[0].base;
         size_t output_size = out_vec[0].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_update(operation, input, input_length,
+                                    output, output_size, &out_vec[0].len);
+#else
         status = psa_aead_update(operation, input, input_length,
                                  output, output_size, &out_vec[0].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
@@ -216,8 +271,11 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
     {
         const uint8_t *input = in_vec[1].base;
         size_t input_length = in_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_aead_update_ad(operation, input, input_length);
+#else
         return psa_aead_update_ad(operation, input, input_length);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_AEAD_VERIFY_SID:
     {
@@ -225,12 +283,20 @@ psa_status_t tfm_crypto_aead_interface(psa_invec in_vec[],
         size_t tag_length = in_vec[1].len;
         uint8_t *plaintext = out_vec[1].base;
         size_t plaintext_size = out_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_aead_verify(operation,
+                                 plaintext, plaintext_size, &out_vec[1].len,
+                                 tag, tag_length);
+#else
         status = psa_aead_verify(operation,
                                  plaintext, plaintext_size, &out_vec[1].len,
                                  tag, tag_length);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status == PSA_SUCCESS) {
+/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
             goto release_operation_and_return;
+#endif
         } else {
             out_vec[1].len = 0;
         }

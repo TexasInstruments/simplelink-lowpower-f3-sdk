@@ -50,10 +50,10 @@ if TYPE_CHECKING:
 
 class LogLevel(Enum):
     Log_DEBUG = 1
-    Log_VERBOSE = 4
-    Log_INFO = 16
-    Log_WARNING = 64
-    Log_ERROR = 256
+    Log_VERBOSE = 2
+    Log_INFO = 4
+    Log_WARNING = 8
+    Log_ERROR = 16
 
 
 @dataclass

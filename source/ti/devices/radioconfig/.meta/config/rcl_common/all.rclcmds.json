@@ -520,8 +520,8 @@
         ]
       },
       {
-        "name": "CMD_GENERIC_PBE_OPERATION",
-        "desc": "Generic PBE operation",
+        "name": "CMD_GENERIC_LRF_OPERATION",
+        "desc": "Generic LRF operation",
         "field_value": [
           {
             "name": "common.cmdId",
@@ -529,7 +529,7 @@
           },
           {
             "name": "common.runtime.handler",
-            "value": "RCL_Handler_Generic_PbeOperation"
+            "value": "RCL_Handler_Generic_LrfOperation"
           }
         ],
         "field": [
@@ -538,7 +538,7 @@
             "type": "RCL_Command"
           },
           {
-            "name": "pbeOperation",
+            "name": "lrfOperation",
             "type": "uint16_t",
             "size": "16",
             "default": "0",
@@ -1133,10 +1133,21 @@
             ]
           },
           {
-            "name": "mode.reserved0",
+            "name": "mode.reportFormat",
             "type": "uint16_t",
             "size": "1",
-            "desc": "Reserved"
+            "enum": [
+              {
+                "symbol": "0",
+                "value": "RCL_CmdBleCs_ReportFormat_HCI",
+                "label": "HCI"
+              },
+              {
+                "symbol": "1",
+                "value": "RCL_CmdBleCs_ReportFormat_Custom",
+                "label": "Custom"
+              }
+            ]
           },
           {
             "name": "mode.inlinePhase",
@@ -1157,7 +1168,7 @@
             ]
           },
           {
-            "name": "mode.reserved1",
+            "name": "mode.reserved0",
             "type": "uint16_t",
             "size": "1",
             "desc": "Reserved"
@@ -1241,83 +1252,76 @@
             "desc": "Config of time of adjustment of first antenna switching for mode 2 steps"
           },
           {
-            "name": "frontend.txPower.fraction",
+            "name": "txPower.fraction",
             "type": "uint8_t",
             "size": "1",
             "default": "0",
             "desc": "Transmit power, fractional part"
           },
           {
-            "name": "frontend.txPower.dBm",
+            "name": "txPower.dBm",
             "type": "int8_t",
             "size": "7",
             "default": "0",
             "desc": "Transmit power, integer part"
           },
           {
-            "name": "frontend.rxGain",
+            "name": "rxGainPolicy",
             "type": "uint8_t",
-            "size": "8",
-            "desc": "Index value of RX gain to be used",
+            "size": "2",
+            "desc": "RX gain selection policy",
             "enum": [
               {
-                "symbol": "RCL_CmdBleCs_RxGain_Auto",
+                "symbol": "RCL_CmdBleCs_Policy_Auto",
                 "value": "0",
                 "label": "Auto"
               },
               {
-                "symbol": "RCL_CmdBleCs_RxGain_Low",
-                "value": "7",
-                "label": "Low"
+                "symbol": "RCL_CmdBleCs_Policy_Cache",
+                "value": "1",
+                "label": "Cache"
               },
               {
-                "symbol": "RCL_CmdBleCs_RxGain_High",
-                "value": "15",
-                "label": "High"
+                "symbol": "RCL_CmdBleCs_Policy_Manual",
+                "value": "2",
+                "label": "Manual"
               }
             ]
           },
           {
-            "name": "foffOverride",
+            "name": "foffPolicy",
+            "type": "uint8_t",
+            "size": "2",
+            "desc": "Frequency offset compensation policy",
+            "enum": [
+              {
+                "symbol": "RCL_CmdBleCs_Policy_Auto",
+                "value": "0",
+                "label": "Auto"
+              },
+              {
+                "symbol": "RCL_CmdBleCs_Policy_Cache",
+                "value": "1",
+                "label": "Cache"
+              },
+              {
+                "symbol": "RCL_CmdBleCs_Policy_Manual",
+                "value": "2",
+                "label": "Manual"
+              }
+            ]
+          },
+          {
+            "name": "rxGainVal",
+            "type": "uint16_t",
+            "size": "16",
+            "desc": "RX gain override value"
+          },
+          {
+            "name": "foffVal",
             "type": "int16_t",
             "size": "16",
-            "desc": "Frequency offset compensation override value in [4x FOFF] units."
-          },
-          {
-            "name": "foffOverrideEnable",
-            "type": "uint8_t",
-            "size": "1",
-            "desc": "Disables automatic FOFF estimation and enforces the use of the provided override value",
-            "enum": [
-              {
-                "symbol": "0",
-                "value": "0",
-                "label": "No override"
-              },
-              {
-                "symbol": "1",
-                "value": "1",
-                "label": "Use override value"
-              }
-            ]
-          },
-          {
-            "name": "reportFormat",
-            "type": "uint8_t",
-            "size": "8",
-            "desc": "Selects the data format which the subevent results shall be returned in",
-            "enum": [
-              {
-                "symbol": "0",
-                "value": "0",
-                "label": "HCI"
-              },
-              {
-                "symbol": "1",
-                "value": "1",
-                "label": "Custom"
-              }
-            ]
+            "desc": "Frequency offset compensation override value"
           },
           {
             "name": "precalTable",

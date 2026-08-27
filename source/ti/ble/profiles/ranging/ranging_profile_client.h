@@ -116,12 +116,17 @@ typedef enum
                                       // statusData: Contains the ATT error code from server
                                       // Application action: If unregistering, consider characteristic as disabled; If registering, handle rejection
 
-    RREQ_DATA_INVALID,                // Data received is invalid or incomplete; returned at @ref RREQ_CompleteEventCallback
-                                      // Raised after: @ref RREQ_GetRangingData (On-Demand), or during Real-Time mode segment reception
-                                      // segmentsReader: Contains an empty Segments Reader
-                                      // Profile state: Returns to READY
-                                      // Cause: Last segment flag not received or unexpected error during segment processing
-                                      // Application action: Discard the data, do not attempt to read segments; Can start a new procedure
+    RREQ_DATA_INVALID,                // Data received is invalid or incomplete
+                                      // On-Demand: returned at @ref RREQ_CompleteEventCallback; raised during @ref RREQ_GetRangingData ACK phase
+                                      // Real-Time: returned at @ref RREQ_StatusCallback; raised by rreq_handleRealTimeFailure on segment error
+                                      // segmentsReader (On-Demand only): Contains an empty Segments Reader
+                                      // Cause: Last segment flag not received, out-of-order segment, or unexpected error during segment processing
+                                      // Profile state (On-Demand): Returns to READY; registration is preserved
+                                      // Profile state (Real-Time): Returns to IDLE; rreq_handleRealTimeFailure issues de-registration via
+                                      //   @ref RREQ_ConfigureCharRegistration — @ref RREQ_CHAR_CONFIGURATION_DONE will follow
+                                      // Application action (On-Demand): Discard the data; can start a new procedure immediately
+                                      // Application action (Real-Time): Discard the data; wait for @ref RREQ_CHAR_CONFIGURATION_DONE,
+                                      //   then re-register via @ref RREQ_ConfigureCharRegistration if desired
 
     /* Timeout statuses */
     RREQ_TIMEOUT_CONTROL_POINT_RSP,   // Timeout waiting for control point response; returned at @ref RREQ_StatusCallback
@@ -138,13 +143,19 @@ typedef enum
                                       // statusData: Contains the ranging counter (2 bytes) for which timeout occurred
                                       // Application action: CS procedure may have failed or server didn't send notification; Can start a new procedure
 
-    RREQ_TIMEOUT_SEGMENTS,            // Timeout waiting for first or next segment; returned at @ref RREQ_StatusCallback
-                                      // Raised after: @ref RREQ_GetRangingData, or during Real-Time mode segment reception
-                                      // Profile state: If On-Demand with abort support - calls @ref RREQ_Abort and waits for abort response; Otherwise returns to READY
-                                      //                If Real-Time mode - returns to INACTIVE and calls @ref RREQ_ConfigureCharRegistration to unregister from Real-Time characteristic
-                                      // Context: Can occur during any segment reception in On-Demand or Real-Time mode
+    RREQ_TIMEOUT_SEGMENTS,            // Timeout waiting for first or next segment (On-Demand mode only); returned at @ref RREQ_StatusCallback
+                                      // Raised after: @ref RREQ_GetRangingData
+                                      // Profile state: If abort supported - calls @ref RREQ_Abort and waits for abort response; Otherwise returns to READY
+                                      // Context: On-Demand mode only, can occur during any segment reception
                                       // statusData: Contains the ranging counter (2 bytes) for which timeout occurred
-                                      // Application action: If On-Demand with abort - wait for abort completion; Otherwise procedure ended, can start new one
+                                      // Application action: If abort supported - wait for abort completion; Otherwise procedure ended, can start new one
+
+    RREQ_TIMEOUT_SEGMENTS_RT,         // Timeout waiting for first or next segment (Real-Time mode only); returned at @ref RREQ_StatusCallback
+                                      // Raised after: segment reception timeout during Real-Time mode
+                                      // Profile state: Returns to IDLE and calls @ref RREQ_ConfigureCharRegistration to unregister from Real-Time characteristic
+                                      // Context: Real-Time mode only; @ref RREQ_CHAR_CONFIGURATION_DONE will follow once de-registration completes
+                                      // statusData: Contains the ranging counter (2 bytes) for which timeout occurred
+                                      // Application action: Wait for @ref RREQ_CHAR_CONFIGURATION_DONE to re-register if desired
 
     /* RAS Control point statuses */
     RREQ_ABORTED_SUCCESSFULLY,        // Abort command processed successfully by server; returned at @ref RREQ_StatusCallback
@@ -526,6 +537,73 @@ uint8_t RREQ_Abort(uint16_t connHandle);
  *                                     as the last notified one.
  */
 uint8_t RREQ_ProcedureStarted(uint16_t connHandle, uint16_t procedureCounter);
+
+/*********************************************************************
+ * @fn      RREQ_getConnInfoSize
+ *
+ * @brief   Returns the size of the RREQ data required.
+ *          This function calculates the size needed to transfer the RREQ
+ *          connection information.
+ *
+ * @param   connHandle - Connection handle.
+ *
+ * @return  The size of the RREQ data in bytes if connection is valid.
+ * @return  0 if the connection handle is invalid or RREQ is not enabled for this connection.
+ */
+uint32_t RREQ_getConnInfoSize(uint16_t connHandle);
+
+/*********************************************************************
+ * @fn      RREQ_getConnInfoData
+ *
+ * @brief   Populates the RREQ ConnInfo data to the provided buffer.
+ *
+ * @param   connHandle      - Connection handle.
+ * @param   pData           - Pointer to the buffer where the data will be stored.
+ *                          The buffer must be at least @ref RREQ_getConnInfoSize() bytes.
+ *
+ * @return  SUCCESS.
+ * @return  INVALIDPARAMETER.
+ */
+uint8_t RREQ_getConnInfoData(uint16_t connHandle, uint8_t *pData);
+
+/*********************************************************************
+ * @fn      RREQ_isAvailableSlot
+ *
+ * @brief   Check if there is available slots for new connection.
+ *
+ * input parameters
+ * @param   None
+ *
+ * @return  SUCCESS.
+ * @return  FAILURE.
+ */
+uint8_t RREQ_isAvailableSlot(void);
+
+/*********************************************************************
+ * @fn      RREQ_populateConnInfoData
+ *
+ * @brief   Apply the data to the actual RREQ table.
+ *
+ * @param   connHandle      - Connection handle.
+ * @param   pData           - Pointer to the buffer where the RREQ data is stored.
+ * @param   length          - Length of the data buffer.
+ *
+ * @return  SUCCESS.
+ * @return  FAILURE.
+ */
+uint8_t RREQ_populateConnInfoData(uint16_t connHandle, uint8_t* pData, uint32_t length);
+
+/*********************************************************************
+ * @fn      RREQ_localDisable
+ *
+ * @brief   Disable the RREQ process on this device, without notifying the peer.
+ *
+ * @param   connHandle      - Connection handle.
+ *
+ * @return  SUCCESS.
+ * @return  INVALIDPARAMETER.
+ */
+uint8_t RREQ_localDisable(uint16_t connHandle);
 
 #endif // RANGING_CLIENT
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Texas Instruments Incorporated
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,22 +36,18 @@
 #include <task.h>
 
 #if (configCHECK_FOR_STACK_OVERFLOW)
-    /*
-     *  ======== vApplicationStackOverflowHook ========
-     *  When stack overflow checking is enabled the application must provide a
-     *  stack overflow hook function. This default hook function is declared as
-     *  weak, and will be used by default, unless the application specifically
-     *  provides its own hook function.
-     */
-    #if defined(__IAR_SYSTEMS_ICC__)
-__weak void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
-    #elif (defined(__TI_COMPILER_VERSION__))
-        #pragma WEAK(vApplicationStackOverflowHook)
-void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
-    #elif (defined(__GNUC__) || defined(__ti_version__))
+/*
+ *  ======== vApplicationStackOverflowHook ========
+ *  When stack overflow checking is enabled the application must provide a
+ *  stack overflow hook function. This default hook function is declared as
+ *  weak, and will be used by default, unless the application specifically
+ *  provides its own hook function.
+ */
 void __attribute__((weak)) vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
-    #endif
 {
+    (void)pxTask;
+    (void)pcTaskName;
+
     /* default to spin upon stack overflow */
     while (1) {}
 }

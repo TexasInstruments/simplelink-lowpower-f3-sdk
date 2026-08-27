@@ -1,14 +1,15 @@
 [
     {
         "files": [
-            "+lpf3_freertos.icf -> lpf3_freertos.icf",
+            "+../../images/rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
+            "+../../images/rfEcho_MissedFirstPacket.png -> rfEcho_MissedFirstPacket.png",
+            "+../../images/rfEcho_MissingFirstCouplePackets.png -> rfEcho_MissingFirstCouplePackets.png",
+            "+../../images/rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
+            "+cc23x0r5.icf -> cc23x0r5.icf",
             "+../main_freertos.c -> main_freertos.c",
             "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.html -> README.html",
             "+../../README.md -> README.md",
-            "+../../rfEcho_ErrorTxRx.png -> rfEcho_ErrorTxRx.png",
-            "+../../rfEcho_MissedFirstPacket.png -> rfEcho_MissedFirstPacket.png",
-            "+../../rfEcho_MissingFirstCouplePackets.png -> rfEcho_MissingFirstCouplePackets.png",
-            "+../../rfEcho_PerfectEcho.png -> rfEcho_PerfectEcho.png",
             "+../../rfEchoTx.c -> rfEchoTx.c",
             "+../rfEchoTx.syscfg -> rfEchoTx.syscfg"
         ]

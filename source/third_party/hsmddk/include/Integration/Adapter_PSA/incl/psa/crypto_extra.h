@@ -109,13 +109,6 @@ extern "C" {
 
 /**@}*/
 
-/** The persistence level for HSM Asset Store.
-*
-* See ::psa_key_persistence_t for more information.
-* 128 - 254 Persistent key with a vendor-specified lifetime.
-*/
-#define PSA_KEY_PERSISTENCE_HSM_ASSET_STORE     ((psa_key_persistence_t)0x80U)
-
 /**
  * \brief Set domain parameters for a key.
  *

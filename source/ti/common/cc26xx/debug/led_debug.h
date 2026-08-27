@@ -52,7 +52,7 @@ extern "C" {
 #elif defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53)
     #define RED_LED   14
     #define GREEN_LED 15
-#elif defined(DeviceFamily_CC27XX)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
     #define RED_LED   16
     #define GREEN_LED 12
 #else

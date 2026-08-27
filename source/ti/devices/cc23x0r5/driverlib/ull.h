@@ -4,7 +4,7 @@
  *  Description:    Defines and prototypes for the ULL instruction wrapper
  *                  functions.
  *
- *  Copyright (c) 2024 Texas Instruments Incorporated
+ *  Copyright (c) 2024-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -34,8 +34,8 @@
  *
  ******************************************************************************/
 
-#ifndef __ULL_H__
-#define __ULL_H__
+#ifndef ti_devices_ull__include
+#define ti_devices_ull__include
 
 //*****************************************************************************
 //
@@ -109,4 +109,4 @@ __STATIC_INLINE void ULLSync(void)
 //
 //*****************************************************************************
 
-#endif // __ULL_H__
+#endif // ti_devices_ull__include

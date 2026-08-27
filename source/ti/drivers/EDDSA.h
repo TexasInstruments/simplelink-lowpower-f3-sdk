@@ -122,7 +122,7 @@
  *  - Call EDDSA_sign(). The R and S vectors will be written to the buffers
  *    provided in the function call. Ensure the return value is
  *    EDDSA_STATUS_SUCCESS.
- *  - For CC27XX devices, the EDDSA driver cannot handle 0-byte messages.
+ *  - For CC27XX and CC35XX devices, the EDDSA driver cannot handle 0-byte messages.
  *
  * ## Verifying a message #
  * After receiving the message, public key, R, and S, the application should
@@ -136,7 +136,7 @@
  *    from the other party.
  *  - Call EDDSA_verify(). Ensure the return value is EDDSA_STATUS_SUCCESS. The
  *    driver will validate the received public key against the provided curve.
- *  - For CC27XX devices, the EDDSA driver cannot handle 0-byte messages.
+ *  - For CC27XX and CC35XX devices, the EDDSA driver cannot handle 0-byte messages.
  *
  * ## General usage #
  * The API expects Edwards elliptic curves as defined in
@@ -529,7 +529,7 @@ extern "C" {
  * @brief  The following status codes are used by the EDDSA driver to indicate
  *         a feature is not supported.
  *
- * CC27XX devices do not support #EDDSA_cancelOperation()
+ * CC27XX and CC35XX devices do not support #EDDSA_cancelOperation()
  */
 #define EDDSA_STATUS_FEATURE_NOT_SUPPORTED (-17)
 

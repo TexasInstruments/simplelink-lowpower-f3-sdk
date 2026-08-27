@@ -176,6 +176,10 @@ extern "C"
     #error "Bond Manager cannot be used since no Peripheral or Central role is defined! Disable in buildConfig.opt"
 #endif // GAP_BOND_MGR && HOST_CONFIG && !(HOST_CONFIG & (PERIPHERAL_CFG | CENTRAL_CFG))
 
+#if (defined(MS_OAD) && !(defined(HOST_CONFIG) && (HOST_CONFIG & PERIPHERAL_CFG)))
+    #error "MS_OAD requires Peripheral role (HOST_CONFIG & PERIPHERAL_CFG)! Disable in buildConfig.opt"
+#endif // MS_OAD && !(HOST_CONFIG & PERIPHERAL_CFG)
+
 #ifdef __cplusplus
 }
 #endif

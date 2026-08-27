@@ -90,10 +90,9 @@ extern void LL_PAST_R_DynamicFree(void);
 extern uint8_t LL_PAST_R_Init(void);
 extern bool LL_PAST_R_IsEnable(void);
 extern void LL_PAST_R_SetFeatureBit(void);
+extern void LL_PAST_R_Reset(void);
 extern void LL_PAST_R_ResetConnParamsToDefault(uint16_t connHandle);
 extern void LL_PAST_R_ProcessIndPackets(llConnState_t * connPtr, uint8_t * pControlPacket, uint8_t controlPacketType);
-extern void LL_PAST_R_SetLastRxPacketLen(llConnState_t * connPtr, uint8_t lastRXPktLength);
-extern void LL_PAST_R_SetMaxRXOctets(llConnState_t * connPtr);
 
 
 // Wrapper functions for the feature implementations
@@ -103,9 +102,8 @@ void OPT_LL_PAST_R_DynamicFree(void);
 uint8_t OPT_LL_PAST_R_Init(void);
 bool OPT_LL_PAST_R_IsEnable(void);
 void OPT_LL_PAST_R_SetFeatureBit(void);
+void OPT_LL_PAST_R_Reset(void);
 void OPT_LL_PAST_R_ResetConnParamsToDefault(uint16_t connHandle);
 void OPT_LL_PAST_R_ProcessIndPackets(llConnState_t * connPtr, uint8_t * pControlPacket, uint8_t controlPacketType);
-void OPT_LL_PAST_R_SetLastRxPacketLen(llConnState_t * connPtr, uint8_t lastRXPktLength);
-void OPT_LL_PAST_R_SetMaxRXOctets(llConnState_t * connPtr);
 
 #endif /* CTRL_PAST_RECEIVER_H_ */

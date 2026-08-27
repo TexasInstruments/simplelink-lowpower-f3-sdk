@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Texas Instruments Incorporated
+ * Copyright (c) 2023-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@
 #include <stdint.h>
 
 #include <ti/drivers/AESGCM.h>
-#include <ti/drivers/cryptoutils/aes/AESCommonLPF3.h>
+#include <ti/drivers/cryptoutils/aes/AESCommonXXF3.h>
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/aes.h)
@@ -79,12 +79,12 @@ extern "C" {
 #endif
 
 /*!
- *  @brief      AESCCMLPF3 Hardware Attributes
+ *  @brief      AESCCMXXF3 Hardware Attributes
  *
- *  AESCCMLPF3 hardware attributes should be included in the board file
+ *  AESCCMXXF3 hardware attributes should be included in the board file
  *  and pointed to by the AESCCM_config struct.
  */
-typedef AESCommonLPF3_HWAttrs AESGCMLPF3_HWAttrs;
+typedef AESCommonXXF3_HWAttrs AESGCMLPF3_HWAttrs;
 
 /*!
  *  @brief      AESGCMLPF3 Object
@@ -94,7 +94,7 @@ typedef AESCommonLPF3_HWAttrs AESGCMLPF3_HWAttrs;
 typedef struct
 {
     /* Common member first to allow struct to be cast to the common type */
-    AESCommonLPF3_Object common;
+    AESCommonXXF3_Object common;
     uint32_t hashKey[AES_BLOCK_SIZE_WORDS];
     uint32_t tagOTP[AES_BLOCK_SIZE_WORDS];
     uint32_t intermediateTag[AES_BLOCK_SIZE_WORDS];

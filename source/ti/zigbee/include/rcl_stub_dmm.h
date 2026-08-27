@@ -15,7 +15,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2025, Texas Instruments Incorporated
+ Copyright (c) 2025-2026, Texas Instruments Incorporated
 
  All rights reserved not granted herein.
  Limited License.
@@ -79,7 +79,7 @@
 #ifndef RCL_DMM_H_
 #define RCL_DMM_H_
 
-#include <ti/drivers/rcl/RCL.h>
+#include <ti/drivers/RCL.h>
 #include <ti/drivers/rcl/RCL_Command.h>
 #include <ti/drivers/rcl/RCL_Buffer.h>
 #include <ti/drivers/rcl/LRF.h>

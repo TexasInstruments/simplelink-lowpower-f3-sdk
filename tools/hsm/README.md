@@ -1,7 +1,7 @@
 # HSM FW Update Signing
 
 If you should want your device to only accept HSM FW updates that have been OK'd
-by you. Then you will need to wrap the HSM FW provided in this SDK with your own
+by you, then you will need to wrap the HSM FW provided in this SDK with your own
 signature.
 
 The steps below will walk you through using the provided python script to:
@@ -90,6 +90,10 @@ displayed from the previous step into the following field.
 ## Sign the HSM FW with your private key
 
     $(venv) python sign_hsm_fw.py --sign --key <private_key_file> --input <sdk>/bin/hsm/<hsm_fw_name>.bin
+
+> By default, `cc27xx` devices are supported. For `cc23xx` devices, run the script by prodiving an additional `--target cc23xx` as follows:
+
+    $(venv) python sign_hsm_fw.py --sign --key <private_key_file> --target cc23xx --input <sdk>/bin/hsm/<hsm_fw_name>.bin
 
 # Program the new HSM FW
 

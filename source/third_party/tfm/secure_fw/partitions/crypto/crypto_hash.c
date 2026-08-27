@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2025-2026, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -13,6 +14,11 @@
 
 #include "tfm_crypto_api.h"
 #include "tfm_crypto_defs.h"
+
+/* TI-TFM: Add header include for TI's PSA Crypto API implementation */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+#include "ti_psa_crypto_hash.h"
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 /*!
  * \addtogroup tfm_crypto_api_shim_layer
@@ -39,13 +45,19 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
         uint8_t *hash = out_vec[0].base;
         size_t hash_size = out_vec[0].len;
 
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_hash_compute(iov->alg, input, input_length,
+                                      hash, hash_size, &out_vec[0].len);
+#else
         status = psa_hash_compute(iov->alg, input, input_length,
                                   hash, hash_size, &out_vec[0].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
+
         if (status != PSA_SUCCESS) {
             out_vec[0].len = 0;
         }
         return status;
-#endif
+#endif /* CRYPTO_SINGLE_PART_FUNCS_DISABLED */
     }
 
     if (sid == TFM_CRYPTO_HASH_COMPARE_SID) {
@@ -56,10 +68,14 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
         size_t input_length = in_vec[1].len;
         const uint8_t *hash = in_vec[2].base;
         size_t hash_length = in_vec[2].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_hash_compare(iov->alg, input, input_length,
+                                   hash, hash_length);
+#else
         return psa_hash_compare(iov->alg, input, input_length,
                                 hash, hash_length);
-#endif
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
+#endif /* CRYPTO_SINGLE_PART_FUNCS_DISABLED */
     }
 
     if (sid == TFM_CRYPTO_HASH_SETUP_SID) {
@@ -104,7 +120,11 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
     switch (sid) {
     case TFM_CRYPTO_HASH_SETUP_SID:
     {
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_hash_setup(operation, iov->alg);
+#else
         status = psa_hash_setup(operation, iov->alg);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             goto release_operation_and_return;
         }
@@ -114,17 +134,26 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
     {
         const uint8_t *input = in_vec[1].base;
         size_t input_length = in_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        return ti_psa_hash_update(operation, input, input_length);
+#else
         return psa_hash_update(operation, input, input_length);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     }
     case TFM_CRYPTO_HASH_FINISH_SID:
     {
         uint8_t *hash = out_vec[1].base;
         size_t hash_size = out_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_hash_finish(operation, hash, hash_size, &out_vec[1].len);
+#else
         status = psa_hash_finish(operation, hash, hash_size, &out_vec[1].len);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status == PSA_SUCCESS) {
+/* TI-TFM: Operation context must be released in crypto driver interrupt handler */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
             goto release_operation_and_return;
+#endif
         } else {
             out_vec[1].len = 0;
         }
@@ -134,21 +163,30 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
     {
         const uint8_t *hash = in_vec[1].base;
         size_t hash_length = in_vec[1].len;
-
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_hash_verify(operation, hash, hash_length);
+#else
         status = psa_hash_verify(operation, hash, hash_length);
+
         if (status == PSA_SUCCESS) {
             goto release_operation_and_return;
         }
+#endif
     }
     break;
     case TFM_CRYPTO_HASH_ABORT_SID:
     {
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_hash_abort(operation);
+#else
         status = psa_hash_abort(operation);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         goto release_operation_and_return;
     }
     case TFM_CRYPTO_HASH_CLONE_SID:
     {
         psa_hash_operation_t *target_operation = NULL;
+
         p_handle = out_vec[0].base;
         *p_handle = *((uint32_t *)in_vec[1].base);
 
@@ -159,7 +197,11 @@ psa_status_t tfm_crypto_hash_interface(psa_invec in_vec[],
         if (status != PSA_SUCCESS) {
             return status;
         }
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+        status = ti_psa_hash_clone(operation, target_operation);
+#else
         status = psa_hash_clone(operation, target_operation);
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
         if (status != PSA_SUCCESS) {
             (void)tfm_crypto_operation_release(p_handle);
         }

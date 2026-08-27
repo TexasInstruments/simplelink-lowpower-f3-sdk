@@ -327,6 +327,40 @@ status_t GapInit_connect(GAP_Peer_Addr_Types_t peerAddrType,
  */
 status_t GapInit_connectAl(uint8_t phys, uint16_t timeout);
 
+/*********************************************************************
+ * @fn      GapInit_connectV2
+ *
+ * @brief   Initiate connection with the specified peer device.
+ *          The V2 version supports PAwR connection creation.
+ *
+ *
+ * @param   advHandle     - Advertising handle identifying the periodic
+ *                          advertising train (0x00-0xEF), or 0xFF for standard
+ *                          extended create connection behavior.
+ * @param   subevent      - Subevent where the connection will be initiated
+ *                          (0x00-0x7F), or 0xFF for standard behavior.
+ * @param   peerAddrType  - peer device's address type.
+ * @param   pPeerAddress  - peer device's address
+ * @param   phys          - PHY(s) to try making connection on.
+ *                          individual PHY values can be OR'ed.
+ * @param   timeout       - if there is no chance to initiate a connection
+ *                          within timeout ms, this connect request will be cancelled
+ *                          automatically. if timeout is 0, the initiator will keep
+ *                          trying to get a chance to make a connection until
+ *                          GapInit_cancelConnect() is called.
+ *
+ * @note    PHY parameters are taken from the gapInitPhyParam array which can be
+ *          configured using GapInit_setPhyParam() before calling this function.
+ *
+ * @return  SUCCESS, INVALIDPARAMETER
+ */
+uint8_t GapInit_connectV2( uint8_t               advHandle,
+                           uint8_t               subevent,
+                           GAP_Peer_Addr_Types_t peerAddrType,
+                           uint8_t*              pPeerAddress,
+                           uint8_t               phys,
+                           uint16_t              timeout );
+
 /**
  * Cancel the ongoing connection process.
  *

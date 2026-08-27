@@ -81,6 +81,7 @@
 
 #include "ti/ble/controller/ll/ll_scheduler.h"
 #include "ti/ble/controller/ll/ll_ae.h"
+#include "ti/ble/controller/ll/ll_padv_advertiser.h"
 
 // Function prototypes for the actual implementations
 extern uint8 LL_SDAA_ControlTxAndGetStartType(taskInfo_t* nextConnTask, taskInfo_t* secTask, uint8 startTaskType);

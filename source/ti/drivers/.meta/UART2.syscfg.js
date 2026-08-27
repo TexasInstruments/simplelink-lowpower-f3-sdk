@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -284,8 +284,7 @@ let base = {
 
     longDescription: `
 The [__UART2 driver__][1] provides device independent APIs for reading
-and writing to the UART peripherals. The UART2 driver is an improved version
-of the [__UART driver__][5].
+and writing to the UART peripherals.
 
 * [Usage Synopsis][2]
 * [Examples][3]
@@ -295,7 +294,6 @@ of the [__UART driver__][5].
 [2]: /drivers/doxygen/html/_u_a_r_t2_8h.html#ti_drivers_UART_Synopsis "Basic C usage summary"
 [3]: /drivers/doxygen/html/_u_a_r_t2_8h.html#ti_drivers_UART_Examples "C usage examples"
 [4]: /drivers/syscfg/html/ConfigDoc.html#UART2_Configuration_Options "Configuration options reference"
-[5]: /drivers/doxygen/html/_u_a_r_t_8h.html#details "C API reference"
 `,
     /* instance properties and methods */
     defaultInstanceName: "CONFIG_UART2_",

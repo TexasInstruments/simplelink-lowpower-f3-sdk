@@ -107,13 +107,8 @@ extern "C"
  * CONSTANTS
  */
 
-#define LL_SYNTH_CALIBRATION                (RAT_TICKS_IN_256US)
-#define LL_RX_SETTLE_TIME                   (RAT_TICKS_IN_64US)
-#define LL_RX_RAMP_OVERHEAD                 (LL_SYNTH_CALIBRATION + LL_RX_SETTLE_TIME)
 #define LL_JITTER_CORRECTION                (RAT_TICKS_IN_16US)
-#define LL_RX_SYNCH_OVERHEAD                (RAT_TICKS_IN_140US)
 #define LL_RX_SYNCH_OVERHEAD_CODED          (RAT_TICKS_IN_900US)
-
 /*******************************************************************************
  * TYPEDEFS
  */

@@ -45,9 +45,6 @@
 #ifndef INCLUDE_GUARD_EIP130_ASSET_POLICY_H
 #define INCLUDE_GUARD_EIP130_ASSET_POLICY_H
 
-#include <third_party/hsmddk/include/Config/cs_eip130.h>                  /* EIP-130 configuration */
-
-
 /*----------------------------------------------------------------------------
  * EIP130_ASSET_POLICY_*
  *
@@ -70,7 +67,7 @@
 #define EIP130_ASSET_POLICY_GENERICDATA         0x0000000000000000ULL   /* Generic Data related */
 #define EIP130_ASSET_POLICY_SYMCRYPTO           0x0000000000002000ULL   /* Symmetric Crypto related */
 #define EIP130_ASSET_POLICY_ASYMCRYPTO          0x0000000000004000ULL   /* Asymmetric Crypto related */
-#define EIP130_ASSET_POLICY_COPROIFC            0x0000000000006000ULL   /* Co-Processor Interface related */
+#define EIP130_ASSET_POLICY_COPROIFC            0x0000000000006000ULL   /* Coprocessor Interface related */
 
 /* - Static Asset Store only */
 #define EIP130_ASSET_POLICY_NUMBER_MASK         0x00000000000000FEULL   /* 0 = AssetNumber mask */
@@ -200,8 +197,18 @@
 #define EIP130_ASSET_POLICY_ACH_SHA3_384        0x0000000050000000ULL   /* SHA-3-384 */
 #define EIP130_ASSET_POLICY_ACH_SHA3_512        0x0000000058000000ULL   /* SHA-3-512 */
 
-/* - Co-Processor Interface related (Static & Dynamic Asset Store) */
-/* Every bit in range [31:16] refers to a Co-Processor [15:0]*/
+/* - Coprocessor Interface related (Static & Dynamic Asset Store) */
+/* Every bit in range [31:16] refers to a Coprocessor [15:0]*/
+#define EIP130_ASSET_POLICY_COPRO1_ALLOW        0x0000000000010000ULL   /* Coprocessor 1 allowed */
+#define EIP130_ASSET_POLICY_COPRO2_ALLOW        0x0000000000020000ULL   /* Coprocessor 2 allowed */
+#define EIP130_ASSET_POLICY_COPRO3_ALLOW        0x0000000000040000ULL   /* Coprocessor 3 allowed */
+#define EIP130_ASSET_POLICY_COPRO4_ALLOW        0x0000000000080000ULL   /* Coprocessor 4 allowed */
+#define EIP130_ASSET_POLICY_COPRO5_ALLOW        0x0000000000100000ULL   /* Coprocessor 5 allowed */
+#define EIP130_ASSET_POLICY_COPRO6_ALLOW        0x0000000000200000ULL   /* Coprocessor 6 allowed */
+#define EIP130_ASSET_POLICY_COPRO7_ALLOW        0x0000000000400000ULL   /* Coprocessor 7 allowed */
+#define EIP130_ASSET_POLICY_COPRO8_ALLOW        0x0000000000800000ULL   /* Coprocessor 8 allowed */
+#define EIP130_ASSET_POLICY_COPRO9_ALLOW        0x0000000001000000ULL   /* Coprocessor 9 allowed */
+#define EIP130_ASSET_POLICY_COPRO10_ALLOW       0x0000000002000000ULL   /* Coprocessor 10 allowed */
 
 /*----------------------------------------------------------------------------
  * Support defines to help readability
@@ -240,4 +247,3 @@
 #endif /* INCLUDE_GUARD_EIP130_ASSET_POLICY_H */
 
 /* end of file eip130_asset_policy.h */
-

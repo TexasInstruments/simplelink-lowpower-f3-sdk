@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,7 @@ class Queue {
         for (let i = 0; i < taskAddresses.length; i++) {
             let addr = taskAddresses[i];
             let name = await this.helper.helperGetNameOfTaskByAddress(addr);
-            namesAndAddresses += name + ": " + String(addr) + ", ";
+            namesAndAddresses += name + ": " + this.helper.helperGetHexString(String(addr)) + ", ";
         }
         return namesAndAddresses;
     }

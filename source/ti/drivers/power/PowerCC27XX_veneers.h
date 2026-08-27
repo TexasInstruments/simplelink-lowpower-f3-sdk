@@ -41,8 +41,8 @@
  *  ============================================================================
  */
 
-#ifndef ti_drivers_power_PowerCC27XX_veneers_
-#define ti_drivers_power_PowerCC27XX_veneers_
+#ifndef ti_drivers_power_PowerCC27XX_veneers__include
+#define ti_drivers_power_PowerCC27XX_veneers__include
 
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC27XX.h>
@@ -81,4 +81,4 @@ void PowerCC27XX_setNonSecureNotificationHandle_veneer(SecureCallback_Handle han
 
 int_fast16_t PowerLPF3_sleep_veneer(uint32_t nextEventTimeUs);
 
-#endif /* ti_drivers_power_PowerCC27XX_veneers_ */
+#endif /* ti_drivers_power_PowerCC27XX_veneers__include */

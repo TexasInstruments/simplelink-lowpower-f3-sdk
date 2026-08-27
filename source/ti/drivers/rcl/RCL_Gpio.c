@@ -32,6 +32,7 @@
 /*
  *  ======== RCL_Gpio.c ========
  */
+#include <ti/drivers/rcl/RCL_Gpio.h>
 
 /*
  *  ======== RCL_GPIO_enable ========

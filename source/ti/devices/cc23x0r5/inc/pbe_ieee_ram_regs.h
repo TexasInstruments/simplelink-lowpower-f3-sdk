@@ -265,16 +265,22 @@
 #define PBE_IEEE_RAM_O_COEXCFG                                       0x000000B8U
 
 // 
-#define PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START                    0x00000204U
+#define PBE_IEEE_RAM_O_EXTSRCADDRTBL                                 0x000000BAU
 
 // 
-#define PBE_IEEE_RAM_O_PAN0_SRC_MATCH_EXT_START                      0x00000284U
+#define PBE_IEEE_RAM_O_MATCHIDXFILT                                  0x000000BCU
 
 // 
-#define PBE_IEEE_RAM_O_PAN1_SRC_MATCH_SHORT_START                    0x00000304U
+#define PBE_IEEE_RAM_O_PAN0_SRC_MATCH_SHORT_START                    0x00000104U
 
 // 
-#define PBE_IEEE_RAM_O_PAN1_SRC_MATCH_EXT_START                      0x00000384U
+#define PBE_IEEE_RAM_O_PAN0_SRC_MATCH_EXT_START                      0x00000184U
+
+// 
+#define PBE_IEEE_RAM_O_PAN1_SRC_MATCH_SHORT_START                    0x00000204U
+
+// 
+#define PBE_IEEE_RAM_O_PAN1_SRC_MATCH_EXT_START                      0x00000284U
 
 //******************************************************************************
 // Register: SYNTHCALTIMEOUT
@@ -1006,12 +1012,14 @@
 #define PBE_IEEE_RAM_FFOPT0_IMMACKSEL_PBE                                0x0000U
 #define PBE_IEEE_RAM_FFOPT0_IMMACKSEL_MCU                                0x0002U
 
-// Field: [0:0] unused0
+// Field: [0:0] srcaddrtbl0
 //
-// Unused bitfield
-#define PBE_IEEE_RAM_FFOPT0_UNUSED0                                      0x0001U
-#define PBE_IEEE_RAM_FFOPT0_UNUSED0_M                                    0x0001U
-#define PBE_IEEE_RAM_FFOPT0_UNUSED0_S                                         0U
+// Let PBE know the source address table configuration for PAN0
+#define PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0                                  0x0001U
+#define PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_M                                0x0001U
+#define PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_S                                     0U
+#define PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_SHORTONLY                        0x0000U
+#define PBE_IEEE_RAM_FFOPT0_SRCADDRTBL0_MIX                              0x0001U
 
 //******************************************************************************
 // Register: PANID1
@@ -1135,12 +1143,14 @@
 #define PBE_IEEE_RAM_FFOPT1_IMMACKSEL_PBE                                0x0000U
 #define PBE_IEEE_RAM_FFOPT1_IMMACKSEL_MCU                                0x0002U
 
-// Field: [0:0] unused0
+// Field: [0:0] srcaddrtbl1
 //
-// Unused bitfield
-#define PBE_IEEE_RAM_FFOPT1_UNUSED0                                      0x0001U
-#define PBE_IEEE_RAM_FFOPT1_UNUSED0_M                                    0x0001U
-#define PBE_IEEE_RAM_FFOPT1_UNUSED0_S                                         0U
+// Let PBE know the source address table configuration for PAN1
+#define PBE_IEEE_RAM_FFOPT1_SRCADDRTBL1                                  0x0001U
+#define PBE_IEEE_RAM_FFOPT1_SRCADDRTBL1_M                                0x0001U
+#define PBE_IEEE_RAM_FFOPT1_SRCADDRTBL1_S                                     0U
+#define PBE_IEEE_RAM_FFOPT1_SRCADDRTBL1_SHORTONLY                        0x0000U
+#define PBE_IEEE_RAM_FFOPT1_SRCADDRTBL1_MIX                              0x0001U
 
 //******************************************************************************
 // Register: TMPRSSI
@@ -1512,6 +1522,26 @@
 #define PBE_IEEE_RAM_COEXCFG_T2_W                                             8U
 #define PBE_IEEE_RAM_COEXCFG_T2_M                                        0x00FFU
 #define PBE_IEEE_RAM_COEXCFG_T2_S                                             0U
+
+//******************************************************************************
+// Register: EXTSRCADDRTBL
+//******************************************************************************
+// Field: [15:0] val
+//
+// Pointer to the extended source address table
+#define PBE_IEEE_RAM_EXTSRCADDRTBL_VAL_W                                     16U
+#define PBE_IEEE_RAM_EXTSRCADDRTBL_VAL_M                                 0xFFFFU
+#define PBE_IEEE_RAM_EXTSRCADDRTBL_VAL_S                                      0U
+
+//******************************************************************************
+// Register: MATCHIDXFILT
+//******************************************************************************
+// Field: [15:0] val
+//
+// Register to disqualigy exteded addresses from the source table that did not had match
+#define PBE_IEEE_RAM_MATCHIDXFILT_VAL_W                                      16U
+#define PBE_IEEE_RAM_MATCHIDXFILT_VAL_M                                  0xFFFFU
+#define PBE_IEEE_RAM_MATCHIDXFILT_VAL_S                                       0U
 
 //******************************************************************************
 // Register: PAN0_SRC_MATCH_SHORT_START

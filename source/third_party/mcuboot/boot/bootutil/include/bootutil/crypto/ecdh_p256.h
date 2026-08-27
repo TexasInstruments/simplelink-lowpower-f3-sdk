@@ -169,7 +169,6 @@ static inline void bootutil_ecdh_p256_drop(bootutil_ecdh_p256_context *ctx)
 static inline int bootutil_ecdh_p256_shared_secret(bootutil_ecdh_p256_context *ctx, const uint8_t *pk, const uint8_t *sk, uint8_t *z)
 {
     return SlCrypto_ecdh_p256_computeSharedSecret(pk,sk, z);
-
 }
 #endif /* MCUBOOT_USE_TI_CRYPTO */
 

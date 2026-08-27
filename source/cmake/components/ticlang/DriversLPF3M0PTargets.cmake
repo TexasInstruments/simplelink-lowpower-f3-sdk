@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget Drivers::drivers_cc23x0r2 Drivers::drivers_cc23x0r2_log Drivers::drivers_cc23x0r5 Drivers::drivers_cc23x0r5_log)
+foreach(_expectedTarget Drivers::drivers_cc23x0r2 Drivers::drivers_cc23x0r2_log Drivers::drivers_cc23x0r5 Drivers::drivers_cc23x0r5_log Drivers::drivers_cc23x1r10 Drivers::drivers_cc23x1r10_log)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -83,6 +83,22 @@ set_target_properties(Drivers::drivers_cc23x0r5_log PROPERTIES
   INTERFACE_LINK_LIBRARIES "Driverlib::cc23x0r5;TOOLCHAIN_ticlang_m0p;TiUtils::json_m0p"
 )
 
+# Create imported target Drivers::drivers_cc23x1r10
+add_library(Drivers::drivers_cc23x1r10 STATIC IMPORTED)
+
+set_target_properties(Drivers::drivers_cc23x1r10 PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x1r10;TOOLCHAIN_ticlang_m0p;TiUtils::json_m0p"
+)
+
+# Create imported target Drivers::drivers_cc23x1r10_log
+add_library(Drivers::drivers_cc23x1r10_log STATIC IMPORTED)
+
+set_target_properties(Drivers::drivers_cc23x1r10_log PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Driverlib::cc23x1r10;TOOLCHAIN_ticlang_m0p;TiUtils::json_m0p"
+)
+
 if(CMAKE_VERSION VERSION_LESS 2.8.12)
   message(FATAL_ERROR "This file relies on consumers using CMake 2.8.12 or greater.")
 endif()
@@ -119,7 +135,7 @@ unset(_IMPORT_CHECK_TARGETS)
 # Make sure the targets which have been exported in some other
 # export set exist.
 unset(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets)
-foreach(_target "Driverlib::cc23x0r2" "TiUtils::json_m0p" "Driverlib::cc23x0r5" )
+foreach(_target "Driverlib::cc23x0r2" "TiUtils::json_m0p" "Driverlib::cc23x0r5" "Driverlib::cc23x1r10" )
   if(NOT TARGET "${_target}" )
     set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets "${${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets} ${_target}")
   endif()

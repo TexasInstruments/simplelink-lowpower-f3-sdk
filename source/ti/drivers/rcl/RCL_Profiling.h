@@ -30,8 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_Profiling_h__include
-#define ti_drivers_RCL_Profiling_h__include
+#ifndef ti_drivers_rcl_RCL_Profiling__include
+#define ti_drivers_rcl_RCL_Profiling__include
 
 typedef enum RCL_ProfilingEvent_e {
     RCL_ProfilingEvent_PreprocStart = 1,   /*!< Radio operation preprocessing has started */
@@ -48,4 +48,4 @@ typedef enum RCL_ProfilingEvent_e {
 
 extern void __attribute__((weak)) RCL_Profiling_eventHook(RCL_ProfilingEvent event);
 
-#endif /* ti_drivers_RCL_Profiling_h__include */
+#endif /* ti_drivers_rcl_RCL_Profiling__include */

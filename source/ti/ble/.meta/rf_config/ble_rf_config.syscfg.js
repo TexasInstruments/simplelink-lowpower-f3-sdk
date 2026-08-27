@@ -207,11 +207,29 @@ function moduleInstances(inst)
 }
 
 /*
+ *  ======== getOpts ========
+ */
+function getOpts(mod)
+{
+    const inst = mod.$static;
+    let result = [];
+
+    result.push("-DDEFAULT_TX_POWER=" + inst.defaultTxPowerValue);
+
+    return result;
+}
+
+// The entire RF group is stack-level configuration (no app-specific items)
+const rfStackConfig = config;
+
+/*
  *  ======== exports ========
  *  Export the BLE RF Settings Configuration
  */
 exports = {
     config: config,
+    rfStackConfig: rfStackConfig,
     validate: validate,
-    moduleInstances: moduleInstances
+    moduleInstances: moduleInstances,
+    getOpts: getOpts
 };

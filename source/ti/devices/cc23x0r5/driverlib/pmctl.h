@@ -3,7 +3,7 @@
  *
  *  Description:    Defines and prototypes for the PMCTL module.
  *
- *  Copyright (c) 2022-2024 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,8 @@
  *
  ******************************************************************************/
 
-#ifndef __PMCTL_H__
-#define __PMCTL_H__
+#ifndef ti_devices_pmctl__include
+#define ti_devices_pmctl__include
 
 //*****************************************************************************
 //
@@ -226,4 +226,4 @@ __STATIC_INLINE uint32_t PMCTLGetVoltageRegulator(void)
 //
 //*****************************************************************************
 
-#endif // __PMCTL_H__
+#endif // ti_devices_pmctl__include

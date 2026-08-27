@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2024-2026 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,5 +53,5 @@ const LogSinkTraceLPF3_Config LogSinkTraceLPF3_config = {
     .tracerConfig       = `inst.rfTraceMode` | `inst.rfTraceTimestamp` | `inst.rfTracePrescaler`,
     .tracerPin          = `pinNumber`,
     .lrfdTracerPin      = `lrfdNumber`,
-    .tracerPinMux       = GPIO_MUX_PORTCFG_PFUNC`inst.lrfGpio.tracePin.$solution.muxMode`
+    .tracerPinMux       = `GPIO._getPinMuxModeFromPin(inst.lrfGpio.tracePin).toString()`
 };

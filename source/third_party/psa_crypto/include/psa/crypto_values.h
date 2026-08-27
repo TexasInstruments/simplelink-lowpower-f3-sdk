@@ -87,6 +87,10 @@
 /** The action was completed successfully. */
 #define PSA_SUCCESS ((psa_status_t)0)
 
+/** The operation was completed successfully and there will be no callback
+ * issued for its completion. */
+#define PSA_OPERATION_COMPLETE          ((psa_status_t)1)
+
 /** An error occurred that does not correspond to any defined
  * failure cause.
  *
@@ -383,7 +387,6 @@
  * using psa_destroy_key().
  */
 #define PSA_ERROR_ASSET_STORE_FULL      ((psa_status_t)-158)
-
 
 /** The function that returns this status is defined as interruptible and
  *  still has work to do, thus the user should call the function again with the
@@ -2541,10 +2544,16 @@
 /** The maximum value for a key identifier chosen by the implementation.
  */
 #define PSA_KEY_ID_VENDOR_MAX                   ((psa_key_id_t) 0x7fffffff)
-
+/** Key identifier for HSM Hardware Unique Key (HUK)
+ */
 #define PSA_KEY_ID_HSM_HUK                      ((psa_key_id_t)(PSA_KEY_ID_USER_MAX))
-
+/** Key identifier for HSM Trusted Key Derivation Key (TKDK)
+ */
 #define PSA_KEY_ID_HSM_TKDK                     ((psa_key_id_t)(PSA_KEY_ID_USER_MAX - 1))
+/** Key identifier for Initial Attestation Key (IAK)
+ *  - Value of TFM_BUILTIN_KEY_ID_HUK should reference PSA_KEY_ID_HSM_IAK
+ */
+#define PSA_KEY_ID_IAK                          ((psa_key_id_t) 0x7fff815d)
 
 #if !defined(MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER)
 

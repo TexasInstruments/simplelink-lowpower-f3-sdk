@@ -1,5 +1,6 @@
 /******************************************************************************
- *  Copyright (c) 2022-2023 Texas Instruments Incorporated. All rights reserved.
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
+ *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -34,8 +35,8 @@
  *
  ******************************************************************************/
 
-#ifndef __COPYLIST_H__
-#define __COPYLIST_H__
+#ifndef ti_devices_copylist__include
+#define ti_devices_copylist__include
 
 #include <stdint.h>
 
@@ -200,4 +201,4 @@ __STATIC_INLINE void CopyList_apply(const uint32_t *list)
     HapiApplyCopyList(list);
 }
 
-#endif //__COPYLIST_H__
+#endif // ti_devices_copylist__include

@@ -407,7 +407,6 @@ function generateDisabledOptions(name)
         if(name == "eventProps")
         {
             let disabledOptions = configurable.options;
-            const devFamily = Common.device2DeviceFamily(system.deviceData.deviceId);
 
             if (inst.advType == "extended")
             {

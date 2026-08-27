@@ -45,41 +45,45 @@ const Docs = system.getScript("/ti/ble/profiles/ble_profiles_config_docs.js");
 const Common = system.getScript("/ti/ble/ble_common.js");
 
 
+const profilesStackConfigItems = [
+    {
+        name: "maxNumPrepareWrites",
+        displayName: "Maximum number of prepare writes",
+        default: 5,
+        longDescription: Docs.maxNumPrepareWritesLongDescription
+    }
+];
+
+// App-only items — shown only in the full BLE module when basicBLEProfiles is true
+const profilesAppConfigItems = [
+    {
+        name: "deviceInfo",
+        displayName: "Device Info",
+        legacyNames: ["DeviceInfo"],
+        longDescription: Docs.deviceInfoLongDescription,
+        default: true,
+        hidden: true
+    },
+    {
+        name: "profiles",
+        displayName: "Profile Selection",
+        longDescription: Docs.profileSelectionLongDescription,
+        default: [],
+        minSelections: 0,
+        options: Common.profiles_list,
+        onChange: onChangeProfile,
+        hidden: true
+    }
+];
+
 const config =
 {
     name: "profiles_module",
     displayName: "Profiles Configurations",
     description: "Configure Profile Settings",
     config:[
-        {
-            name: "hideBasicBLEGroup",
-            default: true,
-            hidden: true
-        },
-        {
-            name: "deviceInfo",
-            displayName: "Device Info",
-            legacyNames: ["DeviceInfo"],
-            longDescription: Docs.deviceInfoLongDescription,
-            default: true,
-            hidden: true
-        },
-        {
-            name: "profiles",
-            displayName: "Profile Selection",
-            longDescription: Docs.profileSelectionLongDescription,
-            default: [],
-            minSelections: 0,
-            options: Common.profiles_list,
-            onChange: onChangeProfile,
-            hidden: true
-        },
-        {
-            name: "maxNumPrepareWrites",
-            displayName: "Maximum number of prepare writes",
-            default: 5,
-            longDescription: Docs.maxNumPrepareWritesLongDescription
-        }
+        ...profilesAppConfigItems,
+        ...profilesStackConfigItems
     ]
 };
 
@@ -125,8 +129,27 @@ function validate(inst, validation)
     }
 }
 
+/*
+ *  ======== getOpts ========
+ */
+function getOpts(mod)
+{
+    const inst = mod.$static;
+    let result = [];
+
+    if(Common.getInstModes(inst).isConnectable)
+    {
+        result.push("-DGATT_MAX_PREPARE_WRITES=" + inst.maxNumPrepareWrites);
+    }
+
+    return result;
+}
+
 // Exports to the top level BLE module
 exports = {
     config: config,
-    validate: validate
+    profilesStackConfigItems: profilesStackConfigItems,
+    profilesAppConfigItems: profilesAppConfigItems,
+    validate: validate,
+    getOpts: getOpts
 };

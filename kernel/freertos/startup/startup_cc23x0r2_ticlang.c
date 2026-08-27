@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,41 +38,24 @@
 
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(driverlib/setup.h)
-
-#include DeviceFamily_constructPath(cmsis/cc23x0r2.h)
-#include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 
 #include <FreeRTOSConfig.h>
 
-//*****************************************************************************
-//
-// The entry point for the application startup code.
-//
-//*****************************************************************************
+/* The entry point for the application startup code. */
 extern void _c_int00(void);
 void resetISR(void);
 
-//*****************************************************************************
-//
-// Linker variables that marks the top and bottom of the stack.
-//
-//*****************************************************************************
-extern unsigned long __STACK_END;
+/* Linker variables that mark the top and bottom of the stack. */
 extern void *__stack;
+extern unsigned long __STACK_END;
 
-//*****************************************************************************
-//
-// Reset vectors defined and populated in SysConfig.
-//
-//*****************************************************************************
+/* Reset vectors defined and populated in SysConfig. */
 extern void (*const resetVectors[])(void);
 
-//*****************************************************************************
-//
-// Optimization is disabled for this inline function to avoid compiler
-// optimizations that use the stack.
-//
-//*****************************************************************************
+/* Optimization is disabled for this inline function to avoid compiler
+ * optimizations that use the stack.
+ */
 __attribute__((optnone)) static inline void initializeStack(uint32_t *start, uint32_t *end)
 {
     while (start < end)
@@ -81,19 +64,15 @@ __attribute__((optnone)) static inline void initializeStack(uint32_t *start, uin
     }
 }
 
-//*****************************************************************************
-//
-// This function is called at reset entry early in the boot sequence.
-//
-//*****************************************************************************
+/* This function is called at reset entry early in the boot sequence. */
 void localProgramStart(void)
 {
-    /* Stack variable used as limit during stack init */
+    /* Stack variable used as limit during stack init. */
     uint32_t stackInitLimit;
-    /* Do final trim of device */
+    /* Do final trim of device. */
     SetupTrimDevice();
 
-    /* Disable interrupts */
+    /* Disable interrupts. */
     __disable_irq();
 
 #if configENABLE_ISR_STACK_INIT
@@ -101,9 +80,8 @@ void localProgramStart(void)
     initializeStack((uint32_t *)&__stack, (uint32_t *)&stackInitLimit);
 #endif
 
-    /*
-     * Set vector table base to point to above vectors in Flash; during
-     * driverlib interrupt initialization this table will be copied to RAM
+    /* Set vector table base to point to above vectors in Flash; during
+     * driverlib interrupt initialization this table will be copied to RAM.
      */
     SCB->VTOR = (unsigned long)&resetVectors[0];
 
@@ -112,17 +90,13 @@ void localProgramStart(void)
           " bl      _c_int00");
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor first starts execution
-// following a reset event.  Only the absolutely necessary steps are performed,
-// after which the application supplied entry routine is called.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor first starts execution
+ * following a reset event.  Only the absolutely necessary steps are performed,
+ * after which the application supplied entry routine is called.
+ */
 void resetISR(void)
 {
-    /*
-     * Set stack pointer based on the stack value stored in the vector table.
+    /* Set stack pointer based on the stack value stored in the vector table.
      * This is necessary to ensure that the application is using the correct
      * stack when using a debugger since a reset within the debugger will
      * load the stack pointer from the bootloader's vector table at address '0'.

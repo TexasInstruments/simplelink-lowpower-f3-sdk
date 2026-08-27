@@ -94,11 +94,6 @@ extern "C"
  * MACROS
  */
 
-// This is a common file for the legacy and sysconfig examples,
-// the parameters under ifndef SYSCFG are defined in this file for
-// the legacy examples and generated using the sysconfig tool for
-// the sysconfig examples
-#ifndef SYSCFG
 /**
  * @defgroup GapAdv_Constants GapAdv Constants
  * Other defines used in the GapAdv module
@@ -156,7 +151,6 @@ extern "C"
 }
 #endif
 /** @} End GapAdv_Constants */
-#endif
 
 /*-------------------------------------------------------------------
  * CONSTANTS
@@ -645,6 +639,30 @@ typedef struct
   uint16 advDataLen;
 } GapAdv_truncData_t;
 
+/// Periodic advertising advertiser subevent data request struct
+typedef struct
+{
+  osal_event_hdr_t hdr;             //!< OSAL Event Header
+  uint8_t  opcode;                  //!< GAP type of command
+  uint8_t  BLEEventCode;            //!< BLE Event Code
+  uint8_t  advHandle;               //!< Advertising handle
+  uint8_t  subeventStart;           //!< Starting subevent index
+  uint8_t  subeventCount;           //!< Number of subevents requested
+} GapAdv_PeriodicAdvASubeventDataRequest_t;
+
+/// Periodic advertising advertiser response report struct
+typedef struct
+{
+  osal_event_hdr_t hdr;             //!< OSAL Event Header
+  uint8_t  opcode;                  //!< GAP type of command
+  uint8_t  BLEEventCode;            //!< BLE Event Code
+  uint8_t  advHandle;               //!< Advertising handle
+  uint8_t  subevent;                //!< Subevent number
+  uint8_t  txStatus;                //!< 0x00=AUX_SYNC_SUBEVENT_IND transmitted, 0x01=not transmitted
+  uint8_t  numResponses;            //!< Number of responses
+  uint8_t  *responses;              //!< Pointer to responses where each contains: [txPower][rssi][cteType][responseSlot][dataStatus][dataLen][data bytes...]
+} GapAdv_PeriodicAdvAResponseReport_t;
+
 /// @cond NODOC
 
 /// Periodic advertising parameters structure
@@ -654,6 +672,16 @@ typedef struct
   uint16 periodicAdvIntervalMax;   //!< Maximum periodic advertising interval; Range: 0x0006 to 0xFFFF Time = N * 1.25 ms Time Range: 7.5ms to 81.91875s
   uint16 periodicAdvProp;          //!< Periodic advertising properties - set bit 6 for include TxPower in the advertising PDU
 } GapAdv_periodicAdvParams_t;
+
+/// PAwR parameters structure
+typedef struct
+{
+  uint8_t  numSubevents;          //!< 0x00 - Periodic Advertising without responses.
+  uint8_t  subeventInterval;      //!< 0xXX - Interval between subevents.
+  uint8_t  responseSlotDelay;     //!< 0xXX - Time between the advertising packet in a subevent and the first response slot.
+  uint8_t  responseSlotSpacing;   //!< 0xXX - Time between response slots.
+  uint8_t  numOfResponseSlots;    //!< 0xXX - Number of response slots for a subevent.
+} GapAdv_PAwRParams_t;
 
 /// Periodic advertising data structure
 typedef struct
@@ -675,6 +703,21 @@ typedef struct
   uint8_t opcode;         //!< GAP type of command
   uint8_t status;         //!< Event status
 } GapAdv_periodicAdvEvt_t;
+
+/// Periodic advertising subevent data structure
+/// Data format (interleaved for each subevent):
+///   For each subevent:
+///     byte: subeventNum (0x00-0x7F)
+///     byte: rspSlotStart
+///     byte: rspSlotCount
+///     byte: dataLen (0-251)
+///     bytes[dataLen]: subevent data
+typedef struct
+{
+  uint8_t  advHandle;          //!< 0xXX - Handle identifying the periodic advertising train\n Range: 0x00 to 0xEF
+  uint8_t  numSubEvtWithData;  //!< 0x01 to 0x0F - Number of subevent data in the command
+  uint8_t *pSubEvtData;        //!< Pointer to interleaved buffer. For each subevent contains:\n [subeventNum(0x00-0x7F)][rspSlotStart][rspSlotCount][dataLen(0-251)][data bytes...]
+} GapAdv_padvSubEvtData_t;
 /// @endcond // NODOC
 
 /// @cond NODOC
@@ -1158,6 +1201,51 @@ extern bStatus_t GapAdv_setVirtualAdvAddr(uint8 advHandle, uint8 *bdAddr);
  */
  bStatus_t GapAdv_SetPeriodicAdvEnable( uint8 enable,
                                         uint8 advHandle );
+
+/**
+ * GapAdv_SetPeriodicAdvTimeSyncEnable
+ *
+ * Used to enable time synchronization for periodic advertising.
+ * When enabled, the TSA (Time Sync Advertiser) will include the absolute
+ * start time in the periodic advertising data.
+ *
+ * @param   advHandle - Advertising handle to enable time sync for
+ *
+ * @return @ref SUCCESS
+ * @return @ref FAILURE
+ * @return @ref bleInvalidRange - if invalid handle
+ */
+ bStatus_t GapAdv_SetPeriodicAdvTimeSyncEnable( uint8 advHandle );
+
+ /**
+ * GapAdv_SetPeriodicAdvSubeventData
+ *
+ * Set the data for one or more subevents of PAwR in reply to
+ * an HCI_LE_Periodic_Advertising_Subevent_Data_Request event
+ *
+ * @param   pPadvSubEvtData - Pointer to periodic advertising subevent parameters and data
+ *                            Contains advHandle, numSubEvtWithData, and interleaved subevent buffer
+ *
+ * @return @ref SUCCESS
+ */
+uint8_t GapAdv_SetPeriodicAdvSubeventData( GapAdv_padvSubEvtData_t *pPadvSubEvtData );
+
+/**
+ * GapAdv_SetPeriodicAdvParamsV2
+ *
+ * Set the advertiser parameters for periodic advertising with PAwR
+ * (Periodic Advertising with Responses) support
+ *
+ * @param   advHandle           - Used to identify a periodic advertising train
+ *                                Created after creating extended advertising using GapAdv_create
+ * @param   periodicAdvParams   - Pointer to periodic advertising parameters
+ * @param   pPAwRParams         - Pointer to periodic advertising with responses parameters
+ *
+ * @return @ref SUCCESS
+ */
+uint8_t GapAdv_SetPeriodicAdvParamsV2( uint8_t                     advHandle,
+                                       GapAdv_periodicAdvParams_t *periodicAdvParams,
+                                       GapAdv_PAwRParams_t        *pPAwRParams );
 /// @endcond //NODOC
 
 /*-------------------------------------------------------------------

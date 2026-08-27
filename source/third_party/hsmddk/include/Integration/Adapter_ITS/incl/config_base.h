@@ -173,7 +173,7 @@
 
 /* The maximum asset size to be stored in the Internal Trusted Storage */
 #ifndef ITS_MAX_ASSET_SIZE
-#define ITS_MAX_ASSET_SIZE                     512
+#define ITS_MAX_ASSET_SIZE                     1600
 #endif
 
 /*

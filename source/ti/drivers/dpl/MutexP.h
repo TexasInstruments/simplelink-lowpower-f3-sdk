@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024, Texas Instruments Incorporated
+ * Copyright (c) 2015-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -68,9 +68,9 @@ extern "C" {
  *            MutexP object.
  *
  *  NoRTOS:   12
- *  BIOS 6.x: 40
  *  BIOS 7.x: 40
  *  FreeRTOS: 80
+ *  Zephyr: 20
  */
 #define MutexP_STRUCT_SIZE (80)
 

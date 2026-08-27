@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,11 +74,25 @@ var cc23x0r2DeviceFiles = [
     "dpl/TimestampPLPF3_freertos.c"
 ];
 
+var cc23x1r10DeviceFiles = [
+    "dpl/ClockPLPF3_freertos.c",
+    "dpl/HwiPCC23X1_freertos.c",
+    "dpl/PowerCC23X1_freertos.c",
+    "dpl/TimestampPLPF3_freertos.c"
+];
+
 var cc27xxDeviceFiles = [
     "dpl/ClockPLPF3_freertos.c",
     "dpl/HwiPCC27XX_freertos.c",
     "dpl/TimestampPLPF3_freertos.c",
     "dpl/PowerCC27XX_freertos.c"
+];
+
+var cc283xDeviceFiles = [
+    "dpl/ClockPLPF3_freertos.c",
+    "dpl/HwiPCC283X_freertos.c",
+    "dpl/OSTickLPF4_freertos.c",
+    "dpl/PowerCC283X_freertos.c"
 ];
 
 var cc35xxDeviceFiles = [
@@ -116,8 +130,12 @@ function getCFiles(kernel)
         return dplFiles.concat(cc23x0r2DeviceFiles, getStartupFiles("cc23x0r2"));
     } else if (system.deviceData.deviceId.match(/CC23.0R5/)) {
         return dplFiles.concat(cc23x0r5DeviceFiles, getStartupFiles("cc23x0r5"));
+    } else if (system.deviceData.deviceId.match(/CC23.1R10/)) {
+        return dplFiles.concat(cc23x1r10DeviceFiles, getStartupFiles("cc23x1r10"));
     } else if (system.deviceData.deviceId.match(/CC27../)) {
-            return dplFiles.concat(cc27xxDeviceFiles, getStartupFiles("cc27xx"));
+        return dplFiles.concat(cc27xxDeviceFiles, getStartupFiles("cc27xx"));
+    } else if (system.deviceData.deviceId.match(/CC283./)) {
+        return dplFiles.concat(cc283xDeviceFiles, getStartupFiles("cc283x"));
     } else if (system.deviceData.deviceId.match(/CC35../)) {
         return dplFiles.concat(cc35xxDeviceFiles, getStartupFiles("cc35xx"));
     } else {

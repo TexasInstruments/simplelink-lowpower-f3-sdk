@@ -45,10 +45,9 @@
 #ifndef INCLUDE_GUARD_ADAPTER_PSA_ASSET_H
 #define INCLUDE_GUARD_ADAPTER_PSA_ASSET_H
 
-#include <third_party/hsmddk/include/Kit/DriverFramework/Basic_Defs_API/incl/basic_defs.h>             // uint8_t, uint16_t, uint32_t, uint64_t
-#include <third_party/hsmddk/include/Config/cs_eip130.h>              // EIP-130 configuration
+#include <third_party/hsmddk/include/Kit/DriverFramework/Basic_Defs_API/incl/basic_defs.h> // uint8_t, uint16_t, uint32_t, uint64_t
 #include <third_party/hsmddk/include/Kit/EIP130/TokenHelper/incl/eip130_asset_policy.h>    // Asset policy defines based on cs_eip130.h
-#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>             // psa_status_t, PsaAssetId_t
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>            // psa_status_t, PsaAssetId_t
 
 /*----------------------------------------------------------------------------
  * Definitions and macros

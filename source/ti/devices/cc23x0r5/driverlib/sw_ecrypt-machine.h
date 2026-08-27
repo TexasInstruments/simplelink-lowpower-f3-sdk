@@ -3,6 +3,9 @@
  ******************************************************************************/
 /* ecrypt-machine.h */
 
+#ifndef ti_devices_sw_ecrypt_machine__include
+#define ti_devices_sw_ecrypt_machine__include
+
 /*
  * This file is included by 'ecrypt-portable.h'. It allows to override
  * the default macros for specific platforms. Please carefully check
@@ -40,10 +43,10 @@
 
     #define ECRYPT_MACHINE_SWAP
 
-/*
- * If you want to overwrite the default swap macros, put it here. And so on.
- */
+    /*
+     * If you want to overwrite the default swap macros, put it here. And so on.
+     */
 
 #endif
 
-/* ------------------------------------------------------------------------- */
+#endif /* ti_devices_sw_ecrypt_machine__include */

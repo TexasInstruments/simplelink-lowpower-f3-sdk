@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -90,7 +90,7 @@ void LogSinkITM_init(void)
 /*
  *  ======== LogSinkITM_printf ========
  */
-void LogSinkITM_printf(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint32_t numArgs, va_list argptr)
+void LogSinkITM_printf(const Log_Module *handle, Log_Level level, uint32_t headerPtr, uint32_t numArgs, va_list argptr)
 {
     uint32_t key;
 
@@ -114,82 +114,100 @@ void LogSinkITM_printf(const Log_Module *handle, uint32_t header, uint32_t heade
 /*
  *  ======== LogSinkITM_printfSingleton0 ========
  */
-void LogSinkITM_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkITM_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkITM_printf(handle, header, headerPtr, 0, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkITM_printf(handle, level, headerPtr, 0, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkITM_printfSingleton1 ========
  */
-void LogSinkITM_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkITM_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkITM_printf(handle, header, headerPtr, 1, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkITM_printf(handle, level, headerPtr, 1, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkITM_printfSingleton2 ========
  */
-void LogSinkITM_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkITM_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkITM_printf(handle, header, headerPtr, 2, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkITM_printf(handle, level, headerPtr, 2, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkITM_printfSingleton1 ========
  */
-void LogSinkITM_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...)
+void LogSinkITM_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, headerPtr);
-    LogSinkITM_printf(handle, header, headerPtr, 3, argptr);
-    va_end(argptr);
+        va_start(argptr, headerPtr);
+        LogSinkITM_printf(handle, level, headerPtr, 3, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkITM_printfSingleton ========
  */
-void LogSinkITM_printfSingleton(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint32_t numArgs, ...)
+void LogSinkITM_printfSingleton(const Log_Module *handle, Log_Level level, uint32_t headerPtr, uint32_t numArgs, ...)
 {
-    va_list argptr;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        va_list argptr;
 
-    va_start(argptr, numArgs);
-    LogSinkITM_printf(handle, header, headerPtr, numArgs, argptr);
-    va_end(argptr);
+        va_start(argptr, numArgs);
+        LogSinkITM_printf(handle, level, headerPtr, numArgs, argptr);
+        va_end(argptr);
+    }
 }
 
 /*
  *  ======== LogSinkITM_buf ========
  */
-void LogSinkITM_bufSingleton(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint8_t *data, size_t size)
+void LogSinkITM_bufSingleton(const Log_Module *handle, Log_Level level, uint32_t headerPtr, uint8_t *data, size_t size)
 {
-    uint32_t key;
+    if (((handle->dynamicLevelsPtr != NULL) && (level & *(handle->dynamicLevelsPtr))) || (handle->levels & level))
+    {
+        uint32_t key;
 
-    /* disable interrupts */
-    key = HwiP_disable();
+        /* disable interrupts */
+        key = HwiP_disable();
 
-    /* Send header */
-    ITM_send32Polling(LogSinkITM_STIM_HEADER, headerPtr);
-    /* We always send the size of the expected buffer */
-    ITM_send32Polling(LogSinkITM_STIM_TRACE, size);
-    /* Send out the actual data */
-    ITM_sendBufferAtomic(LogSinkITM_STIM_TRACE, (const char *)data, size);
+        /* Send header */
+        ITM_send32Polling(LogSinkITM_STIM_HEADER, headerPtr);
+        /* We always send the size of the expected buffer */
+        ITM_send32Polling(LogSinkITM_STIM_TRACE, size);
+        /* Send out the actual data */
+        ITM_sendBufferAtomic(LogSinkITM_STIM_TRACE, (const char *)data, size);
 
-    /* enable interrupts */
-    HwiP_restore(key);
+        /* enable interrupts */
+        HwiP_restore(key);
+    }
 }
 
 /*

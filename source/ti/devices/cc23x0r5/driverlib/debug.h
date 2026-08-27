@@ -3,7 +3,7 @@
  *
  *  Description:    Macros for assisting debug of the driver library.
  *
- *  Copyright (c) 2022 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2026 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,8 @@
  *
  ******************************************************************************/
 
-#ifndef __DEBUG_H__
-#define __DEBUG_H__
+#ifndef ti_devices_debug__include
+#define ti_devices_debug__include
 
 //*****************************************************************************
 //
@@ -44,6 +44,16 @@
 //! @{
 //
 //*****************************************************************************
+
+//*****************************************************************************
+//
+// If building with a C++ compiler, make all of the definitions in this header
+// have a C binding.
+//
+//*****************************************************************************
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //*****************************************************************************
 //
@@ -73,10 +83,19 @@ extern void __error__(char *pFilename, uint32_t line);
 
 //*****************************************************************************
 //
+// Mark the end of the C bindings section for C++ compilers.
+//
+//*****************************************************************************
+#ifdef __cplusplus
+}
+#endif
+
+//*****************************************************************************
+//
 //! Close the Doxygen group.
 //! @}
 //! @}
 //
 //*****************************************************************************
 
-#endif // __DEBUG_H__
+#endif // ti_devices_debug__include

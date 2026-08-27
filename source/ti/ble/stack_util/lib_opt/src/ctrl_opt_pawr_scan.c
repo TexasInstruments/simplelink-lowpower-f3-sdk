@@ -117,6 +117,11 @@ uint8_t OPT_LL_PAwRS_GetSubeventNum(uint8_t* pPAwRParams)
     return LL_PAwRS_GetSubeventNum(pPAwRParams);
 }
 
+bool OPT_LL_PAwRS_IsSubeventInList(uint8_t* pPAwRParams, uint8_t subevent)
+{
+    return LL_PAwRS_IsSubeventInList(pPAwRParams, subevent);
+}
+
 bool OPT_LL_PAwRS_IsEnable(void)
 {
     return LL_PAwRS_IsEnable();
@@ -142,7 +147,7 @@ void OPT_LL_PAwRS_Activate(uint8_t* pPAwRParams)
     LL_PAwRS_Activate(pPAwRParams);
 }
 
-void OPT_LL_PAwRS_PostProcess(const llPAwRPostProcessIn_t* in, llPAwRPostProcessOut_t* out, uint8_t* pPAwRParams)
+void OPT_LL_PAwRS_PostProcess(const llPAwRSPostProcessIn_t* in, llPAwRSPostProcessOut_t* out, uint8_t* pPAwRParams)
 {
     LL_PAwRS_PostProcess(in, out, pPAwRParams);
 }
@@ -170,6 +175,11 @@ void OPT_LL_PAwRS_AdjustNextStartTime(uint32_t* absStartTime, uint8_t* eventCoun
 void OPT_LL_PAwRS_UpdateRspDataCmdIfNeeded(uint8_t* pPAwRParams, uint16_t eventCounter, void* chanMapCurrent, uint32_t accessAddress, uint32_t absStartTime, uint16_t eventInterval)
 {
     LL_PAwRS_UpdateRspDataCmdIfNeeded(pPAwRParams, eventCounter, chanMapCurrent, accessAddress, absStartTime, eventInterval);
+}
+
+void OPT_LL_PAwRS_UpdateConnParams(uint8_t addrType, uint8_t* addr, RCL_CtxPeriodicScanner* pCtx)
+{
+    LL_PAwRS_UpdateConnParams(addrType, addr, pCtx);
 }
 
 bool OPT_LL_PAwRS_IsConnRspPkt(RCL_CtxPeriodicScanner* rfParam)

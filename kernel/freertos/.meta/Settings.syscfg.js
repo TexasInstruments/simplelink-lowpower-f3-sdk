@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026 Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -130,9 +130,88 @@ let deviceSettingsTable = {
         iarPortableFiles: ["../portable/IAR/ARM_CM0/port.c"],
         iarPortableASMFile: "../portable/IAR/ARM_CM0/portasm.s"
     },
+    "cc23x1": {
+        defaultHeapSize: 0x4000,
+        defaultCpuFrequency: 48000000,
+        defaultIdleSleepTicks: 2,
+        defaultPortTaskSelection: 0,
+        defaultMaxInterruptPriority: 1,
+        defaultNvicPriBits: 2,
+        defaultFpuEnabled: false,
+        defaultInterruptCount: 47,
+        defaultSvCallHandler: "vPortSVCHandler",
+        defaultPendSvHandler: "xPortPendSVHandler",
+        defaultSysTickHandler: "xPortSysTickHandler",
+        gccPortableFiles: ["../portable/GCC/ARM_CM0/port.c"],
+        iarPortableFiles: ["../portable/IAR/ARM_CM0/port.c"],
+        iarPortableASMFile: "../portable/IAR/ARM_CM0/portasm.s"
+    },
+    "cc283x": {
+        defaultHeapSize: 0x4000,
+        defaultCpuFrequency: 96000000,
+        defaultIdleSleepTicks: 2,
+        defaultPortTaskSelection: 0,
+        defaultMaxInterruptPriority: 1,
+        defaultNvicPriBits: 4,
+        defaultFpuEnabled: false,
+        defaultInterruptCount: 47,
+        defaultSvCallHandler: "vPortSVCHandler",
+        defaultPendSvHandler: "xPortPendSVHandler",
+        /* CC283X does not use SysTick for FreeRTOS ticks, so just use
+         * Exception_handlerSpin().
+         */
+        defaultSysTickHandler: "Exception_handlerSpin",
+        gccPortableFiles: ["../portable/GCC/ARM_CM3/port.c"],
+        iarPortableFiles: ["../portable/IAR/ARM_CM3/port.c"],
+        iarPortableASMFile: "../portable/IAR/ARM_CM3/portasm.s"
+    },
     "cc35xx": {
         defaultHeapSize: 0x8000,
         defaultCpuFrequency: 160000000,
+        defaultIdleSleepTicks: 2,
+        /* The CM33 port does not have optimised task selection */
+        defaultPortTaskSelection: 0,
+        defaultMaxInterruptPriority: 1,
+        defaultNvicPriBits: 4,
+        defaultFpuEnabled: true,
+        defaultInterruptCount: 69,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
+        gccPortableFiles: [
+            "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
+            "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
+        ],
+        iarPortableFiles: [
+            "../portable/IAR/ARM_CM33_NTZ/non_secure/port.c"
+        ],
+        iarPortableASMFile: "../portable/IAR/ARM_CM33_NTZ/non_secure/portasm.s"
+    },
+    "cc35xx_tfm": {
+        defaultHeapSize: 0x8000,
+        defaultCpuFrequency: 160000000,
+        defaultIdleSleepTicks: 2,
+        /* The CM33 port does not have optimised task selection */
+        defaultPortTaskSelection: 0,
+        defaultMaxInterruptPriority: 2,
+        defaultNvicPriBits: 4,
+        defaultFpuEnabled: true,
+        defaultInterruptCount: 69,
+        defaultSvCallHandler: "SVC_Handler",
+        defaultPendSvHandler: "PendSV_Handler",
+        defaultSysTickHandler: "SysTick_Handler",
+        gccPortableFiles: [
+            "../portable/GCC/ARM_CM33_NTZ/non_secure/port.c",
+            "../portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c"
+        ],
+        iarPortableFiles: [
+            "../portable/IAR/ARM_CM33_NTZ/non_secure/port.c"
+        ],
+        iarPortableASMFile: "../portable/IAR/ARM_CM33_NTZ/non_secure/portasm.s"
+    },
+    "cc37xx": {
+        defaultHeapSize: 0x8000,
+        defaultCpuFrequency: 240000000,
         defaultIdleSleepTicks: 2,
         /* The CM33 port does not have optimised task selection */
         defaultPortTaskSelection: 0,
@@ -152,9 +231,9 @@ let deviceSettingsTable = {
         ],
         iarPortableASMFile: "../portable/IAR/ARM_CM33_NTZ/non_secure/portasm.s"
     },
-    "cc35xx_tfm": {
+    "cc37xx_tfm": {
         defaultHeapSize: 0x8000,
-        defaultCpuFrequency: 160000000,
+        defaultCpuFrequency: 240000000,
         defaultIdleSleepTicks: 2,
         /* The CM33 port does not have optimised task selection */
         defaultPortTaskSelection: 0,
@@ -249,6 +328,15 @@ function getDeviceSettings(tfmEnabled)
     if (deviceId.match(/CC23.0/)) {
         deviceSettings = deviceSettingsTable.cc23x0;
     }
+    else if (deviceId.match(/CC23.1/)) {
+        deviceSettings = deviceSettingsTable.cc23x1;
+
+        /* Adjust CPU frequency if FPGA is used */
+        if (isFPGA)
+        {
+            deviceSettings.defaultCpuFrequency = 12000000;
+        }
+    }
     else if (deviceId.match(/CC13.1.*|CC26.1.*/)) {
         /* CC13X1/CC26X1 */
         deviceSettings = deviceSettingsTable.cc13x1_cc26x1;
@@ -285,6 +373,23 @@ function getDeviceSettings(tfmEnabled)
             deviceSettings.defaultCpuFrequency = 80000000;
         }
     }
+    else if (deviceId.match(/CC37.*/)) {
+        /* CC37XX. Choose between a TFM-enabled or TFM-disabled
+        * configuration
+        */
+        if (tfmEnabled) {
+            deviceSettings = deviceSettingsTable.cc37xx_tfm;
+        }
+        else {
+            deviceSettings = deviceSettingsTable.cc37xx;
+        }
+
+        /* Adjust CPU frequency if FPGA is used */
+        if (isFPGA)
+        {
+            deviceSettings.defaultCpuFrequency = 80000000;
+        }
+    }
     else if (deviceId.match(/CC27.*/)) {
         /* CC27XX. Choose between a TFM-enabled or TFM-disabled
         * configuration
@@ -300,6 +405,15 @@ function getDeviceSettings(tfmEnabled)
         if (isFPGA)
         {
             deviceSettings.defaultCpuFrequency = 24000000;
+        }
+    }
+    else if (deviceId.match(/CC283.*/)) {
+        deviceSettings = deviceSettingsTable.cc283x;
+
+        /* Adjust CPU frequency if FPGA is used */
+        if (isFPGA)
+        {
+            deviceSettings.defaultCpuFrequency = 12000000;
         }
     }
     return deviceSettings;

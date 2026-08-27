@@ -1,6 +1,6 @@
 %%{
 /*
- * Copyright (c) 2019-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2025 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -116,37 +116,29 @@ static const `driver`_HWAttrs `driver`_hwAttrs[`countDef`] = {
 %
 %     let rxPinName     = 'GPIO_INVALID_INDEX';
 %     let txPinName     = 'GPIO_INVALID_INDEX';
-%     let rxPinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
-%     let txPinMuxName  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let rxPinMuxMode  = 'GPIO_MUX_GPIO_INTERNAL';
+%     let txPinMuxMode  = 'GPIO_MUX_GPIO_INTERNAL';
 %     let flowName      = 'UART2_FLOWCTRL_NONE';
 %     let ctsPinName    = 'GPIO_INVALID_INDEX';
 %     let rtsPinName    = 'GPIO_INVALID_INDEX';
-%     let ctsPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
-%     let rtsPinMuxName = 'GPIO_MUX_GPIO_INTERNAL';
+%     let ctsPinMuxMode = 'GPIO_MUX_GPIO_INTERNAL';
+%     let rtsPinMuxMode = 'GPIO_MUX_GPIO_INTERNAL';
 %
 %     if ('rxPinInstance' in inst) {
 %         rxPinName = inst.rxPinInstance.$name;
-%         let rxPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'RXD'],
-%                                                   inst.uart.rxPin.$solution.devicePinName);
-%         rxPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + rxPinMuxMode.toString();
+%         rxPinMuxMode = GPIO._getPinMuxModeFromPin(inst.uart.rxPin).toString();
 %     }
 %
 %     if ('txPinInstance' in inst) {
 %         txPinName = inst.txPinInstance.$name;
-%         let txPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'TXD'],
-%                                                   inst.uart.txPin.$solution.devicePinName);
-%         txPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + txPinMuxMode.toString();
+%         txPinMuxMode = GPIO._getPinMuxModeFromPin(inst.uart.txPin).toString();
 %     }
 %
 %     if (inst.flowControl) {
 %         ctsPinName = inst.ctsPinInstance.$name;
 %         rtsPinName = inst.rtsPinInstance.$name;
-%         let ctsPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'CTS'],
-%                                                 inst.uart.ctsPin.$solution.devicePinName);
-%         let rtsPinMuxMode = GPIO._getPinMuxMode(peripheral.peripheralPins[solution.peripheralName + 'RTS'],
-%                                                 inst.uart.rtsPin.$solution.devicePinName);
-%         ctsPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + ctsPinMuxMode.toString();
-%         rtsPinMuxName = 'GPIO_MUX_PORTCFG_PFUNC' + rtsPinMuxMode.toString();
+%         ctsPinMuxMode = GPIO._getPinMuxModeFromPin(inst.uart.ctsPin).toString();
+%         rtsPinMuxMode = GPIO._getPinMuxModeFromPin(inst.uart.rtsPin).toString();
 %         flowName = 'UART2_FLOWCTRL_HARDWARE';
 %     }
 %
@@ -169,10 +161,10 @@ static const `driver`_HWAttrs `driver`_hwAttrs[`countDef`] = {
     .txBufPtr              = NULL,
     .txBufSize             = 0,
 % }
-    .txPinMux              = `txPinMuxName`,
-    .rxPinMux              = `rxPinMuxName`,
-    .ctsPinMux             = `ctsPinMuxName`,
-    .rtsPinMux             = `rtsPinMuxName`,
+    .txPinMux              = `txPinMuxMode`,
+    .rxPinMux              = `rxPinMuxMode`,
+    .ctsPinMux             = `ctsPinMuxMode`,
+    .rtsPinMux             = `rtsPinMuxMode`,
     .dmaRxTableEntryPri    = &dmaChannel`dmaRXChNumber`ControlTableEntry,
     .dmaTxTableEntryPri    = &dmaChannel`dmaTXChNumber`ControlTableEntry,
     .rxChannelMask         = UDMA_CHANNEL_`dmaRXChNumber`_M,

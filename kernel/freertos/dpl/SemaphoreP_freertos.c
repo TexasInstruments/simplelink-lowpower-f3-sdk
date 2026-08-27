@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2024, Texas Instruments Incorporated
+ * Copyright (c) 2015-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -246,18 +246,25 @@ SemaphoreP_Status SemaphoreP_pend(SemaphoreP_Handle handle, uint32_t timeout)
     /* else, pend with timeout */
     else
     {
-
-        /* if necessary, convert ClockP ticks to FreeRTOS ticks */
-        tickPeriod = ClockP_getSystemTickPeriod();
-        if (tickPeriod != FREERTOS_TICKPERIOD_US)
+        if (timeout == SemaphoreP_WAIT_FOREVER)
         {
-            timeUS  = timeout * (uint64_t)tickPeriod;
-            ticksFR = (TickType_t)(timeUS / FREERTOS_TICKPERIOD_US);
+            ticksFR = portMAX_DELAY;
         }
         else
         {
-            ticksFR = timeout;
+            /* if necessary, convert ClockP ticks to FreeRTOS ticks */
+            tickPeriod = ClockP_getSystemTickPeriod();
+            if (tickPeriod != FREERTOS_TICKPERIOD_US)
+            {
+                timeUS  = timeout * (uint64_t)tickPeriod;
+                ticksFR = (TickType_t)(timeUS / FREERTOS_TICKPERIOD_US);
+            }
+            else
+            {
+                ticksFR = timeout;
+            }
         }
+
         status = xSemaphoreTake((SemaphoreHandle_t)handle, ticksFR);
     }
 

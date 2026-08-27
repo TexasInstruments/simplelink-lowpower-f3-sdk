@@ -14,6 +14,7 @@
     var inst = module.$static;
 
 %%}
+% if (!inst.noAuthentication) {
 /*
  *  ======== mcuboot_config.h ========
  *  Configuration File for MCUboot
@@ -63,15 +64,29 @@
 /* Enable the direct-xip code path. */
 
 #define MCUBOOT_DIRECT_XIP
+#define MCUBOOT_WATCHDOG_FEED()  do { } while (0)
 % }
 % else if(inst.mode === 'overwrite'){
 /* Enable the overwrite-only code path. */
 
 #define MCUBOOT_OVERWRITE_ONLY
 
+
 /*software based downgrade prevention the image version numbers are compared */
 #define MCUBOOT_DOWNGRADE_PREVENTION
-#define MCUBOOT_WATCHDOG_FEED() { }
+#define MCUBOOT_WATCHDOG_FEED()  do { } while (0)
+% }
+% else if(inst.mode === 'swapUsingMove'){
+/* Enable the overwrite using move code path. */
+#define MCUBOOT_SWAP_USING_MOVE 1
+
+/*software based downgrade prevention the image version numbers are compared */
+#define MCUBOOT_DOWNGRADE_PREVENTION
+
+/* Watchdog timeout in milliseconds (configured via SysConfig). */
+#define MCUBOOT_HW_WATCHDOG_TIMEOUT_MS  `inst.watchdogTimeoutMs`
+#include "watchdog/watchdog.h"
+#define MCUBOOT_WATCHDOG_FEED()  do { mcuboot_watchdog_feed(); } while (0)
 % }
 
 % if(inst.imageCompression){
@@ -96,6 +111,10 @@
  */
 
 #define MCUBOOT_HW_ROLLBACK_PROT
+#define MCUBOOT_DOWNGRADE_PREVENTION_SECURITY_COUNTER 1
+% }
+% else{
+#define MCUBOOT_DOWNGRADE_PREVENTION_SECURITY_COUNTER 0
 % }
 
 % if(!inst.tzEnabled){
@@ -158,4 +177,6 @@
  */
 #define MCUBOOT_HAVE_LOGGING 1
 
+
 #endif /* __MCUBOOT_CONFIG_H__ */
+% }

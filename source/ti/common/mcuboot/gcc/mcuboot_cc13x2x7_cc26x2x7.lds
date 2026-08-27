@@ -37,12 +37,12 @@ HEAPSIZE = 16384; /* Size of heap buffer used by HeapMem */
 
 MEMORY
 {
-    FLASH (RX)      : ORIGIN = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE, LENGTH = ti_utils_build_GenMap_MCUBOOT_FLASH_SIZE - 0x58
+    FLASH (RX)      : ORIGIN = ti_utils_build_GenMap_MCUBOOT_FLASH_BASE, LENGTH = ti_utils_build_GenMap_MCUBOOT_FLASH_SIZE
     /*
      * Customer Configuration Area and Bootloader Backdoor configuration in
      * flash, 40 bytes
      */
-    FLASH_CCFG (RX) : ORIGIN = ti_utils_build_GenMap_MCUBOOT_FLASH_SIZE - 0x58, LENGTH = 0x00000058
+    FLASH_CCFG (RX) : ORIGIN = 0x000affa8, LENGTH = 0x00000058
     SRAM (RWX)      : ORIGIN = 0x20000000, LENGTH = 0x00024000
     GPRAM (RWX)     : ORIGIN = 0x11000000, LENGTH = 0x00002000
 }

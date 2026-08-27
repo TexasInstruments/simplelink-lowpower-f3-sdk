@@ -37,10 +37,10 @@
 #include <ti/drivers/rng/RNGLPF3RF.h>
 #include <ti/drivers/AESCMAC.h>
 #include <ti/drivers/AESCTRDRBG.h>
-#include <ti/drivers/aescmac/AESCMACLPF3.h>
+#include <ti/drivers/aescmac/AESCMACXXF3.h>
 #include <ti/drivers/aesctrdrbg/AESCTRDRBGXX.h>
 #include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
-#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
+#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceXXF3.h>
 #include <ti/drivers/cryptoutils/utils/CryptoUtils.h>
 
 #include <ti/drivers/dpl/SemaphoreP.h>
@@ -434,8 +434,8 @@ static int_fast16_t RNGLPF3RF_conditionNoise(uint32_t *noiseInput, uint32_t *see
     AESCMAC_Operation cbcmacOperation;
     AESCMAC_Handle dynHandle;
     AESCMAC_Config dynConfig;
-    AESCMACLPF3_Object dynObject;
-    const AESCMACLPF3_HWAttrs dynHWAttrs = {.intPriority = (~0)};
+    AESCMACXXF3_Object dynObject;
+    const AESCMACXXF3_HWAttrs dynHWAttrs = {.intPriority = (~0)};
     AESCMAC_Params params;
 
     RNGLPF3RF_storeUint32InArray(keyMaterial, RNGLPF3RF_noiseConditioningKeyWord0);

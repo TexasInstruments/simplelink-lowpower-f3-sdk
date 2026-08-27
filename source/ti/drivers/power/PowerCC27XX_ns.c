@@ -60,7 +60,7 @@ static void PowerCC27XX_notifySecureCallbackFxn(uintptr_t arg);
 extern const PowerCC27XX_Config PowerCC27XX_config;
 
 /* Macro for weak definition of the Power Log module */
-Log_MODULE_DEFINE_WEAK(LogModule_Power, {0});
+Log_MODULE_DEFINE_WEAK(LogModule_Power, Log_MODULE_INIT_SINK_DUMMY);
 
 /* Function Macros */
 /* Macro used to extract the resource group  from a resource ID */

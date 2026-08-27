@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -14,8 +15,11 @@
 #include "tfm_crypto_key.h"
 #include "tfm_crypto_defs.h"
 #include "tfm_sp_log.h"
+/* TI-TFM: These includes are not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 #include "crypto_check_config.h"
 #include "tfm_plat_crypto_keys.h"
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 #include "crypto_library.h"
 
@@ -30,7 +34,10 @@
 #include <string.h>
 #include "psa/framework_feature.h"
 #include "psa/service.h"
+/* TI-TFM: This include is not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 #include "psa_manifest/tfm_crypto.h"
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 /**
  * \brief Aligns a value x up to an alignment a.
@@ -187,7 +194,8 @@ static psa_status_t tfm_crypto_init_iovecs(const psa_msg_t *msg,
 }
 #endif /* PSA_FRAMEWORK_HAS_MM_IOVEC == 1 */
 
-static psa_status_t tfm_crypto_call_srv(const psa_msg_t *msg)
+/* TI-TFM: Removed 'static' keyword to expose tfm_crypto_call_srv() for TI's PSA Crypto API service */
+psa_status_t tfm_crypto_call_srv(const psa_msg_t *msg)
 {
     psa_status_t status = PSA_SUCCESS;
     size_t in_len = PSA_MAX_IOVEC, out_len = PSA_MAX_IOVEC, i;
@@ -234,6 +242,13 @@ static psa_status_t tfm_crypto_call_srv(const psa_msg_t *msg)
             psa_unmap_outvec(msg->handle, i, out_vec[i].len);
         }
     }
+
+    /* Unmap from the second element whereas the first was read when parsing */
+    for (i = 1; i < in_len; i++) {
+        if (in_vec[i].base != NULL) {
+            psa_unmap_invec(msg->handle, i);
+        }
+    }
 #else
     /* Write into the IPC framework outputs from the scratch */
     for (i = 0; i < out_len; i++) {
@@ -246,6 +261,9 @@ static psa_status_t tfm_crypto_call_srv(const psa_msg_t *msg)
 
     return status;
 }
+
+/* TI-TFM: These functions are not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 
 static psa_status_t tfm_crypto_engine_init(void)
 {
@@ -330,6 +348,8 @@ psa_status_t tfm_crypto_sfn(const psa_msg_t *msg)
 
     return PSA_ERROR_GENERIC_ERROR;
 }
+
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 
 psa_status_t tfm_crypto_api_dispatcher(psa_invec in_vec[],
                                        size_t in_len,

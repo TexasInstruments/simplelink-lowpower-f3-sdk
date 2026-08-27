@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ti_drivers_RCL_Feature_h__include
-#define ti_drivers_RCL_Feature_h__include
+#ifndef ti_drivers_rcl_RCL_Feature__include
+#define ti_drivers_rcl_RCL_Feature__include
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <ti/devices/DeviceFamily.h>
 
 /**
  * @brief Configuration structure to be set at build time to control features
@@ -43,7 +44,7 @@
  */
 typedef struct {
     bool enableTemperatureMonitoring;
-#ifdef DeviceFamily_CC27XX
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     bool enablePaEsdProtection;
     bool enableTxOutputPowerCompensation;
 #endif
@@ -51,4 +52,4 @@ typedef struct {
 
 extern const RCL_FeatureControl rclFeatureControl;
 
-#endif
+#endif /* ti_drivers_rcl_RCL_Feature__include */

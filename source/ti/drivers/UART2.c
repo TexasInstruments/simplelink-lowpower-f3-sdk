@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated
+ * Copyright (c) 2019-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@ extern const UART2_Config UART2_config[];
 extern const uint_least8_t UART2_count;
 
 /* Macro for weak definition of the UART2 Log module */
-Log_MODULE_DEFINE_WEAK(LogModule_UART2, {0});
+Log_MODULE_DEFINE_WEAK(LogModule_UART2, Log_MODULE_INIT_SINK_DUMMY);
 
 /* Default UART parameters structure */
 const UART2_Params UART2_defaultParams = {

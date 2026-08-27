@@ -1,8 +1,9 @@
 [
     {
         "files": [
-            "+lpf3_nortos.icf -> lpf3_nortos.icf",
+            "+cc23x0r5.icf -> cc23x0r5.icf",
             "+../main_nortos.c -> main_nortos.c",
+            "+../README.html -> README.html",
             "+../README.md -> README.md",
             "+../rfPacketTx.c -> rfPacketTx.c",
             "+../rfPacketTx.syscfg -> rfPacketTx.syscfg"

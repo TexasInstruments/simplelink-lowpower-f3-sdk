@@ -107,6 +107,21 @@ for(var setting in ccfgSettings)
 var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
 zigbee.deviceType                    = ["zc"];
 zigbee.deviceTypeReadOnly            = false;
+zigbee.loggingEnabled                = true;
+
+/* ======== LogSinkUART ======== */
+const LogSinkUART  = scripting.addModule("/ti/log/LogSinkUART", {}, false);
+const LogSinkUART1 = LogSinkUART.addInstance();
+LogSinkUART1.$name    = "CONFIG_ti_log_LogSinkUART_0";
+LogSinkUART1.baudRate = 115200;
+LogSinkUART1.uart.$name     = "CONFIG_UART2_0";
+LogSinkUART1.uart.$hardware = system.deviceData.board.components.XDS110UART;
+zigbee.LogModuleZigbeeApp.loggerSink   = "/ti/log/LogSinkUART";
+zigbee.LogModuleZigbeeApp.logger       = LogSinkUART1;
+zigbee.LogModuleZigbeeApp.enable_INFO  = true;
+zigbee.LogModuleZigbeeOSIF.loggerSink  = "/ti/log/LogSinkUART";
+zigbee.LogModuleZigbeeOSIF.logger      = LogSinkUART1;
+zigbee.LogModuleZigbeeOSIF.enable_INFO = true;
 
 if(system.deviceData.deviceId.match(/CC23.*/))
 {

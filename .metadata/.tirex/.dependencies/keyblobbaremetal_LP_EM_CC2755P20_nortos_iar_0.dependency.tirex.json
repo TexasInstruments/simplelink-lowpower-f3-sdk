@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+../HSMBareMetal.c -> HSMBareMetal.c",
+            "+../HSMBareMetalECCUtility.c -> HSMBareMetalECCUtility.c",
+            "+../keyBlobBareMetal.c -> keyBlobBareMetal.c",
+            "+../keyBlobBareMetal.syscfg -> keyBlobBareMetal.syscfg",
+            "+../lpf3_cc27xx_nortos.icf -> lpf3_cc27xx_nortos.icf",
+            "+../main_nortos.c -> main_nortos.c",
+            "+../../../../../../source/ti/common/hsm/keyBlobBareMetal/README.md -> README.md"
+        ]
+    }
+]

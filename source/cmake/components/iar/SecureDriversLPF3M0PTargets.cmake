@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget SecureDrivers::secure_drivers_cc23x0r2 SecureDrivers::secure_drivers_cc23x0r5)
+foreach(_expectedTarget SecureDrivers::secure_drivers_cc23x0r2 SecureDrivers::secure_drivers_cc23x0r5 SecureDrivers::secure_drivers_cc23x1r10 SecureDrivers::secure_drivers_cc23x1r10_mbedtls)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -67,6 +67,22 @@ set_target_properties(SecureDrivers::secure_drivers_cc23x0r5 PROPERTIES
   INTERFACE_LINK_LIBRARIES "Drivers::drivers_cc23x0r5;ThirdPartyEccLib::ecc_cc23x0;Driverlib::cc23x0r5;TOOLCHAIN_iar_m0p"
 )
 
+# Create imported target SecureDrivers::secure_drivers_cc23x1r10
+add_library(SecureDrivers::secure_drivers_cc23x1r10 STATIC IMPORTED)
+
+set_target_properties(SecureDrivers::secure_drivers_cc23x1r10 PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Drivers::drivers_cc23x1r10;ThirdPartyEccLib::ecc_cc23x0;Driverlib::cc23x1r10;TOOLCHAIN_iar_m0p;SecureDriversUtils::secure_key_storage_enabled;SecureDriversUtils::mbedtls_dependencies_hsm;ThirdPartyHSMDDKLib::hsmddk_cc23x1r10"
+)
+
+# Create imported target SecureDrivers::secure_drivers_cc23x1r10_mbedtls
+add_library(SecureDrivers::secure_drivers_cc23x1r10_mbedtls STATIC IMPORTED)
+
+set_target_properties(SecureDrivers::secure_drivers_cc23x1r10_mbedtls PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/source"
+  INTERFACE_LINK_LIBRARIES "Drivers::drivers_cc23x1r10;ThirdPartyEccLib::ecc_cc23x0;Driverlib::cc23x1r10;TOOLCHAIN_iar_m0p;SecureDriversUtils::secure_key_storage_enabled;SecureDriversUtils::mbedtls_sw_dependencies_hsm;ThirdPartyHSMDDKLib::hsmddk_cc23x1r10"
+)
+
 if(CMAKE_VERSION VERSION_LESS 2.8.12)
   message(FATAL_ERROR "This file relies on consumers using CMake 2.8.12 or greater.")
 endif()
@@ -103,7 +119,7 @@ unset(_IMPORT_CHECK_TARGETS)
 # Make sure the targets which have been exported in some other
 # export set exist.
 unset(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets)
-foreach(_target "Drivers::drivers_cc23x0r2" "ThirdPartyEccLib::ecc_cc23x0" "Driverlib::cc23x0r2" "Drivers::drivers_cc23x0r5" "Driverlib::cc23x0r5" )
+foreach(_target "Drivers::drivers_cc23x0r2" "ThirdPartyEccLib::ecc_cc23x0" "Driverlib::cc23x0r2" "Drivers::drivers_cc23x0r5" "Driverlib::cc23x0r5" "Drivers::drivers_cc23x1r10" "Driverlib::cc23x1r10" "SecureDriversUtils::secure_key_storage_enabled" "SecureDriversUtils::mbedtls_dependencies_hsm" "ThirdPartyHSMDDKLib::hsmddk_cc23x1r10" "SecureDriversUtils::mbedtls_sw_dependencies_hsm" )
   if(NOT TARGET "${_target}" )
     set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets "${${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE_targets} ${_target}")
   endif()

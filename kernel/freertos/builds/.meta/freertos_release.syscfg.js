@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,14 @@ if (system.getRTOS() === "freertos") {
     else if (device.match(/CC23.0R5/)) {
         system.getScript("cc23x0r5/release/freertos_release.syscfg.js");
     }
+    else if (device.match(/CC23.1R10/)) {
+        system.getScript("cc23x1r10/release/freertos_release.syscfg.js");
+    }
     else if (device.match(/CC27/)) {
         system.getScript("cc27xx/release/freertos_release.syscfg.js");
+    }
+    else if (device.match(/CC283/)) {
+        system.getScript("cc283x/release/freertos_release.syscfg.js");
     }
     else if (device.match(/CC35/)) {
         system.getScript("cc35xx/release/freertos_release.syscfg.js");

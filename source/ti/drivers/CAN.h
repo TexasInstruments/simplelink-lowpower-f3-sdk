@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, Texas Instruments Incorporated
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -256,7 +256,7 @@
  *  @code
  *  const CAN_DataBitRateTimingRaw rawDataBitRateTiming = {
  *      // 1Mbps with 40MHz clk and 80% sample point ((40E6 / 2) / (15 + 4 + 1) = 1E6)
- *      // Add 1 to each programmed bit time to get functional value and +1 for for prop segment
+ *      // Add 1 to each programmed bit time to get functional value and +1 for prop segment
  *      .dbrp            = 1U,
  *      .dtSeg1          = 14U,
  *      .dtSeg2          = 3U,
@@ -267,7 +267,7 @@
  *
  *  const CAN_BitRateTimingRaw rawBitTiming = {
  *      // 500kbps nominal with 40MHz clk and 87.5% sample point ((40E6 / 1) / (69 + 10 + 1) = 500E3)
- *      // Add 1 to each programmed bit time to get functional value and +1 for for prop segment
+ *      // Add 1 to each programmed bit time to get functional value and +1 for prop segment
  *      .nbrp       = 0U,
  *      .ntSeg1     = 68U,
  *      .ntSeg2     = 9U,
@@ -338,11 +338,25 @@
 #include <ti/drivers/utils/StructRingBuf.h>
 #include <ti/devices/DeviceFamily.h>
 
-#include <third_party/mcan/MCAN.h>
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    #include <third_party/dcan/DCAN.h>
+#else
+    #include <third_party/mcan/MCAN.h>
+#endif /* (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX) */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /*!
+     *  @brief   DCAN enable macro.
+     *
+     *  Used by CAN driver module to select whether DCAN or MCAN
+     *  IP should be used.
+     */
+    #define CAN_SUPPORTS_DCAN
+#endif /* DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX */
 
 /*! @addtogroup CAN_STATUS CAN status codes
  *  @{
@@ -556,22 +570,72 @@ extern "C" {
 /*!
  *  @brief  A CAN Rx buffer element struct for #CAN_read().
  */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_RxBufElement CAN_RxBufElement;
+#else
 typedef MCAN_RxBufElement CAN_RxBufElement;
+#endif /* CAN_SUPPORTS_DCAN */
 
 /*!
  *  @brief  A CAN Tx buffer element struct for #CAN_write() and #CAN_writeBuffer().
  */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_TxBufElement CAN_TxBufElement;
+#else
 typedef MCAN_TxBufElement CAN_TxBufElement;
+#endif /* CAN_SUPPORTS_DCAN */
 
 /*!
  *  @brief  A CAN Tx Event element struct for #CAN_readTxEvent().
  */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_TxEventFifoElement CAN_TxEventElement;
+#else
 typedef MCAN_TxEventFifoElement CAN_TxEventElement;
+#endif /* CAN_SUPPORTS_DCAN */
 
 /*!
  *  @brief  A CAN bit timing struct for #CAN_getBitTiming().
  */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_BitTimingParams CAN_BitTimingParams;
+#else
 typedef MCAN_BitTimingParams CAN_BitTimingParams;
+#endif /* CAN_SUPPORTS_DCAN */
+
+/*!
+ *   @brief Standard CAN message filter list element.
+ */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_StdMsgIDFilterElement CAN_StdMsgIDFilterElement;
+#else
+typedef MCAN_StdMsgIDFilterElement CAN_StdMsgIDFilterElement;
+#endif /* CAN_SUPPORTS_DCAN */
+
+/*!
+ *   @brief Extended CAN message filter list element.
+ */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_ExtMsgIDFilterElement CAN_ExtMsgIDFilterElement;
+#else
+typedef MCAN_ExtMsgIDFilterElement CAN_ExtMsgIDFilterElement;
+#endif /* CAN_SUPPORTS_DCAN */
+
+/*!
+ *   @brief  CAN Tx FIFO / Queue Status.
+ */
+
+#ifdef CAN_SUPPORTS_DCAN
+typedef DCAN_TxFifoQStatus CAN_TxFifoQStatus;
+#else
+typedef MCAN_TxFifoQStatus CAN_TxFifoQStatus;
+#endif /* CAN_SUPPORTS_DCAN */
 
 /*!
  *  @brief  A handle that is returned from a #CAN_open() call.
@@ -584,7 +648,8 @@ typedef struct CAN_Config_ *CAN_Handle;
  *  @note       Depending on the device, the callback is executed in a high-priority task or interrupt context.
  *              Therefore, the implementation of the callback should be short and non-blocking. Longer
  *              processing such as Rx message handling should be deferred to a task context to avoid
- *              increasing IRQ processing latency.
+ *              increasing IRQ processing latency. CAN_write() and CAN_writeBuffer() APIs should not be called
+ *              from within the callback, otherwise a dead-lock situation may occur.
  *
  *  @param[in]  handle        A #CAN_Handle returned from #CAN_open().
  *  @param[in]  event         @ref CAN_EVENT that has occurred.
@@ -628,10 +693,13 @@ typedef struct
     uint32_t stdFilterNum;
     /*!< Number of Standard ID filter elements [0-128] */
     uint32_t extFilterNum;
+
     /*!< Number of Extended ID filter elements [0-64] */
-    MCAN_StdMsgIDFilterElement *stdMsgIDFilterList;
+    CAN_StdMsgIDFilterElement *stdMsgIDFilterList;
+
     /*!< Points to Standard ID filter elements. Set to NULL if zero elements. */
-    MCAN_ExtMsgIDFilterElement *extMsgIDFilterList;
+    CAN_ExtMsgIDFilterElement *extMsgIDFilterList;
+
     /*!< Points to Extended ID filter elements. Set to NULL if zero elements. */
 
     /*
@@ -724,10 +792,12 @@ typedef struct
      * tSeg2.
      */
 
+#ifndef CAN_SUPPORTS_DCAN
     const CAN_DataBitRateTimingRaw *dataTiming;
-    /*!< CAN FD data phase bit rate configuration. May be set to NULL if CAN FD
-     * bit rate switching is not enabled.
-     */
+        /*!< CAN FD data phase bit rate configuration. May be set to NULL if CAN FD
+         * bit rate switching is not enabled.
+         */
+#endif /* CAN_SUPPORTS_DCAN */
 } CAN_BitRateTimingRaw;
 
 /*!
@@ -781,17 +851,23 @@ typedef struct
  */
 typedef struct
 {
-    bool enableCANFD;           /*!< Set to true to enable CAN FD */
-    bool enableBRS;             /*!< Set to true to enable CAN FD bit rate switching */
+#ifndef CAN_SUPPORTS_DCAN
+    bool enableCANFD; /*!< Set to true to enable CAN FD */
+    bool enableBRS;   /*!< Set to true to enable CAN FD bit rate switching */
+#endif                /* CAN_SUPPORTS_DCAN */
+
     bool rejectNonMatchingMsgs; /*!< Set to true to reject incoming messages that do not match a filter */
     uint32_t nominalBitRate;    /*!< Bit rate for arbitration */
-    uint32_t dataBitRate;       /*!< Bit rate for CAN-FD data phase */
+
+#ifndef CAN_SUPPORTS_DCAN
+    uint32_t dataBitRate; /*!< Bit rate for CAN-FD data phase */
+#endif                    /* CAN_SUPPORTS_DCAN */
 
     void *rxRingBufPtr;   /*!< Pointer to Rx ring buffer */
     void *txRingBufPtr;   /*!< Pointer to Tx ring buffer */
     size_t rxRingBufSize; /*!< Number of Rx ring buffer elements */
     size_t txRingBufSize; /*!< Number of Tx ring buffer elements */
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX))
     uint32_t intPriority; /*!< Interrupt priority */
     uint32_t rxPinMux;    /*!< Receive pin mux */
     uint32_t txPinMux;    /*!< Transmit pin mux */

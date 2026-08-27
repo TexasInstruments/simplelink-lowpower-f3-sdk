@@ -147,6 +147,29 @@ typedef struct
 
 
 /**
+ * @brief Wire-format CS state for handover.
+ *
+ * Mirrors llCs_t with two changes:
+ *   - peerCapabilities: llCsCapabPdu_t (25 B packed) instead of llCsCapabilities_t (32 B),
+ *     because llCsCapabilities_t contains uint16 fields and padding — not wire-safe.
+ *   - peerFaeTbl pointer omitted: raw pointer must not cross the wire; FAE is
+ *     serialised separately via runtimeAllocParams.
+ *   - config[]: llCsConfig_t used directly — csConfigurationSet_t is all-uint8 with
+ *     no padding, so it is byte-safe to copy without a PDU conversion layer.
+ */
+typedef struct
+{
+  drbgParams_t                        csDrbgParams;
+  uint8_t                             completedProcedures;
+  uint8_t                             activeCsCtrlProcedure;
+  /* peerFaeTbl omitted — pointer, serialised via runtimeAllocParams */
+  llCsCapabPdu_t                      peerCapabilities;   /* packed PDU (25 B) */
+  csDefaultSettings_t                 defaultSettings;
+  llCsConfig_t                        hostConfig[CS_MAX_NUM_CONFIG_IDS];
+  llCsChannelMapClassification_t      peerChannelMapClassification;
+} llCsHandoverState_t;
+
+/**
  * @brief Structure to hold the parameters for the Handover process on both serving and reflector node sides.
  *
  * This structure contains the parameters required for the Handover process, including DRBG parameters,
@@ -155,17 +178,20 @@ typedef struct
  */
 typedef struct
 {
-  llCs_t       llCs;                    /* CS state information. */
-                                        /* For future optimizations:
-                                           - remove filteredChanIdx array */
+  uint8_t currentConfigId;                        /* Current Config ID */
+  llCsHandoverState_t llCsConn;                   /* CS wire-format state (packed). */
 
-  uint8_t      validCsConfigsBitmap;       /* Number of valid CS configurations */
+  uint8_t      validCsConfigsBitmap;              /* Number of valid CS configurations */
+  csEnableProcedureCtrlData_t enableProcCtrlData; /* Negotiated CS procedure enable parameters */
+  csProcRepetitions_t     repetitionsInfo;         /* CS repetition runtime state */
+
   llCSHandoverRuntimeAllocParamsSizes_t csRuntimeAllocInfo;  /* Run-time allocation information for the CS. */
-  uint8_t      runtimeAllocParams[];    /* Flexible array member to hold run-time allocated elements. The presence of these elements
+  uint8_t      runtimeAllocParams[];        /* Flexible array member to hold run-time allocated elements. The presence of these elements
                                              is determined by the relevant element sizes described in llCSHandoverRuntimeAllocParamsSizes_t.
                                              The expected data buffer structure is:
                                              | fae
                                             */
+
 } llCSHandoverParams_t;
 
 #endif //LL_CS_HANDOVER_H

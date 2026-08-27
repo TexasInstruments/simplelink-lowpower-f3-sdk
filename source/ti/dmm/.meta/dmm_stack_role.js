@@ -43,14 +43,16 @@ const DmmStackRoles = {
     blePeripheral: "DMMPolicy_StackRole_BlePeripheral",
     wsnNode: "DMMPolicy_StackRole_WsnNode",
     ti154Sensor: "DMMPolicy_StackRole_154Sensor",
-    threadMTD: "DMMPolicy_StackRole_threadMtd",
-    threadFTD: "DMMPolicy_StackRole_threadFtd",
+    threadMTD: "DMMPolicy_StackRole_ThreadMtd",
+    threadFTD: "DMMPolicy_StackRole_ThreadFtd",
     ti154Collector: "DMMPolicy_StackRole_154Collector",
     zigbeeEndDevice: "DMMPolicy_StackRole_ZigbeeEndDevice",
     zigbeeRouter: "DMMPolicy_StackRole_ZigbeeRouter",
     zigbeeCoordinator: "DMMPolicy_StackRole_ZigbeeCoordinator",
-    custom1: "DMMPolicy_StackRole_custom1",
-    custom2: "DMMPolicy_StackRole_custom2"
+    custom1: "DMMPolicy_StackRole_Custom1",
+    custom2: "DMMPolicy_StackRole_Custom2",
+    custom3: "DMMPolicy_StackRole_Custom3",
+    custom4: "DMMPolicy_StackRole_Custom4",
 };
 
 // Applied Activities supported by DMM
@@ -139,6 +141,12 @@ threadFTDRole.appliedActivity = DmmAppliedActivityThread;
 const custom2Role = new StackRole("custom", "Custom 2",
     "CUSTOM2_STACK_POLICY_IDX", DmmStackRoles.custom2);
 
+const custom3Role = new StackRole("custom", "Custom 3",
+"CUSTOM3_STACK_POLICY_IDX", DmmStackRoles.custom3);
+
+const custom4Role = new StackRole("custom", "Custom 4",
+    "CUSTOM4_STACK_POLICY_IDX", DmmStackRoles.custom4);
+        
 const rxAlwaysOnRole = new StackRole("rx_always_on", "RX Always On",
     "RXALWAYSON_STACK_POLICY_IDX", DmmStackRoles.custom1);
 
@@ -189,6 +197,12 @@ function getInfo(stackRoleId)
         case ("custom2"):
             return custom2Role;
 
+        case ("custom3"):
+            return custom3Role;
+
+        case ("custom4"):
+            return custom4Role;
+        
         case ("rxAlwaysOn"):
         case ("rx_always_on"):
             return rxAlwaysOnRole;

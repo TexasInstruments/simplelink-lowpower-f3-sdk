@@ -149,6 +149,7 @@ typedef struct
  * @return  SUCCESS or stack call status
  */
 uint8_t RangingDBClient_initDB(void);
+
 /*********************************************************************
  * @fn      RangingDBClient_procedureOpen
  *
@@ -166,6 +167,24 @@ uint8_t RangingDBClient_initDB(void);
  * @return  Handle of the opened procedure DB otherwise
  */
 uint8_t RangingDBClient_procedureOpen(void);
+
+/*********************************************************************
+ * @fn      RangingDBClient_isAvailableSlot
+ *
+ * @brief   This function check if there is available handle in the DB.
+ *
+ * input parameters
+ *
+ * @param   None
+ *
+ * output parameters
+ *
+ * @param   None
+ *
+ * @return  SUCCESS
+ * @return  FAILURE
+ */
+uint8_t RangingDBClient_isAvailableSlot(void);
 
 /*********************************************************************
  * @fn      RangingDBClient_procedureClose
@@ -294,18 +313,20 @@ uint8_t RangingDBClient_getRangingHeader(RangingDBClient_procedureSegmentsReader
  * output parameters
  *
  * @param   subeventHeaderOut - Pointer to store the retrieved subevent header.
- *                              If NULL, the function will return @ref bleMemAllocError
+//  *                              If NULL, the function will return @ref FAILURE
  * @param   subeventDataOut - Pointer to store the retrieved subevent data.
  *                            Memory for this pointer is allocated within the
  *                            function and should be freed by the caller.
- *                            If NULL, the function will return @ref bleMemAllocError
+ *                            If NULL, the function will return @ref FAILURE
+ * @param   subeventDataSizeOut - Pointer to store the size of the retrieved subevent data.
+ *                                If NULL, the function will return @ref FAILURE
  *
  * @return  SUCCESS - if the subevent header and data was successfully retrieved.
  *          FAILURE - if there was an error during parsing the data or invalid parameters.
  *          bleMemAllocError - if memory allocation failed.
  */
 uint8_t RangingDBClient_getNextSubevent(RangingDBClient_procedureSegmentsReader_t* segmentsReader, uint8_t numAntPath, uint8_t role,
-                                        Ranging_subEventHeader_t* subeventHeaderOut, uint8_t** subeventDataOut);
+                                        Ranging_subEventHeader_t* subeventHeaderOut, uint8_t** subeventDataOut, uint32_t* subeventDataSizeOut);
 
 /*********************************************************************
  * @fn      RangingDBClient_freeSegmentsReader

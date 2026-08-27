@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013-2012 ARM Limited. All rights reserved.
- * Copyright (c) 2024-2025, Texas Instruments Incorporated. All rights reserved.
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,41 +24,44 @@
 #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/build_dependencies/flash_layout.h>
 
 #include <third_party/hsmddk/include/Integration/Adapter_ITS/incl/dpl/HwiP.h>
+#include <DeviceFamily.h>
 
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     #include DeviceFamily_constructPath(driverlib/flash.h) /* FAPI status codes */
     #include DeviceFamily_constructPath(driverlib/hapi.h) /* HAPI functions */
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    #include <stdlib.h> // abs()
-    /* Erase status */
-    typedef enum
+    typedef struct
     {
-        FLASH_ERASE_DONE    = 0, /*!< Erase command completed successfully */
-        FLASH_ERASE_TIMEOUT = 1, /*!< Erase command completed with timeout */
-        FLASH_ERASE_ERROR   = 2  /*!< Erase command did not complete successfully */
-    } FlashEraseStatus;
+        size_t regionBase;      /*!< physical Offset from base of Ext flash*/
+        size_t regionStartAddr; /*!< The regionBase translated to logical address*/
+        size_t regionSize;      /*!< The size of the region in bytes*/
+        uint8_t deviceNum;      /*!< FLASH/PSRAM */
+    } XMEM_Params;
 
-    extern void FlashWrite(uint32_t *readFromAddr, uint32_t *writeToAddr, uint32_t length);
-    extern void FlashRead(uint32_t *readFromAddr, uint32_t *writeToAddr, uint32_t length);
-    extern void FlashSetTickPeriod(uint32_t TickPeriod);
-    extern FlashEraseStatus FlashSectorErase(uint32_t eraseStartAddr, uint32_t sectorEraseOpCode, uint32_t sectorEraseTimeout);
+    typedef struct XMEM_Config_
+    {
+        /*! Pointer to a driver specific data object */
+        void *object;
 
-    extern uint32_t ClockP_getSystemTicks(void);
-    extern uint32_t ClockP_getSystemTickPeriod(void);
+        /*! Pointer to a driver specific hardware attributes structure */
+        const void *hwAttrs;
+    } XMEM_Config;
 
-    /* Fixed values from XSPIWFF3 driver: Found in drivers/source/ti/drivers/XMEMWFF3.c */
-    static const size_t sectorEraseOpCode = 0x20;
-    static const size_t sectorEraseTimeout = 200;
+    typedef struct XMEM_Config_ *XMEM_Handle;
 
-    /* Fixed values from XMEMWFF3 driver: Found in drivers/source/ti/drivers/XMEMWFF3.c */
-    static const size_t logicalBaseAddr = 0xA0050000;
-    static const size_t regionOffset = 0x1CA;
-
-    #define PHY_OFFSET 12
-    static uint32_t convertToLogicalAddr(uint32_t addr);
-
-    #define IS_WORD_ALIGNED(ptr) (((uintptr_t)(ptr) << 30) == 0U)
+    extern void XMEMWFF3_init(void);
+    extern XMEM_Handle XMEMWFF3_open(XMEM_Params *params);
+    extern int32_t XMEMWFF3_close(XMEM_Handle handle);
+    extern int_fast16_t XMEMWFF3_erase(XMEM_Handle handle, size_t offset, size_t size);
+    extern int_fast16_t XMEMWFF3_read(XMEM_Handle handle, size_t offset, void *buffer, size_t bufferSize, uint_fast16_t flags);
+    extern int_fast16_t XMEMWFF3_write(XMEM_Handle handle, size_t offset, void *buffer, size_t bufferSize, uint_fast16_t flags);
+    static XMEM_Handle handle = NULL;
+    static XMEM_Params params;
+    #define XMEMWFF3_KEYSTORE_DEVICE_NUM 0x0
+    #define XMEM_STATUS_SUCCESS (0)
+#else
+    #error "Device family not currently supported"
 #endif
 
 #ifndef ARG_UNUSED
@@ -74,7 +77,13 @@
  * ARM FLASH device structure
  */
 struct arm_flash_dev_t {
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     const uint32_t memory_base;   /*!< FLASH memory base address */
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    uint32_t memory_base;         /*!< FLASH memory base address - must be set at runtime for CC35XX */
+#else
+    #error "Device family not currently supported"
+#endif
     ARM_FLASH_INFO *data;         /*!< FLASH data */
 };
 
@@ -125,7 +134,15 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities =
 static ARM_FLASH_INFO ARM_FLASH0_DEV_DATA =
 {
     .sector_info  = NULL,  /* Uniform sector layout */
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     .sector_count = FLASH0_SIZE / FLASH0_SECTOR_SIZE,
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Since FLASH0_SIZE is a link-time variable for CC35XX,
+     * we cannot determine the sector count at compile-time.
+     */
+#else
+    #error "Device family not currently supported"
+#endif
     .sector_size  = FLASH0_SECTOR_SIZE,
     .page_size    = FLASH0_PAGE_SIZE,
     .program_unit = FLASH0_PROGRAM_UNIT,
@@ -134,7 +151,15 @@ static ARM_FLASH_INFO ARM_FLASH0_DEV_DATA =
 
 static struct arm_flash_dev_t ARM_FLASH0_DEV =
 {
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     .memory_base = FLASH0_BASE_S,
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Since FLASH0_BASE_S is a link-time variable for CC35XX,
+     * we cannot determine the memory_base at compile-time.
+     */
+#else
+    #error "Device family not currently supported"
+#endif
     .data        = &(ARM_FLASH0_DEV_DATA)
 };
 
@@ -165,7 +190,7 @@ static bool isFlashRangeValid(struct arm_flash_dev_t *flash_dev, uint32_t offset
     return isValid;
 }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)  || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
 /**
   * \brief      Translates Flash API (FAPI) status into ARM driver status code
   * \param[in]  fapiStatus FAPI status code
@@ -192,32 +217,9 @@ static int32_t translateFAPIStatus(uint32_t fapiStatus)
     return status;
 }
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-/**
-  * \brief      Translates physical flash address offset to a logical address
-  * \param[in]  offset
-  * \return     ARM driver status code.
-  */
-static uint32_t convertToLogicalAddr(uint32_t addr)
-{
-    /* Calculates the logical address based on the given physical address. The addresses
-     * used by ITS prior to this function call are physical, due to the values set in
-     * flash_layout.h, which are used by the tfm_hal_its layer.
-     */
-    uint32_t calcAddr;
-    uint32_t blockBits;
-    uint32_t controlBits = 0xFFFFFFFF;
-    uint32_t regionOffsetAlign = (uint32_t)regionOffset << PHY_OFFSET;
-    size_t offset = addr - FLASH0_DEV->memory_base;
-
-    /* The following calculations (and this convertToLogicalAddr API as a whole) are copied from the XMEMWFF3
-     * implementation in drivers.
-     */
-    controlBits = (logicalBaseAddr & BITMASK_x_y(31, 26));
-    blockBits = ((uint32_t)abs((int)FLASH0_DEV->memory_base - (int)regionOffsetAlign) & BITMASK_x_y(25, 12));
-    calcAddr  = controlBits + blockBits + offset;
-
-    return calcAddr;
-}
+    /* CC35XX does not have a Flash API, so no implementation is needed. */
+#else
+    #error "Device family not currently supported"
 #endif
 
 static ARM_DRIVER_VERSION ARM_Flash_GetVersion(void)
@@ -238,12 +240,45 @@ static int32_t ARM_Flash_Initialize(ARM_Flash_SignalEvent_t cb_event)
         return ARM_DRIVER_ERROR;
     }
 
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    /* Set link-time variable values for FLASH0_DEV structure */
+    FLASH0_DEV->memory_base = (uint32_t) FLASH0_BASE_S;
+    FLASH0_DEV->data->sector_count = FLASH0_SIZE / FLASH0_SECTOR_SIZE;
+
+    XMEMWFF3_init();
+    /* Configure XMEM parameters for KeyStore */
+    /* Physical address */
+    params.regionBase = (size_t) FLASH_ITS_AREA_ADDR;
+    params.regionStartAddr = (size_t) FLASH_ITS_AREA_LOGICAL_ADDR;
+    params.regionSize = (size_t) FLASH_ITS_AREA_SIZE;
+    params.deviceNum = (uint8_t) XMEMWFF3_KEYSTORE_DEVICE_NUM;
+
+    handle = XMEMWFF3_open(&params);
+
+    if (handle == NULL)
+    {
+        return ARM_DRIVER_ERROR;
+    }
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
+    /* Do nothing specific for CC27xx/CC23x1. */
+#else
+    #error "Device family not currently supported"
+#endif
+
     /* Nothing to be done */
     return ARM_DRIVER_OK;
 }
 
 static int32_t ARM_Flash_Uninitialize(void)
 {
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
+    XMEMWFF3_close(handle);
+    handle = NULL;
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
+    /* Do nothing specific for CC27xx/CC23x1. */
+#else
+    #error "Device family not currently supported"
+#endif
     /* Nothing to be done */
     return ARM_DRIVER_OK;
 }
@@ -278,15 +313,20 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     (void)memcpy(data, (void *)addr, cnt);
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    if (!IS_WORD_ALIGNED(data))
-    {
-        return 0;
+    int_fast16_t status;
+    /* addr is passed as a physical address. Subtract the physical base
+     * address to get the offset into the KeyStore XMEM region.
+     */
+    status = XMEMWFF3_read(handle, (addr - FLASH0_DEV->memory_base), data, cnt, 0);
+
+    if (status != XMEM_STATUS_SUCCESS) {
+        return status;
     }
-    uint32_t logicalAddr = convertToLogicalAddr(addr);
-    FlashRead((uint32_t *)logicalAddr, (uint32_t *)data, cnt);
+#else
+    #error "Device family not currently supported"
 #endif
     /* Conversion between bytes and data items */
     cnt /= data_width_byte[DriverCapabilities.data_width];
@@ -311,23 +351,23 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data, uint32_t c
      * programming.
      */
     key = HwiP_disable();
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     fapi_status = FlashProgram((uint8_t *)data, addr, cnt);
 
     HwiP_restore(key);
 
     status = translateFAPIStatus(fapi_status);
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    if (!IS_WORD_ALIGNED(data))
-    {
-        return 0;
-    }
-    uint32_t logicalAddr = convertToLogicalAddr(addr);
-    FlashWrite((uint32_t *)data, (uint32_t *)logicalAddr, cnt);
+    /* addr is passed as a physical address. Subtract the physical base
+     * address to get the offset into the KeyStore XMEM region.
+     * Have to discard const qualifer on data to match XMEMWFF3_write()
+     * prototype.
+     */
+    status = XMEMWFF3_write(handle, (addr - FLASH0_DEV->memory_base), (void *)data, cnt, 0);
 
     HwiP_restore(key);
-
-    status = ARM_DRIVER_OK;
+#else
+    #error "Device family not currently supported"
 #endif
 
     if (status != ARM_DRIVER_OK) {
@@ -343,11 +383,6 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data, uint32_t c
 static int32_t ARM_Flash_EraseSector(uint32_t addr)
 {
     int32_t status;
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    FlashEraseStatus flashStatus;
-    uint32_t clockPTick;
-    uint32_t clockPTickPeriod;
-#endif
     uintptr_t key;
 
     /*
@@ -356,51 +391,32 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
      * automatically.
      */
     key = HwiP_disable();
-#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     status = translateFAPIStatus(FlashEraseSector(addr));
 
     HwiP_restore(key);
 
     return status;
 #elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
-    /* Driver_Flash is emulating the behavior of XMEMWFF3 in drivers. The following code
-     * is copied from XMEMWFF3.
-     */
-    clockPTick       = ClockP_getSystemTicks();
-    clockPTickPeriod = ClockP_getSystemTickPeriod();
-    FlashSetTickPeriod(clockPTickPeriod);
-
-    /* Note that FlashSectorErase is the one FlashWFF3 API that takes in a physical address as input.
-     * Therefore, we can use addr directly without converting it to logical. The addr provided to
-     * ARM_Flash_EraseSector by ITS is with offset from FLASH_0_BASE, which is the physical address.
-     */
-    flashStatus = FlashSectorErase(addr, sectorEraseOpCode, sectorEraseTimeout);
-
-    /* Set FAPI status codes to return same status translation API below */
-    if (flashStatus == FLASH_ERASE_DONE)
-    {
-        status = ARM_DRIVER_OK;
-    }
-    else
-    {
-        status = ARM_DRIVER_ERROR;
-    }
+    status = XMEMWFF3_erase(handle, (addr - FLASH0_DEV->memory_base), FLASH0_SECTOR_SIZE);
 
     HwiP_restore(key);
 
     return status;
+#else
+    #error "Device family not currently supported"
 #endif
 }
 
 static int32_t ARM_Flash_EraseChip(void)
 {
-#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC35XX)
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1)
     uint32_t status;
     uintptr_t key;
 
     /*
      * CMSIS -> FAPI -> HAPI (Secure ROM)
-     * CC27xx FlashEraseBank handles VIMS cache and line buffer disable/restore
+     * CC27xx/CC23x1 FlashEraseBank handles VIMS cache and line buffer disable/restore
      * automatically. Both 512KB flash banks will be erased.
      */
     key = HwiP_disable();
@@ -412,9 +428,11 @@ static int32_t ARM_Flash_EraseChip(void)
     HwiP_restore(key);
 
     return translateFAPIStatus(status);
-#else
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC35XX)
     /* Not supported for Osprey - only eraseSector present in flash driver */
     return ARM_DRIVER_ERROR;
+#else
+    #error "Device family not currently supported"
 #endif
 }
 

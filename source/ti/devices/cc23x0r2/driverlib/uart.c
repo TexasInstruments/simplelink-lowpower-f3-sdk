@@ -3,7 +3,7 @@
  *
  *  Description:    Driver for the UART peripheral.
  *
- *  Copyright (c) 2022 Texas Instruments Incorporated
+ *  Copyright (c) 2022-2025 Texas Instruments Incorporated
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -76,6 +76,17 @@ void UARTDisable(uint32_t base)
 
     // Disable the UART.
     HWREG(base + UART_O_CTL) &= ~(UART_CTL_UARTEN | UART_CTL_TXE | UART_CTL_RXE);
+}
+
+//*****************************************************************************
+//
+// Enable UART
+//
+//*****************************************************************************
+void UARTEnable(uint32_t base)
+{
+    // Enable the UART.
+    HWREG(base + UART_O_CTL) |= (UART_CTL_UARTEN | UART_CTL_TXE | UART_CTL_RXE);
 }
 
 //*****************************************************************************

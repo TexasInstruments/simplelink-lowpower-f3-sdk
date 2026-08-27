@@ -7,6 +7,17 @@ The [__SimpleLink&trade; CC2745R10-Q1 LaunchPad&trade;__][board] contains a
 
 * Close the __`LEDs`__ jumpers to enable the on-board LEDs.
 
+## Settings for CAN peripheral examples (LPF3 SDK)
+
+When using CAN peripheral examples provided in Simplelink LPF3 SDK along with
+the LP_EM_CC2745R10_Q1 launchpad, connect the Tx and Rx pins of the transceiver
+to the following pins of the LaunchPad.
+
+| LaunchPad Pin | CAN Transceiver Pin |
+|:-------------:|:-------------------:|
+| BP.31 (DIO18) |         RXD         |
+| BP.32 (DIO17) |         TXD         |
+
 ## TI BoosterPacks&trade;
 
 The following BoosterPacks are used with some driver examples.

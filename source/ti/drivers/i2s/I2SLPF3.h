@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025, Texas Instruments Incorporated
+ * Copyright (c) 2023-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -210,10 +210,10 @@
  * the desired sampling frequency will be used.
  *
  * To achieve the most common sample frequencies, it is suggested to select
- * AFOSC as the AFCLK source, since its frequency can be configured to be a
- * multiple of the most common sample rates.
+ * AFOSC as the AFCLK source if supported by the device, since its frequency can
+ * be configured to be a multiple of the most common sample rates.
  *
- * ## Using AFOSC ##
+ * ## Using AFOSC (on supported devices) ##
  *
  * See #PowerLPF3_AfoscFreq for the list of possible frequencies that the AFOSC
  * can be configured to. The frequencies most suited to be used with I2S are
@@ -263,7 +263,9 @@ typedef enum
 {
     I2SLPF3_AFCLK_SRC_CLKREF = CKMD_AFCLK_SOURCE_CLKREF, /*!< 48MHz reference clock (HFXT) */
     I2SLPF3_AFCLK_SRC_CLKHF  = CKMD_AFCLK_SOURCE_CLKHF,  /*!< 96MHz CLKHF */
-    I2SLPF3_AFCLK_SRC_CLKAF  = CKMD_AFCLK_SOURCE_CLKAF,  /*!< AFOSC clock */
+#if (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    I2SLPF3_AFCLK_SRC_CLKAF = CKMD_AFCLK_SOURCE_CLKAF, /*!< AFOSC clock */
+#endif
 } I2SLPF3_AfclkSrc;
 
 /*!
@@ -295,19 +297,21 @@ typedef enum
  */
 typedef struct
 {
-    I2SLPF3_AfclkSrc afclkSrc;     /*!< Audio frequency clock (AFCLK) source. */
+    I2SLPF3_AfclkSrc afclkSrc; /*!< Audio frequency clock (AFCLK) source. */
+#if (DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X1)
     PowerLPF3_AfoscFreq afoscFreq; /*!< The AFOSC frequency to use if #afclkSrc is #I2SLPF3_AFCLK_SRC_CLKAF */
-    uint_least8_t sd1Pin;          /*!< Pin used for SD1 signal. */
-    uint_least8_t sd1PinMux;       /*!< Mux value used to mux the SD1 signal to #sd1Pin. */
-    uint_least8_t sd0Pin;          /*!< Pin used for SD0 signal. */
-    uint_least8_t sd0PinMux;       /*!< Mux value used to mux the SD0 signal to #sd0Pin. */
-    uint_least8_t sckPin;          /*!< Pin used for SCLK signal. */
-    uint_least8_t sckPinMux;       /*!< Mux value used to mux the SCLK signal to #sckPin. */
-    uint_least8_t cclkPin;         /*!< Pin used for CCLK signal. Not used in most of the applications. */
-    uint_least8_t cclkPinMux;      /*!< Mux value used to mux the CCLK signal to #cclkPin. */
-    uint_least8_t wsPin;           /*!< Pin used for WS signal. */
-    uint_least8_t wsPinMux;        /*!< Mux value used to mux the WS signal to #wsPin. */
-    uint8_t intPriority;           /*!< I2S Peripheral's interrupt priority. */
+#endif
+    uint_least8_t sd1Pin;     /*!< Pin used for SD1 signal. */
+    uint_least8_t sd1PinMux;  /*!< Mux value used to mux the SD1 signal to #sd1Pin. */
+    uint_least8_t sd0Pin;     /*!< Pin used for SD0 signal. */
+    uint_least8_t sd0PinMux;  /*!< Mux value used to mux the SD0 signal to #sd0Pin. */
+    uint_least8_t sckPin;     /*!< Pin used for SCLK signal. */
+    uint_least8_t sckPinMux;  /*!< Mux value used to mux the SCLK signal to #sckPin. */
+    uint_least8_t cclkPin;    /*!< Pin used for CCLK signal. Not used in most of the applications. */
+    uint_least8_t cclkPinMux; /*!< Mux value used to mux the CCLK signal to #cclkPin. */
+    uint_least8_t wsPin;      /*!< Pin used for WS signal. */
+    uint_least8_t wsPinMux;   /*!< Mux value used to mux the WS signal to #wsPin. */
+    uint8_t intPriority;      /*!< I2S Peripheral's interrupt priority. */
 } I2SLPF3_HWAttrs;
 
 /*!
@@ -376,7 +380,7 @@ typedef void (*I2SLPF3_PtrUpdate)(I2S_Handle handle, I2SLPF3_Interface *interfac
 typedef struct
 {
     /*! To avoid multiple openings of the I2S. */
-    bool isOpen;
+    volatile bool isOpen;
 
     /*! WS inversion.
      *  - false: The WS signal is not internally inverted.

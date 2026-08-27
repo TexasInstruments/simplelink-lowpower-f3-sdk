@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 ARM Limited. All rights reserved.
+ * Copyright (c) 2015-2025 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the License); you may
  * not use this file except in compliance with the License.
@@ -45,7 +45,7 @@
 #define TRACE_LOG_LEVEL TRACE_LEVEL_DEBUG
 #endif
 
-#if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22)
+#if DeviceFamily_PARENT != DeviceFamily_PARENT_CC23X0 && DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX
 #define TRACE_MAX_LEVEL TRACE_LOG_LEVEL
 #else
 #define TRACE_MAX_LEVEL 0

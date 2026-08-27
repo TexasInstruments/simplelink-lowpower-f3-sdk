@@ -2,8 +2,8 @@
     {
         "files": [
             "+../../hsmFwUpdate.c -> hsmFwUpdate.c",
-            "+../../cc27xxx10_hsm_fw_v3.4.5.h -> cc27xxx10_hsm_fw_v3.4.5.h",
-            "+../../cc27xxx10_hsm_fw_v3.4.5.bin -> cc27xxx10_hsm_fw_v3.4.5.bin",
+            "+../../CC2745R10_Q1_hsm_fw_v3.5.0.h -> CC2745R10_Q1_hsm_fw_v3.5.0.h",
+            "+../../CC2745R10_Q1_hsm_fw_v3.5.0.bin -> CC2745R10_Q1_hsm_fw_v3.5.0.bin",
             "+../../README.md -> README.md",
             "+../../README.html -> README.html",
             "+../main_freertos.c -> main_freertos.c",

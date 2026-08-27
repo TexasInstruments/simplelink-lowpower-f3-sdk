@@ -45,12 +45,11 @@
 #ifndef INCLUDE_GUARD_ADAPTER_PSA_KEY_MANAGEMENT_H
 #define INCLUDE_GUARD_ADAPTER_PSA_KEY_MANAGEMENT_H
 
-#include <third_party/hsmddk/include/Config/cs_adapter_psa.h>         // MBEDTLS_MAX_KEY_BUFF_ENTRIES
-
-#include <third_party/hsmddk/include/Kit/DriverFramework/Basic_Defs_API/incl/basic_defs.h>             // uint8_t, uint16_t, uint32_t, uint64_t
-#include <third_party/hsmddk/include/Kit/DriverFramework/CLib_Abstraction_API/incl/clib.h>                   // size_t
-#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>             // psa_status_t, psa_key_id_t, psa_key_context_t
+#include <third_party/hsmddk/include/Kit/DriverFramework/Basic_Defs_API/incl/basic_defs.h>      // uint8_t, uint16_t, uint32_t, uint64_t
+#include <third_party/hsmddk/include/Kit/DriverFramework/CLib_Abstraction_API/incl/clib.h>      // size_t
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/psa/crypto.h>                 // psa_status_t, psa_key_id_t, psa_key_context_t
 #include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_asset.h>
+#include <third_party/hsmddk/include/Integration/Adapter_PSA/incl/adapter_psa_key_derivation.h> // psa_key_derivation_operation_t
 
 /*----------------------------------------------------------------------------
  * Definitions and macros
@@ -59,18 +58,14 @@
 typedef struct
 {
     psa_key_attributes_t attributes;
-    size_t key_size;
-    size_t modulus_size;
-    size_t exponentsize;
-    uint32_t KeyInUseFlag;
     PsaPolicyMask_t AssetPolicy;
+    size_t key_size;
     PsaAssetId_t key_assetId;
     /* key_assetId2 is necessary for symmetric keys stored with persistence
      * PSA_KEY_PERSISTENCE_HSM_ASSET_STORE. Assets cannot do both encryption
      * and decryption with one asset policy.
      */
     PsaAssetId_t key_assetId2;
-    psa_key_id_t source_key_id;
     uint8_t *key;
     /* Necessary for symmetric keys stored as key blobs. key2 will be used for
      * the decryption key blob.
@@ -153,7 +148,7 @@ psaInt_KeyMgmtGetAndLockKey(mbedtls_svc_key_id_t key,
  *  the plaintext pointer & DataSize should be NULL/0 if an asset ID is requested.
  *  If an asset ID is requested, this function will load plaintext or a key blob
  *  to the HSM if the key is not already stored there. Plaintext cannot be returned
- *  for keys with location #PSA_KEY_LOCATION_PRIMARY_SECURE_ELEMENT.
+ *  for keys with location #PSA_KEY_LOCATION_HSM_ASSET_STORE.
  *
  *  @param  [in]  pKey             Key entry of the key to retrieve.
  *
@@ -291,7 +286,7 @@ psaInt_KeyMgmtReadECPubKey(const size_t PersistentItemSize,
 
 psa_status_t
 psaInt_KeyMgmtDeriveKey(const psa_key_attributes_t * attributes,
-                        psa_key_derivation_operation_t * operation,
+                        KeyMgmt_psa_key_derivation_operation_t * operation,
                         mbedtls_svc_key_id_t * key);
 
 #endif /* INCLUDE_GUARD_ADAPTER_PSA_KEY_MANAGEMENT_H */

@@ -1,0 +1,13 @@
+[
+    {
+        "files": [
+            "+cc23x0r5.icf -> cc23x0r5.icf",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../../overview.rov.json -> overview.rov.json",
+            "+../../README.html -> README.html",
+            "+../../README.md -> README.md",
+            "+../../rfContinuousRxRssi.c -> rfContinuousRxRssi.c",
+            "+../rfContinuousRxRssi.syscfg -> rfContinuousRxRssi.syscfg"
+        ]
+    }
+]

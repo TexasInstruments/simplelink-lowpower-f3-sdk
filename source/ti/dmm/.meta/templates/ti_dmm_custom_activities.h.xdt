@@ -39,7 +39,7 @@
 
 const module = system.modules["/ti/dmm/dmm"].$static;
 const codeGen = system.getScript("/ti/dmm/dmm_code_gen.js");
-const propRfUtil = system.getScript("/ti/prop_rf/prop_rf_common.js");
+const Common = system.getScript("/ti/common/lprf_common.js");
 
 const project = new codeGen.Project(module);
 
@@ -48,7 +48,7 @@ const project = new codeGen.Project(module);
  *  ======== ti_dmm_custom_activities.h ========
  *  Configured DMM module definitions
  *
- *  DO NOT EDIT - This file is generated for the `propRfUtil.getDeviceOrLaunchPadName(false)`
+ *  DO NOT EDIT - This file is generated for the `Common.getDeviceOrLaunchPadName(false)`
  *  by the SysConfig tool.
  */
 #ifndef ti_dmm_custom_activities__H_

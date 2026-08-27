@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../simpleboot.syscfg -> simpleboot.syscfg",
+            "+../../../../../../source/ti/common/cc26xx/debug/led_debug.c -> mcuboot_config/led_debug.c",
+            "+../../../../../../source/ti/common/cc26xx/debug/led_debug.h -> mcuboot_config/led_debug.h",
+            "+../../../../../../source/third_party/mcuboot/boot/ti/source/simpleboot_app/simpleboot_app.c -> simpleboot_app.c",
+            "+../../../../../../source/third_party/mcuboot/boot/ti/source/simpleboot_app/README.md -> README.md",
+            "+../../../../../../source/third_party/mcuboot/boot/bootutil/include/bootutil/image.h -> bootutil/include/image.h",
+            "+../syscall_stubs.c -> syscall_stubs.c",
+            "+../../../../../../source/ti/common/flash/no_rtos/extFlash/bsp_spi_lpf3.c -> flash_map_backend/bsp_spi_lpf3.c",
+            "+../mcuboot_cc27xx.lds -> mcuboot_cc27xx.lds"
+        ]
+    }
+]

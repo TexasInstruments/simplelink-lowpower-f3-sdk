@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022-2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Texas Instruments Incorporated. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
@@ -15,6 +16,13 @@
 #include "psa/crypto.h"
 #include "psa/error.h"
 #include "crypto_library.h"
+
+/* TI-TFM: Custom include(s) and define(s) for TI's PSA Crypto API implementation */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+
+#include "psa/crypto_client_struct.h"
+
+#else
 
 /**
  * \brief This include is required to get the underlying platform function
@@ -65,6 +73,8 @@ static char mbedtls_version_full[18];
 #include "config_engine_buf.h"
 static uint8_t mbedtls_mem_buf[CRYPTO_ENGINE_BUF_SIZE] = {0};
 
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
+
 /*!
  * \defgroup tfm_crypto_library Set of functions implementing the abstractions of the underlying cryptographic
  *                              library that implements the PSA Crypto APIs to provide the PSA Crypto core
@@ -76,6 +86,9 @@ tfm_crypto_library_key_id_t tfm_crypto_library_key_id_init(int32_t owner, psa_ke
 {
     return mbedtls_svc_key_id_make(owner, key_id);
 }
+
+/* TI-TFM: These functions are not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 
 char *tfm_crypto_library_get_info(void)
 {
@@ -99,11 +112,35 @@ psa_status_t tfm_crypto_core_library_init(void)
     return PSA_SUCCESS;
 }
 
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
+
 psa_status_t tfm_crypto_core_library_key_attributes_from_client(
                     const struct psa_client_key_attributes_s *client_key_attr,
                     int32_t client_id,
                     psa_key_attributes_t *key_attributes)
 {
+/* TI-TFM: 'Core' key attributes no longer exist in the attributes struct, starting from
+ * mbedTLS 3.6.0. For implementations that depend on mbedTLS PSA headers, modify function
+ * to not use core attributes.
+ */
+#ifdef TI_PSA_CRYPTO_API_WRAPPER
+    if (client_key_attr == NULL || key_attributes == NULL) {
+        return PSA_ERROR_PROGRAMMER_ERROR;
+    }
+
+    *key_attributes = psa_key_attributes_init();
+
+    /* Copy key attributes from the client key attributes */
+    key_attributes->MBEDTLS_PRIVATE(type) = client_key_attr->type;
+    key_attributes->MBEDTLS_PRIVATE(lifetime) = client_key_attr->lifetime;
+    key_attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage) =
+                                                     client_key_attr->usage;
+    key_attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg) =
+                                                     client_key_attr->alg;
+    key_attributes->MBEDTLS_PRIVATE(bits) = client_key_attr->bits;
+    /* Use the client key id as the key_id and its partition id as the owner */
+    key_attributes->MBEDTLS_PRIVATE(id) = mbedtls_svc_key_id_make(client_id, client_key_attr->id);
+#else
     psa_core_key_attributes_t *core;
 
     if (client_key_attr == NULL || key_attributes == NULL) {
@@ -125,6 +162,7 @@ psa_status_t tfm_crypto_core_library_key_attributes_from_client(
     /* Use the client key id as the key_id and its partition id as the owner */
     core->MBEDTLS_PRIVATE(id) = mbedtls_svc_key_id_make(client_id, client_key_attr->id);
 
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
     return PSA_SUCCESS;
 }
 
@@ -138,6 +176,22 @@ psa_status_t tfm_crypto_core_library_key_attributes_to_client(
 
     struct psa_client_key_attributes_s v = PSA_CLIENT_KEY_ATTRIBUTES_INIT;
     *client_key_attr = v;
+
+    /* TI-TFM: 'Core' key attributes no longer exist in the attributes struct, starting from
+     * mbedTLS 3.6.0. For implementations that depend on mbedTLS PSA headers, modify function
+     * to not use core attributes.
+     */
+    #ifdef TI_PSA_CRYPTO_API_WRAPPER
+    /* Copy key attributes from the core key attributes */
+    client_key_attr->type = key_attributes->MBEDTLS_PRIVATE(type);
+    client_key_attr->lifetime = key_attributes->MBEDTLS_PRIVATE(lifetime);
+    client_key_attr->usage = key_attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(usage);
+    client_key_attr->alg = key_attributes->MBEDTLS_PRIVATE(policy).MBEDTLS_PRIVATE(alg);
+    client_key_attr->bits = key_attributes->MBEDTLS_PRIVATE(bits);
+
+    /* Return the key_id as the client key id, do not return the owner */
+    client_key_attr->id = MBEDTLS_SVC_KEY_ID_GET_KEY_ID(key_attributes->MBEDTLS_PRIVATE(id));
+    #else
     psa_core_key_attributes_t core = key_attributes->MBEDTLS_PRIVATE(core);
 
     /* Copy core key attributes from the client core key attributes */
@@ -150,9 +204,12 @@ psa_status_t tfm_crypto_core_library_key_attributes_to_client(
     /* Return the key_id as the client key id, do not return the owner */
     client_key_attr->id = MBEDTLS_SVC_KEY_ID_GET_KEY_ID(core.MBEDTLS_PRIVATE(id));
 
+    #endif /* TI_PSA_CRYPTO_API_WRAPPER */
     return PSA_SUCCESS;
 }
 
+/* TI-TFM: This functions is not used in TI's PSA Crypto API implementation */
+#ifndef TI_PSA_CRYPTO_API_WRAPPER
 /**
  * \brief This function is required by mbed TLS to enable support for
  *        platform builtin keys in the PSA Crypto core layer implemented
@@ -181,4 +238,5 @@ psa_status_t mbedtls_psa_platform_get_builtin_key(
 
     return PSA_ERROR_DOES_NOT_EXIST;
 }
+#endif /* TI_PSA_CRYPTO_API_WRAPPER */
 /*!@}*/

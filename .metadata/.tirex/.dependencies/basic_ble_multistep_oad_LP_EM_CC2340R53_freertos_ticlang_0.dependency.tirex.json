@@ -1,0 +1,30 @@
+[
+    {
+        "files": [
+            "+../../README.html -> README.html",
+            "+../../app/app_main.c -> app/app_main.c",
+            "+../../app/app_menu.c -> app/app_menu.c",
+            "+../../app/Profiles/app_dev_info.c -> app/Profiles/app_dev_info.c",
+            "+../../common/Startup/osal_icall_ble.c -> common/Startup/osal_icall_ble.c",
+            "+../../app/Profiles/app_oad.c -> app/Profiles/app_oad.c",
+            "+../../app/app_ms_oad_peripheral.c -> app/app_ms_oad_peripheral.c",
+            "+../../app/app_ms_oad_pairing.c -> app/app_ms_oad_pairing.c",
+            "+../../app/app_main.h -> app/app_main.h",
+            "+../../app/app_broadcaster.c -> app/app_broadcaster.c",
+            "+../../app/app_peripheral.c -> app/app_peripheral.c",
+            "+../../app/app_observer.c -> app/app_observer.c",
+            "+../../app/app_central.c -> app/app_central.c",
+            "+../../app/app_connection.c -> app/app_connection.c",
+            "+../../app/app_pairing.c -> app/app_pairing.c",
+            "+../../app/app_data.c -> app/app_data.c",
+            "+../../app/app_time_sync.h -> app/app_time_sync.h",
+            "+../../app/app_time_sync.c -> app/app_time_sync.c",
+            "+../../app/app_padv_time_sync.h -> app/app_padv_time_sync.h",
+            "+../../app/app_padv_time_sync.c -> app/app_padv_time_sync.c",
+            "+../../app/Profiles/app_simple_gatt.c -> app/Profiles/app_simple_gatt.c",
+            "+../basic_ble_multistep_oad.syscfg -> basic_ble_multistep_oad.syscfg",
+            "+../../common/Startup/main_freertos.c -> main_freertos.c",
+            "+cc2340_freertos.cmd -> cc2340_freertos.cmd"
+        ]
+    }
+]

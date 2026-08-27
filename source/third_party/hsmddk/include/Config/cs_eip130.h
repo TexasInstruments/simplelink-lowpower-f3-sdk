@@ -123,7 +123,7 @@
 #endif
 
 /* - Token Group Asset Management */
-// #define EIP130_ENABLE_CPIF                    /** Enable CoProcessor Interface functionality */
+#define EIP130_ENABLE_CPIF                    /** Enable CoProcessor Interface functionality */
 // #define EIP130_ENABLE_ASSET_STORE_RESET       /** Enable Asset Store reset functionality */
 
 /* - Token Group Authenticated Unlock */

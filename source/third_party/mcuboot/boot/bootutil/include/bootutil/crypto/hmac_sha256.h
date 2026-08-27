@@ -11,6 +11,7 @@
 #define __BOOTUTIL_CRYPTO_HMAC_SHA256_H_
 
 #include "mcuboot_config.h"
+#include <ti/devices/DeviceFamily.h>
 
 #if (defined(MCUBOOT_USE_TINYCRYPT) + \
      defined(MCUBOOT_USE_MBED_TLS) + \
@@ -153,8 +154,11 @@ static inline int bootutil_hmac_sha256_set_key(bootutil_hmac_sha256_context *ctx
 
 static inline int bootutil_hmac_sha256_update(bootutil_hmac_sha256_context *ctx, const void *data, unsigned int data_length)
 {
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+    return SlCrypto_sha256_updateHmac(data, data_length);
+#else
     return SlCrypto_sha256_update(data, data_length);
-
+#endif
 }
 
 static inline int bootutil_hmac_sha256_finish(bootutil_hmac_sha256_context *ctx, uint8_t *tag, unsigned int taglen)

@@ -36,7 +36,7 @@
 #include DeviceFamily_constructPath(inc/hw_pmctl.h)
 #include DeviceFamily_constructPath(inc/hw_pmud.h)
 #include DeviceFamily_constructPath(driverlib/gpio.h)
-#if defined(DeviceFamily_CC23X0R2) || defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC27XX)
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0 || DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
 
 #include DeviceFamily_constructPath(driverlib/spi.h)
 #else
@@ -51,7 +51,11 @@
  * board specific settings are directly hard coded here.
  */
 #define BLS_SPI_BASE SPI0_BASE
+#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#define BLS_CPU_FREQ 96000000ul
+#else
 #define BLS_CPU_FREQ 48000000ul
+#endif
 
 #if defined(DeviceFamily_CC23X0R2)
     #define IOC_O_IOC0 (IOC_O_IOC3 - (sizeof(uint32_t) * 3))
@@ -83,7 +87,7 @@
     #define MISO_PINMUX GPIO_MUX_PORTCFG_PFUNC_4
     #define MOSI_PINMUX GPIO_MUX_PORTCFG_PFUNC_2
     #define CLK_PINMUX  GPIO_MUX_PORTCFG_PFUNC_1
-#elif defined(DeviceFamily_CC27XX)
+#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
     #define MISO_PINMUX GPIO_MUX_PORTCFG_PFUNC_2
     #define MOSI_PINMUX GPIO_MUX_PORTCFG_PFUNC_2
     #define CLK_PINMUX  GPIO_MUX_PORTCFG_PFUNC_1

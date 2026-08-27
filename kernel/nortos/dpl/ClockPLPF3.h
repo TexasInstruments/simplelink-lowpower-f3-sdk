@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,8 +39,15 @@
 #define ClockP_TICK_PERIOD 1U
 
 /* CPU frequency, in Hertz */
-#if DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0
+#if ((DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X0) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC23X1))
     #define ClockP_CPU_FREQ 48000000U
-#elif DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
     #define ClockP_CPU_FREQ 96000000U
+#elif (DeviceFamily_PARENT == DeviceFamily_PARENT_CC283X)
+    /* TODO: Update when moving away from FPGA. FPGA frequency is 1/8th of
+     * silicon frequency.
+     */
+    #define ClockP_CPU_FREQ 12000000U
+#else
+    #error "Invalid Device Family defined"
 #endif

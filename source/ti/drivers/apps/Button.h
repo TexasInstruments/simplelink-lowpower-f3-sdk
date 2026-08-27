@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023, Texas Instruments Incorporated
+ * Copyright (c) 2016-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -134,7 +134,7 @@
  *  ##Setting up GPIO configurations #
  *
  *  The following example is for a MSP432.
- *  We are showing interfacing of two push buttons.  Each need a GPIO pin. The
+ *  We are showing interfacing of two push buttons. Each need a GPIO pin. The
  *  following definitions are in "ti_drivers_config.h" and
  *  "ti_drivers_config.c" respectively. This example uses GPIO pins 1.1 and
  *  1.4. The other GPIO configuration structures must exist, see @ref GPIO.h.
@@ -148,7 +148,7 @@
  *  "ti_drivers_config.c"
  *  @code
  *  #include <gpio.h>
- *  GPIO_PinConfig gpioPinConfigs[] = {
+ *  GPIO_PinConfig gpioPinConfigs[GPIO_NUMBER_OF_CONFIGS] = {
  *      GPIOMSP432_P1_1 | GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING,
  *      GPIOMSP432_P1_4 | GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING,
  *  }

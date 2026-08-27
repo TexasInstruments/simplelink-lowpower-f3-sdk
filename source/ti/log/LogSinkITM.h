@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2020-2025, Texas Instruments Incorporated - http://www.ti.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,8 @@
  *  @endcode
  *
  *  This module implements two functions that are required by the Log API:
- *   - printf(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint32_t numArgs, ...);
- *   - buf(const Log_Module *handle, uint32_t header, uint32_t headerPtr, uint8_t *data, size_t size);
+ *   - printf(const Log_Module *handle, Log_Level level,  uint32_t headerPtr, uint32_t numArgs, ...);
+ *   - buf(const Log_Module *handle, Log_Level level,  uint32_t headerPtr, uint8_t *data, size_t size);
  *
  *  Whenever a log-statement is invoked, that uses LogSinkITM as its sink, the functions above are ultimately invoked.
  *
@@ -92,7 +92,7 @@
 extern "C" {
 #endif
 
-#define Log_TI_LOG_SINK_ITM_VERSION 0.1.0
+#define Log_TI_LOG_SINK_ITM_VERSION 0.2.0
 
 /*
  * ======== LogSinkITM_StimulusPorts ========
@@ -194,18 +194,18 @@ extern void LogSinkITM_finalize(void);
  *  @endcond
  */
 extern void LogSinkITM_printfSingleton(const Log_Module *handle,
-                                       uint32_t header,
+                                       Log_Level level,
                                        uint32_t headerPtr,
                                        uint32_t numArgs,
                                        ...);
 
-extern void LogSinkITM_printfSingleton0(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkITM_printfSingleton0(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkITM_printfSingleton1(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkITM_printfSingleton1(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkITM_printfSingleton2(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkITM_printfSingleton2(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 
-extern void LogSinkITM_printfSingleton3(const Log_Module *handle, uint32_t header, uint32_t headerPtr, ...);
+extern void LogSinkITM_printfSingleton3(const Log_Module *handle, Log_Level level, uint32_t headerPtr, ...);
 /*! @endcond NODOC */
 
 /*!
@@ -236,7 +236,7 @@ extern void LogSinkITM_printfSingleton3(const Log_Module *handle, uint32_t heade
  *  @endcond
  */
 extern void LogSinkITM_bufSingleton(const Log_Module *handle,
-                                    uint32_t header,
+                                    Log_Level level,
                                     uint32_t headerPtr,
                                     uint8_t *data,
                                     size_t size);

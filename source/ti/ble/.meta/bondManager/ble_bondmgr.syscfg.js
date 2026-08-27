@@ -43,14 +43,7 @@ const Docs = system.getScript("/ti/ble/bondManager/ble_bondmgr_docs.js");
 // Get common utility functions
 const Common = system.getScript("/ti/ble/ble_common.js");
 
-// Get the default number of bonds allowed
-const defaultMaxBonds = Common.defaultBondValue();
-
-const config = {
-    name: "bondMgrConfig",
-    displayName:"Bond Manager",
-    description: "Configure Bonding Settings",
-    config: [
+const bondMgrStackConfigItems = [
         {
             name: "hideBondMgrGroup",
             default: false,
@@ -60,7 +53,7 @@ const config = {
             name: "maxBonds",
             displayName: "Maximum Number of Supported Bonds",
             description: "Maximum number of bonds that can be saved in NV",
-            default: defaultMaxBonds,
+            default: 5,
             longDescription: Docs.maxBondsLongDescription
         },
         {
@@ -70,6 +63,16 @@ const config = {
             default: 4,
             longDescription: Docs.maxCharCfgLongDescription
         },
+];
+
+const bondMgrStackConfig = {
+    displayName: "Stack Configuration",
+    config: bondMgrStackConfigItems
+};
+
+const bondMgrAppConfig = {
+    displayName: "App Configuration",
+    config: [
         {
             name: "bondPairing",
             displayName: "Pairing Mode",
@@ -277,7 +280,14 @@ const config = {
             ]
         }
     ]
-}
+};
+
+const config = {
+    name: "bondMgrConfig",
+    displayName: "Bond Manager",
+    description: "Configure Bonding Settings",
+    config: [bondMgrStackConfig, bondMgrAppConfig]
+};
 
 /*
  * ======== validate ========
@@ -288,11 +298,12 @@ const config = {
  */
 function validate(inst, validation)
 {
+    // Stack config validation
     if ((inst.maxBonds < 1) || (inst.maxBonds > 50))
     {
         validation.logError("The Max number of allowed bonds range is 1 to 50", inst, "maxBonds");
     }
-    if ( inst.bondManager && ( inst.maxBonds > inst.maxRLSize ) )
+    if ( inst.bondManager && ("maxRLSize" in inst) && ( inst.maxBonds > inst.maxRLSize ) )
     {
         validation.logError("The Max number of bonds cannot be greater than the size of the Resolving List", inst, "maxBonds");
         validation.logError("The Resolving List size cannot be smaller than the size of the Max number of bonds", inst, "maxRLSize");
@@ -304,21 +315,25 @@ function validate(inst, validation)
                             + "NV for each bond is 4", inst, "maxCharCfg");
     }
 
-    if(inst.LTKSize < 7 || inst.LTKSize > 16)
+    // App config validation (only when bondMgrAppConfig is included)
+    if("LTKSize" in inst)
     {
-        validation.logError("Key Size Range is 7 to 16 bytes", inst, "LTKSize");
-    }
+        if(inst.LTKSize < 7 || inst.LTKSize > 16)
+        {
+            validation.logError("Key Size Range is 7 to 16 bytes", inst, "LTKSize");
+        }
 
-    if(inst.ECCKeyRegenPolicy < 0 || inst.ECCKeyRegenPolicy > 255)
-    {
-        validation.logError("ECC Key Regeneration Policy Range is 0 to 255", inst, "ECCKeyRegenPolicy");
-    }
+        if(inst.ECCKeyRegenPolicy < 0 || inst.ECCKeyRegenPolicy > 255)
+        {
+            validation.logError("ECC Key Regeneration Policy Range is 0 to 255", inst, "ECCKeyRegenPolicy");
+        }
 
-    if(inst.ECCKeyRegenPolicy > 10 && inst.ECCKeyRegenPolicy < 256)
-    {
-        validation.logWarning("The specification recommends that this value be set to no higher "
-                              + "than 10 to avoid an attacker from learning too much about a "
-                              + "private key before it is regenerated", inst, "ECCKeyRegenPolicy");
+        if(inst.ECCKeyRegenPolicy > 10 && inst.ECCKeyRegenPolicy < 256)
+        {
+            validation.logWarning("The specification recommends that this value be set to no higher "
+                                  + "than 10 to avoid an attacker from learning too much about a "
+                                  + "private key before it is regenerated", inst, "ECCKeyRegenPolicy");
+        }
     }
 }
 
@@ -426,10 +441,28 @@ function onAllowDebugKeysChange(inst, ui)
 }
 
 /*
+ *  ======== getOpts ========
+ */
+function getOpts(mod)
+{
+    const inst = mod.$static;
+    let result = [];
+
+    inst.bondManager && result.push("-DGAP_BONDINGS_MAX=" + inst.maxBonds);
+    inst.bondManager && result.push("-DGAP_CHAR_CFG_MAX=" + inst.maxCharCfg);
+
+    return result;
+}
+
+/*
  *  ======== exports ========
  *  Export the BLE bond manager Configuration
  */
 exports = {
     config: config,
-    validate: validate
+    bondMgrStackConfig: bondMgrStackConfig,
+    bondMgrStackConfigItems: bondMgrStackConfigItems,
+    bondMgrAppConfig: bondMgrAppConfig,
+    validate: validate,
+    getOpts: getOpts
 };

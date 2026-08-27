@@ -28,13 +28,6 @@
 #ifndef cs_mbedtls_H
 #define cs_mbedtls_H
 
-/* The key ID encodes the partition owner of a key. This define matches that from
- * 'config-tidrivers.h' which Mbed TLS is built with on CC(13|26)x4 devices.
- */
-#ifndef MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-#define MBEDTLS_PSA_CRYPTO_KEY_ID_ENCODES_OWNER
-#endif
-
 /* Add a default owner id to match with client ID in TFM-Enabled builds */
 #define MBEDTLS_PSA_CRYPTO_KEY_ID_DEFAULT_OWNER -1
 

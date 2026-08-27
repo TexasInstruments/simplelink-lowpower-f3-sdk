@@ -1,0 +1,15 @@
+[
+    {
+        "files": [
+            "+../../hsmFwUpdate.c -> hsmFwUpdate.c",
+            "+../../CC2755P20_hsm_fw_v3.5.0.h -> CC2755P20_hsm_fw_v3.5.0.h",
+            "+../../CC2755P20_hsm_fw_v3.5.0.bin -> CC2755P20_hsm_fw_v3.5.0.bin",
+            "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../main_freertos.c -> main_freertos.c",
+            "+../hsmFwUpdate.syscfg -> hsmFwUpdate.syscfg",
+            "+../../../../../../../source/ti/boards/LP_EM_CC2755P20/Board.html -> Board.html",
+            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+        ]
+    }
+]

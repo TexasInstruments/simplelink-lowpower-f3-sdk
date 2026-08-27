@@ -40,16 +40,19 @@ const displayName = "BLE";
 const categoryName = "RF Stacks";
 let topModules;
 
-if(deviceId.match(/CC2340|CC27../))
-{
-    topModules = [
-        {
-            displayName: categoryName,
-            description: categoryName,
-            modules: ["/ti/ble/ble"]
-        }
-    ];
-}
+topModules = [
+    {
+        displayName: categoryName,
+        description: categoryName,
+        categories: [
+            {
+                displayName: "BLE",
+                description: "Bluetooth Low Energy",
+                modules: ["/ti/ble/ble", "/ti/ble/ble_controller"]
+            }
+        ]
+    }
+];
 
 const templates = [
     {
@@ -67,6 +70,18 @@ const templates = [
     {
         name: "/ti/ble/templates/ble_gatt_service.c.xdt",
         outputPath: "ti_ble_gatt_service.c"
+    },
+    {
+        name: "/ti/ble/templates/ble_oad_linker.cmd.xdt",
+        outputPath: "ti_ble_oad_linker.inc"
+    },
+    {
+        name: "/ti/ble/templates/ble_oad_postbuild.cfg.xdt",
+        outputPath: "ti_ble_oad_postbuild.cfg"
+    },
+    {
+        name: "/ti/ble/templates/ble_oad_prebuild.cfg.xdt",
+        outputPath: "ti_ble_oad_prebuild.cfg"
     },
 ];
 

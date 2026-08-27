@@ -107,6 +107,10 @@ class RRSPCommands(enum.IntEnum):
     RRSP_CMD_SEND_CS_EVENT = 0x02
     RRSP_CMD_SEND_CS_EVENT_CONT = 0x03
 
+
+class TimeSyncCommands(enum.IntEnum):
+    TIME_SYNC_CMD_INIT = 0x00
+
 class RASCharsUUID(enum.IntEnum):
     RAS_FEATURE_UUID = 0x2C14
     RAS_REAL_TIME_UUID = 0x2C15
@@ -130,6 +134,7 @@ class AppSpecifier(enum.IntEnum):
     APP_SPECIFIER_CA_SERVER = 0x0A
     APP_SPECIFIER_RREQ = 0x0B
     APP_SPECIFIER_RRSP = 0x0C
+    APP_SPECIFIER_TIME_SYNC = 0x0D
 
 
 class RtlsCapabilities(enum.IntEnum):
@@ -155,6 +160,7 @@ class RtlsCapabilities(enum.IntEnum):
     RTLS_CAP_CA_SERVER = 0x00040000
     RTLS_CAP_RREQ = 0x00080000
     RTLS_CAP_RRSP = 0x00100000
+    RTLS_CAP_TIME_SYNC = 0x00200000
 
 
 class CommonEventType(enum.IntEnum):
@@ -237,6 +243,10 @@ class RRSPEventType(enum.IntEnum):
     NWP_RRSP_SEND_CS_EVENT_CONT = 0x00B3
 
 
+class TimeSyncEventType(enum.IntEnum):
+    NWP_TIME_SYNC_INIT_DONE = 0x00C0
+
+
 class CmConnUpdateType(enum.IntEnum):
     CM_PHY_UPDATE_EVT = 0x00
     CM_CHAN_MAP_UPDATE_EVT = 0x01
@@ -253,6 +263,7 @@ class CsEventType(enum.IntEnum):
     NWP_CS_SUBEVENT_RESULTS_CONTINUE = 0x0046
     NWP_CS_APP_DISTANCE_RESULTS = 0x0060
     NWP_CS_APP_DISTANCE_EXTENDED_RESULTS = 0x0061
+    NWP_CS_APP_RAS_SUBEVENT_RESULTS = 0x0062
 
 
 class CsProcedureDoneStatusType(enum.IntEnum):

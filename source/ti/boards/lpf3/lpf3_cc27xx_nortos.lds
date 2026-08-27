@@ -39,7 +39,7 @@ MEMORY
 {
     /* If secure boot is enabled, set FLASH region origin and size as defined by secure boot.
      * If HSM FW is used and overlapping the user-accessible flash, reserve space for it.
-     * The multiple ternary operators for the length are hard to understand, 
+     * The multiple ternary operators for the length are hard to understand,
      * this is the logic implemented by them:
      * if (DEFINED(ti_utils_build_GenMap_SECURE_BOOT_FLASH_SIZE)) {
      *   // Use secure boot defined flash size
@@ -75,6 +75,9 @@ MEMORY
      */
     S2RRAM (RW) : ORIGIN = DEFINED(ti_utils_build_GenMap_S2RRAM_BASE) ? ti_utils_build_GenMap_S2RRAM_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_S2RRAM_SIZE) ? ti_utils_build_GenMap_S2RRAM_SIZE : 0x0
 
+    /* NVS region definition */
+    NVS (RW) : ORIGIN = DEFINED(ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_BASE) ? ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_BASE : 0x0, LENGTH = DEFINED(ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_SIZE) ? ti_utils_build_GenMap_NVS_CONFIG_NVSINTERNAL_SIZE : 0x0
+
     /* Explicitly placed off target for the storage of logging data.
      * The data placed here is NOT loaded onto the target device.
      * This is part of 1 GB of external memory from 0x60000000 - 0x9FFFFFFF.
@@ -93,6 +96,7 @@ REGION_ALIAS("REGION_HEAP", SRAM);
 REGION_ALIAS("REGION_LOG", LOG_DATA);
 REGION_ALIAS("REGION_ARM_EXIDX", FLASH);
 REGION_ALIAS("REGION_ARM_EXTAB", FLASH);
+REGION_ALIAS("REGION_NVS", NVS);
 
 SECTIONS {
 
@@ -255,8 +259,12 @@ SECTIONS {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
     } > REGION_ARM_EXTAB AT> REGION_ARM_EXTAB
 
-    .nvs (NOLOAD) : ALIGN(0x2000) {
+    .nvs (NOLOAD) : ALIGN(0x800) {
         *(.nvs)
+    } > REGION_NVS
+
+    .keystore (NOLOAD) : ALIGN(0x800) {
+        *(.keystore)
     } > REGION_TEXT
 
     .ccfg : {

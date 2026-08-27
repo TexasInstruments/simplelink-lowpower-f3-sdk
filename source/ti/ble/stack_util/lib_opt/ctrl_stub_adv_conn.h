@@ -106,7 +106,6 @@ extern void LL_setAdvConnDefualtValues(void);
 extern void LE_SetExtAdvParamsAdvConn(aeSetParamCmd_t* pCmdParams, advSet_t* pAdvSet);
 extern llStatus_t LE_checkAdvConnStatus(advSet_t* pAdvSet, aeEnableCmd_t* pCmdParams);
 extern bool ll_AdvConnIsEnable(void);
-extern void llCmdAdvStartedEventHandle(void);
 
 
 // Wrapper functions for the feature implementations
@@ -131,6 +130,5 @@ void OPT_LL_setAdvConnDefualtValues(void);
 void OPT_LE_SetExtAdvParamsAdvConn(aeSetParamCmd_t* pCmdParams, advSet_t* pAdvSet);
 llStatus_t OPT_LE_checkAdvConnStatus(advSet_t* pAdvSet, aeEnableCmd_t* pCmdParams);
 bool OPT_ll_AdvConnIsEnable(void);
-void OPT_llCmdAdvStartedEventHandle(void);
 
 #endif /* CTRL_ADV_CONN_H_ */

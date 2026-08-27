@@ -51,15 +51,6 @@
 #include "ti/ble/stack_util/comdef.h"
 #include "ti/ble/stack_util/icall/app/icall_user_config.h"
 #include "ti/ble/stack_util/icall/app/icall.h"
-
-#include <ti/drivers/ecdh/ECDHLPF3SW.h>
-#include <ti/drivers/cryptoutils/sharedresources/CryptoResourceLPF3.h>
-#include <ti/drivers/RNG.h>
-#include <ti/drivers/cryptoutils/cryptokey/CryptoKeyPlaintext.h>
-
-#include <ti/drivers/ECDH.h>
-#include <ti/drivers/utils/Random.h>
-
 /*******************************************************************************
  * MACROS
  */

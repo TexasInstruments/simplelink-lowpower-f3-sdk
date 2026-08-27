@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated
+ * Copyright (c) 2022-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,11 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//*****************************************************************************
-//
-// Check if compiler is GNU Compiler
-//
-//*****************************************************************************
+/* Check if compiler is GNU Compiler. */
 #if !(defined(__GNUC__))
     #error "startup_cc23x0r5_gcc.c: Unsupported compiler!"
 #endif
@@ -45,104 +41,72 @@
 #include DeviceFamily_constructPath(driverlib/setup.h)
 #include DeviceFamily_constructPath(driverlib/interrupt.h)
 #include DeviceFamily_constructPath(inc/hw_ints.h)
-#include DeviceFamily_constructPath(cmsis/cc23x0r5.h)
-#include DeviceFamily_constructPath(cmsis/core/core_cm0plus.h)
+#include DeviceFamily_constructPath(cmsis/device.h)
 
-//*****************************************************************************
-//
-// Forward declaration of the default fault handlers.
-//
-//*****************************************************************************
+/* Forward declaration of the default fault handlers. */
 void resetISR(void);
 static void nmiISR(void);
 static void faultISR(void);
 static void defaultHandler(void);
 
-//*****************************************************************************
-//
-// External declaration for the reset handler that is to be called when the
-// processor is started
-//
-//*****************************************************************************
+/* External declaration for the reset handler that is to be called when the
+ * processor is started.
+ */
 extern void _c_int00(void);
 
-//*****************************************************************************
-//
-// The entry point for the application.
-//
-//*****************************************************************************
+/* The entry point for the application. */
 extern int main(void);
 
-//*****************************************************************************
-//
-// linker variable that marks the top of stack.
-//
-//*****************************************************************************
+/* Linker variable that marks the top of stack. */
 extern unsigned long _stack_end;
 
-//*****************************************************************************
-//
-// The vector table.  Note that the proper constructs must be placed on this to
-// ensure that it ends up at physical address 0x0000.0000.
-//
-//*****************************************************************************
+/* The vector table. Note that the proper constructs must be placed on this to
+ * ensure that it ends up at physical address 0x0000.0000.
+ *
+ * Marked as used due to being removed by LTO, but is used in resetISR().
+ */
 __attribute__((section(".resetVecs"), used)) void (*const resetVectors[16])(void) = {
     (void (*)(void))((uint32_t)&_stack_end),
-    // The initial stack pointer
-    resetISR,       // The reset handler
-    nmiISR,         // The NMI handler
-    faultISR,       // The hard fault handler
-    defaultHandler, // Reserved
-    defaultHandler, // Reserved
-    defaultHandler, // The usage fault handler
-    0,              // Reserved
-    0,              // Reserved
-    0,              // Reserved
-    0,              // Reserved
-    defaultHandler, // SVCall handler
-    defaultHandler, // Debug monitor handler
-    0,              // Reserved
-    defaultHandler, // The PendSV handler
-    defaultHandler  // The SysTick handler
+    /* The initial stack pointer. */
+    resetISR,       /* The reset handler. */
+    nmiISR,         /* The NMI handler. */
+    faultISR,       /* The hard fault handler. */
+    defaultHandler, /* Reserved. */
+    defaultHandler, /* Reserved. */
+    defaultHandler, /* The usage fault handler. */
+    0,              /* Reserved. */
+    0,              /* Reserved. */
+    0,              /* Reserved. */
+    0,              /* Reserved. */
+    defaultHandler, /* SVCall handler. */
+    defaultHandler, /* Debug monitor handler. */
+    0,              /* Reserved. */
+    defaultHandler, /* The PendSV handler. */
+    defaultHandler  /* The SysTick handler. */
 };
 
-//*****************************************************************************
-//
-// The following are arrays of pointers to constructor functions that need to
-// be called during startup to initialize global objects.
-//
-//*****************************************************************************
+/* The following are arrays of pointers to constructor functions that need to
+ * be called during startup to initialize global objects.
+ */
 extern void (*__init_array_start[])(void);
 extern void (*__init_array_end[])(void);
 
-//*****************************************************************************
-//
-// The following global variable is required for C++ support.
-//
-//*****************************************************************************
+/* The following global variable is required for C++ support. */
 void *__dso_handle = (void *)&__dso_handle;
 
-//*****************************************************************************
-//
-// The following are constructs created by the linker, indicating where the
-// the "data" and "bss" segments reside in memory.  The initializers for the
-// for the "data" segment resides immediately following the "text" segment.
-//
-//*****************************************************************************
+/* The following are constructs created by the linker, indicating where the
+ * the "data" and "bss" segments reside in memory.  The initializers for the
+ * for the "data" segment resides immediately following the "text" segment.
+ */
 extern uint32_t __bss_start__, __bss_end__;
 extern uint32_t __data_load__, __data_start__, __data_end__;
 
-//
-//*****************************************************************************
-//
-// Initialize the .data and .bss sections and copy the first 16 vectors from
-// the read-only/reset table to the runtime RAM table. Fill the remaining
-// vectors with a stub. This vector table will be updated at runtime.
-//
-//*****************************************************************************
-//
-
-/* Marked as used due to being removed by LTO, but is used in resetISR() */
+/* Initialize the .data and .bss sections and copy the first 16 vectors from
+ * the read-only/reset table to the runtime RAM table. Fill the remaining
+ * vectors with a stub. This vector table will be updated at runtime.
+ *
+ * Marked as used due to being removed by LTO, but is used in resetISR().
+ */
 __attribute__((used)) void localProgramStart(void)
 {
     uint32_t *bs;
@@ -155,10 +119,10 @@ __attribute__((used)) void localProgramStart(void)
 
     IntDisableMaster();
 
-    /* Final trim of device */
+    /* Final trim of device. */
     SetupTrimDevice();
 
-    /* initiailize .bss to zero */
+    /* Initialize .bss to zero. */
     bs = &__bss_start__;
     be = &__bss_end__;
     while (bs < be)
@@ -167,7 +131,7 @@ __attribute__((used)) void localProgramStart(void)
         bs++;
     }
 
-    /* relocate the .data section */
+    /* Relocate the .data section. */
     dl = &__data_load__;
     ds = &__data_start__;
     de = &__data_end__;
@@ -181,7 +145,7 @@ __attribute__((used)) void localProgramStart(void)
         }
     }
 
-    /* Run any constructors */
+    /* Run any constructors. */
     count = (uint32_t)(__init_array_end - __init_array_start);
     for (i = 0; i < count; i++)
     {
@@ -191,22 +155,19 @@ __attribute__((used)) void localProgramStart(void)
     /* Call the application's entry point. */
     main();
 
-    /* If we ever return signal Error */
+    /* If we ever return signal Error. */
     faultISR();
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor first starts execution
-// following a reset event.  Only the absolutely necessary set is performed,
-// after which the application supplied entry() routine is called.  Any fancy
-// actions (such as making decisions based on the reset cause register, and
-// resetting the bits in that register) are left solely in the hands of the
-// application.
-//
-// .ltorg is added to avoid literal pool errors when LTO is enabled.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor first starts execution
+ * following a reset event.  Only the absolutely necessary set is performed,
+ * after which the application supplied entry() routine is called.  Any fancy
+ * actions (such as making decisions based on the reset cause register, and
+ * resetting the bits in that register) are left solely in the hands of the
+ * application.
+ *
+ * .ltorg is added to avoid literal pool errors when LTO is enabled.
+ */
 void __attribute__((naked)) resetISR(void)
 {
     __asm__ __volatile__(" ldr r0, =resetVectors\n"
@@ -216,53 +177,41 @@ void __attribute__((naked)) resetISR(void)
                          " .ltorg\n");
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives a NMI.  This
-// simply enters an infinite loop, preserving the system state for examination
-// by a debugger.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor receives an NMI. This
+ * simply enters an infinite loop, preserving the system state for examination
+ * by a debugger.
+ */
 static void nmiISR(void)
 {
     /* Enter an infinite loop. */
     while (1) {}
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives a fault
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor receives a fault
+ * interrupt. This simply enters an infinite loop, preserving the system state
+ * for examination by a debugger.
+ */
 static void faultISR(void)
 {
     /* Enter an infinite loop. */
     while (1) {}
 }
 
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives an unexpected
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
+/* This is the code that gets called when the processor receives an unexpected
+ * interrupt. This simply enters an infinite loop, preserving the system state
+ * for examination by a debugger.
+ */
 static void defaultHandler(void)
 {
     /* Enter an infinite loop. */
     while (1) {}
 }
 
-//*****************************************************************************
-//
-// This function is called by __libc_fini_array which gets called when exit()
-// is called. In order to support exit(), an empty _fini() stub function is
-// required.
-//
-//*****************************************************************************
+/* This function is called by __libc_fini_array which gets called when exit()
+ * is called. In order to support exit(), an empty _fini() stub function is
+ * required.
+ */
 void _fini(void)
 {
-    /* Function body left empty intentionally */
+    /* Function body left empty intentionally. */
 }

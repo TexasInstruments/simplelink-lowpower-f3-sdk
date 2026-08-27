@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@ const displayName = "TI Devices";
 const description = "TI Device Configuration";
 const deviceId = system.deviceData.deviceId;
 
-if (deviceId.match(/CC13.[124]|CC26.[1234]|CC23.0|CC27../)) {
+if (deviceId.match(/CC13.[124]|CC26.[1234]|CC23.0|CC23.1|CC27..|CC283./)) {
     topModules = [
         {
             displayName: displayName,
@@ -67,17 +67,27 @@ if (deviceId.match(/CC13.[124]|CC26.[1234]|CC23.0|CC27../)) {
             alwaysRun: false
         },
         {
+            name: "/ti/devices/templates/ti_devices_CC23X1_config.c.xdt",
+            outputPath: "ti_devices_config.c",
+            alwaysRun: false
+        },
+        {
             name: "/ti/devices/templates/ti_devices_CC27XX_config.c.xdt",
             outputPath: "ti_devices_config.c",
             alwaysRun: false
         },
         {
-            name: "/ti/devices/templates/ti_devices_CC27XX_secure_boot_properties.json.xdt",
+            name: "/ti/devices/templates/ti_devices_CC283X_config.c.xdt",
+            outputPath: "ti_devices_config.c",
+            alwaysRun: false
+        },
+        {
+            name: "/ti/devices/templates/ti_devices_secure_boot_properties.json.xdt",
             outputPath: "ti_secure_boot_properties.json",
             alwaysRun: false
         },
         {
-            name: "/ti/devices/templates/ti_devices_CC27XX_secure_boot_properties.h.xdt",
+            name: "/ti/devices/templates/ti_devices_secure_boot_properties.h.xdt",
             outputPath: "ti_secure_boot_properties.h",
             alwaysRun: false
         }

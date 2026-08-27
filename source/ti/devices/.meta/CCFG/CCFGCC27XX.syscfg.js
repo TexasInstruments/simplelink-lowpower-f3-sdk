@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2022-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,11 +37,15 @@
 
 const Common = system.getScript("/ti/drivers/Common.js");
 
+const deviceId = system.deviceData.deviceId;
+const isCC27xxx20 = deviceId.match(/CC27..(R|P)20/) !== null;
+const isCC27xxx15 = deviceId.match(/CC27..(R|P)15/) !== null;
+
 const MAX_PBLDRVTOR = 0xFFFFFFEF;
 const MAX_SERIALIOCFGINDEX = 0x07;
 const MAX_READPROT_MAINSECTORS = 0x0F;
 const MAX_READPROT_CCFGSECTOR = 0x3F;
-const MAX_PIN_TRIGGER_DIO = 0x3F; // TODO: Find correct value for CC27XX
+const MAX_PIN_TRIGGER_DIO = 0x3F;
 const MAX_CAP_ARRAY = 0x3F;
 const MAX_TEMP_THRESHOLD = 125;
 const MIN_TEMP_THRESHOLD = -50;
@@ -49,7 +53,7 @@ const SCFG_UNDEFINED_SLOT_ADDRESS = 0xFFFFFFFF;
 const SCFG_UNDEFINED_SLOT_LENGTH = 0xFFFFFFFF;
 const SCFG_BOOT_SEED_DISABLED = 0xFF;
 const SECTORSIZE = 0x800;
-const FLASHSIZE = 0x100000;
+const FLASHSIZE = 0xE8000; /* 1MB - 96KB for HSM FW */
 
 const moduleDesc = `
 The device has 2 dedicated configuration areas in flash that must contain a valid configuration
@@ -99,6 +103,102 @@ if (system.compiler == "iar")
 {
     defaultpAppVtorStr = "__vector_table";
 }
+
+/* For the CC27xxx20 family, additional flash attributes are required */
+let cc27xxx20MainSectors512_767 = {
+        name: "writeEraseProt_mainSectors512_767",
+        displayName: "Main Sectors 512-767",
+        description: "Sets runtime write/erase protection for main sectors 512-767 (8 sectors/bit)",
+        longDescription: `Value is written to VIMS:WEPRB2 register by ROM code at execution transfer
+                          from boot code/bootloader to application image. Each bit corresponds to 8 sectors.
+                          A bit value of 0 means the sector group is write/erase protected, 1 means not protected.
+                          The register has sticky-0 bits (once cleared to 0, cannot be set back to 1).`,
+        displayFormat: { radix: "hex", bitSize: 32 },
+        default: 0xFFFFFFFF
+};
+
+let cc27xxx20MainSectors768_1023 = {
+    name: "writeEraseProt_mainSectors768_1023",
+    displayName: "Main Sectors 768-1023",
+    description: "Sets runtime write/erase protection for main sectors 768-1023 (8 sectors/bit)",
+    longDescription: `Value is written to VIMS:WEPRB3 register by ROM code at execution transfer
+                      from boot code/bootloader to application image. Each bit corresponds to 8 sectors.
+                      A bit value of 0 means the sector group is write/erase protected, 1 means not protected.
+                      The register has sticky-0 bits (once cleared to 0, cannot be set back to 1).`,
+    displayFormat: { radix: "hex", bitSize: 32 },
+    default: 0xFFFFFFFF
+};
+
+let cc27xxx20WriteEraseProtB2nm0Sector = {
+    name: "writeEraseProt_b2nm0Sector",
+    displayName: "Write/Erase Protection, B2NM0",
+    description: "Sets write/erase protection for the B2NM0 sector",
+    default: true
+};
+
+let cc27xxx20WriteEraseProtB2nm1Sector = {
+    name: "writeEraseProt_b2nm1Sector",
+    displayName: "Write/Erase Protection, B2NM1",
+    description: "Sets write/erase protection for the B2NM1 sector",
+    default: true
+};
+
+let cc27xxx20WriteEraseProtB2TrimSector = {
+    name: "writeEraseProt_b2trimSector",
+    displayName: "Write/Erase Protection, B2TRIM",
+    description: "Sets write/erase protection for the B2TRIM sector",
+    default: true
+};
+
+let cc27xxx20WriteEraseProtB3nm0Sector = {
+    name: "writeEraseProt_b3nm0Sector",
+    displayName: "Write/Erase Protection, B3NM0",
+    description: "Sets write/erase protection for the B3NM0 sector",
+    default: true
+};
+
+let cc27xxx20WriteEraseProtB3nm1Sector = {
+    name: "writeEraseProt_b3nm1Sector",
+    displayName: "Write/Erase Protection, B3NM1",
+    description: "Sets write/erase protection for the B3NM1 sector",
+    default: true
+};
+
+let cc27xxx20WriteEraseProtB3TrimSector = {
+    name: "writeEraseProt_b3trimSector",
+    displayName: "Write/Erase Protection, B3TRIM",
+    description: "Sets write/erase protection for the B3TRIM sector",
+    default: true
+};
+
+let cc27xxx20ChipEraseRetainMainSectors512_767 = {
+    name: "chipEraseRetain_mainSectors512_767",
+    displayName: "Erase/Retain, Main Sectors 512-767",
+    description: "Sets chip erase retention for main sectors 512-767",
+    longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.
+A bit value of 1 means the sector is retained (protected from chip erase), 0 means erased.`,
+    displayFormat: { radix: "hex", bitSize: 32 },
+    default: 0x00000000
+};
+
+let cc27xxx20ChipEraseRetainMainSectors768_1023 = {
+    name: "chipEraseRetain_mainSectors768_1023",
+    displayName: "Erase/Retain, Main Sectors 768-1023",
+    description: "Sets chip erase retention for main sectors 768-1023",
+    longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.
+A bit value of 1 means the sector is retained (protected from chip erase), 0 means erased.`,
+    displayFormat: { radix: "hex", bitSize: 32 },
+    default: 0x00000000
+};
+
+let cc27xxx20WriteEraseProt = [
+    cc27xxx20WriteEraseProtB2nm0Sector,
+    cc27xxx20WriteEraseProtB2nm1Sector,
+    cc27xxx20WriteEraseProtB2TrimSector,
+    cc27xxx20WriteEraseProtB3nm0Sector,
+    cc27xxx20WriteEraseProtB3nm1Sector,
+    cc27xxx20WriteEraseProtB3TrimSector
+];
 
 let devSpecific = {
     hfxtDefaultParams: hfxtDefaultParams,
@@ -217,7 +317,7 @@ stability over temperature.`,
                     {
                         name: "enableHFXTComp",
                         displayName: "RF Temperature Compensation",
-                        description: "Compensate HFXT frequency for temperature during radio transmissions.",
+                        description: "Compensate HFXT frequency for temperature during radio transmissions",
                         longDescription: `This feature improves the accuracy of the CLKSVT and CLKREF over temperature.
 This should only be enabled if the selected HFXT source is not accurate enough for the selected RF protocol.`,
                         default: true,
@@ -390,7 +490,7 @@ false: All serial bootloader commands except BLDR_CMD_GET_STATUS are rejected.`,
                     {
                         name: "pinTriggerEnabled",
                         displayName: "Enable Pin Trigger",
-                        description: "Enable Pin triggering of serial bootloader.",
+                        description: "Enable Pin triggering of serial bootloader",
                         hidden: true,
                         default: false,
                         onChange: (inst, ui) => {
@@ -444,7 +544,7 @@ Must match the Secure Configuration Permissions to be effective.`,
                             {
                                 name: "allowFlashVerify",
                                 displayName: "Allow Flash Verify",
-                                description: "Allow Flash Verify by SACI.",
+                                description: "Allow Flash Verify by SACI",
                                 longDescription: "Allow flash verify by SACI. Must match the Secure Configuration Permissions to be effective.",
                                 default: true
                             },
@@ -466,7 +566,7 @@ Must match the Secure Configuration Permissions to be effective.`,
                                 name: "allowToolsClientMode",
                                 deprecated: true,
                                 displayName: "Allow Tools Client Mode",
-                                description: "Allow RAM-only tools client mode to be enabled by SACI.",
+                                description: "Allow RAM-only tools client mode to be enabled by SACI",
                                 longDescription: "Allow RAM-only tools client mode to be enabled by SACI. Must match the Secure Configuration Permissions to be effective.",
                                 default: true
                             },
@@ -481,14 +581,14 @@ Must match the Secure Configuration Permissions to be effective.`,
                             {
                                 name: "allowReturnToFactory",
                                 displayName: "Allow Return To Factory",
-                                description: "Allow return to factory by SACI.",
+                                description: "Allow return to factory by SACI",
                                 longDescription: "Allow return to factory by SACI. Must match the Secure Configuration Permissions to be effective.",
                                 default: true
                             },
                             {
                                 name: "allowMainAppErase",
                                 displayName: "Allow Main App Erase",
-                                description: "Allow Main App Erase by SACI.",
+                                description: "Allow Main App Erase by SACI",
                                 longDescription: "Allow Main App Erase by SACI. Must match the Secure Configuration Permissions to be effective.",
                                 default: true
                             }
@@ -515,7 +615,7 @@ Must match the Secure Configuration Permissions to be effective.`,
                             {
                                 name: "scfgAllowFlashVerify",
                                 displayName: "Allow Flash Verify",
-                                description: "Allow Flash Verify by SACI.",
+                                description: "Allow Flash Verify by SACI",
                                 longDescription: "Allow flash verify by SACI. Must match the Customer Configuration Permissions to be effective.",
                                 default: true
                             },
@@ -536,21 +636,21 @@ Must match the Secure Configuration Permissions to be effective.`,
                             {
                                 name: "scfgAllowToolsClientMode",
                                 displayName: "Allow Tools Client Mode",
-                                description: "Allow RAM-only tools client mode to be enabled by SACI.",
+                                description: "Allow RAM-only tools client mode to be enabled by SACI",
                                 longDescription: "Allow RAM-only tools client mode to be enabled by SACI. Must match the Customer Configuration Permissions to be effective.",
                                 default: true
                             },
                             {
                                 name: "scfgAllowReturnToFactory",
                                 displayName: "Allow Return To Factory",
-                                description: "Allow return to factory by SACI.",
+                                description: "Allow return to factory by SACI",
                                 longDescription: "Allow return to factory by SACI. Must match the Customer Configuration Permissions to be effective.",
                                 default: true
                             },
                             {
                                 name: "scfgAllowMainAppErase",
                                 displayName: "Allow Main App Erase",
-                                description: "Allow Main App Erase by SACI.",
+                                description: "Allow Main App Erase by SACI",
                                 longDescription: "Allow Main App Erase by SACI. Must match the Customer Configuration Permissions to be effective.",
                                 default: true
                             }
@@ -587,66 +687,75 @@ Any other: (2^saciTimeout)*64 ms`,
                     {
                         name: "writeEraseProt_mainSectors0_31",
                         displayName: "Main Sectors 0-31",
-                        description: "Sets write/erase protection for main sectors 0-31 (1 sector/bit)",
-                        longDescription: `Value is written to VIMS:WEPRA register by ROM code on PRODDEV at execution transfer
-from boot code/bootloader to application image. Each bit corresponds to 1 sector. The register has sticky-0 bits.`,
+                        description: "Sets runtime write/erase protection for main sectors 0-31 (1 sector/bit)",
+                        longDescription: `Value is written to VIMS:WEPRA register by ROM code at execution transfer
+from boot code/bootloader to application image. Each bit corresponds to 1 sector.
+A bit value of 0 means the sector is write/erase protected, 1 means not protected.
+The register has sticky-0 bits (once cleared to 0, cannot be set back to 1).`,
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
                         name: "writeEraseProt_mainSectors32_255",
                         displayName: "Main Sectors 32-255",
-                        description: "Sets write/erase protection for main sectors 32-255 (8 sectors/bit)",
-                        longDescription: `Value is written to VIMS:WEPRB0 register by ROM code on PRODDEV at execution transfer
-from boot code/bootloader to application image. Each bit corresponds to 8 sectors. The register has sticky-0 bits.`,
+                        description: "Sets runtime write/erase protection for main sectors 32-255 (8 sectors/bit)",
+                        longDescription: `Value is written to VIMS:WEPRB0 register by ROM code at execution transfer
+from boot code/bootloader to application image. Each bit corresponds to 8 sectors.
+A bit value of 0 means the sector group is write/erase protected, 1 means not protected.
+The register has sticky-0 bits (once cleared to 0, cannot be set back to 1).`,
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
                     {
                         name: "writeEraseProt_mainSectors256_511",
                         displayName: "Main Sectors 256-511",
-                        description: "Sets write/erase protection for main sectors 256-511 (8 sectors/bit)",
-                        longDescription: `Value is written to VIMS:WEPRB1 register by ROM code on PRODDEV at execution transfer
-from boot code/bootloader to application image. Each bit corresponds to 8 sectors. The register has sticky-0 bits.`,
+                        description: "Sets runtime write/erase protection for main sectors 256-511 (8 sectors/bit)",
+                        longDescription: `Value is written to VIMS:WEPRB1 register by ROM code at execution transfer
+from boot code/bootloader to application image. Each bit corresponds to 8 sectors.
+A bit value of 0 means the sector group is write/erase protected, 1 means not protected.
+The register has sticky-0 bits (once cleared to 0, cannot be set back to 1).`,
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0xFFFFFFFF
                     },
+                    ...((isCC27xxx20 || isCC27xxx15) ? [cc27xxx20MainSectors512_767] : []),
+                    ...((isCC27xxx20) ? [cc27xxx20MainSectors768_1023] : []),
                     {
                         name: "writeEraseProt_ccfgSector",
-                        displayName: "Write/Erase Protection, CCFG Sector",
-                        description: "Sets write/erase protection for CCFG sector",
+                        displayName: "Write/Erase Protection, CCFG",
+                        description: "Sets write/erase protection for the CCFG sector",
                         default: true
                     },
                     {
                         name: "writeEraseProt_fcfgSector",
-                        displayName: "Write/Erase Protection, FCFG Sector",
-                        description: "Sets write/erase protection for FCFG sector",
+                        displayName: "Write/Erase Protection, FCFG",
+                        description: "Sets write/erase protection for the FCFG sector",
                         default: true
                     },
                     {
                         name: "writeEraseProt_engrSector",
-                        displayName: "Write/Erase Protection, ENGR Sector",
-                        description: "Sets write/erase protection for ENGR sector",
+                        displayName: "Write/Erase Protection, ENGR",
+                        description: "Sets write/erase protection for the ENGR sector",
                         default: true
                     },
                     {
                         name: "writeEraseProt_scfgSector",
-                        displayName: "Write/Erase Protection, SCFG Sector",
-                        description: "Sets write/erase protection for SCFG sector",
+                        displayName: "Write/Erase Protection, SCFG",
+                        description: "Sets write/erase protection for the SCFG sector",
                         default: true
                     },
                     {
                         name: "writeEraseProt_vlogSector",
-                        displayName: "Write/Erase Protection, VLOG Sector",
-                        description: "Sets write/erase protection for VLOG sector",
+                        displayName: "Write/Erase Protection, VLOG",
+                        description: "Sets write/erase protection for the VLOG sector",
                         default: true
                     },
+                    ...((isCC27xxx20 || isCC27xxx15) ? [...cc27xxx20WriteEraseProt] : []),
                     {
                         name: "ccfgSector",
                         displayName: "Read Protection, CCFG Sector",
                         description: "Sets read protection for CCFG sector",
                         longDescription: `Read protection for CCFG (16B granular watermark).
-Value is written to the VIMS:RDPRNMN register by ROM code on PRODDEV at execution transfer
+Value is written to the VIMS:RDPRNMN register by ROM code at execution transfer
 from boot code/bootloader to application image. The register has sticky-0 bits.`,
                         displayFormat: { radix: "hex", bitSize: 8 },
                         default: 0x3F
@@ -655,7 +764,7 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                         name: "mainSectors",
                         displayName: "Read Protection Main Sector",
                         description: "Sets read protection for main sector",
-                        longDescription: `Value is written to the VIMS:RDPRMN register by ROM code on PRODDEV at execution transfer
+                        longDescription: `Value is written to the VIMS:RDPRMN register by ROM code at execution transfer
 from boot code/bootloader to application image. The register has sticky-0 bits.`,
                         displayFormat: { radix: "hex", bitSize: 4 },
                         default: 0x0F
@@ -663,27 +772,37 @@ from boot code/bootloader to application image. The register has sticky-0 bits.`
                     {
                         name: "chipEraseRetain_mainSectors0_31",
                         displayName: "Erase/Retain, Main Sectors 0-31",
-                        description: "Sets chip write/erase protection for main sectors 0-31",
-                        longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
+                        description: "Sets chip erase retention for main sectors 0-31",
+                        longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.
+A bit value of 1 means the sector is retained (protected from chip erase), 0 means erased.`,
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00
                     },
                     {
                         name: "chipEraseRetain_mainSectors32_255",
                         displayName: "Erase/Retain, Main Sectors 32-255",
-                        description: "Sets chip write/erase protection for main sectors 32-255",
-                        longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
+                        description: "Sets chip erase retention for main sectors 32-255",
+                        longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.
+A bit value of 1 means the sector is retained (protected from chip erase), 0 means erased.`,
                         displayFormat: { radix: "hex", bitSize: 32 },
                         default: 0x00
                     },
                     {
                         name: "chipEraseRetain_mainSectors256_511",
                         displayName: "Erase/Retain, Main Sectors 256-511",
-                        description: "Sets chip write/erase protection for main sectors 256-511",
-                        longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.`,
+                        description: "Sets chip erase retention for main sectors 256-511",
+                        longDescription: `Used by the SC_FLASH_ERASE_CHIP SACI command for main sector erase protection.
+A bit value of 1 means the sector is retained (protected from chip erase), 0 means erased.`,
                         displayFormat: { radix: "hex", bitSize: 32 },
-                        default: 0xFC000000
-                    }
+                        /* For CC27xxx20 device family, it is not necessary to
+                         * protect the HSM image with use of the
+                         * "chipEraseRetain" option, it will be handled by the
+                         * ROM code.
+                         */
+                        default: (isCC27xxx20 || isCC27xxx15) ? 0x00000000 : 0xFC000000
+                    },
+                    ...((isCC27xxx20 || isCC27xxx15) ? [cc27xxx20ChipEraseRetainMainSectors512_767] : []),
+                    ...((isCC27xxx20) ? [cc27xxx20ChipEraseRetainMainSectors768_1023] : [])
                 ]
             },
             {
@@ -819,7 +938,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                     {
                         name: "debugAuthSecurekeyPublicHash",
                         displayName: "Secure Key Pair Public Key Hash",
-                        longDescription: "Hex-formatted SHA256-hash of user-supplied Public Key (DER format)",
+                        longDescription: "Hex-formatted SHA256-hash of user-supplied Public Key",
                         hidden: true,
                         default: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                     },
@@ -833,28 +952,28 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                     {
                         name: "debugAuthNonSecurekeyPublicHash",
                         displayName: "Non-Secure Key Pair Public Key Hash",
-                        longDescription: "Hex-formatted SHA256-hash of user-supplied Public Key (DER format)",
+                        longDescription: "Hex-formatted SHA256-hash of user-supplied Public Key",
                         hidden: true,
                         default: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                     },
                     {
                         name: "challengeVectorDeviceConst",
-                        displayName: "Constant To Use For Challenge Vector",
+                        displayName: "Constant to Use for Challenge Vector",
                         longDescription: "Specifies whether to use device MAC address or zeroed constant for challenge vector",
                         options: [
-                            { displayName: "Device MAC Address", name: "SCFG_DBGAUTH_DEVICE_MAC_CONST" },
-                            { displayName: "All Zeros", name: "SCFG_DBGAUTH_ZERO_CONST" }
+                            { displayName: "Device MAC address", name: "SCFG_DBGAUTH_DEVICE_MAC_CONST" },
+                            { displayName: "All zeros", name: "SCFG_DBGAUTH_ZERO_CONST" }
                         ],
                         hidden: true,
                         default: "SCFG_DBGAUTH_DEVICE_MAC_CONST"
                     },
                     {
                         name: "challengeVectorLifetime",
-                        displayName: "Lifetime Of Challenge Vector",
+                        displayName: "Lifetime of Challenge Vector",
                         longDescription: "Specifies whether challenge vector uses a random value or a reusable zeroed value",
                         options: [
-                            { displayName: "Random Challenge Vector", name: "SCFG_DBGAUTH_EPHEMERAL_LIFETIME" },
-                            { displayName: "Reusable Challenge Vector", name: "SCFG_DBGAUTH_ENDLESS_LIFETIME"}
+                            { displayName: "Random challenge vector", name: "SCFG_DBGAUTH_EPHEMERAL_LIFETIME" },
+                            { displayName: "Reusable challenge vector", name: "SCFG_DBGAUTH_ENDLESS_LIFETIME"}
                         ],
                         hidden: true,
                         default: "SCFG_DBGAUTH_EPHEMERAL_LIFETIME"
@@ -993,9 +1112,10 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                     },
                     {
                         name: "hdrSize",
-                        displayName: "Secure Boot Header size",
-                        description: "Secure Boot Header size.",
-                        readOnly: true,
+                        displayName: "Secure Boot Header Size",
+                        description: "Secure boot header size for each image slot",
+                        longDescription: "The size of the secure boot header which is prepended to each image slot in flash. Typical values: 0x80 when TrustZone is disabled, or 0x100 when TrustZone is enabled. However, can be set to a different value if required.",
+                        readOnly: false,
                         displayFormat: "hex",
                         default : 0x80,
                         hidden: true
@@ -1003,7 +1123,7 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                     {
                         name: "version",
                         displayName: "Version",
-                        description: "Version associated with this image.",
+                        description: "Version associated with this image",
                         default: "1.0",
                         hidden: true
                     },
@@ -1085,7 +1205,8 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                             {
                                 name: "prim1Start",
                                 displayName: "Start",
-                                description: "Slot start address",
+                                description: "Slot start physical address",
+                                longDescription: "This field must be a physical address (bit 28 must be cleared)",
                                 displayFormat: "hex",
                                 hidden: true,
                                 default      : 0xFFFFFFFF
@@ -1148,7 +1269,8 @@ These symbols can be used by ELF-based tools (e.g. crc_tool) to manage the optio
                             {
                                 name: "sec1Start",
                                 displayName: "Start",
-                                description: "Slot start address",
+                                description: "Slot start physical address",
+                                longDescription: "This field must be a physical address (bit 28 must be cleared)",
                                 displayFormat: "hex",
                                 hidden: true,
                                 default      : 0xFFFFFFFF
@@ -1300,7 +1422,10 @@ function getLinkerDefs()
             if (inst.mode == "Overwrite") {
                 if (system.modules["/ti/utils/TrustZone"]) {
                     if (imgType == "APP 1") {
-                        flash_base = inst.prim1Start;
+                        /* Bit 28 must be set so that the linker generates the
+                         * correct address for the Non-Secure image.
+                         */
+                        flash_base = inst.prim1Start + 0x10000000;
                         flash_size = inst.prim1Len;
                     } else {
                         flash_base = prim0Start;
@@ -1374,6 +1499,25 @@ function getLinkerDefs()
  *  @param ui   -   GUI state
  */
 function updateBldrVisibility(inst, ui) {
+
+    /* If Secure Boot is enabled, hide CCFG Bootloader visibility */
+    if (inst.authMethod != "No Authentication") {
+        ui.pAppVtorStr.hidden = true;
+        ui.bldrSetting.hidden = true;
+        ui.pBldrVtorStr.hidden = true;
+        ui.bldrEnabled.hidden = true;
+        ui.serialIoCfgIndex.hidden = true;
+        ui.pinTriggerEnabled.hidden = true;
+        ui.pinTriggerDio.hidden = true;
+        ui.pinTriggerLevel.hidden = true;
+
+        return;
+    }
+
+    /* Secure Boot is disabled, restore CCFG Bootloader visibility */
+    ui.pAppVtorStr.hidden = false;
+    ui.bldrSetting.hidden = false;
+
     ui["pBldrVtorStr"].hidden = (inst.bldrSetting != "User-specific bootloader");
 
     let setHidden = (inst.bldrSetting == "Any bootloader forbidden") || (inst.bldrSetting == "Default FCFG bootloader");
@@ -1450,6 +1594,8 @@ function onChangeLfoscComp(inst, ui) {
  */
 function onChangeSecureBoot(inst, ui)
 {
+    updateBldrVisibility(inst, ui);
+
     if (inst.authMethod == "No Authentication") {
         /* If Secure Boot is not enabled, hide all options and return early */
         ui.authAlg.hidden = true;

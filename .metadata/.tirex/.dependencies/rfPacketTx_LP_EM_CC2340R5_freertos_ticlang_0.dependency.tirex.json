@@ -1,12 +1,13 @@
 [
     {
         "files": [
-            "+../../rfPacketTx.c -> rfPacketTx.c",
             "+../../README.md -> README.md",
+            "+../../README.html -> README.html",
+            "+../../rfPacketTx.c -> rfPacketTx.c",
+            "+../../overview.rov.json -> overview.rov.json",
             "+../rfPacketTx.syscfg -> rfPacketTx.syscfg",
             "+../main_freertos.c -> main_freertos.c",
-            "+../../overview.rov.json -> overview.rov.json",
-            "+lpf3_freertos.cmd -> lpf3_freertos.cmd"
+            "+cc23x0r5.cmd -> cc23x0r5.cmd"
         ]
     }
 ]

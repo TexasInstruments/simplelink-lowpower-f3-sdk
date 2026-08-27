@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2023-2025, Texas Instruments Incorporated
+ Copyright (c) 2023-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -200,16 +200,16 @@ Requires API's in a crc.h to implement CRC functionality.
 #ifndef NV_LINUX
 
     #include <ti/devices/DeviceFamily.h>
-    /* CC23X0 and CC27XX does not support GPRAM,
+    /* CC23X0, CC23X1 and CC27XX does not support GPRAM,
      * so VIMS access is not needed */
     #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-        !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+        !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC23X1R10) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
         #include DeviceFamily_constructPath(driverlib/vims.h)
     #endif
 
     #ifdef NVOCMP_MIN_VDD_FLASH_MV
         #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-            !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+            !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC23X1R10) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
             #include <driverlib/aon_batmon.h>
         #else
             #include DeviceFamily_constructPath(inc/hw_types.h)
@@ -409,8 +409,8 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
 //*****************************************************************************
 #if defined(DeviceFamily_CC13X4) || defined(DeviceFamily_CC26X4) || defined(DeviceFamily_CC26X3) ||        \
     defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
-    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
-    // CC26x4/CC13x4/CC23x0/cc27xx devices flash page size is (1 << 11) or 0x800
+    defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC23X1R10) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
+    // CC26x4/CC13x4/CC23x0/CC23x1/cc27xx devices flash page size is (1 << 11) or 0x800
     #define PAGE_SIZE_LSHIFT 11
 #else
     // CC26x2/CC13x2 devices flash page size is (1 << 13) or 0x2000
@@ -432,7 +432,7 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
 
 #ifndef NVOCMP_NO_RAM_OPTIMIZATION
     #if defined(DeviceFamily_CC23X0R5) || defined(DeviceFamily_CC23X0R53) || defined(DeviceFamily_CC23X0R2) || \
-        defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC27XX)
+        defined(DeviceFamily_CC23X0R22) || defined(DeviceFamily_CC23X1R10) || (DeviceFamily_PARENT == DeviceFamily_PARENT_CC27XX)
         #define NVOCMP_RAM_OPTIMIZATION
     #endif
 #endif
@@ -441,14 +441,15 @@ static void NVOCMP_assert(bool cond, char *message, bool fatal)
     // Compact Memory
     #if !defined(NV_LINUX) && !defined(DeviceFamily_CC13X4) && !defined(DeviceFamily_CC26X4) &&                 \
         !defined(DeviceFamily_CC26X3) && !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && \
-        !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+        !defined(DeviceFamily_CC23X0R2) && !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC23X1R10) && \
+        (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
         #define NVOCMP_GPRAM
     #endif
 
     #ifdef NVOCMP_GPRAM
         #define RAM_BUFFER_ADDRESS (uint8_t *)GPRAM_BASE
     #else
-/* When CC23X0/CC27XX is used, as GPRAM is not supported,
+/* When CC23X0/CC23X1/CC27XX is used, as GPRAM is not supported,
  * an SRAM buffer of FLASH_PAGE_SIZE length is declared,
  * as the NVOCMP algorithm relies on it.
  * Also, when CC13X4 / CC26X3 / CC26X4 is used,
@@ -1024,7 +1025,7 @@ extern void NVOCMP_setLowVoltageCb(lowVoltCbFptr funcPtr)
 static bool NVOCMP_checkVoltage(void)
 {
 #if !defined(DeviceFamily_CC23X0R5) && !defined(DeviceFamily_CC23X0R53) && !defined(DeviceFamily_CC23X0R2) && \
-    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC27XX)
+    !defined(DeviceFamily_CC23X0R22) && !defined(DeviceFamily_CC23X1R10) && (DeviceFamily_PARENT != DeviceFamily_PARENT_CC27XX)
 
     uint32_t voltage = AONBatMonBatteryVoltageGet();
     voltage          = (voltage * 1000) >> AON_BATMON_BAT_FRAC_W;
@@ -2569,7 +2570,7 @@ static void NVOCMP_initNv(NVOCMP_nvHandle_t *pNvHandle)
             else if (noPgNact)
             {
                 pgXdst = pgNact;
-                NVOCMP_changePageState(pNvHandle, pNvHandle->tailPage, NVOCMP_PGXDST);
+                NVOCMP_changePageState(pNvHandle, pgXdst, NVOCMP_PGXDST);
                 action = NVOCMP_NORMAL_RESUME;
             }
             else
@@ -2619,7 +2620,11 @@ static void NVOCMP_initNv(NVOCMP_nvHandle_t *pNvHandle)
                 if (pNvHandle->actOffset > NVOCMP_PGDATAOFS + NVOCMP_ITEMHDRLEN)
                 {
                     NVOCMP_readHeader(pNvHandle->actPage, pNvHandle->actOffset - NVOCMP_ITEMHDRLEN, &iHdr, false);
-                    if (iHdr.stats & NVOCMP_FOLLOWBIT)
+
+                    /* If the Follow up flag and active item, check if another
+                     * instance exist and put it inactive.
+                     */
+                    if ((iHdr.stats & NVOCMP_FOLLOWBIT) && (iHdr.stats & NVOCMP_ACTIVEIDBIT))
                     {
                         status = NVOCMP_findItem(pNvHandle,
                                                  pNvHandle->actPage,
@@ -2627,7 +2632,12 @@ static void NVOCMP_initNv(NVOCMP_nvHandle_t *pNvHandle)
                                                  &iHdr,
                                                  NVOCMP_FINDSTRICT,
                                                  NULL);
-                        if ((status == NVINTF_SUCCESS) && (iHdr.hofs > 0))
+                        /* Make sure it is successful and that it didn't wrap
+                         * around to find the same item
+                         */
+                        if ((status == NVINTF_SUCCESS) && (iHdr.hofs > 0) &&
+                            !(iHdr.hpage == pNvHandle->actPage &&
+                              iHdr.hofs == pNvHandle->actOffset - NVOCMP_ITEMHDRLEN))
                         {
                             NVOCMP_setItemInactive(pNvHandle, iHdr.hpage, iHdr.hofs);
                         }

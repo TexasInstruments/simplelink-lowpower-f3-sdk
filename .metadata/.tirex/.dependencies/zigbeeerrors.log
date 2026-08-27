@@ -8,6 +8,12 @@ File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbe
 In project: examples/nortos/LP_EM_CC2755P10/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755P10_nortos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
+In project: examples/nortos/LP_EM_CC2755P20/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755P20_nortos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
+In project: examples/nortos/LP_EM_CC2755R10_BG/zigbee/rf_test/ticlang/rf_test_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
 In project: examples/rtos/LP_EM_CC2340R5/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2340R5_freertos_ticlang.projectspec
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
@@ -15,4 +21,10 @@ In project: examples/rtos/LP_EM_CC2340R53/zigbee/rf_test/freertos/ticlang/rf_tes
 
 File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
 In project: examples/rtos/LP_EM_CC2755P10/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755P10_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
+In project: examples/rtos/LP_EM_CC2755P20/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755P20_freertos_ticlang.projectspec
+
+File not found: ${COM_TI_SIMPLELINK_LOWPOWER_F3_SDK_INSTALL_DIR}/source/ti/zigbee/mac/ti_rf_test.c
+In project: examples/rtos/LP_EM_CC2755R10_BG/zigbee/rf_test/freertos/ticlang/rf_test_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec
 

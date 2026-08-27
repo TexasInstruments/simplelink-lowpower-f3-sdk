@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024, Texas Instruments Incorporated
+# Copyright (c) 2022-2026, Texas Instruments Incorporated
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -114,6 +114,8 @@ if(NOT TARGET TOOLCHAIN_gcc)
         $<$<BOOL:${TI_CMAKE_COMMON_WARNINGS_AS_ERRORS}>:-Wl,--fatal-warnings>
         -flto
         -ffat-lto-objects
+        # Enable input sections to be split across output sections
+        -Wl,--enable-non-contiguous-regions
         # End of section for TI_LFLAGS_OVERRIDE not defined
         >
         # If TI_CFLAGS_OVERRIDE, use it exclusively

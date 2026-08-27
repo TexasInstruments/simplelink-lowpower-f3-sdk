@@ -1,0 +1,12 @@
+[
+    {
+        "files": [
+            "+../nortos/main_nortos.c -> main_nortos.c",
+            "+cc23x0r5.icf -> cc23x0r5.icf",
+            "+../README.html -> README.html",
+            "+../README.md -> README.md",
+            "+../rfContinuousRxRssi.c -> rfContinuousRxRssi.c",
+            "+../rfContinuousRxRssi.syscfg -> rfContinuousRxRssi.syscfg"
+        ]
+    }
+]

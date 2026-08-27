@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025, Texas Instruments Incorporated
+ * Copyright (c) 2024-2026, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -344,28 +344,28 @@ static void Exception_decodeHardFault(Exception_ExceptionContext *exceptionConte
  */
 static void Exception_decodeMemFault(Exception_ExceptionContext *exceptionContext)
 {
-    uint8_t mmfsr = SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk;
+    uint32_t cfsr = SCB->CFSR;
 
-    /* Decode MMFSR to determinte what kind of MemFault it is. */
-    if (mmfsr & SCB_CFSR_MSTKERR_Msk)
+    /* Decode the MMFSR field to determinte what kind of MemFault it is. */
+    if (cfsr & SCB_CFSR_MSTKERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeMemFault: MMFSR indicates a stacking error occured (RD/WR failed), stack push. (MSTKERR)");
     }
-    else if (mmfsr & SCB_CFSR_MUNSTKERR_Msk)
+    else if (cfsr & SCB_CFSR_MUNSTKERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeMemFault: MMFSR indicates an unstacking error occured (RD/WR failed), stack pop. (MUNSTKERR)");
     }
-    else if (mmfsr & SCB_CFSR_DACCVIOL_Msk)
+    else if (cfsr & SCB_CFSR_DACCVIOL_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeMemFault: MMFSR indicates a data accessed error occured (RD/WR failed). (DACCVIOL)");
     }
-    else if (mmfsr & SCB_CFSR_IACCVIOL_Msk)
+    else if (cfsr & SCB_CFSR_IACCVIOL_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
@@ -373,7 +373,7 @@ static void Exception_decodeMemFault(Exception_ExceptionContext *exceptionContex
     }
 
     /* If MMFAR is valid, print it */
-    if (mmfsr & SCB_CFSR_MMARVALID_Msk)
+    if (cfsr & SCB_CFSR_MMARVALID_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
@@ -387,34 +387,34 @@ static void Exception_decodeMemFault(Exception_ExceptionContext *exceptionContex
  */
 static void Exception_decodeBusFault(Exception_ExceptionContext *exceptionContext)
 {
-    uint8_t bfsr = (SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk) >> SCB_CFSR_BUSFAULTSR_Pos;
+    uint32_t cfsr = SCB->CFSR;
 
-    /* Decode BFSR to determinte what kind of MemFault it is. */
-    if (bfsr & SCB_CFSR_STKERR_Msk)
+    /* Decode the BFSR field to determinte what kind of MemFault it is. */
+    if (cfsr & SCB_CFSR_STKERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeBusFault: BusFault caused by stack push. (STKERR)");
     }
-    else if (bfsr & SCB_CFSR_UNSTKERR_Msk)
+    else if (cfsr & SCB_CFSR_UNSTKERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeBusFault: BusFault caused by stack pop. (UNSTKERR)");
     }
-    else if (bfsr & SCB_CFSR_IMPRECISERR_Msk)
+    else if (cfsr & SCB_CFSR_IMPRECISERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeBusFault: Delayed BusFault, exact addr unknown. (IMPRECISERR)");
     }
-    else if (bfsr & SCB_CFSR_PRECISERR_Msk)
+    else if (cfsr & SCB_CFSR_PRECISERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeBusFault: Immediate BusFault, exact addr known. (PRECISERR)");
     }
-    else if (bfsr & SCB_CFSR_IBUSERR_Msk)
+    else if (cfsr & SCB_CFSR_IBUSERR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
@@ -422,7 +422,7 @@ static void Exception_decodeBusFault(Exception_ExceptionContext *exceptionContex
     }
 
     /* If BFAR is valid, print it */
-    if (bfsr & SCB_CFSR_BFARVALID_Msk)
+    if (cfsr & SCB_CFSR_BFARVALID_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
@@ -436,45 +436,45 @@ static void Exception_decodeBusFault(Exception_ExceptionContext *exceptionContex
  */
 static void Exception_decodeUsageFault(Exception_ExceptionContext *exceptionContext)
 {
-    uint8_t ufsr = (SCB->CFSR & SCB_CFSR_USGFAULTSR_Msk) >> SCB_CFSR_USGFAULTSR_Pos;
+    uint32_t cfsr = SCB->CFSR;
 
-    if (ufsr & SCB_CFSR_UNDEFINSTR_Msk)
+    if (cfsr & SCB_CFSR_UNDEFINSTR_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeUsageFault: Undefined instruction executed. (UNDEFINSTR)");
     }
-    else if (ufsr & SCB_CFSR_INVSTATE_Msk)
+    else if (cfsr & SCB_CFSR_INVSTATE_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeUsageFault: Invalid EPSR and instruction combination (INVSTATE)");
     }
-    else if (ufsr & SCB_CFSR_INVPC_Msk)
+    else if (cfsr & SCB_CFSR_INVPC_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeUsageFault: Invalid PC (INVPC)");
     }
-    else if (ufsr & SCB_CFSR_NOCP_Msk)
+    else if (cfsr & SCB_CFSR_NOCP_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeUsageFault: Attempting to use co-processor when it is not present or disabled. (NOCP)");
     }
-    else if (ufsr & SCB_CFSR_STKOF_Msk)
+    else if (cfsr & SCB_CFSR_STKOF_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeUsageFault: Stack overflow error has occurred. (STKOF)");
     }
-    else if (ufsr & SCB_CFSR_UNALIGNED_Msk)
+    else if (cfsr & SCB_CFSR_UNALIGNED_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,
                    "Exception_decodeUsageFault: Unaligned memory access. (UNALIGNED)");
     }
-    else if (ufsr & SCB_CFSR_DIVBYZERO_Msk)
+    else if (cfsr & SCB_CFSR_DIVBYZERO_Msk)
     {
         Log_printf(LogModule_Exception,
                    Log_ERROR,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024, Texas Instruments Incorporated
+ * Copyright (c) 2022-2025, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,9 +35,7 @@
 #include <stdint.h>
 
 #include <ti/devices/DeviceFamily.h>
-#include DeviceFamily_constructPath(inc/hw_rtc.h)
-#include DeviceFamily_constructPath(inc/hw_types.h)
-#include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(driverlib/rtc.h)
 #include <ti/drivers/dpl/TimestampP.h>
 
 #define TIMESTAMPP_NATIVEFORMAT32_INITIALIZER                                                                     \
@@ -86,20 +84,10 @@ const TimestampP_Format __attribute__((section(".log_data"), used))
 
 uint64_t TimestampP_getNative64()
 {
-    uint64_t timestamp;
-
-    /* CNT0 and CNT1 overlap by 16 bits */
-    timestamp = (uint64_t)(HWREG(RTC_BASE + RTC_O_TIME524M) & 0xFFFF0000) << 16;
-    timestamp |= (uint64_t)HWREG(RTC_BASE + RTC_O_TIME8U);
-
-    return timestamp;
+    return RTCGet48BitTime8Us();
 }
 
 uint32_t TimestampP_getNative32()
 {
-    uint32_t timestamp;
-
-    timestamp = HWREG(RTC_BASE + RTC_O_TIME8U);
-
-    return timestamp;
+    return RTCGet32BitTime8Us();
 }

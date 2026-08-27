@@ -9,7 +9,7 @@
 
  ******************************************************************************
  
- Copyright (c) 2013-2025, Texas Instruments Incorporated
+ Copyright (c) 2013-2026, Texas Instruments Incorporated
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -166,7 +166,7 @@ uint8_t readFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  *
  * @return  None.
  */
-uint8_t readFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
+uint8_t readFlashPg(uint32_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
     halIntState_t cs;
     uint8_t *ptr = (uint8_t *)FLASH_ADDRESS(page, offset);
@@ -219,7 +219,7 @@ uint8_t writeFlash(uint_least32_t addr, uint8_t *pBuf, size_t len)
  *
  * @return  None.
  */
-uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
+uint8_t writeFlashPg(uint32_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
 {
     uint32_t flashStat = FLASH_SUCCESS;
 
@@ -237,7 +237,7 @@ uint8_t writeFlashPg(uint8_t page, uint32_t offset, uint8_t *pBuf, uint16_t len)
  *
  * @return  None.
  */
-uint8_t eraseFlashPg(uint8_t page)
+uint8_t eraseFlashPg(uint32_t page)
 {
     uint8_t flashStat = FLASH_SUCCESS;
 
