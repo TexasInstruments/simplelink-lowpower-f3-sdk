@@ -210,6 +210,63 @@ const deviceGroupMcubootSettings = {
         },
         alignment: { flashBoundary: 0x80000, sectorSize : 0x800 }
    },
+   DeviceGroup_CC27XXX7: {
+         tzEnabled: { readOnly: false, hidden: false, tzConfigurable: true},
+        image1:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: 0x6800,
+                secondaryBase: 0x63800,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x6000,
+                secondaryBase: 0x31000,
+            },
+            primarySize: 0x2B000,
+            secondarySize: 0x2B000
+        },
+        image2:
+        {
+            /* The gap between image 1 primary and image 2 primary is for ITS, mcuboot does not care about ITS, so it is up to the user to configure accordingly. */
+            primaryBase: 0x38000,
+            primarySize: 0x2B000,
+            secondaryBase: 0x8E800,
+            secondarySize: 0x2B000
+        },
+        image1Compressed:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x07000,
+                secondaryBase: 0x4D000,
+            },
+            primarySize: 0x46000,
+            secondarySize: 0x31000
+        },
+        antiRollbackProtection: { readOnly: false, hidden: false },
+        enableEncryptedImage:{ enabled: true },
+        bootloader:
+        {
+            tzEnabledBase:
+            {
+                base: 0x800,
+            },
+            tzDisabledBase:
+            {
+                base: 0x0,
+            },
+            size: 0x6000,
+            compressionEnabledSize: 0x7000,
+        },
+        alignment: { flashBoundary: 0xC0000, sectorSize : 0x800 }
+   },
    DeviceGroup_CC27XXX10: {
         tzEnabled: { readOnly: false, hidden: false, tzConfigurable: true},
         image1:
@@ -266,6 +323,63 @@ const deviceGroupMcubootSettings = {
             compressionEnabledSize: 0x7000,
         },
         alignment: { flashBoundary: 0xE8000, sectorSize : 0x800 }
+   },
+   DeviceGroup_CC27XXX15: {
+         tzEnabled: { readOnly: false, hidden: false, tzConfigurable: true},
+        image1:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: 0x6800,
+                secondaryBase: 0x7A800,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x6000,
+                secondaryBase: 0x31000,
+            },
+            primarySize: 0x2B000,
+            secondarySize: 0x2B000
+        },
+        image2:
+        {
+            /* The gap between image 1 primary and image 2 primary is for ITS, mcuboot does not care about ITS, so it is up to the user to configure accordingly. */
+            primaryBase: 0x38000,
+            primarySize: 0x42000,
+            secondaryBase: 0xA5800,
+            secondarySize: 0x42000
+        },
+        image1Compressed:
+        {
+            tzEnabledBase:
+            {
+                primaryBase: null,
+                secondaryBase: null,
+            },
+            tzDisabledBase:
+            {
+                primaryBase: 0x07000,
+                secondaryBase: 0x4D000,
+            },
+            primarySize: 0x46000,
+            secondarySize: 0x31000
+        },
+        antiRollbackProtection: { readOnly: false, hidden: false },
+        enableEncryptedImage:{ enabled: true },
+        bootloader:
+        {
+            tzEnabledBase:
+            {
+                base: 0x800,
+            },
+            tzDisabledBase:
+            {
+                base: 0x0,
+            },
+            size: 0x6000,
+            compressionEnabledSize: 0x7000,
+        },
+        alignment: { flashBoundary: 0x168000, sectorSize : 0x800 }
    },
    DeviceGroup_CC27XXX20: {
         tzEnabled: { readOnly: false, hidden: false, tzConfigurable: true},
@@ -361,9 +475,17 @@ function device2DeviceGroup(deviceId)
     {
         deviceGroup = "DeviceGroup_CC23X0";
     }
+    else if(deviceId.match(/CC27\d{2}[RP]7/))
+    {
+        deviceGroup = "DeviceGroup_CC27XXX7";
+    }
     else if(deviceId.match(/CC27\d{2}[RP]10/))
     {
         deviceGroup = "DeviceGroup_CC27XXX10";
+    }
+    else if(deviceId.match(/CC27\d{2}[RP]15/))
+    {
+        deviceGroup = "DeviceGroup_CC27XXX15";
     }
     else if(deviceId.match(/CC27\d{2}[RP]20/))
     {

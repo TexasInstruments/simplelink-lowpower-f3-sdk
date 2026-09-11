@@ -74,7 +74,9 @@ let mcubootApplication = {
                 displayName : "Enable Image Compression",
                 description : "Enable MCUboot to decompress image from secondary slot",
                 default     : false,
-                hidden      : (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20") ? false : true,
+                hidden      : (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" ||
+                               deviceGroup == "DeviceGroup_CC27XXX20" || deviceGroup == "DeviceGroup_CC27XXX7" ||
+                               deviceGroup == "DeviceGroup_CC27XXX15") ? false : true,
                 onChange    : changeImageCompression
             },
             {
@@ -181,7 +183,9 @@ let mcubootApplication = {
 
 function changeImageCompression(inst, ui)
 {
-    if (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20")
+    if (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" ||
+        deviceGroup == "DeviceGroup_CC27XXX20" || deviceGroup == "DeviceGroup_CC27XXX7" ||
+        deviceGroup == "DeviceGroup_CC27XXX15")
     {
         if (inst.imageCompression)
         {

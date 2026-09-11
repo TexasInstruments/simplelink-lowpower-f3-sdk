@@ -456,7 +456,9 @@ function changeExternalFlash(inst, ui)
 
 function changeImageCompression(inst, ui)
 {
-    if (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20")
+    if (deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" ||
+        deviceGroup == "DeviceGroup_CC27XXX20" || deviceGroup == "DeviceGroup_CC27XXX7" ||
+        deviceGroup == "DeviceGroup_CC27XXX15")
     {
         if (inst.imageCompression)
         {
@@ -500,7 +502,9 @@ function changeMode(inst, ui)
         {
             ui.enableEncryptedImage.hidden = true;
         }
-        if(deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" || deviceGroup == "DeviceGroup_CC27XXX20") /* enable for compression */
+        if(deviceGroup == "DeviceGroup_CC23X0" || deviceGroup == "DeviceGroup_CC27XXX10" ||
+           deviceGroup == "DeviceGroup_CC27XXX20" || deviceGroup == "DeviceGroup_CC27XXX7" ||
+           deviceGroup == "DeviceGroup_CC27XXX15") /* enable for compression */
         {
             ui.imageCompression.hidden = false;
         }

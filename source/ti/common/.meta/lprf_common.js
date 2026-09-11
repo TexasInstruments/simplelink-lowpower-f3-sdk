@@ -188,13 +188,21 @@ function device2DeviceFamily(deviceId)
     {
         driverString = "DeviceFamily_CC23X1R10";
     }
+    else if(deviceId.match(/CC27\d{2}[RP]7/))
+    {
+        driverString = "DeviceFamily_CC27XXX10";
+    }
     else if(deviceId.match(/CC27\d{2}[RP]10/))
     {
-        deviceGroup = "DeviceGroup_CC27XXX10";
+        driverString = "DeviceFamily_CC27XXX10";
+    }
+    else if(deviceId.match(/CC27\d{2}[RP]15/))
+    {
+        driverString = "DeviceFamily_CC27XXX20";
     }
     else if(deviceId.match(/CC27\d{2}[RP]20/))
     {
-        deviceGroup = "DeviceGroup_CC27XXX20";
+        driverString = "DeviceFamily_CC27XXX20";
     }
     else
     {
