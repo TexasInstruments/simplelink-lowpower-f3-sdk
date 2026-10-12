@@ -15,7 +15,13 @@
         "name": "CC2745R10Q1"
       },
       {
+        "name": "CC2745R20Q1"
+      },
+      {
         "name": "CC2755P10"
+      },
+      {
+        "name": "CC2755R7"
       },
       {
         "name": "CC2755R10"
@@ -39,16 +45,11 @@
       "state": [
         {
           "quality": "experimental",
-          "device_name_list": "CC2755R20,CC2765R10Q1"
-        },
-        {
-          "quality": "experimental",
-          "rf_design": "LP-EM-CC2755R10-YCJ-BG",
-          "device_name_list": "CC2755R10"
+          "device_name_list": "CC2755R20,CC2765R10Q1,CC2745R20Q1"
         },
         {
           "quality": "characterized",
-          "device_name_list": "CC2744R7Q1,CC2745R7Q1,CC2745R10Q1,CC2755R10,CC2745P10Q1,CC2755P10,CC2755P20"
+          "device_name_list": "CC2744R7Q1,CC2745R7Q1,CC2745R10Q1,CC2755R10,CC2755R7,CC2745P10Q1,CC2755P10,CC2755P20"
         }
       ]
     },
@@ -1384,6 +1385,15 @@
                   "LRFDMDM.MODCTRL.TONEINSERT": {
                     "value": "0"
                   },
+                  "LRFDMDM.DEMDEBUG.LOOPBACKMODE": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDEBUG.LOOPBACKPIN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.GPOCTRL0.GPO0": {
+                    "value": "0"
+                  },
                   "LRFDRFE.SPARE2.VAL": {
                     "value": "41542"
                   },
@@ -1802,6 +1812,15 @@
                     "value": "3"
                   },
                   "LRFDMDM.MODCTRL.TONEINSERT": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDEBUG.LOOPBACKMODE": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDEBUG.LOOPBACKPIN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.GPOCTRL0.GPO0": {
                     "value": "0"
                   },
                   "LRFDRFE.SPARE2.VAL": {
@@ -2297,6 +2316,15 @@
                     "value": "3"
                   },
                   "LRFDMDM.MODCTRL.TONEINSERT": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDEBUG.LOOPBACKMODE": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.DEMDEBUG.LOOPBACKPIN": {
+                    "value": "0"
+                  },
+                  "LRFDMDM.GPOCTRL0.GPO0": {
                     "value": "0"
                   },
                   "LRFDRFE.RSSIOFFSET.VAL": {

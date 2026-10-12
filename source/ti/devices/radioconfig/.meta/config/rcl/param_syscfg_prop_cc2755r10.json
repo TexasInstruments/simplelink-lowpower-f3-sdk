@@ -141,6 +141,7 @@
       {
         "file8": "nesb_1m_2m_cc27xx.json",
         "phy_files": {
+          "cc23x1": "nesb_1m_2m_cc23x1.phy",
           "cc23xx": "nesb_1m_2m_cc23xx.phy",
           "cc27xx": "nesb_1m_2m_cc27xx.phy"
         },

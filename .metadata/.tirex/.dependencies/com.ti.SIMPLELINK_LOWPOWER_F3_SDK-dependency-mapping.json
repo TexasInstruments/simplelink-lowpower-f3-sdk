@@ -587,6 +587,9 @@
     "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/eccbaremetal/gcc/eccbaremetal_LP_EM_CC2755R10_BG_nortos_gcc.projectspec": "eccbaremetal_LP_EM_CC2755R10_BG_nortos_gcc_0.dependency.tirex.json",
     "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/eccbaremetal/iar/eccbaremetal_LP_EM_CC2755R10_BG_nortos_iar.ipcf": "eccbaremetal_LP_EM_CC2755R10_BG_nortos_iar_0.dependency.tirex.json",
     "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/eccbaremetal/ticlang/eccbaremetal_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec": "eccbaremetal_LP_EM_CC2755R10_BG_nortos_ticlang_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/gcc/hsmfwupdate_LP_EM_CC2755R10_BG_nortos_gcc.projectspec": "hsmfwupdate_LP_EM_CC2755R10_BG_nortos_gcc_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/iar/hsmfwupdate_LP_EM_CC2755R10_BG_nortos_iar.ipcf": "hsmfwupdate_LP_EM_CC2755R10_BG_nortos_iar_0.dependency.tirex.json",
+    "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/ticlang/hsmfwupdate_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec": "hsmfwupdate_LP_EM_CC2755R10_BG_nortos_ticlang_0.dependency.tirex.json",
     "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/keyblobbaremetal/gcc/keyblobbaremetal_LP_EM_CC2755R10_BG_nortos_gcc.projectspec": "keyblobbaremetal_LP_EM_CC2755R10_BG_nortos_gcc_0.dependency.tirex.json",
     "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/keyblobbaremetal/iar/keyblobbaremetal_LP_EM_CC2755R10_BG_nortos_iar.ipcf": "keyblobbaremetal_LP_EM_CC2755R10_BG_nortos_iar_0.dependency.tirex.json",
     "../../../examples/nortos/LP_EM_CC2755R10_BG/hsm/keyblobbaremetal/ticlang/keyblobbaremetal_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec": "keyblobbaremetal_LP_EM_CC2755R10_BG_nortos_ticlang_0.dependency.tirex.json",
@@ -1443,5 +1446,8 @@
     "../../../examples/rtos/LP_EM_CC2755R10_BG/drivers/uart2echo/freertos/ticlang/uart2echo_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec": "uart2echo_LP_EM_CC2755R10_BG_freertos_ticlang_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2755R10_BG/drivers/watchdog/freertos/gcc/watchdog_LP_EM_CC2755R10_BG_freertos_gcc.projectspec": "watchdog_LP_EM_CC2755R10_BG_freertos_gcc_0.dependency.tirex.json",
     "../../../examples/rtos/LP_EM_CC2755R10_BG/drivers/watchdog/freertos/iar/watchdog_LP_EM_CC2755R10_BG_freertos_iar.ipcf": "watchdog_LP_EM_CC2755R10_BG_freertos_iar_0.dependency.tirex.json",
-    "../../../examples/rtos/LP_EM_CC2755R10_BG/drivers/watchdog/freertos/ticlang/watchdog_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec": "watchdog_LP_EM_CC2755R10_BG_freertos_ticlang_0.dependency.tirex.json"
+    "../../../examples/rtos/LP_EM_CC2755R10_BG/drivers/watchdog/freertos/ticlang/watchdog_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec": "watchdog_LP_EM_CC2755R10_BG_freertos_ticlang_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/freertos/gcc/hsmfwupdate_LP_EM_CC2755R10_BG_freertos_gcc.projectspec": "hsmfwupdate_LP_EM_CC2755R10_BG_freertos_gcc_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/freertos/iar/hsmfwupdate_LP_EM_CC2755R10_BG_freertos_iar.ipcf": "hsmfwupdate_LP_EM_CC2755R10_BG_freertos_iar_0.dependency.tirex.json",
+    "../../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/freertos/ticlang/hsmfwupdate_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec": "hsmfwupdate_LP_EM_CC2755R10_BG_freertos_ticlang_0.dependency.tirex.json"
 }

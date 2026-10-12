@@ -317,7 +317,8 @@
         "phy_files": {
           "cc23xx": "adc_noise_bt5_cc23xx.phy",
           "cc23x1": "adc_noise_bt5_cc23xx.phy",
-          "cc27xx": "adc_noise_bt5_cc27xx.phy"
+          "cc27xx": "adc_noise_bt5_cc27xx.phy",
+          "cc276x": "adc_noise_bt5_cc27xx.phy"
         },
         "name": "adc_noise",
         "label": "ADC Noise",

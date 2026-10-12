@@ -67,6 +67,7 @@ extern "C" {
 //*****************************************************************************
 typedef enum
 {
+    CHIP_TYPE_CC2745 = 0x55F2U, //!< Chip type is CC2745
     CHIP_TYPE_CC2755 = 0x9D4AU, //!< Chip type is CC2755
 } ChipType;
 
@@ -77,12 +78,13 @@ typedef enum
 //*****************************************************************************
 typedef enum
 {
-    CC2755P207E0WRHAR = 0x6E9D4AU, //!< Part is CC2755P207E0WRHAR
-    CC2755P207E0RSLR  = 0xCA9D4AU, //!< Part is CC2755P207E0RSLR
-    CC2755P207E0RHAR  = 0x809D4AU, //!< Part is CC2755P207E0RHAR
-    CC2755R207E0YCJR  = 0x089D4AU, //!< Part is CC2755R207E0YCJR
-    CC2755P156E0RSLR  = 0x5A9D4AU, //!< Part is CC2755P156E0RSLR
-    CC2755R207E0RSLR  = 0xE09D4AU, //!< Part is CC2755R207E0RSLR
+    CC2745R20E0WRHARQ1 = 0x1755F2U, //!< Part is CC2745R20E0WRHARQ1
+    CC2755P207E0WRHAR  = 0x6E9D4AU, //!< Part is CC2755P207E0WRHAR
+    CC2755P207E0RSLR   = 0xCA9D4AU, //!< Part is CC2755P207E0RSLR
+    CC2755P207E0RHAR   = 0x809D4AU, //!< Part is CC2755P207E0RHAR
+    CC2755R207E0YCJR   = 0x089D4AU, //!< Part is CC2755R207E0YCJR
+    CC2755P156E0RSLR   = 0x5A9D4AU, //!< Part is CC2755P156E0RSLR
+    CC2755R207E0RSLR   = 0xE09D4AU, //!< Part is CC2755R207E0RSLR
 
 } ChipPartId;
 

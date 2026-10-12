@@ -392,6 +392,7 @@ function moduleInstances(inst)
         "CC2340R2": 0x00040000,
         "CC2340R5": 0x00080000,
         "CC2745R7": 0x000C0000 - hsm_fw_size,
+        "CC2755R7": 0x000D8000 - hsm_fw_size,
         "CC2755R10": 0x00100000 - hsm_fw_size,
         "CC2745R10": 0x00100000 - hsm_fw_size,
         "CC2755P10": 0x00100000 - hsm_fw_size,
@@ -753,7 +754,7 @@ function getOpts(inst) {
 function getLinkerDefs() {
     var linkDef = []
     if ("CC2755P105RHA" ==  system.deviceData.deviceId || "CC2755P207RHA" == system.deviceData.deviceId ||
-        "CC2755R105YCJ" ==  system.deviceData.deviceId || "CC2755R105RHA" == system.deviceData.deviceId)
+        "CC2755R105YCJ" ==  system.deviceData.deviceId || "CC2755R105RHA" == system.deviceData.deviceId || "CC2755R74YCJ" == system.deviceData.deviceId)
     {
         linkDef.push({ name: "HSM_FW_SIZE", value: hsm_fw_size })
     }

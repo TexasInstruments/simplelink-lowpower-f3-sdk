@@ -101,14 +101,24 @@ let defaultVolatileMemoryPoolSize = (keyItemSizeMaxDefault * (defaultPersistentS
 /* Flash memory layout (from base address 0x0):
  *   [Application flash] ... [KeyStore] [HSM FW (96KB)]
  *
- * HSM firmware occupies the final 96KB (0x18000) of flash. The useable
- * application flash ends where HSM FW begins:
- *   1M devices (CC27XX10/7):  useable ends at 0xE8000  (HSM FW: 0xE8000 - 0xFFFFF)
- *   2M devices (CC27XX20/15): useable ends at 0x1E8000 (HSM FW: 0x1E8000 - 0x1FFFFF)
+ * HSM firmware occupies 96KB (0x18000) of flash, and may or may not overlap with usable flash.
+ * The usable flash varies from device to device:
+ *   1M devices (CC27XXX10):  useable ends at 0xE8000  (HSM FW: 0xE8000 - 0xFFFFF)
+ *   1M devices (CC27XXX7):   useable ends at 0xC0000   (HSM FW: 0xE8000 - 0xFFFFF)
+ *   2M devices (CC27XXX20/15): useable ends at 0x1E8000 (HSM FW: 0x1E8000 - 0x1FFFFF)
  *
  * KeyStore is placed at the end of useable flash, just before HSM FW.
  */
-const useableFlashEnd = (deviceId.match(/CC27..(R|P)(20|15)/)) ? 0x1E8000 : 0xE8000;
+let useableFlashEnd;
+if (deviceId.match(/CC27..(R|P)(20|15)/)) {
+    useableFlashEnd = 0x1E8000;
+} else if (deviceId.match(/CC27..(R|P)10/)) {
+    useableFlashEnd = 0xE8000;
+} else if (deviceId.match(/CC27..(R|P)7/)){
+    useableFlashEnd = 0xc0000;
+} else {
+    throw new Error("Unsupported deviceId for useableFlashEnd calculation: " + deviceId);
+}
 const defaultFlashSize = 0x2000;
 const defaultFlashOffset = useableFlashEnd - defaultFlashSize;
 const sectorSize = 0x800;

@@ -107,6 +107,40 @@ for(var setting in ccfgSettings)
 var zigbee  = scripting.addModule("/ti/zigbee/zigbee");
 zigbee.deviceType                    = ["zed"];
 zigbee.deviceTypeReadOnly            = false;
+zigbee.loggingEnabled                = true;
+
+/* ======== UART Logging ========
+ * Logs are sent as binary-encoded data over UART at 115200 baud.
+ * A standard serial terminal will show gibberish - use tilogger to decode:
+ *
+ *   tilogger --elf <path_to>.out uart <COM_PORT> 115200 stdout
+ *
+ * tilogger requires Python + the tilogger package (pip install tilogger).
+ * NOTE: tilogger only works on native Windows, not WSL (binary frames get corrupted).
+ *
+ * Two log modules are connected to UART:
+ *   - LogModule_Zigbee_App:  Application-level events (OTA status, signals, F&B)
+ *   - LogModule_Zigbee_OSIF: OSIF-level events (NVS open/close, flash ops)
+ * The LLMAC module uses LogSinkBuf (too high-frequency for UART).
+ *
+ * To disable logging: set zigbee.loggingEnabled = false and remove the
+ * LogSinkUART section below. This saves ~2KB RAM and reduces code size.
+ */
+/* ======== LogSinkUART ======== */
+const LogSinkUART  = scripting.addModule("/ti/log/LogSinkUART", {}, false);
+const LogSinkUART1 = LogSinkUART.addInstance();
+LogSinkUART1.$name    = "CONFIG_ti_log_LogSinkUART_0";
+LogSinkUART1.baudRate = 115200;
+LogSinkUART1.uart.$name     = "CONFIG_UART2_0";
+LogSinkUART1.uart.$hardware = system.deviceData.board.components.XDS110UART;
+
+/* Connect Zigbee log modules to UART sink */
+zigbee.LogModuleZigbeeApp.loggerSink   = "/ti/log/LogSinkUART";
+zigbee.LogModuleZigbeeApp.logger       = LogSinkUART1;
+zigbee.LogModuleZigbeeApp.enable_INFO  = true;
+zigbee.LogModuleZigbeeOSIF.loggerSink  = "/ti/log/LogSinkUART";
+zigbee.LogModuleZigbeeOSIF.logger      = LogSinkUART1;
+zigbee.LogModuleZigbeeOSIF.enable_INFO = true;
 
 if(system.deviceData.deviceId.match(/CC23.*/))
 {
