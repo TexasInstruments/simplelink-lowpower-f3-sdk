@@ -7,12 +7,14 @@
       "file8": {
         "cc23xx": "adc_noise_bt5_cc23xx.json",
         "cc23x1": "adc_noise_bt5_cc23xx.json",
-        "cc27xx": "adc_noise_bt5_cc27xx.json"
+        "cc27xx": "adc_noise_bt5_cc27xx.json",
+        "cc276x": "adc_noise_bt5_cc27xx.json"
       },
       "phy_files": {
         "cc23xx": "adc_noise_bt5_cc23xx.phy",
         "cc23x1": "adc_noise_bt5_cc23xx.phy",
-        "cc27xx": "adc_noise_bt5_cc27xx.phy"
+        "cc27xx": "adc_noise_bt5_cc27xx.phy",
+        "cc276x": "adc_noise_bt5_cc27xx.phy"
       },
       "name": "adc_noise",
       "label": "ADC Noise",
@@ -147,10 +149,12 @@
     },
     {
       "file8": {
+        "cc23x1": "nesb_1m_2m_cc23x1.json",
         "cc23xx": "nesb_1m_2m_cc23xx.json",
         "cc27xx": "nesb_1m_2m_cc27xx.json"
       },
       "phy_files": {
+        "cc23x1": "nesb_1m_2m_cc23x1.phy",
         "cc23xx": "nesb_1m_2m_cc23xx.phy",
         "cc27xx": "nesb_1m_2m_cc27xx.phy"
       },

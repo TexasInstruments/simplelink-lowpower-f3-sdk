@@ -52,7 +52,9 @@ const CmdHandler = Common.getScript("cmd_handler.js");
 
 // Utility functions shared with SmartRF Studio 8
 let Srfs8Util;
-if (Common.getDeviceFamily() === "cc27xx") {
+// Cover "cc276x" as a workaround for devices that rely on different LRF images.
+// See: RFCONFIG-257.
+if (Common.getDeviceFamily() === "cc27xx" || Common.getDeviceFamily() === "cc276x") {
     Srfs8Util = system.getScript(ConfigPathRclCommon + "srfs8_util_cc27xx.js");
 }
 else {
@@ -227,18 +229,18 @@ function create(phyGroup, phyID, first) {
             // For each feature-type PHY property ...
             for (const prop of Common.forceArray(category.property)) {
                 if (prop.type.startsWith("feature:")) {
-                    
+
                     // Find the feature group through the property type
                     const featureGroupName = prop.type.replace("feature:", "");
                     for (const featureGroup of Common.forceArray(PhyDef.feature_group)) {
                         if (featureGroup.name === featureGroupName) {
-                            
+
                             // Find the selected feature
                             const featureName = RfParamCache[prop.name];
                             for (const feature of featureGroup.feature) {
                                 if (feature.name === featureName) {
 
-                                    // Add to feature selector bit mask 
+                                    // Add to feature selector bit mask
                                     bitmask |= feature.bitmask;
                                     break;
                                 }
@@ -292,7 +294,7 @@ function create(phyGroup, phyID, first) {
         const fileData = system.getScript(ConfigPath + file);
         return _.cloneDeep(fileData.phy_def);
     }
-    
+
 
     /**
      *  ======== enumPhyDefScriptRole ========
@@ -1890,7 +1892,7 @@ function create(phyGroup, phyID, first) {
             }
         }
 
-        // For each TX output power limitation table 
+        // For each TX output power limitation table
         if ("tx_power_limit_table" in PhyDef.rcl_struct_rf_design_deps) {
             for (var dep of PhyDef.rcl_struct_rf_design_deps.tx_power_limit_table) {
 
@@ -2005,7 +2007,7 @@ function create(phyGroup, phyID, first) {
 
                 // Have one empty line before each section
                 code += "\n";
-                
+
                 // For each script ...
                 for (const script of scripts) {
 
@@ -2423,7 +2425,7 @@ ${symNameCode}
         const phyAbbr = ceConfig.phyAbbr && ceConfig.symGenMethod === "Legacy";
 
         // Data structure fields may depend on RF design data (PA table, TX output power limitation
-        // tables), so ensure that what we'll need is up-to-date before proceeding (table sizes) 
+        // tables), so ensure that what we'll need is up-to-date before proceeding (table sizes)
         handleRclStructRfDesignDeps();
 
         // Iterate structs in PHY definition
@@ -2513,12 +2515,12 @@ ${symNameCode}
                                     value += " " + hex + ",";
                                 }
                                 value += " " + lastVal + "}";
-                            
+
                             // Handle PA table
                             } else if (isPaTable) {
                                 value = generatePaTableEntriesCode();
                                 Common.paTableDone = true;
-                            
+
                             // Handle TX output power limit table
                             } else if (isTxPowerLimitTable) {
                                 value = generateTxPowerLimitTableEntriesCode(tableName);

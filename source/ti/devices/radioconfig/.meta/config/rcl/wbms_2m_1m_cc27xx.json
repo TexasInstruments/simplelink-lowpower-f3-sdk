@@ -6,6 +6,9 @@
         "name": "CC2745R10Q1"
       },
       {
+        "name": "CC2745R20Q1"
+      },
+      {
         "name": "CC2765R10Q1"
       }
     ],
@@ -18,7 +21,7 @@
       "default_clone_name": "Custom wBMS",
       "state": {
         "quality": "experimental",
-        "device_name_list": "CC2745R10Q1,CC2765R10Q1"
+        "device_name_list": "CC2745R10Q1,CC2765R10Q1,CC2745R20Q1"
       }
     },
     "feature_group": {
@@ -1192,6 +1195,15 @@
                 "LRFDMDM.MODCTRL.TONEINSERT": {
                   "value": "0"
                 },
+                "LRFDMDM.DEMDEBUG.LOOPBACKMODE": {
+                  "value": "0"
+                },
+                "LRFDMDM.DEMDEBUG.LOOPBACKPIN": {
+                  "value": "0"
+                },
+                "LRFDMDM.GPOCTRL0.GPO0": {
+                  "value": "0"
+                },
                 "LRFDRFE.SPARE2.VAL": {
                   "value": "41542"
                 },
@@ -1610,6 +1622,15 @@
                   "value": "3"
                 },
                 "LRFDMDM.MODCTRL.TONEINSERT": {
+                  "value": "0"
+                },
+                "LRFDMDM.DEMDEBUG.LOOPBACKMODE": {
+                  "value": "0"
+                },
+                "LRFDMDM.DEMDEBUG.LOOPBACKPIN": {
+                  "value": "0"
+                },
+                "LRFDMDM.GPOCTRL0.GPO0": {
                   "value": "0"
                 },
                 "LRFDRFE.SPARE2.VAL": {

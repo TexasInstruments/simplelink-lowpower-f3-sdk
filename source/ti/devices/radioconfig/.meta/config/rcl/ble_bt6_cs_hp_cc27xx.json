@@ -15,7 +15,13 @@
         "name": "CC2745R10Q1"
       },
       {
+        "name": "CC2745R20Q1"
+      },
+      {
         "name": "CC2755P10"
+      },
+      {
+        "name": "CC2755R7"
       },
       {
         "name": "CC2755R10"
@@ -38,7 +44,7 @@
       "default_clone_name": "Custom BLE Channel Sounding",
       "state": {
         "quality": "experimental",
-        "device_name_list": "CC2744R7Q1,CC2745R7Q1,CC2745P10Q1,CC2745R10Q1,CC2755P10,CC2755R10,CC2755P20,CC2755R20,CC2765R10Q1"
+        "device_name_list": "CC2744R7Q1,CC2745R7Q1,CC2745P10Q1,CC2745R10Q1,CC2755P10,CC2755R7,CC2755R10,CC2755P20,CC2755R20,CC2765R10Q1,CC2745R20Q1"
       }
     },
     "rcl_registers": {

@@ -2,7 +2,7 @@
     {
         "name": "Release Notes",
         "resourceType": "file",
-        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_21_00_36_LTS.html",
+        "location": "../../release_notes_simplelink_lowpower_f3_sdk_9_23_00_27.html",
         "devices": [
             "CC2340R5"
         ],
@@ -60,6 +60,25 @@
         "name": "SimpleLink MCU SDK User's Guide",
         "resourceType": "file",
         "location": "../../docs/simplelink_mcu_sdk/Users_Guide.html",
+        "devices": [
+            "CC2340R5"
+        ],
+        "devtools": [
+            "LP-EM-CC2340R5"
+        ],
+        "mainCategories": [
+            [
+                "Documents"
+            ]
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "name": "Changelog",
+        "resourceType": "file",
+        "location": "../../changelog.html",
         "devices": [
             "CC2340R5"
         ],
@@ -430,7 +449,7 @@
     {
         "name": "Core SDK Release Notes",
         "resourceType": "file",
-        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_22_00_18.html",
+        "location": "../../docs/simplelink_mcu_sdk/release_notes_coresdk_lpf3_9_23_00_05.html",
         "devices": [
             "CC2340R5"
         ],
@@ -518,7 +537,7 @@
     {
         "name": "TI BLE Stack Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_ble_9_21_00.html",
+        "location": "../../docs/ble5stack/release_notes_blecsranging_9_23_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -540,7 +559,7 @@
     {
         "name": "TI BLE Stack Release Notes",
         "resourceType": "file",
-        "location": "../../docs/ble5stack/release_notes_blecsranging_9_21_00.html",
+        "location": "../../docs/ble5stack/release_notes_ble_9_23_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -562,7 +581,7 @@
     {
         "name": "TI Proprietary RF Release Notes",
         "resourceType": "file",
-        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_21_00.html",
+        "location": "../../docs/proprietary-rf/release_notes_proprietary-rf_9_23_00.html",
         "devices": [
             "CC2340R5"
         ],
@@ -584,7 +603,7 @@
     {
         "name": "SimpleLink Common Components Module (SCCM) Release Notes",
         "resourceType": "file",
-        "location": "../../docs/sccm/release_notes_sccm_9_21_00.html",
+        "location": "../../docs/sccm/release_notes_sccm_9_23_00.html",
         "devices": [
             "CC2340R5"
         ],

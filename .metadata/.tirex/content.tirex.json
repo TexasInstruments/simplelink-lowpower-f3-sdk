@@ -15719,6 +15719,137 @@
         ]
     },
     {
+        "location": "../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/README.html",
+        "resourceType": "categoryInfo",
+        "name": "hsmfwupdate",
+        "devtools": [
+            "LP-EM-CC2755R10-BG"
+        ],
+        "devices": [
+            "CC2755R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Hardware Security Module (HSM)"
+        ],
+        "resourceClass": [
+            "document"
+        ]
+    },
+    {
+        "resourceType": "project.group",
+        "advanced": {
+            "overrideProjectSpecDeviceId": true
+        },
+        "resourceClass": [
+            "example"
+        ],
+        "resourceSubClass": [
+            "example.general"
+        ],
+        "devices": [
+            "CC2755R10"
+        ],
+        "coreTypes": [
+            "Cortex M.CC2755R10"
+        ],
+        "devtools": [
+            "LP-EM-CC2755R10-BG"
+        ],
+        "name": "hsmfwupdate",
+        "endEquipment": [
+            "general"
+        ],
+        "description": "hsmfwupdate",
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Hardware Security Module (HSM)",
+            "hsmfwupdate"
+        ],
+        "variants": [
+            {
+                "dependencies": [
+                    {
+                        "packageId": "ti_cgt_tiarmclang"
+                    },
+                    {
+                        "packageId": "sysconfig"
+                    }
+                ],
+                "ide": "ccs",
+                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/freertos/ticlang/hsmfwupdate_LP_EM_CC2755R10_BG_freertos_ticlang.projectspec",
+                "kernel": "freertos",
+                "compiler": "ticlang"
+            },
+            {
+                "dependencies": [
+                    {
+                        "packageId": "arm.gnu"
+                    },
+                    {
+                        "packageId": "sysconfig"
+                    }
+                ],
+                "ide": "ccs",
+                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/freertos/gcc/hsmfwupdate_LP_EM_CC2755R10_BG_freertos_gcc.projectspec",
+                "kernel": "freertos",
+                "compiler": "gcc"
+            },
+            {
+                "dependencies": [
+                    {
+                        "packageId": "ti_cgt_tiarmclang"
+                    },
+                    {
+                        "packageId": "sysconfig"
+                    }
+                ],
+                "ide": "ccs",
+                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/ticlang/hsmfwupdate_LP_EM_CC2755R10_BG_nortos_ticlang.projectspec",
+                "kernel": "nortos",
+                "compiler": "ticlang"
+            },
+            {
+                "dependencies": [
+                    {
+                        "packageId": "arm.gnu"
+                    },
+                    {
+                        "packageId": "sysconfig"
+                    }
+                ],
+                "ide": "ccs",
+                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/gcc/hsmfwupdate_LP_EM_CC2755R10_BG_nortos_gcc.projectspec",
+                "kernel": "nortos",
+                "compiler": "gcc"
+            },
+            {
+                "dependencies": [],
+                "ide": "iar",
+                "location": "../../examples/rtos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/freertos/iar/hsmfwupdate_LP_EM_CC2755R10_BG_freertos_iar.ipcf",
+                "kernel": "freertos",
+                "compiler": "iar"
+            },
+            {
+                "dependencies": [],
+                "ide": "iar",
+                "location": "../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/iar/hsmfwupdate_LP_EM_CC2755R10_BG_nortos_iar.ipcf",
+                "kernel": "nortos",
+                "compiler": "iar"
+            }
+        ]
+    },
+    {
         "location": "../../examples/rtos/LP_EM_CC2755P20/hsm/hsmfwupdate/README.html",
         "resourceType": "categoryInfo",
         "name": "hsmfwupdate",
@@ -15978,6 +16109,29 @@
                 "kernel": "nortos",
                 "compiler": "iar"
             }
+        ]
+    },
+    {
+        "location": "../../examples/nortos/LP_EM_CC2755R10_BG/hsm/hsmfwupdate/README.html",
+        "resourceType": "categoryInfo",
+        "name": "hsmfwupdate",
+        "devtools": [
+            "LP-EM-CC2755R10-BG"
+        ],
+        "devices": [
+            "CC2755R10"
+        ],
+        "mainCategories": [
+            [
+                "Examples",
+                "Development Tools"
+            ]
+        ],
+        "subCategories": [
+            "Hardware Security Module (HSM)"
+        ],
+        "resourceClass": [
+            "document"
         ]
     },
     {

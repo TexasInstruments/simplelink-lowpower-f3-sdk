@@ -106,10 +106,12 @@ const deviceToBoard = {
     CC2745R7RHAQ1:  "LP_EM_CC2745R10_Q1",
     CC2745P10RHAQ1: "LP_EM_CC2755P10",
     CC2745R10RHAQ1: "LP_EM_CC2745R10_Q1",
+    CC2745R20RHAQ1: "LP_EM_CC2745R10_Q1",
     CC2755P105RHA:  "LP_EM_CC2755P10",
     CC2755P207RHA:  "LP_EM_CC2755P20",
     CC2755R105YCJ:  "LP_EM_CC2755R10_BG",
-    CC2755R105RHA:  "LP_EM_CC2745R10_Q1"
+    CC2755R105RHA:  "LP_EM_CC2745R10_Q1",
+    CC2755R74YCJ:   "LP_EM_CC2755R10_BG"
 };
 
 const deviceToBondNVBaseAddress = {
@@ -118,7 +120,7 @@ const deviceToBondNVBaseAddress = {
   CC2340R2RGE:    0x3D000,
 /* 512KB devices */
   CC2340R5RKP:    0x7D000,
-  CC2340R5RHBQ1:    0x7D000,
+  CC2340R5RHBQ1:  0x7D000,
   CC2340R5RGE:    0x7D000,
   CC2340R53YBG:   0x7D000,
   CC2340R53RKP:   0x7D000,
@@ -127,6 +129,7 @@ const deviceToBondNVBaseAddress = {
 /* 786KB devices + HSM */
   CC2744R7RHAQ1:  0xA5000,
   CC2745R7RHAQ1:  0xA5000,
+  CC2755R74YCJ:   0xA5000,
 /* 1MB devices + HSM */
   CC2745P10RHAQ1: 0xE5000,
   CC2745R10RHAQ1: 0xE5000,
@@ -134,7 +137,8 @@ const deviceToBondNVBaseAddress = {
   CC2755R105YCJ:  0xE5000,
   CC2755R105RHA:  0xE5000,
 /* 2MB devices + HSM */
-  CC2755P207RHA:  0x1E5000
+  CC2755P207RHA:  0x1E5000,
+  CC2745R20RHAQ1: 0x1E5000
 };
 
 const deviceToHeapSize = {
@@ -152,6 +156,7 @@ const deviceToHeapSize = {
   /* 786KB devices + HSM */
     CC2744R7RHAQ1:  0xA5000,
     CC2745R7RHAQ1:  0xA5000,
+    CC2755R74YCJ:   0xA5000,
   /* 1MB devices + HSM */
     CC2745P10RHAQ1: 0xE5000,
     CC2745R10RHAQ1: 0xE5000,
@@ -159,7 +164,8 @@ const deviceToHeapSize = {
     CC2755R105YCJ:  0xE5000,
     CC2755R105RHA:  0xE5000,
   /* 2MB devices + HSM */
-    CC2755P207RHA:  0x1E5000
+    CC2755P207RHA:  0x1E5000,
+    CC2745R20RHAQ1: 0x1E5000
   };
 
 const txPowerValueToIndex = [
@@ -229,6 +235,7 @@ const CC27XXMigration = [
   {target: "LP_EM_CC2755P10"},
   {target: "LP_EM_CC2755P20"},
   {target: "LP_EM_CC2755R10_BG"},
+  {target: "LP_EM_CC2755R7_BG_SOCKET"},
   {target: "CC2745R10RHAQ1"},
   {target: "CC2745P10RHAQ1"},
   {target: "CC2755P105RHA"},
@@ -236,7 +243,9 @@ const CC27XXMigration = [
   {target: "CC2755R105RHA"},
   {target: "CC2745R7RHAQ1"},
   {target: "CC2755R105YCJ"},
-  {target: "CC2744R7RHAQ1"}
+  {target: "CC2744R7RHAQ1"},
+  {target: "CC2745R20RHAQ1"},
+  {target: "CC2755R74YCJ"}
 ]
 
 const supportedMigrations = {

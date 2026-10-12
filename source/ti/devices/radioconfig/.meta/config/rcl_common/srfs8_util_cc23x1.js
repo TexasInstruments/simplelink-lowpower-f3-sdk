@@ -69,6 +69,14 @@ function create(phyGroup) {
         }
     }
 
+    function convIeee802154ChannelToFreq(channel) {
+        if ((channel >= 11) && (channel <= 26)) {
+            return 2405 + (5 * (channel - 11));
+        } else {
+            return NaN;
+        }
+    }
+
     function convPaTableSettingToBinary(txPower, value, isHighPa) {
         var tempCoeff = (value >> 12) & 0xFF;
         var settingData = [];
@@ -91,8 +99,16 @@ function create(phyGroup) {
         return "{ .power = { .fraction = " + txPowerFract + ", .dBm = " + txPowerInt + " }, .tempCoeff = " + tempCoeff + ", .value = { .reserved = 0, .ib = " + ib + ", .gain = " + gain + ", .mode = " + mode + ", .noIfampRfLdoBypass = " + noIfampRfLdoBypass + " } }"
     }
 
+    function getFrequencyWithOffset() {
+        return getPpFrequency() + getTestProperty("frequencyOffset");
+    }
+
     function getPpFrequencyBle() {
         return convBleChannelToFreq(getPhyProperty("bleChannel"), getPhyProperty("frequency"));
+    }
+
+    function getPpFrequency154() {
+        return convIeee802154ChannelToFreq(getPhyProperty("ieee802154Channel"));
     }
 
     function zeroPadStart(valueString, width) {
@@ -147,9 +163,12 @@ function create(phyGroup) {
         setContext: setContext,
         getPpFrequency: getPpFrequency,
         convBleChannelToFreq: convBleChannelToFreq,
+        convIeee802154ChannelToFreq: convIeee802154ChannelToFreq,
         convPaTableSettingToBinary: convPaTableSettingToBinary,
         convPaTableSettingToString: convPaTableSettingToString,
+        getFrequencyWithOffset: getFrequencyWithOffset,
         getPpFrequencyBle: getPpFrequencyBle,
+        getPpFrequency154: getPpFrequency154,
         genCrcSection: genCrcSection,
         updCfRfFrequency: updCfRfFrequency
     }

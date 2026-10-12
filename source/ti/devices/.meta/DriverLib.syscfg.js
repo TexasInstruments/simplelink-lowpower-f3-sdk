@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2026, Texas Instruments Incorporated - http://www.ti.com
+ * Copyright (c) 2019-2026 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -311,10 +311,11 @@ function getLinkerDefs() {
      */
     dev2mem["CC2340R5RGE"] = dev2mem["CC2340R5RHBQ1"] = dev2mem["CC2340R5RKP"];
     dev2mem["CC2340R5MODA"] = dev2mem["CC2340R53YBG"] = dev2mem["CC2340R53RHBQ1"] = dev2mem["CC2340R53RKP"];
-    dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2745R7RHAQ1"];
+    dev2mem["CC2744R7RHAQ1"] = dev2mem["CC2755R74YCJ"] = dev2mem["CC2745R7RHAQ1"];
     dev2mem["CC2745P10RHAQ1"] = dev2mem["CC2745R10RHAQ1"] =
     dev2mem["CC2755P105RHA"] = dev2mem["CC2755R105YCJ"] = dev2mem["CC2765R10RTQ"] = dev2mem["CC2755R105RHA"];
-    dev2mem["CC2755P207RSL"] = dev2mem["CC2755R207YCJ"] = dev2mem["CC2755R207RSL"] = dev2mem["CC2755P207RHA"];
+    dev2mem["CC2755P207RSL"] = dev2mem["CC2755R207YCJ"] = dev2mem["CC2755R207RSL"] =
+    dev2mem["CC2745R20RHAQ1"] = dev2mem["CC2755P207RHA"];
 
     /* Override FLASH, RAM and S2RRAM base/size if TFM is enabled */
     if (system.modules["/ti/utils/TrustZone"]) {

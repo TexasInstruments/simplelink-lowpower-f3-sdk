@@ -84,6 +84,62 @@
           "default": "camelCase"
         },
         {
+          "name": "cmdList_prop",
+          "displayName": "List of supported RCL Commands",
+          "minSelections": 0,
+          "default": [],
+          "options": [
+            {
+              "name": "cmdGenericTx",
+              "displayName": "CMD_GENERIC_TX",
+              "description": "Generic transmit command"
+            },
+            {
+              "name": "cmdGenericTxRepeat",
+              "displayName": "CMD_GENERIC_TX_REPEAT",
+              "description": "Generic repeated packet transmit command"
+            },
+            {
+              "name": "cmdGenericTxTest",
+              "displayName": "CMD_GENERIC_TX_TEST",
+              "description": "Generic transmitter test command"
+            },
+            {
+              "name": "cmdGenericRx",
+              "displayName": "CMD_GENERIC_RX",
+              "description": "Generic receive command"
+            }
+          ]
+        },
+        {
+          "name": "cmdList_ieee_15_4",
+          "displayName": "List of supported RCL Commands",
+          "minSelections": 0,
+          "default": [],
+          "options": [
+            {
+              "name": "cmdGenericTx",
+              "displayName": "CMD_GENERIC_TX",
+              "description": "Generic transmit command"
+            },
+            {
+              "name": "cmdGenericTxRepeat",
+              "displayName": "CMD_GENERIC_TX_REPEAT",
+              "description": "Generic repeated packet transmit command"
+            },
+            {
+              "name": "cmdGenericTxTest",
+              "displayName": "CMD_GENERIC_TX_TEST",
+              "description": "Generic transmitter test command"
+            },
+            {
+              "name": "cmdGenericRx",
+              "displayName": "CMD_GENERIC_RX",
+              "description": "Generic receive command"
+            }
+          ]
+        },
+        {
           "name": "cmdList_ble",
           "displayName": "List of supported RCL Commands",
           "minSelections": 0,
@@ -220,6 +276,10 @@
       "swConfig": "LRF_swConfig",
       "config": "LRF_config",
       "cfg_segment_list": "LRF_regConfigList",
+      "shapeBaseGfsk067": "LRF_shapeBaseGfsk067",
+      "shapeBaseGfsk05": "LRF_shapeBaseGfsk05",
+      "swConfig1Mbps": "LRF_swConfig1Mbps",
+      "swConfig2Mbps": "LRF_swConfig2Mbps",
       "txPowerTable": "LRF_txPowerTable"
     }
   }

@@ -21,18 +21,18 @@
   ],
   "CC2745R10Q1": [
     "Proprietary",
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
-  "CC2755P10": [
+  "CC2745R20Q1": [
     "Proprietary",
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
-  "CC2755R10": [
+  "CC2765R10Q1": [
     "Proprietary",
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
   "CC2340R5Q1": [
     "BLE",
@@ -48,34 +48,49 @@
     "Proprietary"
   ],
   "CC2341R10": [
-    "BLE"
+    "BLE",
+    "Proprietary"
   ],
   "CC2341R73Q1": [
-    "BLE"
+    "BLE",
+    "Proprietary"
   ],
   "CC2744R7Q1": [
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
   "CC2745R7Q1": [
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
   "CC2745P10Q1": [
+    "BLE",
+    "IEEE"
+  ],
+  "CC2755P10": [
+    "BLE",
     "IEEE",
-    "BLE"
+    "Proprietary"
+  ],
+  "CC2755R7": [
+    "BLE",
+    "IEEE",
+    "Proprietary"
+  ],
+  "CC2755R10": [
+    "BLE",
+    "IEEE",
+    "Proprietary"
   ],
   "CC2755P20": [
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
   "CC2755R20": [
-    "IEEE",
-    "BLE"
+    "BLE",
+    "IEEE"
   ],
-  "CC2765R10Q1": [
-    "IEEE",
-    "Proprietary",
+  "CC2764R20Q1": [
     "BLE"
   ]
 }
